@@ -16,6 +16,7 @@ import recly.core.message.CoreMessage
 import recly.core.model.OnError
 import recly.core.model.Step
 import recly.core.model.Workflow
+import recly.core.model.WorkflowsDocument
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger.Level
@@ -38,6 +39,8 @@ class Executor(
     private val recordings: RecordingRepository,
     private val runners: Map<String, StepRunner>,
     private val random: Random = Random.Default,
+    /** The workflow document as it is now, for [liveSteps]; null when the shell has none to offer. */
+    private val live: suspend () -> WorkflowsDocument? = { null },
 ) {
     private val mutex = Mutex()
 
@@ -99,7 +102,7 @@ class Executor(
             fail(job, "recording '${job.recordingId}' is gone")
             return
         }
-        val defined = workflow.steps.associateBy { it.id }
+        val defined = liveSteps(workflow)
         val prior = mutableMapOf<String, StepOutput>()
         for (run in store.stepsOf(job.id)) {
             if (run.status == StepStatus.SUCCEEDED || run.status == StepStatus.SKIPPED) {
@@ -147,6 +150,26 @@ class Executor(
         deps.logger.log(Level.INFO, "job.done", mapOf("jobId" to job.id, "recordingId" to job.recordingId))
         // Nothing is deleted here any more: once the upload has succeeded the parts are a cache
         // with a window on it, which Retention sweeps at the end of the pass (ADR-017).
+    }
+
+    /**
+     * docs/10 "잡 스냅샷": the snapshot is what the job *is*; the document is what the user *means*
+     * now, and a user who fixes a step's URL or key after it failed expects the next attempt to use
+     * the fix (Z Fold7, 2026-09-04: a parked transcribe kept calling the Free Clova domain the
+     * snapshot named while the workflow had pointed at the Basic one for half an hour). So a step
+     * that is still in the current document — same workflow id, same step id, same type — runs with
+     * the document's definition; a workflow that is gone, a step that was removed or given another
+     * type, and a document the shell cannot read all leave the snapshot in charge, exactly as before.
+     */
+    private suspend fun liveSteps(snapshot: Workflow): Map<String, Step> {
+        val defined = snapshot.steps.associateBy { it.id }.toMutableMap()
+        val current = runCatching { live() }.getOrNull()
+            ?.workflows?.firstOrNull { it.id == snapshot.id }
+            ?: return defined
+        for (step in current.steps) {
+            if (defined[step.id]?.type == step.type) defined[step.id] = step
+        }
+        return defined
     }
 
     private suspend fun runStep(

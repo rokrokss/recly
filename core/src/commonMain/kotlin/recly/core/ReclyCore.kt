@@ -77,7 +77,12 @@ class ReclyCore(
     private val jobStore: JobStore = JobStore(db, deps)
 
     val jobs: JobService =
-        JobService(deps, jobStore, recordings, Executor(deps, jobStore, recordings, defaultRunners(db, deps)))
+        JobService(
+            deps,
+            jobStore,
+            recordings,
+            Executor(deps, jobStore, recordings, defaultRunners(db, deps), live = { workflows.current() }),
+        )
 
     private val driveStore: DriveStore = DriveStore(db, deps)
 

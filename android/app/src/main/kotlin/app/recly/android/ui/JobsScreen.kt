@@ -282,10 +282,18 @@ private fun ExpandedRow(
                 ItemState.FAILED ->
                     ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
 
-                // docs/10: a job that has not failed is already on its way — a `WAITING` one waits
-                // for its `next_run_at` and a `PENDING` one is due — so there is nothing to retry.
-                // A recording with no job, and one too short to have earned one, offer no upload.
-                ItemState.PENDING, ItemState.WAITING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
+                // docs/10: a `WAITING` job is sitting out a backoff after a failed attempt, and
+                // the user who has just fixed what failed (a URL, a key, a plan) should not have
+                // to wait it out — `retry()` makes the next attempt now (Z Fold7, 2026-09-04).
+                // Not while a provider is transcribing: that wait is on someone else's clock.
+                ItemState.WAITING ->
+                    if (item.waitingMinutes == null) {
+                        ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
+                    }
+
+                // A `PENDING` job is due already. A recording with no job, and one too short to
+                // have earned one, offer no upload.
+                ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
                 ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
                 -> Unit
             }

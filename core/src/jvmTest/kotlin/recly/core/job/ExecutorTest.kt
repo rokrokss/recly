@@ -31,6 +31,7 @@ import recly.core.model.OnError
 import recly.core.model.RecordingMeta
 import recly.core.model.Retry
 import recly.core.model.Source
+import recly.core.model.Step
 import recly.core.model.Track
 import recly.core.model.isoUtc
 import recly.core.model.wire
@@ -192,6 +193,51 @@ class ExecutorTest {
             listOf(mapOf("recordingId" to recording.id, "reason" to "within_window")),
             f.logger.fieldsOf("rec.retained"),
         )
+    }
+
+    // docs/10 "잡 스냅샷": a step still in the current document runs with the document's definition
+    // — the URL the user fixed after the job was queued — while the snapshot decides which steps
+    // exist. Same step id and type is the whole test of "still there".
+    @Test
+    fun aStepRunsWithTheCurrentDocumentsDefinitionWhenItIsStillThere() = runBlocking {
+        val seen = mutableListOf<Step>()
+        val webhook = ScriptedRunner("webhook") { ctx, _ -> seen += ctx.step; output("status" to "200") }
+        val f = Fixture(listOf(webhook))
+        val recording = f.seed()
+        val jobId = f.enqueue(recording, webhookStep("hook"))
+        val edited = testDocument(
+            testWorkflow(steps = listOf((webhookStep("hook") as Step.Webhook).copy(url = "https://fixed.example/rec"))),
+        )
+        val executor = Executor(f.deps, f.store, f.recordings, mapOf("webhook" to webhook), Random(42), live = { edited })
+
+        executor.runDueJobs()
+
+        assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
+        assertEquals("https://fixed.example/rec", (seen.single() as Step.Webhook).url)
+    }
+
+    @Test
+    fun theSnapshotDefinitionStaysWhenTheDocumentDoesNotHaveTheStepAnyMore() = runBlocking {
+        val seen = mutableListOf<Step>()
+        val webhook = ScriptedRunner("webhook") { ctx, _ -> seen += ctx.step; output("status" to "200") }
+        val f = Fixture(listOf(webhook))
+        val recording = f.seed()
+        f.enqueue(recording, webhookStep("hook"))
+        // The workflow is still there but the step was replaced by one of another type under the
+        // same id — not the same step, so the snapshot's definition is what runs.
+        val edited = testDocument(testWorkflow(steps = listOf(driveStep("hook"))))
+        val executor = Executor(f.deps, f.store, f.recordings, mapOf("webhook" to webhook), Random(42), live = { edited })
+
+        executor.runDueJobs()
+
+        assertEquals("https://example.com/rec", (seen.single() as Step.Webhook).url)
+        // And a document that cannot be read at all changes nothing either.
+        val f2 = Fixture(listOf(webhook))
+        val r2 = f2.seed()
+        f2.enqueue(r2, webhookStep("hook"))
+        Executor(f2.deps, f2.store, f2.recordings, mapOf("webhook" to webhook), Random(42), live = { error("no document") })
+            .runDueJobs()
+        assertEquals("https://example.com/rec", (seen.last() as Step.Webhook).url)
     }
 
     @Test
