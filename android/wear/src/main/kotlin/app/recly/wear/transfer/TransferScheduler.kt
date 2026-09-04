@@ -7,12 +7,15 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.recly.wear.RecWearApp
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import recly.core.platform.Logger
 
 /**
@@ -32,18 +35,31 @@ object TransferScheduler {
     const val UNIQUE_PERIODIC: String = "rec-transfer-periodic"
 
     /**
-     * KEEP: a pass that is already queued sends the same files this one would, and REPLACE would
-     * cancel it mid-file. Every trigger in docs/11 W4 lands here — the finalize that queued a
-     * recording, the phone appearing, and the app coming to the foreground.
+     * Every trigger in docs/11 W4 lands here — the finalize that queued a recording, the phone
+     * appearing, and the app coming to the foreground.
+     *
+     * KEEP while a pass is *sending*: it sends the same files this one would, and REPLACE would
+     * cancel it mid-file. But a pass that is only *waiting* — the exponential backoff a stalled
+     * ack leaves behind, minutes to hours — is exactly what a new trigger should override: the
+     * phone appearing or the app opening is a better reason to try than a timer set when the last
+     * attempt failed, and WorkManager will not run a backed-off worker early on its own (Watch7,
+     * 2026-09-04: opening the app did nothing against a 24-minute backoff). The state is read off
+     * WorkManager's executor, not the caller's thread — this is called from `onResume`.
      */
     fun runNow(context: Context) {
-        WorkManager.getInstance(context).enqueueUniqueWork(
-            UNIQUE,
-            ExistingWorkPolicy.KEEP,
-            OneTimeWorkRequestBuilder<TransferWorker>()
-                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
-                .build(),
-        )
+        val manager = WorkManager.getInstance(context)
+        val infos = manager.getWorkInfosForUniqueWork(UNIQUE)
+        infos.addListener({
+            val sending = runCatching { infos.get() }.getOrDefault(emptyList())
+                .any { it.state == WorkInfo.State.RUNNING }
+            manager.enqueueUniqueWork(
+                UNIQUE,
+                if (sending) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
+                OneTimeWorkRequestBuilder<TransferWorker>()
+                    .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
+                    .build(),
+            )
+        }, Dispatchers.IO.asExecutor())
     }
 
     /**
