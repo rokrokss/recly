@@ -9,7 +9,7 @@ description = "Recly Windows capture helper (docs/14): WASAPI mic + loopback, dr
 [dependencies]
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-sha2 = "0.10"
+sha2 = "0.11"
 
 # Everything Windows-only lives behind `cfg(windows)`; the development host is macOS, where this
 # crate builds and tests without it (docs/lanes/M6-L2 "환경 제약").
