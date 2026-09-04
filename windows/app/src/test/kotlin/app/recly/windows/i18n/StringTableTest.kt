@@ -62,6 +62,25 @@ class StringTableTest {
         assertEquals(emptyMap(), korean, "strings_en.properties is the English base")
     }
 
+    /**
+     * The cross-shell dictionary (리드 정본), this shell's half: docs/03 "다른 기기의 녹음" says the
+     * same three things on every shell, so the wording is locked here rather than left to drift out
+     * of step with the phones' `job_state_*` and RecKit's `stateLabel`. Android's own
+     * `CrossShellDictionaryTest` reads these very properties and holds the four of them together.
+     */
+    @Test
+    fun `what another device is doing is worded the same on every shell`() {
+        val en = read(StringTable.BASE)
+        val ko = read(StringTable.KOREAN)
+
+        assertEquals("Receiving from the watch", en.getValue(Str.STATE_RECEIVING.key))
+        assertEquals("워치에서 받는 중", ko.getValue(Str.STATE_RECEIVING.key))
+        assertEquals("Uploading on another device", en.getValue(Str.STATE_REMOTE_UPLOADING.key))
+        assertEquals("다른 기기에서 업로드 중", ko.getValue(Str.STATE_REMOTE_UPLOADING.key))
+        assertEquals("Transcribing on another device", en.getValue(Str.STATE_REMOTE_TRANSCRIBING.key))
+        assertEquals("다른 기기에서 전사 중", ko.getValue(Str.STATE_REMOTE_TRANSCRIBING.key))
+    }
+
     /** The loader reads UTF-8 (`Properties.load(InputStream)` would not) and formats positionally. */
     @Test
     fun `a loaded table formats its arguments in its own language`() {

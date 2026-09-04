@@ -17,6 +17,7 @@ import recly.core.job.StepReport
 import recly.core.job.StepRun
 import recly.core.model.RecordingStatus
 import recly.core.recording.RecordingRecord
+import recly.core.transcribe.TranscribeRunner
 
 /**
  * One recent recording as the tray lists it (docs/14 "앱": the tray's … recents, the Mac's `RecentItem`).
@@ -62,10 +63,14 @@ data class RecentItem(
      * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": a recording being written to or uploaded right
      * now is not one to delete — the core refuses it anyway, and offering the button would be
      * offering a refusal. The Mac's popover and its window draw the same two exceptions.
+     *
+     * docs/03 "다른 기기의 녹음" (2026-09-04): and the two that are in flight *elsewhere*, for the same
+     * reason read from the other side — deleting the folder out from under another device's upload,
+     * or the row a watch transfer is still filling, is a refusal waiting to happen.
      */
     val deletable: Boolean
         get() = when ((state as? UiMessage.Res)?.key) {
-            Str.STATUS_RECORDING, Str.STATE_UPLOADING -> false
+            Str.STATUS_RECORDING, Str.STATE_UPLOADING, Str.STATE_RECEIVING, Str.STATE_REMOTE_UPLOADING -> false
             else -> true
         }
 }
@@ -131,11 +136,26 @@ object Recents {
      * The ledger is the pages of rows that have been read so far, so a job still running on one
      * older than those is not seen here: the same scope the rows under it have, and the dashboard
      * says no more than they do.
+     *
+     * docs/03: the key and not the badge, because another device's upload wears the same `UPLOADING`
+     * ([Str.STATE_REMOTE_UPLOADING]) — and this node is what *this* PC is doing.
      */
     fun uploading(items: List<RecentItem>): Boolean =
         items.any { (it.state as? UiMessage.Res)?.key == Str.STATE_UPLOADING }
 
     fun stateLabel(record: RecordingRecord, job: Job?): UiMessage {
+        // docs/03 "다른 기기의 녹음": what is going on somewhere else is read off the recording row —
+        // none of it is a job of this PC's, so none of it can be read off the queue — and it is read
+        // *first*: a transfer still coming in and another device's upload both carry
+        // `status = recording`, and the local `REC` below would answer for both of them.
+        if (record.receiving) return Str.STATE_RECEIVING.message()
+        if (record.remoteUploading) return Str.STATE_REMOTE_UPLOADING.message()
+        // The upload landed and the device that made the recording still has a `transcribe` to run.
+        // Anything else it has left (a `webhook`) is nothing this list has to report, so the row
+        // reads as the finished one it is.
+        if (record.remote && TranscribeRunner.TYPE in record.remotePending) {
+            return Str.STATE_REMOTE_TRANSCRIBING.message()
+        }
         if (record.meta.status == RecordingStatus.RECORDING) return Str.STATUS_RECORDING.message()
         // docs/03: another device recorded and uploaded it, and this PC read it out of Drive. There
         // is no job here, so "no workflow" would be the wrong answer — nothing was skipped. It is

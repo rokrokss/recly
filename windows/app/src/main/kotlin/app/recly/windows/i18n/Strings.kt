@@ -156,6 +156,18 @@ enum class Str {
     /** docs/08 "폴링 · 상태": a provider is transcribing and the only news is how long it has been. */
     STATE_WAITING_TRANSCRIPTION,
     /**
+     * docs/03 "다른 기기의 녹음": the three things that are happening somewhere other than here. Their
+     * own keys rather than the local states' ([STATE_UPLOADING]) — the badge is the same word, but
+     * the sentence has to say *where*, and the State node reads the key to tell this PC's own upload
+     * from another device's ([app.recly.windows.jobs.Recents.uploading]).
+     *
+     * [STATE_RECEIVING] cannot happen on this shell — a PC has no watch to receive from — but the
+     * mapping is one product's, so it is complete here too.
+     */
+    STATE_RECEIVING,
+    STATE_REMOTE_UPLOADING,
+    STATE_REMOTE_TRANSCRIBING,
+    /**
      * A recording nobody named. Its own word, not the workflows' [UNNAMED]: docs/07 rule 11 keeps the
      * shells literally the same, and the Mac says `Untitled` for a recording (`Recents.titleLabel`)
      * and `Unnamed` for a workflow (`WorkflowWindow`).

@@ -9,7 +9,9 @@ import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
+import app.recly.windows.ui.component.BadgeTone
 import app.recly.windows.ui.ledgerStatus
+import app.recly.windows.ui.retryable
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -81,6 +83,85 @@ class RecentsTest {
         // docs/09 화면 원칙 2: Details and Delete are offered exactly as for any finished row.
         assertTrue(item.deletable)
         assertFalse(Recents.uploading(listOf(item)))
+    }
+
+    /**
+     * docs/03 "다른 기기의 녹음" (2026-09-04): a watch transfer still coming in. It cannot happen on
+     * this shell — a PC has no watch to receive from — but the mapping is one product's, so the rule
+     * is held here too: `RECEIVING` before the plain `REC` the row's `status = recording` would
+     * otherwise get, and none of the actions a row that is being written to would refuse.
+     */
+    @Test
+    fun `a transfer still coming in from the watch is RECEIVING, not this device's REC`() {
+        val item = Recents.item(
+            record(status = RecordingStatus.RECORDING, source = Source.WATCH),
+            job = null,
+            steps = emptyList(),
+        )
+
+        assertEquals(Str.STATE_RECEIVING.message(), item.state)
+        assertEquals("RECEIVING", item.state.ledgerStatus().code)
+        assertEquals(BadgeTone.ACCENT, item.state.ledgerStatus().tone)
+        // No delete, no retry, no Drive link — the same exclusions as a row that is recording.
+        assertFalse(item.deletable)
+        assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
+        assertNull(item.link)
+        // docs/09 화면 원칙 2: nothing is finalized yet, so the 길이 column says "not in yet".
+        assertNull(item.durationSec)
+    }
+
+    /**
+     * docs/03: the provisional row a pull opens for a folder that has no `meta.json` in it yet. It
+     * carries `status = recording` like a take being written here, and the local `REC` would be this
+     * PC claiming another device's work.
+     */
+    @Test
+    fun `another device's upload is UPLOADING, and never this PC's REC`() {
+        val item = Recents.item(
+            record(status = RecordingStatus.RECORDING, remote = true),
+            job = null,
+            steps = emptyList(),
+        )
+
+        assertEquals(Str.STATE_REMOTE_UPLOADING.message(), item.state)
+        assertEquals("UPLOADING", item.state.ledgerStatus().code)
+        assertEquals(BadgeTone.ACCENT, item.state.ledgerStatus().tone)
+        // Deleting it would pull the folder out from under the upload that is filling it.
+        assertFalse(item.deletable)
+        assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
+        assertNull(item.link)
+        assertNull(item.durationSec)
+        // docs/09 화면 원칙 1: the State node is what *this* PC is doing, and it is doing nothing.
+        assertFalse(Recents.uploading(listOf(item)))
+    }
+
+    /**
+     * docs/03: the upload landed and the device that made the recording still has its `transcribe` to
+     * run. The row says so, and otherwise behaves as the finished remote row it already is.
+     */
+    @Test
+    fun `another device still transcribing says so, and is a remote DONE row otherwise`() {
+        val item = Recents.item(
+            record(remote = true, remotePending = setOf("transcribe")),
+            job = null,
+            steps = emptyList(),
+        )
+
+        assertEquals(Str.STATE_REMOTE_TRANSCRIBING.message(), item.state)
+        assertEquals("TRANSCRIBING", item.state.ledgerStatus().code)
+        assertEquals(BadgeTone.ACCENT, item.state.ledgerStatus().tone)
+        // Details and Delete, exactly as for any other row another device uploaded.
+        assertTrue(item.deletable)
+        assertFalse(Recents.uploading(listOf(item)))
+    }
+
+    /** docs/03: a `webhook` still to run is nothing this list has to report — the recording is done. */
+    @Test
+    fun `a remote row with only a webhook left to run reads as finished`() {
+        val item = Recents.item(record(remote = true, remotePending = setOf("webhook")), null, emptyList())
+
+        assertEquals(Str.STATE_DONE.message(), item.state)
+        assertEquals("DONE", item.state.ledgerStatus().code)
     }
 
     @Test
@@ -241,12 +322,14 @@ class RecentsTest {
         title: String? = "Weekly meeting",
         durationSec: Double? = null,
         remote: Boolean = false,
+        source: Source = Source.DESKTOP,
+        remotePending: Set<String> = emptySet(),
     ) = RecordingRecord(
         id = "rec-1",
         meta = RecordingMeta(
             schema = 1,
             recordingId = "rec-1",
-            source = Source.DESKTOP,
+            source = source,
             platform = Platform.WINDOWS,
             deviceId = "device",
             deviceName = "PC",
@@ -261,6 +344,7 @@ class RecentsTest {
         ),
         dir = "/tmp/rec-1".toPath(),
         remote = remote,
+        remotePending = remotePending,
     )
 
     private companion object {

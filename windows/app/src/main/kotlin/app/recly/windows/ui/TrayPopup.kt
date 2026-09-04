@@ -411,7 +411,7 @@ private fun RecentRow(
                 if (item.link != null) {
                     BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
                 }
-                if (retryable(item.jobStatus)) {
+                if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null)) {
                     ProcessingButton(
                         label = strings[Str.RECENT_RETRY],
                         state = model.action,
@@ -494,12 +494,19 @@ private const val TICK_MS = 1_000L
 private val EXPANSION_INSET = 84.dp
 
 /**
- * The job states a retry can do anything about. A job on its way is on its way — `WAITING` has a
- * `next_run_at` of its own — and a recording with no job has no upload to ask for. `NEEDS_SPACE` is
- * parked rather than failed, but the user frees the space and then asks for it again, which is what
- * the button is for; `NEEDS_AUTH` is the same after a sign-in.
+ * The job states a retry can do anything about. A job on its way is on its way, and a recording with
+ * no job has no upload to ask for. `NEEDS_SPACE` is parked rather than failed, but the user frees the
+ * space and then asks for it again, which is what the button is for; `NEEDS_AUTH` is the same after a
+ * sign-in.
+ *
+ * docs/09 화면 원칙 2 (2026-09-04): `WAITING` joined them. A job parked on its own `next_run_at` after
+ * a failed attempt is a `RETRY` row, and asking for it now rather than waiting the timer out is a
+ * thing to be able to do — the same core `retry()` the failures call. Except when the wait is a
+ * provider transcribing ([transcribing], the row's waiting-minutes reading): that one is not this
+ * device's to hurry, and the row offers nothing.
  */
-fun retryable(status: JobStatus?): Boolean = when (status) {
+fun retryable(status: JobStatus?, transcribing: Boolean): Boolean = when (status) {
     JobStatus.FAILED, JobStatus.NEEDS_AUTH, JobStatus.NEEDS_SPACE -> true
+    JobStatus.WAITING -> !transcribing
     else -> false
 }

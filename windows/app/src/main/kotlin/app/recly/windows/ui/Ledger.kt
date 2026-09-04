@@ -40,6 +40,13 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     // docs/08 "폴링 · 상태": a job parked while a provider transcribes is waiting on someone else,
     // not on a retry timer, so it is its own code.
     Str.STATE_WAITING_TRANSCRIPTION to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
+    // docs/03 "다른 기기의 녹음" (2026-09-04): work in flight somewhere else — the watch sending, or
+    // another device uploading or transcribing. The accent of every "something is happening", and the
+    // same codes the local states wear: to a reader the news is the news, and *where* it is happening
+    // is what the row's sentence says (`STATE_REMOTE_*`).
+    Str.STATE_RECEIVING to LedgerStatus("RECEIVING", BadgeTone.ACCENT),
+    Str.STATE_REMOTE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
+    Str.STATE_REMOTE_TRANSCRIBING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
     Str.STATE_DONE to LedgerStatus("DONE", BadgeTone.SUCCESS),
     Str.STATE_FAILED to LedgerStatus("FAILED", BadgeTone.DANGER),
     Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.WARNING),

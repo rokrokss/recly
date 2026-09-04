@@ -43,13 +43,22 @@ class LedgerStatusTest {
     }
 
     @Test
-    fun `every badge is a code, and no two states share one`() {
+    fun `every badge is a code, and two states that share one wear it the same way`() {
         LedgerStates.values.forEach { badge ->
             assertTrue(badge.code.isNotBlank(), "a state has no code")
             assertEquals(badge.code.uppercase(Locale.ROOT), badge.code, "${badge.code} is not a code")
         }
-        val codes = LedgerStates.values.map { it.code }
-        assertEquals(codes.size, codes.toSet().size, "two states are told apart only by colour")
+        // docs/03 (2026-09-04): an upload on another device is `UPLOADING` and a provider transcribing
+        // for it is `TRANSCRIBING` — the same news as this PC's own, so deliberately the same code,
+        // with the row's sentence saying where. What two states may never do is share a code in
+        // different tones: that is a pair told apart only by colour.
+        LedgerStates.values.groupBy { it.code }.forEach { (code, badges) ->
+            assertEquals(
+                1,
+                badges.map { it.tone }.toSet().size,
+                "$code is worn in two tones, so those states are told apart only by colour",
+            )
+        }
     }
 
     @Test
@@ -58,6 +67,10 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.DANGER, Str.STATE_FAILED.message().ledgerStatus().tone)
         assertEquals(BadgeTone.DANGER, Str.STATUS_RECORDING.message().ledgerStatus().tone)
         assertEquals(BadgeTone.ACCENT, Str.STATE_UPLOADING.message().ledgerStatus().tone)
+        // docs/03: work in flight elsewhere is still work in flight — the accent, like this PC's own.
+        assertEquals(BadgeTone.ACCENT, Str.STATE_RECEIVING.message().ledgerStatus().tone)
+        assertEquals(BadgeTone.ACCENT, Str.STATE_REMOTE_UPLOADING.message().ledgerStatus().tone)
+        assertEquals(BadgeTone.ACCENT, Str.STATE_REMOTE_TRANSCRIBING.message().ledgerStatus().tone)
         // Something the user has to act on, but nothing is lost yet.
         assertEquals(BadgeTone.WARNING, Str.STATUS_SIGN_IN_NEEDED.message().ledgerStatus().tone)
         assertEquals(BadgeTone.WARNING, Str.STATE_RETRY_WAIT.message().ledgerStatus().tone)
@@ -118,16 +131,37 @@ class LedgerStatusTest {
     private fun statesRecentsCanReport(): List<Pair<String, UiMessage>> =
         listOf("RECORDING" to Recents.stateLabel(record(RecordingStatus.RECORDING), null)) +
             listOf("no job" to Recents.stateLabel(record(), null)) +
+            // docs/03 "다른 기기의 녹음": the three another device's work puts on this list.
+            listOf(
+                "receiving" to Recents.stateLabel(
+                    record(RecordingStatus.RECORDING, source = Source.WATCH),
+                    null,
+                ),
+                "remote uploading" to Recents.stateLabel(
+                    record(RecordingStatus.RECORDING, remote = true),
+                    null,
+                ),
+                "remote transcribing" to Recents.stateLabel(
+                    record(remote = true, remotePending = setOf("transcribe")),
+                    null,
+                ),
+                "remote done" to Recents.stateLabel(record(remote = true), null),
+            ) +
             JobStatus.entries.map { status ->
                 status.name to Recents.stateLabel(record(), job("j", status))
             }
 
-    private fun record(status: RecordingStatus = RecordingStatus.FINALIZED) = RecordingRecord(
+    private fun record(
+        status: RecordingStatus = RecordingStatus.FINALIZED,
+        source: Source = Source.DESKTOP,
+        remote: Boolean = false,
+        remotePending: Set<String> = emptySet(),
+    ) = RecordingRecord(
         id = "rec-1",
         meta = RecordingMeta(
             schema = 1,
             recordingId = "rec-1",
-            source = Source.DESKTOP,
+            source = source,
             platform = Platform.WINDOWS,
             deviceId = "device",
             deviceName = "PC",
@@ -140,5 +174,7 @@ class LedgerStatusTest {
             status = status,
         ),
         dir = "/tmp/rec-1".toPath(),
+        remote = remote,
+        remotePending = remotePending,
     )
 }
