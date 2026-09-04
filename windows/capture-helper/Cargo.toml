@@ -14,7 +14,7 @@ sha2 = "0.10"
 # Everything Windows-only lives behind `cfg(windows)`; the development host is macOS, where this
 # crate builds and tests without it (docs/lanes/M6-L2 "환경 제약").
 [target.'cfg(windows)'.dependencies.windows]
-version = "0.61"
+version = "0.62"
 features = [
     "Win32_Foundation",
     "Win32_Media_Audio",
