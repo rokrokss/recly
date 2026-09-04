@@ -700,6 +700,12 @@ My Drive/
   파일을 버리고 ack하지 않았다(3.8 MB 파트가 오후 내 6번 전송, ack 0). 워치는 콜백을 첫 바이트 전에 등록하고
   `CLOSE_REASON_NORMAL`을 기다린 뒤 닫는다(다른 사유는 링크 실패 = `STALLED`). 폰은 `NORMAL`·`REMOTE_CLOSE` 둘 다
   "전부 도착"으로 받아들이고 sha256이 최종 판정이다 — 끊김·타임아웃·로컬 close는 잘린 파일이라 버린다.
+- **폰의 리스너 서비스는 이벤트마다 새 인스턴스다**(2026-09-04, Z Fold7 실기에서 발견). Play Services는
+  `onChannelOpened`·`onInputClosed`·`onChannelClosed`를 각각 새로 만든 `WearableListenerService` 인스턴스에 전달하고
+  1.5초 뒤 파괴한다. 그래서 `onChannelOpened`에서 인스턴스 필드에 적어 둔 "받는 중인 채널" 목록은 `onInputClosed`
+  때 비어 있었고, 캐시에 다 받아 둔 파일을 아무 로그 없이 무시했다(폰 ack 0건의 두 번째 원인). 스테이징 파일 경로는
+  채널 경로만의 함수(`cache/rec-transfer/{recordingId}/{file}`)이고 `onInputClosed`는 그것을 다시 계산한다 — 두
+  콜백 사이에 메모리 상태를 두지 않는다.
 - 각 파트마다 폰이 sha256을 검증하고 `{recordingId, part, track, ok}` ack를 보낸다.
 - 워치는 파트 ack를 **기록만** 하고 파일은 유지한다; `ack-meta ok:true`를 받은 뒤에야 파트·메타·디렉터리·로컬 행을
   삭제한다(뒤 파트나 메타가 치명 nack면 앞서 ack된 파트까지 남아 있어야 재전송·복구가 가능하다).
