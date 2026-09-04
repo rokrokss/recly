@@ -88,7 +88,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       # The `capture-helper` job's release build, into the directory `appResourcesRootDir` points at.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           name: recly-capture-helper
           path: windows/app/resources/windows-x64
