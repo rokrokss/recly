@@ -42,7 +42,7 @@ jobs:
       - name: Self-test (docs/20 S8, encoder half)
         run: ./target/release/recly-capture-helper.exe --self-test
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: recly-capture-helper
           path: windows/capture-helper/target/release/recly-capture-helper.exe
@@ -147,7 +147,7 @@ jobs:
           if (-not $msi) { throw 'packageMsi produced no MSI' }
           ./windows/scripts/sign-msi.ps1 -Msi $msi.FullName
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: recly-msi
           path: windows/app/build/compose/binaries/main/msi/*.msi
