@@ -1,0 +1,70 @@
+name: Bug report
+description: Something in Recly behaves differently than it should
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Never attach recordings, transcripts, or workflow exports that contain API keys or
+        webhook secrets. Logs may contain file names — redact what you must.
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before reporting
+      options:
+        - label: I searched existing issues
+          required: true
+        - label: This report contains no recordings, transcripts, or secrets
+          required: true
+  - type: dropdown
+    id: platforms
+    attributes:
+      label: Platform(s)
+      multiple: true
+      options:
+        - Galaxy Watch (Wear OS)
+        - Android phone
+        - Apple Watch
+        - iPhone
+        - macOS
+        - Windows
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Recly version
+      description: Settings → About, or the release tag
+    validations:
+      required: true
+  - type: input
+    id: os
+    attributes:
+      label: OS / device
+      placeholder: e.g. Galaxy Watch 7, Wear OS 5
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      value: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Optional. Android: adb logcat; macOS / iPhone: Console.app; Windows: the app's log output. Redact file names if you must."
+      render: text

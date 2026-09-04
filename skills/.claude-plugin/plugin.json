@@ -1,0 +1,13 @@
+{
+  "name": "recly-notes",
+  "description": "Turn a Recly recording's transcript into meeting minutes, saved beside the recording in your own Google Drive.",
+  "version": "0.0.1",
+  "author": {
+    "name": "Hyungrok Kim"
+  },
+  "homepage": "https://github.com/rokrokss/recly",
+  "repository": "https://github.com/rokrokss/recly",
+  "license": "AGPL-3.0-or-later",
+  "keywords": ["recly", "transcript", "meeting-minutes", "summarization"],
+  "skills": ["."]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "recly",
+  "description": "Agent skills that work with Recly recordings in your own Google Drive.",
+  "owner": {
+    "name": "Hyungrok Kim",
+    "url": "https://github.com/rokrokss"
+  },
+  "plugins": [
+    {
+      "name": "recly-notes",
+      "source": "./skills",
+      "description": "Turn a Recly recording's transcript into meeting minutes, saved beside the recording in your own Google Drive."
+    }
+  ]
+}

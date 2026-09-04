@@ -1,0 +1,9 @@
+version = 1
+
+# Everything in this repository is Recly's own work. Rather than an SPDX header in every source
+# file, one annotation covers the tree; `closest` lets a file that carries its own header win.
+[[annotations]]
+path = "**"
+precedence = "closest"
+SPDX-FileCopyrightText = "2026 Hyungrok Kim"
+SPDX-License-Identifier = "AGPL-3.0-or-later"

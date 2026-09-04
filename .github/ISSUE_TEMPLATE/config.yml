@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions
+    url: https://github.com/rokrokss/recly/discussions/categories/q-a
+    about: Ask how something works, or why it behaves the way it does.
+  - name: Ideas and feature requests
+    url: https://github.com/rokrokss/recly/discussions/categories/ideas
+    about: Propose a feature or a change before it becomes an issue.
+  - name: Security vulnerability
+    url: https://github.com/rokrokss/recly/security/advisories/new
+    about: Report privately. Never open a public issue for a vulnerability.

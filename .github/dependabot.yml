@@ -1,0 +1,52 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  # Covers build.gradle.kts and the version catalog, gradle/libs.versions.toml.
+  - package-ecosystem: gradle
+    directory: "/"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      gradle:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: cargo
+    directory: "/windows/capture-helper"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      cargo:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: swift
+    directory: "/apple/RecKit"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      swift:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: "/spec"
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      npm:
+        patterns: ["*"]
+        update-types: [minor, patch]
