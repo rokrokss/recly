@@ -82,6 +82,34 @@ class FolderMarkerTest {
         assertEquals(listOf(FOLDER to emptyList()), marker.marks)
     }
 
+    /**
+     * The editor allows one upload, the parser allows more (docs/09 원칙 3): a second upload that
+     * fails for good must not leave *its* folder promising a transcribe while the first one is
+     * cleared — every upload row's folder is taken down when the job ends.
+     */
+    @Test
+    fun `a job with two uploads clears both folders when the second fails terminally`() = runBlocking {
+        val marker = RecordingMarker()
+        val upload = ScriptedRunner("drive.upload") { ctx, calls ->
+            if (ctx.step.id == "up2") {
+                ctx.saveOutput(buildJsonObject { put("folderId", "F2") })
+                throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code())
+            }
+            uploadOutput(ctx)
+        }
+        val f = Fixture(listOf(upload, ScriptedRunner("transcribe") { _, _ -> output("transcript" to "ok") }), marker = marker)
+        val recording = f.seed()
+        val jobId = f.enqueue(recording, driveStep("up"), driveStep("up2"), transcribeStep("stt"))
+
+        f.service.runDueJobs()
+
+        assertEquals(JobStatus.FAILED, f.store.get(jobId)!!.status)
+        assertEquals(
+            listOf(FOLDER to listOf("drive.upload", "transcribe"), FOLDER to emptyList(), "F2" to emptyList()),
+            marker.marks,
+        )
+    }
+
     /** `WAITING` is a job that *is* coming back, so what it still owes stands. */
     @Test
     fun `a job waiting out a backoff keeps its marker`() = runBlocking {

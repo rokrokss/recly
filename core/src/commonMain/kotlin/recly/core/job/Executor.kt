@@ -185,20 +185,25 @@ class Executor(
      * write on, and a workflow without an upload has nothing to say to anybody.
      */
     private suspend fun mark(job: Job, workflow: Workflow, prior: Map<String, StepOutput>, after: String?) {
-        // The folder comes from the outputs of the steps that succeeded — or, for a job that failed
-        // *in* its upload after the folder was made and marked, from the persisted output of the
-        // upload's own row: `saveStepOutput` wrote the folder before the first byte went up and a
-        // failure never clears it (docs/10), so the marker can still be taken down.
-        val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId")
-            ?: store.stepsOf(job.id)
-                .firstOrNull { run -> workflow.steps.any { it.id == run.stepId && it.type == DriveUploadRunner.TYPE } }
-                ?.output?.string("folderId")
-            ?: return
-        val pending = if (after == null) {
-            emptyList()
-        } else {
-            workflow.steps.dropWhile { it.id != after }.drop(1).map { it.type }
+        if (after == null) {
+            // Over, one way or the other: every folder any upload of this job made is told so. The
+            // folders come from the persisted output of each upload's own row — `saveStepOutput`
+            // wrote the folder before the first byte went up and a failure never clears it
+            // (docs/10) — so an upload that failed for good after marking its folder, and a second
+            // upload that failed after a first one succeeded, are both taken down (Sol, 2026-09-04).
+            val uploads = workflow.steps.filter { it.type == DriveUploadRunner.TYPE }.map { it.id }.toSet()
+            val folders = store.stepsOf(job.id)
+                .filter { it.stepId in uploads }
+                .mapNotNull { it.output?.string("folderId") }
+                .toSet()
+            for (folderId in folders) send(folderId, emptyList())
+            return
         }
+        val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId") ?: return
+        send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).map { it.type })
+    }
+
+    private suspend fun send(folderId: String, pending: List<String>) {
         if (lastMark == folderId to pending) return
         lastMark = folderId to pending
         marker.mark(folderId, pending)
