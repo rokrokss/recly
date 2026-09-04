@@ -11,6 +11,8 @@ import com.google.android.gms.wearable.CapabilityClient
 import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.Wearable
+import java.io.IOException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.withContext
@@ -81,14 +83,44 @@ class WearableTransferLink(
          * One channel per file, as the phone's `RecListenerService` expects: the path *is* the
          * request. `sendFile` closes the output stream when the last byte is in, which is what
          * turns into the phone's `onInputClosed(CLOSE_REASON_NORMAL)` and its ack.
+         *
+         * The `sendFile` Task completes when the request is *queued*, not when the bytes are out,
+         * and its documentation says "the channel should not be immediately closed after calling
+         * this method" — the "sent" signal is `ChannelCallback.onOutputClosed`. Closing right after
+         * the Task, as this used to, queued a CLOSE behind the data, and the phone read that as
+         * `CLOSE_REASON_REMOTE_CLOSE`, dropped the file and never acked: a 3.8 MB part went over
+         * six times in an afternoon (Watch7, 2026-09-04). So the callback is registered before the
+         * first byte — a small file can finish before code that runs after `sendFile` — and the
+         * close waits for it.
          */
         override suspend fun send(path: String, file: Path) {
             withContext(Dispatchers.IO) {
                 val channel = channels.openChannel(nodeId, path).await()
                 try {
-                    channels.sendFile(channel, Uri.fromFile(file.toFile())).await()
+                    val outputClosed = CompletableDeferred<Int>()
+                    val callback = object : ChannelClient.ChannelCallback() {
+                        override fun onOutputClosed(c: ChannelClient.Channel, closeReason: Int, appErrorCode: Int) {
+                            outputClosed.complete(closeReason)
+                        }
+
+                        // A link that dies mid-file closes the whole channel without ever closing
+                        // the output on its own; without this the wait would outlive the worker.
+                        override fun onChannelClosed(c: ChannelClient.Channel, closeReason: Int, appErrorCode: Int) {
+                            outputClosed.complete(closeReason)
+                        }
+                    }
+                    channels.registerChannelCallback(channel, callback).await()
+                    try {
+                        channels.sendFile(channel, Uri.fromFile(file.toFile())).await()
+                        val reason = outputClosed.await()
+                        if (reason != ChannelClient.ChannelCallback.CLOSE_REASON_NORMAL) {
+                            throw IOException("channel output closed with reason $reason before the file was sent")
+                        }
+                    } finally {
+                        runCatching { channels.unregisterChannelCallback(channel, callback).await() }
+                    }
                 } finally {
-                    // The bytes are already the phone's business by now; closing frees the socket.
+                    // The bytes are the phone's business by now; closing frees the socket.
                     runCatching { channels.close(channel).await() }
                 }
             }

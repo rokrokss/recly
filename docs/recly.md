@@ -694,6 +694,12 @@ My Drive/
   `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/meta/{recordingId}` — 파일명을 경로에 싣는 이유는
   메타(=`{base}`)가 마지막에 도착하기 때문이다. Apple은 같은 값들을 `WCSession.transferFile`의 `metadata`
   딕셔너리에 싣는다.
+- **채널은 `onOutputClosed` 뒤에 닫는다**(2026-09-04, Watch7 실기에서 발견). `ChannelClient.sendFile`의 Task는
+  전송 완료가 아니라 **요청 수락** 시점에 끝나고, 공식 문서는 "그 직후 채널을 닫지 말고 `onOutputClosed`로 완료를
+  알라"고 한다. 바로 닫으면 CLOSE가 데이터 뒤에 줄을 서고 폰은 `onInputClosed(CLOSE_REASON_REMOTE_CLOSE)`를 받아
+  파일을 버리고 ack하지 않았다(3.8 MB 파트가 오후 내 6번 전송, ack 0). 워치는 콜백을 첫 바이트 전에 등록하고
+  `CLOSE_REASON_NORMAL`을 기다린 뒤 닫는다(다른 사유는 링크 실패 = `STALLED`). 폰은 `NORMAL`·`REMOTE_CLOSE` 둘 다
+  "전부 도착"으로 받아들이고 sha256이 최종 판정이다 — 끊김·타임아웃·로컬 close는 잘린 파일이라 버린다.
 - 각 파트마다 폰이 sha256을 검증하고 `{recordingId, part, track, ok}` ack를 보낸다.
 - 워치는 파트 ack를 **기록만** 하고 파일은 유지한다; `ack-meta ok:true`를 받은 뒤에야 파트·메타·디렉터리·로컬 행을
   삭제한다(뒤 파트나 메타가 치명 nack면 앞서 ack된 파트까지 남아 있어야 재전송·복구가 가능하다).

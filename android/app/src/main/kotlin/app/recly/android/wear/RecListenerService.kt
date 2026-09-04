@@ -67,10 +67,16 @@ class RecListenerService : WearableListenerService() {
         }
     }
 
-    /** The bytes have stopped. A close that was not clean leaves a truncated file: drop it. */
+    /**
+     * The bytes have stopped. `CLOSE_REASON_NORMAL` is the watch's output closing on its own — the
+     * whole file — and `CLOSE_REASON_REMOTE_CLOSE` is the watch calling `close(channel)`, which it
+     * does once the file is out and which Play Services queues behind the data; either way every
+     * byte the watch sent is here, and the sha256 in `acceptPart` says whether they are the right
+     * ones. A disconnect, a timeout or our own close leaves a truncated file: drop it.
+     */
     override fun onInputClosed(channel: ChannelClient.Channel, closeReason: Int, appErrorCode: Int) {
         val staged = staging.remove(key(channel)) ?: return
-        if (closeReason != ChannelClient.ChannelCallback.CLOSE_REASON_NORMAL) {
+        if (closeReason !in COMPLETE_CLOSE_REASONS) {
             staged.file.delete()
             log(Logger.Level.WARN, "transfer.channel.aborted", mapOf("path" to channel.path, "reason" to closeReason))
             return
@@ -187,5 +193,9 @@ class RecListenerService : WearableListenerService() {
 
     private companion object {
         const val STAGING = "rec-transfer"
+        val COMPLETE_CLOSE_REASONS = setOf(
+            ChannelClient.ChannelCallback.CLOSE_REASON_NORMAL,
+            ChannelClient.ChannelCallback.CLOSE_REASON_REMOTE_CLOSE,
+        )
     }
 }
