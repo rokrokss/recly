@@ -186,10 +186,31 @@ class CrossShellDictionaryTest {
                 windows = "status.sign.in.needed",
                 reckit = "Sign-in needed",
             ),
-            // docs/03 "다른 기기의 녹음": the three "somewhere else" statuses are dictionary lines
-            // too, but only the Android phone carries them today (2026-09-04) — a line one shell
-            // says belongs in that shell's own test, which is `RemoteStateTextTest`. They move here
-            // as the Apple and Windows lanes land their keys.
+            // docs/03 "다른 기기의 녹음" · docs/09 화면 원칙 2: the three "somewhere else" statuses.
+            Line(
+                what = "the RECEIVING status",
+                en = "Receiving from the watch",
+                ko = "워치에서 받는 중",
+                android = "job_state_receiving",
+                windows = "state.receiving",
+                reckit = "Receiving from the watch",
+            ),
+            Line(
+                what = "the remote UPLOADING status",
+                en = "Uploading on another device",
+                ko = "다른 기기에서 업로드 중",
+                android = "job_state_remote_uploading",
+                windows = "state.remote.uploading",
+                reckit = "Uploading on another device",
+            ),
+            Line(
+                what = "the remote TRANSCRIBING status",
+                en = "Transcribing on another device",
+                ko = "다른 기기에서 전사 중",
+                android = "job_state_remote_transcribing",
+                windows = "state.remote.transcribing",
+                reckit = "Transcribing on another device",
+            ),
             // docs/09 화면 원칙 2: the words on an expanded ledger row's own buttons.
             Line(
                 what = "Retry",
