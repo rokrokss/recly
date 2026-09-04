@@ -12,6 +12,7 @@ import com.google.android.gms.wearable.ChannelClient
 import com.google.android.gms.wearable.MessageClient
 import com.google.android.gms.wearable.Wearable
 import java.io.IOException
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -49,7 +50,7 @@ class WearableTransferLink(
         // `/rec/ack` as a prefix, which is also `/rec/ack-meta` — the two paths the phone acks on,
         // and nothing else this app would have to ignore.
         messages.addListener(listener, ackUri(), MessageClient.FILTER_PREFIX).await()
-        WearableChannel(Wearable.getChannelClient(context), messages, listener, node, inbox)
+        WearableChannel(Wearable.getChannelClient(context), messages, listener, node, inbox, logger)
     }
 
     /**
@@ -77,6 +78,7 @@ class WearableTransferLink(
         private val listener: MessageClient.OnMessageReceivedListener,
         private val nodeId: String,
         private val inbox: Channel<AckMessage>,
+        private val logger: Logger,
     ) : TransferChannel {
 
         /**
@@ -95,7 +97,14 @@ class WearableTransferLink(
          */
         override suspend fun send(path: String, file: Path) {
             withContext(Dispatchers.IO) {
+                // Where a transfer's minutes go: each phase of one file is timed and logged, because
+                // on a real Watch7 the bytes took 40 s and the file took two minutes (2026-09-04).
+                val started = TimeSource.Monotonic.markNow()
                 val channel = channels.openChannel(nodeId, path).await()
+                val openedMs = started.elapsedNow().inWholeMilliseconds
+                var queuedMs = -1L
+                var sentMs = -1L
+                var reasonSeen = -1
                 try {
                     val outputClosed = CompletableDeferred<Int>()
                     val callback = object : ChannelClient.ChannelCallback() {
@@ -112,7 +121,10 @@ class WearableTransferLink(
                     channels.registerChannelCallback(channel, callback).await()
                     try {
                         channels.sendFile(channel, Uri.fromFile(file.toFile())).await()
+                        queuedMs = started.elapsedNow().inWholeMilliseconds
                         val reason = outputClosed.await()
+                        sentMs = started.elapsedNow().inWholeMilliseconds
+                        reasonSeen = reason
                         if (reason != ChannelClient.ChannelCallback.CLOSE_REASON_NORMAL) {
                             throw IOException("channel output closed with reason $reason before the file was sent")
                         }
@@ -122,6 +134,18 @@ class WearableTransferLink(
                 } finally {
                     // The bytes are the phone's business by now; closing frees the socket.
                     runCatching { channels.close(channel).await() }
+                    logger.log(
+                        Logger.Level.INFO,
+                        "transfer.send.timing",
+                        mapOf(
+                            "path" to path.substringAfterLast('/'),
+                            "openMs" to openedMs,
+                            "queuedMs" to queuedMs,
+                            "sentMs" to sentMs,
+                            "closedMs" to started.elapsedNow().inWholeMilliseconds,
+                            "reason" to reasonSeen,
+                        ),
+                    )
                 }
             }
         }

@@ -6,6 +6,7 @@ import app.recly.datalayer.TransferPath
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.FileSystem
@@ -246,9 +247,19 @@ class TransferSender(
         recordingId: String,
         crossinline match: (T) -> Boolean,
     ): T? = withTimeoutOrNull(ackTimeout) {
+        val started = TimeSource.Monotonic.markNow()
         while (true) {
             val ack = channel.nextAck()
-            if (ack is T && ack.recordingId == recordingId && match(ack)) return@withTimeoutOrNull ack
+            if (ack is T && ack.recordingId == recordingId && match(ack)) {
+                // Timed for the same reason as `transfer.send.timing`: the ack's lateness is the
+                // other half of a slow transfer.
+                logger.log(
+                    Logger.Level.INFO,
+                    "transfer.ack.received",
+                    mapOf("recordingId" to recordingId, "waitMs" to started.elapsedNow().inWholeMilliseconds),
+                )
+                return@withTimeoutOrNull ack
+            }
         }
         @Suppress("UNREACHABLE_CODE") null
     }
