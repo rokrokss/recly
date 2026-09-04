@@ -90,15 +90,34 @@ public struct RecentItem: Identifiable, Sendable {
     /// what decides whether "check the key" is worth offering.
     public var needsKey: Bool { StepReport.shared.needsKey(lastError: lastError) }
 
-    /// Whether a retry is a thing to offer at all: only a job that has stopped — `FAILED`,
-    /// `NEEDS_AUTH`, `NEEDS_SPACE`. A `WAITING` job is already coming back on its own `next_run_at`,
-    /// a `PENDING` or `RUNNING` one is moving, and a recording with no job has nothing to retry.
+    /// Whether a retry is a thing to offer at all: a job that has stopped — `FAILED`, `NEEDS_AUTH`,
+    /// `NEEDS_SPACE` — and, since docs/09 화면 원칙 2 (2026-09-04), a `WAITING` one too. That job does
+    /// come back on its own `next_run_at`, but a user looking at `RETRY` is looking at it *because*
+    /// they are not waiting any longer, and asking now is the only thing the row could offer.
+    ///
+    /// The one wait that is not that: a provider transcribing ([waitingMinutes]). Nothing this
+    /// device could ask for again would make the result arrive sooner. A `PENDING` or `RUNNING` job
+    /// is moving, and a recording with no job has nothing to retry.
     ///
     /// Read off [state] rather than the job's status because that is what [Recents.load] keeps —
     /// the same keys [Recents.stateLabel] writes.
-    public var canRetry: Bool { jobId != nil && Self.retryable.contains(state) }
+    public var canRetry: Bool {
+        jobId != nil && waitingMinutes == nil && Self.retryable.contains(state)
+    }
 
-    private static let retryable: Set<String> = ["Failed", "Sign-in needed", "No space in Drive"]
+    private static let retryable: Set<String> =
+        ["Failed", "Sign-in needed", "No space in Drive", "Retry pending"]
+
+    /// docs/09 화면 원칙 2: whether "delete" is a thing to offer. A recording being written to right
+    /// now is not one to delete — the core refuses it anyway, and offering the button would be
+    /// offering a refusal — and neither is one still arriving from the watch. A recording another
+    /// device is uploading is not this device's to delete at all: the folder would go out from
+    /// under that upload (docs/03 "다른 기기의 녹음").
+    public var canDelete: Bool { !Self.undeletable.contains(state) }
+
+    private static let undeletable: Set<String> = [
+        "Recording", "Uploading", "Receiving from the watch", "Uploading on another device",
+    ]
 
     /// docs/03: whether another device recorded this and this one only adopted the Drive folder —
     /// which is what the delete question has to know, because there is no local half to keep.
@@ -194,12 +213,27 @@ public enum Recents {
     }
 
     static func stateLabel(record: RecordingRecord, job: Job_?) -> String {
+        // docs/03 "워치 → 폰 전송 계약": the placeholder row this phone opened for a transfer that is
+        // still arriving. It carries the recording's own `RECORDING` status, so it has to be asked
+        // about before that — otherwise the row reads as this phone recording, which it is not.
+        if record.receiving { return "Receiving from the watch" }
+        // docs/03 "다른 기기의 녹음": the folder is on Drive with no `meta.json` in it yet, so the
+        // other device is still uploading. `RECORDING` again, and again not this device's.
+        if record.remoteUploading { return "Uploading on another device" }
         if record.meta.status == .recording { return "Recording" }
         // docs/03: another device recorded it and uploaded it; this one adopted the Drive folder and
         // has no job for it — but the recording itself is finished, and that is all the row has to
         // say. "No workflow" would read like something this device failed to do, and a state of its
         // own would be a permanent label for what is simply a finished recording.
-        if record.remote { return "Done" }
+        //
+        // Unless that device has said it is not done: the marker beside the folder names the steps
+        // still to run, and a transcription in flight is worth waiting for. A `webhook` left to run
+        // is not — it changes nothing the user came here to read — so the row is simply `DONE`.
+        if record.remote {
+            return record.remotePending.contains("transcribe")
+                ? "Transcribing on another device"
+                : "Done"
+        }
         guard let job else { return "No workflow" }
         switch job.status {
         case .pending: return "Waiting"
@@ -233,7 +267,14 @@ public enum Recents {
         ).text
     }
 
-    private static let waiting: Set<String> = ["Waiting", "Retry pending", "No workflow"]
+    /// docs/09 화면 원칙 2 (2026-09-04): a recording still arriving from the watch, and one another
+    /// device is still uploading, are both work the user is waiting on — the header counts them the
+    /// way it counts a queued job. One another device is transcribing is not: the recording itself
+    /// is in, and the header's number is about recordings.
+    private static let waiting: Set<String> = [
+        "Waiting", "Retry pending", "No workflow",
+        "Receiving from the watch", "Uploading on another device",
+    ]
 
     private static let failing: Set<String> =
         ["Failed", "Sign-in needed", "No space in Drive", "Too short"]
@@ -245,6 +286,16 @@ public enum Recents {
     /// the rows under it do.
     public static func uploading(_ items: [RecentItem]) -> Bool {
         items.contains { $0.state == "Uploading" }
+    }
+
+    /// docs/03 "워치 → 폰 전송 계약" · docs/09 화면 원칙 1: whether this phone is taking a recording off
+    /// its watch right now, read off the ledger the way [uploading] reads a running job — the row
+    /// is the only place the transfer is visible, and the State node above the list would otherwise
+    /// say `IDLE` while the phone is busy.
+    ///
+    /// The desktop never asks: nothing is ever received on a Mac.
+    public static func receiving(_ items: [RecentItem]) -> Bool {
+        items.contains { $0.state == "Receiving from the watch" }
     }
 
     /// The last thing a step complained about, as the core wrote it — a `CoreMessage` code

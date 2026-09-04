@@ -386,10 +386,21 @@ final class RecentItemActionsTests: XCTestCase {
         }
     }
 
-    /// `WAITING` · `PENDING` · `RUNNING` · `DONE` · `SKIPPED_SHORT`, and a recording still being
-    /// written to.
+    /// docs/09 화면 원칙 2 (2026-09-04): a `WAITING` job comes back on its own `next_run_at`, but a
+    /// user reading `RETRY` is reading it because they have stopped waiting — so the row asks now.
+    func testAJobWaitingOutABackoffOffersARetryToo() {
+        XCTAssertTrue(item(state: "Retry pending").canRetry)
+    }
+
+    /// docs/08 "폴링 · 상태": the one wait that is not the queue's own. Nothing this device could
+    /// ask for again would make the provider's result arrive any sooner.
+    func testARowWaitingOnAProviderOffersNoRetry() {
+        XCTAssertFalse(item(state: "Retry pending", waitingMinutes: 6).canRetry)
+    }
+
+    /// `PENDING` · `RUNNING` · `DONE` · `SKIPPED_SHORT`, and a recording still being written to.
     func testNothingElseOffersARetry() {
-        for state in ["Retry pending", "Waiting", "Uploading", "Done", "Too short", "Recording"] {
+        for state in ["Waiting", "Uploading", "Done", "Too short", "Recording"] {
             XCTAssertFalse(item(state: state).canRetry, "\(state) offers a retry")
         }
     }
@@ -400,7 +411,11 @@ final class RecentItemActionsTests: XCTestCase {
         XCTAssertFalse(item(state: "Failed", jobId: nil).canRetry)
     }
 
-    private func item(state: String, jobId: String? = "01J9JOB0000000000000000000") -> RecentItem {
+    private func item(
+        state: String,
+        jobId: String? = "01J9JOB0000000000000000000",
+        waitingMinutes: Int? = nil
+    ) -> RecentItem {
         RecentItem(
             id: "01J9REC0000000000000000000",
             jobId: jobId,
@@ -408,7 +423,200 @@ final class RecentItemActionsTests: XCTestCase {
             startedAt: "2026-02-09T12:04:05.000Z",
             state: state,
             link: nil,
-            lastError: nil
+            lastError: nil,
+            waitingMinutes: waitingMinutes
+        )
+    }
+}
+
+/// docs/03 "다른 기기의 녹음" · "워치 → 폰 전송 계약" (docs/09 화면 원칙 2, 2026-09-04): the three
+/// answers a ledger row cannot get from the job queue, because none of them is this device's job —
+/// a watch transfer still arriving, an upload another device is still running, and a transcription
+/// that device has still to do after it.
+///
+/// Read off `RecordingRecord` directly rather than through a database, because the three flags are
+/// the whole of what the mapping is a function of: [Recents.stateLabel] and [LedgerStatus.forRecent]
+/// have to agree about the order they are asked in, and two of the three rows carry the recording's
+/// own `RECORDING` status and would otherwise read as `REC`.
+final class RecentsInFlightElsewhereTests: XCTestCase {
+
+    override func setUp() {
+        super.setUp()
+        // The header below is a sentence; this is about the counting rather than the words.
+        AppLanguage.current = .en
+    }
+
+    override func tearDown() {
+        AppLanguage.current = .system
+        super.tearDown()
+    }
+
+    /// A `watch` row this phone is still being handed: the transfer opened it, and `meta.json` has
+    /// not landed yet. `REC` would say this phone is recording, which it is not.
+    func testAWatchTransferStillArrivingIsReceivingRatherThanRecording() {
+        let record = self.record(source: .watch, status: .recording)
+
+        XCTAssertTrue(record.receiving)
+        XCTAssertEqual(Recents.stateLabel(record: record, job: nil), "Receiving from the watch")
+        XCTAssertEqual(badge(record), LedgerStatus(code: "RECEIVING", tone: .accent))
+    }
+
+    /// A remote row with no `meta.json` behind it yet: the other device's upload is still going.
+    func testARemoteRowStillBeingUploadedElsewhereSaysSoRatherThanREC() {
+        let record = self.record(source: .desktop, status: .recording, remote: true)
+
+        XCTAssertTrue(record.remoteUploading)
+        XCTAssertEqual(Recents.stateLabel(record: record, job: nil), "Uploading on another device")
+        XCTAssertEqual(badge(record), LedgerStatus(code: "UPLOADING", tone: .accent))
+    }
+
+    /// The marker beside the folder says that device still has a `transcribe` to run.
+    func testARemoteRowWaitingOnAnotherDevicesTranscriptionSaysSo() {
+        let record = self.record(source: .desktop, remote: true, pending: ["transcribe"])
+
+        XCTAssertEqual(
+            Recents.stateLabel(record: record, job: nil), "Transcribing on another device"
+        )
+        XCTAssertEqual(badge(record), LedgerStatus(code: "TRANSCRIBING", tone: .accent))
+    }
+
+    /// A webhook left to run changes nothing the user came here to read, so the row is simply done
+    /// — and so is one whose marker says nothing at all.
+    func testARemoteRowWithOnlyAWebhookLeftIsDone() {
+        for pending in [Set(["webhook"]), Set(["transcribe", "webhook"]), Set<String>()] {
+            let record = self.record(source: .desktop, remote: true, pending: pending)
+            let expected = pending.contains("transcribe") ? "Transcribing on another device" : "Done"
+
+            XCTAssertEqual(Recents.stateLabel(record: record, job: nil), expected, "\(pending)")
+        }
+    }
+
+    /// The rows the three rules must not swallow: this device recording, and this device's own
+    /// finished recording with no workflow behind it.
+    func testThisDevicesOwnRowsAreUnchanged() {
+        let recording = record(source: .phone, status: .recording)
+        XCTAssertFalse(recording.receiving)
+        XCTAssertEqual(Recents.stateLabel(record: recording, job: nil), "Recording")
+        XCTAssertEqual(badge(recording), LedgerStatus(code: "REC", tone: .danger))
+
+        let finished = record(source: .phone)
+        XCTAssertEqual(Recents.stateLabel(record: finished, job: nil), "No workflow")
+    }
+
+    /// docs/09 화면 원칙 2: a row nothing can be done to. The delete would pull the folder out from
+    /// under the transfer or the other device's upload, and there is no job of this device's to
+    /// retry or link to Drive.
+    func testAReceivingOrRemotelyUploadingRowOffersNothing() {
+        for state in ["Receiving from the watch", "Uploading on another device"] {
+            let item = self.item(state: state)
+            XCTAssertFalse(item.canDelete, "\(state) offers a delete")
+            XCTAssertFalse(item.canRetry, "\(state) offers a retry")
+            XCTAssertNil(item.link, "\(state) has no job and so no upload step to link")
+            // docs/09 화면 원칙 2: no length yet, and the ledger says so with its own placeholder
+            // rather than by inventing a zero.
+            XCTAssertEqual(LedgerFormat.length(item.durationSec), LedgerFormat.length(nil))
+        }
+    }
+
+    /// A row another device is transcribing is a finished recording as far as this one is concerned
+    /// — the same buttons a remote `DONE` row has.
+    func testARemotelyTranscribingRowBehavesAsAFinishedRemoteRow() {
+        let transcribing = item(state: "Transcribing on another device")
+
+        XCTAssertEqual(transcribing.canDelete, item(state: "Done").canDelete)
+        XCTAssertEqual(transcribing.canRetry, item(state: "Done").canRetry)
+    }
+
+    /// docs/09 화면 원칙 2: the header counts what the user is still waiting for. The recording
+    /// itself is what is in flight for the first two; the third is already here.
+    func testTheHeaderCountsTheArrivingRowsAsWaitingAndTheTranscribingOneAsNeither() {
+        let items = [
+            "Receiving from the watch", "Uploading on another device",
+            "Transcribing on another device", "Done",
+        ].map(item(state:))
+
+        XCTAssertEqual(Recents.summary(items), "4 · 2 waiting · 0 failed")
+    }
+
+    /// docs/09 화면 원칙 1: what the iPhone's State node reads off the ledger. A job of this phone's
+    /// own still wins — the view asks [Recents.uploading] first — so a ledger with both says both.
+    func testAReceivingRowIsWhatTheStateNodeReads() {
+        XCTAssertTrue(Recents.receiving([item(state: "Done"), item(state: "Receiving from the watch")]))
+        XCTAssertFalse(Recents.receiving([item(state: "Done"), item(state: "Uploading")]))
+        XCTAssertFalse(Recents.receiving([]))
+
+        let both = [item(state: "Uploading"), item(state: "Receiving from the watch")]
+        XCTAssertTrue(Recents.uploading(both))
+        XCTAssertTrue(Recents.receiving(both))
+    }
+
+    // MARK: - Pieces
+
+    private func badge(_ record: RecordingRecord) -> LedgerStatus {
+        LedgerStatus.forRecent(state: Recents.stateLabel(record: record, job: nil))
+    }
+
+    /// A row of the shape the three rules are about. `dir` is never read here, but a
+    /// `RecordingRecord` cannot be made without one.
+    private func record(
+        source: Source,
+        status: RecordingStatus = .finalized,
+        remote: Bool = false,
+        pending: Set<String> = []
+    ) -> RecordingRecord {
+        RecordingRecord(
+            id: "01J9REC0000000000000000000",
+            meta: Self.meta(source: source, status: status),
+            dir: OkioPath.companion.toPath("/tmp/recly-tests", normalize: false),
+            driveFolderId: remote ? "1FolderId" : nil,
+            remote: remote,
+            remotePending: pending
+        )
+    }
+
+    private func item(state: String) -> RecentItem {
+        RecentItem(
+            id: "01J9REC0000000000000000000",
+            jobId: nil,
+            title: "",
+            startedAt: "2026-02-09T12:04:05.000Z",
+            state: state,
+            link: nil,
+            lastError: nil,
+            remote: state != "Receiving from the watch"
+        )
+    }
+
+    /// A recording still being written to has no length yet — which is exactly the placeholder the
+    /// length column has to keep for these rows.
+    private static func meta(source: Source, status: RecordingStatus) -> RecordingMeta {
+        RecordingMeta(
+            schema: 1,
+            recordingId: "01J9REC0000000000000000000",
+            source: source,
+            platform: source == .watch ? Platform.watchos : Platform.ios,
+            deviceId: "01J9DEV0000000000000000000",
+            deviceName: "RecKitTests",
+            workflowId: nil,
+            title: nil,
+            startedAt: "2026-02-09T12:04:05.000Z",
+            endedAt: status == .finalized ? "2026-02-09T12:05:05.000Z" : nil,
+            durationSec: status == .finalized ? 60 : nil,
+            timezone: "Asia/Seoul",
+            audio: AudioSettings(
+                codec: Codec.aacLc,
+                container: Container.m4A,
+                sampleRateHz: 48_000,
+                channels: 1,
+                bitrateKbps: 96,
+                segmentSec: 900
+            ),
+            tracks: [Track.mono],
+            parts: [],
+            gaps: [],
+            silenced: [],
+            context: nil,
+            status: status
         )
     }
 }

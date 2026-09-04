@@ -203,14 +203,14 @@ struct RecordingView: View {
         ]
     }
 
-    /// The recorder's own state comes first; `REC` is never displaced. While it is idle and a job in
-    /// the ledger is running, the node says `UPLOADING` with a turning loader instead of `IDLE` —
-    /// otherwise nothing above the list says the app is doing anything at all.
+    /// The recorder's own state comes first; `REC` is never displaced. While it is idle and the
+    /// ledger has work in it, the node says what that work is with a turning loader instead of
+    /// `IDLE` — otherwise nothing above the list says the app is doing anything at all.
     private var stateNode: NodeSpec {
-        if model.state == .idle, Recents.uploading(model.recents) {
+        if model.state == .idle, let busyCode {
             return NodeSpec(
                 label: loc("State"),
-                value: "UPLOADING",
+                value: busyCode,
                 valueColor: blueprint.palette.accent,
                 active: true,
                 busy: true
@@ -222,6 +222,18 @@ struct RecordingView: View {
             valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
             active: model.isRecording
         )
+    }
+
+    /// What the app is doing while the recorder is idle, or nil while it is doing nothing.
+    ///
+    /// A job of this phone's own comes first: docs/09 화면 원칙 1 wants the node to say what the app
+    /// is *doing*, and an upload it is running is more that than a transfer it is being handed.
+    /// docs/03 "워치 → 폰 전송 계약": the transfer is worth saying at all because the ledger row is
+    /// otherwise the only sign of it.
+    private var busyCode: String? {
+        if Recents.uploading(model.recents) { return "UPLOADING" }
+        if Recents.receiving(model.recents) { return "RECEIVING" }
+        return nil
     }
 
     /// The node names the workflow this phone records with — the one the picker has selected.

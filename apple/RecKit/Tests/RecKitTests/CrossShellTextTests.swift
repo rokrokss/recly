@@ -152,3 +152,55 @@ final class ConsentTextTests: XCTestCase {
         return String(source[try XCTUnwrap(Range(match.range(at: 1), in: source))])
     }
 }
+
+/// docs/09 화면 원칙 2 (2026-09-04) · the cross-shell dictionary: the three states a ledger row shows
+/// for work that is in flight on *another* device. Every shell grew them at once and every shell has
+/// to say the same thing, so the wording is written out here rather than read off a neighbour —
+/// Android's `CrossShellDictionaryTest` is what compares the four shells, and it reads this catalog.
+/// What this holds is the Apple half: the keys exist, in both languages, saying exactly this.
+///
+/// The English *is* the key ([RecKitStrings.localized]), so a key renamed on this side and not in
+/// the dictionary shows up here as a missing key rather than as an English row on a Korean device.
+final class LedgerStateTextTests: XCTestCase {
+
+    /// code → the sentence the row says about it, in both languages.
+    private static let states: [(code: String, en: String, ko: String)] = [
+        ("RECEIVING", "Receiving from the watch", "워치에서 받는 중"),
+        ("UPLOADING", "Uploading on another device", "다른 기기에서 업로드 중"),
+        ("TRANSCRIBING", "Transcribing on another device", "다른 기기에서 전사 중"),
+    ]
+
+    func testRecKitsCatalogCarriesTheDictionaryWordingInBothLanguages() throws {
+        let catalog = try ShellCatalogs.catalog(
+            "apple/RecKit/Sources/RecKit/Resources/Localizable.xcstrings"
+        )
+        for state in Self.states {
+            let reading = try XCTUnwrap(catalog[state.en], "RecKit has no '\(state.en)'")
+            XCTAssertEqual(reading["en"], state.en)
+            XCTAssertEqual(reading["ko"], state.ko)
+        }
+    }
+
+    /// The badge is the state as a code (docs/09 화면 원칙 2), and the two are minted from the same
+    /// key — a rewording that missed [LedgerStatus.forRecent] would show as `UNKNOWN`.
+    func testEachOfThemMintsItsOwnAccentBadge() {
+        for state in Self.states {
+            XCTAssertEqual(
+                LedgerStatus.forRecent(state: state.en),
+                LedgerStatus(code: state.code, tone: .accent),
+                state.en
+            )
+        }
+    }
+
+    /// docs/07 rule 3: the row reads its own sentence where it is drawn, so the language it is drawn
+    /// in is the one it comes out in.
+    func testTheRowSaysTheKoreanOneOnAKoreanDevice() {
+        AppLanguage.current = .ko
+        defer { AppLanguage.current = .system }
+
+        for state in Self.states {
+            XCTAssertEqual(RecKitStrings.localized(state.en), state.ko)
+        }
+    }
+}

@@ -4,7 +4,8 @@ import SwiftUI
 private enum Column {
     static let time: CGFloat = 62
     static let length: CGFloat = 44
-    /// Wide enough for `NEEDS_AUTH`, the longest code `LedgerStatus` mints.
+    /// Wide enough for `TRANSCRIBING`, the longest code `LedgerStatus` mints — the badge shrinks
+    /// its letters rather than clipping them when a type size outgrows even that.
     static let status: CGFloat = 96
 }
 

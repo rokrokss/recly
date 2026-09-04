@@ -48,6 +48,14 @@ public struct LedgerStatus: Equatable, Sendable {
     /// core grows without a code here shows as `UNKNOWN` rather than as nothing.
     public static func forRecent(state: String) -> LedgerStatus {
         switch state {
+        // docs/03 "다른 기기의 녹음" · "워치 → 폰 전송 계약": three states that are not this device's
+        // job and not this device's recording either — something is in flight elsewhere, which is
+        // the accent's whole meaning here. They come first because two of them are `RECORDING` rows
+        // and would otherwise read as `REC` (see [Recents.stateLabel], which orders them the same).
+        case "Receiving from the watch": return LedgerStatus(code: "RECEIVING", tone: .accent)
+        case "Uploading on another device": return LedgerStatus(code: "UPLOADING", tone: .accent)
+        case "Transcribing on another device":
+            return LedgerStatus(code: "TRANSCRIBING", tone: .accent)
         case "Recording": return LedgerStatus(code: "REC", tone: .danger)
         case "No workflow": return LedgerStatus(code: "NO_JOB", tone: .neutral)
         case "Waiting": return LedgerStatus(code: "PENDING", tone: .neutral)
@@ -127,9 +135,10 @@ public struct StatusBadge: View {
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
             .lineLimit(1)
-            // A code that is truncated is not a code any more. The longest of them is `NEEDS_AUTH`,
-            // which the ledger's status column is cut for — but the user's own type size can still
-            // outgrow it, and shrinking the letters keeps them readable where clipping does not.
+            // A code that is truncated is not a code any more. The longest of them is
+            // `TRANSCRIBING`, which the ledger's status column is cut for — but the user's own type
+            // size can still outgrow it, and shrinking the letters keeps them readable where
+            // clipping does not.
             .minimumScaleFactor(0.6)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)

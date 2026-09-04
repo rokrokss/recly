@@ -1701,6 +1701,23 @@
         }
       }
     },
+    "Receiving from the watch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Receiving from the watch"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "워치에서 받는 중"
+          }
+        }
+      }
+    },
     "Recorded on another device. Deleting removes it from Drive and from every device.": {
       "extractionState": "manual",
       "localizations": {
@@ -2585,6 +2602,23 @@
         }
       }
     },
+    "Transcribing on another device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribing on another device"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 기기에서 전사 중"
+          }
+        }
+      }
+    },
     "URL": {
       "extractionState": "manual",
       "localizations": {
@@ -2666,6 +2700,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "업로드 중"
+          }
+        }
+      }
+    },
+    "Uploading on another device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploading on another device"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 기기에서 업로드 중"
           }
         }
       }

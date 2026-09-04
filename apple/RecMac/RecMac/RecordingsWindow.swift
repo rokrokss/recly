@@ -103,9 +103,9 @@ struct RecordingsWindow: View {
             ),
             action: { menu.showDetail(item) }
         ) {
-            // docs/03: a recording being written to or uploaded right now is not one to delete —
-            // the core refuses it anyway.
-            if item.state != "Recording", item.state != "Uploading" {
+            // docs/03: a recording being written to, arriving from the watch, or uploaded right now
+            // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
+            if item.canDelete {
                 BadgeButton(loc("Delete"), tone: .danger) {
                     menu.confirmDelete(item, from: .recordingsWindow)
                 }

@@ -406,13 +406,13 @@ struct MenuPopover: View {
                 openWindow(id: RecordingsWindow.id)
             }
             .accessibilityIdentifier("open-detail")
-            // docs/03: a recording being written to or uploaded right now is not one to delete —
-            // the core refuses it anyway, and offering the button would be offering a refusal.
+            // docs/03: a recording being written to, arriving from the watch, or uploaded right now
+            // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
             //
             // The question is asked here, over the ledger it is about, the way the disconnect and
             // the import are: sending the user to another window to answer "delete this?" is the
             // app changing the subject in the middle of its own question.
-            if item.state != "Recording", item.state != "Uploading" {
+            if item.canDelete {
                 BlueprintButton(loc("Delete"), tone: .danger) {
                     model.confirmDelete(item, from: .popover)
                 }
