@@ -154,6 +154,22 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      */
     fun reauthorizeDrive(activity: Activity) = work { graph -> authorize(graph, activity) }
 
+    /**
+     * docs/06 Android: a job parked in `NEEDS_AUTH` is waiting for exactly one thing — an activity
+     * to authorize in — and the app coming to the foreground is that. Silent for an account that
+     * already granted, the consent screen right here otherwise; a cancelled consent leaves the
+     * banner up and the next start asks again. Nothing to do when nobody is signed in: that is the
+     * sign-in button's, not this one's.
+     */
+    fun resumeParked(activity: Activity) {
+        viewModelScope.launch {
+            val graph = graph()
+            if (graph.auth.account() == null) return@launch
+            val parked = graph.core.jobs.observe().first().any { it.status == JobStatus.NEEDS_AUTH }
+            if (parked) work { authorize(it, activity) }
+        }
+    }
+
     /** @return whether the grant is in hand — the message says which way it went either way. */
     private suspend fun authorize(graph: AppGraph, activity: Activity): Boolean {
         val authorized = graph.auth.authorizeDrive(activity, resolver)

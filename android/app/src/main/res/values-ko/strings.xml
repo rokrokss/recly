@@ -19,7 +19,6 @@
 
     <string name="sign_in">Google 로그인</string>
     <string name="sign_out">로그아웃</string>
-    <string name="reauthorize_drive">Drive 권한 다시 허용</string>
     <string name="signed_out">로그아웃됨</string>
     <string name="auth_sign_in_failed">로그인 실패: %1$s</string>
     <string name="auth_add_account">Google 계정을 추가한 뒤 다시 로그인하세요</string>
@@ -167,7 +166,6 @@
     <string name="settings_uploads">업로드</string>
     <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
     <string name="settings_wifi_only_hint">모바일 데이터로는 업로드하지 않습니다.</string>
-    <string name="settings_sync_run">실행</string>
 
     <!-- docs/05 "워크플로우 내보내기 · 가져오기" -->
     <string name="settings_export_workflows">워크플로우 내보내기</string>

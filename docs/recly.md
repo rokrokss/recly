@@ -969,7 +969,11 @@ Windows에서는 절대 선택되지 않는다.
   `accessToken`(1시간). 이미 허용된 계정이면 무음.
 - 갱신: refresh token을 직접 갖지 않는다. `TokenProvider`가 만료 60초 전이면 `authorize()`를 다시 부른다.
   **액티비티가 없는 WorkManager 컨텍스트**에서 `hasResolution() == true`(재동의 필요)가 나오면 Job을 `NEEDS_AUTH`로
-  두고 알림으로 앱을 열게 한다.
+  두고 알림으로 앱을 열게 한다. **앱이 포그라운드로 올 때**(`MainActivity.onStart`) 로그인돼 있고 `NEEDS_AUTH` Job이
+  있으면 사용자가 아무것도 누르지 않아도 액티비티에서 `authorize()`를 다시 부른다(2026-09-04) — 이미 허용된 계정이면
+  무음으로 통과해 Job이 `PENDING`으로 돌아가고, 정말 동의가 필요하면 동의 화면이 그 자리에서 뜬다. 취소하면 배너가
+  남고 다음 시작이 다시 묻는다. 배너·행의 버튼도 같은 호출이다(로그아웃 상태면 설정의 로그인으로). 설정에 별도
+  "다시 허용" 행은 없다.
 - 저장: access token + 만료 시각, 그리고 다시 같은 계정을 고르기 위한 계정 이메일(`account/email`)만 보안 저장소에.
   로그아웃이 둘 다 지운다.
 
@@ -1692,7 +1696,7 @@ data class DisconnectResult(val deletedRecordings: Int, val busyRecordings: List
 
 | 상태 · 코드 | 언제 | 앱이 하는 말 | 사용자가 누르는 것 |
 |---|---|---|---|
-| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | "Google 로그인이 필요합니다 — 녹음 N건이 기다리는 중" | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개 |
+| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | "Google 로그인이 필요합니다 — 녹음 N건이 기다리는 중" | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개. Android는 앱을 여는 것만으로 다시 허용을 시도한다(§6 Android) |
 | Job `NEEDS_SPACE` (`DRIVE_STORAGE_FULL`) | Drive 403 `storageQuotaExceeded` | "Google Drive에 공간이 없습니다 — 녹음 N건이 기다리는 중" | Drive 저장용량 열기 / 다시 시도 |
 | 단계 `FAILED` (`MISSING_SECRET:{name}`) | 이 기기에 그 이름의 키가 없음 | "이 기기에 `{name}` 키가 없습니다" | 키 입력(편집기의 시크릿 폼으로 바로 진입) |
 | 단계 `FAILED` (`INVALID_SECRET:{name}`) | 저장된 값이 서명 키로 못 씀 | "`{name}` 키 값이 올바르지 않습니다" | 키 다시 입력 |

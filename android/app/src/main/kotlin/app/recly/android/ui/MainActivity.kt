@@ -162,9 +162,14 @@ class MainActivity : ComponentActivity() {
 
                 // docs/10 "탭하면 고칠 수 있는 화면으로 간다": the one mapping, shared by the list's
                 // banner and by the notification that says the same thing.
+                // docs/06 Android: signed in, the fix is the Drive consent itself, right here;
+                // signed out, it is the sign-in button, which lives in Settings.
+                val fixAuth = {
+                    if (state.email == null) tab = Tab.SETTINGS else model.reauthorizeDrive(this)
+                }
                 val goFix: (AlertReason, String?) -> Unit = { reason, workflowId ->
                     when (reason.fix) {
-                        FixSurface.SIGN_IN -> tab = Tab.SETTINGS
+                        FixSurface.SIGN_IN -> fixAuth()
                         FixSurface.DRIVE_STORAGE -> startActivity(
                             Intent(Intent.ACTION_VIEW, DRIVE_STORAGE_URL.toUri()),
                         )
@@ -221,7 +226,7 @@ class MainActivity : ComponentActivity() {
                             state = jobs,
                             model = jobsModel,
                             // docs/10: NEEDS_AUTH is unblocked by signing in, not waiting.
-                            onSignIn = { tab = Tab.SETTINGS },
+                            onSignIn = fixAuth,
                             // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is
                             // where "check the key" has to land.
                             onCheckKey = { workflowId ->
@@ -262,6 +267,8 @@ class MainActivity : ComponentActivity() {
     override fun onStart() {
         super.onStart()
         lifecycleScope.launch { WorkScheduler(applicationContext).runNow() }
+        // docs/06 Android: and the activity a NEEDS_AUTH job has been waiting for.
+        model.resumeParked(this)
         // docs/03 "다른 기기의 녹음": and as good a reason to ask Drive what the other devices have
         // uploaded since — the ledger is on screen again.
         jobsModel.refresh()
@@ -482,7 +489,6 @@ private fun SettingsTab(
         onTheme = settingsModel::setTheme,
         onConsentReminder = settingsModel::setConsentReminder,
         onSignIn = { model.signIn(activity) },
-        onReauthorize = { model.reauthorizeDrive(activity) },
         onSignOut = model::signOut,
         onAskToDisconnect = model::askToDisconnect,
         onCancelDisconnect = model::cancelDisconnect,

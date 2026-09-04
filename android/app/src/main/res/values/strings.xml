@@ -29,7 +29,6 @@
     <!-- Account (docs/06). -->
     <string name="sign_in">Sign in with Google</string>
     <string name="sign_out">Sign out</string>
-    <string name="reauthorize_drive">Allow Drive access again</string>
     <string name="signed_out">Signed out</string>
     <string name="auth_sign_in_failed">Sign-in failed: %1$s</string>
     <string name="auth_add_account">Add a Google account, then sign in again</string>
@@ -194,7 +193,6 @@
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Upload on Wi-Fi only</string>
     <string name="settings_wifi_only_hint">Never upload over mobile data.</string>
-    <string name="settings_sync_run">Run</string>
 
     <!-- docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device, and a file moves them. -->
     <string name="settings_export_workflows">Export workflows</string>

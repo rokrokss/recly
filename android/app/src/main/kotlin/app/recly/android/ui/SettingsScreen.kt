@@ -65,7 +65,6 @@ fun SettingsScreen(
     onTheme: (AppTheme) -> Unit,
     onConsentReminder: (Boolean) -> Unit,
     onSignIn: () -> Unit,
-    onReauthorize: () -> Unit,
     onSignOut: () -> Unit,
     onAskToDisconnect: () -> Unit,
     onCancelDisconnect: () -> Unit,
@@ -115,17 +114,6 @@ fun SettingsScreen(
                             onClick = onSignOut,
                             tone = ButtonTone.QUIET,
                             enabled = !main.busy && !main.disconnectPhase.owed,
-                        )
-                    },
-                )
-                TableRow(
-                    title = stringResource(R.string.reauthorize_drive),
-                    trailing = {
-                        ProcessingButton(
-                            label = stringResource(R.string.settings_sync_run),
-                            state = main.action,
-                            onClick = onReauthorize,
-                            enabled = !main.busy,
                         )
                     },
                 )
