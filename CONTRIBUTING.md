@@ -19,7 +19,7 @@ certify that you have the right to license it that way.
 ## Where things go
 
 - **Bugs** → [GitHub Issues](https://github.com/rokrokss/recly/issues/new/choose), using the bug form.
-- **Questions and ideas** → [GitHub Discussions](https://github.com/rokrokss/recly/discussions).
+- **Questions and ideas** → a plain [GitHub Issue](https://github.com/rokrokss/recly/issues/new) (no form needed).
 - **Security** → [SECURITY.md](SECURITY.md). Do not open a public issue for a vulnerability.
 - **Pull request titles** are English and in the imperative: "Fix the watch handoff retry budget",
   not "Fixed…" or "Fixes…".

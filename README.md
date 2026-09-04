@@ -6,7 +6,7 @@
 
 **Record on your watch, phone or desktop. The original lands in your own Google Drive.<br>Then the workflow you defined runs. Nothing goes anywhere else.**
 
-[Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](docs/policy/privacy-policy.md) · [Discussions](https://github.com/rokrokss/recly/discussions) · [한국어](README.ko.md)
+[Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](docs/policy/privacy-policy.md) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -124,9 +124,9 @@ behind it: any change that adds a network call must update that section first.
 
 ## Contributing, security, license
 
-- **Contributing**: bugs go to [Issues](https://github.com/rokrokss/recly/issues/new/choose),
-  questions and ideas to [Discussions](https://github.com/rokrokss/recly/discussions). Conventions
-  are in [CONTRIBUTING.md](CONTRIBUTING.md). There is no CLA.
+- **Contributing**: bugs, questions and ideas all go to
+  [Issues](https://github.com/rokrokss/recly/issues/new/choose). Conventions are in
+  [CONTRIBUTING.md](CONTRIBUTING.md). There is no CLA.
 - **Security**: report vulnerabilities privately via [SECURITY.md](SECURITY.md).
 - **License**: [AGPL-3.0-or-later](LICENSE), with two additional permissions in
   [LICENSE-EXCEPTIONS.md](LICENSE-EXCEPTIONS.md) so the apps can be distributed through app stores.

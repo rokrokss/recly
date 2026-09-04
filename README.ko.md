@@ -6,7 +6,7 @@
 
 **워치·폰·데스크톱 어디서 녹음하든 원본은 내 Google Drive에.<br>그다음은 내가 정한 워크플로우가 돈다. 다른 데로는 아무것도 가지 않는다.**
 
-[다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](docs/policy/privacy-policy.md) · [Discussions](https://github.com/rokrokss/recly/discussions) · [English](README.md)
+[다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](docs/policy/privacy-policy.md) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -117,9 +117,8 @@ provider, 그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리�
 
 ## 기여 · 보안 · 라이선스
 
-- **기여**: 버그는 [Issues](https://github.com/rokrokss/recly/issues/new/choose), 질문과 아이디어는
-  [Discussions](https://github.com/rokrokss/recly/discussions)로. 규칙은 [CONTRIBUTING.md](CONTRIBUTING.md)에
-  있습니다. CLA는 없습니다.
+- **기여**: 버그, 질문, 아이디어 모두 [Issues](https://github.com/rokrokss/recly/issues/new/choose)로.
+  규칙은 [CONTRIBUTING.md](CONTRIBUTING.md)에 있습니다. CLA는 없습니다.
 - **보안**: 취약점은 [SECURITY.md](SECURITY.md)의 비공개 경로로 알려 주세요.
 - **라이선스**: [AGPL-3.0-or-later](LICENSE). 앱스토어 배포를 위한 추가 허가 두 가지는
   [LICENSE-EXCEPTIONS.md](LICENSE-EXCEPTIONS.md)에 있습니다. "Recly"와 아이콘은 상표입니다.
