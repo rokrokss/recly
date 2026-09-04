@@ -28,10 +28,15 @@ class RecComplicationService : SuspendingComplicationDataSourceService() {
     override suspend fun onComplicationRequest(request: ComplicationRequest): ComplicationData? {
         if (request.complicationType != ComplicationType.SHORT_TEXT) return null
         val recording = RecorderService.state.value != RecorderState.Idle
-        val pending = (applicationContext as? RecWearApp)?.pendingCount() ?: 0
+        val app = applicationContext as? RecWearApp
+        val pending = app?.pendingCount() ?: 0
+        // docs/11 W2: the same rule as the screen and the tile — a pass with a phone on the other
+        // end is "sending", not "waiting" (Sol, 2026-09-04: the description said so, the text did not).
+        val sending = app?.queue?.sending?.value == true
         return shortText(
             text = when {
                 recording -> getString(R.string.complication_recording)
+                pending > 0 && sending -> getString(R.string.complication_sending, pending)
                 pending > 0 -> getString(R.string.complication_pending, pending)
                 else -> getString(R.string.complication_idle)
             },

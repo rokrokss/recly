@@ -19,12 +19,12 @@ class StepReportTest {
 
     private val now = Instant.parse("2026-08-26T02:00:00.000Z")
 
-    private fun step(state: String? = null, error: String? = null) = StepRun(
+    private fun step(state: String? = null, error: String? = null, status: StepStatus = StepStatus.PENDING) = StepRun(
         id = "01J9STEPR0N0123456789ABCDE",
         jobId = "01J9JOB0000000000000000000",
         stepId = "stt",
         ordinal = 1,
-        status = StepStatus.PENDING,
+        status = status,
         attempts = 0,
         nextAttemptAt = null,
         lastError = error,
@@ -61,6 +61,17 @@ class StepReportTest {
         assertNull(StepReport.waitingMinutes(listOf(step()), now), "no state at all")
         assertNull(StepReport.waitingMinutes(emptyList(), now), "no steps at all")
         assertNull(StepReport.waitingMinutes(listOf(step(state = "not a time")), now))
+    }
+
+    /** A transcribe that succeeded keeps its `submittedAt`; a webhook after it sitting out a backoff is not "transcribing". */
+    @Test
+    fun `a finished transcribe is not a wait, whatever its state still says`() {
+        val steps = listOf(
+            step(state = "2026-08-26T01:23:00.000Z", status = StepStatus.SUCCEEDED),
+            step().copy(stepId = "hook", ordinal = 2),
+        )
+
+        assertNull(StepReport.waitingMinutes(steps, now))
     }
 
     @Test

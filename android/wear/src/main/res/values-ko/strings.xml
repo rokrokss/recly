@@ -23,6 +23,7 @@
     <string name="entry_ready">대기 중</string>
     <string name="complication_recording">REC</string>
     <string name="complication_pending">대기 %1$d</string>
+    <string name="complication_sending">전송 중 %1$d</string>
     <string name="complication_idle">Recly</string>
 
     <string name="info_open">안내</string>

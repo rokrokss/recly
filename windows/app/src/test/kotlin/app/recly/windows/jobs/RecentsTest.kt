@@ -181,7 +181,8 @@ class RecentsTest {
     @Test
     fun `a job waiting for a transcription says how long it has been`() {
         val submitted = JsonObject(mapOf("submittedAt" to JsonPrimitive("2026-08-27T10:00:00.000Z")))
-        val steps = listOf(step("stt", state = submitted))
+        // Still to run: a transcribe waiting on its provider is a PENDING step, not a finished one.
+        val steps = listOf(step("stt", state = submitted, status = StepStatus.PENDING))
 
         val item = Recents.item(
             record(),

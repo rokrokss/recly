@@ -36,7 +36,12 @@ object StepReport {
      * when the provider started counting, not when this device last polled.
      */
     fun waitingMinutes(steps: List<StepRun>, now: Instant): Int? {
+        // Only a step that is still to run can be waiting on a provider: a transcribe that
+        // succeeded keeps its `submittedAt` (state is never cleared on success), and read off
+        // that row it would call a later webhook's backoff "transcribing" — and hide the retry
+        // that backoff is entitled to (Sol, 2026-09-04).
         val submitted = steps.asReversed()
+            .filter { it.status == StepStatus.PENDING }
             .firstNotNullOfOrNull { (it.state?.get(SUBMITTED_AT) as? JsonPrimitive)?.contentOrNull }
             ?: return null
         val at = runCatching { Instant.parse(submitted) }.getOrNull() ?: return null
