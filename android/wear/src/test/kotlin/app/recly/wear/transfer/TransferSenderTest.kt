@@ -278,6 +278,52 @@ class TransferSenderTest {
         assertEquals(emptyList(), queue.all())
     }
 
+    /**
+     * docs/11 W2: the badge's "sending". It goes up when a phone has been found and a file is on
+     * the wire, and comes down when the pass is over — a stall included, which leaves the
+     * recordings waiting rather than in flight.
+     */
+    @Test
+    fun `sending is true only for as long as a pass has a phone`() = runTest {
+        recording()
+        val link = GatedLink()
+        assertFalse(TransferSender.sending.value, "nothing is being sent before a pass runs")
+
+        val pass = async { sender(link).run() }
+        val (first, ackPart1) = link.channel.inFlight()
+        assertTrue(TransferSender.sending.value, "a file is on the wire")
+
+        ackPart1.complete(ackFor(first))
+        repeat(2) {
+            val (path, gate) = link.channel.inFlight()
+            gate.complete(ackFor(path))
+        }
+        assertEquals(TransferOutcome.DONE, pass.await())
+        assertFalse(TransferSender.sending.value, "the pass is over")
+    }
+
+    /** A watch with recordings and no phone is waiting, not sending — the badge's whole point. */
+    @Test
+    fun `sending stays false without a phone`() = runTest {
+        recording()
+        val link = FakeLink { emptyList() }.apply { phone = false }
+
+        assertEquals(TransferOutcome.NO_PHONE, sender(link).run())
+
+        assertFalse(TransferSender.sending.value)
+    }
+
+    /** An ack that never came ends the pass with everything still waiting. */
+    @Test
+    fun `a stalled pass stops saying it is sending`() = runTest {
+        recording()
+        val link = FakeLink { emptyList() }
+
+        assertEquals(TransferOutcome.STALLED, sender(link).run())
+
+        assertFalse(TransferSender.sending.value)
+    }
+
     /** No phone is not a failure and must not touch a thing. */
     @Test
     fun `nothing happens without a phone`() = runTest {

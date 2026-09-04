@@ -186,6 +186,10 @@ class CrossShellDictionaryTest {
                 windows = "status.sign.in.needed",
                 reckit = "Sign-in needed",
             ),
+            // docs/03 "다른 기기의 녹음": the three "somewhere else" statuses are dictionary lines
+            // too, but only the Android phone carries them today (2026-09-04) — a line one shell
+            // says belongs in that shell's own test, which is `RemoteStateTextTest`. They move here
+            // as the Apple and Windows lanes land their keys.
             // docs/09 화면 원칙 2: the words on an expanded ledger row's own buttons.
             Line(
                 what = "Retry",

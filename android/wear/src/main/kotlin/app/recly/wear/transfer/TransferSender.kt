@@ -7,6 +7,9 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withTimeoutOrNull
 import okio.FileSystem
@@ -92,6 +95,10 @@ class TransferSender(
         val waiting = store.all().filter { it.waiting }
         if (waiting.isEmpty()) return TransferOutcome.IDLE
         val channel = link.open() ?: return TransferOutcome.NO_PHONE
+        // docs/09 원칙 7 · docs/11 W2: the badge says "sending" from here, not from the top of the
+        // pass — a phone was found and bytes are going out. Everything above this is a watch with
+        // recordings and no phone to give them to, which is what "waiting" means.
+        _sending.value = true
         return try {
             for (row in waiting) {
                 if (sendRecording(channel, row) == Step.STALLED) return TransferOutcome.STALLED
@@ -105,6 +112,7 @@ class TransferSender(
             logger.log(Logger.Level.WARN, "transfer.send.failed", emptyMap(), e)
             TransferOutcome.STALLED
         } finally {
+            _sending.value = false
             runCatching { channel.close() }
         }
     }
@@ -282,6 +290,18 @@ class TransferSender(
          * per pass ([app.recly.wear.RecWearApp.sender]), so an instance field would lock nothing.
          */
         private val passes = Mutex()
+
+        private val _sending = MutableStateFlow(false)
+
+        /**
+         * docs/11 W2: a pass that has found a phone and is handing files over right now. On the
+         * companion for the same reason [passes] is — the surfaces that show it (the screen's
+         * badge, the tile, the complication) outlive any one pass and never hold the sender.
+         *
+         * False again the moment the pass ends, however it ended: a stall leaves the recordings
+         * waiting, which is what the badge then says.
+         */
+        val sending: StateFlow<Boolean> = _sending.asStateFlow()
 
         /** docs/11 W4. */
         val ACK_TIMEOUT: Duration = 5.minutes

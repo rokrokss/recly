@@ -15,6 +15,7 @@
     <string name="workflow_phones">폰의 워크플로우</string>
     <string name="workflow_pick">워크플로우</string>
     <string name="pending_badge">대기 %1$d개</string>
+    <string name="sending_badge">전송 중 %1$d개</string>
     <string name="transfer_failed_badge">전송 실패 %1$d개</string>
 
     <string name="tile_start">녹음 시작</string>

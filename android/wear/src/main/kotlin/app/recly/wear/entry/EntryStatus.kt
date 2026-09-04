@@ -18,8 +18,13 @@ import kotlinx.coroutines.launch
 suspend fun Context.entryStatus(): String {
     val recording = RecorderService.state.value != RecorderState.Idle
     if (recording) return getString(R.string.recording_active)
-    val pending = (applicationContext as? RecWearApp)?.pendingCount() ?: 0
-    return if (pending == 0) getString(R.string.entry_ready) else getString(R.string.pending_badge, pending)
+    val app = applicationContext as? RecWearApp
+    val pending = app?.pendingCount() ?: 0
+    if (pending == 0) return getString(R.string.entry_ready)
+    // docs/11 W2: the screen's own rule — a pass with a phone on the other end is "sending", and
+    // the same count with nobody there is "waiting".
+    val sending = app?.queue?.sending?.value == true
+    return getString(if (sending) R.string.sending_badge else R.string.pending_badge, pending)
 }
 
 /**

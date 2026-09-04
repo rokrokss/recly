@@ -33,6 +33,7 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
+import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
 
 /** docs/11 A4: what a recording looks like in the list, whether or not it has a job yet. */
@@ -71,6 +72,15 @@ data class JobItem(
 enum class ItemState {
     /** The row is still open — the recorder is writing into it. */
     RECORDING,
+
+    /** docs/03 "워치 → 폰 전송 계약": the watch is handing this recording over to this phone now. */
+    RECEIVING,
+
+    /** docs/03 "다른 기기의 녹음": another device is still uploading it — a pull's provisional row. */
+    REMOTE_UPLOADING,
+
+    /** docs/03 "다른 기기의 녹음": another device uploaded it and is transcribing it (the marker). */
+    REMOTE_TRANSCRIBING,
 
     /** Finalized but nothing queued it: neither its own pick nor this device's default resolved. */
     NO_JOB,
@@ -490,25 +500,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    private fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
-        record.meta.status == RecordingStatus.RECORDING -> ItemState.RECORDING
-        // Before the job question, because a row adopted from Drive has no job here by definition —
-        // "no workflow" would be a thing for the user to fix, and there is nothing to fix: another
-        // device already did the work, so this is a finished recording (docs/03 "다른 기기의 녹음").
-        record.remote -> ItemState.DONE
-        job == null -> ItemState.NO_JOB
-        else -> when (job.status) {
-            JobStatus.PENDING -> ItemState.PENDING
-            JobStatus.RUNNING -> ItemState.RUNNING
-            JobStatus.WAITING -> ItemState.WAITING
-            JobStatus.DONE -> ItemState.DONE
-            JobStatus.FAILED -> ItemState.FAILED
-            JobStatus.NEEDS_AUTH -> ItemState.NEEDS_AUTH
-            JobStatus.NEEDS_SPACE -> ItemState.NEEDS_SPACE
-            JobStatus.SKIPPED_SHORT -> ItemState.SKIPPED_SHORT
-        }
-    }
-
     /**
      * Whether the microphone is taken. Anything but [RecorderState.Idle] counts: a start that has
      * not reached its first sample, and a stop that has not finished filing, both hold it.
@@ -539,6 +530,39 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         const val LIMIT = 100
     }
 
+}
+
+/**
+ * docs/09 화면 원칙 2: which row state one recording is in. Outside the ViewModel because it is a
+ * decision about a record and a job and nothing else — the same shape the other three shells make
+ * it in, and one a JVM test can ask directly.
+ */
+internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
+    // docs/03 "다른 기기의 녹음": the three things happening somewhere else come first. None of them
+    // is a job of this device's, and each would otherwise be read as one of this device's own
+    // states — a recording coming in from the watch, and one another device is uploading, are both
+    // `status = recording` and would show as `REC`.
+    record.receiving -> ItemState.RECEIVING
+    record.remoteUploading -> ItemState.REMOTE_UPLOADING
+    // A marker that names only `webhook` is not something to say: what is left is a request this
+    // phone will never see the answer to, and the recording itself is done.
+    record.remote && TranscribeRunner.TYPE in record.remotePending -> ItemState.REMOTE_TRANSCRIBING
+    record.meta.status == RecordingStatus.RECORDING -> ItemState.RECORDING
+    // Before the job question, because a row adopted from Drive has no job here by definition —
+    // "no workflow" would be a thing for the user to fix, and there is nothing to fix: another
+    // device already did the work, so this is a finished recording (docs/03 "다른 기기의 녹음").
+    record.remote -> ItemState.DONE
+    job == null -> ItemState.NO_JOB
+    else -> when (job.status) {
+        JobStatus.PENDING -> ItemState.PENDING
+        JobStatus.RUNNING -> ItemState.RUNNING
+        JobStatus.WAITING -> ItemState.WAITING
+        JobStatus.DONE -> ItemState.DONE
+        JobStatus.FAILED -> ItemState.FAILED
+        JobStatus.NEEDS_AUTH -> ItemState.NEEDS_AUTH
+        JobStatus.NEEDS_SPACE -> ItemState.NEEDS_SPACE
+        JobStatus.SKIPPED_SHORT -> ItemState.SKIPPED_SHORT
+    }
 }
 
 /**

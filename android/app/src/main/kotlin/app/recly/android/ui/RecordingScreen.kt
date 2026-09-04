@@ -80,8 +80,8 @@ import recly.core.model.Source
 fun RecordingSection(
     state: RecordingUiState,
     recorder: RecorderState,
-    /** A job in the ledger is running — what the state node says while nothing is recording. */
-    uploading: Boolean = false,
+    /** [ledgerCode]: what the state node says while nothing is recording, or null for nothing. */
+    ledger: String? = null,
     onSelectWorkflow: (String) -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
@@ -115,7 +115,9 @@ fun RecordingSection(
 
     val elapsed = elapsedSeconds(recorder)
     val recording = recorder is RecorderState.Recording
-    val loading = recorder is RecorderState.Idle && uploading
+    // docs/09 화면 원칙 1: what the ledger has to say, but only while the recorder has nothing of
+    // its own — `REC` and the rest are about the recorder, so they win.
+    val borrowed = if (recorder is RecorderState.Idle) ledger else null
     val busy = rememberBusyHold(recorder is RecorderState.Starting || recorder is RecorderState.Stopping)
     var picking by remember { mutableStateOf(false) }
     val selected = state.workflows.firstOrNull { it.id == state.selectedWorkflowId }
@@ -156,16 +158,17 @@ fun RecordingSection(
                     NodeSpec(
                         label = stringResource(R.string.node_state),
                         // docs/09 화면 원칙 1: with nothing to record, the node borrows the ledger's
-                        // own `UPLOADING` — the pass is the only thing happening, and this screen is
-                        // where the user is. `REC` and the rest are about the recorder, so they win.
-                        value = if (loading) "UPLOADING" else recorder.code(),
+                        // own `UPLOADING` — or its `RECEIVING`, a recording coming in from the
+                        // watch (docs/03) — because that is the only thing happening and this
+                        // screen is where the user is ([ledgerCode]).
+                        value = borrowed ?: recorder.code(),
                         valueColor = when {
                             recording -> palette.danger
-                            loading -> palette.accent
+                            borrowed != null -> palette.accent
                             else -> palette.textMuted
                         },
-                        active = recording || loading,
-                        busy = loading,
+                        active = recording || borrowed != null,
+                        busy = borrowed != null,
                     ),
                 ),
                 modifier = Modifier.fillMaxWidth(),
@@ -387,6 +390,20 @@ private fun rememberBusyHold(working: Boolean): Boolean {
  * recording screen is the one on top, without asking the core anything of its own.
  */
 fun uploading(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RUNNING }
+
+/** docs/03 "워치 → 폰 전송 계약": the watch is handing a recording over to this phone right now. */
+fun receiving(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RECEIVING }
+
+/**
+ * docs/09 화면 원칙 1: the code the state node borrows from the ledger while nothing is recording,
+ * or null when the ledger has nothing to say and the node is the recorder's own code. A pass of
+ * this phone's own wins: it is the one thing on this device the user could be waiting for.
+ */
+fun ledgerCode(items: List<JobItem>): String? = when {
+    uploading(items) -> "UPLOADING"
+    receiving(items) -> "RECEIVING"
+    else -> null
+}
 
 /** docs/09: state is a code, in monospace, and never colour alone. */
 private fun RecorderState.code(): String = when (this) {

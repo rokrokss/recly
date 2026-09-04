@@ -33,6 +33,11 @@ data class WearUiState(
      */
     val selectedWorkflowId: String? = null,
     val pending: Int = 0,
+    /**
+     * docs/11 W2: those [pending] recordings are going over right now. The badge says so instead of
+     * "waiting", which is what the same count means with no phone in range.
+     */
+    val sending: Boolean = false,
     /** Recordings the phone refused outright. Their audio is still here — docs/11 W4. */
     val failed: Int = 0,
     val message: WearMessage? = null,
@@ -45,6 +50,13 @@ data class WearUiState(
     val busy: Boolean get() = !canStart && !canStop
 
     val startedAt: Instant? get() = (recorder as? RecorderState.Recording)?.startedAt
+
+    /**
+     * docs/11 W2: the badge reads "sending" only while there is something in flight to say it
+     * about — the last recording of a pass is removed from the queue before the pass ends, and
+     * `전송 중 0개` would be the badge saying so.
+     */
+    val handingOver: Boolean get() = sending && pending > 0
 
     val selected: WorkflowSummary? get() = workflows.firstOrNull { it.id == selectedWorkflowId }
 }
@@ -96,6 +108,7 @@ class WearRecordingViewModel(
         viewModelScope.launch { recorder.events.collect { onEvent(it) } }
         viewModelScope.launch { queue.pending.collect { count -> _state.update { it.copy(pending = count) } } }
         viewModelScope.launch { queue.failed.collect { count -> _state.update { it.copy(failed = count) } } }
+        viewModelScope.launch { queue.sending.collect { now -> _state.update { it.copy(sending = now) } } }
         viewModelScope.launch { workflows.collect { onWorkflows(it) } }
     }
 

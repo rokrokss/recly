@@ -81,6 +81,10 @@
     <string name="job_state_no_workflow">No workflow</string>
     <string name="job_state_pending">Waiting</string>
     <string name="job_state_running">Uploading</string>
+    <!-- docs/03 "다른 기기의 녹음": the three things happening somewhere else. -->
+    <string name="job_state_receiving">Receiving from the watch</string>
+    <string name="job_state_remote_uploading">Uploading on another device</string>
+    <string name="job_state_remote_transcribing">Transcribing on another device</string>
     <string name="job_state_waiting">Retry pending</string>
     <string name="job_state_waiting_in">Retry pending · %1$s</string>
     <string name="job_state_done">Done</string>

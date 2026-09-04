@@ -51,6 +51,13 @@ interface TransferQueue {
     val failed: StateFlow<Int>
 
     /**
+     * docs/11 W2: whether those recordings are going over right now, as opposed to waiting for a
+     * phone that is not there. It is the same count either way — this is only what the badge calls
+     * it — and it is [TransferSender]'s to answer, since only a pass knows it found a phone.
+     */
+    val sending: StateFlow<Boolean>
+
+    /**
      * Idempotent, because more than one thing hands the same recording over: the stop that
      * finalized it, the recovery scan that finds it again before the next recording, and
      * [reconcile] at startup. A recording already on the queue keeps the parts it has acked.
@@ -110,6 +117,9 @@ class FileTransferQueue(
 
     private val _failed = MutableStateFlow(0)
     override val failed: StateFlow<Int> = _failed.asStateFlow()
+
+    /** The pass's own flag: one sender runs at a time in this process, and it holds it. */
+    override val sending: StateFlow<Boolean> get() = TransferSender.sending
 
     private val mutex = Mutex()
 

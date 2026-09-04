@@ -108,6 +108,9 @@ class RecWearApp : Application(), RecorderHost {
         // the state they already have.
         scope.launch { RecorderService.state.drop(1).collect { refreshEntryPoints() } }
         scope.launch { queue.pending.drop(1).collect { refreshEntryPoints() } }
+        // docs/11 W2: the same count reads differently once a pass has a phone, so the two surfaces
+        // that cannot notice anything for themselves are told when that changes too.
+        scope.launch { queue.sending.drop(1).collect { refreshEntryPoints() } }
     }
 
     /**

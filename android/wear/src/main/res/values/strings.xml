@@ -17,7 +17,10 @@
     <string name="recording_failed">Failed: %1$s</string>
     <string name="workflow_phones">Phone\'s workflow</string>
     <string name="workflow_pick">Workflow</string>
+    <!-- docs/11 W2: the same count, said as the pass sees it — waiting for a phone, or going
+         over to one right now. -->
     <string name="pending_badge">%1$d waiting</string>
+    <string name="sending_badge">Sending %1$d</string>
     <string name="transfer_failed_badge">%1$d transfers failed</string>
 
     <!-- docs/11 W5: the tile and the complication. They render outside the app process, so the

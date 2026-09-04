@@ -153,8 +153,14 @@ private fun RecordScreen(
             // docs/11 "주의": Samsung will delay the worker, so the badge says "n waiting" rather
             // than pretending the phone has it. A refusal is worse news than a wait and gets its
             // own line — the audio is still on this watch and nothing will retry it.
+            // docs/11 W2: while a pass has a phone and is handing files over, the same count is
+            // "n sending" — a delayed worker and a transfer in flight are the user's two questions
+            // about the same number, and only the sender can tell them apart.
             Text(
-                text = stringResource(R.string.pending_badge, state.pending),
+                text = stringResource(
+                    if (state.handingOver) R.string.sending_badge else R.string.pending_badge,
+                    state.pending,
+                ),
                 style = WearBlueprint.small,
                 color = WearBlueprint.textMuted,
                 maxLines = 1,

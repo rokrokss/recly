@@ -63,6 +63,9 @@
     <string name="job_state_no_workflow">워크플로우 없음</string>
     <string name="job_state_pending">대기</string>
     <string name="job_state_running">업로드 중</string>
+    <string name="job_state_receiving">워치에서 받는 중</string>
+    <string name="job_state_remote_uploading">다른 기기에서 업로드 중</string>
+    <string name="job_state_remote_transcribing">다른 기기에서 전사 중</string>
     <string name="job_state_waiting">재시도 대기</string>
     <string name="job_state_waiting_in">재시도 대기 · %1$s</string>
     <string name="job_state_done">완료</string>

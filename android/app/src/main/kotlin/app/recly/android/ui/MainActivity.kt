@@ -369,7 +369,7 @@ private fun RecordTab(
         recorder = recorder,
         // docs/09 화면 원칙 1: the state node borrows the ledger while the recorder is idle, and the
         // ledger is the same live list the jobs tab draws.
-        uploading = uploading(jobs.items),
+        ledger = ledgerCode(jobs.items),
         onSelectWorkflow = model::selectWorkflow,
         onStart = model::start,
         onStop = model::stop,

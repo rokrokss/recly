@@ -292,9 +292,12 @@ private fun ExpandedRow(
                     }
 
                 // A `PENDING` job is due already. A recording with no job, and one too short to
-                // have earned one, offer no upload.
+                // have earned one, offer no upload. The three that are happening elsewhere
+                // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
+                // this device's to make due.
                 ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
                 ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
+                ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
                 -> Unit
             }
             // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where this goes.
@@ -314,7 +317,7 @@ private fun ExpandedRow(
                 onClick = onOpenDetail,
                 modifier = Modifier.testTag("open-detail"),
             )
-            if (item.state != ItemState.RECORDING && item.state != ItemState.RUNNING) {
+            if (!item.state.inFlight()) {
                 BlueprintButton(
                     label = stringResource(R.string.action_delete),
                     onClick = onDelete,
@@ -438,6 +441,11 @@ private fun DeleteDialog(
  */
 fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.RECORDING -> LedgerStatus("REC", BadgeTone.DANGER)
+    // docs/03 "다른 기기의 녹음": a code says what is happening, not where — an upload on another
+    // device is the same word as one of this phone's own.
+    ItemState.RECEIVING -> LedgerStatus("RECEIVING", BadgeTone.ACCENT)
+    ItemState.REMOTE_UPLOADING -> LedgerStatus("UPLOADING", BadgeTone.ACCENT)
+    ItemState.REMOTE_TRANSCRIBING -> TRANSCRIBING_BADGE
     ItemState.NO_JOB -> LedgerStatus("NO_JOB", BadgeTone.NEUTRAL)
     ItemState.PENDING -> LedgerStatus("PENDING", BadgeTone.NEUTRAL)
     ItemState.RUNNING -> LedgerStatus("UPLOADING", BadgeTone.ACCENT)
@@ -468,9 +476,23 @@ private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
 private val BADGE_CODES: List<String> =
     ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code
 
-/** The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. */
+/**
+ * The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. A recording on
+ * its way here — from the watch, or from another device's upload — is one the list is waiting for
+ * (docs/03 "다른 기기의 녹음"); one another device is transcribing has already arrived.
+ */
 fun ItemState.waiting(): Boolean =
-    this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NO_JOB
+    this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NO_JOB ||
+        this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
+
+/**
+ * docs/09 화면 원칙 2: a recording something is doing to it right now, so there is nothing on the
+ * row to offer. Deleting one would be pulling the file out from under a recorder, a transfer or
+ * another device's upload (docs/03 "다른 기기의 녹음").
+ */
+fun ItemState.inFlight(): Boolean =
+    this == ItemState.RECORDING || this == ItemState.RUNNING ||
+        this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
 
 fun ItemState.failing(): Boolean =
     this == ItemState.FAILED || this == ItemState.NEEDS_AUTH || this == ItemState.NEEDS_SPACE ||
@@ -483,6 +505,9 @@ fun ItemState.failing(): Boolean =
 @Composable
 private fun label(item: JobItem): String = when (item.state) {
     ItemState.RECORDING -> stringResource(R.string.job_state_recording)
+    ItemState.RECEIVING -> stringResource(R.string.job_state_receiving)
+    ItemState.REMOTE_UPLOADING -> stringResource(R.string.job_state_remote_uploading)
+    ItemState.REMOTE_TRANSCRIBING -> stringResource(R.string.job_state_remote_transcribing)
     ItemState.NO_JOB -> stringResource(R.string.job_state_no_workflow)
     ItemState.PENDING -> stringResource(R.string.job_state_pending)
     ItemState.RUNNING -> stringResource(R.string.job_state_running)

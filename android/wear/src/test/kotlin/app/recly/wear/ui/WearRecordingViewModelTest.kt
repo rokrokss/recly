@@ -72,6 +72,9 @@ private class FakeQueue : TransferQueue {
     val failedCount: MutableStateFlow<Int> = MutableStateFlow(0)
     override val failed: StateFlow<Int> = failedCount.asStateFlow()
 
+    val sendingNow: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    override val sending: StateFlow<Boolean> = sendingNow.asStateFlow()
+
     val added: MutableList<String> = mutableListOf()
 
     override suspend fun add(recordingId: String) {
@@ -226,6 +229,44 @@ class WearRecordingViewModelTest {
         runCurrent()
 
         assertEquals(1, vm.state.value.pending)
+    }
+
+    /**
+     * docs/11 W2: the same count, said two ways. A pass that found a phone is handing the recording
+     * over now; a queue nobody is sending is waiting on a worker Samsung may have parked.
+     */
+    @Test
+    fun `the badge says sending only while a pass has a phone`() = runTest(dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+        queue.add("01J9REC")
+        runCurrent()
+
+        assertFalse(vm.state.value.handingOver, "nothing is being sent yet")
+
+        queue.sendingNow.value = true
+        runCurrent()
+
+        assertTrue(vm.state.value.sending)
+        assertTrue(vm.state.value.handingOver)
+
+        // The pass ended: the recording either went over — and the count with it — or it is
+        // waiting again.
+        queue.sendingNow.value = false
+        runCurrent()
+
+        assertFalse(vm.state.value.handingOver)
+    }
+
+    /** The last recording of a pass leaves the queue before the pass ends: no `전송 중 0개`. */
+    @Test
+    fun `an empty queue is never sending`() = runTest(dispatcher) {
+        val vm = viewModel()
+        queue.sendingNow.value = true
+        runCurrent()
+
+        assertTrue(vm.state.value.sending)
+        assertFalse(vm.state.value.handingOver)
     }
 
     @Test
