@@ -16,6 +16,8 @@ import recly.core.job.StepFailure
 import recly.core.model.Step
 import recly.core.model.Track
 import recly.core.testing.FakeDrive
+import recly.core.testing.transcribeStep
+import recly.core.testing.webhookStep
 
 class DriveUploadRunnerTest {
     @Test
@@ -34,7 +36,14 @@ class DriveUploadRunnerTest {
         assertEquals(FakeDrive.FOLDER_MIME, folder.mimeType)
         assertEquals("주간 회의", folder.description)
         assertEquals(
-            mapOf("recordingId" to h.recordingId, "workflowId" to h.workflow.id),
+            mapOf(
+                "recordingId" to h.recordingId,
+                "workflowId" to h.workflow.id,
+                // docs/03 "다른 기기의 녹음": nothing comes after this step, so the other devices are
+                // told there is nothing to wait for.
+                "pending" to "",
+                "pendingAt" to "2026-08-26T01:00:00.000Z",
+            ),
             folder.appProperties,
         )
         h.sessionStarts().forEach {
@@ -59,6 +68,40 @@ class DriveUploadRunnerTest {
         val creationsBefore = h.folderCreations().size
         h.run()
         assertEquals(creationsBefore, h.folderCreations().size)
+    }
+
+    /**
+     * docs/03 "다른 기기의 녹음": the folder is the only thing another device can see while this one
+     * works, so what is still to come goes on it — before the first byte, and without disturbing the
+     * `recordingId` the folder was stamped with (Drive merges `appProperties` rather than replacing).
+     */
+    @Test
+    fun `the folder is marked with the step types that come after the upload`() = runBlocking {
+        val h = DriveHarness(
+            partCount = 1,
+            partBytes = DriveHarness.SMALL_BYTES,
+            steps = listOf(Step.DriveUpload(id = "up"), webhookStep("hook"), transcribeStep("stt")),
+        )
+
+        h.run()
+
+        val folder = assertNotNull(h.drive.byName(h.base))
+        assertEquals("webhook,transcribe", folder.appProperties["pending"])
+        assertEquals("2026-08-26T01:00:00.000Z", folder.appProperties["pendingAt"])
+        assertEquals(h.recordingId, folder.appProperties["recordingId"], "the folder's own stamp survives")
+    }
+
+    /** The marker is one line in someone else's list: it can never be why an upload failed. */
+    @Test
+    fun `an upload whose marker cannot be written still uploads`() = runBlocking {
+        val h = DriveHarness(partCount = 1, partBytes = DriveHarness.SMALL_BYTES)
+        h.drive.failNext(500) { it.method == "PATCH" }
+
+        val output = h.run()
+
+        assertNotNull(output.json["folderId"])
+        assertEquals(listOf(h.partName(1), h.metaName()), h.drive.uploadOrder())
+        assertTrue(h.logger.events.contains("drive.marker.failed"))
     }
 
     @Test

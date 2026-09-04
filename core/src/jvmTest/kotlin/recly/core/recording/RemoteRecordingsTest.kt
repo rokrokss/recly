@@ -10,13 +10,19 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import recly.core.drive.DriveApi
 import recly.core.drive.ScriptedTokenProvider
 import recly.core.drive.mockTransport
+import recly.core.ids.Ulid
 import recly.core.job.EnqueueResult
 import recly.core.job.Executor
 import recly.core.job.JobService
@@ -28,6 +34,7 @@ import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
+import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.TokenProvider
@@ -100,17 +107,101 @@ class RemoteRecordingsTest {
         assertEquals(1, h.drive.requests.size - before, "one files.list, no children, no downloads")
     }
 
-    /** `meta.json` goes up last (docs/03): a folder without it is an upload in progress. */
+    /**
+     * `meta.json` goes up last (docs/03), so a folder without one is an upload still going — and
+     * waiting for it would leave the user staring at nothing for the length of that upload. The row
+     * appears at once, built out of the listing alone, and the meta landing replaces it.
+     */
     @Test
-    fun `a folder whose meta has not landed yet is left for a later pull`() = runBlocking {
+    fun `a folder whose meta has not landed yet is a row that says another device is uploading`() = runBlocking {
         val h = Harness()
-        val inFlight = h.uploaded(id = PHONE_1, withMeta = false)
+        val inFlight = h.uploaded(id = PHONE_1, title = "theirs", withMeta = false)
+
+        assertEquals(PullSummary(adopted = 1, dropped = 0), h.remote.pull())
+
+        val row = assertNotNull(h.recordings.get(PHONE_1))
+        assertTrue(row.remote)
+        assertTrue(row.remoteUploading)
+        assertFalse(row.receiving, "nothing is coming from a watch")
+        assertEquals(inFlight.folderId, row.driveFolderId)
+        assertEquals(Source.PHONE, row.meta.source, "read off the folder's name")
+        assertEquals("theirs", row.meta.title, "read off the folder's description")
+        // The start time is the id's own: a ULID carries the millisecond it was made (docs/01).
+        assertEquals(assertNotNull(Ulid.timestamp(PHONE_1)).isoUtc(), row.meta.startedAt)
+        assertEquals(emptyList(), row.meta.parts)
+        assertEquals(emptyList(), h.partRows(PHONE_1))
+        assertTrue(h.fs.exists(row.dir / MetaWriter.metaFileName(MetaWriter.baseName(row.meta))))
+        assertEquals(listOf("remote.adopt.provisional", "remote.pull"), h.logger.events)
+
+        // The meta lands: the placeholder becomes the recording, parts and all.
+        h.drive.put(inFlight.metaName, inFlight.folderId, recJson.encodeToString(inFlight.meta).encodeToByteArray())
+        assertEquals(PullSummary(adopted = 1, dropped = 0), h.remote.pull(force = true))
+
+        val completed = assertNotNull(h.recordings.get(PHONE_1))
+        assertTrue(completed.remote)
+        assertFalse(completed.remoteUploading)
+        assertEquals(inFlight.meta, completed.meta)
+        assertEquals(listOf(1L, 1L), h.partRows(PHONE_1).map { it.deleted })
+        assertEquals(
+            inFlight.meta.parts.map { inFlight.fileIds.getValue(it.file) },
+            h.partRows(PHONE_1).map { it.drive_file_id },
+        )
+    }
+
+    /** A device that gave up mid-upload leaves a folder that never fills. It is not "in flight". */
+    @Test
+    fun `a folder that has stood empty for a day is not adopted`() = runBlocking {
+        val h = Harness()
+        h.uploaded(id = PHONE_1, withMeta = false)
+        h.clock.advance(RemoteRecordings.ABANDONED_AFTER + 1.minutes)
 
         assertEquals(PullSummary(0, 0), h.remote.pull())
-        assertNull(h.recordings.get(inFlight.recordingId))
+        assertNull(h.recordings.get(PHONE_1))
+    }
 
-        h.drive.put(inFlight.metaName, inFlight.folderId, recJson.encodeToString(inFlight.meta).encodeToByteArray())
-        assertEquals(PullSummary(1, 0), h.remote.pull(force = true))
+    @Test
+    fun `a provisional row whose folder is still empty a day later is dropped`() = runBlocking {
+        val h = Harness()
+        val inFlight = h.uploaded(id = PHONE_1, withMeta = false)
+        val kept = h.uploaded(id = PHONE_2)
+        h.remote.pull()
+        assertNotNull(h.recordings.get(PHONE_1))
+
+        h.clock.advance(RemoteRecordings.ABANDONED_AFTER + 1.minutes)
+        val summary = h.remote.pull(force = true)
+
+        assertEquals(1, summary.dropped)
+        assertNull(h.recordings.get(PHONE_1))
+        assertFalse(h.fs.exists("/data/recordings/$PHONE_1".toPath()), "its directory went with it")
+        assertNotNull(h.recordings.get(kept.recordingId))
+        assertEquals(emptyList(), h.drive.deleted, "nothing on Drive was touched")
+        assertTrue(inFlight.folderId in h.drive.files.keys)
+    }
+
+    /** The upload was cancelled, or the user deleted the half-written folder: same drop path. */
+    @Test
+    fun `a provisional row whose folder Drive no longer lists is dropped`() = runBlocking {
+        val h = Harness()
+        val inFlight = h.uploaded(id = PHONE_1, withMeta = false)
+        h.remote.pull()
+        h.drive.trashed += inFlight.folderId
+
+        assertEquals(PullSummary(adopted = 0, dropped = 1), h.remote.pull(force = true))
+        assertNull(h.recordings.get(PHONE_1))
+    }
+
+    /** The half-written folder of a recording this device already has is not a second recording. */
+    @Test
+    fun `a folder with no meta is never adopted over a row this device made`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(id = MINE_1)
+        h.uploaded(id = mine.recordingId, withMeta = false)
+
+        assertEquals(PullSummary(0, 0), h.remote.pull())
+
+        val record = assertNotNull(h.recordings.get(mine.recordingId))
+        assertFalse(record.remote)
+        assertEquals(mine.meta.parts, record.meta.parts)
     }
 
     @Test
@@ -398,6 +489,121 @@ class RemoteRecordingsTest {
         assertNull(h.recordings.get(mine.recordingId))
     }
 
+    // The pending marker (docs/03 "다른 기기의 녹음"): what the device running the job says is left.
+
+    @Test
+    fun `the folder's marker says what the other device still has to do`() = runBlocking {
+        val h = Harness()
+        val phone = h.uploaded(id = PHONE_1)
+        h.mark(phone.folderId, "transcribe,webhook")
+
+        h.remote.pull()
+
+        assertEquals(setOf("transcribe", "webhook"), h.recordings.get(PHONE_1)!!.remotePending)
+
+        // The device finished: the marker is emptied, and so is the row.
+        h.mark(phone.folderId, "")
+        h.remote.pull(force = true)
+        assertEquals(emptySet(), h.recordings.get(PHONE_1)!!.remotePending)
+    }
+
+    /** Nothing has refreshed it for longer than any provider result can take (docs/08): the device
+     * that wrote it is gone, and the row must not say "전사 중" forever. */
+    @Test
+    fun `a marker nobody has refreshed for eight hours is not read`() = runBlocking {
+        val h = Harness()
+        val phone = h.uploaded(id = PHONE_1)
+        h.mark(phone.folderId, "transcribe")
+        h.remote.pull()
+        assertEquals(setOf("transcribe"), h.recordings.get(PHONE_1)!!.remotePending)
+
+        h.clock.advance(RemoteRecordings.MARKER_TTL + 1.minutes)
+        h.remote.pull(force = true)
+
+        assertEquals(emptySet(), h.recordings.get(PHONE_1)!!.remotePending)
+    }
+
+    /** A marker without a time on it says nothing about how old it is, so it is not believed. */
+    @Test
+    fun `a marker with no timestamp is not read`() = runBlocking {
+        val h = Harness()
+        val phone = h.uploaded(id = PHONE_1)
+        h.drive.files.getValue(phone.folderId).appProperties += mapOf("pending" to "transcribe")
+
+        h.remote.pull()
+
+        assertEquals(emptySet(), h.recordings.get(PHONE_1)!!.remotePending)
+    }
+
+    /** This device's own job rows are the truth about its own recordings; a marker is not. */
+    @Test
+    fun `a row this device made never takes a marker off Drive`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(id = MINE_1)
+        h.upload(mine)
+        h.mark(h.recordings.get(mine.recordingId)!!.driveFolderId!!, "transcribe")
+
+        h.remote.pull(force = true)
+
+        assertEquals(emptySet(), h.recordings.get(mine.recordingId)!!.remotePending)
+    }
+
+    // How often a pull runs (docs/03 "다른 기기의 녹음").
+
+    @Test
+    fun `a pull waits half a minute rather than two while another device is working`() = runBlocking {
+        val h = Harness()
+        val phone = h.uploaded(id = PHONE_1)
+        h.remote.pull()
+        h.clock.advance(RemoteRecordings.FAST_INTERVAL + 1.seconds)
+        assertEquals("throttled", h.remote.pull().skipped, "nothing is in flight: the wait is two minutes")
+
+        h.mark(phone.folderId, "transcribe")
+        h.remote.pull(force = true)
+        assertEquals(setOf("transcribe"), h.recordings.get(PHONE_1)!!.remotePending)
+
+        h.clock.advance(RemoteRecordings.FAST_INTERVAL + 1.seconds)
+        assertNull(h.remote.pull().skipped, "a row that says 전사 중 has to stop saying it soon")
+    }
+
+    @Test
+    fun `a provisional row is enough to shorten the wait`() = runBlocking {
+        val h = Harness()
+        h.uploaded(id = PHONE_1, withMeta = false)
+        h.remote.pull()
+
+        h.clock.advance(RemoteRecordings.FAST_INTERVAL + 1.seconds)
+
+        assertNull(h.remote.pull().skipped)
+    }
+
+    /**
+     * The ledgers watch the job table for their own recordings and `recordings.observe()` for the
+     * rows a pull writes — which is every row this lane is about, since none of them has a job here.
+     */
+    @Test
+    fun `a provisional adoption, its completion and a marker change all reach the ledger`() = runBlocking {
+        val h = Harness()
+        val inFlight = h.uploaded(id = PHONE_1, withMeta = false)
+        val emissions = Channel<Unit>(Channel.UNLIMITED)
+        val watcher = launch(Dispatchers.Unconfined) { h.recordings.observe().collect { emissions.send(Unit) } }
+        assertNotNull(withTimeoutOrNull(TIMEOUT) { emissions.receive() }, "the list as it is now")
+
+        h.remote.pull()
+        assertNotNull(withTimeoutOrNull(TIMEOUT) { emissions.receive() }, "the provisional row")
+
+        h.drive.put(inFlight.metaName, inFlight.folderId, recJson.encodeToString(inFlight.meta).encodeToByteArray())
+        h.remote.pull(force = true)
+        assertNotNull(withTimeoutOrNull(TIMEOUT) { emissions.receive() }, "the completion")
+
+        while (emissions.tryReceive().isSuccess) Unit
+        h.mark(inFlight.folderId, "transcribe")
+        h.remote.pull(force = true)
+        assertEquals(setOf("transcribe"), h.recordings.get(PHONE_1)!!.remotePending)
+        assertNotNull(withTimeoutOrNull(TIMEOUT) { emissions.receive() }, "the marker")
+        watcher.cancel()
+    }
+
     // Titles (docs/03 "제목").
 
     @Test
@@ -614,6 +820,13 @@ class RemoteRecordingsTest {
         /** The month folder every recording of the fake account shares (ADR-020). */
         private val month = drive.put("2026-08", "root", ByteArray(0), FakeDrive.FOLDER_MIME)
 
+        /** What the device running the workflow leaves on the folder (docs/03 "다른 기기의 녹음"):
+         * the types still to come, stamped with the moment it last said so. */
+        fun mark(folderId: String, pending: String) {
+            drive.files.getValue(folderId).appProperties +=
+                mapOf("pending" to pending, "pendingAt" to clock.now().isoUtc())
+        }
+
         /** What another device's `drive.upload` leaves: the `{base}/` folder stamped with the id,
          * the parts, and — unless [withMeta] is off — `meta.json` last. */
         fun uploaded(
@@ -688,6 +901,9 @@ class RemoteRecordingsTest {
     private companion object {
         /** Ids the meta schema accepts: 26 of the ULID alphabet (no I, L, O, U). */
         fun ulid(tag: String): String = ("01J9$tag").padEnd(26, '0')
+
+        /** Long enough that a slow machine does not fail a test about an emission arriving. */
+        const val TIMEOUT: Long = 2_000
 
         val PHONE_1 = ulid("PH0NE1")
         val PHONE_2 = ulid("PH0NE2")

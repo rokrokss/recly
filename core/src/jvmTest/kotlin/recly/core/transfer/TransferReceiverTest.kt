@@ -16,11 +16,13 @@ import okio.ByteString.Companion.encodeUtf8
 import okio.Path
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
+import recly.core.ids.Ulid
 import recly.core.model.Part
 import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
+import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.recording.MetaWriter
 import recly.core.recording.PartHasher
@@ -89,6 +91,30 @@ class TransferReceiverTest {
         val record = assertNotNull(recordings.get(watchMeta.recordingId))
         assertEquals(RecordingStatus.RECORDING, record.meta.status)
         assertEquals(1, record.meta.parts.size)
+    }
+
+    /**
+     * docs/03 "다른 기기의 녹음": the row a transfer opens is what the list shows for as long as the
+     * transfer takes, and a 20-minute recording handed over at its end must not sit at the top of
+     * the list as if it had just started. The watch's id carries the millisecond it began.
+     */
+    @Test
+    fun `the row a transfer opens is dated by the watch's id, not by the moment it arrived`() = runBlocking {
+        clock.advance(3.hours)
+
+        accept(1)
+
+        val record = assertNotNull(recordings.get(watchMeta.recordingId))
+        assertEquals(assertNotNull(Ulid.timestamp(watchMeta.recordingId)).isoUtc(), record.meta.startedAt)
+        assertTrue(record.receiving, "a phone never records with source watch: this is a transfer in flight")
+        assertFalse(record.remoteUploading)
+
+        // And it is the watch's own meta once that lands, as before.
+        accept(2)
+        receiver.acceptMeta(recJson.encodeToString(metaFor(1, 2)))
+        val finalized = assertNotNull(recordings.get(watchMeta.recordingId))
+        assertEquals(watchMeta.startedAt, finalized.meta.startedAt)
+        assertFalse(finalized.receiving)
     }
 
     /** docs/03: the phone verifies sha256 and nacks; the watch still holds the original. */

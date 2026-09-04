@@ -26,6 +26,7 @@ import recly.core.model.Part
 import recly.core.model.Range
 import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
+import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.model.isoUtc
 import recly.core.model.recJson
@@ -40,6 +41,10 @@ import recly.core.platform.Logger
  * device's upload, or read by a pull. A [remote] recording is one another device uploaded and this
  * one adopted from Drive (docs/03 "다른 기기의 녹음"): it has no job here and never gets one — Drive
  * already holds it — and its parts are fetched by file id when played.
+ *
+ * The three "still in flight elsewhere" answers a ledger needs are [receiving], [remoteUploading]
+ * and [remotePending] — none of them is a job of this device's, which is why none of them can be
+ * read off the queue.
  */
 data class RecordingRecord(
     val id: String,
@@ -47,7 +52,28 @@ data class RecordingRecord(
     val dir: Path,
     val driveFolderId: String? = null,
     val remote: Boolean = false,
-)
+    /**
+     * docs/03 "다른 기기의 녹음": the step types the device that is running the workflow still has to
+     * run after its upload (`transcribe`, `webhook`), read off the folder's marker. Empty when that
+     * device is done, when the marker is too old to believe, and always for this device's own rows.
+     */
+    val remotePending: Set<String> = emptySet(),
+) {
+    /**
+     * A watch transfer in flight (docs/03 "워치 → 폰 전송 계약"): the phone opens the row when the
+     * first part arrives and replaces it wholesale when `meta.json` lands. A phone never *records*
+     * with source `watch` — it only ever receives one — so a local row of this shape can only be
+     * that transfer, still coming in.
+     */
+    val receiving: Boolean get() = !remote && meta.source == Source.WATCH && meta.status == RecordingStatus.RECORDING
+
+    /**
+     * Another device is still uploading (docs/03 "다른 기기의 녹음"): its folder is on Drive with no
+     * `meta.json` in it yet — the meta goes up last — so what this row carries is the placeholder a
+     * pull built out of the folder's name.
+     */
+    val remoteUploading: Boolean get() = remote && meta.status == RecordingStatus.RECORDING
+}
 
 /** What "녹음 삭제" (docs/03) did, or why it did nothing. */
 sealed interface DeleteResult {
@@ -142,6 +168,10 @@ class RecordingRepository(
      * ([ignored]); that check is inside the transaction, so a "로컬만 삭제" that lands during a pull
      * is not undone by it.
      *
+     * The one existing row it does write over is a **provisional** one ([provisional]): the
+     * placeholder a pull opened for a folder that had no `meta.json` yet, which this call is the
+     * completion of. A row of this device's own (`remote = 0`) is never touched, whatever Drive says.
+     *
      * @param fileIds the Drive file of each part, keyed by `(part, track)`; a part the folder did
      * not have is adopted without one and stays missing when played.
      */
@@ -152,7 +182,8 @@ class RecordingRepository(
     ): Boolean = locked {
         val dir = deps.dataDir / RECORDINGS / meta.recordingId
         val written = db.transactionWithResult {
-            if (queries.selectRecordingById(meta.recordingId).executeAsOneOrNull() != null) {
+            val existing = queries.selectRecordingById(meta.recordingId).executeAsOneOrNull()
+            if (existing != null && !(existing.remote == 1L && existing.status == RecordingStatus.RECORDING.wire)) {
                 return@transactionWithResult false
             }
             if (queries.kvGet(IGNORED_PREFIX + meta.recordingId).executeAsOneOrNull() != null) {
@@ -194,6 +225,35 @@ class RecordingRepository(
     suspend fun adopted(): Map<String, String> = locked {
         queries.selectAdoptedRecordings().executeAsList().associate { it.id to it.drive_folder_id!! }
     }
+
+    /**
+     * The adopted rows that are still only a placeholder (docs/03 "다른 기기의 녹음"): another device's
+     * folder is on Drive but its `meta.json` is not, so all this row knows is what the folder's name
+     * says. Kept apart from [adopted] because these are the two rows a pull may write over — the
+     * meta landing completes one ([adopt]), and 24 hours without it abandons the other ([drop]).
+     */
+    suspend fun provisional(): Map<String, String> = locked {
+        queries.selectProvisionalRecordings().executeAsList().associate { it.id to it.drive_folder_id!! }
+    }
+
+    /**
+     * What the device running the workflow says is still to come, off the folder's marker (docs/03
+     * "다른 기기의 녹음"): the comma-joined step types, or null for nothing. Only remote rows have one
+     * — this device's own job rows are the truth about its own recordings.
+     *
+     * @return true when the row changed, so an unchanged marker does not wake every ledger on
+     * `recordings.observe()` once a pass.
+     */
+    suspend fun setRemotePending(recordingId: String, pending: String?): Boolean = locked {
+        val row = queries.selectRecordingById(recordingId).executeAsOneOrNull() ?: return@locked false
+        if (row.remote != 1L || row.remote_pending == pending) return@locked false
+        queries.updateRemotePending(pending, recordingId)
+        true
+    }
+
+    /** Whether any other device is still uploading or still has steps to run — what [RemoteRecordings]
+     * asks to decide how often to look (docs/03 "다른 기기의 녹음"). */
+    suspend fun remoteInFlight(): Boolean = locked { queries.countRemoteInFlight().executeAsOne() > 0 }
 
     /**
      * The other direction of [adopt]: an adopted row whose Drive folder is gone. Only that row —
@@ -515,7 +575,14 @@ class RecordingRepository(
 
     suspend fun list(limit: Int): List<RecordingRecord> = locked {
         queries.selectRecordings(limit.toLong()).executeAsList().map {
-            RecordingRecord(it.id, recJson.decodeFromString(it.meta_json), it.dir.toPath(), it.drive_folder_id, it.remote == 1L)
+            RecordingRecord(
+                it.id,
+                recJson.decodeFromString(it.meta_json),
+                it.dir.toPath(),
+                it.drive_folder_id,
+                it.remote == 1L,
+                pendingTypes(it.remote_pending),
+            )
         }
     }
 
@@ -569,8 +636,19 @@ class RecordingRepository(
 
     private fun record(id: String): RecordingRecord? =
         queries.selectRecordingById(id).executeAsOneOrNull()?.let {
-            RecordingRecord(it.id, recJson.decodeFromString(it.meta_json), it.dir.toPath(), it.drive_folder_id, it.remote == 1L)
+            RecordingRecord(
+                it.id,
+                recJson.decodeFromString(it.meta_json),
+                it.dir.toPath(),
+                it.drive_folder_id,
+                it.remote == 1L,
+                pendingTypes(it.remote_pending),
+            )
         }
+
+    /** The column is the marker verbatim — comma-joined types, or NULL for "nothing is coming". */
+    private fun pendingTypes(column: String?): Set<String> =
+        column?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() }?.toSet().orEmpty()
 
     private fun requireRecord(id: String): RecordingRecord =
         record(id) ?: throw IllegalArgumentException("unknown recording '$id'")

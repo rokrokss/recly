@@ -11,6 +11,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import okio.Path
 import recly.core.db.RecDatabase
+import recly.core.ids.Ulid
 import recly.core.model.AudioSettings
 import recly.core.model.Codec
 import recly.core.model.Container
@@ -198,6 +199,11 @@ class TransferReceiver(
      * Stands in until the real meta lands. It never reaches the disk and every field of it is
      * replaced by [acceptMeta]; what matters is that the row exists so the parts have somewhere to
      * belong and the purge has something to find.
+     *
+     * [startedAt] is the one field the list reads before then, and it is the watch's, not this
+     * moment's: the id the watch made carries the millisecond it started (docs/01 "식별자·시간"), so
+     * a 20-minute recording handed over at its end sits where it belongs among the rows instead of
+     * at the top. [now] is only the fallback for an id that is not a ULID.
      */
     private fun placeholder(recordingId: String, now: Instant): RecordingMeta = RecordingMeta(
         schema = 1,
@@ -206,7 +212,7 @@ class TransferReceiver(
         platform = deps.device.platform,
         deviceId = deps.device.deviceId,
         deviceName = deps.device.name,
-        startedAt = now.isoUtc(),
+        startedAt = (Ulid.timestamp(recordingId) ?: now).isoUtc(),
         timezone = "UTC",
         audio = AudioSettings(Codec.AAC_LC, Container.M4A, 16_000, 1, 32, 900),
         tracks = emptyList(),

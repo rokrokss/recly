@@ -1,0 +1,12 @@
+-- 4 → 5: what another device is still doing shows up in this device's list (docs/03 "다른 기기의 녹음").
+--
+-- The whole schema lives in `Rec.sq`; a migration is only the difference from the version it is
+-- named after. The two have to agree, and `MigrationTest` — which builds an old database by hand
+-- and upgrades it — is what says they do.
+--
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+--
+-- Every row already here reads back with no marker, which is exactly what "nothing is pending" is:
+-- the next pull fills the column in from the folders' `pending` appProperty, and a row of this
+-- device's own never gets one at all.
+ALTER TABLE recording ADD COLUMN remote_pending TEXT;

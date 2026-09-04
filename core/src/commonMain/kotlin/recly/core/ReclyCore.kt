@@ -8,6 +8,7 @@ import kotlin.time.Instant
 import kotlinx.serialization.json.JsonObject
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveApi
+import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveStore
 import recly.core.job.EnqueueResult
 import recly.core.job.Executor
@@ -81,7 +82,14 @@ class ReclyCore(
             deps,
             jobStore,
             recordings,
-            Executor(deps, jobStore, recordings, defaultRunners(db, deps), live = { workflows.current() }),
+            Executor(
+                deps,
+                jobStore,
+                recordings,
+                defaultRunners(db, deps),
+                live = { workflows.current() },
+                marker = DriveFolderMarker(DriveApi(deps), deps),
+            ),
         )
 
     private val driveStore: DriveStore = DriveStore(db, deps)

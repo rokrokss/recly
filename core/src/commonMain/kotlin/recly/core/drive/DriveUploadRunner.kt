@@ -17,6 +17,7 @@ import recly.core.job.StepFailure
 import recly.core.job.StepOutcome
 import recly.core.job.StepOutput
 import recly.core.job.StepRunner
+import recly.core.job.type
 import recly.core.message.CoreMessage
 import recly.core.model.Part
 import recly.core.model.Step
@@ -45,6 +46,9 @@ class DriveUploadRunner(
     private val deps: CoreDeps,
 ) : StepRunner {
     override val type: String = TYPE
+
+    /** docs/03 "다른 기기의 녹음": what the other devices are told is still to come after this upload. */
+    private val marker = DriveFolderMarker(api, deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome {
         val step = ctx.step as? Step.DriveUpload
@@ -106,6 +110,10 @@ class DriveUploadRunner(
         state = state.copy(folderId = folder.id, folderWebViewLink = folder.webViewLink)
         ctx.saveState(state.toJson())
         store.rememberRecordingFolder(ctx.recording.id, folder.id)
+        // The folder exists before the first byte does, and it is the only thing another device can
+        // see while this one uploads (docs/03 "다른 기기의 녹음"): what comes after this step goes on it
+        // now, so a list elsewhere can say "전사 중" instead of showing a finished recording.
+        marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
         // Before the first byte goes out, and into the output rather than the state: a NEEDS_SPACE
         // park drops `state_json` (docs/10), and "Drive에서도 삭제" (docs/03) still has to know which
         // folder this recording made. Overwritten by the full output when the step finishes.

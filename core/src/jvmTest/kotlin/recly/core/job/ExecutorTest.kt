@@ -27,6 +27,7 @@ import kotlinx.serialization.json.putJsonArray
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import recly.core.db.RecDatabase
+import recly.core.drive.FolderMarker
 import recly.core.model.OnError
 import recly.core.model.RecordingMeta
 import recly.core.model.Retry
@@ -111,6 +112,8 @@ internal class Fixture(
     /** The disk is dated by the same clock as the queue: the retention sweep reads part mtimes. */
     val clock: FakeClock = FakeClock(),
     val fs: FakeFileSystem = FakeFileSystem(clock),
+    /** docs/03 "다른 기기의 녹음": what the other devices are told; the default tells them nothing. */
+    val marker: FolderMarker = FolderMarker.NONE,
 ) {
     val logger = FakeLogger()
     val deps = testDeps(clock, fs, logger)
@@ -125,7 +128,7 @@ internal class Fixture(
 
     /** A fresh executor over the same database — what a process restart looks like. */
     fun executorWith(runners: List<StepRunner>, random: Random = Random(42)): Executor =
-        Executor(deps, store, recordings, runners.associateBy { it.type }, random)
+        Executor(deps, store, recordings, runners.associateBy { it.type }, random, marker = marker)
 
     /** Two parts per track: [tracks] is what the recorder made, not what a workflow uploads. */
     suspend fun seed(

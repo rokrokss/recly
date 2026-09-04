@@ -12,6 +12,9 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import recly.core.drive.DriveUploadRunner
+import recly.core.drive.FolderMarker
+import recly.core.drive.string
 import recly.core.message.CoreMessage
 import recly.core.model.OnError
 import recly.core.model.Step
@@ -41,6 +44,11 @@ class Executor(
     private val random: Random = Random.Default,
     /** The workflow document as it is now, for [liveSteps]; null when the shell has none to offer. */
     private val live: suspend () -> WorkflowsDocument? = { null },
+    /**
+     * docs/03 "다른 기기의 녹음": what this device still has to do, written on the recording's Drive
+     * folder so the other devices' lists can say so. Advisory — the default writes nothing.
+     */
+    private val marker: FolderMarker = FolderMarker.NONE,
 ) {
     private val mutex = Mutex()
 
@@ -48,6 +56,10 @@ class Executor(
      * the run is on rather than the one disconnecting. */
     @Volatile
     private var disconnecting = false
+
+    /** The marker last written in the job being run, so a job that ends on a successful step does
+     * not write the same value again for its DONE. Reset per job; runs are serialized by [mutex]. */
+    private var lastMark: Pair<String, List<String>>? = null
 
     /** One job at a time, oldest first (docs/10 "동시성"). Re-entrant calls return immediately —
      * a scheduler that fires while a run is in flight must not double-run a step. */
@@ -104,6 +116,7 @@ class Executor(
         }
         val defined = liveSteps(workflow)
         val prior = mutableMapOf<String, StepOutput>()
+        lastMark = null
         for (run in store.stepsOf(job.id)) {
             if (run.status == StepStatus.SUCCEEDED || run.status == StepStatus.SKIPPED) {
                 run.output?.let { prior[run.stepId] = StepOutput(it) }
@@ -141,15 +154,54 @@ class Executor(
                 runStep(job, workflow, run, step, recording, prior)
             }
             when (outcome) {
-                is Outcome.Ok -> prior[run.stepId] = outcome.output
+                is Outcome.Ok -> {
+                    prior[run.stepId] = outcome.output
+                    // After the step, not before: the marker says what is *left*, and a webhook
+                    // that ran before the transcribe has to leave `transcribe` standing.
+                    mark(job, workflow, prior, after = run.stepId)
+                }
+
                 Outcome.Continue -> Unit
-                Outcome.Stop -> return
+                Outcome.Stop -> {
+                    // A job parked in FAILED is not coming back on its own, so nothing it promised
+                    // will ever run: the other devices are told to stop waiting (docs/03). The
+                    // other parks — WAITING, NEEDS_AUTH, NEEDS_SPACE — do come back, and keep it.
+                    if (store.get(job.id)?.status == JobStatus.FAILED) mark(job, workflow, prior, after = null)
+                    return
+                }
             }
         }
         store.updateJob(job.id, JobStatus.DONE, null, deps.clock.now())
+        mark(job, workflow, prior, after = null)
         deps.logger.log(Level.INFO, "job.done", mapOf("jobId" to job.id, "recordingId" to job.recordingId))
         // Nothing is deleted here any more: once the upload has succeeded the parts are a cache
         // with a window on it, which Retention sweeps at the end of the pass (ADR-017).
+    }
+
+    /**
+     * The folder marker of docs/03 "다른 기기의 녹음": the types of the steps that come after [after],
+     * or none at all when the job is over one way or the other. The folder is the one the
+     * `drive.upload` step left in its output — a job that has not uploaded yet has no folder to
+     * write on, and a workflow without an upload has nothing to say to anybody.
+     */
+    private suspend fun mark(job: Job, workflow: Workflow, prior: Map<String, StepOutput>, after: String?) {
+        // The folder comes from the outputs of the steps that succeeded — or, for a job that failed
+        // *in* its upload after the folder was made and marked, from the persisted output of the
+        // upload's own row: `saveStepOutput` wrote the folder before the first byte went up and a
+        // failure never clears it (docs/10), so the marker can still be taken down.
+        val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId")
+            ?: store.stepsOf(job.id)
+                .firstOrNull { run -> workflow.steps.any { it.id == run.stepId && it.type == DriveUploadRunner.TYPE } }
+                ?.output?.string("folderId")
+            ?: return
+        val pending = if (after == null) {
+            emptyList()
+        } else {
+            workflow.steps.dropWhile { it.id != after }.drop(1).map { it.type }
+        }
+        if (lastMark == folderId to pending) return
+        lastMark = folderId to pending
+        marker.mark(folderId, pending)
     }
 
     /**

@@ -83,7 +83,7 @@
 | ADR-020 | Drive 기본 폴더 최상단은 **`recly/`**다 — `drive.upload`의 `folder` 기본값 `recly/{{yyyy}}/{{yyyy}}-{{MM}}`, "메모" 기본 워크플로우 `recly/memo/{{yyyy}}-{{MM}}` |
 | ADR-021 | `transcribe`(STT + 화자분리)는 **잡을 실행하는 기기가 사용자의 키로 provider API를 직접 호출**한다. 중간 서버·릴레이·콜백 URL은 없다 |
 | ADR-022 | **텔레메트리가 없다.** 분석·사용 통계·크래시 리포팅·원격 로그 수집·원격 설정·A/B·광고 식별자를 넣지 않는다. 어떤 셸에도 Firebase/Crashlytics/Sentry/AppCenter 계열 의존성이 없다. 로그는 기기 로컬 플랫폼 로그에만 남고 사용자가 직접 내보낼 때만 기기를 떠난다 |
-| ADR-023 | **녹음 목록은 Drive가 정본이다**(2026-09-04). 같은 계정의 다른 기기가 올린 녹음은 이 기기의 목록에도 나타난다 — 별도 색인 파일이나 서버 없이, 앱이 `recordingId`를 찍어 둔 `{base}/` 폴더(ADR-014)를 Drive에서 나열해 `meta.json`을 읽어 온다(§3 "다른 기기의 녹음"). 그 행은 이 기기에 Job도 원본도 없고 재생 시 Drive에서 받아 캐시한다. Drive에서 사라지면 행도 사라진다. 이 기기가 직접 만든 행은 Drive가 뭐라 하든 건드리지 않는다 |
+| ADR-023 | **녹음 목록은 Drive가 정본이다**(2026-09-04). 같은 계정의 다른 기기가 올린 녹음은 이 기기의 목록에도 나타난다 — 별도 색인 파일이나 서버 없이, 앱이 `recordingId`를 찍어 둔 `{base}/` 폴더(ADR-014)를 Drive에서 나열해 `meta.json`을 읽어 온다(§3 "다른 기기의 녹음"). 그 행은 이 기기에 Job도 원본도 없고 재생 시 Drive에서 받아 캐시한다. `meta.json`이 아직 없는 폴더도 목록에 나온다 — "다른 기기가 업로드 중"인 잠정 행으로. Drive에서 사라지면 행도 사라진다. 이 기기가 직접 만든 행은 Drive가 뭐라 하든 건드리지 않는다 |
 
 이 규칙들을 뒤집으려면 이 문서를 고치는 것으로 끝나지 않는다. 특히 ADR-022를 뒤집으면
 `docs/policy/privacy-policy.md`와 Play "데이터 안전" 양식·App Store 개인정보 라벨을 함께 고쳐야 한다.
@@ -619,20 +619,39 @@ My Drive/
 워크플로우마다 폴더 템플릿이 달라도 경로를 걷지 않으니 상관없다. 코어 `RemoteRecordings.pull()`:
 
 1. 폴더를 나열해 `recordingId`로 묶는다. 로컬 DB에 그 id의 행이 있으면 건너뛴다(이 기기가 만든 것이든 이미 입양한
-   것이든).
-2. 모르는 id는 폴더의 자식을 한 번 나열해 `{base}.meta.json`을 받고(`meta.json`이 없으면 **아직 올라가는 중**이므로
-   다음 조회로 미룬다; 같은 id의 폴더가 둘이면 — 다른 경로로 재실행 — 최신 것 중 완료된 것), `recording` 행을
-   **입양**한다(`RecordingRepository.adopt`): `remote = 1`, `drive_folder_id`에 폴더, `part` 행은 처음부터
-   `deleted = 1`에 `drive_file_id`. 디렉터리는 워치 수신과 같은 `recordings/{recordingId}/`이고 `meta.json`을 써
-   둔다. **메타는 경로를 만든다**(디렉터리명·파트 파일명)**므로 스키마대로만 받는다**: `recordingId`가 폴더의 것과
-   같고 ULID 형식이며, 모든 `parts[].file`이 이름 규칙이 주는 그 이름일 때만 — 아니면 `remote.meta.mismatch`로 거절.
-3. 이전에 입양했는데 그 **폴더**가 이제 나열되지 않으면(다른 기기가 지웠거나, 사용자가 Drive에서 지웠거나, 재실행이
+   것이든) — **다만 아래 3의 잠정 행이면 건너뛰지 않고 그 행을 완성한다**. `remote = 0`인 행은 무슨 일이 있어도
+   건드리지 않는다.
+2. 모르는 id는 폴더의 자식을 한 번 나열해 `{base}.meta.json`을 받고(같은 id의 폴더가 둘이면 — 다른 경로로 재실행 —
+   최신 것 중 완료된 것), `recording` 행을 **입양**한다(`RecordingRepository.adopt`): `remote = 1`,
+   `drive_folder_id`에 폴더, `part` 행은 처음부터 `deleted = 1`에 `drive_file_id`. 디렉터리는 워치 수신과 같은
+   `recordings/{recordingId}/`이고 `meta.json`을 써 둔다. **메타는 경로를 만든다**(디렉터리명·파트 파일명)**므로
+   스키마대로만 받는다**: `recordingId`가 폴더의 것과 같고 ULID 형식이며, 모든 `parts[].file`이 이름 규칙이 주는
+   그 이름일 때만 — 아니면 `remote.meta.mismatch`로 거절.
+3. **`meta.json`이 없는 폴더는 "다른 기기가 업로드 중"이다**(2026-09-04). 메타는 마지막에 올라가므로(위 Drive 배치)
+   그 폴더는 지금 올라가는 중인 녹음이고, 다음 조회로 미루면 20분짜리 업로드가 끝날 때까지 사용자는 빈 목록을 본다.
+   그래서 나열이 준 것만으로 **잠정 행**을 연다: `remote = 1`, `drive_folder_id`에 그 폴더, `meta`는 폴더 이름
+   `{yyyyMMddTHHmmssZ}_{source}_{ulid8}`에서 읽은 `source`(모르면 `phone`)와 `recordingId`의 ULID 타임스탬프에서
+   읽은 `startedAt`, 제목은 폴더 `description`, `tracks`·`parts`는 비고 `status = recording`. `meta.json`은 입양과
+   같은 자리에 써 둔다. 셸이 보는 것은 `RecordingRecord.remoteUploading`이다. 폴더의 `recordingId`가 ULID가 아니면
+   열지 않는다 — 그 값이 곧 디렉터리 이름이다. **버려진 업로드**: `createdTime`이 24시간을 넘긴 메타 없는 폴더는
+   입양하지 않고, 이미 연 잠정 행도 그 나이가 되면 폴더가 사라졌을 때와 같은 길로 지운다(`drop`). 나중 조회가 그
+   폴더에서 `meta.json`을 찾으면 잠정 행을 **진짜 메타로 갈아 끼운다**(`finalized`·파트·`drive_file_id`) — 1의 예외가
+   이것이다.
+4. **폴더의 `pending` 표식**: 업로드 뒤에 아직 할 일이 남은 기기가 그것을 폴더에 적는다 — `appProperties.pending`은
+   업로드 다음 단계들의 `type`을 쉼표로 이은 것(`transcribe`, `transcribe,webhook`, 없으면 빈 문자열),
+   `appProperties.pendingAt`은 그렇게 적은 시각. 쓰는 쪽은 `drive.upload`가 폴더를 만들거나 찾은 직후(첫 바이트보다
+   먼저)와, 실행기가 단계 하나를 마칠 때마다(남은 것)와 잡이 `DONE`·터미널 `FAILED`가 될 때(빈 값)다. `files.update`의
+   `appProperties`는 병합이라 폴더의 `recordingId`는 그대로 남는다. 표식은 **참고용**이라 실패하면
+   `drive.marker.failed`로 남기고 넘어간다. 읽는 쪽은 이 조회다: 모든 **remote** 행의 `recording.remote_pending`을
+   그 폴더의 표식으로 채우고(`RecordingRecord.remotePending`), 표식이 없거나 비었거나 `pendingAt`이 **8시간**(§8의
+   가장 긴 provider 결과 타임아웃)보다 오래됐으면 NULL이다. `remote = 0`인 행은 절대 받지 않는다 — 자기 잡이 정본이다.
+5. 이전에 입양했는데 그 **폴더**가 이제 나열되지 않으면(다른 기기가 지웠거나, 사용자가 Drive에서 지웠거나, 재실행이
    다른 폴더로 대체) 행과 캐시를 지운다(`drop` — 트랜잭션 안에서 `drive_folder_id`가 그 폴더인지 확인하고 지우므로
    그 사이 워치 전송이 같은 id를 이 기기 것으로 만들었다면 건드리지 않는다). 지우는 것이 입양보다 먼저라 같은 id가
    다른 폴더에 남아 있으면 그 폴더에서 다시 입양된다. 입양한 행의 폴더보다 **새 폴더가 나중에 완료되면**(재실행이
    끝남) 그쪽으로 옮긴다 — 그 id의 폴더가 둘 이상일 때만 새 폴더의 자식을 한 번 더 본다. 나열이 끝까지 성공했을
    때만 — 실패한 조회는 아무것도 지우지 않는다.
-4. **"로컬만 삭제"는 기억한다.** 이 기기가 올린 녹음을 Drive 폴더는 남기고 지우면 그 폴더는 계속 나열되므로, 아니면
+6. **"로컬만 삭제"는 기억한다.** 이 기기가 올린 녹음을 Drive 폴더는 남기고 지우면 그 폴더는 계속 나열되므로, 아니면
    다음 조회가 방금 지운 녹음을 "다른 기기"로 되살린다. 그래서 `delete(deleteDrive = false)`가 삭제 트랜잭션 안에서
    `kv`에 `remote/ignored/{recordingId}` → 폴더 id를 남기고, 조회는 그 폴더가 나열되는 동안 그 id를 입양하지 않는다
    (`adopt` 자체도 트랜잭션 안에서 이 기록을 확인하므로 조회 도중에 끼어든 삭제도 되살아나지 않는다). 폴더가
@@ -652,6 +671,18 @@ My Drive/
   폴더에서 `{base}.transcript.json`을 이름으로 찾는다(다른 기기가 나중에 전사해도 다음 열 때 보인다). 받은 파트는
   여느 캐시처럼 7일 뒤 보관 스윕이 지운다 — Job이 없으므로 파일 mtime만으로 익힌다(`claimPurge`의 입양 분기).
 - **제목은 Drive 폴더의 `description`이 정본이다**(아래 "제목").
+- **잠정 행도 같은 성질을 그대로 쓴다.** `remote = 1`이라 Job이 없고 `uploaded()`는 참이며 삭제·`enqueue`도 입양한
+  행과 같다. 다른 것은 아직 파트가 없다는 것뿐이고(재생할 것이 없다), 제목 바꾸기는 `status = recording`이라
+  거절된다 — 메타가 도착하면 그때부터 된다.
+
+셸이 "지금 무슨 일이 벌어지고 있나"를 그리는 데 쓰는 것은 `RecordingRecord`의 세 값이다. 셋 다 이 기기의 Job이
+아니므로 큐에서는 읽을 수 없다.
+
+| 값 | 뜻 |
+|---|---|
+| `receiving` | 워치 전송이 오는 중(`remote = 0` · `source = watch` · `status = recording`) — 폰은 `source = watch`로 녹음하지 않으므로 이 모양은 전송뿐이다. 행의 `startedAt`은 **워치가 만든 `recordingId`의 ULID 타임스탬프**다(§1 "식별자·시간"): 20분짜리를 끝나고 넘겨받아도 목록에서 제자리에 앉는다 |
+| `remoteUploading` | 다른 기기가 업로드 중(`remote = 1` · `status = recording`) — 위 3의 잠정 행 |
+| `remotePending` | 다른 기기가 업로드 뒤에 아직 할 일(`transcribe` 등) — 위 4의 표식 |
 
 #### 제목
 
@@ -678,9 +709,11 @@ My Drive/
 - 두 기기가 동시에 바꾸면 나중에 Drive에 쓴 쪽이 남는다. 이상은 없다.
 
 언제 조회하나: **모든 잡 패스**(`ReclyCore.runDueJobs` 끝, 2분 스로틀)와 **목록이 화면에 올 때**(셸이
-`pullRemoteRecordings(force = true)`, 화면을 막지 않고 뒤에서). 셸의 목록은 `jobs.observe()` 외에
-`recordings.observe()`(recording 테이블 변경)도 구독해 입양·삭제가 곧바로 반영된다. 로그인이 없으면 조회는
-조용히 건너뛴다(`skipped = "auth"`).
+`pullRemoteRecordings(force = true)`, 화면을 막지 않고 뒤에서). 스로틀은 **다른 기기가 뭔가 하고 있는 동안에는
+30초**다 — `remoteUploading`이거나 `remotePending`이 있는 행이 하나라도 있으면(조회 시점에 DB에 묻는다; 새 상태를
+두지 않는다) 진행 중이라고 말한 목록이 곧 말을 바꿀 수 있어야 한다. 셸의 목록은 `jobs.observe()` 외에
+`recordings.observe()`(recording 테이블 변경)도 구독해 입양·잠정 행·완성·표식 변경·삭제가 곧바로 반영된다.
+로그인이 없으면 조회는 조용히 건너뛴다(`skipped = "auth"`).
 
 **전제**: `drive.file` 스코프에서 다른 클라이언트 ID(폰의 Android 클라이언트, Mac의 iOS 클라이언트…)가 만든 파일이
 같은 Cloud 프로젝트 안에서 서로 보여야 한다. 코드는 그 전에도 이것을 전제했다 — 월 폴더 `recly/2026/2026-09`를
@@ -718,7 +751,10 @@ My Drive/
   `Incomplete(전 파트)`를 돌려주더라도 워치는 파트를 아직 갖고 있으므로(ok 전 삭제 금지) 파트·메타를 다시 보내
   수렴한다(폰의 `acceptPart`는 덮어쓰기, `enqueue`는 `AlreadyDone`). `ack-meta ok:false`에서 워치가 완료 처리하는
   경우는 없다; 요구된 파트가 로컬에 없으면(외부 삭제) `PART_MISSING_LOCALLY`로 실패 표시하고 나머지는 보존한다.
-- 전송 중 녹음 시작 시각·`recordingId`는 워치가 만든 값을 그대로 쓴다(폰이 재생성하지 않는다).
+- 전송 중 녹음 시작 시각·`recordingId`는 워치가 만든 값을 그대로 쓴다(폰이 재생성하지 않는다). 메타가 오기 전의
+  임시 행(`TransferReceiver.placeholder`)도 마찬가지로 시작 시각을 **`recordingId`의 ULID 타임스탬프**에서 읽는다
+  — 도착 시각을 쓰면 20분짜리를 끝나고 받은 폰의 목록에서 그 녹음만 맨 위로 튀어 오른다. 셸이 이 행을 알아보는
+  것은 `RecordingRecord.receiving`이다(§3 "다른 기기의 녹음" 끝의 표).
 
 ---
 
@@ -1537,12 +1573,16 @@ recly.core
 CREATE TABLE recording (
   id TEXT PRIMARY KEY, source TEXT NOT NULL, platform TEXT NOT NULL,
   workflow_id TEXT, title TEXT, started_at TEXT NOT NULL, ended_at TEXT, duration_sec REAL,
-  timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL
+  timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
+  drive_folder_id TEXT,                   -- 이 녹음의 `{base}/` 폴더 (ADR-014)
+  remote INTEGER NOT NULL DEFAULT 0,      -- Drive에서 입양한 행 (§3 "다른 기기의 녹음")
+  remote_pending TEXT                     -- 그 기기가 아직 할 일 (같은 절, 폴더의 `pending` 표식)
 );
 CREATE TABLE part (
   recording_id TEXT NOT NULL, part INTEGER NOT NULL, track TEXT NOT NULL,
   file TEXT NOT NULL, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, md5 TEXT,
   deleted INTEGER NOT NULL DEFAULT 0,
+  drive_file_id TEXT,                     -- 입양한 파트를 받아 올 Drive 파일 (§3)
   PRIMARY KEY (recording_id, part, track)
 );
 CREATE TABLE job (
@@ -1582,8 +1622,8 @@ CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- deviceId 등 �
 
 `Rec.sq`는 **언제나 전체 스키마**이고, 설치된 DB를 따라오게 하는 것은
 `core/src/commonMain/sqldelight/migrations/<n>.sqm`이다(`n`은 "이 버전에서 올린다"는 뜻이라 `1.sqm`이 1 → 2).
-`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **4**; `3.sqm`이 `recording.drive_folder_id`·
-`recording.remote`·`part.drive_file_id`를 더한다, §3 "다른 기기의 녹음").
+`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **5**; `3.sqm`이 `recording.drive_folder_id`·
+`recording.remote`·`part.drive_file_id`를, `4.sqm`이 `recording.remote_pending`을 더한다, §3 "다른 기기의 녹음").
 
 - **스키마를 바꿀 때마다** `Rec.sq`를 고치고 **같은 커밋에서** 다음 번호의 `.sqm`을 추가한다. 둘 중 하나만 하면 새
   설치와 기존 설치의 스키마가 갈라진다.

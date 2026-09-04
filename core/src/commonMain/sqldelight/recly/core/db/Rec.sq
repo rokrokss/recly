@@ -2,12 +2,18 @@
 -- step when it makes or finds the folder, and by a pull when it adopts one — so it outlives the
 -- queue rows "연결 해제" clears. `remote` marks a row adopted from Drive (docs/03 "다른 기기의 녹음"):
 -- another device recorded it, this one has no job for it and no original.
+--
+-- `remote_pending` is what the device that *is* running the workflow says it still has to do, read
+-- off the folder's `pending` marker (docs/03 "다른 기기의 녹음" — 진행 표시): the comma-joined step
+-- types after the upload, or NULL when there are none, the marker is stale, or the row is this
+-- device's own (its own job rows are the truth about it).
 CREATE TABLE recording (
   id TEXT PRIMARY KEY, source TEXT NOT NULL, platform TEXT NOT NULL,
   workflow_id TEXT, title TEXT, started_at TEXT NOT NULL, ended_at TEXT, duration_sec REAL,
   timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
   drive_folder_id TEXT,
-  remote INTEGER NOT NULL DEFAULT 0
+  remote INTEGER NOT NULL DEFAULT 0,
+  remote_pending TEXT
 );
 
 -- `drive_file_id` is the adopted part's file on Drive, where playback fetches it from; a part
@@ -85,8 +91,13 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT drive_folder_id FROM recordi
 
 -- docs/03 "다른 기기의 녹음": a row adopted from Drive. Its parts are written by `insertAdoptedPart`
 -- as already-purged, so nothing here ever enqueues a job for it and playback fetches by file id.
+--
+-- `OR REPLACE` for the one row it may land on: the provisional row an earlier pull opened for a
+-- folder that had no `meta.json` yet. `adopt` refuses every other existing row, so this replaces a
+-- placeholder with the real recording and nothing else. `remote_pending` starts over with it — the
+-- same pull reads the folder's marker again straight after.
 insertAdoptedRecording:
-INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote)
+INSERT OR REPLACE INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
 
 -- The upload step made or found the recording's folder: remembered on the row, where a disconnect
@@ -107,6 +118,21 @@ SELECT id FROM recording;
 
 selectAdoptedRecordings:
 SELECT id, drive_folder_id FROM recording WHERE remote = 1;
+
+-- docs/03 "다른 기기의 녹음": the provisional rows — a remote row still carrying the placeholder meta
+-- a folder without `meta.json` gave it, which is to say another device's upload still in flight.
+selectProvisionalRecordings:
+SELECT id, drive_folder_id FROM recording WHERE remote = 1 AND status = 'recording';
+
+-- The `pending` marker of another device's folder. Never on a row of this device's own: what its
+-- own job still has to do is in the queue, not on Drive.
+updateRemotePending:
+UPDATE recording SET remote_pending = ? WHERE id = ? AND remote = 1;
+
+-- docs/03: is another device still working on something? While one is, the pull runs every 30 s
+-- instead of every two minutes.
+countRemoteInFlight:
+SELECT count(*) FROM recording WHERE remote = 1 AND (status = 'recording' OR remote_pending IS NOT NULL);
 
 selectRecordingFolders:
 SELECT id, drive_folder_id FROM recording WHERE drive_folder_id IS NOT NULL;

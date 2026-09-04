@@ -23,14 +23,51 @@ import recly.core.sync.WorkflowStore
  * rather than on a device.
  */
 class MigrationTest {
-    /** The number the migrations add up to. `3.sqm` upgrades a version-3 database to this. */
+    /** The number the migrations add up to. `4.sqm` upgrades a version-4 database to this. */
     @Test
-    fun `the schema is at version 4`() {
-        assertEquals(4L, RecDatabase.Schema.version)
+    fun `the schema is at version 5`() {
+        assertEquals(5L, RecDatabase.Schema.version)
     }
 
     /**
-     * The upgrade this release is: the two Drive-id columns of docs/03 "다른 기기의 녹음". A row that
+     * The upgrade this release is: `recording.remote_pending`, what another device says it still
+     * has to do (docs/03 "다른 기기의 녹음"). Every row already here reads back with no marker, which
+     * is what "nothing is pending" is — including the adopted one, whose column the next pull fills.
+     */
+    @Test
+    fun `a version-4 database gains the pending column and reads its rows as pending nothing`() {
+        val path = tempDatabase()
+        version1(path, stamped = false)
+        JdbcSqliteDriver("jdbc:sqlite:$path").also { seed ->
+            seed.execute(null, "DROP TABLE IF EXISTS secret_sync", 0)
+            VERSION_4.forEach { seed.execute(null, it, 0) }
+            seed.execute(
+                null,
+                "INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, " +
+                    "timezone, dir, meta_json, status, drive_folder_id, remote) VALUES ('01J9REC', 'phone', 'android', " +
+                    "NULL, NULL, '2026-08-26T01:00:00.000Z', NULL, NULL, 'Asia/Seoul', '/data/recordings/x', '{}', " +
+                    "'finalized', 'folder-1', 1)",
+                0,
+            )
+            seed.execute(null, "PRAGMA user_version = 4", 0)
+            seed.close()
+        }
+
+        val driver = JvmRuntime.openDriver(path)
+
+        val queries = RecDatabase(driver).recQueries
+        val recording = assertNotNull(queries.selectRecordingById("01J9REC").executeAsOneOrNull())
+        assertNull(recording.remote_pending)
+        assertEquals("folder-1", recording.drive_folder_id)
+        assertEquals(0L, queries.countRemoteInFlight().executeAsOne())
+        queries.updateRemotePending("transcribe", "01J9REC")
+        assertEquals(1L, queries.countRemoteInFlight().executeAsOne())
+        assertEquals(5L, userVersion(driver))
+        driver.close()
+    }
+
+    /**
+     * The upgrade before it: the two Drive-id columns of docs/03 "다른 기기의 녹음". A row that
      * was already here — a recording this device made — has neither, and reads back as its own.
      */
     @Test
@@ -64,7 +101,7 @@ class MigrationTest {
         assertEquals(0L, recording.remote)
         assertNull(queries.selectPartsByRecording("01J9REC").executeAsList().single().drive_file_id)
         assertEquals(emptyList(), queries.selectAdoptedRecordings().executeAsList())
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -79,7 +116,7 @@ class MigrationTest {
         val job = assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
         assertEquals("01J9REC", job.recording_id)
         assertEquals("PENDING", job.status)
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -96,7 +133,7 @@ class MigrationTest {
         val driver = JvmRuntime.openDriver(path)
 
         assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -115,7 +152,7 @@ class MigrationTest {
 
         assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -144,7 +181,7 @@ class MigrationTest {
         listOf("remoteFileId", "dirty", "dirtySince", "writeFrozen", "seededHere", "guessedStarterId", "secretsRemoteFileId")
             .forEach { assertNull(queries.syncGet(it).executeAsOneOrNull(), "sync_state row '$it' survived") }
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -158,7 +195,7 @@ class MigrationTest {
         queries.syncSet(WorkflowStore.LOCAL_DOC, DOCUMENT)
         assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull())
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -175,7 +212,7 @@ class MigrationTest {
 
         val queries = RecDatabase(driver).recQueries
         assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull(), "a second create would have thrown")
-        assertEquals(4L, userVersion(driver))
+        assertEquals(5L, userVersion(driver))
         driver.close()
     }
 
@@ -292,6 +329,13 @@ class MigrationTest {
             "CREATE TABLE drive_folder_cache (path TEXT PRIMARY KEY, folder_id TEXT NOT NULL, checked_at TEXT NOT NULL)",
             "CREATE TABLE sync_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
             "CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL)",
+        )
+
+        /** What `3.sqm` added, so that [VERSION_1] plus these is a version-4 database. */
+        val VERSION_4 = listOf(
+            "ALTER TABLE recording ADD COLUMN drive_folder_id TEXT",
+            "ALTER TABLE recording ADD COLUMN remote INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE part ADD COLUMN drive_file_id TEXT",
         )
 
         /** What version 2 added and version 3 takes away again. */

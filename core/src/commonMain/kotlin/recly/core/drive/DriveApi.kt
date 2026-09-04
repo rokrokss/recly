@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonObject
 import okio.Buffer
 import okio.Path
 import recly.core.drive.ResumableUploadPlanner.Outcome
@@ -179,6 +180,25 @@ class DriveApi(
     suspend fun updateDescription(fileId: String, description: String) {
         val body = buildJsonObject { put("description", description) }.toString().encodeToByteArray()
         send("drive.updateDescription") { token ->
+            HttpPlan(
+                method = "PATCH",
+                url = "$FILES_URL/$fileId?fields=id",
+                headers = mapOf("Authorization" to "Bearer $token"),
+                body = HttpBody.Bytes(body, "application/json"),
+            )
+        }
+    }
+
+    /**
+     * Merges keys into a file's `appProperties` — what the `pending` marker of docs/03 "다른 기기의
+     * 녹음" is written with. Drive merges rather than replaces, so the `recordingId`/`workflowId` the
+     * folder was stamped with when it was created survive every call of this.
+     */
+    suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) {
+        val body = buildJsonObject {
+            putJsonObject("appProperties") { appProperties.forEach { (key, value) -> put(key, value) } }
+        }.toString().encodeToByteArray()
+        send("drive.updateAppProperties") { token ->
             HttpPlan(
                 method = "PATCH",
                 url = "$FILES_URL/$fileId?fields=id",

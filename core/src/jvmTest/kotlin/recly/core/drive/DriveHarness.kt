@@ -86,6 +86,9 @@ class DriveHarness(
     val tokens: ScriptedTokenProvider = ScriptedTokenProvider(),
     /** Set to give the workflow's `webhook` step a real endpoint (the drive→webhook end to end). */
     val webhook: FakeWebhook? = null,
+    /** The workflow the upload runs inside. Only the steps *after* the upload matter to it — they
+     * are what the folder's `pending` marker names (docs/03 "다른 기기의 녹음"). */
+    val steps: List<Step> = listOf(Step.DriveUpload(id = "up")),
 ) {
     val drive = FakeDrive()
     val clock = FakeClock()
@@ -116,7 +119,7 @@ class DriveHarness(
     val recordingId = "01J9ABCDEF0123456789ABCDEF"
     val base: String
     val dir: Path
-    val workflow = testWorkflow(steps = listOf(Step.DriveUpload(id = "up")))
+    val workflow = testWorkflow(steps = steps)
 
     /** What the executor would have persisted in `step_run.state_json`. */
     var state: JsonObject? = null
@@ -166,7 +169,9 @@ class DriveHarness(
 
     suspend fun run(step: Step.DriveUpload = workflow.steps.first() as Step.DriveUpload): StepOutput {
         saves.clear()
-        val snapshot = workflow.copy(steps = listOf(step))
+        // The step under test in place of the workflow's first, so a test that hands in its own
+        // `Step.DriveUpload` still runs inside whatever the harness put after the upload.
+        val snapshot = workflow.copy(steps = listOf(step) + workflow.steps.drop(1))
         return done(
             StepContext(
                 job = Job(

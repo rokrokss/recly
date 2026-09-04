@@ -180,7 +180,9 @@ class FakeDrive {
             }
         }
 
-        // `files.update` metadata: the description a rename writes (docs/03 "제목").
+        // `files.update` metadata: the description a rename writes (docs/03 "제목") and the `pending`
+        // marker an upload writes (docs/03 "다른 기기의 녹음"). Drive *merges* appProperties — the keys
+        // not named keep their values — which is what lets the marker leave `recordingId` alone.
         r.method == "PATCH" && r.path.startsWith("/drive/v3/files/") -> {
             val id = r.path.substringAfterLast('/')
             val entry = files[id]
@@ -189,6 +191,10 @@ class FakeDrive {
             } else {
                 val body = Json.parseToJsonElement(r.body.decodeToString()) as JsonObject
                 (body["description"] as? JsonPrimitive)?.let { entry.description = it.content }
+                (body["appProperties"] as? JsonObject)?.let { properties ->
+                    entry.appProperties = entry.appProperties +
+                        properties.mapValues { (_, value) -> (value as JsonPrimitive).content }
+                }
                 json(fileJson(id, entry))
             }
         }
