@@ -18,12 +18,22 @@ struct RecordingsWindow: View {
     var body: some View {
         HSplitView {
             VStack(spacing: 0) {
-                ScreenHeader(title: loc("Details"), meta: "\(menu.recents.count)")
+                ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)")
                 HairLine()
                 ScrollView {
-                    VStack(spacing: 0) {
+                    // Lazy, so the page marker under the rows appears only when it is scrolled to.
+                    LazyVStack(spacing: 0) {
                         ForEach(menu.recents) { item in
                             row(item)
+                        }
+                        // docs/12 "메뉴바": the same paging as the popover's ledger — the next page
+                        // when the end comes into view, keyed on the count so a page that did not
+                        // push it out of view asks again.
+                        if !menu.recents.isEmpty {
+                            Color.clear
+                                .frame(height: 1)
+                                .id(menu.recents.count)
+                                .onAppear { Task { await menu.loadMoreRecents() } }
                         }
                     }
                 }

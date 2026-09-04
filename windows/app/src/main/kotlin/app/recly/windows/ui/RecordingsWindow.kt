@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -112,21 +114,35 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
     }
 }
 
+/**
+ * docs/12 "메뉴바": the same ledger the tray's popup draws, and the same paging —
+ * [app.recly.windows.jobs.Recents.PAGE] rows a page, with the next one read when the last loaded row
+ * is scrolled onto. Lazy for that reason: a scrolling `Column` composes every row whether or not it
+ * was ever on screen, and the last one would ask for the next page the moment it arrived.
+ */
 @Composable
 private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
-    Column(modifier.background(blueprint.surface).verticalScroll(rememberScrollState())) {
-        ScreenHeader(title = strings[Str.WINDOW_RECORDINGS])
-        HairLine()
-        model.recents.forEach { item ->
+    LazyColumn(modifier.background(blueprint.surface)) {
+        item {
+            ScreenHeader(title = strings[Str.WINDOW_RECORDINGS])
+            HairLine()
+        }
+        items(model.recents, key = { it.id }) { item ->
+            // The last loaded row is on screen, so the page after it is asked for.
+            if (item.id == model.recents.last().id) {
+                LaunchedEffect(item.id) { model.loadMoreRecents() }
+            }
             RecordingRow(model, item, strings, selected = model.detail?.recordingId == item.id)
         }
         if (model.recents.isEmpty()) {
-            Text(
-                strings[Str.LEDGER_EMPTY],
-                modifier = Modifier.padding(Space.l),
-                style = MaterialTheme.typography.bodySmall,
-                color = blueprint.textMuted,
-            )
+            item {
+                Text(
+                    strings[Str.LEDGER_EMPTY],
+                    modifier = Modifier.padding(Space.l),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = blueprint.textMuted,
+                )
+            }
         }
     }
 }

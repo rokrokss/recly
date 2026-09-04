@@ -189,9 +189,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     /// The recorder writes one recording at a time, and the one it is writing is the newest — so
-    /// the window the ledger itself reads is more than enough to find it.
+    /// one page of the ledger is more than enough to find it.
     private func somethingIsBeingRecorded() async throws -> Bool {
-        try await core.recordings.list(limit: Recents.count)
+        try await core.recordings.list(limit: Recents.page)
             .contains { $0.meta.status == RecordingStatus.recording }
     }
 }

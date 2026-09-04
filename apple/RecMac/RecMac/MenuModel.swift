@@ -64,8 +64,16 @@ final class MenuModel: ObservableObject {
     }
     /// The output device the tap is on, while a meeting is being recorded (docs/12 deliverable 5).
     @Published private(set) var capturedOutputDevice: String?
-    /// docs/12 "메뉴바": the last five recordings, refreshed after every executor pass.
+    /// docs/12 "메뉴바": the newest recordings, refreshed after every executor pass — a page of
+    /// [Recents.page] to begin with, and a page more each time the ledger is scrolled to its last
+    /// row ([loadMoreRecents]).
     @Published private(set) var recents: [RecentItem] = []
+    /// How many rows this device has, whichever device made them — the Details window's count,
+    /// which the paged [recents] cannot give.
+    @Published private(set) var recordingCount = 0
+    /// How deep [recents] reads: grows by a page as the ledger is scrolled, never shrinks.
+    private var recentsLimit = Recents.page
+    private var loadingMoreRecents = false
     /// docs/10: the user-fixable failures across the queue, folded one line per reason — the
     /// popover's banner, the menu bar icon's error state, and the local notifications.
     @Published private(set) var alerts: [JobAlert] = []
@@ -717,11 +725,23 @@ final class MenuModel: ObservableObject {
     private func refreshRecents() async {
         guard let core = bridge?.core else { return }
         do {
-            recents = try await Recents.load(core: core)
+            recents = try await Recents.load(core: core, limit: recentsLimit)
+            recordingCount = try await core.recordings.ids().count
         } catch {
             logger.error("shell.recents.failed error=\(String(describing: error), privacy: .private)")
         }
         await publishAlerts()
+    }
+
+    /// docs/12 "메뉴바": the ledger's end was scrolled into view. A reading that filled its window
+    /// may have older rows behind it, so the window grows by a page and is read again; one that
+    /// came back short already had everything, and nothing is asked.
+    func loadMoreRecents() async {
+        guard !loadingMoreRecents, recents.count >= recentsLimit else { return }
+        loadingMoreRecents = true
+        defer { loadingMoreRecents = false }
+        recentsLimit += Recents.page
+        await refreshRecents()
     }
 
     /// docs/03: what the other devices have uploaded since this one last looked. The ledger itself
@@ -740,9 +760,9 @@ final class MenuModel: ObservableObject {
     /// — a reason that has been cleared is withdrawn from Notification Center by the same call that
     /// takes it off the popover's banner and the menu bar icon. Every reading goes through here.
     ///
-    /// The *queue*, and not [recents]: the ledger is the newest five recordings, so a job blocked
-    /// before those had its banner line, its menu bar badge and its notification taken away by
-    /// nothing more than five newer recordings — while it was still blocked.
+    /// The *queue*, and not [recents]: the ledger is a window onto the newest recordings, so a job
+    /// blocked before those had its banner line, its menu bar badge and its notification taken away
+    /// by nothing more than a page of newer recordings — while it was still blocked.
     private func publishAlerts() async {
         guard let core = bridge?.core else { return }
         do {

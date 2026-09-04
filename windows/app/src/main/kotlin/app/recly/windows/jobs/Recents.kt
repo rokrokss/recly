@@ -75,9 +75,14 @@ data class RecentItem(
  * Drive link is in a third.
  */
 object Recents {
-    const val COUNT = 5
+    /**
+     * docs/09 화면 원칙 2: how many rows one reading adds. The ledger is not a top-five any more —
+     * it is a page at a time, and scrolling onto the last row reads the next page
+     * ([app.recly.windows.ui.ShellModel.loadMoreRecents]), which is what the Mac's popover does too.
+     */
+    const val PAGE = 20
 
-    suspend fun load(core: ReclyCore, limit: Int = COUNT): List<RecentItem> {
+    suspend fun load(core: ReclyCore, limit: Int = PAGE): List<RecentItem> {
         val byRecording = core.jobs.list().groupBy { it.recordingId }
         val now = core.deps.clock.now()
         return core.recordings.list(limit).map { record ->
@@ -123,9 +128,9 @@ object Recents {
      * ([app.recly.windows.ui.LedgerStates]) — a row that says one thing and a State node that says
      * another would be two answers to one question.
      *
-     * The ledger is the newest five recordings, so a job still running on one older than those is
-     * not seen here: the same scope the rows under it have, and the dashboard says no more than
-     * they do.
+     * The ledger is the pages of rows that have been read so far, so a job still running on one
+     * older than those is not seen here: the same scope the rows under it have, and the dashboard
+     * says no more than they do.
      */
     fun uploading(items: List<RecentItem>): Boolean =
         items.any { (it.state as? UiMessage.Res)?.key == Str.STATE_UPLOADING }

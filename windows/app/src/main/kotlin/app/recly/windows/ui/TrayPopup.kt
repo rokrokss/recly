@@ -12,8 +12,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,9 +57,10 @@ import recly.core.job.JobStatus
 import recly.core.model.Source
 
 /**
- * docs/09 화면 원칙 6: the tray's window — three state nodes, the last five recordings as a ledger,
- * and the actions. The AWT menu that used to carry all of this can only put one run of system text
- * on a line (`trayMenu`), which is why everything with a shape is here instead.
+ * docs/09 화면 원칙 6: the tray's window — three state nodes, the recordings as a ledger a page at a
+ * time (docs/12 "메뉴바"), and the actions. The AWT menu that used to carry all of this can only put
+ * one run of system text on a line (`trayMenu`), which is why everything with a shape is here
+ * instead.
  *
  * docs/09 트렌드 7 keeps glass for chrome the platform owns, and Compose Desktop has none to borrow —
  * so the header and the footer are simply the surface and the ledger between them sits on the dotted
@@ -76,8 +77,8 @@ fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     Column(Modifier.fillMaxSize().dotGrid(palette)) {
         Header(model, strings)
         HairLine()
-        Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())) {
-            Ledger(model, strings, expanded) { id -> expanded = if (expanded == id) null else id }
+        Ledger(model, strings, expanded, Modifier.weight(1f).fillMaxWidth()) { id ->
+            expanded = if (expanded == id) null else id
         }
         HairLine()
         Footer(model, strings, onQuit)
@@ -239,53 +240,79 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
 
 // --- the ledger (docs/09 화면 원칙 2) ---------------------------------------------------------------
 
+/**
+ * docs/12 "메뉴바": [Recents.PAGE] rows a page, and scrolling onto the last one reads the next page.
+ * Lazy rather than a scrolling `Column` for exactly that reason — a `Column` composes every row it
+ * has whether or not anybody has scrolled to it, so the last row would ask for the next page the
+ * moment it was loaded and the ledger would read itself to the end of the recordings.
+ */
 @Composable
-private fun Ledger(model: ShellModel, strings: Strings, expanded: String?, onExpand: (String) -> Unit) {
+private fun Ledger(
+    model: ShellModel,
+    strings: Strings,
+    expanded: String?,
+    modifier: Modifier,
+    onExpand: (String) -> Unit,
+) {
     val palette = blueprint
-    AlertBanner(model, strings)
-    // docs/06: a device with no grant at all has nothing parked yet to say so — the banner above is
-    // what speaks once something is. Both offer the same sign-in.
-    if (!model.signedIn && model.alerts.none { it.reason == AlertReason.NEEDS_AUTH }) {
-        ProcessingButton(
-            label = strings[Str.TRAY_SIGN_IN],
-            state = model.action,
-            strings = strings,
-            onClick = model::signIn,
-            modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
-        )
-    }
-    LedgerHeader(
-        time = strings[Str.LEDGER_TIME],
-        title = strings[Str.LEDGER_TITLE],
-        length = strings[Str.LEDGER_LENGTH],
-        status = strings[Str.LEDGER_STATUS],
-    )
-    model.recents.forEach { item ->
-        RecentRow(item, model, strings, expanded == item.id) { onExpand(item.id) }
-    }
-    if (model.recents.isEmpty()) {
-        Text(
-            strings[Str.LEDGER_EMPTY],
-            modifier = Modifier.padding(Space.l),
-            style = MaterialTheme.typography.bodySmall,
-            color = palette.textMuted,
-        )
-    }
-    Text(
-        model.status.text(strings),
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-        style = MaterialTheme.typography.bodySmall,
-        color = palette.textMuted,
-    )
-    // docs/07 §5: a core code's `|detail` is a diagnostic, never translated, and it goes under the
-    // sentence in monospace rather than inside it.
-    model.statusDetail?.let {
-        Text(
-            it,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
-            style = mono.small,
-            color = palette.textMuted,
-        )
+    LazyColumn(modifier) {
+        item { AlertBanner(model, strings) }
+        // docs/06: a device with no grant at all has nothing parked yet to say so — the banner above
+        // is what speaks once something is. Both offer the same sign-in.
+        if (!model.signedIn && model.alerts.none { it.reason == AlertReason.NEEDS_AUTH }) {
+            item {
+                ProcessingButton(
+                    label = strings[Str.TRAY_SIGN_IN],
+                    state = model.action,
+                    strings = strings,
+                    onClick = model::signIn,
+                    modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
+                )
+            }
+        }
+        item {
+            LedgerHeader(
+                time = strings[Str.LEDGER_TIME],
+                title = strings[Str.LEDGER_TITLE],
+                length = strings[Str.LEDGER_LENGTH],
+                status = strings[Str.LEDGER_STATUS],
+            )
+        }
+        items(model.recents, key = { it.id }) { item ->
+            // The last loaded row is on screen, so the page after it is asked for.
+            if (item.id == model.recents.last().id) {
+                LaunchedEffect(item.id) { model.loadMoreRecents() }
+            }
+            RecentRow(item, model, strings, expanded == item.id) { onExpand(item.id) }
+        }
+        if (model.recents.isEmpty()) {
+            item {
+                Text(
+                    strings[Str.LEDGER_EMPTY],
+                    modifier = Modifier.padding(Space.l),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.textMuted,
+                )
+            }
+        }
+        item {
+            Text(
+                model.status.text(strings),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+            )
+            // docs/07 §5: a core code's `|detail` is a diagnostic, never translated, and it goes
+            // under the sentence in monospace rather than inside it.
+            model.statusDetail?.let {
+                Text(
+                    it,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
+                    style = mono.small,
+                    color = palette.textMuted,
+                )
+            }
+        }
     }
 }
 

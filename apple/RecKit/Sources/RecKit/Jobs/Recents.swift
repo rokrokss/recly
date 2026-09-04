@@ -144,12 +144,14 @@ public struct RecentItem: Identifiable, Sendable {
 }
 
 /// The join the core does not do: jobs are one table, the recordings they are about another, and
-/// the Drive link is in a third. Both Apple shells show the same five rows, so they read them the
-/// same way.
+/// the Drive link is in a third. Both Apple shells draw the same rows, so they read them the same
+/// way.
 public enum Recents {
-    public static let count: Int32 = 5
+    /// docs/12 "메뉴바": what one reading of the desktop ledger adds. The ledger starts with a page
+    /// and asks for another each time the last row it has is scrolled into view.
+    public static let page: Int32 = 20
 
-    public static func load(core: ReclyCore_, limit: Int32 = Recents.count) async throws -> [RecentItem] {
+    public static func load(core: ReclyCore_, limit: Int32 = Recents.page) async throws -> [RecentItem] {
         let jobs = try await core.jobs.list()
         let byRecording = Dictionary(grouping: jobs, by: \.recordingId)
         let now = core.deps.clock.now()

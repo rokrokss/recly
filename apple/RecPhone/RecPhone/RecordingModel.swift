@@ -910,7 +910,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     /// docs/13 I3: the phone's Recordings tab is a screen and not the Mac's popover, so it reads as
     /// deep as Android's list does (`JobsViewModel.LIMIT`) — enough for months of daily recordings,
-    /// shallow enough to join in one pass. [Recents.count]'s five is the popover's number.
+    /// shallow enough to join in one pass. [Recents.page] is what the desktop ledger reads at a time.
     private static let recentsLimit: Int32 = 100
 
     func refreshRecents() async {

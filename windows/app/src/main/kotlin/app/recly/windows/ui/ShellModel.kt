@@ -196,6 +196,15 @@ class ShellModel(
     var recents: List<RecentItem> by mutableStateOf(emptyList())
         private set
     /**
+     * docs/09 화면 원칙 2: how far down the recordings the ledger has been read — one [Recents.PAGE]
+     * to begin with, and another one every time the user scrolls onto the last row
+     * ([loadMoreRecents]). Every refresh reads this much, so a job or a pull moving a row does not
+     * fold the list back up under a user who had scrolled down it.
+     */
+    private var recentsLimit = Recents.PAGE
+    /** Whether a [loadMoreRecents] is already reading, so scrolling does not ask twice for a page. */
+    private var loadingMoreRecents = false
+    /**
      * docs/03: a recording that has just ended and is waiting for its name. The window the tray
      * shows for it is the only thing standing between the stop and the job (see [completeRecording]),
      * and [TitleGate] is what keeps a new start from walking past one.
@@ -906,11 +915,32 @@ class ShellModel(
 
     private suspend fun refreshRecents() {
         val graph = graph ?: return
-        runCatching { Recents.load(graph.core) }
+        runCatching { Recents.load(graph.core, recentsLimit) }
             .onSuccess { recents = it }
             .onFailure {
                 graph.core.deps.logger.log(Logger.Level.ERROR, "shell.recents.failed", error = it)
             }
+    }
+
+    /**
+     * docs/09 화면 원칙 2 / docs/12 "메뉴바": the last loaded row has been scrolled onto, so the
+     * ledger reads the next [Recents.PAGE].
+     *
+     * A reading that came back short of what it asked for is the end of the recordings, and there is
+     * nothing older to ask for — the window is not grown, so the row that fired this can fire it
+     * again without walking the limit off past the rows that exist.
+     */
+    fun loadMoreRecents() {
+        if (recents.size < recentsLimit || loadingMoreRecents) return
+        loadingMoreRecents = true
+        scope.launch {
+            recentsLimit += Recents.PAGE
+            try {
+                refreshRecents()
+            } finally {
+                loadingMoreRecents = false
+            }
+        }
     }
 
     /**

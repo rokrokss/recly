@@ -258,7 +258,8 @@ struct MenuPopover: View {
     // MARK: - The ledger (docs/09 화면 원칙 2 · docs/12 "메뉴바")
 
     private var ledger: some View {
-        VStack(spacing: 0) {
+        // Lazy, so the page marker under the rows appears only when it is scrolled to.
+        LazyVStack(spacing: 0) {
             // docs/10 "macOS": 팝오버 상단 배너 — the same lines the notifications carry, one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it. It replaces the sign-in-only banner: `NEEDS_AUTH` is one of the seven.
@@ -289,6 +290,14 @@ struct MenuPopover: View {
             )
             ForEach(model.recents) { item in
                 row(item)
+            }
+            // docs/12 "메뉴바": the ledger's next page, asked for when its end comes into view. Keyed
+            // on the count so that a page that did not push it out of view asks again.
+            if !model.recents.isEmpty {
+                Color.clear
+                    .frame(height: 1)
+                    .id(model.recents.count)
+                    .onAppear { Task { await model.loadMoreRecents() } }
             }
             if model.recents.isEmpty {
                 Text("No recordings yet")
