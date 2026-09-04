@@ -12,6 +12,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import app.recly.wear.RecWearApp
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -43,18 +44,24 @@ object TransferScheduler {
      * ack leaves behind, minutes to hours — is exactly what a new trigger should override: the
      * phone appearing or the app opening is a better reason to try than a timer set when the last
      * attempt failed, and WorkManager will not run a backed-off worker early on its own (Watch7,
-     * 2026-09-04: opening the app did nothing against a 24-minute backoff). The state is read off
-     * WorkManager's executor, not the caller's thread — this is called from `onResume`.
+     * 2026-09-04: opening the app did nothing against a 24-minute backoff). A pass that is
+     * enqueued to run *now* is kept too: process start fires this three times in a second, and
+     * replacing a pass in the instant between "enqueued" and "running" cancels it mid-file. The
+     * state is read off WorkManager's executor, not the caller's thread — this is called from
+     * `onStart`.
      */
     fun runNow(context: Context) {
         val manager = WorkManager.getInstance(context)
         val infos = manager.getWorkInfosForUniqueWork(UNIQUE)
         infos.addListener({
-            val sending = runCatching { infos.get() }.getOrDefault(emptyList())
-                .any { it.state == WorkInfo.State.RUNNING }
+            val soon = System.currentTimeMillis() + IMMINENT.inWholeMilliseconds
+            val keep = runCatching { infos.get() }.getOrDefault(emptyList()).any {
+                it.state == WorkInfo.State.RUNNING ||
+                    (it.state == WorkInfo.State.ENQUEUED && it.nextScheduleTimeMillis <= soon)
+            }
             manager.enqueueUniqueWork(
                 UNIQUE,
-                if (sending) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
+                if (keep) ExistingWorkPolicy.KEEP else ExistingWorkPolicy.REPLACE,
                 OneTimeWorkRequestBuilder<TransferWorker>()
                     .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
                     .build(),
@@ -65,12 +72,15 @@ object TransferScheduler {
     /**
      * The successor a pass leaves behind when it found another pass already sending. Its own unique
      * name, so it cannot be swallowed by the KEEP on [UNIQUE] — that name is held by the very pass
-     * this one is waiting for — and REPLACE, because two follow-ups are one follow-up.
+     * this one is waiting for. APPEND_OR_REPLACE, not REPLACE: the pass that is sending may itself
+     * be an earlier follow-up under this name, and REPLACE cancelled it mid-file (Watch7,
+     * 2026-09-04) — appending runs this one after it instead, and a second follow-up that finds
+     * nothing left is one idle pass.
      */
     fun runLater(context: Context, delay: Duration = FOLLOW_UP) {
         WorkManager.getInstance(context).enqueueUniqueWork(
             UNIQUE_NEXT,
-            ExistingWorkPolicy.REPLACE,
+            ExistingWorkPolicy.APPEND_OR_REPLACE,
             OneTimeWorkRequestBuilder<TransferWorker>()
                 .setInitialDelay(delay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS)
@@ -100,6 +110,9 @@ object TransferScheduler {
      */
     internal val FOLLOW_UP: Duration = 60.seconds
 
+    /** How far ahead an enqueued pass still counts as "about to run" rather than backed off. */
+    private val IMMINENT: Duration = 5.seconds
+
     private const val PERIOD_HOURS = 6L
     private const val BACKOFF_SECONDS = 30L
 }
@@ -115,8 +128,14 @@ class TransferWorker(
 
     override suspend fun doWork(): Result {
         val app = applicationContext as? RecWearApp ?: return Result.success()
-        val outcome = runCatching { app.sender().run() }.getOrElse {
-            app.logger.log(Logger.Level.ERROR, "transfer.worker.failed", emptyMap(), it)
+        val outcome = try {
+            app.sender().run()
+        } catch (e: CancellationException) {
+            // WorkManager stopping this pass — a job limit, a policy, a replace. Not a failure of
+            // the transfer, and the result of a stopped worker is not read anyway.
+            throw e
+        } catch (e: Throwable) {
+            app.logger.log(Logger.Level.ERROR, "transfer.worker.failed", emptyMap(), e)
             return Result.retry()
         }
         if (outcome == TransferOutcome.ALREADY_RUNNING) {
