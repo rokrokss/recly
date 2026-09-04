@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  As RecPhoneWidgets/Info.plist: the extension point is the one key WidgetKit cannot be told any
+  other way, and the bundle keys around it are synthesised by Xcode.
+-->
+<plist version="1.0">
+<dict>
+	<!--
+	  docs/07 rule 1: English is the base language and Korean the translation, and the two
+	  localizations the bundle carries are what the loader picks between for a device whose
+	  language is neither. The user-visible strings above are overridden by `InfoPlist.xcstrings`.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
+
+	<key>NSExtension</key>
+	<dict>
+		<key>NSExtensionPointIdentifier</key>
+		<string>com.apple.widgetkit-extension</string>
+	</dict>
+</dict>
+</plist>

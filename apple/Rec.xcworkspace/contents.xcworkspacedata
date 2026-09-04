@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+   version = "1.0">
+   <FileRef
+      location = "group:RecKit">
+   </FileRef>
+   <FileRef
+      location = "group:RecMac/RecMac.xcodeproj">
+   </FileRef>
+   <FileRef
+      location = "group:RecPhone/RecPhone.xcodeproj">
+   </FileRef>
+</Workspace>

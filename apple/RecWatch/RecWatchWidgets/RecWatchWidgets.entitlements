@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The other half of RecWatch.entitlements: the complication reads what the app wrote. -->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.recly.watch</string>
+	</array>
+</dict>
+</plist>

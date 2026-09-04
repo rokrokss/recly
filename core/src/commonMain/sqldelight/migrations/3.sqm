@@ -1,0 +1,14 @@
+-- 3 → 4: recordings other devices uploaded appear in this device's list (docs/03 "다른 기기의 녹음").
+--
+-- The whole schema lives in `Rec.sq`; a migration is only the difference from the version it is
+-- named after. The two have to agree, and `MigrationTest` — which builds an old database by hand
+-- and upgrades it — is what says they do.
+--
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+--
+-- Every row already here is this device's own (`remote = 0`), and none of them knows its Drive
+-- folder yet: `drive_folder_id` is filled by the next upload that touches the folder, and until
+-- then "Drive에서도 삭제" reads it off the step output like before.
+ALTER TABLE recording ADD COLUMN drive_folder_id TEXT;
+ALTER TABLE recording ADD COLUMN remote INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE part ADD COLUMN drive_file_id TEXT;

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The keys the app cannot run without, kept out of `INFOPLIST_KEY_…`. RecMac/Info.plist has the
+  reason at length: the `GENERATE_INFOPLIST_FILE` passthrough silently drops a key Xcode does not
+  know, and a permission string that is silently absent reads as a permission that is silently
+  denied. Xcode still synthesises the bundle keys around these.
+-->
+<plist version="1.0">
+<dict>
+	<!--
+	  docs/07 rule 1: English is the base language and Korean the translation, and the two
+	  localizations the bundle carries are what the loader picks between for a device whose
+	  language is neither. The user-visible strings above are overridden by `InfoPlist.xcstrings`.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
+
+	<!-- docs/13 "권한"·M5-L1 deliverable 1: no prompt without it, and no recording without a prompt. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Recly records meetings and memos so they can be transcribed.</string>
+
+	<!--
+	  docs/13 "iPhone RecPhone": `UIBackgroundModes: audio`로 잠금 중 계속 — a recording that stops
+	  when the screen locks is not a recording of a meeting. The session itself is M5-L2.
+	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+		<!--
+		  docs/13 I4·M5-L3 deliverable 4: `BGTaskScheduler` refuses to register `app.recly.jobs`
+		  without it, and the job that finishes an upload — 웹훅 등 나머지 단계 — is what needs the
+		  processing time. The chunk PUTs themselves need no mode at all: a background `URLSession`
+		  keeps running for a suspended app on its own.
+		-->
+		<string>processing</string>
+	</array>
+
+	<!--
+	  docs/13 deliverable 4. Only identifiers listed here may be registered.
+
+	  `app.recly.uploadNow` is the *plain prefix* on purpose. iOS 26's `BGContinuedProcessingTask`
+	  is registered under the wildcard `app.recly.uploadNow.*` and submitted as
+	  `app.recly.uploadNow.{recordingId}`, and the framework compares the registration against this
+	  list with the `.*` stripped — advertising the wildcard here is refused with "Registration
+	  rejected; app.recly.uploadNow.* is not advertised in the application's Info.plist"
+	  (measured, docs/measurements.md).
+	-->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>app.recly.jobs</string>
+		<string>app.recly.uploadNow</string>
+	</array>
+
+	<!--
+	  docs/06: the iPhone client is an *iOS-type* OAuth client with bundle id `app.recly`. Both
+	  values come from `apple/Config/Recly.xcconfig`, which defaults them to placeholders and lets
+	  an untracked `Local.xcconfig` override them — `GoogleAuth` refuses to sign in while
+	  `GIDClientID` still reads like the placeholder, because `GIDSignIn` answers a missing client
+	  id with an Obj-C exception rather than an error, and a job then parks in `NEEDS_AUTH`
+	  (docs/10). See README "Values filled in locally".
+	-->
+	<key>GIDClientID</key>
+	<string>$(RECLY_PHONE_GID_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(RECLY_PHONE_GID_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
+
+	<!--
+	  docs/13 "표시"·M5-L2 deliverable 3: without this the Live Activity request is refused, and a
+	  recording with nothing on the Lock Screen is also App Review 2.5.14's problem.
+	-->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+</dict>
+</plist>

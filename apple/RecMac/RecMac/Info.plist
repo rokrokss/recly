@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Only the keys `GENERATE_INFOPLIST_FILE` cannot write. Xcode synthesises the rest from build
+  settings (`LSUIElement`, `NSMicrophoneUsageDescription`, the bundle keys) and merges them into
+  this file; `INFOPLIST_KEY_NSAudioCaptureUsageDescription` is silently dropped instead, because the
+  passthrough only covers the keys Xcode knows — verified by `plutil -p` on the built bundle, which
+  is the only place the answer shows.
+
+  Without this key the Core Audio process tap has no TCC purpose string, so the system-audio
+  recording prompt is never raised and the tap delivers silence with no error (docs/12 "권한").
+-->
+<plist version="1.0">
+<dict>
+	<!--
+	  docs/07 rule 1: English is the base language and Korean the translation, and the two
+	  localizations the bundle carries are what the loader picks between for a device whose
+	  language is neither. The user-visible strings above are overridden by `InfoPlist.xcstrings`.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
+
+	<key>NSAudioCaptureUsageDescription</key>
+	<string>Recly records the other participants through the system audio as well as your microphone.</string>
+
+	<!--
+	  docs/06: the macOS client is an *iOS-type* OAuth client with bundle id `app.recly.mac`.
+	  Both values below come from `apple/Config/Recly.xcconfig`, which defaults them to
+	  placeholders and lets an untracked `Local.xcconfig` override them — `GoogleAuth` refuses to
+	  sign in while `GIDClientID` still reads like the placeholder, because `GIDSignIn` answers a
+	  missing client id with an Obj-C exception rather than an error. See README "Values filled in
+	  locally".
+	-->
+	<key>GIDClientID</key>
+	<string>$(RECLY_MAC_GID_CLIENT_ID)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>$(RECLY_MAC_GID_REVERSED_CLIENT_ID)</string>
+			</array>
+		</dict>
+	</array>
+</dict>
+</plist>

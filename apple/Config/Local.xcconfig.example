@@ -1,0 +1,9 @@
+// Copy to `Local.xcconfig` (gitignored) and replace the four values with the client ids issued
+// for your own GCP project. Each app is an *iOS-type* client; the reversed id is the client id
+// with its two halves swapped around `com.googleusercontent.apps.`.
+
+RECLY_PHONE_GID_CLIENT_ID = 1234567890-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx.apps.googleusercontent.com
+RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+RECLY_MAC_GID_CLIENT_ID = 1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.apps.googleusercontent.com
+RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy

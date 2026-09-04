@@ -1,0 +1,380 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/07: English is the base language, `values-ko` is the translation. Every user-visible string
+  lives here; log events and field names do not (they are stable identifiers, see CONTRIBUTING.md).
+
+  google_server_client_id is deliberately NOT here: build.gradle.kts generates it from
+  local.properties / the environment so a real client ID never lands in git (see README.md).
+-->
+<resources>
+    <string name="app_name">Recly</string>
+
+    <!-- Shared verbs. -->
+    <string name="action_save">Save</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_close">Close</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_processing">…</string>
+    <string name="action_done">✓</string>
+    <!-- docs/13 deliverable 1: the way back on after a refused permission, in the iPhone's words. -->
+    <string name="action_open_settings">Open System Settings</string>
+
+    <!-- Bottom navigation. -->
+    <string name="tab_record">Record</string>
+    <string name="tab_jobs">List</string>
+    <string name="tab_workflows">Workflows</string>
+    <string name="tab_settings">Settings</string>
+
+    <!-- Account (docs/06). -->
+    <string name="sign_in">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+    <string name="reauthorize_drive">Allow Drive access again</string>
+    <string name="signed_out">Signed out</string>
+    <string name="auth_sign_in_failed">Sign-in failed: %1$s</string>
+    <string name="auth_add_account">Add a Google account, then sign in again</string>
+    <string name="auth_drive_granted">Drive access granted</string>
+    <string name="auth_drive_granted_unparked">Drive access granted — restarting %1$d waiting job(s)</string>
+    <string name="auth_drive_failed">Drive access failed: %1$s</string>
+
+    <!-- Recording screen (docs/11 A3). -->
+    <string name="recording_start">Start</string>
+    <string name="recording_stop">Stop</string>
+    <string name="recording_busy">…</string>
+
+    <!-- docs/03: the stop dialog asks how many people were in the room (context.participants). -->
+    <string name="recording_participants">People in the room</string>
+    <string name="recording_participants_unknown">Unknown</string>
+    <string name="recording_participants_many">6+</string>
+    <!-- ADR-016: nothing is selected on this device, so a plain Start would run nothing. -->
+    <string name="recording_workflow_choose">Choose a workflow</string>
+    <!-- docs/09 "접근성": what a tap on the workflow node does. Said, not drawn — so it stays a
+         verb the reader hears whether or not something is selected already. -->
+    <string name="recording_workflow_pick">Choose a workflow</string>
+    <string name="recording_title_prompt">Recording title</string>
+    <string name="recording_title_hint">Leave it empty to keep the timestamp name</string>
+    <string name="recording_title_save">Save</string>
+    <string name="recording_title_skip">Skip</string>
+    <string name="recording_mic_denied">The microphone permission is needed</string>
+    <!-- Under the record node once the microphone has been refused, above `Open System Settings`. -->
+    <string name="recording_mic_required">The microphone permission is required.</string>
+    <string name="recording_title_too_late">Too late to save the title — the upload has started</string>
+    <string name="recording_finish_deferred">Could not finish saving — it is recovered on the next run</string>
+    <string name="recording_failed">Recording failed: %1$s</string>
+    <string name="recording_saved">Saved — %1$d parts, %2$d s</string>
+
+    <!-- What the queue made of a finished recording (docs/02 trigger rules). -->
+    <string name="enqueue_no_workflow">No workflow to run</string>
+    <string name="enqueue_parts_purged">The audio has already been cleaned up</string>
+    <string name="enqueue_skipped_short">Too short — skipped</string>
+    <string name="enqueue_already_done">Already handled</string>
+    <string name="enqueue_queued">Queued</string>
+
+    <!-- Job list (docs/11 A4). -->
+    <string name="jobs_empty">No recordings yet</string>
+    <string name="jobs_untitled">Untitled</string>
+    <string name="jobs_sign_in">Sign in</string>
+    <string name="jobs_open_drive">Open in Drive</string>
+    <string name="jobs_retry_unavailable">This cannot be retried right now</string>
+    <!-- docs/07 rule 7: the date format is a locale resource, the ISO file name never is. -->
+    <string name="jobs_started_at_format">MMM d, HH:mm</string>
+    <string name="job_state_recording">Recording</string>
+    <string name="job_state_no_workflow">No workflow</string>
+    <string name="job_state_pending">Waiting</string>
+    <string name="job_state_running">Uploading</string>
+    <string name="job_state_waiting">Retry pending</string>
+    <string name="job_state_waiting_in">Retry pending · %1$s</string>
+    <string name="job_state_done">Done</string>
+    <string name="job_state_failed">Failed</string>
+    <string name="job_state_needs_auth">Sign-in needed</string>
+    <string name="job_state_skipped_short">Too short</string>
+    <string name="retry_soon">soon</string>
+    <string name="retry_in_seconds">in %1$d s</string>
+    <string name="retry_in_minutes">in %1$d min</string>
+    <string name="retry_in_hours">in %1$d h</string>
+
+    <!-- Workflow list (docs/11 A6). -->
+    <string name="workflows_add">+ New workflow</string>
+    <string name="workflows_secrets">Manage secrets</string>
+    <string name="workflows_empty">No workflows yet.</string>
+    <string name="workflows_delete_title">Delete ‘%1$s’?</string>
+    <string name="workflows_delete_body">This workflow disappears from this device. Jobs that already exist still run.</string>
+    <string name="workflow_no_steps">No steps</string>
+    <!-- ADR-016: the mark on the workflow this device runs, and the way to move it. -->
+    <string name="workflow_in_use">In use</string>
+    <string name="workflow_use">Use</string>
+    <string name="workflow_delete_in_use">This is the workflow in use on this device.</string>
+    <!-- docs/09 "접근성": what tapping a workflow row does, for a reader who cannot see the row. -->
+    <string name="workflow_open">Edit the workflow</string>
+    <string name="workflow_missing_secrets">No key on this device: %1$s</string>
+    <string name="workflow_gone">This workflow is no longer in the document</string>
+
+    <string name="notice_stale">The document changed while this was open — reopen it</string>
+    <string name="notice_saved_elsewhere">The workflow you were editing earlier was saved</string>
+
+    <!-- Workflow editor (docs/11 A6). -->
+    <string name="editor_new">New workflow</string>
+    <string name="editor_edit">Edit workflow</string>
+    <string name="editor_reopen">Reopen</string>
+    <string name="editor_name">Name</string>
+    <string name="editor_min_duration">Minimum length (s)</string>
+    <string name="editor_min_duration_hint">Recordings shorter than this are not uploaded.</string>
+    <string name="editor_retry">Retry</string>
+    <string name="editor_on_error">On failure</string>
+    <string name="editor_on_error_abort">Stop</string>
+    <string name="editor_on_error_continue">Continue</string>
+    <string name="editor_folder">Folder template</string>
+    <string name="editor_folder_hint">A path under the My Drive root.</string>
+    <string name="editor_include_meta">Include meta.json</string>
+    <string name="editor_url">URL</string>
+    <string name="editor_url_hint">https:// (http://localhost when it is local)</string>
+    <string name="editor_secret">Secret name</string>
+    <string name="editor_secret_none">None</string>
+    <string name="editor_secret_new">New…</string>
+    <string name="editor_secret_missing">This device has no value for ‘%1$s’</string>
+    <string name="editor_secret_enter">Enter it</string>
+    <string name="editor_max_attempts">Retries</string>
+    <string name="editor_initial_delay">First delay (s)</string>
+    <string name="editor_max_delay">Max delay (s)</string>
+    <string name="editor_no_url">No URL</string>
+
+    <!-- docs/08: the transcribe inspector. -->
+    <string name="editor_provider">Provider</string>
+    <!-- docs/08 "폴링 · 상태": only the phones say this — a desktop is not the one whose background
+         budget cuts a long request off. -->
+    <string name="editor_provider_synchronous_hint">This provider answers on one long request. On a phone, an asynchronous provider is more reliable in the background.</string>
+    <string name="editor_api_key">API key</string>
+    <string name="editor_invoke_url">Invoke URL</string>
+    <string name="editor_invoke_url_hint_required">The provider\'s endpoint URL. Required for this provider.</string>
+    <string name="editor_invoke_url_hint_optional">Leave empty for the provider\'s default endpoint. Set it for a self-hosted or regional endpoint.</string>
+    <string name="editor_language">Language</string>
+    <string name="editor_diarize">Separate speakers</string>
+    <string name="editor_speakers_min">Speakers, min</string>
+    <string name="editor_speakers_max">Speakers, max</string>
+    <string name="editor_speakers_hint">1–10. A recording that knows how many people were there overrides this.</string>
+    <string name="editor_order_transcribe_needs_upload">A Drive upload step has to come before this one — the results are written into the folder it makes.</string>
+    <string name="step_drive">Drive</string>
+    <string name="step_drive_upload">Drive upload</string>
+    <string name="step_webhook">Webhook</string>
+    <string name="step_transcribe">Transcribe</string>
+    <!-- What the parser said, in the words of the field it belongs to (docs/02). -->
+    <string name="error_name">The name must be 1–40 characters</string>
+    <string name="error_min_duration">Enter 0 seconds or more</string>
+    <string name="error_steps_count">A workflow needs 1–10 steps</string>
+    <string name="error_folder">The folder template must be 1–200 characters</string>
+    <string name="error_folder_variable">Unknown variable %1$s</string>
+    <string name="error_url">Only https://, or http://localhost·127.0.0.1</string>
+    <string name="error_secret_ref">That does not match the secret name rule</string>
+    <string name="error_max_attempts">A number between 1 and 20</string>
+    <string name="error_initial_delay">1 second or more</string>
+    <string name="error_max_delay">1 second or more</string>
+
+    <!-- Secrets (docs/05 "시크릿"). -->
+    <string name="secrets_title">Secrets on this phone</string>
+    <string name="secrets_hint">Stored on this device only. On another device, enter it again under the same name.</string>
+    <string name="secrets_empty">No secrets yet.</string>
+    <string name="secrets_add">Add a secret</string>
+    <string name="secrets_name">Name</string>
+    <string name="secrets_name_hint">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
+    <string name="secrets_value">Value</string>
+    <string name="secrets_show">Show</string>
+    <string name="secrets_hide">Hide</string>
+    <string name="secrets_generated">Copy the generated value now. It cannot be read again once it is saved (it is on the clipboard).</string>
+    <string name="secrets_copy">Copy</string>
+    <string name="secrets_copied">Secret copied</string>
+    <string name="secrets_generate">Generate a webhook secret</string>
+    <string name="secret_name_empty">Enter a name</string>
+    <string name="secret_name_invalid">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
+    <string name="secret_name_taken">That name already exists</string>
+    <string name="secret_value_required">Enter a value, or generate a webhook secret</string>
+
+    <!-- Settings (docs/11 A10). -->
+    <string name="settings_account">Google account</string>
+    <string name="settings_workflows">Workflows</string>
+    <string name="settings_uploads">Uploads</string>
+    <string name="settings_wifi_only">Upload on Wi-Fi only</string>
+    <string name="settings_wifi_only_hint">Never upload over mobile data.</string>
+    <string name="settings_sync_run">Run</string>
+
+    <!-- docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device, and a file moves them. -->
+    <string name="settings_export_workflows">Export workflows</string>
+    <string name="settings_import_workflows">Import workflows</string>
+    <string name="settings_workflows_keys_hint">Provider keys are not in this file — enter them on each device.</string>
+    <string name="workflows_import_title">Replace the workflows on this device?</string>
+    <string name="workflows_import_body">The %1$d workflow(s) in the file replace every workflow on this device.</string>
+    <string name="workflows_imported">Imported — %1$d workflow(s) on this device now.</string>
+    <string name="workflows_exported">Exported.</string>
+    <string name="workflows_file_failed">Could not open the file: %1$s</string>
+
+    <string name="settings_language">Language</string>
+    <string name="settings_language_ko">한국어</string>
+    <string name="settings_language_en">English</string>
+
+    <!-- docs/09 "접근성": the system's dark mode, or this device's own override of it. -->
+    <string name="settings_theme">Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
+    <!-- docs/07 §5: one string per `CoreMessage` key the core puts in `step_run.last_error`. -->
+    <string name="core_needs_auth">Sign in again to carry on</string>
+    <string name="core_drive_reauth">Google Drive access has to be allowed again</string>
+    <string name="core_drive_storage_full">Google Drive is out of space — free some up and try again</string>
+    <string name="core_drive_consent_required">Drive access needs your consent</string>
+    <string name="core_sign_in_cancelled">The sign-in was cancelled</string>
+    <string name="core_missing_secret">This device has no value for the secret ‘%1$s’</string>
+    <string name="core_invalid_secret">The value stored for the secret ‘%1$s’ is not a usable key</string>
+    <string name="core_webhook_http">The webhook answered HTTP %1$s</string>
+    <string name="core_folder_template">Folder template: %1$s</string>
+    <string name="core_retry_budget_spent">Out of retries: %1$s</string>
+    <string name="core_no_runner">This app cannot run a ‘%1$s’ step</string>
+    <string name="core_step_missing">This job\'s workflow has no step ‘%1$s’</string>
+    <string name="core_unsupported_step">This job needs a newer version of the app: it uses a ‘%1$s’ step</string>
+    <string name="core_step_failed">Failed: %1$s</string>
+    <!-- docs/08 "오류": the transcribe table, in the words of someone who has to decide what to do
+         next. The provider\'s own line rides along as the code\'s detail. -->
+    <string name="core_auth_rejected">The provider rejected the key.</string>
+    <string name="core_quota">The provider is out of quota or is rate-limiting. It will try again.</string>
+    <string name="core_provider_error">Something went wrong at the provider. It will try again.</string>
+    <string name="core_unsupported_audio">The provider would not accept this audio.</string>
+    <string name="core_no_input_track">This recording has no mono or mix track to transcribe.</string>
+    <string name="core_result_timeout">The provider did not finish in time. It will submit again.</string>
+    <string name="core_stale">The document changed while this was open</string>
+    <string name="core_unsupported_schema">Unsupported schema %1$s</string>
+
+    <!-- Entry points that render outside the app (docs/11 A9). -->
+    <string name="tile_label">Recly recording</string>
+    <string name="tile_idle">Idle</string>
+    <string name="tile_recording">Recording</string>
+    <string name="widget_idle">Idle</string>
+    <string name="widget_recording">Recording</string>
+    <string name="widget_description">Start and stop a recording in one tap.</string>
+    <string name="shortcut_start_short">Start recording</string>
+    <string name="shortcut_start_long">Start a Recly recording</string>
+
+    <!-- docs/09 화면 원칙 1: the recording dashboard's three state nodes. -->
+    <string name="node_device">Device</string>
+    <string name="node_workflow">Workflow</string>
+    <string name="node_state">State</string>
+
+    <!-- docs/09 화면 원칙 2: the ledger's columns and what an expanded row offers. -->
+    <string name="jobs_column_time">Time</string>
+    <string name="jobs_column_title">Title</string>
+    <string name="jobs_column_length">Length</string>
+    <string name="jobs_column_status">Status</string>
+    <string name="jobs_summary">%1$d · %2$d waiting · %3$d failed</string>
+    <string name="jobs_row_expand">Expand</string>
+    <string name="jobs_row_collapse">Collapse</string>
+    <string name="jobs_row_description">%1$s, recorded %2$s, length %3$s, %4$s</string>
+
+    <!-- docs/08: the recording detail screen, and what a job that is transcribing says. -->
+    <string name="detail_open">Details</string>
+    <!-- docs/03 "제목": the detail screen names the recording it is about, and renames it. -->
+    <string name="detail_rename">Rename</string>
+    <string name="detail_loading">Loading…</string>
+    <string name="detail_empty">Nothing here yet — the transcribe step has not finished.</string>
+    <!-- The detail's player bar: the recording itself, and what stands between the page and it.
+         The same five lines as RecKit's (CrossShellDictionaryTest holds them together). -->
+    <string name="player_play">Play</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_no_audio">No audio on this device</string>
+    <string name="player_fetching">Fetching from Drive…</string>
+    <string name="player_fetch_failed">Could not fetch from Drive</string>
+    <string name="player_position">Position</string>
+    <string name="job_waiting_transcription">Waiting for the transcription result — %1$d min elapsed</string>
+    <string name="job_reason_check_key">Check the key</string>
+
+    <!-- docs/09 화면 원칙 3: the node graph. -->
+    <string name="editor_node_trigger">Trigger</string>
+    <string name="editor_node_trigger_title">Recording finished</string>
+    <string name="editor_node_end">End</string>
+    <string name="editor_step_kicker">%1$d · %2$s</string>
+    <string name="editor_insert_step">Add a step here</string>
+    <string name="editor_move_up">Move up</string>
+    <string name="editor_move_down">Move down</string>
+
+    <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
+    <string name="settings_capture">Capture</string>
+    <string name="settings_microphone">Microphone</string>
+    <string name="settings_about">About</string>
+    <string name="settings_about_app">recly %1$s (build %2$d) · android %3$d</string>
+    <string name="settings_about_device">device %1$s</string>
+    <string name="settings_open_source">Open-source notices</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+
+    <!-- docs/03 "앱에서 지우기": one recording at a time, and Drive is a separate answer whose
+         default is "leave it" — the irreversible half is never the default one. -->
+    <string name="delete_title">Delete ‘%1$s’?</string>
+    <string name="delete_local_only">Delete on this phone only</string>
+    <string name="delete_with_drive">Also delete the Drive folder</string>
+    <!-- docs/03 "다른 기기의 녹음": nothing of it is only here, so there is no half to keep. -->
+    <string name="delete_remote_body">Recorded on another device. Deleting removes it from Drive and from every device.</string>
+    <string name="delete_busy">Still uploading — try again once it has finished</string>
+    <string name="delete_drive_failed">Deleted here, but Drive refused: %1$s</string>
+    <plurals name="delete_unuploaded">
+        <item quantity="one">%1$d part has not reached Drive yet and is deleted with it.</item>
+        <item quantity="other">%1$d parts have not reached Drive yet and are deleted with it.</item>
+    </plurals>
+
+    <!-- docs/03 "로그아웃 vs 연결 해제" · docs/06: signing out is this device, disconnecting is the grant. -->
+    <string name="settings_disconnect">Disconnect</string>
+    <string name="settings_disconnect_hint">Take this app’s access to your Google account away.</string>
+    <string name="disconnect_title">Disconnect Recly from Google?</string>
+    <string name="disconnect_other_devices">Every device signed in with this account loses access, not only this one. To leave just this phone, sign out instead.</string>
+    <string name="disconnect_local">The upload queue on this phone is wiped. Workflows and keys stay.</string>
+    <string name="disconnect_also_delete">Also delete the recordings on this phone</string>
+    <string name="disconnect_permissions">Open Google account permissions</string>
+    <string name="disconnect_revoke_failed">Google would not take the access away (%1$s) — do it in your Google account permissions</string>
+    <string name="disconnect_done">Disconnected. The recordings on this phone were left where they are.</string>
+    <plurals name="disconnect_unuploaded">
+        <item quantity="one">%1$d recording has not reached Drive yet and stays on this phone.</item>
+        <item quantity="other">%1$d recordings have not reached Drive yet and stay on this phone.</item>
+    </plurals>
+    <string name="disconnect_deleted">Disconnected — %1$d recording(s) deleted from this phone.</string>
+    <string name="disconnect_busy">Google access was revoked, but %1$d recording(s) were still running and were kept — disconnect again once they have finished.</string>
+    <!-- docs/03: a live capture has no job yet, so the core's own Busy guard does not cover it. -->
+    <string name="disconnect_stop_recording">Stop the recording first</string>
+    <!-- docs/06: a disconnect whose local half failed is still owed, and owns the account slot. -->
+    <string name="disconnect_pending_sign_in">Finish disconnecting first</string>
+    <!-- docs/03: a recording started while the disconnect runs is one its clean-up would delete. -->
+    <string name="disconnect_in_progress">Finish disconnecting first</string>
+    <string name="disconnect_cleanup_failed">Google access was revoked, but cleaning up this device failed: %1$s — try Disconnect again</string>
+    <!-- docs/03: a revoke Google refused leaves the grant standing, and it is Google's own page
+         — not this app — that takes it down. The row outlives the disconnect and the account. -->
+    <string name="disconnect_still_listed">Google still lists Recly — remove it at myaccount.google.com/permissions</string>
+    <string name="disconnect_removed">I removed it</string>
+    <!-- docs/06: the phase and the debt are written before the account they are about is deleted,
+         so a store that would not take one is a disconnect that must not start. -->
+    <string name="disconnect_save_failed">Could not save the disconnect state — try again</string>
+
+    <!-- docs/10 "Drive 용량 초과" and "사용자가 고칠 수 있는 실패와 그 알림": the seven reasons a
+         person has to do something about, folded one notification and one banner line per reason. -->
+    <string name="job_state_needs_space">No space in Drive</string>
+    <string name="jobs_open_storage">Open Drive storage</string>
+    <string name="alert_channel">Jobs</string>
+    <string name="alert_needs_auth">Sign in to Google again</string>
+    <string name="alert_needs_space">Google Drive is out of space</string>
+    <string name="alert_missing_secret">A key this phone does not have</string>
+    <string name="alert_invalid_secret">A key stored on this phone cannot be used</string>
+    <string name="alert_auth_rejected">The provider rejected the key</string>
+    <string name="alert_quota">The provider is out of quota — check its limits and billing</string>
+    <string name="alert_webhook">The webhook refused the delivery — check the URL and the signing secret</string>
+    <plurals name="alert_waiting">
+        <item quantity="one">%1$d recording is waiting.</item>
+        <item quantity="other">%1$d recordings are waiting.</item>
+    </plurals>
+
+    <!-- docs/15 §3: what leaves the phone when this step runs, and whose policy decides what
+         becomes of it afterwards. No retention claims, and no links until the URLs are confirmed. -->
+    <string name="provider_disclosure_transcribe">Running this step sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
+
+    <!-- docs/12 M8 · ADR-011: the recording-consent reminder. The wording is the Mac\'s, word for
+         word in both languages (ConsentTextTest holds the two together). -->
+    <string name="settings_consent_reminder">Consent reminder</string>
+    <string name="settings_consent_reminder_hint">A phone cannot tell a meeting from anything else, so it asks once, before the first recording.</string>
+    <string name="consent_question">Did you tell the participants about the recording?</string>
+    <string name="consent_body">This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.\n\nKorea — you may record a conversation you are part of (recording one you are not is prohibited).\nUnited States — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA need every participant\'s consent.\nEU — the GDPR asks for notice and a lawful basis, and Denmark requires explicit consent for business calls.</string>
+    <string name="consent_confirm">I told them · Start recording</string>
+    <string name="consent_suppress">Do not ask again</string>
+    <string name="consent_link">Recording-consent rules by jurisdiction</string>
+</resources>

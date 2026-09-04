@@ -1,0 +1,115 @@
+package app.recly.wear.transfer
+
+import android.content.Context
+import android.net.Uri
+import app.recly.datalayer.AckJson
+import app.recly.datalayer.AckMessage
+import app.recly.datalayer.WearJson
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
+import com.google.android.gms.wearable.CapabilityClient
+import com.google.android.gms.wearable.ChannelClient
+import com.google.android.gms.wearable.MessageClient
+import com.google.android.gms.wearable.Wearable
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withContext
+import okio.Path
+import recly.core.platform.Logger
+
+/**
+ * docs/11 W4. `CapabilityClient` finds the phone, `ChannelClient` carries the file and
+ * `MessageClient` brings the ack back.
+ *
+ * Every Play Services call is a `Task`, and every one of them is awaited on [Dispatchers.IO] rather
+ * than given a listener: this runs inside a `CoroutineWorker` whose whole job is to block until the
+ * transfer is done, and a listener would put the failure branch on the main thread.
+ */
+class WearableTransferLink(
+    private val context: Context,
+    private val logger: Logger,
+) : TransferLink {
+
+    override suspend fun open(): TransferChannel? = withContext(Dispatchers.IO) {
+        val node = phoneNode() ?: return@withContext null
+        // The listener before the first byte: an ack for a small part can beat the code that would
+        // have registered it, and an ack that lands with nowhere to go costs five minutes.
+        val inbox = Channel<AckMessage>(Channel.UNLIMITED)
+        val messages = Wearable.getMessageClient(context)
+        val listener = MessageClient.OnMessageReceivedListener { event ->
+            val ack = AckJson.parse(event.path, event.data)
+            if (ack == null) {
+                logger.log(Logger.Level.WARN, "transfer.ack.unreadable", mapOf("path" to event.path))
+            } else {
+                inbox.trySend(ack)
+            }
+        }
+        // `/rec/ack` as a prefix, which is also `/rec/ack-meta` — the two paths the phone acks on,
+        // and nothing else this app would have to ignore.
+        messages.addListener(listener, ackUri(), MessageClient.FILTER_PREFIX).await()
+        WearableChannel(Wearable.getChannelClient(context), messages, listener, node, inbox)
+    }
+
+    /**
+     * A watch with no phone paired answers every Data Layer call with a failure, and a watch whose
+     * phone is out of range answers with an empty node set. Neither is a fault — it is the state
+     * docs/11 W4 exists for — so both are "no phone", logged at INFO and retried on the capability
+     * event.
+     */
+    private fun phoneNode(): String? = runCatching {
+        Wearable.getCapabilityClient(context)
+            .getCapability(PHONE_CAPABILITY, CapabilityClient.FILTER_REACHABLE)
+            .await()
+            .nodes
+            // Nearby is the Bluetooth link this transfer actually rides; a node reachable only over
+            // the cloud relay cannot take a `ChannelClient` file.
+            .firstOrNull { it.isNearby }
+            ?.id
+    }.onFailure {
+        logger.log(Logger.Level.INFO, "transfer.phone.unavailable", emptyMap(), it)
+    }.getOrNull()
+
+    private class WearableChannel(
+        private val channels: ChannelClient,
+        private val messages: MessageClient,
+        private val listener: MessageClient.OnMessageReceivedListener,
+        private val nodeId: String,
+        private val inbox: Channel<AckMessage>,
+    ) : TransferChannel {
+
+        /**
+         * One channel per file, as the phone's `RecListenerService` expects: the path *is* the
+         * request. `sendFile` closes the output stream when the last byte is in, which is what
+         * turns into the phone's `onInputClosed(CLOSE_REASON_NORMAL)` and its ack.
+         */
+        override suspend fun send(path: String, file: Path) {
+            withContext(Dispatchers.IO) {
+                val channel = channels.openChannel(nodeId, path).await()
+                try {
+                    channels.sendFile(channel, Uri.fromFile(file.toFile())).await()
+                } finally {
+                    // The bytes are already the phone's business by now; closing frees the socket.
+                    runCatching { channels.close(channel).await() }
+                }
+            }
+        }
+
+        override suspend fun nextAck(): AckMessage = inbox.receive()
+
+        override suspend fun close() {
+            withContext(Dispatchers.IO) { runCatching { messages.removeListener(listener).await() } }
+            inbox.close()
+        }
+    }
+
+    /** Any node — only the paired phone ever acks, and there is only ever one of it. */
+    private fun ackUri(): Uri = Uri.Builder().scheme("wear").authority("*").path(WearJson.ACK_PART).build()
+
+    private companion object {
+        /** Declared by the phone in `android/app/src/main/res/values/wear.xml`. */
+        const val PHONE_CAPABILITY = "rec_phone"
+    }
+}
+
+/** Already on [Dispatchers.IO] and the point is to wait: this is not the main thread. */
+private fun <T> Task<T>.await(): T = Tasks.await(this)

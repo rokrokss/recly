@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rec.app/spec/webhook.payload.schema.json",
+  "title": "rec webhook payload",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "id", "timestamp", "data"],
+  "properties": {
+    "type": { "type": "string", "enum": ["recording.completed"] },
+    "id": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
+    "timestamp": { "type": "string", "format": "date-time" },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recording", "files", "folder", "workflow", "device"],
+      "properties": {
+        "recording": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["recordingId", "source", "platform", "startedAt", "endedAt", "durationSec", "timezone", "tracks"],
+          "properties": {
+            "recordingId": { "type": "string" },
+            "source": { "type": "string", "enum": ["watch", "phone", "desktop"] },
+            "platform": { "type": "string", "enum": ["wearos", "android", "watchos", "ios", "macos", "windows"] },
+            "title": { "type": ["string", "null"] },
+            "startedAt": { "type": "string", "format": "date-time" },
+            "endedAt": { "type": "string", "format": "date-time" },
+            "durationSec": { "type": "number" },
+            "timezone": { "type": "string" },
+            "tracks": { "type": "array", "items": { "type": "string", "enum": ["mono", "mic", "sys", "mix"] } },
+            "context": { "type": ["object", "null"] }
+          }
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["part", "track", "name", "bytes", "sha256", "drive"],
+            "properties": {
+              "part": { "type": "integer", "minimum": 0 },
+              "track": { "type": "string", "enum": ["mono", "mic", "sys", "mix", "meta", "transcript"] },
+              "name": { "type": "string" },
+              "bytes": { "type": "integer" },
+              "sha256": { "type": "string" },
+              "drive": {
+                "type": ["object", "null"],
+                "additionalProperties": false,
+                "required": ["fileId", "webViewLink"],
+                "properties": { "fileId": { "type": "string" }, "webViewLink": { "type": "string", "format": "uri" } }
+              }
+            }
+          }
+        },
+        "folder": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["path", "drive"],
+          "properties": {
+            "path": { "type": "string" },
+            "drive": {
+              "type": ["object", "null"],
+              "additionalProperties": false,
+              "required": ["folderId", "webViewLink"],
+              "properties": { "folderId": { "type": "string" }, "webViewLink": { "type": "string", "format": "uri" } }
+            }
+          }
+        },
+        "workflow": {
+          "type": "object", "additionalProperties": false, "required": ["id", "name"],
+          "properties": { "id": { "type": "string" }, "name": { "type": "string" } }
+        },
+        "device": {
+          "type": "object", "additionalProperties": false, "required": ["id", "platform", "name"],
+          "properties": { "id": { "type": "string" }, "platform": { "type": "string" }, "name": { "type": "string" } }
+        }
+      }
+    }
+  }
+}

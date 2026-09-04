@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/11 A9. Static, because it must be there on a fresh install with no recording history — and
+  like the tile and the widget it opens the app rather than the service (while-in-use).
+
+  There is no `REQUESTED_AT` extra here: this file is written at build time, so any stamp in it
+  would be a constant rather than the tap. MainActivity reads a missing one as the moment it got
+  the intent, which is what it used to stamp for every entry point anyway.
+-->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@drawable/ic_rec_notification"
+        android:shortcutId="start-recording"
+        android:shortcutLongLabel="@string/shortcut_start_long"
+        android:shortcutShortLabel="@string/shortcut_start_short">
+        <intent
+            android:action="android.intent.action.MAIN"
+            android:targetClass="app.recly.android.ui.MainActivity"
+            android:targetPackage="app.recly">
+            <extra
+                android:name="app.recly.android.extra.AUTO_START"
+                android:value="true" />
+        </intent>
+    </shortcut>
+</shortcuts>

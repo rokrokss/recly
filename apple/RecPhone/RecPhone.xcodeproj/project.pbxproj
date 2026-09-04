@@ -1,0 +1,1017 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AB0200000000000000000010 /* RecKit in Frameworks */ = {isa = PBXBuildFile; productRef = AB0200000000000000000011 /* RecKit */; };
+		AB0200000000000000000012 /* RecKit in Frameworks */ = {isa = PBXBuildFile; productRef = AB0200000000000000000013 /* RecKit */; };
+		AB0200000000000000000022 /* Recly.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = AB0200000000000000000021 /* Recly.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB0300000000000000000010 /* ReclyWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AB0300000000000000000020 /* ReclyWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB0400000000000000000010 /* ReclyWatchWidgets.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AB0400000000000000000020 /* ReclyWatchWidgets.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		AB0300000000000000000011 /* RecKit in Frameworks */ = {isa = PBXBuildFile; productRef = AB0300000000000000000012 /* RecKit */; };
+		AB0300000000000000000013 /* RecKitTestSupport in Frameworks */ = {isa = PBXBuildFile; productRef = AB0300000000000000000014 /* RecKitTestSupport */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AB0200000000000000000063 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB0200000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB0200000000000000000061;
+			remoteInfo = RecWatch;
+		};
+		AB0300000000000000000065 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB0200000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB0300000000000000000060;
+			remoteInfo = RecPhoneWidgets;
+		};
+		AB0300000000000000000067 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB0200000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB0200000000000000000060;
+			remoteInfo = RecPhone;
+		};
+		AB0400000000000000000063 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = AB0200000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = AB0400000000000000000060;
+			remoteInfo = RecWatchWidgets;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		AB0200000000000000000043 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				AB0200000000000000000022 /* Recly.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0300000000000000000047 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AB0300000000000000000010 /* ReclyWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0400000000000000000047 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				AB0400000000000000000010 /* ReclyWatchWidgets.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		AB0200000000000000000020 /* Recly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Recly.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0200000000000000000021 /* Recly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Recly.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0300000000000000000020 /* ReclyWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ReclyWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0300000000000000000021 /* ReclyTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReclyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0300000000000000000022 /* ReclyUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ReclyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0400000000000000000020 /* ReclyWatchWidgets.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ReclyWatchWidgets.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		AB0200000000000000000023 /* Recly.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Recly.xcconfig; path = ../Config/Recly.xcconfig; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		AB0200000000000000000031 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AB0200000000000000000060 /* RecPhone */;
+		};
+		AB0200000000000000000033 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				RecWatch.entitlements,
+			);
+			target = AB0200000000000000000061 /* RecWatch */;
+		};
+		AB0400000000000000000033 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+				RecWatchWidgets.entitlements,
+			);
+			target = AB0400000000000000000060 /* RecWatchWidgets */;
+		};
+		AB0300000000000000000035 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				RecordingActivityPlan.swift,
+			);
+			target = AB0300000000000000000060 /* RecPhoneWidgets */;
+		};
+		AB0300000000000000000037 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = AB0300000000000000000060 /* RecPhoneWidgets */;
+		};
+		AB0300000000000000000041 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Assets.xcassets,
+				Info.plist,
+				RecPhoneApp.swift,
+				RecordingsView.swift,
+				RecordingView.swift,
+				ReclyShortcuts.swift,
+				SettingsView.swift,
+				WorkflowsView.swift,
+			);
+			target = AB0300000000000000000061 /* ReclyTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		AB0200000000000000000030 /* RecPhone */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB0200000000000000000031 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+				AB0300000000000000000041 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			path = RecPhone;
+			sourceTree = "<group>";
+		};
+		AB0200000000000000000032 /* RecWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB0200000000000000000033 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			name = RecWatch;
+			path = ../RecWatch/RecWatch;
+			sourceTree = "<group>";
+		};
+		AB0300000000000000000034 /* RecPhoneShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB0300000000000000000035 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			path = RecPhoneShared;
+			sourceTree = "<group>";
+		};
+		AB0300000000000000000036 /* RecPhoneWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB0300000000000000000037 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			path = RecPhoneWidgets;
+			sourceTree = "<group>";
+		};
+		AB0300000000000000000038 /* RecPhoneTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RecPhoneTests;
+			sourceTree = "<group>";
+		};
+		AB0300000000000000000039 /* RecPhoneUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = RecPhoneUITests;
+			sourceTree = "<group>";
+		};
+		AB0400000000000000000032 /* RecWatchShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = RecWatchShared;
+			path = ../RecWatch/RecWatchShared;
+			sourceTree = "<group>";
+		};
+		AB0400000000000000000034 /* RecWatchWidgets */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				AB0400000000000000000033 /* PBXFileSystemSynchronizedBuildFileExceptionSet */,
+			);
+			name = RecWatchWidgets;
+			path = ../RecWatch/RecWatchWidgets;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AB0200000000000000000040 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0200000000000000000010 /* RecKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0200000000000000000044 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0200000000000000000012 /* RecKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0300000000000000000048 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0300000000000000000049 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AB0300000000000000000011 /* RecKit in Frameworks */,
+				AB0300000000000000000013 /* RecKitTestSupport in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0400000000000000000048 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AB0200000000000000000050 = {
+			isa = PBXGroup;
+			children = (
+				AB0200000000000000000023 /* Recly.xcconfig */,
+				AB0200000000000000000030 /* RecPhone */,
+				AB0300000000000000000034 /* RecPhoneShared */,
+				AB0300000000000000000036 /* RecPhoneWidgets */,
+				AB0300000000000000000038 /* RecPhoneTests */,
+				AB0300000000000000000039 /* RecPhoneUITests */,
+				AB0200000000000000000032 /* RecWatch */,
+				AB0400000000000000000032 /* RecWatchShared */,
+				AB0400000000000000000034 /* RecWatchWidgets */,
+				AB0200000000000000000051 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AB0200000000000000000051 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AB0200000000000000000020 /* Recly.app */,
+				AB0200000000000000000021 /* Recly.app */,
+				AB0300000000000000000020 /* ReclyWidgets.appex */,
+				AB0300000000000000000021 /* ReclyTests.xctest */,
+				AB0300000000000000000022 /* ReclyUITests.xctest */,
+				AB0400000000000000000020 /* ReclyWatchWidgets.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AB0200000000000000000060 /* RecPhone */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0200000000000000000070 /* Build configuration list for PBXNativeTarget "RecPhone" */;
+			buildPhases = (
+				AB0200000000000000000041 /* Sources */,
+				AB0200000000000000000040 /* Frameworks */,
+				AB0200000000000000000042 /* Resources */,
+				AB0300000000000000000047 /* Embed Foundation Extensions */,
+				AB0200000000000000000043 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB0200000000000000000062 /* PBXTargetDependency */,
+				AB0300000000000000000064 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AB0200000000000000000030 /* RecPhone */,
+				AB0300000000000000000034 /* RecPhoneShared */,
+			);
+			name = RecPhone;
+			packageProductDependencies = (
+				AB0200000000000000000011 /* RecKit */,
+			);
+			productName = RecPhone;
+			productReference = AB0200000000000000000020 /* Recly.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AB0200000000000000000061 /* RecWatch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0200000000000000000072 /* Build configuration list for PBXNativeTarget "RecWatch" */;
+			buildPhases = (
+				AB0200000000000000000045 /* Sources */,
+				AB0200000000000000000044 /* Frameworks */,
+				AB0200000000000000000046 /* Resources */,
+				AB0400000000000000000047 /* Embed Foundation Extensions */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB0400000000000000000062 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AB0200000000000000000032 /* RecWatch */,
+				AB0400000000000000000032 /* RecWatchShared */,
+			);
+			name = RecWatch;
+			packageProductDependencies = (
+				AB0200000000000000000013 /* RecKit */,
+			);
+			productName = RecWatch;
+			productReference = AB0200000000000000000021 /* Recly.app */;
+			productType = "com.apple.product-type.application";
+		};
+		AB0300000000000000000060 /* RecPhoneWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0300000000000000000070 /* Build configuration list for PBXNativeTarget "RecPhoneWidgets" */;
+			buildPhases = (
+				AB030000000000000000004B /* Sources */,
+				AB0300000000000000000048 /* Frameworks */,
+				AB030000000000000000004E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AB0300000000000000000034 /* RecPhoneShared */,
+				AB0300000000000000000036 /* RecPhoneWidgets */,
+			);
+			name = RecPhoneWidgets;
+			productName = RecPhoneWidgets;
+			productReference = AB0300000000000000000020 /* ReclyWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		AB0300000000000000000061 /* ReclyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0300000000000000000071 /* Build configuration list for PBXNativeTarget "ReclyTests" */;
+			buildPhases = (
+				AB030000000000000000004C /* Sources */,
+				AB0300000000000000000049 /* Frameworks */,
+				AB030000000000000000004F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AB0200000000000000000030 /* RecPhone */,
+				AB0300000000000000000034 /* RecPhoneShared */,
+				AB0300000000000000000038 /* RecPhoneTests */,
+				AB0400000000000000000032 /* RecWatchShared */,
+			);
+			name = ReclyTests;
+			packageProductDependencies = (
+				AB0300000000000000000012 /* RecKit */,
+				AB0300000000000000000014 /* RecKitTestSupport */,
+			);
+			productName = ReclyTests;
+			productReference = AB0300000000000000000021 /* ReclyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		AB0300000000000000000062 /* ReclyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0300000000000000000072 /* Build configuration list for PBXNativeTarget "ReclyUITests" */;
+			buildPhases = (
+				AB030000000000000000004D /* Sources */,
+				AB030000000000000000004A /* Frameworks */,
+				AB0300000000000000000050 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				AB0300000000000000000066 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				AB0300000000000000000039 /* RecPhoneUITests */,
+			);
+			name = ReclyUITests;
+			productName = ReclyUITests;
+			productReference = AB0300000000000000000022 /* ReclyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		AB0400000000000000000060 /* RecWatchWidgets */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AB0400000000000000000070 /* Build configuration list for PBXNativeTarget "RecWatchWidgets" */;
+			buildPhases = (
+				AB0400000000000000000045 /* Sources */,
+				AB0400000000000000000048 /* Frameworks */,
+				AB0400000000000000000046 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AB0400000000000000000032 /* RecWatchShared */,
+				AB0400000000000000000034 /* RecWatchWidgets */,
+			);
+			name = RecWatchWidgets;
+			productName = RecWatchWidgets;
+			productReference = AB0400000000000000000020 /* ReclyWatchWidgets.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AB0200000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
+				TargetAttributes = {
+					AB0200000000000000000060 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					AB0200000000000000000061 = {
+						CreatedOnToolsVersion = 26.0;
+					};
+					AB0300000000000000000062 = {
+						TestTargetID = AB0200000000000000000060;
+					};
+				};
+			};
+			buildConfigurationList = AB0200000000000000000071 /* Build configuration list for PBXProject "RecPhone" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				ko,
+				Base,
+			);
+			mainGroup = AB0200000000000000000050;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = AB0200000000000000000051 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AB0200000000000000000060 /* RecPhone */,
+				AB0300000000000000000060 /* RecPhoneWidgets */,
+				AB0300000000000000000061 /* ReclyTests */,
+				AB0300000000000000000062 /* ReclyUITests */,
+				AB0200000000000000000061 /* RecWatch */,
+				AB0400000000000000000060 /* RecWatchWidgets */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AB0200000000000000000042 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0200000000000000000046 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0300000000000000000050 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0400000000000000000046 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AB0200000000000000000041 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0200000000000000000045 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB030000000000000000004D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AB0400000000000000000045 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		AB0200000000000000000062 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB0200000000000000000061 /* RecWatch */;
+			targetProxy = AB0200000000000000000063 /* PBXContainerItemProxy */;
+		};
+		AB0300000000000000000064 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB0300000000000000000060 /* RecPhoneWidgets */;
+			targetProxy = AB0300000000000000000065 /* PBXContainerItemProxy */;
+		};
+		AB0300000000000000000066 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB0200000000000000000060 /* RecPhone */;
+			targetProxy = AB0300000000000000000067 /* PBXContainerItemProxy */;
+		};
+		AB0400000000000000000062 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = AB0400000000000000000060 /* RecWatchWidgets */;
+			targetProxy = AB0400000000000000000063 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AB0200000000000000000080 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		AB0200000000000000000081 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
+		AB0200000000000000000082 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB0200000000000000000023 /* Recly.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RecPhone/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly;
+				PRODUCT_NAME = Recly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		AB0200000000000000000083 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = AB0200000000000000000023 /* Recly.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = RecPhone/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly;
+				PRODUCT_NAME = Recly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		AB0200000000000000000084 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_ENTITLEMENTS = "../RecWatch/RecWatch/RecWatch.entitlements";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "../RecWatch/RecWatch/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.watchkitapp;
+				PRODUCT_NAME = Recly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		AB0200000000000000000085 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				CODE_SIGN_ENTITLEMENTS = "../RecWatch/RecWatch/RecWatch.entitlements";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "../RecWatch/RecWatch/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				MARKETING_VERSION = 0.0.1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.watchkitapp;
+				PRODUCT_NAME = Recly;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+		AB0300000000000000000086 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				INFOPLIST_FILE = RecPhoneWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.widgets;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		AB0300000000000000000087 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				INFOPLIST_FILE = RecPhoneWidgets/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.widgets;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		AB0300000000000000000088 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.tests;
+			};
+			name = Debug;
+		};
+		AB0300000000000000000089 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyTests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					"-lsqlite3",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.tests;
+			};
+			name = Release;
+		};
+		AB030000000000000000008A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyUITests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.uitests;
+				TEST_TARGET_NAME = RecPhone;
+			};
+			name = Debug;
+		};
+		AB030000000000000000008B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_NAME = ReclyUITests;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.uitests;
+				TEST_TARGET_NAME = RecPhone;
+			};
+			name = Release;
+		};
+		AB0400000000000000000084 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "../RecWatch/RecWatchWidgets/RecWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "../RecWatch/RecWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.watchkitapp.widgets;
+				PRODUCT_NAME = ReclyWatchWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
+		};
+		AB0400000000000000000085 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "../RecWatch/RecWatchWidgets/RecWatchWidgets.entitlements";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "../RecWatch/RecWatchWidgets/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Recly;
+				MARKETING_VERSION = 0.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = app.recly.watchkitapp.widgets;
+				PRODUCT_NAME = ReclyWatchWidgets;
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AB0200000000000000000070 /* Build configuration list for PBXNativeTarget "RecPhone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0200000000000000000082 /* Debug */,
+				AB0200000000000000000083 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0200000000000000000071 /* Build configuration list for PBXProject "RecPhone" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0200000000000000000080 /* Debug */,
+				AB0200000000000000000081 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0200000000000000000072 /* Build configuration list for PBXNativeTarget "RecWatch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0200000000000000000084 /* Debug */,
+				AB0200000000000000000085 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0300000000000000000070 /* Build configuration list for PBXNativeTarget "RecPhoneWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0300000000000000000086 /* Debug */,
+				AB0300000000000000000087 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0300000000000000000071 /* Build configuration list for PBXNativeTarget "ReclyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0300000000000000000088 /* Debug */,
+				AB0300000000000000000089 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0300000000000000000072 /* Build configuration list for PBXNativeTarget "ReclyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB030000000000000000008A /* Debug */,
+				AB030000000000000000008B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AB0400000000000000000070 /* Build configuration list for PBXNativeTarget "RecWatchWidgets" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AB0400000000000000000084 /* Debug */,
+				AB0400000000000000000085 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AB0200000000000000000011 /* RecKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecKit;
+		};
+		AB0200000000000000000013 /* RecKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecKit;
+		};
+		AB0300000000000000000012 /* RecKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecKit;
+		};
+		AB0300000000000000000014 /* RecKitTestSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = RecKitTestSupport;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = AB0200000000000000000001 /* Project object */;
+}

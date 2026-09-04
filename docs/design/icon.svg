@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Recly app icon — "A · Record node". Master artboard, 1024x1024.
+       Light: ground #F7F7F5, surface #FFFFFF, ink #111111, record #DA1E28.
+       Dark:  ground #0E0F12, surface #16181D, ink #F2F2F0, record #FA4D56.
+       docs/recly.md §9 "앱 아이콘". Exports: scripts/render-icons.swift. -->
+  <defs>
+    <pattern id="dots" width="64" height="64" patternUnits="userSpaceOnUse">
+      <circle cx="32" cy="32" r="5" fill="#888884" opacity="0.28"/>
+    </pattern>
+  </defs>
+  <rect width="1024" height="1024" fill="#F7F7F5"/>
+  <rect width="1024" height="1024" fill="url(#dots)"/>
+  <rect x="232" y="232" width="560" height="560" rx="40" fill="#FFFFFF" stroke="#111111" stroke-width="28"/>
+  <rect x="392" y="392" width="240" height="240" rx="24" fill="#DA1E28"/>
+</svg>

@@ -1,0 +1,34 @@
+{
+  "schema": 1,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "track": "mono",
+  "language": "ko",
+  "provider": { "name": "assemblyai", "model": "universal-2", "jobRef": "6f2a1c3e-0b7d-4a11-9c2f-8e5d6a4c1002" },
+  "createdAt": "2026-08-29T03:10:00.000Z",
+  "durationSec": 3612.4,
+  "speakers": [
+    { "id": "S1", "name": null },
+    { "id": "S2", "name": null }
+  ],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.2,
+      "speaker": "S1",
+      "text": "시작하겠습니다.",
+      "words": [{ "start": 0.0, "end": 0.6, "text": "시작하겠습니다." }]
+    },
+    {
+      "start": 3.6,
+      "end": 9.1,
+      "speaker": "S2",
+      "text": "네, 지난주 액션아이템부터 보시죠.",
+      "words": [
+        { "start": 3.6, "end": 4.0, "text": "네," },
+        { "start": 4.2, "end": 6.5, "text": "지난주" },
+        { "start": 6.6, "end": 9.1, "text": "액션아이템부터 보시죠." }
+      ]
+    },
+    { "start": 900.4, "end": 906.8, "speaker": "S1", "text": "두 번째 파트의 첫 발화입니다." }
+  ]
+}

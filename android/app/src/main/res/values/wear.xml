@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the watch's `CapabilityClient` looks for when it goes hunting for a phone to send parts to
+  (docs/11 W4, M3-L2). Declaring it is the whole of the phone's side of that discovery.
+-->
+<resources>
+    <string-array name="android_wear_capabilities">
+        <item>rec_phone</item>
+    </string-array>
+</resources>

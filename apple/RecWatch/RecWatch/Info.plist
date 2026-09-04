@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Same rule as RecPhone/Info.plist: the keys the app cannot run without are written here rather than
+  handed to the `INFOPLIST_KEY_…` passthrough.
+-->
+<plist version="1.0">
+<dict>
+	<!--
+	  docs/07 rule 1: English is the base language and Korean the translation, and the two
+	  localizations the bundle carries are what the loader picks between for a device whose
+	  language is neither. The user-visible strings above are overridden by `InfoPlist.xcstrings`.
+	-->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>ko</string>
+	</array>
+
+	<!--
+	  A single-target watchOS app (no WatchKit extension), embedded in `app.recly` as its companion
+	  — docs/13 "Apple Watch RecWatch". Without the pair the bundle is not a watch app at all.
+	-->
+	<key>WKApplication</key>
+	<true/>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>app.recly</string>
+
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Recly records meetings and memos so they can be transcribed.</string>
+
+	<!--
+	  docs/13: `UIBackgroundModes: audio` — WatchKit의 `WKBackgroundModes`가 아니다. This is what
+	  keeps the recording running once the wrist drops. The session itself is M5-L4.
+	-->
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>audio</string>
+	</array>
+</dict>
+</plist>

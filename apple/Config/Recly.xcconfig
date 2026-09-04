@@ -1,0 +1,15 @@
+// The OAuth client ids the two Apple apps sign in with. `Info.plist` reads them as build
+// settings, so the tracked tree carries only the placeholder `GoogleAuth.clientIDPlaceholder`
+// recognises — while that value is in the bundle, sign-in is disabled instead of raising a
+// prompt that cannot succeed. See README "Values filled in locally".
+
+RECLY_PHONE_GID_CLIENT_ID = GIDClientID.apps.googleusercontent.com
+RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
+
+RECLY_MAC_GID_CLIENT_ID = GIDClientID.apps.googleusercontent.com
+RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
+
+// Your own ids, if you have them: copy `Local.xcconfig.example` to `Local.xcconfig` and fill it
+// in. The include is last on purpose — a later assignment wins — and optional (`#include?`), so
+// a checkout without the file builds with the placeholders above.
+#include? "Local.xcconfig"

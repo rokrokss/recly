@@ -1,0 +1,8 @@
+{
+  "name": "rec-spec",
+  "private": true,
+  "type": "module",
+  "description": "JSON Schema validation for rec spec examples",
+  "scripts": { "validate": "node validate.mjs" },
+  "devDependencies": { "ajv": "^8.17.1", "ajv-formats": "^3.0.1" }
+}

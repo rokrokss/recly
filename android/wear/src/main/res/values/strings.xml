@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/07: English is the base language, `values-ko` is the translation. The watch has no language
+  setting of its own — it follows the system, which is what Wear OS offers.
+-->
+<resources>
+    <string name="app_name">Recly</string>
+    <string name="recording_start">Start</string>
+    <string name="recording_stop">Stop</string>
+    <string name="recording_busy">…</string>
+    <string name="recording_idle">Idle</string>
+    <string name="recording_active">Recording</string>
+    <string name="recording_stopping">Saving…</string>
+    <string name="recording_mic_denied">The microphone permission is needed</string>
+    <string name="recording_saved">Saved · %1$d parts · %2$d s</string>
+    <string name="recording_save_deferred">Could not finish saving — recovered next time</string>
+    <string name="recording_failed">Failed: %1$s</string>
+    <string name="workflow_phones">Phone\'s workflow</string>
+    <string name="workflow_pick">Workflow</string>
+    <string name="pending_badge">%1$d waiting</string>
+    <string name="transfer_failed_badge">%1$d transfers failed</string>
+
+    <!-- docs/11 W5: the tile and the complication. They render outside the app process, so the
+         wording is the whole of the state they can show. -->
+    <string name="tile_start">Start recording</string>
+    <!-- The second launcher entry (QuickStartActivity): what the double-press setting lists. -->
+    <string name="quick_start_label">Recly Record</string>
+    <string name="entry_ready">Idle</string>
+    <string name="complication_recording">REC</string>
+    <string name="complication_pending">%1$d waiting</string>
+    <string name="complication_idle">Recly</string>
+
+    <!-- docs/11 W5 "설정 안내 화면". Neither place can be deep-linked from here, so the screen can
+         only describe the way there. -->
+    <string name="info_open">Help</string>
+    <string name="info_back">Close</string>
+    <string name="info_shortcut_title">Double home key → record</string>
+    <string name="info_shortcut_body">Watch Settings → Advanced features → Customise keys → Double press home key → Open app, and choose "Recly Record". Recording then starts from the double press, without opening the app first. Choose "Recly" instead to only open the app.</string>
+    <string name="info_battery_title">Turn off battery optimisation for Galaxy Wearable</string>
+    <string name="info_battery_body">On the phone: Settings → Battery → Background usage limits, and take Galaxy Wearable off the list. With optimisation on, the Bluetooth link drops and recordings never reach the phone.</string>
+    <string name="info_transfer_title">Transfer</string>
+    <string name="info_transfer_body">A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.</string>
+</resources>

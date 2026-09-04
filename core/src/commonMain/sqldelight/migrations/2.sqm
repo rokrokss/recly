@@ -1,0 +1,25 @@
+-- 2 → 3: `secret_sync` goes. Secrets are per-device values in the SecureStore and nothing else now
+-- (docs/05 "시크릿"): there is no `secrets.enc`, so there is nothing for an `updated_at`/`deleted`/
+-- `dirty` row to be the local half of. The values themselves are in the shell's keychain and are
+-- untouched by this.
+--
+-- The whole schema lives in `Rec.sq`; a migration is only the difference from the version it is
+-- named after. The two have to agree, and `MigrationTest` — which builds an old database by hand
+-- and upgrades it — is what says they do.
+--
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+--
+-- `IF EXISTS` for the same reason `1.sqm` creates with `IF NOT EXISTS`: version 2 is reached both
+-- through that migration and by `Schema.create` on a fresh file, and a database that somehow lacks
+-- the table must not fail the upgrade over a table this is removing anyway.
+DROP TABLE IF EXISTS secret_sync;
+
+-- The `sync_state` rows that pointed at Drive. The table stays — the workflow document and the
+-- device-default pointer live in it — but nothing reads these any more, and leaving them would keep
+-- a deleted account's file ids on the device forever.
+DELETE FROM sync_state WHERE key IN (
+  'remoteFileId', 'remoteVersion', 'remoteRevisionId', 'dirty', 'dirtySince', 'mergeBase',
+  'lastPulledAt', 'writeFrozen', 'seededHere', 'guessedStarterId',
+  'secretsRemoteFileId', 'secretsRemoteVersion', 'secretsRemoteRevisionId', 'secretsLastSyncedAt',
+  'secretsWriteFrozen'
+);

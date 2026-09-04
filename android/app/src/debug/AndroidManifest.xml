@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Debug-only. The stub has to live in the app's own APK, not the androidTest one: instrumentation
+  runs in the app process, and an activity declared in the test package would start in a different
+  process where the test could not observe it.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <activity
+            android:name="app.recly.android.ui.ConsentStubActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.DeviceDefault.DayNight" />
+    </application>
+</manifest>

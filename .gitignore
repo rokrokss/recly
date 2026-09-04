@@ -1,0 +1,45 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.kotlin/
+local.properties
+
+# Gradle / JVM
+.gradle/
+build/
+out/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# Xcode / Swift
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcworkspace/xcshareddata/swiftpm/
+.build/
+.swiftpm/
+Packages/
+# Gradle output staged into the package by apple/scripts/build-core.sh
+apple/RecKit/Frameworks/
+
+# Rust
+target/
+
+# Secrets — never commit OAuth client files or keys
+apple/Config/Local.xcconfig
+**/google-services.json
+**/GoogleService-Info.plist
+**/client_secret*.json
+**/*.keystore
+**/*.jks
+**/*.p12
+.env
+.env.*
+
+# Node (spec validation)
+node_modules/

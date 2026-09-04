@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/07: the Korean translation of `values/strings.xml`. Same keys, nothing more. -->
+<resources>
+    <string name="app_name">Recly</string>
+
+    <string name="action_save">저장</string>
+    <string name="action_cancel">취소</string>
+    <string name="action_delete">삭제</string>
+    <string name="action_close">닫기</string>
+    <string name="action_retry">다시 시도</string>
+    <string name="action_processing">…</string>
+    <string name="action_done">✓</string>
+    <string name="action_open_settings">시스템 설정 열기</string>
+
+    <string name="tab_record">녹음</string>
+    <string name="tab_jobs">목록</string>
+    <string name="tab_workflows">워크플로우</string>
+    <string name="tab_settings">설정</string>
+
+    <string name="sign_in">Google 로그인</string>
+    <string name="sign_out">로그아웃</string>
+    <string name="reauthorize_drive">Drive 권한 다시 허용</string>
+    <string name="signed_out">로그아웃됨</string>
+    <string name="auth_sign_in_failed">로그인 실패: %1$s</string>
+    <string name="auth_add_account">Google 계정을 추가한 뒤 다시 로그인하세요</string>
+    <string name="auth_drive_granted">Drive 권한 승인됨</string>
+    <string name="auth_drive_granted_unparked">Drive 권한 승인됨 — 대기 중이던 작업 %1$d건 재시작</string>
+    <string name="auth_drive_failed">Drive 권한 실패: %1$s</string>
+
+    <string name="recording_start">시작</string>
+    <string name="recording_stop">정지</string>
+    <string name="recording_busy">…</string>
+
+    <string name="recording_participants">참석 인원</string>
+    <string name="recording_participants_unknown">모름</string>
+    <string name="recording_participants_many">6명 이상</string>
+    <!-- ADR-016: 이 기기에서 선택한 워크플로우가 없어 그냥 시작하면 아무것도 실행되지 않습니다. -->
+    <string name="recording_workflow_choose">워크플로우를 선택하세요</string>
+    <string name="recording_workflow_pick">워크플로우 선택</string>
+    <string name="recording_title_prompt">녹음 제목</string>
+    <string name="recording_title_hint">비워두면 시각으로 지은 이름을 그대로 씁니다</string>
+    <string name="recording_title_save">저장</string>
+    <string name="recording_title_skip">건너뛰기</string>
+    <string name="recording_mic_denied">마이크 권한 필요</string>
+    <string name="recording_mic_required">마이크 권한이 필요합니다.</string>
+    <string name="recording_title_too_late">제목을 저장하기엔 이미 늦었습니다 — 업로드가 시작되었습니다</string>
+    <string name="recording_finish_deferred">저장을 마무리하지 못했습니다 — 다음 실행 시 복구됩니다</string>
+    <string name="recording_failed">녹음 실패: %1$s</string>
+    <string name="recording_saved">저장됨 — %1$d개 파트, %2$d초</string>
+
+    <string name="enqueue_no_workflow">실행할 워크플로우 없음</string>
+    <string name="enqueue_parts_purged">파트가 이미 정리됨</string>
+    <string name="enqueue_skipped_short">너무 짧아 건너뜀</string>
+    <string name="enqueue_already_done">이미 처리됨</string>
+    <string name="enqueue_queued">작업 대기열에 등록</string>
+
+    <string name="jobs_empty">아직 녹음이 없습니다</string>
+    <string name="jobs_untitled">제목 없음</string>
+    <string name="jobs_sign_in">로그인</string>
+    <string name="jobs_open_drive">Drive 열기</string>
+    <string name="jobs_retry_unavailable">지금은 재시도할 수 없는 상태입니다</string>
+    <string name="jobs_started_at_format">M월 d일 HH:mm</string>
+    <string name="job_state_recording">녹음 중</string>
+    <string name="job_state_no_workflow">워크플로우 없음</string>
+    <string name="job_state_pending">대기</string>
+    <string name="job_state_running">업로드 중</string>
+    <string name="job_state_waiting">재시도 대기</string>
+    <string name="job_state_waiting_in">재시도 대기 · %1$s</string>
+    <string name="job_state_done">완료</string>
+    <string name="job_state_failed">실패</string>
+    <string name="job_state_needs_auth">로그인 필요</string>
+    <string name="job_state_skipped_short">너무 짧음</string>
+    <string name="retry_soon">곧</string>
+    <string name="retry_in_seconds">%1$d초 후</string>
+    <string name="retry_in_minutes">%1$d분 후</string>
+    <string name="retry_in_hours">%1$d시간 후</string>
+
+    <string name="workflows_add">+ 새 워크플로우</string>
+    <string name="workflows_secrets">시크릿 관리</string>
+    <string name="workflows_empty">아직 워크플로우가 없습니다.</string>
+    <string name="workflows_delete_title">‘%1$s’을(를) 삭제할까요?</string>
+    <string name="workflows_delete_body">이 워크플로우는 이 기기에서 사라집니다. 이미 만들어진 Job은 그대로 실행됩니다.</string>
+    <string name="workflow_no_steps">단계 없음</string>
+    <!-- ADR-016: 이 기기가 쓰는 워크플로우 표시와, 그것을 옮기는 방법. -->
+    <string name="workflow_in_use">사용 중</string>
+    <string name="workflow_use">사용</string>
+    <string name="workflow_delete_in_use">이 기기에서 사용 중인 워크플로우입니다.</string>
+    <string name="workflow_open">워크플로우 편집</string>
+    <string name="workflow_missing_secrets">이 기기에 키 없음: %1$s</string>
+    <string name="workflow_gone">이 워크플로우는 문서에 더 이상 없습니다</string>
+
+    <string name="notice_stale">편집하는 사이에 문서가 바뀌었습니다 — 다시 열어 주세요</string>
+    <string name="notice_saved_elsewhere">이전에 편집하던 워크플로우가 저장되었습니다</string>
+
+    <string name="editor_new">새 워크플로우</string>
+    <string name="editor_edit">워크플로우 편집</string>
+    <string name="editor_reopen">다시 열기</string>
+    <string name="editor_name">이름</string>
+    <string name="editor_min_duration">최소 길이(초)</string>
+    <string name="editor_min_duration_hint">이보다 짧은 녹음은 업로드하지 않습니다.</string>
+    <string name="editor_retry">재시도</string>
+    <string name="editor_on_error">오류 시</string>
+    <string name="editor_on_error_abort">중단</string>
+    <string name="editor_on_error_continue">계속</string>
+    <string name="editor_folder">폴더 템플릿</string>
+    <string name="editor_folder_hint">My Drive 루트 기준 경로입니다.</string>
+    <string name="editor_include_meta">meta.json 포함</string>
+    <string name="editor_url">URL</string>
+    <string name="editor_url_hint">https:// (로컬은 http://localhost)</string>
+    <string name="editor_secret">시크릿 이름</string>
+    <string name="editor_secret_none">없음</string>
+    <string name="editor_secret_new">새로 만들기</string>
+    <string name="editor_secret_missing">이 기기에 ‘%1$s’ 값이 없습니다</string>
+    <string name="editor_secret_enter">바로 입력</string>
+    <string name="editor_max_attempts">재시도</string>
+    <string name="editor_initial_delay">첫 지연(초)</string>
+    <string name="editor_max_delay">최대 지연(초)</string>
+    <string name="editor_no_url">URL 없음</string>
+
+    <string name="editor_provider">제공자</string>
+    <string name="editor_provider_synchronous_hint">이 제공자는 요청 하나로 결과를 기다립니다. 폰에서는 백그라운드에서 비동기 제공자가 더 안정적입니다.</string>
+    <string name="editor_api_key">API 키</string>
+    <string name="editor_invoke_url">Invoke URL</string>
+    <string name="editor_invoke_url_hint_required">제공자의 엔드포인트 URL입니다. 이 제공자에는 필수입니다.</string>
+    <string name="editor_invoke_url_hint_optional">비우면 제공자 기본 엔드포인트를 씁니다. 자체 호스팅이나 리전 엔드포인트일 때만 입력하세요.</string>
+    <string name="editor_language">언어</string>
+    <string name="editor_diarize">화자 분리</string>
+    <string name="editor_speakers_min">화자 수 최소</string>
+    <string name="editor_speakers_max">화자 수 최대</string>
+    <string name="editor_speakers_hint">1~10명. 녹음에 참석 인원이 적혀 있으면 그 값이 우선합니다.</string>
+    <string name="editor_order_transcribe_needs_upload">이 단계 앞에 Drive 업로드 단계가 있어야 합니다 — 결과 파일을 그 폴더에 씁니다.</string>
+    <string name="step_drive">Drive</string>
+    <string name="step_drive_upload">Drive 업로드</string>
+    <string name="step_webhook">웹훅</string>
+    <string name="step_transcribe">전사</string>
+    <string name="error_name">이름은 1~40자여야 합니다</string>
+    <string name="error_min_duration">0 이상의 초를 입력하세요</string>
+    <string name="error_steps_count">단계는 1~10개여야 합니다</string>
+    <string name="error_folder">폴더 템플릿은 1~200자여야 합니다</string>
+    <string name="error_folder_variable">알 수 없는 변수 %1$s</string>
+    <string name="error_url">https:// 또는 http://localhost·127.0.0.1 만 됩니다</string>
+    <string name="error_secret_ref">시크릿 이름 규칙에 맞지 않습니다</string>
+    <string name="error_max_attempts">1~20 사이의 숫자</string>
+    <string name="error_initial_delay">1 이상의 초</string>
+    <string name="error_max_delay">1 이상의 초</string>
+
+    <string name="secrets_title">이 폰의 시크릿</string>
+    <string name="secrets_hint">이 기기에만 저장됩니다. 다른 기기에서는 같은 이름으로 다시 입력해야 합니다.</string>
+    <string name="secrets_empty">아직 시크릿이 없습니다.</string>
+    <string name="secrets_add">시크릿 추가</string>
+    <string name="secrets_name">이름</string>
+    <string name="secrets_name_hint">소문자로 시작, 소문자·숫자·밑줄 32자까지</string>
+    <string name="secrets_value">값</string>
+    <string name="secrets_show">표시</string>
+    <string name="secrets_hide">숨기기</string>
+    <string name="secrets_generated">생성한 값을 지금 복사해 두세요. 저장 후에는 다시 볼 수 없습니다 (클립보드에 복사됨).</string>
+    <string name="secrets_copy">복사</string>
+    <string name="secrets_copied">시크릿을 복사했습니다</string>
+    <string name="secrets_generate">웹훅 시크릿 생성</string>
+    <string name="secret_name_empty">이름을 입력하세요</string>
+    <string name="secret_name_invalid">소문자로 시작하고 소문자·숫자·밑줄 32자까지</string>
+    <string name="secret_name_taken">이미 있는 이름입니다</string>
+    <string name="secret_value_required">값을 입력하거나 웹훅 시크릿을 생성하세요</string>
+
+    <string name="settings_account">Google 계정</string>
+    <string name="settings_workflows">워크플로우</string>
+    <string name="settings_uploads">업로드</string>
+    <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
+    <string name="settings_wifi_only_hint">모바일 데이터로는 업로드하지 않습니다.</string>
+    <string name="settings_sync_run">실행</string>
+
+    <!-- docs/05 "워크플로우 내보내기 · 가져오기" -->
+    <string name="settings_export_workflows">워크플로우 내보내기</string>
+    <string name="settings_import_workflows">워크플로우 가져오기</string>
+    <string name="settings_workflows_keys_hint">전사 키는 이 파일에 들어가지 않습니다 — 기기마다 입력합니다.</string>
+    <string name="workflows_import_title">이 기기의 워크플로우를 교체할까요?</string>
+    <string name="workflows_import_body">파일에 있는 워크플로우 %1$d개가 이 기기의 워크플로우를 모두 대체합니다.</string>
+    <string name="workflows_imported">가져왔습니다 — 이제 이 기기에 워크플로우 %1$d개가 있습니다.</string>
+    <string name="workflows_exported">내보냈습니다.</string>
+    <string name="workflows_file_failed">파일을 열지 못했습니다: %1$s</string>
+
+    <string name="settings_language">언어</string>
+    <string name="settings_language_ko">한국어</string>
+    <string name="settings_language_en">English</string>
+
+    <string name="settings_theme">테마</string>
+    <string name="theme_system">시스템 기본</string>
+    <string name="theme_light">밝게</string>
+    <string name="theme_dark">어둡게</string>
+
+    <string name="core_needs_auth">계속하려면 다시 로그인하세요</string>
+    <string name="core_drive_reauth">Google Drive 권한 재동의가 필요합니다</string>
+    <string name="core_drive_storage_full">Google Drive에 공간이 없습니다 — 정리한 뒤 다시 시도하세요</string>
+    <string name="core_drive_consent_required">Drive 권한 동의가 필요합니다</string>
+    <string name="core_sign_in_cancelled">로그인이 취소되었습니다</string>
+    <string name="core_missing_secret">이 기기에 시크릿 ‘%1$s’ 값이 없습니다</string>
+    <string name="core_invalid_secret">시크릿 ‘%1$s’에 저장된 값이 올바른 키가 아닙니다</string>
+    <string name="core_webhook_http">웹훅이 HTTP %1$s로 응답했습니다</string>
+    <string name="core_folder_template">폴더 템플릿: %1$s</string>
+    <string name="core_retry_budget_spent">재시도 횟수를 다 썼습니다: %1$s</string>
+    <string name="core_no_runner">이 앱은 ‘%1$s’ 단계를 실행할 수 없습니다</string>
+    <string name="core_step_missing">이 작업의 워크플로우에 ‘%1$s’ 단계가 없습니다</string>
+    <string name="core_unsupported_step">이 잡에는 더 새로운 버전의 앱이 필요합니다: ‘%1$s’ 단계를 씁니다</string>
+    <string name="core_step_failed">실패: %1$s</string>
+    <string name="core_auth_rejected">제공자가 키를 거부했습니다.</string>
+    <string name="core_quota">제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다. 다시 시도합니다.</string>
+    <string name="core_provider_error">제공자 쪽에서 문제가 생겼습니다. 다시 시도합니다.</string>
+    <string name="core_unsupported_audio">제공자가 이 오디오를 받아들이지 않았습니다.</string>
+    <string name="core_no_input_track">이 녹음에는 전사할 모노·믹스 트랙이 없습니다.</string>
+    <string name="core_result_timeout">제공자가 제때 끝내지 못했습니다. 다시 제출합니다.</string>
+    <string name="core_stale">편집하는 사이에 문서가 바뀌었습니다</string>
+    <string name="core_unsupported_schema">지원하지 않는 스키마 %1$s</string>
+
+    <string name="tile_label">Recly 녹음</string>
+    <string name="tile_idle">대기</string>
+    <string name="tile_recording">녹음 중</string>
+    <string name="widget_idle">대기 중</string>
+    <string name="widget_recording">녹음 중</string>
+    <string name="widget_description">한 번에 녹음을 시작하고 정지합니다.</string>
+    <string name="shortcut_start_short">녹음 시작</string>
+    <string name="shortcut_start_long">Recly 녹음 시작</string>
+
+    <!-- docs/09 화면 원칙 1: the recording dashboard's three state nodes. -->
+    <string name="node_device">기기</string>
+    <string name="node_workflow">워크플로우</string>
+    <string name="node_state">상태</string>
+
+    <!-- docs/09 화면 원칙 2: the ledger's columns and what an expanded row offers. -->
+    <string name="jobs_column_time">시각</string>
+    <string name="jobs_column_title">제목</string>
+    <string name="jobs_column_length">길이</string>
+    <string name="jobs_column_status">상태</string>
+    <string name="jobs_summary">%1$d · 대기 %2$d · 실패 %3$d</string>
+    <string name="jobs_row_expand">펼치기</string>
+    <string name="jobs_row_collapse">접기</string>
+    <string name="jobs_row_description">%1$s, %2$s 녹음, 길이 %3$s, %4$s</string>
+
+    <string name="detail_open">상세</string>
+    <string name="detail_rename">이름 바꾸기</string>
+    <string name="detail_loading">불러오는 중…</string>
+    <string name="detail_empty">아직 아무것도 없습니다 — 전사 단계가 끝나지 않았습니다.</string>
+    <string name="player_play">재생</string>
+    <string name="player_pause">일시정지</string>
+    <string name="player_no_audio">이 기기에 오디오가 없습니다</string>
+    <string name="player_fetching">Drive에서 받는 중…</string>
+    <string name="player_fetch_failed">Drive에서 받지 못했습니다</string>
+    <string name="player_position">위치</string>
+    <string name="job_waiting_transcription">전사 결과를 기다리는 중 — %1$d분 경과</string>
+    <string name="job_reason_check_key">키 확인</string>
+
+    <!-- docs/09 화면 원칙 3: the node graph. -->
+    <string name="editor_node_trigger">트리거</string>
+    <string name="editor_node_trigger_title">녹음 종료</string>
+    <string name="editor_node_end">끝</string>
+    <string name="editor_step_kicker">%1$d · %2$s</string>
+    <string name="editor_insert_step">여기에 단계 추가</string>
+    <string name="editor_move_up">위로</string>
+    <string name="editor_move_down">아래로</string>
+
+    <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
+    <string name="settings_capture">캡처</string>
+    <string name="settings_microphone">마이크</string>
+    <string name="settings_about">정보</string>
+    <string name="settings_about_app">recly %1$s (build %2$d) · android %3$d</string>
+    <string name="settings_about_device">device %1$s</string>
+    <string name="settings_open_source">오픈소스 고지</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+
+    <!-- docs/03 "앱에서 지우기" -->
+    <string name="delete_title">‘%1$s’을(를) 삭제할까요?</string>
+    <string name="delete_local_only">이 폰에서만 삭제</string>
+    <string name="delete_with_drive">Drive 폴더도 함께 삭제</string>
+    <string name="delete_remote_body">다른 기기에서 녹음한 것입니다. 지우면 Drive와 모든 기기에서 사라집니다.</string>
+    <string name="delete_busy">아직 업로드 중입니다 — 끝난 뒤에 다시 시도하세요</string>
+    <string name="delete_drive_failed">이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: %1$s</string>
+    <plurals name="delete_unuploaded">
+        <item quantity="other">아직 Drive에 올라가지 않은 파트 %1$d개가 함께 지워집니다.</item>
+    </plurals>
+
+    <!-- docs/03 "로그아웃 vs 연결 해제" · docs/06 -->
+    <string name="settings_disconnect">연결 해제</string>
+    <string name="settings_disconnect_hint">이 앱의 Google 계정 접근 권한을 회수합니다.</string>
+    <string name="disconnect_title">Recly와 Google의 연결을 해제할까요?</string>
+    <string name="disconnect_other_devices">이 기기뿐 아니라 같은 계정으로 로그인한 모든 기기의 접근이 함께 끊깁니다. 이 폰만 떼려면 로그아웃을 쓰세요.</string>
+    <string name="disconnect_local">이 폰의 업로드 대기열은 모두 지워집니다. 워크플로우와 키는 그대로 남습니다.</string>
+    <string name="disconnect_also_delete">이 폰의 녹음도 함께 삭제</string>
+    <string name="disconnect_permissions">Google 계정 권한 설정 열기</string>
+    <string name="disconnect_revoke_failed">Google이 권한을 회수하지 못했습니다(%1$s) — Google 계정 권한 설정에서 직접 해제하세요</string>
+    <string name="disconnect_done">연결을 해제했습니다. 이 폰의 녹음은 그대로 남아 있습니다.</string>
+    <plurals name="disconnect_unuploaded">
+        <item quantity="other">아직 Drive에 올라가지 않은 녹음 %1$d건은 이 폰에 남습니다.</item>
+    </plurals>
+    <string name="disconnect_deleted">연결을 해제했습니다 — 이 폰의 녹음 %1$d건을 삭제했습니다.</string>
+    <string name="disconnect_busy">Google 액세스는 해제했지만 실행 중이던 녹음 %1$d건은 남겨 두었습니다 — 작업이 끝난 뒤 연결 해제를 다시 실행하세요.</string>
+    <string name="disconnect_stop_recording">먼저 녹음을 중지하세요</string>
+    <string name="disconnect_pending_sign_in">연결 해제를 먼저 끝내세요</string>
+    <string name="disconnect_in_progress">연결 해제를 먼저 끝내세요</string>
+    <string name="disconnect_cleanup_failed">Google 액세스는 해제했지만 이 기기 정리에 실패했습니다: %1$s — 연결 해제를 다시 시도하세요</string>
+    <string name="disconnect_still_listed">Google에 아직 Recly가 남아 있습니다 — myaccount.google.com/permissions에서 직접 해제하세요</string>
+    <string name="disconnect_removed">직접 해제했습니다</string>
+    <string name="disconnect_save_failed">연결 해제 상태를 저장하지 못했습니다 — 다시 시도하세요</string>
+
+    <!-- docs/10 "Drive 용량 초과" · "사용자가 고칠 수 있는 실패와 그 알림" -->
+    <string name="job_state_needs_space">Drive에 공간 없음</string>
+    <string name="jobs_open_storage">Drive 저장용량 열기</string>
+    <string name="alert_channel">작업</string>
+    <string name="alert_needs_auth">Google에 다시 로그인해야 합니다</string>
+    <string name="alert_needs_space">Google Drive에 공간이 없습니다</string>
+    <string name="alert_missing_secret">이 폰에 없는 키가 있습니다</string>
+    <string name="alert_invalid_secret">이 폰에 저장된 키 값을 쓸 수 없습니다</string>
+    <string name="alert_auth_rejected">업체가 키를 거절했습니다</string>
+    <string name="alert_quota">업체 할당량이 찼습니다 — 한도와 결제를 확인하세요</string>
+    <string name="alert_webhook">웹훅이 전송을 거절했습니다 — URL과 서명 시크릿을 확인하세요</string>
+    <plurals name="alert_waiting">
+        <item quantity="other">녹음 %1$d건이 기다리는 중입니다.</item>
+    </plurals>
+
+    <!-- docs/15 §3 -->
+    <string name="provider_disclosure_transcribe">이 단계를 실행하면 녹음 오디오 전체가 고른 업체로 전송됩니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
+
+    <!-- docs/12 M8 · ADR-011: 문구는 Mac의 것을 그대로 쓴다(ConsentTextTest). -->
+    <string name="settings_consent_reminder">동의 리마인더</string>
+    <string name="settings_consent_reminder_hint">폰은 회의를 따로 구분하지 못하므로 첫 녹음 전에 한 번만 묻습니다.</string>
+    <string name="consent_question">참가자에게 녹음을 알렸습니까?</string>
+    <string name="consent_body">이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다.</string>
+    <string name="consent_confirm">알렸습니다 · 녹음 시작</string>
+    <string name="consent_suppress">다시 묻지 않기</string>
+    <string name="consent_link">관할별 녹음 동의 규정 보기</string>
+</resources>

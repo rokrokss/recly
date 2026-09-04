@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The adaptive icon's foreground: the record node, inside the 66dp safe zone of the 108dp
+     canvas (docs/design/icon.svg, scaled 44/560). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFF"
+        android:strokeColor="#111111"
+        android:strokeWidth="2.2"
+        android:pathData="M35.14,32 H72.86 A3.14,3.14 0 0 1 76,35.14 V72.86 A3.14,3.14 0 0 1 72.86,76 H35.14 A3.14,3.14 0 0 1 32,72.86 V35.14 A3.14,3.14 0 0 1 35.14,32 Z" />
+    <path
+        android:fillColor="#DA1E28"
+        android:pathData="M46.46,44.57 H61.54 A1.89,1.89 0 0 1 63.43,46.46 V61.54 A1.89,1.89 0 0 1 61.54,63.43 H46.46 A1.89,1.89 0 0 1 44.57,61.54 V46.46 A1.89,1.89 0 0 1 46.46,44.57 Z" />
+</vector>

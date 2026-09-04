@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/07: the Korean translation of `values/strings.xml`. Same keys, nothing more. -->
+<resources>
+    <string name="app_name">Recly</string>
+    <string name="recording_start">시작</string>
+    <string name="recording_stop">정지</string>
+    <string name="recording_busy">…</string>
+    <string name="recording_idle">대기</string>
+    <string name="recording_active">녹음 중</string>
+    <string name="recording_stopping">저장 중…</string>
+    <string name="recording_mic_denied">마이크 권한 필요</string>
+    <string name="recording_saved">저장됨 · %1$d개 · %2$d초</string>
+    <string name="recording_save_deferred">저장 마무리 실패 — 다음에 복구</string>
+    <string name="recording_failed">실패: %1$s</string>
+    <string name="workflow_phones">폰의 워크플로우</string>
+    <string name="workflow_pick">워크플로우</string>
+    <string name="pending_badge">대기 %1$d개</string>
+    <string name="transfer_failed_badge">전송 실패 %1$d개</string>
+
+    <string name="tile_start">녹음 시작</string>
+    <string name="quick_start_label">Recly 녹음</string>
+    <string name="entry_ready">대기 중</string>
+    <string name="complication_recording">REC</string>
+    <string name="complication_pending">대기 %1$d</string>
+    <string name="complication_idle">Recly</string>
+
+    <string name="info_open">안내</string>
+    <string name="info_back">닫기</string>
+    <string name="info_shortcut_title">홈 키 두 번 → 녹음</string>
+    <string name="info_shortcut_body">워치 설정 → 고급 기능 → 키 사용자화 → 홈 키 두 번 누르기 → 앱 열기에서 "Recly 녹음"을 고르면 앱을 열 필요 없이 두 번 누르는 즉시 녹음이 시작됩니다. "Recly"를 고르면 앱만 열립니다.</string>
+    <string name="info_battery_title">Galaxy Wearable 배터리 최적화 해제</string>
+    <string name="info_battery_body">폰 설정 → 배터리 → 백그라운드 사용 제한에서 Galaxy Wearable을 제외하세요. 최적화가 켜져 있으면 블루투스 연결이 끊겨 녹음이 폰으로 넘어가지 않습니다.</string>
+    <string name="info_transfer_title">전송</string>
+    <string name="info_transfer_body">녹음은 폰이 확인해 줄 때까지 워치에 남습니다. 폰이 가까워지면 자동으로 넘어가고, 넘어간 파일만 워치에서 지워집니다.</string>
+</resources>

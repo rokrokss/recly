@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "source": "desktop",
+  "platform": "macos",
+  "deviceId": "7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10",
+  "deviceName": "MacBook Pro",
+  "workflowId": "01J9ABCDEF0123456789ABCDEF",
+  "title": "주간 회의",
+  "startedAt": "2026-08-26T01:00:00.000Z",
+  "endedAt": "2026-08-26T02:00:12.400Z",
+  "durationSec": 3612.4,
+  "timezone": "Asia/Seoul",
+  "audio": { "codec": "aac-lc", "container": "m4a", "sampleRateHz": 16000, "channels": 1, "bitrateKbps": 32, "segmentSec": 900 },
+  "tracks": ["mic", "sys", "mix"],
+  "parts": [
+    { "part": 1, "track": "mic", "file": "20260826T010000Z_desktop_01J9ABCD_p001_mic.m4a", "bytes": 3601234,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08", "startOffsetSec": 0, "durationSec": 900 },
+    { "part": 1, "track": "sys", "file": "20260826T010000Z_desktop_01J9ABCD_p001_sys.m4a", "bytes": 3598811,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a09", "startOffsetSec": 0, "durationSec": 900 },
+    { "part": 1, "track": "mix", "file": "20260826T010000Z_desktop_01J9ABCD_p001_mix.m4a", "bytes": 3602001,
+      "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a0a", "startOffsetSec": 0, "durationSec": 900 }
+  ],
+  "gaps": [ { "startSec": 1800.0, "endSec": 1800.3, "reason": "segment_restart" } ],
+  "silenced": [],
+  "context": {
+    "app": "us.zoom.xos",
+    "participants": 3
+  },
+  "status": "finalized"
+}

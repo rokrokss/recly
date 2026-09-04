@@ -1,0 +1,33 @@
+{
+  "type": "recording.completed",
+  "id": "01J9STEPR0N0123456789ABCDE",
+  "timestamp": "2026-08-26T02:05:00.000Z",
+  "data": {
+    "recording": {
+      "recordingId": "01J9ABCDEF0123456789ABCDEF",
+      "source": "desktop",
+      "platform": "macos",
+      "title": "주간 회의",
+      "startedAt": "2026-08-26T01:00:00.000Z",
+      "endedAt": "2026-08-26T02:00:12.400Z",
+      "durationSec": 3612.4,
+      "timezone": "Asia/Seoul",
+      "tracks": ["mic", "sys", "mix"],
+      "context": { "app": "us.zoom.xos" }
+    },
+    "files": [
+      { "part": 1, "track": "mix", "name": "20260826T010000Z_desktop_01J9ABCD_p001_mix.m4a", "bytes": 3602001,
+        "sha256": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a0a",
+        "drive": { "fileId": "1AbCdEfGhIjKlMnOpQrStUvWxYz", "webViewLink": "https://drive.google.com/file/d/1AbCdEfGhIjKlMnOpQrStUvWxYz/view" } },
+      { "part": 0, "track": "meta", "name": "20260826T010000Z_desktop_01J9ABCD.meta.json", "bytes": 2210,
+        "sha256": "2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae",
+        "drive": { "fileId": "1ZyXwVuTsRqPoNmLkJiHgFeDcBa", "webViewLink": "https://drive.google.com/file/d/1ZyXwVuTsRqPoNmLkJiHgFeDcBa/view" } }
+    ],
+    "folder": {
+      "path": "recly/2026/2026-08/20260826T010000Z_desktop_01J9ABCD",
+      "drive": { "folderId": "1FoLdErIdXxXxXxXxXxXxXxXxXx", "webViewLink": "https://drive.google.com/drive/folders/1FoLdErIdXxXxXxXxXxXxXxXxXx" }
+    },
+    "workflow": { "id": "01J9ABCDEF0123456789ABCDEF", "name": "회의" },
+    "device": { "id": "7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10", "platform": "macos", "name": "MacBook Pro" }
+  }
+}

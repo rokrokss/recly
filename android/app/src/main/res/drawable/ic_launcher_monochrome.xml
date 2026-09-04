@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The adaptive icon's themed layer: the monochrome template glyph (docs/09 "앱 아이콘"). The
+     launcher tints it, so the white here is only what the tint replaces. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3.95"
+        android:pathData="M38.18,32.91 H69.82 A5.27,5.27 0 0 1 75.09,38.18 V69.82 A5.27,5.27 0 0 1 69.82,75.09 H38.18 A5.27,5.27 0 0 1 32.91,69.82 V38.18 A5.27,5.27 0 0 1 38.18,32.91 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48.73,46.09 H59.27 A2.64,2.64 0 0 1 61.91,48.73 V59.27 A2.64,2.64 0 0 1 59.27,61.91 H48.73 A2.64,2.64 0 0 1 46.09,59.27 V48.73 A2.64,2.64 0 0 1 48.73,46.09 Z" />
+</vector>

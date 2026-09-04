@@ -1,0 +1,61 @@
+{
+  "schema": 3,
+  "revision": 7,
+  "updatedAt": "2026-08-26T01:00:00.000Z",
+  "updatedBy": "7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10",
+  "workflows": [
+    {
+      "id": "01J9ABCDEF0123456789ABCDEF",
+      "name": "모든 필드",
+      "updatedAt": "2026-08-26T01:00:00.000Z",
+      "minDurationSec": 30,
+      "steps": [
+        {
+          "id": "up",
+          "type": "drive.upload",
+          "onError": "abort",
+          "retry": { "maxAttempts": 8, "initialDelaySec": 30, "maxDelaySec": 3600 },
+          "folder": "recly/{{yyyy}}/{{yyyy}}-{{MM}}/{{title}}",
+          "includeMeta": true
+        },
+        {
+          "id": "stt",
+          "type": "transcribe",
+          "onError": "continue",
+          "retry": { "maxAttempts": 4, "initialDelaySec": 30, "maxDelaySec": 600 },
+          "provider": "clova",
+          "secretRef": "clova_key",
+          "invokeUrl": "https://clovaspeech-gw.ncloud.com/external/v1/1234/abcd",
+          "language": "ko-en",
+          "diarize": true,
+          "speakers": { "min": 2, "max": 6 },
+          "model": "sommers"
+        },
+        {
+          "id": "hook",
+          "type": "webhook",
+          "onError": "continue",
+          "retry": { "maxAttempts": 10, "initialDelaySec": 60, "maxDelaySec": 1800 },
+          "url": "https://n8n.example.com/webhook/rec",
+          "secretRef": "hook_main"
+        }
+      ]
+    },
+    {
+      "id": "01J9ABCDEF0123456789ABCDEG",
+      "name": "최소 필드",
+      "updatedAt": "2026-08-20T09:30:00.000Z",
+      "minDurationSec": 0,
+      "steps": [
+        {
+          "id": "up",
+          "type": "drive.upload",
+          "onError": "abort",
+          "retry": { "maxAttempts": 1, "initialDelaySec": 1, "maxDelaySec": 1 },
+          "folder": "recly",
+          "includeMeta": false
+        }
+      ]
+    }
+  ]
+}

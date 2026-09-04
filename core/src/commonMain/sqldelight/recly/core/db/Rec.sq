@@ -1,0 +1,259 @@
+-- `drive_folder_id` is the recording's `{base}/` folder on Drive (ADR-014): written by the upload
+-- step when it makes or finds the folder, and by a pull when it adopts one — so it outlives the
+-- queue rows "연결 해제" clears. `remote` marks a row adopted from Drive (docs/03 "다른 기기의 녹음"):
+-- another device recorded it, this one has no job for it and no original.
+CREATE TABLE recording (
+  id TEXT PRIMARY KEY, source TEXT NOT NULL, platform TEXT NOT NULL,
+  workflow_id TEXT, title TEXT, started_at TEXT NOT NULL, ended_at TEXT, duration_sec REAL,
+  timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
+  drive_folder_id TEXT,
+  remote INTEGER NOT NULL DEFAULT 0
+);
+
+-- `drive_file_id` is the adopted part's file on Drive, where playback fetches it from; a part
+-- uploaded from here keeps its id in the step output instead and leaves this NULL.
+CREATE TABLE part (
+  recording_id TEXT NOT NULL, part INTEGER NOT NULL, track TEXT NOT NULL,
+  file TEXT NOT NULL, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, md5 TEXT,
+  deleted INTEGER NOT NULL DEFAULT 0,
+  drive_file_id TEXT,
+  PRIMARY KEY (recording_id, part, track)
+);
+
+CREATE TABLE job (
+  id TEXT PRIMARY KEY, recording_id TEXT NOT NULL, workflow_id TEXT NOT NULL,
+  workflow_json TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL, updated_at TEXT NOT NULL, next_run_at TEXT,
+  UNIQUE (recording_id, workflow_id)
+);
+
+CREATE TABLE step_run (
+  id TEXT PRIMARY KEY, job_id TEXT NOT NULL, step_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TEXT, last_error TEXT,
+  state_json TEXT,
+  output_json TEXT,
+  UNIQUE (job_id, step_id)
+);
+
+CREATE TABLE drive_folder_cache (path TEXT PRIMARY KEY, folder_id TEXT NOT NULL, checked_at TEXT NOT NULL);
+
+-- docs/05: this device's workflow document and its default-workflow pointer. Both local.
+CREATE TABLE sync_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+
+kvGet:
+SELECT value FROM kv WHERE key = ?;
+
+kvSet:
+INSERT OR REPLACE INTO kv(key, value) VALUES (?, ?);
+
+kvDelete:
+DELETE FROM kv WHERE key = ?;
+
+kvSelectPrefix:
+SELECT * FROM kv WHERE key LIKE :prefix || '%' ORDER BY key;
+
+kvDeletePrefix:
+DELETE FROM kv WHERE key LIKE :prefix || '%';
+
+-- A pending write that has been pushed: gone only if nothing newer was written over it meanwhile.
+kvDeleteIfValue:
+DELETE FROM kv WHERE key = ? AND value = ?;
+
+syncGet:
+SELECT value FROM sync_state WHERE key = ?;
+
+syncSet:
+INSERT OR REPLACE INTO sync_state(key, value) VALUES (?, ?);
+
+syncDelete:
+DELETE FROM sync_state WHERE key = ?;
+
+insertRecording:
+INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+-- The watch path replaces the row as parts and then the meta arrive; the folder the phone's upload
+-- may already have made for it is not the watch's to reset, so it is carried over (last argument:
+-- the same id again).
+upsertRecording:
+INSERT OR REPLACE INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT drive_folder_id FROM recording WHERE id = ?), 0);
+
+-- docs/03 "다른 기기의 녹음": a row adopted from Drive. Its parts are written by `insertAdoptedPart`
+-- as already-purged, so nothing here ever enqueues a job for it and playback fetches by file id.
+insertAdoptedRecording:
+INSERT INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1);
+
+-- The upload step made or found the recording's folder: remembered on the row, where a disconnect
+-- that clears the queue cannot take it.
+updateRecordingFolder:
+UPDATE recording SET drive_folder_id = ? WHERE id = ?;
+
+-- A pull backfilling a row that was uploaded before the column existed: never over a known one.
+updateRecordingFolderIfUnknown:
+UPDATE recording SET drive_folder_id = ? WHERE id = ? AND drive_folder_id IS NULL AND remote = 0;
+
+insertAdoptedPart:
+INSERT OR REPLACE INTO part(recording_id, part, track, file, bytes, sha256, md5, deleted, drive_file_id)
+VALUES (?, ?, ?, ?, ?, ?, NULL, 1, ?);
+
+selectRecordingIds:
+SELECT id FROM recording;
+
+selectAdoptedRecordings:
+SELECT id, drive_folder_id FROM recording WHERE remote = 1;
+
+selectRecordingFolders:
+SELECT id, drive_folder_id FROM recording WHERE drive_folder_id IS NOT NULL;
+
+-- Emits on every write to `recording`: what a ledger that is not driven by the job table alone
+-- listens to, now that a pull can add or drop a row without a job ever existing.
+countRecordings:
+SELECT count(*) FROM recording;
+
+deleteRecording:
+DELETE FROM recording WHERE id = ?;
+
+deletePartsByRecording:
+DELETE FROM part WHERE recording_id = ?;
+
+-- "녹음 삭제" (docs/03): the rows a recording leaves behind, since nothing cascades.
+deleteJobsByRecording:
+DELETE FROM job WHERE recording_id = ?;
+
+deleteStepRunsByRecording:
+DELETE FROM step_run WHERE job_id IN (SELECT id FROM job WHERE recording_id = ?);
+
+selectRecordingById:
+SELECT * FROM recording WHERE id = ?;
+
+selectRecordings:
+SELECT * FROM recording ORDER BY started_at DESC LIMIT :limit;
+
+updateRecordingMeta:
+UPDATE recording SET title = ?, ended_at = ?, duration_sec = ?, meta_json = ?, status = ? WHERE id = ?;
+
+insertPart:
+INSERT OR REPLACE INTO part(recording_id, part, track, file, bytes, sha256, md5, deleted)
+VALUES (?, ?, ?, ?, ?, ?, ?, 0);
+
+selectPartsByRecording:
+SELECT * FROM part WHERE recording_id = ? ORDER BY part, track;
+
+markPartsDeleted:
+UPDATE part SET deleted = 1 WHERE recording_id = ?;
+
+-- A part fetched back from Drive is on the device again (`ReclyCore.audio`): the retention sweep
+-- starts its window over from the file it has just written.
+markPartPresent:
+UPDATE part SET deleted = 0 WHERE recording_id = ? AND part = ? AND track = ?;
+
+-- What the retention sweep has anything to consider: a recording with audio still on disk.
+selectRecordingsWithLiveParts:
+SELECT DISTINCT recording_id FROM part WHERE deleted = 0 ORDER BY recording_id;
+
+insertJob:
+INSERT INTO job(id, recording_id, workflow_id, workflow_json, status, created_at, updated_at, next_run_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+selectJobById:
+SELECT * FROM job WHERE id = ?;
+
+selectJobByRecordingAndWorkflow:
+SELECT * FROM job WHERE recording_id = ? AND workflow_id = ?;
+
+selectJobs:
+SELECT * FROM job ORDER BY created_at;
+
+selectJobsByRecording:
+SELECT * FROM job WHERE recording_id = ? ORDER BY created_at;
+
+selectRunningJobIds:
+SELECT id FROM job WHERE status = 'RUNNING';
+
+selectDueJobs:
+SELECT * FROM job
+WHERE status IN ('PENDING', 'WAITING') AND (next_run_at IS NULL OR next_run_at <= :now)
+ORDER BY created_at;
+
+updateJobStatus:
+UPDATE job SET status = ?, next_run_at = ?, updated_at = ? WHERE id = ?;
+
+latestPendingAttempt:
+SELECT * FROM step_run
+WHERE job_id = ? AND status = 'PENDING' AND next_attempt_at IS NOT NULL
+ORDER BY next_attempt_at DESC LIMIT 1;
+
+insertStepRun:
+INSERT INTO step_run(id, job_id, step_id, ordinal, status, attempts, next_attempt_at, last_error, state_json, output_json)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+selectStepRunsByJob:
+SELECT * FROM step_run WHERE job_id = ? ORDER BY ordinal;
+
+-- Every step of every job of one recording: where the Drive folder id of a deleted recording is.
+selectStepRunsByRecording:
+SELECT step_run.* FROM step_run
+JOIN job ON job.id = step_run.job_id
+WHERE job.recording_id = ? ORDER BY job.created_at, step_run.ordinal;
+
+-- `output_json` is only ever added to, never cleared: a step that writes part of its answer before
+-- it can fail — the Drive folder id, so "Drive에서도 삭제" still knows what to delete after a park
+-- (docs/03) — must not lose it to the failing attempt's own write.
+updateStepRun:
+UPDATE step_run SET status = ?, attempts = ?, next_attempt_at = ?, last_error = ?,
+  output_json = coalesce(?, output_json)
+WHERE id = ?;
+
+updateStepOutput:
+UPDATE step_run SET output_json = ? WHERE id = ?;
+
+updateStepState:
+UPDATE step_run SET state_json = ? WHERE id = ?;
+
+resetStepRuns:
+UPDATE step_run SET status = 'PENDING', attempts = 0, next_attempt_at = NULL, last_error = NULL
+WHERE job_id = ? AND status IN ('PENDING', 'RUNNING', 'FAILED', 'NEEDS_AUTH', 'NEEDS_SPACE');
+
+-- "Run it now" on a job waiting out a backoff: the wait is dropped, the spent attempts are not.
+clearStepBackoff:
+UPDATE step_run SET next_attempt_at = NULL WHERE job_id = ? AND status = 'PENDING';
+
+recoverRunningStepRuns:
+UPDATE step_run SET status = 'PENDING' WHERE status = 'RUNNING';
+
+-- docs/10 "Drive 용량 초과": the resume point is dropped with the park, not kept.
+clearStepState:
+UPDATE step_run SET state_json = NULL WHERE id = ?;
+
+-- "연결 해제" (docs/03): the queue is local state and goes; the recordings are not and stay. The
+-- exception is a recording whose job is RUNNING and which "녹음도 함께 삭제" therefore refused: its
+-- rows are what that run is written against, so they outlive the disconnect.
+deleteStepRunsExcept:
+DELETE FROM step_run WHERE job_id NOT IN (SELECT id FROM job WHERE recording_id IN ?);
+
+deleteJobsExcept:
+DELETE FROM job WHERE recording_id NOT IN ?;
+
+selectPart:
+SELECT * FROM part WHERE recording_id = ? AND part = ? AND track = ?;
+
+updatePartMd5:
+UPDATE part SET md5 = ? WHERE recording_id = ? AND part = ? AND track = ?;
+
+selectFolderCache:
+SELECT * FROM drive_folder_cache WHERE path = ?;
+
+upsertFolderCache:
+INSERT OR REPLACE INTO drive_folder_cache(path, folder_id, checked_at) VALUES (?, ?, ?);
+
+deleteFolderCache:
+DELETE FROM drive_folder_cache WHERE path = ?;
+
+deleteAllFolderCache:
+DELETE FROM drive_folder_cache;

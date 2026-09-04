@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  docs/07: the languages this app ships. It is what puts Recly in the system's per-app language
+  picker; the in-app setting writes the same value through `LocaleManager`.
+-->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="ko" />
+</locale-config>

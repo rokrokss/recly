@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The one entitlement the watch app needs, and only because of the complication: a widget extension
+  is a separate process, and an app group is the only place the two can share the status file
+  (`WatchStatus`). No iCloud, no keychain group — the watch's database is its own (docs/13).
+-->
+<plist version="1.0">
+<dict>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.app.recly.watch</string>
+	</array>
+</dict>
+</plist>
