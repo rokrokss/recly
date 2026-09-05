@@ -15,6 +15,14 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/design/screenshots/galaxy-watch.png" height="220" alt="Galaxy Watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/android-phone.png" height="440" alt="Android 폰">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/mac.png" height="360" alt="macOS 메뉴바">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/iphone.png" height="440" alt="iPhone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/apple-watch.png" height="220" alt="Apple Watch">
+</p>
+
 회의록 앱과 AI 레코더는 녹취록만 남기고 오디오는 버립니다. 그것도 자기 서버에, 자기 구독 아래에서요.
 Recly는 그 반대입니다. **녹음하고 올리는 것까지만** 하는 정직한 레코더입니다. 원본 오디오는 **내**
 Google Drive에 남고, 그다음 일(웹훅, 녹취, 노트)은 **내가** 만든 워크플로우가 **내** 키로 처리합니다.

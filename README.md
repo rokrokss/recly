@@ -15,6 +15,14 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/design/screenshots/galaxy-watch.png" height="220" alt="Galaxy Watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/android-phone.png" height="440" alt="Android phone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/mac.png" height="360" alt="macOS menu bar">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/iphone.png" height="440" alt="iPhone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/apple-watch.png" height="220" alt="Apple Watch">
+</p>
+
 Meeting-note apps and AI recorders keep the transcript and throw the audio away, on their servers,
 under their subscription. Recly is the opposite: an honest recorder that **records and uploads,
 nothing more**. The original audio stays in **your** Google Drive, and what happens next
