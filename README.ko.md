@@ -4,7 +4,7 @@
 
 # Recly
 
-**워치·폰·데스크톱 어디서 녹음하든 원본은 내 Google Drive에.<br>그다음은 내가 정한 워크플로우가 돈다. 다른 데로는 아무것도 가지 않는다.**
+**Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디오는 내 Drive에, 녹취는 내 키로, 노트는 내 AI가.**
 
 [다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](docs/policy/privacy-policy.ko.md) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
 
@@ -15,23 +15,18 @@
 
 </div>
 
-<p align="center">
-  <img src="docs/design/screenshots/galaxy-watch.png" height="220" alt="Galaxy Watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/android-phone.png" height="440" alt="Android 폰">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/mac.png" height="360" alt="macOS 메뉴바">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/iphone.png" height="440" alt="iPhone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/apple-watch.png" height="220" alt="Apple Watch">
-</p>
+<p align="center"><img src="docs/design/flow.svg" width="100%" alt="워치에서 녹음 버튼 → 폰으로 전달 → 폰이 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
 
-회의록 앱과 AI 레코더는 녹취록만 남기고 오디오는 버립니다. 그것도 자기 서버에, 자기 구독 아래에서요.
-Recly는 그 반대입니다. **녹음하고 올리는 것까지만** 하는 정직한 레코더입니다. 원본 오디오는 **내**
-Google Drive에 남고, 그다음 일(웹훅, 녹취, 노트)은 **내가** 만든 워크플로우가 **내** 키로 처리합니다.
-Recly 서버는 없고, 회의에 들어오는 봇도 없고, 월 구독료도 없습니다.
+Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹음기는 이미 손목에 있고 AI는 이미
+구독 중입니다. Recly는 빠진 하나인 녹취를 **내** 키로 원가에 채우고, 원본 오디오를 남의 서버가 아닌
+**내** Google Drive에 남깁니다. 그다음 일(웹훅, 노트)은 **내가** 만든 워크플로우가 합니다. Recly 서버는
+없고, 회의에 들어오는 봇도 없고, 월 구독료도 없습니다.
 
 ## 왜 Recly인가
 
-- **클라이언트 여섯, 습관 하나.** Galaxy Watch, Android, Apple Watch, iPhone, macOS, Windows가 같은
-  방식으로 녹음하고 같은 종류의 워크플로우를 돌립니다. 워치는 폰에 녹음을 넘기고, 데스크톱은 내 마이크와
+- **이미 차고 있는 녹음기.** Galaxy Watch 홈 키를 두 번 누르면 녹음이 시작되고, 워치는 폰에 오디오를
+  넘기고, 나머지는 폰이 합니다. 여섯 클라이언트(Galaxy Watch, Android, Apple Watch, iPhone, macOS,
+  Windows)가 같은 방식으로 녹음하고 같은 종류의 워크플로우를 돌리며, 데스크톱은 내 마이크와
   Zoom·Teams·Meet 상대방 소리를 트랙을 나눠 담습니다.
 - **저장소는 내 Drive뿐.** 녹음은 내 Google Drive의 `recly/2026/2026-09/` 같은 폴더로 갑니다. Google이
   제공하는 가장 좁은 권한(`drive.file`)만 쓰고, 업로드가 확인되기 전에는 원본을 지우지 않습니다. Recly는
@@ -123,6 +118,14 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 
 여섯 클라이언트는 Kotlin Multiplatform 코어 하나를 공유합니다. 워크플로우 엔진, 재개 가능한 Drive
 업로드, 웹훅, 녹취 어댑터, 작업 큐가 거기 있습니다.
+
+<p align="center">
+  <img src="docs/design/screenshots/galaxy-watch.png" height="150" alt="Galaxy Watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/android-phone.png" height="300" alt="Android 폰">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/mac.png" height="250" alt="macOS 메뉴바">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/iphone.png" height="300" alt="iPhone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/apple-watch.png" height="150" alt="Apple Watch">
+</p>
 
 ## 프라이버시
 

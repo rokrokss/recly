@@ -4,7 +4,7 @@
 
 # Recly
 
-**Record on your watch, phone or desktop. The original lands in your own Google Drive.<br>Then the workflow you defined runs. Nothing goes anywhere else.**
+**A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.**
 
 [Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](docs/policy/privacy-policy.md) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
@@ -15,25 +15,21 @@
 
 </div>
 
-<p align="center">
-  <img src="docs/design/screenshots/galaxy-watch.png" height="220" alt="Galaxy Watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/android-phone.png" height="440" alt="Android phone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/mac.png" height="360" alt="macOS menu bar">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/iphone.png" height="440" alt="iPhone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/apple-watch.png" height="220" alt="Apple Watch">
-</p>
+<p align="center"><img src="docs/design/flow.svg" width="100%" alt="Press record on the watch → it hands off to the phone → the phone uploads to your Google Drive and transcribes with your own key → anything, with your own AI"></p>
 
-Meeting-note apps and AI recorders keep the transcript and throw the audio away, on their servers,
-under their subscription. Recly is the opposite: an honest recorder that **records and uploads,
-nothing more**. The original audio stays in **your** Google Drive, and what happens next
-(a webhook, a transcript, the notes) is a workflow **you** wrote, running with **your** keys.
-There is no Recly server, no bot joining your call, and no monthly fee.
+A Plaud or a NotePin sells you three things: a recorder, transcription, and AI notes. You already
+wear the recorder, and you already pay for the AI. Recly supplies the one piece you are missing,
+transcription with **your own** key at cost, and keeps the original audio in **your** Google Drive
+instead of on someone's server. What happens next (a webhook, the notes) is a workflow **you**
+wrote. There is no Recly server, no bot joining your call, and no monthly fee.
 
 ## Why Recly
 
-- **Six clients, one habit.** Galaxy Watch, Android, Apple Watch, iPhone, macOS and Windows all
-  record the same way and run the same kind of workflow. Watches hand recordings to your phone;
-  desktops capture your mic and the other side of a Zoom, Teams or Meet call as separate tracks.
+- **The recorder you already wear.** A double press of the Galaxy Watch's home key starts
+  recording; the watch hands the audio to your phone, and the phone does the rest. Six clients
+  (Galaxy Watch, Android, Apple Watch, iPhone, macOS, Windows) record the same way and run the same
+  kind of workflow; desktops capture your mic and the other side of a Zoom, Teams or Meet call as
+  separate tracks.
 - **Your Drive is the only storage.** Recordings go to a folder like `recly/2026/2026-09/` in
   your own Google Drive, using the narrowest permission Google offers (`drive.file`), and are never
   deleted before the upload is confirmed. Recly cannot see your files. It has no server to see them with.
@@ -130,6 +126,14 @@ decide about pricing last week?"*. Don't like the format? Edit the skill file. T
 
 All six share one Kotlin Multiplatform core: the workflow engine, resumable Drive uploads,
 webhooks, transcription adapters and the job queue.
+
+<p align="center">
+  <img src="docs/design/screenshots/galaxy-watch.png" height="150" alt="Galaxy Watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/android-phone.png" height="300" alt="Android phone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/mac.png" height="250" alt="macOS menu bar">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/iphone.png" height="300" alt="iPhone">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/apple-watch.png" height="150" alt="Apple Watch">
+</p>
 
 ## Privacy
 
