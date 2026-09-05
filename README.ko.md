@@ -6,7 +6,7 @@
 
 **워치·폰·데스크톱 어디서 녹음하든 원본은 내 Google Drive에.<br>그다음은 내가 정한 워크플로우가 돈다. 다른 데로는 아무것도 가지 않는다.**
 
-[다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](docs/policy/privacy-policy.md) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
+[다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](docs/policy/privacy-policy.ko.md) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -45,7 +45,7 @@ Recly 서버는 없고, 회의에 들어오는 봇도 없고, 월 구독료도 �
 | 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 Drive에서 녹취록을 읽고 내 Notion에 노트를 씁니다. Recly는 관여하지 않습니다. |
 | 워크플로우 정의, API 키, 웹훅 시크릿 | 기기의 보안 저장소 | 없음. 동기화되지 않습니다. 옮길 때는 설정 → 내보내기/가져오기. |
 
-네트워크로 나가는 경로 전부를 하나도 빼지 않고 적은 문서가 [개인정보처리방침](docs/policy/privacy-policy.md)입니다.
+네트워크로 나가는 경로 전부를 하나도 빼지 않고 적은 문서가 [개인정보처리방침](docs/policy/privacy-policy.ko.md)입니다.
 
 ## Recly 받기
 
@@ -119,7 +119,7 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 ## 프라이버시
 
 Recly에는 서버가 없습니다. 데이터가 갈 수 있는 곳은 내 Google Drive, 내가 적은 웹훅 주소, 내가 고른 녹취
-provider, 그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리방침](docs/policy/privacy-policy.md)이 그 경로를
+provider, 그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리방침](docs/policy/privacy-policy.ko.md)이 그 경로를
 전부 나열하고, [docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15)가 그 뒤의 엔지니어링
 계약입니다. 네트워크 호출을 추가하는 변경은 그 절을 먼저 고쳐야 합니다.
 

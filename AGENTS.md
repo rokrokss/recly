@@ -25,7 +25,7 @@ windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled f
 spec/        JSON Schema + examples — the contract every client honors
 skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 scripts/     icon rendering, local webhook receiver
-docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md · design/icon.svg
+docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```
 
 ## Build & test commands
