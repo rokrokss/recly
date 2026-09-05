@@ -47,6 +47,8 @@ jobs:
           name: recly-capture-helper
           path: windows/capture-helper/target/release/recly-capture-helper.exe
           if-no-files-found: error
+          # Only the `msi` job downstream reads this; a day is plenty.
+          retention-days: 1
 
   app:
     runs-on: windows-latest
@@ -152,3 +154,7 @@ jobs:
           name: recly-msi
           path: windows/app/build/compose/binaries/main/msi/*.msi
           if-no-files-found: error
+          # ~150 MB per run: the default 90 days blew through the private-repository artifact
+          # storage quota and every upload step started failing. Two weeks is enough to grab an
+          # installer off a recent run; a release is what keeps one for good.
+          retention-days: 14
