@@ -13,7 +13,7 @@ IOS_SIM ?= iPhone 17 Pro
 WATCH_SIM ?= Apple Watch Series 11 (46mm)
 
 .PHONY: help test core android-test windows-test apk aab windows-run windows-msi helper-test \
-        mac mac-test ios watch spec
+        mac mac-test ios watch spec skills
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
@@ -30,6 +30,7 @@ help:
 	@echo "make windows-msi    Windows MSI (Windows hosts only)"
 	@echo "make helper-test    Rust capture helper tests"
 	@echo "make spec           validate spec/examples against the JSON Schemas"
+	@echo "make skills         zip the two agent skills for the Claude app (build/skills/)"
 
 # ---- Core · Android · Windows (JVM)
 
@@ -80,3 +81,14 @@ watch:
 
 spec:
 	cd spec && npm ci && npm run validate
+
+# ---- Skills
+
+# The Claude app takes a skill as a ZIP whose root is the skill folder. `windows-release.yml`
+# attaches these two to the GitHub release for the tag, so a phone can download them.
+skills:
+	mkdir -p build/skills
+	cd skills && for skill in recly-notes recly-notion; do \
+	  rm -f ../build/skills/$$skill.zip && zip -qr ../build/skills/$$skill.zip $$skill -x '*.DS_Store'; \
+	done
+	ls -l build/skills

@@ -30,8 +30,9 @@ app's own local copy with no setup at all.
 
 1. Connect Google Drive and Notion under Settings → Connectors.
 2. Turn on "Code execution and file creation" under Capabilities.
-3. Upload `recly-notes` and `recly-notion` as two ZIP files under Customize → Skills. Each ZIP's
-   root is the skill folder itself.
+3. Upload `recly-notes.zip` and `recly-notion.zip` from the latest
+   [release](https://github.com/rokrokss/recly/releases/latest) under Customize → Skills. (Building
+   them yourself: `make skills`; each ZIP's root is the skill folder itself.)
 
 Do the setup once on the web; it follows your account to the phone.
 
