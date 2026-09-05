@@ -1,15 +1,15 @@
 {
   "name": "recly",
-  "description": "Agent skills that work with Recly recordings in your own Google Drive.",
+  "description": "Agent skills for Recly, the serverless recorder that keeps recordings in your own Google Drive.",
   "owner": {
     "name": "Hyungrok Kim",
     "url": "https://github.com/rokrokss"
   },
   "plugins": [
     {
-      "name": "recly-notes",
+      "name": "recly",
       "source": "./skills",
-      "description": "Turn a Recly recording's transcript into meeting minutes, saved beside the recording in your own Google Drive."
+      "description": "Agent skills for Recly recordings: read a transcript from your own Google Drive, write notes, and keep them in Notion."
     }
   ]
 }

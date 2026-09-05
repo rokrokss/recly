@@ -1,13 +1,13 @@
 {
-  "name": "recly-notes",
-  "description": "Turn a Recly recording's transcript into meeting minutes, saved beside the recording in your own Google Drive.",
-  "version": "0.0.1",
+  "name": "recly",
+  "description": "Agent skills for Recly recordings: read a transcript from your own Google Drive, write notes, and keep them in Notion.",
+  "version": "0.0.2",
   "author": {
     "name": "Hyungrok Kim"
   },
   "homepage": "https://github.com/rokrokss/recly",
   "repository": "https://github.com/rokrokss/recly",
   "license": "AGPL-3.0-or-later",
-  "keywords": ["recly", "transcript", "meeting-minutes", "summarization"],
-  "skills": ["."]
+  "keywords": ["recly", "transcript", "meeting-minutes", "notion", "google-drive"],
+  "skills": ["./recly-notes", "./recly-notion"]
 }

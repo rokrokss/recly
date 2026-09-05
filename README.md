@@ -83,22 +83,45 @@ a watch and getting past the Windows SmartScreen warning. Building from source i
 A workflow is a small JSON document. The schema and examples are in [`spec/`](spec/), so anything
 that can read JSON (your n8n flow, your script) knows exactly what it will receive.
 
-## Summaries: bring your own agent
+## Notes: bring your own agent
 
 Recly's pipeline ends at the transcript on purpose. Summarizing text is something your existing
-AI subscription already does well, so Recly ships a **skill** for your agent instead of a metered
-feature: [`skills/recly-notes`](skills/recly-notes/SKILL.md) reads a recording's transcript from
-your Drive `recly/` folder and writes meeting minutes next to it.
+AI subscription already does well, so Recly ships **skills** for your agent instead of a metered
+feature. Drive stays the archive the app writes; the agent only reads it. Notes, and every edit
+you make to them later, live in Notion.
+
+| Skill | What it does |
+|---|---|
+| [`recly-notes`](skills/recly-notes/SKILL.md) | finds a recording in your Drive (the latest, or the one you name), reads its transcript, and writes minutes, a decision log, interview or lecture notes, or a memo |
+| [`recly-notion`](skills/recly-notion/SKILL.md) | keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
+
+**Coding agents** (Claude Code, Codex, Cursor):
 
 ```bash
 npx skills add rokrokss/recly            # any agent that supports Agent Skills
 # or, inside Claude Code:
 /plugin marketplace add rokrokss/recly
-/plugin install recly-notes@recly
+/plugin install recly@recly
 ```
 
-Then ask: *"Summarize yesterday's 3 pm meeting from my Recly folder"* or *"Write action items for
-the last recording"*. Don't like the minutes format? Edit the skill file. That is the point.
+The plugin registers Notion's hosted MCP server; run `/mcp` once to sign in. Google Drive comes
+from the connector you enable at claude.ai (Settings → Connectors), which Claude Code picks up
+automatically — or, on the machine that transcribed the recording, from the Recly app's own
+local copy with no setup at all.
+
+**Claude app** (web, desktop, phone): connect Google Drive and Notion under Settings →
+Connectors, turn on "Code execution and file creation" under Capabilities, then upload
+`skills/recly-notes` and `skills/recly-notion` as two ZIP files under Customize → Skills (each
+ZIP's root is the skill folder). Do the setup once on the web; it follows your account to the
+phone.
+
+**ChatGPT app** (web, desktop, phone): connect Google Drive and Notion under Settings → Apps,
+create a project, upload the five files under `skills/` (the two `SKILL.md` and the three files
+in `references/`), and put one line in the project instructions: *"Follow the attached
+recly-notes and recly-notion SKILL.md files."* Chat inside that project.
+
+Then ask: *"Make minutes from the latest recording and put them in Notion"* or *"What did we
+decide about pricing last week?"*. Don't like the format? Edit the skill file. That is the point.
 
 ## Clients
 
@@ -141,7 +164,7 @@ android/     :app (phone), :wear (Galaxy Watch), :recording (shared recorder), :
 apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / RecMac
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI)
 spec/        JSON Schema + examples — the contract every client honors
-skills/      skills for the user's agent — recly-notes (transcript → minutes)
+skills/      skills for the user's agent — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 scripts/     icon rendering, local webhook receiver
 docs/        recly.md (the design source of truth) + install.md + development.md + policy/
 ```

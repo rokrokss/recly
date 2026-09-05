@@ -1,49 +1,90 @@
 ---
 name: recly-notes
-description: Turn a Recly recording's transcript into meeting minutes saved beside the recording. Use when the user asks to summarize a Recly recording, meeting, or transcript — in their Google Drive `recly/` folder or a local copy.
+description: Turn a Recly recording's transcript into minutes, a decision log, interview or lecture notes, or a memo. Use when the user mentions a Recly recording, the latest recording, or a transcript.
 ---
 
-# recly-notes — meeting minutes from a Recly transcript
+# recly-notes — notes from a Recly recording
 
-Recly records a meeting, uploads it to the user's own Google Drive, and (when the workflow has a
-`transcribe` step) leaves a diarized transcript next to the audio. Summarization is deliberately
-not a pipeline step: it is your job, running under the user's existing agent subscription instead
-of a metered API key. This skill turns one recording's transcript into minutes and puts them back
-where the recording lives.
+Recly records on a watch, phone, or desktop and uploads the recording to the **user's own Google
+Drive**. When the workflow has a `transcribe` step, a diarized transcript lands next to the audio.
+Summarizing is deliberately not part of that pipeline — it is your job. This skill finds one
+recording, reads its transcript, and writes the notes the user asked for.
 
-## Locate the recording
+Two rules frame everything below:
 
-A recording is one folder, by default under `recly/` in the user's Drive (the workflow may name it
-differently, e.g. `recly/2026-08-31 Weekly sync/`). It contains:
+- **Drive is read-only for you.** It holds what the app recorded. Never write into the recording
+  folder. The notes go in your reply and, when the user wants them kept, into Notion through the
+  `recly-notion` skill.
+- **"Recording" means the transcript.** Unless the user explicitly asks for audio, "get the
+  recording" means read `{base}.transcript.txt`. You cannot listen to audio; if asked for it, give
+  the file names or the Drive folder and stop.
 
-| File | What it is |
+## Find the recording
+
+Try these in order and use the first that works. Always say which recording you picked (title,
+start time, source device).
+
+1. **The Recly app's local directory on this machine.** Only recordings this device transcribed
+   are here, but it needs no setup. macOS: `~/Library/Application Support/rec/recordings/`,
+   Windows: `%LOCALAPPDATA%\rec\recordings\`. One folder per recording; look for
+   `*.transcript.txt` inside.
+2. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
+   `.transcript.txt` — the Drive query is `name contains '.transcript.txt'` — or browse the
+   `recly/` folder tree. Read the transcript and the `{base}.meta.json` beside it.
+3. **A Google Drive desktop sync folder**, if this machine has one:
+   `~/Library/CloudStorage/GoogleDrive-*/My Drive/recly/` or `G:\My Drive\recly`.
+4. **None of the above:** ask the user to attach or paste the transcript, and tell them in one
+   line how to connect Google Drive to this assistant so it works next time.
+
+Folder and file names, `meta.json` fields, and what an incomplete folder looks like are in
+`references/drive-layout.md`.
+
+## Which recording is "the latest"
+
+- **Latest = greatest start time.** Every recording folder and file name begins with the start
+  time in UTC (`20260826T010000Z_desktop_01J9ABCD`), so sorting names in descending order is
+  chronological. You do not need to open `meta.json` to rank them.
+- **A newer folder without a transcript is not "no recording".** A folder with no `meta.json` is
+  still uploading; a folder whose Drive marker `pending` contains `transcribe` is still being
+  transcribed. Use the newest folder that *has* a transcript, and tell the user a newer recording
+  exists and is still uploading or transcribing. Never fall back silently.
+- A recording whose workflow had no `transcribe` step has no transcript at all. Say so; do not
+  guess at the audio.
+- "Yesterday's 3 pm meeting" resolves through `meta.json` `startedAt` in the recording's own
+  `timezone`.
+
+## Read it
+
+- `{base}.transcript.txt` is one turn per line: `[HH:MM:SS] S1: text`. Speakers are `S1`, `S2`, …
+  in order of first appearance; there are no names.
+- `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
+  `source` (`watch`/`phone`/`desktop`), `deviceName`, `context.participants` (head count,
+  optional) and `context.app` (the meeting app on desktop, optional).
+- The transcript is speech-to-text output: names and technical terms may be misheard. Do not
+  correct them silently — keep the spelling and, where it matters, flag it.
+
+## Write the notes
+
+Pick a template from `references/templates.md`:
+
+| Template | Use when |
 |---|---|
-| `{base}_p001_mic.m4a` (and friends) | The audio parts. You do not need them. |
-| `{base}.meta.json` | Title, start time, timezone, device, optional participant count. |
-| `{base}.transcript.txt` | Human/LLM transcript: one line per turn, `[HH:MM:SS] S1: text`. **Read this one.** |
-| `{base}.transcript.json` | Machine transcript with per-segment timing. Fallback only. |
+| **minutes** (default) | a meeting: several speakers, decisions, tasks |
+| decision-log | the user wants only what was decided and why |
+| interview | one person asks, another answers (user research, hiring, podcast) |
+| lecture | one speaker, long, explanatory |
+| memo | a short single-speaker note to self, a call, a voice memo |
 
-Reach the folder however the user's setup allows: a Google Drive connector/MCP, a locally synced
-Drive folder, or files the user hands you. If the user didn't say which recording, take the most
-recent folder that has a transcript, and say which one you picked. If there is no transcript file,
-stop and tell the user the recording ran without a `transcribe` step — don't guess at the audio.
+If the user named a kind, use it. Otherwise infer from the transcript (speaker count, length,
+question density, `context.app`) and say which template you chose. Write in the transcript's
+language unless told otherwise. Use speaker labels as owners unless the user maps them to names;
+offer to map them. Cite timestamps like `[00:14:20]` for anything a reader may want to jump to.
+Keep it to one screen when the recording allows.
 
-## Write the minutes
+## Deliver
 
-Write in the transcript's own language, unless the user asks otherwise. Structure, in order:
-
-1. **Header** — title, date/time (from `{base}.meta.json`, in its timezone), duration, participants.
-2. **Decisions** — what was settled, one line each.
-3. **Action items** — `owner → task (due)`. Use speaker labels (S1, S2…) as owners unless the
-   user tells you real names; offer to map labels to names.
-4. **Discussion** — the substance of what was talked through, by topic, brief. Cite timestamps
-   like `[00:14:20]` for anything a reader may want to jump to.
-
-Keep it minutes, not a transcript retelling: a reader who missed the meeting should know what was
-decided, who owes what, and what was argued — in one screen if the meeting allows it.
-
-## Save it back
-
-Save as `{base}.summary.md` in the same folder as the transcript (same Drive folder when you read
-from Drive, same directory when local). If a summary already exists, overwrite it — the newest run
-is canonical. Show the user the minutes in your reply as well.
+- Put the notes in your reply.
+- If the user wants them kept, or says "save", "upload", "Notion": hand off to the `recly-notion`
+  skill with the notes and the recording's identity — `recordingId`, `{base}`, title,
+  `startedAt` and `timezone`, `durationSec`, `source`, participants, and the template name.
+  `recordingId` is the key that keeps one page per recording; always carry it.
