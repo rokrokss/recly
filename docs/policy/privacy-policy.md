@@ -2,14 +2,14 @@
 
 > **상태: 초안 — 시행 전.** 아직 어디에도 게시되지 않았고, 아래 시행일은 게시하는 날로 다시 적는다.
 >
-> **구현 전제 조건은 충족됐다.** §7의 녹음 삭제(작업 기록 포함)·앱 안의 연결 해제와 §8의 네 셸 동의 리마인더가 실제로 앱에 있다. 게시 전에 남은 것은 **코드가 아니라 사람의 일** 셋이다 — ① `docs/recly.md` §15 §3 표의 provider별 보관 정책 URL 확정(확정 전까지 앱의 고지에도 링크를 걸지 않는다), ② 아래 `<TODO>` 두 곳의 공개 연락처 이메일, ③ 법률 검토(§8의 관할 요약은 웹 요약이고 법률 자문이 아니다 — `docs/recly.md` §열린 결정).
+> **구현 전제 조건은 충족됐다.** §7의 녹음 삭제(작업 기록 포함)·앱 안의 연결 해제와 §8의 네 셸 동의 리마인더가 실제로 앱에 있다. 게시 전에 남은 것은 **코드가 아니라 사람의 일** 둘이다 — ① `docs/recly.md` §15 §3 표의 provider별 보관 정책 URL 확정(확정 전까지 앱의 고지에도 링크를 걸지 않는다), ② 법률 검토(§8의 관할 요약은 웹 요약이고 법률 자문이 아니다 — `docs/recly.md` §열린 결정).
 >
 > **Status: DRAFT — not in force.** It is not live anywhere yet and the effective date below is rewritten on the day it is published.
 >
-> **The implementation prerequisites are met.** §7's recording deletion (job records included) and in-app disconnect, and §8's consent reminder on all four shells, are really in the app. What is left before publication is not code but three human items — (1) confirming the per-provider retention policy URLs in `docs/recly.md` §15 §3 (until then the in-app disclosure carries no link either), (2) the public contact address in the two `<TODO>` places below, and (3) a legal review (§8's jurisdiction summary is a web summary, not legal advice — `docs/recly.md` §열린 결정).
+> **The implementation prerequisites are met.** §7's recording deletion (job records included) and in-app disconnect, and §8's consent reminder on all four shells, are really in the app. What is left before publication is not code but two human items — (1) confirming the per-provider retention policy URLs in `docs/recly.md` §15 §3 (until then the in-app disclosure carries no link either), and (2) a legal review (§8's jurisdiction summary is a web summary, not legal advice — `docs/recly.md` §열린 결정).
 
 **시행일 / Effective date: 2026-08-29**
-**문의 / Contact: `<TODO: 공개 연락처 이메일>`** (스토어 제출·OAuth Production 게시 전에 실제 주소로 바꿀 것)
+**문의 / Contact: q0115643@gmail.com**
 
 이 문서는 Google OAuth 동의 화면과 앱 스토어가 요구하는 공개 URL로 게시된다. 기술적 근거는 `docs/recly.md` §15(프라이버시·데이터 흐름).
 
@@ -149,7 +149,7 @@ Recly는 아동을 대상으로 하지 않으며 아동으로부터 개인정보
 
 ## 11. 문의
 
-`<TODO: 공개 연락처 이메일>`
+q0115643@gmail.com
 
 ---
 
@@ -288,4 +288,4 @@ If this policy changes, the effective date above is updated and the change is ke
 
 ## 11. Contact
 
-`<TODO: public contact email>`
+q0115643@gmail.com

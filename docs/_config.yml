@@ -1,0 +1,5 @@
+# GitHub Pages serves this directory. recly.md is the (Korean) design document, not a web page, and
+# its `{{ … }}` samples would fail Jekyll's Liquid pass; design/ holds icon sources.
+exclude:
+  - recly.md
+  - design/
