@@ -24,7 +24,8 @@ If no Notion tool is available, say so and tell the user how to connect it, then
 - ChatGPT: Settings → Apps → Notion (reconnect if it was connected before March 2026, older
   connections are read-only).
 
-Do not fall back to Notion's REST API with a token.
+Do not fall back to Notion's REST API with a token, and do not save the notes to a local file
+instead — leave them in the reply so the user can retry once Notion is connected.
 
 ## The database
 

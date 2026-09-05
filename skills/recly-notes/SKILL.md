@@ -83,7 +83,9 @@ Keep it to one screen when the recording allows.
 
 ## Deliver
 
-- Put the notes in your reply.
+- Put the notes in your reply. Do not save them to a file anywhere — not in the recording folder,
+  not in the working directory — unless the user asks for a file. The reply and Notion are the
+  destinations.
 - If the user wants them kept, or says "save", "upload", "Notion": hand off to the `recly-notion`
   skill with the notes and the recording's identity — `recordingId`, `{base}`, title,
   `startedAt` and `timezone`, `durationSec`, `source`, participants, and the template name.
