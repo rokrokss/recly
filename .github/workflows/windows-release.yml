@@ -1,6 +1,6 @@
 # docs/14 N7 · M6-L3 deliverable 4: the MSI, with the helper and ffmpeg in it, built on the only
 # kind of machine that can build one — `jpackage` needs WiX and a Windows host — and attached to
-# the GitHub release for the tag. `windows.yml` compiles and tests on every push; this runs on a
+# the GitHub release for the tag. `windows.yml` compiles and tests on the same tags; this runs on a
 # release tag (or by hand from the Actions tab) and leaves a release asset, which unlike a workflow
 # artifact is kept for good and counts against no storage quota (why 0cb2433 dropped the old job).
 # The `skills` job rides along: the two skill ZIPs the Claude app takes (skills/README.md) are

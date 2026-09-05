@@ -99,8 +99,9 @@ helper leaves real audio files behind, while those tests expect the directory to
 ## Windows run verification
 
 The user has no Windows PC (lead decision 2026-08-28), so the `windows-latest` job in
-`.github/workflows/windows.yml` stands in: `cargo test` + `cargo build --release` (the real
-WASAPI/MF link) + `--self-test` + the binary artifact, and `:windows:app:test`.
+`.github/workflows/windows.yml` stands in on every `v*` tag (or a manual run): `cargo test` +
+`cargo build --release` (the real WASAPI/MF link) + `--self-test` + the binary artifact, and
+`:windows:app:test`.
 
 ```
 recly-capture-helper.exe --self-test

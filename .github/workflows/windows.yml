@@ -7,10 +7,11 @@
 # format — the evidence behind ADR-019. What it still cannot prove is in docs/20 "Windows 보류 항목".
 name: windows
 
+# Windows runners are the expensive kind, so this runs on release tags (next to `windows-release.yml`)
+# or by hand from the Actions tab — not on every push.
 on:
   push:
-    branches: [main]
-  pull_request:
+    tags: ['v*']
   workflow_dispatch:
 
 permissions:
