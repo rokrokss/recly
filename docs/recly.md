@@ -463,8 +463,8 @@ meta  = {base}.meta.json
 | 플랫폼 | 경로 |
 |---|---|
 | Android / Wear | `context.filesDir/recordings/{base}/` |
-| iOS / watchOS / macOS | `Application Support/rec/recordings/{base}/` (iOS는 `isExcludedFromBackup = true`) |
-| Windows | `%LOCALAPPDATA%\rec\recordings\{base}\` |
+| iOS / watchOS / macOS | `Application Support/app.recly.mac/recordings/{base}/` (앱 id 디렉터리; iOS는 `isExcludedFromBackup = true`) |
+| Windows | `%LOCALAPPDATA%\Recly\recordings\{base}\` |
 
 워치에서 **수신**한 녹음은 메타가 마지막에 도착해 `{base}`를 미리 알 수 없으므로 폰은 `recordings/{recordingId}/`에
 둔다(디렉터리명은 DB 행에 저장; Drive 배치는 여전히 `{base}`). 수신의 `upsertRecording`은 행을 통째로 바꾸되

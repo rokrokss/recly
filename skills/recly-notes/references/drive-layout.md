@@ -75,13 +75,18 @@ Timestamps are on the recording's own time axis (seconds since `startedAt`).
 The `pending` marker is a Drive folder property (`appProperties.pending`). If your Drive tool
 cannot show it, treat "meta present, transcript absent" as "not transcribed (yet)" and say so.
 
-## Local copies on the recording device
+## Local copies on this device
 
-The Recly desktop and phone apps keep a copy of the transcript beside the recording's local files:
+The Recly desktop and phone apps keep transcripts beside the recording's local files:
 
-- macOS: `~/Library/Application Support/rec/recordings/{base}/` (watch-received recordings use
-  `recordings/{recordingId}/`)
-- Windows: `%LOCALAPPDATA%\rec\recordings\{base}\`
+- macOS: `~/Library/Application Support/app.recly.mac/recordings/`
+- Windows: `%LOCALAPPDATA%\Recly\recordings\`
 
-Only recordings that this device transcribed are there. Recordings made or transcribed on another
-device are in Drive only.
+Two kinds of folder live there:
+
+| Folder | What it holds |
+|---|---|
+| `{base}/` | a recording this device made and transcribed: `meta.json`, `{base}.transcript.json` and `.txt` |
+| `{recordingId}/` (26-character ULID) | a recording from another device that the app has opened: `meta.json` and `{base}.transcript.json` only, fetched from Drive and swept after 7 days |
+
+A recording from another device the app has not opened yet is in Drive only.

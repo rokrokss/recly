@@ -29,11 +29,13 @@ instead — leave them in the reply so the user can retry once Notion is connect
 
 ## The database
 
-- The convention is one database titled **"Recly Recordings"**. Search for it by title. Once
-  found, remember its id for the rest of the session (and in project memory if you have one) so
-  you do not search every time.
-- If it does not exist, ask one question — where to create it — and create it with the schema in
-  `references/database.md`.
+- The convention is one database titled **"Recly Recordings"**. Search for it by title; if the
+  search comes back empty, list the user's private top-level pages before concluding it does not
+  exist — Notion's keyword search has missed a freshly created database. Once found, remember its
+  id for the rest of the session (and in project memory if you have one) so you do not search
+  every time.
+- Only if neither finds it, ask one question — where to create it — and create it with the
+  schema in `references/database.md`. Two databases with this name means duplicates forever.
 - Before the first write in a session, fetch the database and read its actual property names.
   Users rename properties; map by meaning (the date property, the text property holding the
   recording id) instead of failing on an exact name.

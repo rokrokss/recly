@@ -24,10 +24,11 @@ Two rules frame everything below:
 Try these in order and use the first that works. Always say which recording you picked (title,
 start time, source device).
 
-1. **The Recly app's local directory on this machine.** Only recordings this device transcribed
-   are here, but it needs no setup. macOS: `~/Library/Application Support/rec/recordings/`,
-   Windows: `%LOCALAPPDATA%\rec\recordings\`. One folder per recording; look for
-   `*.transcript.txt` inside.
+1. **The Recly app's local directory on this machine.** It needs no setup. macOS:
+   `~/Library/Application Support/app.recly.mac/recordings/`, Windows:
+   `%LOCALAPPDATA%\Recly\recordings\`. One folder per recording. Recordings this device
+   transcribed have both transcript files; recordings from other devices that the app has opened
+   are cached under a folder named by the full `recordingId` with only `{base}.transcript.json`.
 2. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
    `.transcript.txt` — the Drive query is `name contains '.transcript.txt'` — or browse the
    `recly/` folder tree. Read the transcript and the `{base}.meta.json` beside it.
@@ -57,6 +58,8 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
 
 - `{base}.transcript.txt` is one turn per line: `[HH:MM:SS] S1: text`. Speakers are `S1`, `S2`, …
   in order of first appearance; there are no names.
+- If only `{base}.transcript.json` is there, read its `segments` (`start` seconds, `speaker`,
+  `text`) and treat them the same way; render a timestamp as `[HH:MM:SS]` from `start`.
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
   `source` (`watch`/`phone`/`desktop`), `deviceName`, `context.participants` (head count,
   optional) and `context.app` (the meeting app on desktop, optional).
