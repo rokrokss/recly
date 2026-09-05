@@ -31,13 +31,16 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- docs/11 A8. BIND_LISTENER is the broad bind Play Services still expects; the
-             CHANNEL_EVENT filter narrows the channel callbacks to this app's own `/rec/` paths so
-             another app's traffic never reaches RecListenerService. -->
+        <!-- docs/11 A8. BIND_LISTENER is deprecated (lint WearableBindListener, fatal in release
+             builds) and stays for one reason: `onCapabilityChanged` is how the phone notices the
+             watch appearing, and the watch declares no capability of its own for a filter to
+             match. Declaring one and filtering CAPABILITY_CHANGED on it is the way out. The
+             CHANNEL_EVENT filter below narrows the channel callbacks to this app's own `/rec/`
+             paths so another app's traffic never reaches RecListenerService. -->
         <service
             android:name=".wear.RecListenerService"
             android:exported="true"
-            tools:ignore="ExportedService">
+            tools:ignore="ExportedService,WearableBindListener">
             <intent-filter>
                 <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />
             </intent-filter>
