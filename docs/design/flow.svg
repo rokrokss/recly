@@ -29,14 +29,14 @@
     <line x1="40" y1="64" x2="850" y2="64" stroke="#111111" stroke-width="1.5"/>
     <line x1="40" y1="58" x2="40" y2="70" stroke="#111111" stroke-width="1.5"/>
     <line x1="850" y1="58" x2="850" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="393" y="52" width="104" height="24" fill="#F7F7F5"/>
-    <text x="445" y="69" text-anchor="middle">Recly</text>
+    <rect x="270" y="52" width="350" height="24" fill="#F7F7F5"/>
+    <text x="445" y="69" text-anchor="middle">Recly · one press, then automatic</text>
 
     <line x1="880" y1="64" x2="1130" y2="64" stroke="#111111" stroke-width="1.5"/>
     <line x1="880" y1="58" x2="880" y2="70" stroke="#111111" stroke-width="1.5"/>
     <line x1="1130" y1="58" x2="1130" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="953" y="52" width="104" height="24" fill="#F7F7F5"/>
-    <text x="1005" y="69" text-anchor="middle">Yours</text>
+    <rect x="920" y="52" width="170" height="24" fill="#F7F7F5"/>
+    <text x="1005" y="69" text-anchor="middle">Yours · just ask</text>
   </g>
 
   <!-- wires: watch → phone → Drive → AI, and the desktop straight into Drive -->
@@ -80,8 +80,8 @@
       <rect x="9" y="19" width="12" height="12" rx="2" fill="#DA1E28"/>
       <circle cx="15" cy="46" r="1.8" fill="#111111"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Or press it on the phone</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">the watch hands its audio here too</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">Hands off to your phone</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">by itself, or press record here instead</text>
   </g>
 
   <!-- 3 · drive + transcript -->
@@ -98,7 +98,7 @@
       </g>
     </g>
     <text class="t title" x="125" y="98" text-anchor="middle">Uploads and transcribes</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">to your Drive, with your own STT key</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">by itself, into your Google Drive</text>
   </g>
 
   <!-- 4 · your AI -->
@@ -113,8 +113,9 @@
   </g>
 
   <g class="t note" text-anchor="middle" style="font-size:14px">
-    <text x="845" y="394">Audio and transcript live in your Google Drive.</text>
-    <text x="845" y="416">Notes, decisions, Notion pages: whatever you ask your AI for.</text>
-    <text x="845" y="438">No Recly server anywhere on this path.</text>
+    <text x="845" y="384">Audio and transcript live in your Google Drive,</text>
+    <text x="845" y="406">transcribed with your own speech-to-text key.</text>
+    <text x="845" y="428">Notes, decisions, Notion pages: whatever you ask your AI for.</text>
+    <text x="845" y="450">No Recly server anywhere on this path.</text>
   </g>
 </svg>
