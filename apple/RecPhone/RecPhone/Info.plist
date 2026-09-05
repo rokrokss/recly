@@ -82,5 +82,12 @@
 	-->
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+
+	<!--
+	  Export compliance: the only encryption is HTTPS to Google and the user's own providers
+	  (docs/15), which is exempt, so App Store Connect stops asking on every build.
+	-->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>
