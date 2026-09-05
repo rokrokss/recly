@@ -89,7 +89,9 @@ App signing shows the *app signing key's* SHA-1: register an Android OAuth clien
 GCP project, next to the debug one, or sign-in fails in every Play-installed build.
 
 **Releases**: macOS via `apple/scripts/release-mac.sh` (Developer ID + notarization + DMG);
-the Windows MSI via `./gradlew :windows:app:packageMsi` (Windows hosts only — see
+the Windows MSI by `.github/workflows/windows-release.yml`, which a `v*` tag triggers and which
+attaches the installer — and the two skill ZIPs from `make skills` — to the GitHub release
+(`./gradlew :windows:app:packageMsi` by hand needs a Windows host — see
 [`windows/README.md`](../windows/README.md)).
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then

@@ -13,8 +13,9 @@ This document covers only what binds the two into one — **MSI packaging · sig
 ## Building the MSI
 
 `jpackage` (Compose `nativeDistributions`) can build an MSI **only on Windows**, and it needs WiX 3.
-The development machine is macOS (M6-L3 "environment constraints"), so an MSI is built on a Windows
-PC by hand — CI only compiles and tests (`.github/workflows/windows.yml`). On a local Windows PC:
+The development machine is macOS (M6-L3 "environment constraints"), so the release MSI is built by
+`.github/workflows/windows-release.yml` — on a `v*` tag, or by hand from the Actions tab — and
+attached to the GitHub release; `windows.yml` only compiles and tests. On a local Windows PC:
 
 ```powershell
 # 1. The helper

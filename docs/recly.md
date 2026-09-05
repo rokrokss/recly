@@ -2259,7 +2259,7 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 - **실행기**: Job 생성 직후 + 5분 타이머 + 네트워크 복귀 + `nextRunAt` 후속.
 - 패키징: `jpackage` MSI. 헬퍼와 ffmpeg(LGPL 공유 빌드)를 `app/resources/windows-x64/`에 넣고, 설치된 앱이
   `compose.application.resources.dir`로 받아 헬퍼에 `--ffmpeg <경로>`로 넘긴다. ffmpeg LGPL 고지는
-  `THIRD-PARTY-ffmpeg.md`로 설치본에 함께 들어간다. MSI는 Windows에서만 만들 수 있어 Windows PC에서 수동으로 만든다(CI는 컴파일·테스트만).
+  `THIRD-PARTY-ffmpeg.md`로 설치본에 함께 들어간다. MSI는 Windows에서만 만들 수 있어 릴리스 태그(`v*`)에서 CI(`windows-release.yml`)가 만들어 GitHub 릴리스에 첨부한다.
 
 ### 개발 호스트(macOS) 대체
 
@@ -2632,7 +2632,7 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | 갤럭시 워치 3시간 백그라운드 녹음, `sendFile` 30 MB 실측 | 실기기 갤럭시 워치가 없다. 에뮬레이터와 페이크로만 확인 |
 | Apple Watch 배경 녹음 2~3시간, `transferFile` 50 MB·ack 신뢰성 | 실기기 Apple Watch가 없다 |
 | macOS tap 권한 프롬프트 실물, Zoom/Meet/Teams 3앱 캡처, 클랩 오프셋 | 사람의 클릭이 필요하다(자동 조작이 막힘). 설계·경로와 드리프트 *추정기*는 합성 하네스로 검증됨 |
-| Windows 실캡처(loopback, `IAudioSessionManager2` 감지), MSI·SmartScreen, Credential Manager 비우기, `/revoke` 실호출, 시스템 고대비 감지 | **Windows PC가 없다.** 컴파일·단위 테스트는 CI(`windows-latest`)가, UI는 macOS 호스트의 패키지 실행이 대신한다. MSI 생성은 Windows PC에서 수동 |
+| Windows 실캡처(loopback, `IAudioSessionManager2` 감지), MSI·SmartScreen, Credential Manager 비우기, `/revoke` 실호출, 시스템 고대비 감지 | **Windows PC가 없다.** 컴파일·단위 테스트는 CI(`windows-latest`)가, MSI 생성은 릴리스 태그의 CI(`windows-release.yml`)가, UI는 macOS 호스트의 패키지 실행이 대신한다 |
 | `NEEDS_SPACE` 기기 재현 | 실제로 꽉 찬 Google Drive를 만들지 못했다. 코어는 페이크 Transport로(`DriveQuotaTest`), 셸은 단위 테스트와 개발 플래그로 배너·배지만 확인 |
 | 연결 해제의 실제 실행 | 누르면 그 계정의 grant가 **모든 기기에서** 사라져(revoke는 Cloud 프로젝트 단위) 남은 실기 로그인 확인이 전부 막힌다. 다이얼로그·경고 문구·"녹음 중에는 확인 비활성"까지는 UI로 봤고, revoke → `core.disconnect` 경로는 코어·셸 단위 테스트로만 |
 | M7 실키 인수(전사 시나리오 1·2·4) | STT 실제 키가 필요하다. 가짜 키로 `AUTH_REJECTED` → "키를 확인하세요" → 편집기 진입까지는 확인 |

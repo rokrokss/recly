@@ -1,0 +1,143 @@
+# docs/14 N7 · M6-L3 deliverable 4: the MSI, with the helper and ffmpeg in it, built on the only
+# kind of machine that can build one — `jpackage` needs WiX and a Windows host — and attached to
+# the GitHub release for the tag. `windows.yml` compiles and tests on every push; this runs on a
+# release tag (or by hand from the Actions tab) and leaves a release asset, which unlike a workflow
+# artifact is kept for good and counts against no storage quota (why 0cb2433 dropped the old job).
+# The `skills` job rides along: the two skill ZIPs the Claude app takes (skills/README.md) are
+# derived files, so they live on the release rather than in the tree.
+#
+# What it cannot verify is unchanged — SmartScreen, and installing it: docs/20 "Windows 보류 항목".
+name: windows-release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to build and attach the MSI to (created as a pre-release if missing)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  # Runs first and creates the release, so the two jobs never race to create it.
+  skills:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+      - run: make skills
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -e
+          gh release view "$TAG" > /dev/null 2>&1 \
+            || gh release create "$TAG" --prerelease --generate-notes --title "Recly ${TAG#v}"
+          gh release upload "$TAG" build/skills/recly-notes.zip build/skills/recly-notion.zip --clobber
+
+  msi:
+    needs: skills
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      # bash rather than the runner's default pwsh: `set -e` is what makes a two-line step fail on
+      # the first line rather than the last.
+      - name: Install Rust
+        shell: bash
+        run: |
+          rustup toolchain install stable --profile minimal --no-self-update
+          rustup default stable
+
+      # The helper's release build, into the directory `appResourcesRootDir` points at. The
+      # self-test is docs/20 S8's encoder half; a runner has no audio endpoint and says so.
+      - name: Capture helper
+        shell: bash
+        working-directory: windows/capture-helper
+        run: |
+          set -e
+          cargo build --release
+          ./target/release/recly-capture-helper.exe --self-test
+          cp target/release/recly-capture-helper.exe ../app/resources/windows-x64/
+
+      # ADR-019: an **LGPL** shared build (`--disable-gpl --disable-nonfree`), which is what
+      # `windows/app/resources/common/THIRD-PARTY-ffmpeg.md` says is in here. The GPL builds from the
+      # same place are not usable for a distributed app.
+      - name: Bundle ffmpeg (ADR-019)
+        shell: bash
+        run: |
+          set -e
+          url=https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-lgpl-shared.zip
+          curl -fsSL -o ffmpeg.zip "$url"
+          # 7-Zip rather than unzip: it is on the runner's PATH and `unzip` is not guaranteed to be.
+          7z x -y -offmpeg-build ffmpeg.zip > /dev/null
+          bin=$(dirname "$(find ffmpeg-build -name ffmpeg.exe | head -1)")
+          cp "$bin/ffmpeg.exe" windows/app/resources/windows-x64/
+          # The shared build's DLLs have to sit next to the exe, which is where the app looks for it.
+          cp "$bin"/*.dll windows/app/resources/windows-x64/
+          ls -l windows/app/resources/windows-x64
+
+      # jpackage shells out to WiX 3 (`candle`/`light`) and finds it on PATH or not at all.
+      - name: WiX 3 on PATH
+        shell: bash
+        run: |
+          set -e
+          if command -v candle.exe >/dev/null 2>&1; then
+            echo "candle.exe already on PATH"
+            exit 0
+          fi
+          found=$(find "/c/Program Files (x86)" -maxdepth 3 -name candle.exe 2>/dev/null | head -1 || true)
+          if [ -z "$found" ]; then
+            choco install wixtoolset -y --no-progress
+            found=$(find "/c/Program Files (x86)" -maxdepth 3 -name candle.exe 2>/dev/null | head -1)
+          fi
+          test -n "$found"
+          cygpath -w "$(dirname "$found")" >> "$GITHUB_PATH"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: ./gradlew :windows:app:packageMsi
+        shell: bash
+
+      # Skipped, not failed, when the repository has no signing credentials — see the script.
+      - name: Sign (docs/14 N7)
+        shell: pwsh
+        env:
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          TRUSTED_SIGNING_ENDPOINT: ${{ secrets.TRUSTED_SIGNING_ENDPOINT }}
+          TRUSTED_SIGNING_ACCOUNT: ${{ secrets.TRUSTED_SIGNING_ACCOUNT }}
+          TRUSTED_SIGNING_PROFILE: ${{ secrets.TRUSTED_SIGNING_PROFILE }}
+          WINDOWS_CERT_PFX_BASE64: ${{ secrets.WINDOWS_CERT_PFX_BASE64 }}
+          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
+        run: |
+          $msi = Get-ChildItem windows/app/build/compose/binaries/main/msi/*.msi | Select-Object -First 1
+          if (-not $msi) { throw 'packageMsi produced no MSI' }
+          ./windows/scripts/sign-msi.ps1 -Msi $msi.FullName
+
+      # The release for the tag is created here only if nobody made it first — as a pre-release,
+      # with the notes `.github/release.yml` shapes — and the MSI replaces any earlier copy.
+      - name: Attach to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ inputs.tag || github.ref_name }}
+        run: |
+          set -e
+          msi=$(find windows/app/build/compose/binaries/main/msi -name '*.msi' | head -1)
+          gh release view "$TAG" > /dev/null 2>&1 \
+            || gh release create "$TAG" --prerelease --generate-notes --title "Recly ${TAG#v}"
+          gh release upload "$TAG" "$msi" --clobber
