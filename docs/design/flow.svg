@@ -113,9 +113,7 @@
   </g>
 
   <g class="t note" text-anchor="middle" style="font-size:14px">
-    <text x="845" y="384">Audio and transcript live in your Google Drive,</text>
-    <text x="845" y="406">transcribed with your own speech-to-text key.</text>
-    <text x="845" y="428">Notes, decisions, Notion pages: whatever you ask your AI for.</text>
-    <text x="845" y="450">No Recly server anywhere on this path.</text>
+    <text x="845" y="406">Your Drive, your speech-to-text key, your AI.</text>
+    <text x="845" y="428">No Recly server anywhere on this path.</text>
   </g>
 </svg>
