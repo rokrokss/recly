@@ -65,6 +65,29 @@ node scripts/webhook-receiver.mjs --port 8787 --secret whsec_…   # a receiver 
 To cut a release: `make apk` and `./gradlew :android:wear:assembleDebug`, then
 `gh release create v0.1.0 <phone.apk> <watch.apk> --target main --prerelease`.
 
+**Release signing (Android)**: Play App Signing holds the app signing key; this tree only ever
+sees the *upload* key. Create it once, outside the repository (`*.jks` is gitignored anyway):
+
+```bash
+keytool -genkeypair -v -keystore ~/.recly/upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
+```
+
+Then point the build at it, in `local.properties` or the environment (`REC_UPLOAD_STORE_FILE`,
+`REC_UPLOAD_STORE_PASSWORD`, `REC_UPLOAD_KEY_ALIAS`, `REC_UPLOAD_KEY_PASSWORD`):
+
+```properties
+upload.storeFile=/Users/you/.recly/upload.jks
+upload.storePassword=…
+upload.keyAlias=upload
+upload.keyPassword=…
+```
+
+`make aab` builds the phone and watch bundles (`android/*/build/outputs/bundle/release/`), both
+signed with that key — Play pairs the two only when their signatures match. Without the key the
+release bundles are unsigned and Play refuses them. After the first upload, Play Console → Setup →
+App signing shows the *app signing key's* SHA-1: register an Android OAuth client with it in the
+GCP project, next to the debug one, or sign-in fails in every Play-installed build.
+
 **Releases**: macOS via `apple/scripts/release-mac.sh` (Developer ID + notarization + DMG);
 the Windows MSI via `./gradlew :windows:app:packageMsi` (Windows hosts only — see
 [`windows/README.md`](../windows/README.md)).

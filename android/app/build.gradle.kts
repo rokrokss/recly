@@ -40,6 +40,22 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // docs/development.md "Release signing": the upload key, when this machine has one.
+    val uploadKey = rootProject.extra["uploadKey"] as Properties?
+    signingConfigs {
+        uploadKey?.let { key ->
+            create("upload") {
+                storeFile = rootProject.file(key.getProperty("storeFile"))
+                storePassword = key.getProperty("storePassword")
+                keyAlias = key.getProperty("keyAlias")
+                keyPassword = key.getProperty("keyPassword")
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") { signingConfig = signingConfigs.findByName("upload") }
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

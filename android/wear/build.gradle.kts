@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -15,8 +17,9 @@ android {
     buildToolsVersion = "36.0.0"
 
     defaultConfig {
-        // docs/11: Play only pairs a watch APK with its phone APK when the application ID and the
-        // signing key match. Neither module declares a signingConfig, so both take the debug key.
+        // docs/11: Play only pairs a watch bundle with its phone bundle when the application ID and
+        // the signing key match — both modules take the root build script's upload key (release)
+        // or the debug key (debug).
         applicationId = "app.recly"
         minSdk = 34
         targetSdk = 36
@@ -24,6 +27,22 @@ android {
         // tracks included: the watch takes the phone's code plus 1_000_000.
         versionCode = 1_000_002
         versionName = "0.1.0"
+    }
+
+    // docs/development.md "Release signing": the upload key, when this machine has one.
+    val uploadKey = rootProject.extra["uploadKey"] as Properties?
+    signingConfigs {
+        uploadKey?.let { key ->
+            create("upload") {
+                storeFile = rootProject.file(key.getProperty("storeFile"))
+                storePassword = key.getProperty("storePassword")
+                keyAlias = key.getProperty("keyAlias")
+                keyPassword = key.getProperty("keyPassword")
+            }
+        }
+    }
+    buildTypes {
+        getByName("release") { signingConfig = signingConfigs.findByName("upload") }
     }
 
     buildFeatures {
@@ -77,4 +96,11 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     // The transfer queue is a file and the sender deletes files; both are tested on a fake disk.
     testImplementation(libs.okio.fakefilesystem)
+
+    constraints {
+        // The complications library drags in fragment 1.1.0 through appcompat 1.1.0, and release
+        // lint refuses `registerForActivityResult` next to a fragment older than 1.3.0
+        // (InvalidFragmentVersionForActivityResult). Nothing here uses fragments.
+        implementation(libs.androidx.fragment)
+    }
 }
