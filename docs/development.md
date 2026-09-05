@@ -63,7 +63,7 @@ node scripts/webhook-receiver.mjs --port 8787 --secret whsec_…   # a receiver 
 ```
 
 To cut a release: `make apk` and `./gradlew :android:wear:assembleDebug`, then
-`gh release create v0.0.1-dev <phone.apk> <watch.apk> --target main --prerelease`.
+`gh release create v0.1.0 <phone.apk> <watch.apk> --target main --prerelease`.
 
 **Releases**: macOS via `apple/scripts/release-mac.sh` (Developer ID + notarization + DMG);
 the Windows MSI via `./gradlew :windows:app:packageMsi` (Windows hosts only — see

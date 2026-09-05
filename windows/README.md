@@ -58,7 +58,7 @@ still a build, and a build must not fail on a fork.
 In CI, putting in repository secrets of the same names turns the signing step on by itself.
 
 ```powershell
-pwsh windows/scripts/sign-msi.ps1 -Msi windows\app\build\compose\binaries\main\msi\Recly-0.0.1.msi
+pwsh windows/scripts/sign-msi.ps1 -Msi windows\app\build\compose\binaries\main\msi\Recly-0.1.0.msi
 ```
 
 ## SmartScreen check procedure (docs/20 S8 · N7 — **on hold: no Windows PC**)
@@ -70,8 +70,8 @@ docs/20 "Windows 보류 항목" says as much.
    and the warning disappears, so checking on the machine that built it means nothing.
 2. Download the MSI with a browser. It has to be a **download**, not a File Explorer copy — what
    wakes SmartScreen is the Mark of the Web (the `Zone.Identifier` alternate data stream).
-   Check: `Get-Item .\Recly-0.0.1.msi -Stream Zone.Identifier`
-3. Signature check: `Get-AuthenticodeSignature .\Recly-0.0.1.msi | Format-List` → `Status: Valid`,
+   Check: `Get-Item .\Recly-0.1.0.msi -Stream Zone.Identifier`
+3. Signature check: `Get-AuthenticodeSignature .\Recly-0.1.0.msi | Format-List` → `Status: Valid`,
    the subject of `SignerCertificate` is ours, a timestamp present.
 4. Run it. Expected: **the blue "Windows protected your PC" window does not appear.**
    - If it does appear and says "Unknown publisher", it is not signed (back to 3).

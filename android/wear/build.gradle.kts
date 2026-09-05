@@ -20,8 +20,10 @@ android {
         applicationId = "app.recly"
         minSdk = 34
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.0.1-dev"
+        // Play requires a unique versionCode across every bundle of one app, phone and Wear OS
+        // tracks included: the watch takes the phone's code plus 1_000_000.
+        versionCode = 1_000_002
+        versionName = "0.1.0"
     }
 
     buildFeatures {
