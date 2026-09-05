@@ -27,5 +27,9 @@
     "app": "us.zoom.xos",
     "participants": 3
   },
+  "drive": {
+    "folderId": "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456",
+    "folderUrl": "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456"
+  },
   "status": "finalized"
 }

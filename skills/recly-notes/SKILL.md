@@ -62,7 +62,8 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
   `text`) and treat them the same way; render a timestamp as `[HH:MM:SS]` from `start`.
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
   `source` (`watch`/`phone`/`desktop`), `deviceName`, `context.participants` (head count,
-  optional) and `context.app` (the meeting app on desktop, optional).
+  optional), `context.app` (the meeting app on desktop, optional) and `drive.folderUrl` (the
+  recording's Drive folder, optional).
 - The transcript is speech-to-text output: names and technical terms may be misheard. Do not
   correct them silently — keep the spelling and, where it matters, flag it.
 
@@ -91,5 +92,6 @@ Keep it to one screen when the recording allows.
   destinations.
 - If the user wants them kept, or says "save", "upload", "Notion": hand off to the `recly-notion`
   skill with the notes and the recording's identity — `recordingId`, `{base}`, title,
-  `startedAt` and `timezone`, `durationSec`, `source`, participants, and the template name.
+  `startedAt` and `timezone`, `durationSec`, `source`, participants, `drive.folderUrl` when the
+  meta has it, and the template name.
   `recordingId` is the key that keeps one page per recording; always carry it.

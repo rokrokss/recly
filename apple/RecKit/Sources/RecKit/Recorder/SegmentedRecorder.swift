@@ -852,6 +852,7 @@ public final class SegmentedRecorder {
             gaps: [],
             silenced: [],
             context: context,
+            drive: nil,
             status: RecordingStatus.recording
         )
     }

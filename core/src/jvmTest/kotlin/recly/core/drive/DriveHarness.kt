@@ -114,7 +114,7 @@ class DriveHarness(
     val recordings = RecordingRepository(db, deps)
     val store = DriveStore(db, deps)
     val api = DriveApi(deps)
-    val runner = DriveUploadRunner(api, FolderResolver(api, store, deps), store, deps)
+    val runner = DriveUploadRunner(api, FolderResolver(api, store, deps), store, recordings, deps)
 
     val recordingId = "01J9ABCDEF0123456789ABCDEF"
     val base: String

@@ -226,6 +226,7 @@ final class RecordingDetailTests: XCTestCase {
             gaps: [],
             silenced: [],
             context: nil,
+            drive: nil,
             status: RecordingStatus.finalized
         )
         let directory = dataDirectory

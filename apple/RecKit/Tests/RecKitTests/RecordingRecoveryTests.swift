@@ -435,6 +435,7 @@ final class RecordingRecoveryTests: XCTestCase {
             gaps: [],
             silenced: [],
             context: nil,
+            drive: nil,
             status: status
         )
         let base = MetaWriter.shared.baseName(meta: meta)

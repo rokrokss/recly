@@ -13,8 +13,11 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import recly.core.job.StepFailure
+import recly.core.model.DriveLocation
+import recly.core.model.RecordingMeta
 import recly.core.model.Step
 import recly.core.model.Track
+import recly.core.model.recJson
 import recly.core.testing.FakeDrive
 import recly.core.testing.transcribeStep
 import recly.core.testing.webhookStep
@@ -68,6 +71,27 @@ class DriveUploadRunnerTest {
         val creationsBefore = h.folderCreations().size
         h.run()
         assertEquals(creationsBefore, h.folderCreations().size)
+    }
+
+    @Test
+    fun `the meta learns its Drive folder before it is uploaded, and only once`() = runBlocking {
+        val h = DriveHarness(partCount = 1, partBytes = DriveHarness.SMALL_BYTES)
+        h.register()
+
+        h.run()
+
+        val folder = assertNotNull(h.drive.byName(h.base))
+        val folderId = h.drive.files.entries.first { it.value === folder }.key
+        val expected = DriveLocation(folderId, "https://drive.google.com/drive/folders/$folderId")
+        val onDisk = recJson.decodeFromString<RecordingMeta>(h.fs.read(h.dir / h.metaName()) { readUtf8() })
+        assertEquals(expected, onDisk.drive, "the local meta.json carries the folder")
+        val uploaded = recJson.decodeFromString<RecordingMeta>(assertNotNull(h.drive.byName(h.metaName())).content.decodeToString())
+        assertEquals(expected, uploaded.drive, "and so does the copy that went to Drive")
+        assertEquals(expected, assertNotNull(h.recordings.get(h.recordingId)).meta.drive, "and the row")
+
+        h.drive.requests.clear()
+        h.run()
+        assertTrue(h.drive.uploadOrder().isEmpty(), "a re-run changes nothing, so nothing is re-uploaded")
     }
 
     /**

@@ -44,7 +44,7 @@ instead — leave them in the reply so the user can retry once Notion is connect
 
 Input, from the `recly-notes` skill or the user: the notes, and the recording's identity —
 `recordingId`, `{base}`, title, `startedAt` + `timezone`, `durationSec`, `source`, participants,
-template name.
+`drive.folderUrl` (when the meta has it), template name.
 
 1. **Look before you write.** Query the database for rows whose `recordingId` equals the id
    (rows-mode filter, see `references/database.md`).

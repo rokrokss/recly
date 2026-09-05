@@ -42,6 +42,7 @@ base = {yyyyMMdd}T{HHmmss}Z_{source}_{first 8 chars of recordingId}
 | `source` / `platform` / `deviceName` | where it was recorded |
 | `context.participants` | optional head count including the user (2–6, 6 means "6 or more") |
 | `context.app` | optional bundle id of the meeting app (desktop only), e.g. `us.zoom.xos` |
+| `drive.folderId`, `drive.folderUrl` | the recording's own Drive folder, written once the upload knew it; absent on recordings uploaded before this field existed |
 | `gaps`, `silenced` | intervals with no audio (mic taken by another app, segment restart) — explains holes in the transcript |
 | `status` | `recording` → `finalized` |
 

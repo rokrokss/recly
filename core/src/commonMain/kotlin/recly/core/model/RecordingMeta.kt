@@ -23,7 +23,16 @@ data class RecordingMeta(
     val gaps: List<Range> = emptyList(),
     val silenced: List<Range> = emptyList(),
     val context: Context? = null,
+    /** Where the recording went in the user's Drive; written by `drive.upload` once the folder is known (docs/03 "메타데이터"). */
+    val drive: DriveLocation? = null,
     val status: RecordingStatus,
+)
+
+/** The recording's own Drive folder (ADR-014) — the link an agent puts next to the notes it makes. */
+@Serializable
+data class DriveLocation(
+    val folderId: String,
+    val folderUrl: String,
 )
 
 @Serializable

@@ -186,6 +186,7 @@ final class RecentsRemoteTests: XCTestCase {
             gaps: [],
             silenced: [],
             context: nil,
+            drive: nil,
             status: RecordingStatus.finalized
         )
     }
@@ -616,6 +617,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             gaps: [],
             silenced: [],
             context: nil,
+            drive: nil,
             status: status
         )
     }

@@ -26,6 +26,7 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import recly.core.recording.PartHasher
+import recly.core.recording.RecordingRepository
 import recly.core.workflow.Template
 import recly.core.workflow.TemplateContext
 
@@ -43,6 +44,7 @@ class DriveUploadRunner(
     private val api: DriveApi,
     private val folders: FolderResolver,
     private val store: DriveStore,
+    private val recordings: RecordingRepository,
     private val deps: CoreDeps,
 ) : StepRunner {
     override val type: String = TYPE
@@ -110,6 +112,9 @@ class DriveUploadRunner(
         state = state.copy(folderId = folder.id, folderWebViewLink = folder.webViewLink)
         ctx.saveState(state.toJson())
         store.rememberRecordingFolder(ctx.recording.id, folder.id)
+        // Into `meta.json` as well, before the meta is uploaded below: the copy that lands in Drive
+        // (and every device that adopts it, docs/03 "다른 기기의 녹음") then knows its own folder link.
+        folder.webViewLink?.let { recordings.setDriveFolder(ctx.recording.id, folder.id, it) }
         // The folder exists before the first byte does, and it is the only thing another device can
         // see while this one uploads (docs/03 "다른 기기의 녹음"): what comes after this step goes on it
         // now, so a list elsewhere can say "전사 중" instead of showing a finished recording.
@@ -308,7 +313,13 @@ class DriveUploadRunner(
         fun create(db: RecDatabase, deps: CoreDeps): DriveUploadRunner {
             val api = DriveApi(deps)
             val store = DriveStore(db, deps)
-            return DriveUploadRunner(api, FolderResolver(api, store, deps), store, deps)
+            return DriveUploadRunner(
+                api,
+                FolderResolver(api, store, deps),
+                store,
+                RecordingRepository(db, deps),
+                deps,
+            )
         }
     }
 }

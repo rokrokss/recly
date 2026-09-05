@@ -439,6 +439,10 @@ meta  = {base}.meta.json
     "app": "us.zoom.xos",
     "participants": 3
   },
+  "drive": {
+    "folderId": "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456",
+    "folderUrl": "https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456"
+  },
   "status": "finalized"
 }
 ```
@@ -452,6 +456,7 @@ meta  = {base}.meta.json
 | `gaps` | 세그먼트 재시작·인터럽션·tap 재생성 등으로 오디오가 빠진 구간 |
 | `silenced` | Android `isClientSilenced`, Apple 인터럽션 등 마이크를 뺏긴 구간. **알려진 한계**: Android에서 정지가 지연되면(등록 못 한 파트가 남아 복구에 맡길 때) 이 구간은 로그에만 남고 메타에는 들어가지 않는다 |
 | `context` | 선택. `app`은 감지된 회의 앱의 번들 id로 데스크톱 전용. `participants`(정수, 본인 포함 인원)는 정지 후 다이얼로그 선택으로 채운다 — `transcribe`의 화자 수 힌트(§8). **`context.calendar`는 없다** — 캘린더 읽기는 제품 전체에서 제거됐다 |
+| `drive` | 선택. 이 녹음의 Drive 폴더 `folderId`·`folderUrl`(`webViewLink`). `drive.upload`가 폴더를 만들거나 찾은 직후, 메타를 올리기 **전에** 행과 로컬 `meta.json`에 적으므로(`RecordingRepository.setDriveFolder`) Drive의 사본과 그것을 입양한 기기도 같은 값을 갖는다. 에이전트 스킬이 Notion 페이지의 "Recording" 링크로 쓴다(2026-09-05). 업로드 전이거나 링크를 못 받은 폴더면 없다 |
 | `status` | `recording` → `finalized` → (워치) `transferred` |
 
 인원 선택지는 `2 · 3 · 4 · 5 · 6+ · 모름`이고 기본은 "모름"(unknown)이다 — 고르지 않으면 필드를 생략한다.

@@ -22,6 +22,7 @@ import recly.core.drive.DriveApi
 import recly.core.drive.DriveUploadState
 import recly.core.job.JobStatus
 import recly.core.model.Context
+import recly.core.model.DriveLocation
 import recly.core.model.Part
 import recly.core.model.Range
 import recly.core.model.RecordingMeta
@@ -335,6 +336,23 @@ class RecordingRepository(
         if (queries.kvGet(TITLE_PREFIX + recordingId).executeAsOneOrNull() != null) return@locked false
         if (record.meta.title == title) return@locked false
         val meta = record.meta.copy(title = title)
+        writeMeta(meta)
+        MetaWriter.write(deps.fileSystem, record.dir, meta)
+        true
+    }
+
+    /**
+     * `drive.upload` found or made the recording's folder (docs/03 "메타데이터" — `drive`): the row and
+     * `meta.json` learn its id and link before the meta itself goes up, so the copy in Drive carries
+     * them too. Idempotent — a re-run with the same folder writes nothing.
+     *
+     * @return true when the meta changed.
+     */
+    suspend fun setDriveFolder(recordingId: String, folderId: String, folderUrl: String): Boolean = locked {
+        val record = record(recordingId) ?: return@locked false
+        val location = DriveLocation(folderId, folderUrl)
+        if (record.meta.drive == location) return@locked false
+        val meta = record.meta.copy(drive = location)
         writeMeta(meta)
         MetaWriter.write(deps.fileSystem, record.dir, meta)
         true

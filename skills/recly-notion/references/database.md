@@ -12,7 +12,7 @@ Contents: properties · creating the database · queries · page body layout.
 | `Participants` | rich_text | mapped names if known, else `context.participants` as a count, else the speaker labels seen |
 | `Type` | select: `minutes`, `decision-log`, `interview`, `lecture`, `memo` | the template used |
 | `Source` | select: `watch`, `phone`, `desktop` | `meta.source` |
-| `Recording` | url | the Drive folder link when your Drive tool gives one; otherwise leave empty |
+| `Recording` | url | `meta.drive.folderUrl`; if the meta predates that field, the folder link from your Drive tool; otherwise leave empty |
 | `Status` | select: `ready`, `transcribing` | `ready` once notes exist |
 | `recordingId` | rich_text | `meta.recordingId`, the full ULID — the key; never omit it |
 
