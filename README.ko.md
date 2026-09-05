@@ -15,7 +15,7 @@
 
 </div>
 
-<p align="center"><img src="docs/design/flow.svg" width="100%" alt="워치에서 녹음 버튼 → 폰으로 전달 → 폰이 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
+<p align="center"><img src="docs/design/flow.svg" width="100%" alt="워치·폰·Mac·Windows PC에서 녹음 버튼 → 폰이나 PC가 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
 
 Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹음기는 이미 손목에 있고 AI는 이미
 구독 중입니다. Recly는 빠진 하나인 녹취를 **내** 키로 원가에 채우고, 원본 오디오를 남의 서버가 아닌

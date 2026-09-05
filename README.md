@@ -15,7 +15,7 @@
 
 </div>
 
-<p align="center"><img src="docs/design/flow.svg" width="100%" alt="Press record on the watch → it hands off to the phone → the phone uploads to your Google Drive and transcribes with your own key → anything, with your own AI"></p>
+<p align="center"><img src="docs/design/flow.svg" width="100%" alt="Press record on your watch, phone, Mac or Windows PC → the phone or PC uploads to your Google Drive and transcribes with your own key → anything, with your own AI"></p>
 
 A Plaud or a NotePin sells you three things: a recorder, transcription, and AI notes. You already
 wear the recorder, and you already pay for the AI. Recly supplies the one piece you are missing,
