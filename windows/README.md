@@ -13,8 +13,8 @@ This document covers only what binds the two into one — **MSI packaging · sig
 ## Building the MSI
 
 `jpackage` (Compose `nativeDistributions`) can build an MSI **only on Windows**, and it needs WiX 3.
-The development machine is macOS (M6-L3 "environment constraints"), so the real MSI is built by the
-`msi` job in `.github/workflows/windows.yml`. To do the same on a local Windows PC:
+The development machine is macOS (M6-L3 "environment constraints"), so an MSI is built on a Windows
+PC by hand — CI only compiles and tests (`.github/workflows/windows.yml`). On a local Windows PC:
 
 ```powershell
 # 1. The helper
@@ -48,7 +48,7 @@ Recly at login"). An upgrade replaces the previous install through `upgradeUuid`
 ## Signing
 
 `scripts/sign-msi.ps1`. With no credentials it **skips signing and exits 0** — an unsigned MSI is
-still an artifact CI has to leave behind, and a build must not fail on a fork.
+still a build, and a build must not fail on a fork.
 
 | Method | Environment variables needed |
 |---|---|
