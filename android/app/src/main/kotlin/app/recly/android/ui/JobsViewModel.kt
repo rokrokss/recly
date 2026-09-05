@@ -62,7 +62,10 @@ data class JobItem(
      * it and says something else.
      */
     val waitingMinutes: Int?,
-    /** The `drive.upload` output's folder link, once there is one. */
+    /**
+     * The recording's Drive folder: the `drive.upload` output's link, or the folder the row knows
+     * on its own — an adopted recording was read out of that folder (docs/03).
+     */
     val link: String?,
     val nextRunAt: Instant?,
     /** docs/10: why this job is the user's to fix, or null when it is not (banner, notification). */
@@ -493,7 +496,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 remote = record.remote,
                 error = error,
                 waitingMinutes = StepReport.waitingMinutes(steps, now),
-                link = linkOf(steps),
+                link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
                 alert = job?.let { alertReasonOf(it.status, error) },
             )

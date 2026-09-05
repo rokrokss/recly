@@ -38,7 +38,10 @@ data class RecentItem(
     val durationSec: Double? = null,
     /** What the menu says about it — done, sign-in needed, … */
     val state: UiMessage,
-    /** The `drive.upload` step's folder link, once there is one. */
+    /**
+     * The recording's Drive folder: the `drive.upload` step's link, or the folder the row knows on
+     * its own — an adopted recording was read out of that folder (docs/03).
+     */
     val link: String?,
     /** The workflow the job runs, so a key that was refused can be fixed where it is defined. */
     val workflowId: String? = null,
@@ -118,7 +121,7 @@ object Recents {
             startedAt = record.meta.startedAt,
             durationSec = record.meta.durationSec,
             state = waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job),
-            link = driveLink(steps),
+            link = driveLink(steps) ?: record.driveFolderUrl,
             workflowId = job?.workflowId,
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
             // it left behind say nothing about it (docs/10 "잡 스냅샷").

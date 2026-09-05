@@ -149,10 +149,11 @@ final class RecentsRemoteTests: XCTestCase {
         XCTAssertTrue(item.remote)
         XCTAssertEqual(item.state, "Done")
         XCTAssertEqual(LedgerStatus.forRecent(state: item.state).code, "DONE")
-        // No job of its own, so there is nothing to retry and no upload step to have left a link.
+        // No job of its own, so there is nothing to retry — but the row was read out of a Drive
+        // folder, and that folder is its link.
         XCTAssertNil(item.jobId)
         XCTAssertFalse(item.canRetry)
-        XCTAssertNil(item.link)
+        XCTAssertEqual(item.link, URL(string: "https://drive.google.com/drive/folders/1FolderId"))
         // A finished row is neither queued nor failed, so the header counts it as neither.
         XCTAssertEqual(Recents.summary([item]), "1 · 0 waiting · 0 failed")
     }

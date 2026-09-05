@@ -670,8 +670,13 @@ My Drive/
 
 - **Job이 없고 생기지 않는다.** `enqueue`는 `PartsPurged`를 돌려준다(Drive가 이미 갖고 있고 이 기기엔 보낼 원본이
   없다). 복구 스캔이 "Job 없는 finalized 행"으로 보고 enqueue를 불러도 같은 답이다. 목록의 상태는 `NO_JOB`이 아니라
-  **`DONE`**이다 — 끝난 녹음과 똑같이 보이고(2026-09-04 사용자 결정: 영구 상태 "다른 기기"는 무의미), 세부·삭제
-  외의 동작(재시도·올리기·Drive 링크)은 없다. 다른 기기의 것임은 삭제 다이얼로그만 안다(`remote` 플래그).
+  **`DONE`**이다 — 끝난 녹음과 똑같이 보이고(2026-09-04 사용자 결정: 영구 상태 "다른 기기"는 무의미), 세부·삭제·
+  Drive 열기 외의 동작(재시도·올리기)은 없다. 다른 기기의 것임은 삭제 다이얼로그만 안다(`remote` 플래그).
+- **Drive 링크는 있다**(2026-09-05 사용자 결정). 그 폴더에서 읽어온 행이니 폴더는 정의상 안다 — 셸의 `link`는
+  업로드 스텝 출력의 `folderWebViewLink`, 없으면 `RecordingRecord.driveFolderUrl`(메타의 `drive.folderUrl`, 그것도
+  없으면 폴더 id로 만든 정규 URL `https://drive.google.com/drive/folders/{id}`). 이 기기가 올린 녹음도 같은
+  폴백을 타므로 폴더가 생긴 순간부터 열 수 있다. 다른 기기가 아직 올리는 중인 자리표시자 행은 예외다(§9 원칙 2:
+  진행 중인 두 행은 동작이 없다).
 - **`uploaded()`는 참.** Drive에서 온 것이니 정의상 올라가 있다. 삭제 경고의 "안 올라간 파트"는 0이다.
 - **재생·전사는 Drive에서.** `AudioParts`는 업로드 출력 대신 `part.drive_file_id`로 받고, `RecordingResults`는
   폴더에서 `{base}.transcript.json`을 이름으로 찾는다(다른 기기가 나중에 전사해도 다음 열 때 보인다). 받은 파트는

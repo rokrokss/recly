@@ -74,6 +74,17 @@ data class RecordingRecord(
      * pull built out of the folder's name.
      */
     val remoteUploading: Boolean get() = remote && meta.status == RecordingStatus.RECORDING
+
+    /**
+     * The Drive folder a ledger row can open (docs/03 "다른 기기의 녹음", docs/09 화면 원칙 2): the
+     * link `drive.upload` wrote into `meta.json`, or the folder's canonical URL when only its id is
+     * known — an adopted row was read out of that very folder, and one uploaded before the meta
+     * carried a link still names it. Not while another device is still uploading into it: the
+     * in-flight rows offer no actions.
+     */
+    val driveFolderUrl: String?
+        get() = if (remoteUploading) null
+        else meta.drive?.folderUrl ?: driveFolderId?.let { "https://drive.google.com/drive/folders/$it" }
 }
 
 /** What "녹음 삭제" (docs/03) did, or why it did nothing. */

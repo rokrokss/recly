@@ -29,6 +29,7 @@ import recly.core.job.StepStatus
 import recly.core.message.CoreMessage
 import recly.core.model.AudioSettings
 import recly.core.model.Codec
+import recly.core.model.DriveLocation
 import recly.core.model.Container
 import recly.core.model.Platform
 import recly.core.model.RecordingMeta
@@ -231,6 +232,24 @@ class RecentsTest {
         assertEquals(LINK, Recents.item(record(), job("j", JobStatus.DONE), steps).link)
     }
 
+    /** docs/03: an adopted row has no upload step here, but it was read out of its Drive folder. */
+    @Test
+    fun `an adopted recording links to the folder it was read from`() {
+        val item = Recents.item(record(remote = true, driveFolderId = "abc"), job = null, steps = emptyList())
+
+        assertEquals(LINK, item.link)
+    }
+
+    /** The link `drive.upload` wrote into `meta.json` wins over one built from the id. */
+    @Test
+    fun `the meta's own folder link is preferred`() {
+        val record = record(remote = true, driveFolderId = "abc").let {
+            it.copy(meta = it.meta.copy(drive = DriveLocation("abc", "https://drive.google.com/drive/folders/abc?x")))
+        }
+
+        assertEquals("$LINK?x", Recents.item(record, job = null, steps = emptyList()).link)
+    }
+
     @Test
     fun `a job that has not uploaded anything has no link`() {
         assertNull(Recents.item(record(), job("j", JobStatus.PENDING), listOf(step("upload"))).link)
@@ -325,6 +344,7 @@ class RecentsTest {
         remote: Boolean = false,
         source: Source = Source.DESKTOP,
         remotePending: Set<String> = emptySet(),
+        driveFolderId: String? = null,
     ) = RecordingRecord(
         id = "rec-1",
         meta = RecordingMeta(
@@ -344,6 +364,7 @@ class RecentsTest {
             status = status,
         ),
         dir = "/tmp/rec-1".toPath(),
+        driveFolderId = driveFolderId,
         remote = remote,
         remotePending = remotePending,
     )

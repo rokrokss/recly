@@ -54,7 +54,8 @@ public struct RecentItem: Identifiable, Sendable {
     public var titleLabel: String {
         title.isEmpty ? RecKitStrings.localized("Untitled") : title
     }
-    /// The `drive.upload` step's folder link, once there is one.
+    /// The recording's Drive folder: the `drive.upload` step's link, or the folder the row knows
+    /// on its own — an adopted recording was read out of that folder (docs/03).
     public let link: URL?
     /// The workflow the job runs, so a key that was refused can be fixed where it is defined.
     public let workflowId: String?
@@ -196,7 +197,7 @@ public enum Recents {
                     title: record.meta.title ?? "",
                     startedAt: record.meta.startedAt,
                     state: stateLabel(record: record, job: job),
-                    link: driveLink(steps),
+                    link: driveLink(steps) ?? record.driveFolderUrl.flatMap(URL.init(string:)),
                     lastError: error,
                     workflowId: job?.workflowId,
                     waitingMinutes: waiting,
