@@ -18,7 +18,7 @@
 Meeting-note apps and AI recorders keep the transcript and throw the audio away, on their servers,
 under their subscription. Recly is the opposite: an honest recorder that **records and uploads,
 nothing more**. The original audio stays in **your** Google Drive, and what happens next
-(a webhook, a transcript, a summary) is a workflow **you** wrote, running with **your** keys.
+(a webhook, a transcript, the notes) is a workflow **you** wrote, running with **your** keys.
 There is no Recly server, no bot joining your call, and no monthly fee.
 
 ## Why Recly
@@ -32,7 +32,7 @@ There is no Recly server, no bot joining your call, and no monthly fee.
 - **Files and webhooks are the interface.** When a recording finishes, Recly can call a signed
   webhook so n8n, a Cloudflare Worker or your own script takes over. Transcription is an optional
   step you add with your own key from any of 14 providers (AssemblyAI, Clova, Deepgram, OpenAI,
-  Azure and more). Summaries are your agent's job, not a paid tier.
+  Azure and more). Notes are your agent's job, not a paid tier.
 - **Nothing covert.** Recording is always visible. Desktops detect a meeting, ask, and only then
   record. No analytics, no crash reporting, no update pings.
 
@@ -44,7 +44,7 @@ There is no Recly server, no bot joining your call, and no monthly fee.
 | Storage | Your Google Drive | The audio parts and a small metadata file, to your own account. |
 | Webhook | An address you typed into the workflow | One signed POST with the recording's metadata and Drive links. Never the audio, never the transcript text. |
 | Transcription | A provider you chose, with your own key | The audio, only if you added this step. The transcript is written back next to the recording. |
-| Summary | Your own AI agent (Claude Code, Codex, ...) | Whatever your agent already has access to. Recly is not involved. |
+| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes to your Notion. Recly is not involved. |
 | Workflow definitions, API keys, webhook secrets | Your device's secure storage | Nothing. They are never synced. Move them with Settings → Export/Import. |
 
 The full list of every network path, with nothing left out, is in the
@@ -85,17 +85,15 @@ that can read JSON (your n8n flow, your script) knows exactly what it will recei
 
 ## Notes: bring your own agent
 
-Recly's pipeline ends at the transcript on purpose. Summarizing text is something your existing
-AI subscription already does well, so Recly ships **skills** for your agent instead of a metered
-feature. Drive stays the archive the app writes; the agent only reads it. Notes, and every edit
-you make to them later, live in Notion.
+Recly's pipeline ends at the transcript on purpose. Turning it into notes is something your
+existing AI subscription already does well, so Recly ships **skills** for your agent instead of a
+metered feature. Drive stays the archive the app writes and the agent only reads it. The notes,
+and every edit you make to them later, live in your Notion.
 
 | Skill | What it does |
 |---|---|
-| [`recly-notes`](skills/recly-notes/SKILL.md) | finds a recording in your Drive (the latest, or the one you name), reads its transcript, and writes minutes, a decision log, interview or lecture notes, or a memo |
-| [`recly-notion`](skills/recly-notion/SKILL.md) | keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
-
-**Coding agents** (Claude Code, Codex, Cursor):
+| [`recly-notes`](skills/recly-notes/SKILL.md) | Finds a recording (the latest, or the one you name), reads its transcript and writes minutes, a decision log, interview or lecture notes, or a memo |
+| [`recly-notion`](skills/recly-notion/SKILL.md) | Keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
 
 ```bash
 npx skills add rokrokss/recly            # any agent that supports Agent Skills
@@ -104,21 +102,9 @@ npx skills add rokrokss/recly            # any agent that supports Agent Skills
 /plugin install recly@recly
 ```
 
-The plugin registers Notion's hosted MCP server; run `/mcp` once to sign in. Google Drive comes
-from the connector you enable at claude.ai (Settings → Connectors), which Claude Code picks up
-automatically — or, on the machine that transcribed the recording, from the Recly app's own
-local copy with no setup at all.
-
-**Claude app** (web, desktop, phone): connect Google Drive and Notion under Settings →
-Connectors, turn on "Code execution and file creation" under Capabilities, then upload
-`skills/recly-notes` and `skills/recly-notion` as two ZIP files under Customize → Skills (each
-ZIP's root is the skill folder). Do the setup once on the web; it follows your account to the
-phone.
-
-**ChatGPT app** (web, desktop, phone): connect Google Drive and Notion under Settings → Apps,
-create a project, upload the five files under `skills/` (the two `SKILL.md` and the three files
-in `references/`), and put one line in the project instructions: *"Follow the attached
-recly-notes and recly-notion SKILL.md files."* Chat inside that project.
+The plugin registers Notion's hosted MCP server; run `/mcp` once to sign in. Using the Claude or
+ChatGPT apps instead of a coding agent? The same five files work there too. Setup for each is in
+[skills/README.md](skills/README.md).
 
 Then ask: *"Make minutes from the latest recording and put them in Notion"* or *"What did we
 decide about pricing last week?"*. Don't like the format? Edit the skill file. That is the point.
@@ -164,7 +150,7 @@ android/     :app (phone), :wear (Galaxy Watch), :recording (shared recorder), :
 apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / RecMac
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI)
 spec/        JSON Schema + examples — the contract every client honors
-skills/      skills for the user's agent — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
+skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 scripts/     icon rendering, local webhook receiver
 docs/        recly.md (the design source of truth) + install.md + development.md + policy/
 ```
@@ -174,4 +160,5 @@ docs/        recly.md (the design source of truth) + install.md + development.md
 | [docs/development.md](docs/development.md) | Build and test every client, values filled in locally (OAuth client IDs), cutting a release |
 | [docs/recly.md](docs/recly.md) | **The design source of truth** (Korean). Architecture, workflow contract, recording and retention, webhooks, storage and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
 | [spec/](spec/) | Machine-readable contract: `workflow.schema.json`, `recording.meta.schema.json`, `webhook.payload.schema.json`, `transcript.schema.json`, `examples/` |
+| [skills/README.md](skills/README.md) | The `recly` plugin: what the two skills do and how to set them up in Claude Code, the Claude app and ChatGPT |
 | [AGENTS.md](AGENTS.md) | Orientation for coding agents working in this repository |
