@@ -1,10 +1,6 @@
 # Recly Privacy Policy
 
-> **Status: DRAFT — not in force.** The effective date below is rewritten on the day this policy takes effect.
->
-> **The implementation prerequisites are met.** §7's recording deletion (job records included) and in-app disconnect, and §8's consent reminder on all four shells, are really in the app. What is left before publication is not code but two human items — (1) confirming the per-provider retention policy URLs in `docs/recly.md` §15 §3 (until then the in-app disclosure carries no link either), and (2) a legal review (§8's jurisdiction summary is a web summary, not legal advice — `docs/recly.md` §열린 결정).
-
-**Effective date: 2026-08-29**
+**Effective date: 2026-09-09**
 **Contact: q0115643@gmail.com**
 
 This is the public URL the Google OAuth consent screen and the app stores point at. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](privacy-policy.ko.md)
