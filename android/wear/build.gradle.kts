@@ -25,7 +25,7 @@ android {
         targetSdk = 36
         // Play requires a unique versionCode across every bundle of one app, phone and Wear OS
         // tracks included: the watch takes the phone's code plus 1_000_000.
-        versionCode = 1_000_002
+        versionCode = 1_000_003
         versionName = "0.1.0"
     }
 
@@ -42,7 +42,15 @@ android {
         }
     }
     buildTypes {
-        getByName("release") { signingConfig = signingConfigs.findByName("upload") }
+        getByName("release") {
+            signingConfig = signingConfigs.findByName("upload")
+            // R8: the release bundle is a third of the size and Play's optimisation checks pass.
+            // The rules file keeps what obfuscation would otherwise turn into gibberish in the
+            // shells' error text.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
     }
 
     buildFeatures {

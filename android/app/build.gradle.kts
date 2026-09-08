@@ -34,7 +34,7 @@ android {
         applicationId = "app.recly"
         minSdk = 34
         targetSdk = 36
-        versionCode = 2
+        versionCode = 3
         versionName = "0.1.0"
         resValue("string", "google_server_client_id", googleServerClientId)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,7 +53,15 @@ android {
         }
     }
     buildTypes {
-        getByName("release") { signingConfig = signingConfigs.findByName("upload") }
+        getByName("release") {
+            signingConfig = signingConfigs.findByName("upload")
+            // R8: the release bundle is a third of the size and Play's optimisation checks pass.
+            // The rules file keeps what obfuscation would otherwise turn into gibberish in the
+            // shells' error text.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
     }
 
     buildFeatures {
