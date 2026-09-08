@@ -38,7 +38,13 @@ The MSI is on the [GitHub release](https://github.com/rokrokss/recly/releases). 
 code-signed, so SmartScreen shows "Windows protected your PC" — choose **More info** → **Run
 anyway**.
 
-## macOS · iPhone · Apple Watch
+## macOS
 
-App Store, TestFlight and DMG releases are coming soon. Today the way in is building from
-source — see [development.md](development.md).
+Download `Recly-Mac-<version>.dmg` from the [latest release](https://github.com/rokrokss/recly/releases/latest),
+open it and drag Recly to Applications. The app is signed with a Developer ID certificate and
+notarized by Apple, so it opens without any Gatekeeper workaround. macOS 14.4 or later, Apple Silicon.
+
+## iPhone · Apple Watch
+
+The App Store release is in review. Until it is out, the way in is building from source — see
+[development.md](development.md).
