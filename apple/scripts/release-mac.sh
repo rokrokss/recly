@@ -58,6 +58,7 @@ xcodebuild \
   ARCHS=arm64 \
   CODE_SIGN_STYLE=Manual \
   ENABLE_HARDENED_RUNTIME=YES \
+  CODE_SIGN_INJECT_BASE_ENTITLEMENTS=NO \
   "${sign_flags[@]}" \
   build
 
@@ -83,6 +84,12 @@ for key in com.apple.security.device.audio-input; do
     exit 1
   fi
 done
+# The `build` action injects get-task-allow (a debugger attach right) unless told not to above; the
+# notary service rejects any Developer ID signature that carries it.
+if printf '%s' "$entitlements" | grep -q com.apple.security.get-task-allow; then
+  echo "release-mac: signature carries get-task-allow — notarization would reject it" >&2
+  exit 1
+fi
 
 # `hdiutil` rather than `create-dmg`: one dependency fewer, and the layout of the window is not
 # worth a Homebrew formula in the release path.
