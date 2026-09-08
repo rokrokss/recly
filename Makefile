@@ -12,7 +12,7 @@ XCODEBUILD = xcodebuild -workspace $(WORKSPACE) -collect-test-diagnostics never
 IOS_SIM ?= iPhone 17 Pro
 WATCH_SIM ?= Apple Watch Series 11 (46mm)
 
-.PHONY: help test core android-test windows-test apk aab windows-run windows-msi helper-test ios-archive ios-upload \
+.PHONY: help test core android-test windows-test apk aab windows-run windows-msi helper-test ios-archive ios-upload mac-release \
         mac mac-test ios watch spec skills
 
 help:
@@ -24,6 +24,7 @@ help:
 	@echo "make watch          build Recly Watch for the watch simulator (WATCH_SIM=\"$(WATCH_SIM)\")"
 	@echo "make ios-archive    App Store archive of Recly (iPhone + watch); needs the team in Local.xcconfig"
 	@echo "make ios-upload     the same, uploaded to TestFlight"
+	@echo "make mac-release    Developer ID + notarized DMG of Recly Mac (NOTARY_PROFILE=\"$(NOTARY_PROFILE)\")"
 	@echo "make apk            phone debug APK"
 	@echo "make aab            phone + watch release bundles for Play (needs the upload key)"
 	@echo "make android-test   android unit tests only"
@@ -78,6 +79,12 @@ ios-archive:
 
 ios-upload:
 	UPLOAD=1 ./apple/scripts/release-ios.sh
+
+# The notarytool keychain profile: xcrun notarytool store-credentials <name> --apple-id … --team-id …
+NOTARY_PROFILE ?= recly
+
+mac-release:
+	NOTARIZE=1 NOTARY_PROFILE="$(NOTARY_PROFILE)" ./apple/scripts/release-mac.sh
 
 ios:
 	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=NO build
