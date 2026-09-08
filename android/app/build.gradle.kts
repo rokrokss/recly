@@ -61,6 +61,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // The only native code is AndroidX's (graphics-path, datastore); packaging its symbol
+            // tables lets Play symbolicate a native crash and stops the upload warning.
+            ndk { debugSymbolLevel = "SYMBOL_TABLE" }
         }
     }
 
