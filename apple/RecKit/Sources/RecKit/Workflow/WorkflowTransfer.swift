@@ -10,9 +10,10 @@ import UniformTypeIdentifiers
 
 /// A file the user picked and has not agreed to yet: [workflows] is the number the confirmation
 /// names, and [json] is what replaces the document once they have.
-public struct PickedWorkflows: Identifiable, Equatable, Sendable {
+public struct PickedWorkflows: Identifiable, Equatable {
     public let json: String
     public let workflows: Int
+    public var transfers: [TransferTarget] = []
 
     public var id: String { json }
 }
@@ -101,7 +102,18 @@ public final class WorkflowTransferModel: ObservableObject {
             return
         }
         if let parsed = WorkflowParser.shared.parse(json: json) as? ParseResultOk {
-            confirm = PickedWorkflows(json: json, workflows: parsed.document.workflows.count)
+            do {
+                let targets = parsed.document.workflows.flatMap {
+                    TransferTargets.shared.forWorkflow(workflow: $0)
+                }
+                let missing = try await core.transferConsents.missing(targets: targets)
+                confirm = PickedWorkflows(
+                    json: json, workflows: parsed.document.workflows.count, transfers: missing
+                )
+            } catch {
+                fileFailed(error)
+                return
+            }
             message = nil
             failed = false
             importing = .idle
@@ -117,8 +129,16 @@ public final class WorkflowTransferModel: ObservableObject {
 
     /// docs/05: the confirmed replace. There is no merge — the file becomes the whole document.
     public func confirmImport() async {
-        guard let picked = confirm else { return }
+        guard let picked = confirm, importing != .processing else { return }
         importing = .processing
+        do {
+            try await core.transferConsents.grant(targets: picked.transfers)
+        } catch {
+            message = .key("Could not save transfer permissions")
+            failed = true
+            importing = .failed
+            return
+        }
         await replace(picked.json)
     }
 
@@ -211,6 +231,7 @@ public struct WorkflowTransferSection: View {
             ) { picked in
                 ImportDialog(
                     picked: picked,
+                    message: model.failed ? model.message : nil,
                     confirm: { Task { await model.confirmImport() } },
                     cancel: { model.cancelImport() }
                 )
@@ -307,12 +328,14 @@ public struct WorkflowTransferSection: View {
 /// anything is written — and it is asked with the number the file actually holds.
 public struct ImportDialog: View {
     private let picked: PickedWorkflows
+    private let message: UiMessage?
     private let confirm: () -> Void
     private let cancel: () -> Void
     @Environment(\.locale) private var locale
 
-    public init(picked: PickedWorkflows, confirm: @escaping () -> Void, cancel: @escaping () -> Void) {
+    public init(picked: PickedWorkflows, message: UiMessage? = nil, confirm: @escaping () -> Void, cancel: @escaping () -> Void) {
         self.picked = picked
+        self.message = message
         self.confirm = confirm
         self.cancel = cancel
     }
@@ -320,7 +343,7 @@ public struct ImportDialog: View {
     public var body: some View {
         BlueprintDialog(title: loc("Replace the workflows on this device?")) {
             BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
-            BlueprintButton(loc("Import workflows"), tone: .danger) { confirm() }
+            BlueprintButton(loc(picked.transfers.isEmpty ? "Import workflows" : "Allow & import"), tone: .danger) { confirm() }
                 .accessibilityIdentifier("import-confirm")
         } content: {
             BlueprintDialogText(
@@ -334,6 +357,10 @@ public struct ImportDialog: View {
                 loc("Provider keys are not in this file — enter them on each device."),
                 tone: .muted
             )
+            if let message { BlueprintDialogText(message.text, tone: .danger) }
+            if !picked.transfers.isEmpty {
+                TransferDisclosureList(targets: picked.transfers)
+            }
         }
     }
 

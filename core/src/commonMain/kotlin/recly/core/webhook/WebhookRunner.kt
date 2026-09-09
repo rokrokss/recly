@@ -54,7 +54,7 @@ class WebhookRunner(private val deps: CoreDeps) : StepRunner {
             put("webhook-timestamp", timestamp.toString())
             signature(step, ctx.stepRunId, timestamp, body)?.let { put("webhook-signature", it) }
         }
-        val result = deps.transport.execute(
+        val result = ctx.deps.transport.execute(
             HttpPlan(
                 method = "POST",
                 url = step.url,

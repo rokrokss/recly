@@ -174,6 +174,7 @@ object Recents {
             JobStatus.NEEDS_AUTH -> Str.STATUS_SIGN_IN_NEEDED
             // docs/10 "Drive 용량 초과": parked rather than failed, and the row says which — a retry
             // over a full Drive is the same 403 again, and freeing space is the only way past it.
+            JobStatus.NEEDS_CONSENT -> Str.STATE_CONSENT_REQUIRED
             JobStatus.NEEDS_SPACE -> Str.STATE_NO_SPACE
             JobStatus.SKIPPED_SHORT -> Str.STATE_TOO_SHORT
         }.message()

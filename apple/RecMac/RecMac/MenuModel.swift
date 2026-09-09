@@ -782,6 +782,8 @@ final class MenuModel: ObservableObject {
     /// that can open one.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
+        case .privacy:
+            NSWorkspace.shared.open(PrivacyLinks.recly(locale: .current))
         case .signIn:
             signIn()
 

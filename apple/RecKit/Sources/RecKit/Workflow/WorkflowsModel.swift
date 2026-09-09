@@ -81,6 +81,8 @@ public final class WorkflowsModel: ObservableObject {
     @Published public private(set) var items: [WorkflowItem] = []
     @Published public private(set) var secrets: [String] = []
     @Published public var editor: EditorState?
+    @Published public private(set) var pendingTransfers: [TransferTarget] = []
+    private var approvedTransferIds: Set<String> = []
     @Published public var secretForm: SecretForm?
     /// The row whose delete has been asked for and not yet answered. A workflow leaves this device
     /// and does not come back — the document is local (docs/05), so there is no copy anywhere to
@@ -134,6 +136,13 @@ public final class WorkflowsModel: ObservableObject {
         Task { await reload() }
         observeDeviceDefault()
         observeDocument()
+        Task { [weak self] in
+            for await targets in core.transferConsents.observe() {
+                guard let self else { return }
+                self.approvedTransferIds = Set(targets.map(\.id))
+                self.refreshTransferDisclosure()
+            }
+        }
     }
 
     /// The document moves without this model doing the moving — a settings import replaces it
@@ -173,9 +182,11 @@ public final class WorkflowsModel: ObservableObject {
     public func reload() async {
         await loadSecrets()
         do {
+            approvedTransferIds = Set(try await core.transferConsents.approved().map(\.id))
             let document = try await core.workflows.current()
             self.document = document
             show(document)
+            refreshTransferDisclosure()
             onDocumentChanged?()
         } catch {
             message = .key("Could not read the workflows")
@@ -196,6 +207,7 @@ public final class WorkflowsModel: ObservableObject {
             session: sessions.open(),
             openedOn: nil
         )
+        refreshTransferDisclosure()
     }
 
     public func edit(_ id: String) {
@@ -207,11 +219,13 @@ public final class WorkflowsModel: ObservableObject {
             openedOn: OpenedOn(id: workflow.id, updatedAt: workflow.updatedAt),
             order: Self.orderErrors(workflow.toEdit())
         )
+        refreshTransferDisclosure()
     }
 
     public func cancel() {
         sessions.close()
         editor = nil
+        refreshTransferDisclosure()
     }
 
     /// Discards the local edits and starts again from what the document says now.
@@ -273,6 +287,7 @@ public final class WorkflowsModel: ObservableObject {
         editor.errors = []
         editor.order = Self.orderErrors(editor.edit)
         self.editor = editor
+        refreshTransferDisclosure()
     }
 
     /// The parser's docs/08 order verdict, by the step that has to move.
@@ -312,11 +327,29 @@ public final class WorkflowsModel: ObservableObject {
     }
 
     /// The only write path out of the editor.
-    public func save() async {
+    public func save(allowing shown: [TransferTarget] = []) async {
         guard let editor else { return }
+        message = nil
         let now = core.deps.clock.now()
         let edit = editor.edit
+        // These are the destinations the Allow & save action showed, not a fresh unseen list.
+        do {
+            if !shown.isEmpty { try await core.transferConsents.grant(targets: shown) }
+        } catch {
+            message = .key("Could not save transfer permissions")
+            return
+        }
         await mutate(expect: editor.openedOn, session: editor.session) { $0.with(edit, now: now) }
+    }
+
+    private func refreshTransferDisclosure() {
+        guard core.transferConsents.enabled, let editor else {
+            pendingTransfers = []
+            return
+        }
+        pendingTransfers = TransferTargets.shared.forWorkflow(
+            workflow: editor.edit.toWorkflow(updatedAt: notSavedYet)
+        ).filter { !approvedTransferIds.contains($0.id) }
     }
 
     // MARK: - Secrets

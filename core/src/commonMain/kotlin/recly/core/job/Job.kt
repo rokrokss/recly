@@ -13,9 +13,9 @@ import recly.core.model.Workflow
  * docs/10 "잡 상태 머신". [NEEDS_AUTH] and [NEEDS_SPACE] are the two terminal-until-a-person-acts
  * states: the scheduler never picks them up again and only `JobService.retry` moves them on.
  */
-enum class JobStatus { PENDING, RUNNING, WAITING, DONE, FAILED, NEEDS_AUTH, NEEDS_SPACE, SKIPPED_SHORT }
+enum class JobStatus { PENDING, RUNNING, WAITING, DONE, FAILED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT, SKIPPED_SHORT }
 
-enum class StepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, NEEDS_AUTH, NEEDS_SPACE }
+enum class StepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT }
 
 /**
  * One recording × one workflow. [workflow] is the snapshot taken at enqueue time, so editing the

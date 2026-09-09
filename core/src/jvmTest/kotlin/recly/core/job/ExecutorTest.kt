@@ -114,21 +114,25 @@ internal class Fixture(
     val fs: FakeFileSystem = FakeFileSystem(clock),
     /** docs/03 "다른 기기의 녹음": what the other devices are told; the default tells them nothing. */
     val marker: FolderMarker = FolderMarker.NONE,
+    requireTransferConsent: Boolean = false,
+    private val live: suspend () -> recly.core.model.WorkflowsDocument? = { null },
+    transport: recly.core.platform.Transport = recly.core.testing.UnusedTransport,
 ) {
     val logger = FakeLogger()
-    val deps = testDeps(clock, fs, logger)
+    val deps = testDeps(clock, fs, logger, secureStore = recly.core.testing.MapSecureStore(), transport = transport, requireTransferConsent = requireTransferConsent)
 
     /** The driver is kept as well as the database: [JobSnapshotTest] writes a `job` row no query
      * in `Rec.sq` covers. */
     val driver = inMemoryDriver()
     val db = RecDatabase(driver)
+    val consents = recly.core.privacy.TransferConsents(db, deps)
     val recordings = RecordingRepository(db, deps)
     val store = JobStore(db, deps)
     val service = JobService(deps, store, recordings, executorWith(runners, random))
 
     /** A fresh executor over the same database — what a process restart looks like. */
     fun executorWith(runners: List<StepRunner>, random: Random = Random(42)): Executor =
-        Executor(deps, store, recordings, runners.associateBy { it.type }, random, marker = marker)
+        Executor(deps, store, recordings, runners.associateBy { it.type }, random, live = live, marker = marker, transferConsents = consents)
 
     /** Two parts per track: [tracks] is what the recorder made, not what a workflow uploads. */
     suspend fun seed(

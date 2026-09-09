@@ -13,6 +13,9 @@ package recly.core.message
  * [CoreMessageRef.parse] answers null for it so the shell can show it unchanged.
  */
 enum class CoreMessage {
+    /** docs/15: waiting for explicit permission to send data to an external destination. */
+    TRANSFER_CONSENT_REQUIRED,
+
     /** Interactive sign-in is what unblocks this; waiting is not. */
     NEEDS_AUTH,
 

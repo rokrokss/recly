@@ -161,6 +161,7 @@ fun testDeps(
     /** Unconfined keeps the in-memory JDBC driver and FakeFileSystem on the test's own thread;
      * the concurrency tests hand in a real multi-threaded dispatcher instead. */
     io: CoroutineDispatcher = Dispatchers.Unconfined,
+    requireTransferConsent: Boolean = false,
 ): CoreDeps = CoreDeps(
     clock = clock,
     logger = logger,
@@ -173,6 +174,7 @@ fun testDeps(
     device = DeviceInfo(deviceId, platform, DEVICE_NAME),
     appVersion = TEST_APP_VERSION,
     io = io,
+    requireTransferConsent = requireTransferConsent,
 )
 
 fun testMeta(

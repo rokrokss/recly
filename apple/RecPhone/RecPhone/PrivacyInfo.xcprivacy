@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  The App Store privacy manifest. Recly has no server (docs/15): nothing is collected by the
-  developer and nothing tracks, so both collection lists are empty — the App Store Connect privacy
-  answers must say the same. The required-reason APIs are the ones RecKit and this shell call:
+  The App Store privacy manifest. No tracking is performed. App Store Connect privacy answers
+  must also account for the actual third-party data flows and retention in docs/15; having no
+  developer-operated server alone does not establish that no data is collected under Apple's
+  definition. The required-reason APIs below are the ones RecKit and this shell call:
   `UserDefaults` for device-local settings, file modification dates for the recorder's own part
   files inside the container, and `ProcessInfo.systemUptime` for elapsed time in-app.
 -->

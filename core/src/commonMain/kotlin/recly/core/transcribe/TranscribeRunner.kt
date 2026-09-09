@@ -65,7 +65,7 @@ class TranscribeRunner(
             apiKey = key,
             speakersExpected = speakersExpected(step, ctx.recording.meta),
             audioDurationSec = audioDurationSec(ctx.recording.meta),
-            deps = deps,
+            deps = ctx.deps,
             providerState = state.providerState,
         )
         return if (state.ref == null) submit(ctx, step, provider, sttCtx) else poll(ctx, step, provider, sttCtx, state)

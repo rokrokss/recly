@@ -57,7 +57,8 @@ public struct CoreBridge {
             // docs/07 §6: the seed names are the device's language from the moment they are
             // written, so they are decided here and not left to the English base — the shells'
             // own strings follow in I18N-L2.
-            locale: CoreBridge.deviceLanguage
+            locale: CoreBridge.deviceLanguage,
+            requireTransferConsent: platform == .ios
         )
 
         return CoreBridge(

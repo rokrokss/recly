@@ -34,6 +34,7 @@ public enum CoreMessages {
     /// Exhaustive by construction: a new key does not compile until it has a sentence.
     static func key(for message: CoreMessage) -> String {
         switch message {
+        case .transferConsentRequired: return "Permission is needed before sending to this destination"
         case .needsAuth: return "Sign in again to carry on"
         case .driveReauth: return "Google Drive access has to be allowed again"
         case .driveConsentRequired: return "Drive access needs your consent"
@@ -64,7 +65,7 @@ public enum CoreMessages {
     /// The keys whose sentence has a `%@` in it; the rest are looked up without one.
     static func takesArgument(_ message: CoreMessage) -> Bool {
         switch message {
-        case .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
+        case .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
              .noInputTrack, .resultTimeout:
             return false

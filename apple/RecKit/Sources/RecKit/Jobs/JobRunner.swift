@@ -13,6 +13,7 @@ public enum JobRunStatus: Sendable {
     /// docs/10 "Drive 용량 초과": parked until the user frees space and asks again. Like every other
     /// parked state it is not something [NextRun] comes back for — the core does not poll Drive.
     case needsSpace
+    case needsConsent
     case skippedShort
 }
 

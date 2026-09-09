@@ -327,4 +327,6 @@
     <string name="consent_confirm">알렸습니다 · 녹음 시작</string>
     <string name="consent_suppress">다시 묻지 않기</string>
     <string name="consent_link">관할별 녹음 동의 규정 보기</string>
+    <string name="core_transfer_consent_required">이 대상으로 전송하기 전에 허용이 필요합니다</string>
+    <string name="job_state_needs_consent">전송 허용 필요</string>
 </resources>

@@ -28,6 +28,7 @@ struct SettingsView: View {
                     // block the Mac's settings pane draws (RecKit).
                     ThemeSection(theme: theme)
                     workflows
+                    privacy
                     about
                 }
                 .padding(.bottom, Space.l)
@@ -36,6 +37,18 @@ struct SettingsView: View {
             .dotGridBackground()
             .navigationTitle(AppStrings.localized("Settings"))
             .navigationBarTitleDisplayMode(.inline)
+        }
+        .sheet(isPresented: $model.privacyPresented) {
+            if let privacy = model.transferPrivacy {
+                NavigationStack {
+                    TransferPrivacyView(model: privacy)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button(RecKitStrings.localized("Close")) { model.privacyPresented = false }
+                            }
+                        }
+                }
+            }
         }
         // docs/03 "로그아웃 vs 연결 해제": the four things that are true of a disconnect and are not
         // true of a sign-out, before it happens rather than after.
@@ -178,6 +191,23 @@ struct SettingsView: View {
     private var workflows: some View {
         if let model = model.workflowTransfer {
             WorkflowTransferSection(model: model)
+        }
+    }
+
+    private var privacy: some View {
+        Group {
+            section(RecKitStrings.localized("Privacy"))
+            SectionRow(title: RecKitStrings.localized("Privacy Policy")) {
+                Link(RecKitStrings.localized("Open"), destination: PrivacyLinks.recly(locale: locale))
+            }
+            if model.transferPrivacy != nil {
+                SectionRow(title: RecKitStrings.localized("Allowed destinations")) {
+                    BlueprintButton(RecKitStrings.localized("Review transfers")) {
+                        model.privacyPresented = true
+                    }
+                    .accessibilityIdentifier("transfer-privacy")
+                }
+            }
         }
     }
 

@@ -52,6 +52,7 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.WARNING),
     // docs/10 "Drive 용량 초과": a job parked because Drive is full — nothing is lost and nothing
     // retries, and the banner beside it is what offers the storage page.
+    Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING),
     Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING),
     Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL),
 )

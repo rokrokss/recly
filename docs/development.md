@@ -116,3 +116,7 @@ the four values — each app's issued ID and its **reversed client ID**
 settings, so nothing you fill in shows up in the tracked tree. The consent screen must carry
 exactly one scope:
 `drive.file` ([recly.md §6](recly.md#6-인증-구-docs06)).
+
+### iOS 심사 빌드의 Google 로그인 검사
+
+`make ios-archive`는 현재 코어를 다시 빌드한 뒤, 컴파일된 아카이브의 `GIDClientID`와 Google 콜백 URL 스킴을 검사한다. 미설정·플레이스홀더·스킴 불일치면 export/upload 전에 중단한다. `make ios-release-test`는 실제 계정 없이 아카이브 fixture로 이 검사를 검증한다. 이 정적 검사는 OAuth 콘솔의 게시 상태·번들 ID 등록·실제 기기의 로그인 성공까지 보장하지 않는다.

@@ -203,7 +203,8 @@ private struct EditorScreen: View {
     }
 
     private func content(_ editor: EditorState) -> some View {
-        VStack(spacing: 0) {
+        let shown = model.pendingTransfers
+        return VStack(spacing: 0) {
             ScreenHeader(
                 title: editor.edit.name.isEmpty
                     ? loc(editor.isNew ? "New workflow" : "Edit workflow")
@@ -211,10 +212,10 @@ private struct EditorScreen: View {
             ) {
                 HStack(spacing: Space.s) {
                     BlueprintButton(loc("Cancel"), tone: .quiet) { model.cancel() }
-                    ProcessingButton(loc("Save"), state: save, tone: .primary) {
+                    ProcessingButton(loc(shown.isEmpty ? "Save" : "Allow & save"), state: save, tone: .primary) {
                         save = .processing
                         Task {
-                            await model.save()
+                            await model.save(allowing: shown)
                             // A save that worked closes the editor; one that was refused leaves it
                             // open with the reason on it, which is the honest outcome to report.
                             save = model.editor == nil ? .done : .failed
@@ -228,6 +229,10 @@ private struct EditorScreen: View {
 
             ScrollView {
                 VStack(spacing: Space.xs) {
+                    if !shown.isEmpty {
+                        TransferDisclosureList(targets: shown)
+                            .padding(.horizontal, Space.m)
+                    }
                     NodeGraph(
                         axis: .vertical,
                         count: 1 + editor.edit.steps.count,
@@ -311,6 +316,11 @@ private struct EditorScreen: View {
     /// The two things that can be wrong with an open editor, in the order they matter.
     @ViewBuilder
     private func notices(_ editor: EditorState) -> some View {
+        if let message = model.message {
+            Text(verbatim: message.text)
+                .foregroundStyle(blueprint.palette.danger)
+                .padding(.horizontal, Space.m)
+        }
         // Something replaced this workflow while it was open — a second window, an import. There is
         // no three-way merge, so the only honest offer is to start again from what is stored now.
         if editor.stale {

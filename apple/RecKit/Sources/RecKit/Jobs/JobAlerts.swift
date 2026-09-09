@@ -12,6 +12,7 @@ import ReclyCore
 /// same tests over the same rules rather than by sharing code the core does not own.
 public enum AlertReason: String, CaseIterable, Sendable {
     case needsAuth
+    case needsConsent
     case needsSpace
     case missingSecret
     case invalidSecret
@@ -32,6 +33,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
     /// core and the logs use.
     public var code: String {
         switch self {
+        case .needsConsent: return "NEEDS_CONSENT"
         case .needsAuth: return "NEEDS_AUTH"
         case .needsSpace: return "NEEDS_SPACE"
         case .missingSecret: return "MISSING_SECRET"
@@ -44,6 +46,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
 
     public var fix: FixSurface {
         switch self {
+        case .needsConsent: return .privacy
         case .needsAuth: return .signIn
         case .needsSpace: return .driveStorage
         case .missingSecret, .invalidSecret, .authRejected: return .secrets
@@ -56,6 +59,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
 /// 편집기. '앱 열기'로 끝내지 않는다." [driveStorage] is the one that leaves the app, because the
 /// space is Google's to give back.
 public enum FixSurface: CaseIterable, Sendable {
+    case privacy
     case signIn
     case driveStorage
     case secrets
@@ -69,6 +73,7 @@ public enum FixSurface: CaseIterable, Sendable {
     /// with exactly these four words.
     public var labelKey: String {
         switch self {
+        case .privacy: return "Review transfers"
         case .signIn: return "Sign in"
         case .driveStorage: return "Open Drive storage"
         case .secrets: return "Check the key"
@@ -169,6 +174,7 @@ public enum JobAlerts {
     /// nothing.
     public static func reason(status: JobStatus, lastError: String?) -> AlertReason? {
         switch status {
+        case .needsConsent: return .needsConsent
         case .needsAuth: return .needsAuth
         case .needsSpace: return .needsSpace
         // Only a job the queue has given up on. A step that is still inside its retry budget is
@@ -248,7 +254,7 @@ public enum JobAlerts {
         return ordered.last { $0.lastError != nil } ?? holdingUp
     }
 
-    private static let holdingUp: Set<StepStatus> = [.failed, .needsAuth, .needsSpace]
+    private static let holdingUp: Set<StepStatus> = [.failed, .needsAuth, .needsSpace, .needsConsent]
 
     /// One job of the queue, folded down to what the banner and the notification need of it.
     public static func source(status: JobStatus, workflowId: String?, steps: [StepRun]) -> AlertSource {

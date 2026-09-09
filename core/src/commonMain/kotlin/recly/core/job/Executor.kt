@@ -22,6 +22,7 @@ import recly.core.model.Workflow
 import recly.core.model.WorkflowsDocument
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
+import recly.core.privacy.TransferConsents
 import recly.core.platform.Logger.Level
 import recly.core.recording.RecordingRecord
 import recly.core.recording.RecordingRepository
@@ -49,6 +50,7 @@ class Executor(
      * folder so the other devices' lists can say so. Advisory — the default writes nothing.
      */
     private val marker: FolderMarker = FolderMarker.NONE,
+    private val transferConsents: TransferConsents? = null,
 ) {
     private val mutex = Mutex()
 
@@ -135,6 +137,10 @@ class Executor(
             }
             if (run.status == StepStatus.NEEDS_SPACE) {
                 store.park(run, JobStatus.NEEDS_SPACE, null, deps.clock.now())
+                return
+            }
+            if (run.status == StepStatus.NEEDS_CONSENT) {
+                store.park(run, JobStatus.NEEDS_CONSENT, null, deps.clock.now())
                 return
             }
             val waitUntil = run.nextAttemptAt
@@ -260,9 +266,10 @@ class Executor(
             state = run.state,
             saveState = { store.saveStepState(run.id, it) },
             saveOutput = { store.saveStepOutput(run.id, it) },
-            deps = deps,
+            deps = transferConsents?.guardedDeps(step) ?: deps,
         )
         val outcome = try {
+            transferConsents?.requireAllowed(step)
             runner.run(ctx)
         } catch (e: CancellationException) {
             throw e // The row stays RUNNING; the next run resets and repeats it from its saved state.
@@ -270,6 +277,7 @@ class Executor(
             return needsAuth(job, running, e.message ?: CoreMessage.NEEDS_AUTH.code())
         } catch (e: StepFailure) {
             return when {
+                e.needsConsent -> needsConsent(running, e.reason)
                 e.needsAuth -> needsAuth(job, running, e.reason)
                 e.needsSpace -> needsSpace(job, running, e.reason)
                 else -> failed(job, running, step, e.retryable, e.reason, e.retryAfterSec)
@@ -316,6 +324,17 @@ class Executor(
                 "attempts" to run.attempts,
                 "retryAfterSec" to outcome.retryAfterSec,
             ),
+        )
+        return Outcome.Stop
+    }
+
+    /** Consent is not a failure: onError cannot bypass it and no retry attempt is spent. */
+    private suspend fun needsConsent(run: StepRun, reason: String): Outcome {
+        store.park(
+            run.copy(status = StepStatus.NEEDS_CONSENT, nextAttemptAt = null, lastError = reason),
+            JobStatus.NEEDS_CONSENT,
+            null,
+            deps.clock.now(),
         )
         return Outcome.Stop
     }

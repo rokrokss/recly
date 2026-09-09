@@ -152,6 +152,7 @@ enum class Str {
     STATE_FAILED,
     STATE_TOO_SHORT,
     /** docs/10 "Drive 용량 초과": parked because Drive is full, and no retry gets past that. */
+    STATE_CONSENT_REQUIRED,
     STATE_NO_SPACE,
     /** docs/08 "폴링 · 상태": a provider is transcribing and the only news is how long it has been. */
     STATE_WAITING_TRANSCRIPTION,
@@ -330,6 +331,7 @@ enum class Str {
     // docs/15 §3: what leaves this PC when the step runs, and whose policy decides the rest.
     PROVIDER_DISCLOSURE_TRANSCRIBE,
 
+    CORE_TRANSFER_CONSENT_REQUIRED,
     CORE_NEEDS_AUTH,
     CORE_DRIVE_REAUTH,
     CORE_DRIVE_CONSENT_REQUIRED,

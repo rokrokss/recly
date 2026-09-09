@@ -189,6 +189,12 @@ struct RecordingsView: View {
                 }
                 .accessibilityIdentifier("sign-in")
             }
+            if item.alert == .needsConsent {
+                BlueprintButton(RecKitStrings.localized("Review transfers")) {
+                    model.fix(JobAlert(reason: .needsConsent, count: 1))
+                }
+                .accessibilityIdentifier("review-transfers")
+            }
             // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
             // comes back on its own `next_run_at`, and there is nothing to ask for.
             if item.canRetry {

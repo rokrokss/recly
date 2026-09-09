@@ -1559,6 +1559,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 
 ## 10. 코어 (KMP) (구 docs/10)
 
+**iPhone의 전송 허용 대기:** `job.status`와 `step_run.status`의 `NEEDS_CONSENT`, `TRANSFER_CONSENT_REQUIRED` 메시지는 §15의 외부 전송 허용이 필요한 상태다. 일반 재시도로 우회할 수 없고 허용 후 완료된 단계를 유지하며 재개한다.
+
 ### 타깃 · 의존성
 
 | 항목 | 값 |
@@ -2415,6 +2417,14 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 않는다. 확인 전까지는 "provider의 정책을 따르며, 링크에서 확인하라"로만 쓴다. 확인되지 않은 보관 기간을 지어내지
 않는다.
 
+**iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사·웹훅의 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 실행기와 같은 현재 워크플로우 적용 규칙으로 계산한다.
+
+워크플로우 편집기는 새 대상의 수신자·주소·데이터·목적·업체 방침을 표시하고 “허용하고 저장”으로 함께 처리한다. 가져오기도 기존 확인 화면에서 새 대상만 모아 “허용하고 가져오기”로 처리한다. 같은 대상이면 추가 확인 없이 일반 저장/가져오기다. API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 워크플로우 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. 워크플로우 이름·API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
+
+기존 작업과 Watch 수신 작업은 팝업 없이 허용 대기로 남고 목록에서 설정 → 개인정보 보호로 이동해 해결한다. 같은 화면에서 허용을 철회할 수 있다. 철회는 이미 보낸 데이터나 API 키를 삭제하지 않는다. Google Drive는 별도 Google OAuth를 사용한다. 참가자 녹음 동의 안내(§12·§13)와도 별개의 허용이다.
+
+**사용자가 여는 정책 페이지.** 설정과 위 안내는 Recly의 GitHub 개인정보 처리방침 및 선택 업체의 개인정보 처리방침을 외부 브라우저로 연다. `PrivacyLinks`가 URL 목록을 관리한다(GitHub, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). 사용자가 링크를 누를 때만 해당 웹사이트에 접속한다. 녹음·작업 실행 경로의 자동 요청은 아니다.
+
 ### §4 짝 지은 기기 간 전송 — 워치 ↔ 폰
 
 워치는 Drive도 네트워크도 쓰지 않는다(ADR-002). 그래도 **데이터는 워치를 떠난다** — 짝 지은 폰으로. 이 경로는
@@ -2469,10 +2479,10 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 | 사용자가 원하는 것 | 방법 | 남는 것 |
 |---|---|---|
 | 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
-| 자동 삭제 | 업로드가 성공(ack)한 뒤 로컬 파트는 자동으로 지워진다(ADR-017). `meta.json`·DB 행·녹취 사본은 남는다 | 기간 기반 자동 삭제는 없다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
+| 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본은 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
 | 이 기기에서 그만 쓰기 | 로그아웃 | 다른 기기·Drive 영향 없음. 녹음·Job·시크릿은 전부 남는다 |
-| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 토큰·시크릿·Job·`sync_state`·폴더 캐시는 지워지고, **녹음 파일과 `recording`/`part` 행은 사용자가 "녹음도 함께 삭제"를 고르지 않는 한 남는다** |
-| 전부 지우기 | 앱 삭제 + 연결 해제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
+| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·Job·Drive 폴더 캐시는 지워지고, 워크플로우 정의·기기 기본값·API/웹훅 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 사용자가 "녹음도 함께 삭제"를 고르지 않는 한 남는다** |
+| 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
 | provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |
 
 **녹음 삭제가 지우는 것.** `RecordingRepository.delete`가 한 트랜잭션 안에서 `step_run` → `job` → `part` →
@@ -2482,7 +2492,7 @@ URI·오프셋·`fileId`, STT provider job 식별자), 단계 출력(`output_jso
 없다.**
 
 **연결 해제가 남기는 것.** revoke가 실패했을 때 **grant는 Google 쪽에 그대로 서 있다** — 로컬 정리는 이미 끝났으므로
-토큰·시크릿·Job은 이 기기에서 사라졌지만 Google 계정의 앱 목록에는 Recly가 남아 있다. 앱은 그것을 revoke debt로
+Google 토큰·Job은 이 기기에서 사라졌지만 Google 계정의 앱 목록에는 Recly가 남아 있다. 앱은 그것을 revoke debt로
 기록하고 권한 페이지 링크와 함께 말한다. 로컬 정리가 실패하면 `DisconnectPhase`가 `REVOKED_CLEANUP_OWED`로 남아 다음
 실행에서 이어서 갚고, 그 사이 로그인은 막힌다. `RUNNING` Job 때문에 지우지 못한 녹음은 그 Job 행과 함께 남는다.
 

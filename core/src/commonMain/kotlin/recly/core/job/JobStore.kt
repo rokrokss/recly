@@ -96,6 +96,15 @@ class JobStore(
 
     suspend fun get(jobId: String): Job? = locked { job(jobId) }
 
+    suspend fun resumeConsent(jobId: String, now: Instant): Unit = locked {
+        db.transaction {
+            if (queries.selectJobById(jobId).executeAsOneOrNull()?.status == JobStatus.NEEDS_CONSENT.name) {
+                queries.resumeConsentStepRuns(jobId)
+                queries.updateJobStatus(JobStatus.PENDING.name, null, now.isoUtc(), jobId)
+            }
+        }
+    }
+
     /** The same rows [observeJobs] emits, read once. */
     suspend fun list(): List<Job> = locked { queries.selectJobs().executeAsList().map { it.toJob() } }
 

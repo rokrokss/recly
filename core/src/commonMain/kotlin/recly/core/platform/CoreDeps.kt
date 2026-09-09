@@ -29,4 +29,6 @@ class CoreDeps(
      * the shell translates.
      */
     val locale: String = "en",
+    /** docs/15: the iOS shell supplies the destination-consent UI before enabling this policy. */
+    val requireTransferConsent: Boolean = false,
 )

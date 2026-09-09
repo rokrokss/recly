@@ -11,7 +11,7 @@ This is the public URL the Google OAuth consent screen and the app stores point 
 
 Recly is a **recording app**. Recordings are uploaded to **your own Google Drive**, and what happens next is decided by the workflow you build.
 
-**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. As a result the developer **cannot collect, store, or see** your recordings, transcripts, workflows, or Google account data.
+**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. The app does not send your recordings, transcripts, workflows, or Google account data to the developer. Google and any transcription providers or webhook operators you choose process the data sent to them under their own policies and your account agreements.
 
 ## 2. What the app handles, and where it lives
 
@@ -22,7 +22,7 @@ Recly is a **recording app**. Recordings are uploaded to **your own Google Drive
 | Google access and refresh tokens | Your device's secure storage (Android Keystore-backed encrypted storage / Apple Keychain / Windows Credential Manager) |
 | Webhook signing keys and any STT API keys you enter | The same secure storage. **They are not synced between devices and are never sent to Recly** (there is no server to receive them). Only if you added a transcription step, that API key is sent **straight to the provider you chose**, for authentication only (§3(3)). A webhook signing key is never sent at all — it is only used to compute the signature |
 | The email address of the Google account you signed in with | **On the device only.** The Android phone keeps it in secure storage to pick the same account again on the next launch; iPhone and Mac keep the value held by the Google Sign-In SDK as a hint that prefills the next sign-in. Windows stores none. Signing out removes it |
-| Execution state (job queue, retries, upload progress) | A local database on your device |
+| Execution state (job queue, retries, upload progress) and iPhone transfer permissions | A local database on your device; transfer permissions are not included in workflow exports |
 | Diagnostic logs | Your device's system log. They leave the device only when you export them yourself |
 
 ## 3. Every case where data leaves your device
@@ -35,7 +35,7 @@ Only when you add a `webhook` step and enter a URL, the app sends one notificati
 
 - **Requests are signed only if you configured a signing secret.** With a secret set, the request carries an HMAC-SHA256 (Standard Webhooks) signature header; without one it is sent **unsigned**.
 
-That endpoint is operated by you, and what happens there is your responsibility.
+You choose the endpoint and its operator. Check that operator’s privacy policy before sending recording metadata to it.
 
 **(3) A transcription provider you chose — only if you added that step.**
 Transcription (STT) is **an optional step you may put into your workflow, not a fixed processing stage**. Only when you add such a step and enter your own API key does the device call **the provider you selected, directly, with your key**.
@@ -74,6 +74,12 @@ When you record on a Galaxy Watch or an Apple Watch, the **audio files and their
 
 **There is nothing else.** No path other than these four exists by which data leaves your device.
 
+### iPhone permission for transcription and webhooks
+
+Before a new destination is used, the workflow editor or import confirmation shows the recipient, endpoint, data sent and purpose. Choose **Allow & save** or **Allow & import** to authorize future recordings on this device. Existing jobs, including recordings received from Apple Watch, wait for permission and can be continued from **Settings → Privacy**. Recording itself does not require this permission.
+
+Permission is remembered for the same provider and configured endpoint, independently of API keys and workflow names. Changing the provider or destination, withdrawing permission, using a new device, or materially changing the data or purpose requires permission again. Permission is not exported with workflows. On iPhone it is bound to a device-only Keychain marker, so restoring the database onto a different phone does not restore permission. **Withdraw permission** stops subsequent requests, including transcription status queries; an already dispatched request may finish. It does not delete data already sent or stored API keys. Google Drive access uses its separate Google authorization flow. Other platforms currently use their existing workflow configuration flow.
+
 ## 4. What is not collected
 
 - No analytics, usage statistics, or behavioral logging.
@@ -84,7 +90,7 @@ When you record on a Galaxy Watch or an Apple Watch, the **audio files and their
 
 ## 5. Limited Use of Google user data
 
-Recly's use and transfer of information received from Google APIs adheres to the **Google API Services User Data Policy**, including the Limited Use requirements. Drive data is used only to provide the features you requested (uploading your recordings and syncing your workflow definitions), is never used for advertising, and is not read by humans — there is no server that could read it.
+Recly's use and transfer of information received from Google APIs adheres to the **Google API Services User Data Policy**, including the Limited Use requirements. Drive data is used only to provide the features you requested (uploading, listing and retrieving your recordings and transcripts), is never used for advertising, and is not read by humans — there is no server that could read it.
 
 ## 6. Security
 
@@ -96,15 +102,15 @@ Recly's use and transfer of information received from Google APIs adheres to the
 
 ## 7. Retention and deletion
 
-- **Automatic deletion**: local audio is deleted only after an upload has been confirmed. If the upload failed, or if your workflow has no upload step, the originals stay on the device. **They also stay when the upload stopped because your Google Drive is full** — the app tells you there is no space, and picks the upload back up when you have made room and pressed "Retry". There is no time-based automatic deletion.
+- **Automatic local cache cleanup**: after every job for a recording has completed and all its audio has been uploaded, local audio is eligible for cleanup after seven days, measured from the later of the last job update or newest cached audio file. Audio fetched again for playback starts a new cache window. Recordings with unfinished, failed or permission-blocked jobs retain their audio. Metadata and transcript copies remain until you delete the recording. Drive copies are not removed by this cleanup.
 - **Deleting a recording**: all four apps (Android phone, iPhone, Mac, Windows) can delete a recording from the list. Each time, a confirmation dialog **asks what to do about Drive, and the default is to keep it there** — the irreversible choice is never the default. If some parts have not reached Drive yet, the dialog says how many first.
 - **What a deletion removes**: that device's whole recording folder (audio files, `meta.json`, local transcript copies) and **every record of that recording** — not only the recording and part records but the **job records** too (`job` and `step_run`: the copy of the workflow definition that recording ran, the per-step execution state, failure messages, upload and transcription progress, and step outputs). Those are what an earlier build left sitting in the database, invisible in the list; they no longer stay behind. Choosing "also delete the Drive folder" removes that recording's Drive folder as well.
 - **A recording that is being processed is not deleted**: if one of its jobs is running, the deletion is refused with "try again once it has finished". If Drive refuses the folder deletion, the files on your device are still removed and the app tells you so.
 - **Signing out**: all four apps have "Sign out", which removes this device's Google token (on Android, the stored account email as well). It does **not** remove recordings, job state, or the API keys you entered.
-- **Disconnecting**: all four apps now have a **"Disconnect" in Settings, separate from signing out.** It revokes the Google grant and clears this device's tokens, the API keys and webhook signing keys you entered, the job records and the sync state. You can additionally tick "also delete the recordings on this device"; **if you leave it unticked the recordings stay** (a decision about an account does not delete an original that has not been uploaded). One exception: a recording whose job was **running at that moment** is kept together with its job records, and the app tells you how many — disconnect again once it has finished and they go too. **It never deletes anything in Drive** — those files are yours.
-  - The confirmation dialog says first that **every device signed in with the same account loses access, not just this one**, that the workflow definitions in the application data folder may go, how many recordings have not reached Drive yet, and that this device's keys and queue are wiped; it also links to your Google account settings (<https://myaccount.google.com/permissions>).
+- **Disconnecting**: available separately from Sign out in Settings. It revokes Google access and clears this device’s Google tokens, job records and cached Drive references. **Workflow definitions, the device default, API keys, webhook signing keys and iPhone transfer permissions remain.** Select “also delete the recordings on this device” to remove recordings too; otherwise they remain. A recording that cannot be deleted because its job is running is reported and kept with its job records. **Disconnect never deletes Drive files.**
+  - The confirmation explains that other devices using the same Google authorization can also lose access and shows how many recordings have not reached Drive. It links to your Google account settings (<https://myaccount.google.com/permissions>).
   - **If the revocation fails, the app says so** — this device's data is cleared, but Recly is still listed on your Google account, so you have to remove it yourself at the link above.
-  - Google documents the workflow definition in the application data folder as deleted **when a user uninstalls the app from their Drive**; what happens on a plain revocation is not stated by Google.
+
 - **Copies held by an STT provider**: Recly cannot delete these for you. Contact that provider directly.
 
 ### What survives uninstalling the app
@@ -112,13 +118,13 @@ Recly's use and transfer of information received from Google APIs adheres to the
 | Platform | Uninstalling | What is left, and how to remove it |
 |---|---|---|
 | Android phone · Galaxy Watch | **App data goes with it** — recordings, the local database and the encrypted store holding tokens and API keys all live in the app's private area and the OS removes them with the app | Nothing. Files in Drive stay, because they are yours |
-| iPhone · Apple Watch | The app container (recordings, database, settings) is removed | **Apple does not guarantee that Keychain items are deleted** (service `app.recly.secrets`, or `app.recly.watch.*` on the watch — the API keys and webhook signing keys you entered, plus the Google Sign-In SDK's token item). If they persist, reinstalling the same app can read them again. They are not synced to another device or to iCloud (the items are `ThisDeviceOnly`). iOS and watchOS give you no way to delete Keychain items **by hand**, so **run "Disconnect" inside the app before you delete it** — that removes this device's Keychain items (tokens, the API keys and webhook signing keys you entered). The watch has no sign-in and no key entry, so its item (`app.recly.watch.*`) holds only an install identifier and there is no in-app path that clears it; once the app is gone, erasing the device is the only certain removal for whatever is left |
+| iPhone · Apple Watch | The app container (recordings, database, settings and iPhone transfer permissions) is removed | Keychain items can persist after uninstalling. On iPhone, **delete each API key and webhook signing key from Workflows → Secrets on this phone, then Disconnect before uninstalling**. Disconnect removes Google credentials but does not delete those keys. Recly’s own secret items are device-only. A non-credential permission-binding marker (`app.recly.privacy`) may also remain; without the deleted local permission records it grants no access. The watch stores an install identifier, with no sign-in or API-key entry; it has no in-app control for deleting that Keychain identifier |
 | macOS | **Only the `.app` bundle is removed** | (1) Delete `~/Library/Application Support/app.recly.mac/` (recordings, `rec.db`, `device.id`) yourself. (2) In Keychain Access delete the items whose service is `app.recly.mac.secrets` (the API keys and webhook signing keys you entered) plus the item the Google Sign-In SDK created (the Google token). (3) **App settings and the last account's email hint stay in `UserDefaults`** — recording mode, the consent reminder, language and accessibility settings, plus the email address used to prefill your next sign-in (`app.recly.auth.lastAccount`). Clear them with `defaults delete app.recly.mac` in Terminal |
 | Windows | **Only the installed files are removed** | (1) Delete `%LOCALAPPDATA%\Recly\` (recordings, `rec.db`, `device.id`) yourself. (2) In Credential Manager → Windows Credentials delete the `app.recly.windows/tokens/…` and `app.recly.windows/secrets/…` entries. (3) **App settings stay in the registry** — the consent reminder, language, theme and accessibility settings live under `HKCU\Software\JavaSoft\Prefs\app\recly\windows`; delete that key in Registry Editor. The Windows app stores no account email, so there is none to remove |
 
 ### Clearing it from inside the app first
 
-Most of the manual cleanup above becomes unnecessary if you **run "Disconnect" inside the app once before you delete it** — that clears the Keychain and Credential Manager items (tokens, the API keys and webhook signing keys you entered) and this device's job records. To remove the recordings as well, tick "also delete the recordings on this device" in that dialog, or delete them one by one from the list. App settings (macOS `UserDefaults`, the Windows registry) and the macOS and Windows data folders still remain, so follow the rest of the table for those.
+Before uninstalling, delete each saved API key and webhook signing key from the workflow screen’s secret list, then use **Disconnect** to clear Google credentials and this device’s job records. To remove recordings too, select “also delete the recordings on this device”, or delete individual recordings from the list. To stop future third-party transfers on iPhone, use Settings → Privacy → Withdraw permission. Workflows, settings and desktop data folders remain until separately removed as described above. Data already held by Drive, a transcription provider or a webhook operator is managed separately with that service.
 
 ## 8. Your responsibility when recording
 

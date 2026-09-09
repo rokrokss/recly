@@ -250,6 +250,11 @@ WHERE job_id = ? AND status IN ('PENDING', 'RUNNING', 'FAILED', 'NEEDS_AUTH', 'N
 clearStepBackoff:
 UPDATE step_run SET next_attempt_at = NULL WHERE job_id = ? AND status = 'PENDING';
 
+-- Consent resumes only the blocked step, preserving attempts, provider state and completed work.
+resumeConsentStepRuns:
+UPDATE step_run SET status = 'PENDING', next_attempt_at = NULL, last_error = NULL
+WHERE job_id = ? AND status = 'NEEDS_CONSENT';
+
 recoverRunningStepRuns:
 UPDATE step_run SET status = 'PENDING' WHERE status = 'RUNNING';
 

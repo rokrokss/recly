@@ -96,6 +96,7 @@ enum class ItemState {
 
     /** docs/10 "Drive 용량 초과": parked, not retried, until the user frees space and asks again. */
     NEEDS_SPACE,
+    NEEDS_CONSENT,
     SKIPPED_SHORT,
 }
 
@@ -563,6 +564,7 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
         JobStatus.DONE -> ItemState.DONE
         JobStatus.FAILED -> ItemState.FAILED
         JobStatus.NEEDS_AUTH -> ItemState.NEEDS_AUTH
+        JobStatus.NEEDS_CONSENT -> ItemState.NEEDS_CONSENT
         JobStatus.NEEDS_SPACE -> ItemState.NEEDS_SPACE
         JobStatus.SKIPPED_SHORT -> ItemState.SKIPPED_SHORT
     }

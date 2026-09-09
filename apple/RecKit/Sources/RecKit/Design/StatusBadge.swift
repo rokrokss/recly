@@ -63,6 +63,7 @@ public struct LedgerStatus: Equatable, Sendable {
         case "Retry pending": return LedgerStatus(code: "RETRY", tone: .warning)
         case "Done": return LedgerStatus(code: "DONE", tone: .success)
         case "Failed": return LedgerStatus(code: "FAILED", tone: .danger)
+        case "Transfer permission needed": return LedgerStatus(code: "NEEDS_CONSENT", tone: .warning)
         case "Sign-in needed": return LedgerStatus(code: "NEEDS_AUTH", tone: .warning)
         // docs/10 "Drive 용량 초과": a state of its own and not a failure — a retry is not what
         // clears it, and the row says so.

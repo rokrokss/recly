@@ -33,12 +33,13 @@ if [[ -n "${RECLY_ASC_KEY_PATH:-}" ]]; then
         -authenticationKeyIssuerID "${RECLY_ASC_ISSUER:?RECLY_ASC_KEY_PATH needs RECLY_ASC_ISSUER}")
 fi
 
-SKIP_IF_PRESENT=1 "$repo_root/apple/scripts/build-core.sh"
+SKIP_IF_PRESENT=0 "$repo_root/apple/scripts/build-core.sh"
 
 rm -rf "$derived" "$archive"
 mkdir -p "$out"
 echo "release-ios: archiving as team $team"
 xcodebuild \
+  -collect-test-diagnostics never \
   -workspace "$repo_root/apple/Rec.xcworkspace" \
   -scheme Recly \
   -configuration Release \
@@ -51,6 +52,8 @@ xcodebuild \
   CODE_SIGN_STYLE=Automatic \
   CODE_SIGN_IDENTITY="Apple Development" \
   archive
+
+python3 "$repo_root/apple/scripts/validate-ios-oauth.py" "$archive"
 
 plist="$(mktemp -t recly-export).plist"
 trap 'rm -f "$plist"' EXIT
@@ -68,6 +71,7 @@ cat > "$plist" <<PLIST
 PLIST
 
 xcodebuild \
+  -collect-test-diagnostics never \
   -exportArchive \
   -archivePath "$archive" \
   -exportOptionsPlist "$plist" \

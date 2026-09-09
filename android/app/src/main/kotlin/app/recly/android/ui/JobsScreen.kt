@@ -295,7 +295,7 @@ private fun ExpandedRow(
                 // have earned one, offer no upload. The three that are happening elsewhere
                 // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
                 // this device's to make due.
-                ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
+                ItemState.NEEDS_CONSENT, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
                 ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
                 ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
                 -> Unit
@@ -453,6 +453,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.DONE -> LedgerStatus("DONE", BadgeTone.SUCCESS)
     ItemState.FAILED -> LedgerStatus("FAILED", BadgeTone.DANGER)
     ItemState.NEEDS_AUTH -> LedgerStatus("NEEDS_AUTH", BadgeTone.WARNING)
+    ItemState.NEEDS_CONSENT -> LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING)
     ItemState.NEEDS_SPACE -> LedgerStatus("NO_SPACE", BadgeTone.WARNING)
     ItemState.SKIPPED_SHORT -> LedgerStatus("SKIPPED", BadgeTone.NEUTRAL)
 }
@@ -520,6 +521,7 @@ private fun label(item: JobItem): String = when (item.state) {
     ItemState.DONE -> stringResource(R.string.job_state_done)
     ItemState.FAILED -> stringResource(R.string.job_state_failed)
     ItemState.NEEDS_AUTH -> stringResource(R.string.job_state_needs_auth)
+    ItemState.NEEDS_CONSENT -> stringResource(R.string.job_state_needs_consent)
     ItemState.NEEDS_SPACE -> stringResource(R.string.job_state_needs_space)
     ItemState.SKIPPED_SHORT -> stringResource(R.string.job_state_skipped_short)
 }

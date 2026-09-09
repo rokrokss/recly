@@ -90,4 +90,5 @@ class StepFailure(
     val needsAuth: Boolean = false,
     val retryAfterSec: Long? = null,
     val needsSpace: Boolean = false,
+    val needsConsent: Boolean = false,
 ) : Exception(reason)

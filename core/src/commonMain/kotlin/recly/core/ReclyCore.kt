@@ -14,10 +14,18 @@ import recly.core.job.EnqueueResult
 import recly.core.job.Executor
 import recly.core.job.JobService
 import recly.core.job.JobStore
+import recly.core.job.JobStatus
+import recly.core.job.Job
+import recly.core.model.Step
 import recly.core.job.RunSummary
 import recly.core.job.defaultRunners
 import recly.core.model.Track
 import recly.core.platform.CoreDeps
+import recly.core.privacy.TransferConsents
+import recly.core.privacy.TransferTarget
+import recly.core.privacy.TransferTargets
+import recly.core.job.StepStatus
+import recly.core.job.type
 import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 import recly.core.platform.clear
@@ -73,6 +81,8 @@ class ReclyCore(
      */
     val secrets: SecretsRepository = SecretsRepository(deps)
 
+    val transferConsents: TransferConsents = TransferConsents(db, deps)
+
     val transfer: TransferReceiver = TransferReceiver(db, recordings, deps)
 
     private val jobStore: JobStore = JobStore(db, deps)
@@ -89,6 +99,7 @@ class ReclyCore(
                 defaultRunners(db, deps),
                 live = { workflows.current() },
                 marker = DriveFolderMarker(DriveApi(deps), deps),
+                transferConsents = transferConsents,
             ),
         )
 
@@ -181,9 +192,48 @@ class ReclyCore(
      */
     @Throws(Throwable::class)
     suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary {
+        resumeConsentedJobs()
         val summary = jobs.runDueJobs(now)
         remote.pull()
         return summary
+    }
+
+    /** All unapproved destinations still ahead of a parked job, for one grouped consent screen. */
+    @Throws(Throwable::class)
+    suspend fun pendingTransferTargets(): List<TransferTarget> {
+        val targets = mutableListOf<TransferTarget>()
+        for (job in jobs.list().filter { it.status == JobStatus.NEEDS_CONSENT }) {
+            val defined = effectiveSteps(job)
+            for (run in jobStore.stepsOf(job.id)) {
+                if (run.status in setOf(StepStatus.PENDING, StepStatus.NEEDS_CONSENT)) {
+                    defined[run.stepId]?.let(TransferTargets::forStep)?.let(targets::add)
+                }
+            }
+        }
+        return transferConsents.missing(targets)
+    }
+
+    /** Permission cannot reset successful steps, failed onError:continue steps, or retry budgets. */
+    @Throws(Throwable::class)
+    suspend fun resumeConsentedJobs() {
+        for (job in jobs.list().filter { it.status == JobStatus.NEEDS_CONSENT }) {
+            val defined = effectiveSteps(job)
+            val blocked = jobStore.stepsOf(job.id).filter { it.status == StepStatus.NEEDS_CONSENT }
+            if (blocked.isEmpty()) continue
+            val targets = blocked.mapNotNull { defined[it.stepId]?.let(TransferTargets::forStep) }
+            if (transferConsents.missing(targets).isEmpty()) {
+                jobStore.resumeConsent(job.id, deps.clock.now())
+            }
+        }
+    }
+
+    /** The same live-definition rule the executor applies when a queued step is edited. */
+    private suspend fun effectiveSteps(job: Job): Map<String, Step> {
+        val snapshot = job.workflow ?: return emptyMap()
+        val defined = snapshot.steps.associateBy { it.id }.toMutableMap()
+        val current = workflows.current().workflows.firstOrNull { it.id == snapshot.id }
+        current?.steps?.forEach { if (defined[it.id]?.type == it.type) defined[it.id] = it }
+        return defined
     }
 
     /**

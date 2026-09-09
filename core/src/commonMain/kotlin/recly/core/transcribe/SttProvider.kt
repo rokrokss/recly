@@ -138,6 +138,19 @@ data class SttWord(val start: Double, val end: Double, val text: String)
  * here is a valid definition this device happens not to be able to execute.
  */
 object SttProviders {
+    /** The same base addresses the runners use; a tenant endpoint is supplied by the workflow. */
+    fun defaultEndpoint(name: String): String? = when (name) {
+        AssemblyAiProvider.NAME -> AssemblyAiProvider.BASE
+        DagloProvider.NAME -> DagloProvider.BASE
+        DeepgramProvider.NAME -> DeepgramProvider.BASE
+        ElevenLabsProvider.NAME -> ElevenLabsProvider.BASE
+        GladiaProvider.NAME -> GladiaProvider.BASE
+        RevProvider.NAME -> RevProvider.BASE
+        RtzrProvider.NAME -> RtzrProvider.BASE
+        SpeechmaticsProvider.NAME -> SpeechmaticsProvider.BASE
+        else -> OpenAiCompatProvider.Profile.entries.firstOrNull { it.provider == name }?.base
+    }
+
     fun create(name: String): SttProvider? = when (name) {
         AssemblyAiProvider.NAME -> AssemblyAiProvider()
         AzureProvider.NAME -> AzureProvider()
@@ -197,6 +210,8 @@ internal object Reasons {
             deps.transport.execute(plan)
         } catch (e: CancellationException) {
             throw e
+        } catch (e: StepFailure) {
+            throw e // A withdrawn transfer grant must park, not become a retryable provider error.
         } catch (e: Throwable) {
             throw StepFailure(
                 retryable = true,

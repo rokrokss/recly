@@ -242,6 +242,7 @@ public enum Recents {
         case .waiting: return "Retry pending"
         case .done: return "Done"
         case .failed: return "Failed"
+        case .needsConsent: return "Transfer permission needed"
         case .needsAuth: return "Sign-in needed"
         // docs/10 "Drive 용량 초과": parked rather than failed, and nothing retries it on its own —
         // the row's own state, so the list can offer the storage page instead of a retry that
@@ -273,7 +274,7 @@ public enum Recents {
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings.
     private static let waiting: Set<String> = [
-        "Waiting", "Retry pending", "No workflow",
+        "Waiting", "Retry pending", "No workflow", "Transfer permission needed",
         "Receiving from the watch", "Uploading on another device",
     ]
 

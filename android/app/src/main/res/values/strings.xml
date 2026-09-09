@@ -379,4 +379,6 @@
     <string name="consent_confirm">I told them · Start recording</string>
     <string name="consent_suppress">Do not ask again</string>
     <string name="consent_link">Recording-consent rules by jurisdiction</string>
+    <string name="core_transfer_consent_required">Permission is needed before sending to this destination</string>
+    <string name="job_state_needs_consent">Transfer permission needed</string>
 </resources>

@@ -137,6 +137,74 @@
         }
       }
     },
+    "Allow & import": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow & import"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용하고 가져오기"
+          }
+        }
+      }
+    },
+    "Allow & save": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow & save"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용하고 저장"
+          }
+        }
+      }
+    },
+    "Allow transfers and continue": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow transfers and continue"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송을 허용하고 계속"
+          }
+        }
+      }
+    },
+    "Allowed destinations": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed destinations"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용한 전송 대상"
+          }
+        }
+      }
+    },
     "Also delete the Drive folder": {
       "extractionState": "manual",
       "localizations": {
@@ -409,6 +477,23 @@
         }
       }
     },
+    "Could not read transfer permissions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not read transfer permissions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송 허용 정보를 읽지 못했습니다"
+          }
+        }
+      }
+    },
     "Could not save": {
       "extractionState": "manual",
       "localizations": {
@@ -456,6 +541,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "키를 저장하지 못했습니다: %@"
+          }
+        }
+      }
+    },
+    "Could not save transfer permissions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save transfer permissions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송 허용 정보를 저장하지 못했습니다"
           }
         }
       }
@@ -1021,6 +1123,23 @@
         }
       }
     },
+    "For a custom endpoint, also check its operator’s privacy policy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For a custom endpoint, also check its operator’s privacy policy."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "사용자 지정 주소라면 해당 운영자의 개인정보 처리방침도 확인하세요."
+          }
+        }
+      }
+    },
     "GIDClientID in Info.plist is still a placeholder (see README)": {
       "extractionState": "manual",
       "localizations": {
@@ -1463,6 +1582,23 @@
         }
       }
     },
+    "No external destinations allowed yet.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No external destinations allowed yet."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 허용한 외부 전송 대상이 없습니다."
+          }
+        }
+      }
+    },
     "No space in Drive": {
       "extractionState": "manual",
       "localizations": {
@@ -1544,6 +1680,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "오류 시"
+          }
+        }
+      }
+    },
+    "Open": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "열기"
           }
         }
       }
@@ -1633,6 +1786,40 @@
         }
       }
     },
+    "Permission covers future recordings on this device. You can withdraw it in Settings → Privacy.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission covers future recordings on this device. You can withdraw it in Settings → Privacy."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용하면 이 기기의 이후 녹음에도 적용됩니다. 설정 → 개인정보 보호에서 철회할 수 있습니다."
+          }
+        }
+      }
+    },
+    "Permission is needed before sending to this destination": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission is needed before sending to this destination"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 대상으로 전송하기 전에 허용이 필요합니다"
+          }
+        }
+      }
+    },
     "Play": {
       "extractionState": "manual",
       "localizations": {
@@ -1667,6 +1854,40 @@
         }
       }
     },
+    "Privacy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인정보 보호"
+          }
+        }
+      }
+    },
+    "Privacy Policy": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Privacy Policy"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "개인정보 처리방침"
+          }
+        }
+      }
+    },
     "Provider": {
       "extractionState": "manual",
       "localizations": {
@@ -1697,6 +1918,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "전사 키는 이 파일에 들어가지 않습니다 — 기기마다 입력합니다."
+          }
+        }
+      }
+    },
+    "Provider privacy information": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Provider privacy information"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업체 개인정보 처리방침"
           }
         }
       }
@@ -1765,6 +2003,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "녹음 종료"
+          }
+        }
+      }
+    },
+    "Recording metadata and Drive file links are sent here for your automation. Audio and transcript text are not included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording metadata and Drive file links are sent here for your automation. Audio and transcript text are not included."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동화를 위해 녹음 메타데이터와 Drive 파일 링크를 이 주소로 보냅니다. 오디오와 전사 본문은 포함하지 않습니다."
           }
         }
       }
@@ -1867,6 +2122,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "재시도 대기 · %@"
+          }
+        }
+      }
+    },
+    "Review transfers": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Review transfers"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송 허용 확인"
           }
         }
       }
@@ -2173,6 +2445,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "편집하는 사이에 문서가 바뀌었습니다 — 다시 열어 주세요"
+          }
+        }
+      }
+    },
+    "The full recording and language and speaker settings are sent here for transcription. Retention and training depend on the provider and your account settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The full recording and language and speaker settings are sent here for transcription. Retention and training depend on the provider and your account settings."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전사를 위해 녹음 전체와 언어·화자 설정을 이 대상으로 보냅니다. 데이터 보관과 학습 사용 여부는 업체 및 계정 설정에 따라 다릅니다."
           }
         }
       }
@@ -2619,6 +2908,23 @@
         }
       }
     },
+    "Transfer permission needed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transfer permission needed"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전송 허용 필요"
+          }
+        }
+      }
+    },
     "URL": {
       "extractionState": "manual",
       "localizations": {
@@ -2806,6 +3112,57 @@
         }
       }
     },
+    "Webhook destination": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Webhook destination"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "웹훅 전송 대상"
+          }
+        }
+      }
+    },
+    "Withdraw permission": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdraw permission"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용 철회"
+          }
+        }
+      }
+    },
+    "Withdrawing permission stops future requests. It does not delete data already sent or your saved API keys.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Withdrawing permission stops future requests. It does not delete data already sent or your saved API keys."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "허용을 철회하면 이후 요청을 중단합니다. 이미 전송한 데이터나 저장된 API 키는 삭제되지 않습니다."
+          }
+        }
+      }
+    },
     "Workflows": {
       "extractionState": "manual",
       "localizations": {
@@ -2904,6 +3261,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Google에 다시 로그인해야 합니다"
+          }
+        }
+      }
+    },
+    "alert.needsConsent": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission is needed to send recordings."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음을 전송하려면 허용이 필요합니다."
           }
         }
       }

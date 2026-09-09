@@ -71,6 +71,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/05 "워크플로우 내보내기 · 가져오기": the settings tab's file section. Built with the core,
     /// like the editor, and nil until then — there is no document to export before the core.
     @Published private(set) var workflowTransfer: WorkflowTransferModel?
+    @Published private(set) var transferPrivacy: TransferPrivacyModel?
+    @Published var privacyPresented = false
     /// docs/09 트렌드 2: where the one operation a ledger row can start — an upload now, a retry —
     /// actually is. `ProcessingButton` owns the *window* around it and this owns the truth, so a
     /// retry that took two seconds looks like two seconds and one that was refused wears no ✓.
@@ -283,6 +285,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
             workflowEditor = WorkflowsModel(core: bridge.core)
             workflowTransfer = WorkflowTransferModel(core: bridge.core)
+            transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             alertRouter.connect { [weak self] alert in self?.fix(alert) }
@@ -306,6 +309,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             await transport.sweep()
             // docs/12 "실행기" (b)·(c) and a pass now: a job the last run left parked is due.
             runner.start()
+            Task { [weak self] in
+                for await _ in bridge.core.transferConsents.observe() {
+                    guard let self else { return }
+                    self.runner?.jobsDue()
+                }
+            }
             // After the executor exists: the meta's ack is only sent once the recording is queued
             // *and* the executor woken, and a part could arrive the instant the session activates.
             openWatchSession(core: bridge.core)
@@ -963,6 +972,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// holds the fix for, the editor open on the definition that has to change.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
+        case .privacy:
+            tab = .settings
+            privacyPresented = true
         case .signIn:
             tab = .settings
 

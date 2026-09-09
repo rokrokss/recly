@@ -13,7 +13,7 @@ IOS_SIM ?= iPhone 17 Pro
 WATCH_SIM ?= Apple Watch Series 11 (46mm)
 
 .PHONY: help test core android-test windows-test apk aab windows-run windows-msi helper-test ios-archive ios-upload mac-release \
-        mac mac-test ios watch spec skills
+        mac mac-test ios watch spec skills ios-release-test
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
@@ -24,6 +24,7 @@ help:
 	@echo "make watch          build Recly Watch for the watch simulator (WATCH_SIM=\"$(WATCH_SIM)\")"
 	@echo "make ios-archive    App Store archive of Recly (iPhone + watch); needs the team in Local.xcconfig"
 	@echo "make ios-upload     the same, uploaded to TestFlight"
+	@echo "make ios-release-test  validate archive OAuth checks using local fixtures"
 	@echo "make mac-release    Developer ID + notarized DMG of Recly Mac (NOTARY_PROFILE=\"$(NOTARY_PROFILE)\")"
 	@echo "make apk            phone debug APK"
 	@echo "make aab            phone + watch release bundles for Play (needs the upload key)"
@@ -76,6 +77,10 @@ mac-test:
 
 ios-archive:
 	./apple/scripts/release-ios.sh
+
+ios-release-test:
+	bash -n apple/scripts/release-ios.sh
+	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apple/scripts/tests -v
 
 ios-upload:
 	UPLOAD=1 ./apple/scripts/release-ios.sh
