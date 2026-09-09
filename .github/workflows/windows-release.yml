@@ -1,10 +1,7 @@
 # docs/14 N7 · M6-L3 deliverable 4: the MSI, with the helper and ffmpeg in it, built on the only
-# kind of machine that can build one — `jpackage` needs WiX and a Windows host — and attached to
-# the GitHub release for the tag. `windows.yml` compiles and tests on the same tags; this runs on a
-# release tag (or by hand from the Actions tab) and leaves a release asset, which unlike a workflow
-# artifact is kept for good and counts against no storage quota (why 0cb2433 dropped the old job).
-# The `skills` job rides along: the two skill ZIPs the Claude app takes (skills/README.md) are
-# derived files, so they live on the release rather than in the tree.
+# kind of machine that can build one — `jpackage` needs WiX and a Windows host.
+# Tags publish release assets. Manual runs only save workflow artifacts unless publishing is
+# explicitly selected. The two skill ZIPs are built alongside the MSI (skills/README.md).
 #
 # What it cannot verify is unchanged — SmartScreen, and installing it: docs/20 "Windows 보류 항목".
 name: windows-release
@@ -15,14 +12,19 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Release tag to build and attach the MSI to (created as a pre-release if missing)
-        required: true
+        description: Git ref to build (a v-prefixed tag when publishing); defaults to the selected ref
+        required: false
+        type: string
+      publish_release:
+        description: Publish assets to a GitHub pre-release
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
-  # Runs first and creates the release, so the two jobs never race to create it.
+  # When publishing, creates the release first so the jobs never race to create it.
   skills:
     runs-on: ubuntu-latest
     steps:
@@ -30,12 +32,20 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
       - run: make skills
+      - uses: actions/upload-artifact@v7
+        with:
+          name: recly-skills
+          path: build/skills/*.zip
+          if-no-files-found: error
+          retention-days: 30
       - name: Attach to the release
+        if: github.event_name == 'push' || inputs.publish_release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.tag || github.ref_name }}
         run: |
           set -e
+          [[ "$TAG" == v* ]] || { echo 'Publishing requires a v-prefixed release tag'; exit 1; }
           gh release view "$TAG" > /dev/null 2>&1 \
             || gh release create "$TAG" --prerelease --generate-notes --title "Recly ${TAG#v}"
           gh release upload "$TAG" build/skills/recly-notes.zip build/skills/recly-notion.zip --clobber
@@ -63,6 +73,7 @@ jobs:
         working-directory: windows/capture-helper
         run: |
           set -e
+          cargo test
           cargo build --release
           ./target/release/recly-capture-helper.exe --self-test
           cp target/release/recly-capture-helper.exe ../app/resources/windows-x64/
@@ -108,8 +119,21 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - run: ./gradlew :windows:app:packageMsi
+      - name: Test and package MSI
         shell: bash
+        env:
+          REC_GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.REC_GOOGLE_DESKTOP_CLIENT_ID }}
+          REC_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.REC_GOOGLE_DESKTOP_CLIENT_SECRET }}
+        run: |
+          set -e
+          for key in REC_GOOGLE_DESKTOP_CLIENT_ID REC_GOOGLE_DESKTOP_CLIENT_SECRET; do
+            value="${!key}"
+            if [[ -z "$value" || "$value" == REPLACE_ME* ]]; then
+              echo "Missing release OAuth configuration: $key" >&2
+              exit 1
+            fi
+          done
+          make windows-test windows-msi
 
       # Skipped, not failed, when the repository has no signing credentials — see the script.
       - name: Sign (docs/14 N7)
@@ -128,9 +152,17 @@ jobs:
           if (-not $msi) { throw 'packageMsi produced no MSI' }
           ./windows/scripts/sign-msi.ps1 -Msi $msi.FullName
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: recly-windows-msi
+          path: windows/app/build/compose/binaries/main/msi/*.msi
+          if-no-files-found: error
+          retention-days: 30
+
       # The release for the tag is created here only if nobody made it first — as a pre-release,
       # with the notes `.github/release.yml` shapes — and the MSI replaces any earlier copy.
       - name: Attach to the release
+        if: github.event_name == 'push' || inputs.publish_release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}

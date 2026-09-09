@@ -14,9 +14,19 @@ This document covers only what binds the two into one — **MSI packaging · sig
 
 `jpackage` (Compose `nativeDistributions`) can build an MSI **only on Windows**, and it needs WiX 3.
 The development machine is macOS (M6-L3 "environment constraints"), so the release MSI is built by
-`.github/workflows/windows-release.yml` — on a `v*` tag, or by hand from the Actions tab — and
-attached to the GitHub release; `windows.yml`, on the same triggers, only compiles and tests. On a
-local Windows PC:
+`.github/workflows/windows-release.yml`. A `v*` tag publishes to the GitHub release. Manual runs
+save the MSI and skill ZIPs as Actions artifacts for 30 days; publishing requires explicitly
+setting `publish_release=true` and supplying a v-prefixed release tag. The optional `tag` input
+also accepts a commit SHA for an artifact-only build. The workflow runs helper and shell tests
+before packaging. `windows.yml` only compiles and tests.
+
+Set repository Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
+`REC_GOOGLE_DESKTOP_CLIENT_SECRET` from the local desktop OAuth configuration; packaging refuses
+missing values or placeholders. Signing credentials are separate and optional (below).
+The app displays `0.1.0`; `installerVersion` in `app/build.gradle.kts` advances MSI's third
+version field independently to `0.1.1`, allowing installation upgrades for this new build.
+
+On a local Windows PC:
 
 ```powershell
 # 1. The helper

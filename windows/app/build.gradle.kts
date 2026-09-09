@@ -22,6 +22,8 @@ fun oauth(key: String, env: String, fallback: String): String =
     localProperties.getProperty(key) ?: System.getenv(env) ?: fallback
 
 version = "0.1.0"
+// Keep the app's display version stable while advancing MSI's MAJOR.MINOR.BUILD for upgrades.
+val installerVersion = "0.1.1"
 
 /**
  * `BuildConfig` by hand: one generated object, so the ids are compiled in rather than read off a
@@ -129,7 +131,7 @@ compose.desktop {
             // and `jdk.crypto.ec` are what TLS needs for Drive; `jdk.unsupported` is JNA's.
             modules("java.sql", "java.naming", "jdk.crypto.ec", "jdk.unsupported")
             packageName = "Recly"
-            packageVersion = version.toString().substringBefore('-') // MSI wants MAJOR.MINOR.BUILD
+            packageVersion = installerVersion
             vendor = "Recly"
             description = "Recly — record and run workflows"
 
@@ -161,7 +163,7 @@ compose.desktop {
                 bundleID = "app.recly.windows"
                 // macOS refuses a major version of 0, and this bundle is only ever the development
                 // host's build of a Windows app (M6-L1 "환경 제약") — the shipped version is the
-                // project's, which is what `OAuthConfig.APP_VERSION` and the MSI carry.
+                // project's, which is what `OAuthConfig.APP_VERSION` carries.
                 packageVersion = "1.0.0"
             }
         }

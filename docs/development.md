@@ -88,11 +88,21 @@ release bundles are unsigned and Play refuses them. After the first upload, Play
 App signing shows the *app signing key's* SHA-1: register an Android OAuth client with it in the
 GCP project, next to the debug one, or sign-in fails in every Play-installed build.
 
-**Releases**: macOS via `apple/scripts/release-mac.sh` (Developer ID + notarization + DMG);
-the Windows MSI by `.github/workflows/windows-release.yml`, which a `v*` tag triggers and which
-attaches the installer — and the two skill ZIPs from `make skills` — to the GitHub release
-(`./gradlew :windows:app:packageMsi` by hand needs a Windows host — see
-[`windows/README.md`](../windows/README.md)).
+`make android-release-apk`는 같은 업로드 키로 서명한 휴대전화·Wear OS 설치용 APK를
+`android/*/build/outputs/apk/release/`에 만든다. Play 설치본의 앱 서명 키와는 다를 수 있다.
+
+배포 파일은 macOS의 경우 `make mac-release`로 Developer ID 서명·공증한
+`apple/build/dist/Recly-<version>-<build>.dmg`를 만든다. 기존 iOS 아카이브와 DMG는 보존한다.
+Windows MSI는 Windows 호스트의 `make windows-msi` 또는
+`.github/workflows/windows-release.yml`로 만든다. 수동 실행은 기본적으로 MSI와 두 skill ZIP을
+30일 보관하는 Actions artifact만 생성한다. `v*` 태그 push 또는 `publish_release=true`를
+명시한 수동 실행만 GitHub 릴리스에 공개한다. Windows OAuth 설정은 저장소 Actions secrets의
+`REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
+누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
+
+현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `2`,
+Android는 `6`, Wear OS는 `1,000,006`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
+업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.1`로 설정한다.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.

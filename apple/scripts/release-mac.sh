@@ -17,7 +17,7 @@ derived="$repo_root/apple/build/release"
 out="$repo_root/apple/build/dist"
 
 # The XCFramework is a Gradle output that is not checked in; without it the package does not resolve.
-SKIP_IF_PRESENT=1 "$repo_root/apple/scripts/build-core.sh"
+SKIP_IF_PRESENT=0 "$repo_root/apple/scripts/build-core.sh"
 
 # Prefer a distributable Developer ID identity. A caller may select another stable identity for a
 # local-only DMG, and the development certificate created by setup-local-signing.sh is the fallback.
@@ -45,11 +45,13 @@ if [[ "$identity" == Developer\ ID\ Application:* ]]; then
   sign_flags+=(OTHER_CODE_SIGN_FLAGS="--timestamp")
 fi
 
-rm -rf "$derived" "$out"
+# The distribution directory also contains iOS archives and exports; keep those and prior DMGs.
+rm -rf "$derived"
 # `ARCHS=arm64` on the command line and not only in the project: the RecKit package does not inherit
 # the target's setting, and a Release build has no `ONLY_ACTIVE_ARCH` to fall back on — so it reaches
 # for x86_64, which the XCFramework has no slice of (docs/12: Apple Silicon 우선).
 xcodebuild \
+  -collect-test-diagnostics never \
   -workspace "$repo_root/apple/Rec.xcworkspace" \
   -scheme "Recly Mac" \
   -configuration Release \
@@ -64,7 +66,8 @@ xcodebuild \
 
 app="$derived/Build/Products/Release/Recly.app"
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")"
-dmg="$out/Recly-$version.dmg"
+build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")"
+dmg="$out/Recly-$version-$build_number.dmg"
 
 # What was actually signed, and how — the hardened runtime is a flag on the signature, not a build
 # setting anyone can read back off the bundle.

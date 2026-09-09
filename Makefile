@@ -12,7 +12,7 @@ XCODEBUILD = xcodebuild -workspace $(WORKSPACE) -collect-test-diagnostics never
 IOS_SIM ?= iPhone 17 Pro
 WATCH_SIM ?= Apple Watch Series 11 (46mm)
 
-.PHONY: help test core android-test windows-test apk aab windows-run windows-msi helper-test ios-archive ios-upload mac-release \
+.PHONY: help test core android-test windows-test apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
         mac mac-test ios watch spec skills ios-release-test
 
 help:
@@ -28,6 +28,7 @@ help:
 	@echo "make mac-release    Developer ID + notarized DMG of Recly Mac (NOTARY_PROFILE=\"$(NOTARY_PROFILE)\")"
 	@echo "make apk            phone debug APK"
 	@echo "make aab            phone + watch release bundles for Play (needs the upload key)"
+	@echo "make android-release-apk  phone + watch release APKs (needs the upload key)"
 	@echo "make android-test   android unit tests only"
 	@echo "make windows-test   windows shell unit tests only"
 	@echo "make windows-run    run the Windows shell on this host"
@@ -51,6 +52,9 @@ apk:
 
 aab:
 	$(GRADLE) :android:app:bundleRelease :android:wear:bundleRelease
+
+android-release-apk:
+	$(GRADLE) :android:app:assembleRelease :android:wear:assembleRelease
 
 windows-test:
 	$(GRADLE) :windows:app:test
