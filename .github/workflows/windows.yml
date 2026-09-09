@@ -53,7 +53,7 @@ jobs:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # The M6-L1 done condition, on Windows. The protocol tests run against `dev/FakeHelper.java`
       # here: pointing them at the helper binary is a development-host affordance
