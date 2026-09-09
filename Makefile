@@ -5,7 +5,12 @@
 export JAVA_HOME ?= /opt/homebrew/opt/openjdk@21
 export ANDROID_HOME ?= /opt/homebrew/share/android-commandlinetools
 
+# Windows Make uses cmd.exe for recipes, which needs the native wrapper instead of ./gradlew.
+ifeq ($(OS),Windows_NT)
+GRADLE = gradlew.bat
+else
 GRADLE = ./gradlew
+endif
 WORKSPACE = apple/Rec.xcworkspace
 XCODEBUILD = xcodebuild -workspace $(WORKSPACE) -collect-test-diagnostics never
 # Simulator names change with each Xcode; override on the command line: make ios IOS_SIM="iPhone 17".
