@@ -1,9 +1,13 @@
 package app.recly.android.ui.component
 
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,27 +41,29 @@ fun ScreenHeader(
     meta: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(start = Space.m, end = Space.m, top = Space.m, bottom = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-            color = blueprint.text,
-            maxLines = 1,
-            // A workflow the user named, or a recording's title: the header is the one place a
-            // string this app did not write ends up, so it ends rather than being cut mid-glyph.
-            overflow = TextOverflow.Ellipsis,
-        )
-        meta?.let {
-            Text(it, style = mono.small, color = blueprint.textMuted, maxLines = 1)
+    val compact = LocalConfiguration.current.screenHeightDp < 480
+    BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = if (compact) Space.s else Space.m)) {
+        val stacked = maxWidth < 400.dp || (maxWidth < 560.dp && LocalDensity.current.fontScale > 1.3f)
+        val heading: @Composable () -> Unit = {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+                Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
+                    maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
+                meta?.let { value ->
+                    SelectionContainer { Text(value, style = mono.small, color = blueprint.textMuted, maxLines = if (compact) 1 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis) }
+                }
+            }
         }
-        trailing?.invoke()
+        if (stacked) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                heading()
+                trailing?.invoke()
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { heading() }
+                trailing?.invoke()
+            }
+        }
     }
 }
 

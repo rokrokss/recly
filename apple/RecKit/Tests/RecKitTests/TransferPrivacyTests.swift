@@ -22,6 +22,29 @@ final class TransferPrivacyTests: XCTestCase {
         )
     }
 
+    func testSwitchingKeyFormsProtectsInputAndTheSameKeyKeepsItsDraft() async throws {
+        let bridge = try await bridge()
+        let model = WorkflowsModel(core: bridge.core)
+        addTeardownBlock { await model.stopObserving() }
+        await model.reload()
+        model.openSecrets(prefill: "first_key")
+        model.secretForm?.value = "unsaved test value"
+        model.openSecrets(prefill: "first_key")
+        XCTAssertNil(model.protection)
+        XCTAssertEqual(model.secretForm?.value, "unsaved test value")
+        model.openSecrets(prefill: "second_key")
+        XCTAssertNotNil(model.protection)
+        XCTAssertEqual(model.secretForm?.name, "first_key")
+        model.answerProtection(false)
+        XCTAssertEqual(model.secretForm?.value, "unsaved test value")
+        model.openSecrets(prefill: "second_key")
+        model.answerProtection(true)
+        XCTAssertEqual(model.secretForm?.name, "second_key")
+        XCTAssertEqual(model.secretForm?.value, "")
+        model.closeSecrets()
+        XCTAssertNil(model.secretForm)
+    }
+
     // A valid exported document, with a key name already present on the receiving device.
     private let imported = """
     {"schema":3,"revision":1,"updatedAt":"2026-09-09T00:00:00.000Z","updatedBy":"test",
@@ -70,6 +93,7 @@ final class TransferPrivacyTests: XCTestCase {
         try await bridge.core.secrets.put(name: "existing", value: "test-key")
         try await bridge.core.transferConsents.grant(targets: targets)
         let privacy = TransferPrivacyModel(core: bridge.core)
+        addTeardownBlock { await privacy.stopObserving() }
         await privacy.reload()
         XCTAssertEqual(privacy.approved.count, 2)
         await privacy.revoke(targets[0])
@@ -79,10 +103,46 @@ final class TransferPrivacyTests: XCTestCase {
         XCTAssertTrue(names.contains("existing"))
     }
 
+    func testDraftAndKeyDeletionRequireAnExplicitAnswer() async throws {
+        let bridge = try await bridge()
+        _ = try await bridge.core.workflows.importJson(json: imported)
+        let model = WorkflowsModel(core: bridge.core)
+        addTeardownBlock { await model.stopObserving() }
+        await model.reload()
+        let id = try await bridge.core.workflows.current().workflows[0].id
+        model.edit(id)
+        model.update { $0.name = "Unsaved draft" }
+        model.cancel()
+        XCTAssertNotNil(model.protection)
+        model.answerProtection(false)
+        XCTAssertEqual(model.editor?.edit.name, "Unsaved draft")
+        model.add()
+        XCTAssertEqual(model.editor?.edit.id, id)
+        model.answerProtection(true)
+        XCTAssertTrue(model.editor?.isNew == true)
+        model.cancel()
+        XCTAssertNil(model.editor)
+        model.openSecrets(prefill: "draft_key")
+        model.secretForm?.value = "unsaved key"
+        model.add()
+        XCTAssertEqual(model.secretForm?.value, "unsaved key")
+        model.answerProtection(true)
+        XCTAssertNil(model.secretForm)
+        XCTAssertTrue(model.editor?.isNew == true)
+        try await bridge.core.secrets.put(name: "existing", value: "test-key")
+        await model.reload()
+        model.askToDeleteSecret("existing")
+        model.answerProtection(false)
+        let names = try await bridge.core.secrets.names()
+        XCTAssertTrue(names.contains("existing"))
+    }
+
+
     func testEditorRequiresTheExplicitAllowActionAndReusesSavedPermission() async throws {
         let bridge = try await bridge()
         _ = try await bridge.core.workflows.importJson(json: imported)
         let model = WorkflowsModel(core: bridge.core)
+        addTeardownBlock { await model.stopObserving() }
         await model.reload()
         let id = try await bridge.core.workflows.current().workflows[0].id
         model.edit(id)
@@ -113,6 +173,7 @@ final class TransferPrivacyTests: XCTestCase {
         let document = try await bridge.core.workflows.current()
         let targets = TransferTargets.shared.forWorkflow(workflow: document.workflows[0])
         let privacy = TransferPrivacyModel(core: bridge.core)
+        addTeardownBlock { await privacy.stopObserving() }
         await privacy.allowPending([targets[0]])
         XCTAssertNil(privacy.message)
         let approved = try await bridge.core.transferConsents.approved()

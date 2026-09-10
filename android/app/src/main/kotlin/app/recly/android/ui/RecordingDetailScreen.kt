@@ -1,16 +1,27 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package app.recly.android.ui
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.focusable
+import androidx.compose.ui.input.key.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -23,11 +34,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -54,8 +67,7 @@ import app.recly.android.ui.theme.mono
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import kotlinx.coroutines.delay
-import recly.core.transcribe.Transcript
-import recly.core.transcribe.TranscriptSegment
+import recly.core.transcribe.TranscriptAvailability
 
 /**
  * docs/08 "결과 파일", deliverable 3: what the transcribe step wrote, as the speaker turns it is made
@@ -70,6 +82,7 @@ fun RecordingDetailScreen(
     detail: DetailState,
     onClose: () -> Unit,
     onRename: (String) -> Unit,
+    onReload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // One player per recording: opening another one releases the one this was playing, and so does
@@ -106,12 +119,13 @@ fun RecordingDetailScreen(
         )
     }
 
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = modifier.fillMaxSize()) {
-        ScreenHeader(
+        if (!keyboardVisible) ScreenHeader(
             title = detail.title ?: stringResource(R.string.jobs_untitled),
             meta = detail.recordingId,
             trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
                     // Not while the recorder is still writing into this take: the core refuses to
                     // rename one, and an action that does nothing is not one to offer.
                     if (!detail.writing) {
@@ -133,29 +147,30 @@ fun RecordingDetailScreen(
         )
         HairLine()
 
+        // docs/09 화면 원칙 2: only the transcript scrolls; playback stays above the tab bar.
+        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            when {
+                detail.loading -> Notice(stringResource(R.string.detail_loading))
+                detail.transcript == null -> Notice(
+                    stringResource(detail.availability.message()),
+                    onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
+                )
+                detail.transcript.segments.none { it.text.isNotBlank() } ->
+                    Notice(stringResource(R.string.detail_transcript_empty))
+                else -> TranscriptReader(
+                    transcript = detail.transcript,
+                    seekableDurationSec = detail.audio.totalSec,
+                    canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty && detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING,
+                    onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
+        }
+
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
-        if (!detail.loading && !detail.writing) {
-            PlayerBar(detail, player)
+        if (!keyboardVisible && !detail.loading && !detail.writing) {
             HairLine()
-        }
-
-        if (detail.loading) {
-            Notice(stringResource(R.string.detail_loading))
-            return@Column
-        }
-        if (detail.transcript == null) {
-            Notice(stringResource(R.string.detail_empty))
-            return@Column
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Space.m, vertical = Space.m),
-            verticalArrangement = Arrangement.spacedBy(Space.s),
-        ) {
-            TranscriptText(detail.transcript)
+            PlayerBar(detail, player)
         }
     }
 }
@@ -204,8 +219,8 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
 /**
  * docs/08 "결과 파일" · docs/09 화면 원칙 2: the recording itself, where this phone still has it. Its
  * shape on top, with the playhead moving across it and a drag on it to move where the playhead is,
- * and the button and the recording's own clock under that. RecKit's detail and the Windows shell's
- * draw the same bar, in the same words.
+ * and the recording's own clock and play button under that. The bar stays at the bottom of the
+ * detail, with the primary action on the right, within reach while reading the transcript.
  */
 @Composable
 private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
@@ -221,25 +236,21 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
             .padding(horizontal = Space.m, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        // Whenever there is something to draw, and not only when it can be played: Play is what a
-        // recording in progress or an undecided fetch gates, while a scrub before either is settled
-        // is no more than where the next press will start.
-        if (!detail.audio.isEmpty) {
-            Waveform(
-                audio = detail.audio,
-                peaks = detail.waveform,
-                positionSec = scrubSec ?: player.positionSec,
-                onScrub = { scrubSec = it },
-                onSeek = { player.seek(detail.audio, it) },
-            )
+        val waveform: @Composable () -> Unit = {
+            Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
+                onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) })
         }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        if (LocalConfiguration.current.screenHeightDp < 480 && !detail.audio.isEmpty) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.weight(1f)) { waveform() }
+                Box(Modifier.weight(2f)) { PlayerControls(detail, player, scrubSec) }
+            }
+        } else {
+            if (!detail.audio.isEmpty) waveform()
             PlayerControls(detail, player, scrubSec)
         }
+        if (player.failed) Text(stringResource(R.string.player_error), color = palette.danger)
+        else if (player.buffering) Text(stringResource(R.string.player_buffering), color = palette.textMuted)
     }
 }
 
@@ -253,7 +264,7 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
  * @param onScrub where the finger is, while it is down, and null when it lets go.
  */
 @Composable
-private fun Waveform(
+internal fun Waveform(
     audio: RecordingPlaylist.Selection,
     peaks: FloatArray,
     positionSec: Double,
@@ -263,6 +274,7 @@ private fun Waveform(
     val palette = blueprint
     val hair = palette.line
     val totalSec = audio.totalSec
+    var focused by remember { mutableStateOf(false) }
     // docs/09 접근성: the row reports itself as the recording's position, and a reader that cannot
     // see the shape moves the playhead by setting it.
     val label = stringResource(R.string.player_position)
@@ -271,6 +283,8 @@ private fun Waveform(
             .fillMaxWidth()
             .height(MinTouch)
             .testTag("waveform")
+            .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
+            .onFocusChanged { focused = it.isFocused }
             .semantics {
                 contentDescription = label
                 progressBarRangeInfo =
@@ -280,6 +294,16 @@ private fun Waveform(
                     true
                 }
             }
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                when (event.key) {
+                    Key.DirectionLeft -> onSeek((positionSec - 5.0).coerceAtLeast(0.0))
+                    Key.DirectionRight -> onSeek((positionSec + 5.0).coerceAtMost(totalSec))
+                    else -> return@onPreviewKeyEvent false
+                }
+                true
+            }
+            .focusable()
             // Keyed on the recording and not on its seconds: what a release seeks is the selection
             // this gesture was composed with, and two recordings can be the same length.
             .pointerInput(audio) {
@@ -368,7 +392,19 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
             color = palette.textMuted,
         )
 
-        !detail.audio.isEmpty -> {
+        !detail.audio.isEmpty -> Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Space.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // docs/07 rule 4: a clock is a stamp, not a sentence. The finger while there is one on
+            // the waveform, and the player the rest of the time — the two are the same playhead.
+            Text(
+                "${hms((scrubSec ?: player.positionSec).toLong())} / ${hms(detail.audio.totalSec.toLong())}",
+                modifier = Modifier.weight(1f),
+                style = mono.bodySmall,
+                color = palette.textMuted,
+            )
             // Not while this phone is recording: that microphone belongs to the recorder, and
             // not while the trip to Drive is still being decided — what this page will play is
             // not settled yet. Nothing stands in its place; the clock alone says there is
@@ -382,10 +418,10 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
             ) {
                 BlueprintButton(
                     label = stringResource(
-                        if (player.isPlaying) R.string.player_pause else R.string.player_play,
+                        if (player.isPlaying || player.buffering) R.string.player_pause else R.string.player_play,
                     ),
                     onClick = {
-                        if (player.isPlaying) {
+                        if (player.isPlaying || player.buffering) {
                             player.pause()
                         } else if (
                             // The recorder as it is at the press, not as the last frame drew
@@ -403,17 +439,12 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
                             player.play()
                         }
                     },
-                    modifier = Modifier.testTag("play-pause"),
+                    modifier = Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .testTag("play-pause"),
                     tone = ButtonTone.PRIMARY,
                 )
             }
-            // docs/07 rule 4: a clock is a stamp, not a sentence. The finger while there is one on
-            // the waveform, and the player the rest of the time — the two are the same playhead.
-            Text(
-                "${hms((scrubSec ?: player.positionSec).toLong())} / ${hms(detail.audio.totalSec.toLong())}",
-                style = mono.bodySmall,
-                color = palette.textMuted,
-            )
         }
 
         // docs/03: nothing of this recording ever reached Drive, and what was here is gone — so
@@ -425,7 +456,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
             color = palette.textMuted,
         )
     }
-    // Beside the clock when some parts are here and on its own when none are: either way it is
+    // Below the controls when some parts are here and on its own when none are: either way it is
     // what stands between the page and the whole recording.
     if (detail.driveFetch == DriveFetch.FAILED) {
         Text(
@@ -438,7 +469,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
 
 /** The whole page, when there is one line to say and nothing to read. */
 @Composable
-private fun Notice(text: String) {
+private fun Notice(text: String, onRetry: (() -> Unit)? = null) {
     Column(
         modifier = Modifier.fillMaxSize().padding(Space.l),
         verticalArrangement = Arrangement.Center,
@@ -450,37 +481,14 @@ private fun Notice(text: String) {
             color = blueprint.textMuted,
             textAlign = TextAlign.Center,
         )
+        onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
     }
 }
 
-/** docs/08 `transcript.json`: one block per speaker turn, stamped on the recording's own clock. */
-@Composable
-private fun TranscriptText(transcript: Transcript) {
-    val palette = blueprint
-    turns(transcript.segments).forEach { turn ->
-        Column(modifier = Modifier.fillMaxWidth()) {
-            // The stamp and the speaker are codes, not sentences (docs/07 rule 4).
-            Text("${hms(turn.start.toLong())} ${turn.speaker}", style = mono.small, color = palette.textMuted)
-            Text(turn.text, style = MaterialTheme.typography.bodyMedium, color = palette.text)
-        }
-    }
-}
-
-private data class Turn(val speaker: String, val start: Double, val text: String)
-
-/**
- * Consecutive segments of one speaker read as one thing said, which is how the `.txt` the step
- * writes is built too (`TranscriptNormalizer.text`).
- */
-private fun turns(segments: List<TranscriptSegment>): List<Turn> {
-    val turns = mutableListOf<Turn>()
-    segments.forEach { segment ->
-        val last = turns.lastOrNull()
-        if (last != null && last.speaker == segment.speaker) {
-            turns[turns.lastIndex] = last.copy(text = last.text + " " + segment.text.trim())
-        } else {
-            turns += Turn(segment.speaker, segment.start, segment.text.trim())
-        }
-    }
-    return turns
+internal fun TranscriptAvailability.message(): Int = when (this) {
+    TranscriptAvailability.NOT_REQUESTED -> R.string.detail_not_requested
+    TranscriptAvailability.FAILED -> R.string.detail_failed
+    TranscriptAvailability.UNAVAILABLE -> R.string.detail_unavailable
+    TranscriptAvailability.EMPTY -> R.string.detail_transcript_empty
+    else -> R.string.detail_pending
 }

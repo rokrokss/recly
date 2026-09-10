@@ -275,6 +275,7 @@
     <string name="detail_rename">Rename</string>
     <string name="detail_loading">Loading…</string>
     <string name="detail_empty">Nothing here yet — the transcribe step has not finished.</string>
+    <string name="detail_transcript_empty">Transcription finished with no text. Play the recording to check the audio.</string>
     <!-- The detail's player bar: the recording itself, and what stands between the page and it.
          The same five lines as RecKit's (CrossShellDictionaryTest holds them together). -->
     <string name="player_play">Play</string>
@@ -381,4 +382,27 @@
     <string name="consent_link">Recording-consent rules by jurisdiction</string>
     <string name="core_transfer_consent_required">Permission is needed before sending to this destination</string>
     <string name="job_state_needs_consent">Transfer permission needed</string>
+    <string name="discard_title">Discard unsaved changes?</string>
+    <string name="discard_body">Your changes have not been saved.</string>
+    <string name="keep_editing">Keep editing</string>
+    <string name="discard_changes">Discard changes</string>
+    <string name="delete_key_title">Delete key: %1$s</string>
+    <string name="delete_key_body">Workflows using this key will stop working until a key is added again.</string>
+    <string name="delete_key_unused">No saved workflow uses this key.</string>
+    <string name="delete_key_used_by">Used by: %1$s</string>
+    <string name="detail_not_requested">This recording has no transcription step to run.</string>
+    <string name="detail_pending">Transcription is not finished yet. The result will appear here when ready.</string>
+    <string name="detail_failed">Transcription could not finish. Check this recording in the list for the next action.</string>
+    <string name="detail_unavailable">Could not load the transcript. Try again.</string>
+    <string name="player_error">Could not play this recording. Try playing it again.</string>
+    <string name="player_buffering">Preparing playback…</string>
+    <string name="list_loading">Loading…</string>
+    <string name="transcript_search">Search transcript</string>
+    <string name="transcript_copy">Copy all</string>
+    <string name="transcript_copied">Copied</string>
+    <string name="transcript_no_matches">No matching passages</string>
+    <string name="transcript_clear_search">Clear search</string>
+    <string name="transcript_seek">Go to %1$s</string>
+    <string name="transcription_setup">Transcription setup</string>
+    <string name="transcription_setup_body">To get a transcript, connect Google Drive in Settings, add a transcription step after Drive upload in a workflow, and enter the provider’s API key. Select that workflow before recording. Recordings without a transcription step are still saved.</string>
 </resources>

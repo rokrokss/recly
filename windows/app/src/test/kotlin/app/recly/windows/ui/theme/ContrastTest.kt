@@ -87,6 +87,7 @@ class ContrastTest {
         listOf(
             "text" to p.text,
             "textMuted" to p.textMuted,
+            "inputBorder" to p.inputBorder,
             "accent" to p.accent,
             "danger" to p.danger,
             "success" to p.success,
@@ -108,6 +109,7 @@ class ContrastTest {
             "success" to p.success,
             "warning" to p.warning,
             "textMuted" to p.textMuted,
+            "inputBorder" to p.inputBorder,
         ).forEach { (name, edge) ->
             put("$name edge on surface", edge to p.surface)
             put("$name edge on background", edge to p.background)

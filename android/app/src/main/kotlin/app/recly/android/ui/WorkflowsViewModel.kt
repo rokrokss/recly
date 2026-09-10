@@ -71,7 +71,10 @@ data class EditorState(
     val stale: Boolean = false,
     /** Where the Save button's own operation is (docs/09): only a save that landed earns a ✓. */
     val save: ProcessingState = ProcessingState.IDLE,
-)
+    val original: WorkflowEdit = edit,
+) {
+    val dirty: Boolean get() = edit != original
+}
 
 /** The secret manager (deliverable 3). [generated] marks a value the user has not seen anywhere else. */
 data class SecretsState(
@@ -79,7 +82,11 @@ data class SecretsState(
     val value: String = "",
     val generated: Boolean = false,
     @param:StringRes val error: Int? = null,
+    val initialName: String = name,
 )
+
+enum class DiscardTarget { EDITOR, SECRET }
+data class KeyDeleteRequest(val name: String, val workflows: List<String>)
 
 data class WorkflowsUiState(
     val loading: Boolean = true,
@@ -89,6 +96,8 @@ data class WorkflowsUiState(
     val secretsOpen: SecretsState? = null,
     val confirmDelete: WorkflowItem? = null,
     val message: UiMessage? = null,
+    val discardTarget: DiscardTarget? = null,
+    val keyDelete: KeyDeleteRequest? = null,
 )
 
 /** A stamp for a workflow that is only being validated, never written (see `orderErrors`). */
@@ -162,7 +171,20 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- list -------------------------------------------------------------------------------
 
-    fun add() {
+    private var pendingDiscardAction: (() -> Unit)? = null
+
+    private fun guardEditor(action: () -> Unit) {
+        val state = _state.value
+        val form = state.secretsOpen
+        if (state.editor?.dirty == true || (form != null && (form.value.isNotEmpty() || form.name != form.initialName))) {
+            pendingDiscardAction = action
+            _state.update { it.copy(discardTarget = DiscardTarget.EDITOR) }
+        } else action()
+    }
+
+    fun add() = guardEditor { addEditor() }
+
+    private fun addEditor() {
         // Whatever a notification asked for before the document arrived, the user has moved on.
         pendingEditor.clear()
         val edit = WorkflowEdit(
@@ -172,24 +194,30 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
             // docs/02 wants 1..10 steps, so a new workflow starts with the one everybody wants.
             steps = listOf(StepEdit.Drive(id = "upload")),
         )
-        _state.update { it.copy(editor = EditorState(edit, isNew = true, session = sessions.open())) }
+        _state.update { it.copy(editor = EditorState(edit, isNew = true, session = sessions.open()), secretsOpen = null) }
     }
 
     fun edit(id: String) {
         pendingEditor.open(document, id)?.let(::openEditor)
     }
 
-    private fun openEditor(workflow: Workflow) =
-        _state.update { it.copy(editor = workflow.editor(sessions.open())) }
+    private fun openEditor(workflow: Workflow) {
+        if (_state.value.editor?.edit?.id == workflow.id) return
+        guardEditor {
+            _state.update { it.copy(editor = workflow.editor(sessions.open()), secretsOpen = null) }
+        }
+    }
 
     /** Navigation away from the list (another tab, the secrets form): a parked editor request
      * must not surface later over whatever the user is doing then (Sol P1-android r3). */
     fun dismissPending() = pendingEditor.clear()
 
-    fun cancel() {
+    fun cancel() = guardEditor(::discardEditor)
+
+    private fun discardEditor() {
         pendingEditor.clear()
         sessions.close()
-        _state.update { it.copy(editor = null) }
+        _state.update { it.copy(editor = null, secretsOpen = null, discardTarget = null) }
     }
 
     /** Discards the local edits and starts again from what the document says now. */
@@ -309,10 +337,44 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
 
     // --- secrets ----------------------------------------------------------------------------
 
-    fun openSecrets(prefill: String? = null) =
-        _state.update { it.copy(secretsOpen = SecretsState(name = prefill.orEmpty())) }
+    fun openSecrets(prefill: String? = null) {
+        if (_state.value.secretsOpen?.initialName == prefill.orEmpty()) return
+        guardSecret { _state.update { it.copy(secretsOpen = SecretsState(name = prefill.orEmpty())) } }
+    }
 
-    fun closeSecrets() = _state.update { it.copy(secretsOpen = null) }
+    fun closeSecrets() = guardSecret { _state.update { it.copy(secretsOpen = null) } }
+
+    private fun guardSecret(action: () -> Unit) {
+        val form = _state.value.secretsOpen
+        if (form != null && (form.value.isNotEmpty() || form.name != form.initialName)) {
+            pendingDiscardAction = action
+            _state.update { it.copy(discardTarget = DiscardTarget.SECRET) }
+        } else action()
+    }
+
+    fun answerDiscard(discard: Boolean) {
+        val target = _state.value.discardTarget
+        _state.update { it.copy(discardTarget = null) }
+        val action = pendingDiscardAction
+        pendingDiscardAction = null
+        if (!discard) return
+        when (target) {
+            DiscardTarget.EDITOR -> action?.invoke()
+            DiscardTarget.SECRET -> action?.invoke()
+            null -> Unit
+        }
+    }
+
+    fun askDeleteSecret(name: String) {
+        val usedBy = document?.workflows.orEmpty().filter { name in it.secretRefs() }.map { it.name }
+        _state.update { it.copy(keyDelete = KeyDeleteRequest(name, usedBy)) }
+    }
+
+    fun answerDeleteSecret(delete: Boolean) {
+        val request = _state.value.keyDelete ?: return
+        _state.update { it.copy(keyDelete = null) }
+        if (delete) deleteSecret(request.name)
+    }
 
     fun secretName(value: String) = updateSecrets { it.copy(name = value, error = null) }
 
@@ -518,4 +580,3 @@ internal fun StepEdit.labelRes(): Int = when (this) {
     is StepEdit.Hook -> R.string.step_webhook
     is StepEdit.Transcribe -> R.string.step_transcribe
 }
-

@@ -12,6 +12,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -154,17 +157,18 @@ private const val LOADER_TURN_MS = 1_200
 @Composable
 fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
     val palette = blueprint
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
-        nodes.forEachIndexed { index, spec ->
-            StateNode(spec, Modifier.weight(1f))
-            if (index != nodes.lastIndex) {
-                Box(
-                    Modifier
-                        .width(20.dp)
-                        .height(palette.line)
-                        .background(palette.text)
-                        .clearAndSetSemantics {},
-                )
+    BoxWithConstraints(modifier) {
+        if (LocalDensity.current.fontScale > 1.3f || maxWidth < 300.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                nodes.forEach { StateNode(it, Modifier.fillMaxWidth()) }
+            }
+        } else {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                nodes.forEachIndexed { index, spec ->
+                    StateNode(spec, Modifier.weight(1f))
+                    if (index != nodes.lastIndex) Box(Modifier.width(20.dp).height(palette.line)
+                        .background(palette.text).clearAndSetSemantics {})
+                }
             }
         }
     }

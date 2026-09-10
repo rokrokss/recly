@@ -14,12 +14,13 @@ struct RecordingView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
+        ScrollView {
         VStack(spacing: Space.s) {
             Text(model.status)
                 .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
                 .foregroundStyle(blueprint.palette.text)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+                .fixedSize(horizontal: false, vertical: true)
+                .multilineTextAlignment(.center)
 
             if model.isRecording {
                 Text(verbatim: model.elapsed)
@@ -47,7 +48,8 @@ struct RecordingView: View {
             }
         }
         .padding(.horizontal, Space.xs)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        }
         .background(blueprint.palette.background)
     }
 
@@ -70,7 +72,7 @@ struct RecordingView: View {
             Text("Workflow")
         }
         .labelsHidden()
-        .frame(height: minTouch)
+        .frame(minHeight: minTouch)
         .tint(blueprint.palette.accent)
     }
 

@@ -394,6 +394,9 @@ class RecordingPlayer(
     private val teardownWaitMs: Long = TEARDOWN_WAIT_MS,
 ) {
 
+    var failed: Boolean by mutableStateOf(false)
+        private set
+
     var playing: Boolean by mutableStateOf(false)
         private set
 
@@ -513,6 +516,7 @@ class RecordingPlayer(
      */
     fun play(selection: RecordingPlaylist.Selection) {
         if (selection.isEmpty) return
+        failed = false
         // Resuming is the one press that keeps what is running. Everything else starts by stopping,
         // and [stop] waits for the decoder — which takes this object's own lock to move the clock,
         // so waiting for it under that lock would be a deadlock rather than a stop.
@@ -626,6 +630,7 @@ class RecordingPlayer(
      *   made over a live ffmpeg is the one that cannot be retried.
      */
     fun stop(): Boolean {
+        failed = false
         // Both halves, and both answers: the picture's ffmpeg has the same part open as the
         // sound's, and a delete cannot go over either of them. Neither is skipped for the other.
         val drawn = stopDecoding()
@@ -676,6 +681,11 @@ class RecordingPlayer(
      * A playback that is no longer the one has already been detached by a [stop], and that caller's
      * join is what clears the field.
      */
+    @Synchronized
+    private fun reportFailure(finished: Playback) {
+        if (playback === finished) failed = true
+    }
+
     @Synchronized
     private fun ended(finished: Playback) {
         if (playback !== finished) return
@@ -831,6 +841,7 @@ class RecordingPlayer(
                     offsetSec = jumped.second
                 }
             } catch (e: Throwable) {
+                if (!cancelled) reportFailure(this)
                 logger()?.log(Logger.Level.ERROR, "shell.play.failed", error = e)
             } finally {
                 opened?.let { runCatching { it.stop(); it.flush(); it.close() } }
@@ -898,6 +909,15 @@ class RecordingPlayer(
                         }
                     }
                 }
+                if (!cancelled && jump == null) {
+                    val exited = decoder.waitFor(EXIT_WAIT_MS, TimeUnit.MILLISECONDS)
+                    // Stop and seek intentionally terminate the decoder, including during waitFor.
+                    if (!cancelled && jump == null) check(exited && decoder.exitValue() == 0) {
+                        "playback decode failed: $path"
+                    }
+                }
+            } catch (error: Throwable) {
+                if (!cancelled && jump == null) throw error
             } finally {
                 decoder.destroyForcibly()
                 decoder.waitFor(EXIT_WAIT_MS, TimeUnit.MILLISECONDS)

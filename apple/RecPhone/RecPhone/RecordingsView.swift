@@ -48,10 +48,13 @@ struct RecordingsView: View {
                         row(item)
                     }
                     if model.recents.isEmpty {
-                        Text("No recordings yet")
+                        Text(verbatim: loc(model.recentsLoading ? "Loading…" : "No recordings yet"))
                             .font(blueprint.fonts.bodySmall)
                             .foregroundStyle(blueprint.palette.textMuted)
                             .padding(Space.l)
+                        if !model.recentsLoading {
+                            BlueprintButton(loc("Record"), tone: .primary) { model.tab = .record }
+                        }
                     }
                 }
             }

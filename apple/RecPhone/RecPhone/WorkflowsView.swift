@@ -1,6 +1,7 @@
 import ReclyCore
 import RecKit
 import SwiftUI
+import UIKit
 
 /// docs/13 I5 "워크플로우 편집", drawn as docs/09 화면 원칙 3 asks: the editor is a node graph —
 /// the trigger, then one square node per step, joined by straight connectors with a `+` on each —
@@ -43,6 +44,7 @@ private struct Editing: View {
             }
         }
         .task { await model.reload() }
+        .workflowProtection(model: model)
     }
 }
 
@@ -64,6 +66,7 @@ private struct ListScreen: View {
             }
             ScrollView {
                 VStack(spacing: 0) {
+                    TranscriptionSetupHelp()
                     notices
                     SectionHeader(loc("Workflows")).padding(.horizontal, Space.m)
                     ForEach(model.items) { item in
@@ -72,7 +75,7 @@ private struct ListScreen: View {
                     // ADR-016: a phone with no workflow records nothing, so the list saying nothing
                     // at all is the one thing it must not do.
                     if model.items.isEmpty {
-                        Text(verbatim: loc("No workflows yet."))
+                        Text(verbatim: loc(model.loading ? "Loading…" : "No workflows yet."))
                             .font(blueprint.fonts.bodySmall)
                             .foregroundStyle(blueprint.palette.textMuted)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -163,7 +166,7 @@ private struct ListScreen: View {
         ForEach(model.secrets, id: \.self) { name in
             SectionRow(title: name) {
                 BlueprintButton(loc("Delete"), tone: .danger) {
-                    Task { await model.deleteSecret(name) }
+                    model.askToDeleteSecret(name)
                 }
             }
         }
@@ -193,6 +196,7 @@ private struct EditorScreen: View {
     /// The `+` that was tapped, while it asks which kind of step to insert there.
     @State private var insertAt: Int?
     @State private var save: ProcessingState = .idle
+    @State private var keyboardVisible = false
 
     /// The editor is only ever shown when there is one; the binding keeps the rest honest.
     @ViewBuilder
@@ -205,53 +209,38 @@ private struct EditorScreen: View {
     private func content(_ editor: EditorState) -> some View {
         let shown = model.pendingTransfers
         return VStack(spacing: 0) {
-            ScreenHeader(
-                title: editor.edit.name.isEmpty
-                    ? loc(editor.isNew ? "New workflow" : "Edit workflow")
-                    : editor.edit.name
-            ) {
-                HStack(spacing: Space.s) {
-                    BlueprintButton(loc("Cancel"), tone: .quiet) { model.cancel() }
-                    ProcessingButton(loc(shown.isEmpty ? "Save" : "Allow & save"), state: save, tone: .primary) {
-                        save = .processing
-                        Task {
-                            await model.save(allowing: shown)
-                            // A save that worked closes the editor; one that was refused leaves it
-                            // open with the reason on it, which is the honest outcome to report.
-                            save = model.editor == nil ? .done : .failed
+            ScreenHeader(title: editor.edit.name.isEmpty
+                ? loc(editor.isNew ? "New workflow" : "Edit workflow") : editor.edit.name)
+            if !keyboardVisible {
+                ScrollView {
+                    VStack(spacing: Space.xs) {
+                        if !shown.isEmpty {
+                            TransferDisclosureList(targets: shown)
+                                .padding(.horizontal, Space.m)
                         }
+                        NodeGraph(
+                            axis: .vertical,
+                            count: 1 + editor.edit.steps.count,
+                            insertLabel: loc("Add a step here"),
+                            insert: { insertAt = $0 }
+                        ) { index in
+                            node(editor, at: index)
+                        }
+                        Text("End")
+                            .font(blueprint.fonts.sans(TypeSize.small))
+                            .foregroundStyle(blueprint.palette.textMuted)
                     }
-                    .disabled(editor.stale)
-                    .accessibilityIdentifier("saveWorkflow")
+                    .padding(.vertical, Space.m)
+                    .frame(maxWidth: .infinity)
                 }
             }
-            notices(editor)
-
-            ScrollView {
-                VStack(spacing: Space.xs) {
-                    if !shown.isEmpty {
-                        TransferDisclosureList(targets: shown)
-                            .padding(.horizontal, Space.m)
-                    }
-                    NodeGraph(
-                        axis: .vertical,
-                        count: 1 + editor.edit.steps.count,
-                        insertLabel: loc("Add a step here"),
-                        insert: { insertAt = $0 }
-                    ) { index in
-                        node(editor, at: index)
-                    }
-                    Text("End")
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.textMuted)
-                }
-                .padding(.vertical, Space.m)
-                .frame(maxWidth: .infinity)
-            }
-
             HairLine()
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
+                    notices(editor)
+                    if keyboardVisible && !shown.isEmpty {
+                        TransferDisclosureList(targets: shown)
+                    }
                     if let position = openStep, let step = editor.edit.steps[safe: position] {
                         StepInspector(
                             model: model,
@@ -268,8 +257,41 @@ private struct EditorScreen: View {
                 .padding(.vertical, 12)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .frame(maxHeight: 360)
+            .frame(maxHeight: keyboardVisible ? .infinity : 360)
+            .scrollDismissesKeyboard(.interactively)
+            HairLine()
+            FlowLayout(spacing: Space.s) {
+                BlueprintButton(loc("Cancel"), tone: .quiet) {
+                    dismissKeyboard()
+                    model.cancel()
+                }
+                ProcessingButton(loc(shown.isEmpty ? "Save" : "Allow & save"), state: save, tone: .primary) {
+                    save = .processing
+                    Task {
+                        await model.save(allowing: shown)
+                        // A save that worked closes the editor; one that was refused leaves it
+                        // open with the reason on it, which is the honest outcome to report.
+                        save = model.editor == nil ? .done : .failed
+                    }
+                }
+                .disabled(editor.stale)
+                .accessibilityIdentifier("saveWorkflow")
+            }
+
+            .frame(maxWidth: .infinity, alignment: .trailing)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
         }
+        .submitLabel(.done)
+        .onSubmit { dismissKeyboard() }
+        .onChange(of: editor.errors) { _, errors in
+            guard !errors.isEmpty else { return }
+            openStep = editor.edit.steps.firstIndex { step in
+                errors.contains { $0.contains("step '\(step.id)'") }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in keyboardVisible = true }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in keyboardVisible = false }
         // docs/09 화면 원칙 5: four choices is a list, not four buttons — a `confirmationDialog` is
         // the platform's own sheet with the platform's own shape, and this one is drawn like the
         // rest of the app (the Android editor asks the same question the same way).
@@ -288,6 +310,10 @@ private struct EditorScreen: View {
                 }
             }
         }
+    }
+
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 
     @ViewBuilder

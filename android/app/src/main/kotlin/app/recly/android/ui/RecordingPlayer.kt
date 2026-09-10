@@ -11,6 +11,7 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import java.io.File
@@ -32,6 +33,10 @@ import java.io.File
 class RecordingPlayer(context: Context) {
 
     var isPlaying by mutableStateOf(false)
+        private set
+    var buffering by mutableStateOf(false)
+        private set
+    var failed by mutableStateOf(false)
         private set
 
     /** Seconds from the start of the *recording*, not of the part being played. */
@@ -61,7 +66,17 @@ class RecordingPlayer(context: Context) {
                 // The end of the whole recording is the end of its last part, and there is nothing
                 // after it: the clock goes back to the start rather than standing at the end.
                 override fun onPlaybackStateChanged(playbackState: Int) {
+                    buffering = playbackState == Player.STATE_BUFFERING && player.playWhenReady
                     if (playbackState == Player.STATE_ENDED) stop()
+                }
+                override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
+                    buffering = playWhenReady && player.playbackState == Player.STATE_BUFFERING
+                }
+                override fun onIsPlayingChanged(playing: Boolean) { isPlaying = playing }
+                override fun onPlayerError(error: PlaybackException) {
+                    failed = true
+                    buffering = false
+                    isPlaying = false
                 }
             },
         )
@@ -82,9 +97,10 @@ class RecordingPlayer(context: Context) {
 
     fun play() {
         if (selection.isEmpty) return
+        if (failed) player.prepare()
+        failed = false
         queue()
         player.play()
-        isPlaying = true
     }
 
     /**
@@ -117,6 +133,7 @@ class RecordingPlayer(context: Context) {
     fun pause() {
         player.pause()
         isPlaying = false
+        buffering = false
     }
 
     /**
@@ -133,6 +150,8 @@ class RecordingPlayer(context: Context) {
         selection = RecordingPlaylist.Selection.EMPTY
         positionSec = 0.0
         isPlaying = false
+        buffering = false
+        failed = false
     }
 
     /**

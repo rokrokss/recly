@@ -76,6 +76,7 @@ fun JobsScreen(
     onCancelDelete: () -> Unit,
     onDelete: (DeleteRequest, Boolean) -> Unit,
     onSignIn: () -> Unit,
+    onRecord: () -> Unit,
     onOpenDetail: (JobItem) -> Unit,
     /** docs/08 AUTH_REJECTED: "check the key" is only useful with the editor behind it. */
     onCheckKey: (JobItem) -> Unit,
@@ -110,13 +111,16 @@ fun JobsScreen(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                if (!state.loading) {
+                if (state.loading) {
+                    Text(stringResource(R.string.list_loading), color = palette.textMuted)
+                } else {
                     Text(
                         stringResource(R.string.jobs_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = palette.textMuted,
                         textAlign = TextAlign.Center,
                     )
+                    BlueprintButton(stringResource(R.string.tab_record), onRecord, tone = ButtonTone.PRIMARY)
                 }
             }
             return@Column

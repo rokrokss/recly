@@ -7,6 +7,56 @@ import XCTest
 /// a stop happens exactly once, and a recovery pass never walks a directory a recorder is writing
 /// into. (The Android `RecorderSessionTest` asks the same four questions of the same contract.)
 final class RecorderSessionTests: XCTestCase {
+    @MainActor
+    func testPlaybackIsStoppedBeforeCaptureOpensAndStaysBlockedUntilStopFinishes() async throws {
+        let gate = RecordingPlaybackGate()
+        let player = RecordingPlayer(gate: gate)
+        let audio = RecordingPlaylist.Selection(urls: [URL(fileURLWithPath: "/test-audio.m4a")], durations: [10])
+        player.load(audio)
+        player.seek(toSec: 4)
+        let capture = FakeCapture()
+        let opening = expectation(description: "capture reached start")
+        await capture.holdNextStart { opening.fulfill() }
+        let session = RecorderSession(capture: capture, recover: { 0 }, onState: { _ in },
+            setPlaybackBlocked: { blocked in await gate.setBlocked(blocked) })
+        let starting = Task { try await session.start(workflowId: nil) }
+        await fulfillment(of: [opening], timeout: 5)
+        XCTAssertTrue(gate.blocked)
+        XCTAssertTrue(player.captureBlocked)
+        XCTAssertEqual(player.positionSec, 0, "teardown finished before the microphone opened")
+        player.load(audio)
+        player.seek(toSec: 4)
+        player.play()
+        XCTAssertEqual(player.positionSec, 0)
+        XCTAssertFalse(player.active)
+        await capture.releaseStart()
+        _ = try await starting.value
+        let closing = expectation(description: "capture reached stop")
+        await capture.holdNextStop { closing.fulfill() }
+        let stopping = Task { await session.stop(title: nil) }
+        await fulfillment(of: [closing], timeout: 5)
+        XCTAssertTrue(gate.blocked)
+        await capture.releaseStop()
+        _ = await stopping.value
+        XCTAssertFalse(gate.blocked)
+        XCTAssertFalse(player.captureBlocked)
+        player.stop()
+    }
+
+    @MainActor
+    func testARejectedCaptureReleasesThePlaybackGate() async {
+        let gate = RecordingPlaybackGate()
+        let session = RecorderSession(capture: RejectedCapture(), recover: { 0 }, onState: { _ in },
+            setPlaybackBlocked: { blocked in await gate.setBlocked(blocked) })
+        do {
+            _ = try await session.start(workflowId: nil)
+            XCTFail("the test capture must reject its start")
+        } catch {}
+        XCTAssertFalse(gate.blocked)
+        let state = await session.current
+        XCTAssertEqual(state, .idle)
+    }
+
     /// Two clicks on "녹음 시작" while the microphone is still opening. The second is refused — not
     /// as an error, there is nothing to tell the user — and only one recording is ever created.
     func testASecondStartWhileTheFirstIsStillOpeningIsRefused() async throws {
@@ -113,6 +163,13 @@ final class RecorderSessionTests: XCTestCase {
         await session.recoverIfIdle()
         XCTAssertEqual(passes.count, 3)
     }
+}
+
+private actor RejectedCapture: Capture {
+    func start(workflowId: String?, title: String?, mode: RecordingMode, context: Context?) async throws -> String {
+        throw NSError(domain: "RecorderSessionTests", code: 1)
+    }
+    func stop(title: String?) async -> StopResult { .notRecording }
 }
 
 /// A capture that does nothing but count — and that can be held open at the exact moment a test

@@ -134,6 +134,8 @@ class JobService(
      */
     suspend fun steps(jobId: String): List<StepRun> = store.stepsOf(jobId)
 
+    fun observeSteps(recordingId: String): Flow<List<StepRun>> = store.observeSteps(recordingId)
+
     private companion object {
         val RETRYABLE = setOf(
             JobStatus.NEEDS_AUTH,

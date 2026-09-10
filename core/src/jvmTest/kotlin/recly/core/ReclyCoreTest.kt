@@ -16,6 +16,7 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
@@ -93,6 +94,39 @@ class ReclyCoreTest {
 
     /** The same rows the facade writes, for the assertions it exposes no reader for. */
     private val queries get() = RecDatabase(driver).recQueries
+
+    @Test
+    fun `an open detail receives a transcript while its job is still running`() = runBlocking {
+        val meta = testMeta(parts = listOf(testPart(testMeta(), 1)))
+        val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
+        core.recordings.create(meta, dir)
+        seedFiles(fs, dir, meta)
+        core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
+        val workflow = recly.core.model.Workflow(
+            "workflow", "Transcribe then notify", START.isoUtc(), steps = listOf(
+                recly.core.model.Step.DriveUpload("upload"),
+                recly.core.model.Step.Transcribe("stt", provider = "assemblyai", secretRef = "test_key"),
+                recly.core.model.Step.Webhook("hook", url = "https://example.invalid/hook"),
+            ),
+        )
+        val store = recly.core.job.JobStore(RecDatabase(driver), deps)
+        val job = store.enqueue(meta.recordingId, workflow, START, JobStatus.RUNNING)!!
+        val seen = kotlinx.coroutines.channels.Channel<recly.core.transcribe.RecordingResult>(kotlinx.coroutines.channels.Channel.UNLIMITED)
+        val observing = launch(Dispatchers.Unconfined) { core.observeResults(meta.recordingId).collect { seen.send(it) } }
+        try {
+            assertEquals(recly.core.transcribe.TranscriptAvailability.PENDING, kotlinx.coroutines.withTimeout(5000) { seen.receive() }.availability)
+            fs.write(dir / recly.core.transcribe.TranscribeRunner.jsonFileName(MetaWriter.baseName(meta))) {
+                writeUtf8("""{"schema":1,"recordingId":"${meta.recordingId}","track":"mono","language":"ko","provider":{"name":"assemblyai"},"createdAt":"${START.isoUtc()}","durationSec":1.0,"speakers":[],"segments":[{"start":0.0,"end":1.0,"speaker":"S1","text":"Arrived while open"}]}""")
+            }
+            val step = store.stepsOf(job.id).single { it.stepId == "stt" }
+            store.updateStep(step.copy(status = recly.core.job.StepStatus.SUCCEEDED))
+            val result = kotlinx.coroutines.withTimeout(5000) { seen.receive() }
+            assertEquals(recly.core.transcribe.TranscriptAvailability.READY, result.availability)
+            assertEquals("Arrived while open", result.transcript?.segments?.single()?.text)
+            assertEquals(JobStatus.RUNNING, store.get(job.id)?.status, "the webhook need not finish before the text appears")
+        } finally { observing.cancel(); seen.close() }
+    }
+
 
     @Test
     fun `a recording enqueued through the facade runs its default workflow to DONE`() = runBlocking<Unit> {

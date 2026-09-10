@@ -163,14 +163,14 @@ private fun RecordScreen(
                 ),
                 style = WearBlueprint.small,
                 color = WearBlueprint.textMuted,
-                maxLines = 1,
+                maxLines = 3,
             )
             if (state.failed > 0) {
                 Text(
                     text = stringResource(R.string.transfer_failed_badge, state.failed),
                     style = WearBlueprint.small,
                     color = WearBlueprint.danger,
-                    maxLines = 1,
+                    maxLines = 3,
                 )
             }
 
@@ -288,7 +288,7 @@ private fun PickerRow(name: String, selected: Boolean, onClick: () -> Unit) {
                     style = WearBlueprint.label,
                     maxLines = 1,
                 )
-                Text(text = name, maxLines = 1)
+                Text(text = name, maxLines = 3)
             }
         },
     )

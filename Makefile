@@ -35,6 +35,8 @@ help:
 	@echo "make aab            phone + watch release bundles for Play (needs the upload key)"
 	@echo "make android-release-apk  phone + watch release APKs (needs the upload key)"
 	@echo "make android-test   android unit tests only"
+	@echo "make android-ui-test  focused Android interaction tests (connected test device)"
+	@echo "make ios-ui-test    focused iPhone interaction tests (IOS_SIM= override)"
 	@echo "make windows-test   windows shell unit tests only"
 	@echo "make windows-run    run the Windows shell on this host"
 	@echo "make windows-msi    Windows MSI (Windows hosts only)"
@@ -121,3 +123,13 @@ skills:
 	  rm -f ../build/skills/$$skill.zip && zip -qr ../build/skills/$$skill.zip $$skill -x '*.DS_Store'; \
 	done
 	ls -l build/skills
+
+# Focused interaction checks on isolated test devices.
+.PHONY: android-ui-test ios-ui-test
+ANDROID_TEST_CLASS ?= app.recly.android.ui.MobileUxTest,app.recly.android.ui.UiStandardsTest,app.recly.android.ui.TranscriptReaderTest,app.recly.android.ui.HighContrastThemeTest
+android-ui-test:
+	$(GRADLE) :android:app:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=$(ANDROID_TEST_CLASS)
+
+IOS_TESTS ?= ReclyUITests/MobileUxTests
+ios-ui-test:
+	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test -only-testing:$(IOS_TESTS)

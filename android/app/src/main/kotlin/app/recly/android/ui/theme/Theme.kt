@@ -1,5 +1,8 @@
 package app.recly.android.ui.theme
 
+import android.app.UiModeManager
+import android.os.Build
+import android.view.accessibility.AccessibilityManager
 import android.content.ContentResolver
 import android.database.ContentObserver
 import android.os.Handler
@@ -55,7 +58,7 @@ object Space {
  * docs/09 "접근성": whatever it draws, nothing you can tap is smaller than this. A small glyph — the
  * connector's `+`, a square switch — keeps its size and grows a target around itself.
  */
-val MinTouch: Dp = 44.dp
+val MinTouch: Dp = 48.dp
 
 /** docs/09 "형태": 4 for a node, 8 for a card, 0 for a table row. Badges and chips take half a node. */
 object Radius {
@@ -109,7 +112,8 @@ fun ReclyTheme(
     content: @Composable () -> Unit,
 ) {
     val dark = theme.isDark(isSystemInDarkTheme())
-    val blueprint = remember(dark) { blueprintColors(dark) }
+    val highContrast = observeSystemHighContrast()
+    val blueprint = remember(dark, highContrast) { blueprintColors(dark, highContrast) }
     val widthDp = LocalConfiguration.current.screenWidthDp.toFloat()
     val scale = remember(widthDp) { fluidScale(widthDp) }
     val typography = remember(scale) { reclyTypography(scale) }
@@ -175,7 +179,7 @@ fun systemReduceMotion(scale: Float): Boolean = scale == 0f
 /**
  * docs/09 "간격": an 8dp dot grid at 6% behind the content — the visible grid the nodes sit on.
  */
-fun Modifier.dotGrid(palette: BlueprintColors): Modifier = this
+fun Modifier.dotGrid(palette: BlueprintColors): Modifier = if (palette.highContrast) background(palette.background) else this
     .background(palette.background)
     .drawWithCache {
         // One 8dp tile, painted once and repeated. A screen of dots is several thousand circles
@@ -231,7 +235,40 @@ private fun BlueprintColors.toColorScheme() = (if (dark) darkColorScheme() else 
     onErrorContainer = danger,
     tertiary = warningInk,
     onTertiary = surface,
-    outline = grid,
+    outline = inputBorder,
     outlineVariant = grid,
     scrim = text,
 )
+
+/** Custom drawings follow the same contrast preferences as platform-rendered text. */
+@Composable
+private fun observeSystemHighContrast(): Boolean {
+    val context = LocalContext.current
+    val owner = LocalLifecycleOwner.current
+    fun read(): Boolean {
+        val colors = Build.VERSION.SDK_INT >= 34 && context.getSystemService(UiModeManager::class.java).contrast > 0f
+        val text = Build.VERSION.SDK_INT >= 36 && context.getSystemService(AccessibilityManager::class.java).isHighContrastTextEnabled
+        return colors || text
+    }
+    var high by remember(context) { mutableStateOf(read()) }
+    DisposableEffect(context, owner) {
+        val cleanup = mutableListOf<() -> Unit>()
+        if (Build.VERSION.SDK_INT >= 34) {
+            val manager = context.getSystemService(UiModeManager::class.java)
+            val listener = UiModeManager.ContrastChangeListener { high = read() }
+            manager.addContrastChangeListener(context.mainExecutor, listener)
+            cleanup += { manager.removeContrastChangeListener(listener) }
+        }
+        if (Build.VERSION.SDK_INT >= 36) {
+            val manager = context.getSystemService(AccessibilityManager::class.java)
+            val listener = AccessibilityManager.HighContrastTextStateChangeListener { high = read() }
+            manager.addHighContrastTextStateChangeListener(context.mainExecutor, listener)
+            cleanup += { manager.removeHighContrastTextStateChangeListener(listener) }
+        }
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_RESUME) high = read() }
+        owner.lifecycle.addObserver(observer)
+        high = read()
+        onDispose { cleanup.forEach { it() }; owner.lifecycle.removeObserver(observer) }
+    }
+    return high
+}

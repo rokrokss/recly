@@ -13,6 +13,13 @@ import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.annotation.StringRes
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.SideEffect
+import androidx.core.view.WindowCompat
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -115,6 +122,13 @@ class MainActivity : ComponentActivity() {
             // docs/09 "접근성": the system decides the font scale and reduce motion, and the theme is
             // the only place that knows about either. Dark is the system's too until the setting
             // says otherwise, which is the one thing the theme is told.
+            val dark = settings.theme.isDark(isSystemInDarkTheme())
+            SideEffect {
+                WindowCompat.getInsetsController(window, window.decorView).apply {
+                    isAppearanceLightStatusBars = !dark
+                    isAppearanceLightNavigationBars = !dark
+                }
+            }
             ReclyTheme(theme = settings.theme) {
                 val state by model.state.collectAsState()
                 val consentRequest by model.consentRequest.collectAsState()
@@ -195,18 +209,20 @@ class MainActivity : ComponentActivity() {
                     fixRequest.value = null
                     goFix(request.reason, request.workflowId)
                 }
-                BackHandler(enabled = workflows.secretsOpen != null || workflows.editor != null) {
+                BackHandler(enabled = tab != Tab.RECORD) { tab = Tab.RECORD }
+                BackHandler(enabled = tab == Tab.WORKFLOWS && (workflows.secretsOpen != null || workflows.editor != null)) {
                     if (workflows.secretsOpen != null) workflowsModel.closeSecrets() else workflowsModel.cancel()
                 }
 
                 // The detail screen is a page inside the jobs tab, so Back has to leave it.
                 BackHandler(enabled = tab == Tab.JOBS && jobs.detail != null) { jobsModel.closeDetail() }
 
+                val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
                 Scaffold(
-                    modifier = Modifier.dotGrid(blueprint),
+                    modifier = Modifier.dotGrid(blueprint).imePadding(),
                     containerColor = Color.Transparent,
                     bottomBar = {
-                        BlueprintNavBar(
+                        if (!keyboardVisible) BlueprintNavBar(
                             Tab.entries.map { entry ->
                                 NavItem(
                                     glyph = entry.glyph,
@@ -225,6 +241,7 @@ class MainActivity : ComponentActivity() {
                         Tab.JOBS -> JobsTab(
                             state = jobs,
                             model = jobsModel,
+                            onRecord = { tab = Tab.RECORD },
                             // docs/10: NEEDS_AUTH is unblocked by signing in, not waiting.
                             onSignIn = fixAuth,
                             // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is
@@ -388,6 +405,7 @@ private fun RecordTab(
 private fun JobsTab(
     state: JobsUiState,
     model: JobsViewModel,
+    onRecord: () -> Unit,
     onSignIn: () -> Unit,
     onCheckKey: (String?) -> Unit,
     onFix: (JobAlert) -> Unit,
@@ -399,6 +417,7 @@ private fun JobsTab(
             detail = detail,
             onClose = model::closeDetail,
             onRename = { title -> model.rename(detail.recordingId, title) },
+            onReload = model::reloadDetail,
             modifier = modifier,
         )
     } else {
@@ -409,6 +428,7 @@ private fun JobsTab(
             onCancelDelete = model::cancelDelete,
             onDelete = model::delete,
             onSignIn = onSignIn,
+            onRecord = onRecord,
             onOpenDetail = model::openDetail,
             onCheckKey = { item -> onCheckKey(item.workflowId) },
             onFix = onFix,
@@ -424,6 +444,7 @@ private fun WorkflowsTab(
     model: WorkflowsViewModel,
     modifier: Modifier,
 ) {
+    WorkflowProtectionDialogs(state, model::answerDiscard, model::answerDeleteSecret)
     val secretsForm = state.secretsOpen
     val editor = state.editor
     when {
@@ -434,7 +455,7 @@ private fun WorkflowsTab(
             onValue = model::secretValue,
             onGenerate = model::generateSecret,
             onSave = model::saveSecret,
-            onDelete = model::deleteSecret,
+            onDelete = model::askDeleteSecret,
             onClose = model::closeSecrets,
             modifier = modifier,
         )

@@ -8,6 +8,7 @@ import kotlin.time.Instant
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToOne
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -399,6 +400,13 @@ class RecordingRepository(
      * this is for the rows a pull adds or drops without a job ever existing.
      */
     fun observe(): Flow<Unit> = queries.countRecordings().asFlow().mapToOne(deps.io).map { }
+
+    /** Audio inputs change independently of transcription; title-only edits keep playback intact. */
+    fun observeAudio(recordingId: String): Flow<RecordingRecord?> = observe().map { get(recordingId) }
+        .distinctUntilChanged { before, after ->
+            before?.dir == after?.dir && before?.meta?.status == after?.meta?.status &&
+                before?.meta?.parts == after?.meta?.parts && before?.meta?.tracks == after?.meta?.tracks
+        }
 
     /** Drops the row, its parts and the whole directory — the orphan purge, and nothing else. */
     suspend fun delete(recordingId: String) {

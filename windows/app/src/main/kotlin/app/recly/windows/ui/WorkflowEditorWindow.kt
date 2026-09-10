@@ -96,6 +96,7 @@ fun WorkflowEditorWindow(
         if (openFirst) model.items.firstOrNull()?.let { model.edit(it.id) }
     }
 
+    WorkflowProtectionDialogs(model, strings)
     Row(Modifier.fillMaxSize().background(blueprint.background)) {
         Sidebar(model, strings, go, Modifier.width(SidebarWidth).fillMaxHeight())
         VerticalHairLine(Modifier.fillMaxHeight())
@@ -119,6 +120,7 @@ private typealias Go = (suspend () -> Unit) -> Unit
 private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: Modifier) {
     Column(modifier.background(blueprint.surface).verticalScroll(rememberScrollState())) {
         ScreenHeader(title = strings[Str.EDITOR_WORKFLOWS])
+        TranscriptionSetupHelp(strings)
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -221,7 +223,7 @@ private fun Secrets(model: WorkflowsModel, strings: Strings, go: Go) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(name, Modifier.weight(1f), style = mono.small, color = palette.text)
-            BlueprintButton(strings[Str.DELETE], { go { model.deleteSecret(name) } }, tone = ButtonTone.DANGER)
+            BlueprintButton(strings[Str.DELETE], { model.askDeleteSecret(name) }, tone = ButtonTone.DANGER)
         }
     }
     // A form a step opened belongs to that step, and is shown there rather than here.

@@ -44,8 +44,8 @@ struct RecordingView: View {
             // — a screen whose parts are spaced across the phone rather than stacked at the top of
             // it. Inside one, the spacer between the readouts and the record node proposes nothing
             // and collapses, so the order is kept and the node is the end of the scroll.
-            Group {
-                if dynamicTypeSize.isAccessibilitySize {
+            GeometryReader { geometry in
+                if dynamicTypeSize.isAccessibilitySize || geometry.size.height < 520 {
                     ScrollView { dashboard }
                 } else {
                     dashboard

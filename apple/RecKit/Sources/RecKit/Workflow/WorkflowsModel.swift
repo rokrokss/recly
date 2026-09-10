@@ -47,6 +47,14 @@ public struct EditorState {
     /// are live: moving a step breaks a workflow without any field being wrong, so the editor says
     /// so as soon as it is true rather than when a save is refused.
     public var order: [String: String] = [:]
+    public let original: WorkflowEdit
+    public var dirty: Bool { edit != original }
+
+    public init(edit: WorkflowEdit, isNew: Bool, session: Int64, openedOn: OpenedOn?,
+                stale: Bool = false, errors: [String] = [], order: [String: String] = [:]) {
+        self.edit = edit; self.original = edit; self.isNew = isNew; self.session = session
+        self.openedOn = openedOn; self.stale = stale; self.errors = errors; self.order = order
+    }
 }
 
 /// The secret being entered. [generated] marks a value the user has not seen anywhere else.
@@ -60,11 +68,13 @@ public struct SecretForm {
     /// The step that asked for it, so the form is shown where it was asked for and nowhere else.
     /// nil when it was opened from the secret list.
     public var stepId: String?
+    public var initialName = ""
 
     public init() {}
 
     init(name: String, stepId: String? = nil) {
         self.name = name
+        self.initialName = name
         self.stepId = stepId
     }
 }
@@ -88,6 +98,8 @@ public final class WorkflowsModel: ObservableObject {
     /// and does not come back — the document is local (docs/05), so there is no copy anywhere to
     /// restore it from — and the row's button opens the question rather than doing the write.
     @Published public var confirmDelete: WorkflowItem?
+    @Published public var protection: WorkflowProtection?
+    @Published public private(set) var loading = true
     /// docs/07 rule 3: the banner as a key and its arguments, never as words — it stays on screen
     /// for as long as the condition holds, and a sentence made when it was set would outlive the
     /// language change it is meant to answer. `UiMessage.text` is the sentence, read by the view.
@@ -122,6 +134,7 @@ public final class WorkflowsModel: ObservableObject {
     private let store: SecretStore
     private let sessions = EditorSessions()
     private var document: WorkflowsDocument?
+    private var observers: [Task<Void, Never>] = []
     /// ADR-016: the id this device falls back to, as `observeDeviceDefault` last said. Not in the
     /// document, so it moves without one arriving — which is why it is watched rather than read.
     private var deviceDefault: String?
@@ -133,16 +146,16 @@ public final class WorkflowsModel: ObservableObject {
         let documents = CoreWorkflowDocuments(core: core)
         self.documents = documents
         self.mutator = WorkflowMutator(documents: documents)
-        Task { await reload() }
+        observers.append(Task { [weak self] in await self?.reload() })
         observeDeviceDefault()
         observeDocument()
-        Task { [weak self] in
+        observers.append(Task { [weak self] in
             for await targets in core.transferConsents.observe() {
                 guard let self else { return }
                 self.approvedTransferIds = Set(targets.map(\.id))
                 self.refreshTransferDisclosure()
             }
-        }
+        })
     }
 
     /// The document moves without this model doing the moving — a settings import replaces it
@@ -150,20 +163,20 @@ public final class WorkflowsModel: ObservableObject {
     /// `onDocumentChanged`, which [reload] fires) all read it. So the model follows the store
     /// rather than trusting that every write went through itself.
     private func observeDocument() {
-        Task { [weak self] in
+        observers.append(Task { [weak self] in
             guard let core = self?.core else { return }
             for await _ in core.workflows.observe() {
                 guard let self else { return }
                 await self.reload()
             }
-        }
+        })
     }
 
     /// The pointer decides which row wears the badge and which delete carries a warning, and it
     /// changes without the document moving — a pick made here, a pick made on the record screen, a
     /// delete that cleared it. SKIE hands the core's `Flow` over as an `AsyncSequence`.
     private func observeDeviceDefault() {
-        Task { [weak self] in
+        observers.append(Task { [weak self] in
             guard let core = self?.core else { return }
             for await id in core.workflows.observeDeviceDefault() {
                 guard let self else { return }
@@ -172,14 +185,24 @@ public final class WorkflowsModel: ObservableObject {
                     self.show(document)
                 }
             }
-        }
+        })
+    }
+
+    deinit { observers.forEach { $0.cancel() } }
+
+    /// Finish observation before an owner closes the database, including temporary test stores.
+    func stopObserving() async {
+        let pending = observers
+        observers = []
+        pending.forEach { $0.cancel() }
+        for task in pending { await task.value }
     }
 
     // MARK: - List
 
-    /// Re-reads the local copy. There is no `Flow` across the Obj-C bridge, so every write and
-    /// every import ends here rather than the list redrawing itself.
+    /// Re-reads the local copy after a write, import, or observed document change.
     public func reload() async {
+        defer { loading = false }
         await loadSecrets()
         do {
             approvedTransferIds = Set(try await core.transferConsents.approved().map(\.id))
@@ -194,7 +217,22 @@ public final class WorkflowsModel: ObservableObject {
         }
     }
 
+    private var pendingDiscardAction: (() -> Void)?
+
+    private func guardEditor(_ action: @escaping () -> Void) {
+        let secretDirty = secretForm.map { !$0.value.isEmpty || $0.name != $0.initialName } ?? false
+        if editor?.dirty == true || secretDirty {
+            pendingDiscardAction = action
+            protection = .discardEditor
+        } else { action() }
+    }
+
     public func add() {
+        guardEditor { [weak self] in self?.addEditor() }
+    }
+
+    private func addEditor() {
+        secretForm = nil
         editor = EditorState(
             edit: WorkflowEdit(
                 id: mintWorkflowId(now: core.deps.clock.now()),
@@ -211,6 +249,14 @@ public final class WorkflowsModel: ObservableObject {
     }
 
     public func edit(_ id: String) {
+        if editor?.edit.id == id { return }
+        guardEditor { [weak self] in
+            self?.secretForm = nil
+            self?.openEditor(id)
+        }
+    }
+
+    private func openEditor(_ id: String) {
         guard let workflow = document?.workflows.first(where: { $0.id == id }) else { return }
         editor = EditorState(
             edit: workflow.toEdit(),
@@ -223,7 +269,12 @@ public final class WorkflowsModel: ObservableObject {
     }
 
     public func cancel() {
+        guardEditor { [weak self] in self?.discardEditor() }
+    }
+
+    private func discardEditor() {
         sessions.close()
+        secretForm = nil
         editor = nil
         refreshTransferDisclosure()
     }
@@ -240,7 +291,7 @@ public final class WorkflowsModel: ObservableObject {
             message = .key("This workflow is no longer in the document")
             return
         }
-        edit(id)
+        openEditor(id)
     }
 
     /// ADR-016: the row's one control. It writes nothing to the document — the pointer is local, and
@@ -355,11 +406,39 @@ public final class WorkflowsModel: ObservableObject {
     // MARK: - Secrets
 
     public func openSecrets(prefill: String? = nil, step: String? = nil) {
-        secretForm = SecretForm(name: prefill ?? "", stepId: step)
+        if let form = secretForm, form.initialName == (prefill ?? ""), form.stepId == step { return }
+        guardSecret { [weak self] in self?.secretForm = SecretForm(name: prefill ?? "", stepId: step) }
     }
 
     public func closeSecrets() {
-        secretForm = nil
+        guardSecret { [weak self] in self?.secretForm = nil }
+    }
+
+    private func guardSecret(_ action: @escaping () -> Void) {
+        if let form = secretForm, !form.value.isEmpty || form.name != form.initialName {
+            pendingDiscardAction = action
+            protection = .discardSecret
+        } else { action() }
+    }
+
+    public func askToDeleteSecret(_ name: String) {
+        let usedBy = document?.workflows.filter { workflow in
+            workflow.steps.contains { $0.usedSecretRef == name }
+        }.map(\.name) ?? []
+        protection = .deleteKey(name, usedBy)
+    }
+
+    public func answerProtection(_ confirmed: Bool) {
+        let prompt = protection
+        protection = nil
+        let action = pendingDiscardAction
+        pendingDiscardAction = nil
+        guard confirmed, let prompt else { return }
+        switch prompt {
+        case .discardEditor: action?()
+        case .discardSecret: action?()
+        case .deleteKey(let name, _): Task { await deleteSecret(name) }
+        }
     }
 
     /// docs/04: the `whsec_` value is shown once, here, and is never readable again afterwards —

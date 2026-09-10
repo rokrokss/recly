@@ -1,5 +1,7 @@
 package recly.core.transcribe
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -9,6 +11,9 @@ import recly.core.drive.DriveApi
 import recly.core.drive.DriveFileMeta
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
+
+/** Serializes local publication with recovery so a newer valid result always wins. */
+internal val resultFileMutex = Mutex()
 
 /**
  * Where a `transcribe` result goes (docs/08 "결과 파일"): the recording directory, so the app and
@@ -27,8 +32,10 @@ internal class ResultFiles(private val api: DriveApi, private val deps: CoreDeps
         content: ByteArray,
         mimeType: String,
     ): ResultFile {
-        deps.fileSystem.createDirectories(dir)
-        deps.fileSystem.write(dir / name) { write(content) }
+        resultFileMutex.withLock {
+            deps.fileSystem.createDirectories(dir)
+            deps.fileSystem.write(dir / name) { write(content) }
+        }
 
         val md5 = content.toByteString().md5().hex()
         val existing = api.findChildren(folderId, name)

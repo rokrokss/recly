@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package app.recly.android.ui
 
 import androidx.compose.foundation.background
@@ -5,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -90,7 +93,7 @@ fun WorkflowsScreen(
             title = stringResource(R.string.tab_workflows),
             meta = state.items.size.toString(),
             trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
                     BlueprintButton(
                         label = stringResource(R.string.workflows_secrets),
                         onClick = { onSecrets(null) },
@@ -119,6 +122,7 @@ fun WorkflowsScreen(
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
+            item { TranscriptionSetupHelp() }
             items(state.items, key = { it.id }) { item ->
                 WorkflowRow(
                     item = item,
@@ -128,13 +132,17 @@ fun WorkflowsScreen(
                     onAddSecret = { onSecrets(item.missingSecrets.firstOrNull()) },
                 )
             }
-            if (state.items.isEmpty() && !state.loading) {
+            if (state.items.isEmpty()) {
                 item {
                     Text(
-                        stringResource(R.string.workflows_empty),
+                        stringResource(if (state.loading) R.string.list_loading else R.string.workflows_empty),
                         modifier = Modifier.padding(Space.m),
                         style = MaterialTheme.typography.bodyMedium,
                         color = palette.textMuted,
+                    )
+                    if (!state.loading) BlueprintButton(
+                        stringResource(R.string.workflows_add), onAdd, tone = ButtonTone.PRIMARY,
+                        modifier = Modifier.padding(horizontal = Space.m),
                     )
                 }
             }

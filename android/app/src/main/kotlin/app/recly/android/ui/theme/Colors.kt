@@ -28,9 +28,13 @@ data class BlueprintColors(
     val warning: Color,
     val warningInk: Color,
     val dark: Boolean,
+    val highContrast: Boolean = false,
 ) {
+    /** Input boundaries are distinct from decorative grid lines. */
+    val inputBorder: Color get() = textMuted
+
     /** docs/09 "선": 1dp. Connectors, dividers, node borders. */
-    val line: Dp get() = 1.dp
+    val line: Dp get() = if (highContrast) 2.dp else 1.dp
 
     /** What a chosen thing — a selected graph node, a selected chip — draws instead of [line]. */
     val selectedLine: Dp get() = line + 1.dp
@@ -72,4 +76,7 @@ val BlueprintDark: BlueprintColors = BlueprintColors(
 )
 
 /** The palette for the system's dark-mode answer — the one place the two variants are chosen. */
-fun blueprintColors(dark: Boolean): BlueprintColors = if (dark) BlueprintDark else BlueprintLight
+fun blueprintColors(dark: Boolean, highContrast: Boolean = false): BlueprintColors {
+    val base = if (dark) BlueprintDark else BlueprintLight
+    return if (highContrast) base.copy(grid = base.text, textMuted = base.text, highContrast = true) else base
+}

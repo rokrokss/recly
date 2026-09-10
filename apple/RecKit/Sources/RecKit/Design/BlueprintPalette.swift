@@ -45,6 +45,8 @@ public struct BlueprintPalette: Equatable, Sendable {
     public var background: Color { color(.background) }
     public var surface: Color { color(.surface) }
     public var grid: Color { color(.grid) }
+    /// Input boundaries are separate from decorative grid lines.
+    public var inputBorder: Color { textMuted }
     public var text: Color { color(.text) }
     public var textMuted: Color { color(.textMuted) }
     public var accent: Color { color(.accent) }

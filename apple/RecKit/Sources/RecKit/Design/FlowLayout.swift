@@ -16,7 +16,7 @@ public struct FlowLayout: Layout {
 
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let width = proposal.width ?? .infinity
-        let rows = wrap(subviews.map { $0.sizeThatFits(.unspecified) }, into: width)
+        let rows = wrap(measure(subviews, width: width), into: width)
         let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
         // The widest row rather than the proposal: a single chip in a wide inspector must not
         // claim the whole width, or the switch beside it is pushed off.
@@ -29,7 +29,7 @@ public struct FlowLayout: Layout {
         subviews: Subviews,
         cache: inout ()
     ) {
-        let sizes = subviews.map { $0.sizeThatFits(.unspecified) }
+        let sizes = measure(subviews, width: bounds.width)
         var index = 0
         var y = bounds.minY
         for row in wrap(sizes, into: bounds.width) {
@@ -44,6 +44,16 @@ public struct FlowLayout: Layout {
                 index += 1
             }
             y += row.height + spacing
+        }
+    }
+
+    /// A long localized label receives a width proposal so it can wrap within the viewport.
+    private func measure(_ subviews: Subviews, width: CGFloat) -> [CGSize] {
+        subviews.map { subview in
+            let natural = subview.sizeThatFits(.unspecified)
+            guard width.isFinite, natural.width > width else { return natural }
+            let constrained = subview.sizeThatFits(ProposedViewSize(width: max(0, width), height: nil))
+            return CGSize(width: max(0, width), height: constrained.height)
         }
     }
 

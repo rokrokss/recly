@@ -13,6 +13,8 @@ import SwiftUI
 public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var loading = true
     @Published public private(set) var transcript: Transcript?
+    @Published public private(set) var document: TranscriptDocument?
+    @Published public private(set) var availability: TranscriptAvailability = .pending
     /// docs/08 "결과 파일": the audio beside the transcript, when this device still has it.
     @Published public private(set) var audio = RecordingPlaylist.Selection.empty
     /// docs/09 화면 원칙 2: the shape of [audio], one peak per 0.25 s window, for the bar to draw a
@@ -46,6 +48,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var hasAudio: Bool { !audio.isEmpty }
 
     public let recordingId: String
+    public let playbackGate: RecordingPlaybackGate?
     /// The name in the header — the row's when the page opened, and whatever a rename made it
     /// after. Published because the rename is answered here rather than by reopening the page: the
     /// ledger behind it catches up on its own through `observeRecordings`.
@@ -67,11 +70,13 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// the durations back on the clock for the parts it fetches.
     private var playedParts: [Part_] = []
     private var directory: URL?
+    private var audioRecord: RecordingRecord?
 
-    public init(core: ReclyCore_, recordingId: String, title: String) {
+    public init(core: ReclyCore_, recordingId: String, title: String, playbackGate: RecordingPlaybackGate? = nil) {
         self.core = core
         self.recordingId = recordingId
         self.title = title
+        self.playbackGate = playbackGate
     }
 
     /// Called again whenever the view is handed a different model, so it starts from `loading`
@@ -80,8 +85,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         loading = true
         driveFetch = .deciding
         do {
-            transcript = try await core.results(recordingId: recordingId).transcript
-            audio = try await localAudio()
+            await reloadResults(repair: false)
+            audio = localAudio(record: try await core.recordings.get(id: recordingId))
             deviceRecording = try await somethingIsBeingRecorded()
         } catch {
             // A cancelled load is one the view has already replaced; the model it was for is not
@@ -93,7 +98,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         // and the bar stays on `.deciding` until [fetchFromDrive] has decided, so the seconds it
         // spends asking Drive are not seconds in which Play is offered.
         loading = false
+        await finishAudioLoad()
+    }
+
+    private func finishAudioLoad() async {
         await fetchFromDrive()
+        guard !writing, !Task.isCancelled else { waveform = []; return }
         // docs/09 화면 원칙 2: the picture last, and inside the load rather than beside it. Last
         // because the trip to Drive is what settles which parts there are, and a decode of the
         // local prefix would be a picture of a different recording than the one that plays. Inside
@@ -104,6 +114,64 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         let peaks = try? await RecordingWaveform.peaks(for: audio)
         guard !Task.isCancelled else { return }
         waveform = peaks ?? []
+    }
+
+    public func reloadResults(repair: Bool = true) async {
+        do {
+            let result = try await (repair
+                ? core.retryResults(recordingId: recordingId)
+                : core.results(recordingId: recordingId))
+            guard !Task.isCancelled else { return }
+            if transcript != result.transcript {
+                transcript = result.transcript
+                document = result.transcript.map { TranscriptDocument(transcript: $0) }
+            }
+            availability = result.availability
+        } catch {
+            guard !Task.isCancelled else { return }
+            availability = .unavailable
+        }
+    }
+
+    public func followResults() async {
+        for await result in core.observeResults(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            if transcript != result.transcript {
+                transcript = result.transcript
+                document = result.transcript.map { TranscriptDocument(transcript: $0) }
+            }
+            availability = result.availability
+        }
+    }
+
+    /// Recording state is independent of result changes and slow audio downloads.
+    public func followCapture() async {
+        for await _ in core.recordings.observe() {
+            guard !Task.isCancelled else { return }
+            deviceRecording = (try? await somethingIsBeingRecorded()) ?? deviceRecording
+        }
+    }
+
+    public func followAudio() async {
+        for await record in core.recordings.observeAudio(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            if record == audioRecord { continue }
+            driveFetch = .deciding
+            audio = localAudio(record: record)
+            await finishAudioLoad()
+        }
+    }
+
+    public var transcriptMessage: String {
+        let key: String
+        switch availability {
+        case .notRequested: key = "This recording has no transcription step to run."
+        case .failed: key = "Transcription could not finish. Check this recording in the list for the next action."
+        case .unavailable: key = "Could not load the transcript. Try again."
+        case .empty: key = "Transcription finished with no text. Play the recording to check the audio."
+        default: key = "Transcription is not finished yet. The result will appear here when ready."
+        }
+        return RecKitStrings.localized(key)
     }
 
     /// docs/03: the name the user gave this recording, changed from the page it names. The core
@@ -127,8 +195,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     /// The parts of this recording that are still on this device.
-    private func localAudio() async throws -> RecordingPlaylist.Selection {
-        guard let record = try await core.recordings.get(id: recordingId) else {
+    private func localAudio(record: RecordingRecord?) -> RecordingPlaylist.Selection {
+        audioRecord = record
+        guard let record else {
             writing = false
             givenTitle = ""
             playedParts = []
@@ -192,7 +261,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// one page of the ledger is more than enough to find it.
     private func somethingIsBeingRecorded() async throws -> Bool {
         try await core.recordings.list(limit: Recents.page)
-            .contains { $0.meta.status == RecordingStatus.recording }
+            .contains { !$0.remote && $0.meta.deviceId == core.deps.device.deviceId && $0.meta.status == RecordingStatus.recording }
     }
 }
 
@@ -211,12 +280,18 @@ private enum Waveform {
 /// docs/09 화면 원칙 2: the detail is a page behind a ledger row rather than a pane in front of it,
 /// so the header carries the way back — docs/08's result file, the transcript as the speaker turns
 /// it is made of.
+#if os(iOS) || os(macOS)
 public struct RecordingDetailView: View {
+    private struct ResultObservationID: Hashable {
+        let model: ObjectIdentifier
+        let loading: Bool
+    }
+
     @ObservedObject private var model: RecordingDetailModel
     /// One player for the surface rather than for the model: the Mac keeps a single detail view in
     /// its split pane and swaps the model behind it, and picking another recording has to stop the
     /// one that is playing.
-    @StateObject private var player = RecordingPlayer()
+    @StateObject private var player: RecordingPlayer
     /// Where the finger is while it is on the waveform, and `nil` the rest of the time. The
     /// playhead and the clock follow it rather than the player: the seek happens when the drag
     /// ends, and a bar that only moved then would not be a scrub.
@@ -234,6 +309,7 @@ public struct RecordingDetailView: View {
 
     public init(model: RecordingDetailModel, onClose: (() -> Void)? = nil) {
         self.model = model
+        _player = StateObject(wrappedValue: RecordingPlayer(gate: model.playbackGate))
         self.onClose = onClose
     }
 
@@ -259,26 +335,41 @@ public struct RecordingDetailView: View {
                 }
             }
             HairLine()
+            #if !os(iOS)
             if !model.loading, !model.writing {
                 playerBar
                 HairLine()
             }
+            #endif
             if model.loading {
                 notice(loc("Loading…"))
-            } else if model.transcript == nil {
-                notice(loc("Nothing here yet — the transcribe step has not finished."))
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: Space.s) {
-                        transcriptBody
+            } else if model.transcript == nil || model.availability == .empty {
+                VStack(spacing: Space.s) {
+                    Text(verbatim: model.transcriptMessage)
+                        .font(blueprint.fonts.bodySmall)
+                        .foregroundStyle(blueprint.palette.textMuted)
+                        .multilineTextAlignment(.center)
+                    if model.availability == .unavailable {
+                        BlueprintButton(loc("Retry")) { Task { await model.reloadResults() } }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.vertical, Space.m)
                 }
+                .padding(Space.l)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if let document = model.document {
+                TranscriptReader(document: document, seekableDurationSec: model.totalSec,
+                    canSeek: !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching,
+                    onSeek: { seek(toSec: $0) })
+                    .id(model.recordingId)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        #if os(iOS)
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !model.loading, !model.writing {
+                VStack(spacing: 0) { HairLine(); playerBar }
+            }
+        }
+        #endif
         .dotGridBackground()
         // Drawn in the page rather than presented over it, because the page itself is already a
         // sheet on the phone and a view may host only one (see `blueprintDialogOverlay`). The Mac
@@ -304,6 +395,21 @@ public struct RecordingDetailView: View {
             await model.load()
             guard !Task.isCancelled else { return }
             player.load(model.audio)
+            await model.followAudio()
+        }
+        .task(id: ObjectIdentifier(model)) { await model.followCapture() }
+        .onChange(of: model.deviceRecording) { _, active in if active { player.stop() } }
+        .onChange(of: model.audio) { _, audio in player.load(audio) }
+        // Results can arrive while the audio or waveform is still loading. Start after the
+        // initial result read, independently of that slower work, without replacing the player.
+        .task(id: ResultObservationID(model: ObjectIdentifier(model), loading: model.loading)) {
+            if !model.loading { await model.followResults() }
+        }
+        .task {
+            while !Task.isCancelled {
+                player.refreshStatus()
+                try? await Task.sleep(for: .milliseconds(200))
+            }
         }
         // The window closed, the sheet dismissed, the split pane emptied: nothing keeps playing
         // behind a page nobody is looking at.
@@ -319,6 +425,13 @@ public struct RecordingDetailView: View {
                 waveform
             }
             controls
+            if player.failed {
+                Text(verbatim: loc("Could not play this recording. Try playing it again."))
+                    .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.danger)
+            } else if player.buffering {
+                Text(verbatim: loc("Preparing playback…"))
+                    .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.textMuted)
+            }
         }
         .padding(.horizontal, Space.m)
         .padding(.vertical, Space.s)
@@ -439,6 +552,12 @@ public struct RecordingDetailView: View {
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
             } else if model.hasAudio {
+                #if os(iOS)
+                Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")
+                    .font(blueprint.fonts.monoBodySmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                Spacer(minLength: Space.s)
+                #endif
                 // Not while this device is recording: on the phone that session belongs to the
                 // recorder (see `RecordingPlayer`), and the Mac says the same thing so that the
                 // page does not offer one shell what it refuses the other. Nothing stands in its
@@ -446,12 +565,12 @@ public struct RecordingDetailView: View {
                 // Nor while the trip to Drive is still being decided: what this page will play is
                 // not settled yet, and a Play offered now would be answered by whatever the player
                 // last held. The clock stays, so the bar does not change shape when it appears.
-                if !model.deviceRecording, model.driveFetch != .deciding {
+                if !model.deviceRecording, !player.captureBlocked, model.driveFetch != .deciding {
                     BlueprintButton(
-                        player.isPlaying ? loc("Pause") : loc("Play"),
+                        player.active ? loc("Pause") : loc("Play"),
                         tone: .primary
                     ) {
-                        if player.isPlaying {
+                        if player.active {
                             player.pause()
                         } else {
                             // This model's audio, at the press: the player holds nothing between
@@ -463,9 +582,11 @@ public struct RecordingDetailView: View {
                     .accessibilityIdentifier("play-pause")
                 }
                 // docs/07 rule 4: a clock is a stamp, not a sentence.
+                #if !os(iOS)
                 Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
+                #endif
             } else if model.driveFetch == .idle {
                 // docs/03: nothing of this recording ever reached Drive, and what was here is gone
                 // — so there is nowhere left to play it from. Only once the fetch has been decided
@@ -514,47 +635,10 @@ public struct RecordingDetailView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// docs/08 `transcript.json`: one block per speaker turn, on the recording's own clock.
-    @ViewBuilder
-    private var transcriptBody: some View {
-        ForEach(turns(model.transcript?.segments ?? []), id: \.start) { turn in
-            VStack(alignment: .leading, spacing: 2) {
-                // docs/07 rule 4: the stamp and the speaker are codes, not sentences.
-                Text(verbatim: "\(LedgerFormat.elapsed(Int(max(0, turn.start)))) \(turn.speaker)")
-                    .font(blueprint.fonts.monoSmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-                Text(verbatim: turn.text)
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.text)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private struct Turn {
-        let speaker: String
-        let start: Double
-        var text: String
-    }
-
-    /// Consecutive segments of one speaker read as one thing said, as `TranscriptNormalizer.text`
-    /// builds the `.txt` beside it.
-    private func turns(_ segments: [TranscriptSegment]) -> [Turn] {
-        var turns: [Turn] = []
-        for segment in segments {
-            let text = segment.text.trimmingCharacters(in: .whitespaces)
-            if var last = turns.last, last.speaker == segment.speaker {
-                last.text += " " + text
-                turns[turns.count - 1] = last
-            } else {
-                turns.append(Turn(speaker: segment.speaker, start: segment.start, text: text))
-            }
-        }
-        return turns
-    }
-
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
+
+#endif
 
 /// The lane's shared user-visible text: what both shells say about a job the `transcribe` step is
 /// holding up, and where the detail behind a row is opened from. RecKit's own catalog, because both

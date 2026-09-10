@@ -18,6 +18,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -34,6 +35,7 @@ import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
 import recly.core.transcribe.TranscribeRunner
+import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
 
 /** docs/11 A4: what a recording looks like in the list, whether or not it has a job yet. */
@@ -135,6 +137,7 @@ data class DetailState(
     val title: String?,
     val loading: Boolean = true,
     val transcript: Transcript? = null,
+    val availability: TranscriptAvailability = TranscriptAvailability.PENDING,
     /** docs/08 "결과 파일": the audio beside the transcript, where this phone still has it. */
     val audio: RecordingPlaylist.Selection = RecordingPlaylist.Selection.EMPTY,
     /**
@@ -183,6 +186,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     /** Everything the open detail is reading, as one thing to stop when the page goes. */
     private var detailJob: kotlinx.coroutines.Job? = null
+    private var resultJob: kotlinx.coroutines.Job? = null
 
     init {
         viewModelScope.launch {
@@ -314,6 +318,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         // reading — Drive, and then every byte of the recording for the waveform — is work for a
         // page nobody is looking at any more.
         detailJob?.cancel()
+        resultJob?.cancel()
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
     }
 
@@ -328,22 +333,30 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             )
         }
         val core = core()
-        val result = core.results(recordingId)
-        val record = core.recordings.get(recordingId)
-        val audio = record?.let { local(core, it) } ?: RecordingPlaylist.Selection.EMPTY
-        updateDetail(recordingId) {
-            it.copy(
-                loading = false,
-                transcript = result.transcript,
-                audio = audio,
-                writing = record?.meta?.status == RecordingStatus.RECORDING,
-            )
+        val result = try {
+            core.results(recordingId)
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            recly.core.transcribe.RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
         }
-        // Out of `loading` before the fetch, because the player bar is where the fetch is said —
-        // and the bar stays on DECIDING until this has decided, so the seconds it spends asking
-        // Drive are not seconds in which Play is offered.
-        fetchFromDrive(core, recordingId, record, audio)
-        decodeWaveform(core, recordingId)
+        updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+        resultJob = viewModelScope.launch {
+            core.observeResults(recordingId).collect { next ->
+                updateDetail(recordingId) { it.copy(transcript = next.transcript, availability = next.availability) }
+            }
+        }
+        // One owner for the audio load, from the first read through finalization and new parts.
+        // A transcript-only change never restarts this collector or the player.
+        core.recordings.observeAudio(recordingId).collectLatest { record ->
+            val audio = record?.let { local(core, it) } ?: RecordingPlaylist.Selection.EMPTY
+            updateDetail(recordingId) {
+                it.copy(loading = false, audio = audio, waveform = FloatArray(0),
+                    writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING)
+            }
+            fetchFromDrive(core, recordingId, record, audio)
+            decodeWaveform(core, recordingId)
+        }
     }
 
     /**
@@ -470,7 +483,23 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun reloadDetail() {
+        val id = _state.value.detail?.recordingId ?: return
+        viewModelScope.launch {
+            val result = try {
+                core().retryResults(id)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                recly.core.transcribe.RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
+            }
+            updateDetail(id) { it.copy(transcript = result.transcript, availability = result.availability) }
+        }
+    }
+
     fun closeDetail() {
+        resultJob?.cancel()
+        resultJob = null
         detailJob?.cancel()
         detailJob = null
         _state.update { it.copy(detail = null) }

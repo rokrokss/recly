@@ -1,4 +1,7 @@
 import SwiftUI
+#if os(macOS)
+import AppKit
+#endif
 import XCTest
 @testable import RecKit
 
@@ -26,6 +29,19 @@ final class BlueprintContrastTests: XCTestCase {
     /// Badge borders and node edges — colour that means something without being read.
     private static let edges: [BlueprintToken] = [.accent, .danger, .success, .warning, .textMuted]
 
+    #if os(macOS)
+    @MainActor
+    func testLongActionLabelsWrapWithinAConstrainedFlow() {
+        let view = NSHostingView(rootView: FlowLayout {
+            BlueprintButton("Search a very long transcript with a localized action label") {}
+        }.frame(width: 160))
+        view.layoutSubtreeIfNeeded()
+        XCTAssertEqual(view.fittingSize.width, 160, accuracy: 1)
+        XCTAssertGreaterThan(view.fittingSize.height, minTouch + 8,
+            "The action must grow vertically instead of drawing one line outside the viewport")
+    }
+    #endif
+
     func testEveryTextPairClears4_5To1InEveryPalette() {
         for (name, palette) in Self.palettes {
             for ink in Self.inks {
@@ -40,6 +56,9 @@ final class BlueprintContrastTests: XCTestCase {
     }
 
     func testEveryStatusGraphicClears3To1InEveryPalette() {
+        for (_, palette) in Self.palettes {
+            XCTAssertEqual(palette.inputBorder, palette.textMuted)
+        }
         for (name, palette) in Self.palettes {
             for edge in Self.edges {
                 for ground in [BlueprintToken.surface, .background] {

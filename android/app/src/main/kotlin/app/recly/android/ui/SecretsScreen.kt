@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package app.recly.android.ui
 
 import android.content.ClipData
@@ -7,6 +9,7 @@ import android.content.Context
 import android.os.PersistableBundle
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -162,7 +165,7 @@ fun SecretsScreen(
                     )
                 }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
                     // A reveal is per entry: the next secret typed into the cleared form starts
                     // hidden again.
                     BlueprintButton(

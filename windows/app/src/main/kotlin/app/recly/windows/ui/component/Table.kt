@@ -1,5 +1,6 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -46,25 +47,10 @@ fun ScreenHeader(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            title,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
-            color = blueprint.text,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        meta?.let {
-            // A ULID is 26 characters and a 640dp window is not wide enough for it *and* a name, so
-            // the machine's half gives way first.
-            Text(
-                it,
-                modifier = Modifier.weight(1f, fill = false),
-                style = mono.small,
-                color = blueprint.textMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
+                maxLines = 3, overflow = TextOverflow.Ellipsis)
+            meta?.let { SelectionContainer { Text(it, style = mono.small, color = blueprint.textMuted) } }
         }
         trailing?.invoke()
     }

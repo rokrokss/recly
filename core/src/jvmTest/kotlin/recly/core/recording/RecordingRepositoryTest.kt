@@ -13,6 +13,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import okio.fakefilesystem.FakeFileSystem
 import recly.core.model.RecordingMeta
@@ -36,6 +40,24 @@ class RecordingRepositoryTest {
 
     private fun readMeta(): RecordingMeta =
         recJson.decodeFromString(fs.read(dir / MetaWriter.metaFileName(MetaWriter.baseName(meta))) { readUtf8() })
+
+    @Test
+    fun audioObservationFollowsPartsAndFinalizationWithoutRestartingOnRename() = runBlocking {
+        repository.create(meta, dir)
+        val changes = Channel<RecordingRecord?>(Channel.UNLIMITED)
+        val observer = launch { repository.observeAudio(meta.recordingId).collect { changes.send(it) } }
+        suspend fun next() = withTimeout(5_000) { changes.receive() }
+        try {
+            assertEquals(RecordingStatus.RECORDING, next()?.meta?.status)
+            repository.addPart(meta.recordingId, testPart(meta, 1))
+            assertEquals(1, next()?.meta?.parts?.size)
+            repository.finalize(meta.recordingId, deps.clock.now(), 10.0)
+            assertEquals(RecordingStatus.FINALIZED, next()?.meta?.status)
+            repository.rename(meta.recordingId, "Updated title")
+            repository.addPart(meta.recordingId, testPart(meta, 2))
+            assertEquals(2, next()?.meta?.parts?.size, "a title-only edit must not reload audio")
+        } finally { observer.cancelAndJoin() }
+    }
 
     @Test
     fun namesFilesAsTheSpecRequires() {

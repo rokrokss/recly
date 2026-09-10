@@ -69,7 +69,10 @@ data class EditorState(
     val order: Map<String, String> = emptyMap(),
     /** Another write landed while this one was open; nothing can be saved on top of it. */
     val stale: Boolean = false,
-)
+    val original: WorkflowEdit = edit,
+) {
+    val dirty: Boolean get() = edit != original
+}
 
 /** [generated] marks a value the user has not seen anywhere else and will not see again. */
 data class SecretForm(
@@ -82,6 +85,7 @@ data class SecretForm(
      * null when it was opened from the secret list.
      */
     val stepId: String? = null,
+    val initialName: String = name,
 )
 
 /** A stamp for a workflow that is only being validated, never written (see `orderErrors`). */
@@ -147,6 +151,10 @@ class WorkflowsModel(
         private set
 
     private var deleteConfirmId: String? by mutableStateOf(null)
+    var discardSecret: Boolean? by mutableStateOf(null)
+        private set
+    var keyDelete: KeyDeleteRequest? by mutableStateOf(null)
+        private set
 
     /**
      * The row whose delete has been asked for and not yet answered. A workflow leaves this PC and
@@ -206,7 +214,20 @@ class WorkflowsModel(
         loading = false
     }
 
-    fun add() {
+    private var pendingDiscardAction: (() -> Unit)? = null
+
+    private fun guardEditor(action: () -> Unit) {
+        val form = secretForm
+        if (editor?.dirty == true || (form != null && (form.value.isNotEmpty() || form.name != form.initialName))) {
+            pendingDiscardAction = action
+            discardSecret = false
+        } else action()
+    }
+
+    fun add() = guardEditor { addEditor() }
+
+    private fun addEditor() {
+        secretForm = null
         editor = EditorState(
             edit = WorkflowEdit(
                 id = Ulid.generate(TimeClock.System),
@@ -222,11 +243,18 @@ class WorkflowsModel(
 
     fun edit(id: String) {
         val workflow = document?.workflows?.firstOrNull { it.id == id } ?: return
-        editor = workflow.editor(sessions.open())
+        if (editor?.edit?.id == id) return
+        guardEditor {
+            secretForm = null
+            editor = workflow.editor(sessions.open())
+        }
     }
 
-    fun cancel() {
+    fun cancel() = guardEditor(::discardEditor)
+
+    private fun discardEditor() {
         sessions.close()
+        secretForm = null
         editor = null
     }
 
@@ -364,11 +392,37 @@ class WorkflowsModel(
     // --- secrets (docs/05 "시크릿") ---------------------------------------------------------------
 
     fun openSecrets(prefill: String? = null, stepId: String? = null) {
-        secretForm = SecretForm(name = prefill.orEmpty(), stepId = stepId)
+        val current = secretForm
+        if (current != null && current.initialName == prefill.orEmpty() && current.stepId == stepId) return
+        guardSecret { secretForm = SecretForm(name = prefill.orEmpty(), stepId = stepId) }
     }
 
-    fun closeSecrets() {
-        secretForm = null
+    fun closeSecrets() = guardSecret { secretForm = null }
+
+    private fun guardSecret(action: () -> Unit) {
+        val form = secretForm
+        if (form != null && (form.value.isNotEmpty() || form.name != form.initialName)) {
+            pendingDiscardAction = action
+            discardSecret = true
+        } else action()
+    }
+
+    fun answerDiscard(confirmed: Boolean) {
+        if (discardSecret == null) return
+        discardSecret = null
+        val action = pendingDiscardAction
+        pendingDiscardAction = null
+        if (confirmed) action?.invoke()
+    }
+
+    fun askDeleteSecret(name: String) {
+        keyDelete = KeyDeleteRequest(name, document?.workflows.orEmpty().filter { name in it.secretRefs() }.map { it.name })
+    }
+
+    suspend fun answerDeleteSecret(confirmed: Boolean) {
+        val request = keyDelete ?: return
+        keyDelete = null
+        if (confirmed) deleteSecret(request.name)
     }
 
     fun secretName(value: String) {
@@ -542,3 +596,5 @@ data class PickedWorkflows(val json: String, val workflows: Int)
 
 /** docs/05 "워크플로우 내보내기": the name the save dialog suggests, the same on every shell. */
 const val WORKFLOWS_FILE_NAME: String = "recly-workflows.json"
+
+data class KeyDeleteRequest(val name: String, val workflows: List<String>)

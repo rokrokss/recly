@@ -84,24 +84,44 @@ public final class TransferPrivacyModel: ObservableObject {
     private let core: ReclyCore_
     private var generation = 0
     private var readTask: Task<Void, Never>?
+    private var observers: [Task<Void, Never>] = []
+    private var stopped = false
 
     public init(core: ReclyCore_) {
         self.core = core
-        Task { [weak self] in
+        observers.append(Task { [weak self] in
             for await _ in core.transferConsents.observe() {
                 guard let self else { return }
                 await self.reload()
             }
-        }
-        Task { [weak self] in
+        })
+        observers.append(Task { [weak self] in
             for await _ in core.jobs.observe() {
                 guard let self else { return }
                 await self.reload()
             }
-        }
+        })
+    }
+
+    deinit {
+        observers.forEach { $0.cancel() }
+        readTask?.cancel()
+    }
+
+    /// Drain subscriptions before the owner closes its store, including temporary test databases.
+    func stopObserving() async {
+        stopped = true
+        let pending = observers
+        observers = []
+        pending.forEach { $0.cancel() }
+        readTask?.cancel()
+        for task in pending { await task.value }
+        await readTask?.value
+        readTask = nil
     }
 
     public func reload() async {
+        guard !stopped, !Task.isCancelled else { return }
         generation += 1
         let reading = generation
         let previous = readTask
@@ -109,7 +129,7 @@ public final class TransferPrivacyModel: ObservableObject {
         // snapshot and an older read can never overwrite a completed withdrawal.
         let task = Task { [weak self] in
             await previous?.value
-            guard let self else { return }
+            guard let self, !self.stopped, !Task.isCancelled else { return }
             do {
                 let approved = try await core.transferConsents.approved()
                 let pending = try await core.pendingTransferTargets()

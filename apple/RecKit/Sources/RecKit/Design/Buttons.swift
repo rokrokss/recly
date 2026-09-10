@@ -45,7 +45,8 @@ public struct BlueprintButton: View {
             }
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
             .foregroundStyle(ink)
-            .lineLimit(1)
+            .lineLimit(3)
+            .multilineTextAlignment(.center)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             // docs/09 "접근성": the label is small, the button is not.

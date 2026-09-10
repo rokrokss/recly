@@ -480,6 +480,52 @@ class RecordingPlaylistTest {
      * arrived anyway starts no ffmpeg.
      */
     @Test
+    fun `a decoder failure ends playback and a second play retries`() {
+        val spawns = java.util.concurrent.atomic.AtomicInteger()
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+            spawns.incrementAndGet()
+            error("test decoder failure")
+        })
+        val selection = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0))
+        player.play(selection)
+        await("the failure was not surfaced") { true.takeIf { player.failed && !player.playing } }
+        player.play(selection)
+        await("the second press did not retry") { true.takeIf { spawns.get() == 2 && player.failed && !player.playing } }
+        player.stop()
+        assertFalse(player.failed)
+    }
+
+    @Test
+    fun `a nonzero decoder exit reports failure and retries on the next play`() {
+        val spawns = AtomicInteger()
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+            spawns.incrementAndGet()
+            FakeProcess(bytes = 0, exitCode = 183)
+        })
+        val selection = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0))
+        try {
+            player.play(selection)
+            await("the nonzero exit was not reported") { true.takeIf { player.failed && !player.playing } }
+            player.play(selection)
+            await("the second play did not retry") { true.takeIf { spawns.get() == 2 && player.failed && !player.playing } }
+        } finally { player.stop() }
+    }
+
+    @Test
+    fun `a failed middle part does not silently skip ahead to the next part`() {
+        val spawns = AtomicInteger()
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+            if (spawns.incrementAndGet() == 1) FakeProcess(bytes = 3200) else FakeProcess(bytes = 0, exitCode = 1)
+        })
+        try {
+            player.play(RecordingPlaylist.Selection((1..3).map { dir / "p00${it}_mono.m4a" }, List(3) { 60.0 }))
+            await("the failed part was not reported") { true.takeIf { player.failed && !player.playing } }
+            assertEquals(2, spawns.get())
+        } finally { player.stop() }
+    }
+
+
+    @Test
     fun `an empty selection is nothing to play`() {
         val player = RecordingPlayer()
 
@@ -899,7 +945,7 @@ private class FakeSpeaker(
  * @param bytes how much PCM it has, for the tests that need a part to actually end: what happens
  *   after the last one is a `drain` the player is inside of.
  */
-private class FakeProcess(private val bytes: Long = Long.MAX_VALUE) : Process() {
+private class FakeProcess(private val bytes: Long = Long.MAX_VALUE, private val exitCode: Int = 0) : Process() {
 
     @Volatile private var running = true
 
@@ -911,7 +957,10 @@ private class FakeProcess(private val bytes: Long = Long.MAX_VALUE) : Process() 
         override fun read(b: ByteArray, off: Int, len: Int): Int {
             if (!running) return -1
             val left = bytes - written
-            if (left <= 0) return -1
+            if (left <= 0) {
+                running = false
+                return -1
+            }
             // A chunk at a time rather than a spin: the reader is a thread the test is waiting on.
             Thread.sleep(1)
             val n = minOf(len.toLong(), left).toInt()
@@ -929,11 +978,11 @@ private class FakeProcess(private val bytes: Long = Long.MAX_VALUE) : Process() 
 
     override fun waitFor(): Int {
         while (running) Thread.sleep(1)
-        return 0
+        return exitCode
     }
 
     // What `Process.isAlive` is built on: a process that is still running has no exit code yet.
-    override fun exitValue(): Int = if (running) throw IllegalThreadStateException() else 0
+    override fun exitValue(): Int = if (running) throw IllegalThreadStateException() else exitCode
 
     override fun destroy() {
         running = false

@@ -19,6 +19,7 @@ final class MenuModel: ObservableObject {
     /// `isRecording` kept alongside it is a second answer to the same question, and the one on
     /// screen would be whichever of the two was written last.
     @Published private(set) var state: RecorderState = .idle
+    let playbackGate = RecordingPlaybackGate()
     /// The line the menu shows when nothing is being recorded — opening the core, what went wrong,
     /// what a stop left behind.
     ///
@@ -68,6 +69,7 @@ final class MenuModel: ObservableObject {
     /// [Recents.page] to begin with, and a page more each time the ledger is scrolled to its last
     /// row ([loadMoreRecents]).
     @Published private(set) var recents: [RecentItem] = []
+    @Published private(set) var recentsLoading = true
     /// How many rows this device has, whichever device made them — the Details window's count,
     /// which the paged [recents] cannot give.
     @Published private(set) var recordingCount = 0
@@ -220,6 +222,9 @@ final class MenuModel: ObservableObject {
                 recover: { await recovery.reconcile() },
                 onState: { [weak self] state in
                     Task { @MainActor in self?.adopt(state) }
+                },
+                setPlaybackBlocked: { [playbackGate] blocked in
+                    await playbackGate.setBlocked(blocked)
                 }
             )
             self.session = session
@@ -724,6 +729,7 @@ final class MenuModel: ObservableObject {
 
     private func refreshRecents() async {
         guard let core = bridge?.core else { return }
+        defer { recentsLoading = false }
         do {
             recents = try await Recents.load(core: core, limit: recentsLimit)
             recordingCount = try await core.recordings.ids().count
@@ -991,7 +997,7 @@ final class MenuModel: ObservableObject {
     /// elsewhere — `core.results` decides which, and keeps what it downloads.
     func showDetail(_ item: RecentItem) {
         guard let core = bridge?.core else { return }
-        detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel)
+        detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
     }
 
     /// docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check the key"

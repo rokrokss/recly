@@ -32,6 +32,9 @@ data class BlueprintColors(
     val dark: Boolean,
     val highContrast: Boolean,
 ) {
+    /** Input boundaries stay visible independently of the decorative grid. */
+    val inputBorder: Color get() = textMuted
+
     /** docs/09 "선": 1dp, and 2dp in high contrast. Connectors, dividers, node borders. */
     val line: Dp get() = if (highContrast) 2.dp else 1.dp
 

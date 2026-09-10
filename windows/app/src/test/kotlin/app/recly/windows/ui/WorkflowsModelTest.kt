@@ -47,6 +47,76 @@ import recly.core.workflow.WorkflowParser
 class WorkflowsModelTest {
 
     @Test
+    fun `switching key forms protects input and the same key preserves its draft`() = runTest {
+        val model = model(FakeDocuments(document()))
+        model.reload()
+        model.openSecrets("first_key")
+        model.secretValue("unsaved test value")
+        model.openSecrets("first_key")
+        assertNull(model.discardSecret)
+        assertEquals("unsaved test value", model.secretForm?.value)
+        model.openSecrets("second_key")
+        assertEquals(true, model.discardSecret)
+        assertEquals("first_key", model.secretForm?.name)
+        model.answerDiscard(false)
+        assertEquals("unsaved test value", model.secretForm?.value)
+        model.openSecrets("second_key")
+        model.answerDiscard(true)
+        assertEquals("second_key", model.secretForm?.name)
+        assertEquals("", model.secretForm?.value)
+        model.closeSecrets()
+        assertNull(model.secretForm)
+    }
+
+    @Test
+    fun `cancel and switching workflows keep a draft until discard is confirmed`() = runTest {
+        val model = model(FakeDocuments(document()))
+        model.reload()
+        model.edit(MEETING)
+        model.update { it.copy(name = "Unsaved draft") }
+        model.cancel()
+        assertEquals(false, model.discardSecret)
+        assertEquals("Unsaved draft", model.editor?.edit?.name)
+        model.answerDiscard(false)
+        model.edit(MEMO)
+        assertEquals(MEETING, model.editor?.edit?.id)
+        model.answerDiscard(true)
+        assertEquals(MEMO, model.editor?.edit?.id)
+        model.cancel()
+        assertNull(model.editor, "an unchanged editor closes without another question")
+        model.openSecrets("draft_key")
+        model.secretValue("unsaved key")
+        model.add()
+        assertEquals("unsaved key", model.secretForm?.value)
+        model.answerDiscard(true)
+        assertNull(model.secretForm)
+        assertEquals(true, model.editor?.isNew)
+    }
+
+    @Test
+    fun `a generated key and a saved key both require an explicit destructive answer`() = runTest {
+        val model = model(FakeDocuments(document(secretRef = "hook_key")))
+        model.reload()
+        model.openSecrets()
+        model.secretName("hook_key")
+        model.generateSecret()
+        val generated = model.secretForm?.value
+        model.closeSecrets()
+        model.answerDiscard(false)
+        assertEquals(generated, model.secretForm?.value)
+        model.saveSecret()
+        model.askDeleteSecret("hook_key")
+        assertEquals(listOf(model.items.single { it.id == MEMO }.name), model.keyDelete?.workflows)
+        model.answerDeleteSecret(false)
+        assertEquals(listOf("hook_key"), model.secretNames)
+        model.askDeleteSecret("hook_key")
+        model.answerDeleteSecret(true)
+        assertTrue(model.secretNames.isEmpty())
+        assertEquals(listOf("hook_key"), model.items.single { it.id == MEMO }.missingSecrets)
+    }
+
+
+    @Test
     fun `a save on a workflow something else replaced is refused, not merged`() = runTest {
         val documents = FakeDocuments(document())
         val model = model(documents)

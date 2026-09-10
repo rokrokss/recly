@@ -19,6 +19,34 @@ import recly.core.testing.FakeDrive
 /** M7-L3 deliverable 3: what the detail screen reads back, local copy first and Drive after. */
 class RecordingResultsTest {
 
+    @Test
+    fun `an explicit retry restores a corrupt local transcript from Drive`() = runBlocking {
+        val h = TranscribeHarness()
+        val outputs = ran(h)
+        val name = TranscribeRunner.jsonFileName(h.base)
+        h.fs.write(h.dir / name) { writeUtf8("{broken") }
+        val reader = RecordingResults(h.api, h.deps)
+        assertEquals(TranscriptAvailability.UNAVAILABLE, reader.load(record(h), outputs).availability)
+        val before = h.drive.downloads
+        val result = reader.load(record(h), outputs, repair = true)
+        assertEquals(TranscriptAvailability.READY, result.availability)
+        assertEquals(before + 1, h.drive.downloads)
+        assertEquals(result, reader.load(record(h), outputs))
+        assertEquals(before + 1, h.drive.downloads, "the repaired copy works offline")
+    }
+
+    @Test
+    fun `repair preserves a newer valid result published during its download`() = runBlocking {
+        val h = TranscribeHarness()
+        val outputs = ran(h)
+        val name = TranscribeRunner.jsonFileName(h.base)
+        h.fs.write(h.dir / name) { writeUtf8("{broken") }
+        val racing = RacingTransport(h.deps.transport) { h.fs.write(h.dir / name) { writeUtf8(RERUN) } }
+        val result = RecordingResults(DriveApi(h.deps.with(racing)), h.deps).load(record(h), outputs, repair = true)
+        assertEquals("다시 실행", result.transcript?.segments?.single()?.text)
+        assertEquals(RERUN, h.localContent(name))
+    }
+
     private fun record(h: TranscribeHarness) = RecordingRecord(h.recordingId, h.meta, h.dir)
 
     /** `files.get?alt=media` — the only call that reads a file's bytes back out of Drive. */
@@ -89,6 +117,20 @@ class RecordingResultsTest {
         val result = RecordingResults(h.api, h.deps).load(record(h), emptyList())
 
         assertNull(result.transcript)
+    }
+
+    @Test
+    fun `an empty transcript differs from an unreadable file and can be retried`() = runBlocking {
+        val h = TranscribeHarness()
+        val path = h.dir / TranscribeRunner.jsonFileName(h.base)
+        h.fs.write(path) { writeUtf8("{broken") }
+        val reader = RecordingResults(h.api, h.deps)
+        assertEquals(TranscriptAvailability.UNAVAILABLE, reader.load(record(h), emptyList()).availability)
+        val empty = recly.core.model.recJson.decodeFromString<Transcript>(RERUN).copy(segments = emptyList())
+        h.fs.write(path) { writeUtf8(recly.core.model.recJson.encodeToString(Transcript.serializer(), empty)) }
+        assertEquals(TranscriptAvailability.EMPTY, reader.load(record(h), emptyList()).availability)
+        h.fs.write(path) { writeUtf8(RERUN) }
+        assertEquals(TranscriptAvailability.READY, reader.load(record(h), emptyList()).availability)
     }
 
     private companion object {

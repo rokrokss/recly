@@ -1,10 +1,11 @@
-@file:OptIn(ExperimentalTime::class)
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class, ExperimentalTime::class)
 
 package app.recly.android.ui
 
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -228,7 +229,7 @@ fun SettingsScreen(
             // an opinion about — this is the user's override of it, on this device alone, exactly
             // as the PC's Settings window offers it.
             Section(stringResource(R.string.settings_theme))
-            Row(
+            FlowRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(palette.surface)

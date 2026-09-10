@@ -96,6 +96,24 @@ public enum RecordingPlaylist {
 @MainActor
 public final class RecordingPlayer: ObservableObject {
     @Published public private(set) var isPlaying = false
+    @Published public private(set) var buffering = false
+    @Published public private(set) var failed = false
+    @Published public private(set) var captureBlocked = false
+    public var active: Bool { isPlaying || buffering }
+
+    public func refreshStatus() {
+        guard let queue else { return }
+        if queue.failed {
+            queue.tearDown()
+            self.queue = nil
+            isPlaying = false
+            buffering = false
+            failed = true
+        } else {
+            isPlaying = queue.playing
+            buffering = queue.buffering
+        }
+    }
     /// Seconds from the start of the *recording*, not of the part being played.
     @Published public private(set) var positionSec: Double = 0
 
@@ -106,7 +124,17 @@ public final class RecordingPlayer: ObservableObject {
     private var selection = RecordingPlaylist.Selection.empty
     private var queue: Queue?
 
-    public init() {}
+    private let gate: RecordingPlaybackGate?
+
+    public init(gate: RecordingPlaybackGate? = nil) {
+        self.gate = gate
+        gate?.attach(self)
+    }
+
+    func setCaptureBlocked(_ blocked: Bool) {
+        captureBlocked = blocked
+        if blocked { stop() }
+    }
 
     /// A different recording (or none): whatever was playing stops first, and the queue is the new
     /// one. Building it is left to [play], so picking a row does not touch the audio session.
@@ -120,14 +148,16 @@ public final class RecordingPlayer: ObservableObject {
     }
 
     public func play() {
-        guard !selection.isEmpty else { return }
+        guard !captureBlocked, !selection.isEmpty else { return }
+        failed = false
         (queue ?? makeQueue()).play()
-        isPlaying = true
+        refreshStatus()
     }
 
     public func pause() {
         queue?.pause()
         isPlaying = false
+        buffering = false
     }
 
     /// Everything that ends playback ends here: the end of the last part, another recording picked,
@@ -147,6 +177,8 @@ public final class RecordingPlayer: ObservableObject {
         selection = .empty
         positionSec = 0
         isPlaying = false
+        buffering = false
+        failed = false
     }
 
     /// docs/09 화면 원칙 2: a drag on the waveform, or a step of the adjustable action behind it.
@@ -162,7 +194,7 @@ public final class RecordingPlayer: ObservableObject {
     /// without being played — pressing Play after a scrub starts from where the scrub left it,
     /// not from zero.
     public func seek(toSec sec: Double) {
-        guard !selection.isEmpty else { return }
+        guard !captureBlocked, !selection.isEmpty else { return }
         let sec = min(max(0, sec), selection.totalSec)
         let target = Self.target(durations: selection.durations, sec: sec)
         // Ahead of the next tick, which does not come at all while the player is paused: the bar
@@ -250,6 +282,9 @@ public final class RecordingPlayer: ObservableObject {
 private final class Queue {
     private let player: AVQueuePlayer
     private let ended: () -> Void
+    private var loadedItems: [AVPlayerItem] = []
+    private var failures: [NSObjectProtocol] = []
+    private var playbackFailed = false
     private var ticker: Any?
     private var end: NSObjectProtocol?
     #if os(iOS)
@@ -264,6 +299,7 @@ private final class Queue {
         player.actionAtItemEnd = .advance
         self.player = player
         self.ended = ended
+        observeFailures(items)
         // A frame's worth: the clock beside the bar only counts whole seconds, but the playhead on
         // the waveform is drawn at this position, and at four steps a second it jumps rather than
         // moves (docs/09 "모션": what moves, moves).
@@ -281,6 +317,9 @@ private final class Queue {
     /// The current item and the ones after it — what [RecordingPlayer.tick] counts the finished
     /// parts from, asked for outside a tick because [RecordingPlayer.seek] needs it at the press.
     var remaining: Int { player.items().count }
+    var failed: Bool { playbackFailed || player.error != nil || loadedItems.contains { $0.status == .failed } }
+    var playing: Bool { player.timeControlStatus == .playing }
+    var buffering: Bool { player.timeControlStatus == .waitingToPlayAtSpecifiedRate }
 
     /// The same player at another part of the recording (see [RecordingPlayer.seek]), because a
     /// queue player cannot be sent back to an item it has already drained.
@@ -292,6 +331,7 @@ private final class Queue {
     func reload(urls: [URL]) {
         player.removeAllItems()
         let items = urls.map { AVPlayerItem(url: $0) }
+        observeFailures(items)
         for item in items { player.insert(item, after: nil) }
         observeEnd(of: items.last)
     }
@@ -308,8 +348,10 @@ private final class Queue {
     }
 
     func play() {
-        activateSession()
-        player.play()
+        do {
+            try activateSession()
+            player.play()
+        } catch { playbackFailed = true }
     }
 
     func pause() {
@@ -331,12 +373,27 @@ private final class Queue {
         }
     }
 
+    /// AVQueuePlayer can discard a failed item before a status poll; retain its status and
+    /// failed-to-finish notification until the queue is replaced.
+    private func observeFailures(_ items: [AVPlayerItem]) {
+        failures.forEach { NotificationCenter.default.removeObserver($0) }
+        loadedItems = items
+        playbackFailed = false
+        failures = items.map { item in
+            NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemFailedToPlayToEndTime, object: item, queue: .main
+            ) { [weak self] _ in self?.playbackFailed = true }
+        }
+    }
+
     /// Idempotent, and safe from `deinit`: nothing here is main-actor state.
     func tearDown() {
         if let ticker { player.removeTimeObserver(ticker) }
         ticker = nil
         if let end { NotificationCenter.default.removeObserver(end) }
         end = nil
+        failures.forEach { NotificationCenter.default.removeObserver($0) }
+        failures = []
         player.pause()
         releaseSession()
     }
@@ -350,13 +407,13 @@ private final class Queue {
     /// on top of it takes the input away and ends the recording. So the category is only ever
     /// changed when it is something else, and the session is only ever handed back by the player
     /// that took it ([borrowedSession]), never by one that merely played inside someone else's.
-    private func activateSession() {
+    private func activateSession() throws {
         let session = AVAudioSession.sharedInstance()
         guard session.category != .playAndRecord else { return }
         if session.category != .playback {
-            try? session.setCategory(.playback)
+            try session.setCategory(.playback)
         }
-        try? session.setActive(true)
+        try session.setActive(true)
         borrowedSession = true
     }
 
@@ -373,7 +430,7 @@ private final class Queue {
         try? session.setActive(false, options: .notifyOthersOnDeactivation)
     }
     #else
-    private func activateSession() {}
+    private func activateSession() throws {}
     private func releaseSession() {}
     #endif
 }

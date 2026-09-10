@@ -44,6 +44,7 @@ private struct WorkflowsView: View {
             }
         }
         .task { await model.reload() }
+        .workflowProtection(model: model)
     }
 }
 
@@ -65,10 +66,16 @@ private struct ListPane: View {
             HairLine()
             ScrollView {
                 VStack(spacing: 0) {
+                    TranscriptionSetupHelp()
                     if let message = model.message {
                         Banner(message.text)
                             .padding(.horizontal, Space.m)
                             .padding(.top, Space.s)
+                    }
+                    if model.items.isEmpty {
+                        Text(verbatim: loc(model.loading ? "Loading…" : "No workflows yet."))
+                            .foregroundStyle(blueprint.palette.textMuted)
+                            .padding(Space.m)
                     }
                     ForEach(model.items) { item in
                         row(item)
@@ -170,7 +177,7 @@ private struct ListPane: View {
         ForEach(model.secrets, id: \.self) { name in
             SectionRow(title: name) {
                 BlueprintButton(loc("Delete"), tone: .danger) {
-                    Task { await model.deleteSecret(name) }
+                    model.askToDeleteSecret(name)
                 }
             }
         }

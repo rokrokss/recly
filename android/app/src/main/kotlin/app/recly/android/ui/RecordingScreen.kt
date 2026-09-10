@@ -12,6 +12,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -122,7 +127,9 @@ fun RecordingSection(
     var picking by remember { mutableStateOf(false) }
     val selected = state.workflows.firstOrNull { it.id == state.selectedWorkflowId }
 
-    Column(modifier.fillMaxSize()) {
+    BoxWithConstraints(modifier.fillMaxSize()) {
+    val scrollDashboard = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.3f
+    Column(Modifier.fillMaxSize().then(if (scrollDashboard) Modifier.verticalScroll(rememberScrollState()) else Modifier)) {
         ScreenHeader(
             title = stringResource(R.string.app_name),
             // The header is one line: the source and enough of the device id to tell two phones
@@ -191,7 +198,7 @@ fun RecordingSection(
         }
 
         Column(
-            modifier = Modifier.weight(1f).fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().then(if (scrollDashboard) Modifier.heightIn(min = 160.dp) else Modifier.weight(1f)),
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
@@ -250,6 +257,8 @@ fun RecordingSection(
                 )
             }
         }
+    }
+
     }
 
     // The recording is already finalized on disk by the time this appears; the answer only decides

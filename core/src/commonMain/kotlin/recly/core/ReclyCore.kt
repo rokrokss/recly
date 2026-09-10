@@ -6,6 +6,13 @@ import app.cash.sqldelight.db.SqlDriver
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import recly.core.transcribe.TranscriptAvailability
+import recly.core.transcribe.missingTranscriptAvailability
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveApi
 import recly.core.drive.DriveFolderMarker
@@ -136,9 +143,37 @@ class ReclyCore(
      * docs/08 "결과 파일": the transcript of one recording, for the detail screen — the local copy
      * the step left, or Drive's when this device did not run it.
      */
-    suspend fun results(recordingId: String): RecordingResult {
-        val record = recordings.get(recordingId) ?: return RecordingResult()
-        return results.load(record, outputs(recordingId))
+    @Throws(Throwable::class)
+    suspend fun results(recordingId: String): RecordingResult = readResults(recordingId, repair = false)
+
+    /** An explicit retry may replace an unreadable local transcript with a validated Drive copy. */
+    @Throws(Throwable::class)
+    suspend fun retryResults(recordingId: String): RecordingResult = readResults(recordingId, repair = true)
+
+    private suspend fun readResults(recordingId: String, repair: Boolean): RecordingResult {
+        val record = recordings.get(recordingId)
+            ?: return RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
+        val result = results.load(record, outputs(recordingId), repair)
+        if (result.transcript != null || result.availability == TranscriptAvailability.UNAVAILABLE) return result
+        val related = jobs.list().filter { it.recordingId == recordingId }
+        return result.copy(availability = missingTranscriptAvailability(record, related, related.flatMap { jobs.steps(it.id) }))
+    }
+
+    /** Only result data changes: shells keep their player and reading position while collecting. */
+    fun observeResults(recordingId: String): Flow<RecordingResult> = combine(
+        jobs.observe().map { all -> all.filter { it.recordingId == recordingId } }.distinctUntilChanged(),
+        jobs.observeSteps(recordingId).distinctUntilChanged(),
+        recordings.observe().map { recordings.get(recordingId) }.distinctUntilChanged(),
+    ) { _, _, _ -> Unit }.map {
+        try {
+            results(recordingId)
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
+        }
+    }.distinctUntilChanged().catch {
+        emit(RecordingResult(availability = TranscriptAvailability.UNAVAILABLE))
     }
 
     /**

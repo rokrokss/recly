@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
@@ -66,6 +67,7 @@ fun BlueprintTextField(
     minHeight: Dp = MinTouch,
 ) {
     val palette = blueprint
+    var focused by remember { mutableStateOf(false) }
     val style: TextStyle = if (monospace) {
         mono.bodySmall
     } else {
@@ -86,7 +88,8 @@ fun BlueprintTextField(
                     spoken.state?.let { stateDescription = it }
                 }
                 .defaultMinSize(minHeight = minHeight)
-                .border(palette.line, palette.grid, RoundedCornerShape(Radius.node))
+                .onFocusChanged { focused = it.isFocused }
+                .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, RoundedCornerShape(Radius.node))
                 .background(palette.surface, RoundedCornerShape(Radius.node))
                 .padding(horizontal = Space.s, vertical = 10.dp),
             singleLine = singleLine,

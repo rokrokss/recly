@@ -3,6 +3,9 @@
 package app.recly.android.ui
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,11 +19,17 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -118,32 +127,21 @@ fun WorkflowEditorScreen(
     val palette = blueprint
     // The `+` that was tapped, while it asks which kind of step to insert there.
     var insertAt by remember { mutableStateOf<Int?>(null) }
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    LaunchedEffect(errors) {
+        if (!errors.isEmpty) {
+            onOpenStep(if (errors.name != null || errors.minDuration != null) null else {
+                edit.steps.indexOfFirst { it.id in errors.steps }.takeIf { it >= 0 }
+            })
+        }
+    }
 
     Column(modifier.fillMaxSize()) {
-        ScreenHeader(
+        if (!keyboardVisible) ScreenHeader(
             title = edit.name.ifBlank { stringResource(if (editor.isNew) R.string.editor_new else R.string.editor_edit) },
-            trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                    BlueprintButton(
-                        label = stringResource(R.string.action_cancel),
-                        onClick = onCancel,
-                        tone = ButtonTone.QUIET,
-                    )
-                    ProcessingButton(
-                        label = stringResource(R.string.action_save),
-                        state = editor.save,
-                        onClick = onSave,
-                        modifier = Modifier.testTag("workflow-save"),
-                        tone = ButtonTone.PRIMARY,
-                        enabled = !editor.stale,
-                    )
-                }
-            },
         )
 
-        Notices(editor = editor, errors = errors, onReopen = onReopen)
-
-        Column(
+        if (!keyboardVisible) Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
@@ -218,11 +216,12 @@ fun WorkflowEditorScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 360.dp)
+                .weight(if (keyboardVisible) 1f else 1.5f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = Space.m, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
+            Notices(editor = editor, errors = errors, onReopen = onReopen)
             val position = editor.openStep
             val step = position?.let { edit.steps.getOrNull(it) }
             if (step == null) {
@@ -247,6 +246,17 @@ fun WorkflowEditorScreen(
                 )
             }
         }
+        HairLine()
+        FlowRow(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+            horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+        ) {
+            BlueprintButton(stringResource(R.string.action_cancel), onCancel, tone = ButtonTone.QUIET)
+            ProcessingButton(
+                label = stringResource(R.string.action_save), state = editor.save, onClick = onSave,
+                modifier = Modifier.testTag("workflow-save"), tone = ButtonTone.PRIMARY, enabled = !editor.stale,
+            )
+        }
     }
 }
 
@@ -257,10 +267,10 @@ private fun Notices(editor: EditorState, errors: EditorErrors, onReopen: () -> U
     // Another write — an import, say — replaced this workflow while it was open. There is no
     // three-way merge, so the only honest offer is to start again from what the document says now.
     if (editor.stale) {
-        Row(
+        FlowRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 stringResource(R.string.notice_stale),
@@ -295,6 +305,15 @@ private fun TriggerInspector(
     errors: EditorErrors,
     onEdit: ((WorkflowEdit) -> WorkflowEdit) -> Unit,
 ) {
+    val nameFocus = remember { FocusRequester() }
+    val durationFocus = remember { FocusRequester() }
+    val focusManager = LocalFocusManager.current
+    LaunchedEffect(errors.name, errors.minDuration) {
+        when {
+            errors.name != null -> nameFocus.requestFocus()
+            errors.minDuration != null -> durationFocus.requestFocus()
+        }
+    }
     InspectorTitle(stringResource(R.string.editor_node_trigger_title), TRIGGER_CODE)
 
     OutlinedTextField(
@@ -302,9 +321,11 @@ private fun TriggerInspector(
         onValueChange = { value -> onEdit { it.copy(name = value) } },
         label = { Text(stringResource(R.string.editor_name)) },
         singleLine = true,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+        keyboardActions = KeyboardActions(onNext = { durationFocus.requestFocus() }),
         isError = errors.name != null,
         supportingText = errors.name?.let { { Text(it.text()) } },
-        modifier = Modifier.fillMaxWidth().testTag("workflow-name"),
+        modifier = Modifier.fillMaxWidth().testTag("workflow-name").focusRequester(nameFocus),
     )
 
     OutlinedTextField(
@@ -312,12 +333,13 @@ private fun TriggerInspector(
         onValueChange = { value -> onEdit { it.copy(minDurationSec = value) } },
         label = { Text(stringResource(R.string.editor_min_duration)) },
         singleLine = true,
-        keyboardOptions = NUMERIC,
+        keyboardOptions = NUMERIC.copy(imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
         isError = errors.minDuration != null,
         supportingText = {
             Text(errors.minDuration?.text() ?: stringResource(R.string.editor_min_duration_hint))
         },
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().focusRequester(durationFocus),
     )
 }
 

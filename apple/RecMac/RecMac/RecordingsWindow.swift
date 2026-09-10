@@ -23,6 +23,14 @@ struct RecordingsWindow: View {
                 ScrollView {
                     // Lazy, so the page marker under the rows appears only when it is scrolled to.
                     LazyVStack(spacing: 0) {
+                        if menu.recents.isEmpty {
+                            Text(verbatim: loc(menu.recentsLoading ? "Loading…" : "No recordings yet"))
+                                .foregroundStyle(blueprint.palette.textMuted)
+                                .padding(Space.m)
+                            if !menu.recentsLoading {
+                                BlueprintButton(loc("Start recording"), tone: .primary) { menu.start() }
+                            }
+                        }
                         ForEach(menu.recents) { item in
                             row(item)
                         }

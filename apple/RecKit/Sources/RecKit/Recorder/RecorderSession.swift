@@ -40,6 +40,7 @@ public actor RecorderSession {
     private let recover: () async -> Int
     /// Published to whoever draws the menu. Called on the actor; the shell hops to the main queue.
     private let onState: (RecorderState) -> Void
+    private let setPlaybackBlocked: @Sendable (Bool) async -> Void
 
     private var state: RecorderState = .idle
 
@@ -51,11 +52,13 @@ public actor RecorderSession {
     public init(
         capture: any Capture,
         recover: @escaping () async -> Int,
-        onState: @escaping (RecorderState) -> Void
+        onState: @escaping (RecorderState) -> Void,
+        setPlaybackBlocked: @escaping @Sendable (Bool) async -> Void = { _ in }
     ) {
         self.capture = capture
         self.recover = recover
         self.onState = onState
+        self.setPlaybackBlocked = setPlaybackBlocked
     }
 
     public var current: RecorderState { state }
@@ -72,6 +75,8 @@ public actor RecorderSession {
         guard state == .idle else { return nil }
         // Before the first `await`, so a second start finds `starting` however fast it arrives.
         transition(.starting)
+        // The main-actor player teardown finishes before recovery or capture can start.
+        await setPlaybackBlocked(true)
 
         // docs/03: a pass before every new recording, not only at launch — a stop that deferred
         // must not still be deferred when the next recording starts writing next to it. Here is the
@@ -89,6 +94,7 @@ public actor RecorderSession {
         } catch {
             // The microphone never opened: back to idle, and a stop that was waiting on it finds
             // nothing to do.
+            await setPlaybackBlocked(false)
             transition(.idle)
             release()
             throw error
@@ -128,6 +134,7 @@ public actor RecorderSession {
         // Before the first `await`, so the second stop sees `stopping` and returns.
         transition(.stopping)
         let result = await capture.stop(title: title)
+        await setPlaybackBlocked(false)
         transition(.idle)
         return result
     }

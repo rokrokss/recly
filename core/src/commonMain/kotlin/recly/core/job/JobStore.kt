@@ -326,6 +326,10 @@ class JobStore(
     fun observeJobs(): Flow<List<Job>> =
         queries.selectJobs().asFlow().mapToList(deps.io).map { rows -> rows.map { it.toJob() } }
 
+    fun observeSteps(recordingId: String): Flow<List<StepRun>> =
+        queries.selectStepRunsByRecording(recordingId).asFlow().mapToList(deps.io)
+            .map { rows -> rows.map { it.toStepRun() } }
+
     /**
      * True when the job's `drive.upload` steps all succeeded **and** between them they sent every
      * part the recording has. A succeeded step is not the same claim: what was actually sent is

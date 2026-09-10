@@ -214,7 +214,7 @@ private fun BlueprintColors.toColorScheme() = (if (dark) darkColorScheme() else 
     onErrorContainer = danger,
     tertiary = warningInk,
     onTertiary = surface,
-    outline = grid,
+    outline = inputBorder,
     outlineVariant = grid,
     scrim = text,
 )

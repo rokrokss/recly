@@ -23,6 +23,98 @@ final class RecordingDetailTests: XCTestCase {
     }
 
     @MainActor
+    func testAnotherRecordingUpdatesTheCaptureGateWithoutAResultChange() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        await model.load()
+        var observedInitial = false
+        let values = model.$deviceRecording.dropFirst().sink { _ in observedInitial = true }
+        let watch = Task { await model.followCapture() }
+        addTeardownBlock { watch.cancel(); await watch.value }
+        for _ in 0..<100 {
+            if observedInitial { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(observedInitial)
+        let other = try await seed(bridge, status: .recording)
+        for _ in 0..<100 {
+            if model.deviceRecording { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertTrue(model.deviceRecording)
+        _ = try await bridge.core.recordings.finalize(recordingId: other, endedAt: bridge.deps.clock.now(),
+            durationSec: 1, title: nil, silenced: [], gaps: [])
+        for _ in 0..<100 {
+            if !model.deviceRecording { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(model.deviceRecording)
+        values.cancel()
+    }
+
+    @MainActor
+    func testFinalizingAnOpenDetailLoadsItsNewAudioWithoutReopening() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge, status: .recording)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        await model.load()
+        XCTAssertTrue(model.writing)
+        XCTAssertFalse(model.hasAudio)
+        let watch = Task { await model.followAudio() }
+        addTeardownBlock { watch.cancel(); await watch.value }
+        let record = try await bridge.core.recordings.get(id: id)
+        let stored = try XCTUnwrap(record)
+        let file = stored.dir.url.appendingPathComponent("p001_mono.m4a")
+        try Data("test audio".utf8).write(to: file)
+        try await bridge.core.recordings.addPart(recordingId: id, part: Part_(part: 1, track: .mono,
+            file: file.lastPathComponent, bytes: 10, sha256: String(repeating: "0", count: 64),
+            startOffsetSec: 0, durationSec: 1))
+        _ = try await bridge.core.recordings.finalize(recordingId: id, endedAt: bridge.deps.clock.now(),
+            durationSec: 1, title: nil, silenced: [], gaps: [])
+        for _ in 0..<100 {
+            if !model.writing && model.hasAudio { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(model.writing)
+        XCTAssertEqual(model.audio.urls, [file])
+    }
+
+    @MainActor
+    func testObservedResultsUpdateTheBodyWithoutReplacingTheAudio() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        await model.load()
+        let audio = model.audio
+        let record = try await bridge.core.recordings.get(id: id)
+        let stored = try XCTUnwrap(record)
+        let watch = Task { await model.followResults() }
+        addTeardownBlock {
+            watch.cancel()
+            await watch.value
+        }
+        let json = """
+        {"schema":1,"recordingId":"\(id)","track":"mono","language":"ko",
+         "provider":{"name":"assemblyai"},"createdAt":"\(stored.meta.startedAt)","durationSec":1.0,
+         "speakers":[{"id":"S1"}],"segments":[{"start":0.0,"end":1.0,"speaker":"S1","text":"Arrived while open"}]}
+        """
+        let file = stored.dir.url.appendingPathComponent(MetaWriter.shared.baseName(meta: stored.meta) + ".transcript.json")
+        try Data(json.utf8).write(to: file)
+        // A real recording change wakes the same observation used by the view.
+        _ = try await bridge.core.recordings.rename(recordingId: id, title: "Updated metadata")
+        for _ in 0..<100 {
+            if model.availability == .ready { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertEqual(model.transcript?.segments.first?.text, "Arrived while open")
+        XCTAssertEqual(model.document?.search(query: "WHILE").first?.text, "Arrived while open")
+        XCTAssertTrue(model.document?.plainText.contains("Arrived while open") == true)
+        XCTAssertEqual(model.audio, audio)
+        XCTAssertFalse(model.loading)
+    }
+
+    @MainActor
     func testALoadAlwaysEndsAndSaysWhatItFound() async throws {
         let bridge = try await makeBridge()
         let model = RecordingDetailModel(
@@ -49,6 +141,26 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertFalse(model.deviceRecording)
     }
 
+    @MainActor
+    func testAnInvalidAudioFileReportsFailureAndCanBeRetried() async throws {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("invalid-\(UUID().uuidString).m4a")
+        try Data("not an audio file".utf8).write(to: file)
+        defer { try? FileManager.default.removeItem(at: file) }
+        let player = RecordingPlayer()
+        player.load(RecordingPlaylist.Selection(urls: [file], durations: [2]))
+        player.play()
+        for _ in 0..<100 {
+            player.refreshStatus()
+            if player.failed { break }
+            try await Task.sleep(for: .milliseconds(50))
+        }
+        XCTAssertTrue(player.failed)
+        XCTAssertFalse(player.active)
+        player.play()
+        XCTAssertFalse(player.failed, "a new request clears the previous failure")
+        player.stop()
+        XCTAssertFalse(player.failed)
+    }
     /// The teardown every way out of the page goes through — the window closed, the sheet
     /// dismissed, another recording picked, the view deallocated. Calling it on a player with
     /// nothing going has to be nothing rather than a crash, because most of those callers cannot
@@ -197,7 +309,7 @@ final class RecordingDetailTests: XCTestCase {
 
     /// A finalized recording and its directory, with no title of its own — the row a rename is
     /// about, minus the microphone that would otherwise have to make one.
-    private func seed(_ bridge: CoreBridge) async throws -> String {
+    private func seed(_ bridge: CoreBridge, status: RecordingStatus = .finalized) async throws -> String {
         let startedAt = bridge.deps.clock.now()
         let recordingId = Ulid.shared.generate(clock: FixedKotlinClock(startedAt))
         let meta = RecordingMeta(
@@ -227,7 +339,7 @@ final class RecordingDetailTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: RecordingStatus.finalized
+            status: status
         )
         let directory = dataDirectory
             .appendingPathComponent("recordings", isDirectory: true)

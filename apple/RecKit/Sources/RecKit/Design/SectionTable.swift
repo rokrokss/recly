@@ -19,26 +19,39 @@ public struct ScreenHeader<Trailing: View>: View {
     }
 
     public var body: some View {
-        HStack(spacing: 12) {
-            Text(verbatim: title)
-                .font(blueprint.fonts.sans(TypeSize.body, weight: .semibold))
-                .foregroundStyle(blueprint.palette.text)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if let meta {
-                Text(verbatim: meta)
-                    .font(blueprint.fonts.monoSmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                heading.fixedSize(horizontal: true, vertical: false)
+                Spacer(minLength: 0)
+                trailing.fixedSize(horizontal: true, vertical: false)
             }
-            trailing
+            VStack(alignment: .leading, spacing: Space.s) {
+                heading
+                FlowLayout { trailing }
+            }
         }
         .padding(.horizontal, Space.m)
         .padding(.top, Space.m)
         .padding(.bottom, 12)
     }
+    private var heading: some View {
+            VStack(alignment: .leading, spacing: Space.xs) {
+                Text(verbatim: title)
+                    .font(blueprint.fonts.sans(TypeSize.body, weight: .semibold))
+                    .foregroundStyle(blueprint.palette.text)
+                    .lineLimit(3)
+                if let meta {
+                    Text(verbatim: meta)
+                        .font(blueprint.fonts.monoSmall)
+                        .foregroundStyle(blueprint.palette.textMuted)
+                        #if os(iOS) || os(macOS)
+                        .textSelection(.enabled)
+                        #endif
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
 }
 
 extension ScreenHeader where Trailing == EmptyView {
@@ -282,6 +295,7 @@ public struct BlueprintField: View {
     private let mono: Bool
     private let secure: Bool
     @Binding private var text: String
+    @FocusState private var focused: Bool
 
     public init(
         _ label: String,
@@ -308,6 +322,7 @@ public struct BlueprintField: View {
                     TextField("", text: $text)
                 }
             }
+            .focused($focused)
             .textFieldStyle(.plain)
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.bodySmall)
             .foregroundStyle(blueprint.palette.text)
@@ -316,7 +331,7 @@ public struct BlueprintField: View {
             .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+                    .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: focused ? blueprint.line + 1 : blueprint.line)
             }
             .accessibilityLabel(Text(verbatim: label))
         }

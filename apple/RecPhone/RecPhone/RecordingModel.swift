@@ -28,6 +28,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     /// What the recorder says it is doing. The screen is drawn from this and nothing else.
     @Published private(set) var state: RecorderState = .idle
+    let playbackGate = RecordingPlaybackGate()
     /// The line under the button when nothing is being recorded.
     ///
     /// docs/07 rule 3: a *key*, resolved by [status] where the screen draws it, so a note already
@@ -61,6 +62,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published var microphoneDenied = false
     /// docs/13 I3 "목록": the last five recordings, refreshed after every executor pass.
     @Published private(set) var recents: [RecentItem] = []
+    @Published private(set) var recentsLoading = true
     /// The signed-in Google account, or nil.
     @Published private(set) var account: String?
     /// docs/07 rule 3: what became of the last sign-in attempt, kept as the failure rather than as
@@ -260,6 +262,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 recover: { await recovery.reconcile() },
                 onState: { [weak self] state in
                     Task { @MainActor in self?.adopt(state) }
+                },
+                setPlaybackBlocked: { [playbackGate] blocked in
+                    await playbackGate.setBlocked(blocked)
                 }
             )
             self.session = session
@@ -567,7 +572,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/08 결과 파일: the detail screen of one recent recording.
     func detail(for item: RecentItem) -> RecordingDetailModel? {
         guard let core = bridge?.core else { return nil }
-        return RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel)
+        return RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
     }
 
     /// docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check the key"
@@ -924,6 +929,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     func refreshRecents() async {
         guard let core = bridge?.core else { return }
+        defer { recentsLoading = false }
         do {
             recents = try await Recents.load(core: core, limit: Self.recentsLimit)
             // The states are the list's whole content and none of them is the user's text — the

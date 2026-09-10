@@ -240,6 +240,7 @@
     <string name="detail_rename">이름 바꾸기</string>
     <string name="detail_loading">불러오는 중…</string>
     <string name="detail_empty">아직 아무것도 없습니다 — 전사 단계가 끝나지 않았습니다.</string>
+    <string name="detail_transcript_empty">전사가 완료됐지만 텍스트가 없습니다. 녹음을 재생해 음성을 확인해 주세요.</string>
     <string name="player_play">재생</string>
     <string name="player_pause">일시정지</string>
     <string name="player_no_audio">이 기기에 오디오가 없습니다</string>
@@ -329,4 +330,27 @@
     <string name="consent_link">관할별 녹음 동의 규정 보기</string>
     <string name="core_transfer_consent_required">이 대상으로 전송하기 전에 허용이 필요합니다</string>
     <string name="job_state_needs_consent">전송 허용 필요</string>
+    <string name="discard_title">저장하지 않은 변경을 버릴까요?</string>
+    <string name="discard_body">변경 내용이 아직 저장되지 않았습니다.</string>
+    <string name="keep_editing">계속 편집</string>
+    <string name="discard_changes">변경 버리기</string>
+    <string name="delete_key_title">키 삭제: %1$s</string>
+    <string name="delete_key_body">이 키를 사용하는 워크플로우는 키를 다시 등록할 때까지 작동하지 않습니다.</string>
+    <string name="delete_key_unused">이 키를 사용하는 저장된 워크플로우가 없습니다.</string>
+    <string name="delete_key_used_by">사용 중인 워크플로우: %1$s</string>
+    <string name="detail_not_requested">이 녹음에는 실행할 전사 단계가 없습니다.</string>
+    <string name="detail_pending">전사가 아직 끝나지 않았습니다. 완료되면 여기에 결과가 표시됩니다.</string>
+    <string name="detail_failed">전사를 완료하지 못했습니다. 목록에서 이 녹음의 상태와 필요한 조치를 확인해 주세요.</string>
+    <string name="detail_unavailable">전사 결과를 불러오지 못했습니다. 다시 시도해 주세요.</string>
+    <string name="player_error">이 녹음을 재생하지 못했습니다. 다시 재생해 주세요.</string>
+    <string name="player_buffering">재생 준비 중…</string>
+    <string name="list_loading">불러오는 중…</string>
+    <string name="transcript_search">전사 검색</string>
+    <string name="transcript_copy">전체 복사</string>
+    <string name="transcript_copied">복사됨</string>
+    <string name="transcript_no_matches">일치하는 내용이 없습니다</string>
+    <string name="transcript_clear_search">검색 지우기</string>
+    <string name="transcript_seek">%1$s 위치로 이동</string>
+    <string name="transcription_setup">전사 설정 안내</string>
+    <string name="transcription_setup_body">전사를 받으려면 설정에서 Google Drive를 연결하고, 워크플로우의 Drive 업로드 뒤에 전사 단계를 추가한 다음 해당 제공자의 API 키를 입력하세요. 녹음 전에 이 워크플로우를 선택하세요. 전사 단계가 없어도 녹음은 저장됩니다.</string>
 </resources>

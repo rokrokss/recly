@@ -1,5 +1,6 @@
 package app.recly.windows.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -28,6 +29,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -64,8 +66,7 @@ import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
-import recly.core.transcribe.Transcript
-import recly.core.transcribe.TranscriptSegment
+import recly.core.transcribe.TranscriptAvailability
 
 /**
  * docs/08 "결과 파일": the recordings the popup lists, and what the `transcribe` step wrote for the
@@ -85,6 +86,10 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
     // Another recording picked, and — when the window closes — nothing left to look at: neither is
     // a reason to keep hearing the last one.
     LaunchedEffect(model.detail?.recordingId) { player.stop() }
+    LaunchedEffect(model.detail?.recordingId, model.detail?.loading) {
+        val detail = model.detail
+        if (detail != null && !detail.loading) model.followDetailResults(detail.recordingId)
+    }
     // docs/03 ADR-006: a desktop capture takes the system audio with it, so playback left running
     // under one would be *in* the recording — and a delete removes the very file it is reading.
     // Taking Play off the bar is not enough — a recording can be started from the tray while this
@@ -108,7 +113,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
             if (detail == null) {
                 Placeholder(strings[Str.DETAIL_PICK])
             } else {
-                Detail(detail, player, { model.recording }, { model.playbackBlocked }, model::askToRename, strings)
+                Detail(detail, player, { model.recording }, { model.playbackBlocked }, model::askToRename, model::reloadDetailResults, strings)
             }
         }
     }
@@ -137,10 +142,15 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
         if (model.recents.isEmpty()) {
             item {
                 Text(
-                    strings[Str.LEDGER_EMPTY],
+                    strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY],
                     modifier = Modifier.padding(Space.l),
                     style = MaterialTheme.typography.bodySmall,
                     color = blueprint.textMuted,
+                )
+                if (!model.recentsLoading) BlueprintButton(
+                    strings[Str.TRAY_START], { model.start(model.selectedWorkflow?.id) },
+                    enabled = model.ready && !model.recording,
+                    modifier = Modifier.padding(horizontal = Space.m),
                 )
             }
         }
@@ -201,6 +211,7 @@ private fun Detail(
     blocked: () -> Boolean,
     /** docs/03: the name is the one thing on this page the user can change, so it is changed here. */
     onRename: () -> Unit,
+    onReload: () -> Unit,
     strings: Strings,
 ) {
     ScreenHeader(
@@ -221,16 +232,24 @@ private fun Detail(
     }
     when {
         detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
-        detail.transcript == null -> Placeholder(strings[Str.DETAIL_EMPTY])
-        else -> Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = Space.m, vertical = Space.s),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        detail.transcript == null || detail.availability == TranscriptAvailability.EMPTY -> Column(
+            Modifier.fillMaxSize().padding(Space.l),
+            verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            TranscriptText(detail.transcript)
+            Text(strings[detail.availability.message()], color = blueprint.textMuted)
+            if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
+                BlueprintButton(strings[Str.RECENT_RETRY], onReload)
+            }
         }
+        else -> TranscriptReader(
+            transcript = detail.transcript,
+                    seekableDurationSec = detail.audio.totalSec,
+            canSeek = !detail.writing && !recording() && !blocked() && !detail.audio.isEmpty && detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING,
+            onSeek = { if (!recording() && !blocked()) player.seek(detail.audio, it) },
+            strings = strings,
+            modifier = Modifier.fillMaxSize(),
+        )
     }
 }
 
@@ -258,7 +277,10 @@ private fun PlayerBar(
     // on a part the core is about to remove, and one that [RecordingPlayer.stop] — which the gate's
     // own effect above ran before the delete — had already been past. So none starts while it is
     // up, and the effect runs again on the way down, when there is something left to draw.
-    LaunchedEffect(detail.audio, blocked()) { if (!blocked()) player.prepare(detail.audio) }
+    LaunchedEffect(detail.audio, blocked()) {
+        player.stop()
+        if (!blocked()) player.prepare(detail.audio)
+    }
     val positionSec = scrubSec ?: player.positionSec
     Column(
         modifier = Modifier
@@ -280,6 +302,7 @@ private fun PlayerBar(
                 onSeek = { player.seek(detail.audio, it) },
             )
         }
+        if (player.failed) Text(strings[Str.PLAYER_ERROR], color = palette.danger)
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -391,11 +414,14 @@ private fun Waveform(
     val palette = blueprint
     val hair = palette.line
     val totalSec = audio.totalSec
+    var focused by remember { mutableStateOf(false) }
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
             .height(MinTouch)
             .testTag("waveform")
+            .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
+            .onFocusChanged { focused = it.isFocused }
             .semantics {
                 contentDescription = label
                 progressBarRangeInfo =
@@ -495,34 +521,10 @@ private fun second(x: Float, width: Int, totalSec: Double): Double =
 
 private fun millis(seconds: Double): Long = (seconds * 1000).toLong()
 
-/** docs/08 `transcript.json`: one block per speaker turn, stamped on the recording's own clock. */
-@Composable
-private fun TranscriptText(transcript: Transcript) {
-    val palette = blueprint
-    turns(transcript.segments).forEach { turn ->
-        Text(
-            "${LedgerFormat.elapsed((turn.start * 1000).toLong())} ${turn.speaker}",
-            style = mono.small,
-            color = palette.textMuted,
-            modifier = Modifier.padding(top = Space.s),
-        )
-        Text(turn.text, style = MaterialTheme.typography.bodyMedium, color = palette.text)
-    }
+internal fun TranscriptAvailability.message(): Str = when (this) {
+    TranscriptAvailability.NOT_REQUESTED -> Str.DETAIL_NOT_REQUESTED
+    TranscriptAvailability.FAILED -> Str.DETAIL_FAILED
+    TranscriptAvailability.UNAVAILABLE -> Str.DETAIL_UNAVAILABLE
+    TranscriptAvailability.EMPTY -> Str.DETAIL_TRANSCRIPT_EMPTY
+    else -> Str.DETAIL_PENDING
 }
-
-private data class Turn(val speaker: String, val start: Double, val text: String)
-
-/** Consecutive segments of one speaker read as one thing said, as `TranscriptNormalizer.text` does. */
-private fun turns(segments: List<TranscriptSegment>): List<Turn> {
-    val turns = mutableListOf<Turn>()
-    segments.forEach { segment ->
-        val last = turns.lastOrNull()
-        if (last != null && last.speaker == segment.speaker) {
-            turns[turns.lastIndex] = last.copy(text = last.text + " " + segment.text.trim())
-        } else {
-            turns += Turn(segment.speaker, segment.start, segment.text.trim())
-        }
-    }
-    return turns
-}
-

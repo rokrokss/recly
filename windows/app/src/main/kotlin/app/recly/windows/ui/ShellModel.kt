@@ -54,6 +54,8 @@ import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
@@ -69,6 +71,7 @@ import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
 import recly.core.sync.WorkflowRepository
 import recly.core.sync.WorkflowSummary
+import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
 import recly.core.workflow.WorkflowDocuments
 
@@ -85,6 +88,7 @@ data class RecordingDetail(
     val title: UiMessage,
     val loading: Boolean = true,
     val transcript: Transcript? = null,
+    val availability: TranscriptAvailability = TranscriptAvailability.PENDING,
     /** docs/08 "결과 파일": the audio beside the transcript, when this PC still has it. */
     val audio: RecordingPlaylist.Selection = RecordingPlaylist.Selection.EMPTY,
     /** A take still being written to has nothing whole to play yet, so the detail offers nothing. */
@@ -192,6 +196,8 @@ class ShellModel(
      * say and the same thing to do about it.
      */
     var selectedWorkflow: WorkflowSummary? by mutableStateOf(null)
+        private set
+    var recentsLoading: Boolean by mutableStateOf(true)
         private set
     var recents: List<RecentItem> by mutableStateOf(emptyList())
         private set
@@ -920,6 +926,7 @@ class ShellModel(
             .onFailure {
                 graph.core.deps.logger.log(Logger.Level.ERROR, "shell.recents.failed", error = it)
             }
+        recentsLoading = false
     }
 
     /**
@@ -978,6 +985,39 @@ class ShellModel(
      * elsewhere — the core decides which, and keeps what it downloads. The audio beside it is read
      * the same way: what is on this PC first, and Drive for what the sweep took ([fetchFromDrive]).
      */
+    suspend fun followDetailResults(recordingId: String) = coroutineScope {
+        val graph = graph ?: return@coroutineScope
+        launch {
+            graph.core.observeResults(recordingId).collect { result ->
+                updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+            }
+        }
+        graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
+            val local = record?.let { rec ->
+                RecordingPlaylist.select(rec.meta.parts, rec.dir) { graph.core.deps.fileSystem.exists(it) }
+            } ?: RecordingPlaylist.Selection.EMPTY
+            updateDetail(recordingId) {
+                it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
+                    driveFetch = DriveFetch.DECIDING)
+            }
+            fetchFromDrive(graph, recordingId, record, local)
+        }
+    }
+
+    fun reloadDetailResults() {
+        val id = detail?.recordingId ?: return
+        scope.launch {
+            val result = try {
+                graph?.core?.retryResults(id) ?: return@launch
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                recly.core.transcribe.RecordingResult(availability = TranscriptAvailability.UNAVAILABLE)
+            }
+            updateDetail(id) { it.copy(transcript = result.transcript, availability = result.availability) }
+        }
+    }
+
     fun openDetail(item: RecentItem) {
         val graph = graph ?: return
         detail = RecordingDetail(item.id, item.title)
@@ -985,14 +1025,6 @@ class ShellModel(
             val result = runCatching { graph.core.results(item.id) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
                 .getOrNull()
-            val record = runCatching { graph.core.recordings.get(item.id) }
-                .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
-                .getOrNull()
-            val local = record?.let { rec ->
-                RecordingPlaylist.select(rec.meta.parts, rec.dir) { path ->
-                    runCatching { graph.core.deps.fileSystem.exists(path) }.getOrDefault(false)
-                }
-            } ?: RecordingPlaylist.Selection.EMPTY
             // The user may have picked another recording while Drive was answering.
             if (detail?.recordingId != item.id) return@launch
             // Out of `loading` before the fetch, because the player bar is where the fetch is said —
@@ -1003,10 +1035,8 @@ class ShellModel(
                 title = item.title,
                 loading = false,
                 transcript = result?.transcript,
-                audio = local,
-                writing = record?.meta?.status == RecordingStatus.RECORDING,
+                availability = result?.availability ?: TranscriptAvailability.UNAVAILABLE,
             )
-            fetchFromDrive(graph, item.id, record, local)
         }
     }
 

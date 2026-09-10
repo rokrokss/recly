@@ -5,6 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -15,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -34,6 +37,7 @@ data class NavItem(val glyph: NavGlyph, val label: String, val selected: Boolean
 @Composable
 fun BlueprintNavBar(items: List<NavItem>, modifier: Modifier = Modifier) {
     val palette = blueprint
+    val compact = LocalConfiguration.current.screenHeightDp < 480
     Column(modifier.fillMaxWidth().background(palette.surface)) {
         HairLine()
         Row(
@@ -47,13 +51,14 @@ fun BlueprintNavBar(items: List<NavItem>, modifier: Modifier = Modifier) {
                 Column(
                     modifier = Modifier
                         .weight(1f)
+                        .heightIn(min = 48.dp)
                         .selectable(selected = item.selected, role = Role.Tab, onClick = item.onClick)
                         .padding(vertical = Space.xs),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Space.xs),
                 ) {
-                    Canvas(Modifier.size(20.dp)) { drawGlyph(item.glyph, ink) }
-                    Text(item.label, style = MaterialTheme.typography.labelMedium, color = ink, maxLines = 1)
+                    if (!compact) Canvas(Modifier.size(20.dp)) { drawGlyph(item.glyph, ink) }
+                    Text(item.label, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelMedium, color = ink, maxLines = 2, textAlign = TextAlign.Center)
                 }
             }
         }
