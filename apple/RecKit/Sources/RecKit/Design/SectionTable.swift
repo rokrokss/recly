@@ -11,11 +11,13 @@ public struct ScreenHeader<Trailing: View>: View {
     private let title: String
     private let meta: String?
     private let trailing: Trailing
+    private let trailingAlignment: HorizontalAlignment
 
-    public init(title: String, meta: String? = nil, @ViewBuilder trailing: () -> Trailing) {
+    public init(title: String, meta: String? = nil, trailingAlignment: HorizontalAlignment = .leading, @ViewBuilder trailing: () -> Trailing) {
         self.title = title
         self.meta = meta
         self.trailing = trailing()
+        self.trailingAlignment = trailingAlignment
     }
 
     public var body: some View {
@@ -27,7 +29,8 @@ public struct ScreenHeader<Trailing: View>: View {
             }
             VStack(alignment: .leading, spacing: Space.s) {
                 heading
-                FlowLayout { trailing }
+                FlowLayout(alignment: trailingAlignment) { trailing }
+                    .frame(maxWidth: .infinity, alignment: Alignment(horizontal: trailingAlignment, vertical: .center))
             }
         }
         .padding(.horizontal, Space.m)

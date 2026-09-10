@@ -167,6 +167,7 @@ fun JobsScreen(
                     items(state.items, key = { it.recordingId }) { item ->
                         val open = expanded == item.recordingId
                         LedgerRow(
+                            modifier = Modifier.testTag("recording-${item.recordingId}"),
                             date = ledgerColumn(item.startedAt, LEDGER_DATE),
                             time = ledgerColumn(item.startedAt, LEDGER_TIME),
                             title = item.title ?: stringResource(R.string.jobs_untitled),
@@ -259,73 +260,80 @@ private fun ExpandedRow(
             }
         }
 
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
-            item.link?.let { link ->
-                BlueprintButton(
-                    label = stringResource(R.string.jobs_open_drive),
-                    onClick = { context.openUrl(link) },
-                )
-            }
-            when (item.state) {
-                ItemState.NEEDS_AUTH -> {
-                    BlueprintButton(stringResource(R.string.jobs_sign_in), onSignIn)
-                    ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
-                }
-
-                // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing
-                // that changes the answer is on Google's storage page.
-                ItemState.NEEDS_SPACE -> {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
+            FlowRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                verticalArrangement = Arrangement.spacedBy(Space.s),
+            ) {
+                item.link?.let { link ->
                     BlueprintButton(
-                        label = stringResource(R.string.jobs_open_storage),
-                        onClick = { context.openUrl(DRIVE_STORAGE_URL) },
-                        modifier = Modifier.testTag("open-storage"),
+                        label = stringResource(R.string.jobs_open_drive),
+                        onClick = { context.openUrl(link) },
                     )
-                    ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
                 }
-
-                ItemState.FAILED ->
-                    ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
-
-                // docs/10: a `WAITING` job is sitting out a backoff after a failed attempt, and
-                // the user who has just fixed what failed (a URL, a key, a plan) should not have
-                // to wait it out — `retry()` makes the next attempt now (Z Fold7, 2026-09-04).
-                // Not while a provider is transcribing: that wait is on someone else's clock.
-                ItemState.WAITING ->
-                    if (item.waitingMinutes == null) {
+                when (item.state) {
+                    ItemState.NEEDS_AUTH -> {
+                        BlueprintButton(stringResource(R.string.jobs_sign_in), onSignIn)
                         ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
                     }
 
-                // A `PENDING` job is due already. A recording with no job, and one too short to
-                // have earned one, offer no upload. The three that are happening elsewhere
-                // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
-                // this device's to make due.
-                ItemState.NEEDS_CONSENT, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
-                ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
-                ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
-                -> Unit
-            }
-            // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where this goes.
-            if (StepReport.needsKey(item.error)) {
+                    // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing
+                    // that changes the answer is on Google's storage page.
+                    ItemState.NEEDS_SPACE -> {
+                        BlueprintButton(
+                            label = stringResource(R.string.jobs_open_storage),
+                            onClick = { context.openUrl(DRIVE_STORAGE_URL) },
+                            modifier = Modifier.testTag("open-storage"),
+                        )
+                        ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
+                    }
+
+                    ItemState.FAILED ->
+                        ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
+
+                    // docs/10: a `WAITING` job is sitting out a backoff after a failed attempt, and
+                    // the user who has just fixed what failed (a URL, a key, a plan) should not have
+                    // to wait it out — `retry()` makes the next attempt now (Z Fold7, 2026-09-04).
+                    // Not while a provider is transcribing: that wait is on someone else's clock.
+                    ItemState.WAITING ->
+                        if (item.waitingMinutes == null) {
+                            ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
+                        }
+
+                    // A `PENDING` job is due already. A recording with no job, and one too short to
+                    // have earned one, offer no upload. The three that are happening elsewhere
+                    // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
+                    // this device's to make due.
+                    ItemState.NEEDS_CONSENT, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
+                    ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
+                    ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
+                    -> Unit
+                }
+                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where this goes.
+                if (StepReport.needsKey(item.error)) {
+                    BlueprintButton(
+                        label = stringResource(R.string.job_reason_check_key),
+                        onClick = onCheckKey,
+                        modifier = Modifier.testTag("check-key"),
+                    )
+                }
+                // docs/09 화면 원칙 2: the row opens the recording's detail — parts, and the transcript
+                // when there is one — on every shell alike, so it is offered on every row. A recording
+                // still being written to is a thing to look at as well, and the detail says so itself
+                // rather than being hidden for it (`DetailState.writing`).
                 BlueprintButton(
-                    label = stringResource(R.string.job_reason_check_key),
-                    onClick = onCheckKey,
-                    modifier = Modifier.testTag("check-key"),
+                    label = stringResource(R.string.detail_open),
+                    onClick = onOpenDetail,
+                    modifier = Modifier.testTag("open-detail"),
                 )
             }
-            // docs/09 화면 원칙 2: the row opens the recording's detail — parts, and the transcript
-            // when there is one — on every shell alike, so it is offered on every row. A recording
-            // still being written to is a thing to look at as well, and the detail says so itself
-            // rather than being hidden for it (`DetailState.writing`).
-            BlueprintButton(
-                label = stringResource(R.string.detail_open),
-                onClick = onOpenDetail,
-                modifier = Modifier.testTag("open-detail"),
-            )
             if (!item.state.inFlight()) {
                 BlueprintButton(
                     label = stringResource(R.string.action_delete),
                     onClick = onDelete,
                     tone = ButtonTone.DANGER,
+                    modifier = Modifier.testTag("recording-delete-${item.recordingId}"),
                 )
             }
         }

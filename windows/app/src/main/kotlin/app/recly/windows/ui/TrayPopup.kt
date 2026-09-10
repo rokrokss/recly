@@ -404,33 +404,36 @@ private fun RecentRow(
             // docs/08 "오류": why this row is stuck and what to do about it, in the window the user
             // is already in — the same block the recordings window's sidebar draws.
             FailureReason(item, strings)
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalArrangement = Arrangement.spacedBy(Space.s),
-            ) {
-                if (item.link != null) {
-                    BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
-                }
-                if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null)) {
-                    ProcessingButton(
-                        label = strings[Str.RECENT_RETRY],
-                        state = model.action,
-                        strings = strings,
-                        onClick = { model.retry(item) },
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
+                FlowRow(
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                    verticalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
+                    if (item.link != null) {
+                        BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
+                    }
+                    if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null)) {
+                        ProcessingButton(
+                            label = strings[Str.RECENT_RETRY],
+                            state = model.action,
+                            strings = strings,
+                            onClick = { model.retry(item) },
+                        )
+                    }
+                    // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where
+                    // "check the key" lands — and it belongs in this line rather than under the reason
+                    // above it (docs/09 화면 원칙 2, the Mac's `MenuPopover.actions`).
+                    CheckKeyButton(item, strings) { model.editWorkflowOf(item) }
+                    // docs/08 "결과 파일": the transcript, wherever it was written.
+                    BlueprintButton(
+                        label = strings[Str.RECENT_DETAILS],
+                        onClick = {
+                            model.openDetail(item)
+                            model.recordingsOpen = true
+                        },
                     )
                 }
-                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where
-                // "check the key" lands — and it belongs in this line rather than under the reason
-                // above it (docs/09 화면 원칙 2, the Mac's `MenuPopover.actions`).
-                CheckKeyButton(item, strings) { model.editWorkflowOf(item) }
-                // docs/08 "결과 파일": the transcript, wherever it was written.
-                BlueprintButton(
-                    label = strings[Str.RECENT_DETAILS],
-                    onClick = {
-                        model.openDetail(item)
-                        model.recordingsOpen = true
-                    },
-                )
                 // docs/03 "앱에서 지우기": the dialog asks about Drive; this only opens it. Never
                 // over a recording that is being written to or uploaded ([RecentItem.deletable]).
                 if (item.deletable) {

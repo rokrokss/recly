@@ -2,6 +2,7 @@
 
 package app.recly.android.ui
 
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -54,6 +55,9 @@ class MobileUxTest {
         ui.waitUntil(10_000) { model.state.value.items.any { it.id == item.id && it.isDeviceDefault } }
         selectTab(R.string.tab_workflows)
         ui.onNodeWithTag("workflow-delete-${item.id}").assertIsNotEnabled()
+        ui.onNodeWithTag("transcription-setup").performClick()
+        ui.onNodeWithTag("transcription-setup-body").assertIsDisplayed()
+        ui.onNodeWithTag("transcription-setup-close").performClick()
         val before = runBlocking { core.workflows.current() }
 
         ui.runOnIdle {
@@ -76,7 +80,9 @@ class MobileUxTest {
         val model = ViewModelProvider(ui.activity)[WorkflowsViewModel::class.java]
         ui.waitUntil(20_000) { !model.state.value.loading }
         selectTab(R.string.tab_workflows)
-        ui.runOnIdle { model.edit(model.state.value.items.first().id) }
+        val item = model.state.value.items.first()
+        ui.onNodeWithTag("workflow-summary-${item.id}").assertHasNoClickAction()
+        ui.onNodeWithTag("workflow-edit-${item.id}").performClick()
         ui.onNodeWithTag("workflow-name").assertIsDisplayed()
         return model
     }
@@ -129,6 +135,12 @@ class MobileUxTest {
             }
             ui.waitUntil(10_000) { model.state.value.detail?.let { !it.writing && !it.audio.isEmpty && it.driveFetch == DriveFetch.IDLE } == true }
             ui.onNodeWithTag("play-pause").assertIsDisplayed()
+            ui.runOnIdle { model.closeDetail() }
+            ui.onNodeWithTag("recording-$id").performClick()
+            val delete = ui.onNodeWithTag("recording-delete-$id").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            val detail = ui.onNodeWithTag("open-detail").assertIsDisplayed().fetchSemanticsNode().boundsInRoot
+            assertTrue(delete.left > detail.right, "Delete must stay to the right of the ordinary actions")
+            assertTrue(delete.center.x > ui.activity.window.decorView.width / 2f, "Delete must stay on the right")
         } finally {
             ui.runOnIdle { model.closeDetail() }
             runBlocking { core.recordings.delete(id, deleteDrive = false) }

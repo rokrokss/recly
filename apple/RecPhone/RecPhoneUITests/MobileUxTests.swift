@@ -13,6 +13,16 @@ final class MobileUxTests: XCTestCase {
         let deletes = app.buttons.matching(identifier: "workflow-delete")
         XCTAssertTrue(deletes.firstMatch.waitForExistence(timeout: 30))
         let before = deletes.count
+        let summary = app.staticTexts["workflow-name-label"].firstMatch
+        XCTAssertTrue(summary.exists)
+        summary.tap()
+        XCTAssertTrue(app.buttons["newWorkflow"].exists)
+        let edit = app.buttons["workflow-edit"].firstMatch
+        XCTAssertEqual(edit.label, "Edit")
+        edit.tap()
+        XCTAssertTrue(app.textFields["Name"].firstMatch.waitForExistence(timeout: 10))
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["newWorkflow"].waitForExistence(timeout: 10))
         XCTAssertEqual(deletes.allElementsBoundByIndex.filter { !$0.isEnabled }.count, 1)
         XCTAssertTrue(app.staticTexts["workflow-delete-in-use"].exists)
 
@@ -69,13 +79,18 @@ final class MobileUxTests: XCTestCase {
         workflows.tap()
         let help = app.buttons["transcription-setup"]
         XCTAssertTrue(help.waitForExistence(timeout: 10))
+        XCTAssertEqual(help.label, "How to set up transcription")
+        let newWorkflow = app.buttons["newWorkflow"]
+        XCTAssertLessThan(help.frame.maxX, newWorkflow.frame.minX)
+        let originalFrame = newWorkflow.frame
         help.tap()
         let body = app.staticTexts["transcription-setup-body"]
         XCTAssertTrue(body.waitForExistence(timeout: 5))
         XCTAssertTrue(body.label.hasSuffix("are still saved."))
         XCTAssertGreaterThan(body.frame.height, 40)
-        let newWorkflow = app.buttons["newWorkflow"]
+        app.buttons["transcription-setup-close"].tap()
         XCTAssertTrue(newWorkflow.isHittable)
+        XCTAssertEqual(newWorkflow.frame, originalFrame)
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Landscape workflow help"
         shot.lifetime = .keepAlways

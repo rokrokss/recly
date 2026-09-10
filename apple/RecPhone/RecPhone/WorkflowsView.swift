@@ -60,13 +60,15 @@ private struct ListScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: loc("Workflows")) {
-                BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
-                    .accessibilityIdentifier("newWorkflow")
+            ScreenHeader(title: loc("Workflows"), trailingAlignment: .trailing) {
+                HStack(spacing: Space.s) {
+                    TranscriptionSetupHelp()
+                    BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
+                        .accessibilityIdentifier("newWorkflow")
+                }
             }
             ScrollView {
                 VStack(spacing: 0) {
-                    TranscriptionSetupHelp()
                     notices
                     SectionHeader(loc("Workflows")).padding(.horizontal, Space.m)
                     ForEach(model.items) { item in
@@ -115,39 +117,30 @@ private struct ListScreen: View {
 
     /// ADR-016: name, steps, and the one thing a row decides — whether this phone records with it.
     /// The badge and the button are the same control seen from its two states, so exactly one of
-    /// them shows. Two lines rather than one: a badge and three buttons on one row is what the
-    /// mockup does not do — every one of them ends up truncated to a syllable.
+    /// them shows. Explicit actions sit below the summary and wrap at larger text sizes.
     private func row(_ item: WorkflowItem) -> some View {
         SectionBlock {
-            // docs/09 "접근성": the row itself opens the editor, as Android's does — an Edit button
-            // beside the others would be a fourth target for the thing the whole row already is.
-            // The hint is what names the action, as Android's `onClickLabel` does.
-            Button { model.edit(item.id) } label: {
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 6) {
-                        Text(verbatim: item.name.isEmpty ? loc("Unnamed") : item.name)
-                            .font(blueprint.fonts.rowTitle)
-                            .foregroundStyle(blueprint.palette.text)
-                        if item.isDeviceDefault {
-                            StatusBadge(LedgerStatus(code: loc("In use"), tone: .accent))
-                        }
-                    }
-                    Text(verbatim: item.steps)
-                        .font(blueprint.fonts.monoSmall)
-                        .foregroundStyle(blueprint.palette.textMuted)
-                    // docs/05 "새 기기": the definition arrived but the key did not.
-                    if !item.missingSecrets.isEmpty {
-                        Text(verbatim: loc("No key on this device: %@", item.missingSecrets.joined(separator: ", ")))
-                            .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.warningInk)
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 6) {
+                    Text(verbatim: item.name.isEmpty ? loc("Unnamed") : item.name)
+                        .font(blueprint.fonts.rowTitle)
+                        .foregroundStyle(blueprint.palette.text)
+                        .accessibilityIdentifier("workflow-name-label")
+                    if item.isDeviceDefault {
+                        StatusBadge(LedgerStatus(code: loc("In use"), tone: .accent))
                     }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
+                Text(verbatim: item.steps)
+                    .font(blueprint.fonts.monoSmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                // docs/05 "새 기기": the definition arrived but the key did not.
+                if !item.missingSecrets.isEmpty {
+                    Text(verbatim: loc("No key on this device: %@", item.missingSecrets.joined(separator: ", ")))
+                        .font(blueprint.fonts.sans(TypeSize.small))
+                        .foregroundStyle(blueprint.palette.warningInk)
+                }
             }
-            .buttonStyle(.plain)
-            .accessibilityHint(Text(verbatim: loc("Edit the workflow")))
-            .accessibilityIdentifier("workflow-open")
+            .frame(maxWidth: .infinity, alignment: .leading)
             if item.isDeviceDefault {
                 Text(verbatim: RecKitStrings.localized("Select another workflow before deleting this one."))
                     .font(blueprint.fonts.bodySmall)
@@ -156,6 +149,8 @@ private struct ListScreen: View {
             }
             HStack(spacing: Space.s) {
                 FlowLayout(spacing: Space.s) {
+                    BlueprintButton(RecKitStrings.localized("Edit"), tone: .quiet) { model.edit(item.id) }
+                        .accessibilityIdentifier("workflow-edit")
                     if !item.isDeviceDefault {
                         BlueprintButton(loc("Use"), tone: .quiet) {
                             Task { await model.setDeviceDefault(item) }

@@ -92,6 +92,7 @@ fun WorkflowsScreen(
     Column(modifier.fillMaxSize()) {
         ScreenHeader(
             title = stringResource(R.string.tab_workflows),
+            trailingAlignment = Alignment.TopEnd,
             trailing = {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
                     BlueprintButton(
@@ -99,12 +100,16 @@ fun WorkflowsScreen(
                         onClick = { onSecrets(null) },
                         tone = ButtonTone.QUIET,
                     )
-                    BlueprintButton(
-                        label = stringResource(R.string.workflows_add),
-                        onClick = onAdd,
-                        tone = ButtonTone.PRIMARY,
-                        leading = "+",
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        TranscriptionSetupHelp()
+                        BlueprintButton(
+                            modifier = Modifier.weight(1f, fill = false),
+                            label = stringResource(R.string.workflows_add),
+                            onClick = onAdd,
+                            tone = ButtonTone.PRIMARY,
+                            leading = "+",
+                        )
+                    }
                 }
             },
         )
@@ -123,7 +128,6 @@ fun WorkflowsScreen(
         }
 
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-            item { TranscriptionSetupHelp() }
             items(state.items, key = { it.id }) { item ->
                 WorkflowRow(
                     item = item,
@@ -169,9 +173,7 @@ private fun WorkflowRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                // docs/09 "접근성": the row opens the editor, and "row, button" says nothing about
-                // which of the three things on it a tap would do.
-                .clickable(onClickLabel = stringResource(R.string.workflow_open), onClick = onOpen)
+                .testTag("workflow-summary-${item.id}")
                 .padding(horizontal = Space.m, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
@@ -228,6 +230,12 @@ private fun WorkflowRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalArrangement = Arrangement.spacedBy(Space.s),
             ) {
+                BlueprintButton(
+                    label = stringResource(R.string.action_edit),
+                    onClick = onOpen,
+                    tone = ButtonTone.QUIET,
+                    modifier = Modifier.testTag("workflow-edit-${item.id}"),
+                )
                 if (!item.isDeviceDefault) {
                     BlueprintButton(
                         label = stringResource(R.string.workflow_use),

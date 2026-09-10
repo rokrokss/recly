@@ -120,11 +120,12 @@ private typealias Go = (suspend () -> Unit) -> Unit
 private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: Modifier) {
     Column(modifier.background(blueprint.surface).verticalScroll(rememberScrollState())) {
         ScreenHeader(title = strings[Str.EDITOR_WORKFLOWS])
-        TranscriptionSetupHelp(strings)
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
             horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            TranscriptionSetupHelp(strings)
             BlueprintButton(strings[Str.EDITOR_NEW_WORKFLOW], model::add, leading = "+")
         }
         HairLine()
@@ -140,6 +141,7 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
                 inUseLabel = strings[Str.WORKFLOW_IN_USE],
                 deleteBlockedLabel = strings[Str.WORKFLOW_DELETE_IN_USE],
                 useLabel = strings[Str.WORKFLOW_USE],
+                editLabel = strings[Str.EDIT],
                 onOpen = { model.edit(item.id) },
                 onUse = { go { model.setDefault(item) } },
                 onDelete = { model.askToDelete(item) },
@@ -161,8 +163,8 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
 
 /**
  * ADR-016: name, steps, and the one thing a row decides — whether this PC runs it. The badge and the
- * button are the same control seen from its two states, so exactly one of them shows; the delete is
- * beside it and is the only one of the two that writes to the document.
+ * button are the same control seen from its two states, so exactly one of them shows. Editing is
+ * explicit, and deletion stays at the trailing edge.
  */
 @Composable
 private fun WorkflowRow(
@@ -173,6 +175,7 @@ private fun WorkflowRow(
     inUseLabel: String,
     deleteBlockedLabel: String,
     useLabel: String,
+    editLabel: String,
     onOpen: () -> Unit,
     onUse: () -> Unit,
     onDelete: () -> Unit,
@@ -181,25 +184,15 @@ private fun WorkflowRow(
     SidebarRow(
         title = title,
         selected = selected,
-        onOpen = onOpen,
+        onOpen = null,
         controls = {
-            // The mark is a word rather than a colour (docs/09 화면 원칙 2), and it sits where the
-            // button it replaces sat, at the same height as the one beside it.
-            if (inUse) {
-                Text(
-                    inUseLabel,
-                    modifier = Modifier.padding(horizontal = Space.s, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = blueprint.accent,
-                    maxLines = 1,
-                )
-            } else {
-                BlueprintButton(useLabel, onUse, tone = ButtonTone.QUIET)
-            }
+            BlueprintButton(editLabel, onOpen, tone = ButtonTone.QUIET)
+            if (!inUse) BlueprintButton(useLabel, onUse, tone = ButtonTone.QUIET)
             Box(Modifier.weight(1f))
             BlueprintButton(deleteLabel, onDelete, tone = ButtonTone.DANGER, enabled = !inUse)
         },
     ) {
+        if (inUse) Text(inUseLabel, style = MaterialTheme.typography.labelLarge, color = blueprint.accent)
         Text(
             detail,
             style = MaterialTheme.typography.bodySmall,

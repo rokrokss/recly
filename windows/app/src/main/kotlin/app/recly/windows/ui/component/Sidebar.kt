@@ -42,7 +42,8 @@ fun Placeholder(text: String) {
 
 /**
  * One row of that list: a tint and an accent [title] while it is the row on show, whatever [body]
- * has to add underneath, and the controls that are *not* opening it in a row of their own below.
+ * has to add underneath, and a separate action row below. A null [onOpen] keeps the summary static
+ * when the caller provides an explicit Edit action.
  *
  * [controls] is outside the row's own click target on purpose — deleting a recording or marking a
  * workflow is not one of the things opening it should be able to do by accident. The tint and the
@@ -52,7 +53,7 @@ fun Placeholder(text: String) {
 fun SidebarRow(
     title: String,
     selected: Boolean,
-    onOpen: () -> Unit,
+    onOpen: (() -> Unit)?,
     controls: @Composable RowScope.() -> Unit,
     body: @Composable ColumnScope.() -> Unit,
 ) {
@@ -61,7 +62,7 @@ fun SidebarRow(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(role = Role.Button, onClick = onOpen)
+                .then(if (onOpen != null) Modifier.clickable(role = Role.Button, onClick = onOpen) else Modifier)
                 .semantics { this.selected = selected }
                 .padding(horizontal = Space.m, vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(Space.xs),

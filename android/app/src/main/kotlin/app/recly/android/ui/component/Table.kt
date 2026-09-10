@@ -40,6 +40,7 @@ fun ScreenHeader(
     modifier: Modifier = Modifier,
     meta: String? = null,
     trailing: (@Composable () -> Unit)? = null,
+    trailingAlignment: Alignment = Alignment.TopStart,
 ) {
     val compact = LocalConfiguration.current.screenHeightDp < 480
     BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = if (compact) Space.s else Space.m)) {
@@ -56,7 +57,7 @@ fun ScreenHeader(
         if (stacked) {
             Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
                 heading()
-                trailing?.invoke()
+                if (trailing != null) Box(Modifier.fillMaxWidth(), contentAlignment = trailingAlignment) { trailing() }
             }
         } else {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {

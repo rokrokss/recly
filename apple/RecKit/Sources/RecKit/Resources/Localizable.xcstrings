@@ -1,6 +1,23 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Edit": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edit"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "수정"
+          }
+        }
+      }
+    },
     "%1$@ · %2$@ waiting · %3$@ failed": {
       "extractionState": "manual",
       "localizations": {
@@ -3892,19 +3909,19 @@
         }
       }
     },
-    "Transcription setup": {
+    "How to set up transcription": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Transcription setup"
+            "value": "How to set up transcription"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전사 설정 안내"
+            "value": "전사 설정 방법"
           }
         }
       }

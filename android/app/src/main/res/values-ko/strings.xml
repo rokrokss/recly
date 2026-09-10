@@ -351,6 +351,7 @@
     <string name="transcript_no_matches">일치하는 내용이 없습니다</string>
     <string name="transcript_clear_search">검색 지우기</string>
     <string name="transcript_seek">%1$s 위치로 이동</string>
-    <string name="transcription_setup">전사 설정 안내</string>
+    <string name="transcription_setup">전사 설정 방법</string>
     <string name="transcription_setup_body">전사를 받으려면 설정에서 Google Drive를 연결하고, 워크플로우의 Drive 업로드 뒤에 전사 단계를 추가한 다음 해당 제공자의 API 키를 입력하세요. 녹음 전에 이 워크플로우를 선택하세요. 전사 단계가 없어도 녹음은 저장됩니다.</string>
+    <string name="action_edit">수정</string>
 </resources>

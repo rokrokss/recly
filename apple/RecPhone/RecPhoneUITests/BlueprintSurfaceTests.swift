@@ -295,8 +295,8 @@ final class BlueprintSurfaceTests: XCTestCase {
     /// walks the step picker on the way.
     private func openTheTranscribeForm() throws {
         open(tab: "Workflows")
-        // The row is the way in: the editor is what a workflow row opens, as it is on Android.
-        let edit = app.buttons["workflow-open"].firstMatch
+        // Editing starts from the explicit action beside the workflow summary.
+        let edit = app.buttons["workflow-edit"].firstMatch
         try XCTSkipUnless(edit.waitForExistence(timeout: 30), "no workflow to open")
         edit.tap()
 

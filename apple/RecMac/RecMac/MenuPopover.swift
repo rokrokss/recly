@@ -376,32 +376,35 @@ struct MenuPopover: View {
     /// The things that can still be done about this recording, across the row and onto a second
     /// line when they do not fit.
     private func actions(_ item: RecentItem) -> some View {
-        FlowLayout {
-            if item.link != nil {
-                BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
-            }
-            // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-            // comes back on its own `next_run_at`, and there is nothing to ask for.
-            if item.canRetry {
-                ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
-            }
-            // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
-            // the key" lands — which on a Mac means opening the editor window as well.
-            if item.needsKey {
-                BlueprintButton(RecordingDetailStrings.checkKey) {
-                    model.editWorkflow(of: item)
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: WorkflowWindow.id)
+        HStack(alignment: .top, spacing: Space.s) {
+            FlowLayout {
+                if item.link != nil {
+                    BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
-                .accessibilityIdentifier("check-key")
+                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+                // comes back on its own `next_run_at`, and there is nothing to ask for.
+                if item.canRetry {
+                    ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
+                }
+                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
+                // the key" lands — which on a Mac means opening the editor window as well.
+                if item.needsKey {
+                    BlueprintButton(RecordingDetailStrings.checkKey) {
+                        model.editWorkflow(of: item)
+                        NSApp.activate(ignoringOtherApps: true)
+                        openWindow(id: WorkflowWindow.id)
+                    }
+                    .accessibilityIdentifier("check-key")
+                }
+                // docs/08 "결과 파일": the transcript, in the window that fits it.
+                BlueprintButton(RecordingDetailStrings.open) {
+                    model.showDetail(item)
+                    NSApp.activate(ignoringOtherApps: true)
+                    openWindow(id: RecordingsWindow.id)
+                }
+                .accessibilityIdentifier("open-detail")
             }
-            // docs/08 "결과 파일": the transcript, in the window that fits it.
-            BlueprintButton(RecordingDetailStrings.open) {
-                model.showDetail(item)
-                NSApp.activate(ignoringOtherApps: true)
-                openWindow(id: RecordingsWindow.id)
-            }
-            .accessibilityIdentifier("open-detail")
+            Spacer(minLength: 0)
             // docs/03: a recording being written to, arriving from the watch, or uploaded right now
             // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
             //
@@ -413,8 +416,10 @@ struct MenuPopover: View {
                     model.confirmDelete(item, from: .popover)
                 }
                 .accessibilityIdentifier("delete")
+                    .fixedSize(horizontal: true, vertical: false)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 

@@ -173,53 +173,58 @@ struct RecordingsView: View {
     /// The things that can still be done about this recording, across the row and onto a second
     /// line when they do not fit.
     private func actions(_ item: RecentItem) -> some View {
-        FlowLayout {
-            if item.link != nil {
-                BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
-            }
-            // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing that
-            // changes the answer is on Google's storage page.
-            if item.alert == .needsSpace {
-                BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
-                    .accessibilityIdentifier("open-storage")
-            }
-            // docs/10: the sign-in is the whole of what this job is waiting for, so it is offered
-            // where the job is as well as on the banner — and lands on the same tab the banner
-            // takes it to.
-            if item.alert == .needsAuth {
-                BlueprintButton(loc("Sign in")) {
-                    model.fix(JobAlert(reason: .needsAuth, count: 1))
+        HStack(alignment: .top, spacing: Space.s) {
+            FlowLayout {
+                if item.link != nil {
+                    BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
-                .accessibilityIdentifier("sign-in")
-            }
-            if item.alert == .needsConsent {
-                BlueprintButton(RecKitStrings.localized("Review transfers")) {
-                    model.fix(JobAlert(reason: .needsConsent, count: 1))
+                // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing that
+                // changes the answer is on Google's storage page.
+                if item.alert == .needsSpace {
+                    BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
+                        .accessibilityIdentifier("open-storage")
                 }
-                .accessibilityIdentifier("review-transfers")
+                // docs/10: the sign-in is the whole of what this job is waiting for, so it is offered
+                // where the job is as well as on the banner — and lands on the same tab the banner
+                // takes it to.
+                if item.alert == .needsAuth {
+                    BlueprintButton(loc("Sign in")) {
+                        model.fix(JobAlert(reason: .needsAuth, count: 1))
+                    }
+                    .accessibilityIdentifier("sign-in")
+                }
+                if item.alert == .needsConsent {
+                    BlueprintButton(RecKitStrings.localized("Review transfers")) {
+                        model.fix(JobAlert(reason: .needsConsent, count: 1))
+                    }
+                    .accessibilityIdentifier("review-transfers")
+                }
+                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+                // comes back on its own `next_run_at`, and there is nothing to ask for.
+                if item.canRetry {
+                    ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
+                }
+                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
+                // the key" lands — which on a phone means the workflow tab, not an editor behind the
+                // list.
+                if item.needsKey {
+                    BlueprintButton(RecordingDetailStrings.checkKey) { model.editWorkflow(of: item) }
+                        .accessibilityIdentifier("check-key")
+                }
+                // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
+                // after (`RecordingDetailModel`).
+                BlueprintButton(RecordingDetailStrings.open) { detail = model.detail(for: item) }
+                    .accessibilityIdentifier("open-detail")
             }
-            // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-            // comes back on its own `next_run_at`, and there is nothing to ask for.
-            if item.canRetry {
-                ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
-            }
-            // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
-            // the key" lands — which on a phone means the workflow tab, not an editor behind the
-            // list.
-            if item.needsKey {
-                BlueprintButton(RecordingDetailStrings.checkKey) { model.editWorkflow(of: item) }
-                    .accessibilityIdentifier("check-key")
-            }
-            // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
-            // after (`RecordingDetailModel`).
-            BlueprintButton(RecordingDetailStrings.open) { detail = model.detail(for: item) }
-                .accessibilityIdentifier("open-detail")
+            Spacer(minLength: 0)
             // docs/03: a recording being written to, arriving from the watch, or uploaded right now
             // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
             if item.canDelete {
                 BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete(item) }
                     .accessibilityIdentifier("delete")
+                    .fixedSize(horizontal: true, vertical: false)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

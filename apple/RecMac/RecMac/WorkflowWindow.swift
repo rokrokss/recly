@@ -60,13 +60,16 @@ private struct ListPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: loc("Workflows")) {
-                BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
+            ScreenHeader(title: loc("Workflows"), trailingAlignment: .trailing) {
+                HStack(spacing: Space.s) {
+                    TranscriptionSetupHelp()
+                    BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
+                        .accessibilityIdentifier("newWorkflow")
+                }
             }
             HairLine()
             ScrollView {
                 VStack(spacing: 0) {
-                    TranscriptionSetupHelp()
                     if let message = model.message {
                         Banner(message.text)
                             .padding(.horizontal, Space.m)
@@ -109,49 +112,37 @@ private struct ListPane: View {
     /// them shows. docs/09 "목록 = 원장": one line per workflow on the table's own surface, with the
     /// same insets and the same rule under it every other table row has — the pieces rather than
     /// `SectionRow` itself, whose title is a string and cannot carry the badge beside the name.
-    ///
-    /// Opening the editor is the row, not a button on it. Only the left column is the button —
-    /// a button with buttons inside it is one target that swallows the others, which is why the
-    /// ledger in `RecordingsWindow` keeps its actions outside the row too — and it fills the width,
-    /// so everything up to the trailing controls opens the workflow.
     private func row(_ item: WorkflowItem) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                Button { model.edit(item.id) } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: 6) {
-                            Text(verbatim: item.name.isEmpty ? loc("Unnamed") : item.name)
-                                .font(blueprint.fonts.rowTitle)
-                                .foregroundStyle(blueprint.palette.text)
-                                // A long name ends rather than pushing the badge off the row.
-                                .lineLimit(1)
-                            if item.isDeviceDefault {
-                                StatusBadge(LedgerStatus(code: loc("In use"), tone: .accent))
-                            }
-                        }
-                        Text(verbatim: item.steps)
-                            .font(blueprint.fonts.monoSmall)
-                            .foregroundStyle(blueprint.palette.textMuted)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 6) {
+                        Text(verbatim: item.name.isEmpty ? loc("Unnamed") : item.name)
+                            .font(blueprint.fonts.rowTitle)
+                            .foregroundStyle(blueprint.palette.text)
+                            // A long name ends rather than pushing the badge off the row.
                             .lineLimit(1)
-                        // docs/05 "새 기기": the definition arrived but the key did not.
-                        if !item.missingSecrets.isEmpty {
-                            Text(verbatim: loc(
-                                "No key on this device: %@",
-                                item.missingSecrets.joined(separator: ", ")
-                            ))
-                            .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.warningInk)
+                        if item.isDeviceDefault {
+                            StatusBadge(LedgerStatus(code: loc("In use"), tone: .accent))
                         }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .contentShape(Rectangle())
+                    Text(verbatim: item.steps)
+                        .font(blueprint.fonts.monoSmall)
+                        .foregroundStyle(blueprint.palette.textMuted)
+                        .lineLimit(1)
+                    // docs/05 "새 기기": the definition arrived but the key did not.
+                    if !item.missingSecrets.isEmpty {
+                        Text(verbatim: loc(
+                            "No key on this device: %@",
+                            item.missingSecrets.joined(separator: ", ")
+                        ))
+                        .font(blueprint.fonts.sans(TypeSize.small))
+                        .foregroundStyle(blueprint.palette.warningInk)
+                    }
                 }
-                .buttonStyle(.plain)
-                // docs/09 "접근성": the row is announced by what is written on it, and "button"
-                // alone says nothing about which of the things on it a click would do — the hint
-                // says it, as Android's `onClickLabel` does on the same row.
-                .accessibilityHint(Text(verbatim: loc("Edit the workflow")))
-                .accessibilityIdentifier("open-workflow")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                BlueprintButton(RecKitStrings.localized("Edit"), tone: .quiet) { model.edit(item.id) }
+                    .accessibilityIdentifier("workflow-edit")
                 if !item.isDeviceDefault {
                     BlueprintButton(loc("Use"), tone: .quiet) {
                         Task { await model.setDeviceDefault(item) }

@@ -403,6 +403,7 @@
     <string name="transcript_no_matches">No matching passages</string>
     <string name="transcript_clear_search">Clear search</string>
     <string name="transcript_seek">Go to %1$s</string>
-    <string name="transcription_setup">Transcription setup</string>
+    <string name="transcription_setup">How to set up transcription</string>
     <string name="transcription_setup_body">To get a transcript, connect Google Drive in Settings, add a transcription step after Drive upload in a workflow, and enter the provider’s API key. Select that workflow before recording. Recordings without a transcription step are still saved.</string>
+    <string name="action_edit">Edit</string>
 </resources>

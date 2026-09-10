@@ -24,7 +24,7 @@ Set repository Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
 `REC_GOOGLE_DESKTOP_CLIENT_SECRET` from the local desktop OAuth configuration; packaging refuses
 missing values or placeholders. Signing credentials are separate and optional (below).
 The app displays `0.1.0`; `installerVersion` in `app/build.gradle.kts` advances MSI's third
-version field independently to `0.1.5`, allowing installation upgrades for this new build.
+version field independently to `0.1.6`, allowing installation upgrades for this new build.
 
 On a local Windows PC:
 
