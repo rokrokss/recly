@@ -29,7 +29,7 @@ help:
 	@echo "make watch          build Recly Watch for the watch simulator (WATCH_SIM=\"$(WATCH_SIM)\")"
 	@echo "make ios-archive    App Store archive of Recly (iPhone + watch); needs the team in Local.xcconfig"
 	@echo "make ios-upload     the same, uploaded to TestFlight"
-	@echo "make ios-release-test  validate archive OAuth checks using local fixtures"
+	@echo "make ios-release-test  validate Apple packaging and OAuth checks using local fixtures"
 	@echo "make mac-release    Developer ID + notarized DMG of Recly Mac (NOTARY_PROFILE=\"$(NOTARY_PROFILE)\")"
 	@echo "make apk            phone debug APK"
 	@echo "make aab            phone + watch release bundles for Play (needs the upload key)"
@@ -91,6 +91,7 @@ ios-archive:
 
 ios-release-test:
 	bash -n apple/scripts/release-ios.sh
+	bash -n apple/scripts/release-mac.sh
 	PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s apple/scripts/tests -v
 
 ios-upload:

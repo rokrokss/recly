@@ -54,6 +54,8 @@ xcodebuild \
   archive
 
 python3 "$repo_root/apple/scripts/validate-ios-oauth.py" "$archive"
+python3 "$repo_root/apple/scripts/validate-apple-package.py" \
+  "$archive/Products/Applications/Recly.app" --dsym-directory "$archive/dSYMs"
 
 plist="$(mktemp -t recly-export).plist"
 trap 'rm -f "$plist"' EXIT

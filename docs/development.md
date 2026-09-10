@@ -100,9 +100,9 @@ Windows MSI는 Windows 호스트의 `make windows-msi` 또는
 `REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
 누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
 
-현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `3`,
-Android는 `7`, Wear OS는 `1,000,007`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
-업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.2`로 설정한다.
+현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `4`,
+Android는 `8`, Wear OS는 `1,000,008`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
+업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.3`로 설정한다.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.
@@ -130,3 +130,18 @@ exactly one scope:
 ### iOS 심사 빌드의 Google 로그인 검사
 
 `make ios-archive`는 현재 코어를 다시 빌드한 뒤, 컴파일된 아카이브의 `GIDClientID`와 Google 콜백 URL 스킴을 검사한다. 미설정·플레이스홀더·스킴 불일치면 export/upload 전에 중단한다. `make ios-release-test`는 실제 계정 없이 아카이브 fixture로 이 검사를 검증한다. 이 정적 검사는 OAuth 콘솔의 게시 상태·번들 ID 등록·실제 기기의 로그인 성공까지 보장하지 않는다.
+
+### Apple 정적 코어 패키징과 dSYM
+
+`ReclyCore`는 정적 XCFramework이며 자체 리소스를 포함하지 않는다. iPhone·Watch·Mac 프로젝트의
+`PACKAGE_SKIP_AUTO_EMBEDDING_STATIC_BINARY_FRAMEWORKS = YES`는 Swift Package가 이를 앱에
+별도 프레임워크로 복사하지 않도록 한다. 이 설정이 없으면 Xcode가 빈 동적 바이너리를 만들고,
+업로드 시 해당 UUID의 dSYM 누락 경고가 발생한다. 실제 코어 심볼은 각 앱의 dSYM에 들어간다.
+설정 동작은 [Apple의 Swift Build 구현](https://github.com/swiftlang/swift-build/blob/main/Sources/SWBTaskConstruction/TaskProducers/BuildPhaseTaskProducers/SwiftPackageCopyFilesTaskProducer.swift)을 따른다.
+
+`make ios-archive`·`make ios-upload`·`make mac-release`는 `validate-apple-package.py`로
+불필요한 `ReclyCore.framework`가 없는지, 각 앱의 개인정보 매니페스트가 유지되는지,
+실행 파일의 모든 아키텍처 UUID에 맞는 dSYM과 공유 코어 함수 심볼이 있는지를 검사한다.
+실패하면 export/upload 또는 DMG 생성 전에 중단한다. 이 검사는 크래시의 정확한 소스 행이나
+실제 기기 동작까지 보장하지 않는다. `make ios-release-test`는 패키징 검사 fixture도 실행한다.
+향후 정적 바이너리 의존성에 리소스를 추가하면 별도 번들로 보존하거나 임베딩 정책을 재검토해야 한다.

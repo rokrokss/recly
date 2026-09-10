@@ -3,8 +3,8 @@
 # an identity. Release builds refuse ad-hoc signing because its changing designated requirement
 # makes Keychain and privacy grants ask again after every rebuild.
 #
-# The signature is Xcode's, not a `codesign --deep` afterwards: the app embeds ReclyCore.framework
-# and GoogleSignIn's bundles, and the only thing that reliably signs nested code inside out is the
+# The signature is Xcode's, not a `codesign --deep` afterwards: the app includes GoogleSignIn's
+# bundles, and the only thing that reliably signs nested code inside out is the
 # build itself (`--deep` is documented as unsuitable for exactly this).
 #
 # Notarization is deliberately *not* part of a plain run. It uploads the build to Apple under the
@@ -65,6 +65,8 @@ xcodebuild \
   build
 
 app="$derived/Build/Products/Release/Recly.app"
+python3 "$repo_root/apple/scripts/validate-apple-package.py" \
+  "$app" --dsym-directory "$(dirname "$app")"
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist")"
 build_number="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$app/Contents/Info.plist")"
 dmg="$out/Recly-$version-$build_number.dmg"
