@@ -3,7 +3,7 @@
 **시행일: 2026-09-09**
 **문의: q0115643@gmail.com**
 
-정본은 [영어판](privacy-policy.md)이며, Google OAuth 동의 화면과 앱 스토어에는 그 URL을 등록한다. 기술적 근거는 `docs/recly.md` §15(프라이버시·데이터 흐름).
+정본은 [영어판](https://recly.dev/policy/privacy-policy)이며, Google OAuth 동의 화면과 앱 스토어에는 `https://recly.dev/policy/privacy-policy`를 등록한다. 한국어 공개 주소는 `https://recly.dev/policy/privacy-policy.ko`이다. 기술적 근거는 `docs/recly.md` §15(프라이버시·데이터 흐름).
 
 ---
 

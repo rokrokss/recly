@@ -6,8 +6,8 @@ import SwiftUI
 /// docs/15: user-opened policy pages. These are never fetched as part of a recording or a job.
 public enum PrivacyLinks {
     public static func recly(locale: Locale) -> URL {
-        let file = locale.identifier.hasPrefix("ko") ? "privacy-policy.ko.md" : "privacy-policy.md"
-        return URL(string: "https://github.com/rokrokss/recly/blob/main/docs/policy/" + file)!
+        let page = locale.identifier.hasPrefix("ko") ? "privacy-policy.ko" : "privacy-policy"
+        return URL(string: "https://recly.dev/policy/" + page)!
     }
 
     public static func provider(_ name: String) -> URL? {

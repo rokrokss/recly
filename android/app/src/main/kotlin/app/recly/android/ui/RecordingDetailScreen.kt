@@ -445,7 +445,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
                         }
                     },
                     modifier = Modifier
-                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .sizeIn(minWidth = 120.dp, minHeight = 48.dp)
                         .testTag("play-pause"),
                     tone = ButtonTone.PRIMARY,
                 )

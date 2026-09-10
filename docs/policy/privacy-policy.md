@@ -3,7 +3,7 @@
 **Effective date: 2026-09-09**
 **Contact: q0115643@gmail.com**
 
-This is the public URL the Google OAuth consent screen and the app stores point at. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](privacy-policy.ko.md)
+The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
 
 ---
 

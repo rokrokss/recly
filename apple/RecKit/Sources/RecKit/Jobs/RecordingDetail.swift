@@ -431,6 +431,12 @@ public struct RecordingDetailView: View {
                 waveform
             }
             controls
+            #if os(iOS)
+            if model.driveFetch == .failed {
+                Text(verbatim: loc("Could not fetch from Drive"))
+                    .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.textMuted)
+            }
+            #endif
             if player.failed {
                 Text(verbatim: loc("Could not play this recording. Try playing it again."))
                     .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.danger)
@@ -545,6 +551,14 @@ public struct RecordingDetailView: View {
         )
     }
 
+    private var playbackButtonMinWidth: CGFloat? {
+        #if os(iOS)
+        120
+        #else
+        nil
+        #endif
+    }
+
     /// docs/08 "결과 파일": one button and the recording's own clock.
     private var controls: some View {
         HStack(spacing: Space.s) {
@@ -571,7 +585,8 @@ public struct RecordingDetailView: View {
                 if !model.deviceRecording, !player.captureBlocked, model.driveFetch != .deciding {
                     BlueprintButton(
                         player.active ? loc("Pause") : loc("Play"),
-                        tone: .primary
+                        tone: .primary,
+                        minWidth: playbackButtonMinWidth
                     ) {
                         if player.active {
                             player.pause()
@@ -599,6 +614,7 @@ public struct RecordingDetailView: View {
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
             }
+            #if !os(iOS)
             if model.driveFetch == .failed {
                 // Beside the clock when some parts are here and on its own when none are: either
                 // way it is what stands between the page and the whole recording.
@@ -607,7 +623,9 @@ public struct RecordingDetailView: View {
                     .foregroundStyle(blueprint.palette.textMuted)
             }
             Spacer(minLength: 0)
+            #endif
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     /// Where the bar says it is: the finger while there is one on the waveform, and the player the

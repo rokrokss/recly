@@ -6,7 +6,7 @@
 
 **A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.**
 
-[Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](docs/policy/privacy-policy.md) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
+[Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -52,7 +52,7 @@ wrote. There is no Recly server, no bot joining your call, and no monthly fee.
 | Workflow definitions, API keys, webhook secrets | Your device's secure storage | Nothing. They are never synced. Move them with Settings → Export/Import. |
 
 The full list of every network path, with nothing left out, is in the
-[privacy policy](docs/policy/privacy-policy.md).
+[privacy policy](https://recly.dev/policy/privacy-policy).
 
 ## Get Recly
 
@@ -139,7 +139,7 @@ webhooks, transcription adapters and the job queue.
 
 Recly has no server. The only places data can go are your Google Drive, the webhook address you
 typed in, the transcription provider you chose, and your own paired watch or phone. The
-[privacy policy](docs/policy/privacy-policy.md) lists every one of those paths, and
+[privacy policy](https://recly.dev/policy/privacy-policy) lists every one of those paths, and
 [docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15) is the engineering contract
 behind it: any change that adds a network call must update that section first.
 

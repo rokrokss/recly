@@ -137,20 +137,20 @@ private struct ListScreen: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             HStack(spacing: Space.s) {
-                FlowLayout(spacing: Space.s) {
-                    BlueprintButton(RecKitStrings.localized("Edit")) { model.edit(item.id) }
-                        .accessibilityIdentifier("workflow-edit")
-                    if !item.isDeviceDefault {
-                        BlueprintButton(loc("Use")) {
-                            Task { await model.setDeviceDefault(item) }
-                        }
+                if !item.isDeviceDefault {
+                    BlueprintButton(loc("Use")) {
+                        Task { await model.setDeviceDefault(item) }
                     }
                 }
                 Spacer(minLength: 0)
-                BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
-                    .disabled(item.isDeviceDefault)
-                    .fixedSize(horizontal: true, vertical: false)
-                    .accessibilityIdentifier("workflow-delete")
+                FlowLayout(spacing: Space.s, alignment: .trailing) {
+                    BlueprintButton(RecKitStrings.localized("Edit"), minWidth: 96) { model.edit(item.id) }
+                        .accessibilityIdentifier("workflow-edit")
+                    BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
+                        .disabled(item.isDeviceDefault)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .accessibilityIdentifier("workflow-delete")
+                }
             }
         }
     }

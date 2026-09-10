@@ -8,7 +8,7 @@ transcription or webhook step runs with keys you configured on the device.
 
 - [Source code and downloads](https://github.com/rokrokss/recly)
 - [Install guide](install.md)
-- [Privacy Policy](policy/privacy-policy.md) · [개인정보처리방침](policy/privacy-policy.ko.md)
+- [Privacy Policy](https://recly.dev/policy/privacy-policy) · [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)
 - Contact: q0115643@gmail.com
 
 Recly is licensed under AGPL-3.0-or-later. "Recly" and the Recly logo are trademarks of the project.

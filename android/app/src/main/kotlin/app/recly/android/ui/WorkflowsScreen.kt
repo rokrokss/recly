@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -212,30 +213,30 @@ private fun WorkflowRow(
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            if (!item.isDeviceDefault) {
+                BlueprintButton(
+                    label = stringResource(R.string.workflow_use),
+                    onClick = onSetDefault,
+                )
+            }
             FlowRow(
                 modifier = Modifier.weight(1f),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
                 verticalArrangement = Arrangement.spacedBy(Space.s),
             ) {
                 BlueprintButton(
                     label = stringResource(R.string.action_edit),
                     onClick = onOpen,
-                    modifier = Modifier.testTag("workflow-edit-${item.id}"),
+                    modifier = Modifier.widthIn(min = 96.dp).testTag("workflow-edit-${item.id}"),
                 )
-                if (!item.isDeviceDefault) {
-                    BlueprintButton(
-                        label = stringResource(R.string.workflow_use),
-                        onClick = onSetDefault,
-                    )
-                }
+                BlueprintButton(
+                    label = stringResource(R.string.action_delete),
+                    onClick = onDelete,
+                    tone = ButtonTone.DANGER,
+                    enabled = !item.isDeviceDefault,
+                    modifier = Modifier.testTag("workflow-delete-${item.id}"),
+                )
             }
-            BlueprintButton(
-                label = stringResource(R.string.action_delete),
-                onClick = onDelete,
-                tone = ButtonTone.DANGER,
-                enabled = !item.isDeviceDefault,
-                modifier = Modifier.testTag("workflow-delete-${item.id}"),
-            )
         }
         HairLine()
     }
