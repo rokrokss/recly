@@ -185,11 +185,11 @@
     <string name="secrets_generated">Copy the generated value now. It cannot be read again once it is saved (it is on the clipboard).</string>
     <string name="secrets_copy">Copy</string>
     <string name="secrets_copied">Secret copied</string>
-    <string name="secrets_generate">Generate a webhook secret</string>
+    <string name="secrets_generate">Generate a webhook signing key</string>
     <string name="secret_name_empty">Enter a name</string>
     <string name="secret_name_invalid">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
     <string name="secret_name_taken">That name already exists</string>
-    <string name="secret_value_required">Enter a value, or generate a webhook secret</string>
+    <string name="secret_value_required">Enter a value</string>
 
     <!-- Settings (docs/11 A10). -->
     <string name="settings_account">Google account</string>

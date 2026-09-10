@@ -26,16 +26,8 @@ final class MobileUxTests: XCTestCase {
         XCTAssertEqual(deletes.allElementsBoundByIndex.filter { !$0.isEnabled }.count, 1)
         XCTAssertFalse(app.staticTexts["workflow-delete-in-use"].exists)
 
-        let addSecret = app.buttons["add-secret"]
-        for _ in 0..<5 where !addSecret.isHittable { app.scrollViews.firstMatch.swipeUp() }
-        XCTAssertTrue(addSecret.isHittable)
-        XCTAssertGreaterThan(addSecret.frame.midX, app.frame.midX)
-        addSecret.tap()
-        let cancel = app.buttons["Cancel"].firstMatch
-        for _ in 0..<5 where !cancel.isHittable { app.scrollViews.firstMatch.swipeUp() }
-        XCTAssertTrue(cancel.isHittable)
-        XCTAssertGreaterThan(cancel.frame.midX, app.frame.midX)
-        cancel.tap()
+        XCTAssertFalse(app.buttons["add-secret"].exists)
+        XCTAssertFalse(app.buttons["Add a secret"].exists)
 
         app.buttons["newWorkflow"].tap()
         let name = app.textFields["Name"].firstMatch
@@ -127,15 +119,8 @@ final class MobileUxTests: XCTestCase {
         XCTAssertTrue(newWorkflow.isHittable)
         XCTAssertEqual(newWorkflow.label, "새 워크플로우")
         XCTAssertFalse(app.staticTexts["workflow-delete-in-use"].exists)
-        let addSecret = app.buttons["add-secret"]
-        let tabBar = app.tabBars.firstMatch
-        for _ in 0..<6 where !addSecret.isHittable || addSecret.frame.maxY > tabBar.frame.minY {
-            app.scrollViews.firstMatch.swipeUp()
-        }
-        XCTAssertTrue(addSecret.isHittable)
-        XCTAssertGreaterThan(addSecret.frame.midX, app.frame.midX)
-        XCTAssertLessThanOrEqual(addSecret.frame.maxX, app.frame.maxX)
-        XCTAssertLessThanOrEqual(addSecret.frame.maxY, tabBar.frame.minY)
+        XCTAssertFalse(app.buttons["add-secret"].exists)
+        XCTAssertFalse(app.buttons["시크릿 추가"].exists)
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Korean accessibility text workflow actions"
         shot.lifetime = .keepAlways

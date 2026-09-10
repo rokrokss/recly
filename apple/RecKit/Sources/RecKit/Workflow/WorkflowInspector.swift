@@ -80,12 +80,11 @@ public struct StepInspector: View {
         case .hook(let hook):
             BlueprintField(loc("URL"), text: hookField(hook.url) { $0.url = $1 }, mono: true)
                 .urlEntry()
-            BlueprintField(
-                loc("Secret name"),
-                text: hookField(hook.secretRef ?? "") { $0.secretRef = $1.isEmpty ? nil : $1 },
-                mono: true
-            )
-            .plainTextEntry()
+            secretField(hook.secretRef ?? "", webhook: true) { edit, value in
+                guard case .hook(var step) = edit else { return }
+                step.secretRef = value.isEmpty ? nil : value
+                edit = .hook(step)
+            }
 
         // docs/08 `transcribe`. `invokeUrl` is an addressing scheme some providers need, some
         // accept and the rest never read (`WorkflowParser.invokeUrlUse`), so the field is shown for
@@ -375,9 +374,10 @@ public struct StepInspector: View {
     @ViewBuilder
     private func secretField(
         _ value: String,
+        webhook: Bool = false,
         _ set: @escaping (inout StepEdit, String) -> Void
     ) -> some View {
-        label(loc("API key"))
+        label(loc(webhook ? "Secret name" : "API key"))
         FlowLayout {
             BlueprintChip(loc("None"), selected: value.isEmpty) {
                 model.updateStep(at: position) { set(&$0, "") }
@@ -389,6 +389,7 @@ public struct StepInspector: View {
                 }
             }
             BlueprintButton(loc("New…"), leading: "+") { model.openSecrets(step: step.id) }
+                .accessibilityIdentifier("step-new-secret")
         }
         // docs/05 "새 기기": the name arrived in the document, the value did not — so the key is
         // entered here, under the step that is about to ask for it. The window has room for the line
@@ -409,7 +410,7 @@ public struct StepInspector: View {
             #endif
         }
         if let form = model.secretForm, form.stepId == step.id {
-            SecretFormView(model: model, form: form) { name in
+            SecretFormView(model: model, form: form, allowGeneration: webhook) { name in
                 model.updateStep(at: position) { set(&$0, name) }
             }
         }
@@ -521,6 +522,7 @@ public struct InspectorTitle: View {
 public struct SecretFormView: View {
     @ObservedObject private var model: WorkflowsModel
     private let form: SecretForm
+    private let allowGeneration: Bool
     /// What the step editor hangs the stored name on; the secret list has nowhere to put it.
     private let onSaved: (String) -> Void
     @Environment(\.blueprint) private var blueprint
@@ -531,10 +533,12 @@ public struct SecretFormView: View {
     public init(
         model: WorkflowsModel,
         form: SecretForm,
+        allowGeneration: Bool = false,
         onSaved: @escaping (String) -> Void = { _ in }
     ) {
         self.model = model
         self.form = form
+        self.allowGeneration = allowGeneration
         self.onSaved = onSaved
     }
 
@@ -558,6 +562,7 @@ public struct SecretFormView: View {
                 mono: true
             )
             .plainTextEntry()
+            .accessibilityIdentifier("secret-name")
             if form.generated {
                 generatedValue(form.value)
                 // docs/04: shown once and never readable again — the clipboard already has it.
@@ -571,7 +576,7 @@ public struct SecretFormView: View {
                     .foregroundStyle(blueprint.palette.textMuted)
             } else {
                 BlueprintField(
-                    loc("Value"),
+                    loc(allowGeneration ? "Value" : "API key"),
                     text: Binding(
                         get: { form.value },
                         set: { model.secretForm?.value = $0; model.secretForm?.generated = false }
@@ -579,6 +584,7 @@ public struct SecretFormView: View {
                     mono: true,
                     secure: true
                 )
+                .accessibilityIdentifier("secret-value")
             }
             if let error = form.error {
                 Text(verbatim: error.text)
@@ -593,34 +599,25 @@ public struct SecretFormView: View {
         .background(blueprint.palette.surface)
     }
 
-    /// Five buttons fit across a window; on a phone they are two rows, with the answers to the form
-    /// on the second one.
+    /// Generating a webhook key is an optional field action, separate from saving the form.
     @ViewBuilder
     private var buttons: some View {
-        #if os(macOS)
-        HStack(spacing: Space.s) {
-            BlueprintButton(loc("Generate a webhook secret")) { model.generateSecret() }
-            if form.generated {
-                BlueprintButton(loc("Copy")) { model.copyGeneratedSecret() }
+        if allowGeneration {
+            FlowLayout(spacing: Space.s, alignment: .trailing) {
+                BlueprintButton(loc("Generate a webhook signing key"), tone: .quiet) { model.generateSecret() }
+                    .accessibilityIdentifier("secret-generate")
+                if form.generated {
+                    BlueprintButton(loc("Copy"), tone: .quiet) { model.copyGeneratedSecret() }
+                }
             }
-            Spacer(minLength: 0)
-            BlueprintButton(loc("Save"), tone: .primary) { save() }
-            BlueprintButton(loc("Cancel"), tone: .quiet) { model.closeSecrets() }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        #else
         FlowLayout(spacing: Space.s, alignment: .trailing) {
-            BlueprintButton(loc("Generate a webhook secret")) { model.generateSecret() }
-            if form.generated {
-                BlueprintButton(loc("Copy")) { model.copyGeneratedSecret() }
-            }
+            BlueprintButton(loc("Cancel"), tone: .quiet) { model.closeSecrets() }
+            BlueprintButton(loc("Save"), tone: .primary) { save() }
+                .accessibilityIdentifier("secret-save")
         }
         .frame(maxWidth: .infinity, alignment: .trailing)
-        FlowLayout(spacing: Space.s, alignment: .trailing) {
-            BlueprintButton(loc("Save"), tone: .primary) { save() }
-            BlueprintButton(loc("Cancel"), tone: .quiet) { model.closeSecrets() }
-        }
-        .frame(maxWidth: .infinity, alignment: .trailing)
-        #endif
     }
 
     /// docs/05 "시크릿": the name is what the step carries, so the step that opened this form is

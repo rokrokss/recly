@@ -70,7 +70,7 @@ fun SecretsScreen(
 ) {
     val context = LocalContext.current
     val palette = blueprint
-    // The value is a signing key: masked by default, off the keyboard's dictionary and out of its
+    // API keys and signing keys are masked by default, off the keyboard's dictionary and out of its
     // suggestion strip, and shown only while the user asks for it (Sol M2-L4 #2).
     var shown by remember { mutableStateOf(false) }
     // docs/09 화면 원칙 5: what happened is said inline, where the thing that happened is. A toast
@@ -79,9 +79,9 @@ fun SecretsScreen(
 
     Column(modifier.fillMaxSize()) {
         ScreenHeader(
-            title = stringResource(R.string.secrets_title),
+            title = stringResource(if (form.stepId == null) R.string.secrets_title else R.string.secrets_add),
             trailing = {
-                BlueprintButton(
+                if (form.stepId == null) BlueprintButton(
                     label = stringResource(R.string.action_close),
                     onClick = onClose,
                     tone = ButtonTone.QUIET,
@@ -100,21 +100,22 @@ fun SecretsScreen(
                 color = palette.textMuted,
             )
 
-            names.forEach { name -> SecretRow(name = name, onDelete = { onDelete(name) }) }
-            if (names.isEmpty()) {
-                Text(
-                    stringResource(R.string.secrets_empty),
-                    modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = palette.textMuted,
-                )
+            if (form.stepId == null) {
+                names.forEach { name -> SecretRow(name = name, onDelete = { onDelete(name) }) }
+                if (names.isEmpty()) {
+                    Text(
+                        stringResource(R.string.secrets_empty),
+                        modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.textMuted,
+                    )
+                }
             }
 
-            Column(
+            if (form.stepId != null) Column(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m),
                 verticalArrangement = Arrangement.spacedBy(Space.s),
             ) {
-                SectionHeader(stringResource(R.string.secrets_add))
                 OutlinedTextField(
                     value = form.name,
                     onValueChange = onName,
@@ -128,7 +129,7 @@ fun SecretsScreen(
                 OutlinedTextField(
                     value = form.value,
                     onValueChange = onValue,
-                    label = { Text(stringResource(R.string.secrets_value)) },
+                    label = { Text(stringResource(if (form.webhook) R.string.secrets_value else R.string.editor_api_key)) },
                     singleLine = true,
                     textStyle = mono.bodySmall,
                     visualTransformation = if (shown) {
@@ -164,23 +165,29 @@ fun SecretsScreen(
                     )
                 }
 
+                if (form.webhook) FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
+                    BlueprintButton(
+                        label = stringResource(R.string.secrets_generate),
+                        onClick = onGenerate,
+                        modifier = Modifier.testTag("secret-generate"),
+                        tone = ButtonTone.QUIET,
+                    )
+                }
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
                     verticalArrangement = Arrangement.spacedBy(Space.s),
                 ) {
-                    // A reveal is per entry: the next secret typed into the cleared form starts
-                    // hidden again.
+                    BlueprintButton(stringResource(R.string.action_cancel), onClose, tone = ButtonTone.QUIET)
                     BlueprintButton(
                         label = stringResource(R.string.action_save),
                         onClick = { shown = false; onSave() },
                         modifier = Modifier.testTag("secret-save"),
                         tone = ButtonTone.PRIMARY,
-                    )
-                    BlueprintButton(
-                        label = stringResource(R.string.secrets_generate),
-                        onClick = onGenerate,
-                        modifier = Modifier.testTag("secret-generate"),
                     )
                 }
             }

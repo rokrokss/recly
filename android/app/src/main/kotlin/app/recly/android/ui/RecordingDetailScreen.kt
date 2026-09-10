@@ -256,7 +256,6 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
             PlayerControls(detail, player, scrubSec)
         }
         if (player.failed) Text(stringResource(R.string.player_error), color = palette.danger)
-        else if (player.buffering) Text(stringResource(R.string.player_buffering), color = palette.textMuted)
     }
 }
 

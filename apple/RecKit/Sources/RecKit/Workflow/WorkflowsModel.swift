@@ -501,7 +501,7 @@ public final class WorkflowsModel: ObservableObject {
         let name = form.name.trimmingCharacters(in: .whitespaces)
         let problem = SecretName.problem(name, existing: secrets)
             ?? (form.value.isEmpty
-                ? UiMessage.key("Enter a value, or generate a webhook secret")
+                ? UiMessage.key("Enter a value")
                 : nil)
         if let problem {
             secretForm?.error = problem

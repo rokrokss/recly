@@ -83,6 +83,8 @@ data class SecretsState(
     val generated: Boolean = false,
     @param:StringRes val error: Int? = null,
     val initialName: String = name,
+    val stepId: String? = null,
+    val webhook: Boolean = false,
 )
 
 enum class DiscardTarget { EDITOR, SECRET }
@@ -344,8 +346,20 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
     // --- secrets ----------------------------------------------------------------------------
 
     fun openSecrets(prefill: String? = null) {
-        if (_state.value.secretsOpen?.initialName == prefill.orEmpty()) return
-        guardSecret { _state.update { it.copy(secretsOpen = SecretsState(name = prefill.orEmpty())) } }
+        openSecretForm(SecretsState(name = prefill.orEmpty()))
+    }
+
+    fun addStepSecret(prefill: String? = null) {
+        val editor = _state.value.editor ?: return
+        val step = editor.edit.steps.getOrNull(editor.openStep ?: return) ?: return
+        if (step !is StepEdit.Hook && step !is StepEdit.Transcribe) return
+        openSecretForm(SecretsState(name = prefill.orEmpty(), stepId = step.id, webhook = step is StepEdit.Hook))
+    }
+
+    private fun openSecretForm(next: SecretsState) {
+        val current = _state.value.secretsOpen
+        if (current?.initialName == next.initialName && current?.stepId == next.stepId) return
+        guardSecret { _state.update { it.copy(secretsOpen = next) } }
     }
 
     fun closeSecrets() = guardSecret { _state.update { it.copy(secretsOpen = null) } }
@@ -394,6 +408,8 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun saveSecret() = launch {
         val form = _state.value.secretsOpen ?: return@launch
+        val stepId = form.stepId ?: return@launch
+        val session = _state.value.editor?.session ?: return@launch
         val name = form.name.trim()
         val problem = SecretName.problem(name, _state.value.secrets)
             ?: R.string.secret_value_required.takeIf { form.value.isBlank() }
@@ -403,7 +419,18 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
         }
         val graph = graph()
         graph.secrets.put(name, form.value)
-        _state.update { it.copy(secretsOpen = SecretsState()) }
+        val editor = _state.value.editor
+        if (editor?.session == session) {
+            val index = editor.edit.steps.indexOfFirst { it.id == stepId }
+            if (index >= 0) updateStep(index) { step ->
+                when (step) {
+                    is StepEdit.Hook -> step.copy(secretRef = name)
+                    is StepEdit.Transcribe -> step.copy(secretRef = name)
+                    else -> step
+                }
+            }
+        }
+        _state.update { it.copy(secretsOpen = if (it.secretsOpen == form) null else it.secretsOpen) }
         refreshSecrets(graph)
     }
 

@@ -50,10 +50,7 @@ fun WorkflowsScreen(
     onSetDefault: (WorkflowItem) -> Unit,
     onConfirmDelete: (WorkflowItem?) -> Unit,
     onDelete: (WorkflowItem) -> Unit,
-    /**
-     * The secrets screen, with the name already in the form — the key a row is missing, or null
-     * from the header, where there is no one name to fill in.
-     */
+    /** The shared list is for inspecting and deleting existing keys. */
     onSecrets: (String?) -> Unit,
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
@@ -134,7 +131,6 @@ fun WorkflowsScreen(
                     onOpen = { onOpen(item) },
                     onSetDefault = { onSetDefault(item) },
                     onDelete = { onConfirmDelete(item) },
-                    onAddSecret = { onSecrets(item.missingSecrets.firstOrNull()) },
                 )
             }
             if (state.items.isEmpty()) {
@@ -166,7 +162,6 @@ private fun WorkflowRow(
     onOpen: () -> Unit,
     onSetDefault: () -> Unit,
     onDelete: () -> Unit,
-    onAddSecret: () -> Unit,
 ) {
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
@@ -231,14 +226,6 @@ private fun WorkflowRow(
                     BlueprintButton(
                         label = stringResource(R.string.workflow_use),
                         onClick = onSetDefault,
-                    )
-                }
-                if (item.missingSecrets.isNotEmpty()) {
-                    BlueprintButton(
-                        label = stringResource(R.string.secrets_add),
-                        onClick = onAddSecret,
-                        leading = "+",
-                        modifier = Modifier.testTag("workflow-add-secret"),
                     )
                 }
             }

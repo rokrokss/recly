@@ -15,11 +15,14 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextReplacement
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import app.recly.android.R
 import app.recly.android.core.CoreModule
+import app.recly.android.workflow.StepEdit
+import app.recly.android.workflow.StepKind
 import kotlinx.coroutines.runBlocking
 import recly.core.model.AudioSettings
 import recly.core.model.Codec
@@ -91,23 +94,74 @@ class MobileUxTest {
     fun switchingKeyFormsRequiresDiscardAndKeepsTheSameKey() {
         val model = openEditor()
         ui.runOnIdle {
-            model.openSecrets("first_key")
+            model.addStep(StepKind.TRANSCRIBE)
+            model.openStep(model.state.value.editor!!.edit.steps.lastIndex)
+            model.addStepSecret("first_key")
             model.secretValue("unsaved test value")
-            model.openSecrets("first_key")
+            model.addStepSecret("first_key")
             assertTrue(model.state.value.discardTarget == null)
-            model.openSecrets("second_key")
+            model.addStepSecret("second_key")
             assertTrue(model.state.value.secretsOpen?.value == "unsaved test value")
         }
         ui.onNodeWithText(ui.activity.getString(R.string.keep_editing)).performClick()
         ui.runOnIdle {
             assertTrue(model.state.value.secretsOpen?.value == "unsaved test value")
-            model.openSecrets("second_key")
+            model.addStepSecret("second_key")
         }
         ui.onNodeWithText(ui.activity.getString(R.string.discard_changes)).performClick()
         ui.runOnIdle {
             assertTrue(model.state.value.secretsOpen?.name == "second_key")
             assertTrue(model.state.value.secretsOpen?.value == "")
             model.closeSecrets()
+        }
+    }
+
+    @Test
+    fun sharedSecretsOnlyManageNamesAndStepFormsSelectTheSavedKey() {
+        val model = ViewModelProvider(ui.activity)[WorkflowsViewModel::class.java]
+        ui.waitUntil(20_000) { !model.state.value.loading }
+        selectTab(R.string.tab_workflows)
+        ui.onNodeWithText(ui.activity.getString(R.string.workflows_secrets)).performClick()
+        listOf("secret-name", "secret-value", "secret-generate", "secret-save").forEach {
+            ui.onNodeWithTag(it).assertDoesNotExist()
+        }
+        ui.onNodeWithText(ui.activity.getString(R.string.action_close)).performClick()
+        openEditor()
+        val core = runBlocking { CoreModule.get(ui.activity).core }
+        val suffix = System.currentTimeMillis().toString()
+        val savedNames = mutableListOf<String>()
+        try {
+            for (kind in listOf(StepKind.TRANSCRIBE, StepKind.HOOK)) {
+                ui.runOnIdle {
+                    model.addStep(kind)
+                    model.openStep(model.state.value.editor!!.edit.steps.lastIndex)
+                }
+                val stepId = model.state.value.editor!!.edit.steps.last().id
+                ui.onNodeWithTag("step-new-secret").performScrollTo().performClick()
+                val webhook = kind == StepKind.HOOK
+                val name = if (webhook) "ux_hook_$suffix" else "ux_stt_$suffix"
+                savedNames += name
+                ui.onNodeWithTag("secret-name").performTextReplacement(name)
+                if (webhook) {
+                    ui.onNodeWithTag("secret-generate").performScrollTo().performClick()
+                    assertTrue(model.state.value.secretsOpen!!.value.startsWith("whsec_"))
+                } else {
+                    ui.onNodeWithTag("secret-generate").assertDoesNotExist()
+                    ui.onNodeWithTag("secret-value").performTextReplacement("test-api-key")
+                }
+                ui.onNodeWithTag("secret-save").performScrollTo().performClick()
+                ui.waitUntil(10_000) { model.state.value.secretsOpen == null && name in model.state.value.secrets }
+                val step = model.state.value.editor!!.edit.steps.single { it.id == stepId }
+                val reference = when (step) {
+                    is StepEdit.Hook -> step.secretRef
+                    is StepEdit.Transcribe -> step.secretRef
+                    else -> error("Unexpected step")
+                }
+                kotlin.test.assertEquals(name, reference)
+                ui.runOnIdle { model.openStep(null) }
+            }
+        } finally {
+            runBlocking { savedNames.forEach { core.secrets.delete(it) } }
         }
     }
 

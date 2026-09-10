@@ -434,9 +434,6 @@ public struct RecordingDetailView: View {
             if player.failed {
                 Text(verbatim: loc("Could not play this recording. Try playing it again."))
                     .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.danger)
-            } else if player.buffering {
-                Text(verbatim: loc("Preparing playback…"))
-                    .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.textMuted)
             }
         }
         .padding(.horizontal, Space.m)

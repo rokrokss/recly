@@ -83,12 +83,7 @@ private struct ListScreen: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(Space.m)
                     }
-                    SectionHeader(loc("Secrets on this phone")) {
-                        if model.secretForm == nil || model.secretForm?.stepId != nil {
-                            BlueprintButton(loc("Add a secret"), leading: "+") { model.openSecrets() }
-                                .accessibilityIdentifier("add-secret")
-                        }
-                    }
+                    SectionHeader(loc("Secrets on this phone"))
                     .padding(.horizontal, Space.m)
                     secrets
                 }
@@ -150,11 +145,6 @@ private struct ListScreen: View {
                             Task { await model.setDeviceDefault(item) }
                         }
                     }
-                    if !item.missingSecrets.isEmpty {
-                        BlueprintButton(loc("Add a secret"), leading: "+") {
-                            model.openSecrets(prefill: item.missingSecrets.first)
-                        }
-                    }
                 }
                 Spacer(minLength: 0)
                 BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
@@ -173,10 +163,6 @@ private struct ListScreen: View {
                     model.askToDeleteSecret(name)
                 }
             }
-        }
-        // A form a step opened belongs to that step, and is shown there rather than here.
-        if let form = model.secretForm, form.stepId == nil {
-            SecretFormView(model: model, form: form)
         }
     }
 }

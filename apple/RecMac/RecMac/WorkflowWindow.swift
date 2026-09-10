@@ -83,13 +83,7 @@ private struct ListPane: View {
                     ForEach(model.items) { item in
                         row(item)
                     }
-                    // The section's one action lives on its heading: the list under it is the
-                    // secrets themselves, and an "add" row is not one of them.
-                    SectionHeader(loc("Secrets on this Mac")) {
-                        if model.secretForm == nil || model.secretForm?.stepId != nil {
-                            BlueprintButton(loc("Add a secret"), leading: "+") { model.openSecrets() }
-                        }
-                    }
+                    SectionHeader(loc("Secrets on this Mac"))
                     .padding(.horizontal, Space.m)
                     secrets
                 }
@@ -148,11 +142,6 @@ private struct ListPane: View {
                         Task { await model.setDeviceDefault(item) }
                     }
                 }
-                if !item.missingSecrets.isEmpty {
-                    BlueprintButton(loc("Add a secret"), leading: "+") {
-                        model.openSecrets(prefill: item.missingSecrets.first)
-                    }
-                }
                 BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
                     .disabled(item.isDeviceDefault)
             }
@@ -172,10 +161,6 @@ private struct ListPane: View {
                     model.askToDeleteSecret(name)
                 }
             }
-        }
-        // A form a step opened belongs to that step, and is shown there rather than here.
-        if let form = model.secretForm, form.stepId == nil {
-            SecretFormView(model: model, form: form)
         }
     }
 }

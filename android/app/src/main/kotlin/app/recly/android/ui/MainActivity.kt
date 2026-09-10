@@ -190,7 +190,7 @@ class MainActivity : ComponentActivity() {
 
                         FixSurface.SECRETS -> {
                             tab = Tab.WORKFLOWS
-                            workflowsModel.openSecrets()
+                            workflowId?.let(workflowsModel::edit) ?: workflowsModel.openSecrets()
                         }
 
                         // docs/10:124-135: a quota or a webhook is fixed in the definition that
@@ -469,7 +469,7 @@ private fun WorkflowsTab(
             onMoveStep = model::moveStep,
             onOpenStep = model::openStep,
             onEditStep = model::updateStep,
-            onNewSecret = model::openSecrets,
+            onNewSecret = model::addStepSecret,
             onSave = model::save,
             onReopen = model::reopen,
             onCancel = model::cancel,

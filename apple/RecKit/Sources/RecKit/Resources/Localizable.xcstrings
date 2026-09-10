@@ -885,19 +885,19 @@
         }
       }
     },
-    "Enter a value, or generate a webhook secret": {
+    "Enter a value": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter a value, or generate a webhook secret"
+            "value": "Enter a value"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "값을 입력하거나 웹훅 시크릿을 생성하세요"
+            "value": "값을 입력하세요"
           }
         }
       }
@@ -1174,19 +1174,19 @@
         }
       }
     },
-    "Generate a webhook secret": {
+    "Generate a webhook signing key": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Generate a webhook secret"
+            "value": "Generate a webhook signing key"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "웹훅 시크릿 생성"
+            "value": "웹훅 서명 키 생성"
           }
         }
       }

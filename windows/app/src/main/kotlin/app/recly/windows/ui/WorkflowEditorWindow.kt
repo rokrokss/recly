@@ -148,15 +148,15 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
             )
             // docs/05 "시크릿": the definition names the key; the value is this device's own.
             if (item.missingSecrets.isNotEmpty()) {
-                BlueprintButton(
-                    label = strings[Str.EDITOR_MISSING_KEY, item.missingSecrets.joinToString(", ")],
-                    onClick = { model.openSecrets(item.missingSecrets.first()) },
+                Text(
+                    strings[Str.EDITOR_MISSING_KEY, item.missingSecrets.joinToString(", ")],
                     modifier = Modifier.padding(horizontal = Space.m, vertical = Space.xs),
-                    tone = ButtonTone.DANGER,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = blueprint.danger,
                 )
             }
         }
-        Secrets(model, strings, go)
+        Secrets(model, strings)
     }
 }
 
@@ -203,19 +203,9 @@ private fun WorkflowRow(
 
 /** docs/05 "시크릿": the names live in the document, the values only ever here. */
 @Composable
-private fun Secrets(model: WorkflowsModel, strings: Strings, go: Go) {
+private fun Secrets(model: WorkflowsModel, strings: Strings) {
     val palette = blueprint
-    val form = model.secretForm?.takeIf { it.stepId == null }
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        SectionHeader(strings[Str.SECRETS_TITLE], Modifier.weight(1f))
-        if (form == null) {
-            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets() }, leading = "+")
-        }
-    }
+    SectionHeader(strings[Str.SECRETS_TITLE], Modifier.padding(horizontal = Space.m, vertical = Space.s))
     HairLine()
     model.secretNames.forEach { name ->
         Row(
@@ -227,21 +217,11 @@ private fun Secrets(model: WorkflowsModel, strings: Strings, go: Go) {
             BlueprintButton(strings[Str.DELETE], { model.askDeleteSecret(name) }, tone = ButtonTone.DANGER)
         }
     }
-    // A form a step opened belongs to that step, and is shown there rather than here.
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-        verticalArrangement = Arrangement.spacedBy(Space.s),
-    ) {
-        if (form != null) {
-            SecretFormFields(model, form, strings, go)
-        }
-    }
 }
 
 /**
- * The name and the value, wherever they are asked for: the list above, or the step that needs a key
- * it does not have yet. [onSaved] is how that step learns the name to put in its `secretRef` — the
- * value goes to the store and never reaches the document (docs/05 "시크릿").
+ * The name and the value, entered in the step that needs the key. [onSaved] gives that step the name
+ * to put in its `secretRef`; the value goes to the store and never reaches the document (docs/05 "시크릿").
  */
 @Composable
 private fun SecretFormFields(
@@ -249,6 +229,7 @@ private fun SecretFormFields(
     form: SecretForm,
     strings: Strings,
     go: Go,
+    allowGeneration: Boolean = false,
     onSaved: (String) -> Unit = {},
 ) {
     val palette = blueprint
@@ -261,7 +242,7 @@ private fun SecretFormFields(
     BlueprintTextField(
         value = form.value,
         onValueChange = model::secretValue,
-        label = strings[Str.SECRET_VALUE_LABEL],
+        label = strings[if (allowGeneration) Str.SECRET_VALUE_LABEL else Str.FIELD_API_KEY],
         modifier = Modifier.fillMaxWidth(),
     )
     if (form.generated) {
@@ -275,21 +256,27 @@ private fun SecretFormFields(
     form.error?.let {
         Text(strings[it], style = MaterialTheme.typography.bodySmall, color = palette.danger)
     }
+    if (allowGeneration) FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+        verticalArrangement = Arrangement.spacedBy(Space.s),
+    ) {
+        BlueprintButton(strings[Str.SECRET_GENERATE], model::generateSecret, tone = ButtonTone.QUIET)
+        if (form.generated) {
+            BlueprintButton(strings[Str.SECRET_COPY_AGAIN], model::copyGenerated, tone = ButtonTone.QUIET)
+        }
+    }
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
+        BlueprintButton(strings[Str.CANCEL], model::closeSecrets, tone = ButtonTone.QUIET)
         BlueprintButton(
             label = strings[Str.SAVE],
             onClick = { go { model.saveSecret()?.let(onSaved) } },
             tone = ButtonTone.PRIMARY,
         )
-        BlueprintButton(strings[Str.SECRET_GENERATE], model::generateSecret, tone = ButtonTone.QUIET)
-        if (form.generated) {
-            BlueprintButton(strings[Str.SECRET_COPY_AGAIN], model::copyGenerated, tone = ButtonTone.QUIET)
-        }
-        BlueprintButton(strings[Str.CANCEL], model::closeSecrets, tone = ButtonTone.QUIET)
     }
 }
 
@@ -534,7 +521,7 @@ private fun StepInspector(
     order?.let { Notice(strings[Str.EDITOR_ORDER_TRANSCRIBE_NEEDS_UPLOAD]) }
     when (step) {
         is StepEdit.Drive -> DriveFields(model, step, index, strings)
-        is StepEdit.Hook -> HookFields(model, step, index, secrets, strings)
+        is StepEdit.Hook -> HookFields(model, step, index, secrets, strings, go)
         is StepEdit.Transcribe -> TranscribeFields(model, step, index, secrets, strings, go)
     }
 
@@ -606,6 +593,7 @@ private fun HookFields(
     index: Int,
     secrets: List<String>,
     strings: Strings,
+    go: Go,
 ) {
     BlueprintTextField(
         value = step.url,
@@ -613,38 +601,8 @@ private fun HookFields(
         label = strings[Str.FIELD_URL],
         modifier = Modifier.fillMaxWidth(),
     )
-    SectionHeader(strings[Str.FIELD_SECRET_NAME])
-    ChipFlow {
-        BlueprintChip(
-            label = strings[Str.LABEL_NONE],
-            selected = step.secretRef.isNullOrBlank(),
-            onClick = { model.updateStep(index) { (it as StepEdit.Hook).copy(secretRef = null) } },
-        )
-        secrets.forEach { name ->
-            BlueprintChip(
-                label = name,
-                selected = step.secretRef == name,
-                // A secret name is an identifier the document carries, not a word.
-                monospace = true,
-                onClick = { model.updateStep(index) { (it as StepEdit.Hook).copy(secretRef = name) } },
-            )
-        }
-    }
-    // docs/05 "새 기기": the name synced, the value did not.
-    val missing = step.secretRef?.takeIf { it.isNotBlank() && it !in secrets }
-    if (missing != null) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                strings[Str.EDITOR_MISSING_KEY, missing],
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodySmall,
-                color = blueprint.danger,
-            )
-            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets(missing) }, leading = "+")
-        }
+    SecretPicker(model, index, step.id, step.secretRef.orEmpty(), secrets, strings, go, webhook = true) { edit, value ->
+        (edit as StepEdit.Hook).copy(secretRef = value.ifBlank { null })
     }
 }
 
@@ -796,10 +754,16 @@ private fun SecretPicker(
     secrets: List<String>,
     strings: Strings,
     go: Go,
+    webhook: Boolean = false,
     set: (StepEdit, String) -> StepEdit,
 ) {
-    SectionHeader(strings[Str.FIELD_API_KEY])
+    SectionHeader(strings[if (webhook) Str.FIELD_SECRET_NAME else Str.FIELD_API_KEY])
     ChipFlow {
+        if (webhook) BlueprintChip(
+            label = strings[Str.LABEL_NONE],
+            selected = value.isEmpty(),
+            onClick = { model.updateStep(index) { set(it, "") } },
+        )
         secrets.forEach { name ->
             BlueprintChip(
                 label = name,
@@ -828,7 +792,7 @@ private fun SecretPicker(
     }
     // The form this step asked for, shown where it was asked for and nowhere else.
     model.secretForm?.takeIf { it.stepId == stepId }?.let { form ->
-        SecretFormFields(model, form, strings, go) { name -> model.updateStep(index) { set(it, name) } }
+        SecretFormFields(model, form, strings, go, allowGeneration = webhook) { name -> model.updateStep(index) { set(it, name) } }
     }
 }
 
