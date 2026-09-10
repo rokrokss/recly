@@ -123,9 +123,9 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
         TranscriptionSetupHelp(strings)
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
+            horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
         ) {
-            BlueprintButton(strings[Str.EDITOR_NEW_WORKFLOW], model::add)
+            BlueprintButton(strings[Str.EDITOR_NEW_WORKFLOW], model::add, leading = "+")
         }
         HairLine()
         model.items.forEach { item ->
@@ -138,11 +138,10 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
                 selected = model.editor?.edit?.id == item.id,
                 inUse = item.isDeviceDefault,
                 inUseLabel = strings[Str.WORKFLOW_IN_USE],
+                deleteBlockedLabel = strings[Str.WORKFLOW_DELETE_IN_USE],
                 useLabel = strings[Str.WORKFLOW_USE],
                 onOpen = { model.edit(item.id) },
                 onUse = { go { model.setDefault(item) } },
-                // ADR-016: deleting it is allowed, and what it costs is said in the confirmation
-                // rather than on the row — the row is not where the answer is given.
                 onDelete = { model.askToDelete(item) },
                 deleteLabel = strings[Str.DELETE],
             )
@@ -172,6 +171,7 @@ private fun WorkflowRow(
     selected: Boolean,
     inUse: Boolean,
     inUseLabel: String,
+    deleteBlockedLabel: String,
     useLabel: String,
     onOpen: () -> Unit,
     onUse: () -> Unit,
@@ -197,7 +197,7 @@ private fun WorkflowRow(
                 BlueprintButton(useLabel, onUse, tone = ButtonTone.QUIET)
             }
             Box(Modifier.weight(1f))
-            BlueprintButton(deleteLabel, onDelete, tone = ButtonTone.DANGER)
+            BlueprintButton(deleteLabel, onDelete, tone = ButtonTone.DANGER, enabled = !inUse)
         },
     ) {
         Text(
@@ -207,6 +207,9 @@ private fun WorkflowRow(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+        if (inUse) {
+            Text(deleteBlockedLabel, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        }
     }
 }
 
@@ -214,7 +217,17 @@ private fun WorkflowRow(
 @Composable
 private fun Secrets(model: WorkflowsModel, strings: Strings, go: Go) {
     val palette = blueprint
-    SectionHeader(strings[Str.SECRETS_TITLE], Modifier.padding(horizontal = Space.m))
+    val form = model.secretForm?.takeIf { it.stepId == null }
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+        horizontalArrangement = Arrangement.spacedBy(Space.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SectionHeader(strings[Str.SECRETS_TITLE], Modifier.weight(1f))
+        if (form == null) {
+            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets() }, leading = "+")
+        }
+    }
     HairLine()
     model.secretNames.forEach { name ->
         Row(
@@ -227,14 +240,11 @@ private fun Secrets(model: WorkflowsModel, strings: Strings, go: Go) {
         }
     }
     // A form a step opened belongs to that step, and is shown there rather than here.
-    val form = model.secretForm?.takeIf { it.stepId == null }
     Column(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        if (form == null) {
-            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets() })
-        } else {
+        if (form != null) {
             SecretFormFields(model, form, strings, go)
         }
     }
@@ -278,7 +288,8 @@ private fun SecretFormFields(
         Text(strings[it], style = MaterialTheme.typography.bodySmall, color = palette.danger)
     }
     FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         BlueprintButton(
@@ -644,7 +655,7 @@ private fun HookFields(
                 style = MaterialTheme.typography.bodySmall,
                 color = blueprint.danger,
             )
-            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets(missing) })
+            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets(missing) }, leading = "+")
         }
     }
 }
@@ -809,7 +820,7 @@ private fun SecretPicker(
                 onClick = { model.updateStep(index) { set(it, name) } },
             )
         }
-        BlueprintButton(strings[Str.SECRET_NEW], { model.openSecrets(stepId = stepId) })
+        BlueprintButton(strings[Str.SECRET_NEW], { model.openSecrets(stepId = stepId) }, leading = "+")
     }
     // docs/05 "새 기기": the name arrived in the document, the value did not.
     val missing = value.takeIf { it.isNotBlank() && it !in secrets }
@@ -824,7 +835,7 @@ private fun SecretPicker(
                 style = MaterialTheme.typography.bodySmall,
                 color = blueprint.danger,
             )
-            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets(missing, stepId) })
+            BlueprintButton(strings[Str.SECRET_ADD], { model.openSecrets(missing, stepId) }, leading = "+")
         }
     }
     // The form this step asked for, shown where it was asked for and nowhere else.

@@ -77,7 +77,7 @@
     <string name="retry_in_minutes">%1$d분 후</string>
     <string name="retry_in_hours">%1$d시간 후</string>
 
-    <string name="workflows_add">+ 새 워크플로우</string>
+    <string name="workflows_add">새 워크플로우</string>
     <string name="workflows_secrets">시크릿 관리</string>
     <string name="workflows_empty">아직 워크플로우가 없습니다.</string>
     <string name="workflows_delete_title">‘%1$s’을(를) 삭제할까요?</string>
@@ -86,7 +86,7 @@
     <!-- ADR-016: 이 기기가 쓰는 워크플로우 표시와, 그것을 옮기는 방법. -->
     <string name="workflow_in_use">사용 중</string>
     <string name="workflow_use">사용</string>
-    <string name="workflow_delete_in_use">이 기기에서 사용 중인 워크플로우입니다.</string>
+    <string name="workflow_delete_in_use">삭제하려면 먼저 다른 워크플로우를 선택하세요.</string>
     <string name="workflow_open">워크플로우 편집</string>
     <string name="workflow_missing_secrets">이 기기에 키 없음: %1$s</string>
     <string name="workflow_gone">이 워크플로우는 문서에 더 이상 없습니다</string>

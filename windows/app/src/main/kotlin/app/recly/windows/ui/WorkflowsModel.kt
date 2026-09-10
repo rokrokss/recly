@@ -287,13 +287,17 @@ class WorkflowsModel(
         deleteConfirmId = null
     }
 
-    /**
-     * ADR-016: any workflow may be deleted, this PC's default among them — the dialog says what that
-     * costs, and the core clears the pointer with it so the tray asks for a new pick.
-     */
+    /** Read the current selection inside the mutation gate, even for a stale confirmation. */
     suspend fun delete(item: WorkflowItem) = working {
         deleteConfirmId = null
-        apply(mutator.mutate { it.without(item.id) })
+        apply(mutator.mutate {
+            if (deviceDefault() == item.id) {
+                banner.say(Str.WORKFLOW_DELETE_IN_USE.message())
+                null
+            } else {
+                it.without(item.id)
+            }
+        })
         defaultId = deviceDefault()
         document?.let { show(it, secretNames) }
     }

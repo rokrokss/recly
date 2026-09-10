@@ -60,8 +60,8 @@ private struct ListPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: loc("Workflows"), meta: "\(model.items.count)") {
-                BlueprintButton(loc("New workflow")) { model.add() }
+            ScreenHeader(title: loc("Workflows")) {
+                BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
             }
             HairLine()
             ScrollView {
@@ -83,7 +83,9 @@ private struct ListPane: View {
                     // The section's one action lives on its heading: the list under it is the
                     // secrets themselves, and an "add" row is not one of them.
                     SectionHeader(loc("Secrets on this Mac")) {
-                        BlueprintButton(loc("Add a secret")) { model.openSecrets() }
+                        if model.secretForm == nil || model.secretForm?.stepId != nil {
+                            BlueprintButton(loc("Add a secret"), leading: "+") { model.openSecrets() }
+                        }
                     }
                     .padding(.horizontal, Space.m)
                     secrets
@@ -155,18 +157,25 @@ private struct ListPane: View {
                         Task { await model.setDeviceDefault(item) }
                     }
                 }
-                // ADR-016: deleting it is allowed, and what it costs is said in the confirmation
-                // rather than on the row — the row is not where the answer is given.
-                BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
                 if !item.missingSecrets.isEmpty {
-                    BlueprintButton(loc("Add a secret")) {
+                    BlueprintButton(loc("Add a secret"), leading: "+") {
                         model.openSecrets(prefill: item.missingSecrets.first)
                     }
                 }
+                BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
+                    .disabled(item.isDeviceDefault)
             }
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
             .frame(minHeight: minTouch)
+            if item.isDeviceDefault {
+                Text(verbatim: RecKitStrings.localized("Select another workflow before deleting this one."))
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.bottom, Space.s)
+            }
             HairLine()
         }
         .background(blueprint.palette.surface)

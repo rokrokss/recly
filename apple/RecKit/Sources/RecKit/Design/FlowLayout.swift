@@ -9,9 +9,11 @@ import SwiftUI
 /// which is the only arrangement that keeps every chip its own size.
 public struct FlowLayout: Layout {
     private let spacing: CGFloat
+    private let alignment: HorizontalAlignment
 
-    public init(spacing: CGFloat = Space.s) {
+    public init(spacing: CGFloat = Space.s, alignment: HorizontalAlignment = .leading) {
         self.spacing = spacing
+        self.alignment = alignment
     }
 
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -33,7 +35,7 @@ public struct FlowLayout: Layout {
         var index = 0
         var y = bounds.minY
         for row in wrap(sizes, into: bounds.width) {
-            var x = bounds.minX
+            var x = alignment == .trailing ? bounds.maxX - row.width : bounds.minX
             for _ in 0 ..< row.count {
                 let size = sizes[index]
                 subviews[index].place(

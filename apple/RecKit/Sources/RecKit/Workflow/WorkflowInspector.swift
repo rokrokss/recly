@@ -388,7 +388,7 @@ public struct StepInspector: View {
                     model.updateStep(at: position) { set(&$0, name) }
                 }
             }
-            BlueprintButton(loc("New…")) { model.openSecrets(step: step.id) }
+            BlueprintButton(loc("New…"), leading: "+") { model.openSecrets(step: step.id) }
         }
         // docs/05 "새 기기": the name arrived in the document, the value did not — so the key is
         // entered here, under the step that is about to ask for it. The window has room for the line
@@ -608,16 +608,18 @@ public struct SecretFormView: View {
             BlueprintButton(loc("Cancel"), tone: .quiet) { model.closeSecrets() }
         }
         #else
-        HStack(spacing: Space.s) {
+        FlowLayout(spacing: Space.s, alignment: .trailing) {
             BlueprintButton(loc("Generate a webhook secret")) { model.generateSecret() }
             if form.generated {
                 BlueprintButton(loc("Copy")) { model.copyGeneratedSecret() }
             }
         }
-        HStack(spacing: Space.s) {
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        FlowLayout(spacing: Space.s, alignment: .trailing) {
             BlueprintButton(loc("Save"), tone: .primary) { save() }
             BlueprintButton(loc("Cancel"), tone: .quiet) { model.closeSecrets() }
         }
+        .frame(maxWidth: .infinity, alignment: .trailing)
         #endif
     }
 

@@ -39,7 +39,13 @@ public struct BlueprintButton: View {
         Button(action: action) {
             HStack(spacing: Space.xs) {
                 if let leading {
-                    Text(verbatim: leading)
+                    if leading == "+" {
+                        Text(verbatim: leading)
+                            .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
+                            .accessibilityHidden(true)
+                    } else {
+                        Text(verbatim: leading)
+                    }
                 }
                 Text(verbatim: label)
             }

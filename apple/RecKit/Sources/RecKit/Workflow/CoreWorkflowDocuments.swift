@@ -34,15 +34,15 @@ public final class CoreWorkflowDocuments: ReclyCore.WorkflowDocuments {
 /// The change itself is the shell's, and it is applied to the document the gate read *inside* its
 /// lock: that is the whole point of handing the mutator a block instead of a finished document.
 final class DocumentMutation: ReclyCore.KotlinSuspendFunction1 {
-    private let block: @MainActor (WorkflowsDocument) -> WorkflowsDocument?
+    private let block: @MainActor (WorkflowsDocument) async throws -> WorkflowsDocument?
 
-    init(_ block: @escaping @MainActor (WorkflowsDocument) -> WorkflowsDocument?) {
+    init(_ block: @escaping @MainActor (WorkflowsDocument) async throws -> WorkflowsDocument?) {
         self.block = block
     }
 
     /// Nil is Kotlin's "nothing to do", which the mutator answers with `MutationResult.Skipped`.
     func __invoke(p1: Any?) async throws -> Any? {
         guard let document = p1 as? WorkflowsDocument else { return nil }
-        return await block(document)
+        return try await block(document)
     }
 }

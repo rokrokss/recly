@@ -60,8 +60,8 @@ private struct ListScreen: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: loc("Workflows"), meta: "\(model.items.count)") {
-                BlueprintButton(loc("New")) { model.add() }
+            ScreenHeader(title: loc("Workflows")) {
+                BlueprintButton(loc("New workflow"), leading: "+") { model.add() }
                     .accessibilityIdentifier("newWorkflow")
             }
             ScrollView {
@@ -81,7 +81,13 @@ private struct ListScreen: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(Space.m)
                     }
-                    SectionHeader(loc("Secrets on this phone")).padding(.horizontal, Space.m)
+                    SectionHeader(loc("Secrets on this phone")) {
+                        if model.secretForm == nil || model.secretForm?.stepId != nil {
+                            BlueprintButton(loc("Add a secret"), leading: "+") { model.openSecrets() }
+                                .accessibilityIdentifier("add-secret")
+                        }
+                    }
+                    .padding(.horizontal, Space.m)
                     secrets
                 }
                 .padding(.bottom, Space.l)
@@ -142,21 +148,30 @@ private struct ListScreen: View {
             .buttonStyle(.plain)
             .accessibilityHint(Text(verbatim: loc("Edit the workflow")))
             .accessibilityIdentifier("workflow-open")
+            if item.isDeviceDefault {
+                Text(verbatim: RecKitStrings.localized("Select another workflow before deleting this one."))
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .accessibilityIdentifier("workflow-delete-in-use")
+            }
             HStack(spacing: Space.s) {
-                if !item.isDeviceDefault {
-                    BlueprintButton(loc("Use"), tone: .quiet) {
-                        Task { await model.setDeviceDefault(item) }
+                FlowLayout(spacing: Space.s) {
+                    if !item.isDeviceDefault {
+                        BlueprintButton(loc("Use"), tone: .quiet) {
+                            Task { await model.setDeviceDefault(item) }
+                        }
+                    }
+                    if !item.missingSecrets.isEmpty {
+                        BlueprintButton(loc("Add a secret"), leading: "+") {
+                            model.openSecrets(prefill: item.missingSecrets.first)
+                        }
                     }
                 }
-                // ADR-016: deleting it is allowed, and what it costs is said in the confirmation
-                // rather than on the row — the row is not where the answer is given.
+                Spacer(minLength: 0)
                 BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete = item }
+                    .disabled(item.isDeviceDefault)
+                    .fixedSize(horizontal: true, vertical: false)
                     .accessibilityIdentifier("workflow-delete")
-                if !item.missingSecrets.isEmpty {
-                    BlueprintButton(loc("Add a secret")) {
-                        model.openSecrets(prefill: item.missingSecrets.first)
-                    }
-                }
             }
         }
     }
@@ -173,10 +188,6 @@ private struct ListScreen: View {
         // A form a step opened belongs to that step, and is shown there rather than here.
         if let form = model.secretForm, form.stepId == nil {
             SecretFormView(model: model, form: form)
-        } else {
-            SectionBlock {
-                BlueprintButton(loc("Add a secret")) { model.openSecrets() }
-            }
         }
     }
 }

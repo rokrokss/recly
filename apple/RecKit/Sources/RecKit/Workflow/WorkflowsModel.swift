@@ -307,12 +307,17 @@ public final class WorkflowsModel: ObservableObject {
         }
     }
 
-    /// ADR-016: any workflow may be deleted, this device's default among them — the confirmation
-    /// says what that costs before it happens, and the core clears the pointer with it so the
-    /// screens ask for a new pick.
+    /// Read the current selection inside the mutation gate; a confirmation may hold an older row.
     public func delete(_ item: WorkflowItem) async {
         confirmDelete = nil
-        await mutate { $0.without(item.id) }
+        await mutate { [self] document in
+            let inUse = try await core.workflows.isDeviceDefault(workflowId: item.id)
+            guard !inUse.boolValue else {
+                message = .key("Select another workflow before deleting this one.")
+                return nil
+            }
+            return document.without(item.id)
+        }
     }
 
     /// The one place [items] is rebuilt, so an open delete confirmation is the row as it is *now*:
@@ -547,7 +552,7 @@ public final class WorkflowsModel: ObservableObject {
     private func mutate(
         expect: OpenedOn? = nil,
         session: Int64? = nil,
-        _ block: @MainActor @escaping (WorkflowsDocument) -> WorkflowsDocument?
+        _ block: @MainActor @escaping (WorkflowsDocument) async throws -> WorkflowsDocument?
     ) async {
         do {
             let result = try await mutator.mutate(expect: expect, block: DocumentMutation(block))

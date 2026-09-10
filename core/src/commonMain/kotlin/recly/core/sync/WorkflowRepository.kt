@@ -87,8 +87,8 @@ class WorkflowRepository(
         val errors = validate(stamped)
         if (errors.isNotEmpty()) return SaveResult.Invalid(errors)
         store.write(stamped)
-        // Deleting this device's default is allowed (ADR-016) and leaves the pointer with nothing to
-        // resolve, so it goes with it and the shells ask for a new pick.
+        // An import can replace the selected workflow. Clear the unresolved pointer so the shells
+        // ask for a new pick; their individual delete actions protect the selected workflow.
         deviceDefaults.read()?.let { id ->
             // Conditional: a concurrent setDeviceDefault of a *new* choice beats this clear.
             if (stamped.workflows.none { it.id == id }) deviceDefaults.clearIf(id)
@@ -110,7 +110,7 @@ class WorkflowRepository(
         deviceDefaults.write(workflowId)
     }
 
-    /** What the delete confirmation asks before it warns that this is the device's own default. */
+    /** The delete action checks the live selection before changing the document. */
     @Throws(Throwable::class)
     suspend fun isDeviceDefault(workflowId: String): Boolean = deviceDefaults.read() == workflowId
 

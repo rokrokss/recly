@@ -542,17 +542,14 @@ class CrossShellDictionaryTest {
                 android = "workflow_open",
                 mac = "Edit the workflow",
             ),
-            // ADR-016: deleting the workflow this device runs is allowed, and the dialog says which
-            // one it is before it asks — said in the confirm dialog every shell now asks the delete
-            // through, and nowhere else. On Apple the dialog is RecKit's, shared by the phone and
-            // the Mac, so the wording is too.
+            // The selected workflow is protected in the row and in a stale confirmation.
             Line(
                 what = "the deleting-the-workflow-in-use warning",
-                en = "This is the workflow in use on this device.",
-                ko = "이 기기에서 사용 중인 워크플로우입니다.",
+                en = "Select another workflow before deleting this one.",
+                ko = "삭제하려면 먼저 다른 워크플로우를 선택하세요.",
                 android = "workflow_delete_in_use",
                 windows = "workflow.delete.in.use",
-                reckit = "This is the workflow in use on this device.",
+                reckit = "Select another workflow before deleting this one.",
             ),
             // What that same dialog says a delete costs before the warning: the definition is this
             // device's own (docs/05), so nothing syncs it back.

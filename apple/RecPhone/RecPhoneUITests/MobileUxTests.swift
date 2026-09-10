@@ -2,6 +2,57 @@ import XCTest
 
 /// The mobile editor must remain usable while its software keyboard occupies the lower screen.
 final class MobileUxTests: XCTestCase {
+    func testWorkflowActionsProtectTheSelectionAndStayOnTheRight() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-appLanguage", "en"]
+        app.launch()
+        let workflows = app.tabBars.buttons["Workflows"]
+        XCTAssertTrue(workflows.waitForExistence(timeout: 30))
+        workflows.tap()
+        let deletes = app.buttons.matching(identifier: "workflow-delete")
+        XCTAssertTrue(deletes.firstMatch.waitForExistence(timeout: 30))
+        let before = deletes.count
+        XCTAssertEqual(deletes.allElementsBoundByIndex.filter { !$0.isEnabled }.count, 1)
+        XCTAssertTrue(app.staticTexts["workflow-delete-in-use"].exists)
+
+        let addSecret = app.buttons["add-secret"]
+        for _ in 0..<5 where !addSecret.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(addSecret.isHittable)
+        XCTAssertGreaterThan(addSecret.frame.midX, app.frame.midX)
+        addSecret.tap()
+        let cancel = app.buttons["Cancel"].firstMatch
+        for _ in 0..<5 where !cancel.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        XCTAssertTrue(cancel.isHittable)
+        XCTAssertGreaterThan(cancel.frame.midX, app.frame.midX)
+        cancel.tap()
+
+        app.buttons["newWorkflow"].tap()
+        let name = app.textFields["Name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 10))
+        name.tap()
+        name.typeText("Workflow action test")
+        app.buttons["saveWorkflow"].tap()
+        XCTAssertTrue(app.buttons["newWorkflow"].waitForExistence(timeout: 15))
+        XCTAssertEqual(deletes.count, before + 1)
+        let enabledDelete = deletes.element(boundBy: before)
+        for _ in 0..<5 where !enabledDelete.isHittable { app.scrollViews.firstMatch.swipeUp() }
+        let use = app.buttons.matching(identifier: "Use").allElementsBoundByIndex.last!
+        XCTAssertTrue(use.isHittable)
+        XCTAssertTrue(enabledDelete.isEnabled)
+        XCTAssertGreaterThan(enabledDelete.frame.midX, use.frame.maxX)
+        enabledDelete.tap()
+        let confirm = app.buttons["workflow-delete-confirm"]
+        XCTAssertTrue(confirm.waitForExistence(timeout: 5))
+        XCTAssertTrue(confirm.isEnabled)
+        confirm.tap()
+        XCTAssertFalse(confirm.waitForExistence(timeout: 3))
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "Workflow actions and protected selection"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
     func testLandscapeDashboardAndWorkflowHelp() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -43,6 +94,36 @@ final class MobileUxTests: XCTestCase {
         XCTAssertTrue(start.isHittable)
         let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         shot.name = "Korean accessibility text dashboard"
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+
+    func testKoreanLargeTextWorkflowActionsRemainReachable() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(ko)", "-AppleLocale", "ko_KR", "-appLanguage", "ko",
+            "-UIPreferredContentSizeCategoryName", "UICTContentSizeCategoryAccessibilityXXXL"]
+        app.launch()
+        let workflows = app.tabBars.buttons["워크플로우"]
+        XCTAssertTrue(workflows.waitForExistence(timeout: 30))
+        workflows.tap()
+        let newWorkflow = app.buttons["newWorkflow"]
+        XCTAssertTrue(newWorkflow.waitForExistence(timeout: 30))
+        XCTAssertTrue(newWorkflow.isHittable)
+        XCTAssertEqual(newWorkflow.label, "새 워크플로우")
+        let hint = app.staticTexts["workflow-delete-in-use"]
+        XCTAssertEqual(hint.label, "삭제하려면 먼저 다른 워크플로우를 선택하세요.")
+        let addSecret = app.buttons["add-secret"]
+        let tabBar = app.tabBars.firstMatch
+        for _ in 0..<6 where !addSecret.isHittable || addSecret.frame.maxY > tabBar.frame.minY {
+            app.scrollViews.firstMatch.swipeUp()
+        }
+        XCTAssertTrue(addSecret.isHittable)
+        XCTAssertGreaterThan(addSecret.frame.midX, app.frame.midX)
+        XCTAssertLessThanOrEqual(addSecret.frame.maxX, app.frame.maxX)
+        XCTAssertLessThanOrEqual(addSecret.frame.maxY, tabBar.frame.minY)
+        let shot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        shot.name = "Korean accessibility text workflow actions"
         shot.lifetime = .keepAlways
         add(shot)
     }

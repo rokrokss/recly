@@ -20,6 +20,7 @@ final class BlueprintSurfaceTests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
         app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-appLanguage", "en"]
         app.launch()
         // docs/10: the alert notifier asks for permission the first time the queue has something to
         // say, which may be during launch. Whatever the answer, it must not be left in front of the
@@ -133,10 +134,7 @@ final class BlueprintSurfaceTests: XCTestCase {
         )
     }
 
-    /// ADR-016: a workflow deleted here is gone from this phone and nothing syncs it back, so the
-    /// row's button asks before it writes — the same question Android asks, and Cancel has to mean
-    /// something. The seeded row is the one this phone records with (`WorkflowRepository.seed`), so
-    /// the warning about what that costs is in the dialog too, and no longer on the row.
+    /// The selected workflow is protected; deleting another workflow still requires confirmation.
     func testDeletingAWorkflowIsAskedFirstAndCancelKeepsIt() throws {
         open(tab: "Workflows")
         try XCTSkipUnless(
@@ -147,23 +145,26 @@ final class BlueprintSurfaceTests: XCTestCase {
         let before = rows.count
         // Every row, because only one of them is the workflow this phone uses and which one that is
         // comes from the seed rather than from anything this test can say.
-        var sawInUseWarning = false
+        var sawProtectedRow = false
         for index in 0..<before {
-            rows.allElementsBoundByIndex[index].tap()
+            let row = rows.allElementsBoundByIndex[index]
+            if !row.isEnabled {
+                sawProtectedRow = true
+                XCTAssertTrue(app.staticTexts["workflow-delete-in-use"].exists)
+                continue
+            }
+            row.tap()
 
             let confirm = app.buttons["workflow-delete-confirm"]
             XCTAssertTrue(confirm.waitForExistence(timeout: 10), "a workflow was deleted with no question")
             XCTAssertTrue(app.staticTexts["workflow-delete-body"].exists, "the dialog says nothing")
-            if app.staticTexts["workflow-delete-in-use"].exists {
-                sawInUseWarning = true
-                attach("workflow delete dialog")
-            }
+            attach("workflow delete dialog")
 
             app.buttons["Cancel"].firstMatch.tap()
             XCTAssertFalse(confirm.waitForExistence(timeout: 3), "the dialog stayed up")
         }
 
-        XCTAssertTrue(sawInUseWarning, "no row said what deleting the workflow in use costs")
+        XCTAssertTrue(sawProtectedRow, "the selected workflow was deletable")
         XCTAssertEqual(rows.count, before, "Cancel deleted a workflow anyway")
     }
 

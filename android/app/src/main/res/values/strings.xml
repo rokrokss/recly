@@ -97,7 +97,7 @@
     <string name="retry_in_hours">in %1$d h</string>
 
     <!-- Workflow list (docs/11 A6). -->
-    <string name="workflows_add">+ New workflow</string>
+    <string name="workflows_add">New workflow</string>
     <string name="workflows_secrets">Manage secrets</string>
     <string name="workflows_empty">No workflows yet.</string>
     <string name="workflows_delete_title">Delete ‘%1$s’?</string>
@@ -106,7 +106,7 @@
     <!-- ADR-016: the mark on the workflow this device runs, and the way to move it. -->
     <string name="workflow_in_use">In use</string>
     <string name="workflow_use">Use</string>
-    <string name="workflow_delete_in_use">This is the workflow in use on this device.</string>
+    <string name="workflow_delete_in_use">Select another workflow before deleting this one.</string>
     <!-- docs/09 "접근성": what tapping a workflow row does, for a reader who cannot see the row. -->
     <string name="workflow_open">Edit the workflow</string>
     <string name="workflow_missing_secrets">No key on this device: %1$s</string>

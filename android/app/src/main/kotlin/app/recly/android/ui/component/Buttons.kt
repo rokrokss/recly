@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import app.recly.android.R
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.ProcessingPhase
@@ -77,12 +78,19 @@ fun BlueprintButton(
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        leading?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = ink) }
+        leading?.let {
+            Text(
+                it,
+                style = if (it == "+") MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
+                color = ink,
+                modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
+            )
+        }
         Text(
             label,
             style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
             color = ink,
-            maxLines = 1,
+            maxLines = 3,
         )
     }
 }

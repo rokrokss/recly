@@ -204,7 +204,7 @@ enum class Str {
     /** A workflow nobody named — see [UNTITLED] for why the two are not one key. */
     UNNAMED,
     EDITOR_NEW_WORKFLOW,
-    /** ADR-016: the mark on the row this PC runs, the row's one control, and what deleting it costs. */
+    /** ADR-016: the selected row, the selection action, and why its delete action is disabled. */
     WORKFLOW_IN_USE,
     WORKFLOW_USE,
     WORKFLOW_DELETE_IN_USE,

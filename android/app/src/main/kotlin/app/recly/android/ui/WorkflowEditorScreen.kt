@@ -834,6 +834,7 @@ private fun StepSecretPicker(
         BlueprintButton(
             label = stringResource(R.string.editor_secret_new),
             onClick = { onNewSecret(null) },
+            leading = "+",
             modifier = Modifier.testTag("step-new-secret"),
         )
     }

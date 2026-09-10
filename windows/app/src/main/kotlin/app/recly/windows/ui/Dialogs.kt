@@ -211,8 +211,7 @@ fun ImportDialog(
 /**
  * ADR-016: a workflow deleted here is gone from this PC and there is no sync to bring it back, so
  * the question is asked before the write — the same question, in the same words, that Android asks.
- * The in-use warning is part of it rather than part of the row: it is what the answer costs, and
- * the row is not where the answer is given.
+ * A selection change while the question is open also disables its destructive action.
  */
 @Composable
 fun WorkflowDeleteDialog(
@@ -229,7 +228,7 @@ fun WorkflowDeleteDialog(
         height = WORKFLOW_DELETE_HEIGHT,
         actions = {
             BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
-            BlueprintButton(strings[Str.DELETE], onDelete, tone = ButtonTone.DANGER)
+            BlueprintButton(strings[Str.DELETE], onDelete, tone = ButtonTone.DANGER, enabled = !item.isDeviceDefault)
         },
     ) {
         BlueprintDialogText(strings[Str.WORKFLOWS_DELETE_BODY])

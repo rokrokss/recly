@@ -4,9 +4,7 @@ import SwiftUI
 /// there is no sync and no copy anywhere to bring it back from. So the question is asked before the
 /// write, in the same words Android asks it in.
 ///
-/// The warning about the workflow this device is using belongs to the question rather than to the
-/// row: it is what the answer costs, and the row is not where the answer is given. One dialog for
-/// both shells, because the phone and the Mac lose exactly the same thing.
+/// A selection change while the question is open also disables its destructive action.
 public struct WorkflowDeleteDialog: View {
     private let item: WorkflowItem
     private let delete: (WorkflowItem) -> Void
@@ -30,6 +28,7 @@ public struct WorkflowDeleteDialog: View {
         BlueprintDialog(title: loc("Delete ‘%@’?", item.name.isEmpty ? loc("Unnamed") : item.name)) {
             BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
             BlueprintButton(loc("Delete"), tone: .danger) { delete(item) }
+                .disabled(item.isDeviceDefault)
                 .accessibilityIdentifier("workflow-delete-confirm")
         } content: {
             BlueprintDialogText(
@@ -38,7 +37,7 @@ public struct WorkflowDeleteDialog: View {
             .accessibilityIdentifier("workflow-delete-body")
             if item.isDeviceDefault {
                 BlueprintDialogText(
-                    loc("This is the workflow in use on this device."),
+                    loc("Select another workflow before deleting this one."),
                     tone: .danger
                 )
                 .accessibilityIdentifier("workflow-delete-in-use")

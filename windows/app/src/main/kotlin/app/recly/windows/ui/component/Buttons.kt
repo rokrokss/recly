@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -94,12 +95,19 @@ fun BlueprintButton(
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        leading?.let { Text(it, style = MaterialTheme.typography.labelLarge, color = ink) }
+        leading?.let {
+            Text(
+                it,
+                style = if (it == "+") MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelLarge,
+                color = ink,
+                modifier = if (it == "+") Modifier.clearAndSetSemantics { } else Modifier,
+            )
+        }
         Text(
             label,
             style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
             color = ink,
-            maxLines = 1,
+            maxLines = 3,
             // A label that will not fit is cut with a mark that says so — a Korean button label is
             // half again as long as the English one, and a 640dp window is where that shows.
             overflow = TextOverflow.Ellipsis,

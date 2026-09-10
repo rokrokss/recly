@@ -52,7 +52,7 @@ import app.recly.android.ui.theme.mono
  * docs/11 A6 · docs/05 "시크릿", deliverable 3. Values live in this device's secure store and are
  * never synced; a generated `whsec_…` is readable exactly once — here, before it is stored.
  *
- * Drawn as docs/09 asks: a header with the count, the stored names as ledger rows in monospace
+ * Drawn as docs/09 asks: the stored names as ledger rows in monospace
  * (a secret name is an identifier the workflow document refers to, not a sentence), square bordered
  * buttons, and the one rule this design has between the rows.
  */
@@ -80,7 +80,6 @@ fun SecretsScreen(
     Column(modifier.fillMaxSize()) {
         ScreenHeader(
             title = stringResource(R.string.secrets_title),
-            meta = names.size.toString(),
             trailing = {
                 BlueprintButton(
                     label = stringResource(R.string.action_close),
@@ -165,7 +164,11 @@ fun SecretsScreen(
                     )
                 }
 
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
                     // A reveal is per entry: the next secret typed into the cleared form starts
                     // hidden again.
                     BlueprintButton(

@@ -248,13 +248,19 @@ class WorkflowsViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun confirmDelete(item: WorkflowItem?) = _state.update { it.copy(confirmDelete = item) }
 
-    /**
-     * ADR-016: any workflow may be deleted, this device's default among them — the dialog says so
-     * first, and the core clears the pointer with it so the screen asks for a new pick.
-     */
+    /** Read the current selection inside the mutation gate, even for a stale confirmation. */
     fun delete(item: WorkflowItem) = launch {
         _state.update { it.copy(confirmDelete = null) }
-        apply(mutator.mutate { it.without(item.id) }, workflowId = item.id)
+        apply(mutator.mutate {
+            if (core().workflows.isDeviceDefault(item.id)) {
+                _state.update { state ->
+                    state.copy(message = UiMessage.Res(R.string.workflow_delete_in_use))
+                }
+                null
+            } else {
+                it.without(item.id)
+            }
+        }, workflowId = item.id)
     }
 
     fun dismissMessage() = _state.update { it.copy(message = null) }

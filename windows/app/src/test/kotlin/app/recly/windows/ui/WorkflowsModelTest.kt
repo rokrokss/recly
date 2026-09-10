@@ -166,25 +166,44 @@ class WorkflowsModelTest {
         assertEquals(listOf(false, true), model.items.map { it.isDeviceDefault }, "only one row is marked")
     }
 
-    /**
-     * ADR-016 superseded the isDefault-undeletable rule (2065dbb): any workflow may be deleted, and
-     * the row says what deleting the marked one costs before it happens.
-     */
     @Test
-    fun `the row this device defaults to says what deleting it would cost, and still deletes`() = runTest {
+    fun `the selected workflow is preserved until another workflow is selected`() = runTest {
         val defaults = FakeDeviceDefault(MEETING)
         val documents = FakeDocuments(document())
         val model = model(documents, defaults = defaults)
         model.reload()
         val meeting = model.items.single { it.id == MEETING }
-        assertTrue(meeting.isDeviceDefault, "the row knows, which is what puts the warning on it")
+        assertTrue(meeting.isDeviceDefault)
 
+        model.delete(meeting)
+
+        assertEquals(0, documents.saves)
+        assertEquals(listOf(MEETING, MEMO), documents.doc.workflows.map { it.id })
+        assertEquals(MEETING, defaults.id)
+
+        model.setDefault(model.items.single { it.id == MEMO })
         model.delete(meeting)
 
         assertEquals(1, documents.saves)
         assertEquals(listOf(MEMO), documents.doc.workflows.map { it.id })
-        // The core clears a pointer whose workflow the same save deleted; the model reads it back.
-        assertNull(model.items.singleOrNull { it.isDeviceDefault })
+        assertEquals(MEMO, defaults.id)
+    }
+
+    @Test
+    fun `a stale row cannot delete a workflow selected from another window`() = runTest {
+        val defaults = FakeDeviceDefault(MEMO)
+        val documents = FakeDocuments(document())
+        val model = model(documents, defaults = defaults)
+        model.reload()
+        val stale = model.items.single { it.id == MEETING }
+        assertEquals(false, stale.isDeviceDefault)
+
+        defaults.id = MEETING
+        model.delete(stale)
+
+        assertEquals(0, documents.saves)
+        assertEquals(listOf(MEETING, MEMO), documents.doc.workflows.map { it.id })
+        assertTrue(model.items.single { it.id == MEETING }.isDeviceDefault)
     }
 
     /**
@@ -215,8 +234,8 @@ class WorkflowsModelTest {
         model.delete(model.items.single { it.id == MEETING })
 
         assertNull(model.deleteConfirm, "answering closes it")
-        assertEquals(1, documents.saves)
-        assertEquals(listOf(MEMO), documents.doc.workflows.map { it.id })
+        assertEquals(0, documents.saves, "the workflow became selected while the question was open")
+        assertEquals(listOf(MEETING, MEMO), documents.doc.workflows.map { it.id })
     }
 
     /**

@@ -74,11 +74,12 @@ fun WorkflowsScreen(
                     label = stringResource(R.string.action_delete),
                     onClick = { onDelete(item) },
                     tone = ButtonTone.DANGER,
+                    enabled = !item.isDeviceDefault,
                 )
             },
         ) {
             BlueprintDialogText(stringResource(R.string.workflows_delete_body))
-            // ADR-016: deleting it is allowed, and it costs this phone the workflow it runs.
+            // A selection change can protect a workflow while its confirmation is open.
             if (item.isDeviceDefault) {
                 BlueprintDialogText(
                     stringResource(R.string.workflow_delete_in_use),
@@ -91,7 +92,6 @@ fun WorkflowsScreen(
     Column(modifier.fillMaxSize()) {
         ScreenHeader(
             title = stringResource(R.string.tab_workflows),
-            meta = state.items.size.toString(),
             trailing = {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
                     BlueprintButton(
@@ -103,6 +103,7 @@ fun WorkflowsScreen(
                         label = stringResource(R.string.workflows_add),
                         onClick = onAdd,
                         tone = ButtonTone.PRIMARY,
+                        leading = "+",
                     )
                 }
             },
@@ -143,6 +144,7 @@ fun WorkflowsScreen(
                     if (!state.loading) BlueprintButton(
                         stringResource(R.string.workflows_add), onAdd, tone = ButtonTone.PRIMARY,
                         modifier = Modifier.padding(horizontal = Space.m),
+                        leading = "+",
                     )
                 }
             }
@@ -164,72 +166,90 @@ private fun WorkflowRow(
 ) {
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 // docs/09 "접근성": the row opens the editor, and "row, button" says nothing about
                 // which of the three things on it a tap would do.
                 .clickable(onClickLabel = stringResource(R.string.workflow_open), onClick = onOpen)
                 .padding(horizontal = Space.m, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        item.name,
-                        // A long name ends rather than pushing the in-use badge off the row.
-                        modifier = Modifier.weight(1f, fill = false),
-                        style = MaterialTheme.typography.titleSmall,
-                        color = palette.text,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (item.isDeviceDefault) {
-                        StatusBadge(
-                            LedgerStatus(stringResource(R.string.workflow_in_use), BadgeTone.ACCENT),
-                        )
-                    }
-                }
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (item.steps.isEmpty()) {
-                        stringResource(R.string.workflow_no_steps)
-                    } else {
-                        item.steps.map { stringResource(it) }.joinToString(" → ")
-                    },
-                    style = mono.small,
-                    color = palette.textMuted,
+                    item.name,
+                    // A long name ends rather than pushing the in-use badge off the row.
+                    modifier = Modifier.weight(1f, fill = false),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = palette.text,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (item.missingSecrets.isNotEmpty()) {
-                    Text(
-                        stringResource(R.string.workflow_missing_secrets, item.missingSecrets.joinToString()),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.danger,
-                    )
-                    // docs/05 "새 기기": the definition arrived and the key did not, so the line
-                    // that says so is also the way to fix it — the form opens with the missing name
-                    // already in it (the iPhone's own row shortcut). Under the sentence rather than
-                    // beside `Use` and `Delete`: a fourth button across would leave the name a
-                    // syllable wide at a large font size.
-                    BlueprintButton(
-                        label = stringResource(R.string.secrets_add),
-                        onClick = onAddSecret,
-                        modifier = Modifier.testTag("workflow-add-secret"),
+                if (item.isDeviceDefault) {
+                    StatusBadge(
+                        LedgerStatus(stringResource(R.string.workflow_in_use), BadgeTone.ACCENT),
                     )
                 }
             }
-            if (!item.isDeviceDefault) {
-                BlueprintButton(
-                    label = stringResource(R.string.workflow_use),
-                    onClick = onSetDefault,
-                    tone = ButtonTone.QUIET,
+            Text(
+                if (item.steps.isEmpty()) {
+                    stringResource(R.string.workflow_no_steps)
+                } else {
+                    item.steps.map { stringResource(it) }.joinToString(" → ")
+                },
+                style = mono.small,
+                color = palette.textMuted,
+                maxLines = 1,
+            )
+            if (item.missingSecrets.isNotEmpty()) {
+                Text(
+                    stringResource(R.string.workflow_missing_secrets, item.missingSecrets.joinToString()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.danger,
                 )
+            }
+        }
+
+        if (item.isDeviceDefault) {
+            Text(
+                stringResource(R.string.workflow_delete_in_use),
+                modifier = Modifier.padding(horizontal = Space.m),
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+            horizontalArrangement = Arrangement.spacedBy(Space.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            FlowRow(
+                modifier = Modifier.weight(1f),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                verticalArrangement = Arrangement.spacedBy(Space.s),
+            ) {
+                if (!item.isDeviceDefault) {
+                    BlueprintButton(
+                        label = stringResource(R.string.workflow_use),
+                        onClick = onSetDefault,
+                        tone = ButtonTone.QUIET,
+                    )
+                }
+                if (item.missingSecrets.isNotEmpty()) {
+                    BlueprintButton(
+                        label = stringResource(R.string.secrets_add),
+                        onClick = onAddSecret,
+                        leading = "+",
+                        modifier = Modifier.testTag("workflow-add-secret"),
+                    )
+                }
             }
             BlueprintButton(
                 label = stringResource(R.string.action_delete),
                 onClick = onDelete,
                 tone = ButtonTone.DANGER,
+                enabled = !item.isDeviceDefault,
+                modifier = Modifier.testTag("workflow-delete-${item.id}"),
             )
         }
         HairLine()

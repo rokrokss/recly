@@ -2177,6 +2177,23 @@
         }
       }
     },
+    "Select another workflow before deleting this one.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select another workflow before deleting this one."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "삭제하려면 먼저 다른 워크플로우를 선택하세요."
+          }
+        }
+      }
+    },
     "Separate speakers": {
       "extractionState": "manual",
       "localizations": {
@@ -2717,23 +2734,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "이 기기에 ‘%@’ 값이 없습니다"
-          }
-        }
-      }
-    },
-    "This is the workflow in use on this device.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This is the workflow in use on this device."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 기기에서 사용 중인 워크플로우입니다."
           }
         }
       }

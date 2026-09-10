@@ -4,6 +4,7 @@ package app.recly.android.ui
 
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.SemanticsMatcher
@@ -42,6 +43,29 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MobileUxTest {
     @get:Rule val ui = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun selectedWorkflowCannotBeDeletedThroughAStaleRow() {
+        val model = ViewModelProvider(ui.activity)[WorkflowsViewModel::class.java]
+        ui.waitUntil(20_000) { !model.state.value.loading }
+        val core = runBlocking { CoreModule.get(ui.activity).core }
+        val item = model.state.value.items.first()
+        runBlocking { core.workflows.setDeviceDefault(item.id) }
+        ui.waitUntil(10_000) { model.state.value.items.any { it.id == item.id && it.isDeviceDefault } }
+        selectTab(R.string.tab_workflows)
+        ui.onNodeWithTag("workflow-delete-${item.id}").assertIsNotEnabled()
+        val before = runBlocking { core.workflows.current() }
+
+        ui.runOnIdle {
+            model.dismissMessage()
+            model.delete(item.copy(isDeviceDefault = false))
+        }
+        ui.waitUntil(10_000) { model.state.value.message != null }
+        val after = runBlocking { core.workflows.current() }
+        kotlin.test.assertEquals(before.revision, after.revision)
+        kotlin.test.assertEquals(before.workflows.map { it.id }, after.workflows.map { it.id })
+        ui.onNodeWithTag("workflow-delete-${item.id}").assertIsNotEnabled()
+    }
 
     private fun selectTab(label: Int) {
         ui.onNode(hasText(ui.activity.getString(label)) and
