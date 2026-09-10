@@ -11,6 +11,7 @@ struct MenuPopover: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
     @ObservedObject var theme: AppTheme
+    let maximumSize: CGSize
     @Environment(\.blueprint) private var blueprint
     @Environment(\.openWindow) private var openWindow
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
@@ -22,28 +23,21 @@ struct MenuPopover: View {
     @State private var expanded: String?
 
     var body: some View {
-        VStack(spacing: 0) {
+        MenuPanelContent(maximumSize: maximumSize, preferredContentHeight: showingSettings ? 420 : 280) {
             header
             HairLine()
+        } content: {
             if showingSettings {
-                // The settings are a table to be read whole: no scroll view, so the popover is as
-                // tall as they are and grows downward to hold them. A scroll view would not do —
-                // on macOS its ideal height is not its content's, and the popover would keep the
-                // ledger's slot and scroll the settings inside it.
                 SettingsPane(model: model, language: language, theme: theme)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .background(blueprint.palette.surface)
             } else {
-                ScrollView { ledger }
-                    // A popover has no size of its own: without a floor the ledger's scroll view
-                    // offers zero and the whole thing collapses to the chrome.
-                    .frame(minHeight: 180, maxHeight: 280)
-                    .background(blueprint.palette.surface)
+                ledger
             }
+        } footer: {
             HairLine()
             footer
         }
-        .frame(width: 460)
+        // Each section opens at its top; a settings scroll offset must not carry into the ledger.
+        .id(showingSettings)
         .background(blueprint.palette.surface)
         // A `LSUIElement` app has no window to hang a sheet off and the popover is the only surface
         // there is, so the dialogs are drawn *in* it — over the ledger, which is what they are
@@ -235,6 +229,7 @@ struct MenuPopover: View {
             ) {
                 showingSettings.toggle()
             }
+            .accessibilityIdentifier("menu-settings-toggle")
             Spacer(minLength: 0)
             // Not disabled while a recording is in flight — `⌘Q` reaches the app whether this
             // button is enabled or not, and the label is what says what the quit is about to do:
@@ -246,6 +241,7 @@ struct MenuPopover: View {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
+            .accessibilityIdentifier("menu-quit")
         }
         .padding(.horizontal, Space.m)
         .padding(.top, 10)

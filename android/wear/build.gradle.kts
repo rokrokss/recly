@@ -25,7 +25,7 @@ android {
         targetSdk = 36
         // Play requires a unique versionCode across every bundle of one app, phone and Wear OS
         // tracks included: the watch takes the phone's code plus 1_000_000.
-        versionCode = 1_000_008
+        versionCode = 1_000_009
         versionName = "0.1.0"
     }
 

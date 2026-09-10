@@ -14,8 +14,8 @@ import SwiftUI
 ///
 /// The panel is non-activating and can become key, so the settings fields take typing without the
 /// app being brought to the front, and it floats at the pop-up-menu level the way the SwiftUI one
-/// did. It sizes itself to the popover's content and keeps its top edge under the status item
-/// while it does, so the settings pane grows downward from the menu bar rather than up into it.
+/// did. It fits below the status item within the screen's usable bounds. The middle section
+/// scrolls so Back and Quit remain visible even when settings exceed the screen height.
 @MainActor
 final class MenuBarPanel {
     private static let gap: CGFloat = 4
@@ -24,12 +24,11 @@ final class MenuBarPanel {
     private let item: NSStatusItem
     private let panel: Panel
     private let hosting: Hosting
+    private let limits: LayoutLimits
     private var fitScheduled = false
     private var monitors: [Any] = []
     private var iconChanges: AnyCancellable?
-    /// Where the panel's top-left corner goes: under the status item, remembered from the show so
-    /// a resize of the content can put the corner back rather than growing the panel upward.
-    private var anchor = NSPoint.zero
+    private var screenChanges: AnyCancellable?
 
     init(model: MenuModel, language: AppLanguage, theme: AppTheme) {
         self.model = model
@@ -66,8 +65,10 @@ final class MenuBarPanel {
         // invalidated the size, so nothing it does can land back in the pass that asked for it.
         // Escape closes the panel the way a click elsewhere does. The panel and not `self`: no
         // closure may hold `self` until every property is set, and this one is what sets `hosting`.
+        let limits = LayoutLimits()
+        self.limits = limits
         hosting = Hosting(
-            rootView: Root(model: model, language: language, theme: theme) { [weak panel] in
+            rootView: Root(model: model, language: language, theme: theme, limits: limits) { [weak panel] in
                 panel?.orderOut(nil)
             }
         )
@@ -101,6 +102,9 @@ final class MenuBarPanel {
                 guard let self else { return }
                 self.item.button?.image = self.model.icon
             }
+        screenChanges = NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.scheduleFit() }
     }
 
     @objc private func toggle() {
@@ -108,20 +112,6 @@ final class MenuBarPanel {
     }
 
     private func show() {
-        guard let button = item.button, let bar = button.window else { return }
-        let rect = bar.convertToScreen(button.convert(button.bounds, to: nil))
-        guard let screen = NSScreen.screens.first(where: { $0.frame.intersects(rect) }) ?? NSScreen.main else { return }
-        // A status item pushed into the menu bar's overflow reports a position off any screen; the
-        // panel then opens at the screen's own top-right corner rather than where nobody can see it.
-        let visible = screen.visibleFrame
-        let onScreen = screen.frame.intersects(rect)
-        let right = onScreen ? rect.maxX : visible.maxX
-        let top = onScreen ? rect.minY : visible.maxY
-        let width = panel.frame.width
-        anchor = NSPoint(
-            x: max(visible.minX, min(right - width, visible.maxX - width)),
-            y: top - Self.gap
-        )
         fit()
         panel.makeKeyAndOrderFront(nil)
         // docs/03: the popover coming up is when this Mac last looked, so it asks Drive what the
@@ -141,13 +131,30 @@ final class MenuBarPanel {
         }
     }
 
-    /// The panel takes the popover's ideal size and keeps its top-left corner where the show put
-    /// it, so the settings pane grows downward from the menu bar rather than up into it.
+    /// Constrain both SwiftUI's layout proposal and the native window. Clipping only the window
+    /// would still leave the footer below its visible area in SwiftUI's taller content layout.
     private func fit() {
-        let size = hosting.intrinsicContentSize
-        guard size.width > 0, size.height > 0 else { return }
-        if panel.frame.size != size { panel.setContentSize(size) }
-        panel.setFrameTopLeftPoint(anchor)
+        guard let button = item.button, let bar = button.window else { return }
+        let rect = bar.convertToScreen(button.convert(button.bounds, to: nil))
+        guard let screen = NSScreen.screens.first(where: { $0.frame.intersects(rect) }) ?? NSScreen.main else { return }
+        let visible = screen.visibleFrame.insetBy(dx: Self.gap, dy: Self.gap)
+        // An overflowed status item can lie off-screen; use that screen's top-right corner.
+        let onScreen = screen.frame.intersects(rect)
+        let right = onScreen ? rect.maxX : visible.maxX
+        let top = min(onScreen ? rect.minY - Self.gap : visible.maxY, visible.maxY)
+        let maximumSize = CGSize(width: min(460, visible.width), height: max(1, top - visible.minY))
+        if limits.maximumSize != maximumSize { limits.maximumSize = maximumSize }
+
+        let ideal = hosting.intrinsicContentSize
+        guard ideal.width > 0, ideal.height > 0 else { return }
+        let size = CGSize(width: maximumSize.width, height: min(ideal.height, maximumSize.height))
+        let frame = NSRect(
+            x: max(visible.minX, min(right - size.width, visible.maxX - size.width)),
+            y: top - size.height,
+            width: size.width,
+            height: size.height
+        )
+        if panel.frame != frame { panel.setFrame(frame, display: panel.isVisible) }
     }
 
     private func hide() {
@@ -173,16 +180,21 @@ final class MenuBarPanel {
         }
     }
 
+    private final class LayoutLimits: ObservableObject {
+        @Published var maximumSize = CGSize(width: 460, height: 600)
+    }
+
     /// The popover's root, observing the model and the language so that a change of either redraws
     /// the tree — the hosting view's `rootView` is set once, and this is what keeps it live.
     private struct Root: View {
         @ObservedObject var model: MenuModel
         @ObservedObject var language: AppLanguage
         @ObservedObject var theme: AppTheme
+        @ObservedObject var limits: LayoutLimits
         let dismiss: () -> Void
 
         var body: some View {
-            MenuPopover(model: model, language: language, theme: theme)
+            MenuPopover(model: model, language: language, theme: theme, maximumSize: limits.maximumSize)
                 .environment(\.locale, language.locale)
                 .blueprint()
                 // Escape, the way the SwiftUI popover closed on it.
