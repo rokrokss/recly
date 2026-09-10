@@ -297,6 +297,7 @@ public struct BlueprintField: View {
     private let label: String
     private let mono: Bool
     private let secure: Bool
+    private let placeholder: String?
     @Binding private var text: String
     @FocusState private var focused: Bool
 
@@ -304,12 +305,14 @@ public struct BlueprintField: View {
         _ label: String,
         text: Binding<String>,
         mono: Bool = false,
-        secure: Bool = false
+        secure: Bool = false,
+        placeholder: String? = nil
     ) {
         self.label = label
         _text = text
         self.mono = mono
         self.secure = secure
+        self.placeholder = placeholder
     }
 
     public var body: some View {
@@ -320,9 +323,9 @@ public struct BlueprintField: View {
                 .foregroundStyle(blueprint.palette.textMuted)
             Group {
                 if secure {
-                    SecureField("", text: $text)
+                    SecureField("", text: $text, prompt: prompt)
                 } else {
-                    TextField("", text: $text)
+                    TextField("", text: $text, prompt: prompt)
                 }
             }
             .focused($focused)
@@ -338,6 +341,10 @@ public struct BlueprintField: View {
             }
             .accessibilityLabel(Text(verbatim: label))
         }
+    }
+
+    private var prompt: Text? {
+        placeholder.map { Text(verbatim: $0).foregroundColor(blueprint.palette.textMuted) }
     }
 }
 

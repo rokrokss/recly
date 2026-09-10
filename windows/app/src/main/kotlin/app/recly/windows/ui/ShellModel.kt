@@ -59,6 +59,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.withContext
 import okio.Path
 import recly.core.DisconnectResult
@@ -832,13 +833,39 @@ class ShellModel(
         recorder?.stop()
     }
 
-    /** The title dialog's two buttons; skipping and a closed window are the same answer. */
+    /** Saving a title is the only answer that queues this recording. */
     fun saveTitle(title: String, participants: Int? = null) = answerTitle(title, participants)
 
-    fun skipTitle() = answerTitle(null, null)
+    fun cancelTitle() {
+        val graph = graph ?: return
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            // The same one-shot claim as Save: only one answer can own this recording.
+            val outcome = titles.take() ?: return@launch
+            val discarded = playbackGate.cleaning(::stopPlayback) {
+                if (detail?.recordingId == outcome.recordingId) detail = null
+                status = runCatching {
+                    graph.core.recordings.delete(outcome.recordingId, deleteDrive = false)
+                }.fold(
+                    onSuccess = { result ->
+                        when (result) {
+                            is DeleteResult.Deleted, DeleteResult.NotFound -> Str.RECORDING_DISCARDED.message()
+                            DeleteResult.Busy -> Str.RECORDING_DISCARD_FAILED.message()
+                        }
+                    },
+                    onFailure = { error ->
+                        graph.core.deps.logger.log(Logger.Level.ERROR, "rec.delete.failed", error = error)
+                        Str.RECORDING_DISCARD_FAILED.message()
+                    },
+                )
+                refreshRecents()
+                true
+            }
+            if (discarded == null) status = Str.RECORDING_DISCARD_FAILED.message()
+        }
+    }
 
     private fun answerTitle(title: String?, participants: Int?) {
-        scope.launch {
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             val outcome = titles.take() ?: return@launch
             complete(outcome, title, participants)
         }

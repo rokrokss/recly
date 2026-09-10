@@ -315,23 +315,29 @@ public struct RecordingDetailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: model.title, meta: model.recordingId) {
-                // docs/03: the name is the user's to change, from the page that carries it. Not
-                // while the recording is still being written — the core refuses a rename then, and
-                // an action that could only fail is one the page should not be offering. Not
-                // before the load has said which of the two this is, either.
-                if !model.loading, !model.writing {
-                    BlueprintButton(loc("Rename"), tone: .quiet) { renaming = true }
-                        .accessibilityIdentifier("detail-rename")
-                }
-                if let onClose {
-                    // Leaving the page stops what it was playing: the sheet is gone but this view
-                    // is not torn down synchronously with it.
-                    BlueprintButton(loc("Close"), tone: .quiet) {
-                        player.stop()
-                        onClose()
+            ScreenHeader(title: model.title, meta: model.recordingId, trailingAlignment: .trailing) {
+                HStack(spacing: Space.s) {
+                    if !model.loading, model.availability != .empty, let document = model.document {
+                        TranscriptCopyButton(document: document)
+                            .id(model.recordingId)
                     }
-                    .accessibilityIdentifier("detail-close")
+                    // docs/03: the name is the user's to change, from the page that carries it. Not
+                    // while the recording is still being written — the core refuses a rename then, and
+                    // an action that could only fail is one the page should not be offering. Not
+                    // before the load has said which of the two this is, either.
+                    if !model.loading, !model.writing {
+                        BlueprintButton(loc("Rename"), tone: .quiet) { renaming = true }
+                            .accessibilityIdentifier("detail-rename")
+                    }
+                    if let onClose {
+                        // Leaving the page stops what it was playing: the sheet is gone but this view
+                        // is not torn down synchronously with it.
+                        BlueprintButton(loc("Close"), tone: .quiet) {
+                            player.stop()
+                            onClose()
+                        }
+                        .accessibilityIdentifier("detail-close")
+                    }
                 }
             }
             HairLine()

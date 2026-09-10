@@ -9,6 +9,15 @@ private enum Column {
     static let status: CGFloat = 96
 }
 
+/// The rendered status edge, for actions in the expansion beneath this row.
+public struct LedgerStatusTrailingInset: PreferenceKey {
+    public static let defaultValue: CGFloat = 0
+
+    public static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
 /// The column headings above the ledger. At an accessibility type size the row below stops being
 /// four columns (see [LedgerRow]), so there is nothing left for these to head.
 public struct LedgerHeader: View {
@@ -179,7 +188,16 @@ public struct LedgerRow<Trailing: View>: View {
             what.frame(maxWidth: .infinity, alignment: .leading)
             howLong
                 .frame(width: Column.length, alignment: .trailing)
-            StatusBadge(status).frame(width: Column.status)
+            StatusBadge(status)
+                .background {
+                    GeometryReader { geometry in
+                        Color.clear.preference(
+                            key: LedgerStatusTrailingInset.self,
+                            value: max(0, (Column.status - geometry.size.width) / 2)
+                        )
+                    }
+                }
+                .frame(width: Column.status)
         }
     }
 

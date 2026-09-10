@@ -15,7 +15,7 @@ import SwiftUI
 /// The panel is non-activating and can become key, so the settings fields take typing without the
 /// app being brought to the front, and it floats at the pop-up-menu level the way the SwiftUI one
 /// did. It fits below the status item within the screen's usable bounds. The middle section
-/// scrolls so Back and Quit remain visible even when settings exceed the screen height.
+/// scrolls so the settings toggle and Quit remain visible even when settings exceed the screen height.
 @MainActor
 final class MenuBarPanel {
     private static let gap: CGFloat = 4

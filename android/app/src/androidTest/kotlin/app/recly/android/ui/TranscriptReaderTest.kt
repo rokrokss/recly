@@ -51,17 +51,21 @@ class TranscriptReaderTest {
         ui.onNodeWithTag("after-waveform").assertIsFocused()
     }
 
-    @Test fun searchSeekAndCopyKeepTheCompleteTranscript() {
+    @Test fun seekAndHeaderCopyKeepTheCompleteTranscript() {
         var target = -1.0
-        ui.setContent { ReclyTheme { TranscriptReader(transcript, true, { target = it }, Modifier.fillMaxSize()) } }
+        ui.setContent { ReclyTheme {
+            Column {
+                TranscriptCopyButton(transcript)
+                TranscriptReader(transcript, true, { target = it }, Modifier.fillMaxSize())
+            }
+        } }
         ui.onNodeWithTag("transcript-text-119").assertDoesNotExist()
-        ui.onNodeWithTag("transcript-search-toggle").performClick()
-        ui.onNodeWithTag("transcript-search").performTextInput("number 119")
+        ui.onNodeWithTag("transcript-search-toggle").assertDoesNotExist()
+        ui.onNodeWithTag("transcript-search").assertDoesNotExist()
         ui.onNodeWithTag("transcript-passages").performScrollToNode(hasTestTag("transcript-text-119"))
         ui.onNodeWithTag("transcript-text-119").assertIsDisplayed()
         ui.onNodeWithTag("transcript-time-119").performClick()
         ui.runOnIdle { assertEquals(7140.0, target) }
-        ui.onNodeWithTag("transcript-passages").performScrollToIndex(0)
         ui.onNodeWithTag("transcript-copy").performClick()
         ui.runOnIdle {
             val context = InstrumentationRegistry.getInstrumentation().targetContext
@@ -72,14 +76,16 @@ class TranscriptReaderTest {
         }
     }
 
-    @Test fun missingAudioDisablesOnlySeekingAndSearchHasAnEmptyState() {
-        ui.setContent { ReclyTheme { TranscriptReader(transcript, false, {}, Modifier.fillMaxSize()) } }
+    @Test fun missingAudioDisablesSeekingButKeepsHeaderCopyAvailable() {
+        ui.setContent { ReclyTheme {
+            Column {
+                TranscriptCopyButton(transcript)
+                TranscriptReader(transcript, false, {}, Modifier.fillMaxSize())
+            }
+        } }
         ui.onNodeWithTag("transcript-time-0").assertIsNotEnabled()
         ui.onNodeWithTag("transcript-copy").assertIsEnabled()
-        ui.onNodeWithTag("transcript-search-toggle").performClick()
-        ui.onNodeWithTag("transcript-search").performTextInput("not in the recording")
-        ui.onNodeWithTag("transcript-text-0").assertDoesNotExist()
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
-        ui.onNodeWithText(context.getString(app.recly.android.R.string.transcript_no_matches)).assertIsDisplayed()
+        ui.onNodeWithTag("transcript-search-toggle").assertDoesNotExist()
+        ui.onNodeWithTag("transcript-text-0").assertIsDisplayed()
     }
 }

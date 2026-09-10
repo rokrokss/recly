@@ -141,10 +141,10 @@ private struct ListPane: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                BlueprintButton(RecKitStrings.localized("Edit"), tone: .quiet) { model.edit(item.id) }
+                BlueprintButton(RecKitStrings.localized("Edit")) { model.edit(item.id) }
                     .accessibilityIdentifier("workflow-edit")
                 if !item.isDeviceDefault {
-                    BlueprintButton(loc("Use"), tone: .quiet) {
+                    BlueprintButton(loc("Use")) {
                         Task { await model.setDeviceDefault(item) }
                     }
                 }
@@ -159,14 +159,6 @@ private struct ListPane: View {
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
             .frame(minHeight: minTouch)
-            if item.isDeviceDefault {
-                Text(verbatim: RecKitStrings.localized("Select another workflow before deleting this one."))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, Space.m)
-                    .padding(.bottom, Space.s)
-            }
             HairLine()
         }
         .background(blueprint.palette.surface)

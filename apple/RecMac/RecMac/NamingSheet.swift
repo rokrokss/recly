@@ -11,7 +11,7 @@ import SwiftUI
 struct NamingSheet: View {
     /// `(title, participants)` — nil title is "no name", nil participants is "unknown".
     let onSave: (String?, Int?) -> Void
-    let onSkip: () -> Void
+    let onCancel: () -> Void
 
     @State private var title = ""
     @State private var participants: Int?
@@ -23,11 +23,10 @@ struct NamingSheet: View {
 
     var body: some View {
         BlueprintDialog(title: loc("Recording title")) {
-            BlueprintButton(loc("Skip"), tone: .quiet) { onSkip() }
-            BlueprintButton(loc("Save"), tone: .primary) { onSave(trimmed, participants) }
+            BlueprintButton(loc("Cancel"), tone: .quiet) { onCancel() }
+            BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave(trimmed, participants) }
         } content: {
-            BlueprintField(loc("Title"), text: $title)
-            BlueprintDialogText(loc("Leave it empty to keep the timestamp name"), tone: .muted)
+            BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
             Text(verbatim: loc("People in the room"))
                 .font(blueprint.fonts.label)
                 .tracking(0.6)

@@ -17,6 +17,7 @@ public struct BlueprintButton: View {
     private let leading: String?
     private let tone: ButtonTone
     private let mono: Bool
+    private let minWidth: CGFloat?
     private let action: () -> Void
 
     /// - Parameter mono: for a label that is data — a provider id — rather than a word, as
@@ -26,12 +27,14 @@ public struct BlueprintButton: View {
         tone: ButtonTone = .accent,
         leading: String? = nil,
         mono: Bool = false,
+        minWidth: CGFloat? = nil,
         action: @escaping () -> Void
     ) {
         self.label = label
         self.tone = tone
         self.leading = leading
         self.mono = mono
+        self.minWidth = minWidth
         self.action = action
     }
 
@@ -56,7 +59,7 @@ public struct BlueprintButton: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             // docs/09 "접근성": the label is small, the button is not.
-            .frame(minHeight: minTouch)
+            .frame(minWidth: minWidth, minHeight: minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.node)

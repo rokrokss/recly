@@ -212,14 +212,6 @@ private fun WorkflowRow(
             }
         }
 
-        if (item.isDeviceDefault) {
-            Text(
-                stringResource(R.string.workflow_delete_in_use),
-                modifier = Modifier.padding(horizontal = Space.m),
-                style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
-            )
-        }
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
@@ -233,14 +225,12 @@ private fun WorkflowRow(
                 BlueprintButton(
                     label = stringResource(R.string.action_edit),
                     onClick = onOpen,
-                    tone = ButtonTone.QUIET,
                     modifier = Modifier.testTag("workflow-edit-${item.id}"),
                 )
                 if (!item.isDeviceDefault) {
                     BlueprintButton(
                         label = stringResource(R.string.workflow_use),
                         onClick = onSetDefault,
-                        tone = ButtonTone.QUIET,
                     )
                 }
                 if (item.missingSecrets.isNotEmpty()) {

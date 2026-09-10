@@ -542,15 +542,32 @@ final class MenuModel: ObservableObject {
             logger.error("shell.recording.deferred id=\(recordingId, privacy: .public) pending=\(pending, privacy: .public)")
 
         case .finalized(let outcome):
-            if askingForTitle, let answer = askForTitle(),
-               answer.title != nil || answer.participants != nil {
-                // docs/03 `context.participants`: the count comes from the person who was in the
-                // room, and "unknown" writes nothing.
-                _ = try? await bridge?.core.recordings.updateTitle(
-                    recordingId: outcome.recordingId,
-                    title: answer.title,
-                    participants: answer.participants.map { KotlinInt(int: Int32($0)) }
-                )
+            if askingForTitle {
+                switch askForTitle() {
+                case .save(let title, let participants):
+                    if title != nil || participants != nil {
+                        _ = try? await bridge?.core.recordings.updateTitle(
+                            recordingId: outcome.recordingId,
+                            title: title,
+                            participants: participants.map { KotlinInt(int: Int32($0)) }
+                        )
+                    }
+                case .discard, nil:
+                    if detail?.recordingId == outcome.recordingId { detail = nil }
+                    guard let core = bridge?.core else {
+                        note = "Could not discard the recording"
+                        return
+                    }
+                    let result = await RecordingDeletion.delete(
+                        core: core, recordingId: outcome.recordingId, deleteDrive: false
+                    )
+                    switch result {
+                    case .deleted, .notFound: note = "Recording discarded"
+                    case .busy, .unavailable: note = "Could not discard the recording"
+                    }
+                    await refreshRecents()
+                    return
+                }
             }
             // nil: the pick the user made when they started is in the meta, and that is what
             // `enqueue` falls back to (docs/05).
@@ -1080,9 +1097,9 @@ final class MenuModel: ObservableObject {
     // MARK: - Prompts
 
     /// What the stop asked for and got: the name, and how many people were in the room.
-    struct NamingAnswer {
-        let title: String?
-        let participants: Int?
+    enum NamingAnswer {
+        case save(title: String?, participants: Int?)
+        case discard
     }
 
     /// docs/03: the title, asked after the recording has ended. A popover cannot host it — it is
@@ -1092,8 +1109,8 @@ final class MenuModel: ObservableObject {
     private func askForTitle() -> NamingAnswer? {
         BlueprintPanel.run { finish in
             NamingSheet(
-                onSave: { finish(NamingAnswer(title: $0, participants: $1)) },
-                onSkip: { finish(nil) }
+                onSave: { finish(.save(title: $0, participants: $1)) },
+                onCancel: { finish(.discard) }
             )
         }
     }

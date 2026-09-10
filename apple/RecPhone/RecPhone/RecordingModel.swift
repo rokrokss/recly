@@ -549,8 +549,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// The title prompt's answer. Skipping it is an answer too — the recording keeps the name it
-    /// has (none) and the job is queued either way.
+    /// Saves the title prompt's answer and queues the recording, including an empty title.
     ///
     /// - Parameter participants: how many people were in the room, or nil for "unknown" — docs/03's
     ///   `context.participants`, which docs/08 lets override the workflow's speaker hint.
@@ -567,6 +566,24 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             )
         }
         await enqueue(recordingId: naming.id)
+    }
+
+    /// Claims the pending answer before suspending, so Save cannot queue a discarded recording.
+    func cancelNaming() async {
+        guard let naming else { return }
+        self.naming = nil
+        guard let core = bridge?.core else {
+            note = "Could not discard the recording"
+            return
+        }
+        let result = await RecordingDeletion.delete(core: core, recordingId: naming.id, deleteDrive: false)
+        switch result {
+        case .deleted, .notFound:
+            note = "Recording discarded"
+        case .busy, .unavailable:
+            note = "Could not discard the recording"
+        }
+        await refreshRecents()
     }
 
     /// docs/08 결과 파일: the detail screen of one recent recording.

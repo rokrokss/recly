@@ -141,18 +141,12 @@ private struct ListScreen: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            if item.isDeviceDefault {
-                Text(verbatim: RecKitStrings.localized("Select another workflow before deleting this one."))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-                    .accessibilityIdentifier("workflow-delete-in-use")
-            }
             HStack(spacing: Space.s) {
                 FlowLayout(spacing: Space.s) {
-                    BlueprintButton(RecKitStrings.localized("Edit"), tone: .quiet) { model.edit(item.id) }
+                    BlueprintButton(RecKitStrings.localized("Edit")) { model.edit(item.id) }
                         .accessibilityIdentifier("workflow-edit")
                     if !item.isDeviceDefault {
-                        BlueprintButton(loc("Use"), tone: .quiet) {
+                        BlueprintButton(loc("Use")) {
                             Task { await model.setDeviceDefault(item) }
                         }
                     }

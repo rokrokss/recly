@@ -65,6 +65,7 @@ fun BlueprintTextField(
     /** Monospace by default: nearly every field in this app holds data rather than prose. */
     monospace: Boolean = true,
     minHeight: Dp = MinTouch,
+    placeholder: String? = null,
 ) {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
@@ -95,6 +96,14 @@ fun BlueprintTextField(
             singleLine = singleLine,
             textStyle = style.copy(color = palette.text),
             cursorBrush = SolidColor(palette.accent),
+            decorationBox = { innerTextField ->
+                Box {
+                    if (value.isEmpty() && placeholder != null) {
+                        Text(placeholder, style = style, color = palette.textMuted)
+                    }
+                    innerTextField()
+                }
+            },
         )
         hint?.let {
             Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)

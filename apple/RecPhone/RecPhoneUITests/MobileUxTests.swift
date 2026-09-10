@@ -24,7 +24,7 @@ final class MobileUxTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
         XCTAssertTrue(app.buttons["newWorkflow"].waitForExistence(timeout: 10))
         XCTAssertEqual(deletes.allElementsBoundByIndex.filter { !$0.isEnabled }.count, 1)
-        XCTAssertTrue(app.staticTexts["workflow-delete-in-use"].exists)
+        XCTAssertFalse(app.staticTexts["workflow-delete-in-use"].exists)
 
         let addSecret = app.buttons["add-secret"]
         for _ in 0..<5 where !addSecret.isHittable { app.scrollViews.firstMatch.swipeUp() }
@@ -126,8 +126,7 @@ final class MobileUxTests: XCTestCase {
         XCTAssertTrue(newWorkflow.waitForExistence(timeout: 30))
         XCTAssertTrue(newWorkflow.isHittable)
         XCTAssertEqual(newWorkflow.label, "새 워크플로우")
-        let hint = app.staticTexts["workflow-delete-in-use"]
-        XCTAssertEqual(hint.label, "삭제하려면 먼저 다른 워크플로우를 선택하세요.")
+        XCTAssertFalse(app.staticTexts["workflow-delete-in-use"].exists)
         let addSecret = app.buttons["add-secret"]
         let tabBar = app.tabBars.firstMatch
         for _ in 0..<6 where !addSecret.isHittable || addSecret.frame.maxY > tabBar.frame.minY {

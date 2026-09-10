@@ -17,6 +17,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -38,6 +39,26 @@ private val TIME_COLUMN = 68.dp
  */
 private val LENGTH_COLUMN = 52.dp
 private val STATUS_COLUMN = 92.dp
+
+/** Aligns an expanded row's action with the right edge of the column's centered DONE badge. */
+@Composable
+fun LedgerAction(content: @Composable () -> Unit) {
+    Layout(content = {
+        Box { content() }
+        StatusBadge(LedgerStatus("DONE", BadgeTone.SUCCESS), Modifier.clearAndSetSemantics {})
+    }) { measurables, constraints ->
+        val badge = measurables[1].measure(constraints.copy(
+            minWidth = 0, maxWidth = STATUS_COLUMN.roundToPx(), minHeight = 0,
+        ))
+        val inset = ((STATUS_COLUMN.roundToPx() - badge.width) / 2).coerceAtLeast(0)
+        val action = measurables[0].measure(constraints.copy(
+            minWidth = 0, maxWidth = (constraints.maxWidth - inset).coerceAtLeast(0), minHeight = 0,
+        ))
+        layout(action.width + inset, action.height) {
+            action.placeRelative(0, 0)
+        }
+    }
+}
 
 /** A 1dp rule (2dp in high contrast) — the only divider this design has. */
 @Composable

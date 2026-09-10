@@ -205,6 +205,23 @@
         }
       }
     },
+    "Could not discard the recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not discard the recording"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음을 버리지 못했습니다"
+          }
+        }
+      }
+    },
     "Deferred %@": {
       "extractionState": "manual",
       "localizations": {
@@ -745,6 +762,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "녹음 중"
+          }
+        }
+      }
+    },
+    "Recording discarded": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recording discarded"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음을 버렸습니다"
           }
         }
       }

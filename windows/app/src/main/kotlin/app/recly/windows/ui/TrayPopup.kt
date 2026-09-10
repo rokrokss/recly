@@ -37,6 +37,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
+import app.recly.windows.ui.component.LedgerAction
 import app.recly.windows.ui.component.LedgerHeader
 import app.recly.windows.ui.component.LedgerRow
 import app.recly.windows.ui.component.LiveWaveform
@@ -437,11 +438,13 @@ private fun RecentRow(
                 // docs/03 "앱에서 지우기": the dialog asks about Drive; this only opens it. Never
                 // over a recording that is being written to or uploaded ([RecentItem.deletable]).
                 if (item.deletable) {
-                    BlueprintButton(
-                        label = strings[Str.DELETE],
-                        onClick = { model.askToDelete(item) },
-                        tone = ButtonTone.DANGER,
-                    )
+                    LedgerAction {
+                        BlueprintButton(
+                            label = strings[Str.DELETE],
+                            onClick = { model.askToDelete(item) },
+                            tone = ButtonTone.DANGER,
+                        )
+                    }
                 }
             }
         }

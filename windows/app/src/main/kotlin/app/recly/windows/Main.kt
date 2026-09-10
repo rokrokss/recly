@@ -4,6 +4,7 @@ package app.recly.windows
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
@@ -15,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -373,25 +375,25 @@ private fun TitlePrompt(
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = strings[Str.RECORDING_TITLE],
-        // Closing the window is a skip — the job may not be left waiting on a window that is no
-        // longer there.
-        onDismissRequest = model::skipTitle,
+        // Dismissing the title prompt discards this take, just like its Cancel button.
+        onDismissRequest = model::cancelTitle,
         theme = themed,
         height = TITLE_HEIGHT.dp,
         actions = {
-            BlueprintButton(strings[Str.SKIP], model::skipTitle, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CANCEL], model::cancelTitle, tone = ButtonTone.QUIET)
             BlueprintButton(
                 label = strings[Str.SAVE],
                 onClick = { model.saveTitle(title, participants) },
+                modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
         },
     ) {
-        BlueprintDialogText(strings[Str.TITLE_HINT], tone = DialogTone.MUTED)
         BlueprintTextField(
             value = title,
             onValueChange = { title = it },
             label = strings[Str.RECORDING_TITLE],
+            placeholder = strings[Str.UNTITLED],
             // A title is something a person types, not a field of data.
             monospace = false,
         )

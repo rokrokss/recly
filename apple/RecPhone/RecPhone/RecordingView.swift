@@ -73,7 +73,7 @@ struct RecordingView: View {
                 title: $title,
                 participants: $participants,
                 onSave: { finishNaming(with: title, participants: participants) },
-                onSkip: { finishNaming(with: nil, participants: nil) }
+                onCancel: cancelNaming
             )
         }
     }
@@ -330,7 +330,7 @@ struct RecordingView: View {
     private var naming: Binding<Bool> {
         Binding(
             get: { model.naming != nil },
-            set: { shown in if !shown { finishNaming(with: nil, participants: nil) } }
+            set: { shown in if !shown { cancelNaming() } }
         )
     }
 
@@ -340,6 +340,13 @@ struct RecordingView: View {
         title = ""
         participants = nil
         Task { await model.finishNaming(with: answer, participants: count) }
+    }
+
+    private func cancelNaming() {
+        guard model.naming != nil else { return }
+        title = ""
+        participants = nil
+        Task { await model.cancelNaming() }
     }
 }
 
@@ -394,7 +401,7 @@ private struct NamingSheet: View {
     @Binding var title: String
     @Binding var participants: Int?
     let onSave: () -> Void
-    let onSkip: () -> Void
+    let onCancel: () -> Void
 
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
@@ -409,11 +416,8 @@ private struct NamingSheet: View {
             HairLine()
             VStack(alignment: .leading, spacing: Space.m) {
                 VStack(alignment: .leading, spacing: Space.xs) {
-                    BlueprintField(loc("Title"), text: $title)
+                    BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
                         .accessibilityIdentifier("titleField")
-                    Text(verbatim: loc("Leave it empty to keep the timestamp name"))
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.textMuted)
                 }
                 VStack(alignment: .leading, spacing: Space.xs) {
                     Text(verbatim: loc("People in the room"))
@@ -432,9 +436,10 @@ private struct NamingSheet: View {
                     .accessibilityIdentifier("participants")
                 }
                 HStack(spacing: Space.s) {
-                    BlueprintButton(loc("Save"), tone: .primary) { onSave() }
+                    Spacer(minLength: 0)
+                    BlueprintButton(loc("Cancel"), tone: .quiet) { onCancel() }
+                    BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave() }
                         .accessibilityIdentifier("saveTitle")
-                    BlueprintButton(loc("Skip"), tone: .quiet) { onSkip() }
                 }
             }
             .padding(Space.m)

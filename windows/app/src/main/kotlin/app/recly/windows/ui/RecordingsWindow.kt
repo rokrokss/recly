@@ -222,7 +222,13 @@ private fun Detail(
         trailing = if (detail.loading || detail.writing) {
             null
         } else {
-            { BlueprintButton(strings[Str.DETAIL_RENAME], onRename, tone = ButtonTone.QUIET) }
+            {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                    detail.transcript?.takeIf { detail.availability != TranscriptAvailability.EMPTY }
+                        ?.let { TranscriptCopyButton(it, strings) }
+                    BlueprintButton(strings[Str.DETAIL_RENAME], onRename, tone = ButtonTone.QUIET)
+                }
+            }
         },
     )
     // A take still being written to has nothing whole to play, and nothing to say about it either.

@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.collapse
 import androidx.compose.ui.semantics.contentDescription
@@ -42,6 +43,26 @@ private val COLUMN_GAP = Space.s
  * 76dp column, and `00:09` in a 44dp one, which came out as `00:0`.
  */
 data class LedgerColumns(val length: Dp, val status: Dp)
+
+/** Aligns an expanded row's action with the right edge of the column's centered DONE badge. */
+@Composable
+fun LedgerAction(columns: LedgerColumns, content: @Composable () -> Unit) {
+    Layout(content = {
+        Box { content() }
+        StatusBadge(LedgerStatus("DONE", BadgeTone.SUCCESS), Modifier.clearAndSetSemantics {})
+    }) { measurables, constraints ->
+        val badge = measurables[1].measure(constraints.copy(
+            minWidth = 0, maxWidth = columns.status.roundToPx(), minHeight = 0,
+        ))
+        val inset = ((columns.status.roundToPx() - badge.width) / 2).coerceAtLeast(0)
+        val action = measurables[0].measure(constraints.copy(
+            minWidth = 0, maxWidth = (constraints.maxWidth - inset).coerceAtLeast(0), minHeight = 0,
+        ))
+        layout(action.width + inset, action.height) {
+            action.placeRelative(0, 0)
+        }
+    }
+}
 
 /**
  * The narrowest a title column may be and still be a title: below this it holds a word and an

@@ -20,6 +20,7 @@ struct MenuPopover: View {
     @Environment(\.locale) private var locale
 
     @State private var showingSettings = false
+    @State private var statusTrailingInsets: [String: CGFloat] = [:]
     @State private var expanded: String?
 
     var body: some View {
@@ -224,7 +225,7 @@ struct MenuPopover: View {
     private var footer: some View {
         HStack(spacing: Space.s) {
             BlueprintButton(
-                showingSettings ? loc("Back") : loc("Settings"),
+                showingSettings ? loc("Hide settings") : loc("Settings"),
                 tone: .quiet
             ) {
                 showingSettings.toggle()
@@ -338,6 +339,7 @@ struct MenuPopover: View {
                 }
             }
         )
+        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
         if expanded == item.id {
             VStack(alignment: .leading, spacing: Space.s) {
                 // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it
@@ -416,7 +418,8 @@ struct MenuPopover: View {
                     model.confirmDelete(item, from: .popover)
                 }
                 .accessibilityIdentifier("delete")
-                    .fixedSize(horizontal: true, vertical: false)
+                .fixedSize(horizontal: true, vertical: false)
+                .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

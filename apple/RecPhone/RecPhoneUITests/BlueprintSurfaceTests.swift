@@ -150,7 +150,7 @@ final class BlueprintSurfaceTests: XCTestCase {
             let row = rows.allElementsBoundByIndex[index]
             if !row.isEnabled {
                 sawProtectedRow = true
-                XCTAssertTrue(app.staticTexts["workflow-delete-in-use"].exists)
+                XCTAssertFalse(app.staticTexts["workflow-delete-in-use"].exists)
                 continue
             }
             row.tap()

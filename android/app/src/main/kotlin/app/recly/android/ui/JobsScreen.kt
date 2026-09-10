@@ -43,6 +43,8 @@ import app.recly.android.ui.component.BlueprintRadioRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.HairLine
+import app.recly.android.ui.component.LedgerAction
+import app.recly.android.ui.component.LedgerColumns
 import app.recly.android.ui.component.LedgerHeader
 import app.recly.android.ui.component.LedgerRow
 import app.recly.android.ui.component.LedgerStatus
@@ -192,6 +194,7 @@ fun JobsScreen(
                         if (open) {
                             ExpandedRow(
                                 item = item,
+                                columns = columns,
                                 action = state.action,
                                 onRetry = { onRetry(item) },
                                 onDelete = { onConfirmDelete(item) },
@@ -214,6 +217,7 @@ fun JobsScreen(
 @Composable
 private fun ExpandedRow(
     item: JobItem,
+    columns: LedgerColumns,
     action: ProcessingState,
     onRetry: () -> Unit,
     onDelete: () -> Unit,
@@ -329,12 +333,14 @@ private fun ExpandedRow(
                 )
             }
             if (!item.state.inFlight()) {
-                BlueprintButton(
-                    label = stringResource(R.string.action_delete),
-                    onClick = onDelete,
-                    tone = ButtonTone.DANGER,
-                    modifier = Modifier.testTag("recording-delete-${item.recordingId}"),
-                )
+                LedgerAction(columns) {
+                    BlueprintButton(
+                        label = stringResource(R.string.action_delete),
+                        onClick = onDelete,
+                        tone = ButtonTone.DANGER,
+                        modifier = Modifier.testTag("recording-delete-${item.recordingId}"),
+                    )
+                }
             }
         }
     }

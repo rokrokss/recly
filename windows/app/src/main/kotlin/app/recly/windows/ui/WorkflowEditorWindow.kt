@@ -139,7 +139,6 @@ private fun Sidebar(model: WorkflowsModel, strings: Strings, go: Go, modifier: M
                 selected = model.editor?.edit?.id == item.id,
                 inUse = item.isDeviceDefault,
                 inUseLabel = strings[Str.WORKFLOW_IN_USE],
-                deleteBlockedLabel = strings[Str.WORKFLOW_DELETE_IN_USE],
                 useLabel = strings[Str.WORKFLOW_USE],
                 editLabel = strings[Str.EDIT],
                 onOpen = { model.edit(item.id) },
@@ -173,7 +172,6 @@ private fun WorkflowRow(
     selected: Boolean,
     inUse: Boolean,
     inUseLabel: String,
-    deleteBlockedLabel: String,
     useLabel: String,
     editLabel: String,
     onOpen: () -> Unit,
@@ -186,8 +184,8 @@ private fun WorkflowRow(
         selected = selected,
         onOpen = null,
         controls = {
-            BlueprintButton(editLabel, onOpen, tone = ButtonTone.QUIET)
-            if (!inUse) BlueprintButton(useLabel, onUse, tone = ButtonTone.QUIET)
+            BlueprintButton(editLabel, onOpen)
+            if (!inUse) BlueprintButton(useLabel, onUse)
             Box(Modifier.weight(1f))
             BlueprintButton(deleteLabel, onDelete, tone = ButtonTone.DANGER, enabled = !inUse)
         },
@@ -200,9 +198,6 @@ private fun WorkflowRow(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
-        if (inUse) {
-            Text(deleteBlockedLabel, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-        }
     }
 }
 

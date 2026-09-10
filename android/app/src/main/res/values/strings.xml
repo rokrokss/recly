@@ -406,4 +406,6 @@
     <string name="transcription_setup">How to set up transcription</string>
     <string name="transcription_setup_body">To get a transcript, connect Google Drive in Settings, add a transcription step after Drive upload in a workflow, and enter the provider’s API key. Select that workflow before recording. Recordings without a transcription step are still saved.</string>
     <string name="action_edit">Edit</string>
+    <string name="recording_discarded">Recording discarded</string>
+    <string name="recording_discard_failed">Could not discard the recording</string>
 </resources>

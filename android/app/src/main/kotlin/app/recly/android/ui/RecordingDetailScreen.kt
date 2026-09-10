@@ -124,17 +124,23 @@ fun RecordingDetailScreen(
         if (!keyboardVisible) ScreenHeader(
             title = detail.title ?: stringResource(R.string.jobs_untitled),
             meta = detail.recordingId,
+            trailingAlignment = Alignment.TopEnd,
             trailing = {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                    // Not while the recorder is still writing into this take: the core refuses to
-                    // rename one, and an action that does nothing is not one to offer.
-                    if (!detail.writing) {
-                        BlueprintButton(
-                            label = stringResource(R.string.detail_rename),
-                            onClick = { renaming = true },
-                            modifier = Modifier.testTag("detail-rename"),
-                            tone = ButtonTone.QUIET,
-                        )
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                        if (!detail.loading) detail.transcript?.takeIf { transcript ->
+                            transcript.segments.any { it.text.isNotBlank() }
+                        }?.let { TranscriptCopyButton(it) }
+                        // Not while the recorder is still writing into this take: the core refuses to
+                        // rename one, and an action that does nothing is not one to offer.
+                        if (!detail.writing) {
+                            BlueprintButton(
+                                label = stringResource(R.string.detail_rename),
+                                onClick = { renaming = true },
+                                modifier = Modifier.testTag("detail-rename"),
+                                tone = ButtonTone.QUIET,
+                            )
+                        }
                     }
                     BlueprintButton(
                         label = stringResource(R.string.action_close),

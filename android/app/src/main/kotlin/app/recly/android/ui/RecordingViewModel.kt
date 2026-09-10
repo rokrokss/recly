@@ -17,6 +17,7 @@ import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
+import recly.core.recording.DeleteResult
 import recly.core.sync.WorkflowRepository
 import recly.core.sync.WorkflowSummary
 
@@ -77,7 +79,10 @@ data class RecordingUiState(
  * title has to be in it — and if this process dies while the dialog is up, `RecordingRecovery`
  * enqueues the finalized-but-jobless recording next time round.
  */
-class RecordingViewModel(application: Application) : AndroidViewModel(application) {
+class RecordingViewModel @JvmOverloads constructor(
+    application: Application,
+    private val completionEvents: Flow<RecorderEvent> = RecorderService.events,
+) : AndroidViewModel(application) {
 
     private val settings = AppSettings(application)
 
@@ -104,7 +109,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
             }
         }
         viewModelScope.launch {
-            RecorderService.events.collect { event -> onEvent(event) }
+            completionEvents.collect { event -> onEvent(event) }
         }
     }
 
@@ -177,7 +182,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         return true
     }
 
-    /** Stops now. The job is held back until [saveTitle] or [skipTitle] answers the prompt. */
+    /** Stops now. Save queues the recording; Cancel discards it before a job is created. */
     fun stop() = RecorderService.stop(getApplication(), title = null, enqueue = false)
 
     /**
@@ -246,9 +251,23 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         }
     }
 
-    fun skipTitle() {
+    fun cancelTitle() {
         val untitled = _state.value.untitled ?: return
-        finish(untitled) { null }
+        // Claim the prompt synchronously: another click must not save or delete this take again.
+        _state.update { it.copy(untitled = null) }
+        viewModelScope.launch {
+            val message = try {
+                when (core().recordings.delete(untitled.recordingId, deleteDrive = false)) {
+                    is DeleteResult.Deleted, DeleteResult.NotFound -> res(R.string.recording_discarded)
+                    DeleteResult.Busy -> res(R.string.recording_discard_failed)
+                }
+            } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                res(R.string.recording_discard_failed)
+            }
+            _state.update { it.copy(messages = listOf(message)) }
+        }
     }
 
     private fun onEvent(event: RecorderEvent) = when (event) {

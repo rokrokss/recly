@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -95,7 +96,7 @@ fun RecordingSection(
     onMicGranted: () -> Unit,
     onConsumeAutoStart: () -> Boolean,
     onSaveTitle: (String, Int?) -> Unit,
-    onSkipTitle: () -> Unit,
+    onCancelTitle: () -> Unit,
     onConsentAnswered: (Boolean, Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -264,7 +265,7 @@ fun RecordingSection(
     // The recording is already finalized on disk by the time this appears; the answer only decides
     // what title the queued job carries.
     if (state.untitled != null) {
-        TitleDialog(onSave = onSaveTitle, onSkip = onSkipTitle)
+        TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle)
     }
 
     if (state.consentPrompt) {
@@ -516,21 +517,22 @@ private fun granted(context: Context, permission: String): Boolean =
  * default — writes nothing at all rather than guessing.
  */
 @Composable
-private fun TitleDialog(onSave: (String, Int?) -> Unit, onSkip: () -> Unit) {
+internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit) {
     var title by remember { mutableStateOf("") }
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = stringResource(R.string.recording_title_prompt),
-        onDismissRequest = onSkip,
+        onDismissRequest = onCancel,
         actions = {
             BlueprintButton(
-                label = stringResource(R.string.recording_title_skip),
-                onClick = onSkip,
+                label = stringResource(R.string.action_cancel),
+                onClick = onCancel,
                 tone = ButtonTone.QUIET,
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),
                 onClick = { onSave(title, participants) },
+                modifier = Modifier.widthIn(min = 120.dp),
                 tone = ButtonTone.PRIMARY,
             )
         },
@@ -538,12 +540,9 @@ private fun TitleDialog(onSave: (String, Int?) -> Unit, onSkip: () -> Unit) {
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
+            placeholder = { Text(stringResource(R.string.jobs_untitled)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().height(64.dp),
-        )
-        BlueprintDialogText(
-            stringResource(R.string.recording_title_hint),
-            tone = DialogTone.MUTED,
         )
         BlueprintDialogText(
             stringResource(R.string.recording_participants),

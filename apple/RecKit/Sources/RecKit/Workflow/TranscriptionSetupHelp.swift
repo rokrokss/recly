@@ -38,7 +38,7 @@ public struct TranscriptionSetupHelp: View {
 
     private var content: some View {
         VStack(alignment: .leading, spacing: Space.m) {
-            HStack(alignment: .top, spacing: Space.s) {
+            HStack(alignment: .center, spacing: Space.s) {
                 Text(verbatim: title)
                     .font(blueprint.fonts.rowTitle)
                     .frame(maxWidth: .infinity, alignment: .leading)

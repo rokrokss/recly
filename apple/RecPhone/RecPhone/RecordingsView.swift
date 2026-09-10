@@ -10,6 +10,7 @@ struct RecordingsView: View {
     @ObservedObject var model: RecordingModel
     @Environment(\.blueprint) private var blueprint
     @Environment(\.dynamicTypeSize) private var typeSize
+    @State private var statusTrailingInsets: [String: CGFloat] = [:]
     @State private var expanded: String?
     /// docs/08 "결과 파일": the recording whose transcript is being read, as a page over the list —
     /// the ledger has no navigation stack to push onto (docs/09 화면 원칙 2).
@@ -121,6 +122,7 @@ struct RecordingsView: View {
             }
         )
         .accessibilityIdentifier("state")
+        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
         if expanded == item.id {
             expansion(item)
         }
@@ -223,6 +225,7 @@ struct RecordingsView: View {
                 BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete(item) }
                     .accessibilityIdentifier("delete")
                     .fixedSize(horizontal: true, vertical: false)
+                    .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

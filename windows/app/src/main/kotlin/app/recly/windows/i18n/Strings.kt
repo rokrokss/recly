@@ -93,6 +93,8 @@ enum class Str {
     WINDOW_WORKFLOWS,
     WINDOW_SETTINGS,
     RECORDING_TITLE,
+    RECORDING_DISCARDED,
+    RECORDING_DISCARD_FAILED,
     TITLE_HINT,
     // docs/03: the stop dialog also asks how many people were in the room, as the phones do.
     RECORDING_PARTICIPANTS,

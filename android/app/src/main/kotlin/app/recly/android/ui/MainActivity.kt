@@ -394,7 +394,7 @@ private fun RecordTab(
         onMicGranted = model::micGranted,
         onConsumeAutoStart = model::consumeAutoStart,
         onSaveTitle = model::saveTitle,
-        onSkipTitle = model::skipTitle,
+        onCancelTitle = model::cancelTitle,
         onConsentAnswered = model::consentAnswered,
         modifier = modifier,
     )
