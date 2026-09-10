@@ -37,6 +37,7 @@ help:
 	@echo "make android-test   android unit tests only"
 	@echo "make android-ui-test  focused Android interaction tests (connected test device)"
 	@echo "make ios-ui-test    focused iPhone interaction tests (IOS_SIM= override)"
+	@echo "make ios-kit-test   RecKit tests on iOS (IOS_SIM= and IOS_KIT_TESTS= override)"
 	@echo "make windows-test   windows shell unit tests only"
 	@echo "make windows-run    run the Windows shell on this host"
 	@echo "make windows-msi    Windows MSI (Windows hosts only)"
@@ -134,3 +135,8 @@ android-ui-test:
 IOS_TESTS ?= ReclyUITests/MobileUxTests
 ios-ui-test:
 	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test -only-testing:$(IOS_TESTS)
+
+.PHONY: ios-kit-test
+IOS_KIT_TESTS ?= RecKitTests
+ios-kit-test:
+	./apple/scripts/build-sim.sh RecKit "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test -only-testing:$(IOS_KIT_TESTS)

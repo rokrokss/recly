@@ -17,7 +17,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
-import okio.Path.Companion.toPath
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveApi
 import recly.core.drive.DriveUploadState
@@ -119,6 +118,7 @@ class RecordingRepository(
 ) {
     private val queries get() = db.recQueries
     private val mutex = Mutex()
+    private val directories = RecordingDirectory(deps.dataDir, deps.device.platform)
 
     suspend fun create(meta: RecordingMeta, dir: Path): Unit = locked {
         db.transaction {
@@ -132,7 +132,7 @@ class RecordingRepository(
                 meta.endedAt,
                 meta.durationSec,
                 meta.timezone,
-                dir.toString(),
+                directories.stored(dir),
                 recJson.encodeToString(meta),
                 meta.status.wire,
             )
@@ -160,7 +160,7 @@ class RecordingRepository(
                 meta.endedAt,
                 meta.durationSec,
                 meta.timezone,
-                dir.toString(),
+                directories.stored(dir),
                 recJson.encodeToString(meta),
                 meta.status.wire,
                 meta.recordingId,
@@ -212,7 +212,7 @@ class RecordingRepository(
                 meta.endedAt,
                 meta.durationSec,
                 meta.timezone,
-                dir.toString(),
+                directories.stored(dir),
                 recJson.encodeToString(meta),
                 meta.status.wire,
                 folderId,
@@ -284,7 +284,7 @@ class RecordingRepository(
             queries.deleteJobsByRecording(recordingId)
             queries.deletePartsByRecording(recordingId)
             queries.deleteRecording(recordingId)
-            row.dir.toPath()
+            directories.resolve(row.dir)
         } ?: return@locked false
         deps.fileSystem.deleteRecursively(removed, mustExist = false)
         true
@@ -453,7 +453,7 @@ class RecordingRepository(
                 queries.deleteJobsByRecording(recordingId)
                 queries.deletePartsByRecording(recordingId)
                 queries.deleteRecording(recordingId)
-                Removal.Done(row.dir.toPath(), if (deleteDrive) folderId else null)
+                Removal.Done(directories.resolve(row.dir), if (deleteDrive) folderId else null)
             }
             // In the same locked pass as the commit, and not in a second one: past the commit
             // nothing points at the directory any more, and [locked]'s body cannot suspend, so a
@@ -615,7 +615,7 @@ class RecordingRepository(
             RecordingRecord(
                 it.id,
                 recJson.decodeFromString(it.meta_json),
-                it.dir.toPath(),
+                directories.resolve(it.dir),
                 it.drive_folder_id,
                 it.remote == 1L,
                 pendingTypes(it.remote_pending),
@@ -676,7 +676,7 @@ class RecordingRepository(
             RecordingRecord(
                 it.id,
                 recJson.decodeFromString(it.meta_json),
-                it.dir.toPath(),
+                directories.resolve(it.dir),
                 it.drive_folder_id,
                 it.remote == 1L,
                 pendingTypes(it.remote_pending),

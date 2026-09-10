@@ -162,6 +162,7 @@ fun testDeps(
      * the concurrency tests hand in a real multi-threaded dispatcher instead. */
     io: CoroutineDispatcher = Dispatchers.Unconfined,
     requireTransferConsent: Boolean = false,
+    dataDir: Path = "/data".toPath(),
 ): CoreDeps = CoreDeps(
     clock = clock,
     logger = logger,
@@ -170,7 +171,7 @@ fun testDeps(
     transport = transport,
     fileSystem = fileSystem,
     audio = audio,
-    dataDir = "/data".toPath(),
+    dataDir = dataDir,
     device = DeviceInfo(deviceId, platform, DEVICE_NAME),
     appVersion = TEST_APP_VERSION,
     io = io,

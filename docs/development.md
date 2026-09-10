@@ -33,6 +33,9 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 
 **Apple** (requires macOS) — build the XCFramework and stage it into RecKit first:
 
+`make ios-kit-test IOS_SIM="Recly UX Review" IOS_KIT_TESTS=RecKitTests/PlaybackAudioSessionTests`
+runs the playback audio-session regression on an iOS simulator without opening a microphone.
+
 ```bash
 ./apple/scripts/build-core.sh                 # :core:assembleXCFramework → apple/RecKit/Frameworks/
 ./apple/scripts/setup-local-signing.sh        # once per Mac; keeps Keychain grants across rebuilds
@@ -100,9 +103,9 @@ Windows MSI는 Windows 호스트의 `make windows-msi` 또는
 `REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
 누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
 
-현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `10`,
-Android는 `14`, Wear OS는 `1,000,014`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
-업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.9`로 설정한다.
+현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `11`,
+Android는 `15`, Wear OS는 `1,000,015`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
+업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.10`으로 설정한다.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.

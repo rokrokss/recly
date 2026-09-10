@@ -481,6 +481,11 @@ meta  = {base}.meta.json
 둔다(디렉터리명은 DB 행에 저장; Drive 배치는 여전히 `{base}`). 수신의 `upsertRecording`은 행을 통째로 바꾸되
 `drive_folder_id`는 남긴다 — 폰이 이미 올린 뒤 워치가 재전송해도 폴더를 잊지 않는다.
 
+녹음 디렉터리는 DB에 현재 앱 데이터 루트 기준 `recordings/{디렉터리명}`으로 저장한다. iOS·watchOS 업데이트로
+앱 컨테이너 UUID가 바뀌어도 조회·전사·재생·이름 변경·삭제는 현재 루트에서 처리한다. 이전 버전이 남긴 절대
+경로는 같은 앱의 `Containers/Data/Application/{UUID}/Library/Application Support/{앱 id}/recordings/` 아래에
+있는 경우에만 현재 컨테이너로 해석한다. 기존 파일을 이동하거나 삭제하지 않으며 외부 경로는 그대로 둔다.
+
 ### 보관 · 삭제
 
 #### 자동 보관 (ADR-017)
@@ -2205,6 +2210,9 @@ apple/
 - **녹음**: RecKit `SegmentedRecorder`(AVAudioEngine → AAC `AVAudioFile`, 900초 교체). `AVAudioSession`
   `.playAndRecord`/`.default`, 옵션 `.allowBluetooth`. `UIBackgroundModes: audio`로 잠금 중 계속. 인터럽션(전화·Siri)
   → `silenced`/`gaps` 기록 후 재개.
+- **재생**: 녹음 시작 전에 재생을 막고 기존 플레이어를 종료하며, 녹음 입력의 종료가 끝난 뒤에만 재생을 허용한다.
+  Play는 세션을 `.playback`/`.default`로 전환해 활성화한다. 녹음 종료 뒤에도 남는 `.playAndRecord` 카테고리를
+  녹음 진행 여부로 판단하지 않는다.
 - **표시**: Live Activity(경과 시간, 정지 버튼) — 잠금화면·Dynamic Island·워치 Smart Stack. **8시간 상한이면
   갱신**한다.
 - **진입점**: App Intents `StartRecordingIntent(workflow)`, `StopRecordingIntent` → Siri·Shortcuts·액션 버튼.

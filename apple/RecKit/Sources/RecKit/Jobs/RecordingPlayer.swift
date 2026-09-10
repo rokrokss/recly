@@ -402,16 +402,14 @@ private final class Queue {
     /// docs/09: playback is the point of pressing Play, so the session says so — without a category
     /// of `.playback` the phone plays nothing while it is on silent.
     ///
-    /// Except when the recorder already owns the session. `.playAndRecord` is what a recording in
-    /// progress runs in, and playback is allowed inside it — but *setting* a category of `.playback`
-    /// on top of it takes the input away and ends the recording. So the category is only ever
-    /// changed when it is something else, and the session is only ever handed back by the player
-    /// that took it ([borrowedSession]), never by one that merely played inside someone else's.
+    /// The capture gate prevents playback before the recorder opens its input and stays closed
+    /// until that input has stopped. The category is not a recording-state flag: `.playAndRecord`
+    /// remains set after the recorder deactivates the session. Always switch that stale category
+    /// to playback, so the next Play activates an output session with the normal media route.
     private func activateSession() throws {
         let session = AVAudioSession.sharedInstance()
-        guard session.category != .playAndRecord else { return }
         if session.category != .playback {
-            try session.setCategory(.playback)
+            try session.setCategory(.playback, mode: .default)
         }
         try session.setActive(true)
         borrowedSession = true
