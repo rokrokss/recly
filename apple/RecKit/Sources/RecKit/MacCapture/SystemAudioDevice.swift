@@ -32,9 +32,8 @@ public struct SystemAudioDevice: Sendable {
         )
     }
 
-    /// The output device's own rate, which is the rate the tap will deliver at. Polled rather than
-    /// listened to: it is one read every couple of seconds against a listener that would have to be
-    /// moved every time the default device changes (see `ProcessTapCapture.watch`).
+    /// The output device's own rate, used to detect route changes. The aggregate input stream can
+    /// have a different rate; its virtual format is what describes the captured samples.
     var nominalSampleRateHz: Double {
         CoreAudioProperty.value(of: id, selector: kAudioDevicePropertyNominalSampleRate) ?? 0
     }
@@ -67,8 +66,12 @@ enum CoreAudioProperty {
     /// A property whose size is the answer — Core Audio's process object list, which `MicInUseMonitor`
     /// walks. Empty when the property cannot be read at all, which the caller has to read as "no
     /// answer" rather than "nothing there".
-    static func array<T>(of object: AudioObjectID, selector: AudioObjectPropertySelector) -> [T] {
-        var address = address(selector)
+    static func array<T>(
+        of object: AudioObjectID,
+        selector: AudioObjectPropertySelector,
+        scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal
+    ) -> [T] {
+        var address = address(selector, scope: scope)
         var size: UInt32 = 0
         guard AudioObjectGetPropertyDataSize(object, &address, 0, nil, &size) == noErr,
               size >= UInt32(MemoryLayout<T>.stride)

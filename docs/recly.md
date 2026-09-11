@@ -2104,7 +2104,10 @@ apple/
 - **권한**: `NSMicrophoneUsageDescription`, `NSAudioCaptureUsageDescription`. tap 권한은 사전 확인 API가 없으므로 첫
   IOProc 시작에서 프롬프트하고, 실패하면 시스템 설정 "화면 및 시스템 오디오 녹음" 딥링크를 안내한다.
 - **tap 재생성**: 출력 장치 변경(`kAudioHardwarePropertyDefaultOutputDevice`)·포맷 변경 시 tap을 다시 만들고 `gaps`에
-  기록한다. 상태 줄은 **캡처 중인 출력 장치명**을 보여 준다.
+  기록한다. 캡처 포맷은 tap 생성 직후의 포맷이 아니라 **aggregate 입력 스트림의 virtual format**을 읽는다.
+  Bluetooth 통화 모드에서 레이트가 달라져도 실제 전달된 샘플과 일치해야 한다. 입력 스트림의 포맷 변경을 구독하고
+  2초 폴링으로도 재확인한다. 읽을 수 없거나 모노 Float32가 아닌 포맷은 추측해서 해석하지 않는다.
+  `rec.tap.format` 로그에 tap·입력 스트림 레이트를 남긴다. 상태 줄은 **캡처 중인 출력 장치명**을 보여 준다.
 
 ### 미팅 감지 · 컨텍스트
 

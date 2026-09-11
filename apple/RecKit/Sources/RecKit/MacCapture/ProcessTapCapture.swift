@@ -60,7 +60,9 @@ final class ProcessTapCapture: SystemAudioInput {
         let tapID: AudioObjectID
         let aggregateID: AudioDeviceID
         let procID: AudioDeviceIOProcID
+        let streamID: AudioStreamID
         let format: AVAudioFormat
+        let formatListener: AudioObjectPropertyListenerBlock?
         let deviceName: String
         let deviceRateHz: Double
     }
@@ -132,53 +134,85 @@ final class ProcessTapCapture: SystemAudioInput {
             )
         }
 
-        do {
-            guard let asbd: AudioStreamBasicDescription = CoreAudioProperty.value(
-                of: tapID, selector: kAudioTapPropertyFormat
-            ), asbd.mSampleRate > 0 else {
-                throw RecorderError("the tap reports no format", kind: .systemAudioUnavailable)
-            }
-            // A mono global tap is mono by construction; anything else and the buffer below would be
-            // read as the wrong thing rather than merely sound wrong.
-            guard asbd.mChannelsPerFrame == 1, let format = AVAudioFormat(
-                commonFormat: .pcmFormatFloat32,
-                sampleRate: asbd.mSampleRate,
-                channels: 1,
-                interleaved: false
-            ) else {
-                throw RecorderError(
-                    "the tap format is not mono Float32 (\(asbd.mChannelsPerFrame)ch)",
-                    kind: .systemAudioUnavailable
-                )
-            }
+        var ownsTap = true
+        defer { if ownsTap { AudioHardwareDestroyProcessTap(tapID) } }
+        let aggregateID = try Self.makeAggregate(around: device, tap: description)
+        var ownsAggregate = true
+        defer { if ownsAggregate { AudioHardwareDestroyAggregateDevice(aggregateID) } }
 
-            let aggregateID = try Self.makeAggregate(around: device, tap: description)
-            do {
-                let procID = try makeIOProc(on: aggregateID, format: format)
-                lock.withLock {
-                    live = Live(
-                        tapID: tapID,
-                        aggregateID: aggregateID,
-                        procID: procID,
-                        format: format,
-                        deviceName: device.name,
-                        deviceRateHz: device.nominalSampleRateHz
-                    )
-                    lastCallbackSec = Self.nowSec
-                }
-                let started = AudioDeviceStart(aggregateID, procID)
-                guard started == noErr else {
-                    teardown()
-                    throw RecorderError("the tap did not start (\(started))", kind: .systemAudioUnavailable)
-                }
-            } catch {
-                AudioHardwareDestroyAggregateDevice(aggregateID)
-                throw error
-            }
-        } catch {
-            AudioHardwareDestroyProcessTap(tapID)
-            throw error
+        // The IOProc belongs to the aggregate, not the tap. In particular, a Bluetooth call route
+        // can deliver 24 kHz samples while the tap advertises 48 kHz. Labelling those samples with
+        // the tap's rate doubles their pitch and makes the system queue run short by half.
+        let input = try Self.inputFormat(on: aggregateID)
+        let procID = try makeIOProc(on: aggregateID, format: input.format)
+        let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            self?.checkInputFormat(on: aggregateID)
         }
+        var address = CoreAudioProperty.address(kAudioStreamPropertyVirtualFormat)
+        let listening = AudioObjectAddPropertyListenerBlock(
+            input.streamID, &address, control, listener
+        ) == noErr
+        lock.withLock {
+            live = Live(
+                tapID: tapID,
+                aggregateID: aggregateID,
+                procID: procID,
+                streamID: input.streamID,
+                format: input.format,
+                formatListener: listening ? listener : nil,
+                deviceName: device.name,
+                deviceRateHz: device.nominalSampleRateHz
+            )
+            lastCallbackSec = Self.nowSec
+            reportedStreams = false
+        }
+        // From here, teardown owns every resource, including a start that fails.
+        ownsTap = false
+        ownsAggregate = false
+        let tapFormat: AudioStreamBasicDescription? = CoreAudioProperty.value(
+            of: tapID, selector: kAudioTapPropertyFormat
+        )
+        Self.log.info(
+            "rec.tap.format tapRateHz=\(tapFormat?.mSampleRate ?? 0, privacy: .public) streamRateHz=\(input.format.sampleRate, privacy: .public)"
+        )
+        let started = AudioDeviceStart(aggregateID, procID)
+        guard started == noErr else {
+            teardown()
+            throw RecorderError("the tap did not start (\(started))", kind: .systemAudioUnavailable)
+        }
+    }
+
+    /// Read the client-facing format of the sole aggregate input stream. The property readers are
+    /// injectable so hardware-rate regressions can exercise the real resampler without a tap or a
+    /// permission prompt. There is no fallback to a guessed rate when the stream is unavailable.
+    static func inputFormat(
+        on aggregateID: AudioDeviceID,
+        streams: (AudioDeviceID) -> [AudioStreamID] = {
+            CoreAudioProperty.array(
+                of: $0, selector: kAudioDevicePropertyStreams, scope: kAudioObjectPropertyScopeInput
+            )
+        },
+        streamFormat: (AudioStreamID) -> AudioStreamBasicDescription? = {
+            CoreAudioProperty.value(of: $0, selector: kAudioStreamPropertyVirtualFormat)
+        }
+    ) throws -> (streamID: AudioStreamID, format: AVAudioFormat) {
+        let inputs = streams(aggregateID)
+        guard inputs.count == 1, let streamID = inputs.first, var asbd = streamFormat(streamID),
+              asbd.mSampleRate.isFinite, asbd.mSampleRate > 0,
+              asbd.mFormatID == kAudioFormatLinearPCM,
+              asbd.mFormatFlags & kAudioFormatFlagIsFloat != 0,
+              asbd.mFormatFlags & kAudioFormatFlagIsBigEndian == 0,
+              asbd.mChannelsPerFrame == 1, asbd.mBitsPerChannel == 32,
+              asbd.mBytesPerFrame == 4, asbd.mFramesPerPacket == 1, asbd.mBytesPerPacket == 4,
+              let format = AVAudioFormat(streamDescription: &asbd), format.commonFormat == .pcmFormatFloat32
+        else {
+            throw RecorderError("the aggregate input is not one mono Float32 stream", kind: .systemAudioUnavailable)
+        }
+        // Mono interleaved and noninterleaved samples have the same layout. Downstream buffers use
+        // the recorder's noninterleaved convention, with the rate read from the actual stream.
+        return (streamID, AVAudioFormat(
+            commonFormat: .pcmFormatFloat32, sampleRate: format.sampleRate, channels: 1, interleaved: false
+        )!)
     }
 
     /// docs/12: the tap is read through an aggregate device, not directly. Private, so it does not
@@ -252,8 +286,8 @@ final class ProcessTapCapture: SystemAudioInput {
         let list = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         // The tap is meant to be the only input stream on the aggregate device (see the zero input
         // channels in [aggregateDescription]); anything else and the buffer taken below could be a
-        // duplex device's own microphone rather than the meeting. Still `first` — a diagnostic, not
-        // a guess at which stream is the right one.
+        // duplex device's own microphone rather than the meeting. Do not interpret an unknown
+        // stream layout as mono samples; the watchdog will rebuild a stream that stays unusable.
         if list.count > 1 {
             let unreported = lock.withLock {
                 let firstTime = !reportedStreams
@@ -264,7 +298,8 @@ final class ProcessTapCapture: SystemAudioInput {
                 Self.log.error("rec.tap.unexpectedStreams count=\(list.count, privacy: .public)")
             }
         }
-        guard let first = list.first,
+        guard list.count == 1, let first = list.first, first.mNumberChannels == 1,
+              first.mDataByteSize.isMultiple(of: UInt32(MemoryLayout<Float>.size)),
               let source = first.mData?.assumingMemoryBound(to: Float.self)
         else { return }
         let frames = AVAudioFrameCount(first.mDataByteSize / UInt32(MemoryLayout<Float>.size))
@@ -292,6 +327,10 @@ final class ProcessTapCapture: SystemAudioInput {
     /// arrive in the window before it see [live] and are delivered — they are real audio.
     private func teardown() {
         guard let open = lock.withLock({ live }) else { return }
+        if let listener = open.formatListener {
+            var address = CoreAudioProperty.address(kAudioStreamPropertyVirtualFormat)
+            AudioObjectRemovePropertyListenerBlock(open.streamID, &address, control, listener)
+        }
         AudioDeviceStop(open.aggregateID, open.procID)
         AudioDeviceDestroyIOProcID(open.aggregateID, open.procID)
         lock.withLock { live = nil }
@@ -302,10 +341,9 @@ final class ProcessTapCapture: SystemAudioInput {
     // MARK: - Re-creation
 
     /// On [control]. The three things that end a tap (docs/12 "tap 재생성"): the default output device changes,
-    /// its format changes, or the IOProc goes quiet. The first is a listener because it is an event;
-    /// the other two are a poll on the same queue, because a format listener would have to be moved
-    /// to a different device every time the first one fires — two listeners' worth of bookkeeping to
-    /// learn what one read every two seconds says just as well.
+    /// its format changes, or the IOProc goes quiet. The input stream's format listener is installed
+    /// by build and removed by teardown. Polling also covers missed notifications or a replaced
+    /// stream, and detects output-device rate changes independently of the aggregate's format.
     private func watch() {
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
             self?.recreate(reason: "output_device_change")
@@ -353,7 +391,19 @@ final class ProcessTapCapture: SystemAudioInput {
         }
         let rate = SystemAudioDevice.defaultOutput()?.nominalSampleRateHz ?? open.deviceRateHz
         if rate > 0, rate != open.deviceRateHz {
-            recreate(reason: "output_format_change")
+            return recreate(reason: "output_format_change")
+        }
+        checkInputFormat(on: open.aggregateID)
+    }
+
+    /// On control. A queued notification from a destroyed stream cannot restart a replacement
+    /// whose format is already current. A format change keeps the microphone running and records
+    /// the brief system outage through the same path as an output-device change.
+    private func checkInputFormat(on aggregateID: AudioDeviceID) {
+        guard let open = lock.withLock({ live }), open.aggregateID == aggregateID else { return }
+        guard let input = try? Self.inputFormat(on: aggregateID),
+              input.streamID == open.streamID, input.format == open.format else {
+            return recreate(reason: "output_format_change")
         }
     }
 
