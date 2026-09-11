@@ -1123,19 +1123,19 @@
         }
       }
     },
-    "Sign out (%@)": {
+    "Sign out": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sign out (%@)"
+            "value": "Sign out"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로그아웃 (%@)"
+            "value": "로그아웃"
           }
         }
       }

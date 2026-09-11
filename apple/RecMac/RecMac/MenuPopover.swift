@@ -445,7 +445,7 @@ private struct SettingsPane: View {
                     //
                     // Held while a disconnect is owed: the retry reads the sign-in to tell a revoke
                     // that happened from one that never did, and a sign-out would take it away.
-                    BlueprintButton(loc("Sign out (%@)", account), tone: .quiet) { model.signOut() }
+                    BlueprintButton(loc("Sign out"), tone: .quiet) { model.signOut() }
                         .disabled(model.disconnectPhase.owed)
                 }
             } else {
