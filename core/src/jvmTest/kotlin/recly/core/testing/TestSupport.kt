@@ -163,6 +163,7 @@ fun testDeps(
     io: CoroutineDispatcher = Dispatchers.Unconfined,
     requireTransferConsent: Boolean = false,
     dataDir: Path = "/data".toPath(),
+    transcriptionPolicy: recly.core.transcribe.TranscriptionPolicy = recly.core.transcribe.TranscriptionPolicy(),
 ): CoreDeps = CoreDeps(
     clock = clock,
     logger = logger,
@@ -176,6 +177,7 @@ fun testDeps(
     appVersion = TEST_APP_VERSION,
     io = io,
     requireTransferConsent = requireTransferConsent,
+    transcriptionPolicy = transcriptionPolicy,
 )
 
 fun testMeta(

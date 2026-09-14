@@ -1,6 +1,6 @@
 # Recly Privacy Policy
 
-**Effective date: 2026-09-09**
+**Effective date: 2026-09-14**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
@@ -45,7 +45,7 @@ Transcription (STT) is **an optional step you may put into your workflow, not a 
 - How long that provider keeps the data and what it does with it is governed by **that provider's policy**, which Recly does not control. Review the provider's privacy policy before adding the step.
 - If you do not add this step, no audio or text is ever sent to that provider.
 
-These are the fourteen providers you can choose from. **What is sent is the same whichever one you pick** — one audio track file, and the language and diarization options (the speaker-count hint) that ride on the same request. What happens to it afterwards — retention, training — differs by provider, so read that provider's own policy before you pick it.
+The supported providers are listed below; availability may depend on your App Store region. **What is sent is the same whichever one you pick** — one audio track file, and the language and diarization options (the speaker-count hint) that ride on the same request. What happens to it afterwards — retention, training — differs by provider, so read that provider's own policy before you pick it.
 
 | `provider` in the workflow | Company | Policy |
 |---|---|---|
@@ -79,6 +79,8 @@ When you record on a Galaxy Watch or an Apple Watch, the **audio files and their
 Before a new destination is used, the workflow editor or import confirmation shows the recipient, endpoint, data sent and purpose. Choose **Allow & save** or **Allow & import** to authorize future recordings on this device. Existing jobs, including recordings received from Apple Watch, wait for permission and can be continued from **Settings → Privacy**. Recording itself does not require this permission.
 
 Permission is remembered for the same provider and configured endpoint, independently of API keys and workflow names. Changing the provider or destination, withdrawing permission, using a new device, or materially changing the data or purpose requires permission again. Permission is not exported with workflows. On iPhone it is bound to a device-only Keychain marker, so restoring the database onto a different phone does not restore permission. **Withdraw permission** stops subsequent requests, including transcription status queries; an already dispatched request may finish. It does not delete data already sent or stored API keys. Google Drive access uses its separate Google authorization flow. Other platforms currently use their existing workflow configuration flow.
+
+**App Store region.** On iPhone and iPad, Recly reads the current App Store country or region through Apple StoreKit to determine whether the OpenAI transcription integration is available. This integration is disabled for the China mainland storefront. If the region cannot be verified, affected transcription waits. Recly does not send audio, transcripts, workflow definitions or third-party API keys as part of this StoreKit lookup, and does not store the storefront country on disk. Apple manages the underlying account and storefront service. Local recording and Google Drive upload are independent of this check.
 
 ## 4. What is not collected
 

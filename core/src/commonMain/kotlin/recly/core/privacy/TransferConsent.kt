@@ -164,11 +164,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
                 return deps.transport.execute(plan)
             }
         }
-        return CoreDeps(
-            deps.clock, deps.logger, deps.secureStore, deps.tokenProvider, transport, deps.fileSystem,
-            deps.audio, deps.dataDir, deps.device, deps.appVersion, deps.io, deps.locale,
-            requireTransferConsent = true,
-        )
+        return deps.withTransport(transport)
     }
 
     private fun decode(value: String, proof: String): TransferTarget? = runCatching {

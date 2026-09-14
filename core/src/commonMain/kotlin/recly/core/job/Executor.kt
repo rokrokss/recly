@@ -12,6 +12,8 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.JsonObject
+import recly.core.transcribe.StorefrontUnavailableException
 import recly.core.drive.DriveUploadRunner
 import recly.core.drive.FolderMarker
 import recly.core.drive.string
@@ -266,13 +268,19 @@ class Executor(
             state = run.state,
             saveState = { store.saveStepState(run.id, it) },
             saveOutput = { store.saveStepOutput(run.id, it) },
-            deps = transferConsents?.guardedDeps(step) ?: deps,
+            deps = deps.transcriptionPolicy.guardedDeps(step, transferConsents?.guardedDeps(step) ?: deps),
         )
         val outcome = try {
+            deps.transcriptionPolicy.requireAllowed(step)
             transferConsents?.requireAllowed(step)
             runner.run(ctx)
         } catch (e: CancellationException) {
             throw e // The row stays RUNNING; the next run resets and repeats it from its saved state.
+        } catch (_: StorefrontUnavailableException) {
+            val state = store.stepsOf(job.id).first { it.id == run.id }.state ?: JsonObject(emptyMap())
+            return waiting(job, running, step, StepOutcome.Waiting(
+                60, state, CoreMessage.STOREFRONT_UNAVAILABLE.code(),
+            ))
         } catch (e: AuthRequiredException) {
             return needsAuth(job, running, e.message ?: CoreMessage.NEEDS_AUTH.code())
         } catch (e: StepFailure) {
@@ -310,7 +318,7 @@ class Executor(
         val next = now + outcome.retryAfterSec.seconds
         store.saveStepState(run.id, outcome.state)
         store.park(
-            run.copy(status = StepStatus.PENDING, nextAttemptAt = next, lastError = null),
+            run.copy(status = StepStatus.PENDING, nextAttemptAt = next, lastError = outcome.reason),
             JobStatus.WAITING,
             next,
             now,

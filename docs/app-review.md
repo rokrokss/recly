@@ -5,7 +5,7 @@
 ## 제출 전에 완료할 것
 
 - 변경한 개인정보 처리방침을 공개 URL에 반영하고, 앱 설정의 영어(`https://recly.dev/policy/privacy-policy`)·한국어(`https://recly.dev/policy/privacy-policy.ko`) 링크에서 실제로 열리는지 확인한다. App Store Connect의 개인정보 처리방침 URL에는 영어 정본 주소를 등록한다.
-- iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `12`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
+- iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `13`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
 - 최신 정식 iOS의 실제 iPhone에서 제출할 빌드를 검증한다. 잠금 중 녹음 → 정지·이름 입력 → 목록 → 재생 → Drive 업로드·열기 → 선택 전사 → 결과 확인까지 수행한다.
 - 새 전사/웹훅 대상의 “허용하고 저장”, 동일 대상 재사용 시 추가 확인 없음, 가져오기에서 새 대상만 표시, 허용 철회 후 작업 대기, 설정에서 다시 허용 후 이전 업로드를 반복하지 않는 동작을 확인한다.
 - Google 로그인·로그아웃·연결 해제, 녹음의 로컬/Drive 삭제 선택, 시크릿 목록의 API 키 개별 삭제를 확인한다. Recly 자체 계정 생성은 없으며, Google 계정 삭제 기능을 제공하는 것도 아니다.
@@ -13,6 +13,8 @@
 - 화면 녹화는 홈 화면에서 앱 실행으로 시작한다. 실제 기본 흐름과 설정된 선택 기능을 보여주고, 비밀번호·API 키·개인 녹음은 노출하지 않는다. 영상 URL은 심사자가 별도 권한 요청 없이 열 수 있는지 확인한다.
 - 기본 녹음은 API 키 없이 사용할 수 있다. 전사 심사용으로 업체 계정/API 접근이 필요하면 전용 테스트 자격 증명과 정확한 설정 방법을 App Review Information의 비공개 필드에 제공한다. 키를 이 저장소·워크플로우 내보내기 파일·영상에 넣지 않는다.
 - App Privacy 답변을 Google·선택 전사 업체·웹훅의 실제 데이터 처리 및 보관 조건과 대조한다. “개발자 서버가 없음”만으로 Apple의 “수집 안 함”을 확정하지 않는다.
+
+- 중국 본토(`CHN`)·미국(`USA`)·지역 조회 실패 상태를 검증한다. OpenAI 목록·편집·가져오기·기존 잡 실행 차단, 다른 전사 업체 유지, 이미 완료된 Drive 업로드를 반복하지 않는 대기를 확인한다. StoreKit 실계정/샌드박스 확인은 주입된 지역을 이용한 단위 테스트와 구분해 기록한다.
 
 ## 심사 답변 초안
 
@@ -38,7 +40,7 @@
 
 5. **Regional behavior**
 
-   The app's recording and workflow behavior is not intentionally varied by App Store region. The interface is available in English and Korean. Availability, supported transcription languages, processing region and pricing of external services depend on the selected provider, endpoint and the user's account. [Confirm the submitted storefront availability and any applicable service restrictions before sending.]
+   The iOS app disables the OpenAI transcription integration for the China mainland App Store storefront. It checks the StoreKit storefront before transcription and before each provider request; existing and imported workflows cannot bypass the restriction. If the storefront cannot be determined, the affected step waits without transmitting to the provider. The provider is also unavailable in the workflow picker, save and import flows. Apple Watch recordings are processed by the paired iPhone under the same restriction. Local recording and Google Drive upload are independent of this restriction. The interface is available in English and Korean. [Verify CHN, a supported non-China storefront and unavailable-storefront behavior on the submitted build before sending.]
 
 6. **Regulated services and third-party material**
 

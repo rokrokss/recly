@@ -243,10 +243,10 @@ final class BlueprintSurfaceTests: XCTestCase {
         XCTAssertTrue(shown(picker).contains("assemblyai"), shown(picker))
         picker.tap()
 
-        // `WorkflowParser.STT_PROVIDERS`, verbatim and in order.
+        // Nonrestricted providers remain in contract order even without a signed-in storefront.
         let providers = [
             "assemblyai", "clova", "rtzr",
-            "openai", "groq", "together", "mistral",
+            "groq", "together", "mistral",
             "elevenlabs", "deepgram", "azure",
             "daglo", "speechmatics", "rev", "gladia",
         ]
@@ -271,12 +271,12 @@ final class BlueprintSurfaceTests: XCTestCase {
         }
         attach("provider dialog")
 
-        app.buttons["provider-openai"].tap()
+        app.buttons["provider-groq"].tap()
         XCTAssertFalse(
             app.buttons["provider-gladia"].waitForExistence(timeout: 3),
             "the list stayed up after an answer"
         )
-        XCTAssertTrue(shown(picker).contains("openai"), shown(picker))
+        XCTAssertTrue(shown(picker).contains("groq"), shown(picker))
 
         // docs/08: the background budget is a phone's, so this is the one warning the Mac's form
         // does not carry.

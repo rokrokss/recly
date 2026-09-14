@@ -57,6 +57,7 @@ class TranscribeRunner(
                 retryable = false,
                 reason = CoreMessage.STEP_FAILED.code("$TYPE runner got a ${ctx.step::class.simpleName}"),
             )
+        deps.transcriptionPolicy.requireAllowed(step)
         val provider = resolveProvider(providers, step.provider)
         val key = apiKey(deps, step.secretRef)
         val state = TranscribeState.from(ctx.state)
@@ -65,7 +66,7 @@ class TranscribeRunner(
             apiKey = key,
             speakersExpected = speakersExpected(step, ctx.recording.meta),
             audioDurationSec = audioDurationSec(ctx.recording.meta),
-            deps = ctx.deps,
+            deps = deps.transcriptionPolicy.guardedDeps(step, ctx.deps),
             providerState = state.providerState,
         )
         return if (state.ref == null) submit(ctx, step, provider, sttCtx) else poll(ctx, step, provider, sttCtx, state)

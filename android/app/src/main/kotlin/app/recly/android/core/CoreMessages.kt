@@ -15,6 +15,8 @@ object CoreMessages {
     /** Exhaustive by construction: a new key does not compile until it has a sentence. */
     @StringRes
     fun resourceOf(message: CoreMessage): Int = when (message) {
+        CoreMessage.PROVIDER_REGION_RESTRICTED -> R.string.core_provider_region_restricted
+        CoreMessage.STOREFRONT_UNAVAILABLE -> R.string.core_storefront_unavailable
         CoreMessage.TRANSFER_CONSENT_REQUIRED -> R.string.core_transfer_consent_required
         CoreMessage.NEEDS_AUTH -> R.string.core_needs_auth
         CoreMessage.DRIVE_REAUTH -> R.string.core_drive_reauth
@@ -42,6 +44,8 @@ object CoreMessages {
 
     /** The keys whose sentence has a `%1$s` in it, so the rest are looked up without one. */
     fun takesArgument(message: CoreMessage): Boolean = when (message) {
+        CoreMessage.PROVIDER_REGION_RESTRICTED,
+        CoreMessage.STOREFRONT_UNAVAILABLE,
         CoreMessage.TRANSFER_CONSENT_REQUIRED,
         CoreMessage.NEEDS_AUTH,
         CoreMessage.DRIVE_REAUTH,

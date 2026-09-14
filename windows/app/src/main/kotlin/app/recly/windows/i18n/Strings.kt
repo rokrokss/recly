@@ -360,6 +360,8 @@ enum class Str {
     // docs/15 §3: what leaves this PC when the step runs, and whose policy decides the rest.
     PROVIDER_DISCLOSURE_TRANSCRIBE,
 
+    CORE_PROVIDER_REGION_RESTRICTED,
+    CORE_STOREFRONT_UNAVAILABLE,
     CORE_TRANSFER_CONSENT_REQUIRED,
     CORE_NEEDS_AUTH,
     CORE_DRIVE_REAUTH,

@@ -103,6 +103,13 @@ public final class WorkflowTransferModel: ObservableObject {
         }
         if let parsed = WorkflowParser.shared.parse(json: json) as? ParseResultOk {
             do {
+                if let issue = try await core.deps.transcriptionPolicy.workflowIssue(workflows: parsed.document.workflows) {
+                    confirm = nil
+                    message = .core(issue.code(arg: nil, detail: nil))
+                    failed = true
+                    importing = .failed
+                    return
+                }
                 let targets = parsed.document.workflows.flatMap {
                     TransferTargets.shared.forWorkflow(workflow: $0)
                 }
@@ -132,6 +139,13 @@ public final class WorkflowTransferModel: ObservableObject {
         guard let picked = confirm, importing != .processing else { return }
         importing = .processing
         do {
+            if let parsed = WorkflowParser.shared.parse(json: picked.json) as? ParseResultOk,
+               let issue = try await core.deps.transcriptionPolicy.workflowIssue(workflows: parsed.document.workflows) {
+                message = .core(issue.code(arg: nil, detail: nil))
+                failed = true
+                importing = .failed
+                return
+            }
             try await core.transferConsents.grant(targets: picked.transfers)
         } catch {
             message = .key("Could not save transfer permissions")

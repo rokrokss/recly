@@ -13,6 +13,12 @@ package recly.core.message
  * [CoreMessageRef.parse] answers null for it so the shell can show it unchanged.
  */
 enum class CoreMessage {
+    /** docs/15: a transcription integration is unavailable in this App Store region. */
+    PROVIDER_REGION_RESTRICTED,
+
+    /** StoreKit has not supplied a region; wait without sending audio or spending retries. */
+    STOREFRONT_UNAVAILABLE,
+
     /** docs/15: waiting for explicit permission to send data to an external destination. */
     TRANSFER_CONSENT_REQUIRED,
 

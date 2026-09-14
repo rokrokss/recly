@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import okio.FileSystem
 import okio.Path
 import recly.core.drive.KtorTransport
+import recly.core.transcribe.TranscriptionPolicy
 
 /** Everything the shell owns and the core needs (docs/01 "코어 ↔ 셸 경계"). */
 class CoreDeps(
@@ -31,4 +32,10 @@ class CoreDeps(
     val locale: String = "en",
     /** docs/15: the iOS shell supplies the destination-consent UI before enabling this policy. */
     val requireTransferConsent: Boolean = false,
-)
+    val transcriptionPolicy: TranscriptionPolicy = TranscriptionPolicy(),
+) {
+    internal fun withTransport(transport: Transport): CoreDeps = CoreDeps(
+        clock, logger, secureStore, tokenProvider, transport, fileSystem, audio, dataDir,
+        device, appVersion, io, locale, requireTransferConsent, transcriptionPolicy,
+    )
+}

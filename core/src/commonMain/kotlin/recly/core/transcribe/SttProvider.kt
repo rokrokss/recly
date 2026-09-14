@@ -210,6 +210,8 @@ internal object Reasons {
             deps.transport.execute(plan)
         } catch (e: CancellationException) {
             throw e
+        } catch (e: StorefrontUnavailableException) {
+            throw e
         } catch (e: StepFailure) {
             throw e // A withdrawn transfer grant must park, not become a retryable provider error.
         } catch (e: Throwable) {

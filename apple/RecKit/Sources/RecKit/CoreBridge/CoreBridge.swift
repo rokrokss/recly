@@ -33,7 +33,8 @@ public struct CoreBridge {
         /// being suspended (docs/13 I4). Nil is the Ktor transport every other shell uses.
         transport: (any ReclyCore.Transport)? = nil,
         /// docs/08: the remux a `transcribe` step needs. The same one on the Mac and the phone.
-        audio: any ReclyCore.AudioTools = AppleAudioTools()
+        audio: any ReclyCore.AudioTools = AppleAudioTools(),
+        transcriptionPolicy: TranscriptionPolicy? = nil
     ) async throws -> CoreBridge {
         try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
         try relocateLegacyDatabase(named: databaseName, into: dataDirectory, logger: logger)
@@ -58,7 +59,10 @@ public struct CoreBridge {
             // written, so they are decided here and not left to the English base — the shells'
             // own strings follow in I18N-L2.
             locale: CoreBridge.deviceLanguage,
-            requireTransferConsent: platform == .ios
+            requireTransferConsent: platform == .ios,
+            transcriptionPolicy: transcriptionPolicy ?? TranscriptionPolicy(
+                region: platform == .ios ? AppleStorefrontRegion() : nil
+            )
         )
 
         return CoreBridge(

@@ -117,9 +117,10 @@ internal class Fixture(
     requireTransferConsent: Boolean = false,
     private val live: suspend () -> recly.core.model.WorkflowsDocument? = { null },
     transport: recly.core.platform.Transport = recly.core.testing.UnusedTransport,
+    transcriptionPolicy: recly.core.transcribe.TranscriptionPolicy = recly.core.transcribe.TranscriptionPolicy(),
 ) {
     val logger = FakeLogger()
-    val deps = testDeps(clock, fs, logger, secureStore = recly.core.testing.MapSecureStore(), transport = transport, requireTransferConsent = requireTransferConsent)
+    val deps = testDeps(clock, fs, logger, secureStore = recly.core.testing.MapSecureStore(), transport = transport, requireTransferConsent = requireTransferConsent, transcriptionPolicy = transcriptionPolicy)
 
     /** The driver is kept as well as the database: [JobSnapshotTest] writes a `job` row no query
      * in `Rec.sq` covers. */

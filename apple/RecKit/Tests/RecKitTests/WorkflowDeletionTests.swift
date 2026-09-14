@@ -9,7 +9,8 @@ final class WorkflowDeletionTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         let bridge = try await CoreBridge.make(
             appVersion: "test", platform: .ios, deviceName: "Test iPhone",
-            dataDirectory: directory, databaseName: "workflow-delete.db", secureStore: InMemorySecureStore()
+            dataDirectory: directory, databaseName: "workflow-delete.db", secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
         )
         let core = bridge.core
         let model = WorkflowsModel(core: core)

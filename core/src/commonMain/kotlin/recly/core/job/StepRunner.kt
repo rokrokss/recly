@@ -34,7 +34,7 @@ sealed interface StepOutcome {
      * `PENDING` with its `attempts` untouched, and [state] — the submission ref and when it was
      * sent — is saved so the next pass polls the same job instead of re-submitting.
      */
-    data class Waiting(val retryAfterSec: Int, val state: JsonObject) : StepOutcome
+    data class Waiting(val retryAfterSec: Int, val state: JsonObject, val reason: String? = null) : StepOutcome
 }
 
 class StepContext(

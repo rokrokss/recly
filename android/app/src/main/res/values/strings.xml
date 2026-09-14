@@ -408,4 +408,6 @@
     <string name="action_edit">Edit</string>
     <string name="recording_discarded">Recording discarded</string>
     <string name="recording_discard_failed">Could not discard the recording</string>
+    <string name="core_provider_region_restricted">This transcription provider is unavailable in your App Store region.</string>
+    <string name="core_storefront_unavailable">Waiting to verify your App Store region before continuing transcription.</string>
 </resources>

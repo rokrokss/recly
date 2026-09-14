@@ -18,7 +18,8 @@ final class TransferPrivacyTests: XCTestCase {
     private func bridge(_ database: String = "consent.db") async throws -> CoreBridge {
         try await CoreBridge.make(
             appVersion: "test", platform: .ios, deviceName: "Test iPhone",
-            dataDirectory: directory, databaseName: database, secureStore: InMemorySecureStore()
+            dataDirectory: directory, databaseName: database, secureStore: InMemorySecureStore(),
+            transcriptionPolicy: TranscriptionPolicy(region: nil)
         )
     }
 

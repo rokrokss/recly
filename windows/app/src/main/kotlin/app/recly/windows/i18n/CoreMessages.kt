@@ -13,6 +13,8 @@ object CoreMessages {
 
     /** Exhaustive by construction: a new key does not compile until it has a sentence. */
     fun keyOf(message: CoreMessage): Str = when (message) {
+        CoreMessage.PROVIDER_REGION_RESTRICTED -> Str.CORE_PROVIDER_REGION_RESTRICTED
+        CoreMessage.STOREFRONT_UNAVAILABLE -> Str.CORE_STOREFRONT_UNAVAILABLE
         CoreMessage.TRANSFER_CONSENT_REQUIRED -> Str.CORE_TRANSFER_CONSENT_REQUIRED
         CoreMessage.NEEDS_AUTH -> Str.CORE_NEEDS_AUTH
         CoreMessage.DRIVE_REAUTH -> Str.CORE_DRIVE_REAUTH
@@ -43,6 +45,8 @@ object CoreMessages {
      * their sentence stands on its own, so they are looked up without an argument.
      */
     fun takesArgument(message: CoreMessage): Boolean = when (message) {
+        CoreMessage.PROVIDER_REGION_RESTRICTED,
+        CoreMessage.STOREFRONT_UNAVAILABLE,
         CoreMessage.TRANSFER_CONSENT_REQUIRED,
         CoreMessage.NEEDS_AUTH,
         CoreMessage.DRIVE_REAUTH,

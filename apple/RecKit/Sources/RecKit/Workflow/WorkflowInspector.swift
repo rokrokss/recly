@@ -94,60 +94,65 @@ public struct StepInspector: View {
         case .transcribe(let transcribe):
             label(loc("Provider"))
             providerPicker(transcribe.provider)
-            // docs/08 "폴링 · 상태": a provider that answers on one long request is the one a
-            // phone's background budget may cut off, and this is where that choice is made. The Mac
-            // has no such budget, so it does not say it.
-            #if os(iOS)
-            if SttProviders.shared.synchronous(name: transcribe.provider) {
-                hint(loc(
-                    "This provider answers on one long request. On a phone, an asynchronous provider is more reliable in the background."
-                ))
-                .accessibilityIdentifier("provider-synchronous-hint")
+            if let issue = model.regionIssue(step) {
+                hint(CoreMessages.sentence(issue))
             }
-            #endif
-            ProviderDisclosure()
-            secretField(transcribe.secretRef) { edit, value in
-                guard case .transcribe(var step) = edit else { return }
-                step.secretRef = value
-                edit = .transcribe(step)
-            }
-            let invokeUrlUse = WorkflowParser.shared.invokeUrlUse(provider: transcribe.provider)
-            if invokeUrlUse != .none {
-                BlueprintField(
-                    loc("Invoke URL"),
-                    text: transcribeField(transcribe.invokeUrl) { $0.invokeUrl = $1 },
-                    mono: true
-                )
-                .urlEntry()
-                hint(invokeUrlHint(invokeUrlUse))
-            }
-            label(loc("Language"))
-            FlowLayout {
-                ForEach([Language.ko, .en, .koEn, .auto], id: \.self) { language in
-                    BlueprintChip(language.tag, selected: transcribe.language == language) {
-                        model.updateStep(at: position) { edit in
-                            guard case .transcribe(var step) = edit else { return }
-                            step.language = language
-                            edit = .transcribe(step)
+            if model.availableProviders.contains(transcribe.provider) {
+                // docs/08 "폴링 · 상태": a provider that answers on one long request is the one a
+                // phone's background budget may cut off, and this is where that choice is made. The Mac
+                // has no such budget, so it does not say it.
+                #if os(iOS)
+                if SttProviders.shared.synchronous(name: transcribe.provider) {
+                    hint(loc(
+                        "This provider answers on one long request. On a phone, an asynchronous provider is more reliable in the background."
+                    ))
+                    .accessibilityIdentifier("provider-synchronous-hint")
+                }
+                #endif
+                ProviderDisclosure()
+                secretField(transcribe.secretRef) { edit, value in
+                    guard case .transcribe(var step) = edit else { return }
+                    step.secretRef = value
+                    edit = .transcribe(step)
+                }
+                let invokeUrlUse = WorkflowParser.shared.invokeUrlUse(provider: transcribe.provider)
+                if invokeUrlUse != .none {
+                    BlueprintField(
+                        loc("Invoke URL"),
+                        text: transcribeField(transcribe.invokeUrl) { $0.invokeUrl = $1 },
+                        mono: true
+                    )
+                    .urlEntry()
+                    hint(invokeUrlHint(invokeUrlUse))
+                }
+                label(loc("Language"))
+                FlowLayout {
+                    ForEach([Language.ko, .en, .koEn, .auto], id: \.self) { language in
+                        BlueprintChip(language.tag, selected: transcribe.language == language) {
+                            model.updateStep(at: position) { edit in
+                                guard case .transcribe(var step) = edit else { return }
+                                step.language = language
+                                edit = .transcribe(step)
+                            }
                         }
                     }
                 }
-            }
-            SwitchRow(
-                title: loc("Separate speakers"),
-                isOn: Binding(
-                    get: { transcribe.diarize },
-                    set: { value in
-                        model.updateStep(at: position) { edit in
-                            guard case .transcribe(var step) = edit else { return }
-                            step.diarize = value
-                            edit = .transcribe(step)
+                SwitchRow(
+                    title: loc("Separate speakers"),
+                    isOn: Binding(
+                        get: { transcribe.diarize },
+                        set: { value in
+                            model.updateStep(at: position) { edit in
+                                guard case .transcribe(var step) = edit else { return }
+                                step.diarize = value
+                                edit = .transcribe(step)
+                            }
                         }
-                    }
+                    )
                 )
-            )
-            speakerBounds(transcribe)
-            hint(loc("1–10. A recording that knows how many people were there overrides this."))
+                speakerBounds(transcribe)
+                hint(loc("1–10. A recording that knows how many people were there overrides this."))
+            }
         }
 
         Text(verbatim: loc("On failure"))
@@ -190,7 +195,7 @@ public struct StepInspector: View {
         #if os(macOS)
         BlueprintDropdown(
             loc("Provider"),
-            options: WorkflowParser.shared.STT_PROVIDERS.map(ProviderOption.init),
+            options: model.availableProviders.map(ProviderOption.init),
             selection: Binding(
                 get: { ProviderOption(name: provider) },
                 set: { selectProvider($0.name) }
@@ -200,11 +205,17 @@ public struct StepInspector: View {
         )
         .accessibilityIdentifier("step-provider")
         #else
-        BlueprintButton(provider, tone: .quiet, mono: true) { pickingProvider = true }
+        let visibleProvider = model.availableProviders.contains(provider) ? provider : loc("Select a provider")
+        BlueprintButton(visibleProvider, tone: .quiet, mono: true) {
+            Task {
+                await model.refreshRegion()
+                pickingProvider = true
+            }
+        }
             // docs/09 "접근성": the button says the value, and the label above it says what the
             // value is of — a reader given only the value would hear "openai" and no question.
             .accessibilityLabel(Text(verbatim: loc("Provider")))
-            .accessibilityValue(Text(verbatim: provider))
+            .accessibilityValue(Text(verbatim: visibleProvider))
             .accessibilityIdentifier("step-provider")
             .blueprintDialog(isPresented: $pickingProvider) {
                 BlueprintDialog(title: loc("Provider")) {
@@ -212,7 +223,7 @@ public struct StepInspector: View {
                     // answer here closes a question that has already been answered.
                     BlueprintButton(loc("Close"), tone: .quiet) { pickingProvider = false }
                 } content: {
-                    ForEach(WorkflowParser.shared.STT_PROVIDERS, id: \.self) { name in
+                    ForEach(model.availableProviders, id: \.self) { name in
                         BlueprintRadioRow(name, selected: provider == name) {
                             pickingProvider = false
                             selectProvider(name)

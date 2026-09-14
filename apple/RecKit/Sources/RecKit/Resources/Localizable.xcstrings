@@ -3942,6 +3942,57 @@
           }
         }
       }
+    },
+    "This transcription provider is unavailable in your App Store region.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This transcription provider is unavailable in your App Store region."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 전사 제공업체는 현재 App Store 지역에서 사용할 수 없습니다."
+          }
+        }
+      }
+    },
+    "Waiting to verify your App Store region before continuing transcription.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting to verify your App Store region before continuing transcription."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전사를 계속하기 전에 App Store 지역 확인을 기다리고 있습니다."
+          }
+        }
+      }
+    },
+    "Select a provider": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select a provider"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제공업체 선택"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

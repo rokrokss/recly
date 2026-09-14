@@ -8,6 +8,9 @@ import Foundation
 import os
 import ReclyCore
 import SwiftUI
+#if os(iOS)
+import StoreKit
+#endif
 
 /// A stamp for a workflow that is only being validated, never written (see `orderErrors`).
 private let notSavedYet = "1970-01-01T00:00:00.000Z"
@@ -88,6 +91,7 @@ public struct SecretForm {
 /// that succeeds is the whole of what happened to it.
 @MainActor
 public final class WorkflowsModel: ObservableObject {
+    @Published public private(set) var availableProviders: [String] = []
     @Published public private(set) var items: [WorkflowItem] = []
     @Published public private(set) var secrets: [String] = []
     @Published public var editor: EditorState?
@@ -146,6 +150,20 @@ public final class WorkflowsModel: ObservableObject {
         let documents = CoreWorkflowDocuments(core: core)
         self.documents = documents
         self.mutator = WorkflowMutator(documents: documents)
+        refreshProviders()
+        observers.append(Task { [weak self] in
+            for await _ in core.deps.transcriptionPolicy.observe() {
+                self?.refreshProviders()
+                self?.refreshTransferDisclosure()
+            }
+        })
+        #if os(iOS)
+        observers.append(Task { [weak self] in
+            for await _ in Storefront.updates {
+                await self?.refreshRegion()
+            }
+        })
+        #endif
         observers.append(Task { [weak self] in await self?.reload() })
         observeDeviceDefault()
         observeDocument()
@@ -203,6 +221,7 @@ public final class WorkflowsModel: ObservableObject {
     /// Re-reads the local copy after a write, import, or observed document change.
     public func reload() async {
         defer { loading = false }
+        await refreshRegion()
         await loadSecrets()
         do {
             approvedTransferIds = Set(try await core.transferConsents.approved().map(\.id))
@@ -388,6 +407,17 @@ public final class WorkflowsModel: ObservableObject {
         message = nil
         let now = core.deps.clock.now()
         let edit = editor.edit
+        do {
+            if let issue = try await core.deps.transcriptionPolicy.workflowIssue(
+                workflows: [edit.toWorkflow(updatedAt: notSavedYet)]
+            ) {
+                message = .core(issue.code(arg: nil, detail: nil))
+                return
+            }
+        } catch {
+            message = .core(CoreMessage.storefrontUnavailable.code(arg: nil, detail: nil))
+            return
+        }
         // These are the destinations the Allow & save action showed, not a fresh unseen list.
         do {
             if !shown.isEmpty { try await core.transferConsents.grant(targets: shown) }
@@ -405,7 +435,22 @@ public final class WorkflowsModel: ObservableObject {
         }
         pendingTransfers = TransferTargets.shared.forWorkflow(
             workflow: editor.edit.toWorkflow(updatedAt: notSavedYet)
-        ).filter { !approvedTransferIds.contains($0.id) }
+        ).filter { !approvedTransferIds.contains($0.id) && core.deps.transcriptionPolicy.providerAvailable(provider: $0.provider) }
+    }
+
+    public func refreshRegion() async {
+        _ = try? await core.deps.transcriptionPolicy.refresh()
+        refreshProviders()
+    }
+
+    private func refreshProviders() {
+        availableProviders = WorkflowParser.shared.STT_PROVIDERS.filter {
+            core.deps.transcriptionPolicy.providerAvailable(provider: $0)
+        }
+    }
+
+    func regionIssue(_ step: StepEdit) -> CoreMessage? {
+        core.deps.transcriptionPolicy.issue(step: step.toStep(), endpoint: nil)
     }
 
     // MARK: - Secrets
