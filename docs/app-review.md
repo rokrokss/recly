@@ -1,6 +1,8 @@
 # iOS 신규 제출 심사 준비
 
-2026-09-10 기준 코드에 맞춘 준비 문서. 아래 실기기 확인과 빈칸을 완료한 뒤 같은 내용을 App Store Connect의 심사 답변과 App Review Information → Notes에 넣는다. 영상이나 실기기 검증을 완료했다고 미리 적지 않는다.
+0.1.0 (13) 기준 코드에 맞춘 준비 문서. 아래 실기기 확인과 빈칸을 완료한 뒤 같은 내용을 App Store Connect의 심사 답변과 App Review Information → Notes에 넣는다. 영상이나 실기기 검증을 완료했다고 미리 적지 않는다.
+
+공개 이름·부제·설명·키워드는 [스토어 문구 수정 안내](app-store-copy.ko.md)와 [영어 문안](app-store-metadata.en.txt)을 사용한다. 심사용 계정·키는 공개 문안에 넣지 않는다.
 
 ## 제출 전에 완료할 것
 

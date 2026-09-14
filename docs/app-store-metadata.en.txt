@@ -1,0 +1,28 @@
+NAME
+Recly: Voice Recorder
+
+SUBTITLE
+Record, transcribe, automate
+
+PROMOTIONAL TEXT
+Record on iPhone and Apple Watch, save to your own Google Drive, and add optional transcription and webhook workflows.
+
+DESCRIPTION
+Record voice notes, interviews, and meetings with Recly. Keep audio on your device and connect your own Google Drive for uploads.
+
+RECORD AND PLAY BACK
+Record on iPhone or Apple Watch. Add titles to your recordings and play them back when you need them.
+
+SAVE TO YOUR OWN GOOGLE DRIVE
+Connect your Google account to upload recordings to your own Drive and access them from your devices.
+
+OPTIONAL TRANSCRIPTION AND WORKFLOWS
+Add speech-to-text using a supported third-party provider and your own API credentials. Configure optional webhooks to send recording metadata and Drive links to a destination you choose.
+
+CONTROL YOUR CONNECTIONS
+No Recly account is required. Choose which optional services to connect and authorize. Recording can be used without a transcription service.
+
+Transcription provider availability varies by region. Third-party accounts may be required, and provider charges may apply.
+
+KEYWORDS
+audio,memo,meeting,interview,dictation,transcription,workflow,webhook,watch,notes
