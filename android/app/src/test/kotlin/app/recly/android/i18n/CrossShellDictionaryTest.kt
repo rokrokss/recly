@@ -168,20 +168,32 @@ class CrossShellDictionaryTest {
         // --- the dictionary ------------------------------------------------------------------------
 
         val DICTIONARY = listOf(
+            Line(
+                what = "optional Drive connection",
+                en = "Record and play local audio without an account. Connect Google Drive to upload recordings.",
+                ko = "계정 없이 녹음하고 기기에 저장된 녹음을 재생할 수 있습니다. 업로드하려면 Google Drive를 연결하세요.",
+                android = "drive_optional", windows = "drive.optional",
+                reckit = "Record and play local audio without an account. Connect Google Drive to upload recordings.",
+            ),
+            Line(
+                what = "local storage independently of upload status",
+                en = "Saved on this device", ko = "기기에 저장됨",
+                android = "local_saved", windows = "local.saved", reckit = "Saved on this device",
+            ),
             // docs/07 §5: what the core says when a job needs the user back at the sign-in, and what
             // the list calls a job that is parked on it.
             Line(
                 what = "the NEEDS_AUTH sentence",
-                en = "Sign in again to carry on",
-                ko = "계속하려면 다시 로그인하세요",
+                en = "Connect Google Drive to continue uploads",
+                ko = "업로드를 계속하려면 Google Drive를 연결하세요",
                 android = "core_needs_auth",
                 windows = "core.needs.auth",
                 reckit = "Sign in again to carry on",
             ),
             Line(
                 what = "the NEEDS_AUTH status",
-                en = "Sign-in needed",
-                ko = "로그인 필요",
+                en = "Drive upload waiting",
+                ko = "Drive 업로드 대기",
                 android = "job_state_needs_auth",
                 windows = "status.sign.in.needed",
                 reckit = "Sign-in needed",
@@ -705,24 +717,24 @@ class CrossShellDictionaryTest {
             // the heading names Google rather than leaving "Account" to mean anything at all.
             Line(
                 what = "the account section",
-                en = "Google account",
-                ko = "Google 계정",
+                en = "Google Drive",
+                ko = "Google Drive",
                 android = "settings_account",
                 mac = "Google account",
                 phone = "Google account",
             ),
             Line(
                 what = "the signed-out row",
-                en = "Signed out",
-                ko = "로그아웃됨",
+                en = "Drive not connected",
+                ko = "Drive 연결 안 됨",
                 android = "signed_out",
                 mac = "Signed out",
                 phone = "Signed out",
             ),
             Line(
                 what = "the sign-in button",
-                en = "Sign in with Google",
-                ko = "Google 로그인",
+                en = "Connect Google Drive",
+                ko = "Google Drive 연결",
                 android = "sign_in",
                 mac = "Sign in with Google",
                 phone = "Sign in with Google",

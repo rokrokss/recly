@@ -101,7 +101,7 @@ struct RecordingsView: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: item.id,
+            subtitle: item.savedLocally ? RecKitStrings.localized("Saved on this device") : "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
@@ -134,7 +134,7 @@ struct RecordingsView: View {
         VStack(alignment: .leading, spacing: Space.s) {
             // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it has
             // been waiting — the badge's RETRY would otherwise read as "stuck".
-            if item.waitingMinutes != nil {
+            if item.waitingMinutes != nil || item.alert == .needsAuth {
                 Text(verbatim: item.stateLabel)
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
@@ -147,7 +147,7 @@ struct RecordingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: reason.sentence)
                         .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.danger)
+                        .foregroundStyle(item.alert == .needsAuth ? blueprint.palette.textMuted : blueprint.palette.danger)
                     if let detail = reason.detail {
                         Text(verbatim: detail)
                             .font(blueprint.fonts.monoSmall)

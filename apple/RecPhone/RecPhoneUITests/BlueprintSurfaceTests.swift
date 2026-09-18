@@ -78,28 +78,31 @@ final class BlueprintSurfaceTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
-    /// docs/03 "로그아웃 vs 연결 해제": two rows and two meanings, and the warning says the thing that
+    /// docs/03 "로그아웃 vs 연결 해제": connection management keeps two meanings; the warning says what
     /// makes them different — every device loses access, not only this one.
     func testTheDisconnectWarningNamesTheOtherDevices() throws {
         open(tab: "Settings")
         attach("settings")
-        let disconnect = app.buttons["disconnect"]
+        let management = app.buttons["drive-manage"]
         try XCTSkipUnless(
-            disconnect.waitForExistence(timeout: 10),
+            management.waitForExistence(timeout: 10),
             "this simulator is signed out, so there is no grant to disconnect"
         )
+        management.tap()
+        let disconnect = app.buttons["disconnect"]
+        XCTAssertTrue(disconnect.waitForExistence(timeout: 5))
         disconnect.tap()
 
         let confirm = app.buttons["disconnect-confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "no disconnect warning")
         XCTAssertTrue(
             app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS[c] %@", "Every device signed in")
+                NSPredicate(format: "label CONTAINS[c] %@", "Other devices using this Google authorization")
             ).firstMatch.exists,
             "the warning does not say the other devices lose access"
         )
-        // docs/03: the recordings stay unless this is checked — never the default.
-        XCTAssertEqual(app.switches["disconnect-also-delete"].value as? String, "0")
+        // Revoking storage access never offers to delete recordings.
+        XCTAssertFalse(app.switches["disconnect-also-delete"].exists)
         attach("disconnect dialog")
 
         // Never confirmed: this would revoke the grant on every device the account is signed in on.

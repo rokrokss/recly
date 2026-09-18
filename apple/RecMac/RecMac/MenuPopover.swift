@@ -261,24 +261,6 @@ struct MenuPopover: View {
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it. It replaces the sign-in-only banner: `NEEDS_AUTH` is one of the seven.
             AlertBanner(alerts: model.alerts) { model.fix($0) }
-            // docs/06: a Mac with no grant at all has nothing parked yet to say so — the banner
-            // above is what speaks once something is, and until then the offer has to be here
-            // rather than only behind the Settings button. Both open the same sign-in.
-            if model.account == nil, model.alerts.isEmpty {
-                ProcessingButton(
-                    loc(model.canSignIn
-                        ? "Sign in with Google"
-                        : "Sign in with Google (GIDClientID needed)"),
-                    state: model.action
-                ) {
-                    model.signIn()
-                }
-                .disabled(!model.canSignIn || model.signInBlocker != nil)
-                .accessibilityIdentifier("sign-in")
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Space.m)
-                .padding(.vertical, Space.s)
-            }
             LedgerHeader(
                 time: loc("Time"),
                 title: loc("Title"),
@@ -318,7 +300,7 @@ struct MenuPopover: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: item.id,
+            subtitle: item.savedLocally ? RecKitStrings.localized("Saved on this device") : "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
@@ -344,7 +326,7 @@ struct MenuPopover: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it
                 // has been waiting — the badge's RETRY would otherwise read as "stuck".
-                if item.waitingMinutes != nil {
+                if item.waitingMinutes != nil || item.alert == .needsAuth {
                     Text(verbatim: item.stateLabel)
                         .font(blueprint.fonts.sans(TypeSize.small))
                         .foregroundStyle(blueprint.palette.textMuted)
@@ -355,7 +337,7 @@ struct MenuPopover: View {
                 if let reason = item.reason {
                     Text(verbatim: reason.sentence)
                         .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.danger)
+                        .foregroundStyle(item.alert == .needsAuth ? blueprint.palette.textMuted : blueprint.palette.danger)
                     if let detail = reason.detail {
                         Text(verbatim: detail)
                             .font(blueprint.fonts.monoSmall)
@@ -437,68 +419,13 @@ private struct SettingsPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            section(loc("Google account"))
-            if let account = model.account {
-                SectionRow(title: account, subtitle: model.signInBlocker?.text) {
-                    // docs/06: this is `signOut()` and nothing else — it clears this Mac's
-                    // credentials and leaves the grant, and so leaves every other device signed in.
-                    //
-                    // Held while a disconnect is owed: the retry reads the sign-in to tell a revoke
-                    // that happened from one that never did, and a sign-out would take it away.
-                    BlueprintButton(loc("Sign out"), tone: .quiet) { model.signOut() }
-                        .disabled(model.disconnectPhase.owed)
-                }
-            } else {
-                // docs/03: while a disconnect still owes its local clean-up the row says so and the
-                // button is off — signing in again would give the retry a *different* account's
-                // grant to take away.
-                SectionRow(title: loc("Signed out"), subtitle: model.signInBlocker?.text) {
-                    BlueprintButton(
-                        loc(model.canSignIn
-                            ? "Sign in with Google"
-                            : "Sign in with Google (GIDClientID needed)")
-                    ) {
-                        model.signIn()
-                    }
-                    .disabled(!model.canSignIn || model.signInBlocker != nil)
-                }
-            }
-            // docs/03 · docs/06: a second row and not a second meaning for the first one. Signing
-            // out is this Mac; disconnecting takes the grant away from every device.
-            //
-            // Offered without an account as well when a disconnect got the grant away and then
-            // failed to clean this Mac up: the keys and the queue are still here, and this row is
-            // the only way to finish it (docs/03 "연결 해제").
-            if model.account != nil || model.disconnectPhase.owed {
-                SectionRow(
-                    title: loc("Disconnect"),
-                    subtitle: loc("Take this app’s access to your Google account away.")
-                ) {
-                    BlueprintButton(loc("Disconnect"), tone: .danger) { model.askToDisconnect() }
-                        .accessibilityIdentifier("disconnect")
-                }
-            }
-            // docs/03: a revoke that failed leaves the grant standing, and it is Google's page —
-            // not this app — that takes it down. So the row outlives the disconnect, the phase and
-            // even the signed-in state, which is why it sits outside every block above; only the
-            // user closes it.
-            if model.revokeDebt {
-                SectionRow(
-                    title: DisconnectGuard.stillListed.text,
-                    subtitle: "myaccount.google.com/permissions"
-                ) {
-                    HStack(spacing: Space.s) {
-                        BlueprintButton(loc("Open Google account permissions")) {
-                            model.openAccountPermissions()
-                        }
-                        BlueprintButton(DisconnectGuard.debtSettled.text, tone: .quiet) {
-                            model.revokeDebtSettled()
-                        }
-                        .accessibilityIdentifier("revoke-debt-settled")
-                    }
-                }
-                .accessibilityIdentifier("revoke-debt")
-            }
+            DriveConnectionSection(
+                account: model.account, connected: model.hasGoogleCredential,
+                configured: model.canSignIn, pending: model.disconnectPhase.owed,
+                revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
+                signIn: model.signIn, signOut: model.signOut, revoke: model.askToDisconnect,
+                permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
+            )
 
             // docs/12 M4-L3 "메뉴바": the mode is picked before a recording and cannot change
             // during one — the track set is written into the meta at `start`.

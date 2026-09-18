@@ -855,8 +855,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     // MARK: - Sign-in (docs/06 · docs/13 I3)
 
-    /// False while `Info.plist` still carries the placeholder client id — the settings tab offers
-    /// the README procedure rather than a sign-in that cannot succeed.
+    /// A Google credential may have no profile email.
+    var hasGoogleCredential: Bool {
+        auth?.restoration == .restored(hasCredential: true)
+    }
+
+    /// False when the build has no usable Google client configuration.
     var canSignIn: Bool { GoogleAuth.isConfigured }
 
     /// The last sign-in failure in words, made where the settings tab draws it (docs/07 rule 3).

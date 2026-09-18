@@ -43,7 +43,7 @@ class ShellStartTest {
      * exception left to reach it is reported against *whatever test runs next*
      * (`UncaughtExceptionsBeforeTest`). Holding it here also makes it something to assert on.
      */
-    private val failures = mutableListOf<Throwable>()
+    private val failures = java.util.concurrent.ConcurrentLinkedQueue<Throwable>()
 
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, error -> failures += error },
@@ -73,7 +73,7 @@ class ShellStartTest {
         // The launched start fails; the assertions are about what it left behind, so this waits for
         // the shell to settle rather than for a result there is none of.
         withTimeout(TIMEOUT_MS) {
-            while (model.transition != null) delay(POLL_MS)
+            while (model.transition != null || failures.isEmpty()) delay(POLL_MS)
         }
         assertNull(model.transition, "the node was left saying STARTING over a capture that never opened")
         assertEquals("IDLE", model.stateCode(), "the state node never came back")
@@ -101,7 +101,7 @@ class ShellStartTest {
         }
         assertEquals("NO_HELPER", model.stateCode())
         assertFalse(model.playbackBlocked, "playback stayed blocked for a capture that is not running")
-        assertEquals(emptyList(), failures, "a refused start is not a failure")
+        assertEquals(emptyList(), failures.toList(), "a refused start is not a failure")
 
         model.shutdown()
     }

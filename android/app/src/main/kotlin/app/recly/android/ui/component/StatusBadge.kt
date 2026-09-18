@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import app.recly.android.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -32,7 +34,7 @@ data class LedgerStatus(val code: String, val tone: BadgeTone)
 fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     val palette = blueprint
     Text(
-        text = status.code,
+        text = badgeLabel(status.code),
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
             .padding(horizontal = BADGE_PAD, vertical = Space.xs),
@@ -55,7 +57,7 @@ private val BADGE_PAD = Space.s
  */
 @Composable
 fun statusColumnWidth(codes: List<String>): Dp =
-    statusColumn(textColumnWidth(codes, mono.small), blueprint.line)
+    statusColumn(textColumnWidth(codes.map { badgeLabel(it) }, mono.small), blueprint.line)
 
 /**
  * The rule, without a screen to measure on: the widest code, plus the badge's own padding and
@@ -76,3 +78,7 @@ fun BadgeTone.ink(): Color = when (this) {
 @Composable
 private fun BadgeTone.line(): Color =
     if (this == BadgeTone.WARNING) blueprint.warning else ink()
+
+@Composable
+private fun badgeLabel(code: String): String =
+    if (code == "NEEDS_AUTH") stringResource(R.string.drive_pending) else code

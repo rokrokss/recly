@@ -58,8 +58,10 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
 )
 
 /** The state as a badge. Anything the map does not know is still a code, never a blank cell. */
-fun UiMessage.ledgerStatus(): LedgerStatus =
-    LedgerStates[(this as? UiMessage.Res)?.key] ?: LedgerStatus("UNKNOWN", BadgeTone.NEUTRAL)
+fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
+    val status = LedgerStates[(this as? UiMessage.Res)?.key] ?: LedgerStatus("UNKNOWN", BadgeTone.NEUTRAL)
+    return if (status.code == "NEEDS_AUTH" && strings != null) status.copy(label = strings[Str.DRIVE_PENDING]) else status
+}
 
 /**
  * docs/07 §5 · docs/08 "오류": what the core last said about this row — the sentence translated, the
@@ -73,12 +75,13 @@ fun UiMessage.ledgerStatus(): LedgerStatus =
  */
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? = null) {
+    if (item.savedLocally) Text(strings[Str.LOCAL_SAVED], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
     val error = item.lastError ?: return
     val palette = blueprint
     Text(
         coreMessage(error).text(strings),
         style = MaterialTheme.typography.bodySmall,
-        color = palette.danger,
+        color = if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) palette.textMuted else palette.danger,
     )
     coreMessageDetail(error)?.let {
         Text(it, style = mono.small, color = palette.textMuted)

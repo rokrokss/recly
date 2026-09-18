@@ -42,6 +42,27 @@ class RecordingRepositoryTest {
         recJson.decodeFromString(fs.read(dir / MetaWriter.metaFileName(MetaWriter.baseName(meta))) { readUtf8() })
 
     @Test
+    fun localAudioRequiresEveryFinalizedPartAndDoesNotRequireDrive() = runBlocking {
+        val first = testPart(meta, 1).copy(bytes = 5)
+        val second = testPart(meta, 2).copy(bytes = 5)
+        val record = RecordingRecord(meta.recordingId,
+            meta.copy(status = RecordingStatus.FINALIZED, parts = listOf(first, second)), dir)
+        fs.createDirectories(dir)
+        assertFalse(repository.hasLocalAudio(record))
+        fs.write(dir / first.file) { writeUtf8("audio") }
+        assertFalse(repository.hasLocalAudio(record), "a partial download is not a complete local copy")
+        fs.write(dir / second.file) { writeUtf8("bad") }
+        assertFalse(repository.hasLocalAudio(record), "a truncated part is not saved")
+        fs.write(dir / second.file) { writeUtf8("audio") }
+        assertTrue(repository.hasLocalAudio(record), "no Drive token or upload is needed")
+        assertTrue(repository.hasLocalAudio(record.copy(remote = true)), "downloaded audio is local too")
+        assertFalse(repository.hasLocalAudio(record.copy(meta = record.meta.copy(status = RecordingStatus.RECORDING))))
+        assertFalse(repository.hasLocalAudio(record.copy(meta = record.meta.copy(parts = emptyList()))))
+        fs.delete(dir / first.file)
+        assertFalse(repository.hasLocalAudio(record), "purged audio must lose the local label")
+    }
+
+    @Test
     fun audioObservationFollowsPartsAndFinalizationWithoutRestartingOnRename() = runBlocking {
         repository.create(meta, dir)
         val changes = Channel<RecordingRecord?>(Channel.UNLIMITED)

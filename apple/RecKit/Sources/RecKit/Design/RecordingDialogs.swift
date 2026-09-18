@@ -126,11 +126,8 @@ public struct RenameDialog: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// docs/03 "로그아웃 vs 연결 해제": what is true of a disconnect and is not true of a sign-out — every
-/// device loses access, the upload queue on this device is wiped while its workflows and keys stay,
-/// and the recordings Drive has not got stay here unless the user asks otherwise. Only the audio
-/// that exists nowhere else is a separate, unchecked answer: the irreversible half is never the
-/// default one.
+/// docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this device's
+/// upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
 ///
 /// One dialog for both shells, as [DeleteDialog] is, and for the same reason: these lines name the
 /// device and nothing else about them differs.
@@ -141,7 +138,6 @@ public struct DisconnectDialog: View {
     private let cancel: () -> Void
     private let permissions: () -> Void
 
-    @State private var alsoDelete = false
     @Environment(\.locale) private var locale
 
     public init(
@@ -161,26 +157,17 @@ public struct DisconnectDialog: View {
     public var body: some View {
         BlueprintDialog(title: loc("Disconnect Recly from Google?")) {
             BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
-            BlueprintButton(loc("Disconnect"), tone: .danger) { confirm(alsoDelete) }
+            BlueprintButton(loc("Disconnect"), tone: .danger) { confirm(false) }
                 .disabled(!prompt.canConfirm)
                 .accessibilityIdentifier("disconnect-confirm")
         } content: {
-            // docs/03: what a disconnect takes away. Only the audio that exists nowhere else takes
-            // the record red — several red paragraphs would leave the colour meaning nothing, and
-            // this is the same line [DeleteDialog] puts in red for the same reason. Losing access is
-            // undone by signing in again; these recordings are what the checkbox below takes for
-            // good.
+            // docs/03: explain the grant's scope and identify recordings still awaiting upload.
             BlueprintDialogText(loc(device.everyDeviceLosesAccess))
             if prompt.unuploaded > 0 {
                 BlueprintDialogText(loc(device.unuploadedStay, "\(prompt.unuploaded)"), tone: .danger)
             }
             BlueprintDialogText(loc(device.queueWiped))
-            BlueprintCheckRow(loc(device.alsoDeleteRecordings), isOn: $alsoDelete)
-                .accessibilityIdentifier("disconnect-also-delete")
-            // docs/03: a capture that is running has no job yet, so the core's own busy guard does
-            // not cover it and "also delete" would take the recording being written. Said rather
-            // than stopped for them — an app that ended a recording to answer a settings question
-            // would be answering a different one.
+            // docs/03: cleanup must not race a capture or a job that still writes account state.
             if let blocker = prompt.blocker {
                 BlueprintDialogText(blocker, tone: .danger)
                     .accessibilityIdentifier("disconnect-blocked")

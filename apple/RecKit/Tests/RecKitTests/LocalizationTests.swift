@@ -359,7 +359,7 @@ final class CoreMessagesTests: XCTestCase {
             CoreMessage.retryBudgetSpent.code(arg: CoreMessage.needsAuth.code(arg: nil, detail: nil), detail: nil)
         )
 
-        XCTAssertEqual(text.sentence, "Out of retries: Sign in again to carry on")
+        XCTAssertEqual(text.sentence, "Out of retries: Connect Google Drive to continue uploads")
     }
 }
 

@@ -173,7 +173,7 @@ fun JobsScreen(
                             date = ledgerColumn(item.startedAt, LEDGER_DATE),
                             time = ledgerColumn(item.startedAt, LEDGER_TIME),
                             title = item.title ?: stringResource(R.string.jobs_untitled),
-                            subtitle = item.recordingId,
+                            subtitle = if (item.savedLocally) stringResource(R.string.local_saved) else "",
                             length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
                             status = item.badge(),
                             columns = columns,
@@ -251,12 +251,15 @@ private fun ExpandedRow(
         // wrote is prose, which `coreMessage` shows as it stands. Whatever diagnostic rode along
         // with the key is not translated and goes under it, in monospace: for a docs/08 "오류" that
         // is the provider's own words, which are what a support question quotes.
+        if (item.state == ItemState.NEEDS_AUTH) {
+            Text(stringResource(R.string.job_state_needs_auth), color = palette.textMuted)
+        }
         item.error?.let { error ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     coreMessage(error).text(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = palette.danger,
+                    color = if (item.state == ItemState.NEEDS_AUTH) palette.textMuted else palette.danger,
                 )
                 coreMessageDetail(error)?.let { detail ->
                     Text(detail, style = mono.small, color = palette.textMuted)

@@ -29,11 +29,11 @@ class TrayMenuTest {
         val korean = labels(model)
 
         assertEquals(
-            listOf("Opening", "Sign in with Google", "Open Recly", "Start recording", "Quit"),
+            listOf("Opening", "Connect Google Drive", "Open Recly", "Start recording", "Quit"),
             english,
         )
         assertEquals(
-            listOf("여는 중", "Google 로그인", "Recly 열기", "녹음 시작", "종료"),
+            listOf("여는 중", "Google Drive 연결", "Recly 열기", "녹음 시작", "종료"),
             korean,
         )
     }
@@ -75,7 +75,7 @@ class TrayMenuTest {
         val items = trayMenu(shell(), StringTable.of(StringTable.BASE), quit = {})
             .filterIsInstance<TrayEntry.Item>()
 
-        val signIn = items.single { it.label == "Sign in with Google" }
+        val signIn = items.single { it.label == "Connect Google Drive" }
 
         assertTrue(signIn.enabled)
         // A shell with no core signs nobody in; what this says is that the item is wired to the

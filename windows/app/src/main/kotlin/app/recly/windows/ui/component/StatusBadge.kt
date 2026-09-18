@@ -20,7 +20,7 @@ import app.recly.windows.ui.theme.mono
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
 /** The code and its tone — what [LedgerRow] shows in its last column. */
-data class LedgerStatus(val code: String, val tone: BadgeTone)
+data class LedgerStatus(val code: String, val tone: BadgeTone, val label: String = code)
 
 /**
  * A square badge: 1dp of the tone (2dp in high contrast), the code in monospace, on the surface.
@@ -31,7 +31,7 @@ data class LedgerStatus(val code: String, val tone: BadgeTone)
 fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     val palette = blueprint
     Text(
-        text = status.code,
+        text = status.label,
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
             .padding(horizontal = 6.dp, vertical = 3.dp),

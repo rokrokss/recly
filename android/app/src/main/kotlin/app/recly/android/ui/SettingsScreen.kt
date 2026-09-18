@@ -34,7 +34,6 @@ import app.recly.android.R
 import app.recly.android.settings.AppLanguage
 import app.recly.android.settings.AppTheme
 import app.recly.android.ui.component.BlueprintButton
-import app.recly.android.ui.component.BlueprintCheckRow
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogLink
@@ -88,80 +87,77 @@ fun SettingsScreen(
         ScreenHeader(title = stringResource(R.string.tab_settings))
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
             Section(stringResource(R.string.settings_account))
-            // docs/06: while a disconnect is still owed the account slot is not free, and the row
-            // says why rather than leaving a dead button.
+            var managingDrive by rememberSaveable { mutableStateOf(false) }
+            val context = LocalContext.current
             val signInBlocker = DisconnectGuard.signInBlocker(main.disconnectPhase.owed)
-            if (main.email == null) {
+            if (main.email != null || main.disconnectPhase.owed || main.revokeDebt) {
+                TableRow(
+                    title = main.email ?: stringResource(R.string.drive_attention),
+                    subtitle = if (main.disconnectPhase.owed || main.revokeDebt)
+                        stringResource(R.string.drive_attention) else null,
+                    modifier = Modifier.clickable(role = Role.Button) { managingDrive = true }
+                        .testTag("drive-manage"),
+                    trailing = { Text("›") },
+                )
+            } else {
                 TableRow(
                     title = stringResource(R.string.signed_out),
-                    subtitle = signInBlocker?.let { stringResource(it) },
                     trailing = {
                         ProcessingButton(
-                            label = stringResource(R.string.sign_in),
-                            state = main.action,
-                            onClick = onSignIn,
+                            label = stringResource(R.string.drive_connect),
+                            state = main.action, onClick = onSignIn,
                             tone = ButtonTone.PRIMARY,
                             enabled = !main.busy && !main.loading && signInBlocker == null,
                         )
                     },
                 )
-            } else {
-                TableRow(
+                BlueprintDialogText(stringResource(R.string.drive_optional),
+                    modifier = Modifier.padding(horizontal = Space.m))
+                BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
+                    context.openUrl(GOOGLE_PERMISSIONS_URL)
+                })
+            }
+            if (managingDrive) {
+                BlueprintDialog(
                     title = stringResource(R.string.settings_account),
-                    subtitle = main.email,
-                    trailing = {
+                    onDismissRequest = { managingDrive = false },
+                    actions = {
+                        BlueprintButton(stringResource(R.string.action_close),
+                            onClick = { managingDrive = false }, tone = ButtonTone.QUIET)
+                    },
+                ) {
+                    main.email?.let { BlueprintDialogText(it) }
+                    BlueprintDialogText(stringResource(R.string.drive_purpose))
+                    if (main.email != null) {
                         BlueprintButton(
-                            label = stringResource(R.string.sign_out),
-                            onClick = onSignOut,
+                            stringResource(R.string.sign_out),
+                            onClick = { managingDrive = false; onSignOut() },
                             tone = ButtonTone.QUIET,
                             enabled = !main.busy && !main.disconnectPhase.owed,
                         )
-                    },
-                )
-            }
-            // docs/03 · docs/06: a second row and not a second meaning for the first one. Signing
-            // out is this phone; disconnecting takes the grant away from every device. It outlives
-            // the account when the local half failed — that retry is the only way to finish it.
-            if (main.email != null || main.disconnectPhase.owed) {
-                TableRow(
-                    title = stringResource(R.string.settings_disconnect),
-                    subtitle = stringResource(R.string.settings_disconnect_hint),
-                    trailing = {
+                        BlueprintDialogText(stringResource(R.string.drive_stop_hint))
+                    }
+                    if (main.email != null || main.disconnectPhase.owed) {
                         BlueprintButton(
-                            label = stringResource(R.string.settings_disconnect),
-                            onClick = onAskToDisconnect,
-                            tone = ButtonTone.DANGER,
-                            enabled = !main.busy,
+                            stringResource(if (main.disconnectPhase.owed) R.string.drive_finish_revoke else R.string.settings_disconnect),
+                            onClick = { managingDrive = false; onAskToDisconnect() },
+                            tone = ButtonTone.QUIET, enabled = !main.busy,
                             modifier = Modifier.testTag("disconnect"),
                         )
-                    },
-                )
-            }
-            // docs/03: a revoke that failed leaves the grant standing, and it is Google's page —
-            // not this app — that takes it down. So the row outlives the disconnect, the phase and
-            // even the signed-in state, and only the user closes it.
-            if (main.revokeDebt) {
-                val context = LocalContext.current
-                TableRow(
-                    title = stringResource(R.string.disconnect_still_listed),
-                    subtitle = GOOGLE_PERMISSIONS_URL,
-                    trailing = {
-                        Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                            BlueprintButton(
-                                label = stringResource(R.string.disconnect_permissions),
-                                onClick = { context.openUrl(GOOGLE_PERMISSIONS_URL) },
-                                tone = ButtonTone.PRIMARY,
-                            )
-                            BlueprintButton(
-                                label = stringResource(R.string.disconnect_removed),
-                                onClick = onRevokeDebtSettled,
-                                tone = ButtonTone.QUIET,
-                                modifier = Modifier.testTag("revoke-debt-settled"),
-                            )
-                        }
-                    },
-                    modifier = Modifier.testTag("revoke-debt"),
-                )
+                    }
+                    if (main.email == null && !main.disconnectPhase.owed) {
+                        BlueprintButton(stringResource(R.string.drive_connect),
+                            onClick = { managingDrive = false; onSignIn() },
+                            tone = ButtonTone.QUIET, enabled = !main.busy && !main.loading)
+                    }
+                    BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
+                        context.openUrl(GOOGLE_PERMISSIONS_URL)
+                    })
+                    if (main.revokeDebt) {
+                        BlueprintDialogText(stringResource(R.string.disconnect_still_listed))
+                        BlueprintDialogLink(stringResource(R.string.disconnect_removed), onRevokeDebtSettled)
+                    }
+                }
             }
             main.message?.let {
                 Text(
@@ -397,9 +393,8 @@ private fun ImportDialog(picked: PickedWorkflows, onCancel: () -> Unit, onConfir
 }
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": the things that are true of a disconnect and are not true of a
- * sign-out, and the one separate question — the recordings, which this never takes by default
- * (principle 3: nothing is deleted before it has been acknowledged somewhere else).
+ * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this phone's
+ * upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
  */
 @Composable
 private fun DisconnectDialog(
@@ -408,7 +403,6 @@ private fun DisconnectDialog(
     onConfirm: (Boolean) -> Unit,
 ) {
     val context = LocalContext.current
-    var alsoDelete by rememberSaveable { mutableStateOf(false) }
     BlueprintDialog(
         title = stringResource(R.string.disconnect_title),
         onDismissRequest = onCancel,
@@ -420,7 +414,7 @@ private fun DisconnectDialog(
             )
             BlueprintButton(
                 label = stringResource(R.string.settings_disconnect),
-                onClick = { onConfirm(alsoDelete) },
+                onClick = { onConfirm(false) },
                 tone = ButtonTone.DANGER,
                 enabled = prompt.canConfirm,
                 modifier = Modifier.testTag("disconnect-confirm"),
@@ -449,12 +443,6 @@ private fun DisconnectDialog(
         // docs/12: a capture that is running has no job yet, so the core's Busy guard does not
         // cover it. Say what is in the way; never stop it for them.
         prompt.blocker?.let { BlueprintDialogText(stringResource(it), tone = DialogTone.DANGER) }
-        BlueprintCheckRow(
-            label = stringResource(R.string.disconnect_also_delete),
-            checked = alsoDelete,
-            onCheckedChange = { alsoDelete = it },
-            modifier = Modifier.testTag("disconnect-also-delete"),
-        )
         // docs/03: a user who only wants this one device off the account has another way, and it
         // is Google's own page rather than anything this app can do for them.
         BlueprintDialogLink(

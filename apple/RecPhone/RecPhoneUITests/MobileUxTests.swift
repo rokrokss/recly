@@ -2,6 +2,35 @@ import XCTest
 
 /// The mobile editor must remain usable while its software keyboard occupies the lower screen.
 final class MobileUxTests: XCTestCase {
+    func testDriveSettingsExplainOptionalStorageAndKeepRecordingAvailable() {
+        continueAfterFailure = false
+        let app = XCUIApplication()
+        app.launchArguments = ["-AppleLanguages", "(en)", "-AppleLocale", "en_US", "-appLanguage", "en"]
+        app.launch()
+        let settings = app.tabBars.buttons["Settings"]
+        XCTAssertTrue(settings.waitForExistence(timeout: 30))
+        settings.tap()
+        XCTAssertFalse(app.buttons["disconnect"].exists, "revocation belongs inside connection management")
+        XCTAssertFalse(app.buttons["signOut"].exists, "account actions must not clutter Settings")
+        if app.buttons["drive-manage"].exists {
+            app.buttons["drive-manage"].tap()
+            XCTAssertTrue(app.buttons["disconnect"].waitForExistence(timeout: 5))
+            app.buttons["Close"].firstMatch.tap()
+        } else {
+            XCTAssertTrue(app.buttons["signIn"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts[
+                "Record and play local audio without an account. Connect Google Drive to upload recordings."
+            ].exists)
+        }
+        let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        screenshot.name = "Optional Google Drive connection"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        app.tabBars.buttons["Record"].tap()
+        XCTAssertTrue(app.buttons["start"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["start"].isEnabled, "recording must remain available without Drive")
+    }
+
     func testWorkflowActionsProtectTheSelectionAndStayOnTheRight() {
         continueAfterFailure = false
         let app = XCUIApplication()

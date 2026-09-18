@@ -9,7 +9,6 @@ import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.ui.component.BlueprintButton
-import app.recly.windows.ui.component.BlueprintCheckRow
 import app.recly.windows.ui.component.BlueprintDialog
 import app.recly.windows.ui.component.BlueprintDialogLink
 import app.recly.windows.ui.component.BlueprintDialogText
@@ -116,9 +115,8 @@ fun RenameDialog(
 }
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": the four things that are true of a disconnect and are not true of a
- * sign-out, and the one separate question — the recordings, which this never takes by default
- * (principle 3: nothing is deleted before it has been acknowledged somewhere else).
+ * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this PC's
+ * upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
  */
 @Composable
 fun DisconnectDialog(
@@ -129,18 +127,17 @@ fun DisconnectDialog(
     onPermissions: () -> Unit,
     onConfirm: (Boolean) -> Unit,
 ) {
-    var alsoDelete by remember { mutableStateOf(false) }
     BlueprintDialog(
         title = strings[Str.DISCONNECT_TITLE],
         onDismissRequest = onCancel,
         theme = theme,
-        // The warnings, a question and a link: this is the tallest thing the app asks.
+        // Room for the warnings, pending-recording count and Google permissions link.
         height = DISCONNECT_HEIGHT,
         actions = {
             BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
             BlueprintButton(
                 label = strings[Str.SETTINGS_DISCONNECT],
-                onClick = { onConfirm(alsoDelete) },
+                onClick = { onConfirm(false) },
                 tone = ButtonTone.DANGER,
                 enabled = prompt.canConfirm,
             )
@@ -163,11 +160,6 @@ fun DisconnectDialog(
         // docs/12: a capture that is running has no job yet, so the core's Busy guard does not cover
         // it. Say what is in the way; never stop it for them.
         prompt.blocker?.let { BlueprintDialogText(strings[it], tone = DialogTone.DANGER) }
-        BlueprintCheckRow(
-            label = strings[Str.DISCONNECT_ALSO_DELETE],
-            checked = alsoDelete,
-            onCheckedChange = { alsoDelete = it },
-        )
         // docs/03: a user who only wants this one device off the account has another way, and it is
         // Google's own page rather than anything this app can do for them.
         BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], onPermissions)

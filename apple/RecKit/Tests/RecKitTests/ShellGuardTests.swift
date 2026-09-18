@@ -242,7 +242,7 @@ final class DisconnectGuardTests: XCTestCase {
         AppLanguage.current = .ko
         let korean = (DisconnectGuard.restoreUnknown.text, DisconnectGuard.saveFailed.text)
 
-        XCTAssertEqual(english.0, "Could not check the Google sign-in — try Disconnect again")
+        XCTAssertEqual(english.0, "Could not check the Google sign-in — open Google Drive settings and finish revoking access")
         XCTAssertEqual(english.1, "Could not save the disconnect state — try again")
         XCTAssertNotEqual(korean.0, english.0, "the catalog gave the key back")
         XCTAssertNotEqual(korean.1, english.1, "the catalog gave the key back")
@@ -259,7 +259,7 @@ final class DisconnectGuardTests: XCTestCase {
         AppLanguage.current = .ko
         let korean = DisconnectGuard.signInBlocker(pending: true)?.text
 
-        XCTAssertEqual(english, "Finish disconnecting first")
+        XCTAssertEqual(english, "Finish revoking Google access first")
         XCTAssertNotNil(korean)
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
     }
@@ -644,7 +644,7 @@ final class DisconnectGateTests: XCTestCase {
             XCTAssertNil(opened, "a capture opened inside a disconnect")
         }
 
-        XCTAssertEqual(inside, "Finish disconnecting first")
+        XCTAssertEqual(inside, "Finish revoking Google access first")
         XCTAssertFalse(DisconnectGate.busy)
         XCTAssertNil(DisconnectGate.startBlocker())
         let after: String? = await DisconnectGate.ifOpen { "rec-1" }
@@ -751,7 +751,7 @@ final class DisconnectCleanupMessageTests: XCTestCase {
         XCTAssertEqual(
             english,
             "Google access was revoked, but cleaning up this device failed: "
-                + "database is locked — try Disconnect again"
+                + "database is locked — open Google Drive settings and finish revoking access"
         )
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
         XCTAssertTrue(korean.contains("database is locked"), korean)

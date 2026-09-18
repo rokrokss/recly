@@ -2,6 +2,7 @@
 
 package app.recly.windows.ui
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,8 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.auth.OAuthConfig
@@ -28,6 +34,9 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
 import app.recly.windows.settings.RecordingMode
+import app.recly.windows.ui.component.BlueprintDialog
+import app.recly.windows.ui.component.BlueprintDialogLink
+import app.recly.windows.ui.component.BlueprintDialogText
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintDropdown
@@ -38,6 +47,7 @@ import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
+import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -71,74 +81,64 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
 @Composable
 private fun Account(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_ACCOUNT])
-    // docs/06: while a disconnect is still owed the account slot is not free, and the row says so
-    // rather than offering a sign-in — or a sign-out — that would be refused.
+    val palette = blueprint
+    var managingDrive by remember { mutableStateOf(false) }
     val signInBlocker = DisconnectGuard.signInBlocker(model.disconnectPhase.owed)
-    TableRow(
-        title = strings[if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.SETTINGS_SIGNED_OUT],
-        // docs/06 4: the Desktop client id is per-developer and never committed.
-        subtitle = signInBlocker?.let { strings[it] }
-            ?: if (model.clientConfigured) null else strings[Str.SETTINGS_NO_CLIENT],
-        trailing = {
-            if (model.signedIn) {
-                BlueprintButton(
-                    strings[Str.SIGN_OUT],
-                    model::signOut,
-                    tone = ButtonTone.QUIET,
-                    enabled = signInBlocker == null,
-                )
-            } else {
+    if (model.signedIn || model.disconnectPhase.owed || model.revokeDebt) {
+        TableRow(
+            title = strings[if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.DRIVE_ATTENTION],
+            subtitle = if (model.disconnectPhase.owed || model.revokeDebt) strings[Str.DRIVE_ATTENTION] else null,
+            modifier = Modifier.clickable(role = Role.Button) { managingDrive = true },
+            trailing = { Text("›") },
+        )
+    } else {
+        TableRow(
+            title = strings[Str.SETTINGS_SIGNED_OUT],
+            subtitle = if (model.clientConfigured) null else strings[Str.SETTINGS_NO_CLIENT],
+            trailing = {
                 ProcessingButton(
-                    label = strings[Str.SIGN_IN],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::signIn,
-                    tone = ButtonTone.PRIMARY,
+                    label = strings[Str.SIGN_IN], state = model.action, strings = strings,
+                    onClick = model::signIn, tone = ButtonTone.PRIMARY,
                     enabled = model.clientConfigured && signInBlocker == null,
                 )
-            }
-        },
-    )
-    // docs/03 "로그아웃 vs 연결 해제": two rows, not one switch — signing out is this PC, and
-    // disconnecting takes the grant away from every device the account is on. It outlives the
-    // signed-in state, because a disconnect whose clean-up failed is still owed.
-    if (model.signedIn || model.disconnectPhase.owed) {
-        TableRow(
-            title = strings[Str.SETTINGS_DISCONNECT],
-            subtitle = strings[Str.SETTINGS_DISCONNECT_HINT],
-            trailing = {
-                ProcessingButton(
-                    label = strings[Str.SETTINGS_DISCONNECT],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::askToDisconnect,
-                    tone = ButtonTone.DANGER,
-                )
             },
         )
+        BlueprintDialogText(strings[Str.DRIVE_OPTIONAL], modifier = Modifier.padding(horizontal = Space.m))
+        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions)
     }
-    // docs/03: a revoke that failed leaves the grant standing, and it is Google's page — not this
-    // app — that takes it down. So the line outlives the disconnect, the phase and even the signed-in
-    // state, and only the user closes it.
-    if (model.revokeDebt) {
-        TableRow(
-            title = strings[Str.DISCONNECT_STILL_LISTED],
-            subtitle = ShellModel.GOOGLE_PERMISSIONS_URL,
-            trailing = {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                    BlueprintButton(
-                        strings[Str.DISCONNECT_PERMISSIONS],
-                        model::openAccountPermissions,
-                        tone = ButtonTone.PRIMARY,
-                    )
-                    BlueprintButton(
-                        strings[Str.DISCONNECT_REMOVED],
-                        model::revokeDebtSettled,
-                        tone = ButtonTone.QUIET,
-                    )
-                }
+    if (managingDrive) {
+        BlueprintDialog(
+            title = strings[Str.SETTINGS_ACCOUNT],
+            onDismissRequest = { managingDrive = false },
+            height = 400.dp,
+            theme = { ReclyDesktopTheme(dark = palette.dark, highContrast = palette.highContrast, content = it) },
+            actions = {
+                BlueprintButton(strings[Str.CLOSE], { managingDrive = false }, tone = ButtonTone.QUIET)
             },
-        )
+        ) {
+            BlueprintDialogText(strings[Str.DRIVE_PURPOSE])
+            if (model.signedIn) {
+                BlueprintButton(strings[Str.SIGN_OUT],
+                    { managingDrive = false; model.signOut() }, tone = ButtonTone.QUIET,
+                    enabled = signInBlocker == null)
+                BlueprintDialogText(strings[Str.DRIVE_STOP_HINT])
+            }
+            if (model.signedIn || model.disconnectPhase.owed) {
+                BlueprintButton(
+                    strings[if (model.disconnectPhase.owed) Str.DRIVE_FINISH_REVOKE else Str.SETTINGS_DISCONNECT],
+                    { managingDrive = false; model.askToDisconnect() }, tone = ButtonTone.QUIET,
+                )
+            }
+            if (!model.signedIn && !model.disconnectPhase.owed) {
+                BlueprintButton(strings[Str.SIGN_IN], { managingDrive = false; model.signIn() },
+                    tone = ButtonTone.QUIET, enabled = model.clientConfigured)
+            }
+            BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions)
+            if (model.revokeDebt) {
+                BlueprintDialogText(strings[Str.DISCONNECT_STILL_LISTED])
+                BlueprintDialogLink(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled)
+            }
+        }
     }
 }
 

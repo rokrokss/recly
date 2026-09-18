@@ -127,6 +127,9 @@ public struct RecentItem: Identifiable, Sendable {
     /// finished like any other, so its state says nothing about where it was recorded.
     public let remote: Bool
 
+    /// Whether every finalized audio part is present on this device.
+    public let savedLocally: Bool
+
     /// docs/10: why this job is the user's to fix, or nil when it is not — the banner line, and the
     /// notification. Read off the job's own status and the step that stopped it, in [Recents.load],
     /// because a state *label* cannot tell `NEEDS_SPACE` from any other parked job.
@@ -145,7 +148,8 @@ public struct RecentItem: Identifiable, Sendable {
         nextRunAt: Date? = nil,
         durationSec: Double? = nil,
         remote: Bool = false,
-        alert: AlertReason? = nil
+        alert: AlertReason? = nil,
+        savedLocally: Bool = false
     ) {
         self.id = id
         self.jobId = jobId
@@ -159,6 +163,7 @@ public struct RecentItem: Identifiable, Sendable {
         self.nextRunAt = nextRunAt
         self.durationSec = durationSec
         self.remote = remote
+        self.savedLocally = savedLocally
         self.alert = alert
     }
 }
@@ -206,7 +211,8 @@ public enum Recents {
                     },
                     durationSec: record.meta.durationSec?.doubleValue,
                     remote: record.remote,
-                    alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) }
+                    alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
+                    savedLocally: (try? await core.recordings.hasLocalAudio(record: record)) == true
                 )
             )
         }

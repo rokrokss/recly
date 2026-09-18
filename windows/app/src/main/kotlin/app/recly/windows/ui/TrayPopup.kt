@@ -381,9 +381,9 @@ private fun RecentRow(
         date = LedgerFormat.date(item.startedAt),
         time = LedgerFormat.time(item.startedAt),
         title = item.title.text(strings),
-        subtitle = item.id,
+        subtitle = if (item.savedLocally) strings[Str.LOCAL_SAVED] else "",
         length = length,
-        status = item.state.ledgerStatus(),
+        status = item.state.ledgerStatus(strings),
         announce = strings[
             Str.LEDGER_ANNOUNCE,
             item.title.text(strings),

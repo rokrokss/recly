@@ -61,6 +61,7 @@ data class RecentItem(
      * the delete — there is no local half to keep, so the dialog has no choice to offer.
      */
     val remote: Boolean = false,
+    val savedLocally: Boolean = false,
 ) {
     /**
      * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": a recording being written to or uploaded right
@@ -97,7 +98,7 @@ object Recents {
             // One job per (recording, workflow); the newest is the one the user last asked for.
             val job = byRecording[record.id]?.maxByOrNull { it.createdAt }
             val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
-            item(record, job, steps, now)
+            item(record, job, steps, now).copy(savedLocally = try { core.recordings.hasLocalAudio(record) } catch (_: java.io.IOException) { false })
         }
     }
 

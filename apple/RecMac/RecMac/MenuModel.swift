@@ -672,8 +672,12 @@ final class MenuModel: ObservableObject {
 
     // MARK: - Sign-in (docs/06)
 
-    /// True when `Info.plist` still carries the placeholder client id — the menu offers the
-    /// procedure rather than a sign-in that cannot succeed.
+    /// A Google credential may have no profile email.
+    var hasGoogleCredential: Bool {
+        auth?.restoration == .restored(hasCredential: true)
+    }
+
+    /// False when the build has no usable Google client configuration.
     var canSignIn: Bool { GoogleAuth.isConfigured }
 
     /// docs/03: why the popover's sign-in is refused, or nil when it is not. A second account signed

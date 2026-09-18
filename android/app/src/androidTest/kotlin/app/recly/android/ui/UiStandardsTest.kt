@@ -30,6 +30,22 @@ class UiStandardsTest {
     @Before fun useEnglish() { language("en") }
     @After fun restoreEnglish() { language("en") }
 
+    @Test fun driveManagementKeepsRecordingAvailableWithoutSignIn() {
+        ui.onNodeWithText(ui.activity.getString(R.string.tab_settings)).performClick()
+        ui.onNodeWithTag("disconnect").assertDoesNotExist()
+        val management = ui.onAllNodesWithTag("drive-manage").fetchSemanticsNodes()
+        if (management.isNotEmpty()) {
+            ui.onNodeWithTag("drive-manage").performClick()
+            ui.onNodeWithTag("disconnect").assertExists()
+            ui.onNodeWithText(ui.activity.getString(R.string.action_close)).performClick()
+        } else {
+            ui.onNodeWithText(ui.activity.getString(R.string.drive_optional)).assertExists()
+            ui.onNodeWithText(ui.activity.getString(R.string.drive_connect)).assertExists()
+        }
+        ui.onNodeWithText(ui.activity.getString(R.string.tab_record)).performClick()
+        ui.onNodeWithText(ui.activity.getString(R.string.recording_start)).assertIsEnabled()
+    }
+
     @Test fun koreanNavigationAndHeadingRemainWhole() {
         language("ko")
         kotlin.test.assertEquals("워크플로우", ui.activity.getString(R.string.tab_workflows))

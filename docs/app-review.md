@@ -1,13 +1,13 @@
 # iOS 신규 제출 심사 준비
 
-0.1.0 (13) 기준 코드에 맞춘 준비 문서. 아래 실기기 확인과 빈칸을 완료한 뒤 같은 내용을 App Store Connect의 심사 답변과 App Review Information → Notes에 넣는다. 영상이나 실기기 검증을 완료했다고 미리 적지 않는다.
+0.1.0 (14) 기준 코드에 맞춘 준비 문서. 아래 실기기 확인과 빈칸을 완료한 뒤 같은 내용을 App Store Connect의 심사 답변과 App Review Information → Notes에 넣는다. 영상이나 실기기 검증을 완료했다고 미리 적지 않는다.
 
 공개 이름·부제·설명·키워드는 [스토어 문구 수정 안내](app-store-copy.ko.md)와 [영어 문안](app-store-metadata.en.txt)을 사용한다. 심사용 계정·키는 공개 문안에 넣지 않는다.
 
 ## 제출 전에 완료할 것
 
 - 변경한 개인정보 처리방침을 공개 URL에 반영하고, 앱 설정의 영어(`https://recly.dev/policy/privacy-policy`)·한국어(`https://recly.dev/policy/privacy-policy.ko`) 링크에서 실제로 열리는지 확인한다. App Store Connect의 개인정보 처리방침 URL에는 영어 정본 주소를 등록한다.
-- iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `13`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
+- iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `14`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
 - 최신 정식 iOS의 실제 iPhone에서 제출할 빌드를 검증한다. 잠금 중 녹음 → 정지·이름 입력 → 목록 → 재생 → Drive 업로드·열기 → 선택 전사 → 결과 확인까지 수행한다.
 - 새 전사/웹훅 대상의 “허용하고 저장”, 동일 대상 재사용 시 추가 확인 없음, 가져오기에서 새 대상만 표시, 허용 철회 후 작업 대기, 설정에서 다시 허용 후 이전 업로드를 반복하지 않는 동작을 확인한다.
 - Google 로그인·로그아웃·연결 해제, 녹음의 로컬/Drive 삭제 선택, 시크릿 목록의 API 키 개별 삭제를 확인한다. Recly 자체 계정 생성은 없으며, Google 계정 삭제 기능을 제공하는 것도 아니다.
@@ -34,7 +34,7 @@
 
    Launch the app, grant microphone access when prompted, select the default Memo workflow, record, stop and enter a title. Open the recording list to play the recording and view its processing status. Sign in with Google from Settings to enable uploads to your own Drive. Transcription and webhooks are optional workflow steps; the user selects the provider or destination and explicitly permits transmission on iPhone before those requests are sent. Permission can be withdrawn in Settings → Privacy.
 
-   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Google sign-out and Disconnect are available in Settings. API keys can be removed individually from the workflow screen's secret list; recordings can be deleted from the recording list.
+   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Settings → Google Drive → the connected row offers Stop using Drive on this device and Revoke Google access. API keys can be removed individually from the workflow screen's secret list; recordings can be deleted from the recording list.
 
 4. **External services**
 
@@ -53,3 +53,22 @@
 - [Apple 심사 가이드라인의 개인정보 보호 조항](https://developer.apple.com/app-store/review/guidelines/#privacy): 앱 안에서 접근 가능한 개인정보 처리방침과 제3자·AI 서비스 공유 전 명시적 허용 요구.
 - [Apple App Privacy 세부 설명](https://developer.apple.com/app-store/app-privacy-details/): 앱과 제3자의 실제 데이터 처리에 따른 수집 항목 검토.
 - 코드·제품 계약: [설계 §15](recly.md), [개인정보 처리방침](policy/privacy-policy.ko.md), [개발·빌드 명령](development.md).
+
+
+## 2026-09-18 · Guideline 4.8 재검토 답변
+
+빌드 14에서 Google 미연결 녹음·저장·재생을 실제 기기로 확인한 뒤 아래 문안을 보낸다. 영상과 실기기 검증을 완료했다고 미리 주장하지 않는다. UI 변경은 앱 계정 로그인과 Drive 권한 승인을 구분하기 위한 것이며 승인 보장이 아니다.
+
+> Hello App Review Team,
+>
+> Thank you for your feedback. Recly does not create or authenticate a Recly user account. Google authentication authorizes access to the user's own Google Drive for storing and accessing recording files.
+>
+> Users can record and play locally stored audio without connecting Google. Google authorization is required for Drive features and workflows that depend on Drive, including transcription in the current version.
+>
+> In build 14, Settings identifies this integration as Google Drive and explains that recording and local playback do not require an account. Connection management is separate from the recording flow, and the recording list distinguishes local storage from pending Drive uploads.
+>
+> To verify, launch without connecting Google, record and save audio, then open it from the List tab for playback. Settings → Google Drive is where the optional storage connection is configured.
+>
+> We respectfully request reconsideration of Guideline 4.8 because Google authentication does not establish a primary account with Recly. The third-party-service client exception may also be relevant to the Drive integration.
+
+시연 자료: [실제로 검증한 제출 빌드·기기·OS와 접근 가능한 영상 URL을 기입].

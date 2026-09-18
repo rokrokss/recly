@@ -34,6 +34,7 @@ public enum BadgeTone: Sendable {
 /// The code and its tone — what [LedgerRow] shows in its last column.
 public struct LedgerStatus: Equatable, Sendable {
     public let code: String
+    public var label: String { code == "NEEDS_AUTH" ? RecKitStrings.localized("Drive pending") : code }
     public let tone: BadgeTone
 
     public init(code: String, tone: BadgeTone) {
@@ -132,7 +133,7 @@ public struct StatusBadge: View {
     }
 
     public var body: some View {
-        Text(verbatim: status.code)
+        Text(verbatim: status.label)
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
             .lineLimit(1)

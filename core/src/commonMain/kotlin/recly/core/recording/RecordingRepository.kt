@@ -120,6 +120,16 @@ class RecordingRepository(
     private val mutex = Mutex()
     private val directories = RecordingDirectory(deps.dataDir, deps.device.platform)
 
+    /** A complete on-device copy, independent of Drive authorization or job status. */
+    @Throws(Throwable::class)
+    suspend fun hasLocalAudio(record: RecordingRecord): Boolean = withContext(deps.io) {
+        record.meta.status == RecordingStatus.FINALIZED && record.meta.parts.isNotEmpty() &&
+            record.meta.parts.all { part ->
+                val file = deps.fileSystem.metadataOrNull(record.dir / part.file)
+                file?.isRegularFile == true && file.size == part.bytes
+            }
+    }
+
     suspend fun create(meta: RecordingMeta, dir: Path): Unit = locked {
         db.transaction {
             queries.insertRecording(

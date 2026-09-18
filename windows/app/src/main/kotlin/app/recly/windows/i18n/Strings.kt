@@ -15,6 +15,15 @@ import java.util.Properties
  * time, which is the only shape that fits, and it costs no plugin and no generated code.
  */
 enum class Str {
+    DRIVE_PENDING,
+    DRIVE_CONNECT,
+    DRIVE_ATTENTION,
+    DRIVE_OPTIONAL,
+    DRIVE_PURPOSE,
+    DRIVE_STOP_HINT,
+    DRIVE_FINISH_REVOKE,
+    LOCAL_SAVED,
+    CLOSE,
     TRANSCRIPT_SEARCH,
     TRANSCRIPT_COPY,
     TRANSCRIPT_COPIED,

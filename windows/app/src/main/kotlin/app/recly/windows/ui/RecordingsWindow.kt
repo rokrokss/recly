@@ -187,7 +187,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
                 style = mono.small,
                 color = palette.textMuted,
             )
-            StatusBadge(item.state.ledgerStatus())
+            StatusBadge(item.state.ledgerStatus(strings))
         }
         // docs/08 "오류": what to do about it, and — for a key — where to do it. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).

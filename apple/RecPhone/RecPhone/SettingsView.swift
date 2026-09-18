@@ -67,70 +67,13 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var account: some View {
-        section(loc("Google account"))
-        if let account = model.account {
-            SectionRow(title: account, subtitle: model.signInBlocker?.text) {
-                // docs/06: this is `signOut()` and nothing else — it clears this phone's
-                // credentials and leaves the grant, and so leaves every other device signed in.
-                //
-                // Held while a disconnect is owed: the retry reads the sign-in to tell a revoke
-                // that happened from one that never did, and a sign-out would take it away.
-                BlueprintButton(loc("Sign out"), tone: .quiet) { model.signOut() }
-                    .disabled(model.disconnectPhase.owed)
-                    .accessibilityIdentifier("signOut")
-            }
-            .accessibilityIdentifier("account")
-        } else if model.canSignIn {
-            // docs/03: while a disconnect still owes its local clean-up the row says so and the
-            // button is off — signing in again would give the retry a *different* account's grant
-            // to take away.
-            SectionRow(title: loc("Signed out"), subtitle: model.signInBlocker?.text) {
-                BlueprintButton(loc("Sign in with Google")) { model.signIn() }
-                    .disabled(model.signInBlocker != nil)
-                    .accessibilityIdentifier("signIn")
-            }
-        } else {
-            // docs/06: `GIDSignIn` answers a placeholder client id with an Obj-C exception, so the
-            // button is not offered at all — and a job that needed Drive is parked in `NEEDS_AUTH`
-            // rather than failed.
-            SectionRow(title: loc("The Google client ID is not set yet (see the README)."))
-                .accessibilityIdentifier("notConfigured")
-        }
-        // docs/03 · docs/06: a second row and not a second meaning for the first one. Signing out
-        // is this phone; disconnecting takes the grant away from every device.
-        //
-        // Offered without an account as well when a disconnect got the grant away and then failed
-        // to clean this phone up: the keys and the queue are still here, and this row is the only
-        // way to finish it (docs/03 "연결 해제").
-        if model.account != nil || model.disconnectPhase.owed {
-            SectionRow(
-                title: loc("Disconnect"),
-                subtitle: loc("Take this app’s access to your Google account away.")
-            ) {
-                BlueprintButton(loc("Disconnect"), tone: .danger) { model.askToDisconnect() }
-                    .accessibilityIdentifier("disconnect")
-            }
-        }
-        // docs/03: a revoke that failed leaves the grant standing, and it is Google's page — not
-        // this app — that takes it down. So the row outlives the disconnect, the phase and even the
-        // signed-in state, which is why it sits outside every block above; only the user closes it.
-        if model.revokeDebt {
-            SectionRow(
-                title: DisconnectGuard.stillListed.text,
-                subtitle: "myaccount.google.com/permissions"
-            ) {
-                HStack(spacing: Space.s) {
-                    BlueprintButton(loc("Open Google account permissions")) {
-                        model.openAccountPermissions()
-                    }
-                    BlueprintButton(DisconnectGuard.debtSettled.text, tone: .quiet) {
-                        model.revokeDebtSettled()
-                    }
-                    .accessibilityIdentifier("revoke-debt-settled")
-                }
-            }
-            .accessibilityIdentifier("revoke-debt")
-        }
+        DriveConnectionSection(
+            account: model.account, connected: model.hasGoogleCredential,
+            configured: model.canSignIn, pending: model.disconnectPhase.owed,
+            revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
+            signIn: model.signIn, signOut: model.signOut, revoke: model.askToDisconnect,
+            permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
+        )
         if let note = model.authNote {
             hint(note, tone: .danger)
         }
@@ -139,10 +82,7 @@ struct SettingsView: View {
         if let message = model.message {
             hint(message.text, tone: .neutral)
         }
-        hint(
-            loc("Drive access: only the files this app creates (drive.file)."),
-            tone: .neutral
-        )
+
     }
 
     private var microphone: some View {

@@ -17,9 +17,9 @@
     <string name="tab_workflows">워크플로우</string>
     <string name="tab_settings">설정</string>
 
-    <string name="sign_in">Google 로그인</string>
-    <string name="sign_out">로그아웃</string>
-    <string name="signed_out">로그아웃됨</string>
+    <string name="sign_in">Google Drive 연결</string>
+    <string name="sign_out">이 기기에서 Drive 사용 중지</string>
+    <string name="signed_out">Drive 연결 안 됨</string>
     <string name="auth_sign_in_failed">로그인 실패: %1$s</string>
     <string name="auth_add_account">Google 계정을 추가한 뒤 다시 로그인하세요</string>
     <string name="auth_drive_granted">Drive 권한 승인됨</string>
@@ -55,7 +55,7 @@
 
     <string name="jobs_empty">아직 녹음이 없습니다</string>
     <string name="jobs_untitled">제목 없음</string>
-    <string name="jobs_sign_in">로그인</string>
+    <string name="jobs_sign_in">Google Drive 연결</string>
     <string name="jobs_open_drive">Drive 열기</string>
     <string name="jobs_retry_unavailable">지금은 재시도할 수 없는 상태입니다</string>
     <string name="jobs_started_at_format">M월 d일 HH:mm</string>
@@ -70,7 +70,7 @@
     <string name="job_state_waiting_in">재시도 대기 · %1$s</string>
     <string name="job_state_done">완료</string>
     <string name="job_state_failed">실패</string>
-    <string name="job_state_needs_auth">로그인 필요</string>
+    <string name="job_state_needs_auth">Drive 업로드 대기</string>
     <string name="job_state_skipped_short">너무 짧음</string>
     <string name="retry_soon">곧</string>
     <string name="retry_in_seconds">%1$d초 후</string>
@@ -164,7 +164,7 @@
     <string name="secret_name_taken">이미 있는 이름입니다</string>
     <string name="secret_value_required">값을 입력하세요</string>
 
-    <string name="settings_account">Google 계정</string>
+    <string name="settings_account">Google Drive</string>
     <string name="settings_workflows">워크플로우</string>
     <string name="settings_uploads">업로드</string>
     <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
@@ -189,7 +189,7 @@
     <string name="theme_light">밝게</string>
     <string name="theme_dark">어둡게</string>
 
-    <string name="core_needs_auth">계속하려면 다시 로그인하세요</string>
+    <string name="core_needs_auth">업로드를 계속하려면 Google Drive를 연결하세요</string>
     <string name="core_drive_reauth">Google Drive 권한 재동의가 필요합니다</string>
     <string name="core_drive_storage_full">Google Drive에 공간이 없습니다 — 정리한 뒤 다시 시도하세요</string>
     <string name="core_drive_consent_required">Drive 권한 동의가 필요합니다</string>
@@ -280,13 +280,13 @@
     </plurals>
 
     <!-- docs/03 "로그아웃 vs 연결 해제" · docs/06 -->
-    <string name="settings_disconnect">연결 해제</string>
+    <string name="settings_disconnect">Google 접근 권한 철회</string>
     <string name="settings_disconnect_hint">이 앱의 Google 계정 접근 권한을 회수합니다.</string>
-    <string name="disconnect_title">Recly와 Google의 연결을 해제할까요?</string>
-    <string name="disconnect_other_devices">이 기기뿐 아니라 같은 계정으로 로그인한 모든 기기의 접근이 함께 끊깁니다. 이 폰만 떼려면 로그아웃을 쓰세요.</string>
-    <string name="disconnect_local">이 폰의 업로드 대기열은 모두 지워집니다. 워크플로우와 키는 그대로 남습니다.</string>
+    <string name="disconnect_title">Google Drive 접근 권한을 철회할까요?</string>
+    <string name="disconnect_other_devices">같은 Google 승인을 사용하는 다른 기기도 접근 권한을 잃을 수 있습니다.</string>
+    <string name="disconnect_local">이 기기의 대기 중인 처리를 정리합니다. 녹음, Drive 파일, 워크플로우와 키는 유지됩니다.</string>
     <string name="disconnect_also_delete">이 폰의 녹음도 함께 삭제</string>
-    <string name="disconnect_permissions">Google 계정 권한 설정 열기</string>
+    <string name="disconnect_permissions">Google 접근 권한 관리</string>
     <string name="disconnect_revoke_failed">Google이 권한을 회수하지 못했습니다(%1$s) — Google 계정 권한 설정에서 직접 해제하세요</string>
     <string name="disconnect_done">연결을 해제했습니다. 이 폰의 녹음은 그대로 남아 있습니다.</string>
     <plurals name="disconnect_unuploaded">
@@ -295,9 +295,9 @@
     <string name="disconnect_deleted">연결을 해제했습니다 — 이 폰의 녹음 %1$d건을 삭제했습니다.</string>
     <string name="disconnect_busy">Google 액세스는 해제했지만 실행 중이던 녹음 %1$d건은 남겨 두었습니다 — 작업이 끝난 뒤 연결 해제를 다시 실행하세요.</string>
     <string name="disconnect_stop_recording">먼저 녹음을 중지하세요</string>
-    <string name="disconnect_pending_sign_in">연결 해제를 먼저 끝내세요</string>
-    <string name="disconnect_in_progress">연결 해제를 먼저 끝내세요</string>
-    <string name="disconnect_cleanup_failed">Google 액세스는 해제했지만 이 기기 정리에 실패했습니다: %1$s — 연결 해제를 다시 시도하세요</string>
+    <string name="disconnect_pending_sign_in">Google 접근 권한 철회를 먼저 완료하세요</string>
+    <string name="disconnect_in_progress">Google 접근 권한 철회를 먼저 완료하세요</string>
+    <string name="disconnect_cleanup_failed">Google 액세스는 해제했지만 이 기기 정리에 실패했습니다: %1$s — Google Drive 설정에서 권한 철회를 완료하세요</string>
     <string name="disconnect_still_listed">Google에 아직 Recly가 남아 있습니다 — myaccount.google.com/permissions에서 직접 해제하세요</string>
     <string name="disconnect_removed">직접 해제했습니다</string>
     <string name="disconnect_save_failed">연결 해제 상태를 저장하지 못했습니다 — 다시 시도하세요</string>
@@ -306,7 +306,7 @@
     <string name="job_state_needs_space">Drive에 공간 없음</string>
     <string name="jobs_open_storage">Drive 저장용량 열기</string>
     <string name="alert_channel">작업</string>
-    <string name="alert_needs_auth">Google에 다시 로그인해야 합니다</string>
+    <string name="alert_needs_auth">업로드를 계속하려면 Google Drive를 연결하세요</string>
     <string name="alert_needs_space">Google Drive에 공간이 없습니다</string>
     <string name="alert_missing_secret">이 폰에 없는 키가 있습니다</string>
     <string name="alert_invalid_secret">이 폰에 저장된 키 값을 쓸 수 없습니다</string>
@@ -358,4 +358,12 @@
     <string name="recording_discard_failed">녹음을 버리지 못했습니다</string>
     <string name="core_provider_region_restricted">이 전사 제공업체는 현재 App Store 지역에서 사용할 수 없습니다.</string>
     <string name="core_storefront_unavailable">전사를 계속하기 전에 App Store 지역 확인을 기다리고 있습니다.</string>
+    <string name="drive_connect">Google Drive 연결</string>
+    <string name="drive_attention">Drive 연결 확인 필요</string>
+    <string name="drive_optional">계정 없이 녹음하고 기기에 저장된 녹음을 재생할 수 있습니다. 업로드하려면 Google Drive를 연결하세요.</string>
+    <string name="drive_purpose">Google 연결은 Drive 저장에 사용됩니다. Recly 자체 계정은 없습니다.</string>
+    <string name="drive_stop_hint">이 기기에서 Drive 접근을 중지합니다. 녹음은 유지되며 Google 접근 권한은 철회할 때까지 남습니다.</string>
+    <string name="drive_finish_revoke">Google 접근 권한 철회 마무리</string>
+    <string name="local_saved">기기에 저장됨</string>
+    <string name="drive_pending">Drive 대기</string>
 </resources>
