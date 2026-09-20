@@ -1,5 +1,5 @@
 NAME
-Recly: Voice Recorder
+Recly: Record for Your AI
 
 SUBTITLE
 Record, transcribe, automate
