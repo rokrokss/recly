@@ -287,6 +287,18 @@ final class RecordingRecoveryTests: XCTestCase {
 
     /// The process died while the title prompt was open: the recording is finalized and complete,
     /// and the only thing missing is the job the stop was going to create.
+    func testAKnownDriveCopyWaitsForSyncInsteadOfReplayingItsWorkflow() async throws {
+        let bridge = try await makeBridge()
+        try await chooseDeviceDefault(bridge)
+        let seeded = try await seed(bridge, status: .finalized)
+        try writeSegment(seconds: 1, to: seeded.directory, part: 1)
+        try await bridge.core.recordings.rememberFolder(recordingId: seeded.recordingId, folderId: "known-drive-folder")
+        _ = await RecordingRecovery(core: bridge.core).reconcile()
+        let jobs = try await bridge.core.recordings.jobStatuses(recordingId: seeded.recordingId)
+        XCTAssertTrue(jobs.isEmpty, "Drive reconciliation, not launch recovery, owns this completed recording")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file(in: seeded.directory, part: 1).path))
+    }
+
     func testAFinalizedRecordingWithNoJobIsEnqueued() async throws {
         let logger = RecordingLogger()
         let bridge = try await makeBridge(logger: logger)

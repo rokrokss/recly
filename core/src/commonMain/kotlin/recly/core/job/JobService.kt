@@ -20,6 +20,9 @@ sealed interface EnqueueResult {
     /** The parts are already uploaded and deleted: there is nothing left for a new job to do. */
     data object PartsPurged : EnqueueResult
 
+    /** A verified Drive copy already exists, without a local job to replay. */
+    data object AlreadySynced : EnqueueResult
+
     data class SkippedShort(val jobId: String) : EnqueueResult
 
     /** This workflow already ran to completion for this recording; a DONE job is not rerun. */
@@ -54,6 +57,7 @@ class JobService(
         // docs/03 "다른 기기의 녹음": Drive already holds it and this device has no original to send.
         // The answer a purged recording gets, for the same reason: nothing for a job to do.
         if (record.remote) return EnqueueResult.PartsPurged
+        if (record.driveSynced) return EnqueueResult.AlreadySynced
         val meta = record.meta
         val workflow =
             WorkflowSelector.select(doc, chosenWorkflowId ?: meta.workflowId, deviceDefaultWorkflowId)

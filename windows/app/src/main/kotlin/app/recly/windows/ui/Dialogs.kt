@@ -10,7 +10,6 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintDialog
-import app.recly.windows.ui.component.BlueprintDialogLink
 import app.recly.windows.ui.component.BlueprintDialogText
 import app.recly.windows.ui.component.BlueprintRadioRow
 import app.recly.windows.ui.component.BlueprintTextField
@@ -124,14 +123,13 @@ fun DisconnectDialog(
     strings: Strings,
     theme: @Composable (@Composable () -> Unit) -> Unit,
     onCancel: () -> Unit,
-    onPermissions: () -> Unit,
     onConfirm: (Boolean) -> Unit,
 ) {
     BlueprintDialog(
         title = strings[Str.DISCONNECT_TITLE],
         onDismissRequest = onCancel,
         theme = theme,
-        // Room for the warnings, pending-recording count and Google permissions link.
+        // One explanation and, only when needed, the reason confirmation is blocked.
         height = DISCONNECT_HEIGHT,
         actions = {
             BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
@@ -143,26 +141,11 @@ fun DisconnectDialog(
             )
         },
     ) {
-        // docs/03: what a disconnect takes away. Only the audio that exists nowhere else takes the
-        // red — several red paragraphs would leave the colour meaning nothing, and it is the same
-        // line the delete dialog puts in red for the same reason.
-        BlueprintDialogText(strings[Str.DISCONNECT_OTHER_DEVICES])
-        // Nothing is owed to Drive: "0 recordings have not reached Drive yet" is a warning about
-        // nothing, in the one colour this dialog keeps for what cannot be given back. The delete
-        // dialog leaves the same line out for the same reason.
-        if (prompt.unuploaded > 0) {
-            BlueprintDialogText(
-                strings[Str.DISCONNECT_UNUPLOADED, prompt.unuploaded],
-                tone = DialogTone.DANGER,
-            )
-        }
-        BlueprintDialogText(strings[Str.DISCONNECT_LOCAL])
+        BlueprintDialogText(strings[Str.DISCONNECT_OTHER_DEVICES], tone = DialogTone.MUTED)
         // docs/12: a capture that is running has no job yet, so the core's Busy guard does not cover
         // it. Say what is in the way; never stop it for them.
         prompt.blocker?.let { BlueprintDialogText(strings[it], tone = DialogTone.DANGER) }
-        // docs/03: a user who only wants this one device off the account has another way, and it is
-        // Google's own page rather than anything this app can do for them.
-        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], onPermissions)
+
     }
 }
 
@@ -242,7 +225,7 @@ private val RENAME_HEIGHT: Dp = 220.dp
 /** docs/03: another device's recording has no answer to give — one line, and the two buttons. */
 private val REMOTE_DELETE_HEIGHT: Dp = 220.dp
 
-private val DISCONNECT_HEIGHT: Dp = 400.dp
+private val DISCONNECT_HEIGHT: Dp = 260.dp
 
 /** The import replace question and the hint under it, plus the two buttons. */
 private val IMPORT_HEIGHT: Dp = 240.dp

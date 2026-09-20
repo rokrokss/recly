@@ -103,6 +103,17 @@ fun TableRow(
     }
 }
 
+/** Supporting copy below a settings row uses the table's quiet type and inset (docs/09). */
+@Composable
+fun SectionFootnote(text: String, modifier: Modifier = Modifier) {
+    Text(
+        text,
+        modifier = modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+        style = MaterialTheme.typography.bodySmall,
+        color = blueprint.textMuted,
+    )
+}
+
 /**
  * A [TableRow] that *is* its switch: `toggleable` sits on the whole row, so what a screen reader
  * focuses is one merged node with a name — "<title>, switch, on" — and not an unnamed track next to

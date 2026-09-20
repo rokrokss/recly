@@ -5,8 +5,7 @@ import Foundation
 import os
 
 /// System audio as a Core Audio process tap (docs/12 "캡처 파이프라인", macOS 14.4+): a global tap
-/// with this process left out of it, wrapped in a private aggregate device around the default output
-/// device, read by an IOProc.
+/// with this process left out of it, read through a private tap-only aggregate device and an IOProc.
 ///
 /// Global-and-excluded rather than per-app on purpose. The meeting apps worth capturing are a moving
 /// target — Zoom, a browser tab, Teams inside a WebView — and a tap that has to name them is a tap
@@ -31,6 +30,13 @@ final class ProcessTapCapture: SystemAudioInput {
     static let silenceTimeoutSec: Double = 10
     private static let watchIntervalSec: Double = 2
 
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)?
+    private let delivery = AudioDeliveryQueue(label: "app.recly.mac.recorder.tap.delivery")
+    private var captureHealth: CaptureHealth = .healthy
+    private var lastRebuildSec = -Double.infinity
+    private var rebuildFailures = 0
+    var health: CaptureHealth { lock.withLock { captureHealth } }
+
     var onOutage: ((String, TimeInterval) -> Void)?
 
     private let control = DispatchQueue(label: "app.recly.mac.recorder.tap")
@@ -42,7 +48,7 @@ final class ProcessTapCapture: SystemAudioInput {
     private let lock = NSLock()
 
     private var live: Live?
-    private var onBuffer: ((AVAudioPCMBuffer) -> Void)?
+    private var onBuffer: ((CapturedAudio) -> Void)?
     private var deviceListener: AudioObjectPropertyListenerBlock?
     private var watchdog: DispatchSourceTimer?
     /// Monotonic, and written by the IOProc: the watchdog's only evidence that the tap is alive.
@@ -63,6 +69,7 @@ final class ProcessTapCapture: SystemAudioInput {
         let streamID: AudioStreamID
         let format: AVAudioFormat
         let formatListener: AudioObjectPropertyListenerBlock?
+        let tapListener: AudioObjectPropertyListenerBlock?
         let deviceName: String
         let deviceRateHz: Double
     }
@@ -80,11 +87,19 @@ final class ProcessTapCapture: SystemAudioInput {
     /// The build is where the permission prompt happens, and only a build that worked arms the
     /// listener and the watchdog — a start that failed leaves nothing behind to fire.
     func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
+        try startCaptured { onBuffer($0.buffer) }
+    }
+
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
         try control.sync {
+            lastRebuildSec = -.infinity
+            rebuildFailures = 0
+            lock.withLock { captureHealth = .recovering }
             lock.withLock { self.onBuffer = onBuffer }
             do {
                 try build()
             } catch {
+                delivery.finish()
                 lock.withLock { self.onBuffer = nil }
                 throw error
             }
@@ -143,8 +158,57 @@ final class ProcessTapCapture: SystemAudioInput {
         // The IOProc belongs to the aggregate, not the tap. In particular, a Bluetooth call route
         // can deliver 24 kHz samples while the tap advertises 48 kHz. Labelling those samples with
         // the tap's rate doubles their pitch and makes the system queue run short by half.
+        let tapFormat: AudioStreamBasicDescription? = CoreAudioProperty.value(
+            of: tapID, selector: kAudioTapPropertyFormat
+        )
+        guard let rate = tapFormat?.mSampleRate, rate.isFinite, rate > 0 else {
+            throw RecorderError("the tap reports no usable rate", kind: .systemAudioUnavailable)
+        }
+        // Only our virtual device is configured. Opening or retuning the physical output can
+        // interfere with a meeting application's Bluetooth route.
+        var requestedRate = rate
+        var rateAddress = CoreAudioProperty.address(kAudioDevicePropertyNominalSampleRate)
+        let configured = AudioObjectSetPropertyData(
+            aggregateID, &rateAddress, 0, nil, UInt32(MemoryLayout<Double>.size), &requestedRate
+        )
+        guard configured == noErr else {
+            throw RecorderError("could not configure the tap rate (\(configured))", kind: .systemAudioUnavailable)
+        }
         let input = try Self.inputFormat(on: aggregateID)
-        let procID = try makeIOProc(on: aggregateID, format: input.format)
+        guard abs(input.format.sampleRate - rate) < 0.5 else {
+            throw RecorderError("the tap and aggregate rates disagree", kind: .systemAudioUnavailable)
+        }
+        var monitor = CaptureRateMonitor()
+        var invalid = false
+        var hadTimestamp = false
+        delivery.start { [weak self] packet in
+            guard let self, !invalid else { return }
+            if hadTimestamp, packet.hostTimeSec == nil {
+                invalid = true
+                self.onDiagnostic?(CaptureDiagnostic(event: "timestamp_missing", source: "sys"))
+                self.recover(reason: "system_timestamp_missing")
+                return
+            }
+            hadTimestamp = packet.hostTimeSec != nil
+            let result = monitor.observe(
+                frames: Int(packet.buffer.frameLength), rate: packet.buffer.format.sampleRate,
+                hostTimeSec: packet.hostTimeSec
+            )
+            if result == .mismatch {
+                invalid = true
+                self.onDiagnostic?(CaptureDiagnostic(event: "rate_mismatch", source: "sys",
+                    rateHz: packet.buffer.format.sampleRate, measuredRateHz: monitor.measuredRateHz, hostTimeSec: packet.hostTimeSec))
+                self.recover(reason: "system_rate_mismatch")
+                return
+            }
+            if result == .valid {
+                self.lock.withLock { self.captureHealth = .healthy }
+            }
+            self.lock.withLock { self.onBuffer }?(packet)
+        }
+        let procID: AudioDeviceIOProcID
+        do { procID = try makeIOProc(on: aggregateID, format: input.format) }
+        catch { delivery.finish(); throw error }
         let listener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
             self?.checkInputFormat(on: aggregateID)
         }
@@ -152,6 +216,15 @@ final class ProcessTapCapture: SystemAudioInput {
         let listening = AudioObjectAddPropertyListenerBlock(
             input.streamID, &address, control, listener
         ) == noErr
+        let tapListener: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
+            guard let self, self.lock.withLock({ self.live?.tapID == tapID }) else { return }
+            let current: AudioStreamBasicDescription? = CoreAudioProperty.value(of: tapID, selector: kAudioTapPropertyFormat)
+            if current?.mSampleRate != rate || current?.mChannelsPerFrame != tapFormat?.mChannelsPerFrame {
+                self.recreate(reason: "tap_format_change")
+            }
+        }
+        var tapAddress = CoreAudioProperty.address(kAudioTapPropertyFormat)
+        let tapListening = AudioObjectAddPropertyListenerBlock(tapID, &tapAddress, control, tapListener) == noErr
         lock.withLock {
             live = Live(
                 tapID: tapID,
@@ -160,6 +233,7 @@ final class ProcessTapCapture: SystemAudioInput {
                 streamID: input.streamID,
                 format: input.format,
                 formatListener: listening ? listener : nil,
+                tapListener: tapListening ? tapListener : nil,
                 deviceName: device.name,
                 deviceRateHz: device.nominalSampleRateHz
             )
@@ -169,9 +243,8 @@ final class ProcessTapCapture: SystemAudioInput {
         // From here, teardown owns every resource, including a start that fails.
         ownsTap = false
         ownsAggregate = false
-        let tapFormat: AudioStreamBasicDescription? = CoreAudioProperty.value(
-            of: tapID, selector: kAudioTapPropertyFormat
-        )
+        onDiagnostic?(CaptureDiagnostic(event: "format", source: "sys", device: device.name,
+            detail: "tap=\(rate)Hz output=\(device.nominalSampleRateHz)Hz os=\(ProcessInfo.processInfo.operatingSystemVersionString)", rateHz: input.format.sampleRate))
         Self.log.info(
             "rec.tap.format tapRateHz=\(tapFormat?.mSampleRate ?? 0, privacy: .public) streamRateHz=\(input.format.sampleRate, privacy: .public)"
         )
@@ -215,38 +288,14 @@ final class ProcessTapCapture: SystemAudioInput {
         )!)
     }
 
-    /// docs/12: the tap is read through an aggregate device, not directly. Private, so it does not
-    /// appear in the user's sound settings, and built around the current default output device —
-    /// which is why a change of that device means building this again.
-    ///
-    /// Separate from the call that creates it so a test can read the two keys that decide whether a
-    /// recording starts at all and whether what arrives is the meeting or the user's own headset.
+    /// A private tap-only device: never acquire the real output as a subdevice. The parameter
+    /// remains part of the configuration seam so tests can prove physical routes are not included.
     static func aggregateDescription(around device: SystemAudioDevice, tap: CATapDescription) -> [String: Any] {
         [
             kAudioAggregateDeviceNameKey: "Rec System Audio",
             kAudioAggregateDeviceUIDKey: UUID().uuidString,
-            kAudioAggregateDeviceMainSubDeviceKey: device.uid,
             kAudioAggregateDeviceIsPrivateKey: true,
-            kAudioAggregateDeviceIsStackedKey: false,
-            // `false`, and this is not a preference. AudioHardware.h on this key: "calling
-            // AudioDeviceStart with the aggregate device will wait until a tapped process begins
-            // receiving its first audio from any tapped applications." Starting a meeting recording
-            // in a quiet room would park `AudioDeviceStart` on the control queue for as long as
-            // nothing plays — with the microphone already attached and writing all three files, and
-            // the session never leaving `.starting`. Off, the IOProc runs from the first cycle and
-            // delivers silence until something plays, which is also what the watchdog expects.
             kAudioAggregateDeviceTapAutoStartKey: false,
-            kAudioAggregateDeviceSubDeviceListKey: [[
-                kAudioSubDeviceUIDKey: device.uid,
-                // A duplex default output — AirPods, a USB headset, an audio interface, which is
-                // exactly the hardware the echo policy asks the user for — presents its own input
-                // channels through the aggregate device, and [receive] reads the first stream it is
-                // handed. No input channels from the sub-device leaves the tap as the only input
-                // there is, so the first stream is the meeting and not the user's own microphone.
-                kAudioSubDeviceInputChannelsKey: 0,
-            ]],
-            // Core Audio's own drift compensation, between the tap and the device it is stacked on.
-            // `DriftCompensator` is about the other drift — this stream against the microphone.
             kAudioAggregateDeviceTapListKey: [[
                 kAudioSubTapUIDKey: tap.uuid.uuidString,
                 kAudioSubTapDriftCompensationKey: true,
@@ -270,8 +319,10 @@ final class ProcessTapCapture: SystemAudioInput {
     private func makeIOProc(on aggregateID: AudioDeviceID, format: AVAudioFormat) throws -> AudioDeviceIOProcID {
         var procID: AudioDeviceIOProcID?
         let status = AudioDeviceCreateIOProcIDWithBlock(&procID, aggregateID, io) {
-            [weak self] _, inInputData, _, _, _ in
-            self?.receive(inInputData, format: format)
+            [weak self] _, inInputData, inputTime, _, _ in
+            let stamp = inputTime.pointee
+            let time = stamp.mFlags.contains(.hostTimeValid) ? AVAudioTime.seconds(forHostTime: stamp.mHostTime) : nil
+            self?.receive(inInputData, format: format, hostTimeSec: time)
         }
         guard status == noErr, let procID else {
             throw RecorderError("the tap IOProc could not be created (\(status))", kind: .systemAudioUnavailable)
@@ -282,7 +333,7 @@ final class ProcessTapCapture: SystemAudioInput {
     /// On [io], dispatched from Core Audio's IO thread, and free to run alongside anything on
     /// [control]. The buffer it hands over is the device's own memory and is valid for exactly this
     /// call, so the frames are copied out before anything else happens to them.
-    private func receive(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat) {
+    private func receive(_ input: UnsafePointer<AudioBufferList>, format: AVAudioFormat, hostTimeSec: Double?) {
         let list = UnsafeMutableAudioBufferListPointer(UnsafeMutablePointer(mutating: input))
         // The tap is meant to be the only input stream on the aggregate device (see the zero input
         // channels in [aggregateDescription]); anything else and the buffer taken below could be a
@@ -310,15 +361,15 @@ final class ProcessTapCapture: SystemAudioInput {
         destination[0].update(from: source, count: Int(frames))
         buffer.frameLength = frames
 
-        let deliver: ((AVAudioPCMBuffer) -> Void)? = lock.withLock {
+        let active: Bool = lock.withLock {
             // No `live` is a tap that has been torn down: a callback that slipped in beside the
             // teardown has nothing to deliver into, and stamping the clock would tell the watchdog
             // a dead tap is alive.
-            guard live != nil else { return nil }
+            guard live != nil else { return false }
             lastCallbackSec = Self.nowSec
-            return onBuffer
+            return true
         }
-        deliver?(buffer)
+        if active { delivery.submit(CapturedAudio(buffer, hostTimeSec: hostTimeSec)) }
     }
 
     /// On [control]. The IOProc is destroyed before anything else and before [live] is let go:
@@ -331,8 +382,16 @@ final class ProcessTapCapture: SystemAudioInput {
             var address = CoreAudioProperty.address(kAudioStreamPropertyVirtualFormat)
             AudioObjectRemovePropertyListenerBlock(open.streamID, &address, control, listener)
         }
+        if let listener = open.tapListener {
+            var address = CoreAudioProperty.address(kAudioTapPropertyFormat)
+            AudioObjectRemovePropertyListenerBlock(open.tapID, &address, control, listener)
+        }
         AudioDeviceStop(open.aggregateID, open.procID)
         AudioDeviceDestroyIOProcID(open.aggregateID, open.procID)
+        delivery.finish()
+        if delivery.droppedFrames > 0 {
+            onDiagnostic?(CaptureDiagnostic(event: "delivery_overflow", source: "sys", frames: delivery.droppedFrames))
+        }
         lock.withLock { live = nil }
         AudioHardwareDestroyAggregateDevice(open.aggregateID)
         AudioHardwareDestroyProcessTap(open.tapID)
@@ -415,15 +474,32 @@ final class ProcessTapCapture: SystemAudioInput {
     /// A build that fails is not the end of the recording — a meeting with no `sys` track is worth
     /// more than no meeting — so nothing is reported and the watchdog comes back in two seconds.
     /// The microphone never learns any of this happened.
+    func recover(reason: String) {
+        control.async { [weak self] in self?.recreate(reason: reason) }
+    }
+
     private func recreate(reason: String, since: Date = Date()) {
+        // Failed routes remain visible and retry at a bounded rate, without repeatedly acquiring
+        // hardware. A healthy generation resets the backoff after delivering validated audio.
+        let healthy = health == .healthy
+        if healthy { rebuildFailures = 0 }
+        let cooldown = min(10.0, max(1.0, Double(rebuildFailures)))
+        guard Self.nowSec - lastRebuildSec >= cooldown else { return }
+        lastRebuildSec = Self.nowSec
         let live: Bool = lock.withLock {
             guard onBuffer != nil else { return false }
+            captureHealth = rebuildFailures >= 3 ? .failed : .recovering
             outage.begin(reason: reason, since: since)
             return true
         }
         guard live else { return }
         teardown()
-        guard (try? build()) != nil else { return }
+        rebuildFailures += 1
+        onDiagnostic?(CaptureDiagnostic(event: reason, source: "sys"))
+        guard (try? build()) != nil else {
+            lock.withLock { captureHealth = rebuildFailures >= 3 ? .failed : .recovering }
+            return
+        }
         guard let closed = lock.withLock({ outage.end(now: Date()) }) else { return }
         onOutage?(closed.reason, closed.seconds)
     }

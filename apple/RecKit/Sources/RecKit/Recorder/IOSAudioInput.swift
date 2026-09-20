@@ -2,193 +2,261 @@
 import AVFoundation
 import Foundation
 
-/// The iPhone's and the Apple Watch's microphone (docs/13 "iPhone"·"Apple Watch" 녹음):
-/// `AVAudioEngine`'s input node on top of an `AVAudioSession` that is allowed to keep recording once
-/// the screen locks or the wrist drops.
-///
-/// It is a type of its own rather than a branch inside [MicrophoneInput] because everything that
-/// makes these two platforms themselves is the session around the engine, not the engine: the
-/// category that earns the `UIBackgroundModes: audio` entitlement, the interruption a phone call is
-/// (docs/03 `silenced`), and the route change a headset unplugged is (`gaps`, through the recorder's
-/// own restart). The watch shares all three — only the category differs (see [activate]) — so
-/// M5-L4 gave it this input rather than a variant of it.
-///
-/// Started and stopped on the recorder's control queue; the notifications arrive on whatever thread
-/// the system used, which is why nothing here is read from two places at once except through them.
+/// Microphone-only capture for iPhone and Apple Watch. Engine/session operations and notifications
+/// share one queue; hardware callbacks only transfer owned buffers to the writer queue.
 final class IOSAudioInput: AudioInput {
-    private let engine = AVAudioEngine()
+    private var engine = AVAudioEngine()
     private let session: AVAudioSession
-    /// Injected so a test can post the interruption a phone call would (there is no way to make the
-    /// simulator ring), on the real notification names with the real user-info keys.
     private let notifications: NotificationCenter
+    private let control = DispatchQueue(label: "app.recly.mobile.microphone.control")
+    private let delivery = AudioDeliveryQueue(label: "app.recly.mobile.microphone.delivery")
     private var observers: [NSObjectProtocol] = []
-    /// Covers [interruption] and the resume it asks for, which is the one thing here that arrives
-    /// on a thread of its own: an interruption ending as the recorder's control queue is running
-    /// `stop` must either resume before it — and be torn down by it — or find the input stopped and
-    /// do nothing. Without that, a call that ends after the user has already stopped brings the
-    /// session and the microphone indicator back up under a recording that is finalized.
-    private let lock = NSLock()
-    /// Everything this input knows about being interrupted, and every decision it makes about it.
     private var interruption = Interruption()
+    private var generation = 0
+    private var prepared = false
+    private var mediaServicesLost = false
+    private var resumingSilence = false
+    private var routeCheck: DispatchWorkItem?
+    private var attachedRoute: String?
+    private var rejectedInputs: Set<String> = []
 
     var onConfigurationChange: ((String) -> Void)?
     var onSilence: ((Bool) -> Void)?
+    var onFailure: ((RecorderError) -> Void)?
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)?
+    var retriesTransientStart: Bool { true }
 
     init(session: AVAudioSession = .sharedInstance(), notifications: NotificationCenter = .default) {
         self.session = session
         self.notifications = notifications
     }
 
-    /// Configuring the session is what decides this — the input node reports the session's own
-    /// format — and the recorder reads it *before* it calls [start], to build its converter with.
-    /// So the configuration happens here, and it is idempotent: the restart path reads the format
-    /// again after a [stop] has deactivated the session.
-    var format: AVAudioFormat? {
-        try? activate()
+    var format: AVAudioFormat? { control.sync { currentFormat } }
+    var isRunning: Bool { control.sync { !mediaServicesLost && engine.isRunning } }
+    var configurationID: String? { control.sync { mediaServicesLost ? attachedRoute : routeIdentity } }
+    var deviceName: String? { control.sync { session.currentRoute.inputs.first?.portName } }
+
+    private var currentFormat: AVAudioFormat? {
+        guard !mediaServicesLost else { return nil }
         let format = engine.inputNode.outputFormat(forBus: 0)
         return format.sampleRate > 0 && format.channelCount > 0 ? format : nil
     }
 
-    var isRunning: Bool { engine.isRunning }
+    private var routeIdentity: String {
+        #if os(iOS)
+        return session.currentRoute.inputs.map { "\($0.uid):\($0.selectedDataSource?.dataSourceID.stringValue ?? "")" }
+            .joined(separator: ",")
+        #else
+        return session.currentRoute.inputs.map(\.uid).joined(separator: ",")
+        #endif
+    }
 
     func authorize() async throws {
         try await MicrophoneInput.requireMicrophone()
+        control.sync {
+            resumingSilence = false
+            // A new user-initiated recording may retry after the previous media-server failure.
+            // Internal restarts must keep the failure latched until that explicit action.
+            mediaServicesLost = false
+            rejectedInputs.removeAll()
+        }
     }
 
-    func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
-        try activate()
-        guard let format else {
-            throw RecorderError("the audio session reports no usable input format")
-        }
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
-            onBuffer(buffer)
-        }
-        lock.withLock { interruption.tapped = true }
-        // Before the engine rather than after it: an engine that refuses to start is a recording
-        // that never begins, and the observers a failed start left behind are taken off by the
-        // [stop] the recorder's own teardown makes.
-        observe()
-        engine.prepare()
-        try engine.start()
-    }
+    func prepare() throws { try control.sync { try prepareLocked() } }
 
-    func stop() {
-        stopObserving()
-        // The state first, and under the lock: a resume that is halfway through is waited for here
-        // and undone below, and one that has not started yet finds the input stopped.
-        let wasTapped: Bool = lock.withLock {
-            let was = interruption.tapped
-            interruption.stopped()
-            return was
-        }
-        if wasTapped {
-            engine.inputNode.removeTap(onBus: 0)
-        }
-        engine.stop()
-        // Handing the session back is what lets music the recording interrupted come back on.
-        try? session.setActive(false, options: .notifyOthersOnDeactivation)
-    }
-
-    /// docs/13 "iPhone": `.playAndRecord`/`.default` with `.allowBluetooth`, 16 kHz asked for
-    /// (ADR-006 — the hardware answers with whatever it has and `AVAudioConverter` resamples).
-    /// `.playAndRecord` rather than `.record` because it is the category `UIBackgroundModes: audio`
-    /// is granted for, and the one a recording survives the lock screen under.
-    ///
-    /// docs/13 "Apple Watch" asks for `.record` instead, and it is the one difference between the
-    /// two platforms that is a choice: a watch has nothing to play back while it records, and
-    /// `.playAndRecord` would have it hold an output route — and duck whatever the paired phone is
-    /// playing — for the hours a recording lasts.
-    ///
-    /// The other two are the SDK's. `.allowBluetooth` is watchOS 11 API and RecKit's floor is 10, so
-    /// the watch asks for no options at all — a headset it is already routed to is used anyway.
-    /// `setPreferredSampleRate` is *unavailable* on watchOS: the rate is the hardware's, which is
-    /// what `AVAudioConverter` was already resampling from on the other platforms (ADR-006).
-    private func activate() throws {
+    private func prepareLocked() throws {
+        guard !mediaServicesLost else { throw RecorderError("audio services are unavailable") }
+        guard !prepared else { return }
+        // A fresh engine cannot keep an input node's format from the previous Bluetooth profile.
+        engine = AVAudioEngine()
         #if os(watchOS)
-        try session.setCategory(.record, mode: .default)
+        if #available(watchOS 11, *) {
+            try session.setCategory(.record, mode: .default, options: [.allowBluetoothHFP])
+        } else {
+            try session.setCategory(.record, mode: .default)
+        }
         #else
-        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetooth])
+        try session.setCategory(.playAndRecord, mode: .default, options: [.allowBluetoothHFP])
         try session.setPreferredSampleRate(Double(SegmentedRecorder.sampleRateHz))
         #endif
         try session.setActive(true)
+        #if os(iOS)
+        // watchOS exposes the actual route but does not allow setPreferredInput. Its system
+        // chooses from the routes enabled by the category above.
+        let ports = session.availableInputs ?? []
+        rejectedInputs.formIntersection(Set(ports.map(\.uid)))
+        let current = session.currentRoute.inputs.first?.uid
+        let selected = MobileMicrophoneSelection.choose(
+            ports.filter { !self.rejectedInputs.contains($0.uid) }.compactMap(Self.candidate), current: current
+        )
+        let preferred = ports.first { $0.uid == selected }
+        if session.preferredInput?.uid != preferred?.uid {
+            do {
+                try session.setPreferredInput(preferred)
+            } catch {
+                if let preferred { rejectedInputs.insert(preferred.uid) }
+                // A refused external input must not discard a recording the OS default can make.
+                try session.setPreferredInput(nil)
+                onDiagnostic?(CaptureDiagnostic(event: "input_preference_rejected", source: "mic",
+                    device: preferred?.portName, detail: String(describing: error)))
+            }
+        }
+        #endif
+        guard session.isInputAvailable, currentFormat != nil else {
+            throw RecorderError("no microphone is available")
+        }
+        prepared = true
+    }
+
+    private static func candidate(_ port: AVAudioSessionPortDescription) -> MobileMicrophoneSelection.Input? {
+        let priority: Int
+        switch port.portType {
+        case .headsetMic, .usbAudio, .lineIn: priority = 0
+        case .bluetoothHFP, .bluetoothLE: priority = 1
+        case .builtInMic: priority = 2
+        default: return nil
+        }
+        return .init(id: port.uid, priority: priority)
+    }
+
+    func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
+        try startCaptured { onBuffer($0.buffer) }
+    }
+
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
+        try control.sync {
+            try prepareLocked()
+            guard let format = currentFormat else { throw RecorderError("the microphone format is unavailable") }
+            let hardware = engine.inputNode.inputFormat(forBus: 0)
+            guard format.sampleRate == hardware.sampleRate, format.channelCount == hardware.channelCount else {
+                throw RecorderError("the microphone format changed while starting")
+            }
+            delivery.start(onBuffer)
+            engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [delivery] buffer, when in
+                let time = when.isHostTimeValid ? AVAudioTime.seconds(forHostTime: when.hostTime) : nil
+                delivery.submit(CapturedAudio(buffer, hostTimeSec: time))
+            }
+            interruption.tapped = true
+            engine.prepare()
+            try engine.start()
+            attachedRoute = routeIdentity
+            observe()
+            if resumingSilence { resumingSilence = false; onSilence?(false) }
+            onDiagnostic?(CaptureDiagnostic(event: "format", source: "mic",
+                device: session.currentRoute.inputs.first?.portName, rateHz: format.sampleRate))
+        }
+    }
+
+    func stop() {
+        control.sync {
+            generation += 1
+            routeCheck?.cancel()
+            routeCheck = nil
+            observers.forEach { notifications.removeObserver($0) }
+            observers.removeAll()
+            let wasTapped = interruption.tapped
+            interruption.stopped()
+            if !mediaServicesLost {
+                if wasTapped { engine.inputNode.removeTap(onBus: 0) }
+                engine.stop()
+                try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            }
+            delivery.finish()
+            if delivery.droppedFrames > 0 {
+                onDiagnostic?(CaptureDiagnostic(event: "delivery_overflow", source: "mic", frames: delivery.droppedFrames))
+            }
+            prepared = false
+            attachedRoute = nil
+            // Discard orphaned objects without sending them messages after a media-server loss.
+            engine = AVAudioEngine()
+        }
     }
 
     private func observe() {
-        // `object: nil`: there is one `AVAudioSession` in a process and the notification is about
-        // that one. Naming it would only be a way to miss a notification the system posted with
-        // something else in the object.
-        observers.append(
-            notifications.addObserver(
-                forName: AVAudioSession.interruptionNotification, object: nil, queue: nil
-            ) { [weak self] note in
-                self?.interrupted(by: note)
+        let token = generation
+        func subscribe(_ name: Notification.Name, object: Any? = nil, action: @escaping (IOSAudioInput, Notification) -> Void) {
+            observers.append(notifications.addObserver(forName: name, object: object, queue: nil) { [weak self] note in
+                self?.control.async { [weak self] in
+                    guard let self, generation == token, interruption.tapped else { return }
+                    action(self, note)
+                }
+            })
+        }
+        subscribe(AVAudioSession.interruptionNotification) { input, note in
+            guard !input.mediaServicesLost else { return }
+            input.act(on: input.interruption.notified(note.userInfo))
+        }
+        subscribe(AVAudioSession.routeChangeNotification) { input, note in
+            let reason = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt)
+                .flatMap(AVAudioSession.RouteChangeReason.init(rawValue:))
+            if reason == .newDeviceAvailable || reason == .oldDeviceUnavailable {
+                input.rejectedInputs.removeAll()
             }
-        )
-        // docs/13 deliverable 1: a route change goes through the recorder's existing restart
-        // coalescing — the same path a Mac's device change takes, and the same `gaps` entry.
-        observers.append(
-            notifications.addObserver(
-                forName: AVAudioSession.routeChangeNotification, object: nil, queue: nil
-            ) { [weak self] _ in
-                self?.deviceChanged("route_change")
-            }
-        )
-        observers.append(
-            notifications.addObserver(
-                forName: .AVAudioEngineConfigurationChange, object: engine, queue: nil
-            ) { [weak self] _ in
-                self?.deviceChanged("engine_configuration_change")
-            }
-        )
+            input.scheduleRouteCheck()
+        }
+        subscribe(.AVAudioEngineConfigurationChange, object: engine) { input, _ in
+            guard !input.mediaServicesLost else { return }
+            input.act(on: input.interruption.deviceChanged(reason: "engine_configuration_change"))
+        }
+        subscribe(AVAudioSession.mediaServicesWereLostNotification) { input, _ in
+            // Orphaned audio objects must not be restarted while the media server is unavailable.
+            input.mediaServicesLost = true
+            input.routeCheck?.cancel()
+            input.interruption.stopped()
+            input.delivery.finish()
+            input.onSilence?(true)
+            input.onDiagnostic?(CaptureDiagnostic(event: "media_services_lost", source: "mic"))
+            input.onFailure?(RecorderError("audio services are unavailable; the captured audio will be saved"))
+        }
+        subscribe(AVAudioSession.mediaServicesWereResetNotification) { input, _ in
+            input.mediaServicesLost = true
+            input.delivery.finish()
+            input.interruption.stopped()
+            input.prepared = false
+            input.engine = AVAudioEngine()
+            input.onDiagnostic?(CaptureDiagnostic(event: "media_services_reset", source: "mic"))
+            // Apple's reset contract requires a fresh user action before recording again.
+            // Finalize the audio already captured through the shell's normal fatal-stop path.
+            input.onFailure?(RecorderError("audio services reset; the captured audio will be saved"))
+        }
     }
 
-    private func stopObserving() {
-        observers.forEach { notifications.removeObserver($0) }
-        observers.removeAll()
+    private func scheduleRouteCheck() {
+        routeCheck?.cancel()
+        let token = generation
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, generation == token, interruption.tapped, !mediaServicesLost else { return }
+            #if os(iOS)
+            let selected = MobileMicrophoneSelection.choose(
+                (session.availableInputs ?? []).filter { !self.rejectedInputs.contains($0.uid) }.compactMap(Self.candidate),
+                current: session.currentRoute.inputs.first?.uid
+            )
+            let changed = attachedRoute != routeIdentity || selected != session.currentRoute.inputs.first?.uid
+            #else
+            let changed = attachedRoute != routeIdentity
+            #endif
+            guard changed || !engine.isRunning else { return }
+            act(on: interruption.deviceChanged(reason: "input_route_change"))
+        }
+        routeCheck = work
+        control.asyncAfter(deadline: .now() + 0.35, execute: work)
     }
 
-    /// A call or Siri (docs/03 `silenced`): what [Interruption] decided, done.
-    ///
-    /// Under [lock] from the decision to the resume, so that `stop` cannot land in the middle of it.
-    private func interrupted(by note: Notification) {
-        lock.lock()
-        defer { lock.unlock() }
-        act(on: interruption.notified(note.userInfo))
-    }
-
-    /// The hardware moved under the tap. While a call holds the microphone it is only remembered
-    /// (see [Interruption.deviceChanged]); otherwise it goes straight to the recorder's restart.
-    private func deviceChanged(_ reason: String) {
-        lock.lock()
-        defer { lock.unlock() }
-        act(on: interruption.deviceChanged(reason: reason))
-    }
-
-    /// On [lock], from one of the two above.
     private func act(on action: Interruption.Action) {
         switch action {
-        case .ignore:
-            break
-
+        case .ignore: break
         case .silenced:
+            engine.pause()
+            delivery.finish()
             onSilence?(true)
-
         case .resume:
-            onSilence?(false)
-            do {
-                try session.setActive(true)
-                try engine.start()
-            } catch {
-                // The tap and the converter are still the ones the recording started with, and
-                // there is no audio reaching them: the restart path takes the input down and builds
-                // it again, and writes the `gaps` entry for the time it was gone.
-                onConfigurationChange?(Interruption.resumeFailed)
-            }
-
+            resumingSilence = true
+            // Rebuild instead of resuming a tap whose hardware format may have changed during
+            // the interruption. The recorder drains its converter before attaching the new one.
+            onConfigurationChange?("interruption_ended")
         case .resumeByRestart(let reason):
-            onSilence?(false)
+            resumingSilence = true
             onConfigurationChange?(reason)
-
         case .restart(let reason):
             onConfigurationChange?(reason)
         }
@@ -210,11 +278,10 @@ struct Interruption: Equatable {
         case ignore
         /// docs/03 `silenced` starts: the system has already stopped the engine.
         case silenced
-        /// `.ended` with `.shouldResume` — the session and the engine come back, and the tap that
-        /// is still installed carries on into the same segment.
+        /// `.ended` with `.shouldResume` — rebuild the input using the current hardware format.
         case resume
-        /// The interruption is over and resuming in place is not the answer: the silence closes and
-        /// the recorder's restart path rebuilds the input and writes the `gaps` entry.
+        /// The interruption is over: the recorder rebuilds the input and writes a `gaps` entry.
+        /// The silence closes only after the new input successfully starts.
         case resumeByRestart(reason: String)
         /// The hardware moved with no call in the way — straight to the restart path.
         case restart(reason: String)

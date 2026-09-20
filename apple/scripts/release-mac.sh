@@ -3,7 +3,7 @@
 # an identity. Release builds refuse ad-hoc signing because its changing designated requirement
 # makes Keychain and privacy grants ask again after every rebuild.
 #
-# The signature is Xcode's, not a `codesign --deep` afterwards: the app includes GoogleSignIn's
+# The signature is Xcode's, not a `codesign --deep` afterwards: the app includes AppAuth's
 # bundles, and the only thing that reliably signs nested code inside out is the
 # build itself (`--deep` is documented as unsuitable for exactly this).
 #

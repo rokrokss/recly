@@ -117,7 +117,7 @@ final class LedgerStatusTests: XCTestCase {
         XCTAssertEqual(LedgerStatus.forRecent(state: "Recording").tone, .danger)
         XCTAssertEqual(LedgerStatus.forRecent(state: "Uploading").tone, .accent)
         // Something the user has to act on, but nothing is lost yet.
-        XCTAssertEqual(LedgerStatus.forRecent(state: "Sign-in needed").tone, .warning)
+        XCTAssertEqual(LedgerStatus.forRecent(state: "Sign-in needed").tone, .neutral)
         XCTAssertEqual(LedgerStatus.forRecent(state: "Retry pending").tone, .warning)
         // docs/10 "Drive 용량 초과": parked rather than failed, and the code says which.
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in Drive").code, "NO_SPACE")

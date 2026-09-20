@@ -144,6 +144,24 @@ extension SectionRow where Trailing == EmptyView {
     }
 }
 
+/// Supporting copy below a settings row uses the table's quiet type and inset (docs/09).
+public struct SectionFootnote: View {
+    @Environment(\.blueprint) private var blueprint
+    private let text: String
+
+    public init(_ text: String) { self.text = text }
+
+    public var body: some View {
+        Text(verbatim: text)
+            .font(blueprint.fonts.sans(TypeSize.small))
+            .foregroundStyle(blueprint.palette.textMuted)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
+    }
+}
+
 /// A row of the same table that is more than a title and a trailing control — a workflow with its
 /// switch on one line and its buttons on the next. Same surface, same insets, same rule under it.
 public struct SectionBlock<Content: View>: View {

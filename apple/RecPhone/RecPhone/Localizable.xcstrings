@@ -1248,13 +1248,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The sign-in failed"
+            "value": "Could not connect Drive"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로그인에 실패했습니다"
+            "value": "Drive에 연결하지 못했습니다"
           }
         }
       }

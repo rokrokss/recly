@@ -1252,6 +1252,7 @@ class ShellModel(
      * about to lose the queue deserves to know what is still only on this PC.
      */
     fun askToDisconnect() {
+        if (disconnecting) return
         val graph = graph ?: return
         scope.launch {
             disconnectPrompt = DisconnectPrompt(
@@ -1283,41 +1284,45 @@ class ShellModel(
         // confirm a warning nobody has read: from the first activation until its re-read decides,
         // every further activation is a no-op.
         val shown = disconnectPrompt ?: return
-        if (disconnectChecking) return
-        disconnectChecking = true
+        if (disconnecting) return
+        disconnecting = true
+        disconnectPrompt = null
         scope.launch {
-            // The dialog may have stood while the editor window saved an edit whose push failed —
-            // every window is its own surface. What it promised is read again before it is acted
-            // on; a warning it never showed re-asks instead of destroying quietly.
-            val fresh = DisconnectPrompt(
-                unuploaded = Retention.unuploadedRecordings(graph.core),
-                recording = recording,
-            )
-            if (fresh.warnsMore(shown)) {
-                disconnectPrompt = fresh
-                disconnectChecking = false
-                return@launch
+            try {
+                // The dialog may have stood while the editor window saved an edit whose push failed —
+                // every window is its own surface. What it promised is read again before it is acted
+                // on; a warning it never showed re-asks instead of destroying quietly.
+                val fresh = DisconnectPrompt(
+                    unuploaded = Retention.unuploadedRecordings(graph.core),
+                    recording = recording,
+                )
+                if (fresh.warnsMore(shown, alsoDeleteRecordings)) {
+                    disconnectPrompt = fresh
+                    return@launch
+                }
+                disconnectPrompt = null
+                // Shut for the whole of it, before anything is read: the revoke below is a network round
+                // trip, and a start inside that wait would give the clean-up a directory that is being
+                // written into.
+                //
+                // The other half of that: a disconnect that takes the recordings with it deletes what
+                // the detail may be playing. The speaker is off it before the revoke rather than at the
+                // clean-up, and Play stays off the bar for the whole round trip — a press landing inside
+                // it would hand ffmpeg a part the clean-up is about to remove ([PlaybackGate.cleaning]).
+                val ran = playbackGate.cleaning({ !alsoDeleteRecordings || stopPlayback() }) {
+                    runTracked { DisconnectGate.hold { runDisconnect(graph, alsoDeleteRecordings) } }
+                    true
+                }
+                if (ran == null) status = Str.PLAYER_STOP_FAILED.message()
+            } finally {
+                disconnecting = false
             }
-            disconnectPrompt = null
-            disconnectChecking = false
-            // Shut for the whole of it, before anything is read: the revoke below is a network round
-            // trip, and a start inside that wait would give the clean-up a directory that is being
-            // written into.
-            //
-            // The other half of that: a disconnect that takes the recordings with it deletes what
-            // the detail may be playing. The speaker is off it before the revoke rather than at the
-            // clean-up, and Play stays off the bar for the whole round trip — a press landing inside
-            // it would hand ffmpeg a part the clean-up is about to remove ([PlaybackGate.cleaning]).
-            val ran = playbackGate.cleaning({ !alsoDeleteRecordings || stopPlayback() }) {
-                runTracked { DisconnectGate.hold { runDisconnect(graph, alsoDeleteRecordings) } }
-                true
-            }
-            if (ran == null) status = Str.PLAYER_STOP_FAILED.message()
         }
     }
 
-    /** True from a confirm until its re-read decides — see [disconnect]. */
-    private var disconnectChecking = false
+    /** Published before work starts and held through revocation and local cleanup. */
+    var disconnecting: Boolean by mutableStateOf(false)
+        private set
 
     private suspend fun runDisconnect(graph: AppGraph, alsoDeleteRecordings: Boolean): Boolean {
         // The recorder is read again here and not only when the warning opened: the dialog may have
@@ -1524,6 +1529,7 @@ class ShellModel(
     /** docs/06: a job parked in NEEDS_AUTH resumes when the user signs in. */
     private suspend fun unpark() {
         val graph = graph ?: return
+        withContext(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
         graph.core.jobs.list().filter { it.status == JobStatus.NEEDS_AUTH }
             .forEach { graph.core.jobs.retry(it.id) }
         needsAuth = false

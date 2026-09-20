@@ -294,7 +294,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             alertRouter.connect { [weak self] alert in self?.fix(alert) }
-            // Before the executor: a sign-in restored from the SDK's Keychain is what decides
+            // Before the executor: a Drive credential restored from Keychain is what decides
             // whether the first pass can do anything at all (docs/06).
             let auth = GoogleAuth(tokens: tokens)
             self.auth = auth
@@ -920,11 +920,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// Every job that was only waiting for a sign-in goes back to `PENDING`, then one pass.
     private func unpark() async {
         guard let core = bridge?.core else { return }
+        _ = try? await core.pullRemoteRecordings(force: true)
         await ParkedJobs.unpark(core: core)
         runner?.jobsDue()
     }
 
-    /// `GIDSignIn` presents the consent web view from a view controller, and SwiftUI hands none
+    /// AppAuth presents the authorization session from a view controller, and SwiftUI hands none
     /// out — the key window's root is the one the user is looking at.
     private static func anchor() -> UIViewController? {
         UIApplication.shared.connectedScenes
@@ -1115,6 +1116,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// Opens the docs/03 warning. The count is read first because the dialog has to state it: a
     /// user about to lose the queue deserves to know what is still only on this phone.
     func askToDisconnect() {
+        guard !disconnecting else { return }
         guard let core = bridge?.core else { return }
         Task {
             disconnectPrompt = DisconnectPrompt(
@@ -1139,16 +1141,18 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         // The second half of a double-tap must not catch the re-presented prompt below and confirm a
         // warning nobody has read: from the first activation until its re-read decides, every
         // further activation is a no-op.
-        guard let shown = disconnectPrompt, !disconnectChecking else { return }
-        disconnectChecking = true
+        guard let shown = disconnectPrompt, !disconnecting else { return }
+        disconnecting = true
+        disconnectPrompt = nil
         perform {
-            defer { self.disconnectChecking = false }
+            defer { self.disconnecting = false }
             // What the dialog promised is read again before it is acted on; a warning it never
             // showed re-asks instead of destroying quietly (RecKit, and the Mac asks the same).
             if let fresh = await DisconnectPrompt.rewarning(
                 core: self.bridge?.core,
                 recording: self.state != .idle,
-                shown: shown
+                shown: shown,
+                alsoDeleteRecordings: alsoDeleteRecordings
             ) {
                 self.disconnectPrompt = fresh
                 return false
@@ -1158,8 +1162,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// True from a confirm until its re-read decides — see [disconnect].
-    private var disconnectChecking = false
+    /// Published before work starts and held through revocation and local cleanup.
+    @Published private(set) var disconnecting = false
 
     /// docs/03: the user's own word, and the only thing that clears the debt. Recly cannot ask
     /// Google whether the grant is still listed — it has no account left to ask with — so the row

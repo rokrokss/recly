@@ -154,12 +154,13 @@ public struct DisconnectPrompt: Identifiable, Equatable, Sendable {
     }
 
     /// True when this freshly read state carries a warning the dialog the user confirmed never
-    /// showed — a recording that finished since [shown] was built and grew the count. The confirm
+    /// showed when local deletion was requested. Keeping recordings never needs another count warning.
+    /// A recording may have finished since [shown] was built and grown the count. The confirm
     /// re-presents with this instead of acting on a promise the dialog did not make. `recording` is
     /// not compared: it has its own live guards ([canConfirm] on the dialog, and the flow's re-read
     /// at run time).
-    public func warnsMore(than shown: DisconnectPrompt) -> Bool {
-        unuploaded > shown.unuploaded
+    public func warnsMore(than shown: DisconnectPrompt, alsoDeleteRecordings: Bool = true) -> Bool {
+        alsoDeleteRecordings && unuploaded > shown.unuploaded
     }
 
     /// The state read again at the moment the confirm is acted on, and the answer to the only
@@ -175,9 +176,10 @@ public struct DisconnectPrompt: Identifiable, Equatable, Sendable {
     public static func rewarning(
         core: ReclyCore_?,
         recording: Bool,
-        shown: DisconnectPrompt
+        shown: DisconnectPrompt,
+        alsoDeleteRecordings: Bool = true
     ) async -> DisconnectPrompt? {
-        guard let core else { return nil }
+        guard alsoDeleteRecordings, let core else { return nil }
         let fresh = DisconnectPrompt(
             unuploaded: await Retention.unuploadedRecordings(core: core),
             recording: recording
@@ -584,7 +586,7 @@ public enum DisconnectGate {
 
     /// Why a recording may not start right now, or nil when nothing is in the way.
     public static func startBlocker() -> UiMessage? {
-        disconnecting ? .key("Finish disconnecting first") : nil
+        disconnecting ? .key("Disconnecting Drive. Please wait.") : nil
     }
 
     /// Runs [start] with the gate held for the whole of it, or refuses — nil, nothing run — when it

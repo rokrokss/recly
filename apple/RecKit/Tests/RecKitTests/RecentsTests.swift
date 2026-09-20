@@ -495,6 +495,15 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
 
     /// The rows the three rules must not swallow: this device recording, and this device's own
     /// finished recording with no workflow behind it.
+    func testRestoredDriveCopyIsDoneWithoutAJobOrChangingLocalOwnership() {
+        let restored = record(source: .desktop, driveSynced: true)
+        XCTAssertFalse(restored.remote)
+        XCTAssertEqual(Recents.stateLabel(record: restored, job: nil), "Done")
+        XCTAssertEqual(badge(restored), LedgerStatus(code: "DONE", tone: .success))
+        let processing = record(source: .desktop, pending: ["transcribe"], driveSynced: true)
+        XCTAssertEqual(Recents.stateLabel(record: processing, job: nil), "Transcribing on another device")
+    }
+
     func testThisDevicesOwnRowsAreUnchanged() {
         let recording = record(source: .phone, status: .recording)
         XCTAssertFalse(recording.receiving)
@@ -564,7 +573,8 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         source: Source,
         status: RecordingStatus = .finalized,
         remote: Bool = false,
-        pending: Set<String> = []
+        pending: Set<String> = [],
+        driveSynced: Bool = false
     ) -> RecordingRecord {
         RecordingRecord(
             id: "01J9REC0000000000000000000",
@@ -572,7 +582,8 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             dir: OkioPath.companion.toPath("/tmp/recly-tests", normalize: false),
             driveFolderId: remote ? "1FolderId" : nil,
             remote: remote,
-            remotePending: pending
+            remotePending: pending,
+            driveSynced: driveSynced
         )
     }
 

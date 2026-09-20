@@ -72,7 +72,7 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.ACCENT, Str.STATE_REMOTE_UPLOADING.message().ledgerStatus().tone)
         assertEquals(BadgeTone.ACCENT, Str.STATE_REMOTE_TRANSCRIBING.message().ledgerStatus().tone)
         // Something the user has to act on, but nothing is lost yet.
-        assertEquals(BadgeTone.WARNING, Str.STATUS_SIGN_IN_NEEDED.message().ledgerStatus().tone)
+        assertEquals(BadgeTone.NEUTRAL, Str.STATUS_SIGN_IN_NEEDED.message().ledgerStatus().tone)
         assertEquals(BadgeTone.WARNING, Str.STATE_RETRY_WAIT.message().ledgerStatus().tone)
         // Nothing is wrong and nothing is happening.
         assertEquals(BadgeTone.NEUTRAL, Str.STATUS_WAITING.message().ledgerStatus().tone)

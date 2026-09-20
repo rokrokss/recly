@@ -70,6 +70,8 @@ final class DisconnectPromptTests: XCTestCase {
         let shown = DisconnectPrompt(unuploaded: 1)
 
         XCTAssertTrue(DisconnectPrompt(unuploaded: 2).warnsMore(than: shown))
+        XCTAssertFalse(DisconnectPrompt(unuploaded: 2).warnsMore(than: shown, alsoDeleteRecordings: false),
+                       "retained recordings do not need another confirmation")
         XCTAssertFalse(DisconnectPrompt(unuploaded: 1).warnsMore(than: shown), "nothing changed")
         XCTAssertFalse(DisconnectPrompt(unuploaded: 0).warnsMore(than: shown), "a lessened warning stands")
         XCTAssertFalse(
@@ -242,7 +244,7 @@ final class DisconnectGuardTests: XCTestCase {
         AppLanguage.current = .ko
         let korean = (DisconnectGuard.restoreUnknown.text, DisconnectGuard.saveFailed.text)
 
-        XCTAssertEqual(english.0, "Could not check the Google sign-in — open Google Drive settings and finish revoking access")
+        XCTAssertEqual(english.0, "Could not check the Google connection. Try disconnecting Drive again in Settings.")
         XCTAssertEqual(english.1, "Could not save the disconnect state — try again")
         XCTAssertNotEqual(korean.0, english.0, "the catalog gave the key back")
         XCTAssertNotEqual(korean.1, english.1, "the catalog gave the key back")
@@ -259,7 +261,7 @@ final class DisconnectGuardTests: XCTestCase {
         AppLanguage.current = .ko
         let korean = DisconnectGuard.signInBlocker(pending: true)?.text
 
-        XCTAssertEqual(english, "Finish revoking Google access first")
+        XCTAssertEqual(english, "Try disconnecting Drive again in Settings.")
         XCTAssertNotNil(korean)
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
     }
@@ -644,7 +646,7 @@ final class DisconnectGateTests: XCTestCase {
             XCTAssertNil(opened, "a capture opened inside a disconnect")
         }
 
-        XCTAssertEqual(inside, "Finish revoking Google access first")
+        XCTAssertEqual(inside, "Disconnecting Drive. Please wait.")
         XCTAssertFalse(DisconnectGate.busy)
         XCTAssertNil(DisconnectGate.startBlocker())
         let after: String? = await DisconnectGate.ifOpen { "rec-1" }
@@ -750,8 +752,7 @@ final class DisconnectCleanupMessageTests: XCTestCase {
 
         XCTAssertEqual(
             english,
-            "Google access was revoked, but cleaning up this device failed: "
-                + "database is locked — open Google Drive settings and finish revoking access"
+            "Could not disconnect Drive. Try again in Settings. (database is locked)"
         )
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
         XCTAssertTrue(korean.contains("database is locked"), korean)

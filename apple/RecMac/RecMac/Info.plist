@@ -28,12 +28,10 @@
 	<string>Recly records the other participants through the system audio as well as your microphone.</string>
 
 	<!--
-	  docs/06: the macOS client is an *iOS-type* OAuth client with bundle id `app.recly.mac`.
-	  Both values below come from `apple/Config/Recly.xcconfig`, which defaults them to
-	  placeholders and lets an untracked `Local.xcconfig` override them — `GoogleAuth` refuses to
-	  sign in while `GIDClientID` still reads like the placeholder, because `GIDSignIn` answers a
-	  missing client id with an Obj-C exception rather than an error. See README "Values filled in
-	  locally".
+	  docs/06: keep the existing iOS-type client ID and reversed-client-ID callback scheme.
+	  AppAuth requests only Drive access. Local.xcconfig supplies the client ID; GoogleAuth
+	  disables connection while it is a placeholder. The GIDClientID key is retained for
+	  configuration and release-script compatibility, not for a GoogleSignIn SDK dependency.
 	-->
 	<key>GIDClientID</key>
 	<string>$(RECLY_MAC_GID_CLIENT_ID)</string>

@@ -299,39 +299,42 @@ class ReclyCore(
      */
     @Throws(Throwable::class)
     suspend fun disconnect(alsoDeleteRecordings: Boolean): DisconnectResult = jobs.quiesced {
-        // The recordings first, and one at a time through the transactional [RecordingRepository
-        // .delete]: a recording whose job is RUNNING refuses, and its queue rows have to survive
-        // this so the run it is in the middle of still has something to write to.
-        var deleted = 0
-        val busy = mutableListOf<String>()
-        if (alsoDeleteRecordings) {
-            recordings.list(Int.MAX_VALUE).forEach {
-                when (recordings.delete(it.id, deleteDrive = false)) {
-                    is DeleteResult.Deleted -> deleted++
-                    DeleteResult.Busy -> busy += it.id
-                    DeleteResult.NotFound -> Unit
+        remote.disconnected {
+            // The recordings first, and one at a time through the transactional [RecordingRepository
+            // .delete]: a recording whose job is RUNNING refuses, and its queue rows have to survive
+            // this so the run it is in the middle of still has something to write to.
+            var deleted = 0
+            val busy = mutableListOf<String>()
+            if (alsoDeleteRecordings) {
+                recordings.list(Int.MAX_VALUE).forEach {
+                    when (recordings.delete(it.id, deleteDrive = false)) {
+                        is DeleteResult.Deleted -> deleted++
+                        DeleteResult.Busy -> busy += it.id
+                        DeleteResult.NotFound -> Unit
+                    }
                 }
             }
+            // Before the namespace, not after: the shell's provider holds the access token in memory
+            // too, and emptying the store under it would leave that copy to be handed to the next run.
+            deps.tokenProvider.invalidate()
+            deps.secureStore.clear(SecureStore.TOKENS)
+            jobStore.deleteAll(keepRecordings = busy)
+            recordings.synced().keys.forEach { recordings.forgetDriveCopy(it) }
+            driveStore.forgetAllFolders()
+            // The "로컬만 삭제" memory (docs/03 "다른 기기의 녹음") is about this account's folders, and
+            // a device that starts over with an account starts over with its list.
+            recordings.clearIgnored()
+            deps.logger.log(
+                Logger.Level.INFO,
+                "auth.disconnect",
+                mapOf(
+                    "alsoDeleteRecordings" to alsoDeleteRecordings,
+                    "deletedRecordings" to deleted,
+                    "busyRecordings" to busy.size,
+                ),
+            )
+            DisconnectResult(deleted, busy)
         }
-        // Before the namespace, not after: the shell's provider holds the access token in memory
-        // too, and emptying the store under it would leave that copy to be handed to the next run.
-        deps.tokenProvider.invalidate()
-        deps.secureStore.clear(SecureStore.TOKENS)
-        jobStore.deleteAll(keepRecordings = busy)
-        driveStore.forgetAllFolders()
-        // The "로컬만 삭제" memory (docs/03 "다른 기기의 녹음") is about this account's folders, and
-        // a device that starts over with an account starts over with its list.
-        recordings.clearIgnored()
-        deps.logger.log(
-            Logger.Level.INFO,
-            "auth.disconnect",
-            mapOf(
-                "alsoDeleteRecordings" to alsoDeleteRecordings,
-                "deletedRecordings" to deleted,
-                "busyRecordings" to busy.size,
-            ),
-        )
-        DisconnectResult(deleted, busy)
     }
 }
 

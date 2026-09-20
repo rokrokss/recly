@@ -346,7 +346,7 @@ internal fun EnqueueResult.describe(): UiMessage = UiMessage.Res(
         EnqueueResult.NoWorkflow -> R.string.enqueue_no_workflow
         EnqueueResult.PartsPurged -> R.string.enqueue_parts_purged
         is EnqueueResult.SkippedShort -> R.string.enqueue_skipped_short
-        is EnqueueResult.AlreadyDone -> R.string.enqueue_already_done
+        EnqueueResult.AlreadySynced, is EnqueueResult.AlreadyDone -> R.string.enqueue_already_done
         is EnqueueResult.Enqueued -> R.string.enqueue_queued
     },
 )

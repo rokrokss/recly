@@ -53,7 +53,7 @@ class AudioParts(
             val paths = mutableListOf<Path>()
             val missing = mutableListOf<Int>()
             // An adopted recording has no upload output here; its parts' ids came with the row.
-            val adopted = if (record.remote) recordings.driveFileIds(record.id) else emptyMap()
+            val adopted = if (record.remote || record.driveSynced) recordings.driveFileIds(record.id) else emptyMap()
             record.meta.parts.filter { it.track == track }.sortedBy { it.part }.forEach { part ->
                 val path = record.dir / part.file
                 when {

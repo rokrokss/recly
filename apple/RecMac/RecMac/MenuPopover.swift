@@ -48,10 +48,8 @@ struct MenuPopover: View {
                 BlueprintDialogScrim {
                     DisconnectDialog(
                         prompt: prompt,
-                        device: .mac,
                         confirm: { model.disconnect(alsoDeleteRecordings: $0) },
-                        cancel: { model.cancelDisconnect() },
-                        permissions: { model.openAccountPermissions() }
+                        cancel: { model.cancelDisconnect() }
                     )
                 }
             }
@@ -85,7 +83,10 @@ struct MenuPopover: View {
         }
         // docs/10: the fix for a quota or a webhook is in the editor, and only a view has an
         // `openWindow` to open one with.
-        .onAppear { model.openEditor = { openWindow(id: WorkflowWindow.id) } }
+        .onAppear {
+            model.openEditor = { openWindow(id: WorkflowWindow.id) }
+            model.refreshMicrophones()
+        }
     }
 
     // MARK: - Chrome
@@ -97,6 +98,31 @@ struct MenuPopover: View {
                 meta: "\(Source.desktop.name.lowercased()) · \(model.deviceId.prefix(8))"
             )
             StateNodeRow(specs).padding(.horizontal, Space.m)
+            if model.isRecording, model.microphoneRecovering {
+                Text(verbatim: loc("Reconnecting microphone…"))
+                    .font(blueprint.fonts.monoSmall)
+                    .foregroundStyle(blueprint.palette.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+            } else if model.isRecording, let device = model.capturedInputDevice {
+                Text(AppStrings.localized("Microphone: %@", device))
+                    .font(blueprint.fonts.monoSmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+            }
+            if model.isRecording, model.mode == .meeting, model.captureHealth != .healthy {
+                Text(verbatim: loc(model.captureHealth == .failed
+                    ? "System audio unavailable. Microphone recording continues."
+                    : "Reconnecting system audio…"))
+                    .font(blueprint.fonts.monoSmall)
+                    .foregroundStyle(blueprint.palette.danger)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+            }
             // docs/12 M4-L3 "메뉴바": which output device the system audio is being taken from,
             // while it is being taken. Nothing to say in microphone mode, so nothing is said.
             if model.isRecording, let device = model.capturedOutputDevice {
@@ -326,7 +352,7 @@ struct MenuPopover: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it
                 // has been waiting — the badge's RETRY would otherwise read as "stuck".
-                if item.waitingMinutes != nil || item.alert == .needsAuth {
+                if item.waitingMinutes != nil {
                     Text(verbatim: item.stateLabel)
                         .font(blueprint.fonts.sans(TypeSize.small))
                         .foregroundStyle(blueprint.palette.textMuted)
@@ -334,10 +360,10 @@ struct MenuPopover: View {
                 // docs/07 §5: what the core last said about this job, with its diagnostic under it
                 // — the sentence translated, the diagnostic never. For a docs/08 "오류" the
                 // sentence is what to do next and the diagnostic is the provider's own words.
-                if let reason = item.reason {
+                if item.alert != .needsAuth, let reason = item.reason {
                     Text(verbatim: reason.sentence)
                         .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(item.alert == .needsAuth ? blueprint.palette.textMuted : blueprint.palette.danger)
+                        .foregroundStyle(blueprint.palette.danger)
                     if let detail = reason.detail {
                         Text(verbatim: detail)
                             .font(blueprint.fonts.monoSmall)
@@ -421,9 +447,9 @@ private struct SettingsPane: View {
         VStack(spacing: 0) {
             DriveConnectionSection(
                 account: model.account, connected: model.hasGoogleCredential,
-                configured: model.canSignIn, pending: model.disconnectPhase.owed,
+                configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
                 revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
-                signIn: model.signIn, signOut: model.signOut, revoke: model.askToDisconnect,
+                signIn: model.signIn, disconnect: model.askToDisconnect,
                 permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
             )
 
@@ -446,6 +472,24 @@ private struct SettingsPane: View {
                 // short of room it is the title on the left that wraps, not the chips that truncate.
                 .fixedSize(horizontal: true, vertical: false)
                 .disabled(model.canStop)
+            }
+            SectionRow(title: loc("Microphone")) {
+                ScrollView(.horizontal) {
+                    HStack(spacing: Space.s) {
+                        BlueprintChip(loc("Automatic"), selected: model.microphoneUID.isEmpty) {
+                            model.microphoneUID = ""
+                        }
+                        ForEach(model.microphones) { device in
+                            BlueprintChip(device.name, selected: model.microphoneUID == device.id) {
+                                model.microphoneUID = device.id
+                            }
+                        }
+                    }
+                }
+                .scrollIndicators(.never)
+                .frame(maxWidth: 220)
+                .disabled(model.canStop)
+                .accessibilityIdentifier("microphone-selection")
             }
             // docs/12 "실행기": `SMAppService`, written from the system's own answer.
             SwitchRow(
@@ -478,7 +522,7 @@ private struct SettingsPane: View {
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
-                mono("GoogleSignIn · AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
+                mono("AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)

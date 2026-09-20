@@ -69,6 +69,8 @@ class DisconnectGuardTest {
         val shown = DisconnectPrompt(unuploaded = 1)
 
         assertTrue(DisconnectPrompt(unuploaded = 2).warnsMore(shown))
+        assertFalse(DisconnectPrompt(unuploaded = 2).warnsMore(shown, alsoDeleteRecordings = false),
+            "retained recordings do not need another confirmation")
         assertFalse(DisconnectPrompt(unuploaded = 1).warnsMore(shown), "nothing changed")
         assertFalse(DisconnectPrompt(unuploaded = 0).warnsMore(shown), "a lessened warning stands")
         assertFalse(

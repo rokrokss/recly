@@ -242,8 +242,6 @@ class MainActivity : ComponentActivity() {
                             state = jobs,
                             model = jobsModel,
                             onRecord = { tab = Tab.RECORD },
-                            // docs/10: NEEDS_AUTH is unblocked by signing in, not waiting.
-                            onSignIn = fixAuth,
                             // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is
                             // where "check the key" has to land.
                             onCheckKey = { workflowId ->
@@ -406,7 +404,6 @@ private fun JobsTab(
     state: JobsUiState,
     model: JobsViewModel,
     onRecord: () -> Unit,
-    onSignIn: () -> Unit,
     onCheckKey: (String?) -> Unit,
     onFix: (JobAlert) -> Unit,
     modifier: Modifier,
@@ -427,7 +424,6 @@ private fun JobsTab(
             onConfirmDelete = model::confirmDelete,
             onCancelDelete = model::cancelDelete,
             onDelete = model::delete,
-            onSignIn = onSignIn,
             onRecord = onRecord,
             onOpenDetail = model::openDetail,
             onCheckKey = { item -> onCheckKey(item.workflowId) },
@@ -510,7 +506,6 @@ private fun SettingsTab(
         onTheme = settingsModel::setTheme,
         onConsentReminder = settingsModel::setConsentReminder,
         onSignIn = { model.signIn(activity) },
-        onSignOut = model::signOut,
         onAskToDisconnect = model::askToDisconnect,
         onCancelDisconnect = model::cancelDisconnect,
         onDisconnect = model::disconnect,

@@ -65,7 +65,7 @@ cd spec && npm ci && npm run validate            # validate the examples against
 node scripts/webhook-receiver.mjs --port 8787 --secret whsec_…   # a receiver that checks signature & schema
 ```
 
-To cut a release: `make apk` and `./gradlew :android:wear:assembleDebug`, then
+To cut a release: `make apk wear-apk`, then
 `gh release create v0.1.0 <phone.apk> <watch.apk> --target main --prerelease`.
 
 **Release signing (Android)**: Play App Signing holds the app signing key; this tree only ever
@@ -103,9 +103,9 @@ Windows MSI는 Windows 호스트의 `make windows-msi` 또는
 `REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
 누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
 
-현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `14`,
-Android는 `18`, Wear OS는 `1,000,018`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
-업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.13`으로 설정한다.
+현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.0`이다. Apple 앱·내장 Watch·위젯의 빌드는 `15`,
+Android는 `19`, Wear OS는 `1,000,019`이다. Windows 앱 표시 버전도 `0.1.0`으로 유지하고,
+업그레이드 구분을 위해 MSI의 세 번째 버전 필드만 올려 설치 버전은 `0.1.14`으로 설정한다.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.

@@ -25,20 +25,26 @@ class SilenceMonitor(private val elapsedSec: () -> Double) {
      * Since Android 10 an ordinary app only ever sees its own configurations here, and
      * `MediaRecorder` exposes no session id to filter on, so every reported config is ours.
      */
+    @Synchronized
     fun start(audioManager: AudioManager) {
         val callback = object : AudioManager.AudioRecordingCallback() {
             override fun onRecordingConfigChanged(configs: MutableList<AudioRecordingConfiguration>) {
-                onSilenced(configs.any { it.isClientSilenced }, elapsedSec())
+                synchronized(this@SilenceMonitor) {
+                    if (registered !== this) return
+                    onSilenced(configs.any { it.isClientSilenced }, elapsedSec())
+                }
             }
         }
-        audioManager.registerAudioRecordingCallback(callback, Handler(Looper.getMainLooper()))
         registered = callback
+        audioManager.registerAudioRecordingCallback(callback, Handler(Looper.getMainLooper()))
     }
 
     /** Unregisters, closes a range still open, and returns everything for the meta. */
+    @Synchronized
     fun stop(audioManager: AudioManager): List<Range> {
-        registered?.let { audioManager.unregisterAudioRecordingCallback(it) }
+        val callback = registered
         registered = null
+        callback?.let { runCatching { audioManager.unregisterAudioRecordingCallback(it) } }
         onSilenced(false, elapsedSec())
         return ranges.toList()
     }
@@ -48,6 +54,7 @@ class SilenceMonitor(private val elapsedSec: () -> Double) {
      * silenced" must stay one range. A range that resumes where the previous one ended (a flap the
      * callback reported twice) is merged into it rather than appended.
      */
+    @Synchronized
     internal fun onSilenced(nowSilenced: Boolean, atSec: Double) {
         if (nowSilenced == silenced) return
         silenced = nowSilenced
@@ -66,6 +73,7 @@ class SilenceMonitor(private val elapsedSec: () -> Double) {
         }
     }
 
+    @Synchronized
     internal fun ranges(): List<Range> = ranges.toList()
 
     private companion object {

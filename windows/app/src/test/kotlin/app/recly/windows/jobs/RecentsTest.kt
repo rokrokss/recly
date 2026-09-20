@@ -58,6 +58,18 @@ class RecentsTest {
     }
 
     @Test
+    fun `a verified Drive copy without a job is done and keeps local ownership`() {
+        val restored = record().copy(driveSynced = true)
+        val item = Recents.item(restored, job = null, steps = emptyList())
+        assertEquals("DONE", item.state.ledgerStatus().code)
+        assertFalse(item.remote)
+        val pending = Recents.item(restored.copy(remotePending = setOf("transcribe")), job = null, steps = emptyList())
+        assertEquals("TRANSCRIBING", pending.state.ledgerStatus().code)
+        val running = Recents.item(restored, job("running", JobStatus.RUNNING), emptyList())
+        assertEquals(Str.STATE_UPLOADING.message(), running.state)
+    }
+
+    @Test
     fun `a recording no workflow matched is not a failure`() {
         // docs/02: `EnqueueResult.NoWorkflow` leaves no job at all, and the row is not an error.
         val item = Recents.item(record(), job = null, steps = emptyList())

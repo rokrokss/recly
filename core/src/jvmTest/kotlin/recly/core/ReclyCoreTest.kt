@@ -226,6 +226,41 @@ class ReclyCoreTest {
      * configuration now, and nothing could fetch them back.
      */
     @Test
+    fun `disconnect and reconnect restore completed recordings and playback without replaying jobs`() = runBlocking {
+        val part = testPart(testMeta(), 1).copy(sha256 = SEEDED_AUDIO_SHA256)
+        val meta = testMeta(parts = listOf(part))
+        val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
+        core.recordings.create(meta, dir)
+        seedFiles(fs, dir, meta)
+        core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
+        core.workflows.seed(WorkflowRepository.MEMO_ID)
+        core.enqueue(meta.recordingId)
+        core.runDueJobs(START)
+        clock.advance(8.days)
+        core.runDueJobs(clock.now())
+        assertFalse(fs.exists(dir / part.file))
+        core.disconnect(alsoDeleteRecordings = false)
+
+        // The test provider remains authorized: the next pull models the successful reconnection.
+        val summary = core.pullRemoteRecordings()
+        assertNull(summary.skipped, "disconnect must reset the recent-pull throttle")
+        assertTrue(core.recordings.get(meta.recordingId)!!.driveSynced)
+        assertTrue(core.uploaded(meta.recordingId))
+        assertEquals(emptyList(), core.jobs.list())
+        assertEquals(EnqueueResult.AlreadySynced, core.enqueue(meta.recordingId))
+        val audio = core.audio(meta.recordingId)
+        assertEquals(emptyList(), audio.missing)
+        assertEquals(listOf(dir / part.file), audio.paths)
+        assertEquals(SEEDED_AUDIO, fs.read(audio.paths.single()) { readUtf8() })
+
+        core.disconnect(alsoDeleteRecordings = false)
+        assertFalse(core.recordings.get(meta.recordingId)!!.driveSynced)
+        assertTrue(core.recordings.driveFileIds(meta.recordingId).isEmpty())
+        assertTrue(fs.exists(dir / part.file), "connection cleanup must keep downloaded/local audio")
+        assertEquals(emptyList(), drive.deleted)
+    }
+
+    @Test
     fun `disconnect clears the tokens, the queue and the caches, and keeps everything else`() =
         runBlocking<Unit> {
             val uploaded = testMeta(parts = listOf(testPart(testMeta(), 1)))

@@ -162,6 +162,13 @@ final class DriftCompensator {
     private var appliedRatio: Double = 1
 
     private var samples: [Float] = []
+    private var timedSamples = TimedAudioSamples()
+    private var sourceOrigin: Double?
+    private var expectedSourceTime: Double?
+    private var convertedFrames = 0
+    private var sourceFrames = 0
+    private var usesTimestamps = false
+    private(set) var lastMissingFrames = 0
     /// What the tap has delivered, on the target's timeline — see the counting in [append].
     private var producedFrames: Double = 0
     /// One resampler block on the target's timeline, known once the tap's rate is. The queue is
@@ -185,15 +192,44 @@ final class DriftCompensator {
     /// One tap buffer at the output device's rate, resampled onto the microphone's timeline and
     /// queued. Silently drops what it cannot convert: the system track is the one that may have
     /// holes in it, and a failure here must not end the recording.
-    func append(_ buffer: AVAudioPCMBuffer, atSec: Double) {
+    func append(_ buffer: AVAudioPCMBuffer, atSec: Double, captureTimeSec: Double? = nil) {
         lock.withLock {
+            if usesTimestamps, captureTimeSec == nil {
+                drainLocked()
+                converter = nil
+                sourceOrigin = nil
+                expectedSourceTime = nil
+                sourceRateHz = 0
+                droppedFrames += Int(Double(buffer.frameLength) * target.sampleRate / buffer.format.sampleRate)
+                return
+            }
+            let discontinuity = captureTimeSec.flatMap { time in
+                expectedSourceTime.map { abs(time - $0) > 0.02 }
+            } ?? false
+            if discontinuity || (sourceOrigin == nil && captureTimeSec != nil) {
+                drainLocked()
+                converter = nil
+                sourceRateHz = 0
+            }
             // A ratio that moved, or a tap that came back on a different device, is a new resampler.
             // The old one is drained first, exactly as the recorder drains its own: what it is
             // holding is audio the machine really did play.
-            if buffer.format.sampleRate != sourceRateHz || estimator.ratio != appliedRatio {
+            // Timestamped streams already share the host clock. Applying the legacy frame-count
+            // drift ratio as well would correct that clock difference twice.
+            let ratio = captureTimeSec == nil ? estimator.ratio : 1
+            if buffer.format.sampleRate != sourceRateHz || ratio != appliedRatio {
                 drainLocked()
-                rebuild(sourceRateHz: buffer.format.sampleRate, ratio: estimator.ratio)
+                rebuild(sourceRateHz: buffer.format.sampleRate, ratio: ratio)
+                sourceOrigin = captureTimeSec
+                convertedFrames = 0
+                sourceFrames = 0
+                usesTimestamps = captureTimeSec != nil
             }
+            if let captureTimeSec {
+                sourceOrigin = captureTimeSec - Double(sourceFrames) / buffer.format.sampleRate
+            }
+            sourceFrames += Int(buffer.frameLength)
+            expectedSourceTime = captureTimeSec.map { $0 + Double(buffer.frameLength) / buffer.format.sampleRate }
             guard let converter, let relabelled = relabel(buffer) else { return }
             // Counted here, from what the tap delivered, and not in [enqueue] from what the
             // resampler has emitted. `AVAudioConverter` emits in blocks of 4096 input frames and
@@ -211,10 +247,17 @@ final class DriftCompensator {
 
     /// [frames] of system audio to sit under the microphone frames the recorder is about to write,
     /// written into [buffer] from frame zero. Short of them, the rest is silence.
-    func take(frames: AVAudioFrameCount, into buffer: AVAudioPCMBuffer) {
+    func take(frames: AVAudioFrameCount, into buffer: AVAudioPCMBuffer, atSec: Double? = nil) {
         guard let out = buffer.floatChannelData else { return }
         let count = Int(frames)
         lock.withLock {
+            if usesTimestamps, let atSec {
+                let result = timedSamples.take(count: count, at: atSec, rate: target.sampleRate)
+                for index in 0 ..< count { out[0][index] = result.samples[index] }
+                lastMissingFrames = result.missing
+                underrunFrames += result.missing
+                return
+            }
             // The resampler's block, plus one microphone buffer for the two streams' latencies and
             // their scheduling jitter. Anything past that is audio that would be written that much
             // late for the rest of the recording, so it goes.
@@ -223,6 +266,7 @@ final class DriftCompensator {
             for index in 0 ..< taken { out[0][index] = samples[index] }
             for index in taken ..< count { out[0][index] = 0 }
             samples.removeFirst(taken)
+            lastMissingFrames = count - taken
             underrunFrames += count - taken
         }
         buffer.frameLength = frames
@@ -313,7 +357,14 @@ final class DriftCompensator {
 
     private func enqueue(_ buffer: AVAudioPCMBuffer) {
         guard let data = buffer.floatChannelData else { return }
-        samples.append(contentsOf: UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength)))
+        let converted = Array(UnsafeBufferPointer(start: data[0], count: Int(buffer.frameLength)))
+        if let sourceOrigin {
+            timedSamples.append(converted, at: sourceOrigin + Double(convertedFrames) / target.sampleRate,
+                                rate: target.sampleRate)
+            convertedFrames += converted.count
+            return
+        }
+        samples.append(contentsOf: converted)
         dropDown(to: leadFrames + Int(target.sampleRate * Self.maxQueuedSec))
     }
 

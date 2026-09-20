@@ -76,7 +76,7 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.DANGER, ItemState.RECORDING.badge().tone)
         assertEquals(BadgeTone.ACCENT, ItemState.RUNNING.badge().tone)
         // Something the user has to act on, but nothing is lost yet.
-        assertEquals(BadgeTone.WARNING, ItemState.NEEDS_AUTH.badge().tone)
+        assertEquals(BadgeTone.NEUTRAL, ItemState.NEEDS_AUTH.badge().tone)
         assertEquals(BadgeTone.WARNING, ItemState.NEEDS_SPACE.badge().tone)
         assertEquals(BadgeTone.WARNING, ItemState.WAITING.badge().tone)
         // Nothing is wrong and nothing is happening.

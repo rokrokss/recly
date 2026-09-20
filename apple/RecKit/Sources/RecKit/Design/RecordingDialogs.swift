@@ -133,25 +133,19 @@ public struct RenameDialog: View {
 /// device and nothing else about them differs.
 public struct DisconnectDialog: View {
     private let prompt: DisconnectPrompt
-    private let device: DisconnectDevice
     private let confirm: (Bool) -> Void
     private let cancel: () -> Void
-    private let permissions: () -> Void
 
     @Environment(\.locale) private var locale
 
     public init(
         prompt: DisconnectPrompt,
-        device: DisconnectDevice,
         confirm: @escaping (Bool) -> Void,
-        cancel: @escaping () -> Void,
-        permissions: @escaping () -> Void
+        cancel: @escaping () -> Void
     ) {
         self.prompt = prompt
-        self.device = device
         self.confirm = confirm
         self.cancel = cancel
-        self.permissions = permissions
     }
 
     public var body: some View {
@@ -161,25 +155,16 @@ public struct DisconnectDialog: View {
                 .disabled(!prompt.canConfirm)
                 .accessibilityIdentifier("disconnect-confirm")
         } content: {
-            // docs/03: explain the grant's scope and identify recordings still awaiting upload.
-            BlueprintDialogText(loc(device.everyDeviceLosesAccess))
-            if prompt.unuploaded > 0 {
-                BlueprintDialogText(loc(device.unuploadedStay, "\(prompt.unuploaded)"), tone: .danger)
-            }
-            BlueprintDialogText(loc(device.queueWiped))
+            BlueprintDialogText(loc("Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay."), tone: .muted)
             // docs/03: cleanup must not race a capture or a job that still writes account state.
             if let blocker = prompt.blocker {
                 BlueprintDialogText(blocker, tone: .danger)
                     .accessibilityIdentifier("disconnect-blocked")
             }
-            // docs/03: "안내에 Google 계정 설정에서 직접 해제하는 방법도 함께 적는다."
-            BlueprintDialogLink(loc("Open Google account permissions")) { permissions() }
+
         }
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 
-    private func loc(_ key: String, _ argument: String) -> String {
-        RecKitStrings.localized(key, argument)
-    }
 }

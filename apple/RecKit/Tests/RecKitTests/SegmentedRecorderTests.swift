@@ -245,6 +245,79 @@ final class SegmentedRecorderTests: XCTestCase {
 
     // MARK: - The input's lifecycle
 
+    func testADeviceIdentityChangeRestartsEvenWhenTheSampleRateDoesNotChange() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        input.configurationID = "built-in"
+        let failures = Failures()
+        let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
+        let id = try await recorder.start(workflowId: nil, title: nil)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        input.configurationID = "headset"
+        input.onConfigurationChange?("engine_configuration_change")
+        await waitUntil { input.starts == 2 }
+        XCTAssertEqual(input.starts, 2)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else { return XCTFail("expected finalized audio: \(result)") }
+        let row = try await bridge.core.recordings.get(id: id)
+        let record = try XCTUnwrap(row)
+        XCTAssertEqual(record.meta.gaps.count, 1)
+        XCTAssertEqual(record.meta.durationSec?.doubleValue ?? 0, 2, accuracy: 0.01)
+        XCTAssertTrue(failures.all.isEmpty)
+    }
+
+    func testAnUnchangedInputNotificationDoesNotInterruptRecording() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        input.configurationID = "headset"
+        let failures = Failures()
+        let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
+        _ = try await recorder.start(workflowId: nil, title: nil)
+        let restart = expectation(description: "unchanged input must not restart")
+        restart.isInverted = true
+        input.gateNextStart { restart.fulfill() }
+        input.onConfigurationChange?("engine_configuration_change")
+        await fulfillment(of: [restart], timeout: 0.2)
+        XCTAssertEqual(input.starts, 1)
+        XCTAssertEqual(input.stops, 0)
+        _ = await recorder.stop(title: nil)
+    }
+
+    func testAnInputThatIsStillSettlingRetriesBeforeStarting() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        input.retriesTransientStart = true
+        input.failNextPreparations(2)
+        let failures = Failures()
+        let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
+        _ = try await recorder.start(workflowId: nil, title: nil)
+        XCTAssertEqual(input.prepares, 3)
+        XCTAssertEqual(input.starts, 1)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        let result = await recorder.stop(title: nil)
+        guard case .finalized = result else { return XCTFail("expected finalized audio: \(result)") }
+        XCTAssertTrue(failures.all.isEmpty)
+    }
+
+    func testAStopWhileTheNewRouteIsUnavailableCancelsDelayedReattachment() async throws {
+        let bridge = try await makeBridge()
+        let input = FakeAudioInput()
+        let failures = Failures()
+        let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
+        _ = try await recorder.start(workflowId: nil, title: nil)
+        XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
+        input.failNextPreparations(10)
+        input.onConfigurationChange?("input_route_change")
+        await waitUntil { input.prepares >= 2 }
+        _ = await recorder.stop(title: nil)
+        let prepares = input.prepares
+        try await Task.sleep(nanoseconds: 700_000_000)
+        XCTAssertEqual(input.prepares, prepares)
+        XCTAssertFalse(input.isRunning)
+        XCTAssertTrue(failures.all.isEmpty)
+    }
+
     /// Both the HAL listener and `AVAudioEngineConfigurationChange` fire for one device change, and
     /// a third can arrive while the first is still being served. Two teardowns for one change take
     /// the tap down again the instant it came back — and write a second `gaps` entry for an outage

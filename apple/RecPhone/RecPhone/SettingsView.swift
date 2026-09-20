@@ -55,10 +55,8 @@ struct SettingsView: View {
         .blueprintDialog(item: $model.disconnectPrompt) { prompt in
             DisconnectDialog(
                 prompt: prompt,
-                device: .phone,
                 confirm: { model.disconnect(alsoDeleteRecordings: $0) },
-                cancel: { model.cancelDisconnect() },
-                permissions: { model.openAccountPermissions() }
+                cancel: { model.cancelDisconnect() }
             )
         }
     }
@@ -69,9 +67,9 @@ struct SettingsView: View {
     private var account: some View {
         DriveConnectionSection(
             account: model.account, connected: model.hasGoogleCredential,
-            configured: model.canSignIn, pending: model.disconnectPhase.owed,
+            configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
             revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
-            signIn: model.signIn, signOut: model.signOut, revoke: model.askToDisconnect,
+            signIn: model.signIn, disconnect: model.askToDisconnect,
             permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
         )
         if let note = model.authNote {
@@ -164,7 +162,7 @@ struct SettingsView: View {
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
-                mono("GoogleSignIn · AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
+                mono("AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)

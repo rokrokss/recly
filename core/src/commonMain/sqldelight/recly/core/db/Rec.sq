@@ -13,11 +13,12 @@ CREATE TABLE recording (
   timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
   drive_folder_id TEXT,
   remote INTEGER NOT NULL DEFAULT 0,
-  remote_pending TEXT
+  remote_pending TEXT,
+  drive_synced INTEGER NOT NULL DEFAULT 0
 );
 
 -- `drive_file_id` is the adopted part's file on Drive, where playback fetches it from; a part
--- uploaded from here keeps its id in the step output instead and leaves this NULL.
+-- uploaded from here keeps its id in the step output until a pull restores a jobless local copy.
 CREATE TABLE part (
   recording_id TEXT NOT NULL, part INTEGER NOT NULL, track TEXT NOT NULL,
   file TEXT NOT NULL, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, md5 TEXT,
@@ -124,15 +125,15 @@ SELECT id, drive_folder_id FROM recording WHERE remote = 1;
 selectProvisionalRecordings:
 SELECT id, drive_folder_id FROM recording WHERE remote = 1 AND status = 'recording';
 
--- The `pending` marker of another device's folder. Never on a row of this device's own: what its
--- own job still has to do is in the queue, not on Drive.
+-- The `pending` marker of a Drive folder. When a local job exists, what its
+-- own job still has to do is in the queue. Verified jobless local copies use the Drive marker.
 updateRemotePending:
-UPDATE recording SET remote_pending = ? WHERE id = ? AND remote = 1;
+UPDATE recording SET remote_pending = ? WHERE id = ? AND (remote = 1 OR drive_synced = 1);
 
 -- docs/03: is another device still working on something? While one is, the pull runs every 30 s
 -- instead of every two minutes.
 countRemoteInFlight:
-SELECT count(*) FROM recording WHERE remote = 1 AND (status = 'recording' OR remote_pending IS NOT NULL);
+SELECT count(*) FROM recording WHERE (remote = 1 OR drive_synced = 1) AND (status = 'recording' OR remote_pending IS NOT NULL);
 
 selectRecordingFolders:
 SELECT id, drive_folder_id FROM recording WHERE drive_folder_id IS NOT NULL;
@@ -288,3 +289,23 @@ DELETE FROM drive_folder_cache WHERE path = ?;
 
 deleteAllFolderCache:
 DELETE FROM drive_folder_cache;
+
+-- Verified complete Drive copy of a local recording whose job history is absent.
+restoreRecordingDriveCopy:
+UPDATE recording SET drive_folder_id = ?, drive_synced = 1, remote_pending = ? WHERE id = ?;
+
+restorePartDriveFile:
+UPDATE part SET drive_file_id = ? WHERE recording_id = ? AND part = ? AND track = ?;
+
+selectSyncedRecordings:
+SELECT id, drive_folder_id FROM recording WHERE drive_synced = 1;
+
+selectDriveRestoreCandidates:
+SELECT id FROM recording WHERE remote = 0 AND status = 'finalized' AND drive_synced = 0
+AND NOT EXISTS (SELECT 1 FROM job WHERE job.recording_id = recording.id);
+
+clearRecordingDriveCopy:
+UPDATE recording SET drive_synced = 0, remote_pending = NULL WHERE id = ? AND remote = 0;
+
+clearPartDriveFiles:
+UPDATE part SET drive_file_id = NULL WHERE recording_id = ?;

@@ -100,7 +100,7 @@ struct RecordingsWindow: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: item.id,
+            subtitle: item.savedLocally ? RecKitStrings.localized("Saved on this device") : "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
@@ -125,7 +125,7 @@ struct RecordingsWindow: View {
         // `lastError` is a core message key, and a row an older build wrote is prose that
         // `CoreMessages` shows as it stands.
         let fixes = item.needsKey || item.alert == .needsSpace
-        if item.reason != nil || fixes {
+        if (item.alert != .needsAuth && item.reason != nil) || fixes {
             VStack(alignment: .leading, spacing: Space.xs) {
                 if let reason = item.reason {
                     Text(verbatim: reason.sentence)

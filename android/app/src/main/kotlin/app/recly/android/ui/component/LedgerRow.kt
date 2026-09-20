@@ -285,13 +285,15 @@ private fun TitleCell(title: String, subtitle: String, modifier: Modifier = Modi
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-        Text(
-            subtitle,
-            style = mono.small,
-            color = palette.textMuted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+        if (subtitle.isNotEmpty()) {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 

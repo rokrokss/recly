@@ -20,21 +20,14 @@ final class ProcessTapCaptureTests: XCTestCase {
         )
     }
 
-    /// A duplex output — AirPods, a USB headset — would otherwise present its own input channels
-    /// through the aggregate, and the first stream `receive` reads could be the user's headset
-    /// microphone instead of the tap.
-    func testTheSubDeviceContributesNoInputChannelsSoTheTapIsTheOnlyStream() {
+    func testTheTapNeverAcquiresThePhysicalOutputAsASubdevice() {
         let description = ProcessTapCapture.aggregateDescription(around: Self.device, tap: Self.tap)
-
-        let subDevices = try? XCTUnwrap(description[kAudioAggregateDeviceSubDeviceListKey] as? [[String: Any]])
-        let subDevice = try? XCTUnwrap(subDevices?.first)
-        XCTAssertEqual(subDevice?[kAudioSubDeviceUIDKey] as? String, Self.device.uid)
-        XCTAssertEqual(subDevice?[kAudioSubDeviceInputChannelsKey] as? Int, 0)
-        XCTAssertEqual(description[kAudioAggregateDeviceIsPrivateKey] as? Bool, true, "not in Sound settings")
-        XCTAssertEqual(
-            description[kAudioAggregateDeviceMainSubDeviceKey] as? String, Self.device.uid,
-            "the aggregate is built around the output device the audio is going to"
-        )
+        XCTAssertNil(description[kAudioAggregateDeviceSubDeviceListKey])
+        XCTAssertNil(description[kAudioAggregateDeviceMainSubDeviceKey])
+        XCTAssertEqual(description[kAudioAggregateDeviceIsPrivateKey] as? Bool, true)
+        let taps = description[kAudioAggregateDeviceTapListKey] as? [[String: Any]]
+        XCTAssertEqual(taps?.count, 1)
+        XCTAssertEqual(taps?.first?[kAudioSubTapUIDKey] as? String, Self.tap.uuid.uuidString)
     }
 
     /// A 24 kHz Bluetooth stream labelled as 48 kHz doubles pitch and inserts about 85 ms of

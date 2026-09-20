@@ -47,6 +47,8 @@ data class MainUiState(
     val message: UiMessage? = null,
     /** Non-null while the docs/03 disconnect warning is up, with the count it has to name. */
     val disconnect: DisconnectPrompt? = null,
+    /** True for the entire confirmed operation, including Google authorization and local cleanup. */
+    val disconnecting: Boolean = false,
     /** docs/06: how far the last disconnect got, and so whether one is still owed. */
     val disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,
     /** docs/03: a revoke Google refused, so the grant is still listed and only the user can fix it. */
@@ -196,6 +198,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      * the one thing signing in is supposed to fix, and nothing else in the app would ever unpark it.
      */
     private suspend fun unparkNeedsAuth(graph: AppGraph): Int {
+        kotlinx.coroutines.withContext(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
         val parked = graph.core.jobs.observe().first().filter { it.status == JobStatus.NEEDS_AUTH }
         val unparked = parked.count { graph.core.jobs.retry(it.id) }
         if (unparked > 0) WorkScheduler(getApplication()).onJobsDue()
@@ -220,6 +223,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      * user who is about to lose the queue deserves to know what is still only on this phone.
      */
     fun askToDisconnect() {
+        if (_state.value.busy) return
         viewModelScope.launch {
             val prompt = DisconnectPrompt(
                 unuploaded = Retention.unuploadedRecordings(graph().core),
@@ -240,32 +244,23 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
         // one nobody has read: from the first tap until its re-read decides, every further tap is a
         // no-op.
         val shown = _state.value.disconnect ?: return
-        if (disconnectChecking) return
-        disconnectChecking = true
-        viewModelScope.launch {
+        work(disconnecting = true) { graph ->
             // The dialog stands for as long as the user leaves it there, and a recording started
             // from the tile, the widget, the shortcut or the watch can finish inside that — the
             // phone then holds audio the warning never counted. What it promised is read again
             // before it is acted on; a warning it never showed re-asks instead of destroying
             // quietly.
             val fresh = DisconnectPrompt(
-                unuploaded = Retention.unuploadedRecordings(graph().core),
+                unuploaded = Retention.unuploadedRecordings(graph.core),
                 recording = isRecording(),
             )
-            // Down before the dialog changes either way: what a further tap then finds is the
-            // re-presented warning, which is a question it has not answered yet, or no dialog
-            // at all.
-            disconnectChecking = false
-            if (fresh.warnsMore(shown)) {
+            if (fresh.warnsMore(shown, alsoDeleteRecordings)) {
                 _state.update { it.copy(disconnect = fresh) }
-                return@launch
+                return@work false
             }
-            performDisconnect(alsoDeleteRecordings)
+            performDisconnect(graph, alsoDeleteRecordings)
         }
     }
-
-    /** True from a confirm until its re-read decides — see [disconnect]. */
-    private var disconnectChecking = false
 
     /**
      * docs/03 "연결 해제", both halves and in this order: the Google grant, which is what makes the
@@ -274,9 +269,9 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      * half — the user asked for this device to be done with the account — but it is what the
      * message talks about, because the grant is then still standing and only they can take it down.
      */
-    private fun performDisconnect(alsoDeleteRecordings: Boolean) = work { graph ->
+    private suspend fun performDisconnect(graph: AppGraph, alsoDeleteRecordings: Boolean): Boolean {
         _state.update { it.copy(disconnect = null) }
-        try {
+        return try {
             // Shut for the whole of it, before anything is read: the revoke below is a network
             // round trip, and a tile, a widget or the launcher shortcut starting a capture inside
             // that wait would give "also delete the recordings" a directory that is written into.
@@ -444,14 +439,20 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      *
      * @param block whether the action did what the user asked, which is what the button shows.
      */
-    private fun work(block: suspend (AppGraph) -> Boolean) {
+    private fun work(disconnecting: Boolean = false, block: suspend (AppGraph) -> Boolean) {
         if (_state.value.busy) return
+        // Publish before scheduling: the confirmation closes and repeat taps are blocked immediately.
+        _state.update {
+            it.copy(busy = true, action = ProcessingState.PROCESSING, message = null,
+                disconnecting = disconnecting, disconnect = if (disconnecting) null else it.disconnect)
+        }
         viewModelScope.processing(
             phase = { phase ->
                 val running = phase == ProcessingState.PROCESSING
                 _state.update {
                     it.copy(
                         busy = running,
+                        disconnecting = disconnecting && running,
                         action = phase,
                         message = if (running) null else it.message,
                     )

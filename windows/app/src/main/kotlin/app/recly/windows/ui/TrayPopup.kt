@@ -258,19 +258,6 @@ private fun Ledger(
     val palette = blueprint
     LazyColumn(modifier) {
         item { AlertBanner(model, strings) }
-        // docs/06: a device with no grant at all has nothing parked yet to say so — the banner above
-        // is what speaks once something is. Both offer the same sign-in.
-        if (!model.signedIn && model.alerts.none { it.reason == AlertReason.NEEDS_AUTH }) {
-            item {
-                ProcessingButton(
-                    label = strings[Str.TRAY_SIGN_IN],
-                    state = model.action,
-                    strings = strings,
-                    onClick = model::signIn,
-                    modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
-                )
-            }
-        }
         item {
             LedgerHeader(
                 time = strings[Str.LEDGER_TIME],
@@ -337,18 +324,27 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            StatusBadge(alert.reason.badge())
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            if (alert.reason == AlertReason.NEEDS_AUTH) {
                 Text(
-                    strings[alert.reason.label],
+                    strings[Str.ALERT_UPLOADS_WAITING, alert.count],
+                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = palette.text,
-                )
-                Text(
-                    strings[Str.ALERT_WAITING, alert.count],
-                    style = MaterialTheme.typography.bodySmall,
                     color = palette.textMuted,
                 )
+            } else {
+                StatusBadge(alert.reason.badge())
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        strings[alert.reason.label],
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.text,
+                    )
+                    Text(
+                        strings[Str.ALERT_WAITING, alert.count],
+                        style = MaterialTheme.typography.bodySmall,
+                        color = palette.textMuted,
+                    )
+                }
             }
             // The sign-in is the one fix that happens here rather than on another screen, so it is
             // the one that has a result to show (docs/09 트렌드 2).

@@ -581,12 +581,12 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
     record.remoteUploading -> ItemState.REMOTE_UPLOADING
     // A marker that names only `webhook` is not something to say: what is left is a request this
     // phone will never see the answer to, and the recording itself is done.
-    record.remote && TranscribeRunner.TYPE in record.remotePending -> ItemState.REMOTE_TRANSCRIBING
+    (record.remote || (job == null && record.driveSynced)) && TranscribeRunner.TYPE in record.remotePending -> ItemState.REMOTE_TRANSCRIBING
     record.meta.status == RecordingStatus.RECORDING -> ItemState.RECORDING
     // Before the job question, because a row adopted from Drive has no job here by definition —
     // "no workflow" would be a thing for the user to fix, and there is nothing to fix: another
     // device already did the work, so this is a finished recording (docs/03 "다른 기기의 녹음").
-    record.remote -> ItemState.DONE
+    record.remote || (job == null && record.driveSynced) -> ItemState.DONE
     job == null -> ItemState.NO_JOB
     else -> when (job.status) {
         JobStatus.PENDING -> ItemState.PENDING

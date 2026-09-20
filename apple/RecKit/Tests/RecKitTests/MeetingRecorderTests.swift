@@ -20,6 +20,36 @@ final class MeetingRecorderTests: XCTestCase {
         try? FileManager.default.removeItem(at: dataDirectory)
     }
 
+    func testStoppingDrainsTimestampedMicrophoneAndSystemTailsIntoAllThreeTracks() async throws {
+        let bridge = try await makeBridge()
+        let mic = TimedTestInput(rate: 24_000, delay: 60)
+        let system = TimedTestInput(rate: 48_000, delay: 60)
+        let failures = Failures()
+        let recorder = SegmentedRecorder(core: bridge.core, input: mic, systemInput: system) {
+            failures.record($0)
+        }
+        let id = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        system.push(seconds: 1, frequency: 440, time: 100)
+        mic.push(seconds: 1, frequency: 220, time: 100)
+        XCTAssertEqual(recorder.recordedSec, 0, "both delivery queues still hold their packets")
+        let result = await recorder.stop(title: nil)
+        guard case .finalized(let outcome) = result else { return XCTFail("\(result)") }
+        XCTAssertTrue(failures.fatal.isEmpty, "\(failures.all)")
+        XCTAssertEqual(outcome.durationSec, 1, accuracy: 0.001)
+        let row = try await bridge.core.recordings.get(id: id)
+        let record = try XCTUnwrap(row)
+        XCTAssertEqual(record.meta.parts.count, 3)
+        for part in record.meta.parts {
+            let samples = try decode(record.dir.url.appendingPathComponent(part.file))
+            XCTAssertEqual(samples.count, 16_000)
+            let interior = Array(samples.dropFirst(1000).dropLast(1000))
+            let rms = sqrt(interior.reduce(0.0) { $0 + Double($1 * $1) } / Double(interior.count))
+            XCTAssertGreaterThan(rms, 0.15, "\(part.track) must contain audio, including the queued tail")
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: record.dir.url
+            .appendingPathComponent("capture-diagnostics.json").path))
+    }
+
     /// Deliverable 7, the boundary half: three tracks, one set of part numbers, and the same
     /// `startOffsetSec` for every track of a part. The microphone is the clock, so the only way this
     /// can hold is if all three files are cut at the same frame — a track that decided for itself
@@ -378,5 +408,41 @@ final class MeetingRecorderTests: XCTestCase {
             logger: OSLogLogger(),
             secureStore: InMemorySecureStore()
         )
+    }
+}
+
+/// Real ownership queues with synthetic capture times: no hardware or permission prompts.
+private final class TimedTestInput: AudioInput, SystemAudioInput {
+    let format: AVAudioFormat?
+    var isRunning = false
+    var onConfigurationChange: ((String) -> Void)?
+    var onSilence: ((Bool) -> Void)?
+    var onOutage: ((String, TimeInterval) -> Void)?
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)?
+    var outputDeviceName: String? { "Test output" }
+    private let delivery: AudioDeliveryQueue
+
+    init(rate: Double, delay: Double) {
+        format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1)
+        delivery = AudioDeliveryQueue(label: "test.capture.\(rate)", delaySec: delay)
+    }
+    func authorize() async throws {}
+    func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
+        try startCaptured { onBuffer($0.buffer) }
+    }
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
+        isRunning = true
+        delivery.start(onBuffer)
+    }
+    func stop() { isRunning = false; delivery.finish() }
+    func push(seconds: Double, frequency: Double, time: Double) {
+        let format = format!
+        let count = Int(seconds * format.sampleRate)
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: AVAudioFrameCount(count))!
+        buffer.frameLength = AVAudioFrameCount(count)
+        for index in 0 ..< count {
+            buffer.floatChannelData![0][index] = Float(0.5 * sin(2 * .pi * frequency * Double(index) / format.sampleRate))
+        }
+        delivery.submit(CapturedAudio(buffer, hostTimeSec: time))
     }
 }

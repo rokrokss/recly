@@ -21,12 +21,8 @@ let package = Package(
         .library(name: "RecKitTestSupport", targets: ["RecKitTestSupport"]),
     ],
     dependencies: [
-        // docs/06 "iOS · macOS": the SDK keeps the refresh token in the Keychain and renews it with
-        // `refreshTokensIfNeeded`, which is the whole of what `AppleTokenProvider` wraps.
-        .package(url: "https://github.com/google/GoogleSignIn-iOS.git", from: "9.0.0"),
-        // GoogleSignIn's own dependency, named here so the Mac can hand the SDK a keychain store
-        // of its choosing (docs/06 "iOS · macOS": the login keychain, because an ad-hoc build has
-        // no access group for the data-protection one).
+        // Drive-only OAuth plus the legacy keychain reader for migration (docs/06).
+        .package(url: "https://github.com/openid/AppAuth-iOS.git", from: "2.1.0"),
         .package(url: "https://github.com/google/GTMAppAuth.git", from: "5.0.0"),
     ],
     targets: [
@@ -38,17 +34,17 @@ let package = Package(
             name: "RecKit",
             dependencies: [
                 "ReclyCore",
-                // Conditional: GoogleSignIn has no watchOS slice, and the watch never touches Drive
+                // Conditional: the watch never touches Drive
                 // (ADR-002) — the phone signs in for it.
                 .product(
-                    name: "GoogleSignIn",
-                    package: "GoogleSignIn-iOS",
+                    name: "AppAuth",
+                    package: "AppAuth-iOS",
                     condition: .when(platforms: [.macOS, .iOS])
                 ),
                 .product(
                     name: "GTMAppAuth",
                     package: "GTMAppAuth",
-                    condition: .when(platforms: [.macOS])
+                    condition: .when(platforms: [.macOS, .iOS])
                 ),
             ],
             path: "Sources/RecKit",

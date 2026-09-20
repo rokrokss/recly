@@ -256,7 +256,6 @@ fun main(args: Array<String>) {
                 strings = strings,
                 theme = themed,
                 onCancel = model::cancelDisconnect,
-                onPermissions = model::openAccountPermissions,
                 onConfirm = model::disconnect,
             )
         }

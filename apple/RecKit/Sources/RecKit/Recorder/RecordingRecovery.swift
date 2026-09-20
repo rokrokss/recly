@@ -136,6 +136,9 @@ public actor RecordingRecovery {
     /// counts — the retry itself is the self-heal, so a later pass queues it once a default exists.
     /// (The Windows `RecordingRecovery.enqueueIfNoJob` reads the same way.)
     private func ready(_ recordingId: String) async throws -> Bool {
+        // A known Drive folder is reconciled by the next pull. Recreating its missing job before
+        // authorization is restored would re-upload or re-transcribe completed work.
+        if let record = try await core.recordings.get(id: recordingId), record.driveFolderId != nil { return false }
         let result = try await core.enqueue(recordingId: recordingId, chosenWorkflowId: nil)
         log(.info, "rec.recovered.enqueue", ["recordingId": recordingId, "result": Self.name(of: result)])
         if case .enqueued = onEnum(of: result) { return true }
@@ -147,6 +150,7 @@ public actor RecordingRecovery {
         switch onEnum(of: result) {
         case .enqueued: return "Enqueued"
         case .alreadyDone: return "AlreadyDone"
+        case .alreadySynced: return "AlreadySynced"
         case .skippedShort: return "SkippedShort"
         case .partsPurged: return "PartsPurged"
         case .noWorkflow: return "NoWorkflow"

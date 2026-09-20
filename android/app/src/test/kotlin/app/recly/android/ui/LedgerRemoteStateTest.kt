@@ -26,6 +26,14 @@ import recly.core.recording.RecordingRecord
  */
 class LedgerRemoteStateTest {
 
+    @Test
+    fun `a restored Drive copy is done while an active local job still wins`() {
+        val restored = record().copy(driveSynced = true)
+        assertEquals(ItemState.DONE, stateOf(restored, null))
+        assertEquals(ItemState.REMOTE_TRANSCRIBING, stateOf(restored.copy(remotePending = setOf("transcribe")), null))
+        assertEquals(ItemState.RUNNING, stateOf(restored, job("j", JobStatus.RUNNING, nextRunAt = null)))
+    }
+
     /** A watch transfer in flight is not this phone recording, however the row's status reads. */
     @Test
     fun `a recording coming in from the watch is RECEIVING`() {

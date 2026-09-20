@@ -1,6 +1,6 @@
 import Foundation
 
-// The Google half of a disconnect needs the SDK, which ships no watchOS slice — and the watch has
+// Drive authorization is available on iPhone and Mac — the watch has
 // no account of its own to disconnect (ADR-002). So [DisconnectFlow] is the Mac's and the phone's,
 // as `GoogleAuth` itself is; the store below it compiles everywhere the package does.
 #if os(macOS) || os(iOS)
@@ -132,7 +132,10 @@ public final class DisconnectFlow {
                 // is nothing to report but the store.
                 guard let done = try await DisconnectGuard.owingCleanup(
                     persist: { self.persistPhase($0) },
-                    cleanup: { try await core.disconnect(alsoDeleteRecordings: alsoDeleteRecordings) }
+                    cleanup: {
+                        try await self.auth()?.clearCredentials()
+                        return try await core.disconnect(alsoDeleteRecordings: alsoDeleteRecordings)
+                    }
                 ) else {
                     publishMessage(DisconnectGuard.saveFailed)
                     logger.info("auth.disconnect.refused reason=store")
@@ -180,7 +183,7 @@ public final class DisconnectFlow {
     }
 
     private func revoke(with auth: GoogleAuth) async -> RevokeOutcome {
-        // docs/06: the decision is made on what the SDK says *now*. A restore that failed at launch
+        // docs/06: the decision is made on what the credential store says *now*. A restore that failed at launch
         // — or one an aborted attempt of this very disconnect left behind — would otherwise answer
         // for a Keychain nothing has read since, and "try Disconnect again" would keep giving the
         // answer that sent the user here.

@@ -36,12 +36,14 @@ data class DisconnectPrompt(
 
     /**
      * True when this freshly read state carries a warning the dialog the user confirmed never
-     * showed — a recording that finished since [shown] was built and grew the count. The confirm
+     * showed when local deletion was requested. Keeping recordings never needs another count warning.
+     * A recording may have finished since [shown] was built and grown the count. The confirm
      * re-presents with this instead of acting on a promise the dialog did not make. [recording] is
      * not compared: it has its own live guards ([canConfirm] on the dialog, and
      * [DisconnectGuard.liveBlocker] at run time).
      */
-    fun warnsMore(shown: DisconnectPrompt): Boolean = unuploaded > shown.unuploaded
+    fun warnsMore(shown: DisconnectPrompt, alsoDeleteRecordings: Boolean = true): Boolean =
+        alsoDeleteRecordings && unuploaded > shown.unuploaded
 }
 
 /**

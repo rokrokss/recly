@@ -27,17 +27,26 @@ final class FakeAudioInput: AudioInput {
     /// when the input is already running on the format the session attached to, which is how one
     /// device change producing two notifications stays one restart.
     var format: AVAudioFormat?
+    var configurationID: String? {
+        get { lock.withLock { _configurationID } }
+        set { lock.withLock { _configurationID = newValue } }
+    }
+    var retriesTransientStart = false
 
     var onConfigurationChange: ((String) -> Void)?
     /// The interruption a phone call is, without the phone call: what `IOSAudioInput` reports when
     /// the microphone is taken away and given back (docs/03 `silenced`).
     var onSilence: ((Bool) -> Void)?
+    var onFailure: ((RecorderError) -> Void)?
 
     private let lock = NSLock()
     private var _starts = 0
     private var _stops = 0
     private var _onBuffer: ((AVAudioPCMBuffer) -> Void)?
     private var _beforeStart: (() -> Void)?
+    private var _configurationID: String?
+    private var _prepareFailures = 0
+    private var _prepares = 0
 
     init(format: AVAudioFormat? = FakeAudioInput.recorderFormat) {
         self.format = format
@@ -46,6 +55,7 @@ final class FakeAudioInput: AudioInput {
     /// How many times a tap has been installed: one for the start, one more for each restart.
     var starts: Int { lock.withLock { _starts } }
     var stops: Int { lock.withLock { _stops } }
+    var prepares: Int { lock.withLock { _prepares } }
     var isRunning: Bool { lock.withLock { _onBuffer != nil } }
     /// A recorder that ends with this true left a tap — and on a real machine a lit microphone —
     /// behind a recording nobody owns any more.
@@ -58,6 +68,18 @@ final class FakeAudioInput: AudioInput {
     }
 
     func authorize() async throws {}
+
+    func failNextPreparations(_ count: Int) { lock.withLock { _prepareFailures = count } }
+
+    func prepare() throws {
+        let fail = lock.withLock {
+            _prepares += 1
+            guard _prepareFailures > 0 else { return false }
+            _prepareFailures -= 1
+            return true
+        }
+        if fail { throw RecorderError("the route is still settling") }
+    }
 
     func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
         let gate: (() -> Void)? = lock.withLock {

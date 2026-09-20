@@ -17,11 +17,10 @@ import java.util.Properties
 enum class Str {
     DRIVE_PENDING,
     DRIVE_CONNECT,
+    DRIVE_DISCONNECT,
+    DRIVE_DISCONNECTING,
     DRIVE_ATTENTION,
     DRIVE_OPTIONAL,
-    DRIVE_PURPOSE,
-    DRIVE_STOP_HINT,
-    DRIVE_FINISH_REVOKE,
     LOCAL_SAVED,
     CLOSE,
     TRANSCRIPT_SEARCH,
@@ -364,6 +363,7 @@ enum class Str {
     ALERT_AUTH_REJECTED,
     ALERT_QUOTA,
     ALERT_WEBHOOK,
+    ALERT_UPLOADS_WAITING,
     ALERT_WAITING,
 
     // docs/15 §3: what leaves this PC when the step runs, and whose policy decides the rest.

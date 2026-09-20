@@ -1,8 +1,7 @@
-@file:OptIn(ExperimentalTime::class)
+@file:OptIn(ExperimentalTime::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 
 package app.recly.windows.ui
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,13 +14,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.auth.OAuthConfig
@@ -34,9 +28,7 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
 import app.recly.windows.settings.RecordingMode
-import app.recly.windows.ui.component.BlueprintDialog
 import app.recly.windows.ui.component.BlueprintDialogLink
-import app.recly.windows.ui.component.BlueprintDialogText
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintDropdown
@@ -45,9 +37,9 @@ import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
+import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
-import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -81,64 +73,29 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
 @Composable
 private fun Account(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_ACCOUNT])
-    val palette = blueprint
-    var managingDrive by remember { mutableStateOf(false) }
     val signInBlocker = DisconnectGuard.signInBlocker(model.disconnectPhase.owed)
-    if (model.signedIn || model.disconnectPhase.owed || model.revokeDebt) {
-        TableRow(
-            title = strings[if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.DRIVE_ATTENTION],
-            subtitle = if (model.disconnectPhase.owed || model.revokeDebt) strings[Str.DRIVE_ATTENTION] else null,
-            modifier = Modifier.clickable(role = Role.Button) { managingDrive = true },
-            trailing = { Text("›") },
-        )
+    if (model.signedIn || model.disconnectPhase.owed || model.disconnecting) {
+        TableRow(title = strings[if (model.disconnecting) Str.SETTINGS_ACCOUNT else if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.DRIVE_ATTENTION], trailing = {
+            BlueprintButton(strings[if (model.disconnecting) Str.DRIVE_DISCONNECTING else Str.DRIVE_DISCONNECT],
+                model::askToDisconnect, tone = ButtonTone.DANGER, enabled = !model.disconnecting)
+        })
     } else {
         TableRow(
             title = strings[Str.SETTINGS_SIGNED_OUT],
-            subtitle = if (model.clientConfigured) null else strings[Str.SETTINGS_NO_CLIENT],
+            subtitle = strings[if (model.clientConfigured) Str.DRIVE_OPTIONAL else Str.SETTINGS_NO_CLIENT],
             trailing = {
-                ProcessingButton(
-                    label = strings[Str.SIGN_IN], state = model.action, strings = strings,
+                ProcessingButton(label = strings[Str.SIGN_IN], state = model.action, strings = strings,
                     onClick = model::signIn, tone = ButtonTone.PRIMARY,
-                    enabled = model.clientConfigured && signInBlocker == null,
-                )
+                    enabled = model.clientConfigured && signInBlocker == null)
             },
         )
-        BlueprintDialogText(strings[Str.DRIVE_OPTIONAL], modifier = Modifier.padding(horizontal = Space.m))
-        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions)
     }
-    if (managingDrive) {
-        BlueprintDialog(
-            title = strings[Str.SETTINGS_ACCOUNT],
-            onDismissRequest = { managingDrive = false },
-            height = 400.dp,
-            theme = { ReclyDesktopTheme(dark = palette.dark, highContrast = palette.highContrast, content = it) },
-            actions = {
-                BlueprintButton(strings[Str.CLOSE], { managingDrive = false }, tone = ButtonTone.QUIET)
-            },
-        ) {
-            BlueprintDialogText(strings[Str.DRIVE_PURPOSE])
-            if (model.signedIn) {
-                BlueprintButton(strings[Str.SIGN_OUT],
-                    { managingDrive = false; model.signOut() }, tone = ButtonTone.QUIET,
-                    enabled = signInBlocker == null)
-                BlueprintDialogText(strings[Str.DRIVE_STOP_HINT])
-            }
-            if (model.signedIn || model.disconnectPhase.owed) {
-                BlueprintButton(
-                    strings[if (model.disconnectPhase.owed) Str.DRIVE_FINISH_REVOKE else Str.SETTINGS_DISCONNECT],
-                    { managingDrive = false; model.askToDisconnect() }, tone = ButtonTone.QUIET,
-                )
-            }
-            if (!model.signedIn && !model.disconnectPhase.owed) {
-                BlueprintButton(strings[Str.SIGN_IN], { managingDrive = false; model.signIn() },
-                    tone = ButtonTone.QUIET, enabled = model.clientConfigured)
-            }
-            BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions)
-            if (model.revokeDebt) {
-                BlueprintDialogText(strings[Str.DISCONNECT_STILL_LISTED])
-                BlueprintDialogLink(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled)
-            }
-        }
+    if (model.revokeDebt && !model.disconnecting) {
+        SectionFootnote(strings[Str.DISCONNECT_STILL_LISTED])
+        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
+            modifier = Modifier.padding(horizontal = Space.m))
+        BlueprintButton(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled,
+            tone = ButtonTone.QUIET, modifier = Modifier.padding(horizontal = Space.m))
     }
 }
 

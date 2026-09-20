@@ -157,14 +157,14 @@ object Recents {
         // The upload landed and the device that made the recording still has a `transcribe` to run.
         // Anything else it has left (a `webhook`) is nothing this list has to report, so the row
         // reads as the finished one it is.
-        if (record.remote && TranscribeRunner.TYPE in record.remotePending) {
+        if ((record.remote || (job == null && record.driveSynced)) && TranscribeRunner.TYPE in record.remotePending) {
             return Str.STATE_REMOTE_TRANSCRIBING.message()
         }
         if (record.meta.status == RecordingStatus.RECORDING) return Str.STATUS_RECORDING.message()
         // docs/03: another device recorded and uploaded it, and this PC read it out of Drive. There
         // is no job here, so "no workflow" would be the wrong answer — nothing was skipped. It is
         // finished work like any other finished row, and says exactly that.
-        if (record.remote) return Str.STATE_DONE.message()
+        if (record.remote || (job == null && record.driveSynced)) return Str.STATE_DONE.message()
         return when (job?.status) {
             null -> Str.STATE_NO_WORKFLOW
             JobStatus.PENDING -> Str.STATUS_WAITING

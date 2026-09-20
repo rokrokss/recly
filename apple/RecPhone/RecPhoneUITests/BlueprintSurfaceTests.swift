@@ -78,26 +78,23 @@ final class BlueprintSurfaceTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
-    /// docs/03 "로그아웃 vs 연결 해제": connection management keeps two meanings; the warning says what
-    /// makes them different — every device loses access, not only this one.
+    /// docs/03 "로그아웃 vs 연결 해제": the single disconnect action revokes the Google grant,
+    /// so the warning names its effect on other devices.
     func testTheDisconnectWarningNamesTheOtherDevices() throws {
         open(tab: "Settings")
         attach("settings")
-        let management = app.buttons["drive-manage"]
+        let disconnect = app.buttons["disconnect"]
         try XCTSkipUnless(
-            management.waitForExistence(timeout: 10),
+            disconnect.waitForExistence(timeout: 10),
             "this simulator is signed out, so there is no grant to disconnect"
         )
-        management.tap()
-        let disconnect = app.buttons["disconnect"]
-        XCTAssertTrue(disconnect.waitForExistence(timeout: 5))
         disconnect.tap()
 
         let confirm = app.buttons["disconnect-confirm"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 5), "no disconnect warning")
         XCTAssertTrue(
             app.staticTexts.containing(
-                NSPredicate(format: "label CONTAINS[c] %@", "Other devices using this Google authorization")
+                NSPredicate(format: "label CONTAINS[c] %@", "Recly loses Drive access on all devices connected to this Google account")
             ).firstMatch.exists,
             "the warning does not say the other devices lose access"
         )

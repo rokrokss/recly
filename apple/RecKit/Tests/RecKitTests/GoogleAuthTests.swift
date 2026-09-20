@@ -1,6 +1,7 @@
-// Same condition as the type under test: there is no GoogleSignIn slice for watchOS and no watch
+// Same condition as the type under test: no watch
 // sign-in (ADR-002).
 #if os(macOS) || os(iOS)
+import AppAuth
 import XCTest
 @testable import RecKit
 
@@ -9,9 +10,9 @@ import XCTest
 @MainActor
 final class GoogleAuthTests: XCTestCase {
     /// Google documents `grantedScopes` as the thing to check before calling the API. The consent
-    /// screen lets the user tick the two Drive boxes apart, so "signed in" and "may upload" are
+    /// screen lets the user tick profile and Drive separately, so "signed in" and "may upload" are
     /// different questions.
-    func testBothDriveScopesGrantedLeavesNothingMissing() {
+    func testDriveScopeGrantedLeavesNothingMissing() {
         XCTAssertEqual(GoogleAuth.missingScopes(grantedScopes: GoogleAuth.scopes + ["openid"]), [])
     }
 
@@ -25,23 +26,21 @@ final class GoogleAuthTests: XCTestCase {
     }
 
     /// `grantedScopes` is nullable, and a nil is every scope missing rather than none.
-    func testNoGrantedScopesAtAllIsBothMissing() {
+    func testNoGrantedScopesLeavesDriveMissing() {
         XCTAssertEqual(GoogleAuth.missingScopes(grantedScopes: nil), GoogleAuth.scopes)
     }
 
-    /// `GIDSignInError.canceled` is the user closing the sheet — the shells must not turn it into
-    /// an alert (docs/06). The literals are `kGIDSignInErrorDomain` and `kGIDSignInErrorCodeCanceled`
-    /// (-5) / `kGIDSignInErrorCodeKeychain` (-2); the test target does not link the SDK itself.
+    /// Closing the authorization sheet is a cancellation, not an alert (docs/06).
     func testACanceledSignInIsToldApartFromARealFailure() {
-        XCTAssertTrue(GoogleAuth.isCanceled(signInError(code: -5)))
-        XCTAssertFalse(GoogleAuth.isCanceled(signInError(code: -2)))
+        XCTAssertTrue(GoogleAuth.isCanceled(signInError(code: OIDErrorCode.userCanceledAuthorizationFlow.rawValue)))
+        XCTAssertFalse(GoogleAuth.isCanceled(signInError(code: OIDErrorCode.networkError.rawValue)))
         XCTAssertFalse(GoogleAuth.isCanceled(URLError(.notConnectedToInternet)))
-        // Same code, somebody else's domain: -5 means nothing outside GoogleSignIn's.
-        XCTAssertFalse(GoogleAuth.isCanceled(NSError(domain: "app.recly.other", code: -5)))
+        // A matching code in another domain is unrelated.
+        XCTAssertFalse(GoogleAuth.isCanceled(NSError(domain: "app.recly.other", code: OIDErrorCode.userCanceledAuthorizationFlow.rawValue)))
     }
 
     private func signInError(code: Int) -> Error {
-        NSError(domain: "com.google.GIDSignIn", code: code)
+        NSError(domain: OIDGeneralErrorDomain, code: code)
     }
 }
 #endif

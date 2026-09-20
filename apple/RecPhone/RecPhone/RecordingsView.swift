@@ -26,7 +26,7 @@ struct RecordingsView: View {
             // docs/09 화면 원칙 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
             ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents))
-            // docs/10 "iPhone": 목록 상단 배너 — the same lines the notifications carry, one row per
+            // docs/10 "iPhone": 목록 상단 배너 — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
             AlertBanner(alerts: model.alerts) { model.fix($0) }
@@ -134,7 +134,7 @@ struct RecordingsView: View {
         VStack(alignment: .leading, spacing: Space.s) {
             // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it has
             // been waiting — the badge's RETRY would otherwise read as "stuck".
-            if item.waitingMinutes != nil || item.alert == .needsAuth {
+            if item.waitingMinutes != nil {
                 Text(verbatim: item.stateLabel)
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
@@ -143,11 +143,11 @@ struct RecordingsView: View {
             // docs/07 §5: what the core last said about this job, with its diagnostic under it —
             // the sentence translated, the diagnostic never. For a docs/08 "오류" the sentence is
             // what to do next and the diagnostic is the provider's own words.
-            if let reason = item.reason {
+            if item.alert != .needsAuth, let reason = item.reason {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(verbatim: reason.sentence)
                         .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(item.alert == .needsAuth ? blueprint.palette.textMuted : blueprint.palette.danger)
+                        .foregroundStyle(blueprint.palette.danger)
                     if let detail = reason.detail {
                         Text(verbatim: detail)
                             .font(blueprint.fonts.monoSmall)
@@ -185,15 +185,6 @@ struct RecordingsView: View {
                 if item.alert == .needsSpace {
                     BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
                         .accessibilityIdentifier("open-storage")
-                }
-                // docs/10: the sign-in is the whole of what this job is waiting for, so it is offered
-                // where the job is as well as on the banner — and lands on the same tab the banner
-                // takes it to.
-                if item.alert == .needsAuth {
-                    BlueprintButton(loc("Sign in")) {
-                        model.fix(JobAlert(reason: .needsAuth, count: 1))
-                    }
-                    .accessibilityIdentifier("sign-in")
                 }
                 if item.alert == .needsConsent {
                     BlueprintButton(RecKitStrings.localized("Review transfers")) {

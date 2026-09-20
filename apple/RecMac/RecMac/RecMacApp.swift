@@ -90,7 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         false
     }
 
-    /// docs/06: the consent web view comes back on the reversed-client-id scheme, and GoogleSignIn
+    /// docs/06: the consent web view comes back on the reversed-client-id scheme, and AppAuth
     /// asks every macOS app to hand that URL over (the guide's `kAEGetURL` step; this is its AppKit
     /// form). The phone does the same with `.onOpenURL`.
     func application(_ application: NSApplication, open urls: [URL]) {

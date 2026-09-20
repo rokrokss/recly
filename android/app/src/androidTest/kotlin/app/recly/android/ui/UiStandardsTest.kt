@@ -30,14 +30,11 @@ class UiStandardsTest {
     @Before fun useEnglish() { language("en") }
     @After fun restoreEnglish() { language("en") }
 
-    @Test fun driveManagementKeepsRecordingAvailableWithoutSignIn() {
+    @Test fun driveSettingsKeepRecordingAvailableWithoutSignIn() {
         ui.onNodeWithText(ui.activity.getString(R.string.tab_settings)).performClick()
-        ui.onNodeWithTag("disconnect").assertDoesNotExist()
-        val management = ui.onAllNodesWithTag("drive-manage").fetchSemanticsNodes()
-        if (management.isNotEmpty()) {
-            ui.onNodeWithTag("drive-manage").performClick()
-            ui.onNodeWithTag("disconnect").assertExists()
-            ui.onNodeWithText(ui.activity.getString(R.string.action_close)).performClick()
+        ui.onNodeWithTag("drive-manage").assertDoesNotExist()
+        if (ui.onAllNodesWithTag("disconnect").fetchSemanticsNodes().isNotEmpty()) {
+            ui.onNodeWithTag("signOut").assertDoesNotExist()
         } else {
             ui.onNodeWithText(ui.activity.getString(R.string.drive_optional)).assertExists()
             ui.onNodeWithText(ui.activity.getString(R.string.drive_connect)).assertExists()

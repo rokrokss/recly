@@ -52,6 +52,9 @@ class JobStore(
         status: JobStatus = JobStatus.PENDING,
     ): Job? = locked {
         db.transactionWithResult {
+            if (queries.selectRecordingById(recordingId).executeAsOneOrNull()?.drive_synced == 1L) {
+                return@transactionWithResult null
+            }
             val existing = queries.selectJobByRecordingAndWorkflow(recordingId, workflow.id).executeAsOneOrNull()
             if (existing != null) {
                 val rerunnable = existing.status == JobStatus.FAILED.name ||
@@ -169,7 +172,7 @@ class JobStore(
      */
     suspend fun uploaded(recordingId: String): Boolean = locked {
         db.transactionWithResult {
-            if (queries.selectRecordingById(recordingId).executeAsOneOrNull()?.remote == 1L) {
+            if (queries.selectRecordingById(recordingId).executeAsOneOrNull()?.let { it.remote == 1L || it.drive_synced == 1L } == true) {
                 return@transactionWithResult true
             }
             val parts = queries.selectPartsByRecording(recordingId).executeAsList()
@@ -188,7 +191,8 @@ class JobStore(
                     val parts = queries.selectPartsByRecording(recordingId).executeAsList()
                     jobs.any { uploadedEveryPart(it, parts) }
                 }
-                .keys + queries.selectAdoptedRecordings().executeAsList().map { it.id }
+                .keys + queries.selectAdoptedRecordings().executeAsList().map { it.id } +
+                queries.selectSyncedRecordings().executeAsList().map { it.id }
         }
     }
 

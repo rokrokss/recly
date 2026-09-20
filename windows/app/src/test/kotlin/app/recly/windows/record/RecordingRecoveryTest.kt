@@ -195,6 +195,20 @@ class RecordingRecoveryTest {
     }
 
     @Test
+    fun `a known Drive copy waits for synchronization instead of replaying its workflow`() = runBlocking {
+        val core = core()
+        val (id, dir, base) = open(core)
+        register(core, id, base, part = 1, sec = 60.0)
+        val name = MetaWriter.partFileName(base, 1, Track.MIC)
+        write(dir, name)
+        core.recordings.finalize(id, core.deps.clock.now(), durationSec = 60.0)
+        core.recordings.rememberFolder(id, "known-drive-folder")
+        RecordingRecovery(core).reconcile()
+        assertEquals(emptyList(), core.recordings.jobStatuses(id))
+        assertTrue(FileSystem.SYSTEM.exists(dir / name))
+    }
+
+    @Test
     fun `a recording that already has a job is left alone`() = runBlocking {
         val core = core()
         val (id, dir, base) = open(core)

@@ -57,6 +57,104 @@ import recly.core.testing.testWorkflow
 class RemoteRecordingsTest {
 
     @Test
+    fun `reconnect restores a purged local recording after its upload jobs were cleared`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(MINE_1)
+        h.upload(mine)
+        h.clock.advance(8.days)
+        h.retention.sweep(h.clock.now())
+        h.jobStore.deleteAll()
+        val before = h.recordings.get(MINE_1)!!
+        assertFalse(h.jobStore.uploaded(MINE_1))
+        assertTrue(mine.meta.parts.all { !h.fs.exists(before.dir / it.file) })
+
+        h.remote.pull(force = true)
+
+        val restored = h.recordings.get(MINE_1)!!
+        assertTrue(restored.driveSynced)
+        assertFalse(restored.remote, "a restored cloud copy must not become a droppable remote row")
+        assertEquals(before.meta, restored.meta)
+        assertEquals(before.dir, restored.dir)
+        assertEquals(emptyList(), h.jobStore.list())
+        assertTrue(h.jobStore.uploaded(MINE_1))
+        assertEquals(setOf(MINE_1), h.jobStore.uploadedRecordings())
+        assertEquals(EnqueueResult.AlreadySynced, h.jobs.enqueue(MINE_1, h.document, null, h.workflow.id))
+        val playback = h.audio.load(restored, emptyList())
+        assertEquals(emptyList(), playback.missing)
+        assertEquals(2, playback.paths.size)
+        playback.paths.forEach { assertEquals(SEEDED_AUDIO, h.fs.read(it) { readUtf8() }) }
+        val requests = h.drive.requests.size
+        h.remote.pull(force = true)
+        assertEquals(1, h.drive.requests.size - requests, "a restored copy needs only the folder listing")
+    }
+
+    @Test
+    fun `restoration preserves local files and a different account never deletes them`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(MINE_1)
+        h.upload(mine)
+        h.jobStore.deleteAll()
+        h.remote.pull(force = true)
+        val restored = h.recordings.get(MINE_1)!!
+        assertTrue(restored.driveSynced)
+        assertTrue(mine.meta.parts.all { h.fs.exists(restored.dir / it.file) })
+        h.drive.trashed += restored.driveFolderId!!
+        h.remote.pull(force = true)
+        val retained = h.recordings.get(MINE_1)!!
+        assertFalse(retained.driveSynced)
+        assertTrue(mine.meta.parts.all { h.fs.exists(retained.dir / it.file) })
+        assertTrue(h.partRows(MINE_1).all { it.drive_file_id == null })
+        assertFalse(h.jobStore.uploaded(MINE_1))
+    }
+
+    @Test
+    fun `an incomplete or mismatched Drive copy cannot mark a local recording synced`() = runBlocking {
+        for (mismatch in listOf(false, true)) {
+            val h = Harness()
+            h.local(MINE_1)
+            val copy = h.uploaded(MINE_1, source = Source.DESKTOP)
+            if (mismatch) {
+                val metaFile = h.drive.files.values.first { it.name == copy.metaName }
+                val wrong = copy.meta.copy(parts = copy.meta.parts.map { it.copy(sha256 = "0".repeat(64)) })
+                metaFile.content = recJson.encodeToString(wrong).encodeToByteArray()
+            } else {
+                h.drive.trashed += copy.fileIds.values.first()
+            }
+            h.remote.pull(force = true)
+            assertFalse(h.recordings.get(MINE_1)!!.driveSynced)
+            assertFalse(h.jobStore.uploaded(MINE_1))
+        }
+    }
+
+    @Test
+    fun `a job queued during reconciliation remains authoritative`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(MINE_1)
+        val copy = h.uploaded(MINE_1, source = Source.DESKTOP)
+        h.jobs.enqueue(MINE_1, h.document, null, h.workflow.id)
+        val ids = copy.meta.parts.associate { (it.part to it.track) to copy.fileIds.getValue(it.file) }
+        assertFalse(h.recordings.restoreDriveCopy(copy.meta, copy.folderId, ids, null))
+        h.remote.pull(force = true)
+        assertFalse(h.recordings.get(mine.recordingId)!!.driveSynced)
+        assertEquals(1, h.jobStore.list().size)
+    }
+
+    @Test
+    fun `restored local recordings follow the transcription marker until it clears`() = runBlocking {
+        val h = Harness()
+        val mine = h.local(MINE_1)
+        h.upload(mine)
+        h.jobStore.deleteAll()
+        val folder = h.recordings.get(MINE_1)!!.driveFolderId!!
+        h.mark(folder, "transcribe")
+        h.remote.pull(force = true)
+        assertEquals(setOf("transcribe"), h.recordings.get(MINE_1)!!.remotePending)
+        h.mark(folder, "")
+        h.remote.pull(force = true)
+        assertEquals(emptySet(), h.recordings.get(MINE_1)!!.remotePending)
+    }
+
+    @Test
     fun `a recording another device uploaded becomes a row with its parts purged and their file ids`() = runBlocking {
         val h = Harness()
         val phone = h.uploaded(id = PHONE_1, source = Source.PHONE)

@@ -44,6 +44,15 @@ public final class SegmentedRecorder {
         var converter: AVAudioConverter?
         /// The tap's format, kept so a second notification about the same device change is a no-op.
         var inputFormat: AVAudioFormat?
+        var inputConfigurationID: String?
+        var micOrigin: Double?
+        var micConvertedFrames = 0
+        var micSourceFrames = 0
+        var micExpectedTime: Double?
+        var missingSystemFrames = 0
+        var lastSystemRecoverySec = -Double.infinity
+        var diagnostics: [CaptureDiagnostic] = []
+        var inputOutage: (reason: String, since: Date)?
         /// The system stream on the microphone's timeline. `nil` in `microphone` mode.
         let drift: DriftCompensator?
         var totalFrames: AVAudioFramePosition = 0
@@ -82,6 +91,7 @@ public final class SegmentedRecorder {
     private let onError: (RecorderError) -> Void
 
     private let lock = NSLock()
+    private let diagnosticsQueue = DispatchQueue(label: "app.recly.recorder.diagnostics")
     /// The one queue every input operation runs on, in the order it was asked for.
     private let control = DispatchQueue(label: "app.recly.mac.recorder.control")
     private var session: Session?
@@ -119,6 +129,17 @@ public final class SegmentedRecorder {
     public var capturedOutputDevice: String? {
         systemInput?.outputDeviceName
     }
+
+    public var capturedInputDevice: String? { input.deviceName }
+    public var microphoneRecovering: Bool { lock.withLock { restarting } }
+    public var systemCaptureHealth: CaptureHealth { systemInput?.health ?? .healthy }
+
+    #if os(macOS)
+    public func preferMicrophone(_ uid: String?) {
+        (input as? MicrophoneInput)?.route.prefer(uid)
+        requestRestart(reason: "input_route_change")
+    }
+    #endif
 
     public convenience init(
         core: ReclyCore_,
@@ -172,6 +193,9 @@ public final class SegmentedRecorder {
         // brings itself back — so all it leaves is the range in the meta.
         input.onSilence = { [weak self] silenced in self?.recordSilence(silenced) }
         // The tap heals itself; all the recording wants from it is where the hole was.
+        input.onFailure = { [weak self] error in self?.report(error) }
+        input.onDiagnostic = { [weak self] event in self?.recordDiagnostic(event) }
+        systemInput?.onDiagnostic = { [weak self] event in self?.recordDiagnostic(event) }
         systemInput?.onOutage = { [weak self] reason, seconds in self?.recordOutage(reason, seconds) }
     }
 
@@ -255,8 +279,10 @@ public final class SegmentedRecorder {
             lock.withLock {
                 self.session = session
                 self.registrations = nil
+                self.restartPending = false
+                self.restarting = false
             }
-            try await onControl { try self.attach(to: session) }
+            try await attachWithRetry(to: session)
         } catch {
             await abandon(recordingId: recordingId, directory: directory, cause: error)
             throw error as? RecorderError ?? RecorderError("could not open the recording", underlying: error)
@@ -291,6 +317,8 @@ public final class SegmentedRecorder {
             guard let open = session else { return nil }
             session = nil
             closing = open
+            restarting = false
+            restartPending = false
             return open
         }
         guard let open = taken else { return .notRecording }
@@ -322,11 +350,20 @@ public final class SegmentedRecorder {
             // A recording the user stopped while the call that silenced it was still going: the
             // range is open, and closing it here is what puts it in the meta at all.
             open.silence.close(positionSec: at, uptimeSec: Self.nowSec)
+            if let outage = open.inputOutage {
+                open.gaps.append(ReclyCore.Range(startSec: at,
+                    endSec: at + Date().timeIntervalSince(outage.since), reason: outage.reason))
+                open.inputOutage = nil
+            }
             return (at, open.gaps, open.silence.ranges, pending)
         }
         // Releasing the files is what writes the trailing MPEG-4 atoms; until it happens the last
         // part of each track is a container `AVAudioFile(forReading:)` cannot open.
         open.writers.forEach { $0.release() }
+        diagnosticsQueue.sync {}
+        if let data = try? JSONEncoder().encode(open.diagnostics) {
+            try? data.write(to: open.directory.appendingPathComponent("capture-diagnostics.json"), options: .atomic)
+        }
 
         // No boundary registration may land after the finalize: once the row says `finalized`
         // nothing looks at the directory again, and a part arriving late would not be uploaded.
@@ -355,12 +392,42 @@ public final class SegmentedRecorder {
 
     /// Runs on the input's own thread. Everything it can throw is the recording ending, so it says
     /// so once and lets the shell stop; a boundary that cannot be *filed* is not one of those.
-    private func receive(_ buffer: AVAudioPCMBuffer) {
+    private func receive(_ packet: CapturedAudio) {
+        let buffer = packet.buffer
         lock.lock()
         defer { lock.unlock() }
-        guard let session, let converter = session.converter else { return }
+        guard let session = session ?? closing, session.converter != nil else { return }
+        guard buffer.format == session.inputFormat else {
+            control.async { [weak self] in self?.requestRestart(reason: "input_format_change") }
+            return
+        }
+        if session.micOrigin != nil, packet.hostTimeSec == nil {
+            control.async { [weak self] in self?.requestRestart(reason: "input_timestamp_missing") }
+            return
+        }
+        if session.micOrigin == nil { session.micOrigin = packet.hostTimeSec }
+        // An overflow or input discontinuity starts a new timestamp span. Do not slide later
+        // system audio underneath microphone samples acquired before the gap.
+        if let time = packet.hostTimeSec, let expected = session.micExpectedTime, abs(time - expected) > 0.02 {
+            drain(session)
+            session.converter = AVAudioConverter(from: buffer.format, to: session.format)
+            session.micOrigin = time
+            session.micConvertedFrames = 0
+            session.micSourceFrames = 0
+            session.gaps.append(ReclyCore.Range(
+                startSec: Double(session.totalFrames) / Double(Self.sampleRateHz),
+                endSec: Double(session.totalFrames) / Double(Self.sampleRateHz) + max(0, time - expected),
+                reason: "input_timestamp_gap"
+            ))
+        }
+        if let time = packet.hostTimeSec {
+            session.micOrigin = time - Double(session.micSourceFrames) / buffer.format.sampleRate
+        }
+        session.micSourceFrames += Int(buffer.frameLength)
+        session.micExpectedTime = packet.hostTimeSec.map { $0 + Double(buffer.frameLength) / buffer.format.sampleRate }
+        guard let activeConverter = session.converter else { return }
         do {
-            guard let converted = try convert(buffer, with: converter, to: session.format) else { return }
+            guard let converted = try convert(buffer, with: activeConverter, to: session.format) else { return }
             try write(converted, into: session)
             // After the write, so the queue's depth is read at the one phase where it means "how far
             // out of step are the two streams" rather than "how much has piled up since the last
@@ -444,6 +511,7 @@ public final class SegmentedRecorder {
             // nowhere is not part of it.
             guard try writeTracks(piece, of: session) else { return }
             session.totalFrames += AVAudioFramePosition(chunk.count)
+            session.micConvertedFrames += Int(chunk.count)
             if chunk.closesSegment {
                 // `closeSegments` has returned, so the files it closed are released and their
                 // trailing atoms are on disk — only now may anything hash or read them.
@@ -467,7 +535,18 @@ public final class SegmentedRecorder {
         guard let sys = AVAudioPCMBuffer(pcmFormat: session.format, frameCapacity: mic.frameLength) else {
             return false
         }
-        drift.take(frames: mic.frameLength, into: sys)
+        let time = session.micOrigin.map { $0 + Double(session.micConvertedFrames) / session.format.sampleRate }
+        drift.take(frames: mic.frameLength, into: sys, atSec: time)
+        if time != nil, session.totalFrames > Self.sampleRateHz * 2 {
+            session.missingSystemFrames = drift.lastMissingFrames > Int(mic.frameLength) / 2
+                ? session.missingSystemFrames + drift.lastMissingFrames : 0
+            if session.missingSystemFrames > Self.sampleRateHz,
+               Self.nowSec - session.lastSystemRecoverySec > 10 {
+                session.lastSystemRecoverySec = Self.nowSec
+                session.missingSystemFrames = 0
+                systemInput?.recover(reason: "system_buffer_underrun")
+            }
+        }
         guard let mixed = Self.mix(mic, sys), session.writers.allSatisfy(\.isOpen) else { return false }
         for (writer, buffer) in zip(session.writers, [mic, sys, mixed]) {
             guard try writer.write(buffer) else { return false }
@@ -649,7 +728,29 @@ public final class SegmentedRecorder {
 
     /// On the control queue. Publishes the converter before the tap exists, and under the lock,
     /// because the callback reads it the instant the input starts.
+    private func attachWithRetry(to session: Session) async throws {
+        for attempt in 0 ... 4 {
+            do {
+                try await onControl {
+                    guard self.lock.withLock({ self.session === session }) else { throw CancellationError() }
+                    try self.attach(to: session)
+                }
+                return
+            } catch {
+                _ = try? await onControl {
+                    guard self.lock.withLock({ self.session === session || self.closing === session }) else { return }
+                    self.input.stop()
+                    self.lock.withLock { self.drain(session); session.converter = nil }
+                }
+                guard lock.withLock({ self.session === session }), input.retriesTransientStart, attempt < 4,
+                      (error as? RecorderError)?.kind != .systemAudioUnavailable else { throw error }
+                try await Task.sleep(nanoseconds: 500_000_000)
+            }
+        }
+    }
+
     private func attach(to session: Session) throws {
+        try input.prepare()
         guard let format = input.format else {
             throw RecorderError("the default input device reports no usable format")
         }
@@ -659,17 +760,23 @@ public final class SegmentedRecorder {
         lock.withLock {
             session.converter = converter
             session.inputFormat = format
+            session.micOrigin = nil
+            session.micExpectedTime = nil
+            session.micConvertedFrames = 0
+            session.micSourceFrames = 0
         }
-        try input.start { [weak self] buffer in
+        try input.startCaptured { [weak self] buffer in
             self?.receive(buffer)
         }
+        let configurationID = input.configurationID
+        lock.withLock { session.inputConfigurationID = configurationID }
         // The microphone first, then the tap, and only on the first attach — a restart is about the
         // microphone's device, and the tap looks after its own. Starting the tap second is what
         // keeps the system queue from opening with a lead of audio that was played before the
         // recording began, which would sit under the microphone late for the rest of it.
         guard let drift = session.drift, let systemInput, !systemStarted else { return }
-        try systemInput.start { buffer in
-            drift.append(buffer, atSec: Self.nowSec)
+        try systemInput.startCaptured { packet in
+            drift.append(packet.buffer, atSec: Self.nowSec, captureTimeSec: packet.hostTimeSec)
         }
         systemStarted = true
     }
@@ -683,6 +790,20 @@ public final class SegmentedRecorder {
 
     /// An outage the tap covered by itself (docs/12 "tap 재생성"). It is not a restart — the
     /// microphone never stopped — so all it leaves is the hole in the meta's `gaps`.
+    private func recordDiagnostic(_ event: CaptureDiagnostic) {
+        let snapshot: (URL, [CaptureDiagnostic])? = lock.withLock {
+            guard let open = session ?? closing else { return nil }
+            if open.diagnostics.count >= 512 { open.diagnostics.removeFirst() }
+            open.diagnostics.append(event)
+            return (open.directory.appendingPathComponent("capture-diagnostics.json"), open.diagnostics)
+        }
+        guard let (url, events) = snapshot else { return }
+        diagnosticsQueue.async {
+            guard let data = try? JSONEncoder().encode(events) else { return }
+            try? data.write(to: url, options: .atomic)
+        }
+    }
+
     private func recordOutage(_ reason: String, _ seconds: TimeInterval) {
         lock.withLock {
             // [closing] is the stop's own session: the tap reports an outage that was still open
@@ -740,6 +861,13 @@ public final class SegmentedRecorder {
     }
 
     private func restart(_ session: Session, reason: String) {
+        // Never call an input/session API while holding the recorder lock: platform route and
+        // interruption notifications may synchronously call back into this recorder.
+        let running = input.isRunning
+        let format = running ? input.format : nil
+        let configurationID = input.configurationID
+        let forced = ["input_route_change", "input_format_change", "input_timestamp_missing",
+                      "media_services_reset", "interruption_ended"].contains(reason)
         let go: Bool = lock.withLock {
             restartPending = false
             // A stop that landed after this was queued took the session with it, and so would a
@@ -747,23 +875,21 @@ public final class SegmentedRecorder {
             // the `input.stop()` a stop queues behind this is what leaves the tap removed.
             guard self.session === session else { return false }
             // Whichever notification arrived second finds a running input on the format it wanted.
-            if input.isRunning, session.inputFormat == input.format { return false }
-            // Emptied and then dropped, in the one critical section: a tap callback waiting on this
-            // lock must not put another buffer through a converter that has already ended, and the
-            // frames it was holding are audio the device really did capture.
-            //
-            // Dropping it is also what makes an in-flight tap callback return without writing:
-            // `input.stop()` waits for that callback, and it is waiting for this lock.
-            drain(session)
-            session.converter = nil
+            if !forced, running, session.inputFormat == format,
+               session.inputConfigurationID == configurationID { return false }
             restarting = true
             return true
         }
         guard go else { return }
-        defer { lock.withLock { restarting = false } }
-
         let lostAt = Date()
+        lock.withLock { session.inputOutage = (reason, lostAt) }
+        recordDiagnostic(CaptureDiagnostic(event: reason, source: "mic"))
         input.stop()
+        lock.withLock { drain(session); session.converter = nil }
+        reattach(session, reason: reason, lostAt: lostAt, attempt: 0)
+    }
+
+    private func reattach(_ session: Session, reason: String, lostAt: Date, attempt: Int) {
         do {
             // A stop can land while the input is down. Reattaching then would leave a live tap —
             // and a lit microphone — behind a recording nobody owns any more.
@@ -772,6 +898,7 @@ public final class SegmentedRecorder {
             lock.withLock {
                 // Written even if a stop has already taken the session: the outage happened and it
                 // is over, and `stop` reads these only once this queue has drained, so it sees it.
+                session.inputOutage = nil
                 let lostSec = Date().timeIntervalSince(lostAt)
                 let at = Double(session.totalFrames) / Double(Self.sampleRateHz)
                 session.gaps.append(
@@ -786,9 +913,18 @@ public final class SegmentedRecorder {
                     micFrames: session.totalFrames, atSec: Self.nowSec, outageSec: lostSec
                 )
             }
+            lock.withLock { restarting = false }
             log(.warn, "rec.recorder.restarted", ["recordingId": session.recordingId, "reason": reason])
         } catch {
-            report(RecorderError("the engine did not come back after \(reason)", underlying: error))
+            input.stop()
+            if attempt < 10 {
+                control.asyncAfter(deadline: .now() + min(2, 0.5 + Double(attempt) * 0.25)) { [weak self] in
+                    self?.reattach(session, reason: reason, lostAt: lostAt, attempt: attempt + 1)
+                }
+            } else {
+                lock.withLock { restarting = false }
+                report(RecorderError("the engine did not come back after \(reason)", underlying: error))
+            }
         }
     }
 

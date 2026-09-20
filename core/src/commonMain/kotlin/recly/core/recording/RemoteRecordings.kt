@@ -51,7 +51,8 @@ data class PullSummary(
  * with no local audio and no job ([RecordingRepository.adopt]). What it adopted earlier and Drive
  * no longer lists was deleted elsewhere, and goes.
  *
- * Nothing this device made is touched: its own rows are never dropped by a listing, and a
+ * This device's own rows and audio are never dropped by a listing. A jobless local recording
+ * can regain verified Drive file references and completion state without rerunning its workflow. A
  * recording is only adopted when no row of that id exists — or when the row that does is the
  * provisional one below. A recording the user deleted here while keeping its folder ("로컬만 삭제")
  * stays deleted: the folder is remembered ([RecordingRepository.ignored]) until Drive stops listing
@@ -126,6 +127,12 @@ class RemoteRecordings(
         }
     }
 
+    /** Serialize account cleanup with an in-flight pull and reset its throttle for reconnection. */
+    suspend fun <T> disconnected(cleanup: suspend () -> T): T = mutex.withLock {
+        lastPulledAt = null
+        cleanup()
+    }
+
     /**
      * Carries the titles renamed on this device to Drive: the folder's `description`, and the
      * `meta.json` in it. A recording whose folder is not known yet — not uploaded — waits; so does
@@ -197,6 +204,11 @@ class RemoteRecordings(
             if (folderId !in listed) recordings.unignore(recordingId)
         }
 
+        for ((recordingId, folderId) in recordings.synced()) {
+            if (folderId !in listed) recordings.forgetDriveCopy(recordingId)
+            else recordings.setRemotePending(recordingId, pendingOf(byFolderId[folderId], now))
+        }
+        val restoreCandidates = recordings.driveRestoreCandidates()
         val adoptedRows = recordings.adopted()
         val provisionalRows = recordings.provisional()
         val known = recordings.ids()
@@ -211,6 +223,13 @@ class RemoteRecordings(
                 if (recordings.drop(recordingId, current)) {
                     dropped++
                     if (recordings.adopt(replacement.meta, replacement.folder.id, replacement.fileIds)) adopted++
+                }
+                continue
+            }
+            if (current == null && recordingId in restoreCandidates) {
+                for (candidate in candidates) {
+                    val copy = (read(recordingId, candidate) as? Read.Complete)?.adoptable ?: continue
+                    if (recordings.restoreDriveCopy(copy.meta, copy.folder.id, copy.fileIds, pendingOf(candidate, now))) break
                 }
                 continue
             }

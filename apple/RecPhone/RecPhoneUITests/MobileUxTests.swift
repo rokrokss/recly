@@ -2,6 +2,36 @@ import XCTest
 
 /// The mobile editor must remain usable while its software keyboard occupies the lower screen.
 final class MobileUxTests: XCTestCase {
+    func testDriveSettingsFollowThemeChangesInBothLanguages() {
+        continueAfterFailure = false
+        for language in ["en", "ko"] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-AppleLanguages", "(\(language))", "-AppleLocale", language,
+                                   "-appLanguage", language, "-appTheme", "light"]
+            app.launch()
+            let settings = app.tabBars.buttons[language == "ko" ? "설정" : "Settings"]
+            XCTAssertTrue(settings.waitForExistence(timeout: 30))
+            settings.tap()
+            XCTAssertTrue(app.buttons["signIn"].waitForExistence(timeout: 10))
+            for theme in ["light", "dark"] {
+                let chip = app.buttons["theme-" + theme]
+                for _ in 0..<5 where !chip.isHittable { app.scrollViews.firstMatch.swipeUp() }
+                XCTAssertTrue(chip.isHittable)
+                chip.tap()
+                XCTAssertTrue(chip.isSelected)
+                for _ in 0..<5 where !app.buttons["signIn"].isHittable {
+                    app.scrollViews.firstMatch.swipeDown()
+                }
+                XCTAssertTrue(app.buttons["signIn"].isHittable)
+                let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+                screenshot.name = "Drive settings \(language) \(theme)"
+                screenshot.lifetime = .keepAlways
+                add(screenshot)
+            }
+            app.terminate()
+        }
+    }
+
     func testDriveSettingsExplainOptionalStorageAndKeepRecordingAvailable() {
         continueAfterFailure = false
         let app = XCUIApplication()
@@ -10,17 +40,12 @@ final class MobileUxTests: XCTestCase {
         let settings = app.tabBars.buttons["Settings"]
         XCTAssertTrue(settings.waitForExistence(timeout: 30))
         settings.tap()
-        XCTAssertFalse(app.buttons["disconnect"].exists, "revocation belongs inside connection management")
-        XCTAssertFalse(app.buttons["signOut"].exists, "account actions must not clutter Settings")
-        if app.buttons["drive-manage"].exists {
-            app.buttons["drive-manage"].tap()
-            XCTAssertTrue(app.buttons["disconnect"].waitForExistence(timeout: 5))
-            app.buttons["Close"].firstMatch.tap()
+        XCTAssertFalse(app.buttons["drive-manage"].exists, "Drive actions should not need an intermediate screen")
+        if app.buttons["disconnect"].exists {
+            XCTAssertFalse(app.buttons["signOut"].exists)
         } else {
             XCTAssertTrue(app.buttons["signIn"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.staticTexts[
-                "Record and play local audio without an account. Connect Google Drive to upload recordings."
-            ].exists)
+            XCTAssertTrue(app.staticTexts["Record locally. Connect Drive to upload."].exists)
         }
         let screenshot = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         screenshot.name = "Optional Google Drive connection"

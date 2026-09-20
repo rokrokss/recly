@@ -236,7 +236,7 @@ public enum Recents {
         // Unless that device has said it is not done: the marker beside the folder names the steps
         // still to run, and a transcription in flight is worth waiting for. A `webhook` left to run
         // is not — it changes nothing the user came here to read — so the row is simply `DONE`.
-        if record.remote {
+        if record.remote || (job == nil && record.driveSynced) {
             return record.remotePending.contains("transcribe")
                 ? "Transcribing on another device"
                 : "Done"

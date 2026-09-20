@@ -3,6 +3,7 @@ import Foundation
 
 #if os(macOS)
 import CoreAudio
+import AudioToolbox
 #endif
 
 /// Where a recording's audio comes from. `MicrophoneInput` is the microphone half (the system half
@@ -17,6 +18,10 @@ protocol AudioInput: AnyObject {
     var format: AVAudioFormat? { get }
 
     var isRunning: Bool { get }
+    var configurationID: String? { get }
+    var retriesTransientStart: Bool { get }
+    var onFailure: ((RecorderError) -> Void)? { get set }
+    func prepare() throws
 
     /// Reports that the hardware moved under the tap (docs/12): a headset unplugged, the default
     /// input switched in System Settings, a format change. The string is the `gaps` reason the
@@ -35,6 +40,10 @@ protocol AudioInput: AnyObject {
 
     /// Installs the tap and starts delivering. Buffers arrive on the input's own thread.
     func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws
+
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws
+    var deviceName: String? { get }
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)? { get set }
 
     /// Removes the tap and stops. Doing this when nothing was started is not an error.
     func stop()
@@ -62,7 +71,33 @@ protocol SystemAudioInput: AnyObject {
     /// Throws `RecorderError(kind: .systemAudioUnavailable)` when there is no tap to be had.
     func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws
 
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws
+    var health: CaptureHealth { get }
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)? { get set }
+    func recover(reason: String)
+
     func stop()
+}
+
+extension AudioInput {
+    var configurationID: String? { nil }
+    var retriesTransientStart: Bool { false }
+    var onFailure: ((RecorderError) -> Void)? { get { nil } set {} }
+    func prepare() throws {}
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
+        try start { onBuffer(CapturedAudio($0)) }
+    }
+    var deviceName: String? { nil }
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)? { get { nil } set {} }
+}
+
+extension SystemAudioInput {
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
+        try start { onBuffer(CapturedAudio($0)) }
+    }
+    var health: CaptureHealth { .healthy }
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)? { get { nil } set {} }
+    func recover(reason: String) {}
 }
 
 /// `AVAudioEngine`'s input node, which on macOS is the default input device.
@@ -82,7 +117,12 @@ final class MicrophoneInput: AudioInput {
     private let voiceProcessing: Bool
     private var tapped = false
     private var configurationObserver: NSObjectProtocol?
+    private let delivery = AudioDeliveryQueue(label: "app.recly.recorder.microphone", delaySec: 0.6)
+    var onDiagnostic: ((CaptureDiagnostic) -> Void)?
     #if os(macOS)
+    let route = MicrophoneRouteResolver()
+    private var routeTimer: DispatchSourceTimer?
+    private var routeError: Error?
     private var inputListener: AudioObjectPropertyListenerBlock?
     private let listenerQueue = DispatchQueue(label: "app.recly.mac.recorder.devices")
     #endif
@@ -97,6 +137,9 @@ final class MicrophoneInput: AudioInput {
 
     var format: AVAudioFormat? {
         refreshIfIdle()
+        #if os(macOS)
+        if routeError != nil { return nil }
+        #endif
         return currentFormat
     }
 
@@ -106,13 +149,32 @@ final class MicrophoneInput: AudioInput {
     }
 
     var isRunning: Bool { engine.isRunning }
+    var retriesTransientStart: Bool { true }
+
+    var deviceName: String? {
+        #if os(macOS)
+        return route.name
+        #else
+        return nil
+        #endif
+    }
 
     func authorize() async throws {
         try await Self.requireMicrophone()
+        #if os(macOS)
+        route.beginSession()
+        #endif
     }
 
     func start(_ onBuffer: @escaping (AVAudioPCMBuffer) -> Void) throws {
+        try startCaptured { onBuffer($0.buffer) }
+    }
+
+    func startCaptured(_ onBuffer: @escaping (CapturedAudio) -> Void) throws {
         refreshIfIdle()
+        #if os(macOS)
+        if let routeError { throw routeError }
+        #endif
         guard let format = currentFormat else {
             throw RecorderError("the default input device reports no usable format")
         }
@@ -126,13 +188,16 @@ final class MicrophoneInput: AudioInput {
                     + " against \(hardware.sampleRate) Hz/\(hardware.channelCount)ch)"
             )
         }
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { buffer, _ in
-            onBuffer(buffer)
+        delivery.start(onBuffer)
+        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [delivery] buffer, when in
+            let time = when.isHostTimeValid ? AVAudioTime.seconds(forHostTime: when.hostTime) : nil
+            delivery.submit(CapturedAudio(buffer, hostTimeSec: time))
         }
         tapped = true
         engine.prepare()
         try engine.start()
         observeConfigurationChanges()
+        onDiagnostic?(CaptureDiagnostic(event: "format", source: "mic", device: deviceName, rateHz: format.sampleRate))
     }
 
     func stop() {
@@ -142,6 +207,10 @@ final class MicrophoneInput: AudioInput {
             tapped = false
         }
         engine.stop()
+        delivery.finish()
+        if delivery.droppedFrames > 0 {
+            onDiagnostic?(CaptureDiagnostic(event: "delivery_overflow", source: "mic", frames: delivery.droppedFrames))
+        }
     }
 
     /// A stopped engine is thrown away rather than reused, so the format read next — by the
@@ -152,9 +221,28 @@ final class MicrophoneInput: AudioInput {
     private func refreshIfIdle() {
         guard !engine.isRunning else { return }
         engine = AVAudioEngine()
-        if voiceProcessing {
-            try? engine.inputNode.setVoiceProcessingEnabled(true)
+        if voiceProcessing { try? engine.inputNode.setVoiceProcessingEnabled(true) }
+        #if os(macOS)
+        routeError = nil
+        guard let device = route.resolve(initial: route.name == nil) else {
+            routeError = RecorderError("the selected microphone is temporarily unavailable")
+            return
         }
+        guard let unit = engine.inputNode.audioUnit else {
+            routeError = RecorderError("the microphone audio unit is unavailable")
+            return
+        }
+        var deviceID = device.audioID
+        let status = AudioUnitSetProperty(
+            unit, kAudioOutputUnitProperty_CurrentDevice, kAudioUnitScope_Global, 0,
+            &deviceID, UInt32(MemoryLayout<AudioDeviceID>.size)
+        )
+        guard status == noErr else {
+            routeError = RecorderError("could not select the microphone (\(status))")
+            return
+        }
+        route.bind(device)
+        #endif
     }
 
     /// docs/12 "권한": `NSMicrophoneUsageDescription` is what makes the prompt possible; a refusal
@@ -202,8 +290,17 @@ final class MicrophoneInput: AudioInput {
             self?.onConfigurationChange?("engine_configuration_change")
         }
         #if os(macOS)
+        let timer = DispatchSource.makeTimerSource(queue: listenerQueue)
+        timer.schedule(deadline: .now() + 1, repeating: 1)
+        timer.setEventHandler { [weak self] in
+            guard let self else { return }
+            if route.changed() { onConfigurationChange?("input_route_change") }
+        }
+        routeTimer = timer
+        timer.resume()
         let block: AudioObjectPropertyListenerBlock = { [weak self] _, _ in
-            self?.onConfigurationChange?("input_device_change")
+            guard let self, route.changed() else { return }
+            onConfigurationChange?("input_route_change")
         }
         var address = Self.defaultInputAddress
         if AudioObjectAddPropertyListenerBlock(
@@ -220,6 +317,8 @@ final class MicrophoneInput: AudioInput {
             self.configurationObserver = nil
         }
         #if os(macOS)
+        routeTimer?.cancel()
+        routeTimer = nil
         if let inputListener {
             var address = Self.defaultInputAddress
             AudioObjectRemovePropertyListenerBlock(

@@ -232,9 +232,11 @@ public struct LedgerRow<Trailing: View>: View {
             Text(verbatim: title)
                 .font(blueprint.fonts.rowTitle)
                 .foregroundStyle(blueprint.palette.text)
-            Text(verbatim: subtitle)
-                .font(blueprint.fonts.monoSmall)
-                .foregroundStyle(blueprint.palette.textMuted)
+            if !subtitle.isEmpty {
+                Text(verbatim: subtitle)
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.textMuted)
+            }
         }
     }
 

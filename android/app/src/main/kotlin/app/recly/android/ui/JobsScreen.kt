@@ -77,7 +77,6 @@ fun JobsScreen(
     onConfirmDelete: (JobItem) -> Unit,
     onCancelDelete: () -> Unit,
     onDelete: (DeleteRequest, Boolean) -> Unit,
-    onSignIn: () -> Unit,
     onRecord: () -> Unit,
     onOpenDetail: (JobItem) -> Unit,
     /** docs/08 AUTH_REJECTED: "check the key" is only useful with the editor behind it. */
@@ -198,7 +197,6 @@ fun JobsScreen(
                                 action = state.action,
                                 onRetry = { onRetry(item) },
                                 onDelete = { onConfirmDelete(item) },
-                                onSignIn = onSignIn,
                                 onOpenDetail = { onOpenDetail(item) },
                                 onCheckKey = { onCheckKey(item) },
                             )
@@ -221,7 +219,6 @@ private fun ExpandedRow(
     action: ProcessingState,
     onRetry: () -> Unit,
     onDelete: () -> Unit,
-    onSignIn: () -> Unit,
     onOpenDetail: () -> Unit,
     onCheckKey: () -> Unit,
 ) {
@@ -251,15 +248,12 @@ private fun ExpandedRow(
         // wrote is prose, which `coreMessage` shows as it stands. Whatever diagnostic rode along
         // with the key is not translated and goes under it, in monospace: for a docs/08 "오류" that
         // is the provider's own words, which are what a support question quotes.
-        if (item.state == ItemState.NEEDS_AUTH) {
-            Text(stringResource(R.string.job_state_needs_auth), color = palette.textMuted)
-        }
-        item.error?.let { error ->
+        item.error?.takeIf { item.state != ItemState.NEEDS_AUTH }?.let { error ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     coreMessage(error).text(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = if (item.state == ItemState.NEEDS_AUTH) palette.textMuted else palette.danger,
+                    color = palette.danger,
                 )
                 coreMessageDetail(error)?.let { detail ->
                     Text(detail, style = mono.small, color = palette.textMuted)
@@ -281,7 +275,6 @@ private fun ExpandedRow(
                 }
                 when (item.state) {
                     ItemState.NEEDS_AUTH -> {
-                        BlueprintButton(stringResource(R.string.jobs_sign_in), onSignIn)
                         ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
                     }
 
@@ -361,6 +354,26 @@ private fun AlertBanner(alerts: List<JobAlert>, onFix: (JobAlert) -> Unit) {
     Column(Modifier.fillMaxWidth().background(palette.surface).testTag("alert-banner")) {
         HairLine()
         alerts.forEach { alert ->
+            if (alert.reason == AlertReason.NEEDS_AUTH) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        stringResource(R.string.alert_uploads_waiting, alert.count),
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = palette.textMuted,
+                    )
+                    BlueprintButton(
+                        stringResource(R.string.drive_connect),
+                        onClick = { onFix(alert) },
+                        modifier = Modifier.testTag("alert-fix"),
+                    )
+                }
+                return@forEach
+            }
             val reason = stringResource(alert.reason.label)
             val waiting = pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count)
             Row(
@@ -473,7 +486,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.WAITING -> LedgerStatus("RETRY", BadgeTone.WARNING)
     ItemState.DONE -> LedgerStatus("DONE", BadgeTone.SUCCESS)
     ItemState.FAILED -> LedgerStatus("FAILED", BadgeTone.DANGER)
-    ItemState.NEEDS_AUTH -> LedgerStatus("NEEDS_AUTH", BadgeTone.WARNING)
+    ItemState.NEEDS_AUTH -> LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL)
     ItemState.NEEDS_CONSENT -> LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING)
     ItemState.NEEDS_SPACE -> LedgerStatus("NO_SPACE", BadgeTone.WARNING)
     ItemState.SKIPPED_SHORT -> LedgerStatus("SKIPPED", BadgeTone.NEUTRAL)

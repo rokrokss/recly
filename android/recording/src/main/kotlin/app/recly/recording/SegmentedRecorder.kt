@@ -69,6 +69,7 @@ class SegmentedRecorder(
         val closer: SegmentCloser,
         val timer: SegmentTimer,
         val silence: SilenceMonitor,
+        val routing: MicrophoneRouting,
     ) {
         /** The highest part number handed to `setNextOutputFile`; part 1 is the initial output. */
         var armedPart: Int = 1
@@ -134,8 +135,12 @@ class SegmentedRecorder(
                 closer = SegmentCloser(core.deps.fileSystem, dir, ledger, BYTES_PER_SEC),
                 timer = SegmentTimer { SystemClock.elapsedRealtime() },
                 silence = silence,
+                routing = started.routing,
             ).also { armNext(it) }
+            started.routing.start()
         } catch (e: Exception) {
+            session = null
+            started.routing.stop()
             abandon(started.recorder, silence, recordingId, dir, e)
             throw RecorderError("could not open the recording", e)
         }
@@ -160,6 +165,7 @@ class SegmentedRecorder(
         val open = session ?: return@withLock StopResult.NotRecording
         session = null
 
+        open.routing.stop()
         val silenced = open.silence.stop(audioManager())
         // Read the clock before stopping: it is the fallback length of the segment being closed.
         val hintSec = open.timer.advance()
@@ -181,7 +187,10 @@ class SegmentedRecorder(
         PartReconciler(core).closeOut(open.recordingId, open.ledger.recordedSec, title, silenced)
     }
 
-    private class Started(val recorder: MediaRecorder, val sampleRateHz: Int, val startedElapsedMs: Long)
+    private class Started(
+        val recorder: MediaRecorder, val sampleRateHz: Int, val startedElapsedMs: Long,
+        val routing: MicrophoneRouting,
+    )
 
     /** 16 kHz first (ADR-006); a device that refuses it records at 44.1 kHz and says so in the meta. */
     private suspend fun startRecorder(first: File): Started = withContext(core.deps.io) {
@@ -190,11 +199,20 @@ class SegmentedRecorder(
             // rate fixes, so it is not retried behind a misleading "fallback".
             val recorder = runCatching { configure(first, rate) }
                 .getOrElse { throw RecorderError("could not configure the recorder", it) }
+            val routing = MicrophoneRouting(
+                audioManager(), recorder, scope,
+                dispatch = { action -> scope.launch { mutex.withLock {
+                    if (session?.recorder === recorder) action()
+                } } },
+                event = { name, fields -> core.deps.logger.log(Logger.Level.INFO, name, fields) },
+            )
             try {
+                routing.prepare()
                 recorder.prepare()
                 recorder.start()
-                return@withContext Started(recorder, rate, SystemClock.elapsedRealtime())
+                return@withContext Started(recorder, rate, SystemClock.elapsedRealtime(), routing)
             } catch (e: Exception) {
+                runCatching { routing.stop() }
                 runCatching { recorder.release() }
                 first.delete()
                 if (rate == SAMPLE_RATES_HZ.last()) throw RecorderError("start failed at $rate Hz", e)
@@ -249,9 +267,11 @@ class SegmentedRecorder(
             // the segment length is expressed as the bytes a segment's worth of audio takes.
             setMaxFileSize(segmentBytes())
             setOutputFile(first)
-            setOnInfoListener { _, what, _ -> onInfo(what) }
-            setOnErrorListener { _, what, extra ->
-                onError(RecorderError("MediaRecorder error what=$what extra=$extra"))
+            setOnInfoListener { sender, what, _ -> onInfo(sender, what) }
+            setOnErrorListener { sender, what, extra ->
+                scope.launch { mutex.withLock {
+                    if (session?.recorder === sender) onError(RecorderError("MediaRecorder error what=$what extra=$extra"))
+                } }
             }
         }
 
@@ -264,21 +284,23 @@ class SegmentedRecorder(
     private fun segmentBytes(): Long =
         segmentSec.toLong() * BYTES_PER_SEC * CONTAINER_OVERHEAD_PERCENT / 100
 
-    private fun onInfo(what: Int) {
+    private fun onInfo(sender: MediaRecorder, what: Int) {
         when (what) {
             // The previous file is closed and complete: hash it, register it, arm the one after next.
             MediaRecorder.MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED -> {
                 // Read before anything suspends: the coroutine may not run for a while, and this is
                 // where the segment being closed actually ended.
                 val boundaryMs = SystemClock.elapsedRealtime()
-                scope.launch { closeBoundary(boundaryMs) }
+                scope.launch { closeBoundary(sender, boundaryMs) }
             }
 
             // The limit was hit with no next file to switch into: the recorder has stopped itself
             // and what is on disk is all there is.
             MediaRecorder.MEDIA_RECORDER_INFO_MAX_FILESIZE_REACHED,
             MediaRecorder.MEDIA_RECORDER_INFO_MAX_DURATION_REACHED,
-            -> onError(RecorderError("recorder stopped at its limit (what=$what)"))
+            -> scope.launch { mutex.withLock {
+                if (session?.recorder === sender) onError(RecorderError("recorder stopped at its limit (what=$what)"))
+            } }
         }
     }
 
@@ -287,10 +309,10 @@ class SegmentedRecorder(
      * reach the uncaught handler and take the process — and the recording — with it. A segment that
      * cannot be filed is marked and left for [RecordingRecovery]; the encoder keeps running.
      */
-    private suspend fun closeBoundary(boundaryMs: Long) {
+    private suspend fun closeBoundary(sender: MediaRecorder, boundaryMs: Long) {
         try {
             mutex.withLock {
-                val open = session ?: return@withLock
+                val open = session?.takeIf { it.recorder === sender } ?: return@withLock
                 armNext(open)
                 val hintSec = open.timer.advance(boundaryMs)
                 open.closer.drain(open.ledger.openPart, hintSec) { part -> registerPart(open, part) }

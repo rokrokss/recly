@@ -49,7 +49,7 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATE_REMOTE_TRANSCRIBING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
     Str.STATE_DONE to LedgerStatus("DONE", BadgeTone.SUCCESS),
     Str.STATE_FAILED to LedgerStatus("FAILED", BadgeTone.DANGER),
-    Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.WARNING),
+    Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL),
     // docs/10 "Drive 용량 초과": a job parked because Drive is full — nothing is lost and nothing
     // retries, and the banner beside it is what offers the storage page.
     Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING),
@@ -76,12 +76,13 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? = null) {
     if (item.savedLocally) Text(strings[Str.LOCAL_SAVED], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+    if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
     val error = item.lastError ?: return
     val palette = blueprint
     Text(
         coreMessage(error).text(strings),
         style = MaterialTheme.typography.bodySmall,
-        color = if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) palette.textMuted else palette.danger,
+        color = palette.danger,
     )
     coreMessageDetail(error)?.let {
         Text(it, style = mono.small, color = palette.textMuted)

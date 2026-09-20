@@ -86,6 +86,23 @@
         }
       }
     },
+    "Automatic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Automatic"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "자동"
+          }
+        }
+      }
+    },
     "Back": {
       "extractionState": "manual",
       "localizations": {
@@ -201,23 +218,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "계속"
-          }
-        }
-      }
-    },
-    "Continue the Google sign-in in your browser.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Continue the Google sign-in in your browser."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "브라우저에서 Google 로그인을 계속하세요."
           }
         }
       }
@@ -500,13 +500,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google sign-in failed"
+            "value": "Could not connect Drive"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 로그인에 실패했습니다"
+            "value": "Drive에 연결하지 못했습니다"
           }
         }
       }
@@ -630,6 +630,23 @@
         }
       }
     },
+    "Microphone": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크"
+          }
+        }
+      }
+    },
     "Microphone only": {
       "extractionState": "manual",
       "localizations": {
@@ -643,6 +660,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "마이크만"
+          }
+        }
+      }
+    },
+    "Microphone: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microphone: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크: %@"
           }
         }
       }
@@ -864,6 +898,40 @@
           "stringUnit": {
             "state": "translated",
             "value": "지금부터 이 회의를 녹음할 수 있습니다."
+          }
+        }
+      }
+    },
+    "Reconnecting microphone…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnecting microphone…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "마이크 다시 연결 중…"
+          }
+        }
+      }
+    },
+    "Reconnecting system audio…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reconnecting system audio…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 오디오 다시 연결 중…"
           }
         }
       }
@@ -1146,13 +1214,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sign-in failed"
+            "value": "Could not connect Drive"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로그인 실패"
+            "value": "Drive에 연결하지 못했습니다"
           }
         }
       }
@@ -1310,6 +1378,23 @@
         }
       }
     },
+    "System audio unavailable. Microphone recording continues.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "System audio unavailable. Microphone recording continues."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "시스템 오디오를 캡처할 수 없습니다. 마이크는 녹음 중입니다."
+          }
+        }
+      }
+    },
     "System audio: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -1418,13 +1503,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The sign-in failed"
+            "value": "Could not connect Drive"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "로그인에 실패했습니다"
+            "value": "Drive에 연결하지 못했습니다"
           }
         }
       }

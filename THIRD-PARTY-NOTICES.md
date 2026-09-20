@@ -31,8 +31,8 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | JNA and JNA Platform (Win32 wrappers) | Windows | Dual-licensed LGPL-2.1-or-later **or** Apache-2.0 from JNA 4.0 onward; Recly elects **Apache-2.0** | <https://github.com/java-native-access/jna> |
 | Google Play services — `play-services-auth`, `play-services-wearable` | Android phone, Galaxy Watch | Proprietary — Android Software Development Kit License Agreement | <https://developer.android.com/studio/terms> |
 | Google Identity Services — `com.google.android.libraries.identity.googleid:googleid` | Android phone | Proprietary — Android Software Development Kit License Agreement | <https://developer.android.com/studio/terms> |
-| GoogleSignIn-iOS | iPhone, macOS | Apache-2.0 | <https://github.com/google/GoogleSignIn-iOS> |
-| GTMAppAuth | macOS | Apache-2.0 | <https://github.com/google/GTMAppAuth> |
+| AppAuth-iOS | iPhone, macOS | Apache-2.0 | <https://github.com/openid/AppAuth-iOS> |
+| GTMAppAuth | iPhone, macOS | Apache-2.0 | <https://github.com/google/GTMAppAuth> |
 | serde | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/serde-rs/serde> |
 | serde_json | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/serde-rs/json> |
 | sha2 | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/RustCrypto/hashes> |

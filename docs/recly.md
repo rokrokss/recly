@@ -118,7 +118,7 @@
 
 | 구성 요소 | 위치 | 책임 |
 |---|---|---|
-| Recorder | 플랫폼별 | 마이크(및 시스템 오디오) 캡처, 세그먼트 파일 작성, 무음화 감지, `meta.json` 작성 |
+| Recorder | 플랫폼별 | 마이크 캡처(시스템 오디오는 데스크톱 회의 모드만), 세그먼트 파일 작성, 무음화 감지, `meta.json` 작성 |
 | Transfer | Wear/watchOS ↔ 폰 | 파트·메타 전송, sha256 검증, ack, ack 후 워치 측 삭제 |
 | Core | `core/` KMP | 워크플로우 파싱·검증·선택, 잡 큐, 단계 실행, Drive resumable, 웹훅, 전사 provider 어댑터, 내보내기/가져오기 |
 | Scheduler 어댑터 | 플랫폼별 | 코어의 `runDueJobs()`를 WorkManager / 배경 URLSession + BGTask / 트레이·메뉴바 타이머에서 호출 |
@@ -548,25 +548,39 @@ mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retent
 
 #### 계정에서 떼기 — "로그아웃" vs "연결 해제"
 
-두 가지는 다른 동작이고 UI에서 다른 문구를 쓴다. 0.1.0 (14)부터 설정 첫 화면에는 **Google Drive 연결 상태 한 행**만 둔다. 연결되어 있으면 그 행을 눌러 연결 관리를 연다. 연결 관리의 “이 기기에서 Drive 사용 중지”는 기존 로그아웃이고, 보조 항목 “Google 접근 권한 철회”는 기존 연결 해제다. 권한 철회 확인에서 녹음 삭제 선택은 제거한다. 녹음 삭제는 녹음 목록에서만 한다. 미연결 상태에는 “계정 없이 녹음·로컬 재생 가능, 업로드에 Drive 연결 필요”를 설명하고, Google 권한 관리 링크를 유지한다. 철회 실패·로컬 정리 미완료도 같은 행에서 확인하고 복구한다.
+Google Drive 설정은 **“연결 해제” 버튼 하나**만 제공한다. 연결된 계정과 버튼을 주변 설정과 같은
+행·글자 크기로 표시한다. 버튼을 누르면 확인창 하나를 열고, 확인 시 **Google grant 철회와 이 기기의 로컬 정리**를
+함께 수행한다. “이 기기만 연결 해제” 선택과 범위 선택 메뉴는 두지 않는다.
+확인창은 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제되고, 이 기기의 대기 작업은 취소되지만 녹음·설정은 유지됨을
+한 단락으로 알린다. 녹음 삭제와 미업로드 건수는 이 확인창에서 표시하지 않는다. 녹음 삭제는 목록에서만 한다.
+미연결 행에는 “기기에 녹음하고, Drive 연결 시 업로드합니다.”를 작은 보조 문구로 둔다.
+Google 권한 관리 링크는 평상시 숨긴다. Google 권한 철회 실패 기록(`revokeDebt`)이 있을 때만
+오류 안내와 함께 표시하며, 로컬 정리만 미완료인 경우에는 기존 “연결 해제” 버튼으로 재시도한다.
+연결 해제가 실패하거나 앱 종료로 중단되어도 버튼 이름은 **“연결 해제”**로 유지한다. 처리 중에는 대기 안내,
+실패 시에는 설정에서 다시 시도하라는 오류만 표시한다. 재시도는 기존 처리 단계를 이어서 실행하며,
+사용자에게 별도의 “마무리” 동작이나 권한 철회·로컬 정리 단계를 선택하게 하지 않는다.
+확인을 누른 즉시 확인창을 닫고 버튼을 **“연결 해제 중…”**으로 바꾸며 비활성화한다. 이 진행 상태는
+Google 권한 철회부터 로컬 정리까지 유지한다. 중간에 인증 정보나 저장된 처리 단계가 바뀌어도
+완료 전에는 “Drive 연결” 버튼으로 바뀌지 않는다. 완료 시 미연결 화면, 실패 시 재시도 가능한 기존 버튼으로 전환한다.
+내부 `signOut`은 인증 복구 등에 사용하는 기기 내 자격 증명 정리 동작으로 남기되, 별도 사용자 동작으로 노출하지 않는다.
 
-녹음 목록의 “기기에 저장됨”은 완료된 녹음의 모든 오디오 파트가 실제로 기기에 있고 바이트 수가 맞을 때만 표시한다. 파일이 없거나 일부만 내려받은 녹음에는 이 표시를 하지 않는다. `NEEDS_AUTH`의 표시 문구는 “Drive 업로드 대기”이며, 로컬 저장·재생과 별개다. 상태·로그·오류 코드 자체는 바꾸지 않는다.
+녹음 목록의 “기기에 저장됨”은 완료된 녹음의 모든 오디오 파트가 실제로 기기에 있고 바이트 수가 맞을 때만 표시한다. 파일이 없거나 일부만 내려받은 녹음에는 이 표시를 하지 않는다. `NEEDS_AUTH`의 표시 문구는 회색 “업로드 대기”이며, 로컬 저장·재생과 별개다. 개별 녹음 행과 펼친 영역에는 Drive 연결 설명·버튼을 반복하지 않는다. 상태·로그·오류 코드 자체는 바꾸지 않는다.
 
 | | 로그아웃(이 기기) | 연결 해제 |
 |---|---|---|
 | 목적 | 이 기기에서 그만 쓰기 | Recly가 내 Drive에 접근하지 못하게 하기 |
 | 토큰 | 이 기기의 access/refresh token 삭제 | 같음 + Google grant 취소(revoke) |
-| 다른 기기 | 영향 없음 | **함께 끊긴다** — revoke는 클라이언트가 아니라 **Cloud 프로젝트 단위**라서 폰에서 눌러도 Mac·PC의 grant가 사라진다(§6) |
+| 다른 기기 | 영향 없음 | **같은 Google 계정의 Recly 연결이 함께 끊긴다** — revoke는 해당 계정의 **Cloud 프로젝트 단위** 승인을 철회하므로 폰에서 눌러도 같은 프로젝트의 Mac·PC 클라이언트가 받은 grant가 사라진다(§6) |
 | Drive의 녹음 파일 | 그대로 | **그대로** — 사용자의 파일이고 앱이 지울 이유가 없다 |
 | 워크플로우 문서·기기 기본값 | 그대로 | **그대로.** 계정에서 파생된 것이 아니라 이 기기의 설정이고(§5), 지우면 어디에서도 되찾을 수 없다 |
 | 로컬 시크릿(웹훅·STT 키) | 남는다 | **남는다** — 같은 이유다. 계정을 떼는 결정이 사용자가 입력한 키를 지울 이유가 되지 않는다 |
 | 로컬 Job·step_run | 남는다(재로그인하면 이어서 실행) | **삭제**(+ `drive_folder_cache`와 "로컬만 삭제" 기록 `remote/ignored/*`도 비움). |
-| 로컬 녹음 파일·`meta.json` | 남는다 | **남는다.** 아직 올라가지 않은 원본을 이 동작으로 지우지 않는다(원칙 3). 다이얼로그가 "Drive에 올라가지 않은 녹음 N건이 이 기기에 남습니다"를 알린다. 녹음 삭제는 목록에서 별도로 한다 |
+| 로컬 녹음 파일·`meta.json` | 남는다 | **남는다.** 아직 올라가지 않은 원본을 이 동작으로 지우지 않는다(원칙 3). 확인창은 녹음과 설정이 유지됨을 짧게 알린다. 녹음 삭제는 목록에서 별도로 한다 |
 
-- **연결 해제 다이얼로그는 "다른 기기도 함께 끊긴다"를 반드시 보여준다.** 한 기기만 떼려는 사용자는 로그아웃이
-  맞고, **안내에 Google 계정 설정(<https://myaccount.google.com/permissions>)에서 직접 해제하는 방법도 함께
-  적는다.**
-- 기본 로그아웃 경로에서는 revoke를 **부르지 않는다** — 그 이유와 인용은 §6(iOS·macOS `signOut` vs `disconnect`,
+- **연결 해제 다이얼로그는 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제됨을 반드시 보여준다.** Google의 철회 반영에는 시간이 걸릴 수 있으므로 다른 기기의 화면이 즉시 미연결로 바뀐다고 안내하지 않는다. 권한 철회 실패는 기존 오류·복구 경로로 별도 안내한다.
+  **Google 권한 철회 실패 기록이 있을 때만 Google 계정 설정(<https://myaccount.google.com/permissions>)에서
+  직접 해제할 수 있는 링크를 Drive 설정에 표시한다.** 로컬 정리가 끝나 계정이 미연결로 표시되어도 실패 기록이 남아 있으면 링크는 유지한다.
+- 내부 로그아웃 경로에서는 revoke를 **부르지 않는다** — 그 이유와 인용은 §6(iOS·macOS `signOut` vs `disconnect`,
   Windows revoke 절)에 있다.
 
 **연결 해제는 두 반쪽이다**: grant revoke(셸의 플랫폼 SDK 몫)와 로컬 정리(`ReclyCore.disconnect(alsoDeleteRecordings):
@@ -637,9 +651,17 @@ My Drive/
 이 계정의 모든 녹음이다.
 워크플로우마다 폴더 템플릿이 달라도 경로를 걷지 않으니 상관없다. 코어 `RemoteRecordings.pull()`:
 
-1. 폴더를 나열해 `recordingId`로 묶는다. 로컬 DB에 그 id의 행이 있으면 건너뛴다(이 기기가 만든 것이든 이미 입양한
-   것이든) — **다만 아래 3의 잠정 행이면 건너뛰지 않고 그 행을 완성한다**. `remote = 0`인 행은 무슨 일이 있어도
-   건드리지 않는다.
+1. 폴더를 나열해 `recordingId`로 묶는다. 이미 입양한 완료 행은 건너뛰고, 아래 3의 잠정 행은 완성한다.
+   **이 기기에서 만든 완료 녹음에 Job이 없으면 Drive 사본을 검증해 복원한다.** 모든 파트의 번호·트랙·파일명·크기·
+   SHA-256이 로컬 메타와 같고 Drive 파일 ID가 모두 있을 때만 `drive_synced = 1`과 각 파트의 `drive_file_id`를
+   저장한다. 로컬 메타·파일·디렉터리·`remote = 0`은 보존한다. 작업 기록을 새로 만들거나 업로드·전사·웹훅을
+   재실행하지 않는다. 진행 중이거나 실패한 기존 Job은 그 상태가 정본이므로 덮어쓰지 않는다.
+   복원된 녹음은 `DONE`으로 표시하고, 유효한 `transcribe` 진행 표식이 남아 있으면 전사 중으로 표시한다.
+   로컬 오디오가 없으면 재생 시 복원한 파일 ID로 Drive에서 받아온다. 불완전하거나 다른 내용의 사본은 완료로
+   처리하지 않는다. 이 계정의 전체 목록에 복원된 폴더가 없으면 Drive 검증 상태·파일 ID만 지우고 원본은 보존한다.
+   재연결 직후에는 주기 제한 없이 조회한다. 연결 해제는 진행 중 조회와 직렬화하고 검증 상태·파일 ID·조회 제한 시각을
+   초기화하므로, 다른 계정 연결에 이전 계정의 검증 결과를 쓰지 않는다. 시작 시 복구 스캔은 Drive 폴더를 알고 있는
+   Job 없는 녹음을 다시 큐에 넣지 않고 이 조회에 맡긴다.
 2. 모르는 id는 폴더의 자식을 한 번 나열해 `{base}.meta.json`을 받고(같은 id의 폴더가 둘이면 — 다른 경로로 재실행 —
    최신 것 중 완료된 것), `recording` 행을 **입양**한다(`RecordingRepository.adopt`): `remote = 1`,
    `drive_folder_id`에 폴더, `part` 행은 처음부터 `deleted = 1`에 `drive_file_id`. 디렉터리는 워치 수신과 같은
@@ -663,7 +685,7 @@ My Drive/
    `appProperties`는 병합이라 폴더의 `recordingId`는 그대로 남는다. 표식은 **참고용**이라 실패하면
    `drive.marker.failed`로 남기고 넘어간다. 읽는 쪽은 이 조회다: 모든 **remote** 행의 `recording.remote_pending`을
    그 폴더의 표식으로 채우고(`RecordingRecord.remotePending`), 표식이 없거나 비었거나 `pendingAt`이 **8시간**(§8의
-   가장 긴 provider 결과 타임아웃)보다 오래됐으면 NULL이다. `remote = 0`인 행은 절대 받지 않는다 — 자기 잡이 정본이다.
+   가장 긴 provider 결과 타임아웃)보다 오래됐으면 NULL이다. `remote = 0`이라도 Job 없이 Drive 사본을 검증한 행은 받는다. Job이 있는 행은 자기 잡이 정본이다.
 5. 이전에 입양했는데 그 **폴더**가 이제 나열되지 않으면(다른 기기가 지웠거나, 사용자가 Drive에서 지웠거나, 재실행이
    다른 폴더로 대체) 행과 캐시를 지운다(`drop` — 트랜잭션 안에서 `drive_folder_id`가 그 폴더인지 확인하고 지우므로
    그 사이 워치 전송이 같은 id를 이 기기 것으로 만들었다면 건드리지 않는다). 지우는 것이 입양보다 먼저라 같은 id가
@@ -1028,7 +1050,7 @@ Windows에서는 절대 선택되지 않는다.
 |---|---|---|
 | Android | Android | 패키지명 + 서명 SHA-1 (debug·release 각각) |
 | iOS | iOS | 번들 ID `app.recly` |
-| macOS | iOS 유형(GoogleSignIn macOS가 사용) | 번들 ID `app.recly.mac` |
+| macOS | iOS 유형(기존 클라이언트·콜백 스킴 유지) | 번들 ID `app.recly.mac` |
 | Windows / JVM | Desktop app | loopback 리다이렉트 `http://127.0.0.1:{port}` |
 | Wear OS · watchOS | 없음 | 폰이 대행 |
 
@@ -1065,43 +1087,33 @@ Windows에서는 절대 선택되지 않는다.
 
 ### iOS · macOS
 
-- GoogleSignIn-iOS 9.x(`GIDSignIn.sharedInstance.signIn(withPresenting:hint:additionalScopes:)`). refresh token은
-  SDK가 Keychain에 보관하고 `refreshTokensIfNeeded`로 갱신한다 → `TokenProvider`가 이걸 감싼다. **SDK의 Keychain
-  항목이 "who is signed in"의 정본**이다.
-- 실행할 때마다 `hasPreviousSignIn()` → `restorePreviousSignIn()`으로 조용히 복원한다. 실패는
-  `GIDSignInError.hasNoAuthInKeychain`(-4)이라 알릴 것이 없다.
-- **Drive 스코프는 처음부터 `additionalScopes`로 받는다.** Recly가 구글 계정을 요구하는 이유는 Drive 업로드
-  하나뿐이라 스코프 없는 로그인은 쓸 데가 없다. 대신 **동의 결과는 반드시 확인한다**: 사용자가 두 체크박스를 따로
-  끌 수 있으므로 `grantedScopes`에 하나라도 빠지면 `signOut()` 후 "Drive 권한을 허용해야 업로드할 수 있습니다"로
-  되돌린다(스코프가 빠진 계정을 남겨 두면 업로드가 401이 아니라 403으로 실패해 Job이 재시도를 태운다).
-- `hint:`는 OAuth `login_hint`로, **로그아웃으로 끝나지 않은** 마지막 계정만 넣는다(`UserDefaults`
-  `app.recly.auth.lastAccount`). 로그아웃한 사용자는 계정을 바꾸러 온 것일 수 있는데, hint는 다중 로그인 세션에서
-  계정을 대신 골라 버린다.
-- `GIDSignInError.canceled`(-5)는 실패가 아니다 — 시트를 닫은 것뿐이므로 Mac은 경고창을, 폰은 빨간 문구를 띄우지
-  않는다.
-- 로그아웃은 `signOut()`이고 기본 경로에서 `disconnect()`는 쓰지 않는다. `signOut`은 "clears the sign-in state…
-  removes the user's credentials for your app from the Keychain"이고 "Signing out only applies to your app… it
-  does not revoke the permissions the user granted". `disconnect`는 취소(revoke)까지 하는데 그 취소는 **Cloud
-  프로젝트 단위**라 폰에서 누르면 PC·안드로이드의 grant까지 사라진다. 앱의 "연결 해제"(§3)만이 이것을 부른다.
-- 리다이렉트 URL은 **두 셸 모두** SDK에 넘겨야 한다: 폰은 `.onOpenURL`, Mac은
-  `NSApplicationDelegate.application(_:open:)`.
-- SDK는 `ASWebAuthenticationSession`을 **비-ephemeral**로 연다. 그래서 Safari에 이미 로그인한 사용자는 비밀번호를
-  다시 치지 않고 계정 선택만 한다 — 원하는 동작이라 바꿀 것이 없다.
-- macOS에서 SDK는 기본으로 **데이터 보호 키체인**(`kSecUseDataProtectionKeychain`)에 자격증명을 쓰는데, 그
-  키체인은 팀 서명이 붙은 Keychain 접근 그룹(`$(AppIdentifierPrefix)$(CFBundleIdentifier)`)이 없는 프로세스를
-  거부한다 — ad-hoc 서명 빌드 전부다(2026-09-02 실기: 동의 후 "Google sign-in failed", `GIDSignInError.keychain`).
-  그래서 RecKit은 macOS에서 SDK의 저장소를 **로그인 키체인(파일 기반)** 저장소로 바꿔 끼운다
-  (`GoogleAuth.useLoginKeychain`, GTMAppAuth `useFileBasedKeychain`). SDK가 저장소를 공개 API로 열어 두지 않아
-  KVC로 사설 ivar에 넣는 것이며, SDK를 올릴 때 이름이 바뀌면 로그인이 예전과 같은 방식으로 실패하니 그때 다시
-  본다. 부작용이었던 것: ad-hoc 빌드는 설치할 때마다 서명이 달라져 macOS가 "Recly이(가) 키체인의 'auth'에
-  접근하려 합니다" 확인을 다시 띄웠다. 그래서 Mac 빌드는 ad-hoc을 쓰지 않는다 — `apple/scripts/setup-local-signing.sh`가
-  로그인 키체인에 만드는 자체 서명 인증서 "Recly Local Development"가 Xcode 프로젝트의 서명 ID이고,
-  `release-mac.sh`는 Developer ID → `RECLY_SIGNING_IDENTITY` → 그 로컬 인증서 순으로 고르며 어느 것도 없으면
-  멈춘다(2026-09-03). 서명이 빌드마다 같으니 키체인·개인정보 허용이 유지된다. 팀 서명이 붙는 날(§12 M9) 접근
-  그룹을 넣고 이 우회를 걷어낼 수 있다.
-- **배경 URLSession**에서 청크를 보낼 때 토큰이 만료될 수 있다 → 청크 태스크 생성 직전에 갱신하고, **401이면 해당
-  청크를 재계획**한다(ADR-015).
-- App Review 4.8: Recly 자체 계정 생성·인증은 없고 Google 인증은 사용자의 Drive 접근에 사용한다. 녹음·기기에 저장된 녹음 재생은 Google 연결 없이 가능하다. 전사는 현 계약상 Drive 업로드가 선행되어야 하므로 모든 기능이 Google 없이 된다고 설명하지 않는다. 심사 노트에는 실제 빌드의 미연결 녹음·저장·재생 경로를 제시하고, 특정 외부 서비스 클라이언트 예외는 보조 근거로 재검토를 요청한다. 심사 결과를 확정적으로 예측하지 않는다.
+- AppAuth로 **`drive.file` 하나만 요청하는 OAuth Authorization Code + PKCE(S256)** 를 사용한다.
+  `openid`·`email`·`profile`은 요청하지 않는다. `Drive 연결` → Google 계정 선택·Drive 권한 허용 → 앱 복귀이며,
+  이름·이메일 제공 동의를 별도로 요구하지 않는다. Google의 단일 비로그인 스코프 동의 형식을 따른다.
+- 시스템 인증 세션(`ASWebAuthenticationSession`)에서 인증한다. 기존 앱 창을 표시 기준으로 쓰고
+  “브라우저에서 로그인을 계속하세요” 같은 자체 안내 창은 띄우지 않는다. Google 인증 화면·운영체제 확인은 유지한다.
+- 기존 iOS 유형 클라이언트 ID와 역순 클라이언트 ID 스킴의 `/oauth2callback`을 유지한다.
+  `Info.plist`의 `GIDClientID` 키는 기존 설정·릴리즈 검사와의 호환을 위한 이름이다.
+- AppAuth가 난수 `state`·PKCE 검증, 코드 교환, 토큰 갱신을 처리한다. `access_type=offline`을 요청하며,
+  응답의 실제 Drive 권한·클라이언트 ID·refresh token을 검증하고 키체인 저장에 성공해야 연결 완료로 표시한다.
+  권한 거절·취소는 미연결 상태로 돌아가고, 저장 실패를 연결 성공으로 표시하지 않는다.
+- 인증정보는 `app.recly.drive.oauth` 키체인 항목의 AppAuth 상태로 보관한다. Mac은 기존과 같은 로그인 키체인을,
+  iPhone은 기기 잠금 해제 후 접근 가능한 이 기기 전용 키체인을 사용한다. 토큰 회전 결과는 반환 전에 저장한다.
+  유효기간 60초 이내 토큰은 갱신하며, 401은 캐시를 비우고 강제 갱신 후 코어의 재시도 규칙을 따른다.
+- 기존 GoogleSignIn의 `auth` 키체인 항목은 GTMAppAuth로 읽어 Drive 권한이 있는 인증정보만 이관한다.
+  새 항목 저장 후에만 옛 항목과 이메일 로그인 힌트를 지운다. 프로필·ID 토큰은 새 항목에 복사하지 않는다.
+  이관은 Google 권한을 철회하거나 새 동의를 요청하지 않는다. 따라서 기존에 허용된 프로필 권한 자체는
+  Google에서 자동으로 철회되지 않으며, 사용자가 연결 해제 후 다시 연결하면 Drive 전용 요청을 사용한다.
+- 새 연결은 계정 이메일을 요청·저장·표시하지 않고 설정에 `Drive 연결됨`을 표시한다.
+- 키체인 없음과 읽기 실패를 구분한다. 읽기 실패를 미연결로 간주해 권한 철회를 건너뛰지 않는다.
+  연결 해제 중 늦게 도착한 인증·갱신 결과는 저장하지 않는다.
+- 연결 해제는 `https://oauth2.googleapis.com/revoke`에 refresh token을 POST한 뒤 키체인과 로컬 작업을 정리한다.
+  리다이렉트에는 토큰을 전달하지 않는다. 기존 연결 해제 단계·실패 복구·권한 철회 실패 기록을 유지하며,
+  키체인 삭제 실패는 로컬 정리 실패로 남겨 재시도한다. 권한 철회는 Google Cloud 프로젝트 단위다.
+- **배경 URLSession** 청크 전송 전 토큰을 갱신하고, **401이면 해당 청크를 재계획**한다(ADR-015).
+- App Review 4.8: Recly 자체 계정 생성·인증은 없고 Google 인증은 사용자의 Drive 접근에 사용한다.
+  녹음·기기에 저장된 녹음 재생은 Google 연결 없이 가능하다. 전사는 현 계약상 Drive 업로드가 선행된다.
+  심사 노트에는 실제 빌드의 미연결 녹음·저장·재생 경로를 제시한다.
 
 ### Windows (JVM)
 
@@ -1121,7 +1133,7 @@ Windows에서는 절대 선택되지 않는다.
 - `include_granted_scopes`는 쓰지 않는다("Incremental authorization is not supported for installed apps or
   devices"). `login_hint`도 없다 — 프로필 스코프를 요청하지 않으므로(ADR-009) 채워 넣을 주소를 애초에 모른다.
   **Windows는 계정 이메일을 저장하지 않는다.**
-- 로그아웃은 **로컬만**이고 `https://oauth2.googleapis.com/revoke`를 부르지 않는다: "Revocation removes all OAuth
+- 내부 로그아웃은 **로컬만**이고 `https://oauth2.googleapis.com/revoke`를 부르지 않는다: "Revocation removes all OAuth
   2.0 scopes previously granted to a **project**, invalidating any issued access or refresh tokens for all clients
   registered under that project." 남는 grant는 6개월 미사용으로 만료된다. 앱의 "연결 해제"만이 `/revoke`를 부른다.
 - 갱신 중의 `invalid_grant`는 grant가 죽은 것 → 저장분을 버리고 재로그인(`AuthRequiredException`). 같은 코드가 교환
@@ -1613,6 +1625,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `Theme`)는 4셸 공통의 칩 3개 `시스템 기본`·`밝게`·`어둡게`(en `System default`·`Light`·`Dark`)이고, 언어처럼 이
    기기의 로컬 설정이다 — 미설정은 시스템의 `prefers-color-scheme`을 따른다(Windows 2026-09-01, 나머지 셋 2026-09-04).
    설정에 기술 수치(세그먼트 길이 등)는 두지 않는다 — 사용자가 바꿀 수 없는 값은 표시하지 않는다(2026-09-04).
+   행 아래 보조 설명은 작은 산세리프(`12sp`, 사용자 글꼴 크기에 따라 확대)·보조색·좌우 16/상하 8 간격을 쓴다.
+   Drive 연결 상태도 공통 설정 행을 쓴다. 오른쪽에 위험색 “연결 해제” 버튼 하나를 두고 확인창 한 번으로 끝낸다.
+   글자는 주변 행·버튼·링크와 같은 `14sp` 토큰을 쓰고, 최소 클릭 영역(Apple·Windows 44, Android 48)과 사용자 글꼴 확대를 유지한다.
 5. **알림·다이얼로그**: **제목 + 한 줄 설명 + 최대 2개 버튼.** 처리 상태는 인라인(버튼이 "저장 중…"으로 변함), 완료
    시 배지. 두 갈래 질문에 셋째 선택지를 만들지 않는다.
 6. **macOS 메뉴바**: 팝오버(글래스 허용)에 상태 노드 3개 + 최근 원장(20행씩 무한 스크롤) + 동작. Windows 트레이도 동일 구조(Compose
@@ -1684,7 +1699,8 @@ CREATE TABLE recording (
   timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
   drive_folder_id TEXT,                   -- 이 녹음의 `{base}/` 폴더 (ADR-014)
   remote INTEGER NOT NULL DEFAULT 0,      -- Drive에서 입양한 행 (§3 "다른 기기의 녹음")
-  remote_pending TEXT                     -- 그 기기가 아직 할 일 (같은 절, 폴더의 `pending` 표식)
+  remote_pending TEXT,                    -- 그 기기가 아직 할 일 (같은 절, 폴더의 `pending` 표식)
+  drive_synced INTEGER NOT NULL DEFAULT 0  -- Job 없이 검증·복원한 이 기기 녹음의 Drive 사본
 );
 CREATE TABLE part (
   recording_id TEXT NOT NULL, part INTEGER NOT NULL, track TEXT NOT NULL,
@@ -1730,8 +1746,9 @@ CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- deviceId 등 �
 
 `Rec.sq`는 **언제나 전체 스키마**이고, 설치된 DB를 따라오게 하는 것은
 `core/src/commonMain/sqldelight/migrations/<n>.sqm`이다(`n`은 "이 버전에서 올린다"는 뜻이라 `1.sqm`이 1 → 2).
-`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **5**; `3.sqm`이 `recording.drive_folder_id`·
-`recording.remote`·`part.drive_file_id`를, `4.sqm`이 `recording.remote_pending`을 더한다, §3 "다른 기기의 녹음").
+`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **6**; `3.sqm`이 `recording.drive_folder_id`·
+`recording.remote`·`part.drive_file_id`를, `4.sqm`이 `recording.remote_pending`을, `5.sqm`이
+`recording.drive_synced`를 더한다, §3 "다른 기기의 녹음").
 
 - **스키마를 바꿀 때마다** `Rec.sq`를 고치고 **같은 커밋에서** 다음 번호의 `.sqm`을 추가한다. 둘 중 하나만 하면 새
   설치와 기존 설치의 스키마가 갈라진다.
@@ -1862,7 +1879,7 @@ data class DisconnectResult(val deletedRecordings: Int, val busyRecordings: List
 
 | 상태 · 코드 | 언제 | 앱이 하는 말 | 사용자가 누르는 것 |
 |---|---|---|---|
-| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | "Google 로그인이 필요합니다 — 녹음 N건이 기다리는 중" | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개. Android는 앱을 여는 것만으로 다시 허용을 시도한다(§6 Android) |
+| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | 목록 배너는 회색 “업로드 대기 N건” + “Drive 연결” 버튼 한 줄. 시스템 알림은 연결 필요 사유와 대기 건수 | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개. Android는 앱을 여는 것만으로 다시 허용을 시도한다(§6 Android) |
 | Job `NEEDS_SPACE` (`DRIVE_STORAGE_FULL`) | Drive 403 `storageQuotaExceeded` | "Google Drive에 공간이 없습니다 — 녹음 N건이 기다리는 중" | Drive 저장용량 열기 / 다시 시도 |
 | 단계 `FAILED` (`MISSING_SECRET:{name}`) | 이 기기에 그 이름의 키가 없음 | "이 기기에 `{name}` 키가 없습니다" | 키 입력(편집기의 시크릿 폼으로 바로 진입) |
 | 단계 `FAILED` (`INVALID_SECRET:{name}`) | 저장된 값이 서명 키로 못 씀 | "`{name}` 키 값이 올바르지 않습니다" | 키 다시 입력 |
@@ -1878,10 +1895,11 @@ data class DisconnectResult(val deletedRecordings: Int, val busyRecordings: List
    모든 사유에는 갈 곳이 있다.
 3. **상태가 풀리면 알림을 내린다.** 그 이유가 큐에서 사라지면 알림도 내려간다.
 4. **재시도로 낫는 실패는 알리지 않는다.** 목록 행의 상태 배지로만 보인다.
+5. **Drive 연결 안내는 목록 상단 한 곳에서 제공한다.** 연결 설명·상태 배지를 중복하지 않고 기존 보조 글꼴·색상을 사용한다. 대기 작업이 없으면 목록의 연결 안내를 숨기고 설정에서 연결한다. 저장 공간 부족·키 오류 등 실제 실패는 기존 사유·해결 동작을 유지한다.
 
 | 플랫폼 | 표면 |
 |---|---|
-| Android 폰 | 알림 채널 `jobs`(녹음 FGS 채널과 별개, **무음 · 우선순위 기본**). 탭 → 해당 화면. 목록 상단 배너도 같은 문구 |
+| Android 폰 | 알림 채널 `jobs`(녹음 FGS 채널과 별개, **무음 · 우선순위 기본**). 탭 → 해당 화면. 목록 상단 배너도 같은 사유(Drive 연결은 위의 간결한 형식) |
 | 갤럭시 워치 | 없음 — 워치는 Job을 만들지 않는다(ADR-002). 전송 실패만 워치 화면 한 줄 |
 | **iPhone** | `UNUserNotificationCenter` 로컬 알림 + 목록 상단 배너. 권한이 없으면 **배너만** |
 | Apple Watch | 없음(iPhone과 같은 이유) |
@@ -1986,6 +2004,7 @@ android/
 
 ### `:android:recording`
 
+- 폰·Galaxy Watch는 **마이크만** 녹음한다. 시스템 오디오 캡처는 macOS·Windows의 회의 모드에만 있다.
 - `SegmentedRecorder`
   - `MediaRecorder`: `AudioSource.MIC`, `OutputFormat.MPEG_4`, `AudioEncoder.AAC`, 16 kHz(미지원 시 44.1 kHz 폴백 후
     메타 기록), 모노, 32 kbps.
@@ -1995,8 +2014,15 @@ android/
     `MAX_DURATION_APPROACHING`은 공개 SDK에 없으므로 쓰지 않는다.
   - `setPrivacySensitive(true)`는 `setOutputFormat` **이전**에 호출해야 한다(이후 호출 시 API 36에서
     `IllegalStateException`).
+- `MicrophoneRouting`: 유선·USB 입력 → Bluetooth HFP/BLE 헤드셋 → OS 기본 입력 순으로
+  `MediaRecorder.setPreferredDevice`를 요청한다. 같은 종류라면 실제 사용 중인 입력을 유지한다.
+  장치 연결·해제/라우팅 알림은 250 ms 단위로 합치고 녹음 중 1초마다 실제 `routedDevice`를 확인한다.
+  요청이 거절되거나 5초 안에 반영되지 않으면 OS 기본 입력으로 돌아가며, 거절된 장치는 재연결 시 다시 시도한다.
+  벤더 전용 입력은 OS 선택을 따른다. 입력 전환을 위해 `MediaRecorder`나 세그먼트 파일을 다시 만들지 않는다.
+  `setCommunicationDevice`·SCO 시작/종료·통화 모드·재생 캡처 API는 사용하지 않는다.
+  라우트 정보가 없는 것만으로 녹음을 종료하지 않고 진단 로그를 남긴다. 실제 녹음기 오류는 기존 저장·종료 경로로 처리한다.
 - `SilenceMonitor`: `AudioManager.registerAudioRecordingCallback` — `isClientSilenced` 전이를 `silenced` 구간으로
-  기록.
+  기록. 종료 뒤 도착한 이전 콜백은 무시한다.
 - `RecorderService`: `foregroundServiceType="microphone"`, 알림 + `OngoingActivity`(워치), 액션: 정지. 시작은 반드시
   보이는 액티비티·타일·알림 액션에서(while-in-use 규칙). 정지 시 **즉시** `finalize`(제목 null) → 폰 UI는 그 뒤에 제목
   다이얼로그(`updateTitle`) → `jobs.enqueue`; 알림의 정지 액션은 바로 enqueue. 워치면 `TransferQueue.add`. 중복
@@ -2022,7 +2048,7 @@ android/
 | A7 | 설정의 워크플로우 내보내기/가져오기(§5): SAF `CREATE_DOCUMENT`(기본 이름 `recly-workflows.json`)·`OPEN_DOCUMENT`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
 | A8 | Data Layer 수신: `WearableListenerService`(`ChannelClient.onChannelOpened` → `receiveFile`, 경로 `/rec/part/…`·`/rec/meta/…`), sha256 검증, `MessageClient` ack `/rec/ack`·`/rec/ack-meta`, 메타 수신 시 등록 + enqueue + `onJobsDue`; 워크플로우 요약을 `DataClient` `/rec/workflows`(urgent)로 게시; `rec_phone` capability 선언 |
 | A9 | 진입점: 빠른 설정 타일, 홈 위젯(시작/정지), 앱 단축. 타일·위젯에서 시작할 때 FGS 백그라운드 시작 예외를 **쓰거나 포기하거나** 둘 중 하나이지, 조용히 실패하지 않는다 |
-| A10 | 설정: Google Drive 연결 상태 한 행 → 연결 관리, 언어, Wi-Fi 전용, 동의 리마인더, **로그 내보내기** |
+| A10 | 설정: Google Drive 연결 상태·해제 동작, 언어, Wi-Fi 전용, 동의 리마인더, **로그 내보내기** |
 | A11 | Play 등록: Wear OS 폼팩터 포함, 스크린샷, 데이터 안전 양식("수집 없음") |
 
 ### 워치 `:android:wear`
@@ -2065,7 +2091,7 @@ apple/
       MacCapture/               #if os(macOS): ProcessTapCapture, MicCapture, TrackWriter(mic/sys/mix), DriftCompensator
       Detect/                   #if os(macOS): MicInUseMonitor, MeetingAppMonitor, MeetingDetector
       Transfer/                 #if os(iOS)||os(watchOS): WatchTransferQueue (WCSession)
-      Auth/                     #if os(iOS)||os(macOS): GoogleAuth (GoogleSignIn) → TokenProvider
+      Auth/                     #if os(iOS)||os(macOS): GoogleAuth (AppAuth, Drive-only) → TokenProvider
       Transport/                #if os(iOS)||os(macOS): BackgroundTransport (URLSession background)
       Workflow/                 CoreWorkflowDocuments, WorkflowInspector (두 셸 공용 편집기)
       CoreBridge/               ReclyCore(XCFramework) 조립, SecureStore(Keychain), FileSystem, Logger, Crypto
@@ -2087,13 +2113,24 @@ apple/
  마이크 (AVAudioEngine inputNode, 16 kHz 모노 변환)  ─┐
                                                     ├─► DriftCompensator ─► TrackWriter(mic) ─┐
  시스템 (CATapDescription 전역 tap, 자기 프로세스 제외 ─┘                     TrackWriter(sys) ─┼─► mix (합산 −6 dB 헤드룸) ─► TrackWriter(mix)
-        → AudioHardwareCreateAggregateDevice → IOProc, 출력 장치 레이트)
+        → 물리 장치를 포함하지 않는 private aggregate → IOProc, 검증한 입력 레이트)
 ```
 
 - 세 `TrackWriter`는 같은 시작 시각·같은 세그먼트 경계(900초)를 공유한다. 파트 번호가 트랙 간 일치한다.
-- `DriftCompensator`: 두 스트림의 **누적 프레임 수 vs 벽시계**로 레이트 차를 **60초마다 추정**해 시스템 트랙을
-  리샘플하고(`AVAudioConverter`), 임계 초과 시 메타 `gaps`에 기록한다. 목표: 1시간 후 두 트랙 오프셋 < 20 ms —
-  보정하지 않으면 시간당 수십 ms가 벌어진다.
+- 마이크와 시스템 콜백은 버퍼와 첫 샘플의 host timestamp를 복사한 뒤 즉시 반환한다. 변환·AAC 쓰기는
+  별도 직렬 큐에서 처리하고, 대기 오디오는 큐별 2초로 제한한다. 마이크는 시스템 리샘플러의 지연을 흡수하도록
+  0.6초 늦게 처리하며, 정지 시 두 큐와 변환기의 꼬리를 모두 저장한다.
+- `DriftCompensator`: timestamp가 있는 스트림은 공통 host clock으로 정렬한다. 큰 시스템 버퍼를 마이크
+  콜백 크기에 맞춰 잘라 버리지 않는다. 매 콜백의 수집 시각으로 원점을 보정하여 작은 하드웨어 클록 차가
+  누적되지 않게 한다. timestamp가 없는 입력의 기존 경로는 누적 프레임 수 차를 **60초마다 추정**해
+  리샘플한다. 목표: 1시간 후 두 트랙 오프셋 < 20 ms.
+- **마이크 선택**: 기본값은 자동. 직접 선택한 장치 UID → 확인된 회의 앱의 유일한 활성 입력 → macOS 기본 입력
+  순으로 선택한다. 브라우저는 해당 브라우저 소유의 회의 창 제목을 확인할 수 있을 때만 회의 입력으로 간주한다.
+  자동 선택한 입력은 회의 앱 음소거만으로 바꾸지 않는다. 정상 장치 전환은 1초 안정화, 연결 해제는 2초 유예 후
+  대체 입력을 선택하며, 선택 장치의 상태·전체 포맷을 1초마다 확인한다. 최초 시작의 일시적 오류도 짧게 재시도한다.
+  Recly의 AudioUnit만 바인딩하며 OS 기본 입력·출력이나 회의 앱의 장치/음소거 설정은 바꾸지 않는다.
+  AirPods 입력을 지원하며 통화 중 자동으로 내장 마이크를 강제하지 않는다. 사용자가 시작한 녹음은 회의 앱
+  음소거와 독립적으로 계속된다. 설정에는 자동/마이크 선택 한 줄, 녹음 중에는 현재 마이크 이름을 표시한다.
 - **에코**: AEC 없이 두 트랙을 저장한다. 출력 장치가 내장 스피커면 시작 시 한 줄 경고("헤드폰을 쓰면 상대 목소리가
   내 트랙에 섞이지 않습니다").
 - 녹음 규칙: 정지·입력 재시작 시 `AVAudioConverter`를 `.endOfStream`으로 드레인한 뒤 세그먼트를 닫는다(48 kHz
@@ -2107,7 +2144,15 @@ apple/
   기록한다. 캡처 포맷은 tap 생성 직후의 포맷이 아니라 **aggregate 입력 스트림의 virtual format**을 읽는다.
   Bluetooth 통화 모드에서 레이트가 달라져도 실제 전달된 샘플과 일치해야 한다. 입력 스트림의 포맷 변경을 구독하고
   2초 폴링으로도 재확인한다. 읽을 수 없거나 모노 Float32가 아닌 포맷은 추측해서 해석하지 않는다.
+  aggregate에는 실제 출력 subdevice를 넣지 않으며, 샘플레이트 설정은 이 가상 장치에만 적용한다.
+  tap 포맷 변경도 구독한다. 수집 timestamp와 프레임 수로 0.25초 이상인 두 구간의 전달 속도를 검증하고,
+  표시 레이트와 3% 넘게 다르면 해당 세대의 데이터를 더 쓰지 않고 시스템 tap만 재생성한다. 이는 음량/무음
+  검사가 아니며 상대방이 말하지 않는 상태를 오류로 판단하지 않는다. 마이크는 시스템 tap 복구 중에도 계속된다.
+  연속된 시스템 버퍼 부족도 복구를 요청한다. 반복 복구에는 최대 10초 재시도 간격을 적용하며 복구 중/실패를
+  상태 줄에 표시한다. 입력 자체가 끊기면 제한된 재연결 시도 후 오류를 알린다.
   `rec.tap.format` 로그에 tap·입력 스트림 레이트를 남긴다. 상태 줄은 **캡처 중인 출력 장치명**을 보여 준다.
+  녹음 폴더의 `capture-diagnostics.json`에는 장치명·레이트·OS 버전·복구/버퍼 손실 이벤트를 최대 512개 저장한다.
+  이 진단 파일은 로컬에만 두고 Drive 업로드나 웹훅에 포함하지 않는다.
 
 ### 미팅 감지 · 컨텍스트
 
@@ -2149,7 +2194,7 @@ apple/
 | M2 | `MicCapture` + `TrackWriter` → mic 단일 트랙 세그먼트 녹음 |
 | M3 | `ProcessTapCapture`(전역 tap, 자기 제외) → sys 트랙; 권한 플로우·거부 UX |
 | M4 | `DriftCompensator` + mix 트랙 |
-| M5 | 인증(GoogleSignIn macOS) + `BackgroundTransport` + 실행기 연결 |
+| M5 | 인증(AppAuth macOS) + `BackgroundTransport` + 실행기 연결 |
 | M6 | 미팅 감지 + 알림 |
 | M7 | **워크플로우 편집 창** + 설정의 워크플로우 내보내기/가져오기(§5): `NSSavePanel`(기본 이름 `recly-workflows.json`)·`NSOpenPanel`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
 | M8 | 동의 리마인더(첫 녹음 시 1회, 설정에서 끔) + 관할별 안내문 + 스피커 경고. 리마인더는 *첫* 녹음 전에 묻고, "다시 묻지 않기"를 고르면 설정에서 다시 켤 수 있다 |
@@ -2210,9 +2255,16 @@ apple/
 
 ### iPhone
 
-- **녹음**: RecKit `SegmentedRecorder`(AVAudioEngine → AAC `AVAudioFile`, 900초 교체). `AVAudioSession`
-  `.playAndRecord`/`.default`, 옵션 `.allowBluetooth`. `UIBackgroundModes: audio`로 잠금 중 계속. 인터럽션(전화·Siri)
-  → `silenced`/`gaps` 기록 후 재개.
+- **녹음**: **마이크만** 캡처한다. RecKit `SegmentedRecorder`(AVAudioEngine → AAC `AVAudioFile`, 900초 교체).
+  `AVAudioSession`은 `.playAndRecord`/`.default`, 옵션 `.allowBluetoothHFP`.
+  유선·USB → Bluetooth HFP/BLE → 내장 입력 순으로 자동 선택하며 같은 종류면 현재 입력을 유지한다.
+  외부 입력 선택이 거절되면 OS 기본 입력을 사용하고, 장치 재연결이나 새 녹음 시작 시 다시 시도한다.
+  `UIBackgroundModes: audio`로 잠금 중 계속. 입력 UID·데이터 소스·실제 샘플레이트를 확인하고 장치 변경 시
+  새 엔진·변환기로 같은 녹음을 이어간다. 하드웨어 콜백은 버퍼·타임스탬프를 복사하고, 파일 쓰기는 별도 직렬 큐에서
+  처리한다(대기 오디오 상한 2초). 종료/재연결 전 대기 버퍼와 변환기 잔여 샘플을 먼저 저장한다.
+- **인터럽션**: 전화·Siri가 입력을 점유하면 기다렸다가 종료 알림 뒤 새 입력 포맷으로 재연결한다.
+  `silenced`는 실제 재시작 성공 뒤 닫고 `gaps`에 재연결 구간을 기록한다. 종료한 녹음의 지연 알림은 무시한다.
+  OS 오디오 서비스 유실·리셋은 기존 오디오를 저장하고 녹음을 종료한다. Apple 지침에 따라 다음 녹음은 사용자 동작으로 시작한다.
 - **재생**: 녹음 시작 전에 재생을 막고 기존 플레이어를 종료하며, 녹음 입력의 종료가 끝난 뒤에만 재생을 허용한다.
   Play는 세션을 `.playback`/`.default`로 전환해 활성화한다. 녹음 종료 뒤에도 남는 `.playAndRecord` 카테고리를
   녹음 진행 여부로 판단하지 않는다.
@@ -2220,8 +2272,7 @@ apple/
   갱신**한다.
 - **진입점**: App Intents `StartRecordingIntent(workflow)`, `StopRecordingIntent` → Siri·Shortcuts·액션 버튼.
   iOS 18 Control은 `OpenIntent`로 앱을 열어 시작한다(위젯 확장에서 장시간 오디오 세션 시작은 불안정하다).
-- **인증**: GoogleSignIn-iOS 9.x, `additionalScopes: [drive.file]`. `TokenProvider`는
-  `refreshTokensIfNeeded`. RecKit `GoogleAuth`·`AppleTokenProvider`를 macOS와 공유하고, iPhone은
+- **인증**: AppAuth로 `drive.file`만 요청하며 `TokenProvider`가 토큰 갱신·만료·401을 처리한다. RecKit `GoogleAuth`·`AppleTokenProvider`를 macOS와 공유하고, iPhone은
   `signIn(presenting: UIViewController)`.
 - **실행기**(the executor): 포그라운드는 RecKit `JobRunner`(잡 생성 직후 · 5분 타이머 · 네트워크 복귀 · `nextRunAt`
   후속 + 폰만의 다섯째 방아쇠인 앱 활성화). 앱이 화면에 없을 때는 아래 표대로 나뉜다.
@@ -2265,7 +2316,10 @@ apple/
 ### Apple Watch
 
 - **녹음**: RecKit 공용 세그먼트 레코더. `UIBackgroundModes: audio`(WatchKit의 `WKBackgroundModes`가 아니다).
-  포그라운드에서 세션 시작 후 손목을 내려도 유지된다. 길이 제한 없음. 16 kHz AAC 32 kbps.
+  **마이크만** 녹음한다. 포그라운드에서 세션 시작 후 손목을 내려도 유지된다. 길이 제한 없음. 16 kHz AAC 32 kbps.
+  `.record`/`.default`, watchOS 11+는 `.allowBluetoothHFP`로 헤드셋 입력을 허용한다.
+  watchOS는 `setPreferredInput`을 지원하지 않으므로 실제 입력 선택은 OS가 담당한다(watchOS 10은 기본 녹음 세션).
+  입력 변경·인터럽션·버퍼 저장·오디오 서비스 리셋 처리는 iPhone과 공유한다.
 - **전송**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` 파트별 + 메타 마지막.
   `didFinish` 콜백은 누락될 수 있으므로 **폰의 ack(`didReceiveUserInfo`)**를 완료 기준으로 삼는다. ack 받은 파트 삭제.
   재시도: 앱 활성화 시 미ack 파트 재전송(중복은 폰이 sha256으로 무시).
@@ -2423,17 +2477,19 @@ Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Go
 | appDataFolder | **쓰지 않는다.** 워크플로우 정의도 시크릿 값도 기기에만 있고(§5), 기기 사이로 옮기는 것은 사용자가 직접 하는 내보내기/가져오기뿐이다 |
 | 받는 것 | 업로드 검증용 `md5Checksum`·파일 메타. 사용자의 다른 파일 목록은 요청하지 않는다 |
 | 누가 보는가 | 사용자와, 사용자가 그 폴더를 공유한 사람. **Recly는 이 파일들에 접근할 수 있는 서버가 없다** — OAuth 토큰은 기기 보안 저장소에만 있고 Google API 호출에만 쓰이며 Recly에는 전송되지 않는다 |
-| 통제 | Google 계정 설정(<https://myaccount.google.com/permissions>)에서 언제든 연결 해제. 앱 안의 "연결 해제"도 네 셸 모두에 있다(§3) — 로그아웃과 별개 항목이고, grant revoke(Android `AuthorizationClient.revokeAccess`, Apple GoogleSignIn `disconnect()`, Windows `oauth2.googleapis.com/revoke`) + `ReclyCore.disconnect`의 로컬 정리를 함께 한다 |
+| 통제 | Google 계정 설정(<https://myaccount.google.com/permissions>)에서 언제든 연결 해제. 앱 안의 "연결 해제"도 네 셸 모두에 있다(§3) — 하나의 동작으로 grant revoke(Android `AuthorizationClient.revokeAccess`, Apple·Windows `oauth2.googleapis.com/revoke`) + `ReclyCore.disconnect`의 로컬 정리를 함께 한다 |
 
 Recly가 부르는 Google 엔드포인트는 Drive API(`www.googleapis.com`)와
-OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다.
+OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다. Apple의 직접 OAuth 경로는
+`accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token`, `oauth2.googleapis.com/revoke`이며,
+프로필 조회 API를 호출하지 않는다.
 
-다만 **로그인 자체가 계정 이메일을 알려 주고, 그 값이 기기에 남는다**:
+**계정 이메일 처리**는 셸별로 다음과 같다:
 
 | 셸 | 어디서 오나 | 어디에 남나 | 지워지는 때 |
 |---|---|---|---|
 | Android 폰 | Credential Manager의 Google ID token(`GoogleIdTokenCredential.id`가 이메일 주소) | 보안 저장소 `account/email` | 로그아웃 |
-| iPhone · Mac | GoogleSignIn SDK의 `profile.email` — 앱이 `additionalScopes`로 더하는 것은 Drive 두 개뿐이고 이메일은 SDK 로그인에 딸려 온다 | SDK의 키체인 항목 + 다음 로그인 힌트로 `UserDefaults`의 `app.recly.auth.lastAccount` | 로그아웃 |
+| iPhone · Mac | Drive 전용 OAuth이므로 이메일·프로필을 요청하지 않음 | 새 인증정보에는 저장하지 않음. 기존 프로필·ID 토큰·로그인 힌트는 인증정보 이관 시 제거 | 이관 또는 연결 해제 |
 | Windows | 받지 않는다(프로필 스코프 없음) | 저장하지 않는다 | — |
 
 어느 쪽도 Recly로 전송되지 않는다(받을 서버가 없다). 계정을 다시 고르기 위한 로컬 값이다.
@@ -2577,7 +2633,6 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 |---|---|---|
 | 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
 | 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본은 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
-| 이 기기에서 그만 쓰기 | 로그아웃 | 다른 기기·Drive 영향 없음. 녹음·Job·시크릿은 전부 남는다 |
 | Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·Job·Drive 폴더 캐시는 지워지고, 워크플로우 정의·기기 기본값·API/웹훅 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
 | 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
 | provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |

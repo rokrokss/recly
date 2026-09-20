@@ -189,7 +189,7 @@ class RecordingRecovery(private val core: ReclyCore) {
 
     /** A finalized recording with no job at all — the crash landed inside the title prompt. */
     private suspend fun enqueueIfNoJob(record: RecordingRecord): Boolean {
-        if (core.recordings.jobStatuses(record.id).isNotEmpty()) return false
+        if (core.recordings.jobStatuses(record.id).isNotEmpty() || record.driveFolderId != null) return false
         val result = core.enqueue(record.id)
         log("rec.recovered.enqueue", record, mapOf("result" to result::class.simpleName))
         return result is EnqueueResult.Enqueued

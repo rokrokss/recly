@@ -65,6 +65,18 @@ final class MenuModel: ObservableObject {
     }
     /// The output device the tap is on, while a meeting is being recorded (docs/12 deliverable 5).
     @Published private(set) var capturedOutputDevice: String?
+    @Published private(set) var capturedInputDevice: String?
+    @Published private(set) var microphoneRecovering = false
+    @Published private(set) var captureHealth: CaptureHealth = .healthy
+    @Published private(set) var microphones: [MicrophoneDevice] = []
+    @Published var microphoneUID = Defaults.microphoneUID {
+        didSet {
+            Defaults.microphoneUID = microphoneUID
+            recorder?.preferMicrophone(microphoneUID.isEmpty ? nil : microphoneUID)
+        }
+    }
+
+    func refreshMicrophones() { microphones = MicrophoneDevice.available() }
     /// docs/12 "메뉴바": the newest recordings, refreshed after every executor pass — a page of
     /// [Recents.page] to begin with, and a page more each time the ledger is scrolled to its last
     /// row ([loadMoreRecents]).
@@ -216,6 +228,8 @@ final class MenuModel: ObservableObject {
                 self?.captureFailed(error)
             }
             self.recorder = recorder
+            recorder.preferMicrophone(microphoneUID.isEmpty ? nil : microphoneUID)
+            refreshMicrophones()
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(
                 capture: recorder,
@@ -246,7 +260,7 @@ final class MenuModel: ObservableObject {
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             alertRouter.connect { [weak self] alert in self?.fix(alert) }
-            // Before the executor: a sign-in restored from the SDK's Keychain is what decides
+            // Before the executor: a Drive credential restored from Keychain is what decides
             // whether the first pass can do anything at all (docs/06).
             let auth = GoogleAuth(tokens: tokens)
             self.auth = auth
@@ -606,6 +620,8 @@ final class MenuModel: ObservableObject {
         if !isRecording, wasRecording {
             stopTicking()
             capturedOutputDevice = nil
+        capturedInputDevice = nil
+        captureHealth = .healthy
             // Whatever ended it — the menu, `⌘Q`, a fatal capture error — the detector is back to
             // looking for the next meeting rather than for the end of this one.
             detector.recordingChanged(false)
@@ -692,10 +708,11 @@ final class MenuModel: ObservableObject {
         }
         guard let auth else { return }
         Task {
-            // `ASWebAuthenticationSession` needs a window to hang off, and `LSUIElement` means
-            // there may be none — so one is made for the duration of the sign-in.
-            let anchor = Self.makeAuthAnchor()
-            defer { anchor.close() }
+            // Reuse the app's window as the authentication anchor; a browser handoff needs no
+            // additional instruction window. A cold notification may have no visible window yet.
+            let existing = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: \.isVisible)
+            let anchor = existing ?? Self.makeAuthAnchor()
+            defer { if existing == nil { anchor.close() } }
             do {
                 account = try await auth.signIn(presenting: anchor)
                 logger.info("auth.signIn.ok")
@@ -730,6 +747,7 @@ final class MenuModel: ObservableObject {
     /// Every job that was only waiting for a sign-in goes back to `PENDING`, then one pass.
     private func unpark() async {
         guard let core = bridge?.core else { return }
+        _ = try? await core.pullRemoteRecordings(force: true)
         await ParkedJobs.unpark(core: core)
         runner?.jobsDue()
     }
@@ -935,6 +953,7 @@ final class MenuModel: ObservableObject {
     /// Opens the docs/03 warning. The count is read first because the dialog has to state it: a
     /// user about to lose the queue deserves to know what is still only on this Mac.
     func askToDisconnect() {
+        guard !disconnecting else { return }
         guard let core = bridge?.core else { return }
         Task {
             disconnectPrompt = DisconnectPrompt(
@@ -959,16 +978,18 @@ final class MenuModel: ObservableObject {
         // The second half of a double-press must not catch the re-presented prompt below and
         // confirm a warning nobody has read: from the first activation until its re-read decides,
         // every further activation is a no-op.
-        guard let shown = disconnectPrompt, !disconnectChecking else { return }
-        disconnectChecking = true
+        guard let shown = disconnectPrompt, !disconnecting else { return }
+        disconnecting = true
+        disconnectPrompt = nil
         perform {
-            defer { self.disconnectChecking = false }
+            defer { self.disconnecting = false }
             // What the dialog promised is read again before it is acted on; a warning it never
             // showed re-asks instead of destroying quietly (RecKit, and the phone asks the same).
             if let fresh = await DisconnectPrompt.rewarning(
                 core: self.bridge?.core,
                 recording: !self.isIdle,
-                shown: shown
+                shown: shown,
+                alsoDeleteRecordings: alsoDeleteRecordings
             ) {
                 self.disconnectPrompt = fresh
                 return false
@@ -978,8 +999,8 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    /// True from a confirm until its re-read decides — see [disconnect].
-    private var disconnectChecking = false
+    /// Published before work starts and held through revocation and local cleanup.
+    @Published private(set) var disconnecting = false
 
     /// docs/03: the user's own word, and the only thing that clears the debt. Recly cannot ask
     /// Google whether the grant is still listed — it has no account left to ask with — so the row
@@ -1086,6 +1107,9 @@ final class MenuModel: ObservableObject {
         // headphones that were unplugged ten minutes ago is worse than naming nothing. `nil` in
         // microphone mode, where no tap was ever opened.
         capturedOutputDevice = recorder?.capturedOutputDevice
+        capturedInputDevice = recorder?.capturedInputDevice
+        microphoneRecovering = recorder?.microphoneRecovering ?? false
+        captureHealth = recorder?.systemCaptureHealth ?? .healthy
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
         elapsed = LedgerFormat.elapsed(total)
     }
@@ -1208,28 +1232,19 @@ final class MenuModel: ObservableObject {
         NSWorkspace.shared.open(pane)
     }
 
-    /// `ASWebAuthenticationSession` presents itself from a window, and a `LSUIElement` menu-bar app
-    /// has none. This is that window: small, named, and closed the moment the sign-in ends.
+    /// A retained, unshown anchor for sign-in started before any app window is visible.
     private static func makeAuthAnchor() -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 100),
-            styleMask: [.titled],
+            styleMask: [.borderless],
             backing: .buffered,
             defer: false
         )
-        window.title = "Recly"
         // A window made in code releases itself on `close()` by default, and this one is also held
         // by the caller for the length of the sign-in — the second release was a crash after
         // every failed sign-in, in the window's own closing animation.
         window.isReleasedWhenClosed = false
-        let label = NSTextField(
-            labelWithString: AppStrings.localized("Continue the Google sign-in in your browser.")
-        )
-        label.frame = NSRect(x: 20, y: 40, width: 320, height: 20)
-        window.contentView?.addSubview(label)
         window.center()
-        NSApp.activate(ignoringOtherApps: true)
-        window.makeKeyAndOrderFront(nil)
         return window
     }
 
@@ -1300,6 +1315,11 @@ private enum Defaults {
     private static let speakerKey = "speakerWarningSuppressed"
     private static let voiceProcessingKey = "voiceProcessing"
     private static let consentReminderKey = "consentReminder"
+
+    static var microphoneUID: String {
+        get { UserDefaults.standard.string(forKey: "microphoneUID") ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: "microphoneUID") }
+    }
 
     static var mode: RecordingMode {
         get { UserDefaults.standard.string(forKey: modeKey) == "meeting" ? .meeting : .microphone }

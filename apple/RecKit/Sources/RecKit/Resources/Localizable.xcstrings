@@ -398,13 +398,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Could not check the Google sign-in — open Google Drive settings and finish revoking access"
+            "value": "Could not check the Google connection. Try disconnecting Drive again in Settings."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 연결 상태를 확인하지 못했습니다 — Google Drive 설정에서 권한 철회를 다시 시도하세요"
+            "value": "Google 연결 상태를 확인하지 못했습니다. 설정에서 Drive 연결 해제를 다시 시도하세요."
           }
         }
       }
@@ -704,13 +704,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Revoke Google access"
+            "value": "Disconnect"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 접근 권한 철회"
+            "value": "연결 해제"
           }
         }
       }
@@ -721,13 +721,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Revoke Google Drive access?"
+            "value": "Disconnect Google Drive?"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google Drive 접근 권한을 철회할까요?"
+            "value": "Drive 연결을 해제할까요?"
           }
         }
       }
@@ -1072,19 +1072,36 @@
         }
       }
     },
+    "Disconnecting Drive. Please wait.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnecting Drive. Please wait."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive 연결을 해제하는 중입니다. 잠시 기다려 주세요."
+          }
+        }
+      }
+    },
     "Finish disconnecting first": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Finish revoking Google access first"
+            "value": "Try disconnecting Drive again in Settings."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 접근 권한 철회를 먼저 완료하세요"
+            "value": "설정에서 Drive 연결 해제를 다시 시도하세요."
           }
         }
       }
@@ -1248,13 +1265,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google access was revoked, but cleaning up this device failed: %@ — open Google Drive settings and finish revoking access"
+            "value": "Could not disconnect Drive. Try again in Settings. (%@)"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 액세스는 해제했지만 이 기기 정리에 실패했습니다: %@ — Google Drive 설정에서 권한 철회를 완료하세요"
+            "value": "Drive 연결 해제에 실패했습니다. 설정에서 다시 시도하세요. (%@)"
           }
         }
       }
@@ -2268,13 +2285,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drive upload waiting"
+            "value": "Upload waiting"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drive 업로드 대기"
+            "value": "업로드 대기"
           }
         }
       }
@@ -4063,61 +4080,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect Google Drive"
+            "value": "Connect Drive"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google Drive 연결"
-          }
-        }
-      }
-    },
-    "Record and play local audio without an account. Connect Google Drive to upload recordings.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Record and play local audio without an account. Connect Google Drive to upload recordings."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "계정 없이 녹음하고 기기에 저장된 녹음을 재생할 수 있습니다. 업로드하려면 Google Drive를 연결하세요."
-          }
-        }
-      }
-    },
-    "Manage Google permissions": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Manage Google permissions"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google 접근 권한 관리"
-          }
-        }
-      }
-    },
-    "Google access is used for Drive storage. Recly has no account of its own.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google access is used for Drive storage. Recly has no account of its own."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google 연결은 Drive 저장에 사용됩니다. Recly 자체 계정은 없습니다."
+            "value": "Drive 연결"
           }
         }
       }
@@ -4138,22 +4107,6 @@
         }
       }
     },
-    "This device stops accessing Drive. Recordings stay, and Google permissions remain until revoked.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This device stops accessing Drive. Recordings stay, and Google permissions remain until revoked."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 기기에서 Drive 접근을 중지합니다. 녹음은 유지되며 Google 접근 권한은 철회할 때까지 남습니다."
-          }
-        }
-      }
-    },
     "Revoke Google access": {
       "localizations": {
         "en": {
@@ -4165,23 +4118,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google 접근 권한 철회"
-          }
-        }
-      }
-    },
-    "Finish revoking Google access": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Finish revoking Google access"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google 접근 권한 철회 마무리"
+            "value": "Google 권한 철회"
           }
         }
       }
@@ -4207,13 +4144,130 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drive pending"
+            "value": "Upload waiting"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Drive 대기"
+            "value": "업로드 대기"
+          }
+        }
+      }
+    },
+    "Google permissions": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google permissions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google 권한 관리"
+          }
+        }
+      }
+    },
+    "Disconnecting…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnecting…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결 해제 중…"
+          }
+        }
+      }
+    },
+    "Disconnect Drive": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disconnect Drive"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "연결 해제"
+          }
+        }
+      }
+    },
+    "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 이 기기의 대기 작업은 취소되며 녹음과 설정은 유지됩니다."
+          }
+        }
+      }
+    },
+    "Record locally. Connect Drive to upload.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Record locally. Connect Drive to upload."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "기기에 녹음하고, Drive 연결 시 업로드합니다."
+          }
+        }
+      }
+    },
+    "alert.uploadsWaiting": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploads waiting: %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "업로드 대기 %@건"
+          }
+        }
+      }
+    },
+    "Could not save a usable Drive connection. Try connecting again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not save a usable Drive connection. Try connecting again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive 연결 정보를 저장하지 못했습니다. 다시 연결해 주세요."
           }
         }
       }

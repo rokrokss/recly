@@ -1,5 +1,5 @@
 // `GoogleAuth` — and with it `GoogleAccount` and `AppleTokenProvider` — is the Mac's and the
-// phone's (M5-L3); there is no watchOS slice of GoogleSignIn and no watch sign-in (ADR-002), so
+// phone's (M5-L3); there is no watch Drive authorization (ADR-002), so
 // what does not exist there is not compiled there.
 #if os(macOS) || os(iOS)
 import ReclyCore
@@ -22,6 +22,26 @@ final class AppleTokenProviderTests: XCTestCase {
         XCTAssertEqual(first, "ya29.first")
         XCTAssertEqual(second, "ya29.first")
         XCTAssertEqual(account.refreshes, 1, "the cache is what keeps a multi-step job off the SDK")
+    }
+
+    func testExpiringTokenIsNotServedFromTheShellCache() async throws {
+        let account = FakeAccount(token: "old")
+        let provider = AppleTokenProvider(currentAccount: { account })
+        _ = try await provider.__accessToken()
+        account.tokenExpiry = Date().addingTimeInterval(30)
+        account.token = "renewed"
+        let next = try await provider.__accessToken()
+        XCTAssertEqual(next, "renewed")
+        XCTAssertEqual(account.refreshes, 2)
+    }
+
+    func testUnauthorizedForcesRefreshButConnectionChangeOnlyDropsTheShellCache() async throws {
+        let account = FakeAccount(token: "new-connection")
+        let provider = AppleTokenProvider(currentAccount: { account })
+        await provider.invalidate()
+        XCTAssertEqual(account.invalidations, 0)
+        try await provider.__invalidate()
+        XCTAssertEqual(account.invalidations, 1)
     }
 
     /// The 401 path. `invalidate()` lands while the refresh it raced is still suspended; the token
@@ -101,12 +121,10 @@ final class AppleTokenProviderTests: XCTestCase {
         }
     }
 
-    /// The other half of that line: a refresh the SDK refuses because the Keychain has nothing left
-    /// to refresh with (`GIDSignInError.hasNoAuthInKeychain`, -4 — "the user has not signed in
-    /// before or … have since signed out") is exactly the case NEEDS_AUTH is for.
+    /// A missing or rejected credential parks the upload until Drive is connected again.
     func testAKeychainWithNoAuthLeftParksTheJob() async {
         let account = FakeAccount(token: "unused")
-        account.failWith = NSError(domain: "com.google.GIDSignIn", code: -4)
+        account.failWith = GoogleAuth.Failure.invalidCredential
         let provider = AppleTokenProvider(currentAccount: { account })
 
         await assertAuthRequired { try await provider.__accessToken() }
@@ -137,6 +155,9 @@ final class AppleTokenProviderTests: XCTestCase {
 @MainActor
 private final class FakeAccount: GoogleAccount {
     var token: String
+    var tokenExpiry: Date? = .distantFuture
+    private(set) var invalidations = 0
+    func invalidateToken() { invalidations += 1 }
     var failWith: Error?
     /// Runs while the refresh is suspended: the window a 401, a sign-out or another sign-in lands in.
     var whileRefreshing: (@MainActor () async -> Void)?

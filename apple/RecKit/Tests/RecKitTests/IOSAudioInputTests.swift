@@ -22,8 +22,8 @@ final class IOSAudioInputTests: XCTestCase {
         XCTAssertEqual(interruption.notified(userInfo(.began)), .silenced)
     }
 
-    /// The call ended and the system is offering the microphone back, which is the whole of a
-    /// resume: the tap is still installed, so the same segment carries on.
+    /// The call ended and the system is offering the microphone back. The input rebuilds its
+    /// engine against the current hardware format before closing the silence.
     func testAnEndedThatMayResumeResumes() {
         XCTAssertEqual(interruption.notified(userInfo(.began)), .silenced)
 
@@ -104,8 +104,8 @@ final class IOSAudioInputTests: XCTestCase {
         XCTAssertNil(interruption.pendingRestart, "taken, not kept for the next call")
     }
 
-    /// (c) Nothing moved during the call: the resume is still a resume, and the recording carries
-    /// on into the same segment without a `gaps` entry.
+    /// (c) Nothing moved during the call: the default resume action rebuilds the input, with no
+    /// deferred device-change reason replacing it.
     func testAnEndedWithNoDeferredDeviceChangeStillResumes() {
         XCTAssertEqual(interruption.notified(userInfo(.began)), .silenced)
 

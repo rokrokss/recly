@@ -56,9 +56,11 @@ data class RecordingRecord(
     /**
      * docs/03 "다른 기기의 녹음": the step types the device that is running the workflow still has to
      * run after its upload (`transcribe`, `webhook`), read off the folder's marker. Empty when that
-     * device is done, when the marker is too old to believe, and always for this device's own rows.
+     * device is done, when the marker is too old to believe, or when a local workflow job remains authoritative.
      */
     val remotePending: Set<String> = emptySet(),
+    /** A complete Drive copy restored without recreating or replaying workflow jobs. */
+    val driveSynced: Boolean = false,
 ) {
     /**
      * A watch transfer in flight (docs/03 "워치 → 폰 전송 계약"): the phone opens the row when the
@@ -244,6 +246,50 @@ class RecordingRepository(
         written
     }
 
+    /** Local rows without jobs are reconciled with Drive instead of being replaced or re-uploaded. */
+    suspend fun driveRestoreCandidates(): Set<String> = locked {
+        queries.selectDriveRestoreCandidates().executeAsList().toSet()
+    }
+
+    suspend fun synced(): Map<String, String> = locked {
+        queries.selectSyncedRecordings().executeAsList().associate { it.id to it.drive_folder_id!! }
+    }
+
+    /** Restore file references only after matching every part, without changing local audio/meta.
+     * The job check is transactional: a workflow queued while Drive was being read always wins. */
+    suspend fun restoreDriveCopy(meta: RecordingMeta, folderId: String,
+                                 fileIds: Map<Pair<Int, Track>, String>, pending: String?): Boolean = locked {
+        db.transactionWithResult {
+            val record = record(meta.recordingId) ?: return@transactionWithResult false
+            if (record.remote || record.meta.status != RecordingStatus.FINALIZED ||
+                queries.selectJobsByRecording(record.id).executeAsList().isNotEmpty()) return@transactionWithResult false
+            val parts = record.meta.parts
+            if (parts.isEmpty() || parts.size != meta.parts.size) return@transactionWithResult false
+            val remoteParts = meta.parts.associateBy { it.part to it.track }
+            if (remoteParts.size != parts.size || parts.any { part ->
+                    val remote = remoteParts[part.part to part.track]
+                    remote == null || remote.file != part.file || remote.sha256 != part.sha256 ||
+                        remote.bytes != part.bytes || fileIds[part.part to part.track].isNullOrBlank()
+                }) return@transactionWithResult false
+            parts.forEach { part ->
+                queries.restorePartDriveFile(fileIds.getValue(part.part to part.track), record.id,
+                                             part.part.toLong(), part.track.wire)
+            }
+            queries.restoreRecordingDriveCopy(folderId, pending, record.id)
+            true
+        }
+    }
+
+    /** A different account or a deleted folder invalidates the remote copy, never the local take. */
+    suspend fun forgetDriveCopy(recordingId: String): Unit = locked {
+        db.transaction {
+            if (queries.selectRecordingById(recordingId).executeAsOneOrNull()?.remote == 0L) {
+                queries.clearRecordingDriveCopy(recordingId)
+                queries.clearPartDriveFiles(recordingId)
+            }
+        }
+    }
+
     /** Every recording adopted from Drive, with the folder it was read from. */
     suspend fun adopted(): Map<String, String> = locked {
         queries.selectAdoptedRecordings().executeAsList().associate { it.id to it.drive_folder_id!! }
@@ -261,15 +307,14 @@ class RecordingRepository(
 
     /**
      * What the device running the workflow says is still to come, off the folder's marker (docs/03
-     * "다른 기기의 녹음"): the comma-joined step types, or null for nothing. Only remote rows have one
-     * — this device's own job rows are the truth about its own recordings.
+     * "다른 기기의 녹음"): the comma-joined step types, or null for nothing. Remote rows and verified jobless local copies have one; existing local job rows remain authoritative.
      *
      * @return true when the row changed, so an unchanged marker does not wake every ledger on
      * `recordings.observe()` once a pass.
      */
     suspend fun setRemotePending(recordingId: String, pending: String?): Boolean = locked {
         val row = queries.selectRecordingById(recordingId).executeAsOneOrNull() ?: return@locked false
-        if (row.remote != 1L || row.remote_pending == pending) return@locked false
+        if ((row.remote != 1L && row.drive_synced != 1L) || row.remote_pending == pending) return@locked false
         queries.updateRemotePending(pending, recordingId)
         true
     }
@@ -629,6 +674,7 @@ class RecordingRepository(
                 it.drive_folder_id,
                 it.remote == 1L,
                 pendingTypes(it.remote_pending),
+                it.drive_synced == 1L,
             )
         }
     }
@@ -690,6 +736,7 @@ class RecordingRepository(
                 it.drive_folder_id,
                 it.remote == 1L,
                 pendingTypes(it.remote_pending),
+                it.drive_synced == 1L,
             )
         }
 

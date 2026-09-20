@@ -169,11 +169,33 @@ class CrossShellDictionaryTest {
 
         val DICTIONARY = listOf(
             Line(
+                what = "single Drive disconnect action",
+                en = "Disconnect Drive", ko = "연결 해제",
+                android = "drive_disconnect", windows = "drive.disconnect", reckit = "Disconnect Drive",
+            ),
+            Line(
+                what = "confirmed Drive disconnect",
+                en = "Disconnect", ko = "연결 해제",
+                android = "settings_disconnect", windows = "settings.disconnect", reckit = "Disconnect",
+            ),
+            Line(
+                what = "external Google permissions link",
+                en = "Google permissions", ko = "Google 권한 관리",
+                android = "disconnect_permissions", windows = "disconnect.permissions", reckit = "Google permissions",
+            ),
+            Line(
+                what = "concise revocation consequences",
+                en = "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.",
+                ko = "같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 이 기기의 대기 작업은 취소되며 녹음과 설정은 유지됩니다.",
+                android = "disconnect_other_devices", windows = "disconnect.other.devices",
+                reckit = "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.",
+            ),
+            Line(
                 what = "optional Drive connection",
-                en = "Record and play local audio without an account. Connect Google Drive to upload recordings.",
-                ko = "계정 없이 녹음하고 기기에 저장된 녹음을 재생할 수 있습니다. 업로드하려면 Google Drive를 연결하세요.",
+                en = "Record locally. Connect Drive to upload.",
+                ko = "기기에 녹음하고, Drive 연결 시 업로드합니다.",
                 android = "drive_optional", windows = "drive.optional",
-                reckit = "Record and play local audio without an account. Connect Google Drive to upload recordings.",
+                reckit = "Record locally. Connect Drive to upload.",
             ),
             Line(
                 what = "local storage independently of upload status",
@@ -192,8 +214,8 @@ class CrossShellDictionaryTest {
             ),
             Line(
                 what = "the NEEDS_AUTH status",
-                en = "Drive upload waiting",
-                ko = "Drive 업로드 대기",
+                en = "Upload waiting",
+                ko = "업로드 대기",
                 android = "job_state_needs_auth",
                 windows = "status.sign.in.needed",
                 reckit = "Sign-in needed",
