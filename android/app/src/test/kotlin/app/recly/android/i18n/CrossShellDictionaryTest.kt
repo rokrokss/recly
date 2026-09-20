@@ -185,10 +185,10 @@ class CrossShellDictionaryTest {
             ),
             Line(
                 what = "concise revocation consequences",
-                en = "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.",
-                ko = "같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 이 기기의 대기 작업은 취소되며 녹음과 설정은 유지됩니다.",
+                en = "Recly loses Drive access on all devices connected to this Google account. Pending work pauses until you reconnect the same account. Recordings and settings stay.",
+                ko = "같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 대기 작업은 같은 계정에 다시 연결하면 이어집니다. 녹음과 설정은 유지됩니다.",
                 android = "disconnect_other_devices", windows = "disconnect.other.devices",
-                reckit = "Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.",
+                reckit = "Recly loses Drive access on all devices connected to this Google account. Pending work pauses until you reconnect the same account. Recordings and settings stay.",
             ),
             Line(
                 what = "optional Drive connection",

@@ -58,7 +58,7 @@ public struct LedgerStatus: Equatable, Sendable {
         case "Transcribing on another device":
             return LedgerStatus(code: "TRANSCRIBING", tone: .accent)
         case "Recording": return LedgerStatus(code: "REC", tone: .danger)
-        case "No workflow": return LedgerStatus(code: "NO_JOB", tone: .neutral)
+        case "No workflow": return LedgerStatus(code: "DONE", tone: .success)
         case "Waiting": return LedgerStatus(code: "PENDING", tone: .neutral)
         case "Uploading": return LedgerStatus(code: "UPLOADING", tone: .accent)
         case "Retry pending": return LedgerStatus(code: "RETRY", tone: .warning)

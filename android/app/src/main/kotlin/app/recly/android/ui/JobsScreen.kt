@@ -480,7 +480,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.RECEIVING -> LedgerStatus("RECEIVING", BadgeTone.ACCENT)
     ItemState.REMOTE_UPLOADING -> LedgerStatus("UPLOADING", BadgeTone.ACCENT)
     ItemState.REMOTE_TRANSCRIBING -> TRANSCRIBING_BADGE
-    ItemState.NO_JOB -> LedgerStatus("NO_JOB", BadgeTone.NEUTRAL)
+    ItemState.NO_JOB -> LedgerStatus("DONE", BadgeTone.SUCCESS)
     ItemState.PENDING -> LedgerStatus("PENDING", BadgeTone.NEUTRAL)
     ItemState.RUNNING -> LedgerStatus("UPLOADING", BadgeTone.ACCENT)
     ItemState.WAITING -> LedgerStatus("RETRY", BadgeTone.WARNING)
@@ -517,7 +517,7 @@ private val BADGE_CODES: List<String> =
  * (docs/03 "다른 기기의 녹음"); one another device is transcribing has already arrived.
  */
 fun ItemState.waiting(): Boolean =
-    this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NO_JOB ||
+    this == ItemState.PENDING || this == ItemState.WAITING ||
         this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
 
 /**
@@ -543,7 +543,7 @@ private fun label(item: JobItem): String = when (item.state) {
     ItemState.RECEIVING -> stringResource(R.string.job_state_receiving)
     ItemState.REMOTE_UPLOADING -> stringResource(R.string.job_state_remote_uploading)
     ItemState.REMOTE_TRANSCRIBING -> stringResource(R.string.job_state_remote_transcribing)
-    ItemState.NO_JOB -> stringResource(R.string.job_state_no_workflow)
+    ItemState.NO_JOB -> stringResource(R.string.job_state_done)
     ItemState.PENDING -> stringResource(R.string.job_state_pending)
     ItemState.RUNNING -> stringResource(R.string.job_state_running)
     ItemState.WAITING -> item.waitingMinutes

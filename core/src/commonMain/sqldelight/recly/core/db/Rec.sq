@@ -32,6 +32,8 @@ CREATE TABLE job (
   workflow_json TEXT NOT NULL,
   status TEXT NOT NULL,
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL, next_run_at TEXT,
+  drive_account_id TEXT,
+  disconnected_status TEXT,
   UNIQUE (recording_id, workflow_id)
 );
 
@@ -69,6 +71,26 @@ DELETE FROM kv WHERE key LIKE :prefix || '%';
 -- A pending write that has been pushed: gone only if nothing newer was written over it meanwhile.
 kvDeleteIfValue:
 DELETE FROM kv WHERE key = ? AND value = ?;
+
+bindJobDriveAccount:
+UPDATE job SET drive_account_id = ? WHERE id = ? AND drive_account_id IS NULL;
+
+pauseJobForDisconnect:
+UPDATE job SET disconnected_status = COALESCE(disconnected_status, status), status = 'NEEDS_AUTH'
+WHERE id = ? AND status NOT IN ('DONE', 'SKIPPED_SHORT');
+
+restoreDisconnectedJob:
+UPDATE job SET status = disconnected_status, disconnected_status = NULL WHERE id = ?;
+
+resumeAuthStepRuns:
+UPDATE step_run SET status = 'PENDING', last_error = NULL
+WHERE job_id = ? AND status = 'NEEDS_AUTH';
+
+deleteCompletedStepRuns:
+DELETE FROM step_run WHERE job_id IN (SELECT id FROM job WHERE status = 'DONE');
+
+deleteCompletedJobs:
+DELETE FROM job WHERE status = 'DONE';
 
 syncGet:
 SELECT value FROM sync_state WHERE key = ?;
@@ -262,15 +284,6 @@ UPDATE step_run SET status = 'PENDING' WHERE status = 'RUNNING';
 -- docs/10 "Drive 용량 초과": the resume point is dropped with the park, not kept.
 clearStepState:
 UPDATE step_run SET state_json = NULL WHERE id = ?;
-
--- "연결 해제" (docs/03): the queue is local state and goes; the recordings are not and stay. The
--- exception is a recording whose job is RUNNING and which "녹음도 함께 삭제" therefore refused: its
--- rows are what that run is written against, so they outlive the disconnect.
-deleteStepRunsExcept:
-DELETE FROM step_run WHERE job_id NOT IN (SELECT id FROM job WHERE recording_id IN ?);
-
-deleteJobsExcept:
-DELETE FROM job WHERE recording_id NOT IN ?;
 
 selectPart:
 SELECT * FROM part WHERE recording_id = ? AND part = ? AND track = ?;

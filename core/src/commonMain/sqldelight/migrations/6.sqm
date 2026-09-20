@@ -1,0 +1,2 @@
+ALTER TABLE job ADD COLUMN drive_account_id TEXT;
+ALTER TABLE job ADD COLUMN disconnected_status TEXT;

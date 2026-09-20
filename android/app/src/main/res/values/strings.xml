@@ -323,8 +323,8 @@
     <string name="settings_disconnect">Disconnect</string>
     <string name="settings_disconnect_hint">Take this app’s access to your Google account away.</string>
     <string name="disconnect_title">Disconnect Google Drive?</string>
-    <string name="disconnect_other_devices">Recly loses Drive access on all devices connected to this Google account. Pending work on this device is canceled; recordings and settings stay.</string>
-    <string name="disconnect_local">Pending processing on this device is cleared. Recordings, Drive files, workflows and keys stay.</string>
+    <string name="disconnect_other_devices">Recly loses Drive access on all devices connected to this Google account. Pending work pauses until you reconnect the same account. Recordings and settings stay.</string>
+    <string name="disconnect_local">Pending processing pauses until you reconnect the same account. Recordings, Drive files, workflows and keys stay.</string>
     <string name="disconnect_also_delete">Also delete the recordings on this phone</string>
     <string name="disconnect_permissions">Google permissions</string>
     <string name="disconnect_revoke_failed">Google would not take the access away (%1$s) — do it in your Google account permissions</string>

@@ -79,6 +79,11 @@ class JobStore(
                 now.isoUtc(),
                 null,
             )
+            if (workflow.steps.any { it is Step.DriveUpload }) {
+                queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()?.let {
+                    queries.bindJobDriveAccount(it, jobId)
+                }
+            }
             workflow.steps.forEachIndexed { index, step ->
                 queries.insertStepRun(
                     Ulid.generate(fixed(now)),
@@ -98,6 +103,71 @@ class JobStore(
     }
 
     suspend fun get(jobId: String): Job? = locked { job(jobId) }
+
+    internal suspend fun driveConnected(): Boolean = locked {
+        queries.kvGet(DRIVE_CONNECTED).executeAsOneOrNull() != "false"
+    }
+
+    internal suspend fun connectDrive(): Unit = locked { queries.kvSet(DRIVE_CONNECTED, "true") }
+
+    internal suspend fun disconnected(jobId: String): Boolean = locked {
+        queries.selectJobById(jobId).executeAsOneOrNull()?.disconnected_status != null
+    }
+
+    /** Only a verified matching Drive may resume work, including transcription and webhooks. */
+    internal suspend fun resumeDrive(accountId: String, now: Instant): Int = locked {
+        db.transactionWithResult {
+            val prior = queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()
+            if (prior != accountId) queries.deleteAllFolderCache()
+            queries.kvSet(DRIVE_ACCOUNT, accountId)
+            var resumed = 0
+            queries.selectJobs().executeAsList().forEach { row ->
+                if (row.status == JobStatus.DONE.name || row.status == JobStatus.SKIPPED_SHORT.name) return@forEach
+                if (row.workflowOrNull()?.steps?.none { it is Step.DriveUpload } == true) return@forEach
+                // An unbound job disconnected by an older installation cannot be attributed by
+                // guessing. Keep it parked until its existing Drive folder proves ownership.
+                val legacyFolder = queries.selectRecordingById(row.recording_id).executeAsOneOrNull()?.drive_folder_id
+                if (row.drive_account_id == null && row.disconnected_status == null && legacyFolder == null) {
+                    queries.bindJobDriveAccount(accountId, row.id)
+                } else if (row.drive_account_id != accountId) {
+                    queries.pauseJobForDisconnect(row.id)
+                    return@forEach
+                }
+                if (row.disconnected_status != null) {
+                    queries.restoreDisconnectedJob(row.id)
+                    resumed++
+                }
+                val restored = row.disconnected_status ?: row.status
+                if (restored in setOf("PENDING", "RUNNING", "WAITING", "NEEDS_AUTH")) {
+                    queries.resumeAuthStepRuns(row.id)
+                }
+                if (restored == JobStatus.NEEDS_AUTH.name) {
+                    queries.updateJobStatus(JobStatus.PENDING.name, row.next_run_at, now.isoUtc(), row.id)
+                    if (row.disconnected_status == null) resumed++
+                }
+            }
+            resumed
+        }
+    }
+
+    internal suspend fun driveAccountMatches(jobId: String, accountId: String): Boolean = locked {
+        queries.selectJobById(jobId).executeAsOneOrNull()?.let {
+            it.drive_account_id == accountId && it.disconnected_status == null
+        } == true
+    }
+
+    internal suspend fun unboundDriveJobs(): List<Pair<String, String>> = locked {
+        queries.selectJobs().executeAsList()
+            .filter { it.drive_account_id == null && it.status != JobStatus.DONE.name }
+            .mapNotNull { row ->
+                queries.selectRecordingById(row.recording_id).executeAsOneOrNull()?.drive_folder_id
+                    ?.let { row.id to it }
+            }
+    }
+
+    internal suspend fun bindDriveAccount(jobId: String, accountId: String): Unit = locked {
+        queries.bindJobDriveAccount(accountId, jobId)
+    }
 
     suspend fun resumeConsent(jobId: String, now: Instant): Unit = locked {
         db.transaction {
@@ -315,15 +385,21 @@ class JobStore(
         }
     }
 
-    /**
-     * "연결 해제" (docs/03): the whole queue goes, recordings and their parts do not. The jobs of
-     * [keepRecordings] stay — those are the recordings a `RUNNING` job would not let go of, and
-     * deleting the rows that run is written against would orphan it.
-     */
-    suspend fun deleteAll(keepRecordings: List<String> = emptyList()): Unit = locked {
+    /** Disconnect preserves unfinished steps and their resume state; only completed jobs go. */
+    internal suspend fun disconnectDrive(): Unit = locked {
         db.transaction {
-            queries.deleteStepRunsExcept(keepRecordings)
-            queries.deleteJobsExcept(keepRecordings)
+            queries.kvSet(DRIVE_CONNECTED, "false")
+            val account = queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()
+            queries.selectJobs().executeAsList().forEach { row ->
+                if (row.workflowOrNull()?.steps?.none { it is Step.DriveUpload } == true) return@forEach
+                if (account != null && row.drive_account_id == null && row.disconnected_status == null) {
+                    queries.bindJobDriveAccount(account, row.id)
+                }
+                queries.pauseJobForDisconnect(row.id)
+            }
+            queries.deleteCompletedStepRuns()
+            queries.deleteCompletedJobs()
+            queries.kvDelete(DRIVE_ACCOUNT)
         }
     }
 
@@ -369,6 +445,11 @@ class JobStore(
     }
 
     private suspend fun <T> locked(body: () -> T): T = withContext(deps.io) { mutex.withLock { body() } }
+
+    private companion object {
+        const val DRIVE_ACCOUNT = "jobs.drive.account"
+        const val DRIVE_CONNECTED = "jobs.drive.connected"
+    }
 
     private fun writeStep(step: StepRun) {
         queries.updateStepRun(

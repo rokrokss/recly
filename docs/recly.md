@@ -551,7 +551,7 @@ mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retent
 Google Drive 설정은 **“연결 해제” 버튼 하나**만 제공한다. 연결된 계정과 버튼을 주변 설정과 같은
 행·글자 크기로 표시한다. 버튼을 누르면 확인창 하나를 열고, 확인 시 **Google grant 철회와 이 기기의 로컬 정리**를
 함께 수행한다. “이 기기만 연결 해제” 선택과 범위 선택 메뉴는 두지 않는다.
-확인창은 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제되고, 이 기기의 대기 작업은 취소되지만 녹음·설정은 유지됨을
+확인창은 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제되고, 대기 작업은 같은 계정에 재연결하면 이어지고 녹음·설정은 유지됨을
 한 단락으로 알린다. 녹음 삭제와 미업로드 건수는 이 확인창에서 표시하지 않는다. 녹음 삭제는 목록에서만 한다.
 미연결 행에는 “기기에 녹음하고, Drive 연결 시 업로드합니다.”를 작은 보조 문구로 둔다.
 Google 권한 관리 링크는 평상시 숨긴다. Google 권한 철회 실패 기록(`revokeDebt`)이 있을 때만
@@ -574,7 +574,7 @@ Google 권한 철회부터 로컬 정리까지 유지한다. 중간에 인증 �
 | Drive의 녹음 파일 | 그대로 | **그대로** — 사용자의 파일이고 앱이 지울 이유가 없다 |
 | 워크플로우 문서·기기 기본값 | 그대로 | **그대로.** 계정에서 파생된 것이 아니라 이 기기의 설정이고(§5), 지우면 어디에서도 되찾을 수 없다 |
 | 로컬 시크릿(웹훅·STT 키) | 남는다 | **남는다** — 같은 이유다. 계정을 떼는 결정이 사용자가 입력한 키를 지울 이유가 되지 않는다 |
-| 로컬 Job·step_run | 남는다(재로그인하면 이어서 실행) | **삭제**(+ `drive_folder_cache`와 "로컬만 삭제" 기록 `remote/ignored/*`도 비움). |
+| 로컬 Job·step_run | 남는다(재로그인하면 이어서 실행) | **미완료 작업 보존·일시 중지**, 같은 Drive 계정에 재연결하면 재개. 완료 작업 기록, `drive_folder_cache`, "로컬만 삭제" 기록 `remote/ignored/*`은 비움. |
 | 로컬 녹음 파일·`meta.json` | 남는다 | **남는다.** 아직 올라가지 않은 원본을 이 동작으로 지우지 않는다(원칙 3). 확인창은 녹음과 설정이 유지됨을 짧게 알린다. 녹음 삭제는 목록에서 별도로 한다 |
 
 - **연결 해제 다이얼로그는 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제됨을 반드시 보여준다.** Google의 철회 반영에는 시간이 걸릴 수 있으므로 다른 기기의 화면이 즉시 미연결로 바뀐다고 안내하지 않는다. 권한 철회 실패는 기존 오류·복구 경로로 별도 안내한다.
@@ -589,8 +589,9 @@ DisconnectResult`, 코어 몫). 코어는 revoke를 부를 수단이 없으므�
 - **정지 상태에서 돈다.** 로컬 정리는 전부 `Executor.quiesced` 안이다 — 이미 실행 중인 Job은 지금 단계를 마치고
   멈추고, 그 뒤에야 무언가가 지워진다. 캐시된 access token을 먼저 무효화한 다음(`tokenProvider.invalidate()`)
   `tokens` 네임스페이스를 비운다 — 반대 순서면 셸이 메모리에 들고 있던 토큰이 다음 실행에 넘어간다.
-- **지우는 것은 넷뿐이다**: `tokens` 네임스페이스, 큐(`job`·`step_run`), Drive 폴더 캐시, "로컬만 삭제" 기록(`kv` `remote/ignored/*`, §3 "다른 기기의 녹음"). 워크플로우 문서·기기 기본
+- **지우는 것은 넷뿐이다**: `tokens` 네임스페이스, 완료된 작업 기록(`job`·`step_run`), Drive 폴더 캐시, "로컬만 삭제" 기록(`kv` `remote/ignored/*`, §3 "다른 기기의 녹음"). 워크플로우 문서·기기 기본
   워크플로우·`secrets` 네임스페이스는 그대로 둔다(위 표).
+- **미완료 작업 재개(2026-09-21)**: Drive 단계를 포함한 작업에 적용한다. Drive를 사용하지 않는 웹훅 전용 워크플로우에는 Google 인증을 요구하지 않는다. 단계 출력·업로드 세션·전사 요청 ID·재시도 횟수·대기 시각을 보존한다. `job.drive_account_id`에는 Drive `about.get(fields=user(permissionId))`로 확인한 식별자를 저장하고, 연결 해제 전 상태는 `disconnected_status`에 남긴다. 같은 계정이면 이전 상태를 복원하고 성공한 단계는 재실행하지 않는다. 다른 계정이면 이전 작업은 `NEEDS_AUTH`로 계속 대기하며 업로드·전사·웹훅을 보내지 않는다. 계정을 확인하지 못하면 재개하지 않는다. 이전 버전의 계정 미확인 작업은 기존 Drive 폴더 소유자 식별자가 일치할 때만 복원하며, 소유자를 확인할 자료가 없으면 대기를 유지한다. 이전 빌드가 이미 지운 단계 기록은 복원할 수 없다.
 - **`DisconnectResult(deletedRecordings, busyRecordings)`.** 코어 API의 호환성을 위해 삭제 옵션은 유지하지만 네 셸의 권한 철회 UI는 항상 `alsoDeleteRecordings=false`로 호출한다. 내부 API가 삭제 옵션을 사용할 때 `RUNNING` Job 때문에
   지우지 못한 녹음의 id가 `busyRecordings`에 담긴다. 그 녹음과 **그 Job 행은 남기고** 화면은 그 사실을 말한다 —
   Job이 끝난 뒤 다시 누르면 그때 지워진다.
@@ -643,6 +644,12 @@ My Drive/
   쓸 수 있게 한다.
 
 ### 다른 기기의 녹음 (ADR-023)
+
+**작업 기록이 없는 완료 녹음의 표시(2026-09-21).** 녹음이 끝났고 이 기기에 Job이 없으면 목록과
+상세 상태를 `DONE`·“완료”로 표시한다. 연결 해제로 작업 기록이 지워진 녹음도 같다. `NO_JOB`을
+노출하거나 대기 개수에 포함하지 않는다. 이 표시는 Drive 업로드 성공을 새로 판정하거나 Job을
+생성하지 않는다. 실제 Job이 있으면 대기·진행·실패 상태를 그대로 유지하고, 수신·원격 업로드·전사
+진행 표식도 기존 규칙을 따른다.
 
 같은 계정으로 로그인한 폰·데스크톱은 **같은 녹음 목록**을 본다. 서버도 색인 파일도 없다 — Drive가 이미 그
 인덱스다: 위 배치가 녹음마다 `recordingId`를 `appProperties`에 찍은 `{base}/` 폴더 하나를 남기므로, 폴더 조회 한
@@ -1746,9 +1753,9 @@ CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- deviceId 등 �
 
 `Rec.sq`는 **언제나 전체 스키마**이고, 설치된 DB를 따라오게 하는 것은
 `core/src/commonMain/sqldelight/migrations/<n>.sqm`이다(`n`은 "이 버전에서 올린다"는 뜻이라 `1.sqm`이 1 → 2).
-`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **6**; `3.sqm`이 `recording.drive_folder_id`·
+`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **7**; `3.sqm`이 `recording.drive_folder_id`·
 `recording.remote`·`part.drive_file_id`를, `4.sqm`이 `recording.remote_pending`을, `5.sqm`이
-`recording.drive_synced`를 더한다, §3 "다른 기기의 녹음").
+`recording.drive_synced`를, `6.sqm`이 `job.drive_account_id`·`job.disconnected_status`를 더한다, §3).
 
 - **스키마를 바꿀 때마다** `Rec.sq`를 고치고 **같은 커밋에서** 다음 번호의 `.sqm`을 추가한다. 둘 중 하나만 하면 새
   설치와 기존 설치의 스키마가 갈라진다.
@@ -2482,7 +2489,10 @@ Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Go
 Recly가 부르는 Google 엔드포인트는 Drive API(`www.googleapis.com`)와
 OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다. Apple의 직접 OAuth 경로는
 `accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token`, `oauth2.googleapis.com/revoke`이며,
-프로필 조회 API를 호출하지 않는다.
+프로필 조회 API를 호출하지 않는다. 재연결 계정 확인을 위해
+`GET https://www.googleapis.com/drive/v3/about?fields=user(permissionId)`를 호출한다.
+이름·이메일 대신 Drive의 불투명 식별자만 기기 DB에 저장하며, 미완료 작업의 식별자는 연결 해제 후에도 재개용으로 남는다.
+이전 작업의 계정 확인에는 기존 `files.get`의 `owners(permissionId)` 필드만 사용한다. 작업 기록을 삭제하면 해당 식별자도 삭제된다.
 
 **계정 이메일 처리**는 셸별로 다음과 같다:
 
@@ -2633,7 +2643,7 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 |---|---|---|
 | 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
 | 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본은 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
-| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·Job·Drive 폴더 캐시는 지워지고, 워크플로우 정의·기기 기본값·API/웹훅 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
+| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·완료 Job·Drive 폴더 캐시는 지워지고, 미완료 Job은 같은 계정 재연결까지 보존·일시 중지된다. 워크플로우 정의·기기 기본값·API/웹훅 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
 | 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
 | provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |
 

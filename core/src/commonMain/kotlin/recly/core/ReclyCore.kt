@@ -94,6 +94,8 @@ class ReclyCore(
 
     private val jobStore: JobStore = JobStore(db, deps)
 
+    private val driveJobAccess = recly.core.drive.DriveJobAccess(deps, jobStore)
+
     val jobs: JobService =
         JobService(
             deps,
@@ -107,6 +109,8 @@ class ReclyCore(
                 live = { workflows.current() },
                 marker = DriveFolderMarker(DriveApi(deps), deps),
                 transferConsents = transferConsents,
+                prepare = { driveJobAccess.prepare() },
+                requireAccess = { driveJobAccess.requireAccess(it) },
             ),
         )
 
@@ -125,6 +129,10 @@ class ReclyCore(
      * Never throws — a device without an account gets a summary that says so.
      */
     suspend fun pullRemoteRecordings(force: Boolean = false): PullSummary = remote.pull(force)
+
+    /** A successful OAuth connection resumes only work belonging to this verified Drive owner. */
+    @Throws(Throwable::class)
+    suspend fun reconnectDrive(): Int = jobs.quiesced { driveJobAccess.reconnect() }
 
     /**
      * docs/03 "제목": the detail screen's rename. Written locally at once — the list shows it on
@@ -273,10 +281,11 @@ class ReclyCore(
 
     /**
      * "연결 해제" (docs/03 "로그아웃 vs 연결 해제"), the local half of it: the `tokens` namespace of
-     * [SecureStore], the queue (`job`, `step_run`) and the Drive folder cache. Nothing in Drive is
+     * [SecureStore], completed job records and the Drive folder cache. Unfinished jobs keep their steps and
+     * resume state, parked until the same Drive owner is verified on reconnection. Nothing in Drive is
      * touched — those files are the user's own (docs/03), and this never calls `files.delete`.
      *
-     * The `remote/ignored` rows go too — they name folders of the account being disconnected — so
+     * The `remote/ignored` suppression keys go too — they name folders of the account being disconnected — so
      * a re-connect shows what Drive has, the way a fresh device does.
      *
      * What it does **not** touch is this device's own configuration: the workflow document, the
@@ -316,9 +325,10 @@ class ReclyCore(
             }
             // Before the namespace, not after: the shell's provider holds the access token in memory
             // too, and emptying the store under it would leave that copy to be handed to the next run.
+            jobStore.disconnectDrive()
+            driveJobAccess.clear()
             deps.tokenProvider.invalidate()
             deps.secureStore.clear(SecureStore.TOKENS)
-            jobStore.deleteAll(keepRecordings = busy)
             recordings.synced().keys.forEach { recordings.forgetDriveCopy(it) }
             driveStore.forgetAllFolders()
             // The "로컬만 삭제" memory (docs/03 "다른 기기의 녹음") is about this account's folders, and

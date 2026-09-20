@@ -26,14 +26,11 @@ public final class CoreJobQueue: JobQueue, @unchecked Sendable {
     }
 }
 
-/// docs/06: what a sign-in releases. A job that could only ever have been waiting for one goes back
-/// to `PENDING`; the pass that runs them is the shell's own, because the runner is.
+/// docs/06: verify the Drive owner and restore matching paused jobs without resetting progress.
+/// The shell schedules the next pass, including after a transient verification failure.
 public enum ParkedJobs {
     public static func unpark(core: ReclyCore_) async {
-        let parked = (try? await core.jobs.list())?.filter { $0.status == .needsAuth } ?? []
-        for job in parked {
-            _ = try? await core.jobs.retry(jobId: job.id)
-        }
+        _ = try? await core.reconnectDrive()
     }
 }
 

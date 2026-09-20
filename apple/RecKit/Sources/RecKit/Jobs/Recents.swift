@@ -235,7 +235,8 @@ public enum Recents {
                 ? "Transcribing on another device"
                 : "Done"
         }
-        guard let job else { return "No workflow" }
+        // A finalized recording stays done when disconnect clears its local job history.
+        guard let job else { return "Done" }
         switch job.status {
         case .pending: return "Waiting"
         case .running: return "Uploading"
@@ -256,8 +257,8 @@ public enum Recents {
     /// 1 failed" is one glance, where the count on its own is a number nobody has a use for.
     ///
     /// The Android ledger's counting rule (`JobsScreen.waiting` · `JobsScreen.failing`): a
-    /// recording no workflow has picked up is waiting like a queued job is, and one that was too
-    /// short counts with the failures because it is a recording that produced nothing.
+    /// recording without a job is finished, while one that was too short counts with the failures
+    /// because it is a recording that produced nothing.
     public static func summary(_ items: [RecentItem]) -> String {
         UiMessage.key(
             "%1$@ · %2$@ waiting · %3$@ failed",
@@ -274,7 +275,7 @@ public enum Recents {
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings.
     private static let waiting: Set<String> = [
-        "Waiting", "Retry pending", "No workflow", "Transfer permission needed",
+        "Waiting", "Retry pending", "Transfer permission needed",
         "Receiving from the watch", "Uploading on another device",
     ]
 

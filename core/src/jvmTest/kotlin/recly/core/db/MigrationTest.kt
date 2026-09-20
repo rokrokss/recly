@@ -23,10 +23,31 @@ import recly.core.sync.WorkflowStore
  * rather than on a device.
  */
 class MigrationTest {
-    /** The number the migrations add up to. `5.sqm` upgrades a version-5 database to this. */
+    /** The number the migrations add up to. `6.sqm` upgrades a version-6 database to this. */
     @Test
-    fun `the schema is at version 6`() {
-        assertEquals(6L, RecDatabase.Schema.version)
+    fun `the schema is at version 7`() {
+        assertEquals(7L, RecDatabase.Schema.version)
+    }
+
+    @Test
+    fun `a version-6 database preserves jobs and adds unknown account binding`() {
+        val path = tempDatabase()
+        version1(path, stamped = false)
+        JdbcSqliteDriver("jdbc:sqlite:$path").also { seed ->
+            VERSION_4.forEach { seed.execute(null, it, 0) }
+            seed.execute(null, "ALTER TABLE recording ADD COLUMN remote_pending TEXT", 0)
+            seed.execute(null, "ALTER TABLE recording ADD COLUMN drive_synced INTEGER NOT NULL DEFAULT 0", 0)
+            seed.execute(null, "PRAGMA user_version = 6", 0)
+            seed.close()
+        }
+        val driver = JvmRuntime.openDriver(path)
+        assertEquals(7L, userVersion(driver))
+        val job = assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
+        assertEquals("PENDING", job.status)
+        assertEquals("{}", job.workflow_json)
+        assertNull(job.drive_account_id)
+        assertNull(job.disconnected_status)
+        driver.close()
     }
 
     @Test
@@ -43,7 +64,7 @@ class MigrationTest {
             seed.close()
         }
         val driver = JvmRuntime.openDriver(path)
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         val record = assertNotNull(RecDatabase(driver).recQueries.selectRecordingById("existing").executeAsOneOrNull())
         assertEquals(0L, record.drive_synced, "a historical folder id must be verified by the next pull")
         assertEquals("old-folder", record.drive_folder_id)
@@ -86,7 +107,7 @@ class MigrationTest {
         assertEquals(0L, queries.countRemoteInFlight().executeAsOne())
         queries.updateRemotePending("transcribe", "01J9REC")
         assertEquals(1L, queries.countRemoteInFlight().executeAsOne())
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -125,7 +146,7 @@ class MigrationTest {
         assertEquals(0L, recording.remote)
         assertNull(queries.selectPartsByRecording("01J9REC").executeAsList().single().drive_file_id)
         assertEquals(emptyList(), queries.selectAdoptedRecordings().executeAsList())
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -140,7 +161,7 @@ class MigrationTest {
         val job = assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
         assertEquals("01J9REC", job.recording_id)
         assertEquals("PENDING", job.status)
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -157,7 +178,7 @@ class MigrationTest {
         val driver = JvmRuntime.openDriver(path)
 
         assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -176,7 +197,7 @@ class MigrationTest {
 
         assertNotNull(RecDatabase(driver).recQueries.selectJobById(JOB).executeAsOneOrNull())
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -205,7 +226,7 @@ class MigrationTest {
         listOf("remoteFileId", "dirty", "dirtySince", "writeFrozen", "seededHere", "guessedStarterId", "secretsRemoteFileId")
             .forEach { assertNull(queries.syncGet(it).executeAsOneOrNull(), "sync_state row '$it' survived") }
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -219,7 +240,7 @@ class MigrationTest {
         queries.syncSet(WorkflowStore.LOCAL_DOC, DOCUMENT)
         assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull())
         assertFalse(hasTable(driver, "secret_sync"))
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 
@@ -236,7 +257,7 @@ class MigrationTest {
 
         val queries = RecDatabase(driver).recQueries
         assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull(), "a second create would have thrown")
-        assertEquals(6L, userVersion(driver))
+        assertEquals(7L, userVersion(driver))
         driver.close()
     }
 

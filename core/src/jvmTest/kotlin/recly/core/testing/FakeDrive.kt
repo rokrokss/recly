@@ -42,6 +42,7 @@ class FakeDrive {
         var content: ByteArray,
         var version: Long = 1,
         val createdTime: String = "",
+        val ownerAccountId: String = "drive-owner-a",
     ) {
         /** Drive keeps one revision per write, oldest first — what a lost-update replay reads. */
         val revisions: MutableList<Revision> = mutableListOf()
@@ -68,6 +69,7 @@ class FakeDrive {
 
     /** When set, every request must carry exactly this bearer token or it is answered with 401. */
     var acceptedToken: String? = null
+    var accountId: String = "drive-owner-a"
 
     /** Run just before a request is answered: the seam where "another device wrote" happens. */
     val before = mutableListOf<(Recorded) -> Unit>()
@@ -156,6 +158,8 @@ class FakeDrive {
     ).also { requests += it }
 
     private fun MockRequestHandleScope.handle(r: Recorded): HttpResponseData = when {
+        r.path == "/drive/v3/about" -> json("""{"user":{"permissionId":"$accountId"}}""")
+
         r.url.startsWith(SESSION_PREFIX) -> chunk(r)
 
         r.path == "/upload/drive/v3/files" && r.uploadType == "resumable" -> startSession(r)
@@ -327,6 +331,7 @@ class FakeDrive {
             meta.description,
             content,
             createdTime = stamp(),
+            ownerAccountId = accountId,
         )
         entry.revisions += Revision("$id-r1", stamp(), content)
         files[id] = entry
@@ -356,7 +361,7 @@ class FakeDrive {
         return """{"id":"$id","name":"${entry.name}","mimeType":"${entry.mimeType}",""" +
             """"trashed":${id in trashed},"md5Checksum":"$md5","appProperties":{$properties},$description""" +
             """"createdTime":"${entry.createdTime}","headRevisionId":"${entry.headRevisionId}",""" +
-            """"webViewLink":"$link","version":"${entry.version}"}"""
+            """"webViewLink":"$link","version":"${entry.version}","owners":[{"permissionId":"${entry.ownerAccountId}"}]}"""
     }
 
     /** `--B\r\nContent-Type: …\r\n\r\n{json}\r\n--B\r\nContent-Type: …\r\n\r\n{bytes}\r\n--B--`. */
@@ -442,4 +447,3 @@ class FakeDrive {
         }
     }
 }
-

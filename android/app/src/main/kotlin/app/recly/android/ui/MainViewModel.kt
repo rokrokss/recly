@@ -199,10 +199,12 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      */
     private suspend fun unparkNeedsAuth(graph: AppGraph): Int {
         kotlinx.coroutines.withContext(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
-        val parked = graph.core.jobs.observe().first().filter { it.status == JobStatus.NEEDS_AUTH }
-        val unparked = parked.count { graph.core.jobs.retry(it.id) }
-        if (unparked > 0) WorkScheduler(getApplication()).onJobsDue()
-        return unparked
+        return try {
+            graph.core.reconnectDrive()
+        } finally {
+            // A transient owner lookup failure must still leave a scheduled verification pass.
+            WorkScheduler(getApplication()).onJobsDue()
+        }
     }
 
     fun signOut() = work { graph ->

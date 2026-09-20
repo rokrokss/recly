@@ -106,6 +106,7 @@ class JobService(
      * a fresh budget — `state_json` survives either way, so a half-finished upload resumes.
      */
     suspend fun retry(jobId: String): Boolean {
+        if (store.disconnected(jobId)) return false
         val job = store.get(jobId) ?: return false
         val now = deps.clock.now()
         return when {

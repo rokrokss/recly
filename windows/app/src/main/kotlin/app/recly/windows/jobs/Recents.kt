@@ -165,7 +165,8 @@ object Recents {
         // finished work like any other finished row, and says exactly that.
         if (record.remote || (job == null && record.driveSynced)) return Str.STATE_DONE.message()
         return when (job?.status) {
-            null -> Str.STATE_NO_WORKFLOW
+            // Disconnect removes job history without changing the finalized recording.
+            null -> Str.STATE_DONE
             JobStatus.PENDING -> Str.STATUS_WAITING
             JobStatus.RUNNING -> Str.STATE_UPLOADING
             JobStatus.WAITING -> Str.STATE_RETRY_WAIT

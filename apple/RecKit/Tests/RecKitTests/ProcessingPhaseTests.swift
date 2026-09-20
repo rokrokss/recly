@@ -106,9 +106,10 @@ final class LedgerStatusTests: XCTestCase {
         }
     }
 
-    func testNoTwoStatesShareACode() {
-        let codes = states.map { LedgerStatus.forRecent(state: $0).code }
-        XCTAssertEqual(codes.count, Set(codes).count, "two states are told apart only by colour")
+    func testOnlyFinishedStatesShareACode() {
+        let shared = Dictionary(grouping: states, by: { LedgerStatus.forRecent(state: $0).code })
+            .filter { $0.value.count > 1 }
+        XCTAssertEqual(shared, ["DONE": ["No workflow", "Done"]])
     }
 
     func testTheToneSaysWhatKindOfNewsItIs() {
@@ -124,7 +125,7 @@ final class LedgerStatusTests: XCTestCase {
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in Drive").tone, .warning)
         // Nothing is wrong and nothing is happening.
         XCTAssertEqual(LedgerStatus.forRecent(state: "Waiting").tone, .neutral)
-        XCTAssertEqual(LedgerStatus.forRecent(state: "No workflow").tone, .neutral)
+        XCTAssertEqual(LedgerStatus.forRecent(state: "No workflow").tone, .success)
         XCTAssertEqual(LedgerStatus.forRecent(state: "Too short").tone, .neutral)
     }
 

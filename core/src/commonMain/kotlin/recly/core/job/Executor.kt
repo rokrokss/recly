@@ -53,6 +53,8 @@ class Executor(
      */
     private val marker: FolderMarker = FolderMarker.NONE,
     private val transferConsents: TransferConsents? = null,
+    private val prepare: suspend () -> Unit = {},
+    private val requireAccess: suspend (Job) -> Unit = {},
 ) {
     private val mutex = Mutex()
 
@@ -71,6 +73,7 @@ class Executor(
         if (!mutex.tryLock()) return RunSummary(alreadyRunning = true)
         try {
             if (disconnecting) return RunSummary()
+            prepare()
             store.recoverRunning(deps.clock.now())
             val ran = mutableListOf<String>()
             for (job in store.selectDue(now)) {
@@ -271,6 +274,7 @@ class Executor(
             deps = deps.transcriptionPolicy.guardedDeps(step, transferConsents?.guardedDeps(step) ?: deps),
         )
         val outcome = try {
+            requireAccess(job)
             deps.transcriptionPolicy.requireAllowed(step)
             transferConsents?.requireAllowed(step)
             runner.run(ctx)

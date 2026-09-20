@@ -33,7 +33,7 @@ import recly.core.job.StepReport
  */
 val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATUS_RECORDING to LedgerStatus("REC", BadgeTone.DANGER),
-    Str.STATE_NO_WORKFLOW to LedgerStatus("NO_JOB", BadgeTone.NEUTRAL),
+    Str.STATE_NO_WORKFLOW to LedgerStatus("DONE", BadgeTone.SUCCESS),
     Str.STATUS_WAITING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
     Str.STATE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
     Str.STATE_RETRY_WAIT to LedgerStatus("RETRY", BadgeTone.WARNING),

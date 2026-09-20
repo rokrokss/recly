@@ -23,15 +23,18 @@ class LedgerStatusTest {
 
     /**
      * docs/03 "다른 기기의 녹음": a code says what is happening, not where — an upload another device
-     * is running is the same word as one of this phone's own, and that is the only pair. Anything
-     * else sharing a code would be two states told apart by colour alone.
+     * is running is the same word as one of this phone's own. A finalized recording with no job
+     * history also shares the completed state. Other states must remain distinct.
      */
     @Test
     fun `two states share a code only when they say the same thing`() {
         val shared = ItemState.entries.groupBy { it.badge().code }.filterValues { it.size > 1 }
 
         assertEquals(
-            mapOf("UPLOADING" to listOf(ItemState.REMOTE_UPLOADING, ItemState.RUNNING)),
+            mapOf(
+                "UPLOADING" to listOf(ItemState.REMOTE_UPLOADING, ItemState.RUNNING),
+                "DONE" to listOf(ItemState.NO_JOB, ItemState.DONE),
+            ),
             shared,
         )
     }
@@ -81,7 +84,7 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.WARNING, ItemState.WAITING.badge().tone)
         // Nothing is wrong and nothing is happening.
         assertEquals(BadgeTone.NEUTRAL, ItemState.PENDING.badge().tone)
-        assertEquals(BadgeTone.NEUTRAL, ItemState.NO_JOB.badge().tone)
+        assertEquals(BadgeTone.SUCCESS, ItemState.NO_JOB.badge().tone)
         assertEquals(BadgeTone.NEUTRAL, ItemState.SKIPPED_SHORT.badge().tone)
     }
 
@@ -98,7 +101,8 @@ class LedgerStatusTest {
         ItemState.entries.forEach { state ->
             assertTrue(!(state.waiting() && state.failing()), "$state is counted twice")
         }
-        assertEquals(5, ItemState.entries.count { it.waiting() })
+        assertEquals(4, ItemState.entries.count { it.waiting() })
+        assertFalse(ItemState.NO_JOB.waiting())
         assertEquals(4, ItemState.entries.count { it.failing() })
     }
 

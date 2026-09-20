@@ -585,7 +585,8 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
     // "no workflow" would be a thing for the user to fix, and there is nothing to fix: another
     // device already did the work, so this is a finished recording (docs/03 "다른 기기의 녹음").
     record.remote || (job == null && record.driveSynced) -> ItemState.DONE
-    job == null -> ItemState.NO_JOB
+    // Disconnect removes job history without changing the finalized recording.
+    job == null -> ItemState.DONE
     else -> when (job.status) {
         JobStatus.PENDING -> ItemState.PENDING
         JobStatus.RUNNING -> ItemState.RUNNING

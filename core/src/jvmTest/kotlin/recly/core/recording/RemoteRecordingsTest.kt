@@ -63,7 +63,7 @@ class RemoteRecordingsTest {
         h.upload(mine)
         h.clock.advance(8.days)
         h.retention.sweep(h.clock.now())
-        h.jobStore.deleteAll()
+        h.jobStore.disconnectDrive()
         val before = h.recordings.get(MINE_1)!!
         assertFalse(h.jobStore.uploaded(MINE_1))
         assertTrue(mine.meta.parts.all { !h.fs.exists(before.dir / it.file) })
@@ -93,7 +93,7 @@ class RemoteRecordingsTest {
         val h = Harness()
         val mine = h.local(MINE_1)
         h.upload(mine)
-        h.jobStore.deleteAll()
+        h.jobStore.disconnectDrive()
         h.remote.pull(force = true)
         val restored = h.recordings.get(MINE_1)!!
         assertTrue(restored.driveSynced)
@@ -144,7 +144,7 @@ class RemoteRecordingsTest {
         val h = Harness()
         val mine = h.local(MINE_1)
         h.upload(mine)
-        h.jobStore.deleteAll()
+        h.jobStore.disconnectDrive()
         val folder = h.recordings.get(MINE_1)!!.driveFolderId!!
         h.mark(folder, "transcribe")
         h.remote.pull(force = true)
@@ -578,7 +578,7 @@ class RemoteRecordingsTest {
         val mine = h.local(id = MINE_1)
         h.upload(mine)
         val folderId = assertNotNull(h.recordings.get(mine.recordingId)!!.driveFolderId, "the upload remembered the folder")
-        h.jobStore.deleteAll()
+        h.jobStore.disconnectDrive()
 
         h.recordings.delete(mine.recordingId, deleteDrive = false)
 

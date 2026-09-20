@@ -283,8 +283,8 @@
     <string name="settings_disconnect">연결 해제</string>
     <string name="settings_disconnect_hint">이 앱의 Google 계정 접근 권한을 회수합니다.</string>
     <string name="disconnect_title">Drive 연결을 해제할까요?</string>
-    <string name="disconnect_other_devices">같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 이 기기의 대기 작업은 취소되며 녹음과 설정은 유지됩니다.</string>
-    <string name="disconnect_local">이 기기의 대기 중인 처리를 정리합니다. 녹음, Drive 파일, 워크플로우와 키는 유지됩니다.</string>
+    <string name="disconnect_other_devices">같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한을 해제합니다. 대기 작업은 같은 계정에 다시 연결하면 이어집니다. 녹음과 설정은 유지됩니다.</string>
+    <string name="disconnect_local">대기 중인 처리는 같은 계정에 다시 연결하면 이어집니다. 녹음, Drive 파일, 워크플로우와 키는 유지됩니다.</string>
     <string name="disconnect_also_delete">이 폰의 녹음도 함께 삭제</string>
     <string name="disconnect_permissions">Google 권한 관리</string>
     <string name="disconnect_revoke_failed">Google이 권한을 회수하지 못했습니다(%1$s) — Google 계정 권한 설정에서 직접 해제하세요</string>

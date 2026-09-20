@@ -1530,10 +1530,12 @@ class ShellModel(
     private suspend fun unpark() {
         val graph = graph ?: return
         withContext(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
-        graph.core.jobs.list().filter { it.status == JobStatus.NEEDS_AUTH }
-            .forEach { graph.core.jobs.retry(it.id) }
+        try {
+            graph.core.reconnectDrive()
+        } finally {
+            runner?.jobsDue()
+        }
         needsAuth = false
-        runner?.jobsDue()
     }
 
     // --- settings -------------------------------------------------------------------------------

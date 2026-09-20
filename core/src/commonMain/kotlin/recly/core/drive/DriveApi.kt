@@ -38,6 +38,20 @@ class DriveApi(
     /** Bigger than this and a single request is a bad bet on a phone connection (docs/10). */
     val multipartLimit: Long get() = MULTIPART_LIMIT
 
+    /** Opaque Drive owner identifier. No email, name, profile scope or Recly account is needed. */
+    suspend fun accountId(): String {
+        val result = send("drive.about") { token ->
+            HttpPlan(
+                method = "GET",
+                url = "https://www.googleapis.com/drive/v3/about?fields=user(permissionId)",
+                headers = mapOf("Authorization" to "Bearer $token"),
+            )
+        }
+        return (result.json()?.get("user") as? JsonObject)?.string("permissionId")
+            ?.takeIf { it.isNotBlank() }
+            ?: throw StepFailure(true, CoreMessage.STEP_FAILED.code("Drive account identifier missing"))
+    }
+
     suspend fun createFolder(
         name: String,
         parentId: String,

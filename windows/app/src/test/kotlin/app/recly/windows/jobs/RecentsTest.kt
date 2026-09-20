@@ -70,11 +70,11 @@ class RecentsTest {
     }
 
     @Test
-    fun `a recording no workflow matched is not a failure`() {
-        // docs/02: `EnqueueResult.NoWorkflow` leaves no job at all, and the row is not an error.
+    fun `a finalized recording without job history is done without creating a job`() {
+        // A local recording or a disconnected account can leave no job behind.
         val item = Recents.item(record(), job = null, steps = emptyList())
 
-        assertEquals(Str.STATE_NO_WORKFLOW.message(), item.state)
+        assertEquals(Str.STATE_DONE.message(), item.state)
         assertNull(item.jobId)
         assertNull(item.jobStatus)
     }

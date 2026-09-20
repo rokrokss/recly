@@ -344,17 +344,17 @@ final class RecentsSummaryTests: XCTestCase {
         super.tearDown()
     }
 
-    /// A queued job, one waiting out a backoff and a recording no workflow picked up are all
-    /// waiting; a failure, a sign-in, Drive's space and a recording too short to keep have all
+    /// A queued job and one waiting out a backoff are waiting; a finalized recording without a job
+    /// is done. A failure, a sign-in, Drive's space and a recording too short to keep have all
     /// stopped. What is moving or finished is counted in the total and nowhere else.
     func testTheHeaderCountsWhatIsWaitingAndWhatHasStopped() {
         let items = [
-            "Waiting", "Retry pending", "No workflow",
+            "Waiting", "Retry pending", "Done",
             "Failed", "Sign-in needed", "No space in Drive", "Too short",
             "Uploading", "Done", "Recording",
         ].map(item(state:))
 
-        XCTAssertEqual(Recents.summary(items), "10 · 3 waiting · 4 failed")
+        XCTAssertEqual(Recents.summary(items), "10 · 2 waiting · 4 failed")
     }
 
     /// Nothing recorded yet: the zeros are still said, because a header that changes shape as rows
@@ -511,7 +511,8 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(badge(recording), LedgerStatus(code: "REC", tone: .danger))
 
         let finished = record(source: .phone)
-        XCTAssertEqual(Recents.stateLabel(record: finished, job: nil), "No workflow")
+        XCTAssertEqual(Recents.stateLabel(record: finished, job: nil), "Done")
+        XCTAssertEqual(badge(finished), LedgerStatus(code: "DONE", tone: .success))
     }
 
     /// docs/09 화면 원칙 2: a row nothing can be done to. The delete would pull the folder out from
