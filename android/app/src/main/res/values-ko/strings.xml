@@ -364,6 +364,5 @@
     <string name="drive_connect">Drive 연결</string>
     <string name="drive_attention">Drive 연결 확인 필요</string>
     <string name="drive_optional">기기에 녹음하고, Drive 연결 시 업로드합니다.</string>
-    <string name="local_saved">기기에 저장됨</string>
     <string name="drive_pending">업로드 대기</string>
 </resources>

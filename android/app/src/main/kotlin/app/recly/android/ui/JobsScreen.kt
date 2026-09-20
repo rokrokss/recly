@@ -172,7 +172,7 @@ fun JobsScreen(
                             date = ledgerColumn(item.startedAt, LEDGER_DATE),
                             time = ledgerColumn(item.startedAt, LEDGER_TIME),
                             title = item.title ?: stringResource(R.string.jobs_untitled),
-                            subtitle = if (item.savedLocally) stringResource(R.string.local_saved) else "",
+                            subtitle = "",
                             length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
                             status = item.badge(),
                             columns = columns,

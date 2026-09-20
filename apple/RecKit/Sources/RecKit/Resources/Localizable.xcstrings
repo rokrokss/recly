@@ -4123,22 +4123,6 @@
         }
       }
     },
-    "Saved on this device": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Saved on this device"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "기기에 저장됨"
-          }
-        }
-      }
-    },
     "Drive pending": {
       "localizations": {
         "en": {

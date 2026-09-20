@@ -72,7 +72,6 @@ data class JobItem(
     val nextRunAt: Instant?,
     /** docs/10: why this job is the user's to fix, or null when it is not (banner, notification). */
     val alert: AlertReason? = null,
-    val savedLocally: Boolean = false,
 )
 
 enum class ItemState {
@@ -530,7 +529,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
                 alert = job?.let { alertReasonOf(it.status, error) },
-                savedLocally = try { core.recordings.hasLocalAudio(record) } catch (_: java.io.IOException) { false },
             )
         }
     }

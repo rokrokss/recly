@@ -416,6 +416,5 @@
     <string name="drive_connect">Connect Drive</string>
     <string name="drive_attention">Drive connection needs attention</string>
     <string name="drive_optional">Record locally. Connect Drive to upload.</string>
-    <string name="local_saved">Saved on this device</string>
     <string name="drive_pending">Upload waiting</string>
 </resources>

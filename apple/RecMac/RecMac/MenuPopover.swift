@@ -326,7 +326,7 @@ struct MenuPopover: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: item.savedLocally ? RecKitStrings.localized("Saved on this device") : "",
+            subtitle: "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(

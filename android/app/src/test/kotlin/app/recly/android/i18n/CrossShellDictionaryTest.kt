@@ -197,11 +197,6 @@ class CrossShellDictionaryTest {
                 android = "drive_optional", windows = "drive.optional",
                 reckit = "Record locally. Connect Drive to upload.",
             ),
-            Line(
-                what = "local storage independently of upload status",
-                en = "Saved on this device", ko = "기기에 저장됨",
-                android = "local_saved", windows = "local.saved", reckit = "Saved on this device",
-            ),
             // docs/07 §5: what the core says when a job needs the user back at the sign-in, and what
             // the list calls a job that is parked on it.
             Line(

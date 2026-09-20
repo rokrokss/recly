@@ -75,7 +75,6 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
  */
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? = null) {
-    if (item.savedLocally) Text(strings[Str.LOCAL_SAVED], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
     val error = item.lastError ?: return
     val palette = blueprint
