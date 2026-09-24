@@ -21,7 +21,6 @@ import recly.core.message.CoreMessage
 import recly.core.model.OnError
 import recly.core.model.Step
 import recly.core.model.Workflow
-import recly.core.model.WorkflowsDocument
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
 import recly.core.privacy.TransferConsents
@@ -45,8 +44,6 @@ class Executor(
     private val recordings: RecordingRepository,
     private val runners: Map<String, StepRunner>,
     private val random: Random = Random.Default,
-    /** The workflow document as it is now, for [liveSteps]; null when the shell has none to offer. */
-    private val live: suspend () -> WorkflowsDocument? = { null },
     /**
      * docs/03 "다른 기기의 녹음": what this device still has to do, written on the recording's Drive
      * folder so the other devices' lists can say so. Advisory — the default writes nothing.
@@ -69,17 +66,22 @@ class Executor(
 
     /** One job at a time, oldest first (docs/10 "동시성"). Re-entrant calls return immediately —
      * a scheduler that fires while a run is in flight must not double-run a step. */
-    suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary {
+    suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary = runFiltered(now, false)
+
+    internal suspend fun runLocalJobs(now: Instant): RunSummary = runFiltered(now, true)
+
+    private suspend fun runFiltered(now: Instant, localOnly: Boolean): RunSummary {
         if (!mutex.tryLock()) return RunSummary(alreadyRunning = true)
         try {
             if (disconnecting) return RunSummary()
-            prepare()
+            if (!localOnly) prepare()
             store.recoverRunning(deps.clock.now())
             val ran = mutableListOf<String>()
             for (job in store.selectDue(now)) {
                 if (disconnecting) break
                 currentCoroutineContext().ensureActive()
-                runJob(job, now)
+                if (localOnly && !isLocalNext(job)) continue
+                runJob(job, now, localOnly)
                 ran += job.id
             }
             return RunSummary(jobIds = ran)
@@ -107,7 +109,12 @@ class Executor(
         }
     }
 
-    private suspend fun runJob(job: Job, now: Instant) {
+    internal suspend fun isLocalNext(job: Job): Boolean {
+        val run = store.stepsOf(job.id).firstOrNull { it.status !in setOf(StepStatus.SUCCEEDED, StepStatus.SKIPPED) } ?: return false
+        return job.workflow?.steps?.firstOrNull { it.id == run.stepId } is Step.LocalTranscribe
+    }
+
+    private suspend fun runJob(job: Job, now: Instant, localOnly: Boolean) {
         // Before the claim, so a job [JobStore.selectDue] would never have handed over is left as
         // it is rather than parked in RUNNING: a snapshot this build cannot decode has nothing to
         // run against, and the list already shows it as failed (docs/10 "잡 스냅샷").
@@ -121,7 +128,7 @@ class Executor(
             fail(job, "recording '${job.recordingId}' is gone")
             return
         }
-        val defined = liveSteps(workflow)
+        val defined = workflow.steps.associateBy { it.id }
         val prior = mutableMapOf<String, StepOutput>()
         lastMark = null
         for (run in store.stepsOf(job.id)) {
@@ -158,6 +165,10 @@ class Executor(
             if (disconnecting) return
             currentCoroutineContext().ensureActive()
             val step = defined[run.stepId]
+            if (localOnly && step !is Step.LocalTranscribe) {
+                store.updateJob(job.id, JobStatus.PENDING, null, deps.clock.now())
+                return
+            }
             val outcome = if (step == null) {
                 // The snapshot and the rows disagree: nothing can run this, so it is terminal.
                 terminal(job, run, OnError.ABORT, CoreMessage.STEP_MISSING.code(run.stepId))
@@ -167,9 +178,8 @@ class Executor(
             when (outcome) {
                 is Outcome.Ok -> {
                     prior[run.stepId] = outcome.output
-                    // After the step, not before: the marker says what is *left*, and a webhook
-                    // that ran before the transcribe has to leave `transcribe` standing.
-                    mark(job, workflow, prior, after = run.stepId)
+                    // After the step, not before: the marker says what is *left*.
+                    if (!localOnly) mark(job, workflow, prior, after = run.stepId)
                 }
 
                 Outcome.Continue -> Unit
@@ -177,13 +187,13 @@ class Executor(
                     // A job parked in FAILED is not coming back on its own, so nothing it promised
                     // will ever run: the other devices are told to stop waiting (docs/03). The
                     // other parks — WAITING, NEEDS_AUTH, NEEDS_SPACE — do come back, and keep it.
-                    if (store.get(job.id)?.status == JobStatus.FAILED) mark(job, workflow, prior, after = null)
+                    if (!localOnly && store.get(job.id)?.status == JobStatus.FAILED) mark(job, workflow, prior, after = null)
                     return
                 }
             }
         }
         store.updateJob(job.id, JobStatus.DONE, null, deps.clock.now())
-        mark(job, workflow, prior, after = null)
+        if (!localOnly) mark(job, workflow, prior, after = null)
         deps.logger.log(Level.INFO, "job.done", mapOf("jobId" to job.id, "recordingId" to job.recordingId))
         // Nothing is deleted here any more: once the upload has succeeded the parts are a cache
         // with a window on it, which Retention sweeps at the end of the pass (ADR-017).
@@ -211,33 +221,15 @@ class Executor(
             return
         }
         val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId") ?: return
-        send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).map { it.type })
+        send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).map {
+            if (it is Step.LocalTranscribe || it is Step.TranscriptPublish) "transcribe" else it.type
+        }.distinct())
     }
 
     private suspend fun send(folderId: String, pending: List<String>) {
         if (lastMark == folderId to pending) return
         lastMark = folderId to pending
         marker.mark(folderId, pending)
-    }
-
-    /**
-     * docs/10 "잡 스냅샷": the snapshot is what the job *is*; the document is what the user *means*
-     * now, and a user who fixes a step's URL or key after it failed expects the next attempt to use
-     * the fix (Z Fold7, 2026-09-04: a parked transcribe kept calling the Free Clova domain the
-     * snapshot named while the workflow had pointed at the Basic one for half an hour). So a step
-     * that is still in the current document — same workflow id, same step id, same type — runs with
-     * the document's definition; a workflow that is gone, a step that was removed or given another
-     * type, and a document the shell cannot read all leave the snapshot in charge, exactly as before.
-     */
-    private suspend fun liveSteps(snapshot: Workflow): Map<String, Step> {
-        val defined = snapshot.steps.associateBy { it.id }.toMutableMap()
-        val current = runCatching { live() }.getOrNull()
-            ?.workflows?.firstOrNull { it.id == snapshot.id }
-            ?: return defined
-        for (step in current.steps) {
-            if (defined[step.id]?.type == step.type) defined[step.id] = step
-        }
-        return defined
     }
 
     private suspend fun runStep(
@@ -274,7 +266,7 @@ class Executor(
             deps = deps.transcriptionPolicy.guardedDeps(step, transferConsents?.guardedDeps(step) ?: deps),
         )
         val outcome = try {
-            requireAccess(job)
+            if (step !is Step.LocalTranscribe) requireAccess(job)
             deps.transcriptionPolicy.requireAllowed(step)
             transferConsents?.requireAllowed(step)
             runner.run(ctx)

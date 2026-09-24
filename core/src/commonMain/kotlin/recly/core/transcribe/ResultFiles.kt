@@ -18,7 +18,7 @@ internal val resultFileMutex = Mutex()
 /**
  * Where a `transcribe` result goes (docs/08 "결과 파일"): the recording directory, so the app and
  * the next step can read it without a round trip, and the Drive folder the preceding
- * `drive.upload` made, so every other device and the webhook receiver can.
+ * `drive.upload` made, so every other device can.
  *
  * The Drive write follows the upload step's rule: same name and same md5 is left alone, a
  * different md5 is overwritten — running the workflow again makes the newest result the canonical
@@ -59,7 +59,7 @@ internal class ResultFiles(private val api: DriveApi, private val deps: CoreDeps
     }
 }
 
-/** One written result file, in the shape the webhook payload's `files[]` needs (docs/04). */
+/** One written result file, in the shape of a `drive.upload` output's `files[]`. */
 internal data class ResultFile(
     val name: String,
     val bytes: Long,

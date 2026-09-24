@@ -141,7 +141,6 @@
 				RecordingView.swift,
 				ReclyShortcuts.swift,
 				SettingsView.swift,
-				WorkflowsView.swift,
 			);
 			target = AB0300000000000000000061 /* ReclyTests */;
 		};
@@ -462,6 +461,16 @@
 			knownRegions = (
 				en,
 				ko,
+				ja,
+				"zh-Hans",
+				"zh-Hant",
+				es,
+				fr,
+				de,
+				pt,
+				ar,
+				hi,
+				ru,
 				Base,
 			);
 			mainGroup = AB0200000000000000000050;

@@ -3,8 +3,7 @@ import XCTest
 
 /// docs/13 I7: an intent is one call into the model the screen is drawn from — Siri, the action
 /// button, the Control and the Live Activity's stop button all arrive here — and what is worth
-/// checking about it is exactly that: which call, with what, and that a workflow the user named is
-/// carried through rather than dropped.
+/// checking about it is exactly that: which call, and that a refusal is reported.
 @MainActor
 final class RecordingIntentTests: XCTestCase {
     private var commands: FakeRecordingCommands!
@@ -18,19 +17,12 @@ final class RecordingIntentTests: XCTestCase {
         RecordingIntentTarget.commands = nil
     }
 
-    func testTheStartIntentStartsTheWorkflowItWasGiven() async throws {
-        _ = try await StartRecordingIntent(workflow: WorkflowEntity(id: "w2", name: "회의")).perform()
-
-        XCTAssertEqual(commands.started, ["w2"])
-        XCTAssertEqual(commands.stops, 0)
-    }
-
-    /// ADR-016: no workflow named is the source's default, which is `nil` all the way down to
-    /// `enqueue` — not an error and not a picker the user has to answer before recording.
-    func testTheStartIntentWithNoWorkflowStartsTheDefault() async throws {
+    /// docs/05: the intent starts with the same fixed settings as the recording screen.
+    func testTheStartIntentStartsARecording() async throws {
         _ = try await StartRecordingIntent().perform()
 
-        XCTAssertEqual(commands.started, [nil])
+        XCTAssertEqual(commands.starts, 1)
+        XCTAssertEqual(commands.stops, 0)
     }
 
     /// docs/12 M8 · ADR-011: the consent reminder is a question, and an intent is served with the
@@ -47,14 +39,14 @@ final class RecordingIntentTests: XCTestCase {
             XCTAssertEqual(refused.reason, "Open Recly once to answer the recording reminder")
         }
 
-        XCTAssertTrue(commands.started.isEmpty)
+        XCTAssertEqual(commands.starts, 0)
     }
 
     func testTheStopIntentStopsTheRecording() async throws {
         _ = try await StopRecordingIntent().perform()
 
         XCTAssertEqual(commands.stops, 1)
-        XCTAssertTrue(commands.started.isEmpty)
+        XCTAssertEqual(commands.starts, 0)
     }
 
     /// The app has not opened the core yet — the process was launched a moment ago to serve this —
@@ -65,41 +57,20 @@ final class RecordingIntentTests: XCTestCase {
         _ = try await StopRecordingIntent().perform()
         _ = try await StartRecordingIntent().perform()
     }
-
-    /// The workflow picker Siri and the Shortcuts editor show is the app's own list — the phone's
-    /// workflows, by the ids the model would start.
-    func testTheWorkflowQueryOffersWhatTheModelCanRun() async throws {
-        commands.workflows = [
-            WorkflowChoice(id: "w1", name: "기본"),
-            WorkflowChoice(id: "w2", name: "회의"),
-        ]
-
-        let suggested = try await WorkflowChoiceQuery().suggestedEntities()
-        XCTAssertEqual(suggested.map(\.id), ["w1", "w2"])
-        XCTAssertEqual(suggested.map(\.name), ["기본", "회의"])
-
-        let named = try await WorkflowChoiceQuery().entities(for: ["w2"])
-        XCTAssertEqual(named.map(\.id), ["w2"])
-    }
 }
 
 /// The model, minus the microphone and the core.
 @MainActor
 final class FakeRecordingCommands: RecordingCommands {
-    var workflows: [WorkflowChoice] = []
     /// What the model would refuse the next background start with, or nil to let it through
     /// (docs/12 M8: the consent reminder is still owed).
     var refusal: String?
-    private(set) var started: [String?] = []
+    private(set) var starts = 0
     private(set) var stops = 0
 
-    func recordableWorkflows() async -> [WorkflowChoice] {
-        workflows
-    }
-
-    func startFromIntent(workflowId: String?) async -> String? {
+    func startFromIntent() async -> String? {
         if let refusal { return refusal }
-        started.append(workflowId)
+        starts += 1
         return nil
     }
 

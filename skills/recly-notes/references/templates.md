@@ -7,7 +7,9 @@ Contents: shared rules · minutes · decision-log · interview · lecture · mem
 - **Header** on every template: title (from `meta.json`, or "Untitled recording" + device), date
   and time in the recording's timezone, duration, participants (head count or speaker labels).
 - Write in the transcript's language unless the user asks otherwise.
-- Speakers are `S1`, `S2`, … unless the user has mapped them to names. Offer to map them once.
+- Use `S1`, `S2`, … only when labels are present in the transcript; the user may map them to names.
+  Without speaker identification, leave participants unknown and action owners unassigned unless
+  the text explicitly names them. Do not infer a speaker count from paragraphs or turns.
 - Cite timestamps as `[HH:MM:SS]` wherever a reader might want to jump to the audio: every
   decision, every action item, and any disputed point.
 - Do not retell the transcript. A reader who missed the recording should get what matters in one

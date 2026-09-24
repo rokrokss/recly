@@ -21,7 +21,7 @@ android {
 /**
  * The wire between the phone and the watch, and nothing else. Both apps depend on it, so nothing
  * that belongs to one of them may land here — no Play Services, no Compose, no `Context`. What is
- * here is a grammar and three payload shapes, which is exactly what two devices have to agree on.
+ * here is a grammar and two payload shapes, which is exactly what two devices have to agree on.
  */
 dependencies {
     // `api`: `TransferPath` speaks in `recly.core.model.Track` and the acks in `recly.core.model.Part`.

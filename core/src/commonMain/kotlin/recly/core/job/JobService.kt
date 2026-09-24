@@ -5,16 +5,12 @@ package recly.core.job
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
-import recly.core.model.WorkflowsDocument
+import recly.core.model.Workflow
 import recly.core.platform.CoreDeps
 import recly.core.recording.RecordingRepository
-import recly.core.workflow.WorkflowSelector
 
 sealed interface EnqueueResult {
-    /**
-     * Neither the recording's own pick nor this device's default resolves (ADR-016) — the recording
-     * stays in the list, unprocessed, until the user picks a default and runs it.
-     */
+    /** No plan to run: the recording is gone, or the settings it froze no longer read. */
     data object NoWorkflow : EnqueueResult
 
     /** The parts are already uploaded and deleted: there is nothing left for a new job to do. */
@@ -40,18 +36,8 @@ class JobService(
 ) {
     private val retention = Retention(deps, store, recordings)
 
-    /**
-     * [chosenWorkflowId] is the pick made in the UI at stop time; without one the workflow the
-     * recording itself was started with wins, then [deviceDefaultWorkflowId] — this device's own
-     * default, which the caller reads from
-     * [recly.core.sync.WorkflowRepository.deviceDefault] (ADR-016).
-     */
-    suspend fun enqueue(
-        recordingId: String,
-        doc: WorkflowsDocument,
-        chosenWorkflowId: String? = null,
-        deviceDefaultWorkflowId: String? = null,
-    ): EnqueueResult {
+    /** [workflow] is the plan to snapshot into the job; null answers [EnqueueResult.NoWorkflow]. */
+    suspend fun enqueue(recordingId: String, workflow: Workflow?): EnqueueResult {
         val record = recordings.get(recordingId)
             ?: throw IllegalArgumentException("unknown recording '$recordingId'")
         // docs/03 "다른 기기의 녹음": Drive already holds it and this device has no original to send.
@@ -59,9 +45,7 @@ class JobService(
         if (record.remote) return EnqueueResult.PartsPurged
         if (record.driveSynced) return EnqueueResult.AlreadySynced
         val meta = record.meta
-        val workflow =
-            WorkflowSelector.select(doc, chosenWorkflowId ?: meta.workflowId, deviceDefaultWorkflowId)
-                ?: return EnqueueResult.NoWorkflow
+        if (workflow == null) return EnqueueResult.NoWorkflow
         // Too short to be worth uploading, but the job row exists so the list can offer a manual run.
         val short = (meta.durationSec ?: 0.0) < workflow.minDurationSec
         val status = if (short) JobStatus.SKIPPED_SHORT else JobStatus.PENDING
@@ -91,6 +75,10 @@ class JobService(
         if (!summary.alreadyRunning) retention.sweep(now)
         return summary
     }
+
+    internal suspend fun runLocalJobs(now: Instant): RunSummary = executor.runLocalJobs(now)
+
+    internal suspend fun localJobs(): List<Job> = store.list().filter { executor.isLocalNext(it) }
 
     /** "연결 해제" (docs/03) runs in here; see [Executor.quiesced]. Internal: the shells never
      * quiesce the queue themselves, they call `ReclyCore.disconnect`. */

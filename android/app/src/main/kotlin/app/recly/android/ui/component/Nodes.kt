@@ -51,7 +51,7 @@ data class NodeSpec(
     val active: Boolean = true,
     /** Work is running behind the value, and the node turns a loader beside it to say so. */
     val busy: Boolean = false,
-    /** Set only on the one node that is a choice — the workflow picker (docs/09 화면 원칙 1). */
+    /** Set only on the one node that takes a tap — the transcription node (docs/09 화면 원칙 1). */
     val onClick: (() -> Unit)? = null,
     /** What tapping it does, said in words, because the node itself is a label and a value. */
     val onClickLabel: String? = null,

@@ -124,7 +124,7 @@ final class WatchReceiverTests: XCTestCase {
         await fulfillment(of: [acked], timeout: 2)
         XCTAssertEqual(
             core.transcript.entries,
-            ["acceptPart", "ack", "acceptMeta", "workflowId", "enqueue", "onJobsDue", "ack"]
+            ["acceptPart", "ack", "acceptMeta", "enqueue", "onJobsDue", "ack"]
         )
     }
 
@@ -161,7 +161,7 @@ final class WatchReceiverTests: XCTestCase {
         receiver.received(try writeMeta(recordingId), metadata: metaMetadata)
 
         await fulfillment(of: [received], timeout: 2)
-        XCTAssertEqual(core.transcript.entries, ["acceptMeta", "workflowId", "enqueue", "onJobsDue", "ack"])
+        XCTAssertEqual(core.transcript.entries, ["acceptMeta", "enqueue", "onJobsDue", "ack"])
         XCTAssertEqual(
             acks.sent,
             [.meta(recordingId: recordingId, ok: true, reason: nil, missing: [])]
@@ -340,12 +340,7 @@ final class FakeWatchTransferCore: WatchTransferCore, @unchecked Sendable {
         return metaResult
     }
 
-    func workflowId(recordingId: String) async throws -> String? {
-        transcript.record("workflowId")
-        return nil
-    }
-
-    func enqueue(recordingId: String, workflowId: String?) async throws {
+    func enqueue(recordingId: String) async throws {
         transcript.record("enqueue")
     }
 

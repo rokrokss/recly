@@ -45,9 +45,9 @@ sealed interface AckMessage {
 }
 
 /**
- * The reading half of [WearJson.partAck] and [WearJson.metaAck], as `WearWorkflows` is of
- * `WearJson.workflows`: hand-parsed for the same reason the phone hand-builds it, and pinned to the
- * builder by `AckJsonTest` rather than by two people reading the same doc.
+ * The reading half of [WearJson.partAck] and [WearJson.metaAck]: hand-parsed for the same reason
+ * the phone hand-builds it, and pinned to the builder by `AckJsonTest` rather than by two people
+ * reading the same doc.
  *
  * Nothing here throws. An ack the watch cannot read is an ack it did not get, and the transfer's
  * own five-minute timeout is already the answer to that (docs/11 W4) — where guessing at a

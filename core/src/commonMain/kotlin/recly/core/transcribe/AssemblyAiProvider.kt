@@ -122,8 +122,8 @@ class AssemblyAiProvider : SttProvider {
 
     /** docs/08: `ko-en` has no mixed-language code here, and Korean is the half that matters. */
     private fun languageCode(language: Language): String = when (language) {
-        Language.EN -> "en"
-        else -> "ko"
+        Language.AUTO, Language.KO_EN -> "ko"
+        else -> TranscriptionLanguages.code(language)
     }
 
     /**

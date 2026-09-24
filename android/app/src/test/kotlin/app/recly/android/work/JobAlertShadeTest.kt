@@ -66,13 +66,13 @@ class JobAlertShadeTest {
     @Test
     fun `a tap leaves the alert up and a later queue reading takes it down`() {
         val shade = FakeShade()
-        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.WEBHOOK, 1, "morning")))
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 1)))
         shade.ops.clear()
 
-        // The tap: MainActivity opens the editor and publishes nothing, so the last reading of the
+        // The tap: MainActivity opens the settings and publishes nothing, so the last reading of the
         // queue — what the shade is showing — is untouched.
         JobAlertShade.repaint(shade)
-        assertEquals(listOf("notify WEBHOOK 1"), shade.posted())
+        assertEquals(listOf("notify QUOTA 1"), shade.posted())
 
         shade.ops.clear()
         JobAlertShade.publish(shade, emptyList())
@@ -85,7 +85,7 @@ class JobAlertShadeTest {
     @Test
     fun `a refresh after a cancellation reposts nothing`() {
         val shade = FakeShade()
-        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.WEBHOOK, 2)))
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 2)))
         JobAlertShade.publish(shade, emptyList())
         shade.ops.clear()
 
@@ -103,10 +103,10 @@ class JobAlertShadeTest {
     @Test
     fun `a reading that changed nothing posts nothing`() {
         val shade = FakeShade()
-        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 2, "morning")))
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 2)))
         shade.ops.clear()
 
-        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 2, "morning")))
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 2)))
 
         assertEquals(emptyList(), shade.posted())
         // The reasons it still has nothing to say about come down whatever happens.
@@ -145,7 +145,7 @@ class JobAlertShadeTest {
     @Test
     fun `a refresh repaints what the queue last said`() {
         val shade = FakeShade()
-        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 4, "morning")))
+        JobAlertShade.publish(shade, listOf(JobAlert(AlertReason.QUOTA, 4)))
         shade.ops.clear()
 
         JobAlertShade.repaint(shade)

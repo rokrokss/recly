@@ -30,7 +30,6 @@ import kotlinx.coroutines.withTimeout
 import okio.Path.Companion.toPath
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
-import recly.core.sync.WorkflowRepository
 
 /**
  * The lane's own end-to-end path, with only the audio faked: record → finalize → enqueue → executor
@@ -52,9 +51,8 @@ class ShellFlowTest {
         }
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
         val core = AppModule.build(dataDir = dir.absolutePath.toPath()).core
-        // What `ShellModel.load` does on a PC that has never had a document: seed the docs/05
-        // starter and point this device's default at 메모 (ADR-016).
-        core.workflows.seed(WorkflowRepository.MEMO_ID)
+        // What `ShellModel.load` does on a PC that has never had settings: write the defaults.
+        core.initializeProcessing()
         val finalized = CompletableDeferred<RecordingOutcome>()
         val recorder = WindowsRecorder(
             core = core,
@@ -65,12 +63,12 @@ class ShellFlowTest {
             onFinalized = { finalized.complete(it) },
         )
 
-        assertNotNull(recorder.start(workflowId = null))
+        assertNotNull(recorder.start())
         recorder.stop()
         val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
 
-        // A skipped title: no name, and the job is queued all the same. The recording carries no
-        // pick of its own, so ADR-016's second rule applies — this device's own default.
+        // A skipped title: no name, and the job is queued all the same, on the settings the
+        // recording froze when it started.
         assertIs<EnqueueResult.Enqueued>(completeRecording(core, outcome.recordingId, title = null))
         assertNull(assertNotNull(core.recordings.get(outcome.recordingId)).meta.title)
 
@@ -92,7 +90,7 @@ class ShellFlowTest {
         val core = AppModule.build(
             dataDir = Files.createTempDirectory("recly-title").toString().toPath(),
         ).core
-        core.workflows.seed(WorkflowRepository.MEMO_ID)
+        core.initializeProcessing()
         val finalized = CompletableDeferred<RecordingOutcome>()
         val recorder = WindowsRecorder(
             core = core,
@@ -103,7 +101,7 @@ class ShellFlowTest {
             onFinalized = { finalized.complete(it) },
         )
 
-        assertNotNull(recorder.start(workflowId = null))
+        assertNotNull(recorder.start())
         recorder.stop()
         val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
         // The stop leaves no job behind: nothing is queued until the title dialog is answered.

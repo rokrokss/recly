@@ -21,10 +21,7 @@ interface MetaFacade {
 
     suspend fun acceptMeta(json: String): AcceptMetaResult
 
-    /** The workflow the watch started the recording with, as the stored meta now records it. */
-    suspend fun workflowId(recordingId: String): String?
-
-    suspend fun enqueue(recordingId: String, workflowId: String?): EnqueueResult
+    suspend fun enqueue(recordingId: String): EnqueueResult
 
     /** Wakes the executor — the same path the phone recorder's own stop uses (docs/11 A5 (a)). */
     suspend fun onJobsDue()
@@ -96,10 +93,11 @@ class MetaAcceptor(
      * `RecordingRecovery`), and the six-hour periodic worker covers a process that never starts.
      */
     private suspend fun complete(path: TransferPath.Meta) {
-        val enqueued = core.enqueue(path.recordingId, core.workflowId(path.recordingId))
+        val enqueued = core.enqueue(path.recordingId)
         val level = when (enqueued) {
             // Not failures — the recording is filed and shows in the list either way. NoWorkflow
-            // means nothing is configured to run on it, PartsPurged that the work is already done.
+            // means its processing settings could not be read, PartsPurged that the work is
+            // already done.
             is EnqueueResult.NoWorkflow, is EnqueueResult.PartsPurged -> Logger.Level.WARN
             else -> Logger.Level.INFO
         }
@@ -142,11 +140,8 @@ class CoreMetaFacade(
     override suspend fun acceptMeta(json: String): AcceptMetaResult =
         withContext(core.deps.io) { core.transfer.acceptMeta(json) }
 
-    override suspend fun workflowId(recordingId: String): String? =
-        withContext(core.deps.io) { core.recordings.get(recordingId)?.meta?.workflowId }
-
-    override suspend fun enqueue(recordingId: String, workflowId: String?): EnqueueResult =
-        withContext(core.deps.io) { core.enqueue(recordingId, workflowId) }
+    override suspend fun enqueue(recordingId: String): EnqueueResult =
+        withContext(core.deps.io) { core.enqueue(recordingId) }
 
     override suspend fun onJobsDue() = scheduler.onJobsDue()
 

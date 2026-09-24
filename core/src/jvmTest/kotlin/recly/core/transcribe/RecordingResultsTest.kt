@@ -166,6 +166,5 @@ private fun CoreDeps.with(transport: Transport) = CoreDeps(
     audio = audio,
     dataDir = dataDir,
     device = device,
-    appVersion = appVersion,
     io = io,
 )

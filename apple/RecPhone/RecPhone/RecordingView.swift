@@ -21,12 +21,6 @@ struct RecordingView: View {
     /// docs/09 "접근성": at the accessibility sizes the dashboard is taller than the phone, and the
     /// record node is the part that falls off the bottom of it.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    /// docs/09 화면 원칙 1: the workflow picker is revealed by the node it names, and is a row of
-    /// chips rather than a menu — the names, and the one in use with a ✓ on it.
-    @State private var picking = false
-    /// How wide the picker's wrap is, so no single chip can be wider than it. Measured rather than
-    /// assumed: the dashboard's own margin is the only thing that decides it.
-    @State private var pickerWidth: CGFloat = 0
     /// What the record node draws, which outlives the recorder's own state by [holdBusy]'s window.
     @State private var busy = false
     /// When the recorder went to work, so the window can be measured from it. Nil while it is not.
@@ -122,83 +116,17 @@ struct RecordingView: View {
 
     // MARK: - The three nodes
 
-    /// The workflow node is the picker: it is the only node on this screen that is a choice, so the
-    /// row takes a tap while there is something to choose and is a plain readout while there is not.
+    /// The row opens the recording processing settings while nothing is being recorded.
     @ViewBuilder
     private var nodes: some View {
-        if model.workflows.isEmpty || model.isRecording {
-            StateNodeRow(specs)
-        } else {
-            VStack(spacing: Space.s) {
-                Button {
-                    picking.toggle()
-                } label: {
-                    StateNodeRow(specs)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("workflow")
-                if picking { workflowPicker }
-            }
-        }
+        Button { model.tab = .settings } label: { StateNodeRow(specs) }
+            .buttonStyle(.plain).disabled(model.isRecording)
     }
-
-    /// docs/09 화면 원칙 1: "피커는 워크플로우 이름들만 나열하고 선택된 하나가 채워진 칩(✓)이다" — the
-    /// names and nothing else, so there is no "Workflow" label row inside it and no "no pick" entry
-    /// to make (ADR-016: the pick *is* this phone's pointer).
-    ///
-    /// The same chips the Mac's popover draws (`MenuPopover.workflowPicker`) and Android's menu
-    /// marks the same way.
-    ///
-    /// It is the dashboard it opens inside that decides the two limits. docs/05 lets a document hold
-    /// fifty workflows with forty-character names, and a plain wrapping row of those would push the
-    /// readouts and the record node off the bottom of a small phone: so the wrap scrolls after
-    /// [pickerRows] rows, and no chip is wider than the row it is on — a long name is one line with
-    /// its tail cut, as everywhere else in this design.
-    private var workflowPicker: some View {
-        ScrollView(.vertical) {
-            FlowLayout {
-                ForEach(model.workflows, id: \.id) { workflow in
-                    BlueprintChip(workflow.name, selected: model.workflowId == workflow.id) {
-                        picking = false
-                        // ADR-016: a pick here is this phone's own pointer, so it is what every
-                        // recording runs until another one is made — not a choice that lasts one.
-                        Task { await model.selectWorkflow(workflow.id) }
-                    }
-                    // Nil rather than zero until the width is measured: a chip is its own size,
-                    // and a `maxWidth` of 0 would flatten every one of them on the first pass.
-                    .frame(maxWidth: pickerWidth > 0 ? pickerWidth : nil)
-                    .truncationMode(.tail)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background {
-                GeometryReader { proxy in
-                    Color.clear.onChange(of: proxy.size.width, initial: true) { _, width in
-                        pickerWidth = width
-                    }
-                }
-            }
-        }
-        .scrollIndicators(.never)
-        .frame(maxHeight: pickerHeight)
-        .accessibilityIdentifier("workflow-picker")
-    }
-
-    /// How much of the wrap stands before it scrolls: three chips deep, which is as much as the
-    /// dashboard can give up and still be one. A chip is at least [minTouch] tall and the rows are
-    /// [Space.s] apart, so this is that many of them — at the accessibility type sizes the chips are
-    /// taller than the floor and fewer of them stand, which is the same trade the rest of the screen
-    /// makes there.
-    private var pickerHeight: CGFloat {
-        CGFloat(Self.pickerRows) * minTouch + CGFloat(Self.pickerRows - 1) * Space.s
-    }
-
-    private static let pickerRows = 3
 
     private var specs: [NodeSpec] {
         [
             NodeSpec(label: loc("Device"), value: Source.phone.name.lowercased()),
-            NodeSpec(label: loc("Workflow"), value: workflowName),
+            NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
             stateNode,
         ]
     }
@@ -234,16 +162,6 @@ struct RecordingView: View {
         if Recents.uploading(model.recents) { return "UPLOADING" }
         if Recents.receiving(model.recents) { return "RECEIVING" }
         return nil
-    }
-
-    /// The node names the workflow this phone records with — the one the picker has selected.
-    ///
-    /// ADR-016: a phone that has picked none, or points at a workflow another device deleted, has
-    /// something to fix rather than a workflow to name, and the node is where the user is when it
-    /// matters.
-    private var workflowName: String {
-        model.workflows.first { $0.id == model.workflowId }?.name
-            ?? loc("Choose a workflow")
     }
 
     /// docs/09: state is a code, in monospace, and never colour alone.

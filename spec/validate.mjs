@@ -1,4 +1,4 @@
-// 스키마 ↔ 예제 검증 + 워크플로우 스키마 부정 케이스. 실행: cd spec && npm install && npm run validate
+// Schemas ↔ examples, plus negative cases for the settings and transcript schemas. Run: cd spec && npm install && npm run validate
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { readFileSync } from "node:fs";
@@ -8,10 +8,11 @@ import { fileURLToPath } from "node:url";
 const root = dirname(fileURLToPath(import.meta.url));
 const load = (p) => JSON.parse(readFileSync(join(root, p), "utf8"));
 const pairs = [
-  ["workflow.schema.json", "examples/workflows.json"],
   ["recording.meta.schema.json", "examples/recording.meta.json"],
-  ["webhook.payload.schema.json", "examples/webhook.payload.json"],
   ["transcript.schema.json", "examples/transcript.json"],
+  ["transcript.schema.json", "examples/transcript-local.json"],
+  ["recording-settings.schema.json", "examples/recording-settings.json"],
+  ["recording-settings.schema.json", "examples/recording-settings-external.json"],
 ];
 let failed = 0;
 for (const [s, d] of pairs) {
@@ -22,35 +23,50 @@ for (const [s, d] of pairs) {
   if (!ok) { failed++; console.log(JSON.stringify(ajv.errors, null, 1)); }
 }
 
-const ajv = new Ajv2020({ strict: true, allErrors: true });
-addFormats(ajv);
-const wf = ajv.compile(load("workflow.schema.json"));
-const base = load("examples/workflows.json");
-const mut = (f) => { const c = structuredClone(base); f(c); return c; };
-const cases = [
-  ["http url rejected", false, mut((c) => (c.workflows[0].steps[1].url = "http://example.com/x"))],
-  ["localhost http allowed", true, mut((c) => (c.workflows[0].steps[1].url = "http://localhost:5678/webhook/rec"))],
-  ["127.0.0.1 http allowed", true, mut((c) => (c.workflows[0].steps[1].url = "http://127.0.0.1:5678/rec"))],
-  ["unknown step type", false, mut((c) => (c.workflows[0].steps[0].type = "translate"))],
-  ["unknown transcribe provider", false, mut((c) => (c.workflows[2].steps[1].provider = "whisper"))],
-  ["invokeUrl on assemblyai is not the schema's business", true, mut((c) => (c.workflows[2].steps[1].invokeUrl = "https://x.y/z"))],
-  ["speakers.max over 10", false, mut((c) => (c.workflows[2].steps[1].speakers.max = 11))],
-  ["transcribe without secretRef", false, mut((c) => delete c.workflows[2].steps[1].secretRef)],
-  ["bad step id", false, mut((c) => (c.workflows[0].steps[0].id = "Up-1"))],
-  ["11 steps", false, mut((c) => { for (let i = 0; i < 10; i++) c.workflows[0].steps.push({ id: "s" + i, type: "webhook", url: "https://x.y/" }); })],
-  ["bad ulid", false, mut((c) => (c.workflows[0].id = "not-a-ulid"))],
-  ["negative minDurationSec", false, mut((c) => (c.workflows[0].minDurationSec = -1))],
-  ["extra field", false, mut((c) => (c.workflows[0].foo = 1))],
-  ["schema 1 rejected", false, mut((c) => (c.schema = 1))],
-  // 이 스키마는 schema 3만 기술한다. 1..2 문서를 읽어 3으로 올리는 마이그레이션은 코어 파서의 일이고
-  // (docs §5 동결), 여기서는 옛 필드를 그대로 둔 문서가 v3이 아니라는 사실만 못 박는다.
-  ["schema 2 rejected", false, mut((c) => (c.schema = 2))],
-  ["legacy trigger rejected", false, mut((c) => (c.workflows[0].trigger = { sources: ["phone"] }))],
-  ["legacy enabled/isDefault rejected", false, mut((c) => { c.workflows[0].enabled = true; c.workflows[0].isDefault = true; })],
+const settingsAjv = new Ajv2020({ strict: true, allErrors: true });
+addFormats(settingsAjv);
+const settingsSchema = settingsAjv.compile(load("recording-settings.schema.json"));
+const settingsBase = load("examples/recording-settings.json");
+const settingsMut = (f) => { const c = structuredClone(settingsBase); f(c); return c; };
+const settingsCases = [
+  ["off mode", true, settingsMut(c => c.settings.transcription.mode = "off")],
+  ["external requires configuration", false, settingsMut(c => c.settings.transcription.mode = "external")],
+  ["unknown settings field", false, settingsMut(c => c.settings.telemetry = true)],
+  ["unknown nested field", false, settingsMut(c => c.settings.transcription.speakers = { min: 1, max: 10, extra: true })],
+  ["legacy speaker choices remain readable", true, settingsMut(c => { c.settings.transcription.diarize = false; c.settings.transcription.speakers = { min: 2, max: 4 }; })],
+  ["webhook field rejected", false, settingsMut(c => c.settings.webhook = { url: "https://example.com/old-hook" })],
+  ["raw API key excluded", false, settingsMut(c => c.settings.transcription.external = { provider: "assemblyai", secretRef: "key", apiKey: "not-a-key" })],
+  ["unknown provider", false, settingsMut(c => c.settings.transcription.external = { provider: "whisper", secretRef: "key" })],
+  ["bad secretRef", false, settingsMut(c => c.settings.transcription.external = { provider: "assemblyai", secretRef: "Bad-Key" })],
+  ["http invokeUrl rejected", false, settingsMut(c => c.settings.transcription.external = { provider: "clova", secretRef: "key", invokeUrl: "http://example.com/x" })],
+  ["speakers.max over 10", false, settingsMut(c => c.settings.transcription.speakers = { min: 1, max: 11 })],
+  ["future settings version", false, settingsMut(c => c.schema = 2)],
+  ["explicit null", false, settingsMut(c => c.settings.storage = null)],
+  ["workflow folder dependency", false, settingsMut(c => c.settings.storage.folder = "recly/{{ workflowName }}")],
+  ["title fallback dependency", false, settingsMut(c => c.settings.storage.folder = "recly/{{ title }}")],
+  ["empty settings uses defaults", true, settingsMut(c => c.settings = {})],
 ];
-for (const [name, expect, doc] of cases) {
-  const ok = wf(doc);
-  console.log(`${ok === expect ? "OK  " : "FAIL"} ${name} -> valid=${ok}`);
+for (const language of ["ko", "en", "ko-en", "auto", "ja", "zh-cn", "zh-tw", "es", "fr", "de", "pt", "ar", "hi", "ru", "it", "id", "tr", "vi", "th", "nl", "pl", "uk"]) {
+  settingsCases.push([`language ${language}`, true, settingsMut(c => c.settings.transcription.language = language)]);
+}
+settingsCases.push(["unknown language rejected", false, settingsMut(c => c.settings.transcription.language = "xx")]);
+for (const [name, expect, document] of settingsCases) {
+  const ok = settingsSchema(document);
+  console.log(`${ok === expect ? "OK  " : "FAIL"} settings: ${name} -> valid=${ok}`);
   if (ok !== expect) failed++;
+}
+const transcriptAjv = new Ajv2020({ allErrors: true, strict: true });
+addFormats(transcriptAjv);
+const transcriptSchema = transcriptAjv.compile(load("transcript.schema.json"));
+const localTranscript = load("examples/transcript-local.json");
+for (const [label, expected, change] of [
+  ["v2 unknown speaker", true, c => c],
+  ["v2 missing capability", false, c => { delete c.speakerIdentification; return c; }],
+  ["v2 fabricated speaker", false, c => { c.segments[0].speaker = "S1"; return c; }],
+  ["v1 requires speaker", false, c => { c.schema = 1; delete c.speakerIdentification; delete c.timing; return c; }],
+]) {
+  const valid = transcriptSchema(change(structuredClone(localTranscript)));
+  if (valid !== expected) { console.error(`FAIL transcript: ${label}`); failed++; }
+  else console.log(`OK   transcript: ${label} -> valid=${valid}`);
 }
 process.exit(failed ? 1 : 0);

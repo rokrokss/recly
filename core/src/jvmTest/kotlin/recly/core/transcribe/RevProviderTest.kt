@@ -66,6 +66,11 @@ class RevProviderTest {
         val expected = mapOf(
             Language.KO to "ko",
             Language.EN to "en",
+            Language.JA to "ja",
+            Language.FR to "fr",
+            Language.AR to "ar",
+            Language.ZH_CN to "cmn",
+            Language.ZH_TW to "cmn",
             // docs/08: no mixed-language code here, and Korean is the half that matters.
             Language.KO_EN to "ko",
             // Leaving the field out would not detect anything here, it would fall back to English.

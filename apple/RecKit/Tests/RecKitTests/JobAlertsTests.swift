@@ -5,7 +5,7 @@ import XCTest
 
 /// docs/10 "사용자가 고칠 수 있는 실패와 그 알림": which failures call the user, which ones do not, and
 /// what a queue full of them adds up to. Lane P1 acceptance 7 (one notification per reason, with
-/// the count in it) and 8 (a webhook 500 never notifies) are both decided here.
+/// the count in it) and 8 (a provider 500 never notifies) are both decided here.
 ///
 /// The Android shell's `JobAlertsTest` asks the same questions of the same rules. The two files are
 /// how the two shells are held to one answer.
@@ -19,54 +19,19 @@ final class JobAlertsTests: XCTestCase {
     func testAJobThatIsStillBeingCarriedCallsNobody() {
         for status in [JobStatus.pending, .running, .waiting, .done] {
             XCTAssertNil(
-                JobAlerts.reason(status: status, lastError: webhook("500")),
+                JobAlerts.reason(status: status, lastError: providerError()),
                 "\(status.name) alerted"
             )
         }
     }
 
     /// docs/10: "재시도로 낫는 실패는 알리지 않는다." A 5xx is inside the backoff, not at the end of it.
-    func testAWebhook500OnTheRetryPathNeverNotifies() {
-        XCTAssertNil(JobAlerts.reason(status: .waiting, lastError: webhook("500")))
+    func testAProvider500OnTheRetryPathNeverNotifies() {
+        XCTAssertNil(JobAlerts.reason(status: .waiting, lastError: providerError()))
         // And even once it has run out of attempts: what spent them was something a retry could
         // have fixed, so there is nothing for the user to do about it but try again.
-        let spent = CoreMessage.retryBudgetSpent.code(arg: webhook("500"), detail: nil)
+        let spent = CoreMessage.retryBudgetSpent.code(arg: providerError(), detail: nil)
         XCTAssertNil(JobAlerts.reason(status: .failed, lastError: spent))
-    }
-
-    /// The one `Executor.failed` actually writes. When the attempt that fails is the last one in
-    /// the budget it goes straight to `end()` with the *raw* reason — `RETRY_BUDGET_SPENT` only
-    /// wraps a budget that was already spent before the step ran — so an exhausted 500 lands as
-    /// `FAILED` + `WEBHOOK_HTTP:500`, indistinguishable from a 403 except by the number.
-    func testARetryableStatusThatExhaustedItsBudgetStillNotifiesNobody() {
-        for status in ["500", "502", "503", "408", "425", "429"] {
-            XCTAssertNil(
-                JobAlerts.reason(status: .failed, lastError: webhook(status)),
-                "webhook \(status) alerted"
-            )
-        }
-    }
-
-    func testAWebhook4xxIsTheUsersToFix() {
-        for status in ["400", "401", "403", "404", "410", "422"] {
-            XCTAssertEqual(
-                JobAlerts.reason(status: .failed, lastError: webhook(status, detail: "nope")),
-                .webhook,
-                "webhook \(status) did not alert"
-            )
-        }
-    }
-
-    /// docs/04 does not follow a redirect and `WebhookRunner` calls it terminal — "a webhook URL
-    /// that moved is a configuration change the user has to make" — so it is the user's like a 4xx.
-    func testAWebhookRedirectIsTheUsersToFixToo() {
-        XCTAssertEqual(JobAlerts.reason(status: .failed, lastError: webhook("302")), .webhook)
-    }
-
-    /// docs/07 §5: an argument that is not a status is an older build's wording, and says nothing.
-    func testAWebhookCodeWithNoReadableStatusAlertsNothing() {
-        XCTAssertNil(JobAlerts.reason(status: .failed, lastError: webhook(nil)))
-        XCTAssertNil(JobAlerts.reason(status: .failed, lastError: webhook("forbidden")))
     }
 
     func testTheKeyFailuresPointAtTheKey() {
@@ -76,13 +41,6 @@ final class JobAlertsTests: XCTestCase {
                 lastError: CoreMessage.missingSecret.code(arg: "stt_key", detail: nil)
             ),
             .missingSecret
-        )
-        XCTAssertEqual(
-            JobAlerts.reason(
-                status: .failed,
-                lastError: CoreMessage.invalidSecret.code(arg: "hook_secret", detail: nil)
-            ),
-            .invalidSecret
         )
         XCTAssertEqual(
             JobAlerts.reason(
@@ -112,48 +70,37 @@ final class JobAlertsTests: XCTestCase {
     /// Acceptance 7: three jobs blocked on one reason are one line, and the line says three.
     func testTheSameReasonOnThreeJobsIsOneAlertWithACountOfThree() {
         let alerts = JobAlerts.fold([
-            AlertSource(reason: .needsSpace, workflowId: "w1"),
-            AlertSource(reason: .needsSpace, workflowId: "w1"),
-            AlertSource(reason: .needsSpace, workflowId: "w1"),
-            AlertSource(reason: nil, workflowId: "w2"),
+            AlertSource(reason: .needsSpace),
+            AlertSource(reason: .needsSpace),
+            AlertSource(reason: .needsSpace),
+            AlertSource(reason: nil),
         ])
 
-        XCTAssertEqual(alerts, [JobAlert(reason: .needsSpace, count: 3, workflowId: "w1")])
+        XCTAssertEqual(alerts, [JobAlert(reason: .needsSpace, count: 3)])
     }
 
     func testTwoReasonsAreTwoLinesAndNothingIsFoldedAcrossThem() {
         let alerts = JobAlerts.fold([
-            AlertSource(reason: .webhook, workflowId: "hook"),
-            AlertSource(reason: .needsAuth, workflowId: nil),
-            AlertSource(reason: .needsAuth, workflowId: nil),
+            AlertSource(reason: .quota),
+            AlertSource(reason: .needsAuth),
+            AlertSource(reason: .needsAuth),
         ])
 
         XCTAssertEqual(
             alerts,
             [
                 JobAlert(reason: .needsAuth, count: 2),
-                JobAlert(reason: .webhook, count: 1, workflowId: "hook"),
+                JobAlert(reason: .quota, count: 1),
             ]
         )
-    }
-
-    /// docs/10: the editor the fix is in, carried on the line and on the notification. With several
-    /// workflows on one reason the first is the one that opens; the count still says how many.
-    func testAnAlertCarriesTheFirstAffectedWorkflow() {
-        let alerts = JobAlerts.fold([
-            AlertSource(reason: .quota, workflowId: "morning"),
-            AlertSource(reason: .quota, workflowId: "standup"),
-        ])
-
-        XCTAssertEqual(alerts, [JobAlert(reason: .quota, count: 2, workflowId: "morning")])
     }
 
     /// A queue with nothing wrong in it leaves no banner and no notification standing.
     func testACleanQueueHasNoAlerts() {
         XCTAssertEqual(
             JobAlerts.fold([
-                AlertSource(reason: nil, workflowId: "w1"),
-                AlertSource(reason: nil, workflowId: nil),
+                AlertSource(reason: nil),
+                AlertSource(reason: nil),
             ]),
             []
         )
@@ -161,10 +108,10 @@ final class JobAlertsTests: XCTestCase {
 
     /// `onError: continue` lets a job run past a failed step, so the first FAILED row is not the one
     /// that ended the job — the aborting step is the last failure with nothing successful after it.
-    /// Picking the first would report a webhook nobody has to fix in place of the missing key.
+    /// Picking the first would report a provider error nobody has to fix in place of the missing key.
     func testTheAbortingStepIsTheOneReportedAndNotAnEarlierContinue() {
         let steps = [
-            step(0, .failed, webhook("500")),
+            step(0, .failed, providerError()),
             step(1, .succeeded, nil),
             step(2, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil)),
             step(3, .pending, nil),
@@ -179,23 +126,23 @@ final class JobAlertsTests: XCTestCase {
     /// Two failures and nothing succeeded in between: the later one still stopped it.
     func testTheLaterOfTwoFailuresIsTheOneThatStoppedTheJob() {
         let quota = CoreMessage.quota.code(arg: nil, detail: "transcribe 429")
-        let steps = [step(0, .failed, webhook("500")), step(1, .failed, quota)]
+        let steps = [step(0, .failed, providerError()), step(1, .failed, quota)]
 
         XCTAssertEqual(JobAlerts.blockingError(steps: steps), quota)
     }
 
     /// Nothing is holding it up: the last thing anything complained about is all there is to say.
     func testAJobWithNoFailingStepFallsBackToTheLastComplaint() {
-        let steps = [step(0, .succeeded, webhook("500")), step(1, .succeeded, nil)]
+        let steps = [step(0, .succeeded, providerError()), step(1, .succeeded, nil)]
 
-        XCTAssertEqual(JobAlerts.blockingError(steps: steps), webhook("500"))
+        XCTAssertEqual(JobAlerts.blockingError(steps: steps), providerError())
         XCTAssertNil(JobAlerts.blockingError(steps: []))
     }
 
     /// The rows come back in whatever order the query gave them; the rule is about the ordinal.
     func testTheOrderTheRowsArriveInDoesNotDecideTheAnswer() {
         let quota = CoreMessage.quota.code(arg: nil, detail: "transcribe 429")
-        let steps = [step(1, .failed, quota), step(0, .failed, webhook("500"))]
+        let steps = [step(1, .failed, quota), step(0, .failed, providerError())]
 
         XCTAssertEqual(JobAlerts.blockingError(steps: steps), quota)
     }
@@ -205,10 +152,8 @@ final class JobAlertsTests: XCTestCase {
         XCTAssertEqual(AlertReason.needsAuth.fix, .signIn)
         XCTAssertEqual(AlertReason.needsSpace.fix, .driveStorage)
         XCTAssertEqual(AlertReason.missingSecret.fix, .secrets)
-        XCTAssertEqual(AlertReason.invalidSecret.fix, .secrets)
         XCTAssertEqual(AlertReason.authRejected.fix, .secrets)
         XCTAssertEqual(AlertReason.quota.fix, .editor)
-        XCTAssertEqual(AlertReason.webhook.fix, .editor)
     }
 
     /// docs/07 rule 3: the reason is kept as a key and said in words where it is drawn, so a banner
@@ -251,11 +196,10 @@ final class JobAlertsTests: XCTestCase {
     func testAnOlderBlockedJobStillAlertsWhenNewerRecordingsFillTheLedger() {
         let stuck = QueuedJob(
             status: .failed,
-            workflowId: "morning",
             steps: [step(0, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil))]
         )
         let carried = (0 ..< 6).map { _ in
-            QueuedJob(status: .done, workflowId: "morning", steps: [step(0, .succeeded, nil)])
+            QueuedJob(status: .done, steps: [step(0, .succeeded, nil)])
         }
 
         let queue = [stuck] + carried
@@ -264,46 +208,39 @@ final class JobAlertsTests: XCTestCase {
 
         XCTAssertEqual(
             alerts,
-            [JobAlert(
-                reason: .missingSecret,
-                count: 1,
-                workflowId: "morning",
-                secret: "stt_key",
-                stepId: "step0"
-            )]
+            [JobAlert(reason: .missingSecret, count: 1, secret: "stt_key", stepId: "step0")]
         )
     }
 
     /// Every job counts once, whatever the recordings behind them were: two of the seven are stuck
     /// on the same thing and the line says two.
     func testTheCountIsOverTheQueueAndNotOverTheLedger() {
-        let parked = QueuedJob(status: .needsSpace, workflowId: "w1", steps: [])
+        let parked = QueuedJob(status: .needsSpace, steps: [])
         let queue = [parked, parked]
-            + (0 ..< 5).map { _ in QueuedJob(status: .running, workflowId: "w1", steps: []) }
+            + (0 ..< 5).map { _ in QueuedJob(status: .running, steps: []) }
 
         XCTAssertEqual(queue.count, 7)
         XCTAssertEqual(
             JobAlerts.fold(JobAlerts.sources(queue)),
-            [JobAlert(reason: .needsSpace, count: 2, workflowId: "w1")]
+            [JobAlert(reason: .needsSpace, count: 2)]
         )
     }
 
     /// `onError: continue` again, one level up: the source is folded off the step that *stopped*
-    /// the job, so the webhook nobody has to fix does not become the queue's reason.
+    /// the job, so the provider error nobody has to fix does not become the queue's reason.
     func testAJobsSourceIsFoldedOffTheStepThatStoppedIt() {
         let source = JobAlerts.source(
             status: .failed,
-            workflowId: "w1",
             steps: [
-                step(0, .failed, webhook("500")),
+                step(0, .failed, providerError()),
                 step(1, .succeeded, nil),
-                step(2, .failed, CoreMessage.invalidSecret.code(arg: "hook_secret", detail: "401")),
+                step(2, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil)),
             ]
         )
 
         XCTAssertEqual(
             source,
-            AlertSource(reason: .invalidSecret, workflowId: "w1", secret: "hook_secret", stepId: "step2")
+            AlertSource(reason: .missingSecret, secret: "stt_key", stepId: "step2")
         )
     }
 
@@ -311,32 +248,21 @@ final class JobAlertsTests: XCTestCase {
     /// be opened on.
     func testAJobThatIsNotTheUsersToFixCarriesNoFixAtAll() {
         XCTAssertEqual(
-            JobAlerts.source(status: .running, workflowId: "w1", steps: [step(0, .running, nil)]),
-            AlertSource(reason: nil, workflowId: "w1")
+            JobAlerts.source(status: .running, steps: [step(0, .running, nil)]),
+            AlertSource(reason: nil)
         )
     }
 
     // MARK: - Where the key is entered (docs/10 · docs/08 "오류")
 
-    /// docs/10: `MISSING_SECRET` and `INVALID_SECRET` land in the secret form, and the form has to
-    /// open on the key that is missing and under the step that asked for it — otherwise "go to the
-    /// screen that can fix it" is an empty form in a list of workflows.
+    /// docs/10: `MISSING_SECRET` carries the key that is missing and the step that asked for it.
     func testTheKeyFailuresCarryTheSecretAndTheStepTheFormOpensOn() {
         let missing = JobAlerts.source(
             status: .failed,
-            workflowId: "w1",
             steps: [step(0, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil))]
         )
         XCTAssertEqual(missing.secret, "stt_key")
         XCTAssertEqual(missing.stepId, "step0")
-
-        let invalid = JobAlerts.source(
-            status: .failed,
-            workflowId: "w1",
-            steps: [step(1, .failed, CoreMessage.invalidSecret.code(arg: "hook_secret", detail: "bad"))]
-        )
-        XCTAssertEqual(invalid.secret, "hook_secret")
-        XCTAssertEqual(invalid.stepId, "step1")
     }
 
     /// `AUTH_REJECTED` is a provider refusing a value and never says which key held it (the core
@@ -344,7 +270,6 @@ final class JobAlertsTests: XCTestCase {
     func testAuthRejectedNamesTheStepEvenThoughItNamesNoKey() {
         let source = JobAlerts.source(
             status: .failed,
-            workflowId: "w1",
             steps: [step(2, .failed, CoreMessage.authRejected.code(arg: nil, detail: "401"))]
         )
 
@@ -353,12 +278,11 @@ final class JobAlertsTests: XCTestCase {
         XCTAssertEqual(source.stepId, "step2")
     }
 
-    /// Nothing but the two key failures names a secret: a quota or a webhook argument is a status
-    /// or a provider, and prefilling a secret form with it would be nonsense.
+    /// Nothing but the missing key names a secret: a quota argument is a status or a provider, and
+    /// prefilling a secret form with it would be nonsense.
     func testNoOtherReasonPretendsToNameASecret() {
         let quota = JobAlerts.source(
             status: .failed,
-            workflowId: "w1",
             steps: [step(0, .failed, CoreMessage.retryBudgetSpent.code(
                 arg: CoreMessage.quota.code(arg: nil, detail: "429"), detail: nil
             ))]
@@ -373,19 +297,13 @@ final class JobAlertsTests: XCTestCase {
     /// — a step id from one and a key name from another would open the wrong form.
     func testTheFoldCarriesTheSecretAndTheStepOfOneJob() {
         let alerts = JobAlerts.fold([
-            AlertSource(reason: .missingSecret, workflowId: "w1", secret: "stt_key", stepId: "s1"),
-            AlertSource(reason: .missingSecret, workflowId: "w2", secret: "hook_secret", stepId: "s9"),
+            AlertSource(reason: .missingSecret, secret: "stt_key", stepId: "s1"),
+            AlertSource(reason: .missingSecret, secret: "other_key", stepId: "s9"),
         ])
 
         XCTAssertEqual(
             alerts,
-            [JobAlert(
-                reason: .missingSecret,
-                count: 2,
-                workflowId: "w1",
-                secret: "stt_key",
-                stepId: "s1"
-            )]
+            [JobAlert(reason: .missingSecret, count: 2, secret: "stt_key", stepId: "s1")]
         )
     }
 
@@ -393,7 +311,7 @@ final class JobAlertsTests: XCTestCase {
     /// can never name different steps.
     func testTheBlockingStepIsTheOneTheBlockingErrorCameFrom() {
         let steps = [
-            step(0, .failed, webhook("500")),
+            step(0, .failed, providerError()),
             step(1, .succeeded, nil),
             step(2, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil)),
         ]
@@ -412,7 +330,7 @@ final class JobAlertsTests: XCTestCase {
     /// the whole snapshot with it instead, so the shell returns early and leaves what is standing.
     func testAStepReadThatFailedFailsTheWholeSnapshot() async {
         struct Unreadable: Error {}
-        let jobs = [(id: "j1", status: JobStatus.failed, workflowId: "w1" as String?)]
+        let jobs = [(id: "j1", status: JobStatus.failed)]
 
         do {
             _ = try await JobAlerts.sources(jobs: jobs) { _ in throw Unreadable() }
@@ -428,8 +346,8 @@ final class JobAlertsTests: XCTestCase {
     /// own steps.
     func testEachJobIsFoldedFromItsOwnStepsWhenTheyCanBeRead() async throws {
         let jobs = [
-            (id: "j1", status: JobStatus.failed, workflowId: "w1" as String?),
-            (id: "j2", status: JobStatus.done, workflowId: "w1" as String?),
+            (id: "j1", status: JobStatus.failed),
+            (id: "j2", status: JobStatus.done),
         ]
         let steps = [
             "j1": [step(0, .failed, CoreMessage.missingSecret.code(arg: "stt_key", detail: nil))],
@@ -440,13 +358,7 @@ final class JobAlertsTests: XCTestCase {
 
         XCTAssertEqual(
             JobAlerts.fold(sources),
-            [JobAlert(
-                reason: .missingSecret,
-                count: 1,
-                workflowId: "w1",
-                secret: "stt_key",
-                stepId: "step0"
-            )]
+            [JobAlert(reason: .missingSecret, count: 1, secret: "stt_key", stepId: "step0")]
         )
     }
 
@@ -459,8 +371,9 @@ final class JobAlertsTests: XCTestCase {
 
     // MARK: - Pieces
 
-    private func webhook(_ status: String?, detail: String? = nil) -> String {
-        CoreMessage.webhookHttp.code(arg: status, detail: detail)
+    /// A provider 5xx: retried by the runner, never the user's to fix.
+    private func providerError() -> String {
+        CoreMessage.providerError.code(arg: nil, detail: "500")
     }
 
     private func step(_ ordinal: Int32, _ status: StepStatus, _ lastError: String?) -> StepRun {

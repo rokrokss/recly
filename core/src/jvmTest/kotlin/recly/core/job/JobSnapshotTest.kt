@@ -88,6 +88,27 @@ class JobSnapshotTest {
         assertEquals(listOf(healthy), f.service.runDueJobs().jobIds, "the rest of the queue goes on running")
     }
 
+    /** Webhooks were removed the same way: an old job that still names one is skipped, not run. */
+    @Test
+    fun `a snapshot holding a removed webhook step fails its own job and no other`() = runBlocking {
+        val f = Fixture(listOf(ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }))
+        val recording = f.seed()
+        val healthy = f.enqueue(recording, driveStep(STEP_ID))
+        val legacy = readableJson.replace("}]}", "},{\"type\":\"webhook\",\"id\":\"hook\",\"url\":\"https://example.com/rec\"}]}")
+        f.poison(recording, snapshot = legacy)
+
+        val jobs = f.service.observe().first()
+
+        val poisoned = jobs.first { it.id == POISONED_JOB }
+        assertNull(poisoned.workflow, "nothing here can read the snapshot")
+        assertEquals(JobStatus.FAILED, poisoned.status)
+        assertEquals(CoreMessage.UNSUPPORTED_STEP.code("webhook"), poisoned.snapshotError)
+        assertEquals(listOf(healthy), f.service.runDueJobs().jobIds, "the rest of the queue goes on running")
+        assertEquals(legacy, f.rawSnapshot())
+        assertEquals(JobStatus.PENDING.name, f.rawStatus(), "the row was not claimed")
+        recording.meta.parts.forEach { assertTrue(f.fs.exists(recording.dir / it.file), "${it.file} was deleted") }
+    }
+
     @Test
     fun `a run pass skips it, runs the rest, and leaves the snapshot exactly as it was`() = runBlocking {
         val f = Fixture(listOf(ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }))

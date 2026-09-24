@@ -33,12 +33,12 @@ enum class AppTheme(val key: String, val label: Str) {
  * is worth detecting ([detectsEnd]), and whether there is anyone else to have told about the
  * recording ([remindsConsent]).
  */
-enum class RecordingMode(val key: String, val label: Str, val tracks: List<Track>) {
+enum class RecordingMode(val key: String, val tracks: List<Track>) {
     /** One `mono` track — a memo, and the helper opens no render endpoint for it. */
-    MICROPHONE("microphone", Str.SETTINGS_CAPTURE_MODE_MICROPHONE, listOf(Track.MONO)),
+    MICROPHONE("microphone", listOf(Track.MONO)),
 
     /** ADR-006: `mic`, `sys` and `mix`, sharing one start time and one segment boundary. */
-    MEETING("meeting", Str.SETTINGS_CAPTURE_MODE_MEETING, listOf(Track.MIC, Track.SYS, Track.MIX)),
+    MEETING("meeting", listOf(Track.MIC, Track.SYS, Track.MIX)),
     ;
 
     /**
@@ -52,15 +52,6 @@ enum class RecordingMode(val key: String, val label: Str, val tracks: List<Track
      * memo has none. The Mac asks the question under exactly this condition.
      */
     val remindsConsent: Boolean get() = this == MEETING
-
-    companion object {
-        /**
-         * ADR-006: what a PC in front of a call records is a meeting far more often than it is a
-         * memo, and every Windows recording before this setting existed was one — so a store that
-         * has never been written keeps recording what it was recording.
-         */
-        fun of(key: String?): RecordingMode = entries.firstOrNull { it.key == key } ?: MEETING
-    }
 }
 
 /**
@@ -72,9 +63,6 @@ enum class RecordingMode(val key: String, val label: Str, val tracks: List<Track
 interface Settings {
     /** docs/12 M8: asked once before the first meeting recording, and switchable off in Settings. */
     var consentReminder: Boolean
-
-    /** docs/14 "캡처": the microphone alone or the whole meeting — the Mac's `Defaults.mode`. */
-    var recordingMode: RecordingMode
 
     /** docs/07 rule 2: system default, Korean or English, on this machine only. */
     var language: AppLanguage
@@ -126,10 +114,6 @@ class PreferenceSettings(
         get() = prefs.getBoolean(CONSENT_REMINDER, true)
         set(value) = prefs.putBoolean(CONSENT_REMINDER, value)
 
-    override var recordingMode: RecordingMode
-        get() = RecordingMode.of(prefs.get(RECORDING_MODE, ""))
-        set(value) = prefs.put(RECORDING_MODE, value.key)
-
     override var language: AppLanguage
         get() = AppLanguage.of(prefs.get(LANGUAGE, ""))
         set(value) = prefs.put(LANGUAGE, value.tag)
@@ -163,9 +147,6 @@ class PreferenceSettings(
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */
         const val NODE = "app/recly/windows"
         const val CONSENT_REMINDER = "consentReminder"
-
-        /** The Mac's `Defaults.modeKey`, so the two shells' stores read the same on paper. */
-        const val RECORDING_MODE = "recordingMode"
         const val LANGUAGE = "language"
         const val THEME = "theme"
         const val DISCONNECT_PHASE = "disconnectPhase"

@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.missingTranscriptAvailability
+import recly.core.transcribe.LocalEngineStatus
+import recly.core.message.CoreMessage
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveApi
 import recly.core.drive.DriveFolderMarker
@@ -22,8 +24,8 @@ import recly.core.job.Executor
 import recly.core.job.JobService
 import recly.core.job.JobStore
 import recly.core.job.JobStatus
-import recly.core.job.Job
 import recly.core.model.Step
+import recly.core.model.wire
 import recly.core.job.RunSummary
 import recly.core.job.defaultRunners
 import recly.core.model.Track
@@ -32,7 +34,6 @@ import recly.core.privacy.TransferConsents
 import recly.core.privacy.TransferTarget
 import recly.core.privacy.TransferTargets
 import recly.core.job.StepStatus
-import recly.core.job.type
 import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 import recly.core.platform.clear
@@ -43,12 +44,14 @@ import recly.core.recording.RecordingAudio
 import recly.core.recording.RecordingRepository
 import recly.core.recording.RemoteRecordings
 import recly.core.secrets.SecretsRepository
-import recly.core.sync.DeviceDefaultStore
-import recly.core.sync.WorkflowRepository
-import recly.core.sync.WorkflowStore
 import recly.core.transcribe.RecordingResult
 import recly.core.transcribe.RecordingResults
 import recly.core.transfer.TransferReceiver
+import recly.core.processing.ProcessingPlan
+import recly.core.model.Source
+import recly.core.model.RecordingStatus
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 
 /**
  * The shell opens the database: only it knows the file path and which SQLDelight driver its
@@ -76,11 +79,50 @@ class ReclyCore(
 
     val recordings: RecordingRepository = RecordingRepository(db, deps)
 
-    private val workflowStore: WorkflowStore = WorkflowStore(db, deps)
+    /** docs/05: this device's processing preferences, which every recording's plan is compiled from. */
+    val processingSettings = recly.core.processing.ProcessingSettingsRepository(db, deps)
+    @Throws(Throwable::class)
+    suspend fun localEngineInfo(language: String): recly.core.transcribe.LocalEngineInfo = deps.localTranscription.status(language)
 
-    private val deviceDefaults: DeviceDefaultStore = DeviceDefaultStore(db, deps)
+    @Throws(Throwable::class)
+    suspend fun prepareLocalEngine(language: String): recly.core.transcribe.LocalEngineInfo {
+        val info = deps.localTranscription.prepare(language)
+        if (info.status == LocalEngineStatus.READY || info.status == LocalEngineStatus.WAITING) {
+            // A model preparation action also releases recordings blocked only on that model.
+            // Quiescing keeps a pass that observed the missing model from failing after this scan.
+            jobs.quiesced {
+                for (job in jobs.list().filter { it.status == JobStatus.FAILED }) {
+                    val runs = jobs.steps(job.id)
+                    val blocked = runs.singleOrNull { it.status == StepStatus.FAILED } ?: continue
+                    if (blocked.lastError != CoreMessage.LOCAL_MODEL_REQUIRED.code()) continue
+                    val step = job.workflow?.steps?.find { it.id == blocked.stepId } as? Step.LocalTranscribe ?: continue
+                    if (step.language.wire == language) jobStore.resumeModelRequired(job.id, blocked.id, deps.clock.now())
+                }
+            }
+        }
+        return info
+    }
 
-    val workflows: WorkflowRepository = WorkflowRepository(workflowStore, deviceDefaults, deps)
+    @Throws(Throwable::class)
+    suspend fun runLocalJobs(): RunSummary {
+        try {
+            val first = jobs.runLocalJobs(deps.clock.now())
+            if (first.alreadyRunning) return first
+            localTranscription.awaitCurrent()
+            val second = jobs.runLocalJobs(deps.clock.now())
+            return RunSummary(jobIds = (first.jobIds + second.jobIds).distinct())
+        } catch (cancelled: kotlinx.coroutines.CancellationException) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) { localTranscription.cancelAll() }
+            throw cancelled
+        }
+    }
+
+    @Throws(Throwable::class)
+    suspend fun localJobs(): List<recly.core.job.Job> = jobs.localJobs()
+
+    /** Writes the defaults on first use; recording and [enqueue] do this themselves too. */
+    @Throws(Throwable::class)
+    suspend fun initializeProcessing(): recly.core.processing.ProcessingSettingsState.Ready = processingSettings.initialize()
 
     /**
      * docs/05 "시크릿": the device's secret values. **Every shell writes secrets through this**, not
@@ -94,6 +136,19 @@ class ReclyCore(
 
     private val jobStore: JobStore = JobStore(db, deps)
 
+    val localTranscription = recly.core.transcribe.LocalTranscriptionService(db, deps)
+
+    init {
+        recordings.localTranscription = localTranscription
+        recordings.beforeCapture = { meta ->
+            if (meta.source != Source.WATCH) {
+                processingSettings.capture(meta.recordingId)
+                if (meta.status == RecordingStatus.RECORDING) localTranscription.captureStarted(meta.recordingId)
+            }
+        }
+        recordings.afterCapture = { localTranscription.captureEnded(it) }
+    }
+
     private val driveJobAccess = recly.core.drive.DriveJobAccess(deps, jobStore)
 
     val jobs: JobService =
@@ -105,8 +160,7 @@ class ReclyCore(
                 deps,
                 jobStore,
                 recordings,
-                defaultRunners(db, deps),
-                live = { workflows.current() },
+                defaultRunners(db, deps, localTranscription),
                 marker = DriveFolderMarker(DriveApi(deps), deps),
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
@@ -172,7 +226,8 @@ class ReclyCore(
         jobs.observe().map { all -> all.filter { it.recordingId == recordingId } }.distinctUntilChanged(),
         jobs.observeSteps(recordingId).distinctUntilChanged(),
         recordings.observe().map { recordings.get(recordingId) }.distinctUntilChanged(),
-    ) { _, _, _ -> Unit }.map {
+        localTranscription.changes,
+    ) { _, _, _, _ -> Unit }.map {
         try {
             results(recordingId)
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
@@ -224,9 +279,19 @@ class ReclyCore(
         .flatMap { jobs.steps(it.id) }
         .mapNotNull { it.output }
 
-    /** The definition a job runs with is this device's own document, seeded on first use (docs/05). */
-    suspend fun enqueue(recordingId: String, chosenWorkflowId: String? = null): EnqueueResult =
-        jobs.enqueue(recordingId, workflows.current(), chosenWorkflowId, workflows.deviceDefault())
+    /**
+     * The fixed plan (docs/05), compiled from the settings the recording froze when it started. A
+     * finished recording that froze none — a watch recording, at its verified receipt — freezes
+     * the current ones here. [RecordingMeta.workflowId][recly.core.model.RecordingMeta.workflowId]
+     * is not read.
+     */
+    @Throws(Throwable::class)
+    suspend fun enqueue(recordingId: String): EnqueueResult {
+        val record = recordings.get(recordingId) ?: return EnqueueResult.NoWorkflow
+        if (record.meta.status == RecordingStatus.FINALIZED && !record.remote) processingSettings.capture(recordingId)
+        val plan = processingSettings.recordingSnapshot(recordingId)?.let(ProcessingPlan::compile)
+        return jobs.enqueue(recordingId, plan)
+    }
 
     /**
      * What the platform scheduler calls. The pull rides on it because every shell already runs a
@@ -236,9 +301,17 @@ class ReclyCore(
     @Throws(Throwable::class)
     suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary {
         resumeConsentedJobs()
-        val summary = jobs.runDueJobs(now)
-        remote.pull()
-        return summary
+        try {
+            val summary = jobs.runDueJobs(now)
+            if (summary.alreadyRunning) return summary
+            localTranscription.awaitCurrent()
+            val next = jobs.runDueJobs(deps.clock.now())
+            remote.pull()
+            return RunSummary(jobIds = (summary.jobIds + next.jobIds).distinct())
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            withContext(NonCancellable) { localTranscription.cancelAll() }
+            throw e
+        }
     }
 
     /** All unapproved destinations still ahead of a parked job, for one grouped consent screen. */
@@ -246,7 +319,7 @@ class ReclyCore(
     suspend fun pendingTransferTargets(): List<TransferTarget> {
         val targets = mutableListOf<TransferTarget>()
         for (job in jobs.list().filter { it.status == JobStatus.NEEDS_CONSENT }) {
-            val defined = effectiveSteps(job)
+            val defined = job.workflow?.steps.orEmpty().associateBy { it.id }
             for (run in jobStore.stepsOf(job.id)) {
                 if (run.status in setOf(StepStatus.PENDING, StepStatus.NEEDS_CONSENT)) {
                     defined[run.stepId]?.let(TransferTargets::forStep)?.let(targets::add)
@@ -260,7 +333,7 @@ class ReclyCore(
     @Throws(Throwable::class)
     suspend fun resumeConsentedJobs() {
         for (job in jobs.list().filter { it.status == JobStatus.NEEDS_CONSENT }) {
-            val defined = effectiveSteps(job)
+            val defined = job.workflow?.steps.orEmpty().associateBy { it.id }
             val blocked = jobStore.stepsOf(job.id).filter { it.status == StepStatus.NEEDS_CONSENT }
             if (blocked.isEmpty()) continue
             val targets = blocked.mapNotNull { defined[it.stepId]?.let(TransferTargets::forStep) }
@@ -268,15 +341,6 @@ class ReclyCore(
                 jobStore.resumeConsent(job.id, deps.clock.now())
             }
         }
-    }
-
-    /** The same live-definition rule the executor applies when a queued step is edited. */
-    private suspend fun effectiveSteps(job: Job): Map<String, Step> {
-        val snapshot = job.workflow ?: return emptyMap()
-        val defined = snapshot.steps.associateBy { it.id }.toMutableMap()
-        val current = workflows.current().workflows.firstOrNull { it.id == snapshot.id }
-        current?.steps?.forEach { if (defined[it.id]?.type == it.type) defined[it.id] = it }
-        return defined
     }
 
     /**
@@ -288,10 +352,10 @@ class ReclyCore(
      * The `remote/ignored` suppression keys go too — they name folders of the account being disconnected — so
      * a re-connect shows what Drive has, the way a fresh device does.
      *
-     * What it does **not** touch is this device's own configuration: the workflow document, the
-     * device-default pointer and the `secrets` namespace all stay. None of them is derived from the
-     * account any more — they are per-device and there is nothing to fetch them back from — so
-     * deleting them would be losing the user's work over a decision about Drive access.
+     * What it does **not** touch is this device's own configuration: the processing settings and
+     * the `secrets` namespace both stay. Neither is derived from the account — they are per-device
+     * and there is nothing to fetch them back from — so deleting them would be losing the user's
+     * work over a decision about Drive access.
      *
      * The recordings and their `recording`/`part` rows stay unless [alsoDeleteRecordings]: an
      * original that has not been uploaded yet is not deleted by a decision about an account
@@ -308,6 +372,7 @@ class ReclyCore(
      */
     @Throws(Throwable::class)
     suspend fun disconnect(alsoDeleteRecordings: Boolean): DisconnectResult = jobs.quiesced {
+        localTranscription.cancelAll()
         remote.disconnected {
             // The recordings first, and one at a time through the transactional [RecordingRepository
             // .delete]: a recording whose job is RUNNING refuses, and its queue rows have to survive

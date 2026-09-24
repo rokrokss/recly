@@ -93,8 +93,9 @@ final class LedgerStatusTests: XCTestCase {
     /// join adds, so a state the core grows without a code here is a failure rather than an
     /// `UNKNOWN` badge nobody notices.
     private let states = [
-        "Recording", "No workflow", "Waiting", "Uploading",
+        "Recording", "Waiting", "Uploading",
         "Retry pending", "Done", "Failed", "Sign-in needed", "No space in Drive", "Too short",
+        "Transcription pending", "Transcribing on this device",
     ]
 
     func testEveryStateHasACodeAndATone() {
@@ -106,10 +107,12 @@ final class LedgerStatusTests: XCTestCase {
         }
     }
 
-    func testOnlyFinishedStatesShareACode() {
+    func testFinishedAndPendingStatesShareTheirRespectiveCodes() {
         let shared = Dictionary(grouping: states, by: { LedgerStatus.forRecent(state: $0).code })
             .filter { $0.value.count > 1 }
-        XCTAssertEqual(shared, ["DONE": ["No workflow", "Done"]])
+        XCTAssertEqual(shared, [
+            "PENDING": ["Waiting", "Transcription pending"],
+        ])
     }
 
     func testTheToneSaysWhatKindOfNewsItIs() {
@@ -125,7 +128,6 @@ final class LedgerStatusTests: XCTestCase {
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in Drive").tone, .warning)
         // Nothing is wrong and nothing is happening.
         XCTAssertEqual(LedgerStatus.forRecent(state: "Waiting").tone, .neutral)
-        XCTAssertEqual(LedgerStatus.forRecent(state: "No workflow").tone, .success)
         XCTAssertEqual(LedgerStatus.forRecent(state: "Too short").tone, .neutral)
     }
 

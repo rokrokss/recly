@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "revision": 2,
+  "updatedAt": "2026-09-24T10:00:00Z",
+  "updatedBy": "example-device",
+  "settings": {
+    "storage": { "folder": "recly/{{yyyy}}/{{yyyy}}-{{MM}}", "minDurationSec": 30 },
+    "transcription": {
+      "mode": "external", "language": "ko-en",
+      "external": { "provider": "assemblyai", "secretRef": "assemblyai_key" }
+    }
+  }
+}

@@ -43,8 +43,6 @@ data class RecentItem(
      * its own — an adopted recording was read out of that folder (docs/03).
      */
     val link: String?,
-    /** The workflow the job runs, so a key that was refused can be fixed where it is defined. */
-    val workflowId: String? = null,
     /**
      * docs/07 §5: the code the core last wrote for whatever step is holding the job up — a
      * `CoreMessage`, or a sentence an older build stored. Turned into words where it is drawn, so
@@ -61,6 +59,7 @@ data class RecentItem(
      * the delete — there is no local half to keep, so the dialog has no choice to offer.
      */
     val remote: Boolean = false,
+    val localPending: Boolean = false,
 ) {
     /**
      * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": a recording being written to or uploaded right
@@ -94,10 +93,10 @@ object Recents {
         val byRecording = core.jobs.list().groupBy { it.recordingId }
         val now = core.deps.clock.now()
         return core.recordings.list(limit).map { record ->
-            // One job per (recording, workflow); the newest is the one the user last asked for.
+            // The newest job is the one the user last asked for.
             val job = byRecording[record.id]?.maxByOrNull { it.createdAt }
             val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
-            item(record, job, steps, now)
+            item(record, job, steps, now, core.localTranscription.isRunning(record.id))
         }
     }
 
@@ -107,11 +106,13 @@ object Recents {
         job: Job?,
         steps: List<StepRun>,
         now: Instant = Instant.DISTANT_PAST,
+        localRunning: Boolean = false,
     ): RecentItem {
         // docs/08 "폴링 · 상태": while a provider is transcribing there is no "when" to give, only
         // how long it has been — and "waiting to retry" would be a different thing to say.
         val waiting = StepReport.waitingMinutes(steps, now)
             ?.takeIf { job?.status == JobStatus.WAITING }
+        val local = job?.status in setOf(JobStatus.WAITING, JobStatus.RUNNING, JobStatus.PENDING) && StepReport.localPending(job?.workflow, steps)
         return RecentItem(
             id = record.id,
             jobId = job?.id,
@@ -120,14 +121,15 @@ object Recents {
                 ?: Str.UNTITLED.message(),
             startedAt = record.meta.startedAt,
             durationSec = record.meta.durationSec,
-            state = waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job),
+            state = if (local) (if (localRunning) Str.PROCESSING_LOCAL_RUNNING else Str.PROCESSING_LOCAL_PENDING).message()
+                else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job),
             link = driveLink(steps) ?: record.driveFolderUrl,
-            workflowId = job?.workflowId,
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
             // it left behind say nothing about it (docs/10 "잡 스냅샷").
             lastError = job?.snapshotError ?: blockingError(steps),
             waitingMinutes = waiting,
             remote = record.remote,
+            localPending = local,
         )
     }
 

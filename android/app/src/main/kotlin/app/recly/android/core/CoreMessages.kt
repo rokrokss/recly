@@ -15,6 +15,9 @@ object CoreMessages {
     /** Exhaustive by construction: a new key does not compile until it has a sentence. */
     @StringRes
     fun resourceOf(message: CoreMessage): Int = when (message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> R.string.core_local_transcription_unavailable
+        CoreMessage.LOCAL_MODEL_REQUIRED -> R.string.core_local_model_required
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> R.string.core_local_diarization_unavailable
         CoreMessage.PROVIDER_REGION_RESTRICTED -> R.string.core_provider_region_restricted
         CoreMessage.STOREFRONT_UNAVAILABLE -> R.string.core_storefront_unavailable
         CoreMessage.TRANSFER_CONSENT_REQUIRED -> R.string.core_transfer_consent_required
@@ -24,8 +27,6 @@ object CoreMessages {
         CoreMessage.DRIVE_STORAGE_FULL -> R.string.core_drive_storage_full
         CoreMessage.SIGN_IN_CANCELLED -> R.string.core_sign_in_cancelled
         CoreMessage.MISSING_SECRET -> R.string.core_missing_secret
-        CoreMessage.INVALID_SECRET -> R.string.core_invalid_secret
-        CoreMessage.WEBHOOK_HTTP -> R.string.core_webhook_http
         CoreMessage.FOLDER_TEMPLATE -> R.string.core_folder_template
         CoreMessage.RETRY_BUDGET_SPENT -> R.string.core_retry_budget_spent
         CoreMessage.NO_RUNNER -> R.string.core_no_runner
@@ -39,11 +40,13 @@ object CoreMessages {
         CoreMessage.NO_INPUT_TRACK -> R.string.core_no_input_track
         CoreMessage.RESULT_TIMEOUT -> R.string.core_result_timeout
         CoreMessage.STALE -> R.string.core_stale
-        CoreMessage.UNSUPPORTED_SCHEMA -> R.string.core_unsupported_schema
     }
 
     /** The keys whose sentence has a `%1$s` in it, so the rest are looked up without one. */
     fun takesArgument(message: CoreMessage): Boolean = when (message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE,
+        CoreMessage.LOCAL_MODEL_REQUIRED,
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE,
         CoreMessage.PROVIDER_REGION_RESTRICTED,
         CoreMessage.STOREFRONT_UNAVAILABLE,
         CoreMessage.TRANSFER_CONSENT_REQUIRED,
@@ -83,7 +86,7 @@ fun coreMessage(code: String): UiMessage {
 }
 
 /**
- * The diagnostic that came with [code], if any — a webhook's response body, a parser complaint.
+ * The diagnostic that came with [code], if any — a provider's response body, a parser complaint.
  * Never translated, and never part of the sentence: the screen puts it under one.
  */
 fun coreMessageDetail(code: String): String? = CoreMessageRef.parse(code)?.detail

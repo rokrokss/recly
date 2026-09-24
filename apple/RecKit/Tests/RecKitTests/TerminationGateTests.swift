@@ -27,7 +27,7 @@ final class TerminationGateTests: XCTestCase {
             stopped.fulfill()
         }
 
-        let decision = gate.decide(.recording(recordingId: "01ABC", workflowId: nil)) { replied.fulfill() }
+        let decision = gate.decide(.recording(recordingId: "01ABC")) { replied.fulfill() }
 
         XCTAssertEqual(decision, .later)
         await fulfillment(of: [stopped, replied], timeout: 5, enforceOrder: true)
@@ -104,8 +104,8 @@ final class TerminationGateTests: XCTestCase {
             stopped.fulfill()
         }
 
-        let first = gate.decide(.recording(recordingId: "01ABC", workflowId: nil), then: {})
-        let second = gate.decide(.recording(recordingId: "01ABC", workflowId: nil), then: {})
+        let first = gate.decide(.recording(recordingId: "01ABC"), then: {})
+        let second = gate.decide(.recording(recordingId: "01ABC"), then: {})
 
         XCTAssertEqual(first, .later)
         XCTAssertEqual(second, .later)

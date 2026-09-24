@@ -452,7 +452,7 @@ class DisconnectGuardTest {
 
     /**
      * The regression the gate is held across the start for: a start suspends between the check and
-     * the capture actually opening (it reads the workflow summaries first), and a disconnect that
+     * the capture actually opening (it stops the detail's playback first), and a disconnect that
      * slipped into that wait would walk the recording directory while the capture wrote into it. So
      * the disconnect waits for the start that is already inside, rather than interleaving with it.
      */

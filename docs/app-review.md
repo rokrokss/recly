@@ -9,12 +9,12 @@
 - 변경한 개인정보 처리방침을 공개 URL에 반영하고, 앱 설정의 영어(`https://recly.dev/policy/privacy-policy`)·한국어(`https://recly.dev/policy/privacy-policy.ko`) 링크에서 실제로 열리는지 확인한다. App Store Connect의 개인정보 처리방침 URL에는 영어 정본 주소를 등록한다.
 - iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `17`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
 - 최신 정식 iOS의 실제 iPhone에서 제출할 빌드를 검증한다. 잠금 중 녹음 → 정지·이름 입력 → 목록 → 재생 → Drive 업로드·열기 → 선택 전사 → 결과 확인까지 수행한다.
-- 새 전사/웹훅 대상의 “허용하고 저장”, 동일 대상 재사용 시 추가 확인 없음, 가져오기에서 새 대상만 표시, 허용 철회 후 작업 대기, 설정에서 다시 허용 후 이전 업로드를 반복하지 않는 동작을 확인한다.
-- Google Drive 연결·연결 해제, 녹음의 로컬/Drive 삭제 선택, 시크릿 목록의 API 키 개별 삭제를 확인한다. Recly 자체 계정 생성은 없으며, Google 계정 삭제 기능을 제공하는 것도 아니다.
+- 새 전사 대상의 “허용하고 저장”, 동일 대상 재사용 시 추가 확인 없음, 설정 가져오기에서 새 대상만 표시, 허용 철회 후 작업 대기, 설정에서 다시 허용 후 이전 업로드를 반복하지 않는 동작을 확인한다.
+- Google Drive 연결·연결 해제, 녹음의 로컬/Drive 삭제 선택, 녹음 처리 설정의 API 키 개별 삭제를 확인한다. Recly 자체 계정 생성은 없으며, Google 계정 삭제 기능을 제공하는 것도 아니다.
 - Apple Watch를 제출에 포함한다면 실제 Watch의 녹음·iPhone 전송과 허용 대기/재개도 검증한다. 지원 기기·OS·앱 버전·빌드 번호와 결과를 기록한다.
 - 화면 녹화는 홈 화면에서 앱 실행으로 시작한다. 실제 기본 흐름과 설정된 선택 기능을 보여주고, 비밀번호·API 키·개인 녹음은 노출하지 않는다. 영상 URL은 심사자가 별도 권한 요청 없이 열 수 있는지 확인한다.
-- 기본 녹음은 API 키 없이 사용할 수 있다. 전사 심사용으로 업체 계정/API 접근이 필요하면 전용 테스트 자격 증명과 정확한 설정 방법을 App Review Information의 비공개 필드에 제공한다. 키를 이 저장소·워크플로우 내보내기 파일·영상에 넣지 않는다.
-- App Privacy 답변을 Google·선택 전사 업체·웹훅의 실제 데이터 처리 및 보관 조건과 대조한다. “개발자 서버가 없음”만으로 Apple의 “수집 안 함”을 확정하지 않는다.
+- 기본 녹음은 API 키 없이 사용할 수 있다. 전사 심사용으로 업체 계정/API 접근이 필요하면 전용 테스트 자격 증명과 정확한 설정 방법을 App Review Information의 비공개 필드에 제공한다. 키를 이 저장소·설정 내보내기 파일·영상에 넣지 않는다.
+- App Privacy 답변을 Google·선택 전사 업체의 실제 데이터 처리 및 보관 조건과 대조한다. “개발자 서버가 없음”만으로 Apple의 “수집 안 함”을 확정하지 않는다.
 
 - 중국 본토(`CHN`)·미국(`USA`)·지역 조회 실패 상태를 검증한다. OpenAI 목록·편집·가져오기·기존 잡 실행 차단, 다른 전사 업체 유지, 이미 완료된 Drive 업로드를 반복하지 않는 대기를 확인한다. StoreKit 실계정/샌드박스 확인은 주입된 지역을 이용한 단위 테스트와 구분해 기록한다.
 
@@ -28,21 +28,21 @@
 
 2. **Purpose and audience**
 
-   Recly is a general-purpose audio recorder for individuals who want to retain recordings in their own Google Drive and optionally automate transcription or send webhook notifications. It supports personal notes, interviews and meetings that the user is authorized to record. Recly does not operate a developer-hosted backend or a Recly account system.
+   Recly is a general-purpose audio recorder for individuals who want to retain recordings in their own Google Drive and optionally transcribe them on device or with a selected external API. It supports personal notes, interviews and meetings that the user is authorized to record. Recly does not operate a developer-hosted backend or a Recly account system.
 
 3. **Access and setup**
 
-   Launch the app, grant microphone access when prompted, select the default Memo workflow, record, stop and enter a title. Open the recording list to play the recording and view its processing status. Use Settings → Google Drive → Connect Drive to authorize uploads to your own Drive. Transcription and webhooks are optional workflow steps; the user selects the provider or destination and explicitly permits transmission on iPhone before those requests are sent. Permission can be withdrawn in Settings → Privacy.
+   Launch the app, grant microphone access when prompted, record, stop and enter a title. Open the recording list to play the recording and view its processing status. Use Settings → Google Drive → Connect Drive to authorize uploads to your own Drive. Recording processing offers local transcription, an external API or Off; the user selects the provider and explicitly permits transmission on iPhone before those requests are sent. Permission can be withdrawn in Settings → Privacy.
 
-   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Settings → Google Drive → Disconnect Drive revokes Google access and clears this device’s connection after one confirmation, while retaining recordings and settings. API keys can be removed individually from the workflow screen's secret list; recordings can be deleted from the recording list.
+   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Settings → Google Drive → Disconnect Drive revokes Google access and clears this device’s connection after one confirmation, while retaining recordings and settings. API keys can be removed individually from the Settings → Recording processing → API keys; recordings can be deleted from the recording list.
 
 4. **External services**
 
-   Google OAuth provides authorization to the user's Google Drive. Google Drive stores recordings, metadata and any transcription result files. Optional speech-to-text integrations are AssemblyAI, NAVER Clova Speech, RTZR, OpenAI, Groq, Together AI, Mistral, ElevenLabs, Deepgram, Microsoft Azure Speech, Daglo, Speechmatics, Rev AI and Gladia. Only the provider selected in a workflow receives the transcription request. Optional webhooks send recording metadata and Drive links to a user-configured URL. Apple WatchConnectivity transfers recordings between the user's paired Watch and iPhone. There is no Recly-operated payment processor or in-app purchase flow in the current code; external providers may charge the user's own account for API usage.
+   Google OAuth provides authorization to the user's Google Drive. Google Drive stores recordings, metadata and any transcription result files. Optional speech-to-text integrations are AssemblyAI, NAVER Clova Speech, RTZR, OpenAI, Groq, Together AI, Mistral, ElevenLabs, Deepgram, Microsoft Azure Speech, Daglo, Speechmatics, Rev AI and Gladia. Only the provider selected in processing settings or an existing queued recording receives the transcription request. Apple WatchConnectivity transfers recordings between the user's paired Watch and iPhone. There is no Recly-operated payment processor or in-app purchase flow in the current code; external providers may charge the user's own account for API usage.
 
 5. **Regional behavior**
 
-   The iOS app disables the OpenAI transcription integration for the China mainland App Store storefront. It checks the StoreKit storefront before transcription and before each provider request; existing and imported workflows cannot bypass the restriction. If the storefront cannot be determined, the affected step waits without transmitting to the provider. The provider is also unavailable in the workflow picker, save and import flows. Apple Watch recordings are processed by the paired iPhone under the same restriction. Local recording and Google Drive upload are independent of this restriction. The interface is available in English and Korean. [Verify CHN, a supported non-China storefront and unavailable-storefront behavior on the submitted build before sending.]
+   The iOS app disables the OpenAI transcription integration for the China mainland App Store storefront. It checks the StoreKit storefront before transcription and before each provider request; existing jobs and imported settings cannot bypass the restriction. If the storefront cannot be determined, the affected step waits without transmitting to the provider. The provider is also unavailable in the provider picker and save flow. Apple Watch recordings are processed by the paired iPhone under the same restriction. Local recording and Google Drive upload are independent of this restriction. The interface is available in 12 languages (English, Korean, Japanese, Simplified and Traditional Chinese, Spanish, French, German, Portuguese, Arabic, Hindi and Russian). [Verify CHN, a supported non-China storefront and unavailable-storefront behavior on the submitted build before sending.]
 
 6. **Regulated services and third-party material**
 
@@ -63,7 +63,7 @@
 >
 > Thank you for your feedback. Recly does not create or authenticate a Recly user account. Google OAuth authorizes access to the user's own Google Drive for storing and accessing recording files. The iPhone and Mac apps request only the `drive.file` scope, without `openid`, `email`, or `profile`, and do not create a Recly login session.
 >
-> Users can record and play locally stored audio without connecting Google. Google authorization is required for Drive features and workflows that depend on Drive, including transcription in the current version.
+> Users can record and play locally stored audio without connecting Google. Google authorization is required for Drive features and recording processing that depends on Drive, including transcription in the current version.
 >
 > In the submitted build [submitted version/build], Settings identifies this integration as Google Drive and states that users can record locally and connect Drive to upload. The connection is configured in Settings, and the recording list distinguishes local storage from pending Drive uploads.
 >

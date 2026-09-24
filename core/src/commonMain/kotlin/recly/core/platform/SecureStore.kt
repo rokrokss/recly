@@ -1,8 +1,8 @@
 package recly.core.platform
 
 /**
- * Keychain / Keystore / DPAPI, provided by the shell. Namespaces: [SECRETS] for webhook signing
- * keys, [TOKENS] for OAuth material.
+ * Keychain / Keystore / DPAPI, provided by the shell. Namespaces: [SECRETS] for transcription
+ * provider keys, [TOKENS] for OAuth material.
  */
 interface SecureStore {
     suspend fun get(ns: String, key: String): ByteArray?

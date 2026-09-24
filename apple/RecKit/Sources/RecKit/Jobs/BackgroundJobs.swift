@@ -28,10 +28,12 @@ public final class BackgroundJobs {
     /// One `runDueJobs()` pass, whatever it takes. The model owns the core; this type owns the
     /// scheduling around it.
     private let pass: () async -> Void
+    private let localPass: () async -> Void
     private let logger = Logger(subsystem: CoreBridge.appName, category: "jobs")
 
-    public init(pass: @escaping () async -> Void) {
+    public init(pass: @escaping () async -> Void, localPass: @escaping () async -> Void = {}) {
         self.pass = pass
+        self.localPass = localPass
     }
 
     /// Both handlers, and it has to happen before `didFinishLaunching` returns — the system may be
@@ -43,6 +45,9 @@ public final class BackgroundJobs {
         ) { [weak self] task in
             // `using: nil` is a background queue, and everything below the model is main-actor.
             Task { @MainActor in self?.handle(task) }
+        }
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.identifier + ".local", using: nil) { [weak self] task in
+            Task { @MainActor in self?.handle(task, localOnly: true) }
         }
         var continued = false
         if #available(iOS 26.0, *) {
@@ -65,6 +70,10 @@ public final class BackgroundJobs {
     /// request replaces whatever is already queued under the same identifier, so calling it often
     /// costs nothing.
     public func schedule() {
+        let localRequest = BGProcessingTaskRequest(identifier: Self.identifier + ".local")
+        localRequest.requiresNetworkConnectivity = false
+        localRequest.requiresExternalPower = false
+        try? BGTaskScheduler.shared.submit(localRequest)
         let request = BGProcessingTaskRequest(identifier: Self.identifier)
         // An upload with no network is a pass that does nothing; charge is not required, because a
         // recording the user made this morning should not wait for tonight.
@@ -104,9 +113,9 @@ public final class BackgroundJobs {
 
     /// One granted task. The successor is asked for first: a pass that ends without one is a queue
     /// that stalls until the app is opened.
-    private func handle(_ task: BGTask) {
+    private func handle(_ task: BGTask, localOnly: Bool = false) {
         if task is BGProcessingTask { schedule() }
-        let work = Task { await pass() }
+        let work = Task { if localOnly { await localPass() } else { await pass() } }
         // Expiration is the system taking the time back. Cancelling leaves the step `RUNNING`,
         // which the next pass resets and repeats from its saved state (docs/10).
         task.expirationHandler = { work.cancel() }

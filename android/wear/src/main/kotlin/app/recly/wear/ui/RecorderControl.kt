@@ -16,7 +16,7 @@ interface RecorderControl {
     val state: StateFlow<RecorderState>
     val events: SharedFlow<RecorderEvent>
 
-    fun start(workflowId: String?)
+    fun start()
 
     fun stop()
 }
@@ -33,7 +33,7 @@ class ServiceRecorderControl(private val context: Context) : RecorderControl {
 
     override val events: SharedFlow<RecorderEvent> = RecorderService.events
 
-    override fun start(workflowId: String?) = RecorderService.start(context, workflowId)
+    override fun start() = RecorderService.start(context)
 
     override fun stop() = RecorderService.stop(context, title = null)
 }

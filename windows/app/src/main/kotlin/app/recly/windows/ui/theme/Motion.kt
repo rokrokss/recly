@@ -48,7 +48,7 @@ enum class ProcessingPhase { IDLE, PROCESSING, DONE }
 
 /**
  * Where the caller's operation actually is — what the model knows, not what the button draws. The
- * models carry it (`ShellModel.action`, `WorkflowsModel.action`) the way the Mac's `MenuModel` does.
+ * model carries it (`ShellModel.action`) the way the Mac's `MenuModel` does.
  */
 enum class ProcessingState { IDLE, PROCESSING, DONE, FAILED }
 

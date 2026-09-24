@@ -33,13 +33,14 @@ import recly.core.job.StepReport
  */
 val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATUS_RECORDING to LedgerStatus("REC", BadgeTone.DANGER),
-    Str.STATE_NO_WORKFLOW to LedgerStatus("DONE", BadgeTone.SUCCESS),
     Str.STATUS_WAITING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
     Str.STATE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
     Str.STATE_RETRY_WAIT to LedgerStatus("RETRY", BadgeTone.WARNING),
     // docs/08 "폴링 · 상태": a job parked while a provider transcribes is waiting on someone else,
     // not on a retry timer, so it is its own code.
     Str.STATE_WAITING_TRANSCRIPTION to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
+    Str.PROCESSING_LOCAL_RUNNING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
+    Str.PROCESSING_LOCAL_PENDING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
     // docs/03 "다른 기기의 녹음" (2026-09-04): work in flight somewhere else — the watch sending, or
     // another device uploading or transcribing. The accent of every "something is happening", and the
     // same codes the local states wear: to a reader the news is the news, and *where* it is happening

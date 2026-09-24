@@ -28,7 +28,6 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.recording.MetaWriter
-import recly.core.sync.WorkflowRepository
 
 /**
  * docs/03 "복구" as [RecordingRecovery] implements it for a shell that did not write the audio
@@ -287,11 +286,8 @@ class RecordingRecoveryTest {
         }
     }
 
-    /**
-     * As `ShellModel.load` opens it: the docs/05 starters seeded and this device's default pointed
-     * at 회의 (ADR-016), without which a recovered recording would resolve no workflow at all.
-     */
+    /** As `ShellModel.load` opens it: the processing settings initialized (docs/05). */
     private suspend fun core(): ReclyCore = AppModule.build(
         dataDir = Files.createTempDirectory("recly-recovery").toString().toPath(),
-    ).core.also { it.workflows.seed(WorkflowRepository.MEMO_ID) }
+    ).core.also { it.initializeProcessing() }
 }

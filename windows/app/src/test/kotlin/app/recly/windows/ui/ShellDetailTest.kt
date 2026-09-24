@@ -34,7 +34,7 @@ class ShellDetailTest {
         }
         try {
             model.load(directory.absolutePath.toPath(), FakeHelperCommand.command("parts=1", "sec=2.0", "write"))
-            model.start(null)
+            model.start()
             until { model.recording && model.recents.isNotEmpty() }
             model.openDetail(model.recents.first())
             until { model.detail?.loading == false }

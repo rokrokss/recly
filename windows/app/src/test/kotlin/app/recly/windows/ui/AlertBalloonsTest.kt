@@ -54,9 +54,9 @@ class AlertBalloonsTest {
      */
     @Test
     fun `a reason that came back after being fixed is posted again`() {
-        JobAlertBalloons.publish(balloon, listOf(JobAlert(AlertReason.WEBHOOK, 1)))
+        JobAlertBalloons.publish(balloon, listOf(JobAlert(AlertReason.QUOTA, 1)))
         JobAlertBalloons.publish(balloon, emptyList())
-        JobAlertBalloons.publish(balloon, listOf(JobAlert(AlertReason.WEBHOOK, 1)))
+        JobAlertBalloons.publish(balloon, listOf(JobAlert(AlertReason.QUOTA, 1)))
 
         assertEquals(2, shown.size)
     }

@@ -7,7 +7,6 @@ import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.message
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.settings.RecordingMode
 import app.recly.windows.settings.Settings
 import app.recly.windows.ui.theme.ProcessingState
 import java.io.File
@@ -144,12 +143,6 @@ class PreviewTest {
         override var consentReminder: Boolean = true
             set(value) {
                 writes += "consentReminder"
-                field = value
-            }
-
-        override var recordingMode: RecordingMode = RecordingMode.MEETING
-            set(value) {
-                writes += "recordingMode"
                 field = value
             }
 

@@ -26,7 +26,7 @@ import recly.core.platform.HttpResult
 import recly.core.platform.Transport
 import recly.core.transcribe.SttProviders
 
-/** docs/15: permission belongs to a destination and purpose, never a workflow or an API key. */
+/** docs/15: permission belongs to a destination and purpose, never a plan or an API key. */
 @Serializable
 data class TransferTarget(
     val kind: String,
@@ -46,12 +46,9 @@ object TransferTargets {
         workflow.steps.mapNotNull(::forStep).distinctBy { it.id }
 
     fun forStep(step: Step): TransferTarget? = when (step) {
-        is Step.DriveUpload -> null // Google OAuth already authorizes Drive access.
-        is Step.Webhook -> canonical(step.url, trimPath = false)?.let {
-            TransferTarget("webhook", "", it)
-        }
+        is Step.DriveUpload, is Step.LocalTranscribe, is Step.TranscriptPublish -> null
         is Step.Transcribe -> endpoint(step)
-            ?.let { canonical(it, trimPath = true) }
+            ?.let(::canonical)
             ?.let { TransferTarget("transcribe", step.provider, it) }
     }
 
@@ -62,20 +59,16 @@ object TransferTargets {
         else -> SttProviders.defaultEndpoint(step.provider)
     }
 
-    private fun canonical(raw: String, trimPath: Boolean): String? = runCatching {
+    private fun canonical(raw: String): String? = runCatching {
         val url = URLBuilder(raw.trim()).apply { fragment = "" }.build()
         require(url.protocol.name in setOf("http", "https") && url.host.isNotEmpty())
         val value = url.toString()
-        if (trimPath && url.encodedQuery.isEmpty()) value.trimEnd('/') else value
+        if (url.encodedQuery.isEmpty()) value.trimEnd('/') else value
     }.getOrNull()
 
     internal fun valid(target: TransferTarget): Boolean =
-        target.disclosureVersion == DISCLOSURE_VERSION && when (target.kind) {
-            "webhook" -> target.provider.isEmpty() && canonical(target.endpoint, false) == target.endpoint
-            "transcribe" -> SttProviders.create(target.provider) != null &&
-                canonical(target.endpoint, true) == target.endpoint
-            else -> false
-        }
+        target.disclosureVersion == DISCLOSURE_VERSION && target.kind == "transcribe" &&
+            SttProviders.create(target.provider) != null && canonical(target.endpoint) == target.endpoint
 }
 
 @Serializable
@@ -83,7 +76,7 @@ private data class TransferGrant(val target: TransferTarget, val deviceProof: St
 
 /**
  * docs/15: durable grants in the local database, bound to a device-only Keychain marker on iOS.
- * Neither workflow exports nor a marker surviving uninstall can restore the deleted grants.
+ * Neither a settings export nor a marker surviving uninstall can restore the deleted grants.
  * The iOS shell opts in; other shells keep their existing policy while sharing the wire types.
  */
 class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) {
@@ -115,7 +108,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
         return targets.distinctBy { it.id }.filter { it.id !in allowed }
     }
 
-    /** Only the explicit UI action calls this; saving/importing a workflow does not imply consent. */
+    /** Only the explicit UI action calls this; saving/importing settings does not imply consent. */
     @Throws(Throwable::class)
     suspend fun grant(targets: List<TransferTarget>): Unit = withContext(deps.io) {
         if (targets.isEmpty()) return@withContext
@@ -139,7 +132,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
 
     internal suspend fun requireAllowed(step: Step) {
         if (!enabled) return
-        if (step is Step.DriveUpload) return
+        if (step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish) return
         val target = TransferTargets.forStep(step) ?: throw StepFailure(
             retryable = false, reason = CoreMessage.PROVIDER_ERROR.code("Invalid transfer destination"),
         )
@@ -157,7 +150,7 @@ class TransferConsents(private val db: RecDatabase, private val deps: CoreDeps) 
 
     /** Recheck before every provider request, including polling and multi-request submissions. */
     internal fun guardedDeps(step: Step): CoreDeps {
-        if (!enabled || step is Step.DriveUpload) return deps
+        if (!enabled || step is Step.DriveUpload || step is Step.LocalTranscribe || step is Step.TranscriptPublish) return deps
         val transport = object : Transport {
             override suspend fun execute(plan: HttpPlan): HttpResult {
                 requireAllowed(step)

@@ -11,6 +11,11 @@
 #   apple/scripts/build-sim.sh Recly "iOS Simulator" "iPhone 17" test -only-testing:ReclyUITests
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
+# `make core-mac` refreshed only the macOS slice; the simulator slices beside it predate the change.
+if [[ -f "$here/../RecKit/Frameworks/ReclyCore.partial" ]]; then
+  echo "build-sim: the staged core has only a fresh macOS slice ($(cat "$here/../RecKit/Frameworks/ReclyCore.partial")) — run \`make core\` first" >&2
+  exit 1
+fi
 scheme="$1" platform="$2" device="$3"
 shift 3
 exec xcodebuild -workspace "$here/../Rec.xcworkspace" -scheme "$scheme" \

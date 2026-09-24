@@ -85,26 +85,36 @@ class LanguageSettingTest {
      * nothing in it is shown as the language the app resolved to.
      */
     @Test
-    fun `the picker offers the two languages and not the system default`() {
-        assertEquals(listOf(AppLanguage.ENGLISH, AppLanguage.KOREAN), AppLanguage.choices)
+    fun `the picker offers all shipped languages without the system sentinel`() {
+        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"), AppLanguage.choices.map { it.tag })
     }
 
     /** What the row says and the dialog marks: the locale the app's own words were resolved in. */
     @Test
-    fun `the effective language is Korean only for a Korean locale`() {
+    fun `regional locales resolve to their shipped language`() {
         assertEquals(AppLanguage.KOREAN, AppLanguage.effective(Locale.KOREAN))
         assertEquals(AppLanguage.KOREAN, AppLanguage.effective(Locale.KOREA))
-        listOf(Locale.ENGLISH, Locale.UK, Locale.JAPANESE).forEach {
+        listOf(Locale.ENGLISH, Locale.UK).forEach {
             assertEquals(AppLanguage.ENGLISH, AppLanguage.effective(it), "locale '$it'")
         }
     }
 
     /** A tag this app does not offer — another language, or none — reads as the system default. */
     @Test
-    fun `only the two shipped tags are recognised`() {
+    fun `shipped tags and regional variants round trip`() {
         assertEquals(AppLanguage.KOREAN, AppLanguage.of("ko"))
-        assertEquals(AppLanguage.ENGLISH, AppLanguage.of("en"))
-        listOf("", "ja", "en-GB").forEach {
+        AppLanguage.choices.forEach { language ->
+            setting.select(language)
+            assertEquals(language, setting.current())
+        }
+        assertEquals(AppLanguage.ENGLISH, AppLanguage.of("en-GB"))
+        assertEquals(AppLanguage.JAPANESE, AppLanguage.effective(Locale.JAPAN))
+        assertEquals(AppLanguage.CHINESE_TRADITIONAL, AppLanguage.of("zh-Hant-HK"))
+        assertEquals(AppLanguage.CHINESE_TRADITIONAL, AppLanguage.of("zh-TW"))
+        assertEquals(AppLanguage.CHINESE_SIMPLIFIED, AppLanguage.of("zh-Hans-CN"))
+        assertEquals(AppLanguage.CHINESE_SIMPLIFIED, AppLanguage.of("zh-Hans-HK"))
+        assertEquals(AppLanguage.ARABIC, AppLanguage.of("ar-SA"))
+        listOf("", "xx").forEach {
             assertEquals(AppLanguage.SYSTEM, AppLanguage.of(it), "tag '$it'")
         }
     }

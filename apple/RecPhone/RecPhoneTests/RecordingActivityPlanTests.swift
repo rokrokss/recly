@@ -9,7 +9,7 @@ final class RecordingActivityPlanTests: XCTestCase {
 
     func testARunningRecordingIsShownCountingFromItsStart() {
         let plan = RecordingActivityPlan.plan(
-            for: .recording(recordingId: "01J9", workflowId: "w1"), startedAt: startedAt
+            for: .recording(recordingId: "01J9"), startedAt: startedAt
         )
 
         XCTAssertEqual(plan, .show(RecordingActivityAttributes.ContentState(startedAt: startedAt)))
@@ -30,7 +30,7 @@ final class RecordingActivityPlanTests: XCTestCase {
     func testARecordingWithNoStartTimeIsNotShown() {
         XCTAssertEqual(
             RecordingActivityPlan.plan(
-                for: .recording(recordingId: "01J9", workflowId: nil), startedAt: nil
+                for: .recording(recordingId: "01J9"), startedAt: nil
             ),
             .none
         )

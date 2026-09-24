@@ -27,6 +27,15 @@ class ClovaProviderTest {
     private val provider = ClovaProvider()
 
     @Test
+    fun `Japanese and Chinese use Clova recognition codes`() = runBlocking {
+        for ((i, entry) in mapOf(Language.JA to "ja", Language.ZH_CN to "zh-cn", Language.ZH_TW to "zh-tw").entries.withIndex()) {
+            harness.server.reply(COMPLETED)
+            provider.submit(context(language = entry.key), harness.audio)
+            assertEquals(entry.value, params(i)["language"]?.jsonPrimitive?.content)
+        }
+    }
+
+    @Test
     fun `the audio and the params go up as one multipart upload`() = runBlocking {
         harness.server.reply(COMPLETED)
 

@@ -70,7 +70,7 @@ dependencies {
 
     implementation(compose.desktop.currentOs)
     implementation(compose.material3)
-    // Dispatchers.Main on the JVM: the AWT file dialogs (workflow export/import) hop to it, and
+    // Dispatchers.Main on the JVM: the AWT file dialogs (settings export/import) hop to it, and
     // nothing else on the runtime classpath provides a Main dispatcher.
     implementation(libs.kotlinx.coroutines.swing)
 
@@ -100,9 +100,6 @@ tasks.test {
         "recly.acceptance.dataDir",
         "recly.acceptance.authUrlFile",
         "recly.acceptance.authTimeoutSec",
-        "recly.acceptance.webhookSecret",
-        "recly.acceptance.webhookUrl",
-        "recly.acceptance.removeStaleNamed",
     ).forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
 }
 
@@ -133,7 +130,7 @@ compose.desktop {
             packageName = "Recly"
             packageVersion = installerVersion
             vendor = "Recly"
-            description = "Recly — record and run workflows"
+            description = "Recly — record and transcribe"
 
             // docs/09 "앱 아이콘": one master, per-platform exports. jpackage wants a different
             // container per platform, and all three are written by `scripts/render-icons.swift`.

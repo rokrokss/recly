@@ -4,7 +4,7 @@ import XCTest
 @testable import RecKit
 
 /// docs/12 M1's acceptance check: a shell that only supplies `CoreDeps` gets a working core with an
-/// open local database and the two docs/05 defaults in it.
+/// open local database and the docs/05 recording processing settings in it.
 final class CoreBridgeTests: XCTestCase {
     /// A directory of its own per test, and the database now lives inside it (`basePath`), so every
     /// test opens a genuinely fresh file and the teardown takes the whole thing with it. The names
@@ -20,130 +20,12 @@ final class CoreBridgeTests: XCTestCase {
         try? FileManager.default.removeItem(at: dataDirectory)
     }
 
-    /// A never-opened database file, so these two are what the core seeded (docs/05), not leftovers.
-    func testSeedsTheTwoDefaultWorkflows() async throws {
+    /// A never-opened database file, so the settings are what `make` initialized, not leftovers.
+    func testOpeningTheCoreInitializesTheRecordingProcessingSettings() async throws {
         let bridge = try await makeBridge()
-        let document = try await bridge.core.workflows.current()
 
-        XCTAssertEqual(document.workflows.count, 1)
-        XCTAssertEqual(document.workflows.map(\.id), [WorkflowRepository.companion.MEMO_ID])
-        // docs/07 §6: seeded in the device's language, which is what `CoreBridge` hands the core.
-        let seeded = CoreBridge.deviceLanguage == "ko" ? ["메모"] : ["Memo"]
-        XCTAssertEqual(document.workflows.map(\.name), seeded)
-
-        let names = try await bridge.workflowNames()
-        XCTAssertEqual(names, seeded)
-    }
-
-    /// They are placeholders until a device publishes them: epoch stamps, so any real `updatedAt`
-    /// wins the merge (docs/05).
-    func testDefaultsAreUnpublishedPlaceholders() async throws {
-        let bridge = try await makeBridge()
-        let document = try await bridge.core.workflows.current()
-
-        XCTAssertEqual(document.revision, 0)
-        for workflow in document.workflows {
-            XCTAssertEqual(workflow.updatedAt, WorkflowRepository.companion.PLACEHOLDER_UPDATED_AT)
-        }
-    }
-
-    /// ADR-016: which of the two starters this device runs is a local pointer, not a field of the
-    /// document — and a device that has only *read* the seeds has not chosen one yet. `seed` is what
-    /// takes the guess, and only on the call that put them there.
-    func testTheSeedingDeviceTakesThePreferredDefaultAndAReadTakesNone() async throws {
-        let reader = try await makeBridge()
-        _ = try await reader.core.workflows.current()
-        let unchosen = try await reader.core.workflows.deviceDefault()
-        XCTAssertNil(unchosen, "reading the seeds is not choosing one of them")
-
-        // A database of its own, so this really is a device that has never had a document.
-        let seeder = try await makeBridge()
-        _ = try await seeder.core.workflows.seed(
-            preferredDefaultId: WorkflowRepository.companion.MEMO_ID
-        )
-
-        let chosen = try await seeder.core.workflows.deviceDefault()
-        XCTAssertEqual(chosen, WorkflowRepository.companion.MEMO_ID)
-        let memoIsDefault = try await seeder.core.workflows.isDeviceDefault(
-            workflowId: WorkflowRepository.companion.MEMO_ID
-        )
-        XCTAssertTrue(memoIsDefault.boolValue, "the starter is this device's default")
-    }
-
-    /// docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device now, so the file *is* the
-    /// transfer — and the round trip is what says so. Two databases, which is two devices: one
-    /// exports what it holds, the other picks the file up, is told how many are in it and replaces
-    /// its own whole document with them (there is no merge).
-    ///
-    /// Over the real core and a real file rather than a fake of either: what this is about is the
-    /// bytes surviving `exportJson` → disk → `importJson`, and a fake of the core would only prove
-    /// the model calls it.
-    @MainActor
-    func testAnExportedFileReplacesTheWholeDocumentOnAnotherDevice() async throws {
-        let source = try await makeBridge()
-        let carried = Workflow(
-            id: "00000000000000000000CARRY0",
-            name: "Carried",
-            updatedAt: "2026-08-01T00:00:00.000Z",
-            minDurationSec: 0,
-            steps: [
-                Step.DriveUpload(
-                    id: "upload",
-                    onError: .abort,
-                    retry: StepDefaults.retry,
-                    folder: StepDefaults.folder,
-                    includeMeta: true
-                ),
-            ]
-        )
-        guard case .saved = onEnum(of: try await source.core.workflows.save(
-            document: WorkflowsDocument(
-                schema: 3,
-                revision: 1,
-                updatedAt: "2026-08-01T00:00:00.000Z",
-                updatedBy: "device-a",
-                workflows: [carried]
-            )
-        )) else { return XCTFail("the source device would not take the document") }
-
-        let file = dataDirectory.appendingPathComponent(WorkflowTransferModel.fileName)
-        await WorkflowTransferModel(core: source.core).export(to: file)
-
-        // A database of its own: a device that has never seen the file, with its own starter.
-        let target = try await makeBridge()
-        let starters = try await target.core.workflows.current().workflows
-        XCTAssertEqual(starters.count, 1)
-        let transfer = WorkflowTransferModel(core: target.core)
-
-        await transfer.pick(file)
-
-        XCTAssertEqual(transfer.confirm?.workflows, 1, "the confirmation names what the file holds")
-        let untouched = try await target.core.workflows.current().workflows
-        XCTAssertEqual(untouched.count, 1, "the confirmation had not been answered yet")
-
-        await transfer.confirmImport()
-
-        let imported = try await target.core.workflows.current().workflows
-        XCTAssertEqual(imported.map(\.id), [carried.id], "the file replaced the whole document")
-        XCTAssertEqual(imported.map(\.name), ["Carried"])
-        XCTAssertNil(transfer.confirm)
-    }
-
-    /// A file that is not a document is refused without writing anything, and what is shown is the
-    /// parser's own list — docs/02 owns those words, so nothing here invents a sentence for them.
-    @MainActor
-    func testAFileThatIsNotAWorkflowDocumentLeavesTheDeviceAlone() async throws {
-        let bridge = try await makeBridge()
-        let file = dataDirectory.appendingPathComponent("not-a-document.json")
-        try Data("{\"schema\":3}".utf8).write(to: file)
-        let transfer = WorkflowTransferModel(core: bridge.core)
-
-        await transfer.pick(file)
-
-        XCTAssertNil(transfer.confirm, "nothing to confirm: there is nothing to import")
-        XCTAssertTrue(transfer.failed)
-        let stored = try await bridge.core.workflows.current().workflows
-        XCTAssertEqual(stored.count, 1, "the starter is still what this device runs")
+        let state = try await bridge.core.processingSettings.read()
+        XCTAssertTrue(state is ProcessingSettingsStateReady, "every recording freezes these settings")
     }
 
     /// The device id is minted once and kept — the next launch must find the same value.
@@ -309,7 +191,6 @@ final class CoreBridgeTests: XCTestCase {
         databaseName: String = "reckit-tests-\(UUID().uuidString).db"
     ) async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: databaseName,

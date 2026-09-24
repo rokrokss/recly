@@ -148,7 +148,7 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
                     color = blueprint.textMuted,
                 )
                 if (!model.recentsLoading) BlueprintButton(
-                    strings[Str.TRAY_START], { model.start(model.selectedWorkflow?.id) },
+                    strings[Str.TRAY_START], model::start,
                     enabled = model.ready && !model.recording,
                     modifier = Modifier.padding(horizontal = Space.m),
                 )
@@ -191,7 +191,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         }
         // docs/08 "오류": what to do about it, and — for a key — where to do it. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
-        FailureReason(item, strings) { model.editWorkflowOf(item) }
+        FailureReason(item, strings) { model.settingsOpen = true }
     }
 }
 

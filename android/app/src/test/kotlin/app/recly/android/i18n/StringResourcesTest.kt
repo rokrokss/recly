@@ -8,9 +8,9 @@ import kotlin.test.assertTrue
 import org.w3c.dom.Element
 
 /**
- * docs/07 rule 9, the completeness half: every key exists in both languages, in all three Android
+ * docs/07 rule 9, the completeness half: every key exists in all supported languages, in all three Android
  * modules. A key that only exists in `values/` falls back to English silently, which is exactly the
- * bug this catches — the phone would be Korean everywhere except the one string nobody translated.
+ * bug this catches — a translated screen must not contain an untranslated fallback.
  *
  * The watch and the recorder are checked from here because their own test counts are fixed by the
  * lane; nothing about the files needs their modules to be built.
@@ -18,51 +18,46 @@ import org.w3c.dom.Element
 class StringResourcesTest {
 
     @Test
-    fun `every module has the same keys in English and Korean`() {
+    fun `every module has the same keys in every supported language`() {
         MODULES.forEach { module ->
             val base = keysOf(res(module, "values"))
-            val korean = keysOf(res(module, "values-ko"))
-
             assertTrue(base.isNotEmpty(), "$module has no base strings")
-            assertEquals(emptySet(), base - korean, "$module: keys with no Korean translation")
-            assertEquals(emptySet(), korean - base, "$module: Korean keys with no English base")
-        }
-    }
-
-    /**
-     * A translation whose format arguments do not match the base crashes `getString` at runtime
-     * rather than looking wrong, so it is worth its own check.
-     */
-    @Test
-    fun `a translation uses the same format arguments as its base`() {
-        MODULES.forEach { module ->
-            val base = stringsOf(res(module, "values"))
-            val korean = stringsOf(res(module, "values-ko"))
-
-            base.forEach { (key, value) ->
-                assertEquals(
-                    formatArgs(value),
-                    formatArgs(korean.getValue(key)),
-                    "$module/$key: the Korean string's format arguments differ",
-                )
+            QUALIFIERS.forEach { qualifier ->
+                assertEquals(base, keysOf(res(module, qualifier)), "$module/$qualifier: string keys")
             }
         }
     }
 
-    /**
-     * A `<plurals>` is a resource like any other, and a count the app says out loud in one language
-     * and not the other is the same bug as a missing string. The *quantities* deliberately are not
-     * compared: English needs `one` and `other`, Korean has only `other`, and that is the point of
-     * the resource type.
-     */
     @Test
-    fun `every module has the same plurals in English and Korean`() {
+    fun `translations retain the base format arguments`() {
+        MODULES.forEach { module ->
+            val base = stringsOf(res(module, "values"))
+            QUALIFIERS.forEach { qualifier ->
+                val translated = stringsOf(res(module, qualifier))
+                base.forEach { (key, value) ->
+                    assertEquals(formatArgs(value), formatArgs(translated.getValue(key)), "$module/$qualifier/$key")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `every module has the same plurals in every supported language`() {
         MODULES.forEach { module ->
             val base = pluralsOf(res(module, "values"))
-            val korean = pluralsOf(res(module, "values-ko"))
-
-            assertEquals(emptySet(), base - korean, "$module: plurals with no Korean translation")
-            assertEquals(emptySet(), korean - base, "$module: Korean plurals with no English base")
+            QUALIFIERS.forEach { qualifier ->
+                assertEquals(base, pluralsOf(res(module, qualifier)), "$module/$qualifier: plural keys")
+                val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(res(module, qualifier))
+                val plurals = document.getElementsByTagName("plurals")
+                for (index in 0 until plurals.length) {
+                    val element = plurals.item(index) as Element
+                    val items = element.getElementsByTagName("item")
+                    assertTrue((0 until items.length).any { (items.item(it) as Element).getAttribute("quantity") == "other" })
+                    for (item in 0 until items.length) {
+                        assertEquals(setOf("%1\$d"), formatArgs(items.item(item).textContent), "$module/$qualifier: count argument")
+                    }
+                }
+            }
         }
     }
 
@@ -75,7 +70,7 @@ class StringResourcesTest {
             .getElementsByTagName("locale")
             .let { nodes -> (0 until nodes.length).map { (nodes.item(it) as Element).getAttribute("android:name") } }
 
-        assertEquals(listOf("en", "ko"), declared)
+        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"), declared)
     }
 
     private fun res(module: String, qualifier: String): File =
@@ -104,6 +99,8 @@ class StringResourcesTest {
     private companion object {
         /** Unit tests run with the module directory as the working directory. */
         val MODULE_ROOT: File = File("..").canonicalFile
+
+        val QUALIFIERS = listOf("values-ko", "values-ja", "values-b+zh+Hans", "values-b+zh+Hant", "values-es", "values-fr", "values-de", "values-pt", "values-ar", "values-hi", "values-ru")
 
         val MODULES = listOf("app", "wear", "recording")
 

@@ -27,7 +27,6 @@ import recly.core.model.Source
 import recly.core.model.Step
 import recly.core.model.Track
 import recly.core.model.Workflow
-import recly.core.model.WorkflowsDocument
 import recly.core.platform.AudioTools
 import recly.core.platform.Clock
 import recly.core.platform.CoreDeps
@@ -39,20 +38,16 @@ import recly.core.platform.SecureStore
 import recly.core.platform.TokenProvider
 import recly.core.platform.Transport
 import recly.core.recording.MetaWriter
-import recly.core.workflow.WorkflowParser
 
 val START: Instant = Instant.parse("2026-08-26T01:00:00.000Z")
 
-/** The `step_run` ULID a harness runs a step under; the webhook sends it as `webhook-id`. */
+/** The `step_run` ULID a harness runs a step under. */
 const val STEP_RUN_ID: String = "01J9STEPR0N0123456789ABCDE"
 
 /** The one device every test runs as, unless it is a test about two of them. */
 const val DEVICE_ID: String = "7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10"
 
 const val DEVICE_NAME: String = "MacBook Pro"
-
-/** What the webhook `user-agent` reports in tests. */
-const val TEST_APP_VERSION: String = "1.0.0"
 
 /**
  * Also a [kotlin.time.Clock], which is what `FakeFileSystem` dates its files by: the retention
@@ -163,7 +158,9 @@ fun testDeps(
     io: CoroutineDispatcher = Dispatchers.Unconfined,
     requireTransferConsent: Boolean = false,
     dataDir: Path = "/data".toPath(),
+    localTranscription: recly.core.transcribe.LocalTranscriptionEngine = recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
     transcriptionPolicy: recly.core.transcribe.TranscriptionPolicy = recly.core.transcribe.TranscriptionPolicy(),
+    locale: String = "en",
 ): CoreDeps = CoreDeps(
     clock = clock,
     logger = logger,
@@ -174,10 +171,11 @@ fun testDeps(
     audio = audio,
     dataDir = dataDir,
     device = DeviceInfo(deviceId, platform, DEVICE_NAME),
-    appVersion = TEST_APP_VERSION,
     io = io,
     requireTransferConsent = requireTransferConsent,
     transcriptionPolicy = transcriptionPolicy,
+    localTranscription = localTranscription,
+    locale = locale,
 )
 
 fun testMeta(
@@ -237,19 +235,12 @@ fun transcribeStep(
     retry: Retry = Retry(),
 ): Step = Step.Transcribe(id = id, onError = onError, retry = retry, provider = "assemblyai", secretRef = "stt_key")
 
-fun webhookStep(
+/** A `transcript.publish` step: a step after the upload that sends nothing anywhere. */
+fun publishStep(
     id: String,
     onError: OnError = OnError.ABORT,
     retry: Retry = Retry(),
-): Step = Step.Webhook(id = id, onError = onError, retry = retry, url = "https://example.com/rec")
-
-fun testDocument(vararg workflows: Workflow): WorkflowsDocument = WorkflowsDocument(
-    schema = WorkflowParser.SCHEMA,
-    revision = 1,
-    updatedAt = "2026-08-26T01:00:00.000Z",
-    updatedBy = "7c1e4b2a",
-    workflows = workflows.toList(),
-)
+): Step = Step.TranscriptPublish(id = id, onError = onError, retry = retry)
 
 /** Writes the part files a purge is supposed to delete. */
 fun seedFiles(fs: FileSystem, dir: Path, meta: RecordingMeta) {

@@ -1,0 +1,35 @@
+{
+  "schema": 2,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "track": "mono",
+  "language": "ko",
+  "provider": {
+    "name": "apple-speech",
+    "model": "speech-26"
+  },
+  "createdAt": "2026-08-29T03:10:00.000Z",
+  "durationSec": 3612.4,
+  "speakers": [],
+  "segments": [
+    {
+      "start": 0.0,
+      "end": 3.2,
+      "speaker": "",
+      "text": "시작하겠습니다."
+    },
+    {
+      "start": 3.6,
+      "end": 9.1,
+      "speaker": "",
+      "text": "네, 지난주 액션아이템부터 보시죠."
+    },
+    {
+      "start": 900.4,
+      "end": 906.8,
+      "speaker": "",
+      "text": "두 번째 파트의 첫 발화입니다."
+    }
+  ],
+  "speakerIdentification": "unavailable",
+  "timing": "segment"
+}

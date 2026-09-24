@@ -33,7 +33,7 @@ class TranscriptAvailabilityTest {
     }
 
     @Test
-    fun `a failed transcribe is not pending while a later webhook is running`() {
+    fun `a failed transcribe is not pending while a later step is running`() {
         assertEquals(TranscriptAvailability.FAILED, availability(JobStatus.RUNNING, StepStatus.FAILED))
     }
 

@@ -22,6 +22,16 @@ class ElevenLabsProviderTest {
     private val provider = ElevenLabsProvider()
 
     @Test
+    fun `global language selections reach the speech API without a Korean fallback`() = runBlocking {
+        val cases = mapOf(Language.JA to "ja", Language.FR to "fr", Language.AR to "ar", Language.HI to "hi", Language.ZH_TW to "zh")
+        for ((i, entry) in cases.entries.withIndex()) {
+            harness.server.reply(WORDS)
+            provider.submit(context(language = entry.key), harness.audio)
+            assertEquals(entry.value, harness.server.request(i).multipartPart("language_code"))
+        }
+    }
+
+    @Test
     fun `the audio and the options go up as one multipart form`() = runBlocking {
         harness.server.reply(WORDS)
 

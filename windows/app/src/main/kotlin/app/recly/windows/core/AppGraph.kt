@@ -5,7 +5,6 @@ package app.recly.windows.core
 import app.cash.sqldelight.db.SqlDriver
 import app.recly.windows.auth.GoogleAuth
 import app.recly.windows.auth.JvmTokenProvider
-import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.auth.TokenEndpoint
 import app.recly.windows.i18n.Localization
 import java.util.UUID
@@ -31,7 +30,6 @@ class AppGraph(
     val core: ReclyCore,
     val auth: GoogleAuth,
     val tokens: JvmTokenProvider,
-    val secrets: SecretStore,
     val dataDir: Path,
 )
 
@@ -71,9 +69,8 @@ object AppModule {
                 platform = Platform.WINDOWS,
                 name = Host.deviceName(),
             ),
-            appVersion = OAuthConfig.APP_VERSION,
             io = io,
-            locale = localization.tag,
+            locale = localization.language.tag.ifEmpty { Host.language() },
         )
 
         val core = ReclyCore(deps, JvmDriverFactory(dataDir / databaseName))
@@ -81,9 +78,6 @@ object AppModule {
             core = core,
             auth = GoogleAuth(tokens, endpoint, logger, localization::current),
             tokens = tokens,
-            // docs/05 "코어 구현 메모": the shell's secret writes go through the core, not straight
-            // into the secure store, or `secrets.enc` never hears about them.
-            secrets = SecretStore(core.secrets),
             dataDir = dataDir,
         )
     }

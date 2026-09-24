@@ -59,8 +59,7 @@ extension KotlinInstant {
 }
 
 extension Date {
-    /// The same shape, for the timestamps that never were a `KotlinInstant` — the recording's
-    /// `startedAt` and the workflow document's `updatedAt`.
+    /// The same shape, for the timestamps that never were a `KotlinInstant`.
     var isoUtc: String { Self.isoUtcFormatter.string(from: self) }
 
     private static let isoUtcFormatter: DateFormatter = {

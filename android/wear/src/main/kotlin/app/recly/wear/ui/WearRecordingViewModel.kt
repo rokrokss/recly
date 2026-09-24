@@ -6,17 +6,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import app.recly.recording.RecorderEvent
 import app.recly.recording.RecorderState
-import app.recly.wear.data.WatchDefault
 import app.recly.wear.transfer.TransferQueue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import recly.core.sync.WorkflowSummary
 
 /**
  * What the watch screen shows. [recorder] is the state machine — Idle, Starting, Recording,
@@ -25,13 +22,6 @@ import recly.core.sync.WorkflowSummary
  */
 data class WearUiState(
     val recorder: RecorderState = RecorderState.Idle,
-    /** What the phone last published. Every one of them is a watch can start (ADR-016). */
-    val workflows: List<WorkflowSummary> = emptyList(),
-    /**
-     * This watch's own default (ADR-016), as far as the published list can still resolve it. Null is
-     * "Default": the recording carries no pick and the phone runs the phone's own default.
-     */
-    val selectedWorkflowId: String? = null,
     val pending: Int = 0,
     /**
      * docs/11 W2: those [pending] recordings are going over right now. The badge says so instead of
@@ -57,8 +47,6 @@ data class WearUiState(
      * `전송 중 0개` would be the badge saying so.
      */
     val handingOver: Boolean get() = sending && pending > 0
-
-    val selected: WorkflowSummary? get() = workflows.firstOrNull { it.id == selectedWorkflowId }
 }
 
 /**
@@ -77,7 +65,7 @@ sealed interface WearMessage {
 }
 
 /**
- * The screen's half of the watch app: the workflow pick, the two taps and the badge. The recording
+ * The screen's half of the watch app: the two taps and the badge. The recording
  * belongs to `RecorderService` and the transfer to [TransferQueue], which this only reads; all it
  * decides is when a tap counts and what the user is told about the one that just stopped.
  *
@@ -86,22 +74,12 @@ sealed interface WearMessage {
  */
 class WearRecordingViewModel(
     private val recorder: RecorderControl,
-    workflows: Flow<List<WorkflowSummary>>,
     private val queue: TransferQueue,
     private val haptics: Haptics,
-    /** ADR-016: this watch's own default, which outlives the process. */
-    private val defaults: WatchDefault,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(WearUiState())
     val state: StateFlow<WearUiState> = _state.asStateFlow()
-
-    /**
-     * The stored pointer, kept apart from the state so a workflow the phone has temporarily stopped
-     * publishing does not silently lose the user's choice: what the screen shows is this resolved
-     * against the last publish, and it comes back when the workflow does.
-     */
-    private var stored: String? = defaults.read()
 
     init {
         viewModelScope.launch { recorder.state.collect { onRecorder(it) } }
@@ -109,29 +87,9 @@ class WearRecordingViewModel(
         viewModelScope.launch { queue.pending.collect { count -> _state.update { it.copy(pending = count) } } }
         viewModelScope.launch { queue.failed.collect { count -> _state.update { it.copy(failed = count) } } }
         viewModelScope.launch { queue.sending.collect { now -> _state.update { it.copy(sending = now) } } }
-        viewModelScope.launch { workflows.collect { onWorkflows(it) } }
     }
-
-    /**
-     * A pick the user made outlives a republish, but only while the published list still has it: the
-     * phone can delete the workflow this watch was pointing at, and silently recording against a
-     * workflow that is gone would be worse than falling back to "Default".
-     */
-    private fun onWorkflows(published: List<WorkflowSummary>) = _state.update {
-        it.copy(workflows = published, selectedWorkflowId = resolved(published))
-    }
-
-    private fun resolved(published: List<WorkflowSummary>): String? =
-        stored?.takeIf { id -> published.any { it.id == id } }
 
     private fun onRecorder(recorder: RecorderState) = _state.update { it.copy(recorder = recorder) }
-
-    /** The picker's only write: this watch's default, stored now so the next launch starts on it. */
-    fun selectWorkflow(id: String?) {
-        stored = id
-        defaults.write(id)
-        _state.update { it.copy(selectedWorkflowId = resolved(it.workflows), message = null) }
-    }
 
     /**
      * docs/11 W6: the haptic fires on the tap, not on the service confirming. The user has already
@@ -141,7 +99,7 @@ class WearRecordingViewModel(
         if (!_state.value.canStart) return
         _state.update { it.copy(message = null) }
         haptics.click()
-        recorder.start(_state.value.selectedWorkflowId)
+        recorder.start()
     }
 
     fun stop() {

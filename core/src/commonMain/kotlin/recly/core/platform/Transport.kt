@@ -15,10 +15,7 @@ data class HttpPlan(
     val url: String,
     val headers: Map<String, String> = emptyMap(),
     val body: HttpBody? = null,
-    /**
-     * Webhooks are posted to a URL the user typed, so a 3xx must come back as a 3xx: following it
-     * would replay a signed body at an address the signature never promised (docs/04).
-     */
+    /** False returns a 3xx as it is, so a destination check cannot be bypassed by a redirect. */
     val followRedirects: Boolean = true,
     /** Whole-request budget. Null leaves it to the transport's own defaults. */
     val timeoutSec: Int? = null,

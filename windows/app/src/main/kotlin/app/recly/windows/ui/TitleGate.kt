@@ -12,7 +12,7 @@ import kotlinx.coroutines.sync.withLock
  * answer is in. That wait and the next start have to be ordered against each other, and this is the
  * only place they are: the prompt is published from the recorder's finish, a start goes through
  * [ifIdle], and both take the same lock — so a prompt published while a start is still preparing
- * (reading the workflow summaries, say) cannot be stepped over.
+ * (stopping the detail's playback, say) cannot be stepped over.
  *
  * Only one recording ever waits. A second one that finishes while the first is still unnamed does
  * not take the prompt away from it ([publish] answers false); the shell queues that one untitled,

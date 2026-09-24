@@ -121,6 +121,7 @@ class DagloProvider : SttProvider {
         Language.EN -> "en-US"
         Language.KO_EN -> "mixed"
         Language.AUTO -> "ko-KR"
+        else -> TranscriptionLanguages.localeTag(language)
     }
 
     private fun read(ctx: SttContext, json: JsonObject): SttResult {

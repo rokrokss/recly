@@ -103,13 +103,13 @@ class SegmentedRecorder(
      * The recorder starts before the row exists so a device that cannot do 16 kHz is discovered
      * first — the fallback rate has to be the one written into the meta (ADR-006).
      */
-    suspend fun start(workflowId: String?, title: String?): String = mutex.withLock {
+    suspend fun start(title: String?): String = mutex.withLock {
         check(session == null) { "already recording" }
 
         val startedAt = core.deps.clock.now()
         // The id's own timestamp is the recording's start, not "whenever this ran".
         val recordingId = Ulid.generate(object : TimeClock { override fun now(): Instant = startedAt })
-        val draft = meta(recordingId, startedAt, workflowId, title, PREFERRED_SAMPLE_RATE_HZ)
+        val draft = meta(recordingId, startedAt, title, PREFERRED_SAMPLE_RATE_HZ)
         val base = MetaWriter.baseName(draft)
         val dir = core.deps.dataDir / "recordings" / base
         withContext(core.deps.io) { core.deps.fileSystem.createDirectories(dir) }
@@ -123,7 +123,7 @@ class SegmentedRecorder(
         try {
             silence.start(audioManager())
             core.recordings.create(
-                meta(recordingId, startedAt, workflowId, title, started.sampleRateHz),
+                meta(recordingId, startedAt, title, started.sampleRateHz),
                 dir,
             )
             session = Session(
@@ -352,7 +352,6 @@ class SegmentedRecorder(
     private fun meta(
         recordingId: String,
         startedAt: Instant,
-        workflowId: String?,
         title: String?,
         sampleRateHz: Int,
     ): RecordingMeta = RecordingMeta(
@@ -362,7 +361,7 @@ class SegmentedRecorder(
         platform = core.deps.device.platform,
         deviceId = core.deps.device.deviceId,
         deviceName = core.deps.device.name,
-        workflowId = workflowId,
+        workflowId = null,
         title = title,
         startedAt = startedAt.isoUtc(),
         timezone = java.util.TimeZone.getDefault().id,

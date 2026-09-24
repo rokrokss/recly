@@ -35,7 +35,6 @@ class FolderResolverTest {
         audio = recly.core.testing.FakeAudioTools(fs),
         dataDir = "/data".toPath(),
         device = DeviceInfo("7c1e4b2a", Platform.MACOS, "MacBook Pro"),
-        appVersion = "1.0.0",
         io = Dispatchers.Unconfined,
     )
     private val api = DriveApi(deps)

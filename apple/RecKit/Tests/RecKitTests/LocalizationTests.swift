@@ -38,7 +38,7 @@ final class LocalizationCatalogTests: XCTestCase {
         "RecWatch/RecWatchWidgets/Localizable.xcstrings",
     ]
 
-    func testEveryCatalogKeyIsWrittenInBothLanguages() throws {
+    func testEveryCatalogKeyIsWrittenInEverySupportedLanguage() throws {
         let catalogs = try Self.files(named: [
             "Localizable.xcstrings", "InfoPlist.xcstrings", "AppShortcuts.xcstrings",
         ])
@@ -56,7 +56,7 @@ final class LocalizationCatalogTests: XCTestCase {
                     (entry as? [String: Any])?["localizations"] as? [String: Any],
                     "\(where_) has no localizations"
                 )
-                for language in ["en", "ko"] {
+                for language in AppLanguage.Choice.choices.map(\.rawValue) {
                     let unit = (localizations[language] as? [String: Any])?["stringUnit"]
                     let state = (unit as? [String: Any])?["state"] as? String
                     let value = (unit as? [String: Any])?["value"] as? String
@@ -109,8 +109,8 @@ final class LocalizationCatalogTests: XCTestCase {
     /// The regression this exists for: the disconnect warning's "Drive's app data folder" line was
     /// written with curly apostrophes in the shells' code and straight ones in their catalogs, so
     /// the lookup found nothing and handed the key back — the sentence stood in English on a Korean
-    /// device with nothing to notice it by. Now that the dialog and the workflow inspector are
-    /// RecKit's, this is what catches it.
+    /// device with nothing to notice it by. Now that the dialog is RecKit's, this is what catches
+    /// it.
     ///
     /// The scan is over the sources for the same reason the two above are: a key added in the wrong
     /// spelling fails this on the day it is written.
@@ -142,7 +142,7 @@ final class LocalizationCatalogTests: XCTestCase {
         // Membership in the catalog rather than "the Korean differs": `URL` and `Invoke URL` are
         // field names that are the same word in both languages (docs/07 rule 4), and a lookup that
         // found them would be indistinguishable from one that found nothing.
-        // [testEveryCatalogKeyIsWrittenInBothLanguages] is what answers for the two languages.
+        // [testEveryCatalogKeyIsWrittenInEverySupportedLanguage] is what answers for the two languages.
         let catalog = URL(
             fileURLWithPath: "RecKit/Sources/RecKit/Resources/Localizable.xcstrings",
             relativeTo: Self.appleRoot
@@ -198,7 +198,7 @@ final class LocalizationCatalogTests: XCTestCase {
         return keys
     }
 
-    /// docs/07 rule 9's allow-list, and the whole of it: a test may name a workflow in Korean
+    /// docs/07 rule 9's allow-list, and the whole of it: a test may name a recording in Korean
     /// because that is data a user would type, and `\.lproj` catalogs are where Korean belongs.
     static let allowsKorean = ["RecKitTests", "RecPhoneTests", "RecPhoneUITests"]
 
@@ -333,9 +333,9 @@ final class CoreMessagesTests: XCTestCase {
 
     func testACodeBecomesASentenceAndKeepsItsDetailApart() {
         AppLanguage.current = .en
-        let text = CoreMessages.text(CoreMessage.webhookHttp.code(arg: "500", detail: "{\"e\":1}"))
+        let text = CoreMessages.text(CoreMessage.stepFailed.code(arg: "500", detail: "{\"e\":1}"))
 
-        XCTAssertEqual(text.sentence, "The webhook answered HTTP 500")
+        XCTAssertEqual(text.sentence, "Failed: 500")
         XCTAssertEqual(text.detail, "{\"e\":1}")
     }
 
@@ -385,7 +385,7 @@ final class AppLanguageTests: XCTestCase {
         AppLanguage.current = .system
 
         XCTAssertNil(AppLanguage.Choice.system.code)
-        XCTAssertEqual(AppLanguage.locale, .current)
+        XCTAssertEqual(AppLanguage.locale.identifier, AppLanguage.resolvedCode)
     }
 
     /// The point of the whole mechanism: the same key, two languages, without a relaunch.
@@ -399,6 +399,18 @@ final class AppLanguageTests: XCTestCase {
         XCTAssertEqual(korean, "대기")
     }
 
+    func testEveryShippedBundleCanBeSelectedWithoutRelaunching() {
+        for language in AppLanguage.Choice.choices {
+            AppLanguage.current = language
+            XCTAssertEqual(AppLanguage.current, language)
+            let value = RecKitStrings.localized("Waiting")
+            if language == .en { XCTAssertEqual(value, "Waiting") }
+            else { XCTAssertNotEqual(value, "Waiting", language.rawValue) }
+            let context = WatchContext.context(language: AppLanguage.resolvedCode)
+            XCTAssertEqual(WatchContext.language(context), language)
+        }
+    }
+
     func testAnArgumentIsFormattedIntoTheSentence() {
         AppLanguage.current = .en
 
@@ -410,28 +422,34 @@ final class AppLanguageTests: XCTestCase {
     /// is the one thing the watch must not fall back to while a phone is telling it.
     func testTheWatchIsToldAResolvedLanguageRatherThanTheChoice() {
         AppLanguage.current = .system
-        let followed = WatchWorkflows.context([], language: AppLanguage.resolvedCode)
+        let followed = WatchContext.context(language: AppLanguage.resolvedCode)
 
-        XCTAssertTrue(["en", "ko"].contains(followed[WatchWorkflows.languageKey] as? String ?? ""))
-        XCTAssertNotEqual(WatchWorkflows.language(followed), .system)
+        XCTAssertTrue(AppLanguage.Choice.choices.map(\.rawValue).contains(followed[WatchContext.languageKey] as? String ?? ""))
+        XCTAssertNotEqual(WatchContext.language(followed), .system)
 
         AppLanguage.current = .ko
-        let picked = WatchWorkflows.context([], language: AppLanguage.resolvedCode)
+        let picked = WatchContext.context(language: AppLanguage.resolvedCode)
 
-        XCTAssertEqual(WatchWorkflows.language(picked), .ko)
+        XCTAssertEqual(WatchContext.language(picked), .ko)
     }
 
     /// docs/07 rule 2: the picker offers languages and not "follow the system" — a device that has
     /// never been given one is shown the language it followed the system to.
-    func testThePickerOffersTheTwoLanguagesAndNotTheSystemDefault() {
-        XCTAssertEqual(AppLanguage.Choice.choices, [.en, .ko])
+    func testThePickerOffersAllSupportedLanguagesAndNotTheSystemDefault() {
+        XCTAssertEqual(AppLanguage.Choice.choices.map(\.rawValue), ["en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"])
     }
 
     /// What the row says and the picker marks, for a choice and for no choice at all.
-    func testTheEffectiveLanguageIsKoreanOnlyForAKoreanSystem() {
+    func testRegionalSystemLanguagesResolveWithAnEnglishFallback() {
         XCTAssertEqual(AppLanguage.effective(.system, system: "ko"), .ko)
         XCTAssertEqual(AppLanguage.effective(.system, system: "en"), .en)
-        XCTAssertEqual(AppLanguage.effective(.system, system: "ja"), .en)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "ja-JP"), .ja)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "zh-Hant-HK"), .zhHant)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "zh-TW"), .zhHant)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "zh-Hans-HK"), .zhHans)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "zh-Hans-CN"), .zhHans)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "ar-SA"), .ar)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "xx"), .en)
         XCTAssertEqual(AppLanguage.effective(.system, system: nil), .en)
         XCTAssertEqual(AppLanguage.effective(.ko, system: "en"), .ko)
         XCTAssertEqual(AppLanguage.effective(.en, system: "ko"), .en)
@@ -460,49 +478,29 @@ final class UiMessageTests: XCTestCase {
     /// The argument is never translated — a count is a count — but the sentence around it is, and
     /// the count survives the switch because it was stored beside the key rather than baked in.
     func testAnArgumentIsFormattedInAtEachReading() {
-        let stored = UiMessage.key(
-            "Imported — %@ workflow(s) on this device now.",
-            args: [.verbatim("3")]
-        )
+        let stored = UiMessage.key("alert.waiting", args: [.verbatim("3")])
 
         AppLanguage.current = .en
         let english = stored.text
         AppLanguage.current = .ko
         let korean = stored.text
 
-        XCTAssertEqual(english, "Imported — 3 workflow(s) on this device now.")
+        XCTAssertEqual(english, "3 recording(s) are waiting.")
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
         XCTAssertTrue(korean.contains("3"), "the count did not survive: \(korean)")
     }
 
     /// docs/07 §5: a core code goes through [CoreMessages], which is the same rule one level down.
     func testACoreCodeIsTurnedIntoWordsWhereItIsRead() {
-        let stored = UiMessage.core(CoreMessage.webhookHttp.code(arg: "500", detail: nil))
+        let stored = UiMessage.core(CoreMessage.stepFailed.code(arg: "500", detail: nil))
 
         AppLanguage.current = .en
         let english = stored.text
         AppLanguage.current = .ko
         let korean = stored.text
 
-        XCTAssertEqual(english, "The webhook answered HTTP 500")
+        XCTAssertEqual(english, "Failed: 500")
         XCTAssertNotEqual(korean, english)
-    }
-
-    /// docs/07 rule 3 on the secret form: the refusal is kept as a message and not as words, so a
-    /// form still open when the language is changed answers it rather than standing in the old one.
-    func testASecretFormKeepsItsRefusalAsAMessage() throws {
-        var form = SecretForm()
-        form.error = try XCTUnwrap(SecretName.problem("Hook"))
-
-        AppLanguage.current = .en
-        let english = form.error?.text
-        AppLanguage.current = .ko
-        let korean = form.error?.text
-
-        XCTAssertEqual(
-            english, "Starts with a lowercase letter; lowercase, digits and underscores, up to 32"
-        )
-        XCTAssertNotEqual(korean, english, "the catalog gave the key back")
     }
 
     /// docs/07 rule 4: a log line is read by whoever collected it, so what identifies a message

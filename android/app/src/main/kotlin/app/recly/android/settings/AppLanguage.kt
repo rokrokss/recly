@@ -13,34 +13,55 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
- * docs/07 rule 2: the three answers the language setting offers. [tag] is the language tag the
+ * docs/07 rule 2: the supported app languages. [tag] is the language tag the
  * platform stores; the empty one is "whatever the system says".
  */
 enum class AppLanguage(val tag: String) {
     SYSTEM(""),
     KOREAN("ko"),
     ENGLISH("en"),
+    JAPANESE("ja"),
+    CHINESE_SIMPLIFIED("zh-Hans"),
+    CHINESE_TRADITIONAL("zh-Hant"),
+    SPANISH("es"),
+    FRENCH("fr"),
+    GERMAN("de"),
+    PORTUGUESE("pt"),
+    ARABIC("ar"),
+    HINDI("hi"),
+    RUSSIAN("ru"),
+
     ;
 
     companion object {
-        /** Anything the store does not recognise — another language, a region — is [SYSTEM]. */
-        fun of(tag: String): AppLanguage = entries.firstOrNull { it.tag.isNotEmpty() && it.tag == tag } ?: SYSTEM
+        /** Regional tags resolve to their supported language; unknown tags are [SYSTEM]. */
+        fun of(tag: String?): AppLanguage {
+            val normalized = tag.orEmpty().replace('_', '-').lowercase()
+            if (normalized.substringBefore('-') == "zh") {
+                val parts = normalized.split('-')
+                return when {
+                    "hans" in parts -> CHINESE_SIMPLIFIED
+                    "hant" in parts || parts.any { it in listOf("tw", "hk", "mo") } -> CHINESE_TRADITIONAL
+                    else -> CHINESE_SIMPLIFIED
+                }
+            }
+            return entries.firstOrNull { it.tag.isNotEmpty() && (it.tag.lowercase() == normalized || it.tag == normalized.substringBefore('-')) } ?: SYSTEM
+        }
 
         /**
          * docs/07 rule 2: what the picker offers, in the order of the names it draws them under.
          * [SYSTEM] is not one of them — it is the store's "nothing chosen", and what the picker
          * then shows as chosen is [effective].
          */
-        val choices: List<AppLanguage> = listOf(ENGLISH, KOREAN)
+        val choices: List<AppLanguage> = listOf(ENGLISH, KOREAN, JAPANESE, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, SPANISH, FRENCH, GERMAN, PORTUGUESE, ARABIC, HINDI, RUSSIAN)
 
         /**
          * The language the app is actually in. [locale] is the one the app's resources resolved to
          * — `Configuration.getLocales()`, which already carries whatever per-app override
-         * `LocaleManager` applied — and anything that is not Korean is the base language the
-         * strings are written in (docs/07 rule 1).
+         * `LocaleManager` applied — with English as the fallback for unsupported languages (docs/07 rule 1).
          */
         fun effective(locale: Locale): AppLanguage =
-            if (locale.language == KOREAN.tag) KOREAN else ENGLISH
+            of(locale.toLanguageTag()).takeUnless { it == SYSTEM } ?: ENGLISH
     }
 }
 
@@ -67,7 +88,7 @@ class SystemLocaleStore(context: Context) : LocaleStore {
 
     private val manager = context.getSystemService(LocaleManager::class.java)
 
-    override fun current(): String = manager.applicationLocales.toLanguageTags().substringBefore('-')
+    override fun current(): String = manager.applicationLocales.toLanguageTags().substringBefore(',')
 
     /** An empty tag clears the override, which is what "system default" means. */
     override fun apply(tag: String) {

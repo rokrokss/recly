@@ -45,8 +45,6 @@ import app.recly.windows.ui.theme.ProcessingState
 import java.awt.Desktop
 import java.awt.FileDialog
 import java.awt.Frame
-import java.awt.Toolkit
-import java.awt.datatransfer.StringSelection
 import java.io.File
 import java.net.URI
 import java.util.prefs.BackingStoreException
@@ -66,15 +64,11 @@ import recly.core.DisconnectResult
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.model.RecordingStatus
-import recly.core.model.WorkflowsDocument
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
-import recly.core.sync.WorkflowRepository
-import recly.core.sync.WorkflowSummary
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
-import recly.core.workflow.WorkflowDocuments
 
 /**
  * docs/09 화면 원칙 1: the two state codes that are a move rather than a state — the Mac's
@@ -186,18 +180,6 @@ class ShellModel(
         private set
     var signedIn: Boolean by mutableStateOf(false)
         private set
-    /** Every workflow the document has — ADR-016 left nothing in one that could exclude a PC. */
-    var workflows: List<WorkflowSummary> by mutableStateOf(emptyList())
-        private set
-    /**
-     * ADR-016: the workflow every recording on this PC runs — this PC's own pointer, resolved
-     * against [workflows] and refreshed with it. The popup's picker shows it as the one that is
-     * chosen, and picking another one is what moves the pointer ([selectWorkflow]). Null when this
-     * PC has no pointer — or has one the document no longer resolves, which is the same thing to
-     * say and the same thing to do about it.
-     */
-    var selectedWorkflow: WorkflowSummary? by mutableStateOf(null)
-        private set
     var recentsLoading: Boolean by mutableStateOf(true)
         private set
     var recents: List<RecentItem> by mutableStateOf(emptyList())
@@ -222,11 +204,10 @@ class ShellModel(
 
     /**
      * docs/09 화면 원칙 6: the tray's own window. The AWT menu can only carry words, so everything
-     * with a shape — the state nodes, the ledger, the workflow picker — lives in a Compose popup
-     * and this is whether it is up.
+     * with a shape — the state nodes, the ledger — lives in a Compose popup and this is whether it
+     * is up.
      */
     var popupOpen: Boolean by mutableStateOf(false)
-    var editorOpen: Boolean by mutableStateOf(false)
 
     /** docs/08 결과 파일: the window that shows what the transcribe step wrote. */
     var recordingsOpen: Boolean by mutableStateOf(false)
@@ -235,6 +216,8 @@ class ShellModel(
     var detail: RecordingDetail? by mutableStateOf(null)
         private set
     var settingsOpen: Boolean by mutableStateOf(false)
+    var processing: ProcessingViewModel? by mutableStateOf(null)
+        private set
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
@@ -317,20 +300,7 @@ class ShellModel(
     var consentReminder: Boolean by mutableStateOf(true)
         private set
 
-    /**
-     * docs/14 "캡처": what the next recording on this PC is made of — the microphone alone or the
-     * whole meeting. The settings window's chips are where it moves, and the Mac's popover has the
-     * same pair (`MenuModel.mode`). Read at construction like the theme, because the settings
-     * window can be up before [load] has finished.
-     */
-    var recordingMode: RecordingMode by mutableStateOf(settings.recordingMode)
-        private set
-
-    /**
-     * The mode the recording that is *running* was started with. Not [recordingMode]: a recording
-     * the detection started is a meeting whatever the chips say (`MenuModel.start(mode:)`), and the
-     * end-of-meeting offer is about this recording rather than about the next one.
-     */
+    /** Track layout of the active recording. Desktop starts always use meeting capture. */
     private var captureMode: RecordingMode = RecordingMode.MEETING
 
     /**
@@ -377,9 +347,6 @@ class ShellModel(
     // [load] has finished.
 
     var theme: AppTheme by mutableStateOf(settings.theme)
-        private set
-
-    var workflowsModel: WorkflowsModel? by mutableStateOf(null)
         private set
 
     /**
@@ -489,7 +456,6 @@ class ShellModel(
         launcher = LaunchAtLogins.create(logger)
         launchAtLogin = launcher.isEnabled()
         consentReminder = settings.consentReminder
-        recordingMode = settings.recordingMode
         micAccess = MicrophoneAccess.create(logger).state()
 
         val command = helperCommand
@@ -551,26 +517,8 @@ class ShellModel(
             },
         )
 
-        workflowsModel = WorkflowsModel(
-            documents = object : WorkflowDocuments {
-                override suspend fun current() = graph.core.workflows.current()
-                override suspend fun save(document: WorkflowsDocument) =
-                    graph.core.workflows.save(document)
-            },
-            secrets = graph.secrets,
-            clock = graph.core.deps.clock,
-            exportJson = { graph.core.workflows.exportJson() },
-            importJson = { json -> graph.core.workflows.importJson(json) },
-            saveFile = ::saveWorkflowsFile,
-            openFile = ::openWorkflowsFile,
-            deviceDefault = { graph.core.workflows.deviceDefault() },
-            setDeviceDefault = { id ->
-                graph.core.workflows.setDeviceDefault(id)
-                refreshWorkflows()
-            },
-            clipboard = ::copyToClipboard,
-            onDocumentChanged = ::refreshWorkflows,
-        )
+        graph.core.initializeProcessing()
+        processing = ProcessingViewModel(graph.core, scope, ::saveSettingsFile, ::openSettingsFile) { runner?.jobsDue() }
 
         // docs/03 "복구", before the tray can start anything: a recording the last run left open is
         // finished here, and one whose job never got made is queued — both before the first pass.
@@ -579,11 +527,6 @@ class ShellModel(
             .getOrDefault(0)
 
         signedIn = graph.auth.isSignedIn()
-        // ADR-016: this PC's own default is 메모, the one starter a fresh install has.
-        runCatching { graph.core.workflows.seed(WorkflowRepository.MEMO_ID) }
-            .onFailure { logger.log(Logger.Level.ERROR, "shell.workflows.seed.failed", error = it) }
-        refreshWorkflows()
-
         val runner = JobRunner(
             queue = CoreJobQueue(graph.core),
             scope = scope,
@@ -617,7 +560,6 @@ class ShellModel(
             "shell.ready",
             mapOf(
                 "windows" to Host.isWindows,
-                "workflows" to workflows.size,
                 "helper" to (command != null),
                 "helperVersion" to helperVersion,
                 "micAccess" to micAccess.name,
@@ -635,11 +577,10 @@ class ShellModel(
      * waits for the answer. The Mac asks the same question with the same words ([Consent]), and
      * under the same condition: a microphone-only memo has no other participants to have told.
      *
-     * [mode] is this PC's own pick unless the caller has one of its own — which the detection path
-     * does: a meeting Recly found by hearing it is a meeting whatever the chips were last set to
-     * (the Mac's `MenuModel.start(workflowId:mode:)`). The setting is read here, never written.
+     * Every desktop start uses meeting capture, including starts from notifications.
      */
-    fun start(workflowId: String?, mode: RecordingMode = recordingMode) {
+    fun start() {
+        val mode = RecordingMode.MEETING
         if (recorder == null || titlePrompt != null || consentRequest != null) return
         // docs/03: the clean-up half of a disconnect walks the recording directory, so a capture
         // started inside it would be one its own delete pass is writing over. Say what is in the
@@ -649,10 +590,10 @@ class ShellModel(
             return
         }
         if (mode.remindsConsent && consentReminder) {
-            consentRequest = ConsentRequest(workflowId, mode)
+            consentRequest = ConsentRequest(mode)
             return
         }
-        begin(workflowId, mode)
+        begin(mode)
     }
 
     /**
@@ -671,7 +612,7 @@ class ShellModel(
         // A photograph of the question answers nothing: no capture, and not the setting either.
         if (!dialogMode.acts) return
         if (dontAskAgain) toggleConsentReminder(false)
-        begin(request.workflowId, request.mode)
+        begin(request.mode)
     }
 
     /**
@@ -681,7 +622,7 @@ class ShellModel(
      */
     fun previewConsent() {
         dialogMode = DialogMode.PREVIEW
-        consentRequest = ConsentRequest(null, RecordingMode.MEETING)
+        consentRequest = ConsentRequest(RecordingMode.MEETING)
     }
 
     /** `--show-delete`, for [item]: the same dialog, and a confirm that deletes nothing. */
@@ -701,7 +642,7 @@ class ShellModel(
         consentRequest = null
     }
 
-    private fun begin(workflowId: String?, mode: RecordingMode) {
+    private fun begin(mode: RecordingMode) {
         val recorder = recorder ?: return
         helperCrashed = false
         // The tray menu is a snapshot: the recording that just ended may still be waiting for its
@@ -725,22 +666,15 @@ class ShellModel(
                 // And the speaker is off the parts before the Start, for the same reason: a stop the
                 // window drives off the gate is a frame away, and the helper is not.
                 stopPlayback()
-                // The menu was drawn from a list that may be minutes old — another device could have
-                // deleted this workflow since (docs/05).
-                refreshWorkflows()
-                if (workflowId != null && workflows.none { it.id == workflowId }) {
-                    status = Str.STATUS_WORKFLOW_GONE.message()
-                    return@launch
-                }
                 // docs/03: the gate is held across the last look at it *and* the start itself. The
-                // read above suspends, so the check [start] made before it says nothing about the
+                // stop above suspends, so the check [start] made before it says nothing about the
                 // moment the capture actually opens — a disconnect that took the gate inside that
                 // wait would be walking the recording directory while this capture wrote into it. A
                 // start that finds the gate held is refused rather than queued behind the disconnect.
                 status = DisconnectGate.ifOpen {
                     // The recording that ended a moment ago may have published its prompt while the
-                    // summaries were being read; the prompt is published under this same lock.
-                    val id = titles.ifIdle { recorder.start(workflowId, mode = mode) }
+                    // playback was being stopped; the prompt is published under this same lock.
+                    val id = titles.ifIdle { recorder.start(mode = mode) }
                     started = id != null
                     // What the recording that is running is made of, for as long as it runs — the
                     // detector reads it to tell a meeting's end from a memo's silence.
@@ -790,37 +724,6 @@ class ShellModel(
                 transition = null
             }
         }
-    }
-
-    /**
-     * ADR-016: picking in the popup *is* the pointer — the same write the workflows window's row
-     * makes ([WorkflowsModel.setDefault]). There is no pick that lasts only as long as the popup:
-     * what the picker shows is what every recording on this PC runs until someone picks another.
-     */
-    fun selectWorkflow(id: String) {
-        val graph = graph ?: return
-        scope.launch {
-            graph.core.workflows.setDeviceDefault(id)
-            refreshWorkflows()
-            // A workflows window open beside the popup marks the same workflow and holds its own
-            // reading of the pointer, so it is told to take another one.
-            workflowsModel?.reload()
-        }
-    }
-
-    /**
-     * ADR-016: what the tray may offer, which is every workflow the document has, and which of them
-     * a start runs, which is this PC's own local pointer resolved against it. The pointer is not in
-     * the document, so both are read together whenever either could have moved.
-     */
-    private suspend fun refreshWorkflows() {
-        val graph = graph ?: return
-        runCatching { graph.core.workflows.current() to graph.core.workflows.deviceDefault() }
-            .onSuccess { (document, selected) ->
-                workflows = document.workflows.map { WorkflowSummary(it.id, it.name) }
-                selectedWorkflow = workflows.firstOrNull { it.id == selected }
-            }
-            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.workflows.failed", error = it) }
     }
 
     /** Quit: a recording in flight is finalized and queued first — the crash path is not the exit. */
@@ -890,9 +793,6 @@ class ShellModel(
         scope.launch {
             refreshRecents()
             refreshAlerts(jobs)
-            // A pass pulls when the five-minute gate is open (docs/05), so the definitions the tray
-            // offers may have just been replaced by another device's.
-            refreshWorkflows()
         }
     }
 
@@ -928,22 +828,8 @@ class ShellModel(
     fun fix(alert: JobAlert) = when (alert.reason.fix) {
         FixSurface.SIGN_IN -> signIn()
         FixSurface.DRIVE_STORAGE -> open(DRIVE_STORAGE_URL)
-        // The key the step named, in the form under that step — not the workflow's list of keys.
-        FixSurface.SECRETS -> openEditor(alert.workflowId) { model ->
-            model.openSecrets(alert.secret, alert.stepId)
-        }
-
-        FixSurface.EDITOR -> openEditor(alert.workflowId) {}
-    }
-
-    private fun openEditor(workflowId: String?, then: (WorkflowsModel) -> Unit) {
-        editorOpen = true
-        val model = workflowsModel ?: return
-        scope.launch {
-            model.reload()
-            workflowId?.let { model.edit(it) }
-            then(model)
-        }
+        // The key and the transcription settings are both in the settings window's processing panel.
+        FixSurface.SECRETS, FixSurface.EDITOR -> { settingsOpen = true }
     }
 
     private suspend fun refreshRecents() {
@@ -1121,16 +1007,6 @@ class ShellModel(
         detail = change(current)
     }
 
-    /** docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check" lands. */
-    fun editWorkflowOf(item: RecentItem) {
-        val workflowId = item.workflowId ?: return
-        editorOpen = true
-        scope.launch {
-            workflowsModel?.reload()
-            workflowsModel?.edit(workflowId)
-        }
-    }
-
     // --- renaming a recording (docs/03) -----------------------------------------------------
 
     /**
@@ -1289,9 +1165,9 @@ class ShellModel(
         disconnectPrompt = null
         scope.launch {
             try {
-                // The dialog may have stood while the editor window saved an edit whose push failed —
-                // every window is its own surface. What it promised is read again before it is acted
-                // on; a warning it never showed re-asks instead of destroying quietly.
+                // The dialog may have stood while a recording finished or an upload failed — every
+                // window is its own surface. What it promised is read again before it is acted on; a
+                // warning it never showed re-asks instead of destroying quietly.
                 val fresh = DisconnectPrompt(
                     unuploaded = Retention.unuploadedRecordings(graph.core),
                     recording = recording,
@@ -1550,16 +1426,6 @@ class ShellModel(
     }
 
     /**
-     * docs/14 "캡처": the mode the *next* recording runs in. A recording already in flight keeps the
-     * one it started with — its track set is in `meta.json` — which is why the chips are off while
-     * one is running, exactly as the Mac's are.
-     */
-    fun selectRecordingMode(choice: RecordingMode) {
-        settings.recordingMode = choice
-        recordingMode = choice
-    }
-
-    /**
      * docs/07 rule 3: the tray menu, the open windows and the next notification are all in the new
      * language the moment this returns — the tables behind them are one [Localization] state.
      */
@@ -1585,40 +1451,6 @@ class ShellModel(
         graph?.dataDir?.let { open(it.toString()) }
     }
 
-    // --- docs/05 "워크플로우 내보내기 · 가져오기" -------------------------------------------------
-
-    fun exportWorkflows() = transferring { it.exportWorkflows() }
-
-    fun importWorkflows() = transferring { it.pickImport() }
-
-    fun confirmImport() = transferring { it.confirmImport() }
-
-    fun cancelImport() {
-        workflowsModel?.cancelImport()
-    }
-
-    /**
-     * The settings window's buttons drive [WorkflowsModel], which is where the state and the words
-     * live; this only lends them [action] and takes its banner. Set before the suspension, or an
-     * operation slower than the button's own window re-enables it mid-flight and the second press
-     * is a duplicate (as [runTracked] does for the rest).
-     */
-    private fun transferring(block: suspend (WorkflowsModel) -> Unit) {
-        val model = workflowsModel ?: return
-        scope.launch {
-            action = ProcessingState.PROCESSING
-            try {
-                block(model)
-            } catch (e: Throwable) {
-                settle(ProcessingState.FAILED)
-                throw e
-            }
-            adopt(model)
-            // The model knows whether it worked; the button here is only showing what it decided.
-            settle(model.action)
-        }
-    }
-
     /**
      * docs/05: the file itself. AWT's own dialog rather than Swing's chooser — it is the Windows
      * shell dialog, which is the one a user of this app has seen before, and this app already draws
@@ -1626,21 +1458,20 @@ class ShellModel(
      * thread's coroutine like every other blocking call here.
      *
      * False when the user closed it without choosing: that asked for nothing and reports nothing.
-     * A write that failed is the shell's own complaint, not the core's ([WorkflowsModel.fileFailed]).
      */
-    private suspend fun saveWorkflowsFile(name: String, contents: String): Boolean {
+    private suspend fun saveSettingsFile(name: String, contents: String): Boolean {
         val chosen = fileDialog(FileDialog.SAVE, name) ?: return false
-        return runCatching { withContext(Dispatchers.IO) { chosen.writeText(contents) } }
-            .onFailure { workflowsModel?.fileFailed(it.reason()) }
-            .isSuccess
+        withContext(Dispatchers.IO) { chosen.writeText(contents) }
+        return true
     }
 
     /** Null both when the user closed the dialog and when the file would not open — see above. */
-    private suspend fun openWorkflowsFile(): String? {
+    private suspend fun openSettingsFile(): String? {
         val chosen = fileDialog(FileDialog.LOAD, null) ?: return null
-        return runCatching { withContext(Dispatchers.IO) { chosen.readText() } }
-            .onFailure { workflowsModel?.fileFailed(it.reason()) }
-            .getOrNull()
+        return withContext(Dispatchers.IO) {
+            require(chosen.length() <= 1_048_576) { "Settings file is too large" }
+            chosen.readText()
+        }
     }
 
     private suspend fun fileDialog(mode: Int, name: String?): File? = withContext(Dispatchers.Main) {
@@ -1650,14 +1481,10 @@ class ShellModel(
         dialog.file?.let { File(dialog.directory ?: "", it) }
     }
 
-    /** A file-system failure is a diagnostic, never a sentence — it is shown under one. */
-    private fun Throwable.reason(): String = message ?: this::class.simpleName.orEmpty()
-
     /**
      * Runs [block] with [action] following it, and [settle]s on whether it did what the user asked.
      * Whatever it threw carries on to the scope exactly as it did before — this only makes sure the
-     * button is not left saying "…" for ever. `WorkflowsModel.working` is the same window without
-     * the settle, because that button's own operation decides what it lands on.
+     * button is not left saying "…" for ever.
      */
     private suspend fun runTracked(block: suspend () -> Boolean) {
         action = ProcessingState.PROCESSING
@@ -1667,15 +1494,6 @@ class ShellModel(
             settle(ProcessingState.FAILED)
             throw e
         }
-    }
-
-    /**
-     * The tray takes both halves of the editor's banner, not only the sentence: an import started
-     * from the settings window can fail with a diagnostic the editor would have shown underneath,
-     * and that window may not even be open (Sol I18N-L3 #2).
-     */
-    internal fun adopt(model: WorkflowsModel) {
-        statusLine.say(model.message ?: return, model.messageDetail)
     }
 
     private fun open(target: String) {
@@ -1690,18 +1508,12 @@ class ShellModel(
         }
     }
 
-    private fun copyToClipboard(value: String) {
-        runCatching {
-            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
-        }
-    }
-
     /**
      * A recording the consent question is standing in front of (docs/12 M8). It carries the mode it
      * was asked about: the answer starts *that* recording, and the chips may have moved while the
      * dialog stood.
      */
-    data class ConsentRequest(val workflowId: String?, val mode: RecordingMode)
+    data class ConsentRequest(val mode: RecordingMode)
 
     /**
      * What the detector is allowed to do to this shell. Deliberately four narrow calls rather than
@@ -1728,7 +1540,7 @@ class ShellModel(
         override fun isRecording(): Boolean = recording && captureMode.detectsEnd
 
         /** ADR-011: a meeting Recly found by hearing it is a meeting, whatever the chips say. */
-        override fun start() = this@ShellModel.start(null, RecordingMode.MEETING)
+        override fun start() = this@ShellModel.start()
 
         override fun stop() = this@ShellModel.stop()
 

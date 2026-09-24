@@ -1,0 +1,62 @@
+[
+  {
+    "tag": "en",
+    "name": "English",
+    "android": "en"
+  },
+  {
+    "tag": "ko",
+    "name": "한국어",
+    "android": "ko"
+  },
+  {
+    "tag": "ja",
+    "name": "日本語",
+    "android": "ja"
+  },
+  {
+    "tag": "zh-Hans",
+    "name": "简体中文",
+    "android": "b+zh+Hans"
+  },
+  {
+    "tag": "zh-Hant",
+    "name": "繁體中文",
+    "android": "b+zh+Hant"
+  },
+  {
+    "tag": "es",
+    "name": "Español",
+    "android": "es"
+  },
+  {
+    "tag": "fr",
+    "name": "Français",
+    "android": "fr"
+  },
+  {
+    "tag": "de",
+    "name": "Deutsch",
+    "android": "de"
+  },
+  {
+    "tag": "pt",
+    "name": "Português",
+    "android": "pt"
+  },
+  {
+    "tag": "ar",
+    "name": "العربية",
+    "android": "ar"
+  },
+  {
+    "tag": "hi",
+    "name": "हिन्दी",
+    "android": "hi"
+  },
+  {
+    "tag": "ru",
+    "name": "Русский",
+    "android": "ru"
+  }
+]

@@ -54,7 +54,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         let pushed = Int((Double(Self.totalFrames) * inputRateHz / Double(SegmentedRecorder.sampleRateHz)).rounded())
         XCTAssertTrue(
             input.push(frames: pushed) { Self.tone($0, rateHz: inputRateHz) },
@@ -110,7 +110,7 @@ final class SegmentedRecorderTests: XCTestCase {
             // One segment: this is about the end of the recording, not the boundary.
             let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 900, input: input) { failures.record($0) }
 
-            let recordingId = try await recorder.start(workflowId: nil, title: nil)
+            let recordingId = try await recorder.start(title: nil)
             let pushed = Int(rate * 2)
             XCTAssertTrue(input.push(frames: pushed) { Self.tone($0, rateHz: rate) })
             let result = await recorder.stop(title: nil)
@@ -145,7 +145,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         XCTAssertTrue(input.push(frames: Self.totalFrames) { Self.sample($0) })
         _ = await recorder.stop(title: nil)
 
@@ -191,7 +191,7 @@ final class SegmentedRecorderTests: XCTestCase {
             try? Data(count: 6_000).write(to: url)
         }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         let opened = try await bridge.core.recordings.get(id: recordingId)
         let directory = try XCTUnwrap(opened).dir.url
         let corrupted = MetaWriter.shared.partFileName(
@@ -251,7 +251,7 @@ final class SegmentedRecorderTests: XCTestCase {
         input.configurationID = "built-in"
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        let id = try await recorder.start(workflowId: nil, title: nil)
+        let id = try await recorder.start(title: nil)
         XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
         input.configurationID = "headset"
         input.onConfigurationChange?("engine_configuration_change")
@@ -273,7 +273,7 @@ final class SegmentedRecorderTests: XCTestCase {
         input.configurationID = "headset"
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        _ = try await recorder.start(workflowId: nil, title: nil)
+        _ = try await recorder.start(title: nil)
         let restart = expectation(description: "unchanged input must not restart")
         restart.isInverted = true
         input.gateNextStart { restart.fulfill() }
@@ -291,7 +291,7 @@ final class SegmentedRecorderTests: XCTestCase {
         input.failNextPreparations(2)
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        _ = try await recorder.start(workflowId: nil, title: nil)
+        _ = try await recorder.start(title: nil)
         XCTAssertEqual(input.prepares, 3)
         XCTAssertEqual(input.starts, 1)
         XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
@@ -305,7 +305,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let input = FakeAudioInput()
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        _ = try await recorder.start(workflowId: nil, title: nil)
+        _ = try await recorder.start(title: nil)
         XCTAssertTrue(input.push(frames: 16_000) { Self.sample($0) })
         input.failNextPreparations(10)
         input.onConfigurationChange?("input_route_change")
@@ -330,7 +330,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let input = FakeAudioInput()
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         XCTAssertEqual(input.starts, 1)
 
         let entered = expectation(description: "the restart is on the control queue")
@@ -368,7 +368,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let input = FakeAudioInput()
         let failures = Failures()
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
-        _ = try await recorder.start(workflowId: nil, title: nil)
+        _ = try await recorder.start(title: nil)
 
         let entered = expectation(description: "the restart is on the control queue")
         let gate = DispatchSemaphore(value: 0)
@@ -404,7 +404,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let entered = expectation(description: "the first attach is on the control queue")
         let gate = DispatchSemaphore(value: 0)
         input.gateNextStart { entered.fulfill(); gate.wait() }
-        let starting = Task { try await recorder.start(workflowId: nil, title: nil) }
+        let starting = Task { try await recorder.start(title: nil) }
         await fulfillment(of: [entered], timeout: 5)
 
         input.format = Self.otherFormat
@@ -433,7 +433,7 @@ final class SegmentedRecorderTests: XCTestCase {
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5, input: input) { failures.record($0) }
 
         XCTAssertEqual(recorder.livePeaks(), [], "there is nothing to draw before a recording")
-        _ = try await recorder.start(workflowId: nil, title: nil)
+        _ = try await recorder.start(title: nil)
         // A fifth of a second: two finished windows, whatever the buffer sizes fall out as.
         XCTAssertTrue(input.push(frames: SegmentedRecorder.sampleRateHz / 5) { Self.sample($0) })
 
@@ -503,7 +503,6 @@ final class SegmentedRecorderTests: XCTestCase {
 
     private func makeBridge(logger: any ReclyCore.Logger = OSLogLogger()) async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "reckit-tests-\(UUID().uuidString).db",

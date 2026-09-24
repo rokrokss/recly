@@ -17,7 +17,6 @@ final class RecordingLiveActivity {
     /// When the *activity* was requested, which is not when the recording started once it has been
     /// asked for a second time (see [refreshIfNeeded]).
     private var requestedAt: Date?
-    private var workflowName: String?
 
     /// docs/13 deliverable 3: leftover Activities are cleaned up after a quit or a crash. A process
     /// that died mid-recording leaves a pill counting up for a recording nobody is making; the next
@@ -31,13 +30,12 @@ final class RecordingLiveActivity {
     }
 
     /// The one call the model makes: what the recorder is doing, as a plan, applied.
-    func apply(_ plan: RecordingActivityPlan, workflowName: String?) async {
+    func apply(_ plan: RecordingActivityPlan) async {
         switch plan {
         case .none:
             await end()
 
         case .show(var state):
-            self.workflowName = workflowName
             // docs/07 rule 3: stamped on every apply rather than once at the request, so a language
             // picked in the middle of a recording reaches the pill — the model applies again when
             // [AppLanguage.didChange] arrives, and an update is all it takes.
@@ -71,7 +69,7 @@ final class RecordingLiveActivity {
         }
         do {
             activity = try Activity.request(
-                attributes: RecordingActivityAttributes(workflowName: workflowName),
+                attributes: RecordingActivityAttributes(),
                 content: ActivityContent(state: state, staleDate: nil)
             )
             requestedAt = Date()

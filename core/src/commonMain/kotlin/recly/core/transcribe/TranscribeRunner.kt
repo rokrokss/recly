@@ -52,6 +52,9 @@ class TranscribeRunner(
     private val results = ResultFiles(api, deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome {
+        if (ctx.workflow.id == recly.core.processing.ProcessingPlan.ID && TranscriptCache.read(ctx) != null) {
+            return StepOutcome.Done(TranscriptCache.output(ctx))
+        }
         val step = ctx.step as? Step.Transcribe
             ?: throw StepFailure(
                 retryable = false,
@@ -180,6 +183,10 @@ class TranscribeRunner(
             language = result.language ?: step.language.wire,
         )
         val base = MetaWriter.baseName(meta)
+        if (ctx.workflow.id == recly.core.processing.ProcessingPlan.ID) {
+            TranscriptCache.write(ctx, transcript)
+            return TranscriptCache.output(ctx)
+        }
         val folderId = folderId(ctx)
         val json = results.write(
             dir = ctx.recording.dir,
@@ -216,8 +223,7 @@ class TranscribeRunner(
                     put("provider", provider.name)
                     transcript.provider.model?.let { put("model", it) }
                 }
-                // The same shape `drive.upload` writes, so the webhook payload builder can read
-                // both with one code path (docs/04 `files[]`).
+                // The same `files[]` shape `drive.upload` writes, so one reader covers both.
                 putJsonArray("files") {
                     add(json.toJson(TRACK))
                     add(text.toJson(TRACK))

@@ -101,7 +101,6 @@ class RecorderService : Service() {
             ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE,
         )
 
-        val chosen = intent.getStringExtra(EXTRA_WORKFLOW_ID)
         val title = intent.getStringExtra(EXTRA_TITLE)
         val segmentSec = intent.getIntExtra(EXTRA_SEGMENT_SEC, SegmentedRecorder.DEFAULT_SEGMENT_SEC)
 
@@ -123,8 +122,8 @@ class RecorderService : Service() {
                 onError = { fail(it) },
             )
             try {
-                val recordingId = recorder.start(chosen, title)
-                session.started(recorder, recordingId, core.deps.clock.now(), chosen)
+                val recordingId = recorder.start(title)
+                session.started(recorder, recordingId, core.deps.clock.now())
                 startLevels(recorder)
             } catch (e: Exception) {
                 session.startFailed()
@@ -231,7 +230,6 @@ class RecorderService : Service() {
         const val ACTION_START: String = "app.recly.recording.START"
         const val ACTION_STOP: String = "app.recly.recording.STOP"
         const val ACTION_REFRESH: String = "app.recly.recording.REFRESH"
-        const val EXTRA_WORKFLOW_ID: String = "workflowId"
         const val EXTRA_TITLE: String = "title"
 
         /**
@@ -269,14 +267,12 @@ class RecorderService : Service() {
         /** Call from something visible — a while-in-use type started from the background throws. */
         fun start(
             context: Context,
-            workflowId: String?,
             title: String? = null,
             segmentSec: Int = SegmentedRecorder.DEFAULT_SEGMENT_SEC,
         ) {
             context.startForegroundService(
                 Intent(context, RecorderService::class.java)
                     .setAction(ACTION_START)
-                    .putExtra(EXTRA_WORKFLOW_ID, workflowId)
                     .putExtra(EXTRA_TITLE, title)
                     .putExtra(EXTRA_SEGMENT_SEC, segmentSec),
             )

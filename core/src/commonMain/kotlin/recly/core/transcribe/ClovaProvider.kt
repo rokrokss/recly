@@ -116,6 +116,10 @@ class ClovaProvider : SttProvider {
         Language.EN -> "en-US"
         Language.KO_EN -> "enko"
         Language.AUTO -> "ko-KR"
+        Language.JA -> "ja"
+        Language.ZH_CN -> "zh-cn"
+        Language.ZH_TW -> "zh-tw"
+        else -> TranscriptionLanguages.localeTag(language)
     }
 
     private fun read(ctx: SttContext, json: JsonObject): SttResult {

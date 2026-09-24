@@ -28,6 +28,15 @@ class AzureProviderTest {
     private val provider = AzureProvider()
 
     @Test
+    fun `global languages use explicit Azure locales`() = runBlocking {
+        for ((i, entry) in mapOf(Language.FR to "fr-FR", Language.AR to "ar-SA", Language.ZH_TW to "zh-TW").entries.withIndex()) {
+            harness.server.reply(TRANSCRIBED)
+            provider.submit(context(language = entry.key), harness.audio)
+            assertEquals(listOf(entry.value), definition(i)["locales"]!!.jsonArray.map { it.jsonPrimitive.content })
+        }
+    }
+
+    @Test
     fun `the audio and the definition go up as one multipart form`() = runBlocking {
         harness.server.reply(TRANSCRIBED)
 

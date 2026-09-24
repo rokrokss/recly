@@ -140,8 +140,9 @@ class RevProvider : SttProvider {
      * provider has no detection mode either, so `auto` is Korean — what it is used for.
      */
     private fun languageCode(language: Language): String = when (language) {
-        Language.EN -> "en"
-        else -> "ko"
+        Language.AUTO, Language.KO_EN -> "ko"
+        Language.ZH_CN, Language.ZH_TW -> "cmn"
+        else -> TranscriptionLanguages.code(language)
     }
 
     /**

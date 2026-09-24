@@ -15,6 +15,27 @@ import java.util.Properties
  * time, which is the only shape that fits, and it costs no plugin and no generated code.
  */
 enum class Str {
+    PROCESSING_LANGUAGE_AUTO,
+    PROCESSING_LANGUAGE_MIXED,
+    PROCESSING_LANGUAGE_UNSUPPORTED,
+
+    CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE,
+    CORE_LOCAL_MODEL_REQUIRED,
+    CORE_LOCAL_DIARIZATION_UNAVAILABLE,
+    PROCESSING_TITLE,
+    PROCESSING_LOCAL,
+    PROCESSING_EXTERNAL,
+    PROCESSING_OFF,
+    PROCESSING_NEW_RECORDINGS,
+    PROCESSING_STORAGE,
+    PROCESSING_TRANSCRIPTION,
+    PROCESSING_SAVED,
+    PROCESSING_PREPARE,
+    PROCESSING_EXPORT,
+    PROCESSING_IMPORT,
+    PROCESSING_IMPORT_BODY,
+    PROCESSING_UNREADABLE,
+
     DRIVE_PENDING,
     DRIVE_CONNECT,
     DRIVE_DISCONNECT,
@@ -28,18 +49,8 @@ enum class Str {
     TRANSCRIPT_NO_MATCHES,
     TRANSCRIPT_CLEAR_SEARCH,
     TRANSCRIPT_SEEK,
-    EDIT,
-    TRANSCRIPTION_SETUP,
-    TRANSCRIPTION_SETUP_BODY,
 
-    DISCARD_TITLE,
-    DISCARD_BODY,
-    KEEP_EDITING,
-    DISCARD_CHANGES,
     DELETE_KEY_TITLE,
-    DELETE_KEY_BODY,
-    DELETE_KEY_UNUSED,
-    DELETE_KEY_USED_BY,
     DETAIL_NOT_REQUESTED,
     DETAIL_PENDING,
     DETAIL_FAILED,
@@ -63,7 +74,6 @@ enum class Str {
     STATUS_SIGNING_IN,
     STATUS_NO_CLIENT,
     STATUS_SIGN_IN_FAILED,
-    STATUS_WORKFLOW_GONE,
     STATUS_CANNOT_START,
 
     TRAY_TOOLTIP,
@@ -73,7 +83,6 @@ enum class Str {
     TRAY_START_AGAIN,
     TRAY_START,
     TRAY_OPEN,
-    TRAY_EDIT_WORKFLOWS,
     TRAY_SETTINGS,
     TRAY_QUIT,
     /** docs/12: a quit under a running capture finalizes it first, and the label says so. */
@@ -81,11 +90,8 @@ enum class Str {
 
     // The tray popup (docs/09 화면 원칙 6): three state nodes, a ledger, a footer.
     NODE_DEVICE,
-    NODE_WORKFLOW,
     NODE_STATE,
     /** ADR-016: nothing is chosen on this PC yet, so a start would run nothing. */
-    WORKFLOW_CHOOSE,
-    LABEL_NONE,
     LEDGER_TIME,
     LEDGER_TITLE,
     LEDGER_LENGTH,
@@ -97,7 +103,6 @@ enum class Str {
     /** The row's own action, which is not the window that names the transcript surface. */
     RECENT_DETAILS,
 
-    WINDOW_WORKFLOWS,
     WINDOW_SETTINGS,
     RECORDING_TITLE,
     RECORDING_DISCARDED,
@@ -132,9 +137,6 @@ enum class Str {
     SETTINGS_CONSENT_REMINDER,
     SETTINGS_RECORDING,
     // docs/14 "캡처": the microphone alone or the whole meeting, in the Mac's own two labels.
-    SETTINGS_CAPTURE_MODE,
-    SETTINGS_CAPTURE_MODE_MICROPHONE,
-    SETTINGS_CAPTURE_MODE_MEETING,
     /** docs/14 "권한": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
     SETTINGS_HELPER_MISSING,
@@ -144,19 +146,19 @@ enum class Str {
     SETTINGS_DATA,
     SETTINGS_OPEN_FOLDER,
 
-    // docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device, and a file moves them.
-    SETTINGS_WORKFLOWS,
-    SETTINGS_EXPORT_WORKFLOWS,
-    SETTINGS_IMPORT_WORKFLOWS,
-    SETTINGS_WORKFLOWS_KEYS_HINT,
-    WORKFLOWS_IMPORT_TITLE,
-    WORKFLOWS_IMPORT_BODY,
-    WORKFLOWS_IMPORTED,
-    WORKFLOWS_EXPORTED,
-    WORKFLOWS_FILE_FAILED,
-
     SETTINGS_LANGUAGE,
     LANGUAGE_KO,
+    LANGUAGE_JA,
+    LANGUAGE_ZH_HANS,
+    LANGUAGE_ZH_HANT,
+    LANGUAGE_ES,
+    LANGUAGE_FR,
+    LANGUAGE_DE,
+    LANGUAGE_PT,
+    LANGUAGE_AR,
+    LANGUAGE_HI,
+    LANGUAGE_RU,
+
     LANGUAGE_EN,
 
     // docs/09 화면 원칙 4: the theme the user chooses, and the honest system block.
@@ -181,7 +183,6 @@ enum class Str {
     NOTIFY_IDLE_TITLE,
     NOTIFY_IDLE_BODY,
 
-    STATE_NO_WORKFLOW,
     STATE_UPLOADING,
     STATE_RETRY_WAIT,
     STATE_DONE,
@@ -205,39 +206,10 @@ enum class Str {
     STATE_REMOTE_UPLOADING,
     STATE_REMOTE_TRANSCRIBING,
     /**
-     * A recording nobody named. Its own word, not the workflows' [UNNAMED]: docs/07 rule 11 keeps the
-     * shells literally the same, and the Mac says `Untitled` for a recording (`Recents.titleLabel`)
-     * and `Unnamed` for a workflow (`WorkflowWindow`).
+     * A recording nobody named: docs/07 rule 11 keeps the shells literally the same, and the Mac says
+     * `Untitled` for a recording (`Recents.titleLabel`).
      */
     UNTITLED,
-
-    /** A workflow nobody named — see [UNTITLED] for why the two are not one key. */
-    UNNAMED,
-    EDITOR_NEW_WORKFLOW,
-    /** ADR-016: the selected row, the selection action, and why its delete action is disabled. */
-    WORKFLOW_IN_USE,
-    WORKFLOW_USE,
-    WORKFLOW_DELETE_IN_USE,
-    /** What a workflow delete costs, asked before it happens. The title is [DELETE_TITLE]. */
-    WORKFLOWS_DELETE_BODY,
-    EDITOR_MISSING_KEY,
-    EDITOR_STALE,
-    EDITOR_SAVED_ELSEWHERE,
-    EDITOR_DELETED_ELSEWHERE,
-    EDITOR_REOPEN,
-
-    // docs/09 화면 원칙 3: the node graph and the inspector under it.
-    EDITOR_WORKFLOWS,
-    EDITOR_PICK_WORKFLOW,
-    EDITOR_NODE_TRIGGER,
-    EDITOR_NODE_TRIGGER_TITLE,
-    EDITOR_NODE_END,
-    EDITOR_INSERT_STEP,
-    EDITOR_STEP_KICKER,
-    EDITOR_NO_URL,
-    EDITOR_MOVE_EARLIER,
-    EDITOR_MOVE_LATER,
-    EDITOR_RETRY,
 
     // docs/08 "결과 파일" · "오류": the transcripts and summaries window.
     WINDOW_RECORDINGS,
@@ -260,54 +232,17 @@ enum class Str {
     /** docs/09 접근성: what the waveform row is, for a reader that cannot see the shape. */
     PLAYER_POSITION,
 
-    SECRETS_TITLE,
-    SECRET_ADD,
-    SECRET_NAME_LABEL,
-    SECRET_VALUE_LABEL,
-    SECRET_GENERATE,
-    SECRET_GENERATED_NOTE,
-    SECRET_COPY_AGAIN,
-    SECRET_NAME_EMPTY,
     SECRET_NAME_INVALID,
-    SECRET_NAME_TAKEN,
     SECRET_VALUE_REQUIRED,
 
-    FIELD_NAME,
     FIELD_MIN_DURATION,
-    FIELD_FOLDER,
-    FIELD_INCLUDE_META,
-    FIELD_URL,
     FIELD_SECRET_NAME,
-    // docs/09: the two answers are a choice of one, so they are chips and not a switch — the same
-    // pair the other three inspectors show.
-    FIELD_ON_ERROR,
-    ON_ERROR_ABORT,
-    ON_ERROR_CONTINUE,
-    FIELD_RETRIES,
-    FIELD_FIRST_DELAY,
-    FIELD_MAX_DELAY,
-    STEP_ADD_DRIVE,
-    STEP_ADD_WEBHOOK,
-    STEP_ADD_TRANSCRIBE,
 
-    // docs/08: the transcribe inspector.
+    // docs/08: the transcription settings.
     FIELD_PROVIDER,
     FIELD_API_KEY,
     FIELD_INVOKE_URL,
-    FIELD_INVOKE_URL_HINT_REQUIRED,
-    FIELD_INVOKE_URL_HINT_OPTIONAL,
     FIELD_LANGUAGE,
-    FIELD_DIARIZE,
-    FIELD_SPEAKERS_MIN,
-    FIELD_SPEAKERS_MAX,
-    FIELD_SPEAKERS_HINT,
-    SECRET_NEW,
-    EDITOR_ORDER_TRANSCRIBE_NEEDS_UPLOAD,
-
-    LABEL_DRIVE,
-    LABEL_DRIVE_UPLOAD,
-    LABEL_WEBHOOK,
-    LABEL_TRANSCRIBE,
 
     AUTH_PAGE_OK,
     AUTH_PAGE_DECLINED,
@@ -358,10 +293,8 @@ enum class Str {
     ALERT_NEEDS_AUTH,
     ALERT_NEEDS_SPACE,
     ALERT_MISSING_SECRET,
-    ALERT_INVALID_SECRET,
     ALERT_AUTH_REJECTED,
     ALERT_QUOTA,
-    ALERT_WEBHOOK,
     ALERT_UPLOADS_WAITING,
     ALERT_WAITING,
 
@@ -377,8 +310,6 @@ enum class Str {
     CORE_DRIVE_STORAGE_FULL,
     CORE_SIGN_IN_CANCELLED,
     CORE_MISSING_SECRET,
-    CORE_INVALID_SECRET,
-    CORE_WEBHOOK_HTTP,
     CORE_FOLDER_TEMPLATE,
     CORE_RETRY_BUDGET_SPENT,
     CORE_NO_RUNNER,
@@ -395,8 +326,15 @@ enum class Str {
     CORE_NO_INPUT_TRACK,
     CORE_RESULT_TIMEOUT,
 
+    PROCESSING_MODEL,
+    PROCESSING_SAVE_KEY,
+    PROCESSING_KEY_SAVED,
+    PROCESSING_SECRETS,
+    PROCESSING_KEYS_NOT_EXPORTED,
+    PROCESSING_LOCAL_RUNNING,
+    PROCESSING_LOCAL_PENDING,
+
     CORE_STALE,
-    CORE_UNSUPPORTED_SCHEMA,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')
@@ -421,7 +359,7 @@ class Strings internal constructor(
     }
 }
 
-/** Where the two tables are read from, once each per process. */
+/** Where supported language tables are loaded, once each per process. */
 object StringTable {
 
     const val BASE: String = "en"
@@ -430,10 +368,10 @@ object StringTable {
 
     private val tables = mutableMapOf<String, Strings>()
 
-    /** Anything that is not [KOREAN] is the base language (docs/07 rule 1). */
+    /** Resolve regional variants; unknown languages use [BASE] (docs/07 rule 1). */
     @Synchronized
     fun of(language: String): Strings {
-        val tag = if (language == KOREAN) KOREAN else BASE
+        val tag = AppLanguage.of(language).tag.ifEmpty { BASE }
         return tables.getOrPut(tag) { Strings(tag, load(tag)) }
     }
 

@@ -115,7 +115,7 @@ fun RenameDialog(
 
 /**
  * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this PC's
- * upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
+ * upload queue. Recordings and keys stay; deleting audio is a separate list action.
  */
 @Composable
 fun DisconnectDialog(
@@ -149,73 +149,6 @@ fun DisconnectDialog(
     }
 }
 
-/**
- * docs/05 "워크플로우 가져오기": there is no merge, so the one question worth asking is asked before
- * anything is written — and it is asked with the number the file actually holds.
- */
-@Composable
-fun ImportDialog(
-    picked: PickedWorkflows,
-    strings: Strings,
-    theme: @Composable (@Composable () -> Unit) -> Unit,
-    onCancel: () -> Unit,
-    onConfirm: () -> Unit,
-) {
-    BlueprintDialog(
-        title = strings[Str.WORKFLOWS_IMPORT_TITLE],
-        onDismissRequest = onCancel,
-        theme = theme,
-        height = IMPORT_HEIGHT,
-        actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
-            BlueprintButton(
-                label = strings[Str.SETTINGS_IMPORT_WORKFLOWS],
-                onClick = onConfirm,
-                tone = ButtonTone.DANGER,
-            )
-        },
-    ) {
-        BlueprintDialogText(
-            strings[Str.WORKFLOWS_IMPORT_BODY, picked.workflows],
-            tone = DialogTone.DANGER,
-        )
-        BlueprintDialogText(strings[Str.SETTINGS_WORKFLOWS_KEYS_HINT])
-    }
-}
-
-/**
- * ADR-016: a workflow deleted here is gone from this PC and there is no sync to bring it back, so
- * the question is asked before the write — the same question, in the same words, that Android asks.
- * A selection change while the question is open also disables its destructive action.
- */
-@Composable
-fun WorkflowDeleteDialog(
-    item: WorkflowItem,
-    strings: Strings,
-    theme: @Composable (@Composable () -> Unit) -> Unit,
-    onCancel: () -> Unit,
-    onDelete: () -> Unit,
-) {
-    BlueprintDialog(
-        title = strings[Str.DELETE_TITLE, item.name.ifBlank { strings[Str.UNNAMED] }],
-        onDismissRequest = onCancel,
-        theme = theme,
-        height = WORKFLOW_DELETE_HEIGHT,
-        actions = {
-            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
-            BlueprintButton(strings[Str.DELETE], onDelete, tone = ButtonTone.DANGER, enabled = !item.isDeviceDefault)
-        },
-    ) {
-        BlueprintDialogText(strings[Str.WORKFLOWS_DELETE_BODY])
-        if (item.isDeviceDefault) {
-            BlueprintDialogText(
-                strings[Str.WORKFLOW_DELETE_IN_USE],
-                tone = DialogTone.DANGER,
-            )
-        }
-    }
-}
-
 /** One warning line, two answers about Drive, and the two buttons. */
 private val DELETE_HEIGHT: Dp = 280.dp
 
@@ -226,9 +159,3 @@ private val RENAME_HEIGHT: Dp = 220.dp
 private val REMOTE_DELETE_HEIGHT: Dp = 220.dp
 
 private val DISCONNECT_HEIGHT: Dp = 260.dp
-
-/** The import replace question and the hint under it, plus the two buttons. */
-private val IMPORT_HEIGHT: Dp = 240.dp
-
-/** What a workflow delete costs, plus the default warning when there is one, and the two buttons. */
-private val WORKFLOW_DELETE_HEIGHT: Dp = 240.dp

@@ -144,10 +144,9 @@ class WindowsRecorder(
      * helper is asked for and the ones the meta records, and the helper opens the render endpoint
      * only for a track that needs it — so a microphone-only recording never touches the speakers.
      * It is a parameter and not a field because it is fixed at the start and cannot change under a
-     * running recording (docs/14 "캡처", the Mac's `session.start(workflowId:mode:)`).
+     * running recording (docs/14 "캡처", as on the Mac).
      */
     suspend fun start(
-        workflowId: String?,
         title: String? = null,
         mode: RecordingMode = RecordingMode.MEETING,
     ): String? = mutex.withLock {
@@ -157,7 +156,7 @@ class WindowsRecorder(
         val tracks = mode.tracks
         val startedAt = core.deps.clock.now()
         val recordingId = Ulid.generate(object : TimeClock { override fun now(): Instant = startedAt })
-        val meta = meta(recordingId, startedAt, workflowId, title, tracks)
+        val meta = meta(recordingId, startedAt, title, tracks)
         val base = MetaWriter.baseName(meta)
         val dir = core.deps.dataDir / "recordings" / base
         withContext(core.deps.io) { core.deps.fileSystem.createDirectories(dir) }
@@ -361,7 +360,6 @@ class WindowsRecorder(
     private fun meta(
         recordingId: String,
         startedAt: Instant,
-        workflowId: String?,
         title: String?,
         tracks: List<Track>,
     ): RecordingMeta = RecordingMeta(
@@ -371,7 +369,7 @@ class WindowsRecorder(
         platform = core.deps.device.platform,
         deviceId = core.deps.device.deviceId,
         deviceName = core.deps.device.name,
-        workflowId = workflowId,
+        workflowId = null,
         title = title,
         startedAt = startedAt.isoUtc(),
         timezone = java.util.TimeZone.getDefault().id,

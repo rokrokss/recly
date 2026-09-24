@@ -196,6 +196,7 @@ final class MenuBarPanel {
         var body: some View {
             MenuPopover(model: model, language: language, theme: theme, maximumSize: limits.maximumSize)
                 .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
                 // Escape, the way the SwiftUI popover closed on it.
                 .onExitCommand(perform: dismiss)

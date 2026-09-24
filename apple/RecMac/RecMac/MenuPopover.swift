@@ -29,7 +29,7 @@ struct MenuPopover: View {
             HairLine()
         } content: {
             if showingSettings {
-                SettingsPane(model: model, language: language, theme: theme)
+                SettingsPane(model: model, language: language, theme: theme, surface: .popover)
             } else {
                 ledger
             }
@@ -44,7 +44,7 @@ struct MenuPopover: View {
         // there is, so the dialogs are drawn *in* it — over the ledger, which is what they are
         // about — rather than as a panel the popover would be dismissed behind.
         .overlay {
-            if let prompt = model.disconnectPrompt {
+            if let prompt = model.disconnectPrompt, model.disconnectSource == .popover {
                 BlueprintDialogScrim {
                     DisconnectDialog(
                         prompt: prompt,
@@ -68,24 +68,10 @@ struct MenuPopover: View {
                 }
             }
         }
-        // docs/05 "워크플로우 가져오기": the replace confirmation, drawn here for the same reason —
-        // the settings pane is inside this popover and has no window of its own to present from.
-        .overlay {
-            if let transfer = model.workflowTransfer, let picked = transfer.confirm {
-                BlueprintDialogScrim {
-                    ImportDialog(
-                        picked: picked,
-                        confirm: { Task { await transfer.confirmImport() } },
-                        cancel: { transfer.cancelImport() }
-                    )
-                }
-            }
-        }
-        // docs/10: the fix for a quota or a webhook is in the editor, and only a view has an
+        // docs/10: the fix for a quota or a key is in the settings window, and only a view has an
         // `openWindow` to open one with.
         .onAppear {
-            model.openEditor = { openWindow(id: WorkflowWindow.id) }
-            model.refreshMicrophones()
+            model.openEditor = { openWindow(id: "processing-settings") }
         }
     }
 
@@ -113,7 +99,7 @@ struct MenuPopover: View {
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
             }
-            if model.isRecording, model.mode == .meeting, model.captureHealth != .healthy {
+            if model.isRecording, model.captureHealth != .healthy {
                 Text(verbatim: loc(model.captureHealth == .failed
                     ? "System audio unavailable. Microphone recording continues."
                     : "Reconnecting system audio…"))
@@ -157,16 +143,9 @@ struct MenuPopover: View {
                     BlueprintButton(loc("Start recording"), tone: .primary) { model.start() }
                         .disabled(!model.isReady)
                 }
-                BlueprintButton(loc("Workflows")) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    openWindow(id: WorkflowWindow.id)
-                }
                 Spacer(minLength: 0)
-                // Idle, the empty half of the row is the workflow picker's; while a recording runs
-                // the pick cannot change anyway, and the space is the timer's above.
-                if !model.isRecording {
-                    workflowPicker
-                }
+                BlueprintButton(RecKitStrings.localized("Recording processing"), tone: .quiet) { showingSettings = true }
+
             }
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
@@ -174,33 +153,10 @@ struct MenuPopover: View {
         .background(.ultraThinMaterial)
     }
 
-    /// The one choice on this surface: which workflow this Mac records with (ADR-016 — the pick is
-    /// this Mac's own pointer, so it outlives the popover and the launch).
-    ///
-    /// Chips rather than a `Picker(.menu)`: docs/09 "형태" has no pop-up button in it, and what a
-    /// pop-up hid was the one thing this row is for — which workflow the next recording runs. They
-    /// wrap when there are more of them than the popover is wide, and the whole row scrolls
-    /// sideways rather than pushing the actions off it.
-    private var workflowPicker: some View {
-        ScrollView(.horizontal) {
-            FlowLayout {
-                ForEach(model.workflows, id: \.id) { workflow in
-                    BlueprintChip(workflow.name, selected: model.workflowId == workflow.id) {
-                        Task { await model.selectWorkflow(workflow.id) }
-                    }
-                }
-            }
-        }
-        .scrollIndicators(.never)
-        .frame(maxWidth: 220)
-        .disabled(model.workflows.isEmpty)
-        .accessibilityIdentifier("workflow")
-    }
-
     private var specs: [NodeSpec] {
         [
             NodeSpec(label: loc("Device"), value: Source.desktop.name.lowercased()),
-            NodeSpec(label: loc("Workflow"), value: workflowName),
+            NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
             stateNode,
         ]
     }
@@ -224,18 +180,6 @@ struct MenuPopover: View {
             valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
             active: model.isRecording
         )
-    }
-
-    /// The node names the workflow this Mac is set to record with — the one chip that is selected.
-    ///
-    /// ADR-016 · docs/09 화면 원칙 1: no selection is one line in all four shells, whether the
-    /// document is empty or the pointer named a workflow that is gone. Both say the same thing about
-    /// pressing start — nothing would run — and name the same fix.
-    private var workflowName: String {
-        if let selected = model.workflows.first(where: { $0.id == model.workflowId }) {
-            return selected.name
-        }
-        return loc("Choose a workflow")
     }
 
     /// docs/09: state is a code, in monospace, and never colour alone.
@@ -371,8 +315,8 @@ struct MenuPopover: View {
                     }
                 }
                 // More buttons than a 460pt popover holds in one line, and a label cut to a
-                // syllable says nothing — so they wrap onto a second line, the way the workflow
-                // chips above them do, rather than becoming a column.
+                // syllable says nothing — so they wrap onto a second line rather than becoming a
+                // column.
                 actions(item)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -396,13 +340,12 @@ struct MenuPopover: View {
                 if item.canRetry {
                     ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
                 }
-                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
-                // the key" lands — which on a Mac means opening the editor window as well.
+                // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
+                // that is where "check the key" lands — which on a Mac means opening that window.
                 if item.needsKey {
                     BlueprintButton(RecordingDetailStrings.checkKey) {
-                        model.editWorkflow(of: item)
                         NSApp.activate(ignoringOtherApps: true)
-                        openWindow(id: WorkflowWindow.id)
+                        openWindow(id: "processing-settings")
                     }
                     .accessibilityIdentifier("check-key")
                 }
@@ -436,10 +379,11 @@ struct MenuPopover: View {
 
 /// docs/09 화면 원칙 4: the settings the menu used to carry, as a section table — account, capture,
 /// language, and the honest system block at the bottom.
-private struct SettingsPane: View {
+struct SettingsPane: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
     @ObservedObject var theme: AppTheme
+    let surface: SettingsSurface
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
@@ -449,48 +393,11 @@ private struct SettingsPane: View {
                 account: model.account, connected: model.hasGoogleCredential,
                 configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
                 revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
-                signIn: model.signIn, disconnect: model.askToDisconnect,
+                signIn: model.signIn, disconnect: { model.askToDisconnect(from: surface) },
                 permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
             )
 
-            // docs/12 M4-L3 "메뉴바": the mode is picked before a recording and cannot change
-            // during one — the track set is written into the meta at `start`.
             section(loc("Capture"))
-            SectionRow(title: loc("Recording mode")) {
-                HStack(spacing: Space.s) {
-                    BlueprintChip(loc("Microphone only"), selected: model.mode == .microphone) {
-                        model.mode = .microphone
-                    }
-                    BlueprintChip(
-                        loc("Meeting (mic + system)"),
-                        selected: model.mode == .meeting
-                    ) {
-                        model.mode = .meeting
-                    }
-                }
-                // The chips carry the choice, so they keep their whole label; when the popover is
-                // short of room it is the title on the left that wraps, not the chips that truncate.
-                .fixedSize(horizontal: true, vertical: false)
-                .disabled(model.canStop)
-            }
-            SectionRow(title: loc("Microphone")) {
-                ScrollView(.horizontal) {
-                    HStack(spacing: Space.s) {
-                        BlueprintChip(loc("Automatic"), selected: model.microphoneUID.isEmpty) {
-                            model.microphoneUID = ""
-                        }
-                        ForEach(model.microphones) { device in
-                            BlueprintChip(device.name, selected: model.microphoneUID == device.id) {
-                                model.microphoneUID = device.id
-                            }
-                        }
-                    }
-                }
-                .scrollIndicators(.never)
-                .frame(maxWidth: 220)
-                .disabled(model.canStop)
-                .accessibilityIdentifier("microphone-selection")
-            }
             // docs/12 "실행기": `SMAppService`, written from the system's own answer.
             SwitchRow(
                 title: loc("Launch at login"),
@@ -508,10 +415,10 @@ private struct SettingsPane: View {
             // phone's settings tab draws (RecKit).
             ThemeSection(theme: theme)
 
-            // docs/05 "워크플로우 내보내기 · 가져오기": definitions are this Mac's own, so a file is
-            // how they reach another device. The same block the phone's settings tab draws (RecKit).
-            if let transfer = model.workflowTransfer {
-                WorkflowTransferSection(model: transfer)
+            // docs/05: the recording processing settings. The same block the phone's settings tab
+            // draws (RecKit).
+            if let processing = model.processing {
+                ProcessingSettingsView(model: processing, preparationAllowed: model.isIdle)
             }
 
             // docs/09 트렌드 6: no mascot and no "handmade" line — what this build actually is.
@@ -527,6 +434,21 @@ private struct SettingsPane: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
+        }
+        // docs/03 "로그아웃 vs 연결 해제": the popover draws the warning over itself (above); the
+        // Settings window has a window to present from, so a disconnect asked there is its sheet.
+        .blueprintDialog(
+            item: Binding(
+                get: { surface == .settingsWindow && model.disconnectSource == surface ? model.disconnectPrompt : nil },
+                // A sheet only ever writes nil back, and a dismissal is a cancel like any other.
+                set: { if $0 == nil { model.cancelDisconnect() } }
+            )
+        ) { prompt in
+            DisconnectDialog(
+                prompt: prompt,
+                confirm: { model.disconnect(alsoDeleteRecordings: $0) },
+                cancel: { model.cancelDisconnect() }
+            )
         }
     }
 

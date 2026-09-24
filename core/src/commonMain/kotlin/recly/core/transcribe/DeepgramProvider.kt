@@ -11,6 +11,7 @@ import recly.core.drive.string
 import recly.core.job.StepFailure
 import recly.core.message.CoreMessage
 import recly.core.model.Language
+import recly.core.model.wire
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
 
@@ -83,6 +84,7 @@ class DeepgramProvider : SttProvider {
         Language.EN -> "en"
         Language.KO_EN -> "ko"
         Language.AUTO -> null
+        else -> language.wire
     }
 
     private fun read(ctx: SttContext, json: JsonObject, model: String): SttResult {

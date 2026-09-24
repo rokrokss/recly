@@ -2,10 +2,8 @@
 
 package app.recly.windows
 
-import app.recly.windows.core.Secrets
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.settings.RecordingMode
 import app.recly.windows.settings.Settings
 import app.recly.windows.ui.DisconnectPhase
 import java.util.prefs.BackingStoreException
@@ -47,21 +45,6 @@ class MemorySecureStore : SecureStore {
         entries.keys.filter { it.startsWith("$ns/") }.map { it.removePrefix("$ns/") }.sorted()
 }
 
-/** [Secrets] without the core's secure store behind it — the names and values, in memory. */
-class MemorySecrets : Secrets {
-    private val values = mutableMapOf<String, String>()
-
-    override suspend fun names(): List<String> = values.keys.sorted()
-
-    override suspend fun put(name: String, value: String) {
-        values[name] = value
-    }
-
-    override suspend fun delete(name: String) {
-        values.remove(name)
-    }
-}
-
 /** The only fields the executor wiring looks at; the rest is a valid but empty workflow. */
 fun job(
     id: String,
@@ -87,7 +70,6 @@ fun job(
 /** [Settings] as the plain data holder it is on a PC, minus the registry. */
 class FakeSettings(
     override var consentReminder: Boolean = true,
-    override var recordingMode: RecordingMode = RecordingMode.MEETING,
     override var language: AppLanguage = AppLanguage.SYSTEM,
     override var theme: AppTheme = AppTheme.SYSTEM,
     override var disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,

@@ -1,7 +1,7 @@
 # `windows/app` — the Recly Windows shell (Compose Desktop)
 
 docs/14 "앱" · the Windows section of docs/06 · ADR-005. Tray, auth (loopback PKCE), runner,
-workflow editor window, settings, meeting detection & notification (M6-L3). This module does not
+settings, meeting detection & notification (M6-L3). This module does not
 capture audio — it spawns `windows/capture-helper` (Rust, M6-L2) and talks to it over the docs/14
 JSON line protocol. MSI packaging and signing are in `windows/README.md`.
 

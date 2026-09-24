@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://rec.app/spec/recording-settings.schema.json",
+  "title": "Recly recording processing settings",
+  "description": "Device-local fixed-flow preferences; secret references only. See docs/recly.md section 5.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "revision", "updatedAt", "updatedBy", "settings"],
+  "properties": {
+    "schema": { "const": 1 },
+    "revision": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "updatedBy": { "type": "string", "minLength": 1 },
+    "settings": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "storage": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "folder": {
+              "type": "string", "minLength": 1, "maxLength": 200,
+              "pattern": "^(?![\\s\\S]*\\{\\{\\s*(workflowName|title)\\s*\\}\\})[\\s\\S]*$",
+              "default": "recly/memo/{{yyyy}}-{{MM}}"
+            },
+            "minDurationSec": { "type": "integer", "minimum": 0, "maximum": 2147483647, "default": 0 }
+          }
+        },
+        "transcription": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "mode": { "enum": ["local", "external", "off"], "default": "local" },
+            "language": { "type": "string", "enum": ["ko", "en", "ja", "zh-cn", "zh-tw", "es", "fr", "de", "pt", "ar", "hi", "ru", "it", "id", "tr", "vi", "th", "nl", "pl", "uk", "ko-en", "auto"], "default": "ko" },
+            "diarize": { "type": "boolean", "default": false, "deprecated": true, "description": "Accepted for read compatibility. New recording plans enable diarization automatically when the selected provider/model or local engine supports it." },
+            "speakers": { "$ref": "#/$defs/speakers", "deprecated": true, "description": "Accepted for read compatibility. New recording plans use automatic speaker inference with the default range." },
+            "external": { "$ref": "#/$defs/external" }
+          },
+          "allOf": [{
+            "if": { "required": ["mode"], "properties": { "mode": { "const": "external" } } },
+            "then": { "properties": { "external": true }, "required": ["external"] }
+          }]
+        }
+      }
+    }
+  },
+  "$defs": {
+    "speakers": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": "integer", "minimum": 1, "maximum": 10, "default": 1 },
+        "max": { "type": "integer", "minimum": 1, "maximum": 10, "default": 10 }
+      }
+    },
+    "external": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "secretRef"],
+      "properties": {
+        "provider": {
+          "type": "string",
+          "enum": [
+            "assemblyai", "clova", "rtzr",
+            "openai", "groq", "together", "mistral",
+            "elevenlabs", "deepgram", "azure",
+            "daglo", "speechmatics", "rev", "gladia"
+          ]
+        },
+        "secretRef": { "type": "string", "pattern": "^[a-z][a-z0-9_]{0,31}$" },
+        "invokeUrl": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "model": { "type": "string", "minLength": 1, "maxLength": 100 }
+      }
+    }
+  }
+}

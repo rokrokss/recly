@@ -12,8 +12,6 @@
     <string name="recording_saved">저장됨 · %1$d개 · %2$d초</string>
     <string name="recording_save_deferred">저장 마무리 실패 — 다음에 복구</string>
     <string name="recording_failed">실패: %1$s</string>
-    <string name="workflow_phones">폰의 워크플로우</string>
-    <string name="workflow_pick">워크플로우</string>
     <string name="pending_badge">대기 %1$d개</string>
     <string name="sending_badge">전송 중 %1$d개</string>
     <string name="transfer_failed_badge">전송 실패 %1$d개</string>

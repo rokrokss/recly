@@ -5,7 +5,7 @@ import recly.core.platform.SecureStore
 
 /**
  * The `secrets` namespace of the device's [SecureStore], as everything above the core sees it
- * (docs/05 "시크릿": names travel in `workflows.json`, values never leave the device).
+ * (docs/05 "시크릿": names travel in the processing settings, values never leave the device).
  *
  * Values are per-device and stay per-device — there is no sync and no export carries them, so a new
  * device is a device whose `secretRef`s have nothing behind them until its user types them in

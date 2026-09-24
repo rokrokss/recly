@@ -60,9 +60,9 @@ internal class RecorderSession(
     }
 
     /** The microphone is open and the row exists. Any stop that raced the start is served now. */
-    fun started(capture: Capture, recordingId: String, startedAt: Instant, workflowId: String?) {
+    fun started(capture: Capture, recordingId: String, startedAt: Instant) {
         this.capture = capture
-        state.value = RecorderState.Recording(recordingId, startedAt, workflowId)
+        state.value = RecorderState.Recording(recordingId, startedAt)
         pendingStop?.let {
             pendingStop = null
             stop(it.title, it.enqueue)

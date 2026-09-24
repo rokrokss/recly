@@ -65,7 +65,6 @@ class UploadingNodeTest {
     private fun item(state: ItemState): JobItem = JobItem(
         recordingId = "01J0${state.name}",
         jobId = null,
-        workflowId = null,
         title = null,
         startedAt = "2026-09-03T09:00:00Z",
         durationSec = 60.0,

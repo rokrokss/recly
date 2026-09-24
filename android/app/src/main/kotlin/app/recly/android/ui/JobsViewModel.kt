@@ -42,8 +42,6 @@ import recly.core.transcribe.Transcript
 data class JobItem(
     val recordingId: String,
     val jobId: String?,
-    /** The workflow the job runs, so a key that was refused can be fixed where it is defined. */
-    val workflowId: String?,
     /** Null when the recording was never named; the screen says so in the app's language. */
     val title: String?,
     /** ISO-8601 UTC, as `meta.json` holds it — the screen formats it for the locale (docs/07). */
@@ -72,6 +70,8 @@ data class JobItem(
     val nextRunAt: Instant?,
     /** docs/10: why this job is the user's to fix, or null when it is not (banner, notification). */
     val alert: AlertReason? = null,
+    val localPending: Boolean = false,
+    val localRunning: Boolean = false,
 )
 
 enum class ItemState {
@@ -113,6 +113,8 @@ data class DeleteRequest(
     val title: String?,
     val unuploaded: Int,
     val remote: Boolean,
+    /** Whether a Drive folder exists to delete at all — the row's [JobItem.link]. */
+    val hasDriveFolder: Boolean,
 )
 
 data class JobsUiState(
@@ -205,7 +207,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                         it.copy(
                             loading = false,
                             items = items,
-                            alerts = foldAlerts(items.map { row -> AlertSource(row.alert, row.workflowId) }),
+                            alerts = foldAlerts(items.map { row -> row.alert }),
                             // The open detail's Play goes away for as long as the recorder holds
                             // the microphone, wherever the recording was started from.
                             detail = it.detail?.copy(deviceRecording = capturing(recorder)),
@@ -265,6 +267,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     title = item.title,
                     unuploaded = unuploaded,
                     remote = item.remote,
+                    hasDriveFolder = item.link != null,
                 ),
             )
         }
@@ -518,7 +521,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             JobItem(
                 recordingId = record.id,
                 jobId = job?.id,
-                workflowId = job?.workflowId,
                 title = record.meta.title?.takeIf { it.isNotBlank() },
                 startedAt = record.meta.startedAt,
                 durationSec = record.meta.durationSec,
@@ -526,6 +528,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 remote = record.remote,
                 error = error,
                 waitingMinutes = StepReport.waitingMinutes(steps, now),
+                localPending = job?.status in setOf(JobStatus.WAITING, JobStatus.PENDING, JobStatus.RUNNING) && StepReport.localPending(job?.workflow, steps),
+                localRunning = core.localTranscription.isRunning(record.id),
                 link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
                 alert = job?.let { alertReasonOf(it.status, error) },

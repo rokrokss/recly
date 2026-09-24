@@ -110,7 +110,7 @@ class RecordingTitleTest {
         }
         runBlocking { events.emit(RecorderEvent.Finished(id, 60.0, 1, emptyList(), enqueue = false)) }
         ui.waitUntil(10_000) {
-            model.state.value.untitled?.recordingId == id && model.state.value.workflows.isNotEmpty()
+            model.state.value.untitled?.recordingId == id
         }
     }
 

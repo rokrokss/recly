@@ -70,7 +70,6 @@ final class RecordingRecoveryTests: XCTestCase {
     func testAnUnreadableTailIsQuarantinedAndTheReadablePartsAreRecovered() async throws {
         let logger = RecordingLogger()
         let bridge = try await makeBridge(logger: logger)
-        try await chooseDeviceDefault(bridge)
         let seeded = try await seed(bridge, status: RecordingStatus.recording)
         let first = try writeSegment(seconds: 1, to: seeded.directory, part: 1)
         // The tail: bytes the encoder was still writing when the process went away.
@@ -102,7 +101,6 @@ final class RecordingRecoveryTests: XCTestCase {
     /// landed. The next pass files the part, clears the marker, closes the meta and queues the job.
     func testAPendingMarkerIsClearedWhenTheNextPassFilesThePart() async throws {
         let bridge = try await makeBridge()
-        try await chooseDeviceDefault(bridge)
         let seeded = try await seed(bridge, status: RecordingStatus.recording)
         let first = try writeSegment(seconds: 1, to: seeded.directory, part: 1)
         markPending(in: seeded.directory, part: 1)
@@ -287,9 +285,8 @@ final class RecordingRecoveryTests: XCTestCase {
 
     /// The process died while the title prompt was open: the recording is finalized and complete,
     /// and the only thing missing is the job the stop was going to create.
-    func testAKnownDriveCopyWaitsForSyncInsteadOfReplayingItsWorkflow() async throws {
+    func testAKnownDriveCopyWaitsForSyncInsteadOfReplayingItsPlan() async throws {
         let bridge = try await makeBridge()
-        try await chooseDeviceDefault(bridge)
         let seeded = try await seed(bridge, status: .finalized)
         try writeSegment(seconds: 1, to: seeded.directory, part: 1)
         try await bridge.core.recordings.rememberFolder(recordingId: seeded.recordingId, folderId: "known-drive-folder")
@@ -302,7 +299,6 @@ final class RecordingRecoveryTests: XCTestCase {
     func testAFinalizedRecordingWithNoJobIsEnqueued() async throws {
         let logger = RecordingLogger()
         let bridge = try await makeBridge(logger: logger)
-        try await chooseDeviceDefault(bridge)
         let seeded = try await seed(bridge, status: RecordingStatus.finalized)
         try writeSegment(seconds: 1, to: seeded.directory, part: 1)
 
@@ -320,49 +316,24 @@ final class RecordingRecoveryTests: XCTestCase {
         XCTAssertEqual(after.count, jobs.count)
     }
 
-    /// ADR-016: a device that has not picked a default resolves `NO_WORKFLOW`, and the queue refusing
-    /// the recording is not the same thing as having recovered it. Counting it would report a
-    /// recovery on every pass forever, and `rec.recovered.ready` would claim a success that never
-    /// happened — the log says what the queue actually answered instead. (The Windows
-    /// `RecordingRecovery.enqueueIfNoJob` draws the same line.)
-    func testAFinalizedRecordingIsNotCountedWhenTheQueueHasNoWorkflowToRunIt() async throws {
+    /// New recordings use their captured processing settings, with nothing to choose.
+    func testAFinalizedRecordingQueuesItsFixedPlanOnce() async throws {
         let logger = RecordingLogger()
         let bridge = try await makeBridge(logger: logger)
         let seeded = try await seed(bridge, status: RecordingStatus.finalized)
         try writeSegment(seconds: 1, to: seeded.directory, part: 1)
         let recovery = RecordingRecovery(core: bridge.core)
 
-        // The first pass has the unfiled part to register, which *is* work; the queue refusing the
-        // recording afterwards is not, and the pass after it has nothing else left to do.
+        // The first pass files the recovered part and enqueues its fixed plan once.
         let first = await recovery.reconcile()
         XCTAssertEqual(first, 1)
         let again = await recovery.reconcile()
 
-        XCTAssertEqual(again, 0, "a refused enqueue is not a recovery")
+        XCTAssertEqual(again, 0, "an already queued recording is not recovered again")
         XCTAssertTrue(logger.events.contains("rec.recovered.enqueue"))
-        XCTAssertFalse(logger.events.contains("rec.recovered.ready"), "no success is claimed")
+        XCTAssertFalse(logger.events.contains("rec.recovered.ready"), "the finalized recording uses the enqueue recovery event")
         let jobs = try await bridge.core.recordings.jobStatuses(recordingId: seeded.recordingId)
-        XCTAssertTrue(jobs.isEmpty)
-    }
-
-    /// The other half of the same rule: retrying on every pass is the self-heal, so the pass after
-    /// the user finally picks a default is the one that queues the recording — and *that* pass is
-    /// the one that counts it.
-    func testTheRecordingIsQueuedByTheFirstPassAfterADefaultIsChosen() async throws {
-        let bridge = try await makeBridge()
-        let seeded = try await seed(bridge, status: RecordingStatus.finalized)
-        try writeSegment(seconds: 1, to: seeded.directory, part: 1)
-        let recovery = RecordingRecovery(core: bridge.core)
-        _ = await recovery.reconcile()
-        let refused = await recovery.reconcile()
-        XCTAssertEqual(refused, 0, "nothing but the refused enqueue is left")
-
-        try await bridge.core.workflows.setDeviceDefault(workflowId: WorkflowRepository.companion.MEMO_ID)
-        let touched = await recovery.reconcile()
-
-        XCTAssertEqual(touched, 1)
-        let jobs = try await bridge.core.recordings.jobStatuses(recordingId: seeded.recordingId)
-        XCTAssertFalse(jobs.isEmpty)
+        XCTAssertEqual(jobs.count, 1)
     }
 
     /// The done condition's shape, on disk: a `meta.json` next to the parts, `status: finalized`,
@@ -539,19 +510,8 @@ final class RecordingRecoveryTests: XCTestCase {
             .filter { $0.hasSuffix(PartReconciler.pendingSuffix) }
     }
 
-    /// ADR-016: what a recovered recording runs is this device's own default, and a shell picks one
-    /// at startup (`seed(preferredDefaultId:)`). A device that has *not* chosen parks the recording
-    /// as `NO_WORKFLOW`, which is the selector's business rather than the reconciler's — so the
-    /// cases below that are about the queue start from a device that has one.
-    private func chooseDeviceDefault(_ bridge: CoreBridge) async throws {
-        _ = try await bridge.core.workflows.seed(
-            preferredDefaultId: WorkflowRepository.companion.MEMO_ID
-        )
-    }
-
     private func makeBridge(logger: any ReclyCore.Logger = OSLogLogger()) async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "reckit-tests-\(UUID().uuidString).db",

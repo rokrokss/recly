@@ -351,7 +351,6 @@ final class RecordingDetailTests: XCTestCase {
 
     private func makeBridge() async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "recording-detail-tests.db",

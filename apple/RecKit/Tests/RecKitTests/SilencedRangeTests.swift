@@ -126,7 +126,7 @@ final class SilencedRangeTests: XCTestCase {
             core: bridge.core, segmentSec: 60, source: Source.phone, input: input
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         // Two seconds of audio, then the call: the engine stops, so nothing more is pushed until
         // the interruption ends.
         XCTAssertTrue(input.push(frames: 2 * SegmentedRecorder.sampleRateHz) { _ in 0.1 })
@@ -163,7 +163,7 @@ final class SilencedRangeTests: XCTestCase {
             core: bridge.core, segmentSec: 60, source: Source.phone, input: input
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         XCTAssertTrue(input.push(frames: SegmentedRecorder.sampleRateHz) { _ in 0.1 })
         input.onSilence?(true)
         input.onSilence?(false)
@@ -201,7 +201,6 @@ final class SilencedRangeTests: XCTestCase {
 
     private func makeBridge() async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "reckit-silence-\(UUID().uuidString).db",

@@ -50,7 +50,7 @@ class WindowsRecorderTest {
         val finalized = CompletableDeferred<RecordingOutcome>()
         val recorder = recorder(core, finalized, "parts=2", "sec=2.0")
 
-        val recordingId = assertNotNull(recorder.start(workflowId = null))
+        val recordingId = assertNotNull(recorder.start())
         recorder.stop()
 
         val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
@@ -76,7 +76,7 @@ class WindowsRecorderTest {
         // One part per track, then the process exits without answering a stop.
         val recorder = recorder(core, finalized, "die", "sec=3.0")
 
-        val recordingId = assertNotNull(recorder.start(workflowId = null))
+        val recordingId = assertNotNull(recorder.start())
 
         val outcome = withTimeout(TIMEOUT_MS) { finalized.await() }
         assertEquals(3, outcome.parts)
@@ -95,7 +95,7 @@ class WindowsRecorderTest {
         // `addPart` failing looks like from in here, without a broken database to arrange.
         val recorder = recorder(core, finalized, "partsOnStop", "sec=2.0")
 
-        val recordingId = assertNotNull(recorder.start(workflowId = null))
+        val recordingId = assertNotNull(recorder.start())
         val dir = assertNotNull(core.recordings.get(recordingId)).dir
         core.recordings.delete(recordingId)
         FileSystem.SYSTEM.createDirectories(dir)
@@ -134,7 +134,7 @@ class WindowsRecorderTest {
             drainTimeout = Duration.ZERO,
         )
 
-        val recordingId = assertNotNull(recorder.start(workflowId = null))
+        val recordingId = assertNotNull(recorder.start())
         val result = recorder.stop()
 
         val deferred = assertIs<StopResult.Deferred>(result)
@@ -155,7 +155,7 @@ class WindowsRecorderTest {
         val finalized = CompletableDeferred<RecordingOutcome>()
         val recorder = recorder(core, finalized, "partsOnStop", "sec=2.0")
 
-        val recordingId = assertNotNull(recorder.start(workflowId = null))
+        val recordingId = assertNotNull(recorder.start())
         core.recordings.delete(recordingId)
 
         val deferred = assertIs<StopResult.Deferred>(recorder.stop())
@@ -203,7 +203,7 @@ class WindowsRecorderTest {
             detection = detection,
         )
 
-        assertNotNull(recorder.start(workflowId = null))
+        assertNotNull(recorder.start())
         recorder.stop()
         withTimeout(TIMEOUT_MS) { finalized.await() }
 

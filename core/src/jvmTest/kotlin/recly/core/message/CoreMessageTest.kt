@@ -7,18 +7,18 @@ import kotlin.test.assertNull
 /**
  * docs/07 §5: the core says things in keys, the shell says them in words. What matters here is
  * that the round trip is exact for every key — a shell that cannot read a code back shows the
- * user a raw `MISSING_SECRET:webhook_secret` — and that a sentence stored by an older build is
+ * user a raw `MISSING_SECRET:speech_api` — and that a sentence stored by an older build is
  * recognisably *not* a key.
  */
 class CoreMessageTest {
 
-    private val SECRET_KEYS = setOf(CoreMessage.MISSING_SECRET, CoreMessage.INVALID_SECRET)
+    private val SECRET_KEYS = setOf(CoreMessage.MISSING_SECRET)
 
     @Test
     fun `every key round-trips through its code, with and without an argument`() {
         CoreMessage.entries.forEach { message ->
-            // The two that name a secret only parse with a real `secretRef`; see below.
-            val arg = if (message in SECRET_KEYS) "webhook_secret" else "x"
+            // The one that names a secret only parses with a real `secretRef`; see below.
+            val arg = if (message in SECRET_KEYS) "speech_api" else "x"
             if (message !in SECRET_KEYS) {
                 assertEquals(CoreMessageRef(message), CoreMessageRef.parse(message.code()))
             }
@@ -54,9 +54,9 @@ class CoreMessageTest {
     @Test
     fun `a detail survives whatever is in it`() {
         val body = """{"error":"nope|maybe","code":7}"""
-        val parsed = CoreMessageRef.parse(CoreMessage.WEBHOOK_HTTP.code("400", detail = body))
+        val parsed = CoreMessageRef.parse(CoreMessage.STEP_FAILED.code("400", detail = body))
 
-        assertEquals(CoreMessageRef(CoreMessage.WEBHOOK_HTTP, "400", body), parsed)
+        assertEquals(CoreMessageRef(CoreMessage.STEP_FAILED, "400", body), parsed)
     }
 
     @Test
@@ -68,14 +68,13 @@ class CoreMessageTest {
     }
 
     /**
-     * The reason the two secret keys are strict: builds before the keys existed wrote exactly
-     * these two strings into `step_run.last_error`, and reading them as the new wire form would
-     * show an empty secret name for one and a parser complaint where the name goes for the other.
+     * The reason the secret key is strict: builds before the keys existed wrote exactly this
+     * string into `step_run.last_error`, and reading it as the new wire form would show an empty
+     * secret name.
      */
     @Test
-    fun `the sentences an older build stored for a secret are not keys`() {
+    fun `the sentence an older build stored for a secret is not a key`() {
         assertNull(CoreMessageRef.parse("MISSING_SECRET"))
-        assertNull(CoreMessageRef.parse("INVALID_SECRET: expected whsec_ or base64"))
     }
 
     @Test
@@ -92,7 +91,7 @@ class CoreMessageTest {
     @Test
     fun `the code is the documented shape`() {
         assertEquals("NEEDS_AUTH", CoreMessage.NEEDS_AUTH.code())
-        assertEquals("MISSING_SECRET:webhook_secret", CoreMessage.MISSING_SECRET.code("webhook_secret"))
+        assertEquals("MISSING_SECRET:speech_api", CoreMessage.MISSING_SECRET.code("speech_api"))
     }
 
     /** An argument is opaque: a diagnostic with colons in it must come back whole. */

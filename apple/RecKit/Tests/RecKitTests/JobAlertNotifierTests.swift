@@ -13,7 +13,7 @@ final class StandingAlertsTests: XCTestCase {
     /// alerts again while it does. One stuck job buzzed the user every five minutes.
     func testTheSameReadingTwiceIsOneNotification() {
         var standing = StandingAlerts()
-        let queue = [JobAlert(reason: .needsSpace, count: 1, workflowId: "w1")]
+        let queue = [JobAlert(reason: .needsSpace, count: 1)]
 
         let first = standing.apply(queue)
         XCTAssertEqual(first.post, queue)
@@ -33,13 +33,13 @@ final class StandingAlertsTests: XCTestCase {
         XCTAssertEqual(standing.apply(grown).post, [])
     }
 
-    /// So is anything else the line is made of — the workflow a tap would open is on the
+    /// So is anything else the line is made of — the key a tap would open is on the
     /// notification, and a fold that now points at another one has to replace it.
     func testAChangedFixIsPostedAgain() {
         var standing = StandingAlerts()
-        standing.record(JobAlert(reason: .missingSecret, count: 1, workflowId: "w1", secret: "a", stepId: "s1"))
+        standing.record(JobAlert(reason: .missingSecret, count: 1, secret: "a", stepId: "s1"))
 
-        let moved = [JobAlert(reason: .missingSecret, count: 1, workflowId: "w1", secret: "b", stepId: "s2")]
+        let moved = [JobAlert(reason: .missingSecret, count: 1, secret: "b", stepId: "s2")]
 
         XCTAssertEqual(standing.apply(moved).post, moved)
     }
@@ -62,7 +62,7 @@ final class StandingAlertsTests: XCTestCase {
     /// silent replace of one that is no longer on the Lock Screen.
     func testAReasonThatComesBackIsPostedAgain() {
         var standing = StandingAlerts()
-        let alert = JobAlert(reason: .quota, count: 1, workflowId: "w1")
+        let alert = JobAlert(reason: .quota, count: 1)
         standing.record(alert)
         _ = standing.apply([])
 
@@ -73,13 +73,13 @@ final class StandingAlertsTests: XCTestCase {
     func testOnlyWhatChangedIsPosted() {
         var standing = StandingAlerts()
         let auth = JobAlert(reason: .needsAuth, count: 1)
-        let quota = JobAlert(reason: .quota, count: 1, workflowId: "w1")
+        let quota = JobAlert(reason: .quota, count: 1)
         standing.record(auth)
         standing.record(quota)
 
-        let update = standing.apply([auth, JobAlert(reason: .quota, count: 3, workflowId: "w1")])
+        let update = standing.apply([auth, JobAlert(reason: .quota, count: 3)])
 
-        XCTAssertEqual(update.post, [JobAlert(reason: .quota, count: 3, workflowId: "w1")])
+        XCTAssertEqual(update.post, [JobAlert(reason: .quota, count: 3)])
         XCTAssertFalse(update.withdraw.contains(.needsAuth))
         XCTAssertFalse(update.withdraw.contains(.quota))
     }
@@ -104,7 +104,7 @@ final class AlertRouterTests: XCTestCase {
     /// delivered long before that, and there was nothing there to take it.
     func testATapBeforeTheModelIsReadyIsKeptAndThenRouted() {
         let router = AlertRouter<JobAlert>()
-        let alert = JobAlert(reason: .missingSecret, count: 1, workflowId: "w1", secret: "k", stepId: "s1")
+        let alert = JobAlert(reason: .missingSecret, count: 1, secret: "k", stepId: "s1")
 
         router.deliver(alert)
         XCTAssertTrue(router.isWaiting)
@@ -121,9 +121,9 @@ final class AlertRouterTests: XCTestCase {
         var routed: [JobAlert] = []
         router.connect { routed.append($0) }
 
-        router.deliver(JobAlert(reason: .quota, count: 2, workflowId: "w2"))
+        router.deliver(JobAlert(reason: .quota, count: 2))
 
-        XCTAssertEqual(routed, [JobAlert(reason: .quota, count: 2, workflowId: "w2")])
+        XCTAssertEqual(routed, [JobAlert(reason: .quota, count: 2)])
         XCTAssertFalse(router.isWaiting)
     }
 
@@ -207,7 +207,7 @@ final class JobAlertPostingTests: XCTestCase {
         let center = FakeAlertCenter()
         center.failures = 1
         let notifier = JobAlertNotifier(subsystem: "app.recly.tests", center: center)
-        let queue = [JobAlert(reason: .needsSpace, count: 1, workflowId: "w1")]
+        let queue = [JobAlert(reason: .needsSpace, count: 1)]
 
         await notifier.publish(queue)
         XCTAssertEqual(center.posted, [], "the refused post was counted as delivered")
@@ -223,7 +223,7 @@ final class JobAlertPostingTests: XCTestCase {
     func testAnAlertThatLandedIsNotPostedAgain() async {
         let center = FakeAlertCenter()
         let notifier = JobAlertNotifier(subsystem: "app.recly.tests", center: center)
-        let queue = [JobAlert(reason: .quota, count: 1, workflowId: "w1")]
+        let queue = [JobAlert(reason: .quota, count: 1)]
 
         await notifier.publish(queue)
         await notifier.publish(queue)

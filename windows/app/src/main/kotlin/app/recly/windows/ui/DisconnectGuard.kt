@@ -269,7 +269,7 @@ object DisconnectGate {
      * is not free.
      *
      * [startBlocker] on its own is a reading and not a promise: a start suspends between it and the
-     * capture actually opening (the workflow summaries are read from the database first), and a
+     * capture actually opening (the detail's playback is stopped first), and a
      * disconnect that took the gate inside that wait would be walking the recording directory while
      * the capture wrote into it. So the last check and the start are the same critical section, and
      * this is it.

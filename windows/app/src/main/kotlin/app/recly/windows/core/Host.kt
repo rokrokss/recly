@@ -30,13 +30,8 @@ object Host {
         System.getProperty("user.home").toPath() / "Library" / "Application Support" / APP_ID
     }
 
-    /**
-     * The app's language as the bare tag the core takes (docs/07 §1: `en` or `ko`). The core needs
-     * it for one thing — the names it seeds the default workflows with, which are the user's data
-     * from the moment they are written (docs/07 §6) — so a fresh Korean profile must not get the
-     * English base by default.
-     */
-    fun language(): String = if (Locale.getDefault().language == "ko") "ko" else "en"
+    /** Full system language tag, preserving region and script for locale resolution. */
+    fun language(): String = Locale.getDefault().toLanguageTag()
 
     /** The machine name in `meta.json` (docs/03 `deviceName`). */
     fun deviceName(): String =

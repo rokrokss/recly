@@ -37,7 +37,7 @@ final class RecordingModelTests: XCTestCase {
     /// it cannot have run a line yet at this point.
     func testTheIntentsFindTheModelBeforeTheCoreIsOpen() {
         // The store, not the Keychain: this host has no entitlement for one, and the load below
-        // reaches the `secrets` namespace on its way to the workflow editor.
+        // reaches the `secrets` namespace on its way to the recording processing settings.
         let model = RecordingModel(
             dataDirectory: dataDirectory,
             segmentSec: 5,

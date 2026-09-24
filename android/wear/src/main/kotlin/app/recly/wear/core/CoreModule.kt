@@ -7,7 +7,6 @@ import android.os.Build
 import app.recly.recording.platform.AndroidSecureStore
 import app.recly.recording.platform.SystemClock
 import app.recly.recording.platform.deviceId
-import app.recly.wear.BuildConfig
 import java.util.Locale
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
@@ -66,9 +65,8 @@ object CoreModule {
                 platform = Platform.WEAROS,
                 name = Build.MODEL,
             ),
-            appVersion = BuildConfig.VERSION_NAME,
             io = Dispatchers.IO,
-            // docs/07 §6: only the seeded workflow names use it, and only on a first install.
+            // docs/07 §6: seeds the first transcription language, and only on a first install.
             locale = Locale.getDefault().language,
         )
 

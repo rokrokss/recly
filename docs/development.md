@@ -8,6 +8,7 @@ path for Gradle, `ARCHS=arm64` for simulators, `-collect-test-diagnostics never`
 ```bash
 make test        # core · android · windows unit tests (JVM)
 make core        # build the XCFramework and stage it into apple/RecKit (do this first on a Mac)
+make core-mac    # after a core change, refresh only the macOS slice before make mac / mac-test
 make mac         # build Recly Mac          make mac-test   # RecKit tests on macOS
 make ios         # Recly on the iOS simulator        make watch      # Recly Watch on the watch simulator
 make apk         # phone debug APK          make spec       # validate spec/examples
@@ -58,11 +59,10 @@ cd windows/capture-helper && cargo test          # rules, boundaries, sha256, dr
 cargo build --release                            # the real capture binary, on Windows
 ```
 
-**Spec validation · local webhook receiver** (Node):
+**Spec validation** (Node):
 
 ```bash
 cd spec && npm ci && npm run validate            # validate the examples against the JSON Schemas
-node scripts/webhook-receiver.mjs --port 8787 --secret whsec_…   # a receiver that checks signature & schema
 ```
 
 To cut a release: `make apk wear-apk`, then

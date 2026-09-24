@@ -27,7 +27,6 @@ import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.settings.RecordingMode
 import app.recly.windows.ui.component.BlueprintDialogLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
@@ -64,7 +63,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Capture(model, strings)
             Startup(model, strings)
             Data(model, strings)
-            Workflows(model, strings)
+            model.processing?.let { ProcessingPanel(it, strings) }
             About(model, strings)
         }
     }
@@ -143,23 +142,6 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 @Composable
 private fun Capture(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_RECORDING])
-    // docs/14 "캡처": the mode is picked before a recording and cannot change during one — the track
-    // set is written into the meta at the start. The Mac's popover offers the same two chips.
-    TableRow(
-        title = strings[Str.SETTINGS_CAPTURE_MODE],
-        trailing = {
-            Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-                RecordingMode.entries.forEach { mode ->
-                    BlueprintChip(
-                        label = strings[mode.label],
-                        selected = model.recordingMode == mode,
-                        onClick = { model.selectRecordingMode(mode) },
-                        enabled = !model.recording,
-                    )
-                }
-            }
-        },
-    )
     // docs/12 M8: the reminder is on by default and this is where it goes off — and back on, which
     // the dialog's own "Do not ask again" cannot do.
     SwitchRow(
@@ -215,38 +197,6 @@ private fun Data(model: ShellModel, strings: Strings) {
         // docs/09: a path is data, so it is monospace and it is shown rather than described.
         Mono(model.dataDir)
         BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], model::openDataDir, tone = ButtonTone.QUIET)
-    }
-    HairLine()
-}
-
-/**
- * docs/05 "워크플로우 내보내기 · 가져오기": definitions are this PC's own, so moving them to another
- * device is a file the user carries — and the hint says what the file does *not* carry with it.
- */
-@Composable
-private fun Workflows(model: ShellModel, strings: Strings) {
-    val palette = blueprint
-    Section(strings[Str.SETTINGS_WORKFLOWS])
-    SettingsCard {
-        Text(
-            strings[Str.SETTINGS_WORKFLOWS_KEYS_HINT],
-            style = MaterialTheme.typography.bodySmall,
-            color = palette.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-            ProcessingButton(
-                label = strings[Str.SETTINGS_EXPORT_WORKFLOWS],
-                state = model.action,
-                strings = strings,
-                onClick = model::exportWorkflows,
-            )
-            ProcessingButton(
-                label = strings[Str.SETTINGS_IMPORT_WORKFLOWS],
-                state = model.action,
-                strings = strings,
-                onClick = model::importWorkflows,
-            )
-        }
     }
     HairLine()
 }

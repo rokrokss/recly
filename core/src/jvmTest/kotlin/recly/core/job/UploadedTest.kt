@@ -11,7 +11,7 @@ import kotlinx.coroutines.runBlocking
 import recly.core.model.Track
 import recly.core.testing.driveStep
 import recly.core.testing.testMeta
-import recly.core.testing.webhookStep
+import recly.core.testing.transcribeStep
 
 /**
  * "Does Drive hold every part of this recording?" — the signal the delete dialog and the disconnect
@@ -47,12 +47,12 @@ class UploadedTest {
      */
     @Test
     fun `an upload that landed under a job that failed afterwards is still uploaded`() = runBlocking {
-        val webhook = ScriptedRunner("webhook") { _, _ ->
-            throw StepFailure(retryable = false, reason = "500 from the hook")
+        val transcribe = ScriptedRunner("transcribe") { _, _ ->
+            throw StepFailure(retryable = false, reason = "400 from the provider")
         }
-        val f = Fixture(listOf(uploader(), webhook))
+        val f = Fixture(listOf(uploader(), transcribe))
         val recording = f.seed()
-        val jobId = f.enqueue(recording, driveStep("up"), webhookStep("hook"))
+        val jobId = f.enqueue(recording, driveStep("up"), transcribeStep("stt"))
 
         f.service.runDueJobs()
 
@@ -91,15 +91,15 @@ class UploadedTest {
     /** A DONE job that never had a `drive.upload` step proves nothing about Drive. */
     @Test
     fun `a recording nothing ever uploaded is not uploaded`() = runBlocking {
-        val f = Fixture(listOf(ScriptedRunner("webhook") { _, _ -> output("status" to "200") }))
+        val f = Fixture(listOf(ScriptedRunner("transcribe") { _, _ -> output("transcript" to "ok") }))
         val withoutJob = f.seed()
-        val withWebhookOnly = f.seed(testMeta(recordingId = "01J9ZZZZZZ0123456789ABCDEF"))
-        f.enqueue(withWebhookOnly, webhookStep("hook"))
+        val withoutUpload = f.seed(testMeta(recordingId = "01J9ZZZZZZ0123456789ABCDEF"))
+        f.enqueue(withoutUpload, transcribeStep("stt"))
 
         f.service.runDueJobs()
 
         assertFalse(f.store.uploaded(withoutJob.id), "a recording with no job at all")
-        assertFalse(f.store.uploaded(withWebhookOnly.id), "a DONE job with nothing that uploads")
+        assertFalse(f.store.uploaded(withoutUpload.id), "a DONE job with nothing that uploads")
         assertEquals(emptySet<String>(), f.store.uploadedRecordings())
     }
 

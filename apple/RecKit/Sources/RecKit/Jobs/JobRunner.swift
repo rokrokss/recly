@@ -176,6 +176,8 @@ public final class JobRunner {
         Task { await pass() }
     }
 
+    public func runCurrent() async { await pass() }
+
     private func pass() async {
         // Snapshotted before the pass and compared after the queue is read, never in between: a
         // job enqueued while this pass runs lands in neither, and the counter is the only evidence

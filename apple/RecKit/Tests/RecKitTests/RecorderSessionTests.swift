@@ -19,7 +19,7 @@ final class RecorderSessionTests: XCTestCase {
         await capture.holdNextStart { opening.fulfill() }
         let session = RecorderSession(capture: capture, recover: { 0 }, onState: { _ in },
             setPlaybackBlocked: { blocked in await gate.setBlocked(blocked) })
-        let starting = Task { try await session.start(workflowId: nil) }
+        let starting = Task { try await session.start() }
         await fulfillment(of: [opening], timeout: 5)
         XCTAssertTrue(gate.blocked)
         XCTAssertTrue(player.captureBlocked)
@@ -49,7 +49,7 @@ final class RecorderSessionTests: XCTestCase {
         let session = RecorderSession(capture: RejectedCapture(), recover: { 0 }, onState: { _ in },
             setPlaybackBlocked: { blocked in await gate.setBlocked(blocked) })
         do {
-            _ = try await session.start(workflowId: nil)
+            _ = try await session.start()
             XCTFail("the test capture must reject its start")
         } catch {}
         XCTAssertFalse(gate.blocked)
@@ -66,10 +66,10 @@ final class RecorderSessionTests: XCTestCase {
 
         let held = expectation(description: "the first start is in flight")
         await capture.holdNextStart { held.fulfill() }
-        let first = Task { try await session.start(workflowId: "w1") }
+        let first = Task { try await session.start() }
         await fulfillment(of: [held], timeout: 5)
 
-        let second = try await session.start(workflowId: "w2")
+        let second = try await session.start()
         XCTAssertNil(second, "one recording at a time")
 
         await capture.releaseStart()
@@ -78,7 +78,7 @@ final class RecorderSessionTests: XCTestCase {
         let starts = await capture.starts
         XCTAssertEqual(starts, 1, "one session, whatever the menu did")
         let current = await session.current
-        XCTAssertEqual(current, .recording(recordingId: recordingId, workflowId: "w1"))
+        XCTAssertEqual(current, .recording(recordingId: recordingId))
     }
 
     /// The stop the user asked for while the microphone was still opening. There is nothing to
@@ -91,7 +91,7 @@ final class RecorderSessionTests: XCTestCase {
 
         let held = expectation(description: "the start is in flight")
         await capture.holdNextStart { held.fulfill() }
-        let starting = Task { try await session.start(workflowId: nil) }
+        let starting = Task { try await session.start() }
         await fulfillment(of: [held], timeout: 5)
 
         let stopping = Task { await session.stop(title: nil) }
@@ -119,7 +119,7 @@ final class RecorderSessionTests: XCTestCase {
         let capture = FakeCapture()
         let states = States()
         let session = RecorderSession(capture: capture, recover: { 0 }, onState: { states.record($0) })
-        let started = try await session.start(workflowId: nil)
+        let started = try await session.start()
         let recordingId = try XCTUnwrap(started)
 
         let held = expectation(description: "the first stop is in flight")
@@ -137,7 +137,7 @@ final class RecorderSessionTests: XCTestCase {
         XCTAssertEqual(stops, 1)
         XCTAssertEqual(
             states.all,
-            [.starting, .recording(recordingId: recordingId, workflowId: nil), .stopping, .idle],
+            [.starting, .recording(recordingId: recordingId), .stopping, .idle],
             "the shell draws its menu from this, so the order is part of the contract"
         )
     }
@@ -153,7 +153,7 @@ final class RecorderSessionTests: XCTestCase {
         await session.recoverIfIdle()
         XCTAssertEqual(passes.count, 1, "at launch")
 
-        _ = try await session.start(workflowId: nil)
+        _ = try await session.start()
         XCTAssertEqual(passes.count, 2, "and again before a new recording — docs/03")
 
         await session.recoverIfIdle()
@@ -166,7 +166,7 @@ final class RecorderSessionTests: XCTestCase {
 }
 
 private actor RejectedCapture: Capture {
-    func start(workflowId: String?, title: String?, mode: RecordingMode, context: Context?) async throws -> String {
+    func start(title: String?, mode: RecordingMode, context: Context?) async throws -> String {
         throw NSError(domain: "RecorderSessionTests", code: 1)
     }
     func stop(title: String?) async -> StopResult { .notRecording }
@@ -201,7 +201,7 @@ actor FakeCapture: Capture {
         stopGate = nil
     }
 
-    func start(workflowId: String?, title: String?, mode: RecordingMode, context: Context?) async throws -> String {
+    func start(title: String?, mode: RecordingMode, context: Context?) async throws -> String {
         starts += 1
         if let onHold = holdStart {
             holdStart = nil

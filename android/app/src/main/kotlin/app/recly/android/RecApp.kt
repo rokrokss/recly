@@ -6,7 +6,6 @@ import android.app.Application
 import app.recly.android.core.CoreModule
 import app.recly.android.entry.RecWidget
 import app.recly.android.ui.DisconnectGate
-import app.recly.android.wear.WorkflowPublisher
 import app.recly.android.work.JobAlertNotifier
 import app.recly.android.work.NextRun
 import app.recly.android.work.WorkScheduler
@@ -56,8 +55,6 @@ class RecApp : Application(), RecorderHost {
             runCatching { core.transfer.purgeOrphans(core.deps.clock.now()) }
                 .onFailure { core.deps.logger.log(Logger.Level.ERROR, "transfer.purge.failed", emptyMap(), it) }
         }
-        // docs/05 "워치" row: the watch's picker is fed from here and nowhere else.
-        scope.launch { WorkflowPublisher.run(this@RecApp, core()) }
         // docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the queue is the only thing that knows a
         // reason has been fixed, so the notifications live off it rather than off the failures.
         scope.launch { JobAlertNotifier(this@RecApp).run(core()) }

@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import recly.core.model.Part
 import recly.core.model.Track
-import recly.core.sync.WorkflowSummary
 import recly.core.transfer.Ack
 
 private const val SHA = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -66,21 +65,5 @@ class WearJsonTest {
         val json = WearJson.metaAck(ID, ok = false, reason = "malformed meta: boom")
 
         assertEquals("""{"recordingId":"$ID","ok":false,"reason":"malformed meta: boom"}""", json)
-    }
-
-    /** docs/05 "워치" row: id and name — and never the steps, nor anything ADR-016 deleted. */
-    @Test
-    fun `the workflow summary is the two fields the watch is allowed to see`() {
-        val json = WearJson.workflows(listOf(WorkflowSummary("a", "회의"), WorkflowSummary("b", "메모")))
-
-        assertEquals(
-            """{"workflows":[{"id":"a","name":"회의"},{"id":"b","name":"메모"}]}""",
-            json,
-        )
-    }
-
-    @Test
-    fun `no workflows is an empty list, not an absent key`() {
-        assertEquals("""{"workflows":[]}""", WearJson.workflows(emptyList()))
     }
 }

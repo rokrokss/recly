@@ -30,7 +30,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
 /** docs/09 "아이콘": thin geometric line work, drawn rather than drawn from a font. */
-enum class NavGlyph { RECORD, LIST, WORKFLOWS, SETTINGS }
+enum class NavGlyph { RECORD, LIST, SETTINGS }
 
 data class NavItem(val glyph: NavGlyph, val label: String, val selected: Boolean, val onClick: () -> Unit)
 
@@ -85,19 +85,6 @@ private fun DrawScope.drawGlyph(glyph: NavGlyph, color: Color) {
             listOf(0.32f, 0.5f, 0.68f).forEach { at ->
                 drawLine(color, Offset(left, size.height * at), Offset(right, size.height * at), stroke.width)
             }
-        }
-
-        NavGlyph.WORKFLOWS -> {
-            val side = size.width * 0.42f
-            val at = (size.width - side) / 2
-            drawRoundRect(color, Offset(at, inset), Size(side, side), corner, stroke)
-            drawRoundRect(color, Offset(at, size.height - side - inset), Size(side, side), corner, stroke)
-            drawLine(
-                color,
-                Offset(size.width / 2, side + inset),
-                Offset(size.width / 2, size.height - side - inset),
-                stroke.width,
-            )
         }
 
         NavGlyph.SETTINGS -> drawCircle(color, radius = box.width / 2, style = stroke)

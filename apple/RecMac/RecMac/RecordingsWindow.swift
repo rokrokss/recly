@@ -136,11 +136,9 @@ struct RecordingsWindow: View {
                     FlowLayout {
                         if item.needsKey {
                             BlueprintButton(RecordingDetailStrings.checkKey) {
-                                menu.editWorkflow(of: item)
-                                // The editor is a window of its own (`LSUIElement`), and it may not
-                                // be open — selecting a workflow in a window nobody can see is no
-                                // answer.
-                                openWindow(id: WorkflowWindow.id)
+                                // The settings are a window of their own (`LSUIElement`), and it
+                                // may not be open.
+                                openWindow(id: "processing-settings")
                             }
                             .accessibilityIdentifier("check-key")
                         }

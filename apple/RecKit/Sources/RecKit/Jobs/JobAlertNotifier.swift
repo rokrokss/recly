@@ -7,7 +7,7 @@ import UserNotifications
 /// 1. **One notification per reason.** Five jobs blocked on the same thing are one notification
 ///    whose body counts them, not five notifications.
 /// 2. **Only what a person can fix.** A step inside its retry budget is `WAITING` and never reaches
-///    [JobAlerts.reason], so a webhook 500 on its way round the backoff calls nobody.
+///    [JobAlerts.reason], so a provider 500 on its way round the backoff calls nobody.
 /// 3. **It comes down by itself.** The queue is the source of truth, so a reason that is no longer
 ///    in it is withdrawn on the next reading — a sign-in, a `retry()`, a deletion.
 ///
@@ -21,7 +21,7 @@ import UserNotifications
 @MainActor
 public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate {
 
-    /// Where the fix is, and — for the reasons a workflow holds it — which workflow's editor.
+    /// Where the fix is.
     /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다."
     public var onFix: ((JobAlert) -> Void)?
 
@@ -112,7 +112,6 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
         let tapped = JobAlert(
             reason: reason,
             count: content.userInfo[Self.countKey] as? Int ?? 1,
-            workflowId: content.userInfo[Self.workflowKey] as? String,
             secret: content.userInfo[Self.secretKey] as? String,
             stepId: content.userInfo[Self.stepKey] as? String
         )
@@ -143,9 +142,6 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
         content.body = alert.waiting
         content.categoryIdentifier = Self.category(of: alert.reason)
         content.userInfo[Self.countKey] = alert.count
-        if let workflowId = alert.workflowId {
-            content.userInfo[Self.workflowKey] = workflowId
-        }
         if let secret = alert.secret {
             content.userInfo[Self.secretKey] = secret
         }
@@ -189,7 +185,6 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
     // MARK: - Identifiers
 
     private static let prefix = "job.alert."
-    private static let workflowKey = "workflowId"
     private static let secretKey = "secret"
     private static let stepKey = "stepId"
     private static let countKey = "count"

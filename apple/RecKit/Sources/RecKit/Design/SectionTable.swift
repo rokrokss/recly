@@ -423,7 +423,6 @@ public enum BlueprintGlyph: String, Sendable {
     /// A square with a dot in it — the record node of docs/09 "형태", not a circle.
     case record = "dot.square"
     case list = "list.bullet.rectangle"
-    case workflows = "rectangle.connected.to.line.below"
     case settings = "slider.horizontal.3"
 }
 

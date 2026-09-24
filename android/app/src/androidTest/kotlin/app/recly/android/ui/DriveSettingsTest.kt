@@ -36,8 +36,6 @@ class DriveSettingsTest {
                             main.value = main.value.copy(disconnect = null, disconnecting = true, busy = true)
                         }
                     }, onRevokeDebtSettled = {},
-                    onExportWorkflows = {}, onImportWorkflows = {},
-                    onCancelImport = {}, onConfirmImport = {},
                 )
             }
         }

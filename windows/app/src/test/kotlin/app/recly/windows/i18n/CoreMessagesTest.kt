@@ -39,11 +39,11 @@ class CoreMessagesTest {
     /** The one key whose argument is itself a code, resolved with the sentence around it. */
     @Test
     fun `a nested code is translated inside the sentence that carries it`() {
-        val inner = CoreMessage.WEBHOOK_HTTP.code("503")
+        val inner = CoreMessage.STEP_FAILED.code("HTTP 503")
         val message = coreMessage(CoreMessage.RETRY_BUDGET_SPENT.code(inner))
 
-        assertEquals("Out of retries: The webhook answered HTTP 503", message.text(en))
-        assertEquals("재시도 횟수를 다 썼습니다: 웹훅이 HTTP 503로 응답했습니다", message.text(ko))
+        assertEquals("Out of retries: Failed: HTTP 503", message.text(en))
+        assertEquals("재시도 횟수를 다 썼습니다: 실패: HTTP 503", message.text(ko))
     }
 
     /** docs/07 §5 compatibility: a row written before the keys existed is a sentence, shown as it is. */
@@ -58,7 +58,7 @@ class CoreMessagesTest {
     }
 
     /**
-     * The two keys that name a secret are only a key when the argument really is a `secretRef` —
+     * The key that names a secret is only a key when the argument really is a `secretRef` —
      * older builds wrote a bare `MISSING_SECRET` into the same column (`CoreMessageRef.parse`).
      */
     @Test
@@ -69,11 +69,11 @@ class CoreMessagesTest {
     /** The diagnostic is never translated and never part of the sentence. */
     @Test
     fun `a detail comes back beside the sentence, not inside it`() {
-        val code = CoreMessage.INVALID_SECRET.code("hook", detail = "not base64: 'whsec_…'")
+        val code = CoreMessage.AUTH_REJECTED.code(detail = "transcribe 401")
 
-        assertEquals("The value stored for the secret ‘hook’ is not a usable key", coreMessage(code).text(en))
-        assertEquals("시크릿 ‘hook’에 저장된 값이 올바른 키가 아닙니다", coreMessage(code).text(ko))
-        assertEquals("not base64: 'whsec_…'", coreMessageDetail(code))
+        assertEquals("The provider rejected the key.", coreMessage(code).text(en))
+        assertEquals("제공자가 키를 거부했습니다.", coreMessage(code).text(ko))
+        assertEquals("transcribe 401", coreMessageDetail(code))
     }
 
     private companion object {

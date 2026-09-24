@@ -46,7 +46,6 @@ final class MicrophoneSmokeTests: XCTestCase {
         )
 
         let bridge = try await CoreBridge.make(
-            appVersion: "0.0.0-mic",
             deviceName: "RecKitMicTest",
             dataDirectory: dataDirectory,
             databaseName: "mic.db",
@@ -55,7 +54,7 @@ final class MicrophoneSmokeTests: XCTestCase {
         var failures: [RecorderError] = []
         let recorder = SegmentedRecorder(core: bridge.core, segmentSec: 5) { failures.append($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil)
+        let recordingId = try await recorder.start(title: nil)
         try await Task.sleep(nanoseconds: 12_000_000_000)
         XCTAssertGreaterThan(recorder.recordedSec, 11, "the tap delivered nothing")
         let result = await recorder.stop(title: "마이크 스모크")

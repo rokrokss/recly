@@ -94,7 +94,7 @@ dependencies {
     // `CallbackToFutureAdapter`: `TileService` answers in a `ListenableFuture` and the tile's
     // counts come off a suspending queue.
     implementation(libs.androidx.concurrent.futures)
-    // docs/11 W2: the workflow summary arrives on `/rec/workflows`; W4 sends the parts back.
+    // docs/11 W4: the parts go back to the phone over the Data Layer.
     implementation(libs.play.services.wearable)
     // docs/11 W4: the sender runs in WorkManager, not in the screen — a transfer outlives both.
     implementation(libs.androidx.work.runtime.ktx)

@@ -7,28 +7,49 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * docs/07 rule 2: the three answers the language setting offers. [tag] is what is stored; the empty
- * one is "whatever the system says", which is [Host.language] (docs/07 rule 1 — `ko` or English).
+ * docs/07 rule 2: the supported app languages. [tag] is what is stored; the empty
+ * one is "whatever the system says", which is [Host.language] (docs/07 rule 1).
  */
 enum class AppLanguage(val tag: String) {
     SYSTEM(""),
     KOREAN(StringTable.KOREAN),
     ENGLISH(StringTable.BASE),
+    JAPANESE("ja"),
+    CHINESE_SIMPLIFIED("zh-Hans"),
+    CHINESE_TRADITIONAL("zh-Hant"),
+    SPANISH("es"),
+    FRENCH("fr"),
+    GERMAN("de"),
+    PORTUGUESE("pt"),
+    ARABIC("ar"),
+    HINDI("hi"),
+    RUSSIAN("ru"),
+
     ;
 
     companion object {
-        /** Anything the store does not recognise — another language, a region — is [SYSTEM]. */
-        fun of(tag: String?): AppLanguage =
-            entries.firstOrNull { it.tag.isNotEmpty() && it.tag == tag } ?: SYSTEM
+        /** Regional tags resolve to their supported language; unknown tags are [SYSTEM]. */
+        fun of(tag: String?): AppLanguage {
+            val normalized = tag.orEmpty().replace('_', '-').lowercase()
+            if (normalized.substringBefore('-') == "zh") {
+                val parts = normalized.split('-')
+                return when {
+                    "hans" in parts -> CHINESE_SIMPLIFIED
+                    "hant" in parts || parts.any { it in listOf("tw", "hk", "mo") } -> CHINESE_TRADITIONAL
+                    else -> CHINESE_SIMPLIFIED
+                }
+            }
+            return entries.firstOrNull { it.tag.isNotEmpty() && (it.tag.lowercase() == normalized || it.tag == normalized.substringBefore('-')) } ?: SYSTEM
+        }
 
         /**
          * docs/07 rule 2: what the picker offers, each under its own name and in the order of those
          * names. [SYSTEM] is not one of them — it is the store's "nothing chosen", and what the
          * picker then shows as chosen is [Localization.effective]. The label lives here rather than
-         * on the entries because only these two are ever drawn.
+         * on the entries because the system sentinel is never drawn.
          */
         val choices: List<Pair<AppLanguage, Str>> =
-            listOf(ENGLISH to Str.LANGUAGE_EN, KOREAN to Str.LANGUAGE_KO)
+            listOf(ENGLISH to Str.LANGUAGE_EN, KOREAN to Str.LANGUAGE_KO, JAPANESE to Str.LANGUAGE_JA, CHINESE_SIMPLIFIED to Str.LANGUAGE_ZH_HANS, CHINESE_TRADITIONAL to Str.LANGUAGE_ZH_HANT, SPANISH to Str.LANGUAGE_ES, FRENCH to Str.LANGUAGE_FR, GERMAN to Str.LANGUAGE_DE, PORTUGUESE to Str.LANGUAGE_PT, ARABIC to Str.LANGUAGE_AR, HINDI to Str.LANGUAGE_HI, RUSSIAN to Str.LANGUAGE_RU)
     }
 }
 
@@ -54,7 +75,7 @@ class Localization(
     /** For everything that is not a composition: the table as it is right now. */
     val current: Strings get() = state.value
 
-    /** `en` or `ko` — what [recly.core.platform.CoreDeps.locale] takes (docs/07 §6). */
+    /** The full language tag supplied to [recly.core.platform.CoreDeps.locale] (docs/07 §6). */
     val tag: String get() = current.language
 
     /**

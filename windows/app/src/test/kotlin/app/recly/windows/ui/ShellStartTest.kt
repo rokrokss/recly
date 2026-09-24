@@ -68,7 +68,7 @@ class ShellStartTest {
         recordings.deleteRecursively()
         recordings.writeText("not a directory")
 
-        model.start(null)
+        model.start()
 
         // The launched start fails; the assertions are about what it left behind, so this waits for
         // the shell to settle rather than for a result there is none of.
@@ -94,7 +94,7 @@ class ShellStartTest {
         // null rather than throwing (docs/14 deliverable 5).
         model.load(dataDirectory = dir.absolutePath.toPath(), helperCommand = null)
 
-        model.start(null)
+        model.start()
 
         withTimeout(TIMEOUT_MS) {
             while (model.transition != null) delay(POLL_MS)

@@ -33,15 +33,12 @@ class CoreMessagesTest {
         assertEquals(
             setOf(
                 CoreMessage.MISSING_SECRET,
-                CoreMessage.INVALID_SECRET,
-                CoreMessage.WEBHOOK_HTTP,
                 CoreMessage.FOLDER_TEMPLATE,
                 CoreMessage.RETRY_BUDGET_SPENT,
                 CoreMessage.NO_RUNNER,
                 CoreMessage.STEP_MISSING,
                 CoreMessage.UNSUPPORTED_STEP,
                 CoreMessage.STEP_FAILED,
-                CoreMessage.UNSUPPORTED_SCHEMA,
             ),
             withArgument,
         )

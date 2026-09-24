@@ -114,7 +114,7 @@ class JobStore(
         queries.selectJobById(jobId).executeAsOneOrNull()?.disconnected_status != null
     }
 
-    /** Only a verified matching Drive may resume work, including transcription and webhooks. */
+    /** Only a verified matching Drive may resume work, including transcription. */
     internal suspend fun resumeDrive(accountId: String, now: Instant): Int = locked {
         db.transactionWithResult {
             val prior = queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()
@@ -238,7 +238,7 @@ class JobStore(
      * files go?" — and is stricter about it: a job that has not finished, or one whose snapshot
      * this build cannot read, may still need the parts here, but neither says anything about what
      * Drive already holds. All this asks is that some job [uploadedEveryPart], so an upload that
-     * landed and a webhook that failed afterwards still counts.
+     * landed and a transcription that failed afterwards still counts.
      */
     suspend fun uploaded(recordingId: String): Boolean = locked {
         db.transactionWithResult {
@@ -353,6 +353,20 @@ class JobStore(
     /** Manual re-run: failed, parked and half-finished steps go back to `PENDING` with a fresh
      * retry budget, while `state_json` stays so a partial upload is not thrown away. */
     suspend fun resetForRerun(jobId: String, now: Instant): Unit = locked { resetRows(jobId, now) }
+
+    /** Model preparation releases only its blocked step, without resetting other work or consent. */
+    internal suspend fun resumeModelRequired(jobId: String, stepRunId: String, now: Instant): Boolean = locked {
+        db.transactionWithResult {
+            val row = queries.selectJobById(jobId).executeAsOneOrNull() ?: return@transactionWithResult false
+            if (row.status != JobStatus.FAILED.name || row.disconnected_status != null) return@transactionWithResult false
+            val blocked = queries.selectStepRunsByJob(jobId).executeAsList().map { it.toStepRun() }
+                .singleOrNull { it.status == StepStatus.FAILED } ?: return@transactionWithResult false
+            if (blocked.id != stepRunId || blocked.lastError != CoreMessage.LOCAL_MODEL_REQUIRED.code()) return@transactionWithResult false
+            writeStep(blocked.copy(status = StepStatus.PENDING, attempts = 0, nextAttemptAt = null, lastError = null))
+            queries.updateJobStatus(JobStatus.PENDING.name, null, now.isoUtc(), jobId)
+            true
+        }
+    }
 
     /**
      * "Upload now" on a job that is only waiting out a backoff. Unlike [resetForRerun] nothing is

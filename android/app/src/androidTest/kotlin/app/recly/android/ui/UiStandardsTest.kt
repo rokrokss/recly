@@ -43,11 +43,9 @@ class UiStandardsTest {
         ui.onNodeWithText(ui.activity.getString(R.string.recording_start)).assertIsEnabled()
     }
 
-    @Test fun koreanNavigationAndHeadingRemainWhole() {
+    @Test fun koreanNavigationRemainsWhole() {
         language("ko")
-        kotlin.test.assertEquals("워크플로우", ui.activity.getString(R.string.tab_workflows))
         navigationLabelsRemainWholeAtTheConfiguredTextSize()
-        theWorkflowHeadingKeepsReadableWidthBesideItsActions()
     }
 
     private fun clipped(layout: TextLayoutResult): Boolean =
@@ -56,7 +54,7 @@ class UiStandardsTest {
 
     @Test
     fun navigationLabelsRemainWholeAtTheConfiguredTextSize() {
-        for (key in listOf(R.string.tab_record, R.string.tab_jobs, R.string.tab_workflows, R.string.tab_settings)) {
+        for (key in listOf(R.string.tab_record, R.string.tab_jobs, R.string.tab_settings)) {
             val label = ui.activity.getString(key)
             val layouts = mutableListOf<TextLayoutResult>()
             ui.onNode(hasText(label) and hasAnyAncestor(SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)), useUnmergedTree = true)
@@ -64,17 +62,5 @@ class UiStandardsTest {
             assertTrue(layouts.isNotEmpty())
             assertFalse(layouts.any { clipped(it) }, "$label is visually clipped: ${layouts.map { layout -> "width=${layout.size.width}, lines=${layout.lineCount}, right=${(0 until layout.lineCount).map(layout::getLineRight)}, end=${layout.getLineEnd(layout.lineCount - 1, true)}, text=${layout.layoutInput.text}" }}")
         }
-    }
-
-    @Test
-    fun theWorkflowHeadingKeepsReadableWidthBesideItsActions() {
-        val label = ui.activity.getString(R.string.tab_workflows)
-        val isTab = SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Tab)
-        ui.onNode(hasText(label) and isTab).performClick()
-        val layouts = mutableListOf<TextLayoutResult>()
-        ui.onNode(hasText(label) and !hasAnyAncestor(isTab), useUnmergedTree = true)
-            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(layouts) }
-        assertTrue(layouts.isNotEmpty())
-        assertTrue(layouts.all { it.size.width > 0 && !clipped(it) }, "The page heading is squeezed out by its actions")
     }
 }

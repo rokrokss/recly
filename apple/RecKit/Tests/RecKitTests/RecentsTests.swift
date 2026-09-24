@@ -77,7 +77,6 @@ final class RecentsTests: XCTestCase {
 
     private func makeBridge() async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: databaseName,
@@ -129,7 +128,6 @@ final class RecentsRemoteTests: XCTestCase {
 
     func testAnAdoptedRecordingReadsAsAFinishedRow() async throws {
         let bridge = try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "recents-remote-tests.db",
@@ -363,6 +361,11 @@ final class RecentsSummaryTests: XCTestCase {
         XCTAssertEqual(Recents.summary([]), "0 · 0 waiting · 0 failed")
     }
 
+    func testLocalTranscriptionRemainsInTheWaitingCount() {
+        let items = ["Transcription pending", "Transcribing on this device"].map(item(state:))
+        XCTAssertEqual(Recents.summary(items), "2 · 2 waiting · 0 failed")
+    }
+
     private func item(state: String) -> RecentItem {
         RecentItem(
             id: "01J9REC0000000000000000000",
@@ -407,9 +410,9 @@ final class RecentItemActionsTests: XCTestCase {
         }
     }
 
-    /// `NO_WORKFLOW`: there is no job, so `jobs.retry` has nothing to take.
+    /// There is no job, so `jobs.retry` has nothing to take.
     func testARecordingWithNoJobOffersNoRetry() {
-        XCTAssertFalse(item(state: "No workflow", jobId: nil).canRetry)
+        XCTAssertFalse(item(state: "Done", jobId: nil).canRetry)
         XCTAssertFalse(item(state: "Failed", jobId: nil).canRetry)
     }
 
@@ -494,7 +497,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
     }
 
     /// The rows the three rules must not swallow: this device recording, and this device's own
-    /// finished recording with no workflow behind it.
+    /// finished recording with no job behind it.
     func testRestoredDriveCopyIsDoneWithoutAJobOrChangingLocalOwnership() {
         let restored = record(source: .desktop, driveSynced: true)
         XCTAssertFalse(restored.remote)

@@ -197,11 +197,10 @@ struct RecordingsView: View {
                 if item.canRetry {
                     ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
                 }
-                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check
-                // the key" lands — which on a phone means the workflow tab, not an editor behind the
-                // list.
+                // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
+                // that is where "check the key" lands — which on a phone means the settings tab.
                 if item.needsKey {
-                    BlueprintButton(RecordingDetailStrings.checkKey) { model.editWorkflow(of: item) }
+                    BlueprintButton(RecordingDetailStrings.checkKey) { model.showProcessingSettings() }
                         .accessibilityIdentifier("check-key")
                 }
                 // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive

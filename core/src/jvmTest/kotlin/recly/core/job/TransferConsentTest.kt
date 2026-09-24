@@ -17,14 +17,14 @@ import recly.core.ReclyCore
 
 class TransferConsentTest {
     private val upload = ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }
-    private val hook = webhookStep("hook", onError = OnError.CONTINUE)
+    private val speech = transcribeStep("speech", onError = OnError.CONTINUE)
     private fun target(step: Step) = assertNotNull(TransferTargets.forStep(step))
 
     @Test
     fun `permission parks even onError continue and resumes without repeating the upload`() = runBlocking {
-        val send = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
+        val send = ScriptedRunner("transcribe") { _, _ -> output("status" to "200") }
         val f = Fixture(listOf(upload, send), requireTransferConsent = true)
-        val id = f.enqueue(f.seed(), driveStep("up"), hook)
+        val id = f.enqueue(f.seed(), driveStep("up"), speech)
         f.service.runDueJobs()
         assertEquals(JobStatus.NEEDS_CONSENT, f.store.get(id)!!.status)
         assertEquals(0, send.calls)
@@ -34,7 +34,7 @@ class TransferConsentTest {
         assertEquals(StepStatus.NEEDS_CONSENT, before[1].status)
         assertEquals(0, before[1].attempts)
 
-        f.consents.grant(listOf(target(hook)))
+        f.consents.grant(listOf(target(speech)))
         f.store.resumeConsent(id, f.clock.now())
         f.executorWith(listOf(upload, send)).runDueJobs()
         assertEquals(JobStatus.DONE, f.store.get(id)!!.status)
@@ -102,27 +102,6 @@ class TransferConsentTest {
     }
 
     @Test
-    fun `queued job checks the current edited endpoint rather than its approved snapshot`() = runBlocking {
-        val old = hook as Step.Webhook
-        val changed = old.copy(url = "https://example.com/new")
-        val doc = testDocument(testWorkflow(steps = listOf(driveStep("up"), changed)))
-        val send = ScriptedRunner("webhook") { ctx, _ ->
-            assertEquals(changed, ctx.step)
-            output("status" to "200")
-        }
-        val f = Fixture(listOf(upload, send), requireTransferConsent = true, live = { doc })
-        f.consents.grant(listOf(target(old)))
-        val id = f.enqueue(f.seed(), driveStep("up"), old)
-        f.service.runDueJobs()
-        assertEquals(0, send.calls)
-        assertEquals(JobStatus.NEEDS_CONSENT, f.store.get(id)!!.status)
-        f.consents.grant(listOf(target(changed)))
-        f.store.resumeConsent(id, f.clock.now())
-        f.service.runDueJobs()
-        assertEquals(1, send.calls)
-    }
-
-    @Test
     fun `grants survive reopening and key changes but not endpoint provider or purpose changes`() = runBlocking {
         val f = Fixture(emptyList(), requireTransferConsent = true)
         val stt = (transcribeStep("stt") as Step.Transcribe).copy(provider = "openai")
@@ -149,7 +128,7 @@ class TransferConsentTest {
     @Test
     fun `restoring the database without the original device key cannot restore permission`() = runBlocking {
         val f = Fixture(emptyList(), requireTransferConsent = true)
-        val t = target(hook)
+        val t = target(speech)
         f.consents.grant(listOf(t))
         assertTrue(f.consents.missing(listOf(t)).isEmpty())
         f.deps.secureStore.delete("privacy", "transfer-device")
@@ -159,23 +138,20 @@ class TransferConsentTest {
     }
 
     @Test
-    fun `facade groups imported destinations and resumes only the blocked step after explicit permission`() = runBlocking {
-        val send = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
+    fun `facade groups destinations and resumes only the blocked step after explicit permission`() = runBlocking {
+        val send = ScriptedRunner("transcribe") { _, _ -> output("status" to "200") }
         val f = Fixture(listOf(upload, send), requireTransferConsent = true)
         val core = ReclyCore(f.deps, object : DriverFactory { override fun create() = f.driver })
-        val next = (hook as Step.Webhook).copy(id = "other", url = "https://example.com/other")
-        val workflow = testWorkflow(steps = listOf(driveStep("up"), hook, next))
-        val json = recJson.encodeToString(testDocument(workflow))
-        core.workflows.importJson(json)
+        val next = (speech as Step.Transcribe).copy(id = "other", provider = "deepgram")
+        val workflow = testWorkflow(steps = listOf(driveStep("up"), speech, next))
         assertTrue(core.transferConsents.approved().isEmpty())
         val id = f.enqueue(f.seed(), *workflow.steps.toTypedArray())
         f.service.runDueJobs()
-        assertEquals(listOf(target(hook), target(next)), core.pendingTransferTargets())
+        assertEquals(listOf(target(speech), target(next)), core.pendingTransferTargets())
         core.resumeConsentedJobs()
         assertEquals(JobStatus.NEEDS_CONSENT, f.store.get(id)!!.status)
         assertFalse(core.jobs.retry(id), "normal retry must not bypass permission")
         core.transferConsents.grant(core.pendingTransferTargets())
-        assertFalse(core.workflows.exportJson().contains("disclosureVersion"))
         core.resumeConsentedJobs()
         assertEquals(StepStatus.SUCCEEDED, f.store.stepsOf(id)[0].status)
         f.service.runDueJobs()
@@ -187,26 +163,27 @@ class TransferConsentTest {
     @Test
     fun `missing and corrupt grant records fail closed and a failed batch grants nothing`() = runBlocking {
         val f = Fixture(emptyList(), requireTransferConsent = true)
-        val t = target(hook)
+        val t = target(speech)
+        val other = target((transcribeStep("stt") as Step.Transcribe).copy(provider = "deepgram"))
         f.db.recQueries.kvSet("privacy/transfer/" + t.id, "not-json")
         assertEquals(listOf(t), f.consents.missing(listOf(t)))
         assertFailsWith<IllegalArgumentException> { f.consents.grant(listOf(t, t.copy(kind = "unknown"))) }
         assertEquals(listOf(t), f.consents.missing(listOf(t)))
         // Inject an actual SQLite write failure after the first row; the transaction must roll back.
-        f.driver.execute(null, "CREATE TRIGGER refuse_consent BEFORE INSERT ON kv WHEN NEW.key = 'privacy/transfer/${target(transcribeStep("stt")).id}' BEGIN SELECT RAISE(ABORT, 'test storage failure'); END", 0)
-        assertFails { f.consents.grant(listOf(t, target(transcribeStep("stt")))) }
+        f.driver.execute(null, "CREATE TRIGGER refuse_consent BEFORE INSERT ON kv WHEN NEW.key = 'privacy/transfer/${other.id}' BEGIN SELECT RAISE(ABORT, 'test storage failure'); END", 0)
+        assertFails { f.consents.grant(listOf(t, other)) }
         assertEquals(listOf(t), f.consents.missing(listOf(t)))
     }
 
     @Test
     fun `invalid destination cannot reach the transport and other shells retain their existing behavior`() = runBlocking {
-        val send = ScriptedRunner("webhook") { _, _ -> error("Must not execute") }
+        val send = ScriptedRunner("transcribe") { _, _ -> error("Must not execute") }
         val f = Fixture(listOf(send), requireTransferConsent = true)
-        val invalid = (hook as Step.Webhook).copy(url = "file:///tmp/audio", onError = OnError.ABORT)
+        val invalid = (speech as Step.Transcribe).copy(provider = "clova", invokeUrl = "file:///tmp/audio", onError = OnError.ABORT)
         val id = f.enqueue(f.seed(), invalid)
         f.service.runDueJobs()
         assertEquals(0, send.calls)
         assertEquals(JobStatus.FAILED, f.store.get(id)!!.status)
-        assertTrue(Fixture(emptyList()).consents.missing(listOf(target(hook))).isEmpty())
+        assertTrue(Fixture(emptyList()).consents.missing(listOf(target(speech))).isEmpty())
     }
 }

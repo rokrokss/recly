@@ -13,6 +13,9 @@ object CoreMessages {
 
     /** Exhaustive by construction: a new key does not compile until it has a sentence. */
     fun keyOf(message: CoreMessage): Str = when (message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE
+        CoreMessage.LOCAL_MODEL_REQUIRED -> Str.CORE_LOCAL_MODEL_REQUIRED
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> Str.CORE_LOCAL_DIARIZATION_UNAVAILABLE
         CoreMessage.PROVIDER_REGION_RESTRICTED -> Str.CORE_PROVIDER_REGION_RESTRICTED
         CoreMessage.STOREFRONT_UNAVAILABLE -> Str.CORE_STOREFRONT_UNAVAILABLE
         CoreMessage.TRANSFER_CONSENT_REQUIRED -> Str.CORE_TRANSFER_CONSENT_REQUIRED
@@ -22,8 +25,6 @@ object CoreMessages {
         CoreMessage.DRIVE_STORAGE_FULL -> Str.CORE_DRIVE_STORAGE_FULL
         CoreMessage.SIGN_IN_CANCELLED -> Str.CORE_SIGN_IN_CANCELLED
         CoreMessage.MISSING_SECRET -> Str.CORE_MISSING_SECRET
-        CoreMessage.INVALID_SECRET -> Str.CORE_INVALID_SECRET
-        CoreMessage.WEBHOOK_HTTP -> Str.CORE_WEBHOOK_HTTP
         CoreMessage.FOLDER_TEMPLATE -> Str.CORE_FOLDER_TEMPLATE
         CoreMessage.RETRY_BUDGET_SPENT -> Str.CORE_RETRY_BUDGET_SPENT
         CoreMessage.NO_RUNNER -> Str.CORE_NO_RUNNER
@@ -37,7 +38,6 @@ object CoreMessages {
         CoreMessage.NO_INPUT_TRACK -> Str.CORE_NO_INPUT_TRACK
         CoreMessage.RESULT_TIMEOUT -> Str.CORE_RESULT_TIMEOUT
         CoreMessage.STALE -> Str.CORE_STALE
-        CoreMessage.UNSUPPORTED_SCHEMA -> Str.CORE_UNSUPPORTED_SCHEMA
     }
 
     /**
@@ -45,6 +45,9 @@ object CoreMessages {
      * their sentence stands on its own, so they are looked up without an argument.
      */
     fun takesArgument(message: CoreMessage): Boolean = when (message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE,
+        CoreMessage.LOCAL_MODEL_REQUIRED,
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE,
         CoreMessage.PROVIDER_REGION_RESTRICTED,
         CoreMessage.STOREFRONT_UNAVAILABLE,
         CoreMessage.TRANSFER_CONSENT_REQUIRED,
@@ -81,7 +84,7 @@ fun coreMessage(code: String): UiMessage {
 }
 
 /**
- * The diagnostic that came with [code], if any — a webhook's response body, a parser complaint.
+ * The diagnostic that came with [code], if any — a provider's response, a parser complaint.
  * Never translated, and never part of the sentence: the window puts it under one, in monospace.
  */
 fun coreMessageDetail(code: String): String? = CoreMessageRef.parse(code)?.detail

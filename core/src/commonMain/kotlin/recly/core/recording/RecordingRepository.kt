@@ -55,7 +55,7 @@ data class RecordingRecord(
     val remote: Boolean = false,
     /**
      * docs/03 "다른 기기의 녹음": the step types the device that is running the workflow still has to
-     * run after its upload (`transcribe`, `webhook`), read off the folder's marker. Empty when that
+     * run after its upload (`transcribe`), read off the folder's marker. Empty when that
      * device is done, when the marker is too old to believe, or when a local workflow job remains authoritative.
      */
     val remotePending: Set<String> = emptySet(),
@@ -121,6 +121,9 @@ class RecordingRepository(
     private val queries get() = db.recQueries
     private val mutex = Mutex()
     private val directories = RecordingDirectory(deps.dataDir, deps.device.platform)
+    internal var beforeCapture: suspend (RecordingMeta) -> Unit = {}
+    internal var afterCapture: suspend (String) -> Unit = {}
+    internal var localTranscription: recly.core.transcribe.LocalTranscriptionService? = null
 
     /** A complete on-device copy, independent of Drive authorization or job status. */
     @Throws(Throwable::class)
@@ -132,8 +135,11 @@ class RecordingRepository(
             }
     }
 
-    suspend fun create(meta: RecordingMeta, dir: Path): Unit = locked {
-        db.transaction {
+    suspend fun create(meta: RecordingMeta, dir: Path) {
+        beforeCapture(meta)
+        try {
+            locked {
+            db.transaction {
             queries.insertRecording(
                 meta.recordingId,
                 meta.source.wire,
@@ -150,7 +156,12 @@ class RecordingRepository(
             )
             meta.parts.forEach { insertPart(meta.recordingId, it) }
         }
-        MetaWriter.write(deps.fileSystem, dir, meta)
+            MetaWriter.write(deps.fileSystem, dir, meta)
+            }
+        } catch (error: Throwable) {
+            afterCapture(meta.recordingId)
+            throw error
+        }
     }
 
     /**
@@ -492,6 +503,11 @@ class RecordingRepository(
      * cancellation can strand a directory the rows no longer name.
      */
     suspend fun delete(recordingId: String, deleteDrive: Boolean): DeleteResult {
+        return localTranscription?.deleting(recordingId) { deleteInternal(recordingId, deleteDrive) }
+            ?: deleteInternal(recordingId, deleteDrive)
+    }
+
+    private suspend fun deleteInternal(recordingId: String, deleteDrive: Boolean): DeleteResult {
         val removal = locked {
             val outcome = db.transactionWithResult {
                 val row = queries.selectRecordingById(recordingId).executeAsOneOrNull()
@@ -504,6 +520,7 @@ class RecordingRepository(
                 // A rename that never reached Drive goes with the recording: pushed later, it would
                 // land on whatever another device has since named the folder.
                 queries.kvDelete(TITLE_PREFIX + recordingId)
+                queries.syncDelete("processing/recording/" + recordingId)
                 queries.deleteStepRunsByRecording(recordingId)
                 queries.deleteJobsByRecording(recordingId)
                 queries.deletePartsByRecording(recordingId)
@@ -603,7 +620,8 @@ class RecordingRepository(
         title: String? = null,
         silenced: List<Range> = emptyList(),
         gaps: List<Range> = emptyList(),
-    ): RecordingRecord = locked {
+    ): RecordingRecord {
+        val finalized = locked {
         val record = requireRecord(recordingId)
         val meta = record.meta.copy(
             endedAt = endedAt.isoUtc(),
@@ -621,6 +639,9 @@ class RecordingRepository(
             mapOf("recordingId" to recordingId, "durationSec" to durationSec, "parts" to meta.parts.size),
         )
         record.copy(meta = meta)
+        }
+        afterCapture(recordingId)
+        return finalized
     }
 
     /**

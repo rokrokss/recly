@@ -225,7 +225,6 @@ public final class SegmentedRecorder {
     /// answer is the permission deep link and the offer to record the microphone alone.
     @discardableResult
     public func start(
-        workflowId: String?,
         title: String?,
         mode: RecordingMode = .microphone,
         context: Context? = nil
@@ -242,7 +241,6 @@ public final class SegmentedRecorder {
         let draft = meta(
             recordingId: recordingId,
             startedAt: startedAt,
-            workflowId: workflowId,
             title: title,
             mode: mode,
             context: context
@@ -957,7 +955,6 @@ public final class SegmentedRecorder {
     private func meta(
         recordingId: String,
         startedAt: KotlinInstant,
-        workflowId: String?,
         title: String?,
         mode: RecordingMode,
         context: Context?
@@ -969,7 +966,7 @@ public final class SegmentedRecorder {
             platform: core.deps.device.platform,
             deviceId: core.deps.device.deviceId,
             deviceName: core.deps.device.name,
-            workflowId: workflowId,
+            workflowId: nil,
             title: title,
             startedAt: startedAt.isoUtc,
             endedAt: nil,

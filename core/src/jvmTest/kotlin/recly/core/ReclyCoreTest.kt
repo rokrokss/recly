@@ -32,19 +32,22 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.DeviceInfo
 import recly.core.platform.SecureStore
 import recly.core.platform.TokenProvider
+import recly.core.processing.ExternalTranscription
+import recly.core.processing.ProcessingPlan
+import recly.core.processing.ProcessingSaveResult
+import recly.core.processing.ProcessingSettingsState
+import recly.core.processing.ProcessingTranscription
+import recly.core.processing.TranscriptionMode
 import recly.core.recording.MetaWriter
-import recly.core.sync.WorkflowRepository
-import recly.core.sync.WorkflowStore
 import recly.core.testing.FakeClock
 import recly.core.testing.FakeDrive
+import recly.core.testing.FakeEndpoint
 import recly.core.testing.FakeLogger
-import recly.core.testing.FakeWebhook
 import recly.core.testing.MapSecureStore
 import recly.core.testing.RoutingTransport
 import recly.core.testing.SEEDED_AUDIO
 import recly.core.testing.SEEDED_AUDIO_SHA256
 import recly.core.testing.START
-import recly.core.testing.TEST_APP_VERSION
 import recly.core.testing.seedFiles
 import recly.core.testing.testMeta
 import recly.core.testing.testPart
@@ -55,7 +58,8 @@ import recly.core.testing.testPart
  */
 class ReclyCoreTest {
     private val drive = FakeDrive()
-    private val webhook = FakeWebhook()
+    /** The transcription provider's endpoint (`groq`, pointed here by its `invokeUrl`). */
+    private val stt = FakeEndpoint("https://stt.example.com/v1").apply { responseBody = """{"text":"hello","duration":1.0}""" }
     private val clock = FakeClock()
 
     /** Dated by the same clock as the queue: the retention sweep reads the parts' mtimes. */
@@ -74,12 +78,11 @@ class ReclyCoreTest {
         logger = logger,
         secureStore = store,
         tokenProvider = tokenProvider,
-        transport = RoutingTransport(webhook.url, webhook.transport(fs), mockTransport(drive, fs)),
+        transport = RoutingTransport(stt.url, stt.transport(fs), mockTransport(drive, fs)),
         fileSystem = fs,
         audio = recly.core.testing.FakeAudioTools(fs),
         dataDir = "/data".toPath(),
         device = DeviceInfo("7c1e4b2a", Platform.MACOS, "MacBook Pro"),
-        appVersion = TEST_APP_VERSION,
         io = Dispatchers.Unconfined,
     )
 
@@ -104,10 +107,10 @@ class ReclyCoreTest {
         seedFiles(fs, dir, meta)
         core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
         val workflow = recly.core.model.Workflow(
-            "workflow", "Transcribe then notify", START.isoUtc(), steps = listOf(
+            "workflow", "Transcribe then publish", START.isoUtc(), steps = listOf(
                 recly.core.model.Step.DriveUpload("upload"),
                 recly.core.model.Step.Transcribe("stt", provider = "assemblyai", secretRef = "test_key"),
-                recly.core.model.Step.Webhook("hook", url = "https://example.invalid/hook"),
+                recly.core.model.Step.TranscriptPublish("publish"),
             ),
         )
         val store = recly.core.job.JobStore(RecDatabase(driver), deps)
@@ -124,26 +127,21 @@ class ReclyCoreTest {
             val result = kotlinx.coroutines.withTimeout(5000) { seen.receive() }
             assertEquals(recly.core.transcribe.TranscriptAvailability.READY, result.availability)
             assertEquals("Arrived while open", result.transcript?.segments?.single()?.text)
-            assertEquals(JobStatus.RUNNING, store.get(job.id)?.status, "the webhook need not finish before the text appears")
+            assertEquals(JobStatus.RUNNING, store.get(job.id)?.status, "publishing need not finish before the text appears")
         } finally { observing.cancel(); seen.close() }
     }
 
 
     @Test
-    fun `a recording enqueued through the facade runs its default workflow to DONE`() = runBlocking<Unit> {
+    fun `a recording enqueued through the facade runs its fixed plan to DONE`() = runBlocking<Unit> {
         val meta = testMeta(parts = listOf(testPart(testMeta(), 1)))
         val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
         core.recordings.create(meta, dir)
         seedFiles(fs, dir, meta)
         core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
 
-        // docs/05 "첫 기기": the facade hands the executor a document even on a fresh install, and
-        // the device that seeds it points its own default at one of the starters (ADR-016).
-        assertEquals(
-            listOf("Memo"),
-            core.workflows.seed(WorkflowRepository.MEMO_ID).workflows.map { it.name },
-        )
-        assertEquals(WorkflowRepository.MEMO_ID, core.workflows.deviceDefault())
+        // docs/05: a fresh install has settings as soon as a recording starts, and the recording
+        // froze them — no transcription here, where no on-device runtime is installed.
         val enqueued = core.enqueue(meta.recordingId)
 
         assertIs<EnqueueResult.Enqueued>(enqueued)
@@ -152,6 +150,8 @@ class ReclyCoreTest {
         assertEquals(listOf(enqueued.jobId), summary.jobIds)
         val job = core.jobs.observe().first().single { it.id == enqueued.jobId }
         assertEquals(JobStatus.DONE, job.status)
+        assertEquals(ProcessingPlan.ID, job.workflowId)
+        assertEquals(listOf("upload"), job.workflow!!.steps.map { it.id })
         // The upload really happened: the recording's folder and its meta are on the fake Drive.
         assertNotNull(drive.byName(MetaWriter.baseName(meta)))
         assertNotNull(drive.byName(MetaWriter.metaFileName(MetaWriter.baseName(meta))))
@@ -171,7 +171,6 @@ class ReclyCoreTest {
             core.recordings.create(meta, dir)
             seedFiles(fs, dir, meta)
             core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
-            core.workflows.seed(WorkflowRepository.MEMO_ID)
             core.enqueue(meta.recordingId)
 
             core.runDueJobs()
@@ -202,29 +201,12 @@ class ReclyCoreTest {
             assertFalse(fs.exists(dir / part.file))
         }
 
-    /** docs/05: the document is this device's own and never leaves it — a run reads it locally and
-     * nothing about running the queue puts it in Drive. */
-    @Test
-    fun `runDueJobs runs off the local document and publishes nothing`() = runBlocking<Unit> {
-        core.workflows.current()
-
-        core.runDueJobs(START)
-
-        assertNull(drive.byName("workflows.json"))
-        assertTrue(core.transfer.purgeOrphans(START).isEmpty())
-        // The watch summary is the definition's id and name and nothing else (ADR-016).
-        assertEquals(
-            listOf("Memo"),
-            core.workflows.summary().map { it.name },
-        )
-    }
-
     /**
      * docs/03 "로그아웃 vs 연결 해제": disconnect clears credentials and completed jobs while preserving
      * unfinished workflow progress. The recordings are the user's own — an original that never got
      * uploaded is not deleted by a decision about an account (principle 3) — and neither are the
-     * files in Drive, the workflows, the device default or the secrets: those are this device's own
-     * configuration now, and nothing could fetch them back.
+     * files in Drive, the processing settings or the secrets: those are this device's own
+     * configuration, and nothing could fetch them back.
      */
     @Test
     fun `disconnect and reconnect restore completed recordings and playback without replaying jobs`() = runBlocking {
@@ -234,7 +216,6 @@ class ReclyCoreTest {
         core.recordings.create(meta, dir)
         seedFiles(fs, dir, meta)
         core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
-        core.workflows.seed(WorkflowRepository.MEMO_ID)
         core.enqueue(meta.recordingId)
         core.runDueJobs(START)
         clock.advance(8.days)
@@ -269,7 +250,6 @@ class ReclyCoreTest {
             core.recordings.create(uploaded, dir)
             seedFiles(fs, dir, uploaded)
             core.recordings.finalize(uploaded.recordingId, START, durationSec = 900.0)
-            core.workflows.seed(WorkflowRepository.MEMO_ID)
             core.enqueue(uploaded.recordingId)
             core.runDueJobs(START)
 
@@ -280,11 +260,11 @@ class ReclyCoreTest {
             core.recordings.create(pendingMeta, pendingDir)
             seedFiles(fs, pendingDir, pendingMeta)
 
-            deps.secureStore.put(SecureStore.SECRETS, "webhook_secret", "whsec_x".encodeToByteArray())
+            deps.secureStore.put(SecureStore.SECRETS, "speech_api", "sk-x".encodeToByteArray())
             deps.secureStore.put(SecureStore.TOKENS, "refresh", "1//refresh".encodeToByteArray())
             assertTrue(core.jobs.list().isNotEmpty())
             assertNotNull(queries.selectFolderCache("recly").executeAsOneOrNull())
-            assertEquals(WorkflowRepository.MEMO_ID, core.workflows.deviceDefault())
+            val settings = assertIs<ProcessingSettingsState.Ready>(core.processingSettings.read())
 
             core.disconnect(alsoDeleteRecordings = false)
 
@@ -292,9 +272,8 @@ class ReclyCoreTest {
             assertNull(deps.secureStore.get(SecureStore.TOKENS, "refresh"))
             assertNull(queries.selectFolderCache("recly").executeAsOneOrNull())
             // The device's own configuration is not the account's to take.
-            assertEquals("whsec_x", core.secrets.get("webhook_secret"))
-            assertNotNull(queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull())
-            assertEquals(WorkflowRepository.MEMO_ID, core.workflows.deviceDefault())
+            assertEquals("sk-x", core.secrets.get("speech_api"))
+            assertEquals(settings, core.processingSettings.read())
 
             assertNotNull(core.recordings.get(uploaded.recordingId), "the recording rows stay")
             assertNotNull(core.recordings.get(pendingMeta.recordingId))
@@ -369,7 +348,6 @@ class ReclyCoreTest {
         core.recordings.create(busy, busyDir)
         seedFiles(fs, busyDir, busy)
         core.recordings.finalize(busy.recordingId, START, durationSec = 900.0)
-        core.workflows.seed(WorkflowRepository.MEMO_ID)
         core.enqueue(busy.recordingId)
         val busyJob = core.jobs.list().single()
         queries.updateJobStatus(JobStatus.RUNNING.name, null, START.isoUtc(), busyJob.id)
@@ -395,16 +373,16 @@ class ReclyCoreTest {
 
     @Test
     fun `disconnect preserves progress across restart and resumes only remaining steps`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         val before = core.jobs.steps(jobId)
         val jobBefore = core.jobs.list().single()
-        val uploads = drive.requests.count { it.path.startsWith("/upload/") }
+        val uploads = drive.uploadOrder()
         core.disconnect(alsoDeleteRecordings = false)
         assertEquals(JobStatus.NEEDS_AUTH, core.jobs.list().single().status)
         assertEquals(before, core.jobs.steps(jobId), "disconnect must not reset attempts, outputs or resume state")
         assertFalse(core.jobs.retry(jobId), "manual retry cannot bypass a disconnected account")
         core.runDueJobs(clock.now())
-        assertEquals(1, webhook.received.size, "even the fake still-valid token must not resume disconnected work")
+        assertEquals(1, stt.received.size, "even the fake still-valid token must not resume disconnected work")
 
         val restarted = ReclyCore(deps, object : DriverFactory {
             override fun create(): SqlDriver = driver
@@ -413,18 +391,20 @@ class ReclyCoreTest {
         assertEquals(JobStatus.WAITING, restarted.jobs.list().single().status)
         assertEquals(jobBefore.nextRunAt, restarted.jobs.list().single().nextRunAt)
         assertEquals(before, restarted.jobs.steps(jobId))
-        webhook.status = 200
+        stt.status = 200
         clock.advance(1.days)
         restarted.runDueJobs(clock.now())
         assertEquals(JobStatus.DONE, restarted.jobs.list().single().status)
-        assertEquals(2, webhook.received.size)
-        assertEquals(uploads, drive.requests.count { it.path.startsWith("/upload/") }, "successful upload must not repeat")
+        assertEquals(2, stt.received.size)
+        val base = MetaWriter.baseName(testMeta())
+        val transcript = setOf(recly.core.transcribe.TranscribeRunner.jsonFileName(base), recly.core.transcribe.TranscribeRunner.textFileName(base))
+        assertEquals(uploads, drive.uploadOrder().filterNot { it in transcript }, "successful upload must not repeat")
         assertEquals(before.first().output, restarted.jobs.steps(jobId).first().output)
     }
 
     @Test
     fun `another Drive account cannot resume a disconnected workflow or reset its retry state`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         val steps = core.jobs.steps(jobId)
         core.disconnect(alsoDeleteRecordings = false)
         drive.accountId = "drive-owner-b"
@@ -434,18 +414,18 @@ class ReclyCoreTest {
         core.runDueJobs(clock.now())
         assertEquals(JobStatus.NEEDS_AUTH, core.jobs.list().single().status)
         assertEquals(steps, core.jobs.steps(jobId))
-        assertEquals(1, webhook.received.size)
+        assertEquals(1, stt.received.size)
         drive.accountId = "drive-owner-a"
         assertEquals(1, core.reconnectDrive())
-        webhook.status = 200
+        stt.status = 200
         core.runDueJobs(clock.now())
         assertEquals(JobStatus.DONE, core.jobs.list().single().status)
-        assertEquals(2, webhook.received.size)
+        assertEquals(2, stt.received.size)
     }
 
     @Test
     fun `failed work remains failed after disconnect and a verified reconnect`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         queries.updateJobStatus(JobStatus.FAILED.name, null, clock.now().isoUtc(), jobId)
         val before = core.jobs.steps(jobId)
         core.disconnect(alsoDeleteRecordings = false)
@@ -454,19 +434,19 @@ class ReclyCoreTest {
         core.runDueJobs(clock.now())
         assertEquals(JobStatus.FAILED, core.jobs.list().single().status)
         assertEquals(before, core.jobs.steps(jobId))
-        assertEquals(1, webhook.received.size, "reconnection is not an instruction to retry a terminal failure")
+        assertEquals(1, stt.received.size, "reconnection is not an instruction to retry a terminal failure")
     }
 
     @Test
     fun `unverified reconnection preserves parked work until Drive becomes reachable`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         val before = core.jobs.steps(jobId)
         core.disconnect(alsoDeleteRecordings = false)
         drive.failNext(503) { it.path == "/drive/v3/about" }
         assertFailsWith<recly.core.job.StepFailure> { core.reconnectDrive() }
         assertEquals(JobStatus.NEEDS_AUTH, core.jobs.list().single().status)
         assertEquals(before, core.jobs.steps(jobId))
-        webhook.status = 200
+        stt.status = 200
         clock.advance(1.days)
         core.runDueJobs(clock.now())
         assertEquals(JobStatus.DONE, core.jobs.list().single().status)
@@ -474,7 +454,7 @@ class ReclyCoreTest {
 
     @Test
     fun `legacy progress resumes only after the existing folder owner is verified`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         driver.execute(null, "UPDATE job SET drive_account_id = NULL", 0)
         queries.kvDelete("jobs.drive.account")
         core.disconnect(alsoDeleteRecordings = false)
@@ -489,25 +469,6 @@ class ReclyCoreTest {
     }
 
     @Test
-    fun `a workflow without Drive still runs without Google authentication`() = runBlocking {
-        val meta = testMeta(parts = listOf(testPart(testMeta(), 1)))
-        val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
-        core.recordings.create(meta, dir)
-        seedFiles(fs, dir, meta)
-        core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
-        val workflow = recly.core.model.Workflow("notify-only", "Notify", START.isoUtc(), steps = listOf(
-            recly.core.model.Step.Webhook("notify", url = webhook.url),
-        ))
-        val job = recly.core.job.JobStore(RecDatabase(driver), deps).enqueue(meta.recordingId, workflow, START)!!
-        drive.failNext(401, times = 20) { true }
-        core.disconnect(alsoDeleteRecordings = false)
-        core.runDueJobs(START)
-        assertEquals(JobStatus.DONE, core.jobs.list().single { it.id == job.id }.status)
-        assertEquals(1, webhook.received.size)
-        assertTrue(drive.requests.none { it.path == "/drive/v3/about" })
-    }
-
-    @Test
     fun `queued audio is bound before its first upload and cannot move to a different account`() = runBlocking {
         core.reconnectDrive()
         val meta = testMeta(parts = listOf(testPart(testMeta(), 1)))
@@ -515,7 +476,6 @@ class ReclyCoreTest {
         core.recordings.create(meta, dir)
         seedFiles(fs, dir, meta)
         core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
-        core.workflows.seed(WorkflowRepository.MEMO_ID)
         val jobId = (core.enqueue(meta.recordingId) as EnqueueResult.Enqueued).jobId
         core.disconnect(alsoDeleteRecordings = false)
         drive.accountId = "drive-owner-b"
@@ -531,38 +491,40 @@ class ReclyCoreTest {
 
     @Test
     fun `credentials replaced during verification cannot resume the old account work`() = runBlocking {
-        val jobId = waitingWebhook()
+        val jobId = waitingTranscription()
         core.disconnect(alsoDeleteRecordings = false)
         drive.before += { request ->
             if (request.path == "/drive/v3/about") tokenProvider.token = "replacement-account-token"
         }
         assertFailsWith<recly.core.platform.AuthRequiredException> { core.reconnectDrive() }
         assertEquals(JobStatus.NEEDS_AUTH, core.jobs.list().single { it.id == jobId }.status)
-        assertEquals(1, webhook.received.size)
+        assertEquals(1, stt.received.size)
         drive.before.clear()
         drive.accountId = "drive-owner-b"
         core.runDueJobs(clock.now())
         assertEquals(JobStatus.NEEDS_AUTH, core.jobs.list().single { it.id == jobId }.status)
-        assertEquals(1, webhook.received.size)
+        assertEquals(1, stt.received.size)
     }
 
-    private suspend fun waitingWebhook(): String {
+    /** A job whose upload succeeded and whose transcription is waiting out a provider 503. */
+    private suspend fun waitingTranscription(): String {
+        core.secrets.put("speech_api", "sk-test")
+        val initial = core.initializeProcessing().document
+        assertIs<ProcessingSaveResult.Saved>(core.processingSettings.save(initial.settings.copy(
+            transcription = ProcessingTranscription(mode = TranscriptionMode.EXTERNAL,
+                external = ExternalTranscription("groq", "speech_api", invokeUrl = stt.url)),
+        ), initial.revision))
         val meta = testMeta(parts = listOf(testPart(testMeta(), 1)))
         val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
         core.recordings.create(meta, dir)
         seedFiles(fs, dir, meta)
         core.recordings.finalize(meta.recordingId, START, durationSec = 900.0)
-        val doc = core.workflows.seed(WorkflowRepository.MEMO_ID)
-        val workflow = doc.workflows.single()
-        core.workflows.save(doc.copy(workflows = listOf(workflow.copy(
-            steps = workflow.steps + recly.core.model.Step.Webhook("notify", url = webhook.url),
-        ))))
         val jobId = (core.enqueue(meta.recordingId) as EnqueueResult.Enqueued).jobId
-        webhook.status = 503
+        stt.status = 503
         core.runDueJobs(START)
         assertEquals(JobStatus.WAITING, core.jobs.list().single().status)
-        assertEquals(1, webhook.received.size)
-        val step = core.jobs.steps(jobId).last()
+        assertEquals(1, stt.received.size)
+        val step = core.jobs.steps(jobId).single { it.stepId == "transcribe" }
         recly.core.job.JobStore(RecDatabase(driver), deps).saveStepState(
             step.id, kotlinx.serialization.json.buildJsonObject {
                 put("resume", kotlinx.serialization.json.JsonPrimitive("keep-this-reference"))

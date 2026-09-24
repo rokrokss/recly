@@ -13,10 +13,8 @@ protocol WatchTransferCore: AnyObject {
 
     func acceptMeta(json: String) async throws -> AcceptMetaResult
 
-    /// The workflow the watch started the recording with, as the stored meta now records it.
-    func workflowId(recordingId: String) async throws -> String?
-
-    func enqueue(recordingId: String, workflowId: String?) async throws
+    /// Queues the fixed plan compiled from the recording processing settings (docs/05).
+    func enqueue(recordingId: String) async throws
 
     /// Wakes the executor — the same path the phone recorder's own stop uses.
     func onJobsDue() async
@@ -52,7 +50,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     private let logger = Logger(subsystem: CoreBridge.appName, category: "transfer")
     /// The session is activated asynchronously and `updateApplicationContext` is refused until it
     /// has been (`WCErrorCodeSessionNotActivated`, measured on the paired simulators), so the
-    /// workflow summary is published from here rather than from the call that started activation.
+    /// context is published from here rather than from the call that started activation.
     var onActivated: (() -> Void)?
     /// The accept that is running or waiting, so the next one can be chained behind it. Touched from
     /// `WCSession`'s delegate queue and, in the tests, from the test thread — hence the lock.
@@ -228,8 +226,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
 
     /// The order is the contract: filed, queued, executor woken, and only then acked.
     private func complete(recordingId: String) async throws {
-        let workflowId = try await core.workflowId(recordingId: recordingId)
-        try await core.enqueue(recordingId: recordingId, workflowId: workflowId)
+        try await core.enqueue(recordingId: recordingId)
         await core.onJobsDue()
         // The ack is the last thing the protocol needs; the log is informational and must never
         // stand between a filed-and-woken recording and the watch being told so.
@@ -308,12 +305,8 @@ final class CoreWatchTransfer: WatchTransferCore {
         try await core.transfer.acceptMeta(json: json)
     }
 
-    func workflowId(recordingId: String) async throws -> String? {
-        try await core.recordings.get(id: recordingId)?.meta.workflowId
-    }
-
-    func enqueue(recordingId: String, workflowId: String?) async throws {
-        _ = try await core.enqueue(recordingId: recordingId, chosenWorkflowId: workflowId)
+    func enqueue(recordingId: String) async throws {
+        _ = try await core.enqueue(recordingId: recordingId)
     }
 
     func onJobsDue() async {

@@ -140,7 +140,7 @@ private val DASH_GAP: Dp = 3.dp
 /**
  * docs/09 트렌드 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
  * What happened is the caller's to say: [state] comes from the operation itself
- * ([app.recly.windows.ui.ShellModel.action], [app.recly.windows.ui.WorkflowsModel.action]), and the
+ * ([app.recly.windows.ui.ShellModel.action]), and the
  * button only owns the *window* around it — "…" for at least
  * [app.recly.windows.ui.theme.Motion.PROCESSING_MIN_MS] however fast the result was, a check that
  * fills out the 800ms on success, and nothing at all on failure, which the screen reports.

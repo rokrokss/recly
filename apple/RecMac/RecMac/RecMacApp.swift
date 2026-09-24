@@ -4,7 +4,7 @@ import SwiftUI
 
 /// docs/12: the menu bar shell. `LSUIElement` is on, so there is no Dock icon and no window —
 /// the status item's popover ([MenuBarPanel]) is the whole UI. M4-L2 adds start/stop; the
-/// recent-recordings list, the workflow editor and sign-in follow in M4-L3 onwards.
+/// recent-recordings list, the settings window and sign-in follow in M4-L3 onwards.
 @main
 struct RecMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
@@ -33,22 +33,20 @@ struct RecMacApp: App {
             EmptyView()
         }
 
-        // docs/12 M7: the editor is a window of its own, opened from the menu. `LSUIElement` keeps
+        // docs/12 M7: the settings are a window of their own, opened from the menu. `LSUIElement` keeps
         // it out of the Dock; it is simply closed when the user is done with it.
         // docs/07 rule 3: the window's *contents* are SwiftUI and follow `\.locale` below without a
         // relaunch, but its title is not inside that subtree — it is resolved by the scene, against
         // the app's environment, where the modifier never reaches. So it is looked up explicitly in
         // the app's language, from a body that observes [AppLanguage]: picking a language rebuilds
         // this scene with the new title.
-        Window(AppStrings.localized("Workflows"), id: WorkflowWindow.id) {
-            WorkflowWindow(menu: model)
+        Window(AppStrings.localized("Settings"), id: "processing-settings") {
+            ScrollView { SettingsPane(model: model, language: language, theme: AppTheme.shared, surface: .settingsWindow) }
                 .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
         }
-        // The editor's node graph runs sideways and the list rows carry three controls: opened at
-        // its minimum the window is all edges. This is only the first size — macOS keeps whatever
-        // the user drags it to.
-        .defaultSize(width: 960, height: 640)
+        .defaultSize(width: 520, height: 680)
 
         // docs/08 "결과 파일": what is behind a recording — the audio, the transcript — which does
         // not fit in a popover. Its title is resolved the same way the editor's is, and for the
@@ -56,6 +54,7 @@ struct RecMacApp: App {
         Window(AppStrings.localized("Details"), id: RecordingsWindow.id) {
             RecordingsWindow(menu: model)
                 .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
         }
     }
@@ -85,7 +84,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     /// With no `MenuBarExtra` inserted, SwiftUI would otherwise quit the app when the details or
-    /// the workflows window closes as the last one open. A menu bar app outlives its windows.
+    /// the settings window closes as the last one open. A menu bar app outlives its windows.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
     }

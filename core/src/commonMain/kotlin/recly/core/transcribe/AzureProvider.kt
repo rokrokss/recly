@@ -104,6 +104,7 @@ class AzureProvider : SttProvider {
         Language.EN -> listOf(EN)
         Language.KO_EN -> listOf(KO, EN)
         Language.AUTO -> emptyList()
+        else -> listOf(TranscriptionLanguages.localeTag(language))
     }
 
     private fun read(ctx: SttContext, json: JsonObject): SttResult {

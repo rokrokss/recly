@@ -27,6 +27,18 @@ import kotlinx.coroutines.flow.first
 class WorkScheduler(private val context: Context) : JobScheduler {
 
     override suspend fun runNow(expedited: Boolean) {
+        armLocal(Duration.ZERO)
+        runNetwork(expedited)
+    }
+
+    suspend fun armLocal(delay: Duration) {
+        WorkManager.getInstance(context).enqueueUniqueWork("rec-local-next", ExistingWorkPolicy.KEEP,
+            OneTimeWorkRequestBuilder<LocalTranscriptionWorker>()
+                .setInitialDelay(delay.inWholeMilliseconds, TimeUnit.MILLISECONDS)
+                .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, BACKOFF_SECONDS, TimeUnit.SECONDS).build())
+    }
+
+    suspend fun runNetwork(expedited: Boolean = false) {
         val request = request()
             .apply { if (expedited) setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST) }
             .build()
@@ -38,6 +50,7 @@ class WorkScheduler(private val context: Context) : JobScheduler {
     }
 
     override suspend fun armNext(delay: Duration) {
+        armLocal(delay)
         WorkManager.getInstance(context).enqueueUniqueWork(
             UNIQUE_NEXT,
             ExistingWorkPolicy.REPLACE,

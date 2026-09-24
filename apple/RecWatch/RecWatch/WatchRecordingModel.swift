@@ -31,14 +31,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     @Published private(set) var isReady = false
     /// Recordings the phone has not acked yet — the audio is still on this watch until it does.
     @Published private(set) var waiting = 0
-    /// docs/13 deliverable 3: the summary the phone publishes with `updateApplicationContext`.
-    @Published private(set) var workflows: [WatchWorkflow] = []
-    /// ADR-016 on the watch: the phone keeps one local pointer at the workflow *it* runs, and this
-    /// watch keeps its own. Tapping a name in the picker sets it, and the recording carries it to
-    /// the phone as the chosen id — so the two are never merged and neither is ever written into
-    /// `workflows.json`. `nil` is the honest starting state, not "the first workflow": the phone's
-    /// own default is what runs then, which is what a user who has never opened the picker expects.
-    @Published private(set) var workflowId: String?
     /// A refusal is not something the app can retry its way out of; the screen says so.
     @Published private(set) var microphoneDenied = false
 
@@ -57,10 +49,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     private var ticker: Timer?
     private var startedAt: Date?
     private var loading: Task<Void, Never>?
-    /// The stored pointer, kept apart from [workflowId] so a workflow the phone has temporarily
-    /// stopped publishing does not silently lose the user's choice: what the screen shows is this
-    /// resolved against the last publish, and it comes back when the workflow does.
-    private var storedWorkflowId = Defaults.workflowId
 
     init(
         dataDirectory: URL = CoreBridge.defaultDataDirectory,
@@ -75,11 +63,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         // And before the load too, so that the acks for a transfer that finished while the app was
         // gone are already queued when the queue opens.
         link.activate()
-        link.onWorkflows = { [weak self] workflows in
-            Task { @MainActor in self?.adopt(workflows: workflows) }
-        }
-        // docs/07 rule 2: the watch has no language setting of its own; the phone's arrives with
-        // the workflow list and is applied where it stands.
+        // docs/07 rule 2: the watch has no language setting of its own; the phone's arrives in its
+        // application context and is applied where it stands.
         link.onLanguage = { choice in
             Task { @MainActor in AppLanguage.shared.choice = choice }
         }
@@ -90,7 +75,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
     private func load() async {
         do {
-            let bridge = try await CoreBridge.make(appVersion: CoreBridge.appVersion, dataDirectory: dataDirectory)
+            let bridge = try await CoreBridge.make(dataDirectory: dataDirectory)
             self.bridge = bridge
             let recorder = SegmentedRecorder(
                 core: bridge.core,
@@ -163,31 +148,10 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         RecorderStatusLine.text(state: state, note: note, count: noteCount)
     }
 
-    // MARK: - The pick
-
-    /// The picker's only write: this watch's own default, stored now so the next launch starts on it.
-    func selectWorkflow(_ id: String?) {
-        storedWorkflowId = id
-        Defaults.workflowId = id
-        workflowId = resolvedWorkflowId
-    }
-
-    /// A pick the user made outlives a republish, but only while the published list still has it:
-    /// the phone can delete the workflow this watch was pointing at, and silently recording against
-    /// one that is gone would be worse than falling back to the phone's own default.
-    private func adopt(workflows: [WatchWorkflow]) {
-        self.workflows = workflows
-        workflowId = resolvedWorkflowId
-    }
-
-    private var resolvedWorkflowId: String? {
-        storedWorkflowId.flatMap { id in workflows.contains { $0.id == id } ? id : nil }
-    }
-
     // MARK: - Start and stop
 
     func start() {
-        Task { await start(workflowId: workflowId) }
+        Task { await startRecording() }
     }
 
     func stop() {
@@ -196,7 +160,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
     func startFromIntent() async {
         await loaded()
-        await start(workflowId: workflowId)
+        await startRecording()
     }
 
     func stopFromIntent() async {
@@ -204,10 +168,10 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         await finish()
     }
 
-    private func start(workflowId: String?) async {
+    private func startRecording() async {
         guard let session, isReady else { return }
         do {
-            guard let recordingId = try await session.start(workflowId: workflowId) else { return }
+            guard let recordingId = try await session.start() else { return }
             startedAt = Date()
             microphoneDenied = false
             // docs/13 WA5.
@@ -378,19 +342,6 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     private func tick() {
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
         elapsed = LedgerFormat.elapsed(total)
-    }
-}
-
-/// The watch's own settings. `UserDefaults` and not the core: which workflow *this* watch starts a
-/// recording with is a fact about it (ADR-016 · 원칙 2) and nothing about it is synced — the phone
-/// never publishes it and never reads it.
-private enum Defaults {
-    private static let workflowKey = "defaultWorkflowId"
-
-    /// `nil` removes the key, which is the same state a watch that has never chosen is in.
-    static var workflowId: String? {
-        get { UserDefaults.standard.string(forKey: workflowKey) }
-        set { UserDefaults.standard.set(newValue, forKey: workflowKey) }
     }
 }
 

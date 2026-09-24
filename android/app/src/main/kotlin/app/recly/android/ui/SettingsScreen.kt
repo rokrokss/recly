@@ -8,7 +8,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -54,7 +53,7 @@ import kotlin.time.ExperimentalTime
 
 /**
  * docs/11 A10 as docs/09 화면 원칙 4 draws it: a section table — account, language, capture,
- * uploads, workflows — closed by an honest block of what this build actually is.
+ * uploads, processing — closed by an honest block of what this build actually is.
  */
 @Composable
 fun SettingsScreen(
@@ -69,18 +68,11 @@ fun SettingsScreen(
     onCancelDisconnect: () -> Unit,
     onDisconnect: (Boolean) -> Unit,
     onRevokeDebtSettled: () -> Unit,
-    onExportWorkflows: () -> Unit,
-    onImportWorkflows: () -> Unit,
-    onCancelImport: () -> Unit,
-    onConfirmImport: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = blueprint
     main.disconnect?.let { prompt ->
         DisconnectDialog(prompt = prompt, onCancel = onCancelDisconnect, onConfirm = onDisconnect)
-    }
-    settings.transfer.confirm?.let { picked ->
-        ImportDialog(picked = picked, onCancel = onCancelImport, onConfirm = onConfirmImport)
     }
     Column(modifier.fillMaxSize()) {
         ScreenHeader(title = stringResource(R.string.tab_settings))
@@ -233,14 +225,7 @@ fun SettingsScreen(
                 onCheckedChange = onWifiOnly,
             )
 
-            // docs/05: definitions are this device's own, so moving them to another device is a
-            // file the user carries — and the hint says what the file does *not* carry with it.
-            Section(stringResource(R.string.settings_workflows))
-            TransferSection(
-                state = settings.transfer,
-                onExport = onExportWorkflows,
-                onImport = onImportWorkflows,
-            )
+            ProcessingPanel()
 
             // docs/09 트렌드 6: no mascot, no "handmade" line — the build, in monospace.
             Section(stringResource(R.string.settings_about))
@@ -269,89 +254,8 @@ fun SettingsScreen(
 }
 
 /**
- * docs/05 "워크플로우 내보내기 · 가져오기": the two buttons, and above them the one thing about the
- * file a user has to know before they carry it anywhere — the keys are not in it.
- */
-@Composable
-private fun TransferSection(
-    state: WorkflowTransferUiState,
-    onExport: () -> Unit,
-    onImport: () -> Unit,
-) {
-    val palette = blueprint
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(palette.surface)
-            .padding(horizontal = Space.m, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(Space.s),
-    ) {
-        Text(
-            stringResource(R.string.settings_workflows_keys_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = palette.textMuted,
-        )
-        Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-            ProcessingButton(
-                label = stringResource(R.string.settings_export_workflows),
-                state = state.exporting,
-                onClick = onExport,
-                modifier = Modifier.testTag("export-workflows"),
-            )
-            ProcessingButton(
-                label = stringResource(R.string.settings_import_workflows),
-                state = state.importing,
-                onClick = onImport,
-                modifier = Modifier.testTag("import-workflows"),
-            )
-        }
-    }
-    // docs/09 화면 원칙 5: what happened is said where it happened, under the thing that did it.
-    state.message?.let {
-        Text(
-            it.text(),
-            modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
-            style = MaterialTheme.typography.bodySmall,
-            color = if (state.failed) palette.danger else palette.textMuted,
-        )
-    }
-    HairLine()
-}
-
-/**
- * docs/05 "워크플로우 가져오기": there is no merge, so the one question worth asking is asked before
- * anything is written — and it is asked with the number the file actually holds.
- */
-@Composable
-private fun ImportDialog(picked: PickedWorkflows, onCancel: () -> Unit, onConfirm: () -> Unit) {
-    BlueprintDialog(
-        title = stringResource(R.string.workflows_import_title),
-        onDismissRequest = onCancel,
-        actions = {
-            BlueprintButton(
-                label = stringResource(R.string.action_cancel),
-                onClick = onCancel,
-                tone = ButtonTone.QUIET,
-            )
-            BlueprintButton(
-                label = stringResource(R.string.settings_import_workflows),
-                onClick = onConfirm,
-                tone = ButtonTone.DANGER,
-                modifier = Modifier.testTag("import-confirm"),
-            )
-        },
-    ) {
-        BlueprintDialogText(
-            stringResource(R.string.workflows_import_body, picked.workflows),
-            tone = DialogTone.DANGER,
-        )
-        BlueprintDialogText(stringResource(R.string.settings_workflows_keys_hint))
-    }
-}
-
-/**
  * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this phone's
- * upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
+ * upload queue. Recordings, settings and keys stay; deleting audio is a separate list action.
  */
 @Composable
 private fun DisconnectDialog(
@@ -404,7 +308,21 @@ private fun About(line: String) {
  * resolved to instead.
  */
 private fun AppLanguage.labelRes(): Int =
-    if (this == AppLanguage.KOREAN) R.string.settings_language_ko else R.string.settings_language_en
+    when (this) {
+        AppLanguage.ENGLISH -> R.string.settings_language_en
+        AppLanguage.KOREAN -> R.string.settings_language_ko
+        AppLanguage.JAPANESE -> R.string.settings_language_ja
+        AppLanguage.CHINESE_SIMPLIFIED -> R.string.settings_language_zh_hans
+        AppLanguage.CHINESE_TRADITIONAL -> R.string.settings_language_zh_hant
+        AppLanguage.SPANISH -> R.string.settings_language_es
+        AppLanguage.FRENCH -> R.string.settings_language_fr
+        AppLanguage.GERMAN -> R.string.settings_language_de
+        AppLanguage.PORTUGUESE -> R.string.settings_language_pt
+        AppLanguage.ARABIC -> R.string.settings_language_ar
+        AppLanguage.HINDI -> R.string.settings_language_hi
+        AppLanguage.RUSSIAN -> R.string.settings_language_ru
+        AppLanguage.SYSTEM -> R.string.settings_language_en
+    }
 
 /** docs/09 "접근성": the three answers the theme setting offers, the PC's own three. */
 private fun AppTheme.labelRes(): Int = when (this) {

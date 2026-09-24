@@ -28,7 +28,7 @@ struct TranscriptReader: View {
                 ForEach(document.blocks, id: \.index) { block in
                     VStack(alignment: .leading, spacing: Space.xs) {
                         let stamp = LedgerFormat.elapsed(Int(block.start))
-                        BlueprintButton("\(stamp) \(block.speaker)", tone: .quiet, mono: true) {
+                        BlueprintButton(block.speaker.isEmpty ? stamp : "\(stamp) \(block.speaker)", tone: .quiet, mono: true) {
                             onSeek(block.start)
                         }
                         .disabled(!canSeek || block.start >= seekableDurationSec)

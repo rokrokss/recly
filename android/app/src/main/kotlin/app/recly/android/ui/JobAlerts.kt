@@ -17,33 +17,26 @@ import recly.core.message.CoreMessageRef
  * counts, and the same reason on five jobs is one line and one notification with a count on it.
  */
 enum class AlertReason(@param:StringRes val label: Int, val fix: FixSurface) {
+    LOCAL_TRANSCRIPTION_UNAVAILABLE(R.string.core_local_transcription_unavailable, FixSurface.PROCESSING),
+    LOCAL_MODEL_REQUIRED(R.string.core_local_model_required, FixSurface.PROCESSING),
+    LOCAL_DIARIZATION_UNAVAILABLE(R.string.core_local_diarization_unavailable, FixSurface.PROCESSING),
     NEEDS_AUTH(R.string.alert_needs_auth, FixSurface.SIGN_IN),
     NEEDS_SPACE(R.string.alert_needs_space, FixSurface.DRIVE_STORAGE),
     MISSING_SECRET(R.string.alert_missing_secret, FixSurface.SECRETS),
-    INVALID_SECRET(R.string.alert_invalid_secret, FixSurface.SECRETS),
     AUTH_REJECTED(R.string.alert_auth_rejected, FixSurface.SECRETS),
-    QUOTA(R.string.alert_quota, FixSurface.EDITOR),
-    WEBHOOK(R.string.alert_webhook, FixSurface.EDITOR),
+    QUOTA(R.string.alert_quota, FixSurface.PROCESSING),
 }
 
 /**
- * Where the fix is. docs/10: "탭하면 고칠 수 있는 화면으로 간다 — 로그인 화면, 시크릿 폼, 워크플로우
- * 편집기. '앱 열기'로 끝내지 않는다." [DRIVE_STORAGE] is the one that leaves the app, because the
- * space is Google's to give back (<https://drive.google.com/settings/storage>).
+ * Where the fix is. docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다."
+ * [SECRETS] and [PROCESSING] are the processing settings, where the keys live too. [DRIVE_STORAGE]
+ * is the one that leaves the app, because the space is Google's to give back
+ * (<https://drive.google.com/settings/storage>).
  */
-enum class FixSurface { SIGN_IN, DRIVE_STORAGE, SECRETS, EDITOR }
+enum class FixSurface { SIGN_IN, DRIVE_STORAGE, SECRETS, PROCESSING }
 
-/**
- * One reason and how many jobs are stuck on it — the banner line, and the notification body.
- *
- * [workflowId] is the workflow of the first job that reported this reason, so the fix surfaces that
- * are a workflow ([FixSurface.EDITOR]) open the definition that has to change rather than the list
- * of them (docs/10 "탭하면 고칠 수 있는 화면으로 간다"). Null when nothing in the fold named one.
- */
-data class JobAlert(val reason: AlertReason, val count: Int, val workflowId: String? = null)
-
-/** One job's side of the fold: why it is stuck, and the workflow it was running. */
-data class AlertSource(val reason: AlertReason?, val workflowId: String?)
+/** One reason and how many jobs are stuck on it — the banner line, and the notification body. */
+data class JobAlert(val reason: AlertReason, val count: Int)
 
 /** docs/10 "Drive 용량 초과": where "free some up" actually happens. */
 const val DRIVE_STORAGE_URL: String = "https://drive.google.com/settings/storage"
@@ -66,11 +59,12 @@ fun alertReasonOf(status: JobStatus, lastError: String?): AlertReason? = when (s
 private fun terminalReason(lastError: String?): AlertReason? {
     val ref = lastError?.let { CoreMessageRef.parse(it) } ?: return null
     return when (ref.message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE
+        CoreMessage.LOCAL_MODEL_REQUIRED -> AlertReason.LOCAL_MODEL_REQUIRED
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> AlertReason.LOCAL_DIARIZATION_UNAVAILABLE
         CoreMessage.MISSING_SECRET -> AlertReason.MISSING_SECRET
-        CoreMessage.INVALID_SECRET -> AlertReason.INVALID_SECRET
         CoreMessage.AUTH_REJECTED -> AlertReason.AUTH_REJECTED
         CoreMessage.QUOTA -> AlertReason.QUOTA
-        CoreMessage.WEBHOOK_HTTP -> AlertReason.WEBHOOK.takeIf { terminalWebhook(ref.arg) }
         // docs/10: a spent budget is the user's problem only when what spent it was the provider's
         // quota. Anything else ran out of attempts against something a retry could have fixed.
         CoreMessage.RETRY_BUDGET_SPENT ->
@@ -83,30 +77,6 @@ private fun terminalReason(lastError: String?): AlertReason? {
 /** The code of the failure that spent the last attempt (`Executor` nests it as the argument). */
 private fun spentOn(ref: CoreMessageRef): CoreMessage? =
     ref.arg?.let { CoreMessageRef.parse(it) }?.message
-
-/**
- * True when the webhook's answer was one nothing but the user can change.
- *
- * docs/04 "응답 처리" retries 408 · 425 · 429 · 5xx and fails on everything else, so "terminal" is
- * that set's complement: a 4xx the URL or the signing secret has to fix, and the 3xx the plan
- * deliberately did not follow (`WebhookRunner.outcome` — "a webhook URL that moved is a
- * configuration change the user has to make"). docs/10 puts those on the user.
- *
- * The status has to be read here because `Executor.failed` writes the **raw**
- * `WEBHOOK_HTTP:<status>` when the attempt that fails is the last one in the budget — only a budget
- * already spent before the step ran is wrapped in `RETRY_BUDGET_SPENT` (`Executor.runStep`). So a
- * 500 that ran out of attempts reaches this file looking exactly like a 403 that never had any, and
- * the code is the only thing that tells them apart.
- *
- * A status that will not parse is an older build's wording: nothing is claimed about it.
- */
-private fun terminalWebhook(status: String?): Boolean {
-    val code = status?.toIntOrNull() ?: return false
-    return code < 500 && code !in RETRIED_STATUS
-}
-
-/** docs/04: what the webhook step waits out rather than fails on. */
-private val RETRIED_STATUS = setOf(408, 425, 429)
 
 /**
  * The step that stopped the job, and failing that the last complaint anything made — the
@@ -127,12 +97,8 @@ fun blockingError(steps: List<StepRun>): String? {
 
 private val HOLDING_UP = setOf(StepStatus.FAILED, StepStatus.NEEDS_AUTH, StepStatus.NEEDS_SPACE)
 
-/** The reasons across the whole queue, folded one entry per reason, in [AlertReason] order. */
-fun foldAlerts(sources: List<AlertSource>): List<JobAlert> = AlertReason.entries.mapNotNull { reason ->
-    val affected = sources.filter { it.reason == reason }
-    if (affected.isEmpty()) {
-        null
-    } else {
-        JobAlert(reason, affected.size, affected.firstNotNullOfOrNull { it.workflowId })
-    }
+/** The reasons across the whole queue (one per job), folded one entry per reason, in [AlertReason] order. */
+fun foldAlerts(reasons: List<AlertReason?>): List<JobAlert> = AlertReason.entries.mapNotNull { reason ->
+    val affected = reasons.count { it == reason }
+    if (affected == 0) null else JobAlert(reason, affected)
 }

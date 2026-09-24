@@ -18,14 +18,14 @@ class UiMessageTest {
         R.string.auth_sign_in_failed to "Sign-in failed: %1\$s",
         R.string.core_sign_in_cancelled to "The sign-in was cancelled",
         R.string.core_retry_budget_spent to "Out of retries: %1\$s",
-        R.string.core_webhook_http to "The webhook answered HTTP %1\$s",
+        R.string.core_missing_secret to "This device has no value for the secret ‘%1\$s’",
     )
 
     private val korean = mapOf(
         R.string.auth_sign_in_failed to "로그인 실패: %1\$s",
         R.string.core_sign_in_cancelled to "로그인이 취소되었습니다",
         R.string.core_retry_budget_spent to "재시도 횟수를 다 썼습니다: %1\$s",
-        R.string.core_webhook_http to "웹훅이 HTTP %1\$s로 응답했습니다",
+        R.string.core_missing_secret to "이 기기에 시크릿 ‘%1\$s’ 값이 없습니다",
     )
 
     private fun strings(table: Map<Int, String>): (Int, List<Any>) -> String =
@@ -46,14 +46,14 @@ class UiMessageTest {
     /** The core nests too: the argument of `RETRY_BUDGET_SPENT` is the code that spent the last try. */
     @Test
     fun `a core code nested in a core code is resolved all the way down`() {
-        val code = CoreMessage.RETRY_BUDGET_SPENT.code(CoreMessage.WEBHOOK_HTTP.code("503"))
+        val code = CoreMessage.RETRY_BUDGET_SPENT.code(CoreMessage.MISSING_SECRET.code("openai_key"))
 
         assertEquals(
-            "Out of retries: The webhook answered HTTP 503",
+            "Out of retries: This device has no value for the secret ‘openai_key’",
             coreMessage(code).text(strings(english)),
         )
         assertEquals(
-            "재시도 횟수를 다 썼습니다: 웹훅이 HTTP 503로 응답했습니다",
+            "재시도 횟수를 다 썼습니다: 이 기기에 시크릿 ‘openai_key’ 값이 없습니다",
             coreMessage(code).text(strings(korean)),
         )
     }

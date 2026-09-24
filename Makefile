@@ -16,13 +16,17 @@ XCODEBUILD = xcodebuild -workspace $(WORKSPACE) -collect-test-diagnostics never
 # Simulator names change with each Xcode; override on the command line: make ios IOS_SIM="iPhone 17".
 IOS_SIM ?= iPhone 17 Pro
 WATCH_SIM ?= Apple Watch Series 11 (46mm)
+# Optional flags for the Gradle invocation inside the XCFramework wrapper (for example --offline).
+CORE_GRADLE_ARGS ?=
+SIM_BUILD_ARGS ?=
 
-.PHONY: help test core android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
+.PHONY: help test core core-mac core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
         mac mac-test ios watch spec skills ios-release-test
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
 	@echo "make core           build the XCFramework and stage it into apple/RecKit"
+	@echo "make core-mac       refresh only the macOS slice — the fast loop before make mac / mac-test"
 	@echo "make mac            build Recly Mac"
 	@echo "make mac-test       RecKit tests on macOS"
 	@echo "make ios            build Recly for the iOS simulator   (IOS_SIM=\"$(IOS_SIM)\")"
@@ -48,9 +52,13 @@ help:
 
 # ---- Core · Android · Windows (JVM)
 
+# --parallel: the test tasks are in separate projects and share nothing (about 20% faster).
 test:
-	$(GRADLE) :core:jvmTest :android:app:testDebugUnitTest :android:wear:testDebugUnitTest \
+	$(GRADLE) --parallel :core:jvmTest :android:app:testDebugUnitTest :android:wear:testDebugUnitTest \
 	          :android:recording:testDebugUnitTest :android:datalayer:testDebugUnitTest :windows:app:test
+
+core-test:
+	$(GRADLE) :core:jvmTest
 
 android-test:
 	$(GRADLE) :android:app:testDebugUnitTest :android:wear:testDebugUnitTest \
@@ -83,7 +91,10 @@ helper-test:
 # ---- Apple (macOS host)
 
 core:
-	./apple/scripts/build-core.sh
+	./apple/scripts/build-core.sh $(CORE_GRADLE_ARGS)
+
+core-mac:
+	CORE_SLICES=macos ./apple/scripts/build-core.sh $(CORE_GRADLE_ARGS)
 
 mac:
 	$(XCODEBUILD) -scheme 'Recly Mac' -destination 'platform=macOS' build
@@ -109,10 +120,10 @@ mac-release:
 	NOTARIZE=1 NOTARY_PROFILE="$(NOTARY_PROFILE)" ./apple/scripts/release-mac.sh
 
 ios:
-	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=NO build
+	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" $(SIM_BUILD_ARGS) CODE_SIGNING_ALLOWED=NO build
 
 watch:
-	./apple/scripts/build-sim.sh "Recly Watch" "watchOS Simulator" "$(WATCH_SIM)" CODE_SIGNING_ALLOWED=NO build
+	./apple/scripts/build-sim.sh "Recly Watch" "watchOS Simulator" "$(WATCH_SIM)" $(SIM_BUILD_ARGS) CODE_SIGNING_ALLOWED=NO build
 
 # ---- Spec
 
@@ -138,7 +149,7 @@ android-ui-test:
 
 IOS_TESTS ?= ReclyUITests/MobileUxTests
 ios-ui-test:
-	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test -only-testing:$(IOS_TESTS)
+	./apple/scripts/build-sim.sh Recly "iOS Simulator" "$(IOS_SIM)" $(SIM_BUILD_ARGS) CODE_SIGNING_ALLOWED=YES CODE_SIGN_IDENTITY=- test -only-testing:$(IOS_TESTS)
 
 .PHONY: ios-kit-test
 IOS_KIT_TESTS ?= RecKitTests

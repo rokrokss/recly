@@ -34,16 +34,4 @@ class RecordingModeTest {
         assertFalse(RecordingMode.MICROPHONE.remindsConsent)
         assertTrue(RecordingMode.MEETING.remindsConsent)
     }
-
-    /**
-     * The stored key is the Mac's own (`"microphone"` / `"meeting"`), and a store that has never
-     * been written keeps recording what every Windows recording before this setting recorded.
-     */
-    @Test
-    fun `an unwritten store still records the meeting`() {
-        assertEquals(RecordingMode.MEETING, RecordingMode.of(null))
-        assertEquals(RecordingMode.MEETING, RecordingMode.of(""))
-        assertEquals(RecordingMode.MEETING, RecordingMode.of("meeting"))
-        assertEquals(RecordingMode.MICROPHONE, RecordingMode.of("microphone"))
-    }
 }

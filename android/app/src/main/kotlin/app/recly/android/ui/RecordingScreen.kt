@@ -58,8 +58,6 @@ import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogLink
 import app.recly.android.ui.component.BlueprintDialogText
-import app.recly.android.ui.component.BlueprintMenu
-import app.recly.android.ui.component.BlueprintMenuItem
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.LiveWaveform
@@ -88,7 +86,8 @@ fun RecordingSection(
     recorder: RecorderState,
     /** [ledgerCode]: what the state node says while nothing is recording, or null for nothing. */
     ledger: String? = null,
-    onSelectWorkflow: (String) -> Unit,
+    /** The transcription node's tap: the processing settings, where what it says is changed. */
+    onOpenProcessing: () -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onMicDenied: () -> Unit,
@@ -125,8 +124,6 @@ fun RecordingSection(
     // its own — `REC` and the rest are about the recorder, so they win.
     val borrowed = if (recorder is RecorderState.Idle) ledger else null
     val busy = rememberBusyHold(recorder is RecorderState.Starting || recorder is RecorderState.Stopping)
-    var picking by remember { mutableStateOf(false) }
-    val selected = state.workflows.firstOrNull { it.id == state.selectedWorkflowId }
 
     BoxWithConstraints(modifier.fillMaxSize()) {
     val scrollDashboard = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.3f
@@ -137,14 +134,11 @@ fun RecordingSection(
             // apart. The whole id is in Settings → About, where it is the point.
             meta = "${Source.PHONE.name.lowercase()} · ${rememberDeviceId().take(8)}",
         )
-        // The picker hangs off this box, so the box is the padded row and not the whole screen —
-        // otherwise the menu opens flush against the left edge, outside the app's own margin.
         Box(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-            // docs/09 화면 원칙 1: the workflow node is the picker — it is the only node on this
-            // screen that is a choice, and so the only one that takes a tap. The device and the
-            // state are readouts.
-            val canPick = recorder is RecorderState.Idle && state.workflows.isNotEmpty()
-            val pickLabel = stringResource(R.string.recording_workflow_pick)
+            // docs/09 화면 원칙 1: the transcription node is the only one on this screen that takes
+            // a tap — it opens the processing settings. The device and the state are readouts.
+            val canPick = recorder is RecorderState.Idle
+            val pickLabel = stringResource(R.string.processing_title)
             StateNodeRow(
                 nodes = listOf(
                     NodeSpec(
@@ -154,13 +148,10 @@ fun RecordingSection(
                         value = Source.PHONE.name.lowercase(),
                     ),
                     NodeSpec(
-                        label = stringResource(R.string.node_workflow),
-                        // ADR-016: the node names the workflow this phone runs — the selection is
-                        // the pointer itself, so there is nothing else it could be showing. Nothing
-                        // selected is not a word for a state, it is a thing to fix, and the node is
-                        // where the user is when it matters.
-                        value = selected?.name ?: stringResource(R.string.recording_workflow_choose),
-                        onClick = if (canPick) ({ picking = true }) else null,
+                        label = stringResource(R.string.processing_transcription),
+                        value = if (state.processing.mode == recly.core.processing.TranscriptionMode.EXTERNAL) state.processing.external?.provider.orEmpty()
+                            else stringResource(state.processing.mode.label()),
+                        onClick = if (canPick) onOpenProcessing else null,
                         onClickLabel = pickLabel,
                     ),
                     NodeSpec(
@@ -181,21 +172,7 @@ fun RecordingSection(
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
-            // ADR-016: the picker offers the workflows and nothing else — picking one is what sets
-            // this phone's pointer, so there is no separate "no pick" entry to make.
-            BlueprintMenu(expanded = picking, onDismissRequest = { picking = false }) {
-                state.workflows.forEach { workflow ->
-                    BlueprintMenuItem(
-                        label = workflow.name,
-                        onClick = {
-                            onSelectWorkflow(workflow.id)
-                            picking = false
-                        },
-                        divider = workflow != state.workflows.last(),
-                        selected = workflow.id == state.selectedWorkflowId,
-                    )
-                }
-            }
+
         }
 
         Column(

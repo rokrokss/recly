@@ -15,8 +15,6 @@
     <string name="recording_saved">Saved · %1$d parts · %2$d s</string>
     <string name="recording_save_deferred">Could not finish saving — recovered next time</string>
     <string name="recording_failed">Failed: %1$s</string>
-    <string name="workflow_phones">Phone\'s workflow</string>
-    <string name="workflow_pick">Workflow</string>
     <!-- docs/11 W2: the same count, said as the pass sees it — waiting for a phone, or going
          over to one right now. -->
     <string name="pending_badge">%1$d waiting</string>

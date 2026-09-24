@@ -6,9 +6,10 @@ Instructions for coding agents working in this repository. Read this before touc
 
 Recly is a multi-platform audio recorder with **no server**. Six clients — Galaxy Watch, Android
 phone, Apple Watch, iPhone, macOS, Windows — record, upload to the *user's own* Google Drive, and
-run a user-defined workflow (Drive upload · transcription · webhook). Configuration, keys and
-workflow definitions stay on the device; only recordings go to Drive. There is no backend to
-change, and no telemetry.
+run a fixed recording flow (Drive upload · transcription · result upload).
+Device settings and keys stay on the device; recordings and results go to Drive. There are no
+user-editable workflows and no webhooks, and no compatibility layer for older workflow documents or
+settings. There is no backend to change, and no telemetry.
 
 The design source of truth is [`docs/recly.md`](docs/recly.md) (Korean). The machine-readable
 contract is [`spec/*.json`](spec/). Conventions are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
@@ -17,14 +18,14 @@ contract is [`spec/*.json`](spec/). Conventions are in [`CONTRIBUTING.md`](CONTR
 
 ```
 core/        Kotlin Multiplatform shared core (:core) — workflow engine, Drive resumable upload,
-             webhooks, transcription providers, job queue, SQLDelight DB
+             transcription providers, job queue, SQLDelight DB
 android/     :app (phone) · :wear (Galaxy Watch) · :recording (shared recorder) · :datalayer
              (phone↔watch contract)
 apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / RecMac
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled ffmpeg
 spec/        JSON Schema + examples — the contract every client honors
 skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
-scripts/     icon rendering, local webhook receiver
+scripts/     icon rendering
 docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```
 
@@ -50,13 +51,16 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 | `make windows-msi` | Windows MSI — **Windows hosts only** |
 | `make helper-test` | Rust capture helper tests (`cargo test`) |
 | `make core` | build the XCFramework and stage it into `apple/RecKit` — do this first on a Mac |
+| `make core-mac` | refresh only the macOS slice — one Kotlin/Native target instead of six; enough for `make mac` / `make mac-test` |
 | `make mac` / `make mac-test` | build Recly Mac / run RecKit tests on macOS |
 | `make ios` / `make watch` | simulator builds (`IOS_SIM=` / `WATCH_SIM=` override the device) |
 | `make spec` | validate `spec/examples` against the JSON Schemas |
 | `make help` | the full list |
 
 Apple work requires macOS. `make core` before any Apple build or test — the XCFramework is a
-Gradle output, not a checked-in artifact.
+Gradle output, not a checked-in artifact. Once it is staged, a `core/` change that you only need to
+check on the Mac takes `make core-mac`; iOS/watch simulator builds refuse to run until a full
+`make core` has refreshed their slices, and the release scripts always build all of them.
 
 ## Rules that are contracts
 
@@ -87,7 +91,8 @@ Never report done on code that was not exercised.
 
 1. `make test` — always.
 2. `make spec` — if you touched `spec/`.
-3. `make mac-test` (after `make core`) — if you touched `core/` or anything under `apple/`.
+3. `make mac-test` (after `make core`, or `make core-mac` when only the Mac is checked) — if you
+   touched `core/` or anything under `apple/`.
 4. `make helper-test` — if you touched `windows/capture-helper/`.
 
 ## Gotchas

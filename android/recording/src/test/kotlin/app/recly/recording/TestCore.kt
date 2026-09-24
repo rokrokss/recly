@@ -34,7 +34,6 @@ import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 import recly.core.platform.TokenProvider
 import recly.core.platform.Transport
-import recly.core.sync.WorkflowRepository
 
 /**
  * A real [ReclyCore] on the JVM — the in-memory JDBC driver and a fake disk. The recovery scan is
@@ -62,7 +61,6 @@ fun testCore(
         audio = NoAudioTools,
         dataDir = "/data".toPath(),
         device = DeviceInfo("7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10", Platform.ANDROID, "Pixel"),
-        appVersion = "0.1.0",
         // Unconfined keeps the JDBC driver and the fake disk on the test's own thread.
         io = Dispatchers.Unconfined,
     ),
@@ -88,10 +86,6 @@ class TestHost(
     override suspend fun onRecordingReady(recordingId: String, enqueue: Boolean) {
         ready += recordingId to enqueue
         if (enqueues && enqueue) {
-            // The phone seeds the docs/05 starters and points its own default at 메모 the first time
-            // a screen opens (ADR-016), which is long before any recording is handed over. Without
-            // it nothing resolves and every recovery here would be testing NO_WORKFLOW instead.
-            core.workflows.seed(WorkflowRepository.MEMO_ID)
             core.enqueue(recordingId)
         }
     }

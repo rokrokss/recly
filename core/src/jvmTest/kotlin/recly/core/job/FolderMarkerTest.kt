@@ -13,7 +13,6 @@ import recly.core.message.CoreMessage
 import recly.core.model.OnError
 import recly.core.testing.driveStep
 import recly.core.testing.transcribeStep
-import recly.core.testing.webhookStep
 
 /**
  * docs/03 "다른 기기의 녹음": Drive holds the audio but says nothing about the transcribe that is
@@ -27,14 +26,14 @@ class FolderMarkerTest {
         val marker = RecordingMarker()
         val f = Fixture(runners(), marker = marker)
         val recording = f.seed()
-        val jobId = f.enqueue(recording, driveStep("up"), webhookStep("hook"), transcribeStep("stt"))
+        val jobId = f.enqueue(recording, driveStep("up"), driveStep("hook"), transcribeStep("stt"))
 
         f.service.runDueJobs()
 
         assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
         assertEquals(
             listOf(
-                FOLDER to listOf("webhook", "transcribe"),
+                FOLDER to listOf("drive.upload", "transcribe"),
                 FOLDER to listOf("transcribe"),
                 FOLDER to emptyList(),
             ),
@@ -47,15 +46,15 @@ class FolderMarkerTest {
     @Test
     fun `a job that parks in FAILED stops the other devices waiting`() = runBlocking {
         val marker = RecordingMarker()
-        val f = Fixture(runners(hook = { throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
+        val f = Fixture(runners(hook = { _ -> throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
         val recording = f.seed()
-        val jobId = f.enqueue(recording, driveStep("up"), webhookStep("hook"), transcribeStep("stt"))
+        val jobId = f.enqueue(recording, driveStep("up"), driveStep("hook"), transcribeStep("stt"))
 
         f.service.runDueJobs()
 
         assertEquals(JobStatus.FAILED, f.store.get(jobId)!!.status)
         assertEquals(
-            listOf(FOLDER to listOf("webhook", "transcribe"), FOLDER to emptyList()),
+            listOf(FOLDER to listOf("drive.upload", "transcribe"), FOLDER to emptyList()),
             marker.marks,
         )
     }
@@ -114,26 +113,26 @@ class FolderMarkerTest {
     @Test
     fun `a job waiting out a backoff keeps its marker`() = runBlocking {
         val marker = RecordingMarker()
-        val f = Fixture(runners(hook = { throw StepFailure(retryable = true, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
+        val f = Fixture(runners(hook = { _ -> throw StepFailure(retryable = true, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
         val recording = f.seed()
-        val jobId = f.enqueue(recording, driveStep("up"), webhookStep("hook"))
+        val jobId = f.enqueue(recording, driveStep("up"), driveStep("hook"))
 
         f.service.runDueJobs()
 
         assertEquals(JobStatus.WAITING, f.store.get(jobId)!!.status)
-        assertEquals(listOf(FOLDER to listOf("webhook")), marker.marks)
+        assertEquals(listOf(FOLDER to listOf("drive.upload")), marker.marks)
     }
 
     /** A step whose `onError` is `continue` leaves the job running, and the marker moves on with it. */
     @Test
     fun `a failed step the job continues past still comes off the marker`() = runBlocking {
         val marker = RecordingMarker()
-        val f = Fixture(runners(hook = { throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
+        val f = Fixture(runners(hook = { _ -> throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code()) }), marker = marker)
         val recording = f.seed()
         val jobId = f.enqueue(
             recording,
             driveStep("up"),
-            webhookStep("hook", onError = OnError.CONTINUE),
+            driveStep("hook", onError = OnError.CONTINUE),
             transcribeStep("stt"),
         )
 
@@ -141,9 +140,9 @@ class FolderMarkerTest {
 
         assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
         assertEquals(
-            listOf(FOLDER to listOf("webhook", "transcribe"), FOLDER to emptyList()),
+            listOf(FOLDER to listOf("drive.upload", "transcribe"), FOLDER to emptyList()),
             marker.marks,
-            "the webhook wrote nothing itself; the transcribe after it cleared what was left",
+            "the failed step wrote nothing itself; the transcribe after it cleared what was left",
         )
     }
 
@@ -153,7 +152,7 @@ class FolderMarkerTest {
         val marker = RecordingMarker()
         val f = Fixture(runners(), marker = marker)
         val recording = f.seed()
-        val jobId = f.enqueue(recording, webhookStep("hook"))
+        val jobId = f.enqueue(recording, transcribeStep("stt"))
 
         f.service.runDueJobs()
 
@@ -161,10 +160,12 @@ class FolderMarkerTest {
         assertEquals(emptyList(), marker.marks)
     }
 
-    /** The upload's output names the folder; the two steps after it are scripted to do nothing. */
-    private fun runners(hook: suspend () -> StepOutcome = { output("status" to "200") }): List<StepRunner> = listOf(
-        ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) },
-        ScriptedRunner("webhook") { _, _ -> hook() },
+    /**
+     * The uploads' output names the folder; the transcribe is scripted to do nothing. The second
+     * upload, `hook`, is the step a test makes fail.
+     */
+    private fun runners(hook: suspend (StepContext) -> StepOutcome = { uploadOutput(it) }): List<StepRunner> = listOf(
+        ScriptedRunner("drive.upload") { ctx, _ -> if (ctx.step.id == "hook") hook(ctx) else uploadOutput(ctx) },
         ScriptedRunner("transcribe") { _, _ -> output("transcript" to "ok") },
     )
 

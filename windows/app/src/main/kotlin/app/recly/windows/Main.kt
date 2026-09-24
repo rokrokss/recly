@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -47,15 +50,12 @@ import app.recly.windows.ui.Consent
 import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
 import app.recly.windows.ui.DisconnectDialog
-import app.recly.windows.ui.ImportDialog
 import app.recly.windows.ui.RecordingsWindow
 import app.recly.windows.ui.RenameDialog
 import app.recly.windows.ui.SettingsWindow
 import app.recly.windows.ui.ShellModel
 import app.recly.windows.ui.TrayEntry
 import app.recly.windows.ui.TrayPopup
-import app.recly.windows.ui.WorkflowDeleteDialog
-import app.recly.windows.ui.WorkflowEditorWindow
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintCheckRow
 import app.recly.windows.ui.component.BlueprintChip
@@ -77,8 +77,8 @@ import kotlinx.coroutines.launch
 
 /**
  * docs/14 N1 · deliverable 1: a tray app with no main window. The tray is the way in; docs/09 화면
- * 원칙 6 makes what it opens a Compose popup window rather than an AWT menu, because the state nodes,
- * the ledger and the workflow picker are shapes and an AWT menu item is one run of system text.
+ * 원칙 6 makes what it opens a Compose popup window rather than an AWT menu, because the state nodes
+ * and the ledger are shapes and an AWT menu item is one run of system text.
  *
  * The language table is collected here and handed down (docs/07 rule 3): a new one recomposes the
  * whole application, which is what rebuilds the AWT tray menu and retitles the open windows.
@@ -100,7 +100,6 @@ fun main(args: Array<String>) {
         LaunchedEffect(model) { model.load() }
         LaunchedEffect(dev) {
             model.popupOpen = model.popupOpen || dev.popup
-            model.editorOpen = model.editorOpen || dev.editor
             model.settingsOpen = model.settingsOpen || dev.settings
         }
         // The two that are not windows need the core open behind them, which `load` is still doing
@@ -155,28 +154,6 @@ fun main(args: Array<String>) {
             }
         }
 
-        if (model.editorOpen) {
-            Window(
-                onCloseRequest = { model.editorOpen = false },
-                title = strings[Str.WINDOW_WORKFLOWS],
-                state = rememberWindowState(
-                    width = (dev.editorWidth ?: EDITOR_WIDTH).dp,
-                    height = EDITOR_HEIGHT.dp,
-                ),
-            ) {
-                model.workflowsModel?.let { workflows ->
-                    Themed(model, dev) {
-                        WorkflowEditorWindow(
-                            model = workflows,
-                            strings = strings,
-                            openFirst = dev.editor,
-                            openStep = dev.step,
-                        )
-                    }
-                }
-            }
-        }
-
         // docs/08 "결과 파일": what the transcribe step wrote, for the recordings the popup lists.
         if (model.recordingsOpen) {
             Window(
@@ -224,32 +201,6 @@ fun main(args: Array<String>) {
             )
         }
 
-        // docs/05 "워크플로우 가져오기": asked from here for the same reason — the settings window
-        // that started the import may be closed by the time the file has been picked.
-        model.workflowsModel?.importConfirm?.let { picked ->
-            ImportDialog(
-                picked = picked,
-                strings = strings,
-                theme = themed,
-                onCancel = model::cancelImport,
-                onConfirm = model::confirmImport,
-            )
-        }
-
-        // ADR-016: and the same for a workflow delete, which is the other write with nothing behind
-        // it — the document is this PC's own, so there is no copy anywhere to restore it from.
-        model.workflowsModel?.let { workflows ->
-            workflows.deleteConfirm?.let { item ->
-                WorkflowDeleteDialog(
-                    item = item,
-                    strings = strings,
-                    theme = themed,
-                    onCancel = workflows::cancelDelete,
-                    onDelete = { scope.launch { workflows.delete(item) } },
-                )
-            }
-        }
-
         model.disconnectPrompt?.let { prompt ->
             DisconnectDialog(
                 prompt = prompt,
@@ -279,6 +230,7 @@ fun main(args: Array<String>) {
  */
 @Composable
 private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> Unit) {
+    val strings by model.localization.strings.collectAsState()
     val systemDark = isSystemInDarkTheme()
     val theme = dev.theme ?: model.theme
     // Observed, not read once: AWT fires a property change when the user flips the Windows
@@ -291,7 +243,9 @@ private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> 
             AppTheme.DARK -> true
         },
         highContrast = dev.highContrast ?: highContrastOf(systemContrast),
-        content = content,
+        content = {
+            CompositionLocalProvider(LocalLayoutDirection provides if (strings.language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
+        },
     )
 }
 
@@ -299,7 +253,7 @@ private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> 
  * What makes it a popup rather than a window: clicking anywhere *else* puts it away — and else means
  * another application, not this one.
  *
- * The Mac drew the same line in e9838fb: opening Details, Settings, Workflows or the delete question
+ * The Mac drew the same line in e9838fb: opening Details, Settings or the delete question
  * from the popover and then clicking in it took the popover with it, because a click on the app's own
  * window is still a click outside the popover. So the focus loss is not the answer on its own — what
  * took the focus is ([popupClosesOnFocusLoss]). Escape and the tray icon are unaffected: both close
@@ -334,7 +288,7 @@ private fun FrameWindowScope.CloseWhenItLosesFocus(close: () -> Unit) {
 /**
  * Whether a popup that has lost the focus should close: only when nothing of this app's own has it.
  * AWT's focus manager knows this JVM's windows and no others, so an active window that is not the
- * popup itself is one of ours — Details, Settings, Workflows, or a dialog raised over the popup — and
+ * popup itself is one of ours — Details, Settings, or a dialog raised over the popup — and
  * the popup stays where it is, the way the Mac's popover does.
  *
  * The two are compared by identity alone, which is why neither is typed `java.awt.Window`: a test
@@ -563,8 +517,6 @@ private const val TITLE_HEIGHT = 360
 
 private const val POPUP_WIDTH = 520
 private const val POPUP_HEIGHT = 560
-private const val EDITOR_WIDTH = 1100
-private const val EDITOR_HEIGHT = 760
 private const val SETTINGS_WIDTH = 640
 private const val SETTINGS_HEIGHT = 900
 private const val RECORDINGS_WIDTH = 900

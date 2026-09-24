@@ -16,7 +16,7 @@ class TitleGateTest {
 
     @Test
     fun `a prompt published while a start is preparing refuses that start`() = runTest {
-        // The shell reads the workflow summaries before it starts recording; the recording that
+        // The shell stops the detail's playback before it starts recording; the recording that
         // ended a moment ago can publish its prompt in exactly that window.
         val gate = TitleGate()
         assertNull(gate.pending, "the tray offered the start because nothing was waiting")

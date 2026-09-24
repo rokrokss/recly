@@ -22,9 +22,9 @@ sealed interface TrayEntry {
  * given language produce can be looked at without a tray — which is how `TrayMenuTest` proves that
  * choosing English rebuilds it (docs/07 rule 3).
  *
- * **It is the fallback now, not the UI.** docs/09 화면 원칙 6 puts the state nodes, the ledger and the
- * workflow picker in a window ([TrayPopup]), because an AWT menu item is one run of system text and
- * cannot draw any of them. What stays here is what has to work even if that window will not open on
+ * **It is the fallback now, not the UI.** docs/09 화면 원칙 6 puts the state nodes and the ledger in
+ * a window ([TrayPopup]), because an AWT menu item is one run of system text and cannot draw any of
+ * them. What stays here is what has to work even if that window will not open on
  * some machine: what the app is doing, the way in to the window, start/stop, and quit.
  *
  * Every label is resolved from [strings] on the way out, so a language change produces a different
@@ -49,10 +49,10 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
     if (model.recording) {
         add(TrayEntry.Item(strings[Str.TRAY_STOP], onClick = model::stop))
     } else {
-        // ADR-016: a recording runs the workflow this PC is set to, which is what the popup's Start
-        // does as well. A recording waiting for its name would lose its job to a second one.
+        // The same start as the popup's. A recording waiting for its name would lose its job to a
+        // second one.
         val startable = model.ready && !model.helperMissing && model.titlePrompt == null
-        add(TrayEntry.Item(strings[Str.TRAY_START], enabled = startable) { model.start(null) })
+        add(TrayEntry.Item(strings[Str.TRAY_START], enabled = startable, onClick = model::start))
         // docs/14 "감지": an AWT balloon has no buttons, so clicking the balloon is the whole of its
         // interaction and **the reliable way to take an offer is this item** ([MeetingNotifier]).
         // It comes and goes with the offer, which is what keeps a stale one off the menu.

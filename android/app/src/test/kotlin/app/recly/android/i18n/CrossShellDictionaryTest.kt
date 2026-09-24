@@ -259,58 +259,6 @@ class CrossShellDictionaryTest {
                 mac = "Open in Drive",
                 phone = "Open in Drive",
             ),
-            // docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device, and the file is
-            // the only way one device's workflows reach another — so the two controls that move
-            // them are the same words wherever a user meets them. RecKit's catalog answers for both
-            // Apple shells: the section is drawn once and both settings screens show that one.
-            Line(
-                what = "the export control",
-                en = "Export workflows",
-                ko = "워크플로우 내보내기",
-                android = "settings_export_workflows",
-                windows = "settings.export.workflows",
-                reckit = "Export workflows",
-            ),
-            Line(
-                what = "the import control",
-                en = "Import workflows",
-                ko = "워크플로우 가져오기",
-                android = "settings_import_workflows",
-                windows = "settings.import.workflows",
-                reckit = "Import workflows",
-            ),
-            // docs/05: an import replaces the whole document — there is no merge — and the number
-            // the confirmation names is the one the file actually holds.
-            Line(
-                what = "the import replace warning",
-                en = "The %1\$d workflow(s) in the file replace every workflow on this device.",
-                ko = "파일에 있는 워크플로우 %1\$d개가 이 기기의 워크플로우를 모두 대체합니다.",
-                android = "workflows_import_body",
-                windows = "workflows.import.body",
-                reckit = "The %@ workflow(s) in the file replace every workflow on this device.",
-            ),
-            // docs/05 "시크릿": the export carries the names, never the values — said on every shell
-            // that offers the file, because a user who read it on one and not the other loses a key.
-            Line(
-                what = "the keys-are-per-device hint",
-                en = "Provider keys are not in this file — enter them on each device.",
-                ko = "전사 키는 이 파일에 들어가지 않습니다 — 기기마다 입력합니다.",
-                android = "settings_workflows_keys_hint",
-                windows = "settings.workflows.keys.hint",
-                reckit = "Provider keys are not in this file — enter them on each device.",
-            ),
-            // docs/08 "폴링 · 상태": the warning under a synchronous provider in the transcribe
-            // step. Only the two phones say it — a desktop's background is not the one that cuts a
-            // long request off — so Windows has no key for it and is left out of this line.
-            Line(
-                what = "the synchronous-provider hint",
-                en = "This provider answers on one long request. On a phone, an asynchronous " +
-                    "provider is more reliable in the background.",
-                ko = "이 제공자는 요청 하나로 결과를 기다립니다. 폰에서는 백그라운드에서 비동기 제공자가 더 안정적입니다.",
-                android = "editor_provider_synchronous_hint",
-                reckit = "This provider answers on one long request. On a phone, an asynchronous " +
-                    "provider is more reliable in the background.",
-            ),
             // docs/03: the same two questions, in the same order, at the end of every recording.
             Line(
                 what = "the title prompt",
@@ -357,27 +305,6 @@ class CrossShellDictionaryTest {
                 mac = "6+",
                 phone = "6+",
             ),
-            // docs/05 "시크릿": the value is shown once, and the sentence has to say so on every shell
-            // that shows it — a user who read the softer wording on one device loses the key.
-            Line(
-                what = "the secrets form",
-                en = "Add a secret",
-                ko = "시크릿 추가",
-                android = "secrets_add",
-                windows = "secret.add",
-                mac = "Add a secret",
-                phone = "Add a secret",
-            ),
-            Line(
-                what = "the generated secret",
-                en = "Copy the generated value now. It cannot be read again once it is saved " +
-                    "(it is on the clipboard).",
-                ko = "생성한 값을 지금 복사해 두세요. 저장 후에는 다시 볼 수 없습니다 (클립보드에 복사됨).",
-                android = "secrets_generated",
-                windows = "secret.generated.note",
-                reckit = "Copy the generated value now. It cannot be read again once it is saved " +
-                    "(it is on the clipboard).",
-            ),
             // docs/09 화면 원칙 2: the three states the audit found each shell wording its own way.
             Line(
                 what = "the RETRY status",
@@ -394,14 +321,6 @@ class CrossShellDictionaryTest {
                 android = "job_state_skipped_short",
                 windows = "state.too.short",
                 reckit = "Too short",
-            ),
-            Line(
-                what = "the NO_JOB status",
-                en = "No workflow",
-                ko = "워크플로우 없음",
-                android = "job_state_no_workflow",
-                windows = "state.no.workflow",
-                reckit = "No workflow",
             ),
             // docs/09 화면 원칙 2: a ledger with nothing in it yet. Not a sentence — it is the
             // empty state of a table, and only Android had been ending it with a full stop.
@@ -425,38 +344,6 @@ class CrossShellDictionaryTest {
             ),
             // docs/09 화면 원칙 3: the inspector's own field labels.
             Line(
-                what = "the folder field",
-                en = "Folder template",
-                ko = "폴더 템플릿",
-                android = "editor_folder",
-                windows = "field.folder",
-                reckit = "Folder template",
-            ),
-            Line(
-                what = "the retries field",
-                en = "Retries",
-                ko = "재시도",
-                android = "editor_max_attempts",
-                windows = "field.retries",
-                reckit = "Retries",
-            ),
-            Line(
-                what = "the first-delay field",
-                en = "First delay (s)",
-                ko = "첫 지연(초)",
-                android = "editor_initial_delay",
-                windows = "field.first.delay",
-                reckit = "First delay (s)",
-            ),
-            Line(
-                what = "the max-delay field",
-                en = "Max delay (s)",
-                ko = "최대 지연(초)",
-                android = "editor_max_delay",
-                windows = "field.max.delay",
-                reckit = "Max delay (s)",
-            ),
-            Line(
                 what = "the minimum-length field",
                 en = "Minimum length (s)",
                 ko = "최소 길이(초)",
@@ -471,124 +358,6 @@ class CrossShellDictionaryTest {
                 android = "editor_secret",
                 windows = "field.secret.name",
                 reckit = "Secret name",
-            ),
-            // docs/08: `invokeUrl` means one of two things, and which one is the provider's answer
-            // (`WorkflowParser.invokeUrlUse`) — so the line under the field is one of two, and both
-            // are the same line on the three shells that draw the editor.
-            Line(
-                what = "the invoke-URL hint for a provider that requires one",
-                en = "The provider's endpoint URL. Required for this provider.",
-                ko = "제공자의 엔드포인트 URL입니다. 이 제공자에는 필수입니다.",
-                android = "editor_invoke_url_hint_required",
-                windows = "field.invoke.url.hint.required",
-                reckit = "The provider's endpoint URL. Required for this provider.",
-            ),
-            Line(
-                what = "the invoke-URL hint for a provider that only accepts one",
-                en = "Leave empty for the provider's default endpoint. " +
-                    "Set it for a self-hosted or regional endpoint.",
-                ko = "비우면 제공자 기본 엔드포인트를 씁니다. 자체 호스팅이나 리전 엔드포인트일 때만 입력하세요.",
-                android = "editor_invoke_url_hint_optional",
-                windows = "field.invoke.url.hint.optional",
-                reckit = "Leave empty for the provider's default endpoint. " +
-                    "Set it for a self-hosted or regional endpoint.",
-            ),
-            // The two answers to "what happens after a failure", as chips on all four.
-            Line(
-                what = "the on-error label",
-                en = "On failure",
-                ko = "오류 시",
-                android = "editor_on_error",
-                windows = "field.on.error",
-                reckit = "On failure",
-            ),
-            Line(
-                what = "the on-error abort chip",
-                en = "Stop",
-                ko = "중단",
-                android = "editor_on_error_abort",
-                windows = "on.error.abort",
-                reckit = "onError.abort",
-            ),
-            Line(
-                what = "the on-error continue chip",
-                en = "Continue",
-                ko = "계속",
-                android = "editor_on_error_continue",
-                windows = "on.error.continue",
-                reckit = "onError.continue",
-            ),
-            // docs/09 화면 원칙 3: the step node's kicker is the position and the type, on both the
-            // shells whose kicker is a format string (Apple interpolates it in the view).
-            Line(
-                what = "the step kicker",
-                en = "%1\$d · %2\$s",
-                ko = "%1\$d · %2\$s",
-                android = "editor_step_kicker",
-                windows = "editor.step.kicker",
-            ),
-            // ADR-016 (리드 정본, 2026-09-02): there is one selection per device and no "default"
-            // vocabulary anywhere near it. The mark on the workflow every recording on this device
-            // runs, said on every shell that lists workflows.
-            Line(
-                what = "the in-use badge",
-                en = "In use",
-                ko = "사용 중",
-                android = "workflow_in_use",
-                windows = "workflow.in.use",
-                mac = "In use",
-                phone = "In use",
-            ),
-            // The list's one control, and the other half of that badge: exactly one of the two is on
-            // a row. It writes nothing to the document — the pointer it moves is this device's own.
-            Line(
-                what = "the select-this-workflow control",
-                en = "Use",
-                ko = "사용",
-                android = "workflow_use",
-                windows = "workflow.use",
-                mac = "Use",
-                phone = "Use",
-            ),
-            // Nothing is selected on this device — no pointer, or one pointing at a workflow that is
-            // gone — said where the user would meet it: the picker and the record screen's node.
-            Line(
-                what = "the choose-a-workflow nudge",
-                en = "Choose a workflow",
-                ko = "워크플로우를 선택하세요",
-                android = "recording_workflow_choose",
-                windows = "workflow.choose",
-                mac = "Choose a workflow",
-                phone = "Choose a workflow",
-            ),
-            // docs/09 "접근성": what a click on the workflow row does, said out loud rather than
-            // drawn — Android's `onClickLabel`, the Mac row's accessibility hint. The row is the
-            // control on both, so it is the same promise and has to be the same words.
-            Line(
-                what = "the open-the-workflow row label",
-                en = "Edit the workflow",
-                ko = "워크플로우 편집",
-                android = "workflow_open",
-                mac = "Edit the workflow",
-            ),
-            // The selected workflow is protected in the row and in a stale confirmation.
-            Line(
-                what = "the deleting-the-workflow-in-use warning",
-                en = "Select another workflow before deleting this one.",
-                ko = "삭제하려면 먼저 다른 워크플로우를 선택하세요.",
-                android = "workflow_delete_in_use",
-                windows = "workflow.delete.in.use",
-                reckit = "Select another workflow before deleting this one.",
-            ),
-            // What that same dialog says a delete costs before the warning: the definition is this
-            // device's own (docs/05), so nothing syncs it back.
-            Line(
-                what = "the workflow delete body",
-                en = "This workflow disappears from this device. Jobs that already exist still run.",
-                ko = "이 워크플로우는 이 기기에서 사라집니다. 이미 만들어진 Job은 그대로 실행됩니다.",
-                android = "workflows_delete_body",
-                windows = "workflows.delete.body",
-                reckit = "This workflow disappears from this device. Jobs that already exist still run.",
             ),
             // docs/08 "결과 파일": the window a desktop opens and the screen a phone pushes. What is
             // behind a row is the whole of the recording — its audio as well as its transcript — so
@@ -717,18 +486,6 @@ class CrossShellDictionaryTest {
                 mac = "Launch at login",
                 pending = setOf("windows"),
             ),
-            // docs/05 "시크릿": a step naming a key this device has no value for, on every shell
-            // that lists workflows — a key is per device (docs/05), so the row has to say which
-            // device it is talking about, and every shell says "this device" for itself.
-            Line(
-                what = "the missing-key mark on a workflow row",
-                en = "No key on this device: %1\$s",
-                ko = "이 기기에 키 없음: %1\$s",
-                android = "workflow_missing_secrets",
-                windows = "editor.missing.key",
-                mac = "No key on this device: %@",
-                phone = "No key on this device: %@",
-            ),
             // docs/09 화면 원칙 4 · docs/03: the account section, and the two things it says when
             // there is nobody signed in. Which account it is about is the whole of the section, so
             // the heading names Google rather than leaving "Account" to mean anything at all.
@@ -787,16 +544,6 @@ class CrossShellDictionaryTest {
                 ko = "이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: %1\$s",
                 android = "delete_drive_failed",
                 reckit = "Deleted here, but Drive refused: %@",
-            ),
-            // docs/05 "시크릿": the secret picker's own way out — a key that is not defined yet is
-            // defined from where it was needed, and the ellipsis is what says the form is coming.
-            Line(
-                what = "the new-secret choice in the picker",
-                en = "New…",
-                ko = "새로 만들기",
-                android = "editor_secret_new",
-                windows = "secret.new",
-                reckit = "New…",
             ),
             // docs/13 deliverable 1: the microphone is what this app is for, so a refusal is said
             // the same way wherever the user meets it — the note the recorder puts up, and the line

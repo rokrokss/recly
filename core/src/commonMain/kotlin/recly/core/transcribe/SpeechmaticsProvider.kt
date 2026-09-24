@@ -148,6 +148,8 @@ class SpeechmaticsProvider : SttProvider {
         // The documented value that turns language identification on; what it heard comes back
         // on the tokens themselves.
         Language.AUTO -> "auto"
+        Language.ZH_CN, Language.ZH_TW -> "cmn"
+        else -> TranscriptionLanguages.code(language)
     }
 
     /** A rejection carries a list of `{message}` objects; only the sentences are worth keeping. */

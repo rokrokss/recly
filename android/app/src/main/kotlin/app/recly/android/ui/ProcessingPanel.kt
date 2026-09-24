@@ -1,0 +1,140 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
+package app.recly.android.ui
+
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.lifecycle.viewmodel.compose.viewModel
+import app.recly.android.R
+import app.recly.android.core.text
+import app.recly.android.ui.component.*
+import app.recly.android.ui.theme.Space
+import app.recly.android.ui.theme.blueprint
+import recly.core.model.Language
+import recly.core.processing.*
+import java.util.Locale
+import recly.core.transcribe.TranscriptionLanguages
+import recly.core.transcribe.LocalEngineStatus
+import recly.core.workflow.InvokeUrlUse
+import recly.core.workflow.WorkflowParser
+
+@Composable
+fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
+    val resources = LocalContext.current.resources
+    val state by model.state.collectAsState()
+    val draft = state.draft ?: return
+    var pickingLanguage by remember { mutableStateOf(false) }
+    val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in draft.languages
+    var deletingKey by remember { mutableStateOf<String?>(null) }
+    val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let { model.export(it) } }
+    val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importSettings) }
+    SectionHeader(stringResource(R.string.processing_title))
+    deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, name), onDismissRequest = { deletingKey = null }, actions = {
+        BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
+        BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null })
+    }) { Text(name) } }
+    Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+        if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall)
+        Text(stringResource(R.string.processing_new_recordings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        ProcessingField(R.string.processing_storage, draft.folder) { v -> model.edit { it.folder = v } }
+        ProcessingField(R.string.editor_min_duration, draft.minimumSeconds) { v -> model.edit { it.minimumSeconds = v } }
+        SectionHeader(stringResource(R.string.processing_transcription))
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+            // No engine, no chip — unless it is already chosen, so the line below can say why and the user can leave it.
+            TranscriptionMode.entries.filter { it != TranscriptionMode.LOCAL || state.localInstalled || draft.mode == it }.forEach { mode ->
+                BlueprintChip(stringResource(mode.label()), draft.mode == mode, onClick = { model.edit { it.mode = mode } })
+            }
+        }
+        if (draft.mode == TranscriptionMode.LOCAL) {
+            when (state.local?.status) {
+                LocalEngineStatus.UNSUPPORTED -> Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall)
+                LocalEngineStatus.MODEL_REQUIRED -> BlueprintButton(stringResource(R.string.processing_prepare), { model.prepare() }, enabled = !state.busy)
+                else -> Unit
+            }
+        }
+        if (draft.mode == TranscriptionMode.EXTERNAL) {
+            var providers by remember { mutableStateOf(false) }
+            Text(stringResource(R.string.editor_provider), style = MaterialTheme.typography.labelMedium)
+            BlueprintButton(draft.provider, { providers = true }, tone = ButtonTone.QUIET)
+            if (providers) BlueprintDialog(title = stringResource(R.string.editor_provider), onDismissRequest = { providers = false }, actions = {
+                BlueprintButton(stringResource(R.string.action_close), { providers = false }, tone = ButtonTone.QUIET)
+            }) {
+                WorkflowParser.STT_PROVIDERS.forEach { name -> BlueprintRadioRow(name, draft.provider == name, {
+                    model.edit { it.selectProvider(name) }; providers = false
+                }) }
+            }
+            Text(stringResource(R.string.provider_disclosure_transcribe), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            ProcessingField(R.string.editor_secret, draft.secretRef) { v -> model.edit { it.secretRef = v } }
+            ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey)
+            if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) {
+                ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
+            }
+            if (draft.acceptsModel) ProcessingField(R.string.processing_model, draft.model) { v -> model.edit { it.model = v } }
+        }
+        if (draft.mode != TranscriptionMode.OFF) {
+            Text(stringResource(R.string.editor_language), style = MaterialTheme.typography.labelMedium)
+            BlueprintButton(transcriptionLanguageLabel(draft.language), { pickingLanguage = true }, tone = ButtonTone.QUIET)
+            if (!languageSupported) Text(stringResource(R.string.processing_language_unsupported))
+            if (pickingLanguage) BlueprintDialog(title = stringResource(R.string.editor_language), onDismissRequest = { pickingLanguage = false }, actions = {
+                BlueprintButton(stringResource(R.string.action_close), { pickingLanguage = false }, tone = ButtonTone.QUIET)
+            }) {
+                draft.languages.forEach { language -> BlueprintRadioRow(transcriptionLanguageLabel(language), draft.language == language, {
+                    model.edit { it.language = language }; pickingLanguage = false
+                }) }
+            }
+        }
+        if (state.secretNames.isNotEmpty()) {
+            SectionHeader(stringResource(R.string.processing_secrets))
+            state.secretNames.forEach { name ->
+                Text(name, style = MaterialTheme.typography.bodySmall)
+                BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
+            }
+        }
+        state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+            BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy && state.dirty)
+            BlueprintButton(stringResource(R.string.action_save), { model.save() }, tone = ButtonTone.PRIMARY,
+                enabled = !state.busy && languageSupported && state.dirty)
+        }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+            BlueprintButton(stringResource(R.string.processing_export), { export.launch("recly-settings.json") }, tone = ButtonTone.QUIET,
+                enabled = state.stored is ProcessingSettingsState.Ready && !state.dirty)
+            BlueprintButton(stringResource(R.string.processing_import), { importPicker.launch(arrayOf("application/json", "text/plain")) }, tone = ButtonTone.QUIET, enabled = !state.dirty)
+        }
+    }
+}
+
+@Composable
+private fun ProcessingField(label: Int, value: String, change: (String) -> Unit) {
+    OutlinedTextField(value, change, label = { Text(stringResource(label)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+}
+
+@Composable
+private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save: (String, String, () -> Unit) -> Any) {
+    var value by remember(name) { mutableStateOf("") }
+    if (name.isNotBlank() && name !in saved) Text(stringResource(R.string.editor_secret_missing, name), style = MaterialTheme.typography.bodySmall)
+    OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
+        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+    BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = "" } },
+        enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
+}
+
+internal fun TranscriptionMode.label(): Int = when (this) {
+    TranscriptionMode.LOCAL -> R.string.processing_local
+    TranscriptionMode.EXTERNAL -> R.string.processing_external
+    TranscriptionMode.OFF -> R.string.processing_off
+}
+
+@Composable
+private fun transcriptionLanguageLabel(language: Language): String = when (language) {
+    Language.AUTO -> stringResource(R.string.processing_language_auto)
+    Language.KO_EN -> stringResource(R.string.processing_language_mixed)
+    else -> Locale.forLanguageTag(TranscriptionLanguages.localeTag(language)).let { it.getDisplayName(it) }
+}

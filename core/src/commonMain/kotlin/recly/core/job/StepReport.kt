@@ -17,6 +17,13 @@ import recly.core.message.CoreMessageRef
  */
 object StepReport {
 
+    /** Automatic local waits are never a user-triggered retry, including thermal/OS pauses. */
+    fun localPending(workflow: recly.core.model.Workflow?, steps: List<StepRun>): Boolean {
+        val next = steps.firstOrNull { it.status != StepStatus.SUCCEEDED && it.status != StepStatus.SKIPPED } ?: return false
+        return workflow?.steps?.firstOrNull { it.id == next.stepId } is recly.core.model.Step.LocalTranscribe &&
+            next.status in setOf(StepStatus.PENDING, StepStatus.RUNNING)
+    }
+
     /**
      * Whether the thing to do about [lastError] is to look at the key: this device holds no value
      * for the secret, or the provider refused the one it holds (docs/08 "오류"). Every other
@@ -38,7 +45,7 @@ object StepReport {
     fun waitingMinutes(steps: List<StepRun>, now: Instant): Int? {
         // Only a step that is still to run can be waiting on a provider: a transcribe that
         // succeeded keeps its `submittedAt` (state is never cleared on success), and read off
-        // that row it would call a later webhook's backoff "transcribing" — and hide the retry
+        // that row it would call a later step's backoff "transcribing" — and hide the retry
         // that backoff is entitled to (Sol, 2026-09-04).
         val submitted = steps.asReversed()
             .filter { it.status == StepStatus.PENDING }

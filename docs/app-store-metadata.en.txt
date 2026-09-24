@@ -2,10 +2,10 @@ NAME
 Recly: Record for Your AI
 
 SUBTITLE
-Record, transcribe, automate
+Record and transcribe to Drive
 
 PROMOTIONAL TEXT
-Record on iPhone and Apple Watch, save to your own Google Drive, and add optional transcription and webhook workflows.
+Record on iPhone and Apple Watch, save to your own Google Drive, and transcribe on device or with a provider you choose.
 
 DESCRIPTION
 Record voice notes, interviews, and meetings with Recly. Record, save, and play audio on your device without signing in. Connect your own Google Drive when you want to upload recordings.
@@ -16,13 +16,13 @@ Record on iPhone or Apple Watch. Add titles to your recordings and play them bac
 SAVE TO YOUR OWN GOOGLE DRIVE
 Connect your Google account to upload recordings to your own Drive and access them from your devices.
 
-OPTIONAL TRANSCRIPTION AND WORKFLOWS
-Add speech-to-text using a supported third-party provider and your own API credentials. Configure optional webhooks to send recording metadata and Drive links to a destination you choose.
+OPTIONAL TRANSCRIPTION
+Transcribe on device on supported iPhone models, or add speech-to-text using a supported third-party provider and your own API credentials.
 
 CONTROL YOUR CONNECTIONS
-Recly does not create a user account. Google authorization is used to access your own Drive. Drive-based workflows, including transcription in this version, require a Google Drive connection. You can disconnect Drive in Settings and keep your recordings and settings.
+Recly does not create a user account. Google authorization is used to access your own Drive. Transcription in this version requires a Google Drive connection, because each recording is uploaded before it is transcribed. You can disconnect Drive in Settings and keep your recordings and settings.
 
 Transcription provider availability varies by region. Third-party accounts may be required, and provider charges may apply.
 
 KEYWORDS
-audio,memo,meeting,interview,dictation,transcription,workflow,webhook,watch,notes
+audio,memo,meeting,interview,dictation,transcription,voice,recorder,watch,notes

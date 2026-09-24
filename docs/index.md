@@ -3,8 +3,8 @@
 **Record on your watch, phone or desktop. Everything stays on your devices and in your own Google Drive.**
 
 Recly is an open-source audio recorder for Galaxy Watch, Android, Apple Watch, iPhone, macOS and
-Windows. There is no Recly server: recordings go to the Google Drive folder you choose, and any
-transcription or webhook step runs with keys you configured on the device.
+Windows. There is no Recly server: recordings go to the Google Drive folder you choose, and
+transcription runs on the device or with API keys you configured on the device.
 
 - [Source code and downloads](https://github.com/rokrokss/recly)
 - [Install guide](install.md)

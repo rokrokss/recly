@@ -10,8 +10,9 @@ import recly.core.recording.RecordingRecord
 val Step.type: String
     get() = when (this) {
         is Step.DriveUpload -> "drive.upload"
-        is Step.Webhook -> "webhook"
         is Step.Transcribe -> "transcribe"
+        is Step.LocalTranscribe -> "local.transcribe"
+        is Step.TranscriptPublish -> "transcript.publish"
     }
 
 interface StepRunner {
@@ -44,7 +45,7 @@ class StepContext(
      * snapshot this build cannot read, and such a job never reaches a runner (docs/10 "잡 스냅샷").
      */
     val workflow: Workflow,
-    /** The `step_run` row's ULID. The webhook sends it as `webhook-id` so a retry dedupes (docs/04). */
+    /** The `step_run` row's ULID. */
     val stepRunId: String,
     val step: Step,
     val recording: RecordingRecord,

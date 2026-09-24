@@ -19,23 +19,22 @@ class CoreDeps(
     val audio: AudioTools,
     val dataDir: Path,
     val device: DeviceInfo,
-    /** Shell build version, `1.4.0` — the webhook `user-agent` is `rec/{appVersion} ({platform})` (docs/04). */
-    val appVersion: String,
     /** Single dispatcher for file and DB work: SQLDelight drivers are not thread-safe everywhere. */
     val io: CoroutineDispatcher,
     /**
-     * The app's language as a bare tag, `en` or `ko` (docs/07). The core needs it for one thing
-     * only: the names of the seeded default workflows, which are user data from the moment they
-     * are written. Everything else the core says to a person is a [recly.core.message.CoreMessage]
-     * the shell translates.
+     * The app's language tag (docs/07), including a script or region when available. It seeds
+     * the first transcription language; later locale changes do not replace saved user
+     * preferences. User-visible core errors are [recly.core.message.CoreMessage]
+     * codes translated by the shell.
      */
     val locale: String = "en",
     /** docs/15: the iOS shell supplies the destination-consent UI before enabling this policy. */
     val requireTransferConsent: Boolean = false,
     val transcriptionPolicy: TranscriptionPolicy = TranscriptionPolicy(),
+    val localTranscription: recly.core.transcribe.LocalTranscriptionEngine = recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
 ) {
     internal fun withTransport(transport: Transport): CoreDeps = CoreDeps(
         clock, logger, secureStore, tokenProvider, transport, fileSystem, audio, dataDir,
-        device, appVersion, io, locale, requireTransferConsent, transcriptionPolicy,
+        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription,
     )
 }

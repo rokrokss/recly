@@ -53,6 +53,7 @@
 	<key>BGTaskSchedulerPermittedIdentifiers</key>
 	<array>
 		<string>app.recly.jobs</string>
+		<string>app.recly.jobs.local</string>
 		<string>app.recly.uploadNow</string>
 	</array>
 

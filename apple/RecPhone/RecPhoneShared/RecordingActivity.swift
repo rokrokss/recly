@@ -40,8 +40,4 @@ struct RecordingActivityAttributes: ActivityAttributes {
             language = try container.decodeIfPresent(String.self, forKey: .language) ?? ""
         }
     }
-
-    /// The workflow the user picked when they started, for the pill to name. `nil` is the source's
-    /// default (ADR-016), which has no name worth showing.
-    var workflowName: String?
 }

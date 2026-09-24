@@ -9,7 +9,6 @@ import android.app.PendingIntent
 import android.content.Context
 import app.recly.android.R
 import app.recly.android.ui.AlertReason
-import app.recly.android.ui.AlertSource
 import app.recly.android.ui.JobAlert
 import app.recly.android.ui.MainActivity
 import app.recly.android.ui.alertReasonOf
@@ -28,7 +27,7 @@ import app.recly.recording.R as RecordingR
  * 1. **One notification per reason.** Five jobs blocked on the same thing are one notification
  *    whose body counts them, not five notifications.
  * 2. **Only what a person can fix.** A step inside its retry budget is `WAITING` and never reaches
- *    [alertReasonOf], so a webhook 500 on its way round the backoff calls nobody.
+ *    [alertReasonOf], so a provider 500 on its way round the backoff calls nobody.
  * 3. **It comes down by itself.** The queue is the source of truth, so a reason that is no longer
  *    in it is cancelled on the next emission — a sign-in, a `retry()`, a deletion.
  *
@@ -48,7 +47,7 @@ class JobAlertNotifier(private val context: Context) {
             // A parked job says why in its own status; only a FAILED one has to be asked, and
             // asking for every job on every emission would be a query per row per change.
             val error = if (job.status == JobStatus.FAILED) blockingError(core.jobs.steps(job.id)) else null
-            AlertSource(alertReasonOf(job.status, error), job.workflowId)
+            alertReasonOf(job.status, error)
         },
     )
 

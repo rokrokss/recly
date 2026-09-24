@@ -27,7 +27,7 @@ class SttProvidersTest {
     @Test
     fun `the providers that answer on one long request are the ones the editors warn about`() {
         assertEquals(
-            listOf("clova", "openai", "groq", "together", "mistral", "elevenlabs", "deepgram", "azure"),
+            listOf("elevenlabs", "clova", "openai", "groq", "together", "mistral", "deepgram", "azure"),
             WorkflowParser.STT_PROVIDERS.filter { SttProviders.synchronous(it) },
         )
     }

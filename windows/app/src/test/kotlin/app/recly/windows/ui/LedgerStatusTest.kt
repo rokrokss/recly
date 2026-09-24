@@ -76,7 +76,6 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.WARNING, Str.STATE_RETRY_WAIT.message().ledgerStatus().tone)
         // Nothing is wrong and nothing is happening.
         assertEquals(BadgeTone.NEUTRAL, Str.STATUS_WAITING.message().ledgerStatus().tone)
-        assertEquals(BadgeTone.SUCCESS, Str.STATE_NO_WORKFLOW.message().ledgerStatus().tone)
         assertEquals(BadgeTone.NEUTRAL, Str.STATE_TOO_SHORT.message().ledgerStatus().tone)
     }
 

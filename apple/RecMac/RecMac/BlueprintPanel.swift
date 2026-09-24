@@ -37,6 +37,7 @@ enum BlueprintPanel {
                 NSApp.stopModal()
             }
             .environment(\.locale, AppLanguage.locale)
+            .environment(\.layoutDirection, AppLanguage.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
             .blueprint()
             .frame(width: width)
         )

@@ -15,9 +15,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import app.recly.wear.RecWearApp
-import app.recly.wear.core.WearLogger
-import app.recly.wear.data.PrefsWatchDefault
-import app.recly.wear.data.WorkflowSource
 import app.recly.wear.transfer.TransferScheduler
 
 /**
@@ -32,10 +29,8 @@ class MainActivity : ComponentActivity() {
             initializer {
                 WearRecordingViewModel(
                     recorder = ServiceRecorderControl(applicationContext),
-                    workflows = WorkflowSource(applicationContext, WearLogger).flow(),
                     queue = (application as RecWearApp).queue,
                     haptics = SystemHaptics(applicationContext),
-                    defaults = PrefsWatchDefault(applicationContext),
                 )
             }
         }
@@ -57,7 +52,6 @@ class MainActivity : ComponentActivity() {
                 state = state,
                 onStart = ::startRecording,
                 onStop = viewModel::stop,
-                onSelect = viewModel::selectWorkflow,
             )
         }
         consumeAutoStart(intent)

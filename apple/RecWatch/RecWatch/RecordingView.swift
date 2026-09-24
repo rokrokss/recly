@@ -28,8 +28,6 @@ struct RecordingView: View {
                     .foregroundStyle(blueprint.palette.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.6)
-            } else if !model.workflows.isEmpty {
-                picker
             }
 
             button
@@ -51,29 +49,6 @@ struct RecordingView: View {
         .frame(maxWidth: .infinity)
         }
         .background(blueprint.palette.background)
-    }
-
-    /// ADR-016: a tap here is the workflow this watch records with, stored on the watch and sent
-    /// with the recording as its pick. "Phone's workflow" is always offered and is the only option
-    /// when the phone has published nothing — a recording with no pick of its own runs whichever
-    /// workflow the *phone* is using when the phone enqueues it.
-    private var picker: some View {
-        Picker(
-            selection: Binding(
-                get: { model.workflowId },
-                set: { model.selectWorkflow($0) }
-            )
-        ) {
-            Text("Phone's workflow").tag(String?.none)
-            ForEach(model.workflows, id: \.id) { workflow in
-                Text(workflow.name).tag(String?.some(workflow.id))
-            }
-        } label: {
-            Text("Workflow")
-        }
-        .labelsHidden()
-        .frame(minHeight: minTouch)
-        .tint(blueprint.palette.accent)
     }
 
     /// docs/09 "형태": a square node with a thick border, filled while recording — the watch's

@@ -15,6 +15,66 @@
             "state": "translated",
             "value": "회의·메모를 녹음해 전사합니다."
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyは会議やメモを録音し、文字起こしに使います。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly录制会议和备忘，以便进行转录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly錄製會議和備忘，以便進行轉錄。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly graba reuniones y notas para transcribirlas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly enregistre des réunions et des mémos pour les transcrire."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly nimmt Besprechungen und Notizen zur Transkription auf."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas para transcrição."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسجّل Recly الاجتماعات والمذكرات لنسخها إلى نص."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly मीटिंग और मेमो रिकॉर्ड करता है ताकि उनका ट्रांसक्रिप्शन हो सके।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly записывает встречи и заметки для расшифровки."
+          }
         }
       }
     }

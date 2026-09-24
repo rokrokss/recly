@@ -2,7 +2,7 @@ import RecKit
 import SwiftUI
 import UIKit
 
-/// docs/13: the iPhone shell — record, list, edit workflows, settings (M5-L2 and M5-L3).
+/// docs/13: the iPhone shell — record, list, settings (M5-L2 and M5-L3).
 @main
 struct RecPhoneApp: App {
     /// Only for the two things a SwiftUI `App` cannot be handed: the background-task registration
@@ -33,6 +33,7 @@ struct RecPhoneApp: App {
         WindowGroup {
             RootTabs(model: model, language: language, theme: theme)
                 .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 // docs/09 "접근성": nil is no preference of the app's own, which is the device's
                 // scheme — the palette follows `\.colorScheme` either way.
                 .preferredColorScheme(theme.choice.colorScheme)
@@ -57,11 +58,9 @@ private struct RootTabs: View {
     @ObservedObject var theme: AppTheme
     @Environment(\.blueprint) private var blueprint
 
-    /// The selection is the model's rather than this view's own state, for two reasons that pull
-    /// the same way: without a binding the selection is the tab bar's and goes back to the first
-    /// tab whenever the bar is rebuilt — which opening the workflow editor does, from three tabs
-    /// away — and docs/08 "오류" needs "check the key", which is on the list, to land on the editor,
-    /// which is on the workflow tab.
+    /// The selection is the model's rather than this view's own state: without a binding the
+    /// selection is the tab bar's and goes back to the first tab whenever the bar is rebuilt, and
+    /// docs/08 "오류" needs "check the key", which is on the list, to land on the settings tab.
     var body: some View {
         TabView(selection: $model.tab) {
             RecordingView(model: model)
@@ -70,9 +69,6 @@ private struct RootTabs: View {
             RecordingsView(model: model)
                 .tabItem { Label { Text("List") } icon: { BlueprintIcon(.list) } }
                 .tag(PhoneTab.recordings)
-            WorkflowsView(model: model)
-                .tabItem { Label { Text("Workflows") } icon: { BlueprintIcon(.workflows) } }
-                .tag(PhoneTab.workflows)
             SettingsView(model: model, language: language, theme: theme)
                 .tabItem { Label { Text("Settings") } icon: { BlueprintIcon(.settings) } }
                 .tag(PhoneTab.settings)

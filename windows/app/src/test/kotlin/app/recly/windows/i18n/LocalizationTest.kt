@@ -52,10 +52,10 @@ class LocalizationTest {
      * nothing in it is shown as the language the app resolved to.
      */
     @Test
-    fun `the picker offers the two languages and not the system default`() {
+    fun `the picker offers all shipped languages without the system sentinel`() {
         assertEquals(
-            listOf(AppLanguage.ENGLISH to Str.LANGUAGE_EN, AppLanguage.KOREAN to Str.LANGUAGE_KO),
-            AppLanguage.choices,
+            listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"),
+            AppLanguage.choices.map { it.first.tag },
         )
     }
 
@@ -64,7 +64,10 @@ class LocalizationTest {
     fun `the effective language is the chosen one, or the system's`() {
         assertEquals(AppLanguage.KOREAN, Localization(FakeSettings()) { "ko" }.effective)
         assertEquals(AppLanguage.ENGLISH, Localization(FakeSettings()) { "en" }.effective)
-        assertEquals(AppLanguage.ENGLISH, Localization(FakeSettings()) { "ja" }.effective)
+        assertEquals(AppLanguage.JAPANESE, Localization(FakeSettings()) { "ja-JP" }.effective)
+        assertEquals(AppLanguage.CHINESE_TRADITIONAL, Localization(FakeSettings()) { "zh-Hant-HK" }.effective)
+        assertEquals(AppLanguage.ARABIC, Localization(FakeSettings()) { "ar-SA" }.effective)
+        assertEquals(AppLanguage.CHINESE_SIMPLIFIED, Localization(FakeSettings()) { "zh-Hans-HK" }.effective)
         assertEquals(
             AppLanguage.ENGLISH,
             Localization(FakeSettings(language = AppLanguage.ENGLISH)) { "ko" }.effective,
@@ -74,9 +77,15 @@ class LocalizationTest {
     /** A stored value this build does not know — an old release, a hand-edited registry — is `system`. */
     @Test
     fun `an unknown stored tag is the system default`() {
-        assertEquals(AppLanguage.SYSTEM, AppLanguage.of("ja"))
+        assertEquals(AppLanguage.SYSTEM, AppLanguage.of("xx"))
         assertEquals(AppLanguage.SYSTEM, AppLanguage.of(""))
         assertEquals(AppLanguage.SYSTEM, AppLanguage.of(null))
         assertEquals(AppLanguage.KOREAN, AppLanguage.of("ko"))
+        AppLanguage.choices.forEach { (language, _) ->
+            val localization = Localization(FakeSettings()) { "en" }
+            localization.language = language
+            assertEquals(language, localization.effective)
+            assertEquals(language.tag, localization.strings.value.language)
+        }
     }
 }

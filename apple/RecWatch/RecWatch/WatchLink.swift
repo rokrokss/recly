@@ -4,7 +4,7 @@ import RecKit
 import WatchConnectivity
 
 /// The watch's end of `WCSession` (docs/13 "Apple Watch" 전송, M5-L4 deliverable 2): the queue's way
-/// out, the acks' way in, and the workflow summary's way in.
+/// out, the acks' way in, and the phone's language setting's way in.
 ///
 /// It is built before the core is — activating the session early is what lets the acks for a
 /// transfer that finished while the app was gone be waiting when the queue opens — so the queue is
@@ -13,8 +13,6 @@ import WatchConnectivity
 final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     /// Set once the core is open. Delegate callbacks arrive on `WCSession`'s own queue.
     private var queue: WatchTransferQueue?
-    /// The phone's `updateApplicationContext`, as the model's picker wants it.
-    var onWorkflows: (([WatchWorkflow]) -> Void)?
     /// docs/07 rule 2: the phone's language setting, which the watch follows.
     var onLanguage: ((AppLanguage.Choice) -> Void)?
 
@@ -31,7 +29,7 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
     /// across a kill, but a part it never got to keeps its place in the queue file instead.
     func adopt(_ queue: WatchTransferQueue) {
         self.queue = queue
-        // The context is a snapshot, not a message: whatever is standing now is the current list.
+        // The context is a snapshot, not a message: whatever is standing now is the current one.
         adopt(context: session.receivedApplicationContext)
         Task { await queue.pump() }
     }
@@ -91,11 +89,8 @@ final class WatchLink: NSObject, WCSessionDelegate, WatchTransferLink {
         adopt(context: applicationContext)
     }
 
-    /// The two things the context carries, each ignored on its own when it is not there — a phone
-    /// too old to send the language still sends the workflows, and the watch keeps the language it
-    /// has (docs/07 rule 2).
+    /// A context with no language in it leaves the watch on the language it has (docs/07 rule 2).
     private func adopt(context: [String: Any]) {
-        if let workflows = WatchWorkflows.parse(context) { onWorkflows?(workflows) }
-        if let language = WatchWorkflows.language(context) { onLanguage?(language) }
+        if let language = WatchContext.language(context) { onLanguage?(language) }
     }
 }

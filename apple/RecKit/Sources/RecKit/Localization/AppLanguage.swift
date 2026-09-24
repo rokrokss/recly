@@ -10,18 +10,28 @@ import SwiftUI
 /// an explicit lookup through [AppLanguage.bundle].
 @MainActor
 public final class AppLanguage: ObservableObject {
-    /// docs/07 rule 1: `system` follows the device, and the two the app is translated into.
+    /// docs/07 rule 1: `system` follows the device, alongside the explicitly supported languages.
     public enum Choice: String, CaseIterable, Identifiable, Sendable {
         case system
         case ko
         case en
+        case ja
+        case zhHans = "zh-Hans"
+        case zhHant = "zh-Hant"
+        case es
+        case fr
+        case de
+        case pt
+        case ar
+        case hi
+        case ru
 
         public var id: String { rawValue }
 
         /// docs/07 rule 2: what the picker offers, each under its own name and in the order of
         /// those names. [system] is not one of them — it is the store's "nothing chosen", and what
         /// the picker then shows as chosen is [AppLanguage.effective].
-        public static let choices: [Choice] = [.en, .ko]
+        public static let choices: [Choice] = [.en, .ko, .ja, .zhHans, .zhHant, .es, .fr, .de, .pt, .ar, .hi, .ru]
 
         /// The bare tag, or nil for [system] — which has no tag of its own to look anything up in.
         public var code: String? { self == .system ? nil : rawValue }
@@ -51,7 +61,7 @@ public final class AppLanguage: ObservableObject {
     /// (which is what a `@Published` publisher, sent from `willSet`, would hand it).
     public static let didChange = Notification.Name("app.recly.language.didChange")
 
-    public var locale: Locale { choice.locale }
+    public var locale: Locale { Locale(identifier: effective.rawValue) }
 
     /// What the picker shows as chosen: the language the app is actually in, which with nothing
     /// chosen is the device's rather than "system". Writing it is an ordinary explicit pick — the
@@ -75,30 +85,35 @@ public final class AppLanguage: ObservableObject {
         set { UserDefaults.standard.set(newValue.rawValue, forKey: key) }
     }
 
-    public nonisolated static var locale: Locale { current.locale }
+    public nonisolated static var locale: Locale { Locale(identifier: resolvedCode) }
 
     /// The language the app is actually in, as a bare tag: the choice's own, or — for `system` —
-    /// the device's, narrowed to one of the two the app has (docs/07 rule 1).
+    /// the device's, resolved to a language the app supports (docs/07 rule 1).
     ///
     /// What a *different* device has to be told, because `system` there means that device's locale:
     /// a watch handed `system` follows its own language rather than the phone's (rule 2).
     public nonisolated static var resolvedCode: String { effective(current).rawValue }
 
     /// The same narrowing as a function of what it depends on, so it can be asked about a device
-    /// that is not this one: the choice's own language, or [system]'s, and anything that is not
-    /// Korean is the base language the app is written in (docs/07 rule 1).
+    /// that is not this one: the choice's own language, or [system]'s, with English as the fallback (docs/07 rule 1).
     public nonisolated static func effective(
         _ choice: Choice,
-        system: String? = Locale.current.language.languageCode?.identifier
+        system: String? = Locale.preferredLanguages.first
     ) -> Choice {
-        (choice.code ?? system) == "ko" ? .ko : .en
+        let tag = (choice.code ?? system ?? "en").replacingOccurrences(of: "_", with: "-").lowercased()
+        let parts = tag.components(separatedBy: "-")
+        if parts.first == "zh" {
+            if parts.contains("hans") { return .zhHans }
+            return parts.contains("hant") || parts.contains(where: { ["tw", "hk", "mo"].contains($0) }) ? .zhHant : .zhHans
+        }
+        return Choice.choices.first { $0.rawValue.lowercased() == tag || $0.rawValue == tag.components(separatedBy: "-")[0] } ?? .en
     }
 
-    /// The `.lproj` inside [base] the current choice names, or [base] itself when the choice is
-    /// `system` — which is the bundle the loader has already resolved to the device's language.
+    /// The `.lproj` inside [base] the current choice names, or [base] itself when
+    /// the resolved localization is not present in that bundle.
     public nonisolated static func bundle(in base: Bundle) -> Bundle {
-        guard let code = current.code,
-              let path = base.path(forResource: code, ofType: "lproj"),
+        let code = resolvedCode
+        guard let path = base.path(forResource: code, ofType: "lproj"),
               let localized = Bundle(path: path)
         else { return base }
         return localized

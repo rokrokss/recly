@@ -11,7 +11,6 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import recly.core.platform.JvmRuntime
-import recly.core.sync.WorkflowStore
 
 /**
  * docs/10 "스키마 마이그레이션". The emulator found this the hard way: a database created before
@@ -221,7 +220,7 @@ class MigrationTest {
         val driver = JvmRuntime.openDriver(path)
 
         val queries = RecDatabase(driver).recQueries
-        assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull())
+        assertEquals(DOCUMENT, queries.syncGet(LOCAL_DOC).executeAsOneOrNull())
         assertEquals("01J9WF", queries.syncGet("deviceDefaultWorkflowId").executeAsOneOrNull())
         listOf("remoteFileId", "dirty", "dirtySince", "writeFrozen", "seededHere", "guessedStarterId", "secretsRemoteFileId")
             .forEach { assertNull(queries.syncGet(it).executeAsOneOrNull(), "sync_state row '$it' survived") }
@@ -237,8 +236,8 @@ class MigrationTest {
         val driver = JvmRuntime.openDriver(path)
 
         val queries = RecDatabase(driver).recQueries
-        queries.syncSet(WorkflowStore.LOCAL_DOC, DOCUMENT)
-        assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull())
+        queries.syncSet(LOCAL_DOC, DOCUMENT)
+        assertEquals(DOCUMENT, queries.syncGet(LOCAL_DOC).executeAsOneOrNull())
         assertFalse(hasTable(driver, "secret_sync"))
         assertEquals(7L, userVersion(driver))
         driver.close()
@@ -249,14 +248,14 @@ class MigrationTest {
     fun `an up-to-date database is opened without being touched`() {
         val path = tempDatabase()
         JvmRuntime.openDriver(path).also { first ->
-            RecDatabase(first).recQueries.syncSet(WorkflowStore.LOCAL_DOC, DOCUMENT)
+            RecDatabase(first).recQueries.syncSet(LOCAL_DOC, DOCUMENT)
             first.close()
         }
 
         val driver = JvmRuntime.openDriver(path)
 
         val queries = RecDatabase(driver).recQueries
-        assertEquals(DOCUMENT, queries.syncGet(WorkflowStore.LOCAL_DOC).executeAsOneOrNull(), "a second create would have thrown")
+        assertEquals(DOCUMENT, queries.syncGet(LOCAL_DOC).executeAsOneOrNull(), "a second create would have thrown")
         assertEquals(7L, userVersion(driver))
         driver.close()
     }
@@ -307,12 +306,15 @@ class MigrationTest {
     private companion object {
         const val JOB = "01J9JOB"
 
+        /** The `sync_state` key older builds kept their workflow document under. */
+        const val LOCAL_DOC = "localDoc"
+
         /** Stands in for a real document: this test is about the row surviving, not its contents. */
         const val DOCUMENT = "{\"schema\":3}"
 
         /** What a version-2 device had in `sync_state` — the local two, and the Drive bookkeeping. */
         val SYNC_STATE_AT_2 = listOf(
-            WorkflowStore.LOCAL_DOC to DOCUMENT,
+            LOCAL_DOC to DOCUMENT,
             "deviceDefaultWorkflowId" to "01J9WF",
             "guessedStarterId" to "01J9WF",
             "remoteFileId" to "drive-1",

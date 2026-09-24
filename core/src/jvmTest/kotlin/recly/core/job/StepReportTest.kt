@@ -63,12 +63,12 @@ class StepReportTest {
         assertNull(StepReport.waitingMinutes(listOf(step(state = "not a time")), now))
     }
 
-    /** A transcribe that succeeded keeps its `submittedAt`; a webhook after it sitting out a backoff is not "transcribing". */
+    /** A transcribe that succeeded keeps its `submittedAt`; a later step sitting out a backoff is not "transcribing". */
     @Test
     fun `a finished transcribe is not a wait, whatever its state still says`() {
         val steps = listOf(
             step(state = "2026-08-26T01:23:00.000Z", status = StepStatus.SUCCEEDED),
-            step().copy(stepId = "hook", ordinal = 2),
+            step().copy(stepId = "publish", ordinal = 2),
         )
 
         assertNull(StepReport.waitingMinutes(steps, now))

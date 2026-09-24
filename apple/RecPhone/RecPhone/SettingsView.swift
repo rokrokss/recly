@@ -27,7 +27,7 @@ struct SettingsView: View {
                     // docs/09 "접근성": the one override of the system's light/dark, and the same
                     // block the Mac's settings pane draws (RecKit).
                     ThemeSection(theme: theme)
-                    workflows
+                    processingSettings
                     privacy
                     about
                 }
@@ -121,14 +121,13 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Workflows (docs/05 "워크플로우 내보내기 · 가져오기")
+    // MARK: - Recording processing (docs/05)
 
-    /// Definitions are this phone's own, so a file is how they reach another device. The same block
-    /// the Mac's settings pane draws (RecKit). Nil until the core is open.
+    /// The same block the Mac's settings pane draws (RecKit). Nil until the core is open.
     @ViewBuilder
-    private var workflows: some View {
-        if let model = model.workflowTransfer {
-            WorkflowTransferSection(model: model)
+    private var processingSettings: some View {
+        if let processing = model.processing {
+            ProcessingSettingsView(model: processing, preparationAllowed: model.state == .idle)
         }
     }
 

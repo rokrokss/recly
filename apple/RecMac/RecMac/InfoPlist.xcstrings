@@ -15,6 +15,66 @@
             "state": "translated",
             "value": "회의 상대의 목소리를 시스템 오디오로 함께 녹음합니다."
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyはマイクに加え、システム音声を通じて他の参加者の声も録音します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly除录制麦克风外，也通过系统音频录制其他参与者。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly除錄製麥克風外，也透過系統音訊錄製其他參與者。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly graba a los demás participantes mediante el audio del sistema, además de tu micrófono."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly enregistre les autres participants via l’audio du système, en plus de votre microphone."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly zeichnet andere Teilnehmende über Systemaudio sowie Ihr Mikrofon auf."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava os outros participantes pelo áudio do sistema, além do seu microfone."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسجّل Recly المشاركين الآخرين عبر صوت النظام، إضافةً إلى ميكروفونك."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly आपके माइक्रोफ़ोन के साथ सिस्टम ऑडियो से अन्य प्रतिभागियों को भी रिकॉर्ड करता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly записывает других участников через системный звук, а также ваш микрофон."
+          }
         }
       }
     },
@@ -31,6 +91,66 @@
           "stringUnit": {
             "state": "translated",
             "value": "회의·메모를 녹음해 전사합니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyは会議やメモを録音し、文字起こしに使います。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly录制会议和备忘，以便进行转录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly錄製會議和備忘，以便進行轉錄。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly graba reuniones y notas para transcribirlas."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly enregistre des réunions et des mémos pour les transcrire."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly nimmt Besprechungen und Notizen zur Transkription auf."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas para transcrição."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يسجّل Recly الاجتماعات والمذكرات لنسخها إلى نص."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly मीटिंग और मेमो रिकॉर्ड करता है ताकि उनका ट्रांसक्रिप्शन हो सके।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly записывает встречи и заметки для расшифровки."
           }
         }
       }

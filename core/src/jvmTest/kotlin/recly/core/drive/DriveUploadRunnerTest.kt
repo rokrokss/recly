@@ -20,7 +20,6 @@ import recly.core.model.Track
 import recly.core.model.recJson
 import recly.core.testing.FakeDrive
 import recly.core.testing.transcribeStep
-import recly.core.testing.webhookStep
 
 class DriveUploadRunnerTest {
     @Test
@@ -104,13 +103,13 @@ class DriveUploadRunnerTest {
         val h = DriveHarness(
             partCount = 1,
             partBytes = DriveHarness.SMALL_BYTES,
-            steps = listOf(Step.DriveUpload(id = "up"), webhookStep("hook"), transcribeStep("stt")),
+            steps = listOf(Step.DriveUpload(id = "up"), transcribeStep("stt")),
         )
 
         h.run()
 
         val folder = assertNotNull(h.drive.byName(h.base))
-        assertEquals("webhook,transcribe", folder.appProperties["pending"])
+        assertEquals("transcribe", folder.appProperties["pending"])
         assertEquals("2026-08-26T01:00:00.000Z", folder.appProperties["pendingAt"])
         assertEquals(h.recordingId, folder.appProperties["recordingId"], "the folder's own stamp survives")
     }

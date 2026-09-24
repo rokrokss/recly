@@ -12,15 +12,14 @@ public struct CoreBridge {
     /// Where `okio` writes: parts, `meta.json`, the SQLite file's directory.
     public let dataDirectory: URL
 
-    /// docs/12 M1: open the local DB and read the workflow list. Audio capture, sign-in and the
-    /// executor arrive in later lanes, so the only shell pieces wired here are the six of
-    /// `CoreDeps` plus the driver factory.
+    /// docs/12 M1: open the local DB and initialize the recording processing settings. Audio
+    /// capture, sign-in and the executor arrive in later lanes, so the only shell pieces wired here
+    /// are the six of `CoreDeps` plus the driver factory.
     ///
     /// Nothing here touches the Keychain. The store is handed on to the core for the things that
     /// are actually secret (`tokens`, `secrets`), and it is first reached when one of those is
     /// wanted — never on the way to the menu (see [deviceId]).
     public static func make(
-        appVersion: String,
         platform: Platform = CoreBridge.defaultPlatform,
         deviceName: String = CoreBridge.deviceName,
         dataDirectory: URL = CoreBridge.defaultDataDirectory,
@@ -53,7 +52,6 @@ public struct CoreBridge {
                 platform: platform,
                 name: deviceName
             ),
-            appVersion: appVersion,
             io: AppleRuntime.shared.ioDispatcher(),
             // docs/07 §6: the seed names are the device's language from the moment they are
             // written, so they are decided here and not left to the English base — the shells'
@@ -62,22 +60,13 @@ public struct CoreBridge {
             requireTransferConsent: platform == .ios,
             transcriptionPolicy: transcriptionPolicy ?? TranscriptionPolicy(
                 region: platform == .ios ? AppleStorefrontRegion() : nil
-            )
+            ),
+            localTranscription: LocalSpeechEngine.make()
         )
 
-        return CoreBridge(
-            // `basePath`, so the SQLite file lands in `dataDir` with everything else the app owns.
-            // `openCore` rather than `ReclyCore_(deps:driverFactory:)`: the database is opened in the
-            // initialiser, and a Kotlin initialiser that throws aborts the process — this one is
-            // `@Throws`, so a database that will not open reaches the caller as an error.
-            core: try AppleRuntime.shared.openCore(
-                deps: deps,
-                name: databaseName,
-                basePath: dataDirectory.path
-            ),
-            deps: deps,
-            dataDirectory: dataDirectory
-        )
+        let core = try AppleRuntime.shared.openCore(deps: deps, name: databaseName, basePath: dataDirectory.path)
+        if platform != .watchos { _ = try await core.initializeProcessing() }
+        return CoreBridge(core: core, deps: deps, dataDirectory: dataDirectory)
     }
 
     /// Builds before this one let the native driver pick the directory, which put the database in
@@ -175,12 +164,6 @@ public struct CoreBridge {
     /// The database file and the two SQLite writes beside it, in the order they have to move.
     private static let databaseSuffixes = ["", "-wal", "-shm"]
 
-    /// The two docs/05 defaults are seeded on first read, so this is never empty.
-    /// A `suspend fun` called as Swift `async` — SKIE's doing (see `docs/measurements.md`).
-    public func workflowNames() async throws -> [String] {
-        try await core.workflows.current().workflows.map(\.name)
-    }
-
     /// docs/01: a UUID v4 minted at install time; a reinstall gets a new one.
     ///
     /// A plain file next to the database, not the Keychain. The id is not a secret — it says which
@@ -264,14 +247,12 @@ public extension CoreBridge {
         #endif
     }
 
-    /// The language the core seeds default workflow names in (docs/07 §6), as the bare tag the
-    /// core understands. The *app's* language rather than the device's, because that is what the
-    /// user is reading when the seed is written; `en` and `ko` are the two the app has (docs/07
-    /// §1) and anything else falls back to the English base.
-    static var deviceLanguage: String { AppLanguage.resolvedCode }
+    /// The explicit app choice or full device language tag. Keep languages beyond the UI catalog
+    /// available when the core initializes transcription on a new installation (docs/07 §6).
+    static var deviceLanguage: String { AppLanguage.current.code ?? Locale.preferredLanguages.first ?? "en" }
 
-    /// What this build is, for [make] and for the About block at the bottom of every settings
-    /// screen (docs/09 트렌드 6). The three models each carried a copy of it.
+    /// What this build is, for the About block at the bottom of every settings screen
+    /// (docs/09 트렌드 6). The three models each carried a copy of it.
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }

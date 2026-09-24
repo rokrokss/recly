@@ -148,6 +148,7 @@ class GladiaProvider : SttProvider {
         Language.EN -> listOf("en")
         Language.KO_EN -> listOf("ko", "en")
         Language.AUTO -> emptyList()
+        else -> listOf(TranscriptionLanguages.code(language))
     }
 
     /** An utterance is already a speaker turn, so it maps onto a segment one for one. */

@@ -92,6 +92,7 @@ class ElevenLabsProvider : SttProvider {
         Language.EN -> "en"
         Language.KO_EN -> "ko"
         Language.AUTO -> null
+        else -> TranscriptionLanguages.code(language)
     }
 
     private fun read(ctx: SttContext, json: JsonObject, model: String): SttResult {

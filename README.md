@@ -19,24 +19,23 @@
 
 A Plaud or a NotePin sells you three things: a recorder, transcription, and AI notes. You already
 wear the recorder, and you already pay for the AI. Recly supplies the one piece you are missing,
-transcription with **your own** key at cost, and keeps the original audio in **your** Google Drive
-instead of on someone's server. What happens next (a webhook, the notes) is a workflow **you**
-wrote. There is no Recly server, no bot joining your call, and no monthly fee.
+transcription on a supported device or with **your own** API key, and keeps the original audio in
+**your** Google Drive. There is no Recly server, no bot joining your call, and no monthly fee.
 
 ## Why Recly
 
 - **The recorder you already wear.** A double press of the Galaxy Watch's home key starts
   recording; the watch hands the audio to your phone, and the phone does the rest. Six clients
   (Galaxy Watch, Android, Apple Watch, iPhone, macOS, Windows) record the same way and run the same
-  kind of workflow; desktops capture your mic and the other side of a Zoom, Teams or Meet call as
+  recording flow; desktops capture your mic and the other side of a Zoom, Teams or Meet call as
   separate tracks.
 - **Your Drive is the only storage.** Recordings go to a folder like `recly/2026/2026-09/` in
   your own Google Drive, using the narrowest permission Google offers (`drive.file`), and are never
   deleted before the upload is confirmed. Recly cannot see your files. It has no server to see them with.
-- **Files and webhooks are the interface.** When a recording finishes, Recly can call a signed
-  webhook so n8n, a Cloudflare Worker or your own script takes over. Transcription is an optional
-  step you add with your own key from any of 14 providers (AssemblyAI, Clova, Deepgram, OpenAI,
-  Azure and more). Notes are your agent's job, not a paid tier.
+- **Files are the interface.** Your agent reads transcription results from your Drive. Settings offer
+  on-device transcription, an external API using your key (AssemblyAI, Clova, Deepgram, OpenAI, Azure
+  and more), or upload only. Speaker separation is automatic when supported. Notes are your agent's
+  job, not a paid tier.
 - **Nothing covert.** Recording is always visible. Desktops detect a meeting, ask, and only then
   record. No analytics, no crash reporting, no update pings.
 
@@ -46,10 +45,9 @@ wrote. There is no Recly server, no bot joining your call, and no monthly fee.
 |---|---|---|
 | Recording | Your watch, phone or desktop | Nothing. A watch hands the audio to your paired phone, and only there. |
 | Storage | Your Google Drive | The audio parts and a small metadata file, to your own account. |
-| Webhook | An address you typed into the workflow | One signed POST with the recording's metadata and Drive links. Never the audio, never the transcript text. |
-| Transcription | A provider you chose, with your own key | The audio, only if you added this step. The transcript is written back next to the recording. |
+| Transcription | On device, or a provider you chose with your own key | Local transcription sends no audio to an ASR service. External mode sends the joined audio to the selected provider. Results are written next to the recording in Drive. |
 | Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes to your Notion. Recly is not involved. |
-| Workflow definitions, API keys, webhook secrets | Your device's secure storage | Nothing. They are never synced. Move them with Settings → Export/Import. |
+| Processing settings and API keys | Your device | Nothing is synced. Settings → Export/Import moves configuration only; enter keys separately on each device. |
 
 The full list of every network path, with nothing left out, is in the
 [privacy policy](https://recly.dev/policy/privacy-policy).
@@ -80,12 +78,22 @@ a watch and getting past the Windows SmartScreen warning. Building from source i
 2. **Upload.** When you stop, the recording goes to your Drive as it is. Watches hand off to the
    phone first. If the network is down, it waits and retries. The original is never deleted before
    Drive has acknowledged it.
-3. **Run your workflow.** The steps you defined run on the device that recorded: upload, then
-   optionally a webhook and a transcript. Workflows are edited on the phone or desktop and can be
-   exported as a JSON file to carry to another device.
+3. **Transcribe and finish.** After the original upload, the phone or desktop transcribes and
+   uploads the result. Choose the transcription method and storage folder in Settings. Turning
+   transcription off keeps the original upload.
 
-A workflow is a small JSON document. The schema and examples are in [`spec/`](spec/), so anything
-that can read JSON (your n8n flow, your script) knows exactly what it will receive.
+New installations default to on-device transcription where the app ships an on-device engine. The
+Apple adapter requires iOS/macOS 26, supported hardware and language assets. Android, Windows and
+Apple devices below OS 26 have no engine yet, so new installations there start with transcription
+off and do not offer on-device; select an external API to transcribe. Local transcription has no automatic
+cloud fallback.
+
+The interface supports English, Korean, Japanese, Simplified and Traditional Chinese, Spanish,
+French, German, Portuguese, Arabic, Hindi and Russian. Transcription offers 20 language choices,
+filtered by the provider or the device's speech engine. Desktop recordings always use meeting mode
+(microphone plus system audio), with automatic microphone selection.
+
+Settings and transcript formats are documented in [`spec/`](spec/).
 
 ## Notes: bring your own agent
 
@@ -118,14 +126,14 @@ decide about pricing last week?"*. Don't like the format? Edit the skill file. T
 | Client | Built with | What it does |
 |---|---|---|
 | Galaxy Watch (Wear OS) | Kotlin · Wear Compose | Record, hand off to the Android phone |
-| Android phone | Kotlin · Compose | Record, edit and run workflows, Google sign-in |
+| Android phone | Kotlin · Compose | Record, configure processing, Google sign-in |
 | Apple Watch | SwiftUI | Record, hand off to the iPhone |
-| iPhone | SwiftUI | Record, edit and run workflows, Google sign-in |
-| macOS | SwiftUI menu-bar app | Meeting capture (mic + system audio), run workflows |
-| Windows | Compose Desktop + Rust capture helper | Meeting capture, run workflows |
+| iPhone | SwiftUI | Record, configure processing, Google sign-in |
+| macOS | SwiftUI menu-bar app | Meeting capture (mic + system audio), process recordings |
+| Windows | Compose Desktop + Rust capture helper | Meeting capture, process recordings |
 
-All six share one Kotlin Multiplatform core: the workflow engine, resumable Drive uploads,
-webhooks, transcription adapters and the job queue.
+All six share one Kotlin Multiplatform core: the fixed recording flow, resumable Drive uploads,
+transcription adapters and the job queue.
 
 <p align="center">
   <img src="docs/design/screenshots/galaxy-watch.png" height="150" alt="Galaxy Watch">&nbsp;&nbsp;
@@ -137,8 +145,8 @@ webhooks, transcription adapters and the job queue.
 
 ## Privacy
 
-Recly has no server. The only places data can go are your Google Drive, the webhook address you
-typed in, the transcription provider you chose, and your own paired watch or phone. The
+Recly has no server. The only places data can go are your Google Drive, the transcription
+provider you chose, and your own paired watch or phone. The
 [privacy policy](https://recly.dev/policy/privacy-policy) lists every one of those paths, and
 [docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15) is the engineering contract
 behind it: any change that adds a network call must update that section first.
@@ -163,14 +171,14 @@ apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / 
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI)
 spec/        JSON Schema + examples — the contract every client honors
 skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
-scripts/     icon rendering, local webhook receiver
+scripts/     icon rendering
 docs/        recly.md (the design source of truth) + install.md + development.md + policy/
 ```
 
 | Document | Contents |
 |---|---|
 | [docs/development.md](docs/development.md) | Build and test every client, values filled in locally (OAuth client IDs), cutting a release |
-| [docs/recly.md](docs/recly.md) | **The design source of truth** (Korean). Architecture, workflow contract, recording and retention, webhooks, storage and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
-| [spec/](spec/) | Machine-readable contract: `workflow.schema.json`, `recording.meta.schema.json`, `webhook.payload.schema.json`, `transcript.schema.json`, `examples/` |
+| [docs/recly.md](docs/recly.md) | **The design source of truth** (Korean). Architecture, the internal step model, recording and retention, processing settings and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
+| [spec/](spec/) | Machine-readable contract: `recording-settings.schema.json`, `recording.meta.schema.json`, `transcript.schema.json`, `examples/` |
 | [skills/README.md](skills/README.md) | The `recly` plugin: what the two skills do and how to set them up in Claude Code, the Claude app and ChatGPT |
 | [AGENTS.md](AGENTS.md) | Orientation for coding agents working in this repository |

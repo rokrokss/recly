@@ -6,13 +6,12 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import recly.core.model.Part
-import recly.core.sync.WorkflowSummary
 import recly.core.transfer.Ack
 
 /**
- * Everything the phone puts on the wire towards the watch. Three payloads, all tiny, all
+ * Everything the phone puts on the wire towards the watch. Two payloads, both tiny, both
  * hand-built: `@Serializable` classes would mean the serialization compiler plugin in this module
- * for three objects that exist only as a message format, and the format is easier to read written
+ * for two objects that exist only as a message format, and the format is easier to read written
  * out.
  *
  * The watch parses these — [AckJson] is the other half, and it is tested against what this builds —
@@ -23,9 +22,6 @@ object WearJson {
     /** The message paths the acks go out on. */
     const val ACK_PART: String = "/rec/ack"
     const val ACK_META: String = "/rec/ack-meta"
-
-    /** The data item the workflow summary is published to. */
-    const val WORKFLOWS: String = "/rec/workflows"
 
     private val json = Json
 
@@ -65,25 +61,6 @@ object WearJson {
                             put("part", part.part)
                             put("track", part.track.wire)
                         }
-                    }
-                }
-            }
-        },
-    )
-
-    /**
-     * docs/05 "워치" row: the watch is told the id and the name — never the steps, because it never
-     * runs one and never touches Drive, and (ADR-016) nothing else, because a definition carries no
-     * flag about which device runs it. Which workflow this watch starts with is the watch's own
-     * local pick, not something the phone publishes.
-     */
-    fun workflows(summary: List<WorkflowSummary>): String = json.encodeToString(
-        buildJsonObject {
-            putJsonArray("workflows") {
-                summary.forEach { workflow ->
-                    addJsonObject {
-                        put("id", workflow.id)
-                        put("name", workflow.name)
                     }
                 }
             }

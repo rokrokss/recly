@@ -28,7 +28,7 @@ final class MeetingRecorderTests: XCTestCase {
         let recorder = SegmentedRecorder(core: bridge.core, input: mic, systemInput: system) {
             failures.record($0)
         }
-        let id = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        let id = try await recorder.start(title: nil, mode: .meeting)
         system.push(seconds: 1, frequency: 440, time: 100)
         mic.push(seconds: 1, frequency: 220, time: 100)
         XCTAssertEqual(recorder.recordedSec, 0, "both delivery queues still hold their packets")
@@ -63,7 +63,7 @@ final class MeetingRecorderTests: XCTestCase {
             core: bridge.core, segmentSec: 5, input: mic, systemInput: system
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        let recordingId = try await recorder.start(title: nil, mode: .meeting)
         XCTAssertEqual(system.starts, 1, "meeting mode opens the tap")
         push(seconds: 7, mic: mic, system: system, micSample: Self.micTone, systemSample: Self.systemTone)
         let result = await recorder.stop(title: nil)
@@ -114,7 +114,7 @@ final class MeetingRecorderTests: XCTestCase {
             core: bridge.core, segmentSec: 900, input: mic, systemInput: system
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        let recordingId = try await recorder.start(title: nil, mode: .meeting)
         // Both sides loud: summing without the headroom would clip, and the clipping is what the
         // last assertion looks for.
         push(seconds: 3, mic: mic, system: system, micSample: Self.loudMicTone, systemSample: Self.loudSystemTone)
@@ -183,7 +183,7 @@ final class MeetingRecorderTests: XCTestCase {
             core: bridge.core, segmentSec: 5, input: mic, systemInput: system
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil, mode: .microphone)
+        let recordingId = try await recorder.start(title: nil, mode: .microphone)
         XCTAssertTrue(mic.push(frames: 112_000) { Self.micTone($0) })
         _ = await recorder.stop(title: nil)
 
@@ -208,7 +208,7 @@ final class MeetingRecorderTests: XCTestCase {
         ) { _ in }
 
         do {
-            _ = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+            _ = try await recorder.start(title: nil, mode: .meeting)
             XCTFail("expected the refused tap to be thrown")
         } catch let error as RecorderError {
             XCTAssertEqual(error.kind, .systemAudioUnavailable)
@@ -232,7 +232,7 @@ final class MeetingRecorderTests: XCTestCase {
             core: bridge.core, segmentSec: 900, input: mic, systemInput: system
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        let recordingId = try await recorder.start(title: nil, mode: .meeting)
         push(seconds: 1, mic: mic, system: system, micSample: Self.micTone, systemSample: Self.systemTone)
         system.onOutage?("output_device_change", 0.4)
         push(seconds: 1, mic: mic, system: system, micSample: Self.micTone, systemSample: Self.systemTone)
@@ -262,7 +262,7 @@ final class MeetingRecorderTests: XCTestCase {
             core: bridge.core, segmentSec: 900, input: mic, systemInput: system
         ) { failures.record($0) }
 
-        let recordingId = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        let recordingId = try await recorder.start(title: nil, mode: .meeting)
         push(seconds: 2, mic: mic, system: system, micSample: Self.micTone, systemSample: Self.systemTone)
         // Open when the recording ends, and reported the way the real tap reports it: from `stop`.
         system.outageAtStop = (reason: "system_tap_silent", seconds: 1.5)
@@ -302,7 +302,7 @@ final class MeetingRecorderTests: XCTestCase {
             driftIntervalSec: 0
         ) { failures.record($0) }
 
-        _ = try await recorder.start(workflowId: nil, title: nil, mode: .meeting)
+        _ = try await recorder.start(title: nil, mode: .meeting)
         // Matched pairs: three tap frames under every microphone frame, which is what a 48 kHz tap
         // under a 16 kHz timeline is. Nothing drifts, so nothing is corrected.
         for _ in 0 ..< 4 { pair(mic: mic, system: system) }
@@ -401,7 +401,6 @@ final class MeetingRecorderTests: XCTestCase {
 
     private func makeBridge() async throws -> CoreBridge {
         try await CoreBridge.make(
-            appVersion: "0.0.0-test",
             deviceName: "RecKitTests",
             dataDirectory: dataDirectory,
             databaseName: "reckit-tests-\(UUID().uuidString).db",

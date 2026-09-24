@@ -6,17 +6,17 @@ Contents: folder layout · names · `meta.json` · the transcript files · folde
 
 ```
 My Drive/
-  recly/2026/2026-08/                       the workflow's folder template; may differ per workflow
+  recly/memo/2026-08/                      the device storage folder; may differ by settings
     20260826T010000Z_desktop_01J9ABCD/      one folder per recording = {base}
       20260826T010000Z_desktop_01J9ABCD_p001_mic.m4a     audio parts (you do not need them)
       20260826T010000Z_desktop_01J9ABCD_p001_sys.m4a
       20260826T010000Z_desktop_01J9ABCD.meta.json        uploaded last
-      20260826T010000Z_desktop_01J9ABCD.transcript.txt   only when the workflow transcribes
+      20260826T010000Z_desktop_01J9ABCD.transcript.txt   only when transcription is enabled
       20260826T010000Z_desktop_01J9ABCD.transcript.json
 ```
 
-The default template is `recly/{yyyy}/{yyyy}-{MM}` (in the recording's own timezone), but a user
-may have several workflows with different templates, e.g. `recly/memo/2026-08`. Searching Drive by
+The default template is `recly/memo/{{yyyy}}-{{MM}}` (in the recording's own timezone).
+Existing recordings may use folders from earlier settings or legacy workflows. Searching Drive by
 file name (`name contains '.transcript.txt'`) finds every transcript without walking the tree.
 
 ## Names
@@ -57,7 +57,10 @@ changes or a segment passes 60 seconds:
 ```
 
 Speakers are normalized to `S1`, `S2`, … in order of first appearance. Names are never in the
-file. If the workflow ran without diarization, everything is `S1`.
+file. Legacy v1 transcripts without diarization may use `S1` for everything; this does not prove
+a single participant. Local v2 with `speakerIdentification: unavailable` instead has `speakers: []`
+and empty segment speakers. Its text lines are `[HH:MM:SS] text`. Never fabricate labels or owners.
+The v2 `timing` field declares segment or word precision.
 
 `{base}.transcript.json` — the machine copy with per-segment `start`/`end` seconds and, when the
 provider gives them, word timings. Use it only if the `.txt` is missing or you need exact seconds.
@@ -70,7 +73,7 @@ Timestamps are on the recording's own time axis (seconds since `startedAt`).
 |---|---|---|
 | no `meta.json` | another device is still uploading (meta goes last) | do not use it; tell the user it is uploading |
 | `meta.json` but no transcript, folder marker `pending` contains `transcribe` | transcription is running (up to a few hours for long recordings) | tell the user it is still transcribing |
-| `meta.json` but no transcript, no `pending` | the workflow has no `transcribe` step | say there is no transcript |
+| `meta.json` but no transcript, no `pending` | transcription is off, failed, or not yet published | say no transcript is available; do not infer why |
 | transcript present | ready | read it |
 
 The `pending` marker is a Drive folder property (`appProperties.pending`). If your Drive tool

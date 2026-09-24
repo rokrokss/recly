@@ -9,7 +9,7 @@ Contents: properties · creating the database · queries · page body layout.
 | `Name` | title | `meta.title`; when absent, `{date} {source}` e.g. `2026-08-26 desktop` |
 | `Date` | date (with time) | `startedAt` rendered in `timezone` |
 | `Duration (min)` | number | `durationSec / 60`, rounded |
-| `Participants` | rich_text | mapped names if known, else `context.participants` as a count, else the speaker labels seen |
+| `Participants` | rich_text | mapped names if known, else `context.participants` as a count, else identified speaker labels; leave empty when none are available |
 | `Type` | select: `minutes`, `decision-log`, `interview`, `lecture`, `memo` | the template used |
 | `Source` | select: `watch`, `phone`, `desktop` | `meta.source` |
 | `Recording` | url | `meta.drive.folderUrl`; if the meta predates that field, the folder link from your Drive tool; otherwise leave empty |

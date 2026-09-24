@@ -2,10 +2,6 @@ import AppIntents
 import Foundation
 
 /// What the watch's entry points drive — the app's `WatchRecordingModel`, or a fake in a test.
-///
-/// There is no workflow parameter here, unlike the phone's `StartRecordingIntent`: the watch's pick
-/// is made on its own screen and `nil` runs the source's default (ADR-016), and an Ultra action
-/// button press has nobody to ask.
 @MainActor
 protocol WatchRecordingCommands: AnyObject {
     func startFromIntent() async

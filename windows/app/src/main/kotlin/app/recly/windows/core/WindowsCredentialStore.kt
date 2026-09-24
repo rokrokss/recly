@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import recly.core.platform.SecureStore
 
 /**
- * docs/05 "시크릿" · docs/06 Windows: tokens and webhook signing keys live in the Windows Credential
+ * docs/05 "시크릿" · docs/06 Windows: tokens and provider keys live in the Windows Credential
  * Manager, as generic credentials this app owns.
  *
  * JNA rather than `jna-platform`: the platform bundle wraps most of advapi32 but not the credential

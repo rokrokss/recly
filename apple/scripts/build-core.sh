@@ -4,24 +4,46 @@
 # `swift build` resolve the package on its own, without a relative path out of the package root.
 # `SKIP_IF_PRESENT=1` leaves an existing Gradle build alone (Xcode "Run Script" use) but still
 # refreshes the copy; without it Gradle decides, which is cheap when nothing in :core changed.
+#
+# `CORE_SLICES=macos` (`make core-mac`) is the Mac development loop: a full build compiles and
+# links six Kotlin/Native targets with release optimization, which takes most of an hour after a
+# :core change, while `make mac` / `make mac-test` read only the macOS slice. It links that one
+# slice — release, like the full build: a debug framework keeps SQLiter's load-extension calls,
+# which macOS's system SQLite does not export, and a test bundle or app linked against it fails to
+# load — swaps it into the staged copy, and leaves a marker naming it so
+# `build-sim.sh` refuses to build iOS or watchOS against the older slices beside it. A full run
+# (the default, and what the release scripts call) removes the marker.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 built="$repo_root/core/build/XCFrameworks/release/ReclyCore.xcframework"
 staged="$repo_root/apple/RecKit/Frameworks/ReclyCore.xcframework"
+partial="$repo_root/apple/RecKit/Frameworks/ReclyCore.partial"
 
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk@21}"
 export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}"
 
-if [[ "${SKIP_IF_PRESENT:-0}" == "1" && -d "$built" ]]; then
-  echo "build-core: $built already there, skipping the Gradle build"
+if [[ "${CORE_SLICES:-all}" == "macos" ]]; then
+  if [[ ! -d "$staged/macos-arm64" ]]; then
+    echo "build-core: no staged XCFramework to update yet — run a full \`make core\` once" >&2
+    exit 1
+  fi
+  "$repo_root/gradlew" -p "$repo_root" :core:linkReleaseFrameworkMacosArm64 "$@"
+  rsync -a --delete "$repo_root/core/build/bin/macosArm64/releaseFramework/ReclyCore.framework/" \
+    "$staged/macos-arm64/ReclyCore.framework/"
+  echo "macos-arm64 $(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$partial"
 else
-  "$repo_root/gradlew" -p "$repo_root" :core:assembleXCFramework "$@"
-fi
+  if [[ "${SKIP_IF_PRESENT:-0}" == "1" && -d "$built" ]]; then
+    echo "build-core: $built already there, skipping the Gradle build"
+  else
+    "$repo_root/gradlew" -p "$repo_root" :core:assembleXCFramework "$@"
+  fi
 
-# --delete: a stale slice left in the copy would still be linked.
-mkdir -p "$(dirname "$staged")"
-rsync -a --delete "$built/" "$staged/"
+  # --delete: a stale slice left in the copy would still be linked.
+  mkdir -p "$(dirname "$staged")"
+  rsync -a --delete "$built/" "$staged/"
+  rm -f "$partial"
+fi
 
 # Xcode's explicit-module cache keeps a precompiled ReclyCore.pcm keyed to the header it was built
 # from. A refreshed XCFramework changes that header, and instead of rebuilding the module the next

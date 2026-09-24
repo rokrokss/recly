@@ -6,7 +6,8 @@ description: Turn a Recly recording's transcript into minutes, a decision log, i
 # recly-notes — notes from a Recly recording
 
 Recly records on a watch, phone, or desktop and uploads the recording to the **user's own Google
-Drive**. When the workflow has a `transcribe` step, a diarized transcript lands next to the audio.
+Drive**. When transcription is enabled in Processing Settings, a transcript lands next to the audio.
+Speaker identification depends on the selected engine.
 Summarizing is deliberately not part of that pipeline — it is your job. This skill finds one
 recording, reads its transcript, and writes the notes the user asked for.
 
@@ -49,7 +50,7 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
   still uploading; a folder whose Drive marker `pending` contains `transcribe` is still being
   transcribed. Use the newest folder that *has* a transcript, and tell the user a newer recording
   exists and is still uploading or transcribing. Never fall back silently.
-- A recording whose workflow had no `transcribe` step has no transcript at all. Say so; do not
+- A recording made with transcription off has no transcript. Say so; do not
   guess at the audio.
 - "Yesterday's 3 pm meeting" resolves through `meta.json` `startedAt` in the recording's own
   `timezone`.
@@ -57,7 +58,10 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
 ## Read it
 
 - `{base}.transcript.txt` is one turn per line: `[HH:MM:SS] S1: text`. Speakers are `S1`, `S2`, …
-  in order of first appearance; there are no names.
+  in order of first appearance when speaker identification is available; there are no names.
+  Local v2 transcripts may instead have `[HH:MM:SS] text`, `speakerIdentification: unavailable`,
+  `speakers: []`, and empty segment speakers. Do not invent speaker labels, a speaker count, or
+  action owners from these. Use "unassigned" unless the words explicitly name an owner.
 - If only `{base}.transcript.json` is there, read its `segments` (`start` seconds, `speaker`,
   `text`) and treat them the same way; render a timestamp as `[HH:MM:SS]` from `start`.
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,

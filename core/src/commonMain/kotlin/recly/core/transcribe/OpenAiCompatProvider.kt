@@ -140,6 +140,7 @@ class OpenAiCompatProvider(private val profile: Profile) : SttProvider {
         Language.EN -> "en"
         Language.KO_EN -> "ko"
         Language.AUTO -> null
+        else -> TranscriptionLanguages.code(language)
     }
 
     /**

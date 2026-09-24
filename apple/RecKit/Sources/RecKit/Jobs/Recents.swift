@@ -57,8 +57,6 @@ public struct RecentItem: Identifiable, Sendable {
     /// The recording's Drive folder: the `drive.upload` step's link, or the folder the row knows
     /// on its own — an adopted recording was read out of that folder (docs/03).
     public let link: URL?
-    /// The workflow the job runs, so a key that was refused can be fixed where it is defined.
-    public let workflowId: String?
     /// docs/08 "폴링 · 상태": how long the transcription has been in flight, when it is. Nil for
     /// every other state, which has a word of its own.
     public let waitingMinutes: Int?
@@ -140,7 +138,6 @@ public struct RecentItem: Identifiable, Sendable {
         state: String,
         link: URL?,
         lastError: String?,
-        workflowId: String? = nil,
         waitingMinutes: Int? = nil,
         nextRunAt: Date? = nil,
         durationSec: Double? = nil,
@@ -154,7 +151,6 @@ public struct RecentItem: Identifiable, Sendable {
         self.state = state
         self.link = link
         self.lastError = lastError
-        self.workflowId = workflowId
         self.waitingMinutes = waitingMinutes
         self.nextRunAt = nextRunAt
         self.durationSec = durationSec
@@ -177,7 +173,7 @@ public enum Recents {
         let now = core.deps.clock.now()
         var items: [RecentItem] = []
         for record in try await core.recordings.list(limit: limit) {
-            // One job per (recording, workflow); the newest is the one the user last asked for.
+            // The newest job is the one the user last asked for.
             let job = byRecording[record.id]?
                 .max { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }
             var steps: [StepRun] = []
@@ -190,16 +186,18 @@ public enum Recents {
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
             // it left behind say nothing about it (docs/10 "잡 스냅샷").
             let error = job?.snapshotError ?? lastError(steps)
+            let localPending = (job?.status == .waiting || job?.status == .running || job?.status == .pending)
+                && StepReport.shared.localPending(workflow: job?.workflow, steps: steps)
+            let localRunning = localPending ? (try await core.localTranscription.isRunning(recordingId: record.id)).boolValue : false
             items.append(
                 RecentItem(
                     id: record.id,
                     jobId: job?.id,
                     title: record.meta.title ?? "",
                     startedAt: record.meta.startedAt,
-                    state: stateLabel(record: record, job: job),
+                    state: localPending ? (localRunning ? "Transcribing on this device" : "Transcription pending") : stateLabel(record: record, job: job),
                     link: driveLink(steps) ?? record.driveFolderUrl.flatMap(URL.init(string:)),
                     lastError: error,
-                    workflowId: job?.workflowId,
                     waitingMinutes: waiting,
                     nextRunAt: job?.nextRunAt.map {
                         Date(timeIntervalSince1970: Double($0.toEpochMilliseconds()) / 1000)
@@ -213,7 +211,7 @@ public enum Recents {
         return items
     }
 
-    static func stateLabel(record: RecordingRecord, job: Job_?) -> String {
+    static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?) -> String {
         // docs/03 "워치 → 폰 전송 계약": the placeholder row this phone opened for a transfer that is
         // still arriving. It carries the recording's own `RECORDING` status, so it has to be asked
         // about before that — otherwise the row reads as this phone recording, which it is not.
@@ -275,6 +273,7 @@ public enum Recents {
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings.
     private static let waiting: Set<String> = [
+        "Transcribing on this device", "Transcription pending",
         "Waiting", "Retry pending", "Transfer permission needed",
         "Receiving from the watch", "Uploading on another device",
     ]

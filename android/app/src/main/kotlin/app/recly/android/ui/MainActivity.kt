@@ -47,14 +47,12 @@ import app.recly.recording.RecorderState
 import kotlinx.coroutines.launch
 
 /**
- * What the phone app is in M2: record, watch the queue, define what a recording is for, and the
- * account (docs/11 A3·A4·A6·A10). The editor is its own tab rather than a page inside Settings — it
- * is the screen a user opens on purpose, not one they go looking for behind a setting.
+ * What the phone app is: record, watch the queue, and the settings — the account and what happens
+ * to a recording (docs/11 A3·A4·A10).
  */
 private enum class Tab(@param:StringRes val label: Int, val glyph: NavGlyph) {
     RECORD(R.string.tab_record, NavGlyph.RECORD),
     JOBS(R.string.tab_jobs, NavGlyph.LIST),
-    WORKFLOWS(R.string.tab_workflows, NavGlyph.WORKFLOWS),
     SETTINGS(R.string.tab_settings, NavGlyph.SETTINGS),
 }
 
@@ -63,7 +61,6 @@ class MainActivity : ComponentActivity() {
     private val model: MainViewModel by viewModels()
     private val recordingModel: RecordingViewModel by viewModels()
     private val jobsModel: JobsViewModel by viewModels()
-    private val workflowsModel: WorkflowsViewModel by viewModels()
     private val settingsModel: SettingsViewModel by viewModels()
 
     /**
@@ -86,26 +83,11 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * docs/05 "워크플로우 내보내기 · 가져오기". The two SAF contracts and nothing else: where the file
-     * goes and which file it is are the platform's to ask, and the bytes are the ViewModel's.
-     * Cancelling either picker hands back a null uri, which is not a failure and says nothing.
-     */
-    private val exportWorkflows =
-        registerForActivityResult(ActivityResultContracts.CreateDocument(WORKFLOWS_MIME)) { uri ->
-            uri?.let(settingsModel::exportWorkflows)
-        }
-
-    private val importWorkflows =
-        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let(settingsModel::pickImport)
-        }
-
-    /**
      * docs/10: which fix screen a tapped job notification asked for, until the composition has
      * taken it. It is state and not a flag on the intent for the same reason as the auto-start —
      * the intent is redelivered on every recreation and the tap happened once.
      */
-    private val fixRequest = mutableStateOf<FixRequest?>(null)
+    private val fixRequest = mutableStateOf<AlertReason?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -157,7 +139,6 @@ class MainActivity : ComponentActivity() {
                 val recording by recordingModel.state.collectAsState()
                 val recorder by recordingModel.recorder.collectAsState()
                 val jobs by jobsModel.state.collectAsState()
-                val workflows by workflowsModel.state.collectAsState()
                 var tab by rememberSaveable { mutableStateOf(Tab.RECORD) }
                 // docs/11 A9: a tile, widget or shortcut tap is a request to record *now*, so it
                 // brings the Record tab with it. The tab is remembered across a restore, and a
@@ -167,10 +148,8 @@ class MainActivity : ComponentActivity() {
                     if (recording.autoStart != null) tab = Tab.RECORD
                 }
                 LaunchedEffect(tab) {
-                    // Leaving the Workflows tab forgets an editor a notification asked for but the
-                    // document could not answer yet — it must not pop up over another screen later.
-                    if (tab != Tab.WORKFLOWS) workflowsModel.dismissPending()
-                    // The same for an auto-start the user has navigated away from.
+                    // Leaving the Record tab forgets an auto-start the user has navigated away from —
+                    // it must not start a recording behind another screen later.
                     if (tab != Tab.RECORD) recordingModel.dropAutoStart()
                 }
 
@@ -181,38 +160,24 @@ class MainActivity : ComponentActivity() {
                 val fixAuth = {
                     if (state.email == null) tab = Tab.SETTINGS else model.reauthorizeDrive(this)
                 }
-                val goFix: (AlertReason, String?) -> Unit = { reason, workflowId ->
+                val goFix: (AlertReason) -> Unit = { reason ->
                     when (reason.fix) {
                         FixSurface.SIGN_IN -> fixAuth()
                         FixSurface.DRIVE_STORAGE -> startActivity(
                             Intent(Intent.ACTION_VIEW, DRIVE_STORAGE_URL.toUri()),
                         )
 
-                        FixSurface.SECRETS -> {
-                            tab = Tab.WORKFLOWS
-                            workflowId?.let(workflowsModel::edit) ?: workflowsModel.openSecrets()
-                        }
-
-                        // docs/10:124-135: a quota or a webhook is fixed in the definition that
-                        // holds the key or the URL, so the editor of *that* workflow is the screen
-                        // — the tab alone would leave the user to find it. Several workflows on one
-                        // reason open the first; the banner behind them still counts them all.
-                        FixSurface.EDITOR -> {
-                            tab = Tab.WORKFLOWS
-                            workflowId?.let(workflowsModel::edit)
-                        }
+                        FixSurface.SECRETS, FixSurface.PROCESSING -> { tab = Tab.SETTINGS }
                     }
                 }
 
                 LaunchedEffect(fixRequest.value) {
-                    val request = fixRequest.value ?: return@LaunchedEffect
+                    val reason = fixRequest.value ?: return@LaunchedEffect
                     fixRequest.value = null
-                    goFix(request.reason, request.workflowId)
+                    goFix(reason)
                 }
                 BackHandler(enabled = tab != Tab.RECORD) { tab = Tab.RECORD }
-                BackHandler(enabled = tab == Tab.WORKFLOWS && (workflows.secretsOpen != null || workflows.editor != null)) {
-                    if (workflows.secretsOpen != null) workflowsModel.closeSecrets() else workflowsModel.cancel()
-                }
+
 
                 // The detail screen is a page inside the jobs tab, so Back has to leave it.
                 BackHandler(enabled = tab == Tab.JOBS && jobs.detail != null) { jobsModel.closeDetail() }
@@ -236,23 +201,18 @@ class MainActivity : ComponentActivity() {
                 ) { insets ->
                     val content = Modifier.fillMaxSize().padding(insets)
                     when (tab) {
-                        Tab.RECORD -> RecordTab(recording, recorder, jobs, recordingModel, content)
+                        Tab.RECORD -> RecordTab(recording, recorder, jobs, recordingModel, content, onOpenProcessing = { tab = Tab.SETTINGS })
 
                         Tab.JOBS -> JobsTab(
                             state = jobs,
                             model = jobsModel,
                             onRecord = { tab = Tab.RECORD },
-                            // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is
-                            // where "check the key" has to land.
-                            onCheckKey = { workflowId ->
-                                tab = Tab.WORKFLOWS
-                                workflowId?.let(workflowsModel::edit)
-                            },
-                            onFix = { alert -> goFix(alert.reason, alert.workflowId) },
+                            // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so
+                            // that is where "check the key" has to land.
+                            onCheckKey = { tab = Tab.SETTINGS },
+                            onFix = { alert -> goFix(alert.reason) },
                             modifier = content,
                         )
-
-                        Tab.WORKFLOWS -> WorkflowsTab(workflows, workflowsModel, content)
 
                         Tab.SETTINGS -> SettingsTab(
                             main = state,
@@ -260,8 +220,6 @@ class MainActivity : ComponentActivity() {
                             model = model,
                             settingsModel = settingsModel,
                             activity = this@MainActivity,
-                            onExportWorkflows = { exportWorkflows.launch(WORKFLOWS_FILE_NAME) },
-                            onImportWorkflows = { importWorkflows.launch(WORKFLOWS_MIME_FILTER) },
                             modifier = content,
                         )
                     }
@@ -301,11 +259,8 @@ class MainActivity : ComponentActivity() {
 
     private fun consumeFix(intent: Intent) {
         val name = intent.getStringExtra(EXTRA_FIX) ?: return
-        val workflowId = intent.getStringExtra(EXTRA_FIX_WORKFLOW)
         intent.removeExtra(EXTRA_FIX)
-        intent.removeExtra(EXTRA_FIX_WORKFLOW)
         fixRequest.value = AlertReason.entries.firstOrNull { it.name == name }
-            ?.let { FixRequest(it, workflowId) }
     }
 
     companion object {
@@ -329,9 +284,6 @@ class MainActivity : ComponentActivity() {
         /** docs/10: which [AlertReason]'s fix screen a tapped job notification wants. */
         const val EXTRA_FIX: String = "app.recly.android.extra.FIX"
 
-        /** …and, for the reasons a workflow holds the fix for, which workflow's editor. */
-        const val EXTRA_FIX_WORKFLOW: String = "app.recly.android.extra.FIX_WORKFLOW"
-
         /**
          * `SINGLE_TOP` so a second tap reaches [onNewIntent] instead of stacking another copy of
          * the app; `NEW_TASK` because a tile and a widget both launch from outside a task.
@@ -351,25 +303,8 @@ class MainActivity : ComponentActivity() {
             Intent(context, MainActivity::class.java)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 .putExtra(EXTRA_FIX, alert.reason.name)
-                .putExtra(EXTRA_FIX_WORKFLOW, alert.workflowId)
     }
 }
-
-/** docs/10: one tapped notification — the reason, and the workflow whose editor undoes it. */
-private data class FixRequest(val reason: AlertReason, val workflowId: String?)
-
-/** docs/05 "워크플로우 내보내기": the name SAF suggests, which every shell offers the same. */
-private const val WORKFLOWS_FILE_NAME = "recly-workflows.json"
-
-private const val WORKFLOWS_MIME = "application/json"
-
-/**
- * What the open picker will let the user through. `application/json` alone hides the very file this
- * app writes on a device whose provider typed it as text or as a plain byte stream — a file another
- * shell's share sheet handed over, say — so all three are accepted and the parser is what refuses.
- */
-private val WORKFLOWS_MIME_FILTER =
-    arrayOf(WORKFLOWS_MIME, "text/plain", "application/octet-stream")
 
 @Composable
 private fun RecordTab(
@@ -378,6 +313,7 @@ private fun RecordTab(
     jobs: JobsUiState,
     model: RecordingViewModel,
     modifier: Modifier,
+    onOpenProcessing: () -> Unit,
 ) {
     RecordingSection(
         state = state,
@@ -385,7 +321,7 @@ private fun RecordTab(
         // docs/09 화면 원칙 1: the state node borrows the ledger while the recorder is idle, and the
         // ledger is the same live list the jobs tab draws.
         ledger = ledgerCode(jobs.items),
-        onSelectWorkflow = model::selectWorkflow,
+        onOpenProcessing = onOpenProcessing,
         onStart = model::start,
         onStop = model::stop,
         onMicDenied = model::micDenied,
@@ -404,7 +340,7 @@ private fun JobsTab(
     state: JobsUiState,
     model: JobsViewModel,
     onRecord: () -> Unit,
-    onCheckKey: (String?) -> Unit,
+    onCheckKey: () -> Unit,
     onFix: (JobAlert) -> Unit,
     modifier: Modifier,
 ) {
@@ -426,61 +362,8 @@ private fun JobsTab(
             onDelete = model::delete,
             onRecord = onRecord,
             onOpenDetail = model::openDetail,
-            onCheckKey = { item -> onCheckKey(item.workflowId) },
+            onCheckKey = { onCheckKey() },
             onFix = onFix,
-            modifier = modifier,
-        )
-    }
-}
-
-/** The secrets form and the editor are pages inside this tab, in that order of precedence. */
-@Composable
-private fun WorkflowsTab(
-    state: WorkflowsUiState,
-    model: WorkflowsViewModel,
-    modifier: Modifier,
-) {
-    WorkflowProtectionDialogs(state, model::answerDiscard, model::answerDeleteSecret)
-    val secretsForm = state.secretsOpen
-    val editor = state.editor
-    when {
-        secretsForm != null -> SecretsScreen(
-            names = state.secrets,
-            form = secretsForm,
-            onName = model::secretName,
-            onValue = model::secretValue,
-            onGenerate = model::generateSecret,
-            onSave = model::saveSecret,
-            onDelete = model::askDeleteSecret,
-            onClose = model::closeSecrets,
-            modifier = modifier,
-        )
-
-        editor != null -> WorkflowEditorScreen(
-            editor = editor,
-            secrets = state.secrets,
-            onEdit = model::update,
-            onAddStep = model::addStep,
-            onRemoveStep = model::removeStep,
-            onMoveStep = model::moveStep,
-            onOpenStep = model::openStep,
-            onEditStep = model::updateStep,
-            onNewSecret = model::addStepSecret,
-            onSave = model::save,
-            onReopen = model::reopen,
-            onCancel = model::cancel,
-            modifier = modifier,
-        )
-
-        else -> WorkflowsScreen(
-            state = state,
-            onAdd = model::add,
-            onOpen = { model.edit(it.id) },
-            onSetDefault = model::setDeviceDefault,
-            onConfirmDelete = model::confirmDelete,
-            onDelete = model::delete,
-            onSecrets = model::openSecrets,
-            onDismissMessage = model::dismissMessage,
             modifier = modifier,
         )
     }
@@ -494,8 +377,6 @@ private fun SettingsTab(
     model: MainViewModel,
     settingsModel: SettingsViewModel,
     activity: Activity,
-    onExportWorkflows: () -> Unit,
-    onImportWorkflows: () -> Unit,
     modifier: Modifier,
 ) {
     SettingsScreen(
@@ -510,10 +391,6 @@ private fun SettingsTab(
         onCancelDisconnect = model::cancelDisconnect,
         onDisconnect = model::disconnect,
         onRevokeDebtSettled = model::revokeDebtSettled,
-        onExportWorkflows = onExportWorkflows,
-        onImportWorkflows = onImportWorkflows,
-        onCancelImport = settingsModel::cancelImport,
-        onConfirmImport = settingsModel::confirmImport,
         modifier = modifier,
     )
 }

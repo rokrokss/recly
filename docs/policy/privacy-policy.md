@@ -1,6 +1,6 @@
 # Recly Privacy Policy
 
-**Effective date: 2026-09-18**
+**Effective date: 2026-09-25**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
@@ -9,20 +9,20 @@ The public URL for the Google OAuth consent screen and app stores is <https://re
 
 ## 1. Summary
 
-Recly is a **recording app**. Recordings are uploaded to **your own Google Drive**, and what happens next is decided by the workflow you build.
+Recly is a **recording app**. Recordings are uploaded to **your own Google Drive**, followed by the transcription method you choose in Settings.
 
-**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. The app does not send your recordings, transcripts, workflows, or Google account data to the developer. Google and any transcription providers or webhook operators you choose process the data sent to them under their own policies and your account agreements.
+**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. The app does not send your recordings, transcripts, settings, or Google account data to the developer. Google and any transcription provider you choose process the data sent to them under their own policies and your account agreements.
 
 ## 2. What the app handles, and where it lives
 
 | Data | Where it is stored |
 |---|---|
-| Audio files and metadata (title, timestamps, duration, device name) | Your device, and your own Google Drive if you added an upload step |
-| Workflow definitions | On your device only (never sent to Drive) |
+| Audio files and metadata (title, timestamps, duration, device name) | Your device, and your own Google Drive after you connect it |
+| Processing settings | On your device only (never sent to Drive) |
 | Google access and refresh tokens | Your device's secure storage (Android Keystore-backed encrypted storage / Apple Keychain / Windows Credential Manager) |
-| Webhook signing keys and any STT API keys you enter | The same secure storage. **They are not synced between devices and are never sent to Recly** (there is no server to receive them). Only if you added a transcription step, that API key is sent **straight to the provider you chose**, for authentication only (§3(3)). A webhook signing key is never sent at all — it is only used to compute the signature |
+| Any STT API keys you enter | The same secure storage. **They are not synced between devices and are never sent to Recly** (there is no server to receive them). Only when external transcription is selected, that API key is sent **straight to the provider you chose**, for authentication only (§3(2)) |
 | The email address of the Google account selected on Android | **On the device only.** The Android phone keeps it in secure storage to pick the same account again on the next launch. iPhone, Mac and Windows request Drive access without an email or profile scope and do not store an account email. iPhone and Mac remove the previous version’s email hint and profile archive when migrating an existing connection. Disconnecting Drive removes the locally stored connection data |
-| Execution state (job queue, retries, upload progress, opaque Drive owner identifier read via the Drive API) and iPhone transfer permissions | A local database on your device; transfer permissions are not included in workflow exports |
+| Execution state (job queue, retries, upload progress, opaque Drive owner identifier read via the Drive API) and iPhone transfer permissions | A local database on your device; transfer permissions are not included in settings exports |
 | Diagnostic logs | Your device's system log. They leave the device only when you export them yourself |
 
 ## 3. Every case where data leaves your device
@@ -30,24 +30,17 @@ Recly is a **recording app**. Recordings are uploaded to **your own Google Drive
 **(1) Your Google Drive.**
 The app writes audio parts and `meta.json` into a recording folder. It uses only one permission — `drive.file` (files this app created) — and therefore **cannot see your other Drive files**. These files are yours and are visible only to you unless you share them.
 
-**(2) A webhook address you configured.**
-Only when you add a `webhook` step and enter a URL, the app sends one notification to that address. The body contains recording metadata and Drive file links; it does **not** contain the audio itself or the transcript text.
+**(2) An external transcription provider you chose.**
+Processing Settings offers on-device transcription, an external API, or Off. Only external mode, including existing queued external transcription, calls **the provider you selected, directly, with your own key**. Local mode does not fall back to an external provider.
 
-- **Requests are signed only if you configured a signing secret.** With a secret set, the request carries an HMAC-SHA256 (Standard Webhooks) signature header; without one it is sent **unsigned**.
-
-You choose the endpoint and its operator. Check that operator’s privacy policy before sending recording metadata to it.
-
-**(3) A transcription provider you chose — only if you added that step.**
-Transcription (STT) is **an optional step you may put into your workflow, not a fixed processing stage**. Only when you add such a step and enter your own API key does the device call **the provider you selected, directly, with your key**.
-
-- Transcription step: **the full audio file** is sent to the STT provider you chose.
+- External transcription: **the full joined audio file** is sent to the STT provider you chose.
 - There is no intermediary server. The request goes from your device to the provider.
-- How long that provider keeps the data and what it does with it is governed by **that provider's policy**, which Recly does not control. Review the provider's privacy policy before adding the step.
-- If you do not add this step, no audio or text is ever sent to that provider.
+- How long that provider keeps the data and what it does with it is governed by **that provider's policy**, which Recly does not control. Review the provider's privacy policy before selecting the provider.
+- If you choose local transcription or Off, no audio or text is sent to an external transcription provider.
 
 The supported providers are listed below; availability may depend on your App Store region. **What is sent is the same whichever one you pick** — one audio track file, and the language and diarization options (the speaker-count hint) that ride on the same request. What happens to it afterwards — retention, training — differs by provider, so read that provider's own policy before you pick it.
 
-| `provider` in the workflow | Company | Policy |
+| Configured `provider` | Company | Policy |
 |---|---|---|
 | `assemblyai` | AssemblyAI | <https://www.assemblyai.com/> |
 | `clova` | NAVER Cloud CLOVA Speech | <https://www.ncloud.com/> |
@@ -64,23 +57,29 @@ The supported providers are listed below; availability may depend on your App St
 | `rev` | Rev AI | <https://www.rev.ai/> |
 | `gladia` | Gladia | <https://www.gladia.io/> |
 
-**(4) Your own paired devices — between watch and phone.**
-When you record on a Galaxy Watch or an Apple Watch, the **audio files and their metadata** (title, timestamps, duration, checksums) move to the paired phone, because the watch neither uploads nor runs workflows. **This transfer happens even when your workflow has no Drive upload step at all.** In the other direction, the phone sends the watch a **workflow summary** — the id and name of each workflow, so the watch can offer a list. The steps inside a workflow are never sent.
+**(3) Your own paired devices — between watch and phone.**
+When you record on a Galaxy Watch or an Apple Watch, the **audio files and their metadata** (title, timestamps, duration, checksums) move to the paired phone, because the watch records and transfers while the phone handles upload and transcription. **Transfer does not depend on transcription settings.** In the other direction the phone sends only small control messages: receipt confirmations and, to an Apple Watch, the app’s language setting. Processing settings are never sent to the watch.
 
 - The transport is the operating system's device-pairing channel (the Wear OS Data Layer, Apple's WatchConnectivity). No Recly server is involved; none exists.
-- **Both devices are yours.** Recly runs no server that relays this transfer. The channel itself belongs to the operating system, though: recordings are only sent while the two devices are near each other (on both Wear OS and Apple), but small items such as workflow names may be relayed through Google Play services' infrastructure when the devices are apart — that handling is governed by Google's privacy policy.
+- **Both devices are yours.** Recly runs no server that relays this transfer. The channel itself belongs to the operating system, though: recordings are only sent while the two devices are near each other (on both Wear OS and Apple), but small items such as receipt confirmations may be relayed through Google Play services' infrastructure when the devices are apart — that handling is governed by Google's privacy policy.
 - Once the phone confirms receipt, the watch deletes its own copy — no recording history accumulates on the watch.
 - API keys and tokens are never sent over this path.
 
-**There is nothing else.** No path other than these four exists by which data leaves your device.
+Apple model downloads and the StoreKit region lookup are described below. Recly adds no developer-operated endpoint for these features.
 
-### iPhone permission for transcription and webhooks
+### iPhone permission for external transcription
 
-Before a new destination is used, the workflow editor or import confirmation shows the recipient, endpoint, data sent and purpose. Choose **Allow & save** or **Allow & import** to authorize future recordings on this device. Existing jobs, including recordings received from Apple Watch, wait for permission and can be continued from **Settings → Privacy**. Recording itself does not require this permission.
+Before a new external destination is used, the job waits for permission. **Settings → Privacy** shows the recipient, endpoint, data and purpose and lets you allow the transfer. This applies to new and existing jobs, including recordings received from Apple Watch. Recording itself and local transcription do not require external-transcription permission.
 
-Permission is remembered for the same provider and configured endpoint, independently of API keys and workflow names. Changing the provider or destination, withdrawing permission, using a new device, or materially changing the data or purpose requires permission again. Permission is not exported with workflows. On iPhone it is bound to a device-only Keychain marker, so restoring the database onto a different phone does not restore permission. **Withdraw permission** stops subsequent requests, including transcription status queries; an already dispatched request may finish. It does not delete data already sent or stored API keys. Google Drive access uses its separate Google authorization flow. Other platforms currently use their existing workflow configuration flow.
+Permission is remembered for the same provider and configured endpoint, independently of API keys. Changing the provider or destination, withdrawing permission, using a new device, or materially changing the data or purpose requires permission again. Permission is not exported with settings. On iPhone it is bound to a device-only Keychain marker, so restoring the database onto a different phone does not restore permission. **Withdraw permission** stops subsequent requests, including transcription status queries; an already dispatched request may finish. It does not delete data already sent or stored API keys. Google Drive access uses its separate Google authorization flow. Other platforms use their processing settings flow.
 
-**App Store region.** On iPhone and iPad, Recly reads the current App Store country or region through Apple StoreKit to determine whether the OpenAI transcription integration is available. This integration is disabled for the China mainland storefront. If the region cannot be verified, affected transcription waits. Recly does not send audio, transcripts, workflow definitions or third-party API keys as part of this StoreKit lookup, and does not store the storefront country on disk. Apple manages the underlying account and storefront service. Local recording and Google Drive upload are independent of this check.
+**App Store region.** On iPhone and iPad, Recly reads the current App Store country or region through Apple StoreKit to determine whether the OpenAI transcription integration is available. This integration is disabled for the China mainland storefront. If the region cannot be verified, affected transcription waits. Recly does not send audio, transcripts, processing settings or third-party API keys as part of this StoreKit lookup, and does not store the storefront country on disk. Apple manages the underlying account and storefront service. Local recording and Google Drive upload are independent of this check.
+
+### On-device transcription
+
+On iPhone and Mac with iOS or macOS 26 or later, new recording settings default to local transcription, and Apple Speech analyzes audio on the device. Other devices have no on-device engine yet, so their new settings start with transcription off. Preparing a missing language model is a separate action in Settings; Apple’s system service downloads the model assets. Recly does not send your recording to an external speech API for this local analysis. Original audio and finished transcripts still upload to your Google Drive as separate steps in the recording flow.
+
+On those devices, choose an external provider if you want transcripts. Recly never silently switches local transcription to a paid or cloud API, and external transcription sends audio only to the provider you selected. Processing settings and API keys remain on the device; exported settings contain key references, not key values.
 
 ## 4. What is not collected
 
@@ -88,7 +87,7 @@ Permission is remembered for the same provider and configured endpoint, independ
 - No automatic crash reporting.
 - No advertising identifiers and no ads.
 - No Recly account: no sign-up, and no email or profile data reaching the developer. iPhone, Mac and Windows use OAuth to request only `drive.file`, without requesting identity scopes (`openid`, `email`, `profile`). Android uses Google account selection and stores the selected email locally before requesting Drive access, as described in §2. Migrating an existing iPhone or Mac connection removes local profile data; it does not revoke permissions previously granted to Google. Disconnecting Drive revokes the Google authorization.
-- **The developer (Recly) collects nothing about you and sells, shares, or transfers nothing to third parties** — there is no data in the developer's hands to begin with. What does happen is **the transfers you direct**: as set out in §3, to your own Google Drive, to a webhook receiver you configured, to the STT provider you chose, and between your own paired devices (watch ↔ phone). Those happen because you asked for them; they are not the developer handing your data to a third party.
+- **The developer (Recly) collects nothing about you and sells, shares, or transfers nothing to third parties** — there is no data in the developer's hands to begin with. What does happen is **the transfers you direct**: as set out in §3, to your own Google Drive, to the STT provider you chose, and between your own paired devices (watch ↔ phone). Those happen because you asked for them; they are not the developer handing your data to a third party.
 
 ## 5. Limited Use of Google user data
 
@@ -97,7 +96,7 @@ Recly's use and transfer of information received from Google APIs adheres to the
 ## 6. Security
 
 - API keys and tokens are stored in the operating system's secure storage (Android Keystore-backed encrypted storage, Apple Keychain, Windows Credential Manager).
-- All outbound communication uses HTTPS, except a `127.0.0.1`/`localhost` receiver you configure yourself.
+- All outbound communication uses HTTPS.
 - On **Android, iPhone and Apple Watch**, recordings live in the per-app area the operating system isolates (the app container) and other apps cannot reach them.
 - **macOS and Windows have no such isolation.** The Mac app is distributed directly and therefore does not run inside a sandbox; its files are in `~/Library/Application Support/app.recly.mac/`, and on Windows in `%LOCALAPPDATA%\Recly\` — **other programs running under the same user account can read them.** What protects them there is the operating system's user-account permissions (file access control) and, if you have turned it on, disk encryption (FileVault on macOS, BitLocker on Windows). API keys and tokens are not kept with those files; they are in the Keychain and Credential Manager instead.
 - No secure storage is complete without device-level security. Please use a device lock and disk encryption.
@@ -106,9 +105,9 @@ Recly's use and transfer of information received from Google APIs adheres to the
 
 - **Automatic local cache cleanup**: after every job for a recording has completed and all its audio has been uploaded, local audio is eligible for cleanup after seven days, measured from the later of the last job update or newest cached audio file. Audio fetched again for playback starts a new cache window. Recordings with unfinished, failed or permission-blocked jobs retain their audio. Metadata and transcript copies remain until you delete the recording. Drive copies are not removed by this cleanup.
 - **Deleting a recording**: all four apps (Android phone, iPhone, Mac, Windows) can delete a recording from the list. Each time, a confirmation dialog **asks what to do about Drive, and the default is to keep it there** — the irreversible choice is never the default. If some parts have not reached Drive yet, the dialog says how many first.
-- **What a deletion removes**: that device's whole recording folder (audio files, `meta.json`, local transcript copies) and **every record of that recording** — not only the recording and part records but the **job records** too (`job` and `step_run`: the copy of the workflow definition that recording ran, the per-step execution state, failure messages, upload and transcription progress, and step outputs). Those are what an earlier build left sitting in the database, invisible in the list; they no longer stay behind. Choosing "also delete the Drive folder" removes that recording's Drive folder as well.
+- **What a deletion removes**: that device's whole recording folder (audio files, `meta.json`, local transcript copies) and **every record of that recording** — not only the recording and part records but the **job records** too (`job` and `step_run`: the copy of the processing plan that recording ran, the per-step execution state, failure messages, upload and transcription progress, and step outputs). Those are what an earlier build left sitting in the database, invisible in the list; they no longer stay behind. Choosing "also delete the Drive folder" removes that recording's Drive folder as well.
 - **A recording that is being processed is not deleted**: if one of its jobs is running, the deletion is refused with "try again once it has finished". If Drive refuses the folder deletion, the files on your device are still removed and the app tells you so.
-- **Disconnect Drive**: open Settings → Google Drive → Disconnect Drive and confirm. It revokes Google authorization and clears this device's Google credentials, completed job records and cached Drive references. Unfinished work and its Drive owner identifier stay on your device so the same account can resume it without repeating successful steps. Work for a different account stays paused. **Recordings, Drive files, workflow definitions, the device default, API keys, webhook signing keys and iPhone transfer permissions remain.** Delete recordings separately from the recording list.
+- **Disconnect Drive**: open Settings → Google Drive → Disconnect Drive and confirm. It revokes Google authorization and clears this device's Google credentials, completed job records and cached Drive references. Unfinished work and its Drive owner identifier stay on your device so the same account can resume it without repeating successful steps. Work for a different account stays paused. **Recordings, Drive files, processing settings, API keys and iPhone transfer permissions remain.** Delete recordings separately from the recording list.
   - Revocation removes Recly's Drive authorization for this Google account across all clients in the same Google Cloud project. Other devices using this account must reconnect Recly to use Drive again. Google can take time to apply the revocation; this does not immediately sign out the interface on every device. Drive work on this device pauses until the same account reconnects. If Google authorization could not be revoked, Settings shows a link to Google permission settings (<https://myaccount.google.com/permissions>), including after this device has disconnected locally. The link is hidden when no revocation failure remains.
   - **If revocation fails, the app says so** and keeps a route to Google permission settings. If local cleanup fails, Google Drive settings offer a retry.
 
@@ -119,13 +118,13 @@ Recly's use and transfer of information received from Google APIs adheres to the
 | Platform | Uninstalling | What is left, and how to remove it |
 |---|---|---|
 | Android phone · Galaxy Watch | **App data goes with it** — recordings, the local database and the encrypted store holding tokens and API keys all live in the app's private area and the OS removes them with the app | Nothing. Files in Drive stay, because they are yours |
-| iPhone · Apple Watch | The app container (recordings, database, settings and iPhone transfer permissions) is removed | Keychain items can persist after uninstalling. On iPhone, **delete each API key and webhook signing key from Workflows → Secrets on this phone, then revoke Google access before uninstalling**. Revoking Google access removes Google credentials but does not delete those keys. Recly’s own secret items are device-only. A non-credential permission-binding marker (`app.recly.privacy`) may also remain; without the deleted local permission records it grants no access. The watch stores an install identifier, with no sign-in or API-key entry; it has no in-app control for deleting that Keychain identifier |
-| macOS | **Only the `.app` bundle is removed** | (1) Delete `~/Library/Application Support/app.recly.mac/` (recordings, `rec.db`, `device.id`) yourself. (2) In Keychain Access delete the items whose service is `app.recly.mac.secrets` (the API keys and webhook signing keys you entered) plus `app.recly.drive.oauth` (the Google tokens) and any legacy `auth` item created by the previous Google Sign-In SDK. (3) **App settings stay in `UserDefaults`** — recording mode, the consent reminder, language and accessibility settings. An older version may also have left an email hint (`app.recly.auth.lastAccount`) before migration. Clear them with `defaults delete app.recly.mac` in Terminal |
+| iPhone · Apple Watch | The app container (recordings, database, settings and iPhone transfer permissions) is removed | Keychain items can persist after uninstalling. On iPhone, **delete each API key from Settings → Recording processing → API keys, then revoke Google access before uninstalling**. Revoking Google access removes Google credentials but does not delete those keys. Recly’s own secret items are device-only. A non-credential permission-binding marker (`app.recly.privacy`) may also remain; without the deleted local permission records it grants no access. The watch stores an install identifier, with no sign-in or API-key entry; it has no in-app control for deleting that Keychain identifier |
+| macOS | **Only the `.app` bundle is removed** | (1) Delete `~/Library/Application Support/app.recly.mac/` (recordings, `rec.db`, `device.id`) yourself. (2) In Keychain Access delete the items whose service is `app.recly.mac.secrets` (the API keys you entered) plus `app.recly.drive.oauth` (the Google tokens) and any legacy `auth` item created by the previous Google Sign-In SDK. (3) **App settings stay in `UserDefaults`** — recording mode, the consent reminder, language and accessibility settings. An older version may also have left an email hint (`app.recly.auth.lastAccount`) before migration. Clear them with `defaults delete app.recly.mac` in Terminal |
 | Windows | **Only the installed files are removed** | (1) Delete `%LOCALAPPDATA%\Recly\` (recordings, `rec.db`, `device.id`) yourself. (2) In Credential Manager → Windows Credentials delete the `app.recly.windows/tokens/…` and `app.recly.windows/secrets/…` entries. (3) **App settings stay in the registry** — the consent reminder, language, theme and accessibility settings live under `HKCU\Software\JavaSoft\Prefs\app\recly\windows`; delete that key in Registry Editor. The Windows app stores no account email, so there is none to remove |
 
 ### Clearing it from inside the app first
 
-Before uninstalling, delete each saved API key and webhook signing key from the workflow screen’s secret list, then use **Disconnect Drive** in Settings → Google Drive to clear Google credentials. Unfinished job records remain until you delete their recordings. To remove recordings too, delete individual recordings from the list. To stop future third-party transfers on iPhone, use Settings → Privacy → Withdraw permission. Workflows, settings and desktop data folders remain until separately removed as described above. Data already held by Drive, a transcription provider or a webhook operator is managed separately with that service.
+Before uninstalling, delete each saved API key from Settings → Recording processing → API keys, then use **Disconnect Drive** in Settings → Google Drive to clear Google credentials. Unfinished job records remain until you delete their recordings. To remove recordings too, delete individual recordings from the list. To stop future third-party transfers on iPhone, use Settings → Privacy → Withdraw permission. Processing settings and desktop data folders remain until separately removed as described above. Data already held by Drive or a transcription provider is managed separately with that service.
 
 ## 8. Your responsibility when recording
 

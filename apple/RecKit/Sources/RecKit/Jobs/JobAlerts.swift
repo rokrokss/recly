@@ -11,21 +11,24 @@ import ReclyCore
 /// The Android shell's `JobAlerts.kt` is the same file; the two are held together by having the
 /// same tests over the same rules rather than by sharing code the core does not own.
 public enum AlertReason: String, CaseIterable, Sendable {
+    case localUnavailable
+    case localModel
+    case localDiarization
     case needsAuth
     case needsConsent
     case needsSpace
     case missingSecret
-    case invalidSecret
     case authRejected
     case quota
-    case webhook
 
     /// docs/07 rule 3: the key, resolved where the banner or the notification draws it.
     ///
     /// Namespaced rather than written as its own English sentence, which is this catalog's usual
     /// shape: docs/10's line for `AUTH_REJECTED` says the same thing as `CoreMessage.AUTH_REJECTED`
     /// down to the full stop, and two keys that differ only in punctuation generate one symbol.
-    public var labelKey: String { "alert." + rawValue }
+    public var labelKey: String {
+        "alert." + rawValue
+    }
 
     public var label: String { RecKitStrings.localized(labelKey) }
 
@@ -33,14 +36,15 @@ public enum AlertReason: String, CaseIterable, Sendable {
     /// core and the logs use.
     public var code: String {
         switch self {
+        case .localUnavailable: return "LOCAL_TRANSCRIPTION_UNAVAILABLE"
+        case .localModel: return "LOCAL_MODEL_REQUIRED"
+        case .localDiarization: return "LOCAL_DIARIZATION_UNAVAILABLE"
         case .needsConsent: return "NEEDS_CONSENT"
         case .needsAuth: return "NEEDS_AUTH"
         case .needsSpace: return "NEEDS_SPACE"
         case .missingSecret: return "MISSING_SECRET"
-        case .invalidSecret: return "INVALID_SECRET"
         case .authRejected: return "AUTH_REJECTED"
         case .quota: return "QUOTA"
-        case .webhook: return "WEBHOOK"
         }
     }
 
@@ -49,8 +53,8 @@ public enum AlertReason: String, CaseIterable, Sendable {
         case .needsConsent: return .privacy
         case .needsAuth: return .signIn
         case .needsSpace: return .driveStorage
-        case .missingSecret, .invalidSecret, .authRejected: return .secrets
-        case .quota, .webhook: return .editor
+        case .missingSecret, .authRejected: return .secrets
+        case .quota, .localUnavailable, .localModel, .localDiarization: return .editor
         }
     }
 }
@@ -77,7 +81,7 @@ public enum FixSurface: CaseIterable, Sendable {
         case .signIn: return "Sign in"
         case .driveStorage: return "Open Drive storage"
         case .secrets: return "Check the key"
-        case .editor: return "Workflows"
+        case .editor: return "Recording processing"
         }
     }
 
@@ -88,14 +92,9 @@ public enum FixSurface: CaseIterable, Sendable {
 public let driveStorageURL = URL(string: "https://drive.google.com/settings/storage")!
 
 /// One reason and how many jobs are stuck on it — the banner line, and the notification body.
-///
-/// [workflowId] is the workflow of the first job that reported this reason, so the fix surfaces
-/// that are a workflow ([FixSurface.editor]) open the definition that has to change rather than the
-/// list of them. Nil when nothing in the fold named one.
 public struct JobAlert: Identifiable, Equatable, Sendable {
     public let reason: AlertReason
     public let count: Int
-    public let workflowId: String?
     /// docs/10: the `secretRef` the blocking step named, so [FixSurface.secrets] opens the form
     /// already filled in with the key that is missing rather than an empty one. Nil for
     /// `AUTH_REJECTED`, which is a provider refusing a value and never says which key held it.
@@ -109,13 +108,11 @@ public struct JobAlert: Identifiable, Equatable, Sendable {
     public init(
         reason: AlertReason,
         count: Int,
-        workflowId: String? = nil,
         secret: String? = nil,
         stepId: String? = nil
     ) {
         self.reason = reason
         self.count = count
-        self.workflowId = workflowId
         self.secret = secret
         self.stepId = stepId
     }
@@ -126,22 +123,19 @@ public struct JobAlert: Identifiable, Equatable, Sendable {
     }
 }
 
-/// One job's side of the fold: why it is stuck, the workflow it was running, and — for the failures
-/// a key holds up — the secret and the step the form has to open on.
+/// One job's side of the fold: why it is stuck, and — for the failures a key holds up — the secret
+/// and the step the form has to open on.
 public struct AlertSource: Equatable, Sendable {
     public let reason: AlertReason?
-    public let workflowId: String?
     public let secret: String?
     public let stepId: String?
 
     public init(
         reason: AlertReason?,
-        workflowId: String?,
         secret: String? = nil,
         stepId: String? = nil
     ) {
         self.reason = reason
-        self.workflowId = workflowId
         self.secret = secret
         self.stepId = stepId
     }
@@ -155,12 +149,10 @@ public struct AlertSource: Equatable, Sendable {
 /// an opinion about.
 public struct QueuedJob {
     public let status: JobStatus
-    public let workflowId: String?
     public let steps: [StepRun]
 
-    public init(status: JobStatus, workflowId: String?, steps: [StepRun]) {
+    public init(status: JobStatus, steps: [StepRun]) {
         self.status = status
-        self.workflowId = workflowId
         self.steps = steps
     }
 }
@@ -187,11 +179,12 @@ public enum JobAlerts {
     private static func terminalReason(_ lastError: String?) -> AlertReason? {
         guard let lastError, let ref = CoreMessageRef.companion.parse(code: lastError) else { return nil }
         switch ref.message {
+        case .localTranscriptionUnavailable: return .localUnavailable
+        case .localModelRequired: return .localModel
+        case .localDiarizationUnavailable: return .localDiarization
         case .missingSecret: return .missingSecret
-        case .invalidSecret: return .invalidSecret
         case .authRejected: return .authRejected
         case .quota: return .quota
-        case .webhookHttp: return terminalWebhook(ref.arg) ? .webhook : nil
         // docs/10: a spent budget is the user's problem only when what spent it was the provider's
         // quota. Anything else ran out of attempts against something a retry could have fixed.
         case .retryBudgetSpent: return spentOn(ref) == .quota ? .quota : nil
@@ -204,28 +197,6 @@ public enum JobAlerts {
         guard let arg = ref.arg else { return nil }
         return CoreMessageRef.companion.parse(code: arg)?.message
     }
-
-    /// True when the webhook's answer was one nothing but the user can change.
-    ///
-    /// docs/04 "응답 처리" retries 408 · 425 · 429 · 5xx and fails on everything else, so "terminal"
-    /// is that set's complement: a 4xx the URL or the signing secret has to fix, and the 3xx the
-    /// plan deliberately did not follow ("a webhook URL that moved is a configuration change the
-    /// user has to make"). docs/10 puts those on the user.
-    ///
-    /// The status has to be read here because `Executor.failed` writes the **raw**
-    /// `WEBHOOK_HTTP:<status>` when the attempt that fails is the last one in the budget — only a
-    /// budget already spent before the step ran is wrapped in `RETRY_BUDGET_SPENT`. So a 500 that
-    /// ran out of attempts reaches this file looking exactly like a 403 that never had any, and the
-    /// code is the only thing that tells them apart.
-    ///
-    /// A status that will not parse is an older build's wording: nothing is claimed about it.
-    private static func terminalWebhook(_ status: String?) -> Bool {
-        guard let status, let code = Int(status) else { return false }
-        return code < 500 && !retriedStatus.contains(code)
-    }
-
-    /// docs/04: what the webhook step waits out rather than fails on.
-    private static let retriedStatus: Set<Int> = [408, 425, 429]
 
     /// The step that stopped the job, and failing that the last complaint anything made — the
     /// `last_error` both the list row and [reason(status:lastError:)] read.
@@ -257,12 +228,11 @@ public enum JobAlerts {
     private static let holdingUp: Set<StepStatus> = [.failed, .needsAuth, .needsSpace, .needsConsent]
 
     /// One job of the queue, folded down to what the banner and the notification need of it.
-    public static func source(status: JobStatus, workflowId: String?, steps: [StepRun]) -> AlertSource {
+    public static func source(status: JobStatus, steps: [StepRun]) -> AlertSource {
         let blocking = blockingStep(steps: steps)
         let reason = reason(status: status, lastError: blocking?.lastError)
         return AlertSource(
             reason: reason,
-            workflowId: workflowId,
             secret: reason == nil ? nil : secretName(blocking?.lastError),
             stepId: reason == nil ? nil : blocking?.stepId
         )
@@ -270,7 +240,7 @@ public enum JobAlerts {
 
     /// The whole queue, as [fold] takes it.
     public static func sources(_ jobs: [QueuedJob]) -> [AlertSource] {
-        jobs.map { source(status: $0.status, workflowId: $0.workflowId, steps: $0.steps) }
+        jobs.map { source(status: $0.status, steps: $0.steps) }
     }
 
     /// The same, read off the core: **every** job it is carrying, not the newest five recordings'.
@@ -280,9 +250,7 @@ public enum JobAlerts {
     /// ago is still blocked, and folding the ledger instead would take its notification down the
     /// moment somebody recorded five more things.
     public static func sources(core: ReclyCore_) async throws -> [AlertSource] {
-        let jobs = try await core.jobs.list().map {
-            (id: $0.id, status: $0.status, workflowId: $0.workflowId)
-        }
+        let jobs = try await core.jobs.list().map { (id: $0.id, status: $0.status) }
         return try await sources(jobs: jobs) { try await core.jobs.steps(jobId: $0) }
     }
 
@@ -295,25 +263,25 @@ public enum JobAlerts {
     /// and empty the banner. Failing instead leaves the last reading standing, and the next runner
     /// pass reads the queue again.
     static func sources(
-        jobs: [(id: String, status: JobStatus, workflowId: String?)],
+        jobs: [(id: String, status: JobStatus)],
         steps: (String) async throws -> [StepRun]
     ) async throws -> [AlertSource] {
         var sources: [AlertSource] = []
         for job in jobs {
             sources.append(
-                source(status: job.status, workflowId: job.workflowId, steps: try await steps(job.id))
+                source(status: job.status, steps: try await steps(job.id))
             )
         }
         return sources
     }
 
-    /// The `secretRef` a code names, for the form the fix opens. Only the two that carry one:
-    /// `CoreMessageRef.parse` refuses those unless the argument really is a `secretRef` (docs/02),
-    /// so what comes back here is a name the editor can look up.
+    /// The `secretRef` a code names, for the form the fix opens. Only the one that carries one:
+    /// `CoreMessageRef.parse` refuses it unless the argument really is a `secretRef` (docs/02),
+    /// so what comes back here is a name the settings can look up.
     private static func secretName(_ lastError: String?) -> String? {
         guard let lastError, let ref = CoreMessageRef.companion.parse(code: lastError) else { return nil }
         switch ref.message {
-        case .missingSecret, .invalidSecret: return ref.arg
+        case .missingSecret: return ref.arg
         default: return nil
         }
     }
@@ -330,7 +298,6 @@ public enum JobAlerts {
             return JobAlert(
                 reason: reason,
                 count: affected.count,
-                workflowId: affected.compactMap(\.workflowId).first,
                 secret: fixOn?.secret,
                 stepId: fixOn?.stepId
             )

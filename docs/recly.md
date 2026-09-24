@@ -1,9 +1,9 @@
 # Recly
 
-**어느 기기에서 녹음하든, 녹음이 끝나면 사용자가 정한 워크플로우가 돈다.**
+**어느 기기에서 녹음하든, 녹음이 끝나면 고정 처리(원본 업로드 · 전사 · 결과 업로드)가 돈다.**
 
 이 문서 하나가 Recly의 현재 모습이다. 역사도 레인 기록도 아니고, 지금 코드가 지키는 계약과 규칙을 있는 그대로 적는다.
-기계가 읽는 정본은 `spec/*.json`(워크플로우·메타·웹훅 payload·transcript 스키마)이고, 이 문서는 그 스키마의 의미와
+기계가 읽는 정본은 `spec/*.json`(녹음 처리 설정·메타·transcript 스키마)이고, 이 문서는 그 스키마의 의미와
 스키마에 담기지 않는 규칙을 정한다.
 
 **절 번호는 계약이다.** 코드 주석의 `docs/NN "소제목"` 인용은 이 문서의 §NN과 그 소제목을 가리킨다. 절 번호와
@@ -13,10 +13,10 @@
 |---|---|
 | [0](#0-제품-정의--규칙-구-docs00) | 제품 정의 · 원칙 · 규칙(구 ADR) |
 | [1](#1-아키텍처-구-docs01) | 아키텍처 |
-| [2](#2-워크플로우-계약-구-docs02) | 워크플로우 계약 |
+| [2](#2-워크플로우-계약-구-docs02) | 워크플로우 계약 — 내부 단계 모델만(사용자 문서는 폐기, 2026-09-24) |
 | [3](#3-녹음저장-구-docs03) | 녹음 · 저장 · 보관 · 삭제 |
-| [4](#4-웹훅-구-docs04) | 웹훅 |
-| [5](#5-워크플로우-보관시크릿-구-docs05) | 워크플로우 보관 · 내보내기/가져오기 · 시크릿 |
+| [4](#4-웹훅-구-docs04) | 웹훅 — 폐기(2026-09-24) |
+| [5](#5-워크플로우-보관시크릿-구-docs05) | 녹음 처리 설정 · 시크릿(워크플로우 보관·내보내기/가져오기는 폐기, 2026-09-24) |
 | [6](#6-인증-구-docs06) | Google 인증 |
 | [7](#7-i18n-구-docs07) | 다국어 |
 | [8](#8-전사-구-docs08) | `transcribe` |
@@ -36,22 +36,26 @@
 
 ## 0. 제품 정의 · 규칙 (구 docs/00)
 
+**2026-09-24 적용:** 녹음은 고정 처리 계획(§5 "고정 처리 설정 도입")만 실행한다 — `drive.upload` →
+`transcribe` 또는 `local.transcribe` → `transcript.publish`. 사용자 편집형 워크플로우(문서·편집기·피커·기기 기본
+포인터·내보내기/가져오기·schema 1/2 마이그레이션·워치 워크플로우 목록)와 웹훅은 **폐기**됐고, 이전 설정을 읽는
+호환 계층도 없다. 아래 규칙 표에서 그 결정으로 무효가 된 항목은 "폐기"로 표시한다. 폰 화면은 녹음·목록·설정 3탭이다.
+
 ### 한 줄 정의
 
-녹음과 업로드만 하는 정직한 레코더. 원본 오디오는 **사용자 자신의 Google Drive**에 그대로 남고, 그 다음은 사용자의
-워크플로우가 한다. Plaud 류 노트테이커에서 "녹음 + 업로드"만 떼어낸 제품이며, 워치·폰·데스크톱 여섯 클라이언트가
-같은 워크플로우를 실행한다.
+녹음 원본과 전사 결과를 **사용자 자신의 Google Drive**에 남기는 레코더. 녹음·원본 업로드·전사·결과 업로드
+순서로 처리한다. 워치는 녹음과 폰 전송을, 폰·데스크톱은 후처리를 담당한다.
 
 ### 원칙
 
 1. **녹음한 기기가 실행한다.** 워치는 폰에 넘긴다. **Recly의 서버는 존재하지 않는다.**
-2. **설정은 기기의 것이다.** 워크플로우 정의·전사 키·기본 선택은 전부 기기 로컬에 있고 동기화하지 않는다.
+2. **설정은 기기의 것이다.** 녹음 처리 설정·전사 키와 보존된 이전 정의는 전부 기기 로컬에 있고 동기화하지 않는다.
    기기 사이의 이동은 설정의 내보내기/가져오기(§5)다. Drive에는 녹음과 결과 파일만 올라간다 — 그리고 그것이
    곧 기기들이 공유하는 **녹음 목록**이다(ADR-023, §3 "다른 기기의 녹음"). 재시도·업로드
    세션 같은 런타임
    상태는 각 기기 로컬에만 있다.
 3. **ack 전까지 원본을 지우지 않는다.**
-4. **파일과 웹훅이 인터페이스다.** 전사는 선택 단계이고, 요약부터는 사용자의 에이전트 몫이다(§16,
+4. **Drive의 파일이 인터페이스다.** 전사는 로컬·외부 API·OFF 중 선택하고, 요약부터는 사용자의 에이전트 몫이다(§16,
    `skills/recly-notes/`). 기본은 "내 Drive + 내 자동화". Drive는 앱이 쓰는 원본 보관소라 에이전트는 읽기만
    하고, 에이전트가 만드는 회의록과 그 뒤의 수정은 사용자의 Notion에 둔다(`skills/recly-notion/`).
 5. **은밀 모드는 없다.** 녹음 중에는 항상 표시하고, 데스크톱은 감지 → 확인 → 녹음이다.
@@ -62,22 +66,22 @@
 
 | 번호 | 규칙 |
 |---|---|
-| ADR-001 | 기기는 녹음하고 원본은 사용자의 Drive로 간다. 전사·전달은 사용자가 **자기 워크플로우에 직접 넣는 선택 단계**이지 고정된 후처리가 아니다. 요약은 파이프라인에 없다 — 구독형 에이전트가 못 하는 일(STT)만 파이프라인이 대신하고, 할 수 있는 일(텍스트 요약)은 에이전트 스킬(`skills/recly-notes/`)로 한다 |
+| ADR-001 | 기기는 녹음하고 원본은 사용자의 Drive로 간다. 전사·전달은 사용자가 **자기 워크플로우에 직접 넣는 선택 단계**이지 고정된 후처리가 아니다. 요약은 파이프라인에 없다 — 구독형 에이전트가 못 하는 일(STT)만 파이프라인이 대신하고, 할 수 있는 일(텍스트 요약)은 에이전트 스킬(`skills/recly-notes/`)로 한다. (2026-09-24 개정: 사용자 워크플로우·웹훅 폐기 — 전사는 녹음 처리 설정의 로컬·외부 API·OFF 선택이다, §5) |
 | ADR-002 | 워크플로우를 실행하는 것은 Android 폰·iPhone·macOS·Windows다. Galaxy Watch는 Data Layer로, Apple Watch는 WatchConnectivity로 파일을 폰에 넘긴다. **워치에는 인증·네트워크 코드가 없다.** 셀룰러 워치 단독 업로드는 범위 밖 |
 | ADR-003 | 폰과 워치가 동시에 녹음하면 파일도 둘이고 서로 연결하지 않는다. `recordingId`는 기기별 독립 ULID이고 세션 연결(session id)은 없다 |
-| ADR-004 | 워크플로우 엔진·Drive 클라이언트·웹훅·동기화·잡 큐는 Kotlin Multiplatform `core/` 하나에 있다. 워크플로우 로직을 두 번 짜지 않는다 |
+| ADR-004 | 워크플로우 엔진·Drive 클라이언트·웹훅·동기화·잡 큐는 Kotlin Multiplatform `core/` 하나에 있다. 워크플로우 로직을 두 번 짜지 않는다. (웹훅은 2026-09-24 폐기) |
 | ADR-005 | 셸: Android/Wear는 Kotlin + Compose, iOS·watchOS·macOS는 SwiftUI + KMP XCFramework, Windows는 Compose Desktop(JVM) + Rust 캡처 헬퍼 |
 | ADR-006 | 오디오는 AAC-LC `.m4a`, 16 kHz 모노 32 kbps, 명목 900초 세그먼트. 모바일·워치는 `mono` 한 트랙, 데스크톱은 `mic`·`sys`·`mix` 세 트랙 |
-| ADR-007 | 워크플로우 정의는 **기기 로컬 문서** 하나이고 백엔드도 동기화도 없다. 기기 간 이동은 설정의 내보내기/가져오기(§5) — 파일 포맷은 문서 직렬화 그대로다 |
-| ADR-008 | 워크플로우 JSON에는 시크릿 **이름**(`secretRef`)만 들어가고 값은 기기별 보안 저장소에 있다. 값이 없는 기기에서 그 단계는 `MISSING_SECRET`으로 실패한다. 값은 동기화되지 않으며 내보내기 파일에도 절대 들어가지 않는다 — 키는 기기마다 입력한다 |
+| ADR-007 | 워크플로우 정의는 **기기 로컬 문서** 하나이고 백엔드도 동기화도 없다. 기기 간 이동은 설정의 내보내기/가져오기(§5) — 파일 포맷은 문서 직렬화 그대로다 (폐기 2026-09-24) |
+| ADR-008 | 워크플로우 JSON에는 시크릿 **이름**(`secretRef`)만 들어가고 값은 기기별 보안 저장소에 있다. 값이 없는 기기에서 그 단계는 `MISSING_SECRET`으로 실패한다. 값은 동기화되지 않으며 내보내기 파일에도 절대 들어가지 않는다 — 키는 기기마다 입력한다. (2026-09-24: 워크플로우 JSON 폐기 — 같은 규칙이 녹음 처리 설정의 `secretRef`에 적용된다) |
 | ADR-009 | OAuth 스코프는 `drive.file` 하나이고 동의 화면은 Production이다. 전체 `drive` 스코프를 요청하지 않는다 |
-| ADR-010 | 웹훅 서명은 Standard Webhooks 그대로다 |
+| ADR-010 | 웹훅 서명은 Standard Webhooks 그대로다 (폐기 2026-09-24) |
 | ADR-011 | **회의에 봇을 넣지 않는다.** 마이크 사용·회의 앱으로 감지하고 사용자가 한 번 눌러 녹음한다. 자동 녹음은 없다. 참가자별 스트림은 없고 "나 vs 상대" 두 트랙이 상한이다 |
-| ADR-012 | 단계 타입은 `drive.upload` · `webhook` · `transcribe` 셋이다(`schema: 3`). `deliver.*`(Notion·Telegram)는 없다 |
+| ADR-012 | 단계 타입은 `drive.upload` · `webhook` · `transcribe` 셋이다(`schema: 3`). `deliver.*`(Notion·Telegram)는 없다. (2026-09-24: `webhook` 폐기. 사용자가 고르는 단계는 없고 고정 계획이 `drive.upload`·`transcribe` 또는 `local.transcribe`·`transcript.publish`를 만든다) |
 | ADR-013 | 단계별 조건식(`if`)은 없다. 워크플로우 수준의 `minDurationSec` 하나뿐이다 |
 | ADR-014 | Drive 배치는 녹음당 폴더 하나 — `{folder}/{base}/` 아래 파트 파일들과 `meta.json` |
 | ADR-015 | resumable 업로드는 **프로토콜(코어의 순수 함수)과 전송(플랫폼)이 분리**되어 있다. Apple은 배경 `URLSession`으로 전송을 교체한다 |
-| ADR-016 | 기기마다 **사용 중인 워크플로우 하나**를 고른다 — 로컬에만 있고 동기화되지 않는 포인터이고, 이 기기의 모든 녹음(수동·회의 감지·워치)이 그것을 실행한다. 피커에서 고르는 행위가 곧 이 포인터를 바꾸는 것이며 녹음 단위의 임시 선택은 없다(2026-09-02: 이전의 "기본 (이름)" 항목과 "기본" 어휘를 폐기 — 같은 워크플로우가 두 항목으로 보였다). 공유 문서에는 `enabled`·`isDefault`·`trigger.sources`가 없고, 소스 필터도 `updatedAt` 최신 폴백도 없다. 선택이 없거나 가리키는 워크플로우가 사라졌으면 아무것도 실행하지 않고 셸이 "워크플로우를 선택하세요"라고 묻는다. 사용 중인 워크플로우는 먼저 다른 워크플로우를 선택해야 삭제할 수 있다 |
+| ADR-016 | 기기마다 **사용 중인 워크플로우 하나**를 고른다 — 로컬에만 있고 동기화되지 않는 포인터이고, 이 기기의 모든 녹음(수동·회의 감지·워치)이 그것을 실행한다. 피커에서 고르는 행위가 곧 이 포인터를 바꾸는 것이며 녹음 단위의 임시 선택은 없다(2026-09-02: 이전의 "기본 (이름)" 항목과 "기본" 어휘를 폐기 — 같은 워크플로우가 두 항목으로 보였다). 공유 문서에는 `enabled`·`isDefault`·`trigger.sources`가 없고, 소스 필터도 `updatedAt` 최신 폴백도 없다. 선택이 없거나 가리키는 워크플로우가 사라졌으면 아무것도 실행하지 않고 셸이 "워크플로우를 선택하세요"라고 묻는다. 사용 중인 워크플로우는 먼저 다른 워크플로우를 선택해야 삭제할 수 있다 (폐기 2026-09-24) |
 | ADR-017 | 로컬 원본은 **업로드가 성공했을 때만** 지운다. 웹훅만 있는 워크플로우나 `continue`로 지나간 실패 업로드는 원본을 보관한다. **2026-09-03 개정**: 업로드 성공 후에도 **7일**은 남긴다(고정값, 설정 UI 없음) — 로컬 파트는 기간이 있는 캐시다. 매 잡 패스의 보관 스윕이 "모든 잡 DONE + 업로드 전부 성공 + 파일 mtime과 마지막 DONE 시각 둘 다 7일 경과"인 녹음의 파트를 지운다. 상세 화면이 재생할 때 로컬에 없는 파트는 업로드 출력의 `fileId`로 Drive에서 다시 받아 같은 이름으로 두고(sha256 검증), 그 파트는 다시 7일을 받는다. 업로드된 적 없는 파트는 영원히 보관 |
 | ADR-018 | 제품명은 **Recly**(식별자 `recly`). Android `app.recly`·Kotlin 패키지 `recly.core`, Apple 번들 `app.recly`/`app.recly.watch`/`app.recly.mac`, XCFramework `ReclyCore`. 사용자에게 보이지 않는 계약(파일명 `{base}`, 웹훅 `user-agent: rec/…`, 로그 이벤트 `rec.*`, 기기 저장 경로 `files/rec`·`rec.db`, Data Layer 경로 `/rec/…`)은 `rec` 그대로다 |
 | ADR-019 | Windows 인코딩은 **번들 ffmpeg**(LGPL 동적 링크, 무수정, 별도 프로세스)다. Media Foundation AAC MFT는 입력 44.1/48 kHz·출력 96 kbps 이상만 받아 ADR-006의 16 kHz·32 kbps를 낼 수 없다. MF 경로는 `--encoder mf`로 남아 있고 기본값이 아니다 |
@@ -107,11 +111,11 @@
                       ▼                        ▼          ▼            ▼
  ┌─ Executor (기기 로컬) ─────────────────────────────────────────────────────┐
  │  Job(recording × workflow) → step 1 → step 2 → … ; 상태는 로컬 SQLite     │
- │  KMP core: workflow · job · drive · webhook · transcribe · sync · storage  │
+ │  KMP core: workflow · job · drive · transcribe · sync · storage            │
  └───────────────┬───────────────────────────────────────────┬────────────────┘
                  │                                           │
                  ▼                                           ▼
-   Google Drive  {folder}/{base}/ parts + meta.json      웹훅 (서명, 재시도)
+   Google Drive  {folder}/{base}/ parts + meta.json      STT provider (외부 API 전사일 때)
 ```
 
 ### 구성 요소
@@ -120,10 +124,10 @@
 |---|---|---|
 | Recorder | 플랫폼별 | 마이크 캡처(시스템 오디오는 데스크톱 회의 모드만), 세그먼트 파일 작성, 무음화 감지, `meta.json` 작성 |
 | Transfer | Wear/watchOS ↔ 폰 | 파트·메타 전송, sha256 검증, ack, ack 후 워치 측 삭제 |
-| Core | `core/` KMP | 워크플로우 파싱·검증·선택, 잡 큐, 단계 실행, Drive resumable, 웹훅, 전사 provider 어댑터, 내보내기/가져오기 |
+| Core | `core/` KMP | 녹음 처리 설정·고정 계획 컴파일, 잡 큐, 단계 실행, Drive resumable, 전사 provider 어댑터, 설정 내보내기/가져오기 |
 | Scheduler 어댑터 | 플랫폼별 | 코어의 `runDueJobs()`를 WorkManager / 배경 URLSession + BGTask / 트레이·메뉴바 타이머에서 호출 |
 | Auth 어댑터 | 폰·데스크톱 | Google OAuth, access token 공급(`TokenProvider`) |
-| UI | 플랫폼별 | 녹음 시작·정지, 워크플로우 편집(폰·데스크톱), 녹음 목록·상태 |
+| UI | 플랫폼별 | 녹음 시작·정지, 녹음 처리 설정(폰·데스크톱), 녹음 목록·상태 |
 
 ### 녹음 생명주기
 
@@ -180,12 +184,12 @@ rec/
     app/                      Compose Desktop
     capture-helper/           Rust (wasapi) — 캡처·감지, JSON lines로 상태 보고
   spec/                       JSON Schema + 예제 (계약)
-  scripts/                    아이콘 렌더링, 웹훅 로컬 수신기
+  scripts/                    아이콘 렌더링
   docs/                       이 문서 + 개인정보처리방침 + 아이콘 마스터
 ```
 
 빌드 도구: Gradle 래퍼(`core`·`android:*`·`windows/app`), Xcode(`apple`), Cargo(`windows/capture-helper`),
-Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:windows:app`를 포함하고,
+Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:windows:app`를 포함하고,
 `apple`은 `:core:assembleXCFramework` 산출물을 SwiftPM binary target으로 참조한다.
 
 ### 코어 ↔ 셸 경계 (the core ↔ shell boundary)
@@ -202,7 +206,7 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 **코어가 셸에 주는 것**(`ReclyCore(deps, driverFactory)` — 셸이 SQLDelight 드라이버를 열어 넘긴다):
 
 - `recordings` — 녹음 등록, 파트 추가, finalize, 목록, `delete`
-- `workflows` — 로컬 캐시 읽기/쓰기, `sync()`, 선택 규칙
+- `processingSettings` — 녹음 처리 설정 읽기·저장·가져오기(§5 "고정 처리 설정 도입"). 옛 `workflows`(문서·선택 규칙)는 폐기(2026-09-24)
 - `jobs` — `enqueue(recordingId, chosenWorkflowId?)`, `runDueJobs(now)`, `retry(jobId)`, 상태 관찰
 - `secrets` — `SecretsRepository.put/delete/get/names`(값 쓰기의 **유일한** 입구, §5)
 - `secretSync` — `setup`/`disable`/`status`
@@ -218,12 +222,15 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 
 ## 2. 워크플로우 계약 (구 docs/02)
 
-스키마: [`spec/workflow.schema.json`](../spec/workflow.schema.json) · 예제:
-[`spec/examples/workflows.json`](../spec/examples/workflows.json). 스키마가 기계 정본이고 이 절은 그 의미다.
-
-각 기기는 자기 문서 하나를 읽고 쓴다. 저장은 로컬 DB(§5), 내보내기 파일명은 `recly-workflows.json`이다.
+> **폐기(2026-09-24)**: 사용자 편집형 워크플로우 문서(로컬 문서, 내보내기 파일 `recly-workflows.json`, schema 1..3)와
+> 그 스키마·예제(`spec/workflow.schema.json`, `spec/examples/workflows.json`)는 제거됐다. 녹음은 고정 처리
+> 계획(§5 "고정 처리 설정 도입")만 실행한다. `Workflow`/`Step` 모델은 그 계획과 잡 스냅샷(`job.workflow_json`)의
+> **내부 표현**으로만 남고, 사용자 문서도 공개 스키마도 아니다. 단계 공통 필드·`drive.upload`·`transcribe`의
+> 의미와 템플릿 변수는 그 내부 계획에 그대로 적용된다. 문서·선택·웹훅에 관한 소절은 기록이다.
 
 ### 문서 구조
+
+> **폐기(2026-09-24)**: 사용자 문서가 없다(§2 머리말). 아래는 기록이다.
 
 ```json
 {
@@ -242,6 +249,10 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 | `updatedBy` | 마지막으로 쓴 기기의 `deviceId` |
 
 ### 워크플로우
+
+> **2026-09-24**: 사용자가 만드는 워크플로우는 없다. 고정 계획의 `Workflow`는 고정 id(`ProcessingPlan.ID`)·`name`·
+> `minDurationSec`(녹음 처리 설정의 `storage.minDurationSec`)·`steps`를 가진 내부 값이다. 아래의 기기 포인터(ADR-016)
+> 서술은 폐기.
 
 ```json
 {
@@ -270,7 +281,7 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 | 필드 | 기본 | 의미 |
 |---|---|---|
 | `id` | 필수 | `^[a-z][a-z0-9_]{0,31}$`, 워크플로우 안에서 유일 |
-| `type` | 필수 | `drive.upload` \| `webhook` \| `transcribe` |
+| `type` | 필수 | `drive.upload` \| `transcribe` \| `local.transcribe` \| `transcript.publish` (`webhook`은 2026-09-24 폐기) |
 | `onError` | `abort` | `abort`: 이후 단계 실행 안 함, Job FAILED. `continue`: 이 단계만 FAILED로 두고 다음 단계 진행 |
 | `retry.maxAttempts` | 8 | 1~20 |
 | `retry.initialDelaySec` | 30 | 지수 백오프 시작값 |
@@ -292,6 +303,8 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 - 멱등: 같은 `{base}` 폴더가 이미 있으면 재사용하고, 같은 이름·같은 md5 파일은 건너뛴다.
 
 #### `webhook`
+
+> **폐기(2026-09-24)**: 웹훅 단계는 제거됐다(§4). 이전 빌드가 큐에 넣은 잡의 `webhook` 단계도 실행하지 않는다. 아래는 기록이다.
 
 ```json
 { "id": "hook", "type": "webhook",
@@ -317,6 +330,8 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 
 ### 템플릿 변수
 
+> **2026-09-24**: 녹음 처리 설정의 폴더(`storage.folder`)는 `title`·`workflowName`을 쓸 수 없다(§5 "고정 처리 설정 도입").
+
 `{{ }}` 안에 아래 이름만 허용한다. 알 수 없는 변수는 검증 오류다.
 
 | 변수 | 값 |
@@ -331,6 +346,9 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 경로에 쓰일 때 `/`, `\`, 제어문자는 `_`로 치환하고 앞뒤 공백을 제거한다.
 
 ### 선택 규칙 (ADR-016)
+
+> **폐기(2026-09-24)**: 선택할 워크플로우가 없다. 모든 녹음은 고정 계획을 실행하며 기기 포인터·시딩 추측·워크플로우
+> 목록 UI 규칙은 없어졌다. 아래는 기록이다.
 
 1. 녹음 시작(또는 정지) 시 호출자가 넘긴 `workflowId`가 문서에서 **해석되면** 그것. 셸은 이 자리를 **비워
    보낸다**(2026-09-02: 녹음 단위 임시 선택은 UI에서 사라졌다) — 코어 규칙으로는 남겨 두어 테스트·하네스가 특정
@@ -356,6 +374,10 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
 
 ### 검증 규칙 (validation rules)
 
+> **2026-09-24**: 사용자 문서가 없으므로 문서 수준 규칙(로컬 캐시 보호, 미지 필드, 마이그레이션·`MigrationBlocked`)과
+> `webhook.url` 스킴 규칙은 폐기. 녹음 처리 설정의 검증은 §5 "고정 처리 설정 도입"과
+> `spec/recording-settings.schema.json`이 정한다.
+
 - 스키마 통과 + 워크플로우 `id`가 ULID + `name` 1~40자 + `minDurationSec >= 0` + 단계 `id` 유일 +
   템플릿 변수 유효 + `webhook.url` 스킴 규칙 + `transcribe` 순서 제약 +
   `transcribe.provider`가 아는 값(`UnknownProvider`) + `clova`에만 `invokeUrl`.
@@ -366,6 +388,8 @@ Node(`spec` 검증·웹훅 수신기). 루트 `settings.gradle.kts`가 `:core`, 
   거부 사유가 아니다(§5 스키마).
 
 ### 예제
+
+> **폐기(2026-09-24)**: `spec/examples/workflows.json`은 삭제됐다. 설정 예제는 `spec/examples/recording-settings*.json`이다.
 
 `spec/examples/workflows.json` — "회의"(Drive + 웹훅), "메모"(Drive만), "회의록"(Drive + `transcribe`) 세 개.
 
@@ -493,12 +517,12 @@ meta  = {base}.meta.json
 파트 파일은 다음이 **모두** 참일 때만 삭제한다 — ① Job이 DONE, ② 그 워크플로우에 `drive.upload` 단계가 1개 이상
 있고 전부 SUCCEEDED(`continue`로 건너뛴 실패 업로드는 보관), ③ 같은 녹음의 **모든** Job이
 DONE(FAILED·SKIPPED_SHORT·NEEDS_AUTH·NEEDS_SPACE도 삭제를 막는다 — `retry()`에 파트가 필요하므로), ④ 파일
-mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retention.sweep`이 재평가한다). 그 외에는 보관하고 목록에 "업로드 안 됨"을 표시한다. 웹훅만 있는 워크플로우는 원본을
-지우지 않는다. **워치는 폰 ack 즉시 삭제**한다.
+mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retention.sweep`이 재평가한다). 그 외에는 보관하고 목록에 "업로드 안 됨"을 표시한다.
+**워치는 폰 ack 즉시 삭제**한다.
 
 **지우지 않는 것**: `meta.json`, DB 행(`recording`·`part`(`deleted=1` 표시)·`job`·`step_run`), 그리고
 `transcribe`가 만든 로컬 사본(`{base}.transcript.json/.txt` — 상세 화면의 입력이라 파트 보관 규칙과 무관하게
-남긴다, §8). 그래서 파트가 지워진 뒤에도 목록·상세·웹훅 재전송에 필요한 것은
+남긴다, §8). 그래서 파트가 지워진 뒤에도 목록·상세에 필요한 것은
 전부 로컬에 있다. 이 자동 삭제에는 **업로드 성공 뒤 7일**의 창이 있다(2026-09-03, 고정값·설정 없음): 시간만
 지났다고 지우는 규칙은 여전히 없고, "업로드가 끝났고 7일이 지났다"일 때만 매 잡 패스의 보관 스윕이 지운다. 그
 사이에는 상세의 재생이 로컬 파트를 그대로 쓰고, 지워진 뒤에는 Drive에서 받아 다시 7일을 둔다. 사용자가 지우는
@@ -572,8 +596,8 @@ Google 권한 철회부터 로컬 정리까지 유지한다. 중간에 인증 �
 | 토큰 | 이 기기의 access/refresh token 삭제 | 같음 + Google grant 취소(revoke) |
 | 다른 기기 | 영향 없음 | **같은 Google 계정의 Recly 연결이 함께 끊긴다** — revoke는 해당 계정의 **Cloud 프로젝트 단위** 승인을 철회하므로 폰에서 눌러도 같은 프로젝트의 Mac·PC 클라이언트가 받은 grant가 사라진다(§6) |
 | Drive의 녹음 파일 | 그대로 | **그대로** — 사용자의 파일이고 앱이 지울 이유가 없다 |
-| 워크플로우 문서·기기 기본값 | 그대로 | **그대로.** 계정에서 파생된 것이 아니라 이 기기의 설정이고(§5), 지우면 어디에서도 되찾을 수 없다 |
-| 로컬 시크릿(웹훅·STT 키) | 남는다 | **남는다** — 같은 이유다. 계정을 떼는 결정이 사용자가 입력한 키를 지울 이유가 되지 않는다 |
+| 녹음 처리 설정 | 그대로 | **그대로.** 계정에서 파생된 것이 아니라 이 기기의 설정이고(§5), 지우면 어디에서도 되찾을 수 없다 |
+| 로컬 시크릿(STT 키) | 남는다 | **남는다** — 같은 이유다. 계정을 떼는 결정이 사용자가 입력한 키를 지울 이유가 되지 않는다 |
 | 로컬 Job·step_run | 남는다(재로그인하면 이어서 실행) | **미완료 작업 보존·일시 중지**, 같은 Drive 계정에 재연결하면 재개. 완료 작업 기록, `drive_folder_cache`, "로컬만 삭제" 기록 `remote/ignored/*`은 비움. |
 | 로컬 녹음 파일·`meta.json` | 남는다 | **남는다.** 아직 올라가지 않은 원본을 이 동작으로 지우지 않는다(원칙 3). 확인창은 녹음과 설정이 유지됨을 짧게 알린다. 녹음 삭제는 목록에서 별도로 한다 |
 
@@ -589,9 +613,9 @@ DisconnectResult`, 코어 몫). 코어는 revoke를 부를 수단이 없으므�
 - **정지 상태에서 돈다.** 로컬 정리는 전부 `Executor.quiesced` 안이다 — 이미 실행 중인 Job은 지금 단계를 마치고
   멈추고, 그 뒤에야 무언가가 지워진다. 캐시된 access token을 먼저 무효화한 다음(`tokenProvider.invalidate()`)
   `tokens` 네임스페이스를 비운다 — 반대 순서면 셸이 메모리에 들고 있던 토큰이 다음 실행에 넘어간다.
-- **지우는 것은 넷뿐이다**: `tokens` 네임스페이스, 완료된 작업 기록(`job`·`step_run`), Drive 폴더 캐시, "로컬만 삭제" 기록(`kv` `remote/ignored/*`, §3 "다른 기기의 녹음"). 워크플로우 문서·기기 기본
-  워크플로우·`secrets` 네임스페이스는 그대로 둔다(위 표).
-- **미완료 작업 재개(2026-09-21)**: Drive 단계를 포함한 작업에 적용한다. Drive를 사용하지 않는 웹훅 전용 워크플로우에는 Google 인증을 요구하지 않는다. 단계 출력·업로드 세션·전사 요청 ID·재시도 횟수·대기 시각을 보존한다. `job.drive_account_id`에는 Drive `about.get(fields=user(permissionId))`로 확인한 식별자를 저장하고, 연결 해제 전 상태는 `disconnected_status`에 남긴다. 같은 계정이면 이전 상태를 복원하고 성공한 단계는 재실행하지 않는다. 다른 계정이면 이전 작업은 `NEEDS_AUTH`로 계속 대기하며 업로드·전사·웹훅을 보내지 않는다. 계정을 확인하지 못하면 재개하지 않는다. 이전 버전의 계정 미확인 작업은 기존 Drive 폴더 소유자 식별자가 일치할 때만 복원하며, 소유자를 확인할 자료가 없으면 대기를 유지한다. 이전 빌드가 이미 지운 단계 기록은 복원할 수 없다.
+- **지우는 것은 넷뿐이다**: `tokens` 네임스페이스, 완료된 작업 기록(`job`·`step_run`), Drive 폴더 캐시, "로컬만 삭제" 기록(`kv` `remote/ignored/*`, §3 "다른 기기의 녹음"). 녹음 처리 설정·`secrets`
+  네임스페이스는 그대로 둔다(위 표).
+- **미완료 작업 재개(2026-09-21)**: Drive 단계를 포함한 작업에 적용한다. 단계 출력·업로드 세션·전사 요청 ID·재시도 횟수·대기 시각을 보존한다. `job.drive_account_id`에는 Drive `about.get(fields=user(permissionId))`로 확인한 식별자를 저장하고, 연결 해제 전 상태는 `disconnected_status`에 남긴다. 같은 계정이면 이전 상태를 복원하고 성공한 단계는 재실행하지 않는다. 다른 계정이면 이전 작업은 `NEEDS_AUTH`로 계속 대기하며 업로드·전사를 보내지 않는다. 계정을 확인하지 못하면 재개하지 않는다. 이전 버전의 계정 미확인 작업은 기존 Drive 폴더 소유자 식별자가 일치할 때만 복원하며, 소유자를 확인할 자료가 없으면 대기를 유지한다. 이전 빌드가 이미 지운 단계 기록은 복원할 수 없다.
 - **`DisconnectResult(deletedRecordings, busyRecordings)`.** 코어 API의 호환성을 위해 삭제 옵션은 유지하지만 네 셸의 권한 철회 UI는 항상 `alsoDeleteRecordings=false`로 호출한다. 내부 API가 삭제 옵션을 사용할 때 `RUNNING` Job 때문에
   지우지 못한 녹음의 id가 `busyRecordings`에 담긴다. 그 녹음과 **그 Job 행은 남기고** 화면은 그 사실을 말한다 —
   Job이 끝난 뒤 다시 누르면 그때 지워진다.
@@ -661,7 +685,7 @@ My Drive/
 1. 폴더를 나열해 `recordingId`로 묶는다. 이미 입양한 완료 행은 건너뛰고, 아래 3의 잠정 행은 완성한다.
    **이 기기에서 만든 완료 녹음에 Job이 없으면 Drive 사본을 검증해 복원한다.** 모든 파트의 번호·트랙·파일명·크기·
    SHA-256이 로컬 메타와 같고 Drive 파일 ID가 모두 있을 때만 `drive_synced = 1`과 각 파트의 `drive_file_id`를
-   저장한다. 로컬 메타·파일·디렉터리·`remote = 0`은 보존한다. 작업 기록을 새로 만들거나 업로드·전사·웹훅을
+   저장한다. 로컬 메타·파일·디렉터리·`remote = 0`은 보존한다. 작업 기록을 새로 만들거나 업로드·전사를
    재실행하지 않는다. 진행 중이거나 실패한 기존 Job은 그 상태가 정본이므로 덮어쓰지 않는다.
    복원된 녹음은 `DONE`으로 표시하고, 유효한 `transcribe` 진행 표식이 남아 있으면 전사 중으로 표시한다.
    로컬 오디오가 없으면 재생 시 복원한 파일 ID로 Drive에서 받아온다. 불완전하거나 다른 내용의 사본은 완료로
@@ -686,7 +710,7 @@ My Drive/
    폴더에서 `meta.json`을 찾으면 잠정 행을 **진짜 메타로 갈아 끼운다**(`finalized`·파트·`drive_file_id`) — 1의 예외가
    이것이다.
 4. **폴더의 `pending` 표식**: 업로드 뒤에 아직 할 일이 남은 기기가 그것을 폴더에 적는다 — `appProperties.pending`은
-   업로드 다음 단계들의 `type`을 쉼표로 이은 것(`transcribe`, `transcribe,webhook`, 없으면 빈 문자열),
+   업로드 다음 단계들의 `type`을 쉼표로 이은 것(`transcribe,transcript.publish`, `local.transcribe,transcript.publish`, 없으면 빈 문자열),
    `appProperties.pendingAt`은 그렇게 적은 시각. 쓰는 쪽은 `drive.upload`가 폴더를 만들거나 찾은 직후(첫 바이트보다
    먼저)와, 실행기가 단계 하나를 마칠 때마다(남은 것)와 잡이 `DONE`·터미널 `FAILED`가 될 때(빈 값)다. `files.update`의
    `appProperties`는 병합이라 폴더의 `recordingId`는 그대로 남는다. 표식은 **참고용**이라 실패하면
@@ -821,9 +845,15 @@ My Drive/
 
 ## 4. 웹훅 (구 docs/04)
 
-스키마: [`spec/webhook.payload.schema.json`](../spec/webhook.payload.schema.json).
+> **폐기(2026-09-24)**: 웹훅은 제품에서 제거됐다 — `webhook` 단계, 완료 웹훅 설정, payload·서명(Standard Webhooks),
+> `spec/webhook.payload.schema.json`, 로컬 수신기 스크립트가 모두 없다. 이전 빌드가 큐에 넣은 잡의 웹훅도 보내지
+> 않는다. 이 절은 기록이다. **예외**: "응답 처리"의 백오프 식과 "429의 `Retry-After` … `maxDelaySec` 상한" 규칙은
+> 모든 단계의 재시도 규칙으로 계속 유효하다(`Executor`가 인용한다). 결과 파일 항목의 모양(`files[]`,
+> `track: "transcript"`)도 단계 출력으로 남는다(§8 "결과 파일").
 
 ### 요청
+
+> **폐기(2026-09-24)** — §4 머리말.
 
 ```
 POST {url}
@@ -843,6 +873,8 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
 - 타임아웃 30초. 리다이렉트는 따르지 않는다.
 
 ### payload
+
+> **폐기(2026-09-24)** — §4 머리말.
 
 ```json
 {
@@ -885,6 +917,9 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
 
 ### 응답 처리
 
+> **폐기(2026-09-24)**: 아래 표는 웹훅 전용이라 기록이다. 표 아래의 백오프 식과 표의 "429의 `Retry-After` …
+> `maxDelaySec` 상한"은 모든 단계에 계속 유효하다(§4 머리말).
+
 | 응답 | 처리 |
 |---|---|
 | 2xx | 성공. 본문 무시 |
@@ -895,6 +930,8 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
 8회.
 
 ### 수신 측 검증
+
+> **폐기(2026-09-24)** — §4 머리말.
 
 ```js
 import { Webhook } from "standardwebhooks";
@@ -909,27 +946,35 @@ const payload = wh.verify(rawBody, {
 n8n Webhook 노드는 서명 검증이 없으므로 Code 노드에서 위 라이브러리로 검증하거나, 로컬 n8n이면
 `http://127.0.0.1` 예외를 쓰고 서명 없이 둔다.
 
-저장소의 로컬 수신기는 `scripts/webhook-receiver.mjs`다(§20 검증 상태).
+저장소의 로컬 수신기 `scripts/webhook-receiver.mjs`는 2026-09-24 삭제됐다(§20 "웹훅 로컬 수신기").
 
 ---
 
 ## 5. 워크플로우 보관·시크릿 (구 docs/05)
 
+> **2026-09-24**: 워크플로우 보관(로컬 문서·기기 기본 포인터·스키마 마이그레이션·내보내기/가져오기·저장/편집·첫
+> 실행 시드)은 **폐기**됐다. 이 절에서 현재 유효한 것은 "동기화하지 않는다", "고정 처리 설정 도입", "시크릿",
+> "토큰"이다.
+
 ### 동기화하지 않는다
 
-**워크플로우 정의도 시크릿 값도 기기별이다.** 두 기기가 같은 계정을 쓰더라도 서로의 워크플로우를 보지 않고,
+**녹음 처리 설정도 시크릿 값도 기기별이다.** 두 기기가 같은 계정을 쓰더라도 서로의 설정을 보지 않고,
 한쪽에서 고친 것이 다른 쪽에 저절로 나타나지 않는다. Drive `appDataFolder`에는 아무것도 두지 않는다 —
-`workflows.json`도 `secrets.enc`도 없고, 따라서 pull/push도 병합도 동결도 `dirty` 표시도 없다(ADR-007 대체).
+설정 파일도 `secrets.enc`도 없고, 따라서 pull/push도 병합도 동결도 `dirty` 표시도 없다(ADR-007 대체).
 Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` 스코프의 사용자 폴더다(§3).
 
-기기 사이로 정의를 옮기는 방법은 **내보내기/가져오기** 하나다(아래). 시크릿 값은 어느 파일로도 나가지 않는다 —
-새 기기에서는 `secretRef`가 비어 있고 UI가 "이 기기에 키 없음"으로 표시한다(§2).
+기기 사이로 설정을 옮기는 방법은 녹음 처리 설정의 **내보내기/가져오기** 하나다(아래 "고정 처리 설정 도입").
+시크릿 값은 어느 파일로도 나가지 않는다 — 새 기기에는 `secretRef`의 값이 없고 UI가 "이 기기에 키 없음"으로
+표시한다.
 
 동기화하지 않는 것은 그 밖에도 같다: Job 상태, 토큰, 앱 설정(언어·Wi-Fi 전용)(Wi-Fi 전용은 폰
 셸에만 있다: Android WorkManager UNMETERED, iOS allowsCellularAccess; 2026-09-03)(ADR-008). **녹음 목록은
 예외다** — 동기화가 아니라 Drive의 녹음 폴더가 곧 목록이라서 그렇다(ADR-023, §3 "다른 기기의 녹음").
 
 ### 로컬 상태 (`sync_state`)
+
+> **폐기(2026-09-24)**: 아래 두 행(`localDoc`·`deviceDefaultWorkflowId`)은 쓰지 않는다. 현재 `sync_state`에서 쓰는 키는
+> 녹음 처리 설정 `processing/settings`다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
 
 키/값 테이블 하나에 두 줄뿐이고, 둘 다 이 기기의 것이다.
 
@@ -943,6 +988,9 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
 워크플로우 2개로 동작하고 행은 그대로 남는다.
 
 ### 스키마
+
+> **폐기(2026-09-24)**: 워크플로우 문서의 schema 판정과 1·2 마이그레이션은 제거됐다. 녹음 처리 설정의 형식은
+> `spec/recording-settings.schema.json` v1이다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
 
 지원 schema는 **3**이다(§2). 파서가 내리는 판정은 로컬 문서에도 가져온 파일에도 똑같이 적용된다.
 
@@ -959,6 +1007,9 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
 
 ### 내보내기 · 가져오기
 
+> **폐기(2026-09-24)**: 워크플로우 내보내기/가져오기(`recly-workflows.json`)는 제거됐다. 현재의 내보내기/가져오기는
+> 녹음 처리 설정 하나다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
+
 설정 화면의 두 항목이고, 코어 쪽은 `WorkflowRepository.exportJson()` / `importJson(json)` 둘뿐이다. 파일을
 고르고 쓰는 것은 셸의 몫이다(Android SAF, iPhone 공유 시트, Mac 저장 패널, Windows 파일 선택).
 
@@ -974,6 +1025,9 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
 
 ### 저장 · 편집
 
+> **폐기(2026-09-24)**: 워크플로우 편집기와 그 저장 규칙은 제거됐다. 설정 저장의 동시 편집 규칙은 아래
+> "고정 처리 설정 도입"의 revision 비교다. 아래는 기록이다.
+
 - 저장은 `WorkflowRepository.save`가 검증(§2 파서 왕복) → `localDoc` 교체 순서로 한 번에 한다. 실패는 저장 실패이고,
   실패한 저장은 아무것도 쓰지 않는다.
 - 저장이 문서 봉투(`revision += 1`, `updatedAt = now`, `updatedBy = deviceId`)를 찍는다. 내보낸 파일이 언제 어느
@@ -983,6 +1037,9 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
   거절한다 — 3-way 병합이 없으므로 다시 열게 하는 것이 정직하다.
 
 ### 첫 실행
+
+> **폐기(2026-09-24)**: 기본 워크플로우("메모") 시드와 기기 포인터 찍기는 없다. 첫 실행은 녹음 처리 설정의
+> `initialize()`다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
 
 - 기본 워크플로우는 "메모"(Drive, `recly/memo/{{yyyy}}-{{MM}}`, mono) 하나뿐이다(2026-09-04 사용자 결정; "회의"
   스타터는 제거). 고정 ULID(`00000000000000000000RECMEM`)와 `updatedAt = 1970-01-01T00:00:00.000Z`로 심는다 — 아직
@@ -994,9 +1051,63 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
 - 어느 경로가 먼저 문서를 심었는지는 상관없다(백그라운드 enqueue의 `current()`가 셸의 `seed()`보다 먼저 돌 수 있다).
   조건은 "포인터가 비어 있는가" 하나다.
 
+### 고정 처리 설정 도입
+
+2026-09-24: 녹음은 **녹음 → 원본 업로드 → 전사 → 전사 결과 업로드**로 고정한다(`ProcessingPlan`:
+`drive.upload` → `transcribe` 또는 `local.transcribe` → `transcript.publish`, 전사 OFF면 `drive.upload`만).
+폰은 녹음·목록·설정 세 탭, 데스크톱은 기존 메뉴/트레이와 처리 설정, 워치는 녹음·전송만 제공한다.
+사용자 편집형 워크플로우와 웹훅은 없고, 이전 워크플로우 문서·설정을 읽거나 이관하는 호환 계층도 없다.
+전체 방향과 실기기 출시 조건은 [고정 처리 흐름 계획](research/2026-09-24-fixed-recording-flow-plan.md)에 따른다.
+
+- `ReclyCore.processingSettings`는 `sync_state`의 별도 키 `processing/settings`를 사용한다. 새 테이블이나 DB 버전 변경은 없다.
+- 형식은 [`spec/recording-settings.schema.json`](../spec/recording-settings.schema.json) v1이다. 저장 위치·최소 길이,
+  `local`/`external`/`off`, 언어, 외부 provider/키 참조/endpoint/모델을 설정한다.
+  전역 단계 배열이나 사용자 워크플로우 선택은 없다. 키 **값**은 읽거나 저장·내보내지 않는다.
+- 완료 후 연동(웹훅)은 없다. 설정 형식(`spec/recording-settings.schema.json`)에 `webhook` 필드가 없다.
+- 내보내기는 현재 녹음 설정만 제공한다. 이전 설정 내보내기와 복구용 내부 백업은 없다.
+- Siri/단축어 시작(`StartRecordingIntent`, 파라미터 없음)도 고정 설정을 사용한다.
+- 화자 분리와 최소/최대 화자 수는 UI에 노출하지 않는다. 새 계획은 지원하는 provider/모델에서 화자 분리를 자동 요청하고
+  화자 수는 기본 범위로 추론한다. 저장된 과거 `diarize=false`나 화자 수 힌트는 새 계획을 제한하지 않는다.
+  Groq 및 명시적으로 선택한 비화자 OpenAI 모델은 일반 전사를 사용한다. OpenAI 모델을 비워두면 기존 어댑터의
+  화자 지원 기본 모델을 쓴다. 명시한 모델·업체·키는 자동 교체하지 않는다.
+  로컬은 실행 시 `supportsDiarization`을 확인해 실제 요청에 반영하며, 미지원인 Apple SpeechTranscriber도 전사를 계속한다.
+- `initialize()`는 저장된 설정이 없으면 기본값(로컬 전사, 메모 폴더 `recly/memo/{{yyyy}}-{{MM}}`)으로 **Ready**
+  상태를 만든다. 옛 워크플로우 문서나 기기 포인터는 조사하지 않는다 — 이관·검토(`NeedsReview`) 상태는 없다.
+  셸이 로컬 엔진을 넘기지 않은 빌드(`LocalTranscriptionEngine.installed == false`: Android·Windows, OS 26 미만
+  Apple)는 로컬 대신 OFF로 준비한다 — 항상 실패하는 방식을 기본으로 두지 않는다. 셸은 이때 로컬 선택지를 숨기고,
+  이미 로컬이 저장돼 있으면 사용할 수 없다는 안내와 함께만 보여 준다.
+- 폴더 템플릿에는 `{{workflowName}}`과 `{{title}}`을 허용하지 않는다(워크플로우 이름이 없다).
+- endpoint HTTPS·모델 길이 등 제약에 어긋나는 설정은 저장·가져오기에서 거부한다. 입력을 잘라내거나 조용히
+  보정하지 않는다.
+- 저장·가져오기는 현재 revision을 비교해 동시 편집 덮어쓰기를 막는다. 가져온 revision/device는 채택하지 않고
+  이 기기의 새 revision으로 저장한다. 미래 버전·미지 필드·명시적 null·손상 문서는 기본값으로 대체하지 않는다.
+- OFF/로컬로 바꿔도 유효한 기존 외부 설정은 보존한다. 미완성 입력 초안은 셸에서 관리하며, 저장된 설정에는
+  비활성 필드를 포함해 검증을 통과한 값만 둔다. 동작 방식 변경으로 키 값을 지우지 않는다.
+- `read()`/`observe()`는 초기화 부작용이 없다. 셸은 시작할 때 `initialize()`를 부른다. Watch에서는 이 초기화를
+  실행하지 않는다.
+
+- 새 녹음은 시작 시 `processing/recording/<id>`에 설정 revision을 고정한다. 워치 녹음은 수신 검증 후 폰의 설정을
+  고정한다. 설정 변경은 기존 녹음·진행 중 잡을 바꾸지 않는다.
+- 실행기는 내부 고정 ID(`ProcessingPlan.ID`)와 `local.transcribe`/`transcript.publish` 단계로 기존 영속 큐를 사용한다.
+  완료 결과를 먼저 원자적으로 로컬 저장하므로 결과 업로드 실패에서 API/모델을 다시 돌리지 않는다.
+- 로컬 실행은 `이 기기에서 전사 중`, 자동 재개 대기는 `전사 대기 중`으로 표시하고 강제 재시도 버튼을 제공하지 않는다.
+  설정의 API 키 목록에서 저장된 키를 개별 삭제할 수 있으며 삭제 전 확인한다.
+- Apple의 로컬 엔진은 iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`이며, 언어 자산 준비는 설정에서 사용자가 요청한다.
+  녹음 시작·진행·종료 중에는 새 모델 준비 요청을 막는다. 이미 OS에 전달된 공유 자산 설치의 완료·재시도 시점은 OS가 관리한다.
+  설정에는 준비 중과 준비 완료를 표시한다. 모델 준비가 끝나면 같은 언어의 `LOCAL_MODEL_REQUIRED` 실패만 자동 재개하며,
+  완료된 업로드·저장한 전사 진행률·다른 실패·연결 해제 상태는 유지한다. 설치 전 열/전력 제한으로 보류되면 준비 버튼을 유지한다.
+  파일 하나를 한 분석기에 공급하고 PCM은 제한된 버퍼로 읽는다. 여러 녹음 파트는 무손실 결합하며 임시 파일은 성공·실패·취소 시 정리한다.
+  열 상태가 nominal이 아니거나 저전력 모드이면 대기/중단한다. 확정 구간을 저장해 다음 실행 기회에 재개한다.
+- 로컬 계산은 기기당 하나, 새 녹음 시작 시 양보한다. 플랫폼 실행 만료/취소도 native 분석기를 취소한다.
+  로컬 전용 패스는 Drive 인증·네트워크 요청·결과 게시를 실행하지 않는다. 네트워크 업로드의 Wi-Fi 제약은 그대로다.
+- 현재 Android·Windows의 실제 로컬 추론 어댑터는 미구현이며, 이 두 플랫폼의 로컬 선택은 `지원 불가`로 표시한다.
+  무거운 CPU 추론이나 외부 API로 자동 대체하지 않는다. 실제 기기의 품질·발열·장문 검증은 완료를 주장하지 않는다.
+- 로컬 전사 v2는 `speakerIdentification`과 `timing`을 명시한다. 화자 분리 미지원이면 `speakers=[]`, `speaker=""`이며
+  단일 화자를 식별했다고 표현하지 않는다. v1 외부 API 결과와 기존 파일 읽기는 유지한다.
+
 ### 시크릿
 
-- 이름: `^[a-z][a-z0-9_]{0,31}$`. 워크플로우 JSON에는 이름만 들어간다(ADR-008).
+- 이름: `^[a-z][a-z0-9_]{0,31}$`. 녹음 처리 설정에는 이름(`secretRef`)만 들어간다(ADR-008).
 - 저장:
 
 | 플랫폼 | 구현 | 세부 |
@@ -1019,18 +1130,15 @@ Windows에서는 절대 선택되지 않는다.
 - **값은 기기 밖으로 나가지 않는다.** 파일로도, 내보내기로도, 워치로도 가지 않는다. 새 기기는 사용자가 다시
   입력한다 — 그 대신 어느 기기의 키가 새어도 다른 기기가 함께 새지 않는다.
 - 실행 시 값이 없으면 그 단계는 즉시 `MISSING_SECRET`으로 FAILED(재시도 없음), `onError` 적용.
-- UI: 공용 시크릿 목록은 이름 조회·삭제만 제공한다. 새 키와 이 기기에 없는 `secretRef`의 값은 워크플로우
-  편집 화면의 해당 단계에서 입력받으며, 저장하면 그 단계의 키로 바로 선택한다. 전사 단계에서는 API 키 입력과
-  취소·저장만 제공하고 생성 버튼은 숨긴다. 웹훅 단계에서는 키 입력과 취소·저장에 더해 `웹훅 서명 키 생성`
-  (en `Generate a webhook signing key`)을 보조 동작으로 제공한다. 생성 동작과 저장 버튼은 별도 행에 둔다.
-  두 입력 폼 모두 저장소에서 참조할 키 이름을 함께 받으며, 별도 용도 선택은 요구하지 않는다.
+- UI: 공용 시크릿(API 키) 목록은 이름 조회·삭제만 제공한다. 새 키의 값은 녹음 처리 설정의 외부 전사 항목에서
+  입력받는다. 웹훅 서명 키 생성 동작(en `Generate a webhook signing key`)은 폐기됐다(2026-09-24).
 - **읽히지 않는 보안 저장소는 실패로 닫는다(fail closed).** 셸의 Keychain/Keystore/Credential Manager가 목록 조회
   자체를 거부하면(`errSecMissingEntitlement`, 잠긴 기기의 `errSecInteractionNotAllowed`, ACL 거부) 그 예외는 코어를
   그대로 통과한다 — "없음"으로 읽으면 `secretRef`가 있는 단계에 "이 기기에 키 없음"이 잘못 붙고,
   `ReclyCore.disconnect`의 `tokens` 정리가 토큰이 그대로 남은 네임스페이스를 비웠다고 보고한다. 그래서 `disconnect`는
   던져서 셸이 정리를 계속 빚진 상태(`REVOKED_CLEANUP_OWED`)로 두고 재시도를 띄우게 한다.
-- **키 삭제는 확인 후 실행한다**(2026-09-10). 키 이름과 이를 참조하는 저장된 워크플로우 이름을 먼저 보여준다.
-  취소하면 키와 워크플로우가 유지된다. 확인 화면에는 키 값을 표시하지 않는다. Android·iPhone·macOS·Windows 공통이다.
+- **키 삭제는 확인 후 실행한다**(2026-09-10). 키 이름을 먼저 보여준다.
+  취소하면 키가 유지된다. 확인 화면에는 키 값을 표시하지 않는다. Android·iPhone·macOS·Windows 공통이다.
 - **"연결 해제"는 시크릿을 지우지 않는다**(§3). 값은 계정에서 파생된 것이 아니라 이 기기의 설정이고, 지우면 어디에서도
   되찾을 수 없다.
 
@@ -1153,7 +1261,7 @@ Windows에서는 절대 선택되지 않는다.
 
 ### Wear OS · watchOS
 
-인증 없음. 워치는 Drive에 접근하지 않는다(ADR-002). 워크플로우 요약은 폰이 밀어준다.
+인증 없음. 워치는 Drive에 접근하지 않는다(ADR-002). (워크플로우 요약 전송은 2026-09-24 폐기)
 
 ### 코어 인터페이스 (the core interface)
 
@@ -1178,18 +1286,19 @@ interface TokenProvider {
 
 ## 7. i18n (구 docs/07)
 
-지원 언어는 **영어(en)와 한국어(ko)**다. 기본 언어는 사용자의 시스템 언어를 따르고, 앱 안의 언어 설정으로 바꿀 수
-있다.
+화면은 **12개 언어**를 지원한다: 영어(en), 한국어(ko), 일본어(ja), 중국어 간체(zh-Hans)·번체(zh-Hant),
+스페인어(es), 프랑스어(fr), 독일어(de), 포르투갈어(pt), 아랍어(ar), 힌디어(hi), 러시아어(ru).
+기본 언어는 시스템 언어를 따르며 앱 안에서 바꿀 수 있다. 전사 언어는 화면 언어와 별도 설정이다(§8).
 
 ### 규칙
 
-1. **기준 언어는 영어**(리소스 키의 기본값), 한국어는 번역 리소스. 시스템 언어가 `ko`(지역 무관)면 한국어, 그 외
-   전부 영어.
-2. **언어 설정값**: `system`(기본) · `ko` · `en`. **기기별 설정이고 동기화하지 않는다**(워크플로우 문서에 넣지
+1. **기준 언어는 영어**(리소스 키의 기본값). 지역 태그는 지원하는 언어로 정규화하고 미지원 언어만 영어로 대체한다.
+   중국어는 명시한 Hans/Hant 표기체를 우선하고, 없으면 TW/HK/MO는 번체, 나머지는 간체로 구분한다. 아랍어는 RTL 배치를 적용한다.
+2. **언어 설정값**: `system`(기본)과 위 12개 언어 태그. **기기별 설정이고 동기화하지 않는다**(녹음 처리 설정에 넣지
    않는다). 저장 위치는 플랫폼 관례(Android `LocaleManager.applicationLocales` + DataStore, Apple `UserDefaults`,
    Windows `java.util.prefs`). **설정 UI는 지금 언어를 값으로 보여주는 한 행**이고, 목록은 폰(Android·iPhone)에서
    다이얼로그로, 데스크톱(macOS·Windows)에서 드롭다운으로 연다 — 언어는 늘어나도 행은 한 줄이다. 목록에
-   `시스템 기본` 항목은 **없다**: 각 언어의 자기 이름(`English`, `한국어`)뿐이고, 아직 아무것도 고르지 않았으면
+   `시스템 기본` 항목은 **없다**: 각 언어의 자기 이름(`English`, `한국어`, `日本語`, `العربية` 등)뿐이고, 아직 아무것도 고르지 않았으면
    시스템 언어를 따르며 **그 언어가 선택된 것으로 보인다**(행에도 그 이름이 뜬다) — 대신 명시적으로 고른 뒤 다시
    OS 추종으로 되돌리는 항목은 없다는 것을 받아들인다. 이름은 어느 언어에서도 번역하지 않는다. 고른 즉시
    적용되고(규칙 3) 국기는 쓰지 않는다.
@@ -1199,19 +1308,19 @@ interface TokenProvider {
    조회(`String(localized:bundle:locale:)`, Android `createConfigurationContext`)한다.
 4. **사용자에게 보이는 문자열은 전부 리소스**: UI 텍스트, 알림, 다이얼로그, 오류 안내, 접근성 라벨,
    위젯/컴플리케이션, 트레이. **리소스로 만들지 않는 것**: 로그 이벤트·필드(`rec.*`, `shell.*`), 파일명·폴더 규칙,
-   웹훅 페이로드, 워크플로우 JSON, 코드 식별자. 숫자는 숫자다 — 인원 수 같은 값은 문장이 아니라 수로 쓰고, 문장이
+   녹음 처리 설정 JSON, 코드 식별자. 숫자는 숫자다 — 인원 수 같은 값은 문장이 아니라 수로 쓰고, 문장이
    되는 것은 `모름`(unknown)과 `6+`뿐이다.
 5. **코어가 만드는 사용자 문자열**: 코어는 자연어 대신 **메시지 키**(`CoreMessage` enum: `NEEDS_AUTH`,
    `DRIVE_REAUTH`, `MISSING_SECRET`, `FROZEN`, `STALE`, `DRIVE_STORAGE_FULL`, `AUTH_REJECTED`, …)를
    `StepRun.lastError`·예외에 담고, 각 플랫폼이 키를 번역한다. 인자는 `NAME:{arg}`, provider가 한 말은
    `NAME|{detail}`로 붙이고 `|` 뒤는 번역하지 않고 문장 아래에 고정폭으로 그대로 보여준다. 셸은
    `CoreMessageRef.parse`로 읽는다. DB에 이미 저장된 옛 문장은 그대로 표시한다(호환).
-6. **기본 워크플로우 이름**("메모")은 최초 시드 시점의 앱 언어로 생성한다(en: "Memo"). 이후 언어를
+6. **폐기(2026-09-24)** — **기본 워크플로우 이름**("메모")은 최초 시드 시점의 앱 언어로 생성한다(en: "Memo"). 이후 언어를
    바꿔도 이름은 사용자 데이터이므로 바뀌지 않는다. 시드 ID는 고정이다(§5).
 7. **날짜·시간·숫자는 플랫폼 로케일 포맷터**를 쓴다 — 패턴 자체가 리소스라서 한국어 기기는 "8월 28일 15:04",
    영어 기기는 "Aug 28, 3:04 PM"으로 읽힌다. 파일명 타임스탬프(ISO)는 불변이다.
 8. **관할별 동의 안내문**(§12)은 언어별 리소스로 두되 링크·법역 목록은 공통이다.
-9. **완전성 테스트**: 각 플랫폼에 "모든 키가 en·ko 양쪽에 존재"하는 테스트와 "UI 소스에 한글 리터럴이 남아 있지
+9. **완전성 테스트**: 각 플랫폼에 "모든 키가 지원하는 12개 언어에 존재"하는 테스트와 "UI 소스에 한글 리터럴이 남아 있지
    않다"는 검사(허용 목록: 로그·테스트·주석)를 둔다. RecKit은 여기에 더해 "뷰가 그리는 키가 전부 카탈로그에
    있다"를 스캔으로 확인한다(곱슬 아포스트로피처럼 철자가 어긋난 키를 쓰는 날 바로 실패한다).
 10. **기기 이름 치환 규칙**: 한 문장이 이 기기를 가리킬 때 쓰는 말은 셸마다 정해져 있다 — Android·iPhone은
@@ -1228,14 +1337,20 @@ interface TokenProvider {
     2026-09-04의 `워치에서 받는 중`·`다른 기기에서 업로드 중`·`다른 기기에서 전사 중`(§9 화면 원칙 2)은 세 셸이
     같은 날 갖췄으므로 바로 이 사전에 있다.
 
+영어·한국어의 기존 리소스는 유지한다. 추가 언어의 공통 사전은 `localization/translations/`에 두며
+`scripts/localize.py`가 Apple String Catalog, Android XML, Windows properties로 생성한다.
+`python3 scripts/localize.py --check`는 메시지 누락·서식 인자·생성 결과의 일치를 검사한다.
+기술 식별자와 언어 자기 이름만 `localization/unchanged.json`에 명시적으로 예외 처리한다.
+수량 문장은 수에 따라 문법이 깨지지 않는 형태로 쓰며 Android는 `other` 복수 리소스를 사용한다.
+
 ### 플랫폼 매핑
 
 | 플랫폼 | 리소스 | 언어 설정 UI | 전환 |
 |---|---|---|---|
-| Android 폰 | `values/strings.xml`(en) + `values-ko/`, `android:localeConfig` | 설정 → 언어 행 → 선택 다이얼로그 | 플랫폼 `LocaleManager.applicationLocales`(API 33+; 앱은 순수 ComponentActivity라 AppCompat 경로는 no-op) |
+| Android 폰 | `values/strings.xml`(en) + 언어별 `values-*/`, `android:localeConfig` | 설정 → 언어 행 → 선택 다이얼로그 | 플랫폼 `LocaleManager.applicationLocales`(API 33+; 앱은 순수 ComponentActivity라 AppCompat 경로는 no-op) |
 | 갤럭시 워치 | 같은 방식, 시스템 언어만(설정 UI 없음) | — | 시스템 |
 | iPhone·Apple Watch·macOS | String Catalog(`Localizable.xcstrings`) — RecKit이 공용 카탈로그를 갖고 각 앱이 자기 것을 갖는다 | 설정 → 언어 행(폰은 다이얼로그, Mac은 드롭다운) | SwiftUI `\.locale`; AppKit/UIKit 문자열은 명시 로케일 조회; `AppleLanguages`는 건드리지 않음 |
-| Windows 데스크톱 | `strings_en.properties`/`strings_ko.properties` + `Str` enum 키 | 설정 창 → 언어 행 → 드롭다운 | 로케일 `StateFlow` → 리컴포지션, 트레이 메뉴 재구성 |
+| Windows 데스크톱 | `strings_{언어}.properties` + `Str` enum 키 | 설정 창 → 언어 행 → 드롭다운 | 로케일 `StateFlow` → 리컴포지션, 트레이 메뉴 재구성 |
 | 코어 | `CoreMessage` 키 | — | — |
 
 ### Windows 데스크톱 설계 메모
@@ -1260,7 +1375,8 @@ interface TokenProvider {
 
 ## 8. 전사 (구 docs/08)
 
-`transcribe`(STT + 화자분리)는 워크플로우 `schema: 3`의 선택 단계다. 실행 위치는 다른 단계와 같은 **잡을 실행하는
+`transcribe`(STT + 화자분리)는 녹음 처리 설정에서 전사 방식을 외부 API로 고르면 고정 계획에 들어가는 단계다(§5
+"고정 처리 설정 도입"; 로컬이면 `local.transcribe`). 실행 위치는 다른 단계와 같은 **잡을 실행하는
 기기**(폰·Mac·Windows)이고 서버는 없다. 기기가 사용자의 키로 STT API를 직접 부르고 결과를 Drive 녹음 폴더에 쓴다.
 
 ### 원칙
@@ -1268,7 +1384,7 @@ interface TokenProvider {
 - **서버리스** — 모든 호출은 기기 → 사용자 계정 API(Drive, STT). 중간 릴레이·콜백 URL 없음. 따라서 STT
   provider는 **폴링 가능한 비동기 API 또는 동기 API**만 쓴다(콜백 전용 모드는 쓰지 않는다).
 - **BYO 키** — 키는 기존 시크릿 저장소(§5)의 `secretRef`다. 없으면 `MISSING_SECRET`.
-- **Drive가 버스** — 결과 파일은 녹음 폴더 `{folder}/{base}/`에 놓인다. 다른 기기·웹훅 수신자·사용자는 그 파일만
+- **Drive가 버스** — 결과 파일은 녹음 폴더 `{folder}/{base}/`에 놓인다. 다른 기기·에이전트·사용자는 그 파일만
   보면 된다. 기기 간 별도 통신은 없다.
 - **한 트랙, 한 파일** — 트랙 하나(`mono` 또는 `mix`)를 파트 remux로 이어 붙인 파일 하나를 올린다. 파트별 전사는
   파트마다 화자 라벨이 달라져 쓰지 않는다.
@@ -1291,11 +1407,11 @@ interface TokenProvider {
 |---|---|---|
 | `provider` | 필수 | `assemblyai` \| `clova` \| `rtzr` \| `openai` \| `groq` \| `together` \| `mistral` \| `elevenlabs` \| `deepgram` \| `azure` \| `daglo` \| `speechmatics` \| `rev` \| `gladia`. 클라이언트가 모르는 값이면 검증 오류(`UnknownProvider`) |
 | `secretRef` | 필수 | provider 키. 값 형식은 provider 표 참조 |
-| `invokeUrl` | — | provider마다 뜻이 다르다(`WorkflowParser.invokeUrlUse`). **필수**: `clova`(앱별 호출 URL)·`azure`(리소스 엔드포인트). **선택**: `openai`·`groq`·`together`·`mistral`·`speechmatics` — 비우면 provider 기본 엔드포인트, 넣으면 그 자리를 대신한다(자체 호스팅·리전). **나머지**: 넣으면 검증 오류. 끝의 `/`는 잘라낸다. 필수 provider는 템플릿(`WorkflowParser.invokeUrlTemplate`: `clova` → `https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}`, `azure` → `https://{resourceName}.cognitiveservices.azure.com`)이 있어 편집기가 빈 필드에 채워 넣고, `{…}`가 남은 URL은 검증 오류(`InvokeUrlPlaceholder`) |
+| `invokeUrl` | — | provider마다 뜻이 다르다(`WorkflowParser.invokeUrlUse`). **필수**: `clova`(앱별 호출 URL)·`azure`(리소스 엔드포인트). **선택**: `openai`·`groq`·`together`·`mistral`·`speechmatics` — 비우면 provider 기본 엔드포인트, 넣으면 그 자리를 대신한다(자체 호스팅·리전). **나머지**: 넣으면 검증 오류. 끝의 `/`는 잘라낸다. 필수 provider는 템플릿(`WorkflowParser.invokeUrlTemplate`: `clova` → `https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}`, `azure` → `https://{resourceName}.cognitiveservices.azure.com`)이 있어 설정 화면이 빈 필드에 채워 넣고, `{…}`가 남은 URL은 검증 오류(`InvokeUrlPlaceholder`) |
 | `language` | `ko` | `ko` \| `en` \| `ko-en` \| `auto`. provider가 못 받는 값은 어댑터가 가장 가까운 값으로 매핑 |
 | `diarize` | `true` | 화자분리 요청 여부 |
 | `speakers.min` / `speakers.max` | 1 / 10 | 화자 수 힌트. 메타 `context.participants`가 있으면 `min = max = participants`로 **덮어쓴다**(녹음 시점 정보가 워크플로우 기본값보다 정확하다). 상한은 10명이라 `6+`는 그 위쪽 전부를 뜻한다 |
-| `model` | provider 기본 | provider별 모델 이름. 자유 문자열, 검증은 provider가 한다 |
+| `model` | provider 기본 | provider별 모델 이름. 자유 문자열, 검증은 provider가 한다. 모델을 고정했거나 고를 모델이 없는 `clova`·`assemblyai`·`azure`·`rev`는 이 값을 읽지 않으므로(`SttProviders.acceptsModel`) 고정 처리 계획은 보내지 않고 설정 화면은 입력란을 숨긴다. 설정 화면에서 제공자를 바꾸면 모델과 `invokeUrl`(필수 제공자는 템플릿)을 비운다 — 다른 제공자의 이름·주소가 넘어가지 않게 |
 
 입력 트랙: 녹음 `tracks`에 `mono`가 있으면 `mono`, 아니면 `mix`. 둘 다 없으면 단계
 `FAILED(NO_INPUT_TRACK)`(비재시도).
@@ -1304,23 +1420,32 @@ interface TokenProvider {
 단계의 output이기 때문이다.
 
 출력: `{ transcript: { jsonFileId, txtFileId, language, speakerCount, durationSec, provider, model }, files: [ … ] }`
-— `files[]`는 결과 파일(json·txt)의 `name/bytes/sha256/drive{fileId,webViewLink}`로, 웹훅 payload 빌더가
-`drive.upload` output과 같은 코드로 읽는다.
+— `files[]`는 결과 파일(json·txt)의 `name/bytes/sha256/drive{fileId,webViewLink}`다(웹훅 payload가
+읽던 모양이다; 웹훅은 2026-09-24 폐기).
 
 ### Provider
 
-첫 행이 편집기의 기본 provider다(영어 기준 우선).
+새 외부 전사 설정의 목록과 기본 선택은 **ElevenLabs → CLOVA → AssemblyAI → RTZR → OpenAI → Groq →
+Together → Mistral → Deepgram → Azure → Daglo → Speechmatics → Rev → Gladia** 순이다. 저장된 제공자는 바꾸지 않는다.
+
+전사 언어는 `ko`, `en`, `ja`, `zh-cn`, `zh-tw`, `es`, `fr`, `de`, `pt`, `ar`, `hi`, `ru`, `it`, `id`, `tr`,
+`vi`, `th`, `nl`, `pl`, `uk` 20개 선택값에 기존 `ko-en`·`auto`를 더한다. 새 설정의 초기 언어는 기기 언어에서 정한다.
+제공자·모델이 지원하는 선택값만 표시한다. CLOVA는 한·영·혼용·일·중국어 간체/번체, Daglo는 검증된 한·영·혼용을
+유지한다. Mistral은 13개 언어, RTZR sommers는 한·일, 영어 전용 Groq 모델과 Deepgram 특수 모델은 영어로 제한한다.
+Apple 로컬은 `SpeechTranscriber.supportedLocale(equivalentTo:)`를 실제 기기에서 조회하며 모델 설치 여부는 별도로 표시한다.
+API가 ISO 언어 코드만 받으면 중국어 두 선택값은 `zh`, Speechmatics·Rev는 `cmn`으로 보낸다. 중국어 표기체의 강제 변환은 하지 않는다.
+근거와 구현 범위는 [글로벌 언어 설정 기록](research/2026-09-24-global-language-settings.md)을 따른다.
 
 | provider | 인증(`secretRef` 값 형식) | 제출 | 폴링 | 화자분리·힌트 | 언어 매핑 | 기본 모델 |
 |---|---|---|---|---|---|---|
-| `assemblyai` | 헤더 `authorization`; 값 = 키 | `POST /v2/upload`(바이트) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected`(min=max일 때) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-2` (**고정** — U-3.x는 한국어 없음) |
+| `elevenlabs` (Scribe) | 헤더 `xi-api-key`; 값 = 키 | `POST https://api.elevenlabs.io/v1/speech-to-text` multipart(`file`, `model_id`, `language_code`, `diarize`, `num_speakers`, `timestamps_granularity=word`, `tag_audio_events=false`), 동기 | 없음(동기) | `diarize`, `num_speakers`(단일 값을 알 때만) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략 | `scribe_v2` |
 | `clova` (Naver CLOVA Speech 장문) | 헤더 `X-CLOVASPEECH-API-KEY`; 값 = 키 문자열. `invokeUrl`은 단계 필드 | `POST {invokeUrl}/recognizer/upload` multipart(`media`, `params` JSON), `completion: "sync"`(≤2 h; 결과가 응답 본문) | 없음(동기). HTTP 타임아웃 15분 | `diarization.enable`, `speakerCountMin/Max`(≤10) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`enko`, `auto`→`ko-KR` | — |
+| `assemblyai` | 헤더 `authorization`; 값 = 키 | `POST /v2/upload`(바이트) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected`(min=max일 때) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-2` (**고정** — U-3.x는 한국어 없음) |
 | `rtzr` (리턴제로) | 값 = `{clientId}:{clientSecret}`. `POST /v1/authenticate` → JWT(6 h) 캐시(단계 state) | `POST /v1/transcribe` multipart(`file`, `config` JSON) → `id` | `GET /v1/transcribe/{id}` → `transcribing`/`completed`/`failed`. `Waiting(30s)` | `use_diarization`, `diarization.spk_count`(min=max일 때만 전달) | `sommers`는 `ko`/`ja`만 → `ko`→`sommers`; `en`·`ko-en`·`auto`는 `model_name: "whisper"` + `language: "en"`/`"multi"`/`"detect"` | `sommers` |
 | `openai` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart(`file`, `model`, `language`), 동기(응답 본문이 결과). base 기본 `https://api.openai.com/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | 모델 이름이 정한다 — 이름에 `diarize`가 있으면 `response_format=diarized_json` + `chunking_strategy=auto`, `whisper`로 시작하면 `verbose_json` + `timestamp_granularities[]=segment`, 그 밖은 `json`. 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략(자동 감지) | `diarize`면 `gpt-4o-transcribe-diarize`, 아니면 `whisper-1` |
 | `groq` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.groq.com/openai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | **없다** — Groq에 화자분리가 없으므로 `diarize`는 무시하고 화자는 `null`. `verbose_json` 고정 | 위와 같음 | `whisper-large-v3-turbo` |
 | `together` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.together.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `response_format=verbose_json` + `timestamp_granularities=segment`, 그리고 `min_speakers`/`max_speakers`(범위) | 위와 같음 | `openai/whisper-large-v3` |
 | `mistral` (Voxtral) | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.mistral.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `timestamp_granularities=segment`. 화자 수 힌트 없음 | 위와 같음 | `voxtral-mini-latest` |
-| `elevenlabs` (Scribe) | 헤더 `xi-api-key`; 값 = 키 | `POST https://api.elevenlabs.io/v1/speech-to-text` multipart(`file`, `model_id`, `language_code`, `diarize`, `num_speakers`, `timestamps_granularity=word`, `tag_audio_events=false`), 동기 | 없음(동기) | `diarize`, `num_speakers`(단일 값을 알 때만) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략 | `scribe_v2` |
 | `deepgram` | 헤더 `Authorization: Token {키}` | `POST https://api.deepgram.com/v1/listen?…` 쿼리(`model`, `smart_format=true`, `punctuate=true`, `utterances=true`), 본문은 파일 바이트 그대로, 동기 | 없음(동기) | `diarize_model=latest`만 보낸다(옛 `diarize` 플래그를 같이 보내면 거부된다). 화자 수 힌트 없음 | `ko`→`language=ko`, `en`→`language=en`, `ko-en`→`language=ko`, `auto`→`detect_language=true` | `nova-3` |
 | `azure` (Fast transcription) | 헤더 `Ocp-Apim-Subscription-Key`; 값 = 키. `invokeUrl`은 리소스 엔드포인트(단계 필드, **필수**) | `POST {invokeUrl}/speechtotext/transcriptions:transcribe?api-version=2025-10-15` multipart(`audio`, `definition` JSON), 동기 | 없음(동기) | `diarization.enabled` + `maxSpeakers`(API가 받는 2..35로 클램프). `diarize: false`면 `diarization`을 아예 빼고 보낸다 | `ko`→`["ko-KR"]`, `en`→`["en-US"]`, `ko-en`→`["ko-KR","en-US"]`, `auto`→`[]` | — |
 | `daglo` (다글로) | 헤더 `Authorization: Bearer {키}` | `POST https://apis.daglo.ai/stt/v1/async/transcripts` multipart(`file`, `sttConfig` JSON) → `rid` | `GET https://apis.daglo.ai/stt/v1/async/transcripts/{rid}` → `transcribed`(완료) / `input_error`·`transcript_error`·`file_error`(종료 실패) / 그 밖은 진행 중 | `speakerDiarization.enable`, `speakerCountHint`(단일 값을 알고 2 이상일 때) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`mixed`, `auto`→`ko-KR` | `general` |
@@ -1332,7 +1457,7 @@ interface TokenProvider {
 poll(ctx, ref): PollResult }`로 있고, `TranscribeRunner`는 provider와 무관하게 remux → submit → poll → 정규화 →
 Drive 쓰기만 안다.
 
-기본 모델 이름은 각 provider의 현행 GA 모델로 갱신하고 `spec/examples/workflows.json`에 반영한다. 사용자가
+기본 모델 이름은 각 provider의 현행 GA 모델로 갱신한다. 사용자가
 `model`을 바꿀 수 있으므로 **코어는 이름을 검증하지 않는다.**
 
 #### 길이·크기 한도
@@ -1399,7 +1524,7 @@ maxDurationSec)`)로 선언한다. 러너는 파트를 이어 붙인 직후·업
 | reason | 재시도 | 조건 |
 |---|---|---|
 | `MISSING_SECRET` | 아니오 | 이 기기에 그 이름의 키가 없음 |
-| `AUTH_REJECTED` | 아니오 | 401/403. UI는 **"키를 확인하세요"**(check the key) + 편집기 진입 |
+| `AUTH_REJECTED` | 아니오 | 401/403. UI는 **"키를 확인하세요"**(check the key) + 설정 진입 |
 | `QUOTA` | 예 | 429(`Retry-After` 우선), 402 |
 | `PROVIDER_ERROR` | 예 | 5xx, 네트워크, 타임아웃, provider `failed`/`error` 상태(메시지 보존) |
 | `UNSUPPORTED_AUDIO` | 아니오 | 4xx로 파일 거부, 또는 제출 전 한도 초과(provider가 선언, detail에 한도) |
@@ -1409,7 +1534,7 @@ maxDurationSec)`)로 선언한다. 러너는 파트를 이어 붙인 직후·업
 reason은 `step_run.last_error`에 **`CoreMessage` 코드**로 적힌다(§7 규칙 5). 여섯 개는 `NAME|provider가 한 말` —
 셸이 `NAME`을 자기 언어 문장으로 옮기고 `|` 뒤는 번역 없이 문장 아래에 그대로 보여준다. `MISSING_SECRET`만 인자를
 쓴다(`MISSING_SECRET:{secretRef}`). `MISSING_SECRET`·`AUTH_REJECTED`일 때 `StepReport.needsKey`가 "키를 확인하세요"
-동작을 켠다. **키는 워크플로우에 정의되어 있으므로 그 화면이 곧 편집기다.**
+동작을 켠다. **키는 녹음 처리 설정에서 고치므로 그 화면으로 간다.**
 
 ### 결과 파일
 
@@ -1452,9 +1577,11 @@ Drive 쓰기는 `drive.upload`와 같은 멱등 규칙(같은 이름 + 같은 md
 §3. 정수, 선택. 채우는 곳:
 
 - 데스크톱·폰: 정지 후 제목 다이얼로그에서 인원 선택(2·3·4·5·6+·모름). 기본 "모름" = 생략.
-- 워치: 없다(폰이 전송받아 바로 enqueue). 워크플로우 `speakers` 기본값이 적용된다.
+- 워치: 없다(폰이 전송받아 바로 enqueue). 처리 계획의 `speakers` 기본값이 적용된다.
 
 ### 웹훅
+
+> **폐기(2026-09-24)**: 웹훅이 없다(§4). 결과 파일 항목의 모양(`track: "transcript"`)은 단계 출력 `files[]`로 남는다.
 
 §4의 `files[]`에 결과 파일을 추가한다: `track: "transcript"`(json·txt 두 항목). 앞선 `transcribe` 단계가
 성공했을 때만이다.
@@ -1475,9 +1602,9 @@ Drive 쓰기는 `drive.upload`와 같은 멱등 규칙(같은 이름 + 같은 md
 
 | # | 트렌드 | Recly 적용 |
 |---|---|---|
-| 1 | AI 협업(보조 레이어, 강요 없음) | AI는 **사용자가 자기 워크플로우에 직접 넣은 선택 단계**일 때만 존재한다 — `transcribe`는 사용자의 키로 돌고, 넣지 않으면 앱 어디에도 AI가 없다. UI 규칙은 "보조 레이어": 원본(파트·타이머·상태)이 언제나 본문이고 녹취는 그 옆·아래의 별도 레이어이며, 결과가 원본 표시를 덮거나 대신하지 않는다. 결과가 있는 녹음에만 목록 행에 진입점이 생기고 상세 화면의 녹취 탭에서 펼친다. 자동 제안·자동 실행·"AI로 개선" 같은 권유 UI는 없다 |
+| 1 | AI 협업(보조 레이어, 강요 없음) | 전사는 **설정에서 로컬·외부 API·OFF 중 선택**한다. 새 설치는 로컬(로컬 엔진이 없는 빌드는 OFF)이며 외부 API는 사용자의 키로 실행한다. UI 규칙은 "보조 레이어": 원본(파트·타이머·상태)이 언제나 본문이고 녹취는 그 옆·아래의 별도 레이어이며, 결과가 원본 표시를 덮거나 대신하지 않는다. 결과가 있는 녹음에만 목록 행에 진입점이 생기고 상세 화면의 녹취 탭에서 펼친다. 자동 제안·자동 실행·"AI로 개선" 같은 권유 UI는 없다 |
 | 2 | **목적 있는 모션**(상태 신호, 의도적 마이크로 딜레이) | 녹음 시작/정지·업로드·로그인 같은 **드문 고위험 동작**에 0.3–0.8초의 가시적 처리 상태(버튼이 "저장 중…"으로 변하고 끝나면 "✓"). 장식 애니메이션 금지. 모든 모션은 `reduce motion`을 존중한다 |
-| 3 | **Raw 미학**(모노스페이스·그리드·와이어프레임) | **Recly의 시각 언어의 중심.** 타이머·파트 번호·파일명·크기·sha·상태 코드는 모노스페이스. 화면은 보이는 그리드 위의 사각 노드; 워크플로우 편집기는 단계를 **직선 커넥터로 잇는 노드 그래프**다. 필러 일러스트·그라디언트 오버레이 없음 |
+| 3 | **Raw 미학**(모노스페이스·그리드·와이어프레임) | **Recly의 시각 언어의 중심.** 타이머·파트 번호·파일명·크기·sha·상태 코드는 모노스페이스. 화면은 보이는 그리드 위의 사각 노드; 녹음 화면은 기기·전사·상태 노드를 표시하고 처리 설정은 기존 섹션 표로 제공한다. 필러 일러스트·그라디언트 오버레이 없음 |
 | 4 | 포용적 시각(제어권) | **모션 줄이기·고대비는 시스템 설정을 그대로 따른다** — 앱 안에 같은 토글을 다시 두지 않는다(중복 제어는 제어권이 아니다). WCAG AA(텍스트 4.5:1, 그래픽 3:1). 스와이프 힌트엔 정적 대안 |
 | 5 | **유동 타이포** | 브레이크포인트 대신 연속 스케일: Compose `sp` + 창 크기 기반 보간, SwiftUI Dynamic Type + `ScaledMetric`, Windows 창 너비에 따른 clamp 보간. 사용자 글꼴 크기 설정을 존중한다 |
 | 6 | 저작(Crafted, not prompted) | **아이콘 마스코트 없음.** 대신 **정직한 시스템 표시**: 버전·빌드·기기 ID·오픈소스 고지를 설정 하단에 모노스페이스로. "Handmade" 마케팅 문구는 넣지 않는다(제품 정직성) |
@@ -1540,7 +1667,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    사용자에게 보이지 않는 데이터다). 이 셋이 화면의 경계(boundary)를 만든다.
    - **기기 노드 값**은 소스 코드 그대로(`phone` / `desktop`) — 번역하지 않는다. 트랙(`mono`)과 같은 취급이고,
      헤더 meta도 4셸 모두 `<source> · <기기 ID 앞 8자>`다.
-   - **사용 중인 워크플로우 표시**(ADR-016): 워크플로우 노드는 4셸 모두 **그 이름만** 적는다. 피커는 워크플로우
+   - **사용 중인 워크플로우 표시**(ADR-016) — **폐기(2026-09-24)**: 선택할 워크플로우가 없어 피커와
+     `워크플로우를 선택하세요` 안내가 사라졌다. 아래는 기록이다. 워크플로우 노드는 4셸 모두 **그 이름만** 적는다. 피커는 워크플로우
      이름들만 나열하고 선택된 하나가 채워진 칩(✓)이다 — "선택됨"을 말로 쓰지 않는다. 단일 선택 컨트롤은 선택
      상태를 스스로 보여주고, 말로 붙이면 길어질 뿐이다. 피커에서 고르면 그 자리에서 이 기기의 포인터가 바뀐다.
      워크플로우 목록에서는 사용 중인 행에 배지 `사용 중`(en `In use`)을 붙이고, 다른 행의 동작은 `사용`(en
@@ -1562,7 +1690,7 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    기기의 잡이 아니라 큐에서는 읽을 수 없다: `RECEIVING`(워치에서 받는 중 = `receiving`; `status = recording`이라
    그냥 두면 `REC`로 보인다) · `UPLOADING`(다른 기기가 업로드 중 = `remoteUploading`; 이 기기의 업로드와 **같은
    단어**다 — 배지는 어디서가 아니라 무엇을 말한다) · `TRANSCRIBING`(다른 기기가 전사 중 = `remotePending`에
-   `transcribe`; `webhook`만 남았으면 `DONE`이다). 셋 다 액센트다. 앞의 둘은 **녹음 중인 행과 같이 동작이 없다**
+   `transcribe`). 셋 다 액센트다. 앞의 둘은 **녹음 중인 행과 같이 동작이 없다**
    (삭제·다시 시도·Drive 링크 없음 — 삭제는 남의 업로드 밑에서 폴더를 빼는 일이다), `TRANSCRIBING`은 입양한 `DONE`
    행과 같다(상세·삭제). 길이 열은 `durationSec`이 없을 때의 자리표시자 그대로이고(`0:00`을 지어내지 않는다),
    배지 열 너비를 재는 셸은 이 코드들도 함께 잰다. 헤더 수에서 앞의 둘은 `대기`로 세고 `TRANSCRIBING`은 세지 않는다.
@@ -1585,7 +1713,7 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    발화 묶음은 결과가 바뀔 때 캐시하며, 동일 화자의 긴 발화도 60초 또는 1,200자 기준으로 다음 세그먼트부터
    나누고 지연 목록으로 표시한다(제공자가 반환한 단일 세그먼트 자체는 분할하지 않는다). 재생 시계마다 전체
    문자열을 다시 이어 붙이지 않는다. Android·Windows 파형에는 보이는 키보드 포커스와 좌우 5초 이동이 있다.
-   4셸 모두 열린 상세에서 잡·단계·녹음 변경을 관찰해 전사 결과를 갱신한다. 후속 웹훅 완료를 기다리지 않으며
+   4셸 모두 열린 상세에서 잡·단계·녹음 변경을 관찰해 전사 결과를 갱신한다.
    전사·제목만 바뀌면 재생·읽기 위치를 초기화하지 않는다. 녹음 상태와 오디오 파트는 전사와 별도로 관찰해,
    상세를 연 채 녹음이 종료되거나 파트가 추가돼도 화면을 다시 열지 않고 재생 영역을 갱신한다.
    iPhone·macOS는 녹음 시작 준비 단계에서 기존 재생을 먼저 중지한 뒤 캡처를 시작한다. 캡처 종료 완료까지
@@ -1597,12 +1725,14 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    추가하지 않아 플레이어 높이와 주변 콘텐츠 위치가 바뀌지 않게 한다. 실제 재생 실패는 화면에 표시하고 다음
    재생 요청으로 다시 시도한다. Windows는 ffmpeg의 비정상 종료·종료 대기 초과도 실패로 표시하며 사용자의
    중지·탐색으로 종료된 경우는 제외한다. 제목을 주 정보로, 내부 ID를 그 아래의 복사 가능한 보조 정보로 둔다.
-   목록 첫 읽기에는 로딩 안내를, 실제 빈 목록에는 녹음·워크플로우 생성으로 가는 동작을 제공한다.
+   목록 첫 읽기에는 로딩 안내를, 실제 빈 목록에는 녹음으로 가는 동작을 제공한다.
    녹음 목록의 삭제는 동작 영역 오른쪽에 고정하고, 우측 테두리는 위 상태 열의 `DONE` 배지 우측 테두리와
    맞춘다. 열기·다시 시도·상세 등 나머지 동작은 왼쪽 공간에서 줄바꿈한다. 모바일 목록과 데스크톱 메뉴·트레이의
    펼친 목록에도 같은 규칙을 적용한다.
    (2026-09-03: 행의 파트 표는 제거 — 파트 번호·트랙·바이트·sha는 사용자에게 보이지 않는다)
-3. **워크플로우 편집기 = 노드 그래프**: 트리거(기기) → 단계 노드들 → 끝. 노드는 사각, 커넥터는 직선, 선택 노드에
+3. **워크플로우 편집기 = 노드 그래프** — **폐기(2026-09-24)**: 사용자 워크플로우 편집기와 목록이 제거됐다. 편집기·
+   목록에 관한 문장은 기록이고, 끝의 일반 배치 규칙("iPhone은 세로·좌우 가로 방향을 지원하며"부터)과 미저장 키
+   입력의 폐기 확인은 유효하다. 기록: 트리거(기기) → 단계 노드들 → 끝. 노드는 사각, 커넥터는 직선, 선택 노드에
    액센트 테두리. 단계 추가는 커넥터 위 `+`. 이미 `drive.upload`가 있으면 추가 메뉴의 `Drive 업로드`는 비활성이다
    (2026-09-04: 두 번째 업로드는 같은 폴더면 아무것도 안 하고, 다른 폴더면 뒤 단계가 모르는 사본이 된다 — 웹훅·전사는
    마지막 업로드만 읽는다; 편집기 규칙이고 파서는 막지 않는다). 웹훅은 엔드포인트마다 하나이므로 여러 개가 자연스럽다.
@@ -1688,7 +1818,7 @@ recly.core
   recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5)
   job/          JobService · Executor · StepRunner · Backoff · JobStore
   drive/        DriveApi · ResumableUploadPlanner · FolderResolver · AppData
-  webhook/      Signer · PayloadBuilder · WebhookRunner
+  webhook/      Signer · PayloadBuilder · WebhookRunner   — 폐기(2026-09-24)
   transcribe/   SttProvider 어댑터 · TranscribeRunner
   sync/         WorkflowSync (pull/push/merge)
   secrets/      SecretsRepository · SecretSync · SecretSyncStore
@@ -1822,7 +1952,8 @@ minDurationSec 미만 ──► SKIPPED_SHORT (수동 실행 시 PENDING)
   스냅샷은 아무것도 증명하지 못하고 파트는 원본 오디오의 유일한 사본이다.
 - **`workflow_json`은 다시 쓰지 않는다.** 행은 더 새로운 앱이 넣은 그대로 남고 `retry()`는 행을 `PENDING`으로
   되돌리기만 하므로, 앱을 업데이트하면 같은 행이 그대로 디코드되어 원래 의도대로 실행된다.
-- **단계 정의는 실행 시점의 문서가 이긴다**(2026-09-04). 스냅샷은 잡이 *무엇인지*(어느 워크플로우, 어떤 단계들),
+- **폐기(2026-09-24)** — 사용자 문서가 없어 잡은 스냅샷(고정 계획)대로 실행되고, 설정 변경은 진행 중 잡을 바꾸지
+  않는다(§5 "고정 처리 설정 도입"). 기록: **단계 정의는 실행 시점의 문서가 이긴다**(2026-09-04). 스냅샷은 잡이 *무엇인지*(어느 워크플로우, 어떤 단계들),
   문서는 사용자가 *지금 뜻하는 것*이다. 실패 뒤 URL·키·플랜을 고친 사용자는 다음 시도가 그 수정을 쓰길 기대한다
   (Z Fold7 실기: 대기 중인 전사가 스냅샷의 Free Clova 도메인만 30분간 계속 불렀다). 그래서 `Executor`는 잡을 돌릴 때
   현재 문서에서 같은 `workflowId`의 워크플로우를 찾아, **같은 `id`·같은 `type`**의 단계는 문서의 정의로 바꿔 끼운다.
@@ -1888,17 +2019,17 @@ data class DisconnectResult(val deletedRecordings: Int, val busyRecordings: List
 |---|---|---|---|
 | Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | 목록 배너는 회색 “업로드 대기 N건” + “Drive 연결” 버튼 한 줄. 시스템 알림은 연결 필요 사유와 대기 건수 | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개. Android는 앱을 여는 것만으로 다시 허용을 시도한다(§6 Android) |
 | Job `NEEDS_SPACE` (`DRIVE_STORAGE_FULL`) | Drive 403 `storageQuotaExceeded` | "Google Drive에 공간이 없습니다 — 녹음 N건이 기다리는 중" | Drive 저장용량 열기 / 다시 시도 |
-| 단계 `FAILED` (`MISSING_SECRET:{name}`) | 이 기기에 그 이름의 키가 없음 | "이 기기에 `{name}` 키가 없습니다" | 키 입력(편집기의 시크릿 폼으로 바로 진입) |
-| 단계 `FAILED` (`INVALID_SECRET:{name}`) | 저장된 값이 서명 키로 못 씀 | "`{name}` 키 값이 올바르지 않습니다" | 키 다시 입력 |
+| 단계 `FAILED` (`MISSING_SECRET:{name}`) | 이 기기에 그 이름의 키가 없음 | "이 기기에 `{name}` 키가 없습니다" | 키 입력(설정의 API 키 입력으로 바로 진입) |
+| **폐기(2026-09-24)** 단계 `FAILED` (`INVALID_SECRET:{name}`) — 웹훅 서명 키 전용 | 저장된 값이 서명 키로 못 씀 | "`{name}` 키 값이 올바르지 않습니다" | 키 다시 입력 |
 | 단계 `FAILED` (`AUTH_REJECTED`) | STT provider가 키를 거절(401/403) | "키를 확인하세요" + provider가 한 말 그대로 | 키 다시 입력 |
 | 단계 재시도 중 / `RETRY_BUDGET_SPENT:QUOTA` (`QUOTA`) | provider 할당량·요금(429·402). 429는 `Retry-After`로 조용히 기다리지만, 예산을 다 쓰면 사용자 문제다 | "provider 할당량이 찼습니다 — 결제·한도를 확인하세요" | provider 콘솔 열기 / 다시 시도 |
-| 단계 `FAILED` (`WEBHOOK_HTTP:{status}`) | 웹훅이 4xx(408·425·429 제외) | "웹훅이 {status}로 거절했습니다 — URL과 서명 시크릿을 확인하세요" | 워크플로우 편집 열기 / 다시 시도 |
+| **폐기(2026-09-24)** 단계 `FAILED` (`WEBHOOK_HTTP:{status}`) | 웹훅이 4xx(408·425·429 제외) | "웹훅이 {status}로 거절했습니다 — URL과 서명 시크릿을 확인하세요" | 워크플로우 편집 열기 / 다시 시도 |
 
 규칙:
 
 1. **알림은 상태당 하나로 접는다.** 잡 5건이 같은 이유로 막혀도 알림은 1건이고 본문의 개수만 오른다. 같은 이유의
    알림을 다시 내는 것은 상태가 풀렸다가 다시 막혔을 때뿐이다.
-2. **탭하면 고칠 수 있는 화면으로 간다** — 로그인 화면, 시크릿 폼, 워크플로우 편집기. "앱 열기"로 끝내지 않는다.
+2. **탭하면 고칠 수 있는 화면으로 간다** — 로그인 화면, 설정의 API 키 입력. "앱 열기"로 끝내지 않는다.
    모든 사유에는 갈 곳이 있다.
 3. **상태가 풀리면 알림을 내린다.** 그 이유가 큐에서 사라지면 알림도 내려간다.
 4. **재시도로 낫는 실패는 알리지 않는다.** 목록 행의 상태 배지로만 보인다.
@@ -1931,13 +2062,13 @@ sealed interface StepOutcome { data class Done(val output: StepOutput); data cla
 
 - `DriveUploadRunner`: 폴더 해석(캐시 → `files.list` → 생성) → 파트별 resumable 세션(≤5 MB면 multipart 단일 요청) →
   md5 검증 → `meta.json` 마지막 → output `{folderId, webViewLink, files[]}`.
-- `WebhookRunner`: `prior`에서 가장 최근 `drive.upload` output을 찾아 payload 구성 → 서명 → POST → 응답 규칙(§4).
+- `WebhookRunner` — **폐기(2026-09-24)**. 기록: `prior`에서 가장 최근 `drive.upload` output을 찾아 payload 구성 → 서명 → POST → 응답 규칙(§4).
 - `TranscribeRunner`: `deps.audio.concat`로 입력 트랙 remux → `SttProvider.submit` → `Waiting(30)` 반복 → `poll`
   완료 시 `transcript.json/.txt`로 정규화 → 로컬 사본 + Drive 쓰기(`prior`의 `drive.upload` 폴더).
 - **`StepOutcome.Waiting(retryAfterSec, state)`** — `run`이 이것을 돌려주면 Executor는 `attempts`를 올리지 않고
   단계를 `PENDING`으로 둔 채 Job을 `WAITING(next_run_at = now + retryAfterSec)`으로 옮기고 `state`를 저장한다.
 
-"앞 단계의 마지막 X 출력"을 찾는 것은 `priorOutput` 하나이고 네 곳(러너 3 + `PayloadBuilder`)이 그것을 쓴다.
+"앞 단계의 마지막 X 출력"을 찾는 것은 `priorOutput` 하나이고 러너들이 그것을 쓴다.
 
 ### ResumableUploadPlanner (ADR-015)
 
@@ -1971,13 +2102,13 @@ object ResumableUploadPlanner {
 
 | 영역 | 테스트 |
 |---|---|
-| 파서·검증 | `spec/examples/workflows.json` 통과; 잘못된 문서 픽스처(중복 step id, 미지 변수, http URL, 11개 step…) 각각 지정된 오류 |
+| 파서·검증 — **폐기(2026-09-24)** | `spec/examples/workflows.json` 통과; 잘못된 문서 픽스처(중복 step id, 미지 변수, http URL, 11개 step…) 각각 지정된 오류 |
 | 템플릿 | 변수 치환, 타임존 변환, 경로 안전 치환 |
-| 선택 규칙 | 4단계 규칙 표 기반 |
+| 선택 규칙 — **폐기(2026-09-24)** | 4단계 규칙 표 기반 |
 | 백오프 | 8회 시퀀스 상한·지터 범위 |
 | ResumableUploadPlanner | 200/308/404/5xx/401 시나리오, 청크 경계, 오프셋 재확인 |
 | DriveUploadRunner | Ktor `MockEngine`으로 전체 흐름: 폴더 생성 → 3파트 업로드 중 2번째에서 5xx → 재개 → md5 불일치 시 재업로드 → meta 마지막 |
-| WebhookRunner | Standard Webhooks 공식 테스트 벡터로 서명 검증; 429 `Retry-After`; 4xx 즉시 실패; 앞 단계 output 반영 |
+| WebhookRunner — **폐기(2026-09-24)** | Standard Webhooks 공식 테스트 벡터로 서명 검증; 429 `Retry-After`; 4xx 즉시 실패; 앞 단계 output 반영 |
 | Executor | 프로세스 재시작 시뮬레이션(DB만 남기고 새 Executor) 후 중단 지점 재개; `abort`/`continue`; `NEEDS_AUTH` 전이; quiesce 순서 |
 | Sync | pull/push/merge 케이스: **원격만 변경**, 로컬만 변경, **양쪽 변경 → id별 LWW**, 삭제 휴리스틱, 깨진 원격, Outdated schema 마이그레이션 후 push |
 | SecretSync | PBKDF2·AES-GCM 실제 연산, AAD 위조, tombstone·삭제 워터마크, 여분 파일, fail-closed |
@@ -2005,7 +2136,7 @@ android/
   recording/   라이브러리. SegmentedRecorder(MediaRecorder), RecorderService(FGS microphone), SilenceMonitor,
                AndroidSecureStore · deviceId · SystemClock (폰·워치 공용)
   datalayer/   폰↔워치 경로·JSON 계약 한 벌
-  app/         폰 앱. Compose. 워크플로우 편집, 녹음, 실행, 인증, Data Layer 수신
+  app/         폰 앱. Compose. 녹음 처리 설정, 녹음, 실행, 인증, Data Layer 수신
   wear/        워치 앱. Wear Compose. 녹음, 전송, 타일, Ongoing Activity
 ```
 
@@ -2048,12 +2179,12 @@ android/
 |---|---|
 | A1 | 프로젝트 골격, `:core` 의존, DI, DataStore, `ReclyCore` 조립 |
 | A2 | 인증: Credential Manager 로그인 + `AuthorizationClient`(drive.file), `TokenProvider`, 보안 저장 |
-| A3 | 녹음 화면 + `RecorderService` 연결, 워크플로우 선택 시트, 정지 후 제목·인원 입력(선택) |
+| A3 | 녹음 화면 + `RecorderService` 연결, ~~워크플로우 선택 시트~~(폐기 2026-09-24), 정지 후 제목·인원 입력(선택) |
 | A4 | 녹음 목록: 상태(녹음 중/대기/업로드 중 n%/완료/실패/인증 필요/공간 없음), 수동 실행·삭제 |
 | A5 | `WorkflowWorker`: `OneTimeWorkRequest`(유니크 `rec-jobs`, `NetworkType.CONNECTED`), `runDueJobs()` 호출, 실패 시 `Result.retry`(주기 인스턴스는 상한 뒤 success — 6h 보험이 죽지 않게); **매 패스 후 후속 실행 재계산**: WAITING의 `nextRunAt`과 PENDING(즉시) 중 최소로 `rec-jobs-next`(REPLACE, 과거면 지연 0) 하나를 무장, `alreadyRunning`이면 타이머를 건드리지 않고 60초 뒤 후속; enqueue 시에도 `rec-jobs-next` 0초 무장; 옛 "지금 올리기"가 쓰던 core `retry`(WAITING 포함) + `setExpedited`는 "다시 시도"가 그대로 쓴다; 설정 "Wi-Fi에서만" 변경 시 `rec-jobs-next`·`rec-jobs-periodic`을 새 제약으로 재무장(`rec-jobs`는 KEEP — 실행 중 패스를 취소하면 재시도 예산이 소모된다; 이미 큐에 있던 패스 1회는 옛 제약으로 돌 수 있다) |
-| A6 | 워크플로우 편집 UI: 목록(행마다 "수정"·"사용"·삭제, 사용 중인 행은 배지), 이름/최소 길이, 단계 순서 편집(드래그), `drive.upload` 폴더 템플릿, `webhook` URL/시크릿, `transcribe` 폼과 provider 고지, 이 기기에 없는 시크릿 경고, 키 관리(값은 기기별, §5). 쓰기 규칙: 모든 문서 변경은 뮤텍스 안에서 `current()`를 다시 읽어 적용·저장(전체 문서 저장 경쟁 방지); 편집기는 연 시점의 `updatedAt`을 기억해 다른 창의 저장으로 바뀌었으면 저장을 거부하고 "다시 열기"; 시크릿 복사는 클립보드 민감 플래그 |
-| A7 | 설정의 워크플로우 내보내기/가져오기(§5): SAF `CREATE_DOCUMENT`(기본 이름 `recly-workflows.json`)·`OPEN_DOCUMENT`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
-| A8 | Data Layer 수신: `WearableListenerService`(`ChannelClient.onChannelOpened` → `receiveFile`, 경로 `/rec/part/…`·`/rec/meta/…`), sha256 검증, `MessageClient` ack `/rec/ack`·`/rec/ack-meta`, 메타 수신 시 등록 + enqueue + `onJobsDue`; 워크플로우 요약을 `DataClient` `/rec/workflows`(urgent)로 게시; `rec_phone` capability 선언 |
+| A6 | **폐기(2026-09-24)** — 워크플로우 편집 UI: 목록(행마다 "수정"·"사용"·삭제, 사용 중인 행은 배지), 이름/최소 길이, 단계 순서 편집(드래그), `drive.upload` 폴더 템플릿, `webhook` URL/시크릿, `transcribe` 폼과 provider 고지, 이 기기에 없는 시크릿 경고, 키 관리(값은 기기별, §5). 쓰기 규칙: 모든 문서 변경은 뮤텍스 안에서 `current()`를 다시 읽어 적용·저장(전체 문서 저장 경쟁 방지); 편집기는 연 시점의 `updatedAt`을 기억해 다른 창의 저장으로 바뀌었으면 저장을 거부하고 "다시 열기"; 시크릿 복사는 클립보드 민감 플래그 |
+| A7 | **폐기(2026-09-24)** — 설정의 워크플로우 내보내기/가져오기(§5): SAF `CREATE_DOCUMENT`(기본 이름 `recly-workflows.json`)·`OPEN_DOCUMENT`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
+| A8 | Data Layer 수신: `WearableListenerService`(`ChannelClient.onChannelOpened` → `receiveFile`, 경로 `/rec/part/…`·`/rec/meta/…`), sha256 검증, `MessageClient` ack `/rec/ack`·`/rec/ack-meta`, 메타 수신 시 등록 + enqueue + `onJobsDue`; ~~워크플로우 요약을 `DataClient` `/rec/workflows`(urgent)로 게시~~(폐기 2026-09-24); `rec_phone` capability 선언 |
 | A9 | 진입점: 빠른 설정 타일, 홈 위젯(시작/정지), 앱 단축. 타일·위젯에서 시작할 때 FGS 백그라운드 시작 예외를 **쓰거나 포기하거나** 둘 중 하나이지, 조용히 실패하지 않는다 |
 | A10 | 설정: Google Drive 연결 상태·해제 동작, 언어, Wi-Fi 전용, 동의 리마인더, **로그 내보내기** |
 | A11 | Play 등록: Wear OS 폼팩터 포함, 스크린샷, 데이터 안전 양식("수집 없음") |
@@ -2063,7 +2194,7 @@ android/
 | # | 범위 |
 |---|---|
 | W1 | 골격: Wear Compose M3, `standalone=false`(폰 앱 필수), `RecorderService` 재사용 |
-| W2 | 메인 화면: 큰 시작/정지 버튼, 워크플로우 선택(`DataClient`로 받은 요약, 워치에서 고르지 않았으면 **"폰의 워크플로우"**(en `Phone's workflow`) — 두 워치 모두 같은 말이다), 경과 시간, 전송 대기 n개(폰을 찾아 넘기는 중이면 `전송 중 n개`(en `Sending n`) — 패스가 채널을 연 동안만이다, 2026-09-04). 화면은 둘뿐이고 내비게이션 라이브러리가 없다 — 워치에서의 여정은 "녹음"뿐이다 |
+| W2 | 메인 화면: 큰 시작/정지 버튼, ~~워크플로우 선택(`DataClient`로 받은 요약, 워치에서 고르지 않았으면 **"폰의 워크플로우"**(en `Phone's workflow`) — 두 워치 모두 같은 말이다)~~(폐기 2026-09-24), 경과 시간, 전송 대기 n개(폰을 찾아 넘기는 중이면 `전송 중 n개`(en `Sending n`) — 패스가 채널을 연 동안만이다, 2026-09-04). 화면은 둘뿐이고 내비게이션 라이브러리가 없다 — 워치에서의 여정은 "녹음"뿐이다 |
 | W3 | `OngoingActivity`(Wear OS 6) / Live Updates(7): 워치페이스 칩, 탭하면 앱 |
 | W4 | `TransferQueue`: `CapabilityClient`로 폰 노드 탐색, `ChannelClient.openChannel` → `sendFile` 파트별, ack 대기(타임아웃 5분), ack 시 삭제, 실패·미연결 시 큐 유지, 연결 이벤트에서 재시도. 판정 기준은 **"폰 꺼진 채 녹음 → 폰 켜면 자동 전송 완료"**이고, 그때까지 워치 화면은 "폰이 아직 갖고 있지 않다"를 정직하게 말한다 |
 | W5 | 진입점: 타일(`launchAction`), 컴플리케이션(상태), **두 번째 런처 항목 "Recly 녹음"**(`QuickStartActivity` — 삼성 "홈 키 두 번 누르기" 설정은 앱만 고를 수 있고 엑스트라를 못 넘기므로, 이 항목이 자동 시작 엑스트라를 붙여 MainActivity로 넘기고 사라진다), **설정 안내 화면**("홈 키 두 번 → 녹음"). **"타일 탭 → 즉시 녹음"**, **"홈 키 두 번 → 즉시 녹음"**이 기준이다 |
@@ -2100,7 +2231,7 @@ apple/
       Transfer/                 #if os(iOS)||os(watchOS): WatchTransferQueue (WCSession)
       Auth/                     #if os(iOS)||os(macOS): GoogleAuth (AppAuth, Drive-only) → TokenProvider
       Transport/                #if os(iOS)||os(macOS): BackgroundTransport (URLSession background)
-      Workflow/                 CoreWorkflowDocuments, WorkflowInspector (두 셸 공용 편집기)
+      Workflow/                 CoreWorkflowDocuments, WorkflowInspector (두 셸 공용 편집기 — 폐기 2026-09-24)
       CoreBridge/               ReclyCore(XCFramework) 조립, SecureStore(Keychain), FileSystem, Logger, Crypto
   RecMac/                       메뉴바 앱, SwiftUI
 ```
@@ -2109,7 +2240,7 @@ apple/
 `apple/RecKit/Frameworks/`로 스테이징한다. 정적 프레임워크라 **앱 타깃의 Other Linker Flags에 `-lsqlite3`**가 필요하다
 (빠뜨리면 `_sqlite3_*` 미해결 심볼).
 
-**워크플로우 편집 로직은 Swift로 두 번 짜지 않는다.** `CoreWorkflowDocuments`가 코어 `WorkflowDocuments`를 Swift에서
+**폐기(2026-09-24)** — **워크플로우 편집 로직은 Swift로 두 번 짜지 않는다.** `CoreWorkflowDocuments`가 코어 `WorkflowDocuments`를 Swift에서
 구현하고(`__current`/`__save`/`__writeFrozen`), 편집 블록은 코어가 요구하는
 `suspend (WorkflowsDocument) -> WorkflowsDocument?`를 `DocumentMutation: KotlinSuspendFunction1`로 넘긴다 — 세 셸이
 같은 뮤텍스·같은 staleness 규칙을 쓴다.
@@ -2131,13 +2262,13 @@ apple/
   콜백 크기에 맞춰 잘라 버리지 않는다. 매 콜백의 수집 시각으로 원점을 보정하여 작은 하드웨어 클록 차가
   누적되지 않게 한다. timestamp가 없는 입력의 기존 경로는 누적 프레임 수 차를 **60초마다 추정**해
   리샘플한다. 목표: 1시간 후 두 트랙 오프셋 < 20 ms.
-- **마이크 선택**: 기본값은 자동. 직접 선택한 장치 UID → 확인된 회의 앱의 유일한 활성 입력 → macOS 기본 입력
+- **마이크 선택**: 항상 자동. 과거에 저장한 수동 UID는 사용하지 않는다. 확인된 회의 앱의 유일한 활성 입력 → macOS 기본 입력
   순으로 선택한다. 브라우저는 해당 브라우저 소유의 회의 창 제목을 확인할 수 있을 때만 회의 입력으로 간주한다.
   자동 선택한 입력은 회의 앱 음소거만으로 바꾸지 않는다. 정상 장치 전환은 1초 안정화, 연결 해제는 2초 유예 후
   대체 입력을 선택하며, 선택 장치의 상태·전체 포맷을 1초마다 확인한다. 최초 시작의 일시적 오류도 짧게 재시도한다.
   Recly의 AudioUnit만 바인딩하며 OS 기본 입력·출력이나 회의 앱의 장치/음소거 설정은 바꾸지 않는다.
   AirPods 입력을 지원하며 통화 중 자동으로 내장 마이크를 강제하지 않는다. 사용자가 시작한 녹음은 회의 앱
-  음소거와 독립적으로 계속된다. 설정에는 자동/마이크 선택 한 줄, 녹음 중에는 현재 마이크 이름을 표시한다.
+  음소거와 독립적으로 계속된다. 마이크 선택 UI는 노출하지 않으며 녹음 중 현재 입력 장치 이름만 상태로 표시한다. 마이크 권한 복구 안내는 유지한다.
 - **에코**: AEC 없이 두 트랙을 저장한다. 출력 장치가 내장 스피커면 시작 시 한 줄 경고("헤드폰을 쓰면 상대 목소리가
   내 트랙에 섞이지 않습니다").
 - 녹음 규칙: 정지·입력 재시작 시 `AVAudioConverter`를 `.endOfStream`으로 드레인한 뒤 세그먼트를 닫는다(48 kHz
@@ -2159,7 +2290,7 @@ apple/
   상태 줄에 표시한다. 입력 자체가 끊기면 제한된 재연결 시도 후 오류를 알린다.
   `rec.tap.format` 로그에 tap·입력 스트림 레이트를 남긴다. 상태 줄은 **캡처 중인 출력 장치명**을 보여 준다.
   녹음 폴더의 `capture-diagnostics.json`에는 장치명·레이트·OS 버전·복구/버퍼 손실 이벤트를 최대 512개 저장한다.
-  이 진단 파일은 로컬에만 두고 Drive 업로드나 웹훅에 포함하지 않는다.
+  이 진단 파일은 로컬에만 두고 Drive 업로드에 포함하지 않는다.
 
 ### 미팅 감지 · 컨텍스트
 
@@ -2182,15 +2313,15 @@ apple/
 - **Mac 팝오버 크기**: 메뉴바와 Dock을 제외한 현재 화면 안에 들어오도록 높이를 제한한다. 설정·원장만 스크롤하고
   하단의 설정/설정 접기·종료는 항상 표시한다. 설정이 열려 있을 때 버튼은 `설정 접기`(en `Hide settings`)로
   표시한다. 설정을 접으면 원장 크기로 줄어들며, 화면 구성이 바뀌면 위치와 높이를 다시 맞춘다.
-- **팝오버가 이 항목들을 담는다**: 시작·정지, 최근 원장, **워크플로우 편집 창**, 설정, 로그인. Windows의 AWT 메뉴는
+- **팝오버가 이 항목들을 담는다**: 시작·정지, 최근 원장, 설정, 로그인(워크플로우 편집 창은 2026-09-24 폐기). Windows의 AWT 메뉴는
   축약 폴백이다(macOS는 `.window` MenuBarExtra라 NSMenu가 없다).
-- **팝오버는 이 앱의 창이 포커스를 가져가도 열려 있다** — 상세·워크플로우·설정 창이나 삭제 다이얼로그를 팝오버에서
+- **팝오버는 이 앱의 창이 포커스를 가져가도 열려 있다** — 상세·설정 창이나 삭제 다이얼로그를 팝오버에서
   열고 그 안을 눌러도 닫히지 않는다. 닫히는 것은 다른 앱 클릭·상태 아이콘 클릭·Esc뿐이다(Mac은 `MenuBarPanel`의
   AppKit `NSPanel` + 전역 마우스 모니터, 2026-09-03; Windows 트레이 팝업은 포커스가 이 JVM의 다른 창으로 간 경우를
   구분한다, 2026-09-04).
 - **실행기**: 앱 프로세스가 `runDueJobs()`를 (a) Job 생성 직후 (b) 5분 타이머 (c) 네트워크 복귀(`NWPathMonitor`)
   (d) `nextRunAt` 후속에 호출한다. `SMAppService`로 로그인 시 자동 실행.
-- **워크플로우 편집 창**: 폰과 같은 기능. SwiftUI 폼 + `WorkflowInspector`(RecKit 공용). 데스크톱이 편집의 주
+- **워크플로우 편집 창** — **폐기(2026-09-24)**. 기록: 폰과 같은 기능. SwiftUI 폼 + `WorkflowInspector`(RecKit 공용). 데스크톱이 편집의 주
   무대다.
 
 ### 태스크
@@ -2203,7 +2334,7 @@ apple/
 | M4 | `DriftCompensator` + mix 트랙 |
 | M5 | 인증(AppAuth macOS) + `BackgroundTransport` + 실행기 연결 |
 | M6 | 미팅 감지 + 알림 |
-| M7 | **워크플로우 편집 창** + 설정의 워크플로우 내보내기/가져오기(§5): `NSSavePanel`(기본 이름 `recly-workflows.json`)·`NSOpenPanel`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
+| M7 | **폐기(2026-09-24)** — **워크플로우 편집 창** + 설정의 워크플로우 내보내기/가져오기(§5): `NSSavePanel`(기본 이름 `recly-workflows.json`)·`NSOpenPanel`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
 | M8 | 동의 리마인더(첫 녹음 시 1회, 설정에서 끔) + 관할별 안내문 + 스피커 경고. 리마인더는 *첫* 녹음 전에 묻고, "다시 묻지 않기"를 고르면 설정에서 다시 켤 수 있다 |
 | M9 | 배포: Developer ID 서명, hardened runtime, notarytool, DMG(`apple/scripts/release-mac.sh`). Sparkle 자동 업데이트는 없다 |
 
@@ -2216,7 +2347,7 @@ apple/
 
 1. **리마인더** — "참가자에게 녹음을 알렸습니까?" + [알렸습니다] [취소]. 확인하지 않으면 녹음을 시작하지 않는다.
    설정에서 끌 수 있다(끄는 것도 사용자의 선택이고, 끈다고 책임이 옮겨 가지 않는다). 띄우는 시점은 기기마다 다르다 —
-   Mac·Windows는 회의 모드 녹음마다(감지 여부 무관; 마이크만 녹음하는 메모에는 상대가 없다), 폰(iPhone·Android)은 회의를 구분할 수단이 없어
+   Mac·Windows는 새 녹음마다(감지 여부 무관, 회의 모드 고정), 폰(iPhone·Android)은 회의를 구분할 수단이 없어
    **첫 녹음 전에 한 번만** 묻고 설정 문구에 그 차이를 적는다. **워치 둘에는 없다**(화면이 좁고 폰이 정본이며, 워치로
    녹음할 때의 책임은 같다).
 2. **관할별 안내문** — "내 관할은?"을 누르면 아래 표를 요약한 화면. 언어별 리소스이고 법역 목록·링크는 공통이다.
@@ -2277,13 +2408,13 @@ apple/
   녹음 진행 여부로 판단하지 않는다.
 - **표시**: Live Activity(경과 시간, 정지 버튼) — 잠금화면·Dynamic Island·워치 Smart Stack. **8시간 상한이면
   갱신**한다.
-- **진입점**: App Intents `StartRecordingIntent(workflow)`, `StopRecordingIntent` → Siri·Shortcuts·액션 버튼.
+- **진입점**: App Intents `StartRecordingIntent`, `StopRecordingIntent` → Siri·Shortcuts·액션 버튼.
   iOS 18 Control은 `OpenIntent`로 앱을 열어 시작한다(위젯 확장에서 장시간 오디오 세션 시작은 불안정하다).
 - **인증**: AppAuth로 `drive.file`만 요청하며 `TokenProvider`가 토큰 갱신·만료·401을 처리한다. RecKit `GoogleAuth`·`AppleTokenProvider`를 macOS와 공유하고, iPhone은
   `signIn(presenting: UIViewController)`.
 - **실행기**(the executor): 포그라운드는 RecKit `JobRunner`(잡 생성 직후 · 5분 타이머 · 네트워크 복귀 · `nextRunAt`
   후속 + 폰만의 다섯째 방아쇠인 앱 활성화). 앱이 화면에 없을 때는 아래 표대로 나뉜다.
-- **UI**: 녹음, 목록, 워크플로우 편집(폰과 macOS 동일 기능, RecKit `WorkflowInspector`), 설정. SwiftUI.
+- **UI**: 녹음, 목록, 설정(녹음 처리 설정 포함). SwiftUI. (워크플로우 편집은 2026-09-24 폐기)
 - **App Review**: 4.8 예외 근거 심사 노트, 2.5.14 녹음 표시(Live Activity + 시스템 마이크 표시).
 
 #### 배경에서 실제로 되는 일
@@ -2291,7 +2422,7 @@ apple/
 | 단계 | 앱이 정지(suspended)된 동안 | 앱이 종료된 뒤 |
 |---|---|---|
 | Drive 청크 PUT | **된다** — `BackgroundTransport`가 청크를 임시 파일로 잘라 배경 `URLSession`(`app.recly.upload`) 업로드 태스크로 보낸다. 완료 이벤트가 플래너에 응답으로 들어가 다음 청크가 예약된다 | 전송은 끝나지만 결과를 기다리던 코루틴은 없다. iOS가 `handleEventsForBackgroundURLSession`으로 앱을 깨우고, 이벤트는 임시 파일만 정리한다. 오프셋은 `DriveApi`가 재개 시 Drive에 다시 물어보므로 유실이 아니다 |
-| resumable 세션 시작 · `meta.json` · 웹훅 · Job 상태 기록 | 코어가 돌아야 하는 일이라 **안 된다** | 안 된다 |
+| resumable 세션 시작 · `meta.json` · Job 상태 기록 | 코어가 돌아야 하는 일이라 **안 된다** | 안 된다 |
 
 즉 **배경에서 저절로 되는 것은 업로드 바이트뿐**이고, 나머지는 `BGProcessingTask`(`app.recly.jobs`)가 얻어 주는
 실행 시간에 `runDueJobs()`가 처리한다. 스케줄 시점은 (a) 녹음 정지 직후, (b) 업로드 이벤트로 깨어난 직후, (c)
@@ -2307,7 +2438,7 @@ apple/
 
 `WCSessionDelegate.session(_:didReceive:)`에서 **동기적으로** 파일 이동 → sha256 검증 →
 `transferUserInfo(["ack": …])`(도달 보장) → 메타 수신 시 등록·enqueue. `transferFile` 수신 측은 콜백 안에서 파일을
-옮기지 않으면 삭제된다. 워크플로우 요약은 `updateApplicationContext`로 워치에 보낸다.
+옮기지 않으면 삭제된다. 워크플로우 요약을 `updateApplicationContext`로 워치에 보내던 것은 폐기됐다(2026-09-24).
 
 | # | 범위 |
 |---|---|
@@ -2315,7 +2446,7 @@ apple/
 | I2 | 녹음 + 배경 오디오 + Live Activity |
 | I3 | 인증 + **목록** + 포그라운드 **실행기** |
 | I4 | `BackgroundTransport` + `BGProcessingTask` |
-| I5 | **워크플로우 편집** + 설정의 워크플로우 내보내기/가져오기(§5): SwiftUI `fileExporter`(기본 이름 `recly-workflows.json`)·`fileImporter`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
+| I5 | **폐기(2026-09-24)** — **워크플로우 편집** + 설정의 워크플로우 내보내기/가져오기(§5): SwiftUI `fileExporter`(기본 이름 `recly-workflows.json`)·`fileImporter`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
 | I6 | WC 수신·ack(§3 워치 → 폰 전송 계약의 받는 쪽) |
 | I7 | App Intents · 액션 버튼 · Control |
 | I8 | TestFlight |
@@ -2332,7 +2463,7 @@ apple/
   재시도: 앱 활성화 시 미ack 파트 재전송(중복은 폰이 sha256으로 무시).
 - **진입점**: 컴플리케이션(상태 + 탭 시작), App Shortcut → Watch Ultra 액션 버튼, Double
   Tap(`handGestureShortcut(.primaryAction)`)은 정지에.
-- 인증·네트워크 없음. 워크플로우 요약은 `applicationContext`.
+- 인증·네트워크 없음. (워크플로우 요약 수신은 2026-09-24 폐기)
 
 | # | 범위 |
 |---|---|
@@ -2362,7 +2493,7 @@ apple/
 
 ```
 windows/
-  app/               Compose Desktop (JVM). 트레이, 워크플로우 편집, 실행기, 인증(loopback PKCE), 헬퍼 관리
+  app/               Compose Desktop (JVM). 트레이, 녹음 처리 설정, 실행기, 인증(loopback PKCE), 헬퍼 관리
   capture-helper/    Rust 바이너리. WASAPI 마이크 + loopback 캡처, 리샘플, 드리프트 보정, 세그먼트 파일 작성,
                      마이크 사용 감지
 ```
@@ -2380,9 +2511,9 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 - 인코딩: **번들 ffmpeg**(ADR-019)로 파이프. MF 경로는 `--encoder mf`로 남아 있고, CI의 `--self-test`가 두 포맷을
   실제로 시도해 근거를 찍는다.
 - 트랙·세그먼트·메타 규칙은 macOS와 동일하다. 드리프트 보정도 같은 방식이고 목표도 같다(1시간 < 20 ms).
-  녹음 모드(마이크만 / 회의)는 macOS와 같은 설정이고 마이크만 모드는 `mono` 한 트랙이다(2026-09-03).
-  기본값은 Windows가 `회의`, macOS가 `마이크만`이다 — Mac은 시스템 오디오 캡처에 권한 프롬프트가 있어 첫 실행을
-  마이크로 시작하고, Windows의 루프백은 프롬프트가 없다(2026-09-03).
+  데스크톱의 새 녹음은 macOS·Windows 모두 **회의 모드(마이크 + 시스템 오디오)**로 고정한다(2026-09-24).
+  모드 선택 UI와 과거 선택값의 적용을 없앤다. 폰·워치와 기존 녹음 메타의 `mono` 지원은 유지한다.
+  Mac의 시스템 오디오 권한 안내와 Windows의 루프백 처리는 기존 플랫폼 경로를 따른다.
 - **권한**: 프롬프트가 없다. 설정 → 개인정보 → 마이크 → "데스크톱 앱 허용"이 꺼져 있으면 레지스트리
   (`HKCU\…\ConsentStore\microphone`)로 감지해서 안내한다.
 
@@ -2402,7 +2533,7 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 
 ### 앱
 
-- 트레이: 상태 아이콘, 시작/정지, 최근(원장, 20행씩 무한 스크롤), 편집 창, 설정, 알림 배너. 시작 시 자동 실행(launch at login)은
+- 트레이: 상태 아이콘, 시작/정지, 최근(원장, 20행씩 무한 스크롤), 설정, 알림 배너(편집 창은 2026-09-24 폐기). 시작 시 자동 실행(launch at login)은
   `HKCU\…\Run`이다(Mac의 `SMAppService`에 해당한다).
 - 인증: §6 Windows 절(Ktor CIO 127.0.0.1 서버 + 시스템 브라우저 + PKCE). refresh token은 Credential Manager(JNA).
 - **실행기**: Job 생성 직후 + 5분 타이머 + 네트워크 복귀 + `nextRunAt` 후속.
@@ -2433,7 +2564,7 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 | N3 | 헬퍼: loopback + 드리프트 보정 + mix |
 | N4 | 인증 + 실행기 |
 | N5 | **감지** + 알림 |
-| N6 | 편집 창 + 설정의 워크플로우 내보내기/가져오기(§5) |
+| N6 | **폐기(2026-09-24)** — 편집 창 + 설정의 워크플로우 내보내기/가져오기(§5) |
 | N7 | MSI + 서명(SmartScreen 경고 없음) |
 
 ---
@@ -2446,31 +2577,41 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 
 ### 한 줄 요약
 
-Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive, (2) 사용자가 워크플로우에 적어 넣은 웹훅
-주소, (3) 사용자가 **선택 단계로 직접 넣었을 때만** STT provider, (4) **사용자가 짝 지은 자신의 다른
-기기**(워치 ↔ 폰) — 앞의 셋은 사용자의 계정·사용자의 키로 가고, 넷째는 사용자 자신의 기기 두 대 사이에 머문다. 그
-외에 App Store 배포본은 아래 StoreKit 국가 조회를 사용한다.
+Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive(§1, Google OAuth 포함), (2) 사용자가 녹음
+처리 설정에서 **외부 API 전사를 골랐을 때만** 그 STT provider(§3), (3) **사용자가 짝 지은 자신의 다른 기기**(워치 ↔ 폰,
+§4) — 앞의 둘은 사용자의 계정·사용자의 키로 가고, 셋째는 사용자 자신의 기기 두 대 사이에 머문다. 그 외에 App
+Store 배포본은 아래 StoreKit 국가 조회를, Apple 로컬 전사는 사용자가 요청한 모델 자산 다운로드를 쓰고, 정책
+링크는 사용자가 누를 때만 브라우저로 연다(§3 끝). 웹훅(§2)은 2026-09-24 폐기돼 더 이상 경로가 아니다.
+
+### Apple 로컬 음성 모델 자산
+
+- 설정의 모델 준비를 직접 요청하면 Apple Speech `AssetInventory` 시스템 서비스가 언어 모델을 다운로드한다.
+  Apple이 관리하는 시스템 자산 다운로드이며 앱이 별도 서버 주소를 설정하거나 API 키를 전달하지 않는다.
+- `SpeechTranscriber` 처리에는 기기의 오디오 파일/PCM과 확정 결과를 사용한다. 로컬 전사 선택 자체로 외부 STT에
+  오디오를 보내지 않으며, 기본 흐름의 원본·결과 Drive 업로드는 별도 단계로 유지한다.
+- 모델 없음·플랫폼 미지원·언어 미지원은 사용자 설정 동작이 필요한 상태다. 열·저전력·OS 실행 시간 대기는 일반 대기로
+  표시하며 자동 재개 사유를 별도 경고하지 않는다. 이 정책은 기기의 발열이 0임을 보증하지 않는다.
 
 ### 중국 본토 App Store
 
 2026-09-14 심사 대응: iPhone/iPad는 StoreKit `Storefront.current.countryCode`의 `CHN`을 기준으로 OpenAI 전사를 비활성화한다. 기기 언어·지역 설정·GPS·IP 추정은 판별에 사용하지 않는다. Apple Watch 녹음의 전사는 iPhone에서 실행하므로 같은 정책을 따른다. Android·Windows·직접 배포 macOS에는 이 App Store 정책을 적용하지 않는다.
 
 - `openai` 제공업체와 OpenAI/ChatGPT 도메인을 직접 지정한 전사 엔드포인트를 차단한다. `groq` 등 다른 제공업체 이름으로 OpenAI 주소를 지정해도 차단한다. 다른 업체가 제공하는 전사는 별도 서비스이며 이 정책에서 일괄 제거하지 않는다.
-- 편집 목록에서 해당 제공업체를 숨기고 저장·가져오기 확인 시 다시 검증한다. 기존 정의·복원된 데이터베이스·이미 큐에 있는 잡에도 실행 직전과 매 전사 요청 직전에 동일 정책을 적용한다. 저장된 설정이나 키를 자동 삭제하지 않는다.
+- 설정의 제공업체 목록에서 해당 제공업체를 숨기고 저장·가져오기 확인 시 다시 검증한다. 저장된 설정·복원된 데이터베이스·이미 큐에 있는 잡에도 실행 직전과 매 전사 요청 직전에 동일 정책을 적용한다. 저장된 설정이나 키를 자동 삭제하지 않는다.
 - 지역 미확인·조회 실패는 허용으로 간주하지 않는다. 해당 전사는 `STOREFRONT_UNAVAILABLE`로 60초 대기하며 재시도 횟수를 소모하지 않는다. 중국 본토로 확인되면 `PROVIDER_REGION_RESTRICTED`로 실패한다. 다른 단계와 `onError` 계약은 유지한다.
 - 제한 또는 지역 미확인 상태에서는 전사 HTTP 리디렉션을 자동 추적하지 않는다. 전사 업체의 최종 엔드포인트를 사용해야 하며, 리디렉션으로 검사하지 않은 목적지에 오디오가 전달되는 것을 방지한다.
-- StoreKit의 현재 국가 정보는 사용 직전에 읽고 편집 화면은 `Storefront.updates`를 구독한다. 이전 국가를 디스크에 저장해 허용 근거로 재사용하지 않는다.
-- 추가 시스템 서비스 경로: Apple StoreKit에 App Store 국가 정보를 요청한다. Recly가 이 조회에 녹음·녹취록·워크플로우·외부 업체 API 키를 전달하지 않는다. Apple의 시스템 서비스가 계정/storefront 정보를 관리하며, 앱이 별도의 IP 위치 조회 서버를 호출하지 않는다.
+- StoreKit의 현재 국가 정보는 사용 직전에 읽고 설정 화면은 `Storefront.updates`를 구독한다. 이전 국가를 디스크에 저장해 허용 근거로 재사용하지 않는다.
+- 추가 시스템 서비스 경로: Apple StoreKit에 App Store 국가 정보를 요청한다. Recly가 이 조회에 녹음·녹취록·처리 설정·외부 업체 API 키를 전달하지 않는다. Apple의 시스템 서비스가 계정/storefront 정보를 관리하며, 앱이 별도의 IP 위치 조회 서버를 호출하지 않는다.
 
 ### §0 기기 안에만 있는 것
 
 | 데이터 | 어디에 | 나가는가 |
 |---|---|---|
-| 녹음 원본(`.m4a` 파트) | §3 로컬 저장 경로 | Drive 업로드 단계가 있을 때만. 없으면 네트워크로는 나가지 않는다 — 다만 **워치에서 녹음한 것은 업로드 단계가 없어도 짝 지은 폰으로 넘어간다**(§4) |
+| 녹음 원본(`.m4a` 파트) | §3 로컬 저장 경로 | Drive 업로드 단계가 사용자의 Drive로 올린다(§1). 외부 API 전사를 골랐으면 이어 붙인 트랙 한 파일이 그 provider로 간다(§3). **워치에서 녹음한 것은 먼저 짝 지은 폰으로 넘어간다**(§4) |
 | `meta.json` | 같은 폴더 | 업로드 단계가 함께 올린다. 워치의 것은 파트와 함께 폰으로 넘어간다 |
 | 녹취 결과 파일 | 같은 폴더(로컬 사본) | Drive 녹음 폴더에 함께 쓴다 |
 | Job·단계 상태, 재시도 예산, 업로드 세션 오프셋 | 로컬 SQLite(`rec.db`) | **절대 나가지 않는다**(원칙 2) |
-| `deviceId`(설치마다 새 UUID v4) | 보안 저장소 / macOS는 `{dataDir}/device.id` | 웹훅 payload `data.device.id`에만 실린다(사용자가 웹훅을 넣었을 때) |
+| `deviceId`(설치마다 새 UUID v4) | 보안 저장소 / macOS는 `{dataDir}/device.id` | Drive에 올라가는 `meta.json`의 `deviceId`에 실린다(§1). 그 밖으로는 나가지 않는다 |
 | 로그(`rec.*`, `shell.*`, `detect.*`) | 플랫폼 로그(Android `Log`, Apple `os.Logger`, JVM stdout) | 사용자가 "로그 내보내기"로 직접 꺼낼 때만 |
 | 언어·Wi-Fi 전용 같은 앱 설정 | 플랫폼 설정 저장소 | 나가지 않는다(동기화 대상이 아니다) |
 
@@ -2479,9 +2620,9 @@ Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Go
 | 항목 | 내용 |
 |---|---|
 | 스코프 | `drive.file` 하나뿐(ADR-009). non-sensitive. **전체 `drive` 스코프를 요청하지 않는다** — 앱이 만들지 않은 사용자의 다른 파일은 읽을 수 없다 |
-| 올라가는 것 | 녹음 폴더 `{folder 템플릿}/{base}/`(기본 `recly/{yyyy}/{yyyy}-{MM}/`) 안의 파트 `.m4a`, `{base}.meta.json`, 그리고 전사 단계를 넣었다면 `{base}.transcript.json/.txt` |
+| 올라가는 것 | 녹음 폴더 `{folder 템플릿}/{base}/`(기본 `recly/{yyyy}/{yyyy}-{MM}/`) 안의 파트 `.m4a`, `{base}.meta.json`, 그리고 전사를 켰다면(로컬·외부 API) `{base}.transcript.json/.txt` |
 | 폴더에 붙는 메타 | 폴더 `description`에 제목, `appProperties`에 `recordingId`·`workflowId` |
-| appDataFolder | **쓰지 않는다.** 워크플로우 정의도 시크릿 값도 기기에만 있고(§5), 기기 사이로 옮기는 것은 사용자가 직접 하는 내보내기/가져오기뿐이다 |
+| appDataFolder | **쓰지 않는다.** 녹음 처리 설정도 시크릿 값도 기기에만 있고(§5), 기기 사이로 옮기는 것은 사용자가 직접 하는 설정 내보내기/가져오기뿐이다 |
 | 받는 것 | 업로드 검증용 `md5Checksum`·파일 메타. 사용자의 다른 파일 목록은 요청하지 않는다 |
 | 누가 보는가 | 사용자와, 사용자가 그 폴더를 공유한 사람. **Recly는 이 파일들에 접근할 수 있는 서버가 없다** — OAuth 토큰은 기기 보안 저장소에만 있고 Google API 호출에만 쓰이며 Recly에는 전송되지 않는다 |
 | 통제 | Google 계정 설정(<https://myaccount.google.com/permissions>)에서 언제든 연결 해제. 앱 안의 "연결 해제"도 네 셸 모두에 있다(§3) — 하나의 동작으로 grant revoke(Android `AuthorizationClient.revokeAccess`, Apple·Windows `oauth2.googleapis.com/revoke`) + `ReclyCore.disconnect`의 로컬 정리를 함께 한다 |
@@ -2506,6 +2647,9 @@ OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다. Apple의 직접 
 
 ### §2 웹훅 — 사용자가 적어 넣은 주소
 
+> **폐기(2026-09-24)**: 웹훅은 제품에서 제거됐다(§4). 이 경로로는 아무것도 나가지 않는다 — 이전 빌드가 큐에 넣은 잡의
+> 웹훅도 보내지 않는다. 아래는 기록이다.
+
 `webhook` 단계가 있을 때만, 사용자가 그 단계에 적은 URL로 **POST 한 번**. 받는 쪽은 사용자의 n8n·Cloudflare
 Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 
@@ -2526,8 +2670,8 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 
 ### §3 STT provider — 사용자가 그 단계를 넣었을 때만
 
-전사는 **고정된 후처리 단계가 아니다.** 사용자가 자기 워크플로우에 `transcribe` 단계를 직접 추가하고 자기 API
-키를 넣었을 때만 존재한다(§8). 넣지 않으면 이 절 전체가 일어나지 않는다.
+외부 STT 전송은 사용자가 녹음 처리 설정에서 전사 방식을 **외부 API**로 고르고 자기 API 키를 넣었을 때만
+일어난다(§5 "고정 처리 설정 도입", §8). 로컬 전사나 OFF면 이 절 전체가 일어나지 않는다.
 
 | 무엇이 | 어디로 | 언제 |
 |---|---|---|
@@ -2538,7 +2682,7 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 - 인증은 **사용자의 키**다. 청구도 사용자의 계정으로 간다.
 - 그 다음 provider가 데이터를 얼마나 오래 갖고 있는지, 학습에 쓰는지는 **그 provider의 정책**이고 Recly가 통제하지
   못한다.
-- **이 고지는 세 셸의 편집기에 있다.** `transcribe` 단계 폼의 **provider 선택 바로 아래**에 세 줄이 뜬다.
+- **이 고지는 세 셸의 녹음 처리 설정에 있다.** 외부 전사의 **provider 선택 바로 아래**에 세 줄이 뜬다.
   문구는 세 셸이 글자 그대로 같고(대조 테스트) en·ko 양쪽에 있다.
 
   `transcribe`(ko / en):
@@ -2580,9 +2724,9 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 않는다. 확인 전까지는 "provider의 정책을 따르며, 링크에서 확인하라"로만 쓴다. 확인되지 않은 보관 기간을 지어내지
 않는다.
 
-**iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사·웹훅의 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 실행기와 같은 현재 워크플로우 적용 규칙으로 계산한다.
+**iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 그 작업에 고정된 처리 계획으로 계산한다.
 
-워크플로우 편집기는 새 대상의 수신자·주소·데이터·목적·업체 방침을 표시하고 “허용하고 저장”으로 함께 처리한다. 가져오기도 기존 확인 화면에서 새 대상만 모아 “허용하고 가져오기”로 처리한다. 같은 대상이면 추가 확인 없이 일반 저장/가져오기다. API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 워크플로우 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. 워크플로우 이름·API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
+녹음 처리 설정 저장은 새 대상의 수신자·주소·데이터·목적·업체 방침을 표시하고 “허용하고 저장”으로 함께 처리한다. 가져오기도 기존 확인 화면에서 새 대상만 모아 “허용하고 가져오기”로 처리한다. 같은 대상이면 추가 확인 없이 일반 저장/가져오기다. API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 설정 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
 
 기존 작업과 Watch 수신 작업은 팝업 없이 허용 대기로 남고 목록에서 설정 → 개인정보 보호로 이동해 해결한다. 같은 화면에서 허용을 철회할 수 있다. 철회는 이미 보낸 데이터나 API 키를 삭제하지 않는다. Google Drive는 별도 Google OAuth를 사용한다. 참가자 녹음 동의 안내(§12·§13)와도 별개의 허용이다.
 
@@ -2591,20 +2735,20 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 ### §4 짝 지은 기기 간 전송 — 워치 ↔ 폰
 
 워치는 Drive도 네트워크도 쓰지 않는다(ADR-002). 그래도 **데이터는 워치를 떠난다** — 짝 지은 폰으로. 이 경로는
-워크플로우에 업로드 단계가 하나도 없어도 일어나고, Drive·웹훅·provider 어느 것과도 무관하다.
+Drive·provider 어느 것과도 무관하게 일어난다.
 
 | 방향 | 무엇이 | 어떻게 |
 |---|---|---|
 | 갤럭시 워치 → Android 폰 | 녹음 파트 `.m4a` 파일, 그리고 전부 ack된 뒤 `meta.json` | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. 파일 메타는 별도 payload가 아니라 채널 경로에 실린다(`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`·`/rec/meta/{recordingId}`). 폰은 `WearableListenerService.onChannelOpened` → `receiveFile`로 받고 `MessageClient`로 ack한다 |
 | Apple Watch → iPhone | 같음 | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId·part·track·sha256·파일명이 `metadata` 딕셔너리에 실린다. 폰은 `WCSessionDelegate.session(_:didReceive:)`로 받고 `transferUserInfo`로 ack한다 |
-| Android 폰 → 갤럭시 워치 | **워크플로우 요약**: 워크플로우당 `id`·`name` 두 필드뿐, **단계 내용은 실리지 않는다** | `DataClient.putDataItem` 경로 `/rec/workflows` |
-| iPhone → Apple Watch | 워크플로우 요약: `id`·`name`과 앱 언어뿐, 단계 내용 없음 | `WCSession.updateApplicationContext` |
+| Android 폰 → 갤럭시 워치 | **폐기(2026-09-24)** — ~~워크플로우 요약: 워크플로우당 `id`·`name` 두 필드뿐~~. 워치에 워크플로우 목록이 없다 | ~~`DataClient.putDataItem` 경로 `/rec/workflows`~~ |
+| iPhone → Apple Watch | 앱 언어뿐(워크플로우 요약 `id`·`name`은 2026-09-24 폐기), 단계 내용 없음 | `WCSession.updateApplicationContext` |
 
 - **두 기기 모두 사용자 자신의 기기다.** 전송은 OS의 페어링 전송로를 타고 **Recly의 서버는 관여하지 않는다** —
   받을 서버가 없다. 워치 모듈에는 HTTP 클라이언트조차 없다.
 - 녹음 파일 전송은 **가까이 있는 노드로만** 나간다 — Android는 `isNearby`가 아닌 노드를 걸러 Google 클라우드 릴레이
-  경유를 제외하고, Apple은 `WCSession`뿐이다. 다만 **`/rec/workflows` DataClient 항목에는 그 필터가 없어** Play
-  Services가 고르는 전송로를 그대로 탄다(워크플로우 id·이름·on/off·소스뿐).
+  경유를 제외하고, Apple은 `WCSession`뿐이다. (필터가 없던 `/rec/workflows` DataClient 항목은 2026-09-24 폐기돼
+  더 이상 게시하지 않는다.)
 - 방향은 녹음에 대해 **한 방향**이다. 워치 → 폰만 있고, 녹취 본문이나 워크플로우 단계·시크릿·Job 결과가
   폰 → 워치로 가는 경로는 없다.
 - 워치는 ack를 받으면 자기 사본을 지운다 — 워치에 녹음 이력이 남지 않는다.
@@ -2612,17 +2756,17 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 
 ### §5 BYO 키와 토큰 — 기기 보안 저장소에만
 
-키 값은 **워크플로우 정의에 들어가지 않는다.** 정의에는 이름(`secretRef`)만 있고 값은 기기마다 따로 넣는다
-(ADR-008). 그래서 Drive의 `workflows.json`에도, 웹훅 payload에도, 로그에도 키가 없다. 저장 기전은 §5의 시크릿 표와
+키 값은 **녹음 처리 설정에 들어가지 않는다.** 설정에는 이름(`secretRef`)만 있고 값은 기기마다 따로 넣는다
+(ADR-008). 그래서 설정 내보내기 파일에도, Drive에도, 로그에도 키가 없다. 저장 기전은 §5의 시크릿 표와
 같다.
 
-- 여기 담기는 것: Google access/refresh token(`tokens` 네임스페이스), 웹훅 서명 시크릿과 STT API
+- 여기 담기는 것: Google access/refresh token(`tokens` 네임스페이스), STT API
   키(`secrets` 네임스페이스), `deviceId`.
-- **키가 나가는 유일한 경로는 provider 인증이다.** STT 키는 사용자가 그 단계를 넣었을 때 요청 헤더로 provider에
+- **키가 나가는 유일한 경로는 provider 인증이다.** STT 키는 사용자가 외부 API 전사를 골랐을 때 요청 헤더로 provider에
   그대로 실린다. 즉 "기기 밖으로 나가지 않는다"가 아니라 **"Recly로는 가지 않고, 사용자가 고른 provider에만
-  간다"**가 맞는 문장이다. 웹훅 서명 시크릿은 어디에도 실리지 않는다(HMAC 계산에만 쓴다).
+  간다"**가 맞는 문장이다.
 - **기기 간 동기화는 없다.** 키는 입력한 기기에만 있고, 키가 없는 기기에서 그 단계는 `MISSING_SECRET`으로 즉시
-  실패한다. 내보낸 워크플로우 파일에도 값은 들어가지 않는다 — 파일에 있는 것은 `secretRef` 이름뿐이다(§5).
+  실패한다. 내보낸 설정 파일에도 값은 들어가지 않는다 — 파일에 있는 것은 `secretRef` 이름뿐이다(§5).
 - 개발 호스트 예외: macOS에서 Windows 앱을 돌릴 때 쓰는 `DevFileSecureStore`는 평문 base64 JSON이다. **개발
   전용**이고 Windows 빌드에서는 선택되지 않는다.
 
@@ -2643,12 +2787,12 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 |---|---|---|
 | 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
 | 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본은 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
-| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·완료 Job·Drive 폴더 캐시는 지워지고, 미완료 Job은 같은 계정 재연결까지 보존·일시 중지된다. 워크플로우 정의·기기 기본값·API/웹훅 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
+| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·완료 Job·Drive 폴더 캐시는 지워지고, 미완료 Job은 같은 계정 재연결까지 보존·일시 중지된다. 녹음 처리 설정·API 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
 | 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
 | provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |
 
 **녹음 삭제가 지우는 것.** `RecordingRepository.delete`가 한 트랜잭션 안에서 `step_run` → `job` → `part` →
-`recording`을 지우고 같은 잠금 구간에서 디렉터리를 지운다. 그래서 그 녹음의 워크플로우 정의 스냅샷
+`recording`을 지우고 같은 잠금 구간에서 디렉터리를 지운다. 그래서 그 녹음의 처리 계획 스냅샷
 전문(`job.workflow_json`), 실패 메시지 원문(`step_run.last_error`), 재개 상태(`state_json` — Drive resumable 세션
 URI·오프셋·`fileId`, STT provider job 식별자), 단계 출력(`output_json`)이 **UI에 보이지 않은 채 DB에 남는 일이
 없다.**
@@ -2670,6 +2814,9 @@ Google 토큰·Job은 이 기기에서 사라졌지만 Google 계정의 앱 목�
 **이 절은 규칙이 아니라 제안이다.** 가격·과금은 아직 결정되지 않았고(§열린 결정), 결정되면 §0의 규칙 표로 올라간다.
 
 ### 이 제품이 서는 자리
+
+> **2026-09-24**: 웹훅·사용자 워크플로우가 제거됐다. 아래 표의 "서명된 웹훅"·"같은 워크플로우"는 당시 제안의
+> 기록이고, 지금 자동화의 입력은 Drive 녹음 폴더뿐이다.
 
 **"봇 없이 캡처 → 내 Drive에 원본 저장 → 웹훅/내 자동화"를 하는 제품이 상용·오픈소스 어디에도 없다.**
 Granola·ChatGPT Record·Notion은 원본 오디오를 **지우고**, 로컬 보관을 하는 오픈소스들도 웹훅·자동화를 월 $10~15 유료
@@ -2734,6 +2881,8 @@ Granola·ChatGPT Record·Notion은 원본 오디오를 **지우고**, 로컬 보
 
 ### 웹훅 로컬 수신기
 
+> **폐기(2026-09-24)**: 웹훅이 제거되면서 수신기(`scripts/webhook-receiver.mjs`·`.test.mjs`)도 삭제됐다. 아래는 기록이다.
+
 Drive·웹훅이 걸린 인수는 모두 이 수신기로 판정한다. §4의 Standard Webhooks 서명을 코어 `Signer`와 같은 식으로
 재계산해 검증하고, 본문을 `spec/webhook.payload.schema.json`으로 확인한다.
 
@@ -2762,12 +2911,12 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | 대상 | 시나리오 |
 |---|---|
 | **코어** | `./gradlew :core:jvmTest` 통과; 예제 JSON 왕복(파싱→직렬화) 구조 동일 |
-| **Android 폰** | 1 새 설치 → 기본 워크플로우 2개가 로컬에 생기고 이 폰에서 사용 중인 것은 메모. 2 1시간 녹음(화면 끔) → 정지 → 제목 입력 → 30초 안에 Drive `recly/2026/2026-08/{base}/`에 4파트 + meta, 웹훅 1회 수신(서명 검증 통과). 3 비행기 모드에서 녹음 → 해제 → 자동 업로드. 4 업로드 중 앱 강제 종료 → WorkManager가 이어서 완료(Drive에 중복 파일 없음). 5 웹훅 500 → 재시도 → 성공. 6 시크릿 없는 기기에서 `MISSING_SECRET`, `continue`면 다음 단계 진행. 7 30초 미만 → `SKIPPED_SHORT`, 행에 다시 시도·올리기 버튼이 없다. 8 동의 화면 중 회전(액티비티 재생성) → 인가 완료 |
-| **Galaxy Watch** | 1 타일 탭 → 즉시 녹음, 워치페이스 칩 표시, 앱 닫아도 지속. 2 폰 없이 20분 녹음 2건 → 폰 연결 → 두 건 모두 전송·ack·워치에서 삭제·폰에서 Drive 업로드. 3 전송 중 BT 끊김 → 재연결 시 미ack 파트부터 재개, 폰에 중복 없음. 4 폰에서 워크플로우 이름 변경 → 워치 선택지에 반영 |
-| **macOS** | 1 **"Zoom 입장 시 알림 1회"** → 클릭 → 3트랙 녹음 → 정지 → Drive에 mic/sys/mix + meta, 웹훅. 2 1시간 회의 후 클랩 오프셋 < 20 ms. 3 폰에서 만든 워크플로우가 mac 편집 창에 보이고 양방향 편집 충돌 없이 병합. 4 새 Mac에서 DMG 설치 → Gatekeeper 통과 → 권한 프롬프트 2종(마이크 → 시스템 오디오) |
+| **Android 폰** | 1 **폐기(2026-09-24)** ~~새 설치 → 기본 워크플로우 2개가 로컬에 생기고 이 폰에서 사용 중인 것은 메모~~ → 새 설치 → 녹음 처리 설정이 기본값으로 준비된다(§5 "고정 처리 설정 도입"). 2 1시간 녹음(화면 끔) → 정지 → 제목 입력 → 30초 안에 Drive `recly/2026/2026-08/{base}/`에 4파트 + meta~~, 웹훅 1회 수신(서명 검증 통과)~~(웹훅 부분 폐기 2026-09-24). 3 비행기 모드에서 녹음 → 해제 → 자동 업로드. 4 업로드 중 앱 강제 종료 → WorkManager가 이어서 완료(Drive에 중복 파일 없음). 5 **폐기(2026-09-24)** ~~웹훅 500 → 재시도 → 성공~~. 6 시크릿 없는 기기에서 `MISSING_SECRET`~~, `continue`면 다음 단계 진행~~(사용자 `onError`는 2026-09-24 폐기). 7 30초 미만 → `SKIPPED_SHORT`, 행에 다시 시도·올리기 버튼이 없다. 8 동의 화면 중 회전(액티비티 재생성) → 인가 완료 |
+| **Galaxy Watch** | 1 타일 탭 → 즉시 녹음, 워치페이스 칩 표시, 앱 닫아도 지속. 2 폰 없이 20분 녹음 2건 → 폰 연결 → 두 건 모두 전송·ack·워치에서 삭제·폰에서 Drive 업로드. 3 전송 중 BT 끊김 → 재연결 시 미ack 파트부터 재개, 폰에 중복 없음. 4 **폐기(2026-09-24)** ~~폰에서 워크플로우 이름 변경 → 워치 선택지에 반영~~ |
+| **macOS** | 1 **"Zoom 입장 시 알림 1회"** → 클릭 → 3트랙 녹음 → 정지 → Drive에 mic/sys/mix + meta~~, 웹훅~~(폐기 2026-09-24). 2 1시간 회의 후 클랩 오프셋 < 20 ms. 3 **폐기(2026-09-24)** ~~폰에서 만든 워크플로우가 mac 편집 창에 보이고 양방향 편집 충돌 없이 병합~~. 4 새 Mac에서 DMG 설치 → Gatekeeper 통과 → 권한 프롬프트 2종(마이크 → 시스템 오디오) |
 | **iPhone + Apple Watch** | 1 액션 버튼 → 녹음 → 잠금 3시간 → 정지 → 홈으로 나감 → 잠금 상태에서 업로드 완료(배경 URLSession). 2 워치 20분 녹음 × 2 → iPhone 자동 수신·ack·실행. 3 Double Tap으로 정지 |
-| **Windows** | **1 "Teams 입장 → 알림"** → 녹음 → Drive + 웹훅. 2 MSI 설치 시 SmartScreen 경고 없음 |
-| **전사** | 1 폰에서 "회의록" 워크플로우로 3분 이상(2파트 이상) 녹음 → 인원 선택 → Drive 폴더에 파트·meta·`*.transcript.json/.txt`가 생기고 상세 화면에 화자별 녹취가 보임. transcript의 `start/end`가 두 번째 파트 구간을 900초 이후로 가리킴(remux + 오프셋 검증). 2 제출 직후 프로세스 종료 → 다음 `runDueJobs`가 새로 제출하지 않고 같은 `jobRef`로 폴링해 완료(`attempts` 안 오름). 3 키 없음 → `MISSING_SECRET`(즉시), 틀린 키 → `AUTH_REJECTED` + "키를 확인하세요". 4 데스크톱 3트랙 → `mix`가 입력으로 선택되고 웹훅 `files[]`에 `transcript` 항목 |
+| **Windows** | **1 "Teams 입장 → 알림"** → 녹음 → Drive~~ + 웹훅~~(폐기 2026-09-24). 2 MSI 설치 시 SmartScreen 경고 없음 |
+| **전사** | 1 폰에서 ~~"회의록" 워크플로우로~~ 외부 API 전사 설정으로 3분 이상(2파트 이상) 녹음 → 인원 선택 → Drive 폴더에 파트·meta·`*.transcript.json/.txt`가 생기고 상세 화면에 화자별 녹취가 보임. transcript의 `start/end`가 두 번째 파트 구간을 900초 이후로 가리킴(remux + 오프셋 검증). 2 제출 직후 프로세스 종료 → 다음 `runDueJobs`가 새로 제출하지 않고 같은 `jobRef`로 폴링해 완료(`attempts` 안 오름). 3 키 없음 → `MISSING_SECRET`(즉시), 틀린 키 → `AUTH_REJECTED` + "키를 확인하세요". 4 데스크톱 3트랙 → `mix`가 입력으로 선택되고 ~~웹훅 `files[]`에 `transcript` 항목~~(폐기 2026-09-24) Drive 폴더에 `*.transcript.json/.txt` |
 
 ### 지금까지 무엇이 실제로 확인됐나
 
@@ -2795,7 +2944,7 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | 스키마 v2 마이그레이션 | `user_version = 1`인 실기 DB에 새 빌드를 덮어써도 크래시 없이 1 → 2로 올라감 |
 | Android `concat` 런타임 | 계측 테스트가 AAC 파트 2개를 만들어 이어 붙인 뒤 디코드 — 길이 오차 0, 전 프레임 디코드 통과(§8 무손실 복사·pts 이어 붙임) |
 | 교차 셸 문구 통일(§7 규칙 10·11, §9 화면 원칙 1) | 네 셸의 사전을 하나로 맞춘 뒤 실제로 확인: Android 에뮬레이터와 iPhone 시뮬레이터의 녹음 화면이 같은 노드 값(`phone` · 사용 중인 워크플로우 이름만 · `IDLE`)과 같은 헤더 meta(`phone · <id8>`)를 보이고, 폰의 피커가 워크플로우 이름만(`회의` 선택됨·`메모`)을, 정지 뒤 제목 프롬프트가 `Recording title` + `Leave it empty to keep the timestamp name` + `People in the room`(모름·2·3·4·5·6+)을 보인다. RecMac 카탈로그에 없던 `People in the room`·`Unknown`·`6+`(한국어에서 영어로 새던 자리)까지 포함해 `CrossShellDictionaryTest`가 en·ko를 잠근다 |
-| 워크플로우 내보내기/가져오기 | 설정에서 내보낸 `recly-workflows.json`을 다른 기기에서 가져오기 → 목록이 교체되고, 이 기기의 기본·시크릿 값은 그대로(파일에 없음). 구 스키마 파일 가져오기 → 마이그레이션되어 저장 |
+| 워크플로우 내보내기/가져오기 — **폐기(2026-09-24)** | 설정에서 내보낸 `recly-workflows.json`을 다른 기기에서 가져오기 → 목록이 교체되고, 이 기기의 기본·시크릿 값은 그대로(파일에 없음). 구 스키마 파일 가져오기 → 마이그레이션되어 저장 |
 
 **보류 — 전부 하드웨어·계정 대기이지 코드 문제가 아니다**
 
@@ -2844,6 +2993,9 @@ Windows `ui/ShellModel.kt`와 Mac `MenuModel.swift`는 길지만 **뽑을 로직
 Windows `windows/app/src/test/.../Fakes.kt`, Android는 모듈별 공용 테스트 파일.
 
 ### 5. step→라벨 맵이 셋인 것은 의도한 것이다
+
+> **2026-09-24**: 워크플로우 편집기(`WorkflowEditorScreen`·`StepEdit`)가 제거되면 이 판정의 대상 중 편집기 쪽 맵은
+> 사라진다. 남는 맵에는 같은 원칙(문구가 다르면 맵도 다르다)이 적용된다.
 
 Android `WorkflowsViewModel`에 `Step`→라벨과 `StepEdit`→라벨이 따로 있고, `WorkflowEditorScreen`에 `StepKind`→라벨이
 하나 더 있다. **문구가 다르기 때문**이다 — 목록은 짧은 이름(`Drive`), 편집기와 단계 추가 다이얼로그는 동작을 말하는

@@ -35,9 +35,7 @@ import recly.core.testing.DEVICE_NAME
 import recly.core.testing.FakeClock
 import recly.core.testing.FakeDrive
 import recly.core.testing.FakeLogger
-import recly.core.testing.FakeWebhook
 import recly.core.testing.MapSecureStore
-import recly.core.testing.RoutingTransport
 import recly.core.testing.START
 import recly.core.testing.STEP_RUN_ID
 import recly.core.testing.inMemoryDatabase
@@ -84,8 +82,6 @@ class DriveHarness(
     val tracks: List<Track> = listOf(Track.MONO),
     val title: String? = "주간 회의",
     val tokens: ScriptedTokenProvider = ScriptedTokenProvider(),
-    /** Set to give the workflow's `webhook` step a real endpoint (the drive→webhook end to end). */
-    val webhook: FakeWebhook? = null,
     /** The workflow the upload runs inside. Only the steps *after* the upload matter to it — they
      * are what the folder's `pending` marker names (docs/03 "다른 기기의 녹음"). */
     val steps: List<Step> = listOf(Step.DriveUpload(id = "up")),
@@ -105,9 +101,7 @@ class DriveHarness(
         logger = logger,
         secureStore = secrets,
         tokenProvider = tokens,
-        transport = webhook
-            ?.let { RoutingTransport(it.url, it.transport(fs), mockTransport(drive, fs)) }
-            ?: mockTransport(drive, fs),
+        transport = mockTransport(drive, fs),
         platform = platform,
     )
 

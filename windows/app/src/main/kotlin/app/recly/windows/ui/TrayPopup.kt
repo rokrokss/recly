@@ -34,7 +34,6 @@ import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
 import app.recly.windows.ui.component.BlueprintButton
-import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.LedgerAction
@@ -91,10 +90,6 @@ fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
 @Composable
 private fun Header(model: ShellModel, strings: Strings) {
     val palette = blueprint
-    // ADR-016: the workflow this PC runs is its own pointer, and the picker below is where it is
-    // moved. A refresh under the open popup that takes it away (another device deleted it, docs/05)
-    // leaves nothing chosen, which is what the picker and the node then say.
-    val workflow = model.selectedWorkflow
 
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         // The header is one line: the source and enough of the device id to tell two machines
@@ -108,14 +103,8 @@ private fun Header(model: ShellModel, strings: Strings) {
             nodes = listOf(
                 NodeSpec(strings[Str.NODE_DEVICE], Source.DESKTOP.name.lowercase(Locale.ROOT)),
                 NodeSpec(
-                    label = strings[Str.NODE_WORKFLOW],
-                    value = when {
-                        workflow != null -> workflow.name
-                        model.workflows.isEmpty() -> strings[Str.LABEL_NONE]
-                        // ADR-016: with nothing chosen this PC would run nothing, which is a thing
-                        // to fix rather than a state to report.
-                        else -> strings[Str.WORKFLOW_CHOOSE]
-                    },
+                    label = strings[Str.PROCESSING_TRANSCRIPTION],
+                    value = model.processing?.summary?.let { if (it.mode == recly.core.processing.TranscriptionMode.EXTERNAL) it.external?.provider.orEmpty() else strings[it.mode.label()] } ?: strings[Str.PROCESSING_LOCAL],
                 ),
                 model.stateNode(strings[Str.NODE_STATE], palette),
             ),
@@ -157,11 +146,10 @@ private fun Header(model: ShellModel, strings: Strings) {
                     label = strings[Str.TRAY_START],
                     state = model.action,
                     strings = strings,
-                    onClick = { model.start(null) },
+                    onClick = model::start,
                     tone = ButtonTone.PRIMARY,
                     enabled = model.ready && !model.helperMissing && model.titlePrompt == null,
                 )
-                WorkflowPicker(model)
                 // docs/14 "감지": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
                 // made stands here for as long as it stands at all.
                 if (model.meetingOffer == MeetingDetectionRule.Prompt.START) {
@@ -169,33 +157,11 @@ private fun Header(model: ShellModel, strings: Strings) {
                 }
                 // The helper died under a recording; that one was finalized and this offers another.
                 if (model.helperCrashed) {
-                    BlueprintButton(strings[Str.TRAY_START_AGAIN], onClick = { model.start(null) })
+                    BlueprintButton(strings[Str.TRAY_START_AGAIN], onClick = model::start,
+                        enabled = model.ready && !model.helperMissing && model.titlePrompt == null)
                 }
             }
         }
-    }
-}
-
-/**
- * ADR-016: the workflows, with the one this PC runs marked — and picking another *is* moving the
- * pointer ([ShellModel.selectWorkflow]), which is the write the workflows window's row makes.
- *
- * docs/09 화면 원칙 1: chips rather than a menu, because what a menu hid was the one thing this row
- * is for — which workflow the next recording runs. The Mac's popover draws exactly this
- * (`MenuPopover.workflowPicker`). They are emitted into the caller's [FlowRow], so a set of them
- * wider than the popup wraps onto the next line instead of pushing the actions off it.
- *
- * Nothing at all when the document has no workflows in it: there is no choice to offer, and the
- * State node above is where a PC with nothing chosen is told so.
- */
-@Composable
-private fun WorkflowPicker(model: ShellModel) {
-    model.workflows.forEach { workflow ->
-        BlueprintChip(
-            label = workflow.name,
-            selected = model.selectedWorkflow?.id == workflow.id,
-            onClick = { model.selectWorkflow(workflow.id) },
-        )
     }
 }
 
@@ -226,7 +192,6 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BlueprintButton(strings[Str.TRAY_EDIT_WORKFLOWS], { model.editorOpen = true }, tone = ButtonTone.QUIET)
         BlueprintButton(strings[Str.TRAY_SETTINGS], { model.settingsOpen = true }, tone = ButtonTone.QUIET)
         Box(Modifier.weight(1f))
         // Never disabled while a capture is in flight: the quit waits for the stop to finalize and
@@ -306,8 +271,8 @@ private fun Ledger(
 
 /**
  * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": one line per reason, with the count of the jobs on it
- * and the way to fix it — the sign-in, Drive's storage page, the secret form under the step that
- * asked for the key, or the workflow the step belongs to. Never "open the app".
+ * and the way to fix it — the sign-in, Drive's storage page, or the processing settings where the
+ * key and the transcription are set. Never "open the app".
  *
  * The lines come and go with the queue: a reason nothing is blocked on any more is not in
  * [ShellModel.alerts], so its row is simply not drawn (docs/10 rule 3).
@@ -410,7 +375,7 @@ private fun RecentRow(
                     if (item.link != null) {
                         BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
                     }
-                    if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null)) {
+                    if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending)) {
                         ProcessingButton(
                             label = strings[Str.RECENT_RETRY],
                             state = model.action,
@@ -418,10 +383,10 @@ private fun RecentRow(
                             onClick = { model.retry(item) },
                         )
                     }
-                    // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where
+                    // docs/08 AUTH_REJECTED: the key is in the processing settings, so that is where
                     // "check the key" lands — and it belongs in this line rather than under the reason
                     // above it (docs/09 화면 원칙 2, the Mac's `MenuPopover.actions`).
-                    CheckKeyButton(item, strings) { model.editWorkflowOf(item) }
+                    CheckKeyButton(item, strings) { model.settingsOpen = true }
                     // docs/08 "결과 파일": the transcript, wherever it was written.
                     BlueprintButton(
                         label = strings[Str.RECENT_DETAILS],

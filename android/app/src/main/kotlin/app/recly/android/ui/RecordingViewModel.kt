@@ -27,8 +27,6 @@ import kotlinx.coroutines.launch
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 import recly.core.recording.DeleteResult
-import recly.core.sync.WorkflowRepository
-import recly.core.sync.WorkflowSummary
 
 /** A recording that has stopped and is waiting to be named before it is queued. */
 data class UntitledRecording(
@@ -38,14 +36,7 @@ data class UntitledRecording(
 )
 
 data class RecordingUiState(
-    val workflows: List<WorkflowSummary> = emptyList(),
-    /**
-     * ADR-016: the workflow this phone runs, which is its own local pointer and not a field of the
-     * document. It is a mirror of that pointer and never a pick of its own — the picker writes the
-     * pointer, and this arrives back from it. Null when this phone has no pointer, or one the
-     * document no longer resolves; both are "choose one", and the screen says so.
-     */
-    val selectedWorkflowId: String? = null,
+    val processing: recly.core.processing.ProcessingTranscription = recly.core.processing.ProcessingTranscription(),
     /** Non-null while the title dialog is up; the recording is already finalized on disk. */
     val untitled: UntitledRecording? = null,
     /**
@@ -70,7 +61,7 @@ data class RecordingUiState(
 )
 
 /**
- * The recording screen's half of `MainActivity`. It owns the workflow pick and the title prompt;
+ * The recording screen's half of `MainActivity`. It owns the title prompt;
  * the recording itself belongs to [RecorderService], which outlives this ViewModel.
  *
  * The order matters and is the lead's call: Stop stops and finalizes straight away, and only then
@@ -93,33 +84,18 @@ class RecordingViewModel @JvmOverloads constructor(
 
     init {
         viewModelScope.launch {
-            // ADR-016: every workflow the document has is offered — a definition says nothing about
-            // which device may run it — and the one the picker shows as selected is this phone's
-            // own pointer, which is what a Start runs (docs/09 화면 원칙 1). The pointer is not in
-            // the document, so both are watched.
-            //
-            // The first read seeds the docs/05 starters on a phone that has never had a document,
-            // and points this phone at 메모: what a phone records is far more often one.
-            val workflows = core().workflows
-            workflows.seed(WorkflowRepository.MEMO_ID)
-            combine(workflows.observe(), workflows.observeDeviceDefault()) { document, default ->
-                document.workflows.map { WorkflowSummary(it.id, it.name) } to default
-            }.collect { (summaries, selected) ->
-                _state.update { it.copy(workflows = summaries, selectedWorkflowId = selected) }
-            }
+            val repository = core().processingSettings
+            combine(repository.observe(), recorder) { stored, capture -> stored to capture }
+                .collect { (stored, capture) ->
+                    if (capture is RecorderState.Idle) {
+                        val settings = (stored as? recly.core.processing.ProcessingSettingsState.Ready)?.document?.settings
+                        _state.update { it.copy(processing = settings?.transcription ?: it.processing) }
+                    }
+                }
         }
         viewModelScope.launch {
             completionEvents.collect { event -> onEvent(event) }
         }
-    }
-
-    /**
-     * ADR-016: the picker's one control. Choosing a workflow moves this phone's pointer — nothing
-     * is written to the document, and the state is not touched here: `observeDeviceDefault` says
-     * what the pointer is now, and the screen reads it from there.
-     */
-    fun selectWorkflow(id: String) {
-        viewModelScope.launch { core().workflows.setDeviceDefault(id) }
     }
 
     /**
@@ -164,9 +140,7 @@ class RecordingViewModel @JvmOverloads constructor(
 
     private fun begin() {
         if (refusedByDisconnect()) return
-        // ADR-016: no workflow is chosen for the recording — the phone's own pointer decides when
-        // the recording is enqueued, and the picker is what moved it (`WorkflowSelector.select`).
-        RecorderService.start(getApplication(), workflowId = null)
+        RecorderService.start(getApplication())
     }
 
     /**

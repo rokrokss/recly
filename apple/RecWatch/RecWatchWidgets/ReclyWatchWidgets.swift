@@ -78,6 +78,7 @@ struct ComplicationFace: View {
                 .font(.system(.body, design: .monospaced))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .environment(\.locale, status.appLocale)
+                .environment(\.layoutDirection, status.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
 
         default:
             Image(systemName: status.symbol)
@@ -86,6 +87,7 @@ struct ComplicationFace: View {
                     title.font(.system(.caption2, design: .monospaced))
                 }
                 .environment(\.locale, status.appLocale)
+                .environment(\.layoutDirection, status.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         }
     }
 

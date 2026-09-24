@@ -155,6 +155,7 @@ class RtzrProvider : SttProvider {
             Language.EN -> "en"
             Language.KO_EN -> "multi"
             Language.AUTO -> "detect"
+            else -> TranscriptionLanguages.code(ctx.step.language)
         }
         put("model_name", modelName(ctx))
         put("language", language)

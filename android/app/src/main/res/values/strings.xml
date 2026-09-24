@@ -23,7 +23,6 @@
     <!-- Bottom navigation. -->
     <string name="tab_record">Record</string>
     <string name="tab_jobs">List</string>
-    <string name="tab_workflows">Workflows</string>
     <string name="tab_settings">Settings</string>
 
     <!-- Account (docs/06). -->
@@ -45,11 +44,6 @@
     <string name="recording_participants">People in the room</string>
     <string name="recording_participants_unknown">Unknown</string>
     <string name="recording_participants_many">6+</string>
-    <!-- ADR-016: nothing is selected on this device, so a plain Start would run nothing. -->
-    <string name="recording_workflow_choose">Choose a workflow</string>
-    <!-- docs/09 "접근성": what a tap on the workflow node does. Said, not drawn — so it stays a
-         verb the reader hears whether or not something is selected already. -->
-    <string name="recording_workflow_pick">Choose a workflow</string>
     <string name="recording_title_prompt">Recording title</string>
     <string name="recording_title_hint">Leave it empty to keep the timestamp name</string>
     <string name="recording_title_save">Save</string>
@@ -63,7 +57,7 @@
     <string name="recording_saved">Saved — %1$d parts, %2$d s</string>
 
     <!-- What the queue made of a finished recording (docs/02 trigger rules). -->
-    <string name="enqueue_no_workflow">No workflow to run</string>
+    <string name="enqueue_no_workflow">Review recording settings to continue</string>
     <string name="enqueue_parts_purged">The audio has already been cleaned up</string>
     <string name="enqueue_skipped_short">Too short — skipped</string>
     <string name="enqueue_already_done">Already handled</string>
@@ -78,7 +72,6 @@
     <!-- docs/07 rule 7: the date format is a locale resource, the ISO file name never is. -->
     <string name="jobs_started_at_format">MMM d, HH:mm</string>
     <string name="job_state_recording">Recording</string>
-    <string name="job_state_no_workflow">No workflow</string>
     <string name="job_state_pending">Waiting</string>
     <string name="job_state_running">Uploading</string>
     <!-- docs/03 "다른 기기의 녹음": the three things happening somewhere else. -->
@@ -96,117 +89,28 @@
     <string name="retry_in_minutes">in %1$d min</string>
     <string name="retry_in_hours">in %1$d h</string>
 
-    <!-- Workflow list (docs/11 A6). -->
-    <string name="workflows_add">New workflow</string>
-    <string name="workflows_secrets">Manage secrets</string>
-    <string name="workflows_empty">No workflows yet.</string>
-    <string name="workflows_delete_title">Delete ‘%1$s’?</string>
-    <string name="workflows_delete_body">This workflow disappears from this device. Jobs that already exist still run.</string>
-    <string name="workflow_no_steps">No steps</string>
-    <!-- ADR-016: the mark on the workflow this device runs, and the way to move it. -->
-    <string name="workflow_in_use">In use</string>
-    <string name="workflow_use">Use</string>
-    <string name="workflow_delete_in_use">Select another workflow before deleting this one.</string>
-    <!-- docs/09 "접근성": what tapping a workflow row does, for a reader who cannot see the row. -->
-    <string name="workflow_open">Edit the workflow</string>
-    <string name="workflow_missing_secrets">No key on this device: %1$s</string>
-    <string name="workflow_gone">This workflow is no longer in the document</string>
-
-    <string name="notice_stale">The document changed while this was open — reopen it</string>
-    <string name="notice_saved_elsewhere">The workflow you were editing earlier was saved</string>
-
-    <!-- Workflow editor (docs/11 A6). -->
-    <string name="editor_new">New workflow</string>
-    <string name="editor_edit">Edit workflow</string>
-    <string name="editor_reopen">Reopen</string>
-    <string name="editor_name">Name</string>
+    <!-- Processing settings (docs/05). -->
     <string name="editor_min_duration">Minimum length (s)</string>
-    <string name="editor_min_duration_hint">Recordings shorter than this are not uploaded.</string>
-    <string name="editor_retry">Retry</string>
-    <string name="editor_on_error">On failure</string>
-    <string name="editor_on_error_abort">Stop</string>
-    <string name="editor_on_error_continue">Continue</string>
-    <string name="editor_folder">Folder template</string>
-    <string name="editor_folder_hint">A path under the My Drive root.</string>
-    <string name="editor_include_meta">Include meta.json</string>
-    <string name="editor_url">URL</string>
-    <string name="editor_url_hint">https:// (http://localhost when it is local)</string>
     <string name="editor_secret">Secret name</string>
-    <string name="editor_secret_none">None</string>
-    <string name="editor_secret_new">New…</string>
     <string name="editor_secret_missing">This device has no value for ‘%1$s’</string>
-    <string name="editor_secret_enter">Enter it</string>
-    <string name="editor_max_attempts">Retries</string>
-    <string name="editor_initial_delay">First delay (s)</string>
-    <string name="editor_max_delay">Max delay (s)</string>
-    <string name="editor_no_url">No URL</string>
 
     <!-- docs/08: the transcribe inspector. -->
     <string name="editor_provider">Provider</string>
     <!-- docs/08 "폴링 · 상태": only the phones say this — a desktop is not the one whose background
          budget cuts a long request off. -->
-    <string name="editor_provider_synchronous_hint">This provider answers on one long request. On a phone, an asynchronous provider is more reliable in the background.</string>
     <string name="editor_api_key">API key</string>
     <string name="editor_invoke_url">Invoke URL</string>
-    <string name="editor_invoke_url_hint_required">The provider\'s endpoint URL. Required for this provider.</string>
-    <string name="editor_invoke_url_hint_optional">Leave empty for the provider\'s default endpoint. Set it for a self-hosted or regional endpoint.</string>
     <string name="editor_language">Language</string>
-    <string name="editor_diarize">Separate speakers</string>
-    <string name="editor_speakers_min">Speakers, min</string>
-    <string name="editor_speakers_max">Speakers, max</string>
-    <string name="editor_speakers_hint">1–10. A recording that knows how many people were there overrides this.</string>
-    <string name="editor_order_transcribe_needs_upload">A Drive upload step has to come before this one — the results are written into the folder it makes.</string>
-    <string name="step_drive">Drive</string>
-    <string name="step_drive_upload">Drive upload</string>
-    <string name="step_webhook">Webhook</string>
-    <string name="step_transcribe">Transcribe</string>
-    <!-- What the parser said, in the words of the field it belongs to (docs/02). -->
-    <string name="error_name">The name must be 1–40 characters</string>
-    <string name="error_min_duration">Enter 0 seconds or more</string>
-    <string name="error_steps_count">A workflow needs 1–10 steps</string>
-    <string name="error_folder">The folder template must be 1–200 characters</string>
-    <string name="error_folder_variable">Unknown variable %1$s</string>
-    <string name="error_url">Only https://, or http://localhost·127.0.0.1</string>
-    <string name="error_secret_ref">That does not match the secret name rule</string>
-    <string name="error_max_attempts">A number between 1 and 20</string>
-    <string name="error_initial_delay">1 second or more</string>
-    <string name="error_max_delay">1 second or more</string>
 
     <!-- Secrets (docs/05 "시크릿"). -->
-    <string name="secrets_title">Secrets on this phone</string>
-    <string name="secrets_hint">Stored on this device only. On another device, enter it again under the same name.</string>
-    <string name="secrets_empty">No secrets yet.</string>
-    <string name="secrets_add">Add a secret</string>
-    <string name="secrets_name">Name</string>
-    <string name="secrets_name_hint">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
-    <string name="secrets_value">Value</string>
-    <string name="secrets_show">Show</string>
-    <string name="secrets_hide">Hide</string>
-    <string name="secrets_generated">Copy the generated value now. It cannot be read again once it is saved (it is on the clipboard).</string>
-    <string name="secrets_copy">Copy</string>
-    <string name="secrets_copied">Secret copied</string>
-    <string name="secrets_generate">Generate a webhook signing key</string>
-    <string name="secret_name_empty">Enter a name</string>
     <string name="secret_name_invalid">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
-    <string name="secret_name_taken">That name already exists</string>
     <string name="secret_value_required">Enter a value</string>
 
     <!-- Settings (docs/11 A10). -->
     <string name="settings_account">Google Drive</string>
-    <string name="settings_workflows">Workflows</string>
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Upload on Wi-Fi only</string>
     <string name="settings_wifi_only_hint">Never upload over mobile data.</string>
-
-    <!-- docs/05 "워크플로우 내보내기 · 가져오기": definitions are per-device, and a file moves them. -->
-    <string name="settings_export_workflows">Export workflows</string>
-    <string name="settings_import_workflows">Import workflows</string>
-    <string name="settings_workflows_keys_hint">Provider keys are not in this file — enter them on each device.</string>
-    <string name="workflows_import_title">Replace the workflows on this device?</string>
-    <string name="workflows_import_body">The %1$d workflow(s) in the file replace every workflow on this device.</string>
-    <string name="workflows_imported">Imported — %1$d workflow(s) on this device now.</string>
-    <string name="workflows_exported">Exported.</string>
-    <string name="workflows_file_failed">Could not open the file: %1$s</string>
 
     <string name="settings_language">Language</string>
     <string name="settings_language_ko">한국어</string>
@@ -225,8 +129,6 @@
     <string name="core_drive_consent_required">Drive access needs your consent</string>
     <string name="core_sign_in_cancelled">The sign-in was cancelled</string>
     <string name="core_missing_secret">This device has no value for the secret ‘%1$s’</string>
-    <string name="core_invalid_secret">The value stored for the secret ‘%1$s’ is not a usable key</string>
-    <string name="core_webhook_http">The webhook answered HTTP %1$s</string>
     <string name="core_folder_template">Folder template: %1$s</string>
     <string name="core_retry_budget_spent">Out of retries: %1$s</string>
     <string name="core_no_runner">This app cannot run a ‘%1$s’ step</string>
@@ -242,7 +144,6 @@
     <string name="core_no_input_track">This recording has no mono or mix track to transcribe.</string>
     <string name="core_result_timeout">The provider did not finish in time. It will submit again.</string>
     <string name="core_stale">The document changed while this was open</string>
-    <string name="core_unsupported_schema">Unsupported schema %1$s</string>
 
     <!-- Entry points that render outside the app (docs/11 A9). -->
     <string name="tile_label">Recly recording</string>
@@ -256,7 +157,6 @@
 
     <!-- docs/09 화면 원칙 1: the recording dashboard's three state nodes. -->
     <string name="node_device">Device</string>
-    <string name="node_workflow">Workflow</string>
     <string name="node_state">State</string>
 
     <!-- docs/09 화면 원칙 2: the ledger's columns and what an expanded row offers. -->
@@ -286,15 +186,6 @@
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Waiting for the transcription result — %1$d min elapsed</string>
     <string name="job_reason_check_key">Check the key</string>
-
-    <!-- docs/09 화면 원칙 3: the node graph. -->
-    <string name="editor_node_trigger">Trigger</string>
-    <string name="editor_node_trigger_title">Recording finished</string>
-    <string name="editor_node_end">End</string>
-    <string name="editor_step_kicker">%1$d · %2$s</string>
-    <string name="editor_insert_step">Add a step here</string>
-    <string name="editor_move_up">Move up</string>
-    <string name="editor_move_down">Move down</string>
 
     <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
     <string name="settings_capture">Capture</string>
@@ -358,10 +249,8 @@
     <string name="alert_needs_auth">Connect Google Drive to continue uploads</string>
     <string name="alert_needs_space">Google Drive is out of space</string>
     <string name="alert_missing_secret">A key this phone does not have</string>
-    <string name="alert_invalid_secret">A key stored on this phone cannot be used</string>
     <string name="alert_auth_rejected">The provider rejected the key</string>
     <string name="alert_quota">The provider is out of quota — check its limits and billing</string>
-    <string name="alert_webhook">The webhook refused the delivery — check the URL and the signing secret</string>
     <string name="alert_uploads_waiting">Uploads waiting: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="one">%1$d recording is waiting.</item>
@@ -383,14 +272,7 @@
     <string name="consent_link">Recording-consent rules by jurisdiction</string>
     <string name="core_transfer_consent_required">Permission is needed before sending to this destination</string>
     <string name="job_state_needs_consent">Transfer permission needed</string>
-    <string name="discard_title">Discard unsaved changes?</string>
-    <string name="discard_body">Your changes have not been saved.</string>
-    <string name="keep_editing">Keep editing</string>
-    <string name="discard_changes">Discard changes</string>
     <string name="delete_key_title">Delete key: %1$s</string>
-    <string name="delete_key_body">Workflows using this key will stop working until a key is added again.</string>
-    <string name="delete_key_unused">No saved workflow uses this key.</string>
-    <string name="delete_key_used_by">Used by: %1$s</string>
     <string name="detail_not_requested">This recording has no transcription step to run.</string>
     <string name="detail_pending">Transcription is not finished yet. The result will appear here when ready.</string>
     <string name="detail_failed">Transcription could not finish. Check this recording in the list for the next action.</string>
@@ -404,9 +286,6 @@
     <string name="transcript_no_matches">No matching passages</string>
     <string name="transcript_clear_search">Clear search</string>
     <string name="transcript_seek">Go to %1$s</string>
-    <string name="transcription_setup">How to set up transcription</string>
-    <string name="transcription_setup_body">To get a transcript, connect Google Drive in Settings, add a transcription step after Drive upload in a workflow, and enter the provider’s API key. Select that workflow before recording. Recordings without a transcription step are still saved.</string>
-    <string name="action_edit">Edit</string>
     <string name="recording_discarded">Recording discarded</string>
     <string name="recording_discard_failed">Could not discard the recording</string>
     <string name="core_provider_region_restricted">This transcription provider is unavailable in your App Store region.</string>
@@ -417,4 +296,40 @@
     <string name="drive_attention">Drive connection needs attention</string>
     <string name="drive_optional">Record locally. Connect Drive to upload.</string>
     <string name="drive_pending">Upload waiting</string>
+    <string name="core_local_transcription_unavailable">Local transcription is unavailable on this device. Choose another transcription method.</string>
+    <string name="core_local_model_required">Prepare the speech model in transcription settings.</string>
+    <string name="core_local_diarization_unavailable">This local engine does not support speaker identification. Turn it off or choose an external API.</string>
+    <string name="processing_title">Recording processing</string>
+    <string name="processing_local">On device</string>
+    <string name="processing_external">External API</string>
+    <string name="processing_off">Off</string>
+    <string name="processing_new_recordings">Applies to new recordings. Watch recordings use these settings when received.</string>
+    <string name="processing_storage">Storage folder</string>
+    <string name="processing_transcription">Transcription</string>
+    <string name="processing_saved">Settings saved</string>
+    <string name="processing_prepare">Prepare model</string>
+    <string name="processing_export">Export settings</string>
+    <string name="processing_import">Import settings</string>
+    <string name="processing_import_body">Review the folder and transcription method before saving. Keys are not included.</string>
+    <string name="processing_unreadable">These settings cannot be read by this version. The original data has been preserved.</string>
+    <string name="processing_model">Model (optional)</string>
+    <string name="processing_save_key">Save key</string>
+    <string name="processing_key_saved">API key saved</string>
+    <string name="processing_secrets">API keys</string>
+    <string name="processing_keys_not_exported">API keys stay on this device and are not included in exported settings.</string>
+    <string name="processing_local_running">Transcribing on this device</string>
+    <string name="processing_local_pending">Transcription pending</string>
+    <string name="settings_language_ja">日本語</string>
+    <string name="settings_language_zh_hans">简体中文</string>
+    <string name="settings_language_zh_hant">繁體中文</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_fr">Français</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_pt">Português</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_hi">हिन्दी</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="processing_language_auto">Automatic</string>
+    <string name="processing_language_mixed">Korean and English</string>
+    <string name="processing_language_unsupported">This language is not supported by the selected transcription method.</string>
 </resources>

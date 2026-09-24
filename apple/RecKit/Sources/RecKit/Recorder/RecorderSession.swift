@@ -12,7 +12,7 @@ public enum RecorderState: Equatable, Sendable {
     /// start must not be accepted in the meantime.
     case starting
 
-    case recording(recordingId: String, workflowId: String?)
+    case recording(recordingId: String)
 
     case stopping
 }
@@ -20,7 +20,7 @@ public enum RecorderState: Equatable, Sendable {
 /// The capture as [RecorderSession] sees it: `SegmentedRecorder` in the app, a fake in the tests —
 /// which is what lets the lifecycle rules below be checked without a microphone.
 public protocol Capture: AnyObject {
-    func start(workflowId: String?, title: String?, mode: RecordingMode, context: Context?) async throws -> String
+    func start(title: String?, mode: RecordingMode, context: Context?) async throws -> String
     func stop(title: String?) async -> StopResult
 }
 
@@ -67,7 +67,6 @@ public actor RecorderSession {
     /// not an error to show the user.
     @discardableResult
     public func start(
-        workflowId: String?,
         title: String? = nil,
         mode: RecordingMode = .microphone,
         context: Context? = nil
@@ -85,10 +84,8 @@ public actor RecorderSession {
         _ = await recover()
 
         do {
-            let recordingId = try await capture.start(
-                workflowId: workflowId, title: title, mode: mode, context: context
-            )
-            transition(.recording(recordingId: recordingId, workflowId: workflowId))
+            let recordingId = try await capture.start(title: title, mode: mode, context: context)
+            transition(.recording(recordingId: recordingId))
             release()
             return recordingId
         } catch {

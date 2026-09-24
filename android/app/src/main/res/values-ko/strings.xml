@@ -14,7 +14,6 @@
 
     <string name="tab_record">녹음</string>
     <string name="tab_jobs">목록</string>
-    <string name="tab_workflows">워크플로우</string>
     <string name="tab_settings">설정</string>
 
     <string name="sign_in">Google Drive 연결</string>
@@ -33,9 +32,6 @@
     <string name="recording_participants">참석 인원</string>
     <string name="recording_participants_unknown">모름</string>
     <string name="recording_participants_many">6명 이상</string>
-    <!-- ADR-016: 이 기기에서 선택한 워크플로우가 없어 그냥 시작하면 아무것도 실행되지 않습니다. -->
-    <string name="recording_workflow_choose">워크플로우를 선택하세요</string>
-    <string name="recording_workflow_pick">워크플로우 선택</string>
     <string name="recording_title_prompt">녹음 제목</string>
     <string name="recording_title_hint">비워두면 시각으로 지은 이름을 그대로 씁니다</string>
     <string name="recording_title_save">저장</string>
@@ -47,7 +43,7 @@
     <string name="recording_failed">녹음 실패: %1$s</string>
     <string name="recording_saved">저장됨 — %1$d개 파트, %2$d초</string>
 
-    <string name="enqueue_no_workflow">실행할 워크플로우 없음</string>
+    <string name="enqueue_no_workflow">계속하려면 녹음 처리 설정을 확인하세요</string>
     <string name="enqueue_parts_purged">파트가 이미 정리됨</string>
     <string name="enqueue_skipped_short">너무 짧아 건너뜀</string>
     <string name="enqueue_already_done">이미 처리됨</string>
@@ -60,7 +56,6 @@
     <string name="jobs_retry_unavailable">지금은 재시도할 수 없는 상태입니다</string>
     <string name="jobs_started_at_format">M월 d일 HH:mm</string>
     <string name="job_state_recording">녹음 중</string>
-    <string name="job_state_no_workflow">워크플로우 없음</string>
     <string name="job_state_pending">대기</string>
     <string name="job_state_running">업로드 중</string>
     <string name="job_state_receiving">워치에서 받는 중</string>
@@ -77,108 +72,22 @@
     <string name="retry_in_minutes">%1$d분 후</string>
     <string name="retry_in_hours">%1$d시간 후</string>
 
-    <string name="workflows_add">새 워크플로우</string>
-    <string name="workflows_secrets">시크릿 관리</string>
-    <string name="workflows_empty">아직 워크플로우가 없습니다.</string>
-    <string name="workflows_delete_title">‘%1$s’을(를) 삭제할까요?</string>
-    <string name="workflows_delete_body">이 워크플로우는 이 기기에서 사라집니다. 이미 만들어진 Job은 그대로 실행됩니다.</string>
-    <string name="workflow_no_steps">단계 없음</string>
-    <!-- ADR-016: 이 기기가 쓰는 워크플로우 표시와, 그것을 옮기는 방법. -->
-    <string name="workflow_in_use">사용 중</string>
-    <string name="workflow_use">사용</string>
-    <string name="workflow_delete_in_use">삭제하려면 먼저 다른 워크플로우를 선택하세요.</string>
-    <string name="workflow_open">워크플로우 편집</string>
-    <string name="workflow_missing_secrets">이 기기에 키 없음: %1$s</string>
-    <string name="workflow_gone">이 워크플로우는 문서에 더 이상 없습니다</string>
-
-    <string name="notice_stale">편집하는 사이에 문서가 바뀌었습니다 — 다시 열어 주세요</string>
-    <string name="notice_saved_elsewhere">이전에 편집하던 워크플로우가 저장되었습니다</string>
-
-    <string name="editor_new">새 워크플로우</string>
-    <string name="editor_edit">워크플로우 편집</string>
-    <string name="editor_reopen">다시 열기</string>
-    <string name="editor_name">이름</string>
     <string name="editor_min_duration">최소 길이(초)</string>
-    <string name="editor_min_duration_hint">이보다 짧은 녹음은 업로드하지 않습니다.</string>
-    <string name="editor_retry">재시도</string>
-    <string name="editor_on_error">오류 시</string>
-    <string name="editor_on_error_abort">중단</string>
-    <string name="editor_on_error_continue">계속</string>
-    <string name="editor_folder">폴더 템플릿</string>
-    <string name="editor_folder_hint">My Drive 루트 기준 경로입니다.</string>
-    <string name="editor_include_meta">meta.json 포함</string>
-    <string name="editor_url">URL</string>
-    <string name="editor_url_hint">https:// (로컬은 http://localhost)</string>
     <string name="editor_secret">시크릿 이름</string>
-    <string name="editor_secret_none">없음</string>
-    <string name="editor_secret_new">새로 만들기</string>
     <string name="editor_secret_missing">이 기기에 ‘%1$s’ 값이 없습니다</string>
-    <string name="editor_secret_enter">바로 입력</string>
-    <string name="editor_max_attempts">재시도</string>
-    <string name="editor_initial_delay">첫 지연(초)</string>
-    <string name="editor_max_delay">최대 지연(초)</string>
-    <string name="editor_no_url">URL 없음</string>
 
     <string name="editor_provider">제공자</string>
-    <string name="editor_provider_synchronous_hint">이 제공자는 요청 하나로 결과를 기다립니다. 폰에서는 백그라운드에서 비동기 제공자가 더 안정적입니다.</string>
     <string name="editor_api_key">API 키</string>
     <string name="editor_invoke_url">Invoke URL</string>
-    <string name="editor_invoke_url_hint_required">제공자의 엔드포인트 URL입니다. 이 제공자에는 필수입니다.</string>
-    <string name="editor_invoke_url_hint_optional">비우면 제공자 기본 엔드포인트를 씁니다. 자체 호스팅이나 리전 엔드포인트일 때만 입력하세요.</string>
     <string name="editor_language">언어</string>
-    <string name="editor_diarize">화자 분리</string>
-    <string name="editor_speakers_min">화자 수 최소</string>
-    <string name="editor_speakers_max">화자 수 최대</string>
-    <string name="editor_speakers_hint">1~10명. 녹음에 참석 인원이 적혀 있으면 그 값이 우선합니다.</string>
-    <string name="editor_order_transcribe_needs_upload">이 단계 앞에 Drive 업로드 단계가 있어야 합니다 — 결과 파일을 그 폴더에 씁니다.</string>
-    <string name="step_drive">Drive</string>
-    <string name="step_drive_upload">Drive 업로드</string>
-    <string name="step_webhook">웹훅</string>
-    <string name="step_transcribe">전사</string>
-    <string name="error_name">이름은 1~40자여야 합니다</string>
-    <string name="error_min_duration">0 이상의 초를 입력하세요</string>
-    <string name="error_steps_count">단계는 1~10개여야 합니다</string>
-    <string name="error_folder">폴더 템플릿은 1~200자여야 합니다</string>
-    <string name="error_folder_variable">알 수 없는 변수 %1$s</string>
-    <string name="error_url">https:// 또는 http://localhost·127.0.0.1 만 됩니다</string>
-    <string name="error_secret_ref">시크릿 이름 규칙에 맞지 않습니다</string>
-    <string name="error_max_attempts">1~20 사이의 숫자</string>
-    <string name="error_initial_delay">1 이상의 초</string>
-    <string name="error_max_delay">1 이상의 초</string>
 
-    <string name="secrets_title">이 폰의 시크릿</string>
-    <string name="secrets_hint">이 기기에만 저장됩니다. 다른 기기에서는 같은 이름으로 다시 입력해야 합니다.</string>
-    <string name="secrets_empty">아직 시크릿이 없습니다.</string>
-    <string name="secrets_add">시크릿 추가</string>
-    <string name="secrets_name">이름</string>
-    <string name="secrets_name_hint">소문자로 시작, 소문자·숫자·밑줄 32자까지</string>
-    <string name="secrets_value">값</string>
-    <string name="secrets_show">표시</string>
-    <string name="secrets_hide">숨기기</string>
-    <string name="secrets_generated">생성한 값을 지금 복사해 두세요. 저장 후에는 다시 볼 수 없습니다 (클립보드에 복사됨).</string>
-    <string name="secrets_copy">복사</string>
-    <string name="secrets_copied">시크릿을 복사했습니다</string>
-    <string name="secrets_generate">웹훅 서명 키 생성</string>
-    <string name="secret_name_empty">이름을 입력하세요</string>
     <string name="secret_name_invalid">소문자로 시작하고 소문자·숫자·밑줄 32자까지</string>
-    <string name="secret_name_taken">이미 있는 이름입니다</string>
     <string name="secret_value_required">값을 입력하세요</string>
 
     <string name="settings_account">Google Drive</string>
-    <string name="settings_workflows">워크플로우</string>
     <string name="settings_uploads">업로드</string>
     <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
     <string name="settings_wifi_only_hint">모바일 데이터로는 업로드하지 않습니다.</string>
-
-    <!-- docs/05 "워크플로우 내보내기 · 가져오기" -->
-    <string name="settings_export_workflows">워크플로우 내보내기</string>
-    <string name="settings_import_workflows">워크플로우 가져오기</string>
-    <string name="settings_workflows_keys_hint">전사 키는 이 파일에 들어가지 않습니다 — 기기마다 입력합니다.</string>
-    <string name="workflows_import_title">이 기기의 워크플로우를 교체할까요?</string>
-    <string name="workflows_import_body">파일에 있는 워크플로우 %1$d개가 이 기기의 워크플로우를 모두 대체합니다.</string>
-    <string name="workflows_imported">가져왔습니다 — 이제 이 기기에 워크플로우 %1$d개가 있습니다.</string>
-    <string name="workflows_exported">내보냈습니다.</string>
-    <string name="workflows_file_failed">파일을 열지 못했습니다: %1$s</string>
 
     <string name="settings_language">언어</string>
     <string name="settings_language_ko">한국어</string>
@@ -195,8 +104,6 @@
     <string name="core_drive_consent_required">Drive 권한 동의가 필요합니다</string>
     <string name="core_sign_in_cancelled">로그인이 취소되었습니다</string>
     <string name="core_missing_secret">이 기기에 시크릿 ‘%1$s’ 값이 없습니다</string>
-    <string name="core_invalid_secret">시크릿 ‘%1$s’에 저장된 값이 올바른 키가 아닙니다</string>
-    <string name="core_webhook_http">웹훅이 HTTP %1$s로 응답했습니다</string>
     <string name="core_folder_template">폴더 템플릿: %1$s</string>
     <string name="core_retry_budget_spent">재시도 횟수를 다 썼습니다: %1$s</string>
     <string name="core_no_runner">이 앱은 ‘%1$s’ 단계를 실행할 수 없습니다</string>
@@ -210,7 +117,6 @@
     <string name="core_no_input_track">이 녹음에는 전사할 모노·믹스 트랙이 없습니다.</string>
     <string name="core_result_timeout">제공자가 제때 끝내지 못했습니다. 다시 제출합니다.</string>
     <string name="core_stale">편집하는 사이에 문서가 바뀌었습니다</string>
-    <string name="core_unsupported_schema">지원하지 않는 스키마 %1$s</string>
 
     <string name="tile_label">Recly 녹음</string>
     <string name="tile_idle">대기</string>
@@ -223,7 +129,6 @@
 
     <!-- docs/09 화면 원칙 1: the recording dashboard's three state nodes. -->
     <string name="node_device">기기</string>
-    <string name="node_workflow">워크플로우</string>
     <string name="node_state">상태</string>
 
     <!-- docs/09 화면 원칙 2: the ledger's columns and what an expanded row offers. -->
@@ -249,15 +154,6 @@
     <string name="player_position">위치</string>
     <string name="job_waiting_transcription">전사 결과를 기다리는 중 — %1$d분 경과</string>
     <string name="job_reason_check_key">키 확인</string>
-
-    <!-- docs/09 화면 원칙 3: the node graph. -->
-    <string name="editor_node_trigger">트리거</string>
-    <string name="editor_node_trigger_title">녹음 종료</string>
-    <string name="editor_node_end">끝</string>
-    <string name="editor_step_kicker">%1$d · %2$s</string>
-    <string name="editor_insert_step">여기에 단계 추가</string>
-    <string name="editor_move_up">위로</string>
-    <string name="editor_move_down">아래로</string>
 
     <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
     <string name="settings_capture">캡처</string>
@@ -309,10 +205,8 @@
     <string name="alert_needs_auth">업로드를 계속하려면 Google Drive를 연결하세요</string>
     <string name="alert_needs_space">Google Drive에 공간이 없습니다</string>
     <string name="alert_missing_secret">이 폰에 없는 키가 있습니다</string>
-    <string name="alert_invalid_secret">이 폰에 저장된 키 값을 쓸 수 없습니다</string>
     <string name="alert_auth_rejected">업체가 키를 거절했습니다</string>
     <string name="alert_quota">업체 할당량이 찼습니다 — 한도와 결제를 확인하세요</string>
-    <string name="alert_webhook">웹훅이 전송을 거절했습니다 — URL과 서명 시크릿을 확인하세요</string>
     <string name="alert_uploads_waiting">업로드 대기 %1$d건</string>
     <plurals name="alert_waiting">
         <item quantity="other">녹음 %1$d건이 기다리는 중입니다.</item>
@@ -331,14 +225,7 @@
     <string name="consent_link">관할별 녹음 동의 규정 보기</string>
     <string name="core_transfer_consent_required">이 대상으로 전송하기 전에 허용이 필요합니다</string>
     <string name="job_state_needs_consent">전송 허용 필요</string>
-    <string name="discard_title">저장하지 않은 변경을 버릴까요?</string>
-    <string name="discard_body">변경 내용이 아직 저장되지 않았습니다.</string>
-    <string name="keep_editing">계속 편집</string>
-    <string name="discard_changes">변경 버리기</string>
     <string name="delete_key_title">키 삭제: %1$s</string>
-    <string name="delete_key_body">이 키를 사용하는 워크플로우는 키를 다시 등록할 때까지 작동하지 않습니다.</string>
-    <string name="delete_key_unused">이 키를 사용하는 저장된 워크플로우가 없습니다.</string>
-    <string name="delete_key_used_by">사용 중인 워크플로우: %1$s</string>
     <string name="detail_not_requested">이 녹음에는 실행할 전사 단계가 없습니다.</string>
     <string name="detail_pending">전사가 아직 끝나지 않았습니다. 완료되면 여기에 결과가 표시됩니다.</string>
     <string name="detail_failed">전사를 완료하지 못했습니다. 목록에서 이 녹음의 상태와 필요한 조치를 확인해 주세요.</string>
@@ -352,9 +239,6 @@
     <string name="transcript_no_matches">일치하는 내용이 없습니다</string>
     <string name="transcript_clear_search">검색 지우기</string>
     <string name="transcript_seek">%1$s 위치로 이동</string>
-    <string name="transcription_setup">전사 설정 방법</string>
-    <string name="transcription_setup_body">전사를 받으려면 설정에서 Google Drive를 연결하고, 워크플로우의 Drive 업로드 뒤에 전사 단계를 추가한 다음 해당 제공자의 API 키를 입력하세요. 녹음 전에 이 워크플로우를 선택하세요. 전사 단계가 없어도 녹음은 저장됩니다.</string>
-    <string name="action_edit">수정</string>
     <string name="recording_discarded">녹음을 버렸습니다</string>
     <string name="recording_discard_failed">녹음을 버리지 못했습니다</string>
     <string name="core_provider_region_restricted">이 전사 제공업체는 현재 App Store 지역에서 사용할 수 없습니다.</string>
@@ -365,4 +249,40 @@
     <string name="drive_attention">Drive 연결 확인 필요</string>
     <string name="drive_optional">기기에 녹음하고, Drive 연결 시 업로드합니다.</string>
     <string name="drive_pending">업로드 대기</string>
+    <string name="core_local_transcription_unavailable">이 기기에서는 로컬 전사를 사용할 수 없습니다. 전사 방식을 변경해 주세요.</string>
+    <string name="core_local_model_required">전사 설정에서 음성 모델을 준비해 주세요.</string>
+    <string name="core_local_diarization_unavailable">이 로컬 엔진은 화자 구분을 지원하지 않습니다. 화자 구분을 끄거나 외부 API를 선택해 주세요.</string>
+    <string name="processing_title">녹음 처리</string>
+    <string name="processing_local">로컬</string>
+    <string name="processing_external">외부 API</string>
+    <string name="processing_off">전사 안 함</string>
+    <string name="processing_new_recordings">새 녹음부터 적용됩니다. 워치 녹음은 수신할 때 이 설정을 사용합니다.</string>
+    <string name="processing_storage">저장 폴더</string>
+    <string name="processing_transcription">전사</string>
+    <string name="processing_saved">설정을 저장했습니다</string>
+    <string name="processing_prepare">모델 준비</string>
+    <string name="processing_export">설정 내보내기</string>
+    <string name="processing_import">설정 가져오기</string>
+    <string name="processing_import_body">저장하기 전에 폴더와 전사 방식을 확인하세요. 키 값은 포함되지 않습니다.</string>
+    <string name="processing_unreadable">이 버전에서 설정을 읽을 수 없습니다. 원본 데이터는 보존되었습니다.</string>
+    <string name="processing_model">모델 (선택)</string>
+    <string name="processing_save_key">키 저장</string>
+    <string name="processing_key_saved">API 키를 저장했습니다</string>
+    <string name="processing_secrets">API 키</string>
+    <string name="processing_keys_not_exported">API 키는 이 기기에 보관되며 내보내는 설정에는 포함되지 않습니다.</string>
+    <string name="processing_local_running">이 기기에서 전사 중</string>
+    <string name="processing_local_pending">전사 대기 중</string>
+    <string name="settings_language_ja">日本語</string>
+    <string name="settings_language_zh_hans">简体中文</string>
+    <string name="settings_language_zh_hant">繁體中文</string>
+    <string name="settings_language_es">Español</string>
+    <string name="settings_language_fr">Français</string>
+    <string name="settings_language_de">Deutsch</string>
+    <string name="settings_language_pt">Português</string>
+    <string name="settings_language_ar">العربية</string>
+    <string name="settings_language_hi">हिन्दी</string>
+    <string name="settings_language_ru">Русский</string>
+    <string name="processing_language_auto">자동</string>
+    <string name="processing_language_mixed">한국어·영어 혼용</string>
+    <string name="processing_language_unsupported">선택한 전사 방식에서 지원하지 않는 언어입니다.</string>
 </resources>

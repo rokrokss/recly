@@ -43,40 +43,21 @@ final class MenuModel: ObservableObject {
     /// `@Published` because [status] is drawn from it: a finished operation writes only this, and
     /// a menu that was not told would go on showing the note it replaced.
     @Published private(set) var message: UiMessage?
-    /// ADR-016: every workflow the document has — a definition says nothing about which device may
-    /// run it.
-    @Published private(set) var workflows: [WorkflowSummary] = []
-    /// Which of them this Mac records with: a mirror of the local pointer (ADR-016), resolved
-    /// against the document by the core's own rule rather than by a second copy of it. Nil when this
-    /// Mac has picked none, or points at one the document no longer resolves; both are "pick one".
-    ///
-    /// Read-only from outside, because the pointer is the truth and [selectWorkflow] is the one way
-    /// it moves — a value written here would be a second answer that the next observation undoes.
-    @Published private(set) var workflowId: String?
+    @Published private(set) var processing: ProcessingSettingsModel?
+    private var capturedProcessingKey: String?
+    private var capturedProcessingProvider: String?
+    var processingSummary: String {
+        if isRecording { return capturedProcessingProvider ?? RecKitStrings.localized(capturedProcessingKey ?? "On device") }
+        return processing?.providerSummary ?? RecKitStrings.localized(processing?.summaryKey ?? "On device")
+    }
     @Published private(set) var elapsed = ""
     /// False until the core is open: there is nothing to start a recording against before that.
     @Published private(set) var isReady = false
-    /// docs/12 M4-L3 "메뉴바": microphone only / meeting (microphone + system). Remembered between
-    /// launches, and
-    /// `microphone` on a machine that has never chosen — recording everyone else in the room by
-    /// default is not a default to make on the user's behalf.
-    @Published var mode: RecordingMode = Defaults.mode {
-        didSet { Defaults.mode = mode }
-    }
     /// The output device the tap is on, while a meeting is being recorded (docs/12 deliverable 5).
     @Published private(set) var capturedOutputDevice: String?
     @Published private(set) var capturedInputDevice: String?
     @Published private(set) var microphoneRecovering = false
     @Published private(set) var captureHealth: CaptureHealth = .healthy
-    @Published private(set) var microphones: [MicrophoneDevice] = []
-    @Published var microphoneUID = Defaults.microphoneUID {
-        didSet {
-            Defaults.microphoneUID = microphoneUID
-            recorder?.preferMicrophone(microphoneUID.isEmpty ? nil : microphoneUID)
-        }
-    }
-
-    func refreshMicrophones() { microphones = MicrophoneDevice.available() }
     /// docs/12 "메뉴바": the newest recordings, refreshed after every executor pass — a page of
     /// [Recents.page] to begin with, and a page more each time the ledger is scrolled to its last
     /// row ([loadMoreRecents]).
@@ -96,6 +77,9 @@ final class MenuModel: ObservableObject {
     @Published private(set) var deleteRequest: DeleteAsk?
     /// Non-nil while the docs/03 disconnect warning is up, with the count it has to name.
     @Published var disconnectPrompt: DisconnectPrompt?
+    /// Where that warning was asked from, and so where it is drawn. Written with the prompt, never
+    /// before its count is read — see [DeleteAsk].
+    @Published private(set) var disconnectSource: SettingsSurface = .popover
     /// docs/06: how far the last disconnect got, and so whether one is still owed. Stored, because
     /// a relaunch is the most likely place the retry happens from — the account is gone by then and
     /// this is the only thing that keeps the Disconnect row on screen.
@@ -105,11 +89,6 @@ final class MenuModel: ObservableObject {
     @Published private(set) var revokeDebt = DisconnectDefaults.revokeDebt
     /// The signed-in Google account, or nil.
     @Published private(set) var account: String?
-    /// Built once the core is open; the workflow window is empty until then.
-    @Published private(set) var workflowEditor: WorkflowsModel?
-    /// docs/05 "워크플로우 내보내기 · 가져오기": the settings pane's file section, built with the core
-    /// like the editor. Nil until then — there is no document to export before the core is open.
-    @Published private(set) var workflowTransfer: WorkflowTransferModel?
     /// docs/08 결과 파일: the recording the transcript window is showing, once one is picked.
     @Published private(set) var detail: RecordingDetailModel?
     /// docs/12 "실행기": `SMAppService`. Written from the system's own answer, never from the
@@ -148,7 +127,7 @@ final class MenuModel: ObservableObject {
     /// has to be able to forward a response to it before the core is open, because a notification
     /// tapped from a cold launch is delivered as soon as the launch finishes.
     private let alertNotifier = JobAlertNotifier(subsystem: "app.recly.mac")
-    /// Where that tap waits while there is no editor to take it to (docs/10).
+    /// Where that tap waits while there is no screen to take it to (docs/10).
     private let alertRouter = AlertRouter<JobAlert>()
     /// And where the *meeting* offer's own tap waits. Same reason, other notification: the offer is
     /// the one thing on the Lock Screen that is most likely to be opened from a cold launch, and
@@ -217,7 +196,7 @@ final class MenuModel: ObservableObject {
     /// docs/12 M2: open the core, finish whatever the last run left behind, then offer to record.
     private func load() async {
         do {
-            let bridge = try await CoreBridge.make(appVersion: CoreBridge.appVersion, tokenProvider: tokens)
+            let bridge = try await CoreBridge.make(tokenProvider: tokens)
             self.bridge = bridge
             let recorder = SegmentedRecorder(
                 core: bridge.core,
@@ -228,8 +207,7 @@ final class MenuModel: ObservableObject {
                 self?.captureFailed(error)
             }
             self.recorder = recorder
-            recorder.preferMicrophone(microphoneUID.isEmpty ? nil : microphoneUID)
-            refreshMicrophones()
+            recorder.preferMicrophone(nil)
             let recovery = RecordingRecovery(core: bridge.core)
             let session = RecorderSession(
                 capture: recorder,
@@ -245,16 +223,10 @@ final class MenuModel: ObservableObject {
             // Before anything else can touch the directories: a part the last run could not file is
             // still on disk, and a recording left open is one nothing would ever act on.
             let recovered = await session.recoverIfIdle()
-            await refreshWorkflows()
-            workflowTransfer = WorkflowTransferModel(core: bridge.core)
-            let editor = WorkflowsModel(core: bridge.core)
-            // Every edit and every reopen ends in the editor re-reading the document, which is
-            // exactly when the popover's answers about it go stale.
-            editor.onDocumentChanged = { [weak self] in
-                Task { @MainActor in await self?.refreshWorkflows() }
-            }
-            workflowEditor = editor
-            observeDeviceDefault(core: bridge.core)
+            let processing = ProcessingSettingsModel(core: bridge.core, canPrepare: { [weak self] in self?.isIdle == true })
+            await processing.reload()
+            processing.onSaved = { [weak self] in self?.objectWillChange.send(); self?.runner?.jobsDue() }
+            self.processing = processing
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
@@ -282,14 +254,13 @@ final class MenuModel: ObservableObject {
             // button starts a recording, and a button that cannot is worse than no notification —
             // so a tap that arrived before now was kept, and is served here.
             meetingRouter.connect { [weak self] action in self?.act(on: action) }
-            // The device id identifies this install, the data directory carries the user's home
-            // directory, and the workflow names are the user's own text — none of the three belongs
-            // in a log anyone can read off the machine. Counts are what the line is actually for.
+            // The device id identifies this install and the data directory carries the user's home
+            // directory — neither belongs in a log anyone can read off the machine. Counts are what
+            // the line is actually for.
             logger.info(
                 """
                 shell.ready device=\(bridge.deps.device.deviceId, privacy: .private) \
                 dataDir=\(bridge.dataDirectory.path, privacy: .private) \
-                workflows=\(self.workflows.count, privacy: .public) \
                 recovered=\(recovered, privacy: .public)
                 """
             )
@@ -297,59 +268,6 @@ final class MenuModel: ObservableObject {
             note = "Core error"
             // A database-open failure puts the file's path in the message.
             logger.error("shell.failed error=\(String(describing: error), privacy: .private)")
-        }
-    }
-
-    /// [workflows] and [workflowId] as the core has them *now*. Both are answers about the
-    /// stored document, and the document moves under this model — an editor save, an import — so
-    /// they are re-read rather than kept from the one launch that first read them. Otherwise the popover names one workflow and the `nil` it starts with
-    /// runs another.
-    private func refreshWorkflows() async {
-        guard let core = bridge?.core else { return }
-        do {
-            // docs/05 "첫 기기": the first read seeds the starter on a Mac that has never had a
-            // document, and — ADR-016 — points this Mac's own default at 메모, the one starter there
-            // is. A Mac adopting an existing document seeds nothing and keeps a null pointer, which
-            // the popover nudges about.
-            let document = try await core.workflows.seed(
-                preferredDefaultId: WorkflowRepository.companion.MEMO_ID
-            )
-            workflows = try await core.workflows.summary()
-            workflowId = WorkflowSelector.shared.select(
-                doc: document,
-                chosen: nil,
-                deviceDefault: try await core.workflows.deviceDefault()
-            )?.id
-        } catch {
-            // The names are the user's own text; the failure is worth a line, the document is not.
-            logger.error("shell.workflows.failed error=\(String(describing: error), privacy: .private)")
-        }
-    }
-
-    /// The popover's one choice: which workflow this Mac records with. It writes nothing to the
-    /// document — the pointer is local (ADR-016), and the same call is what the workflow window's
-    /// row action makes. [workflowId] follows from the observation below rather than from here, so
-    /// what the chips show is the pointer the core actually holds.
-    func selectWorkflow(_ id: String) async {
-        guard let core = bridge?.core else { return }
-        do {
-            try await core.workflows.setDeviceDefault(workflowId: id)
-        } catch {
-            message = .key("Could not save")
-            logger.error("shell.workflows.select.failed error=\(String(describing: error), privacy: .private)")
-        }
-    }
-
-    /// ADR-016: the pointer is not in the document, so it moves without one arriving — a pick made
-    /// in the popover or in the workflow window, a delete that cleared it. `onDocumentChanged`
-    /// answers for the document; this answers for the pointer. SKIE hands the core's `Flow` over as
-    /// an `AsyncSequence`.
-    private func observeDeviceDefault(core: ReclyCore_) {
-        Task { [weak self] in
-            for await _ in core.workflows.observeDeviceDefault() {
-                guard let self else { return }
-                await self.refreshWorkflows()
-            }
         }
     }
 
@@ -451,20 +369,11 @@ final class MenuModel: ObservableObject {
     /// The cleared margin around the badge, in points.
     private static let badgeGap: CGFloat = 1
 
-    /// [mode] is the menu's own pick unless the caller has one of its own — which the detection
-    /// paths do: a meeting Recly found by *hearing* it is a meeting, whatever the menu was last set
-    /// to, and starting a one-track memo off an "Are you in a meeting?" notification would be
-    /// answering a
-    /// different question than the one asked. The menu's setting is read, never written.
-    /// The popover's own start. `nil` like every other path: ADR-016 leaves the choice to this
-    /// Mac's own pointer, which is exactly what the popover's chips set.
+    /// Every desktop start captures the microphone and system audio with automatic routing, with
+    /// the fixed recording processing settings (docs/05).
     func start() {
-        start(workflowId: nil)
-    }
-
-    func start(workflowId: String?, mode: RecordingMode? = nil) {
         guard let session, isReady else { return }
-        let mode = mode ?? self.mode
+        let mode = RecordingMode.meeting
         // docs/03: before the question, not after it — a disconnect's clean-up walks the recording
         // directory, and there is nothing to ask about a capture that is about to be refused.
         if let blocker = DisconnectGate.startBlocker() {
@@ -477,16 +386,13 @@ final class MenuModel: ObservableObject {
         guard askAboutConsentIfNeeded(mode: mode) else { return }
         Task {
             do {
-                // The last look at the document before the core makes its own pick from it: what
-                // the popover is showing and what `nil` is about to run are then the same answer.
-                await refreshWorkflows()
-                // docs/03: the gate is held across the last look at the document *and* the start
-                // itself. The read above suspends, so the check `start` made before it says
-                // nothing about the moment the capture actually opens — a disconnect that took the
-                // gate inside that wait would be walking the recording directory while this capture
-                // wrote into it. A start that finds it held is refused rather than queued.
+                // docs/03: the gate is held across the start itself. The check `start` made before
+                // this task says nothing about the moment the capture actually opens — a disconnect
+                // that took the gate inside that wait would be walking the recording directory
+                // while this capture wrote into it. A start that finds it held is refused rather
+                // than queued.
                 let opened = try await DisconnectGate.ifOpen {
-                    try await session.start(workflowId: workflowId, mode: mode)
+                    try await session.start(mode: mode)
                 }
                 guard let started = opened else {
                     // The gate was shut. By a disconnect — which is what to say — or by another
@@ -583,14 +489,13 @@ final class MenuModel: ObservableObject {
                     return
                 }
             }
-            // nil: the pick the user made when they started is in the meta, and that is what
-            // `enqueue` falls back to (docs/05).
+            // The core compiles the fixed plan from the settings the recording froze (docs/05).
             //
             // The failure is caught rather than swallowed as `try?`, which is what the phone
             // already did: a recording whose job could not be made is one nothing will ever upload,
             // and the menu said "Waiting" over it.
             do {
-                _ = try await bridge?.core.enqueue(recordingId: outcome.recordingId, chosenWorkflowId: nil)
+                _ = try await bridge?.core.enqueue(recordingId: outcome.recordingId)
                 // docs/12 "실행기" (a): the job exists now, so a pass runs immediately rather than
                 // waiting for the five-minute timer.
                 runner?.jobsDue()
@@ -616,7 +521,11 @@ final class MenuModel: ObservableObject {
     private func adopt(_ next: RecorderState) {
         let wasRecording = isRecording
         state = next
-        if isRecording, !wasRecording { startTicking() }
+        if isRecording, !wasRecording {
+            capturedProcessingKey = processing?.summaryKey
+            capturedProcessingProvider = processing?.providerSummary
+            startTicking()
+        }
         if !isRecording, wasRecording {
             stopTicking()
             capturedOutputDevice = nil
@@ -680,8 +589,7 @@ final class MenuModel: ObservableObject {
     /// The notification's button.
     private func act(on action: MeetingNotifier.Action) {
         switch action {
-        // No workflow submenu on a notification: `nil` is the source's default (ADR-016).
-        case .start: start(workflowId: nil, mode: .meeting)
+        case .start: start()
         case .stop: stop()
         }
     }
@@ -758,12 +666,7 @@ final class MenuModel: ObservableObject {
     /// the menu bar icon and the notifications are folded out of the same reading ([publishAlerts]).
     /// docs/10 replaced the sign-in-only line this used to raise — `NEEDS_AUTH` is one of its seven.
     private func passFinished() {
-        Task {
-            await refreshRecents()
-            // A pass is also where a pull lands (docs/05), so the document another device edited is
-            // in the local copy by now and the popover's default is one this one has never read.
-            await refreshWorkflows()
-        }
+        Task { await refreshRecents() }
     }
 
     private func refreshRecents() async {
@@ -821,9 +724,8 @@ final class MenuModel: ObservableObject {
         await alertNotifier.publish(alerts)
     }
 
-    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다 — 로그인 화면, 시크릿 폼, 워크플로우 편집기.
-    /// '앱 열기'로 끝내지 않는다." On a `LSUIElement` Mac that means the editor window, opened on the
-    /// definition that has to change — [openEditor] is set by the scene, which is the only thing
+    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다." On a `LSUIElement` Mac
+    /// that means the settings window — [openEditor] is set by the scene, which is the only thing
     /// that can open one.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
@@ -835,17 +737,10 @@ final class MenuModel: ObservableObject {
         case .driveStorage:
             openDriveStorage()
 
-        // docs/08 "오류": the key is the thing to look at, and looking at it means the form it is
-        // entered in — not the editor with the form still to be found. The step named it, so the
-        // form opens under that step (`SecretFormView` draws where `form.stepId` points) with the
-        // key that was refused already in the name field.
-        case .secrets:
-            openWorkflow(alert.workflowId) { editor in
-                editor.openSecrets(prefill: alert.secret, step: alert.stepId)
-            }
-
-        case .editor:
-            openWorkflow(alert.workflowId) { _ in }
+        // docs/08 "오류": the key is the thing to look at, and it is entered in the recording
+        // processing settings.
+        case .secrets, .editor:
+            openEditor?()
         }
     }
 
@@ -853,18 +748,6 @@ final class MenuModel: ObservableObject {
     /// give back. Offered on the ledger row as well as on the banner.
     func openDriveStorage() {
         NSWorkspace.shared.open(driveStorageURL)
-    }
-
-    /// The editor window, open on one definition — and then whatever the fix has to do inside it.
-    private func openWorkflow(_ workflowId: String?, then: @escaping (WorkflowsModel) -> Void) {
-        guard let workflowId, let editor = workflowEditor else { return }
-        Task {
-            await editor.reload()
-            editor.edit(workflowId)
-            then(editor)
-            NSApp.activate(ignoringOtherApps: true)
-            self.openEditor?()
-        }
     }
 
     /// How a window gets opened from a model: `openWindow` is an environment value and only a view
@@ -952,12 +835,14 @@ final class MenuModel: ObservableObject {
 
     /// Opens the docs/03 warning. The count is read first because the dialog has to state it: a
     /// user about to lose the queue deserves to know what is still only on this Mac.
-    func askToDisconnect() {
+    func askToDisconnect(from surface: SettingsSurface) {
         guard !disconnecting else { return }
         guard let core = bridge?.core else { return }
         Task {
+            let unuploaded = await Retention.unuploadedRecordings(core: core)
+            disconnectSource = surface
             disconnectPrompt = DisconnectPrompt(
-                unuploaded: await Retention.unuploadedRecordings(core: core),
+                unuploaded: unuploaded,
                 // A capture that is running has no job yet, so `core.disconnect`'s own busy guard —
                 // which is over the queue — does not cover it, and "also delete the recordings"
                 // would delete the one being written. Read here rather than when the button is
@@ -1040,16 +925,6 @@ final class MenuModel: ObservableObject {
     func showDetail(_ item: RecentItem) {
         guard let core = bridge?.core else { return }
         detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
-    }
-
-    /// docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check the key"
-    /// lands.
-    func editWorkflow(of item: RecentItem) {
-        guard let workflowId = item.workflowId, let editor = workflowEditor else { return }
-        Task {
-            await editor.reload()
-            editor.edit(workflowId)
-        }
     }
 
     /// A popover button's window (docs/09 트렌드 2): the action reports its own outcome, so a retry
@@ -1303,6 +1178,14 @@ struct DeleteAsk: Identifiable, Equatable {
     var id: String { request.id }
 }
 
+/// The two surfaces that draw [SettingsPane] — the popover's settings and the Settings window — and
+/// so the two a disconnect can be asked from. Both can be open at once; the warning is drawn only on
+/// the one that asked, as [DeleteAsk] is.
+enum SettingsSurface {
+    case popover
+    case settingsWindow
+}
+
 /// The shell's settings, in one place. `UserDefaults` and not the core: none of them is worth
 /// syncing between machines — which output device is in front of *this* user and whether they have
 /// read the speaker warning are facts about one Mac.
@@ -1311,20 +1194,9 @@ struct DeleteAsk: Identifiable, Equatable {
 /// are about are deleted and read back by the same rules on the phone, so they live in RecKit
 /// ([DisconnectDefaults]).
 private enum Defaults {
-    private static let modeKey = "recordingMode"
     private static let speakerKey = "speakerWarningSuppressed"
     private static let voiceProcessingKey = "voiceProcessing"
     private static let consentReminderKey = "consentReminder"
-
-    static var microphoneUID: String {
-        get { UserDefaults.standard.string(forKey: "microphoneUID") ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: "microphoneUID") }
-    }
-
-    static var mode: RecordingMode {
-        get { UserDefaults.standard.string(forKey: modeKey) == "meeting" ? .meeting : .microphone }
-        set { UserDefaults.standard.set(newValue == .meeting ? "meeting" : "microphone", forKey: modeKey) }
-    }
 
     static var speakerWarningSuppressed: Bool {
         get { UserDefaults.standard.bool(forKey: speakerKey) }

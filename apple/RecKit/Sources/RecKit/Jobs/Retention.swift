@@ -497,8 +497,8 @@ public enum DisconnectDevice: Sendable {
         }
     }
 
-    /// docs/03: the queue is account-derived and goes; the workflows and the keys are this
-    /// device's own configuration and stay, which is the half a user is most likely to fear.
+    /// docs/03: the queue is account-derived and pauses; the keys are this device's own
+    /// configuration and stay, which is the half a user is most likely to fear.
     var queueWiped: String {
         switch self {
         case .phone: return "The upload queue on this phone is wiped. Workflows and keys stay."

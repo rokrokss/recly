@@ -122,6 +122,7 @@ data class SttResult(
     val model: String?,
 )
 
+@kotlinx.serialization.Serializable
 data class SttSegment(
     val start: Double,
     val end: Double,
@@ -131,6 +132,7 @@ data class SttSegment(
     val words: List<SttWord>? = null,
 )
 
+@kotlinx.serialization.Serializable
 data class SttWord(val start: Double, val end: Double, val text: String)
 
 /**
@@ -138,6 +140,25 @@ data class SttWord(val start: Double, val end: Double, val text: String)
  * here is a valid definition this device happens not to be able to execute.
  */
 object SttProviders {
+    /** Capabilities of the adapters we ship; an explicitly selected model always wins. */
+    fun supportsDiarization(name: String, model: String? = null): Boolean = when (name) {
+        OpenAiCompatProvider.OPENAI_NAME -> model == null || "diarize" in model
+        OpenAiCompatProvider.GROQ_NAME -> false
+        AssemblyAiProvider.NAME, AzureProvider.NAME, ClovaProvider.NAME, DagloProvider.NAME,
+        DeepgramProvider.NAME, ElevenLabsProvider.NAME, GladiaProvider.NAME, RevProvider.NAME,
+        RtzrProvider.NAME, SpeechmaticsProvider.NAME, OpenAiCompatProvider.TOGETHER_NAME,
+        OpenAiCompatProvider.MISTRAL_NAME -> true
+        else -> false
+    }
+
+    /** The adapters that read `step.model`; the others pin their model or have none to choose. */
+    fun acceptsModel(name: String): Boolean = when (name) {
+        OpenAiCompatProvider.OPENAI_NAME, OpenAiCompatProvider.GROQ_NAME, OpenAiCompatProvider.TOGETHER_NAME,
+        OpenAiCompatProvider.MISTRAL_NAME, DagloProvider.NAME, DeepgramProvider.NAME, ElevenLabsProvider.NAME,
+        GladiaProvider.NAME, RtzrProvider.NAME, SpeechmaticsProvider.NAME -> true
+        else -> false
+    }
+
     /** The same base addresses the runners use; a tenant endpoint is supplied by the workflow. */
     fun defaultEndpoint(name: String): String? = when (name) {
         AssemblyAiProvider.NAME -> AssemblyAiProvider.BASE

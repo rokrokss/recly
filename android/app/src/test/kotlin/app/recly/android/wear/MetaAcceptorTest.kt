@@ -39,7 +39,6 @@ class MetaAcceptorTest {
 
     private inner class FakeMetaFacade(
         private val result: AcceptMetaResult = AcceptMetaResult.Complete(ID),
-        private val workflowId: String? = "wf-1",
         private val enqueued: EnqueueResult = EnqueueResult.Enqueued("job-1"),
         private val failEnqueue: Throwable? = null,
         private val failAccept: Throwable? = null,
@@ -47,7 +46,7 @@ class MetaAcceptorTest {
     ) : MetaFacade {
 
         /** What `enqueue` was asked to run, once it has been asked. */
-        var enqueueArgs: Pair<String, String?>? = null
+        var enqueueArgs: String? = null
             private set
 
         override suspend fun acceptMeta(json: String): AcceptMetaResult {
@@ -56,11 +55,9 @@ class MetaAcceptorTest {
             return result
         }
 
-        override suspend fun workflowId(recordingId: String): String? = workflowId
-
-        override suspend fun enqueue(recordingId: String, workflowId: String?): EnqueueResult {
+        override suspend fun enqueue(recordingId: String): EnqueueResult {
             ops += "enqueue"
-            enqueueArgs = recordingId to workflowId
+            enqueueArgs = recordingId
             failEnqueue?.let { throw it }
             return enqueued
         }
@@ -99,7 +96,7 @@ class MetaAcceptorTest {
 
         assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack"), ops)
         assertEquals(listOf("""{"recordingId":"$ID","ok":true}"""), acks)
-        assertEquals(ID to "wf-1", core.enqueueArgs)
+        assertEquals(ID, core.enqueueArgs)
     }
 
     @Test

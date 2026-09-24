@@ -21,6 +21,7 @@ struct RecWatchApp: App {
         WindowGroup {
             RecordingView(model: model)
                 .environment(\.locale, language.locale)
+                .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()
         }
     }

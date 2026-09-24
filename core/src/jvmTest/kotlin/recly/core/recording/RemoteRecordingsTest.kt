@@ -45,7 +45,6 @@ import recly.core.testing.SEEDED_AUDIO
 import recly.core.testing.SEEDED_AUDIO_SHA256
 import recly.core.testing.inMemoryDatabase
 import recly.core.testing.testDeps
-import recly.core.testing.testDocument
 import recly.core.testing.testMeta
 import recly.core.testing.testWorkflow
 
@@ -78,7 +77,7 @@ class RemoteRecordingsTest {
         assertEquals(emptyList(), h.jobStore.list())
         assertTrue(h.jobStore.uploaded(MINE_1))
         assertEquals(setOf(MINE_1), h.jobStore.uploadedRecordings())
-        assertEquals(EnqueueResult.AlreadySynced, h.jobs.enqueue(MINE_1, h.document, null, h.workflow.id))
+        assertEquals(EnqueueResult.AlreadySynced, h.jobs.enqueue(MINE_1, h.workflow))
         val playback = h.audio.load(restored, emptyList())
         assertEquals(emptyList(), playback.missing)
         assertEquals(2, playback.paths.size)
@@ -131,7 +130,7 @@ class RemoteRecordingsTest {
         val h = Harness()
         val mine = h.local(MINE_1)
         val copy = h.uploaded(MINE_1, source = Source.DESKTOP)
-        h.jobs.enqueue(MINE_1, h.document, null, h.workflow.id)
+        h.jobs.enqueue(MINE_1, h.workflow)
         val ids = copy.meta.parts.associate { (it.part to it.track) to copy.fileIds.getValue(it.file) }
         assertFalse(h.recordings.restoreDriveCopy(copy.meta, copy.folderId, ids, null))
         h.remote.pull(force = true)
@@ -412,7 +411,7 @@ class RemoteRecordingsTest {
 
         assertTrue(h.jobStore.uploaded(phone.recordingId))
         assertEquals(setOf(phone.recordingId), h.jobStore.uploadedRecordings())
-        assertEquals(EnqueueResult.PartsPurged, h.jobs.enqueue(phone.recordingId, h.document, null, h.workflow.id))
+        assertEquals(EnqueueResult.PartsPurged, h.jobs.enqueue(phone.recordingId, h.workflow))
         assertEquals(emptyList(), h.jobStore.list())
     }
 
@@ -593,11 +592,11 @@ class RemoteRecordingsTest {
     fun `the folder's marker says what the other device still has to do`() = runBlocking {
         val h = Harness()
         val phone = h.uploaded(id = PHONE_1)
-        h.mark(phone.folderId, "transcribe,webhook")
+        h.mark(phone.folderId, "drive.upload,transcribe")
 
         h.remote.pull()
 
-        assertEquals(setOf("transcribe", "webhook"), h.recordings.get(PHONE_1)!!.remotePending)
+        assertEquals(setOf("drive.upload", "transcribe"), h.recordings.get(PHONE_1)!!.remotePending)
 
         // The device finished: the marker is emptied, and so is the row.
         h.mark(phone.folderId, "")
@@ -913,7 +912,6 @@ class RemoteRecordingsTest {
         val audio = AudioParts(DriveApi(deps), recordings, deps)
         val remote = RemoteRecordings(DriveApi(deps), recordings, deps)
         val workflow = testWorkflow()
-        val document = testDocument(workflow)
 
         /** The month folder every recording of the fake account shares (ADR-020). */
         private val month = drive.put("2026-08", "root", ByteArray(0), FakeDrive.FOLDER_MIME)
@@ -969,7 +967,7 @@ class RemoteRecordingsTest {
         /** This device's own upload of [local], through the real runner: the folder it leaves is
          * stamped like any other device's. */
         suspend fun upload(local: Local) {
-            assertTrue(jobs.enqueue(local.recordingId, document, null, workflow.id) is EnqueueResult.Enqueued)
+            assertTrue(jobs.enqueue(local.recordingId, workflow) is EnqueueResult.Enqueued)
             jobs.runDueJobs(clock.now())
             assertEquals(setOf(local.recordingId), jobStore.uploadedRecordings())
         }

@@ -15,7 +15,9 @@ public final class CoreJobQueue: JobQueue, @unchecked Sendable {
     public func now() -> Date { core.deps.clock.now().date }
 
     public func runDueJobs() async throws -> JobPass {
-        let summary = try await core.runDueJobs(now: core.deps.clock.now())
+        let summary = try await withTaskCancellationHandler {
+            try await core.runDueJobs(now: core.deps.clock.now())
+        } onCancel: { self.core.deps.localTranscription.cancel() }
         return JobPass(alreadyRunning: summary.alreadyRunning, ran: summary.jobIds.count)
     }
 

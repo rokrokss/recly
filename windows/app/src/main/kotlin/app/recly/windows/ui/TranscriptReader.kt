@@ -54,7 +54,7 @@ internal fun TranscriptReader(
                 Column(Modifier.padding(horizontal = Space.m)) {
                     val stamp = LedgerFormat.elapsed((block.start * 1000).toLong())
                     val seekLabel = strings[Str.TRANSCRIPT_SEEK, stamp]
-                    BlueprintButton("$stamp ${block.speaker}", { onSeek(block.start) }, enabled = canSeek && block.start < seekableDurationSec,
+                    BlueprintButton(if (block.speaker.isEmpty()) stamp else "$stamp ${block.speaker}", { onSeek(block.start) }, enabled = canSeek && block.start < seekableDurationSec,
                         modifier = Modifier.testTag("transcript-time-${block.index}")
                             .semantics { contentDescription = seekLabel }, tone = ButtonTone.QUIET, monospace = true)
                     Text(block.text, style = MaterialTheme.typography.bodyMedium, color = blueprint.text,

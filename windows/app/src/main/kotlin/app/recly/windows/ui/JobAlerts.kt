@@ -22,13 +22,14 @@ import recly.core.message.CoreMessageRef
  * does not own.
  */
 enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
+    LOCAL_TRANSCRIPTION_UNAVAILABLE(Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE, "LOCAL_TRANSCRIPTION_UNAVAILABLE", FixSurface.EDITOR),
+    LOCAL_MODEL_REQUIRED(Str.CORE_LOCAL_MODEL_REQUIRED, "LOCAL_MODEL_REQUIRED", FixSurface.EDITOR),
+    LOCAL_DIARIZATION_UNAVAILABLE(Str.CORE_LOCAL_DIARIZATION_UNAVAILABLE, "LOCAL_DIARIZATION_UNAVAILABLE", FixSurface.EDITOR),
     NEEDS_AUTH(Str.ALERT_NEEDS_AUTH, "NEEDS_AUTH", FixSurface.SIGN_IN),
     NEEDS_SPACE(Str.ALERT_NEEDS_SPACE, "NEEDS_SPACE", FixSurface.DRIVE_STORAGE),
     MISSING_SECRET(Str.ALERT_MISSING_SECRET, "MISSING_SECRET", FixSurface.SECRETS),
-    INVALID_SECRET(Str.ALERT_INVALID_SECRET, "INVALID_SECRET", FixSurface.SECRETS),
     AUTH_REJECTED(Str.ALERT_AUTH_REJECTED, "AUTH_REJECTED", FixSurface.SECRETS),
     QUOTA(Str.ALERT_QUOTA, "QUOTA", FixSurface.EDITOR),
-    WEBHOOK(Str.ALERT_WEBHOOK, "WEBHOOK", FixSurface.EDITOR),
     ;
 
     /** docs/09 화면 원칙 2: the banner row wears the state as a code, in the tone of what it is. */
@@ -44,7 +45,7 @@ enum class FixSurface(val label: Str) {
     SIGN_IN(Str.SIGN_IN),
     DRIVE_STORAGE(Str.JOBS_OPEN_STORAGE),
     SECRETS(Str.REASON_CHECK_KEY),
-    EDITOR(Str.TRAY_EDIT_WORKFLOWS),
+    EDITOR(Str.PROCESSING_TITLE),
 }
 
 /** docs/10 "Drive 용량 초과": where "free some up" actually happens. */
@@ -95,11 +96,12 @@ fun alertReasonOf(status: JobStatus, lastError: String?): AlertReason? = when (s
 private fun terminalReason(lastError: String?): AlertReason? {
     val ref = lastError?.let { CoreMessageRef.parse(it) } ?: return null
     return when (ref.message) {
+        CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE
+        CoreMessage.LOCAL_MODEL_REQUIRED -> AlertReason.LOCAL_MODEL_REQUIRED
+        CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> AlertReason.LOCAL_DIARIZATION_UNAVAILABLE
         CoreMessage.MISSING_SECRET -> AlertReason.MISSING_SECRET
-        CoreMessage.INVALID_SECRET -> AlertReason.INVALID_SECRET
         CoreMessage.AUTH_REJECTED -> AlertReason.AUTH_REJECTED
         CoreMessage.QUOTA -> AlertReason.QUOTA
-        CoreMessage.WEBHOOK_HTTP -> AlertReason.WEBHOOK.takeIf { terminalWebhook(ref.arg) }
         // docs/10: a spent budget is the user's problem only when what spent it was the provider's
         // quota. Anything else ran out of attempts against something a retry could have fixed.
         CoreMessage.RETRY_BUDGET_SPENT ->
@@ -112,30 +114,6 @@ private fun terminalReason(lastError: String?): AlertReason? {
 /** The code of the failure that spent the last attempt (`Executor` nests it as the argument). */
 private fun spentOn(ref: CoreMessageRef): CoreMessage? =
     ref.arg?.let { CoreMessageRef.parse(it) }?.message
-
-/**
- * True when the webhook's answer was one nothing but the user can change.
- *
- * docs/04 "응답 처리" retries 408 · 425 · 429 · 5xx and fails on everything else, so "terminal" is
- * that set's complement: a 4xx the URL or the signing secret has to fix, and the 3xx the plan
- * deliberately did not follow ("a webhook URL that moved is a configuration change the user has to
- * make"). docs/10 puts those on the user.
- *
- * The status has to be read here because `Executor.failed` writes the **raw** `WEBHOOK_HTTP:<status>`
- * when the attempt that fails is the last one in the budget — only a budget already spent before the
- * step ran is wrapped in `RETRY_BUDGET_SPENT`. So a 500 that ran out of attempts reaches this file
- * looking exactly like a 403 that never had any, and the code is the only thing that tells them
- * apart.
- *
- * A status that will not parse is an older build's wording: nothing is claimed about it.
- */
-private fun terminalWebhook(status: String?): Boolean {
-    val code = status?.toIntOrNull() ?: return false
-    return code < 500 && code !in RETRIED_STATUS
-}
-
-/** docs/04: what the webhook step waits out rather than fails on. */
-private val RETRIED_STATUS = setOf(408, 425, 429)
 
 /**
  * The step that stopped the job, and failing that the last complaint anything made — the
@@ -176,14 +154,14 @@ fun alertSource(status: JobStatus, workflowId: String?, steps: List<StepRun>): A
 }
 
 /**
- * The `secretRef` a code names, for the form the fix opens. Only the two that carry one:
- * `CoreMessageRef.parse` refuses those unless the argument really is a `secretRef` (docs/02), so
- * what comes back here is a name the editor can look up.
+ * The `secretRef` a code names, for the form the fix opens. Only the one that carries one:
+ * `CoreMessageRef.parse` refuses it unless the argument really is a `secretRef` (docs/02), so
+ * what comes back here is a name that can be looked up.
  */
 private fun secretName(lastError: String?): String? {
     val ref = lastError?.let { CoreMessageRef.parse(it) } ?: return null
     return when (ref.message) {
-        CoreMessage.MISSING_SECRET, CoreMessage.INVALID_SECRET -> ref.arg
+        CoreMessage.MISSING_SECRET -> ref.arg
         else -> null
     }
 }

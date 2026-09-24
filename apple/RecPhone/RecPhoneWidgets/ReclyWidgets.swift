@@ -28,7 +28,7 @@ struct RecordingLiveActivityWidget: Widget {
         ActivityConfiguration(for: RecordingActivityAttributes.self) { context in
             HStack(spacing: 16) {
                 Label {
-                    workflowName(context.attributes.workflowName)
+                    Text("Recording")
                         .font(.system(.subheadline, weight: .semibold))
                 } icon: {
                     // docs/09 "형태": a filled square, not a circle — the same mark the recording
@@ -46,6 +46,7 @@ struct RecordingLiveActivityWidget: Widget {
             // docs/09 "토큰": the palette's own page black rather than a translucent system one.
             .activityBackgroundTint(WidgetTokens.background.opacity(0.6))
             .environment(\.locale, context.state.appLocale)
+            .environment(\.layoutDirection, context.state.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         } dynamicIsland: { context in
             // `DynamicIsland` is not a view and takes no modifier of its own, so the locale is
             // handed to each region that draws words or numbers — the Lock Screen is not the only
@@ -59,9 +60,11 @@ struct RecordingLiveActivityWidget: Widget {
                     elapsed(context.state.startedAt)
                         .font(.system(.title2, design: .monospaced))
                         .environment(\.locale, locale)
+                        .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 }
                 DynamicIslandExpandedRegion(.trailing) {
                     stopButton.environment(\.locale, locale)
+                        .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 }
             } compactLeading: {
                 recordMark
@@ -69,6 +72,7 @@ struct RecordingLiveActivityWidget: Widget {
                 elapsed(context.state.startedAt)
                     .font(.system(.caption, design: .monospaced))
                     .environment(\.locale, locale)
+                    .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
             } minimal: {
                 recordMark
             }
@@ -80,11 +84,6 @@ struct RecordingLiveActivityWidget: Widget {
         RoundedRectangle(cornerRadius: WidgetTokens.Radius.badge)
             .fill(WidgetTokens.danger)
             .frame(width: 12, height: 12)
-    }
-
-    /// The user's own text, or the word for a recording started with no workflow picked.
-    private func workflowName(_ name: String?) -> Text {
-        name.map(Text.init(verbatim:)) ?? Text("Recording")
     }
 
     /// Counted by the system from the recording's start, so a three-hour recording needs no update

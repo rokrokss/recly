@@ -17,9 +17,14 @@ data class Transcript(
     val durationSec: Double,
     val speakers: List<TranscriptSpeaker>,
     val segments: List<TranscriptSegment>,
+    /** v2: "unavailable" means no speaker identification was performed. Empty speaker IDs are unknown. */
+    val speakerIdentification: String? = null,
+    /** v2: timing supplied by the engine, never fabricated word alignment. */
+    val timing: String? = null,
 ) {
     companion object {
         const val SCHEMA = 1
+        const val LOCAL_SCHEMA = 2
     }
 }
 
@@ -107,7 +112,8 @@ object TranscriptNormalizer {
                 if (lineSpeaker != null) append('\n')
                 lineSpeaker = segment.speaker
                 lineStart = segment.start
-                append("[${clock(segment.start)}] ${segment.speaker}: ")
+                append("[${clock(segment.start)}] ")
+                if (segment.speaker.isNotEmpty()) append("${segment.speaker}: ")
             } else {
                 append(' ')
             }

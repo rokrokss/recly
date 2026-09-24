@@ -34,6 +34,9 @@ public enum CoreMessages {
     /// Exhaustive by construction: a new key does not compile until it has a sentence.
     static func key(for message: CoreMessage) -> String {
         switch message {
+        case .localTranscriptionUnavailable: return "Local transcription is unavailable on this device. Choose another transcription method."
+        case .localModelRequired: return "Prepare the speech model in transcription settings."
+        case .localDiarizationUnavailable: return "This local engine does not support speaker identification. Turn it off or choose an external API."
         case .providerRegionRestricted: return "This transcription provider is unavailable in your App Store region."
         case .storefrontUnavailable: return "Waiting to verify your App Store region before continuing transcription."
         case .transferConsentRequired: return "Permission is needed before sending to this destination"
@@ -43,8 +46,6 @@ public enum CoreMessages {
         case .driveStorageFull: return "Google Drive is out of space — free some up and try again"
         case .signInCancelled: return "The sign-in was cancelled"
         case .missingSecret: return "This device has no value for the secret ‘%@’"
-        case .invalidSecret: return "The value stored for the secret ‘%@’ is not a usable key"
-        case .webhookHttp: return "The webhook answered HTTP %@"
         case .folderTemplate: return "Folder template: %@"
         case .retryBudgetSpent: return "Out of retries: %@"
         case .noRunner: return "This app cannot run a ‘%@’ step"
@@ -60,14 +61,13 @@ public enum CoreMessages {
         case .noInputTrack: return "This recording has no mono or mix track to transcribe."
         case .resultTimeout: return "The provider did not finish in time. It will submit again."
         case .stale: return "The document changed while this was open"
-        case .unsupportedSchema: return "Unsupported schema %@"
         }
     }
 
     /// The keys whose sentence has a `%@` in it; the rest are looked up without one.
     static func takesArgument(_ message: CoreMessage) -> Bool {
         switch message {
-        case .providerRegionRestricted, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
+        case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
              .noInputTrack, .resultTimeout:
             return false

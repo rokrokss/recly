@@ -58,7 +58,7 @@ class RecorderSessionTest {
 
     private fun record(capture: Capture) {
         assertTrue(session.begin())
-        session.started(capture, ID, Instant.parse("2026-08-26T01:00:00.000Z"), null)
+        session.started(capture, ID, Instant.parse("2026-08-26T01:00:00.000Z"))
     }
 
     @Test
@@ -113,7 +113,7 @@ class RecorderSessionTest {
         assertEquals(emptyList(), host.ready)
         assertEquals(0, idles)
 
-        session.started(capture, ID, Instant.parse("2026-08-26T01:00:00.000Z"), null)
+        session.started(capture, ID, Instant.parse("2026-08-26T01:00:00.000Z"))
 
         assertEquals(1, capture.stops)
         assertEquals(listOf(ID to false), host.ready)

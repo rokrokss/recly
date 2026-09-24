@@ -79,7 +79,7 @@ fun JobsScreen(
     onDelete: (DeleteRequest, Boolean) -> Unit,
     onRecord: () -> Unit,
     onOpenDetail: (JobItem) -> Unit,
-    /** docs/08 AUTH_REJECTED: "check the key" is only useful with the editor behind it. */
+    /** docs/08 AUTH_REJECTED: "check the key" is only useful with the key's settings behind it. */
     onCheckKey: (JobItem) -> Unit,
     /** docs/10: the banner is not a notice, it is the way to the screen that fixes the thing. */
     onFix: (JobAlert) -> Unit,
@@ -199,6 +199,7 @@ fun JobsScreen(
                                 onDelete = { onConfirmDelete(item) },
                                 onOpenDetail = { onOpenDetail(item) },
                                 onCheckKey = { onCheckKey(item) },
+                                onFixAuth = { onFix(JobAlert(AlertReason.NEEDS_AUTH, 1)) },
                             )
                         }
                     }
@@ -221,6 +222,7 @@ private fun ExpandedRow(
     onDelete: () -> Unit,
     onOpenDetail: () -> Unit,
     onCheckKey: () -> Unit,
+    onFixAuth: () -> Unit,
 ) {
     val palette = blueprint
     val context = LocalContext.current
@@ -274,8 +276,10 @@ private fun ExpandedRow(
                     )
                 }
                 when (item.state) {
+                    // A retry cannot pass while Drive is not granted; the banner's fix is what
+                    // unparks these jobs (docs/06 Android), so the row's Retry runs that instead.
                     ItemState.NEEDS_AUTH -> {
-                        ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
+                        BlueprintButton(stringResource(R.string.action_retry), onClick = onFixAuth)
                     }
 
                     // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing
@@ -297,7 +301,7 @@ private fun ExpandedRow(
                     // to wait it out — `retry()` makes the next attempt now (Z Fold7, 2026-09-04).
                     // Not while a provider is transcribing: that wait is on someone else's clock.
                     ItemState.WAITING ->
-                        if (item.waitingMinutes == null) {
+                        if (item.waitingMinutes == null && !item.localPending) {
                             ProcessingButton(stringResource(R.string.action_retry), action, onRetry)
                         }
 
@@ -310,7 +314,7 @@ private fun ExpandedRow(
                     ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
                     -> Unit
                 }
-                // docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where this goes.
+                // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so that is where this goes.
                 if (StepReport.needsKey(item.error)) {
                     BlueprintButton(
                         label = stringResource(R.string.job_reason_check_key),
@@ -454,6 +458,8 @@ private fun DeleteDialog(
                 modifier = Modifier.testTag("delete-unuploaded"),
             )
         }
+        // Nothing ever reached Drive, so there is no second answer to choose between.
+        if (!request.hasDriveFolder) return@BlueprintDialog
         BlueprintRadioRow(
             label = stringResource(R.string.delete_local_only),
             selected = !deleteDrive,
@@ -498,7 +504,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
  * the same code the desktop's ledger shows (`windows/.../Ledger.LedgerStates`).
  */
 fun JobItem.badge(): LedgerStatus =
-    if (waitingMinutes != null) TRANSCRIBING_BADGE else state.badge()
+    if (waitingMinutes != null || localRunning) TRANSCRIBING_BADGE else if (localPending) ItemState.PENDING.badge() else state.badge()
 
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
 
@@ -538,7 +544,9 @@ fun ItemState.failing(): Boolean =
  * is transcribing there is no "when" to give, only how long it has been (docs/08 "폴링 · 상태").
  */
 @Composable
-private fun label(item: JobItem): String = when (item.state) {
+private fun label(item: JobItem): String = if (item.localPending) stringResource(
+    if (item.localRunning) R.string.processing_local_running else R.string.processing_local_pending
+) else when (item.state) {
     ItemState.RECORDING -> stringResource(R.string.job_state_recording)
     ItemState.RECEIVING -> stringResource(R.string.job_state_receiving)
     ItemState.REMOTE_UPLOADING -> stringResource(R.string.job_state_remote_uploading)

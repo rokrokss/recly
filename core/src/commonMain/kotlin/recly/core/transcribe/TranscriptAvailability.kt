@@ -17,12 +17,12 @@ internal fun missingTranscriptAvailability(
     if (record.meta.status == RecordingStatus.RECORDING || "transcribe" in record.remotePending) {
         return TranscriptAvailability.PENDING
     }
-    val requested = jobs.filter { job -> job.workflow?.steps?.any { it is Step.Transcribe } == true }
+    val requested = jobs.filter { job -> job.workflow?.steps?.any { it is Step.Transcribe || it is Step.LocalTranscribe } == true }
     if (requested.isEmpty()) return if (jobs.any { it.snapshotError != null }) {
         TranscriptAvailability.FAILED
     } else TranscriptAvailability.NOT_REQUESTED
     val ids = requested.flatMap { job ->
-        job.workflow!!.steps.filterIsInstance<Step.Transcribe>().map { job.id to it.id }
+        job.workflow!!.steps.filter { it is Step.Transcribe || it is Step.LocalTranscribe }.map { job.id to it.id }
     }.toSet()
     val transcription = runs.filter { (it.jobId to it.stepId) in ids }
     if (transcription.any { it.status == StepStatus.SUCCEEDED }) return TranscriptAvailability.UNAVAILABLE

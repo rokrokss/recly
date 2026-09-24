@@ -13,6 +13,9 @@ package recly.core.message
  * [CoreMessageRef.parse] answers null for it so the shell can show it unchanged.
  */
 enum class CoreMessage {
+    LOCAL_TRANSCRIPTION_UNAVAILABLE,
+    LOCAL_MODEL_REQUIRED,
+    LOCAL_DIARIZATION_UNAVAILABLE,
     /** docs/15: a transcription integration is unavailable in this App Store region. */
     PROVIDER_REGION_RESTRICTED,
 
@@ -42,12 +45,6 @@ enum class CoreMessage {
 
     /** Argument: the `secretRef` this device holds no value for (docs/05 "시크릿"). */
     MISSING_SECRET,
-
-    /** Argument: the `secretRef` whose stored value is not a usable signing key. */
-    INVALID_SECRET,
-
-    /** Argument: the HTTP status the webhook answered with. */
-    WEBHOOK_HTTP,
 
     /** Argument: what the folder template says wrong. */
     FOLDER_TEMPLATE,
@@ -99,16 +96,12 @@ enum class CoreMessage {
      */
     RESULT_TIMEOUT,
 
-    /** Something changed the workflow while it was open here — a second window, or an import. */
+    /** Something changed the settings while they were open here — a second window, or an import. */
     STALE,
-
-    /** Argument: the `schema` of a document this build is too old to read — an imported file
-     * written by a newer build (docs/05 "워크플로우 가져오기"). */
-    UNSUPPORTED_SCHEMA,
     ;
 
     /**
-     * The wire form: `NEEDS_AUTH`, `MISSING_SECRET:webhook_secret`, or either of those followed by
+     * The wire form: `NEEDS_AUTH`, `MISSING_SECRET:speech_api`, or either of those followed by
      * `|` and a [CoreMessageRef.detail] — a diagnostic the shell shows verbatim under the sentence.
      */
     fun code(arg: String? = null, detail: String? = null): String = buildString {
@@ -144,10 +137,9 @@ data class CoreMessageRef(
          * build stored a sentence and the shell shows it as it stands.
          *
          * That rule has teeth only if the keys are hard to counterfeit. Builds before the keys
-         * existed wrote a bare `MISSING_SECRET` and `INVALID_SECRET: <complaint>` into the same
-         * column, and both would otherwise read as the new wire form — one with no secret name at
-         * all, the other with a sentence where the name goes. So the two keys that name a secret
-         * are only a key when the argument really is a `secretRef` (docs/02).
+         * existed wrote a bare `MISSING_SECRET` into the same column, which would otherwise read
+         * as the new wire form with no secret name at all. So the key that names a secret is only
+         * a key when the argument really is a `secretRef` (docs/02).
          */
         fun parse(code: String): CoreMessageRef? {
             val head = code.substringBefore(CoreMessage.DETAIL)
@@ -159,7 +151,7 @@ data class CoreMessageRef(
             return CoreMessageRef(message, arg, detail)
         }
 
-        private val NAMES_A_SECRET = setOf(CoreMessage.MISSING_SECRET, CoreMessage.INVALID_SECRET)
+        private val NAMES_A_SECRET = setOf(CoreMessage.MISSING_SECRET)
 
         /** docs/02 `secretRef`, which is what a secret name is allowed to be. */
         private val SECRET_REF = Regex("^[a-z][a-z0-9_]{0,31}$")

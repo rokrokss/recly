@@ -48,11 +48,10 @@ import recly.core.testing.transcribeStep
 import recly.core.testing.inMemoryDriver
 import recly.core.testing.seedFiles
 import recly.core.testing.testDeps
-import recly.core.testing.testDocument
 import recly.core.testing.testMeta
 import recly.core.testing.testPart
 import recly.core.testing.testWorkflow
-import recly.core.testing.webhookStep
+import recly.core.testing.publishStep
 
 internal fun output(vararg pairs: Pair<String, String>): StepOutcome =
     StepOutcome.Done(StepOutput(buildJsonObject { pairs.forEach { (k, v) -> put(k, v) } }))
@@ -115,7 +114,6 @@ internal class Fixture(
     /** docs/03 "다른 기기의 녹음": what the other devices are told; the default tells them nothing. */
     val marker: FolderMarker = FolderMarker.NONE,
     requireTransferConsent: Boolean = false,
-    private val live: suspend () -> recly.core.model.WorkflowsDocument? = { null },
     transport: recly.core.platform.Transport = recly.core.testing.UnusedTransport,
     transcriptionPolicy: recly.core.transcribe.TranscriptionPolicy = recly.core.transcribe.TranscriptionPolicy(),
 ) {
@@ -133,7 +131,7 @@ internal class Fixture(
 
     /** A fresh executor over the same database — what a process restart looks like. */
     fun executorWith(runners: List<StepRunner>, random: Random = Random(42)): Executor =
-        Executor(deps, store, recordings, runners.associateBy { it.type }, random, live = live, marker = marker, transferConsents = consents)
+        Executor(deps, store, recordings, runners.associateBy { it.type }, random, marker = marker, transferConsents = consents)
 
     /** Two parts per track: [tracks] is what the recorder made, not what a workflow uploads. */
     suspend fun seed(
@@ -152,24 +150,20 @@ internal class Fixture(
     }
 
     suspend fun enqueue(recording: RecordingRecord, vararg steps: recly.core.model.Step): String =
-        (enqueue(recording, testDocument(testWorkflow(steps = steps.toList()))) as EnqueueResult.Enqueued).jobId
+        (enqueue(recording, testWorkflow(steps = steps.toList())) as EnqueueResult.Enqueued).jobId
 
-    /**
-     * These tests run one workflow, and after ADR-016 something has to say so: it is this device's
-     * default rather than a pick made at stop time.
-     */
-    suspend fun enqueue(recording: RecordingRecord, doc: recly.core.model.WorkflowsDocument): EnqueueResult =
-        service.enqueue(recording.id, doc, deviceDefaultWorkflowId = doc.workflows.single().id)
+    suspend fun enqueue(recording: RecordingRecord, workflow: recly.core.model.Workflow): EnqueueResult =
+        service.enqueue(recording.id, workflow)
 }
 
 class ExecutorTest {
-    private val twoStepWorkflow = arrayOf(driveStep("up"), webhookStep("hook"))
+    private val twoStepWorkflow = arrayOf(driveStep("up"), publishStep("hook"))
 
     @Test
     fun runsEveryStepAndLeavesThePartsToTheRetentionSweep() = runBlocking {
         val upload = ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }
-        val webhook = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
-        val f = Fixture(listOf(upload, webhook))
+        val publish = ScriptedRunner("transcript.publish") { _, _ -> output("status" to "200") }
+        val f = Fixture(listOf(upload, publish))
         val recording = f.seed()
         val jobId = f.enqueue(recording, *twoStepWorkflow)
 
@@ -182,8 +176,8 @@ class ExecutorTest {
         assertEquals(listOf(StepStatus.SUCCEEDED, StepStatus.SUCCEEDED), steps.map { it.status })
         assertEquals("F1", steps[0].output!!["folderId"]!!.jsonPrimitive.content)
         assertEquals("200", steps[1].output!!["status"]!!.jsonPrimitive.content)
-        // The webhook step sees the upload's output (docs/02: files[].drive comes from it).
-        assertEquals("F1", webhook.priors.single()["up"]!!.json["folderId"]!!.jsonPrimitive.content)
+        // The step after the upload sees the upload's output.
+        assertEquals("F1", publish.priors.single()["up"]!!.json["folderId"]!!.jsonPrimitive.content)
         // A finished job deletes nothing any more: the audio is a cache with a window on it, and
         // the sweep at the end of the pass says so rather than taking it (ADR-017).
         recording.meta.parts.forEach {
@@ -201,51 +195,6 @@ class ExecutorTest {
             listOf(mapOf("recordingId" to recording.id, "reason" to "within_window")),
             f.logger.fieldsOf("rec.retained"),
         )
-    }
-
-    // docs/10 "잡 스냅샷": a step still in the current document runs with the document's definition
-    // — the URL the user fixed after the job was queued — while the snapshot decides which steps
-    // exist. Same step id and type is the whole test of "still there".
-    @Test
-    fun aStepRunsWithTheCurrentDocumentsDefinitionWhenItIsStillThere() = runBlocking {
-        val seen = mutableListOf<Step>()
-        val webhook = ScriptedRunner("webhook") { ctx, _ -> seen += ctx.step; output("status" to "200") }
-        val f = Fixture(listOf(webhook))
-        val recording = f.seed()
-        val jobId = f.enqueue(recording, webhookStep("hook"))
-        val edited = testDocument(
-            testWorkflow(steps = listOf((webhookStep("hook") as Step.Webhook).copy(url = "https://fixed.example/rec"))),
-        )
-        val executor = Executor(f.deps, f.store, f.recordings, mapOf("webhook" to webhook), Random(42), live = { edited })
-
-        executor.runDueJobs()
-
-        assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
-        assertEquals("https://fixed.example/rec", (seen.single() as Step.Webhook).url)
-    }
-
-    @Test
-    fun theSnapshotDefinitionStaysWhenTheDocumentDoesNotHaveTheStepAnyMore() = runBlocking {
-        val seen = mutableListOf<Step>()
-        val webhook = ScriptedRunner("webhook") { ctx, _ -> seen += ctx.step; output("status" to "200") }
-        val f = Fixture(listOf(webhook))
-        val recording = f.seed()
-        f.enqueue(recording, webhookStep("hook"))
-        // The workflow is still there but the step was replaced by one of another type under the
-        // same id — not the same step, so the snapshot's definition is what runs.
-        val edited = testDocument(testWorkflow(steps = listOf(driveStep("hook"))))
-        val executor = Executor(f.deps, f.store, f.recordings, mapOf("webhook" to webhook), Random(42), live = { edited })
-
-        executor.runDueJobs()
-
-        assertEquals("https://example.com/rec", (seen.single() as Step.Webhook).url)
-        // And a document that cannot be read at all changes nothing either.
-        val f2 = Fixture(listOf(webhook))
-        val r2 = f2.seed()
-        f2.enqueue(r2, webhookStep("hook"))
-        Executor(f2.deps, f2.store, f2.recordings, mapOf("webhook" to webhook), Random(42), live = { error("no document") })
-            .runDueJobs()
-        assertEquals("https://example.com/rec", (seen.last() as Step.Webhook).url)
     }
 
     @Test
@@ -356,8 +305,8 @@ class ExecutorTest {
         val upload = ScriptedRunner("drive.upload") { _, _ ->
             throw StepFailure(retryable = false, reason = "MISSING_SECRET")
         }
-        val webhook = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
-        val f = Fixture(listOf(upload, webhook))
+        val publish = ScriptedRunner("transcript.publish") { _, _ -> output("status" to "200") }
+        val f = Fixture(listOf(upload, publish))
         val recording = f.seed()
         val jobId = f.enqueue(recording, *twoStepWorkflow)
 
@@ -367,7 +316,7 @@ class ExecutorTest {
         val steps = f.store.stepsOf(jobId)
         assertEquals(listOf(StepStatus.FAILED, StepStatus.PENDING), steps.map { it.status })
         assertEquals("MISSING_SECRET", steps[0].lastError)
-        assertEquals(0, webhook.calls)
+        assertEquals(0, publish.calls)
         assertTrue("job.failed" in f.logger.events)
         // A failed job keeps its parts: the user can still retry or export them (docs/03).
         recording.meta.parts.forEach { assertTrue(f.fs.exists(recording.dir / it.file)) }
@@ -378,10 +327,10 @@ class ExecutorTest {
         val upload = ScriptedRunner("drive.upload") { _, _ ->
             throw StepFailure(retryable = false, reason = "MISSING_SECRET")
         }
-        val webhook = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
-        val f = Fixture(listOf(upload, webhook))
+        val publish = ScriptedRunner("transcript.publish") { _, _ -> output("status" to "200") }
+        val f = Fixture(listOf(upload, publish))
         val recording = f.seed()
-        val jobId = f.enqueue(recording, driveStep("up", onError = OnError.CONTINUE), webhookStep("hook"))
+        val jobId = f.enqueue(recording, driveStep("up", onError = OnError.CONTINUE), publishStep("hook"))
 
         f.service.runDueJobs()
 
@@ -390,8 +339,8 @@ class ExecutorTest {
             listOf(StepStatus.FAILED, StepStatus.SUCCEEDED),
             f.store.stepsOf(jobId).map { it.status },
         )
-        assertEquals(1, webhook.calls)
-        assertTrue(webhook.priors.single().isEmpty(), "a failed step contributes no output")
+        assertEquals(1, publish.calls)
+        assertTrue(publish.priors.single().isEmpty(), "a failed step contributes no output")
         // The upload never landed, so the parts stay even though the job is DONE.
         recording.meta.parts.forEach { assertTrue(f.fs.exists(recording.dir / it.file)) }
         assertEquals(
@@ -510,8 +459,8 @@ class ExecutorTest {
             order += "step"
             uploadOutput(ctx)
         }
-        val webhook = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
-        val f = Fixture(listOf(upload, webhook))
+        val publish = ScriptedRunner("transcript.publish") { _, _ -> output("status" to "200") }
+        val f = Fixture(listOf(upload, publish))
         val jobId = f.enqueue(f.seed(), *twoStepWorkflow)
 
         val run = async(Dispatchers.Default) { f.service.runDueJobs(f.clock.now()) }
@@ -527,7 +476,7 @@ class ExecutorTest {
 
         assertEquals(listOf("step", "disconnect"), order)
         assertEquals(1, upload.calls)
-        assertEquals(0, webhook.calls, "the rest of the job is not run over an account being emptied")
+        assertEquals(0, publish.calls, "the rest of the job is not run over an account being emptied")
         // Stopped the way a kill stops it: the row stays RUNNING for the next recoverRunning.
         assertEquals(JobStatus.RUNNING, f.store.get(jobId)!!.status)
         assertEquals(StepStatus.PENDING, f.store.stepsOf(jobId)[1].status)
@@ -537,7 +486,7 @@ class ExecutorTest {
     fun enqueueIsIdempotentPerRecordingAndWorkflow() = runBlocking {
         val f = Fixture(listOf(ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }))
         val recording = f.seed()
-        val doc = testDocument(testWorkflow(steps = listOf(driveStep("up"))))
+        val doc = testWorkflow(steps = listOf(driveStep("up")))
 
         val first = f.enqueue(recording, doc) as EnqueueResult.Enqueued
         val second = f.enqueue(recording, doc) as EnqueueResult.Enqueued
@@ -550,7 +499,7 @@ class ExecutorTest {
     fun reEnqueuingADoneJobReportsAlreadyDoneAndCreatesNothing() = runBlocking {
         val f = Fixture(listOf(ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }))
         val recording = f.seed()
-        val doc = testDocument(testWorkflow(steps = listOf(driveStep("up"))))
+        val doc = testWorkflow(steps = listOf(driveStep("up")))
         val jobId = (f.enqueue(recording, doc) as EnqueueResult.Enqueued).jobId
         f.service.runDueJobs()
         assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
@@ -567,7 +516,7 @@ class ExecutorTest {
         }
         val f = Fixture(listOf(upload))
         val recording = f.seed()
-        val doc = testDocument(testWorkflow(steps = listOf(driveStep("up"))))
+        val doc = testWorkflow(steps = listOf(driveStep("up")))
         val jobId = (f.enqueue(recording, doc) as EnqueueResult.Enqueued).jobId
         f.service.runDueJobs()
         assertEquals(JobStatus.FAILED, f.store.get(jobId)!!.status)
@@ -586,7 +535,7 @@ class ExecutorTest {
         val upload = ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }
         val f = Fixture(listOf(upload))
         val recording = f.seed(durationSec = 10.0)
-        val doc = testDocument(testWorkflow(minDurationSec = 30, steps = listOf(driveStep("up"))))
+        val doc = testWorkflow(minDurationSec = 30, steps = listOf(driveStep("up")))
 
         val result = f.enqueue(recording, doc)
 
@@ -604,33 +553,14 @@ class ExecutorTest {
         assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
     }
 
-    /** ADR-016: no pick and no device default is the only way a recording gets no job. */
+    /** No plan to run is the only way a local recording gets no job. */
     @Test
-    fun reportsNoWorkflowWhenNeitherThePickNorTheDeviceDefaultResolves() = runBlocking {
+    fun reportsNoWorkflowWhenThereIsNoPlan() = runBlocking {
         val f = Fixture(emptyList())
         val recording = f.seed(testMeta(source = Source.DESKTOP))
-        val doc = testDocument(testWorkflow())
 
-        assertEquals(EnqueueResult.NoWorkflow, f.service.enqueue(recording.id, doc))
-        assertEquals(
-            EnqueueResult.NoWorkflow,
-            f.service.enqueue(recording.id, doc, deviceDefaultWorkflowId = "01ZZZZZZZZZZZZZZZZZZZZZZZZ"),
-        )
+        assertEquals(EnqueueResult.NoWorkflow, f.service.enqueue(recording.id, null))
         assertEquals(0, f.service.observe().first().size)
-    }
-
-    /** …and the device default is what runs when the recording carries no pick of its own. */
-    @Test
-    fun runsTheDeviceDefaultWhenTheRecordingHasNoPick() = runBlocking {
-        val f = Fixture(emptyList())
-        val recording = f.seed(testMeta(source = Source.DESKTOP))
-        val workflow = testWorkflow()
-        val doc = testDocument(workflow)
-
-        val jobId = (f.service.enqueue(recording.id, doc, deviceDefaultWorkflowId = workflow.id)
-            as EnqueueResult.Enqueued).jobId
-
-        assertEquals(workflow.id, f.store.get(jobId)!!.workflowId)
     }
 
     @Test
@@ -670,9 +600,8 @@ class ExecutorTest {
         partPath = recording.dir / recording.meta.parts.first().file
         val first = testWorkflow(id = "01J9AAAAAAAAAAAAAAAAAAAAAA", steps = listOf(driveStep("up")))
         val second = testWorkflow(id = "01J9BBBBBBBBBBBBBBBBBBBBBB", steps = listOf(driveStep("up")))
-        val doc = testDocument(first, second)
-        val firstJob = (f.service.enqueue(recording.id, doc, first.id) as EnqueueResult.Enqueued).jobId
-        val secondJob = (f.service.enqueue(recording.id, doc, second.id) as EnqueueResult.Enqueued).jobId
+        val firstJob = (f.service.enqueue(recording.id, first) as EnqueueResult.Enqueued).jobId
+        val secondJob = (f.service.enqueue(recording.id, second) as EnqueueResult.Enqueued).jobId
 
         val summary = f.service.runDueJobs()
 
@@ -711,9 +640,8 @@ class ExecutorTest {
         }
         val f = Fixture(listOf(upload), clock = clock, fs = fs)
         val recording = f.seed()
-        val doc = testDocument(failing, healthy)
-        val failedJob = (f.service.enqueue(recording.id, doc, failing.id) as EnqueueResult.Enqueued).jobId
-        val doneJob = (f.service.enqueue(recording.id, doc, healthy.id) as EnqueueResult.Enqueued).jobId
+        val failedJob = (f.service.enqueue(recording.id, failing) as EnqueueResult.Enqueued).jobId
+        val doneJob = (f.service.enqueue(recording.id, healthy) as EnqueueResult.Enqueued).jobId
 
         f.service.runDueJobs()
 
@@ -758,7 +686,7 @@ class ExecutorTest {
         val upload = ScriptedRunner("drive.upload") { ctx, _ ->
             if (!raced) {
                 raced = true
-                service!!.enqueue(recordingId!!, testDocument(second), second.id)
+                service!!.enqueue(recordingId!!, second)
             }
             uploadOutput(ctx)
         }
@@ -812,7 +740,7 @@ class ExecutorTest {
         recording.meta.parts.forEach { assertFalse(f.fs.exists(recording.dir / it.file)) }
 
         val later = testWorkflow(id = "01J9BBBBBBBBBBBBBBBBBBBBBB", steps = listOf(driveStep("up")))
-        val result = f.service.enqueue(recording.id, testDocument(later), later.id)
+        val result = f.service.enqueue(recording.id, later)
 
         assertEquals(EnqueueResult.PartsPurged, result)
         assertEquals(listOf(jobId), f.service.observe().first().map { it.id }, "no job row was created")
@@ -820,10 +748,10 @@ class ExecutorTest {
 
     @Test
     fun aWorkflowWithoutADriveUploadNeverPurgesTheParts() = runBlocking {
-        val webhook = ScriptedRunner("webhook") { _, _ -> output("status" to "200") }
-        val f = Fixture(listOf(webhook))
+        val publish = ScriptedRunner("transcript.publish") { _, _ -> output("status" to "200") }
+        val f = Fixture(listOf(publish))
         val recording = f.seed()
-        val jobId = f.enqueue(recording, webhookStep("hook"))
+        val jobId = f.enqueue(recording, publishStep("hook"))
 
         f.service.runDueJobs()
 
@@ -840,11 +768,11 @@ class ExecutorTest {
         val upload = ScriptedRunner("drive.upload") { _, _ ->
             throw StepFailure(retryable = false, reason = "MISSING_SECRET")
         }
-        val webhook = ScriptedRunner("webhook") { _, calls ->
+        val publish = ScriptedRunner("transcript.publish") { _, calls ->
             if (calls == 1) throw StepFailure(retryable = true, reason = "503") else output("status" to "200")
         }
-        val f = Fixture(listOf(upload, webhook))
-        val jobId = f.enqueue(f.seed(), driveStep("up", onError = OnError.CONTINUE), webhookStep("hook"))
+        val f = Fixture(listOf(upload, publish))
+        val jobId = f.enqueue(f.seed(), driveStep("up", onError = OnError.CONTINUE), publishStep("hook"))
 
         f.service.runDueJobs()
 
@@ -855,7 +783,7 @@ class ExecutorTest {
         f.service.runDueJobs()
 
         assertEquals(1, upload.calls, "a FAILED step must not be run again inside the same job")
-        assertEquals(2, webhook.calls)
+        assertEquals(2, publish.calls)
         assertEquals(JobStatus.DONE, f.store.get(jobId)!!.status)
         assertEquals(listOf(StepStatus.FAILED, StepStatus.SUCCEEDED), f.store.stepsOf(jobId).map { it.status })
     }

@@ -4,7 +4,6 @@ package app.recly.android.core
 
 import android.content.Context
 import android.os.Build
-import app.recly.android.BuildConfig
 import app.recly.android.R
 import app.recly.android.auth.AndroidTokenProvider
 import app.recly.android.auth.GoogleAuth
@@ -31,7 +30,6 @@ class AppGraph internal constructor(
     val core: ReclyCore,
     val auth: GoogleAuth,
     val tokens: AndroidTokenProvider,
-    val secrets: SecretStore,
 )
 
 /**
@@ -71,13 +69,16 @@ object CoreModule {
                 platform = Platform.ANDROID,
                 name = Build.MODEL,
             ),
-            appVersion = BuildConfig.VERSION_NAME,
             io = Dispatchers.IO,
-            // docs/07 §6: only the seeded workflow names use it, and only on a first install.
-            locale = Locale.getDefault().language,
+            // docs/07 §6: seeds the first transcription language, and only on a first install.
+            locale = Locale.getDefault().let { locale ->
+                if (locale.language == "zh") app.recly.android.settings.AppLanguage.effective(locale).tag
+                else locale.toLanguageTag()
+            },
         )
 
         val core = ReclyCore(deps, AndroidRuntime.driverFactory(context, "rec.db"))
+        core.initializeProcessing()
         AppGraph(
             core = core,
             auth = GoogleAuth(
@@ -89,9 +90,6 @@ object CoreModule {
                 serverClientId = context.getString(R.string.google_server_client_id),
             ),
             tokens = tokens,
-            // docs/05 "코어 구현 메모": the shell's secret writes go through the core, not straight
-            // into the secure store, or `secrets.enc` never hears about them.
-            secrets = SecretStore(core.secrets),
         )
     }
 }

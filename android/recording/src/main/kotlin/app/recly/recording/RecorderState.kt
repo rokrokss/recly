@@ -19,7 +19,6 @@ sealed interface RecorderState {
     data class Recording(
         val recordingId: String,
         val startedAt: Instant,
-        val workflowId: String?,
     ) : RecorderState
 
     data object Stopping : RecorderState

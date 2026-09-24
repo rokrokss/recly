@@ -127,19 +127,17 @@ public actor RecordingRecovery {
     }
 
     /// A recovered recording is finalized and nobody is going to be asked to name it, so it goes
-    /// straight to the queue. `chosenWorkflowId` is nil on purpose: the pick the user made when
-    /// they started is in the meta, and that is what `enqueue` falls back to (docs/05).
+    /// straight to the queue, with the fixed plan compiled from the settings it froze (docs/05).
     ///
-    /// The queue is allowed to refuse: a device that has not chosen a default resolves `NoWorkflow`
-    /// (ADR-016), and calling that a recovery would count the same recording on every pass and log
-    /// a success that never happened. The result goes in the log as it is and only `Enqueued`
-    /// counts — the retry itself is the self-heal, so a later pass queues it once a default exists.
-    /// (The Windows `RecordingRecovery.enqueueIfNoJob` reads the same way.)
+    /// The queue is allowed to refuse: a recording whose frozen settings cannot be read resolves
+    /// `NoWorkflow`, and calling that a recovery would count the same recording on every pass and
+    /// log a success that never happened. The result goes in the log as it is and only `Enqueued`
+    /// counts. (The Windows `RecordingRecovery.enqueueIfNoJob` reads the same way.)
     private func ready(_ recordingId: String) async throws -> Bool {
         // A known Drive folder is reconciled by the next pull. Recreating its missing job before
         // authorization is restored would re-upload or re-transcribe completed work.
         if let record = try await core.recordings.get(id: recordingId), record.driveFolderId != nil { return false }
-        let result = try await core.enqueue(recordingId: recordingId, chosenWorkflowId: nil)
+        let result = try await core.enqueue(recordingId: recordingId)
         log(.info, "rec.recovered.enqueue", ["recordingId": recordingId, "result": Self.name(of: result)])
         if case .enqueued = onEnum(of: result) { return true }
         return false

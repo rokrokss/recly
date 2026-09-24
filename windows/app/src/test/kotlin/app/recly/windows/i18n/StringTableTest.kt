@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/07 rule 9, the completeness half: every key exists in both languages and takes the same
+ * docs/07 rule 9, the completeness half: every key exists in all supported languages and takes the same
  * arguments in each. A key missing from one table falls back to the other silently, which is
  * exactly the bug this catches — the desktop would be Korean everywhere except the one line nobody
  * translated.
@@ -24,7 +24,7 @@ class StringTableTest {
     }
 
     @Test
-    fun `both tables hold exactly the keys the enum declares`() {
+    fun `all tables hold exactly the keys the enum declares`() {
         val declared = Str.entries.map { it.key }.toSet()
 
         for (language in LANGUAGES) {
@@ -41,14 +41,15 @@ class StringTableTest {
     @Test
     fun `a translation takes the same format arguments as the base`() {
         val base = read(StringTable.BASE)
-        val korean = read(StringTable.KOREAN)
-
-        base.forEach { (key, value) ->
-            assertEquals(
-                formatArgs(value),
-                formatArgs(korean.getValue(key)),
-                "$key: the Korean string's format arguments differ",
-            )
+        LANGUAGES.forEach { language ->
+            val translation = read(language)
+            base.forEach { (key, value) ->
+                assertEquals(
+                    formatArgs(value),
+                    formatArgs(translation.getValue(key)),
+                    "$language/$key: format arguments differ",
+                )
+            }
         }
     }
 
@@ -88,10 +89,12 @@ class StringTableTest {
         assertEquals("보류 2", StringTable.of(StringTable.KOREAN)[Str.STATUS_DEFERRED, 2])
     }
 
-    /** docs/07 rule 1: anything that is not `ko` — a region, a language we do not ship — is English. */
+    /** docs/07 rule 1: regional tags resolve to their supported language, with English as the fallback. */
     @Test
-    fun `anything other than Korean is the base table`() {
-        assertEquals(StringTable.BASE, StringTable.of("ja").language)
+    fun `supported regions resolve and unknown languages use the base table`() {
+        assertEquals("ja", StringTable.of("ja-JP").language)
+        assertEquals("zh-Hant", StringTable.of("zh-TW").language)
+        assertEquals(StringTable.BASE, StringTable.of("xx").language)
         assertEquals(StringTable.BASE, StringTable.of("").language)
         assertEquals(StringTable.KOREAN, StringTable.of("ko").language)
     }
@@ -110,7 +113,7 @@ class StringTableTest {
         /** Tests run with `windows/app` as the working directory (Gradle's default). */
         val RESOURCES = File("src/main/resources/i18n")
 
-        val LANGUAGES = listOf(StringTable.BASE, StringTable.KOREAN)
+        val LANGUAGES = AppLanguage.choices.map { it.first.tag }
 
         val FORMAT_ARG = Regex("%\\d+\\$[a-zA-Z]")
 

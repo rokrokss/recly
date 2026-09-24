@@ -10,7 +10,6 @@ import WatchConnectivity
 enum PhoneTab: Hashable {
     case record
     case recordings
-    case workflows
     case settings
 }
 
@@ -41,16 +40,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// The argument of the one note that takes one (`Deferred %@`), set right after the key so that
     /// [status] can format it in the language the screen is being drawn in.
     private var noteCount: Int?
-    /// ADR-016: every workflow the document has — a definition says nothing about which device may
-    /// run it.
-    @Published private(set) var workflows: [WorkflowSummary] = []
-    /// Which of them this phone records with: a mirror of the local pointer (ADR-016), resolved
-    /// against the document. Nil when this phone has picked none, or points at one the document no
-    /// longer resolves; both are "pick one", and the screen says so.
-    ///
-    /// Read-only from outside, because the pointer is the truth and [selectWorkflow] is the one way
-    /// it moves — a value written here would be a second answer that the next observation undoes.
-    @Published private(set) var workflowId: String?
+    @Published private(set) var processing: ProcessingSettingsModel?
+    private var capturedProcessingKey: String?
+    private var capturedProcessingProvider: String?
+    var processingSummary: String {
+        if isRecording { return capturedProcessingProvider ?? RecKitStrings.localized(capturedProcessingKey ?? "On device") }
+        return processing?.providerSummary ?? RecKitStrings.localized(processing?.summaryKey ?? "On device")
+    }
     @Published private(set) var elapsed = ""
     /// False until the core is open: there is nothing to record against before that.
     @Published private(set) var isReady = false
@@ -68,11 +64,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/07 rule 3: what became of the last sign-in attempt, kept as the failure rather than as
     /// words — [authNote] makes the sentence where the settings tab draws it.
     @Published private(set) var authError: Error?
-    /// docs/13 I5. Built once the core is open; the workflow tab waits for it.
-    @Published private(set) var workflowEditor: WorkflowsModel?
-    /// docs/05 "워크플로우 내보내기 · 가져오기": the settings tab's file section. Built with the core,
-    /// like the editor, and nil until then — there is no document to export before the core.
-    @Published private(set) var workflowTransfer: WorkflowTransferModel?
     @Published private(set) var transferPrivacy: TransferPrivacyModel?
     @Published var privacyPresented = false
     /// docs/09 트렌드 2: where the one operation a ledger row can start — an upload now, a retry —
@@ -82,8 +73,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/09 화면 원칙 1·4: this install, for the dashboard's header and the About block. Empty
     /// until the core is open, which is the only thing that knows it.
     @Published private(set) var deviceId = ""
-    /// Which of the four tabs is on screen, so an action taken on one can land on another —
-    /// docs/08 "오류": "check the key" is on the list and the editor it means is a tab away.
+    /// Which of the tabs is on screen, so an action taken on one can land on another —
+    /// docs/08 "오류": "check the key" is on the list and the settings it means are a tab away.
     @Published var tab: PhoneTab = .record
 
     /// A recording that has ended and has not been named yet.
@@ -146,7 +137,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// `handleEventsForBackgroundURLSession` can reconnect the session without waiting for the
     /// database to open.
     private let transport: BackgroundTransport
-    private lazy var background = BackgroundJobs { [weak self] in await self?.runOneJobPass() }
+    private lazy var background = BackgroundJobs(pass: { [weak self] in await self?.runOneJobPass() }, localPass: { [weak self] in
+        guard let core = self?.bridge?.core else { return }
+        _ = try? await withTaskCancellationHandler { try await core.runLocalJobs() }
+            onCancel: { core.deps.localTranscription.cancel() }
+    })
     /// docs/03 "연결 해제" · docs/06: the whole of a disconnect, which is RecKit's and not this
     /// model's — the Mac runs the same one. Lazy because every one of its closures reads `self`.
     private lazy var disconnectFlow = DisconnectFlow(
@@ -184,7 +179,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// to be Notification Center's before the response of a tap that *launched* the app is
     /// delivered, which is long before the core is open.
     private let alertNotifier = JobAlertNotifier(subsystem: CoreBridge.appName)
-    /// Where that tap waits while there is no editor to take it to (docs/10).
+    /// Where that tap waits while there is no screen to take it to (docs/10).
     private let alertRouter = AlertRouter<JobAlert>()
     private var ticker: Timer?
     /// When the recording on screen began — the Live Activity counts up from it.
@@ -218,7 +213,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         RecordingIntentTarget.commands = self
         // The same argument for a notification tap, which is what launched the app just as often:
         // the response is delivered as soon as the launch finishes, and there is nothing to route
-        // it to until [load] has built the editor — so it is buffered rather than dropped.
+        // it to until [load] has opened the core — so it is buffered rather than dropped.
         alertNotifier.onFix = { [weak self] alert in self?.alertRouter.deliver(alert) }
         // Before the load, so that a language picked while the core is still opening is not lost.
         observeLanguage()
@@ -240,7 +235,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func load() async {
         do {
             let bridge = try await CoreBridge.make(
-                appVersion: CoreBridge.appVersion,
                 dataDirectory: dataDirectory,
                 secureStore: secureStore,
                 tokenProvider: tokens,
@@ -273,23 +267,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             let recovered = await session.recoverIfIdle()
             // And before the first pill of this run: the last one's is still counting up.
             await activity.endStale()
-            // docs/05 "첫 기기": the first read seeds the starters on a phone that has never had a
-            // document, and — ADR-016 — points this phone's own default at 메모, because what a
-            // phone records is far more often one. A phone adopting an existing document seeds
-            // nothing and keeps a null pointer, which the record screen nudges about.
-            _ = try await bridge.core.workflows.seed(
-                preferredDefaultId: WorkflowRepository.companion.MEMO_ID
-            )
-            workflows = try await bridge.core.workflows.summary()
-            observeDeviceDefault(core: bridge.core)
+            let processing = ProcessingSettingsModel(core: bridge.core, canPrepare: { [weak self] in self?.state == .idle })
+            await processing.reload()
+            processing.onSaved = { [weak self] in self?.objectWillChange.send(); self?.runner?.jobsDue() }
+            self.processing = processing
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
-            // [workflowId] comes from the observation above rather than from here: the pointer is
-            // what the screen shows, and the seed has just set it on a phone that has never had a
-            // document.
-
-            workflowEditor = WorkflowsModel(core: bridge.core)
-            workflowTransfer = WorkflowTransferModel(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
@@ -327,13 +310,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             deviceId = bridge.deps.device.deviceId
             isReady = true
             note = "Waiting"
-            // The device id, the container path and the workflow names are the user's; counts are
-            // what the line is for (as on macOS).
+            // The device id and the container path are the user's; counts are what the line is for
+            // (as on macOS).
             logger.info(
                 """
                 shell.ready device=\(bridge.deps.device.deviceId, privacy: .private) \
                 dataDir=\(bridge.dataDirectory.path, privacy: .private) \
-                workflows=\(self.workflows.count, privacy: .public) \
                 recovered=\(recovered, privacy: .public)
                 """
             )
@@ -341,37 +323,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             note = "Core error"
             // A database-open failure puts the file's path in the message.
             logger.error("shell.failed error=\(String(describing: error), privacy: .private)")
-        }
-    }
-
-    /// ADR-016: which workflow a Start runs is this phone's own local pointer, and it moves without
-    /// the document moving — a pick made on the record screen or on the workflows tab, a delete that
-    /// cleared it. The document moves without the pointer moving too — an editor save, a pull, a
-    /// rename on another device — and the node, the picker, the intents and the watch context read
-    /// both. So both are followed, and nothing is a name read once at launch. SKIE hands the core's
-    /// `Flow`s over as `AsyncSequence`s.
-    private func observeDeviceDefault(core: ReclyCore_) {
-        Task { [weak self] in
-            for await document in core.workflows.observe() {
-                guard let self else { return }
-                self.workflows = document.workflows.map { WorkflowSummary(id: $0.id, name: $0.name) }
-                let id = try? await core.workflows.deviceDefault()
-                self.workflowId = document.workflows.first { $0.id == id }?.id
-                // The watch shows whatever this session last published, so a stale list there is
-                // a stale list until the next launch — republish on every document move.
-                if self.watchReceiver != nil {
-                    await self.publishWorkflowsToWatch(core: core)
-                }
-            }
-        }
-        Task { [weak self] in
-            for await id in core.workflows.observeDeviceDefault() {
-                guard let self else { return }
-                // Against the document rather than against [workflows]: a pointer at a workflow
-                // another device deleted resolves to nothing, which is the nudge.
-                let document = try? await core.workflows.current()
-                self.workflowId = document?.workflows.first { $0.id == id }?.id
-            }
         }
     }
 
@@ -398,19 +349,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 guard let self else { return }
                 await self.refreshRecents()
             }
-        }
-    }
-
-    /// The record screen's picker, and the one way [workflowId] moves: a pick is this phone's own
-    /// pointer (ADR-016), which is the same write the workflows tab's row action makes. Nothing is
-    /// written to the document — the pointer is local.
-    func selectWorkflow(_ id: String) async {
-        guard let core = bridge?.core else { return }
-        do {
-            try await core.workflows.setDeviceDefault(workflowId: id)
-        } catch {
-            message = .key("Could not save")
-            logger.error("shell.workflows.select.failed error=\(String(describing: error), privacy: .private)")
         }
     }
 
@@ -457,7 +395,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             consentPrompt = true
             return
         }
-        Task { _ = await start(workflowId: nil) }
+        Task { _ = await startRecording() }
     }
 
     /// The reminder's answer. [suppress] is the "do not ask again" box, which — as on the Mac —
@@ -468,7 +406,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         if suppress { consentReminder = false }
         guard confirmed else { return }
         Defaults.consentAsked = true
-        Task { _ = await start(workflowId: nil) }
+        Task { _ = await startRecording() }
     }
 
     func stop() {
@@ -476,7 +414,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     /// - Returns: what refused the start, or nil when the recorder was asked for one.
-    private func start(workflowId: String?) async -> UiMessage? {
+    private func startRecording() async -> UiMessage? {
         guard let session, isReady else { return nil }
         // docs/03: the gate is held across the start itself rather than merely read before it —
         // `session.start` suspends, and a disconnect that took the gate inside that wait would be
@@ -485,7 +423,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             do {
                 // `nil` means the session was not idle — a second tap, or a stop still finishing.
                 // The state it published already says so; there is nothing to tell the user.
-                guard let recordingId = try await session.start(workflowId: workflowId) else { return }
+                guard let recordingId = try await session.start() else { return }
                 startedAt = Date()
                 microphoneDenied = false
                 await updateActivity()
@@ -552,7 +490,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// Saves the title prompt's answer and queues the recording, including an empty title.
     ///
     /// - Parameter participants: how many people were in the room, or nil for "unknown" — docs/03's
-    ///   `context.participants`, which docs/08 lets override the workflow's speaker hint.
+    ///   `context.participants`, which docs/08 lets override the settings' speaker hint.
     func finishNaming(with title: String?, participants: Int? = nil) async {
         guard let naming else { return }
         self.naming = nil
@@ -592,22 +530,16 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
     }
 
-    /// docs/08 AUTH_REJECTED: the key is defined in the workflow, so that is where "check the key"
-    /// lands — which on a phone means the workflow tab, not just an editor behind the list.
-    func editWorkflow(of item: RecentItem) {
-        guard let workflowId = item.workflowId, let editor = workflowEditor else { return }
-        tab = .workflows
-        Task {
-            await editor.reload()
-            editor.edit(workflowId)
-        }
+    /// docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so that is
+    /// where "check the key" lands — which on a phone means the settings tab.
+    func showProcessingSettings() {
+        tab = .settings
     }
 
-    /// `nil` for the workflow: the pick the user made when they started is in the meta, and that is
-    /// what `enqueue` falls back to (docs/05).
+    /// The core compiles the fixed plan from the settings the recording froze (docs/05).
     private func enqueue(recordingId: String) async {
         do {
-            _ = try await bridge?.core.enqueue(recordingId: recordingId, chosenWorkflowId: nil)
+            _ = try await bridge?.core.enqueue(recordingId: recordingId)
             logger.info("shell.recording.enqueued id=\(recordingId, privacy: .public)")
             // docs/12 "실행기" (a): the job exists now, so a pass runs immediately rather than
             // waiting for the five-minute timer …
@@ -637,11 +569,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     // MARK: - The intents (docs/13 I7)
 
-    func recordableWorkflows() async -> [WorkflowChoice] {
-        await loaded()
-        return workflows.map { WorkflowChoice(id: $0.id, name: $0.name) }
-    }
-
     /// docs/12 M8 · ADR-011: an intent is served with the phone locked and the app in the
     /// background, where there is nobody to ask the consent question and no screen to ask it on.
     /// That is a reason to *refuse*, not a reason to skip it — a first recording made by saying
@@ -649,7 +576,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// the reminder has been answered on the screen, or turned off.
     ///
     /// - Returns: nil when the recording was started, or the sentence the intent reports.
-    func startFromIntent(workflowId: String?) async -> String? {
+    func startFromIntent() async -> String? {
         await loaded()
         if let refusal = BackgroundStart.refusal(askConsent: Defaults.askConsent) {
             logger.info("shell.intent.refused reason=consent")
@@ -657,9 +584,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
         // docs/03: and the same for a disconnect that is running — the clean-up would delete the
         // recording this intent is about to open. Siri reads the refusal out.
-        // ADR-016: the intent's own workflow when the shortcut names one, and otherwise `nil` — the
-        // pointer the record screen shows is what the core resolves it to.
-        return await start(workflowId: workflowId)?.text
+        return await startRecording()?.text
     }
 
     func stopFromIntent() async {
@@ -674,7 +599,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func adopt(_ next: RecorderState) {
         let wasRecording = isRecording
         state = next
-        if isRecording, !wasRecording { startTicking() }
+        if isRecording, !wasRecording {
+            capturedProcessingKey = processing?.summaryKey
+            capturedProcessingProvider = processing?.providerSummary
+            startTicking()
+        }
         if !isRecording, wasRecording {
             stopTicking()
             startedAt = nil
@@ -683,10 +612,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     private func updateActivity() async {
-        await activity.apply(
-            RecordingActivityPlan.plan(for: state, startedAt: startedAt),
-            workflowName: workflows.first { $0.id == workflowId }?.name
-        )
+        await activity.apply(RecordingActivityPlan.plan(for: state, startedAt: startedAt))
     }
 
     private func startTicking() {
@@ -735,8 +661,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     func handleBackgroundSessionEvents(completion: @escaping () -> Void) {
         logger.info("shell.upload.relaunch")
         transport.adoptBackgroundEvents(completion: completion)
-        // The chunks that just landed are not a finished job: `meta.json` and the webhook are still
-        // core work, and the core only runs while the app does.
+        // The chunks that just landed are not a finished job: `meta.json` and the transcription are
+        // still core work, and the core only runs while the app does.
         background.schedule()
     }
 
@@ -748,7 +674,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func runOneJobPass() async {
         await loaded()
         guard let runner else { return }
-        await runner.run().value
+        await runner.runCurrent()
     }
 
     /// The phone's fifth trigger, on top of the four [JobRunner] has of its own: coming back to the
@@ -785,9 +711,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 guard let self else { return }
                 // [watchReceiver] is the only proof there is a `WCSession` to publish on: it is
                 // set exactly when `isSupported()` was true.
-                if let core = self.bridge?.core, self.watchReceiver != nil {
-                    Task { await self.publishWorkflowsToWatch(core: core) }
-                }
+                if self.watchReceiver != nil { self.publishLanguageToWatch() }
                 Task { await self.updateActivity() }
                 // A job alert already standing in Notification Center was painted once and is still
                 // in the old language; posting it again under the same identifier replaces it.
@@ -798,11 +722,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     // MARK: - The watch (docs/13 I6)
 
-    /// docs/13 deliverable 3: the watch's parts come in here, and the workflow summary goes out to
+    /// docs/13 deliverable 3: the watch's parts come in here, and the app's language goes out to
     /// the watch on `updateApplicationContext`.
     ///
     /// The context is published from here and nowhere else on purpose: it is a *replacing* snapshot,
-    /// so the list the watch shows is whatever this session last set, and a watch that was out of
+    /// so what the watch follows is whatever this session last set, and a watch that was out of
     /// range simply gets it when it comes back.
     private func openWatchSession(core: ReclyCore_) {
         guard WCSession.isSupported() else { return }
@@ -818,38 +742,29 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             staging: dataDirectory.appendingPathComponent("watch", isDirectory: true)
         )
         // On every activation, not once: a session that was refused the context while it was still
-        // activating would leave the watch with an empty picker until the next launch.
+        // activating would leave the watch on its old language until the next launch.
         receiver.onActivated = { [weak self] in
-            Task { @MainActor in await self?.publishWorkflowsToWatch(core: core) }
+            Task { @MainActor in self?.publishLanguageToWatch() }
         }
         watchReceiver = receiver
         WCSession.default.delegate = receiver
         WCSession.default.activate()
     }
 
-    /// docs/05 "워치" row: the workflows and only their names — the watch never runs a step and never
-    /// touches Drive (ADR-002), and after ADR-016 an id and a name are the whole of a definition it
-    /// could act on. Which of them this watch starts with is the watch's own local pointer and never
-    /// travels this way.
-    ///
-    /// docs/07 rule 2: the app's language rides along, because the watch has no language setting of
-    /// its own and following the phone is the only choice a user ever made about it. What rides is
-    /// the *resolved* tag rather than the raw choice: `system` read on the watch means the watch's
-    /// own locale, which is the one thing the watch must not fall back to while a phone is telling
-    /// it.
-    private func publishWorkflowsToWatch(core: ReclyCore_) async {
+    /// docs/07 rule 2: the app's language, because the watch has no language setting of its own
+    /// and following the phone is the only choice a user ever made about it. What rides is the
+    /// *resolved* tag rather than the raw choice: `system` read on the watch means the watch's own
+    /// locale, which is the one thing the watch must not fall back to while a phone is telling it.
+    private func publishLanguageToWatch() {
         do {
-            let watchable = try await core.workflows.summary()
-                .map { WatchWorkflow(id: $0.id, name: $0.name) }
             try WCSession.default.updateApplicationContext(
-                WatchWorkflows.context(watchable, language: AppLanguage.resolvedCode)
+                WatchContext.context(language: AppLanguage.resolvedCode)
             )
-            logger.info("watch.workflows count=\(watchable.count, privacy: .public)")
+            logger.info("watch.context")
         } catch {
             // A session that is not paired refuses the context; there is nothing to do about it and
-            // nothing is lost — a recording that carries no pick runs this phone's own default
-            // workflow (ADR-016).
-            logger.info("watch.workflows.skipped error=\(String(describing: error), privacy: .public)")
+            // nothing is lost.
+            logger.info("watch.context.skipped error=\(String(describing: error), privacy: .public)")
         }
     }
 
@@ -995,9 +910,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         await alertNotifier.publish(alerts)
     }
 
-    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다 — 로그인 화면, 시크릿 폼, 워크플로우 편집기.
-    /// '앱 열기'로 끝내지 않는다." On a phone that means a tab, and for the two reasons a workflow
-    /// holds the fix for, the editor open on the definition that has to change.
+    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다." On a phone that means a
+    /// tab.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
         case .privacy:
@@ -1009,17 +923,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         case .driveStorage:
             openDriveStorage()
 
-        // docs/08 "오류": the key is the thing to look at, and looking at it means the form it is
-        // entered in — not the editor with the form still to be found. The step named it, so the
-        // form opens under that step (`SecretFormView` draws where `form.stepId` points) with the
-        // key that was refused already in the name field.
-        case .secrets:
-            openEditor(alert.workflowId) { editor in
-                editor.openSecrets(prefill: alert.secret, step: alert.stepId)
-            }
-
-        case .editor:
-            openEditor(alert.workflowId) { _ in }
+        // docs/08 "오류": the key is the thing to look at, and it is entered in the recording
+        // processing settings.
+        case .secrets, .editor:
+            tab = .settings
         }
     }
 
@@ -1027,18 +934,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// give back. Offered on the ledger row as well as on the banner.
     func openDriveStorage() {
         UIApplication.shared.open(driveStorageURL)
-    }
-
-    /// The workflow tab, with the editor open on one definition — and then whatever the fix has to
-    /// do inside it.
-    private func openEditor(_ workflowId: String?, then: @escaping (WorkflowsModel) -> Void) {
-        tab = .workflows
-        guard let workflowId, let editor = workflowEditor else { return }
-        Task {
-            await editor.reload()
-            editor.edit(workflowId)
-            then(editor)
-        }
     }
 
     // MARK: - Deleting a recording (docs/03 "앱에서 지우기")
