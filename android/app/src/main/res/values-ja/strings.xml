@@ -66,7 +66,6 @@
     <string name="retry_in_hours">%1$d時間後</string>
     <string name="editor_min_duration">最短の長さ（秒）</string>
     <string name="editor_secret">シークレット名</string>
-    <string name="editor_secret_missing">このデバイスにはシークレット「%1$s」の値がありません</string>
     <string name="editor_provider">提供者</string>
     <string name="editor_api_key">APIキー</string>
     <string name="editor_invoke_url">呼び出しURL</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">モデル（任意）</string>
     <string name="processing_save_key">キーを保存</string>
     <string name="processing_key_saved">APIキーを保存しました</string>
+    <string name="processing_key_on_device">このデバイスに保存済み</string>
+    <string name="processing_key_not_on_device">このデバイスに保存されたキーはありません</string>
     <string name="processing_secrets">APIキー</string>
     <string name="processing_keys_not_exported">APIキーはこのデバイスに保存され、設定の書き出しには含まれません。</string>
     <string name="processing_local_running">このデバイスで文字起こし中</string>

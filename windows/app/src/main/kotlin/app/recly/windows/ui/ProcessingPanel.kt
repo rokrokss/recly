@@ -73,8 +73,12 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
 @Composable
 private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Strings) {
     var value by remember(name) { mutableStateOf("") }
+    // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
     OutlinedTextField(value, { value = it }, label = { Text(strings[Str.FIELD_API_KEY]) }, singleLine = true,
-        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+        supportingText = if (name.isBlank()) null else {
+            { Text(strings[if (name in model.secretNames) Str.PROCESSING_KEY_ON_DEVICE else Str.PROCESSING_KEY_NOT_ON_DEVICE]) }
+        })
     BlueprintButton(strings[Str.PROCESSING_SAVE_KEY], { model.saveKey(name, value) { value = "" } }, enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
 }
 internal fun TranscriptionMode.label(): Str = when (this) {

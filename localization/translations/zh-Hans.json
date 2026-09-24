@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "此应用无法运行“{0}”步骤",
   "This cannot be retried right now": "目前无法重试",
   "This device has no value for the secret ‘{0}’": "此设备上没有机密凭据“{0}”的值",
-  "This device has no value for ‘{0}’": "此设备上没有机密凭据“{0}”的值",
   "This host cannot set it (installed Windows apps only).": "此环境无法设置（仅适用于已安装的Windows应用）。",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "此任务使用“{0}”步骤，需要更新版本的应用",
   "This job's workflow has no step ‘{0}’": "此任务的工作流没有“{0}”步骤",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}，录制于{1}，时长{2}，{3}",
   "API key saved": "API密钥已保存",
   "Applies to new recordings.": "适用于新录音。",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新连接同一账号前，待处理任务将暂停。录音、Drive文件和密钥都会保留。"
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新连接同一账号前，待处理任务将暂停。录音、Drive文件和密钥都会保留。",
+  "Saved on this device": "已保存在此设备上",
+  "Not saved on this device": "此设备上未保存密钥"
 }

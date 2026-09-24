@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "لا يمكن لهذا التطبيق تشغيل الخطوة «{0}»",
   "This cannot be retried right now": "لا يمكن إعادة المحاولة الآن",
   "This device has no value for the secret ‘{0}’": "لا توجد قيمة للسر «{0}» على هذا الجهاز",
-  "This device has no value for ‘{0}’": "لا توجد قيمة للسر «{0}» على هذا الجهاز",
   "This host cannot set it (installed Windows apps only).": "لا يمكن ضبطه هنا (لتطبيقات Windows المثبّتة فقط).",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "تتطلب هذه المهمة إصدارًا أحدث من التطبيق لأنها تستخدم الخطوة «{0}»",
   "This job's workflow has no step ‘{0}’": "لا يحتوي سير عمل هذه المهمة على الخطوة «{0}»",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}، سُجّل {1}، المدة {2}، {3}",
   "API key saved": "تم حفظ مفتاح API",
   "Applies to new recordings.": "تُطبّق على التسجيلات الجديدة.",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "تتوقف المعالجة المعلّقة حتى إعادة ربط الحساب نفسه. تبقى التسجيلات وملفات Drive والمفاتيح."
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "تتوقف المعالجة المعلّقة حتى إعادة ربط الحساب نفسه. تبقى التسجيلات وملفات Drive والمفاتيح.",
+  "Saved on this device": "محفوظ على هذا الجهاز",
+  "Not saved on this device": "لا يوجد مفتاح محفوظ على هذا الجهاز"
 }

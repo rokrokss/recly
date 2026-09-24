@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "Приложение не может выполнить шаг «{0}»",
   "This cannot be retried right now": "Сейчас повторить нельзя",
   "This device has no value for the secret ‘{0}’": "На этом устройстве нет значения секрета «{0}»",
-  "This device has no value for ‘{0}’": "На этом устройстве нет значения секрета «{0}»",
   "This host cannot set it (installed Windows apps only).": "Здесь настройка недоступна (только для установленных приложений Windows).",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "Для задачи нужна новая версия приложения: она использует шаг «{0}»",
   "This job's workflow has no step ‘{0}’": "В процессе этой задачи нет шага «{0}»",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}, записано {1}, длительность {2}, {3}",
   "API key saved": "Ключ API сохранён",
   "Applies to new recordings.": "Применяется к новым записям.",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся."
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся.",
+  "Saved on this device": "Сохранён на этом устройстве",
+  "Not saved on this device": "На этом устройстве ключ не сохранён"
 }

@@ -66,7 +66,6 @@
     <string name="retry_in_hours">en %1$d h</string>
     <string name="editor_min_duration">Duración mínima (s)</string>
     <string name="editor_secret">Nombre del secreto</string>
-    <string name="editor_secret_missing">Este dispositivo no tiene el valor del secreto «%1$s»</string>
     <string name="editor_provider">Proveedor</string>
     <string name="editor_api_key">Clave API</string>
     <string name="editor_invoke_url">URL de invocación</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">Modelo (opcional)</string>
     <string name="processing_save_key">Guardar clave</string>
     <string name="processing_key_saved">Clave API guardada</string>
+    <string name="processing_key_on_device">Guardada en este dispositivo</string>
+    <string name="processing_key_not_on_device">No hay ninguna clave guardada en este dispositivo</string>
     <string name="processing_secrets">Claves API</string>
     <string name="processing_keys_not_exported">Las claves API se quedan en este dispositivo y no se incluyen al exportar ajustes.</string>
     <string name="processing_local_running">Transcribiendo en este dispositivo</string>

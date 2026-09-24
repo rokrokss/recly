@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "Cette app ne peut pas exécuter l’étape « {0} »",
   "This cannot be retried right now": "Impossible de réessayer maintenant",
   "This device has no value for the secret ‘{0}’": "Cet appareil n’a pas de valeur pour le secret « {0} »",
-  "This device has no value for ‘{0}’": "Cet appareil n’a pas de valeur pour le secret « {0} »",
   "This host cannot set it (installed Windows apps only).": "Réglage indisponible ici (apps installées sur Windows uniquement).",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "Cette tâche nécessite une version plus récente : elle utilise l’étape « {0} »",
   "This job's workflow has no step ‘{0}’": "Le flux de cette tâche n’a pas d’étape « {0} »",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}, enregistré le {1}, durée {2}, {3}",
   "API key saved": "Clé API enregistrée",
   "Applies to new recordings.": "S’applique aux nouveaux enregistrements.",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Le traitement en attente est suspendu jusqu’à la reconnexion du même compte. Enregistrements, fichiers Drive et clés sont conservés."
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Le traitement en attente est suspendu jusqu’à la reconnexion du même compte. Enregistrements, fichiers Drive et clés sont conservés.",
+  "Saved on this device": "Enregistrée sur cet appareil",
+  "Not saved on this device": "Aucune clé enregistrée sur cet appareil"
 }

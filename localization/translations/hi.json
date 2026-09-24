@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "यह ऐप ‘{0}’ चरण नहीं चला सकता",
   "This cannot be retried right now": "अभी फिर कोशिश नहीं हो सकती",
   "This device has no value for the secret ‘{0}’": "इस डिवाइस पर सीक्रेट ‘{0}’ का मान नहीं है",
-  "This device has no value for ‘{0}’": "इस डिवाइस पर सीक्रेट ‘{0}’ का मान नहीं है",
   "This host cannot set it (installed Windows apps only).": "यहाँ सेट नहीं हो सकता (केवल इंस्टॉल किए Windows ऐप)।",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "इस कार्य को नया ऐप संस्करण चाहिए: यह ‘{0}’ चरण उपयोग करता है",
   "This job's workflow has no step ‘{0}’": "इस कार्य के वर्कफ़्लो में ‘{0}’ चरण नहीं है",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}, रिकॉर्ड किया {1}, अवधि {2}, {3}",
   "API key saved": "API कुंजी सहेजी गई",
   "Applies to new recordings.": "नई रिकॉर्डिंग पर लागू होगा।",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "वही खाता फिर कनेक्ट होने तक लंबित प्रोसेसिंग रुकेगी। रिकॉर्डिंग, Drive फ़ाइलें और कुंजियाँ बनी रहेंगी।"
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "वही खाता फिर कनेक्ट होने तक लंबित प्रोसेसिंग रुकेगी। रिकॉर्डिंग, Drive फ़ाइलें और कुंजियाँ बनी रहेंगी।",
+  "Saved on this device": "इस डिवाइस पर सहेजी गई",
+  "Not saved on this device": "इस डिवाइस पर कोई कुंजी सहेजी नहीं गई"
 }

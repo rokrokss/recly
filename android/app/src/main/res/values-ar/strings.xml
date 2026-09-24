@@ -66,7 +66,6 @@
     <string name="retry_in_hours">بعد %1$d ساعة</string>
     <string name="editor_min_duration">المدة الدنيا (ث)</string>
     <string name="editor_secret">اسم السر</string>
-    <string name="editor_secret_missing">لا توجد قيمة للسر «%1$s» على هذا الجهاز</string>
     <string name="editor_provider">المزوّد</string>
     <string name="editor_api_key">مفتاح API</string>
     <string name="editor_invoke_url">رابط الاستدعاء</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">النموذج (اختياري)</string>
     <string name="processing_save_key">حفظ المفتاح</string>
     <string name="processing_key_saved">تم حفظ مفتاح API</string>
+    <string name="processing_key_on_device">محفوظ على هذا الجهاز</string>
+    <string name="processing_key_not_on_device">لا يوجد مفتاح محفوظ على هذا الجهاز</string>
     <string name="processing_secrets">مفاتيح API</string>
     <string name="processing_keys_not_exported">تبقى مفاتيح API على هذا الجهاز ولا تُضمّن في الإعدادات المُصدّرة.</string>
     <string name="processing_local_running">جارٍ النسخ على هذا الجهاز</string>

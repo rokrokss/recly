@@ -66,7 +66,6 @@
     <string name="retry_in_hours">%1$d घंटे में</string>
     <string name="editor_min_duration">न्यूनतम अवधि (सेकंड)</string>
     <string name="editor_secret">सीक्रेट का नाम</string>
-    <string name="editor_secret_missing">इस डिवाइस पर सीक्रेट ‘%1$s’ का मान नहीं है</string>
     <string name="editor_provider">प्रदाता</string>
     <string name="editor_api_key">API कुंजी</string>
     <string name="editor_invoke_url">कॉल URL</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">मॉडल (वैकल्पिक)</string>
     <string name="processing_save_key">कुंजी सहेजें</string>
     <string name="processing_key_saved">API कुंजी सहेजी गई</string>
+    <string name="processing_key_on_device">इस डिवाइस पर सहेजी गई</string>
+    <string name="processing_key_not_on_device">इस डिवाइस पर कोई कुंजी सहेजी नहीं गई</string>
     <string name="processing_secrets">API कुंजियाँ</string>
     <string name="processing_keys_not_exported">API कुंजियाँ इसी डिवाइस पर रहती हैं और एक्सपोर्ट की गई सेटिंग में शामिल नहीं होतीं।</string>
     <string name="processing_local_running">इस डिवाइस पर ट्रांसक्रिप्शन जारी</string>

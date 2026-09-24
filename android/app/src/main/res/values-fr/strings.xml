@@ -66,7 +66,6 @@
     <string name="retry_in_hours">dans %1$d h</string>
     <string name="editor_min_duration">Durée minimale (s)</string>
     <string name="editor_secret">Nom du secret</string>
-    <string name="editor_secret_missing">Cet appareil n’a pas de valeur pour le secret « %1$s »</string>
     <string name="editor_provider">Fournisseur</string>
     <string name="editor_api_key">Clé API</string>
     <string name="editor_invoke_url">URL d’appel</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">Modèle (facultatif)</string>
     <string name="processing_save_key">Enregistrer la clé</string>
     <string name="processing_key_saved">Clé API enregistrée</string>
+    <string name="processing_key_on_device">Enregistrée sur cet appareil</string>
+    <string name="processing_key_not_on_device">Aucune clé enregistrée sur cet appareil</string>
     <string name="processing_secrets">Clés API</string>
     <string name="processing_keys_not_exported">Les clés API restent sur cet appareil et ne sont pas exportées avec les réglages.</string>
     <string name="processing_local_running">Transcription sur cet appareil</string>

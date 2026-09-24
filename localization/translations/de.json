@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "Diese App kann den Schritt „{0}“ nicht ausführen",
   "This cannot be retried right now": "Erneuter Versuch momentan nicht möglich",
   "This device has no value for the secret ‘{0}’": "Auf diesem Gerät fehlt der Wert für „{0}“",
-  "This device has no value for ‘{0}’": "Auf diesem Gerät fehlt der Wert für „{0}“",
   "This host cannot set it (installed Windows apps only).": "Hier nicht einstellbar (nur für installierte Windows-Apps).",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "Dieser Auftrag benötigt eine neuere App-Version: Er verwendet den Schritt „{0}“",
   "This job's workflow has no step ‘{0}’": "Der Workflow dieses Auftrags hat keinen Schritt „{0}“",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}, aufgenommen {1}, Dauer {2}, {3}",
   "API key saved": "API-Schlüssel gespeichert",
   "Applies to new recordings.": "Gilt für neue Aufnahmen.",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Ausstehende Verarbeitung pausiert, bis dasselbe Konto erneut verbunden ist. Aufnahmen, Drive-Dateien und Schlüssel bleiben erhalten."
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Ausstehende Verarbeitung pausiert, bis dasselbe Konto erneut verbunden ist. Aufnahmen, Drive-Dateien und Schlüssel bleiben erhalten.",
+  "Saved on this device": "Auf diesem Gerät gespeichert",
+  "Not saved on this device": "Auf diesem Gerät ist kein Schlüssel gespeichert"
 }

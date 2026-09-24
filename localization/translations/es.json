@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "Esta app no puede ejecutar un paso «{0}»",
   "This cannot be retried right now": "No se puede reintentar ahora",
   "This device has no value for the secret ‘{0}’": "Este dispositivo no tiene el valor del secreto «{0}»",
-  "This device has no value for ‘{0}’": "Este dispositivo no tiene el valor del secreto «{0}»",
   "This host cannot set it (installed Windows apps only).": "No se puede configurar aquí (solo apps instaladas en Windows).",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "Esta tarea requiere una versión más reciente: usa un paso «{0}»",
   "This job's workflow has no step ‘{0}’": "El flujo de esta tarea no tiene el paso «{0}»",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}, grabado {1}, duración {2}, {3}",
   "API key saved": "Clave API guardada",
   "Applies to new recordings.": "Se aplica a las nuevas grabaciones.",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "El procesamiento pendiente se pausa hasta reconectar la misma cuenta. Se conservan grabaciones, archivos de Drive y claves."
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "El procesamiento pendiente se pausa hasta reconectar la misma cuenta. Se conservan grabaciones, archivos de Drive y claves.",
+  "Saved on this device": "Guardada en este dispositivo",
+  "Not saved on this device": "No hay ninguna clave guardada en este dispositivo"
 }

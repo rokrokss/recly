@@ -301,7 +301,6 @@
   "This app cannot run a ‘{0}’ step": "このアプリは「{0}」ステップを実行できません",
   "This cannot be retried right now": "今は再試行できません",
   "This device has no value for the secret ‘{0}’": "このデバイスにはシークレット「{0}」の値がありません",
-  "This device has no value for ‘{0}’": "このデバイスにはシークレット「{0}」の値がありません",
   "This host cannot set it (installed Windows apps only).": "この環境では設定できません（Windowsにインストールしたアプリのみ）。",
   "This job needs a newer version of the app: it uses a ‘{0}’ step": "このジョブは「{0}」ステップを使うため、新しいバージョンのアプリが必要です",
   "This job's workflow has no step ‘{0}’": "このジョブのワークフローには「{0}」ステップがありません",
@@ -375,5 +374,7 @@
   "{0}, recorded {1}, length {2}, {3}": "{0}、録音日時{1}、長さ{2}、{3}",
   "API key saved": "APIキーを保存しました",
   "Applies to new recordings.": "新しい録音に適用されます。",
-  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。"
+  "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。",
+  "Saved on this device": "このデバイスに保存済み",
+  "Not saved on this device": "このデバイスに保存されたキーはありません"
 }

@@ -119,9 +119,12 @@ private fun ProcessingField(label: Int, value: String, change: (String) -> Unit)
 @Composable
 private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save: (String, String, () -> Unit) -> Any) {
     var value by remember(name) { mutableStateOf("") }
-    if (name.isNotBlank() && name !in saved) Text(stringResource(R.string.editor_secret_missing, name), style = MaterialTheme.typography.bodySmall)
+    // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
     OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
-        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth())
+        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+        supportingText = if (name.isBlank()) null else {
+            { Text(stringResource(if (name in saved) R.string.processing_key_on_device else R.string.processing_key_not_on_device)) }
+        })
     BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = "" } },
         enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
 }

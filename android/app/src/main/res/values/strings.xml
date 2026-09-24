@@ -92,7 +92,6 @@
     <!-- Processing settings (docs/05). -->
     <string name="editor_min_duration">Minimum length (s)</string>
     <string name="editor_secret">Secret name</string>
-    <string name="editor_secret_missing">This device has no value for ‘%1$s’</string>
 
     <!-- docs/08: the transcribe inspector. -->
     <string name="editor_provider">Provider</string>
@@ -315,6 +314,8 @@
     <string name="processing_model">Model (optional)</string>
     <string name="processing_save_key">Save key</string>
     <string name="processing_key_saved">API key saved</string>
+    <string name="processing_key_on_device">Saved on this device</string>
+    <string name="processing_key_not_on_device">Not saved on this device</string>
     <string name="processing_secrets">API keys</string>
     <string name="processing_keys_not_exported">API keys stay on this device and are not included in exported settings.</string>
     <string name="processing_local_running">Transcribing on this device</string>

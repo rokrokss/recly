@@ -66,7 +66,6 @@
     <string name="retry_in_hours">in %1$d Std.</string>
     <string name="editor_min_duration">Mindestdauer (s)</string>
     <string name="editor_secret">Name des geheimen Werts</string>
-    <string name="editor_secret_missing">Auf diesem Gerät fehlt der Wert für „%1$s“</string>
     <string name="editor_provider">Anbieter</string>
     <string name="editor_api_key">API-Schlüssel</string>
     <string name="editor_invoke_url">Aufruf-URL</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">Modell (optional)</string>
     <string name="processing_save_key">Schlüssel speichern</string>
     <string name="processing_key_saved">API-Schlüssel gespeichert</string>
+    <string name="processing_key_on_device">Auf diesem Gerät gespeichert</string>
+    <string name="processing_key_not_on_device">Auf diesem Gerät ist kein Schlüssel gespeichert</string>
     <string name="processing_secrets">API-Schlüssel</string>
     <string name="processing_keys_not_exported">API-Schlüssel bleiben auf diesem Gerät und sind nicht in exportierten Einstellungen enthalten.</string>
     <string name="processing_local_running">Transkription auf diesem Gerät</string>

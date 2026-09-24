@@ -66,7 +66,6 @@
     <string name="retry_in_hours">через %1$d ч</string>
     <string name="editor_min_duration">Минимальная длительность (с)</string>
     <string name="editor_secret">Имя секрета</string>
-    <string name="editor_secret_missing">На этом устройстве нет значения секрета «%1$s»</string>
     <string name="editor_provider">Провайдер</string>
     <string name="editor_api_key">Ключ API</string>
     <string name="editor_invoke_url">URL вызова</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">Модель (необязательно)</string>
     <string name="processing_save_key">Сохранить ключ</string>
     <string name="processing_key_saved">Ключ API сохранён</string>
+    <string name="processing_key_on_device">Сохранён на этом устройстве</string>
+    <string name="processing_key_not_on_device">На этом устройстве ключ не сохранён</string>
     <string name="processing_secrets">Ключи API</string>
     <string name="processing_keys_not_exported">Ключи API остаются на этом устройстве и не включаются в экспорт настроек.</string>
     <string name="processing_local_running">Расшифровка на этом устройстве</string>

@@ -66,7 +66,6 @@
     <string name="retry_in_hours">%1$d小时后</string>
     <string name="editor_min_duration">最短时长（秒）</string>
     <string name="editor_secret">机密凭据名称</string>
-    <string name="editor_secret_missing">此设备上没有机密凭据“%1$s”的值</string>
     <string name="editor_provider">提供商</string>
     <string name="editor_api_key">API密钥</string>
     <string name="editor_invoke_url">调用URL</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">模型（可选）</string>
     <string name="processing_save_key">保存密钥</string>
     <string name="processing_key_saved">API密钥已保存</string>
+    <string name="processing_key_on_device">已保存在此设备上</string>
+    <string name="processing_key_not_on_device">此设备上未保存密钥</string>
     <string name="processing_secrets">API密钥</string>
     <string name="processing_keys_not_exported">API密钥仅保留在此设备上，不包含在导出的设置中。</string>
     <string name="processing_local_running">正在此设备上转录</string>

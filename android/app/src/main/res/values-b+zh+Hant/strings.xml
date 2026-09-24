@@ -66,7 +66,6 @@
     <string name="retry_in_hours">%1$d小時後</string>
     <string name="editor_min_duration">最短時長（秒）</string>
     <string name="editor_secret">機密憑證名稱</string>
-    <string name="editor_secret_missing">此裝置上沒有機密憑證「%1$s」的值</string>
     <string name="editor_provider">供應商</string>
     <string name="editor_api_key">API金鑰</string>
     <string name="editor_invoke_url">呼叫URL</string>
@@ -236,6 +235,8 @@
     <string name="processing_model">模型（選填）</string>
     <string name="processing_save_key">儲存金鑰</string>
     <string name="processing_key_saved">API金鑰已儲存</string>
+    <string name="processing_key_on_device">已儲存在此裝置上</string>
+    <string name="processing_key_not_on_device">此裝置上未儲存金鑰</string>
     <string name="processing_secrets">API金鑰</string>
     <string name="processing_keys_not_exported">API金鑰僅保留在此裝置上，不包含在匯出的設定中。</string>
     <string name="processing_local_running">正在此裝置上轉錄</string>

@@ -281,6 +281,10 @@ private struct ProcessingKeyField: View {
     @State private var value = ""
     var body: some View {
         BlueprintField(RecKitStrings.localized("API key"), text: $value, secure: true)
+        // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
+        if !name.isEmpty {
+            SectionFootnote(RecKitStrings.localized(model.secretNames.contains(name) ? "Saved on this device" : "Not saved on this device"))
+        }
         BlueprintButton(RecKitStrings.localized("Save key"), tone: .quiet) {
             Task { if await model.saveKey(name, value: value) { value = "" } }
         }.disabled(name.isEmpty || value.isEmpty)
