@@ -7,6 +7,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.flow.Flow
 import recly.core.model.Workflow
 import recly.core.platform.CoreDeps
+import recly.core.processing.ProcessingPlan
 import recly.core.recording.RecordingRepository
 
 sealed interface EnqueueResult {
@@ -33,6 +34,11 @@ class JobService(
     private val store: JobStore,
     private val recordings: RecordingRepository,
     private val executor: Executor,
+    /**
+     * docs/10 "재시도": the fixed plan compiled from the current processing settings, for a manual
+     * rerun of [recordingId]'s job. Null leaves reruns on the job's own snapshot.
+     */
+    private val planForRerun: (suspend (recordingId: String) -> Workflow?)? = null,
 ) {
     private val retention = Retention(deps, store, recordings)
 
@@ -104,7 +110,10 @@ class JobService(
             }
 
             job.status in RETRYABLE -> {
-                store.resetForRerun(jobId, now)
+                // A fixed-plan job reruns with the settings the user has now — a replaced key, a
+                // corrected address or another provider — not with what was frozen when it began.
+                val plan = if (job.workflowId == ProcessingPlan.ID) planForRerun?.invoke(job.recordingId) else null
+                if (plan != null) store.replanForRerun(jobId, plan, now) else store.resetForRerun(jobId, now)
                 true
             }
 

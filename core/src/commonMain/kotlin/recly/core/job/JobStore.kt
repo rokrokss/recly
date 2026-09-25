@@ -354,6 +354,42 @@ class JobStore(
      * retry budget, while `state_json` stays so a partial upload is not thrown away. */
     suspend fun resetForRerun(jobId: String, now: Instant): Unit = locked { resetRows(jobId, now) }
 
+    /**
+     * docs/10 "재시도": a manual rerun runs what is left with the processing settings as they are now.
+     * A step that already succeeded keeps its run and the definition it ran with (an upload is not
+     * repeated); every other step takes [plan]'s definition, starts over, and loses its provider
+     * state when that definition changed (the submission belonged to the old one). Steps [plan] no
+     * longer has are dropped unless they already ran; steps it adds get fresh runs.
+     */
+    suspend fun replanForRerun(jobId: String, plan: Workflow, now: Instant): Unit = locked {
+        db.transaction {
+            val old = job(jobId)?.workflow ?: return@transaction resetRows(jobId, now)
+            val runs = queries.selectStepRunsByJob(jobId).executeAsList().map { it.toStepRun() }
+            val done = runs.filter { it.status == StepStatus.SUCCEEDED }.map { it.stepId }.toSet()
+            val before = old.steps.associateBy { it.id }
+            val steps = plan.steps.map { step -> if (step.id in done) before[step.id] ?: step else step } +
+                old.steps.filter { it.id in done && plan.steps.none { step -> step.id == it.id } }
+            steps.forEachIndexed { index, step ->
+                val run = runs.firstOrNull { it.stepId == step.id }
+                when {
+                    run == null -> queries.insertStepRun(
+                        Ulid.generate(fixed(now)), jobId, step.id, index.toLong(), StepStatus.PENDING.name,
+                        0, null, null, null, null,
+                    )
+                    run.status == StepStatus.SUCCEEDED -> queries.updateStepOrdinal(index.toLong(), run.id)
+                    else -> {
+                        writeStep(run.copy(status = StepStatus.PENDING, attempts = 0, nextAttemptAt = null, lastError = null))
+                        if (before[step.id] != step) queries.clearStepState(run.id)
+                        queries.updateStepOrdinal(index.toLong(), run.id)
+                    }
+                }
+            }
+            runs.filter { run -> steps.none { it.id == run.stepId } }.forEach { queries.deleteStepRunById(it.id) }
+            queries.updateJobWorkflow(recJson.encodeToString(plan.copy(steps = steps)), now.isoUtc(), jobId)
+            queries.updateJobStatus(JobStatus.PENDING.name, null, now.isoUtc(), jobId)
+        }
+    }
+
     /** Model preparation releases only its blocked step, without resetting other work or consent. */
     internal suspend fun resumeModelRequired(jobId: String, stepRunId: String, now: Instant): Boolean = locked {
         db.transactionWithResult {

@@ -103,6 +103,14 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
         }
     }
 
+    /** A manual rerun re-freezes the recording on the settings it now runs with (docs/10 "재시도"). */
+    @Throws(Throwable::class)
+    suspend fun refreeze(recordingId: String): ProcessingSettingsDocument {
+        val document = initialize().document
+        locked { queries.syncSet(RECORDING_PREFIX + recordingId, ProcessingSettingsParser.serialize(document)) }
+        return document
+    }
+
     /** Null when nothing was frozen for [recordingId], or what was frozen no longer reads. */
     @Throws(Throwable::class)
     suspend fun recordingSnapshot(recordingId: String): ProcessingSettingsDocument? = locked {

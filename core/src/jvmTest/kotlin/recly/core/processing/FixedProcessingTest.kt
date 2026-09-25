@@ -151,6 +151,45 @@ class FixedProcessingTest {
         assertFalse(StepReport.localPending(job.workflow, h.store.stepsOf(job.id)))
     }
 
+    @Test fun `a manual rerun runs what is left with the current settings and keeps finished work`() = runBlocking<Unit> {
+        val h = Harness()
+        val first = h.core.initializeProcessing().document
+        val old = first.settings.copy(transcription = ProcessingTranscription(mode = TranscriptionMode.EXTERNAL,
+            external = ExternalTranscription("clova", "khrbasic", "https://clovaspeech-gw.ncloud.com/external/v1/1/abc")))
+        val saved = assertIs<ProcessingSaveResult.Saved>(h.core.processingSettings.save(old, first.revision)).document
+        h.capture()
+        val job = h.enqueue()
+        val runs = h.store.stepsOf(job.id)
+        h.store.updateStep(runs[0].copy(status = StepStatus.SUCCEEDED, output = buildJsonObject { put("folderId", "folder-1") }))
+        h.store.updateStep(runs[1].copy(status = StepStatus.FAILED, attempts = 1, lastError = CoreMessage.MISSING_SECRET.code("khrbasic")))
+        h.store.updateJob(job.id, JobStatus.FAILED, null, START)
+        // The user replaces the key: the new settings name the provider's own key.
+        val fixed = old.copy(transcription = old.transcription.copy(external = ExternalTranscription("clova", "clova",
+            "https://clovaspeech-gw.ncloud.com/external/v1/1/abc")))
+        h.core.processingSettings.save(fixed, saved.revision)
+
+        assertTrue(h.core.jobs.retry(job.id))
+
+        val rerun = h.store.get(job.id)!!
+        assertEquals(JobStatus.PENDING, rerun.status)
+        assertEquals("clova", (rerun.workflow!!.steps[1] as Step.Transcribe).secretRef, "the rerun uses the key named now")
+        val after = h.store.stepsOf(job.id)
+        assertEquals(StepStatus.SUCCEEDED, after[0].status, "the upload is not repeated")
+        assertEquals("folder-1", after[0].outputString("folderId"))
+        assertEquals(StepStatus.PENDING, after[1].status)
+        assertEquals(0, after[1].attempts)
+        assertNull(after[1].lastError)
+        assertEquals("clova", h.core.processingSettings.recordingSnapshot(h.id)!!.settings.transcription.external!!.secretRef)
+
+        // Turning transcription off and rerunning leaves only the finished upload.
+        h.store.updateJob(job.id, JobStatus.FAILED, null, START)
+        val current = h.core.processingSettings.read() as ProcessingSettingsState.Ready
+        h.core.processingSettings.save(current.document.settings.copy(transcription = ProcessingTranscription(mode = TranscriptionMode.OFF)), current.document.revision)
+        assertTrue(h.core.jobs.retry(job.id))
+        assertEquals(listOf("upload"), h.store.get(job.id)!!.workflow!!.steps.map { it.id })
+        assertEquals(listOf("upload"), h.store.stepsOf(job.id).map { it.stepId })
+    }
+
     @Test fun `capture freezes settings while future captures use the new revision`() = runBlocking<Unit> {
         val h = Harness(Engine())
         val first = assertIs<ProcessingSettingsState.Ready>(h.core.initializeProcessing()).document

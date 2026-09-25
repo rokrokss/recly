@@ -265,6 +265,16 @@ UPDATE step_run SET output_json = ? WHERE id = ?;
 updateStepState:
 UPDATE step_run SET state_json = ? WHERE id = ?;
 
+-- A manual rerun re-plans what is left from the current processing settings (docs/10 "재시도").
+updateJobWorkflow:
+UPDATE job SET workflow_json = ?, updated_at = ? WHERE id = ?;
+
+deleteStepRunById:
+DELETE FROM step_run WHERE id = ?;
+
+updateStepOrdinal:
+UPDATE step_run SET ordinal = ? WHERE id = ?;
+
 resetStepRuns:
 UPDATE step_run SET status = 'PENDING', attempts = 0, next_attempt_at = NULL, last_error = NULL
 WHERE job_id = ? AND status IN ('PENDING', 'RUNNING', 'FAILED', 'NEEDS_AUTH', 'NEEDS_SPACE');

@@ -166,6 +166,7 @@ class ReclyCore(
                 prepare = { driveJobAccess.prepare() },
                 requireAccess = { driveJobAccess.requireAccess(it) },
             ),
+            planForRerun = { recordingId -> ProcessingPlan.compile(processingSettings.refreeze(recordingId)) },
         )
 
     private val driveStore: DriveStore = DriveStore(db, deps)
