@@ -228,7 +228,6 @@
   "Saving": "保存中",
   "Saving…": "保存中…",
   "Search transcript": "文字起こしを検索",
-  "Secret name": "シークレット名",
   "Sending {0}": "送信中 {0}",
   "Settings": "設定",
   "Settings saved": "設定を保存しました",
@@ -368,6 +367,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。",
   "Saved on this device": "このデバイスに保存済み",
   "Not saved on this device": "このデバイスに保存されたキーはありません",
-  "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。",
-  "Download Apple’s speech model to transcribe on this device.": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。"
+  "Download Apple’s speech model to transcribe on this device.": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。",
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
 }

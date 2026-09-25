@@ -4,10 +4,14 @@ package app.recly.android.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -20,6 +24,7 @@ import app.recly.android.ui.theme.blueprint
 import recly.core.model.Language
 import recly.core.processing.*
 import java.util.Locale
+import recly.core.transcribe.SttProviders
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.workflow.InvokeUrlUse
@@ -36,7 +41,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let { model.export(it) } }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importSettings) }
     SectionHeader(stringResource(R.string.processing_title))
-    deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, name), onDismissRequest = { deletingKey = null }, actions = {
+    deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, SttProviders.displayName(name)), onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
         BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null })
     }) { Text(name) } }
@@ -60,17 +65,16 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
         }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
             var providers by remember { mutableStateOf(false) }
-            Text(stringResource(R.string.editor_provider), style = MaterialTheme.typography.labelMedium)
-            BlueprintButton(draft.provider, { providers = true }, tone = ButtonTone.QUIET)
+            // docs/09 원칙 4: a settings row, "Provider … ElevenLabs", like the app language row.
+            ProcessingRow(stringResource(R.string.editor_provider), SttProviders.displayName(draft.provider)) { providers = true }
             if (providers) BlueprintDialog(title = stringResource(R.string.editor_provider), onDismissRequest = { providers = false }, actions = {
                 BlueprintButton(stringResource(R.string.action_close), { providers = false }, tone = ButtonTone.QUIET)
             }) {
-                WorkflowParser.STT_PROVIDERS.forEach { name -> BlueprintRadioRow(name, draft.provider == name, {
+                WorkflowParser.STT_PROVIDERS.forEach { name -> BlueprintRadioRow(SttProviders.displayName(name), draft.provider == name, {
                     model.edit { it.selectProvider(name) }; providers = false
                 }) }
             }
-            Text(stringResource(R.string.provider_disclosure_transcribe), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-            ProcessingField(R.string.editor_secret, draft.secretRef) { v -> model.edit { it.secretRef = v } }
+            Text(stringResource(R.string.provider_disclosure_transcribe, SttProviders.displayName(draft.provider)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey)
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) {
                 ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
@@ -80,14 +84,13 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             if (state.secretNames.isNotEmpty()) {
                 SectionHeader(stringResource(R.string.processing_secrets))
                 state.secretNames.forEach { name ->
-                    Text(name, style = MaterialTheme.typography.bodySmall)
+                    Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall)
                     BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
                 }
             }
         }
         if (draft.mode != TranscriptionMode.OFF) {
-            Text(stringResource(R.string.editor_language), style = MaterialTheme.typography.labelMedium)
-            BlueprintButton(transcriptionLanguageLabel(draft.language), { pickingLanguage = true }, tone = ButtonTone.QUIET)
+            ProcessingRow(stringResource(R.string.editor_language), transcriptionLanguageLabel(draft.language)) { pickingLanguage = true }
             if (!languageSupported) Text(stringResource(R.string.processing_language_unsupported))
             if (pickingLanguage) BlueprintDialog(title = stringResource(R.string.editor_language), onDismissRequest = { pickingLanguage = false }, actions = {
                 BlueprintButton(stringResource(R.string.action_close), { pickingLanguage = false }, tone = ButtonTone.QUIET)
@@ -108,6 +111,19 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 enabled = state.stored is ProcessingSettingsState.Ready && !state.dirty)
             BlueprintButton(stringResource(R.string.processing_import), { importPicker.launch(arrayOf("application/json", "text/plain")) }, tone = ButtonTone.QUIET, enabled = !state.dirty)
         }
+    }
+}
+
+/** The app language row's shape (label, quiet value, tap to choose) without a second inset. */
+@Composable
+private fun ProcessingRow(title: String, value: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = Space.s),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
     }
 }
 

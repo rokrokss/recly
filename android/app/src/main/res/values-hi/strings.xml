@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">%1$d मिनट में</string>
     <string name="retry_in_hours">%1$d घंटे में</string>
     <string name="editor_min_duration">न्यूनतम अवधि (सेकंड)</string>
-    <string name="editor_secret">सीक्रेट का नाम</string>
     <string name="editor_provider">प्रदाता</string>
     <string name="editor_api_key">API कुंजी</string>
     <string name="editor_invoke_url">कॉल URL</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">प्रतीक्षारत रिकॉर्डिंग: %1$d।</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
+    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %1$s को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
     <string name="settings_consent_reminder">सहमति की याद दिलाएँ</string>
     <string name="consent_question">क्या आपने प्रतिभागियों को रिकॉर्डिंग के बारे में बताया है?</string>
     <string name="consent_body">यह रिकॉर्डिंग मीटिंग के अन्य लोगों को कोई संकेत नहीं देती। उन्हें बताना रिकॉर्ड करने वाले की ज़िम्मेदारी है।\n\nकोरिया: आप उस बातचीत को रिकॉर्ड कर सकते हैं जिसमें आप शामिल हैं; अन्य बातचीत रिकॉर्ड करना प्रतिबंधित है।\nअमेरिका: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA में सभी प्रतिभागियों की सहमति चाहिए।\nEU: GDPR सूचना और वैध आधार माँगता है; डेनमार्क में व्यावसायिक कॉल के लिए स्पष्ट सहमति आवश्यक है।</string>

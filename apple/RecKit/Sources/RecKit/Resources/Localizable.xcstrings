@@ -6777,83 +6777,6 @@
         }
       }
     },
-    "Secret name": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Secret name"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "시크릿 이름"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "シークレット名"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "机密凭据名称"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "機密憑證名稱"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nombre del secreto"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nom du secret"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Name des geheimen Werts"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nome do segredo"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اسم السر"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "सीक्रेट का नाम"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Имя секрета"
-          }
-        }
-      }
-    },
     "Sign in": {
       "extractionState": "manual",
       "localizations": {
@@ -10554,73 +10477,73 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it."
+            "value": "External transcription sends the whole recording to %@.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "외부 전사는 녹음 오디오 전체를 고른 업체로 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요."
+            "value": "외부 전사는 녹음 오디오 전체를 %@에 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "外部の文字起こしでは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
+            "value": "外部の文字起こしでは、録音全体を%@に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "外部转录会将完整录音发送给所选提供商。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
+            "value": "外部转录会将完整录音发送给%@。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "外部轉錄會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
+            "value": "外部轉錄會將完整錄音傳送給%@。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La transcripción externa envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo."
+            "value": "La transcripción externa envía la grabación completa a %@.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "La transcription externe envoie l’enregistrement complet au fournisseur choisi.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser."
+            "value": "La transcription externe envoie l’enregistrement complet à %@.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die externe Transkription sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
+            "value": "Die externe Transkription sendet die gesamte Aufnahme an %@.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "A transcrição externa envia a gravação inteira ao provedor escolhido.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar."
+            "value": "A transcrição externa envia a gravação inteira para %@.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "يرسل النسخ الخارجي التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
+            "value": "يرسل النسخ الخارجي التسجيل كاملًا إلى %@.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
+            "value": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग %@ को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Внешняя расшифровка отправляет всю запись выбранному провайдеру.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
+            "value": "Внешняя расшифровка отправляет всю запись в %@.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
           }
         }
       }

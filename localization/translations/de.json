@@ -228,7 +228,6 @@
   "Saving": "Wird gespeichert",
   "Saving…": "Wird gespeichert…",
   "Search transcript": "Transkript durchsuchen",
-  "Secret name": "Name des geheimen Werts",
   "Sending {0}": "Wird gesendet: {0}",
   "Settings": "Einstellungen",
   "Settings saved": "Einstellungen gespeichert",
@@ -368,6 +367,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Ausstehende Verarbeitung pausiert, bis dasselbe Konto erneut verbunden ist. Aufnahmen, Drive-Dateien und Schlüssel bleiben erhalten.",
   "Saved on this device": "Auf diesem Gerät gespeichert",
   "Not saved on this device": "Auf diesem Gerät ist kein Schlüssel gespeichert",
-  "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.",
-  "Download Apple’s speech model to transcribe on this device.": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter."
+  "Download Apple’s speech model to transcribe on this device.": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter.",
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an {0}.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
 }

@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">بعد %1$d دقيقة</string>
     <string name="retry_in_hours">بعد %1$d ساعة</string>
     <string name="editor_min_duration">المدة الدنيا (ث)</string>
-    <string name="editor_secret">اسم السر</string>
     <string name="editor_provider">المزوّد</string>
     <string name="editor_api_key">مفتاح API</string>
     <string name="editor_invoke_url">رابط الاستدعاء</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">التسجيلات المنتظرة: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
+    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى %1$s.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
     <string name="settings_consent_reminder">تذكير بالموافقة</string>
     <string name="consent_question">هل أخبرت المشاركين بالتسجيل؟</string>
     <string name="consent_body">لا يظهر هذا التسجيل أي إشارة للمشاركين الآخرين. إبلاغهم مسؤولية من يسجّل.\n\nكوريا: يجوز تسجيل محادثة تشارك فيها، ويُحظر تسجيل محادثة لا تشارك فيها.\nالولايات المتحدة: تتطلب CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA موافقة جميع المشاركين.\nالاتحاد الأوروبي: تتطلب GDPR إخطارًا وأساسًا قانونيًا، وتتطلب الدنمارك موافقة صريحة للمكالمات التجارية.</string>

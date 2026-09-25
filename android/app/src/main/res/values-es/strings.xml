@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">en %1$d min</string>
     <string name="retry_in_hours">en %1$d h</string>
     <string name="editor_min_duration">Duración mínima (s)</string>
-    <string name="editor_secret">Nombre del secreto</string>
     <string name="editor_provider">Proveedor</string>
     <string name="editor_api_key">Clave API</string>
     <string name="editor_invoke_url">URL de invocación</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">Grabaciones en espera: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">La transcripción externa envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
+    <string name="provider_disclosure_transcribe">La transcripción externa envía la grabación completa a %1$s.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
     <string name="settings_consent_reminder">Recordatorio de consentimiento</string>
     <string name="consent_question">¿Has avisado a los participantes de la grabación?</string>
     <string name="consent_body">Esta grabación no muestra ningún aviso a los demás participantes. Informarles es responsabilidad de quien graba.\n\nCorea: puedes grabar una conversación en la que participas (está prohibido grabar una en la que no participas).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA requieren el consentimiento de todos.\nUE: el RGPD exige informar y contar con una base jurídica; Dinamarca exige consentimiento explícito para llamadas de negocios.</string>

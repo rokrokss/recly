@@ -234,7 +234,6 @@ enum class Str {
     SECRET_VALUE_REQUIRED,
 
     FIELD_MIN_DURATION,
-    FIELD_SECRET_NAME,
 
     // docs/08: the transcription settings.
     FIELD_PROVIDER,

@@ -69,7 +69,8 @@ final class ProviderDisclosureTests: XCTestCase {
             for (key, name) in Self.pairs {
                 let ours = try XCTUnwrap(catalog[key]?[language], "RecKit has no \(key) in \(language)")
                 let theirs = try XCTUnwrap(android[name], "android has no \(name) in \(locale)")
-                XCTAssertEqual(ours, theirs, "\(key) is not the Android wording in \(language)")
+                // The provider's name is an argument: `%@` here, `%1$s` in Android resources.
+                XCTAssertEqual(ours, theirs.replacingOccurrences(of: "%1$s", with: "%@"), "\(key) is not the Android wording in \(language)")
             }
         }
     }

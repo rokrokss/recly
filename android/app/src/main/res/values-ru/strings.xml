@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">через %1$d мин</string>
     <string name="retry_in_hours">через %1$d ч</string>
     <string name="editor_min_duration">Минимальная длительность (с)</string>
-    <string name="editor_secret">Имя секрета</string>
     <string name="editor_provider">Провайдер</string>
     <string name="editor_api_key">Ключ API</string>
     <string name="editor_invoke_url">URL вызова</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">Ожидающих записей: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись выбранному провайдеру.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
+    <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
     <string name="settings_consent_reminder">Напоминание о согласии</string>
     <string name="consent_question">Вы сообщили участникам о записи?</string>
     <string name="consent_body">Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.\n\nКорея: можно записывать разговор, в котором вы участвуете; запись чужого разговора запрещена.\nСША: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA требуют согласия всех участников.\nЕС: GDPR требует уведомления и правового основания; Дания требует явного согласия для деловых звонков.</string>

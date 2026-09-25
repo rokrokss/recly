@@ -1107,7 +1107,7 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
 
 ### 시크릿
 
-- 이름: `^[a-z][a-z0-9_]{0,31}$`. 녹음 처리 설정에는 이름(`secretRef`)만 들어간다(ADR-008).
+- 이름: `^[a-z][a-z0-9_]{0,31}$`. 녹음 처리 설정에는 이름(`secretRef`)만 들어간다(ADR-008). 이름은 **제공자 id 그대로**다(`elevenlabs`, `clova` …, 2026-09-25) — 제공자마다 키가 따로 남아 제공자를 바꿔도 다른 업체의 키가 전송되지 않고, 설정 화면에는 이름 입력칸이 없다. 설정 화면과 녹음 화면의 전사 노드는 제공자를 `SttProviders.displayName`(ElevenLabs, CLOVA Speech …, 번역하지 않는 고유명사)으로 보여 주고, 전사 파일·로그·설정 문서에는 id를 그대로 쓴다.
 - 저장:
 
 | 플랫폼 | 구현 | 세부 |
@@ -2685,13 +2685,13 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 - **이 고지는 세 셸의 녹음 처리 설정에 있다.** 외부 전사의 **provider 선택 바로 아래**에 세 줄이 뜬다.
   문구는 세 셸이 글자 그대로 같고(대조 테스트) en·ko 양쪽에 있다.
 
-  `transcribe`(ko / en):
+  `transcribe`(ko / en; `{업체}`는 고른 제공자의 표시 이름, 2026-09-25):
 
-  > 이 단계를 실행하면 녹음 오디오 전체가 고른 업체로 전송됩니다.
+  > 외부 전사는 녹음 오디오 전체를 {업체}에 보냅니다.
   > 얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.
   > 쓰기 전에 업체의 정책을 확인하세요.
 
-  > Running this step sends the whole recording to the provider you pick.
+  > External transcription sends the whole recording to {provider}.
   > How long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.
   > Read the provider's policy before you use it.
 

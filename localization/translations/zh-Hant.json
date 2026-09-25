@@ -228,7 +228,6 @@
   "Saving": "儲存中",
   "Saving…": "儲存中…",
   "Search transcript": "搜尋逐字稿",
-  "Secret name": "機密憑證名稱",
   "Sending {0}": "正在傳送{0}",
   "Settings": "設定",
   "Settings saved": "設定已儲存",
@@ -368,6 +367,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新連接同一帳戶前，待處理工作將暫停。錄音、Drive檔案和金鑰都會保留。",
   "Saved on this device": "已儲存在此裝置上",
   "Not saved on this device": "此裝置上未儲存金鑰",
-  "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部轉錄會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。",
-  "Download Apple’s speech model to transcribe on this device.": "下載Apple語音模型即可在此裝置上轉錄。"
+  "Download Apple’s speech model to transcribe on this device.": "下載Apple語音模型即可在此裝置上轉錄。",
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部轉錄會將完整錄音傳送給{0}。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
 }

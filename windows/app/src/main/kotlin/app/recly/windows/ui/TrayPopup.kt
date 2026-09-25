@@ -104,7 +104,7 @@ private fun Header(model: ShellModel, strings: Strings) {
                 NodeSpec(strings[Str.NODE_DEVICE], Source.DESKTOP.name.lowercase(Locale.ROOT)),
                 NodeSpec(
                     label = strings[Str.PROCESSING_TRANSCRIPTION],
-                    value = model.processing?.summary?.let { if (it.mode == recly.core.processing.TranscriptionMode.EXTERNAL) it.external?.provider.orEmpty() else strings[it.mode.label()] } ?: strings[Str.PROCESSING_LOCAL],
+                    value = model.processing?.summary?.let { if (it.mode == recly.core.processing.TranscriptionMode.EXTERNAL) it.external?.provider?.let(recly.core.transcribe.SttProviders::displayName).orEmpty() else strings[it.mode.label()] } ?: strings[Str.PROCESSING_LOCAL],
                 ),
                 model.stateNode(strings[Str.NODE_STATE], palette),
             ),

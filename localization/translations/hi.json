@@ -228,7 +228,6 @@
   "Saving": "सहेजा जा रहा है",
   "Saving…": "सहेजा जा रहा है…",
   "Search transcript": "ट्रांसक्रिप्ट खोजें",
-  "Secret name": "सीक्रेट का नाम",
   "Sending {0}": "{0} भेजा जा रहा है",
   "Settings": "सेटिंग",
   "Settings saved": "सेटिंग सहेजी गई",
@@ -368,6 +367,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "वही खाता फिर कनेक्ट होने तक लंबित प्रोसेसिंग रुकेगी। रिकॉर्डिंग, Drive फ़ाइलें और कुंजियाँ बनी रहेंगी।",
   "Saved on this device": "इस डिवाइस पर सहेजी गई",
   "Not saved on this device": "इस डिवाइस पर कोई कुंजी सहेजी नहीं गई",
-  "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।",
-  "Download Apple’s speech model to transcribe on this device.": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें।"
+  "Download Apple’s speech model to transcribe on this device.": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें।",
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग {0} को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
 }

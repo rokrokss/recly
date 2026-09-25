@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">%1$d分钟后</string>
     <string name="retry_in_hours">%1$d小时后</string>
     <string name="editor_min_duration">最短时长（秒）</string>
-    <string name="editor_secret">机密凭据名称</string>
     <string name="editor_provider">提供商</string>
     <string name="editor_api_key">API密钥</string>
     <string name="editor_invoke_url">调用URL</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">%1$d条录音正在等待。</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">外部转录会将完整录音发送给所选提供商。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。</string>
+    <string name="provider_disclosure_transcribe">外部转录会将完整录音发送给%1$s。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
     <string name="consent_question">您已告知参与者将进行录音吗？</string>
     <string name="consent_body">此录音不会向会议中的其他人显示任何提示。告知参与者是录音者的责任。\n\n韩国：可以录制自己参与的对话（禁止录制自己未参与的对话）。\n美国：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有参与者同意。\n欧盟：GDPR要求告知并具备合法依据；丹麦要求商务通话取得明确同意。</string>

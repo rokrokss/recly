@@ -12,12 +12,17 @@ data class ProcessingDraft(
     var mode: TranscriptionMode,
     var language: Language,
     var provider: String,
-    var secretRef: String,
     var invokeUrl: String,
     var model: String,
     private val retainedExternal: ExternalTranscription?,
 ) {
     fun snapshot(): ProcessingDraft = copy()
+
+    /**
+     * docs/05 "시크릿": each provider's key is kept under the provider's own id, so switching provider
+     * never sends one company's key to another and nobody has to name a secret.
+     */
+    val secretRef: String get() = provider
 
     val languages: List<Language> get() = if (mode == TranscriptionMode.EXTERNAL)
         TranscriptionLanguages.supported(provider, chosenModel) else TranscriptionLanguages.explicit
@@ -46,7 +51,7 @@ data class ProcessingDraft(
         fun from(settings: ProcessingSettings): ProcessingDraft {
             val t = settings.transcription
             return ProcessingDraft(settings.storage.folder, settings.storage.minDurationSec.toString(), t.mode,
-                t.language, t.external?.provider ?: "elevenlabs", t.external?.secretRef ?: "speech_api",
+                t.language, t.external?.provider ?: "elevenlabs",
                 t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external)
         }
     }

@@ -1,4 +1,5 @@
 import SwiftUI
+import ReclyCore
 
 /// docs/15 §3, lane P1 deliverable 6: what leaves the device when the `transcribe` step runs — the
 /// audio — and whose policy decides what becomes of it afterwards. It sits under the provider choice
@@ -14,10 +15,13 @@ public struct ProviderDisclosure: View {
     /// editor is open.
     @Environment(\.locale) private var locale
 
-    public init() {}
+    /// The provider id; the sentence names the company, not "the provider".
+    private let provider: String
+
+    public init(provider: String) { self.provider = provider }
 
     public var body: some View {
-        Text(verbatim: RecKitStrings.localized("provider.disclosure.transcribe"))
+        Text(verbatim: RecKitStrings.localized("provider.disclosure.transcribe", SttProviders.shared.displayName(name: provider)))
             .font(blueprint.fonts.sans(TypeSize.small))
             .foregroundStyle(blueprint.palette.textMuted)
             .fixedSize(horizontal: false, vertical: true)

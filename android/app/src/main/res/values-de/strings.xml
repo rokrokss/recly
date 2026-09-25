@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">in %1$d Min.</string>
     <string name="retry_in_hours">in %1$d Std.</string>
     <string name="editor_min_duration">Mindestdauer (s)</string>
-    <string name="editor_secret">Name des geheimen Werts</string>
     <string name="editor_provider">Anbieter</string>
     <string name="editor_api_key">API-Schlüssel</string>
     <string name="editor_invoke_url">Aufruf-URL</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">Wartende Aufnahmen: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
+    <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an %1$s.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
     <string name="settings_consent_reminder">Einwilligungserinnerung</string>
     <string name="consent_question">Haben Sie die Teilnehmenden über die Aufnahme informiert?</string>
     <string name="consent_body">Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.\n\nKorea: Gespräche, an denen Sie teilnehmen, dürfen aufgenommen werden; andere nicht.\nUSA: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA verlangen die Einwilligung aller Teilnehmenden.\nEU: Die DSGVO verlangt Information und eine Rechtsgrundlage; Dänemark verlangt ausdrückliche Einwilligung für geschäftliche Anrufe.</string>

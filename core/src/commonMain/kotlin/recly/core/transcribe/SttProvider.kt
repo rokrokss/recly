@@ -151,6 +151,28 @@ object SttProviders {
         else -> false
     }
 
+    /**
+     * What the settings show for [name]: the company's own spelling. Brand names are proper nouns and
+     * are not translated; ids stay in data (transcripts, logs, the settings document).
+     */
+    fun displayName(name: String): String = when (name) {
+        ElevenLabsProvider.NAME -> "ElevenLabs"
+        ClovaProvider.NAME -> "CLOVA Speech"
+        AssemblyAiProvider.NAME -> "AssemblyAI"
+        RtzrProvider.NAME -> "RTZR"
+        OpenAiCompatProvider.OPENAI_NAME -> "OpenAI"
+        OpenAiCompatProvider.GROQ_NAME -> "Groq"
+        OpenAiCompatProvider.TOGETHER_NAME -> "Together AI"
+        OpenAiCompatProvider.MISTRAL_NAME -> "Mistral AI"
+        DeepgramProvider.NAME -> "Deepgram"
+        AzureProvider.NAME -> "Azure AI Speech"
+        DagloProvider.NAME -> "Daglo"
+        SpeechmaticsProvider.NAME -> "Speechmatics"
+        RevProvider.NAME -> "Rev AI"
+        GladiaProvider.NAME -> "Gladia"
+        else -> name
+    }
+
     /** The adapters that read `step.model`; the others pin their model or have none to choose. */
     fun acceptsModel(name: String): Boolean = when (name) {
         OpenAiCompatProvider.OPENAI_NAME, OpenAiCompatProvider.GROQ_NAME, OpenAiCompatProvider.TOGETHER_NAME,

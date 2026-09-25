@@ -9,7 +9,6 @@ final class ProcessingModeTests: XCTestCase {
         draft.mode = .external
         draft.language = .auto
         draft.provider = "assemblyai"
-        draft.secretRef = "saved_key"
         draft.model = "saved-model"
 
         draft.selectAppleTranscriptionMode(.local, preferredLanguage: .ko)
@@ -18,7 +17,7 @@ final class ProcessingModeTests: XCTestCase {
         XCTAssertEqual(draft.language, .ko)
         XCTAssertTrue(draft.settings().transcription.diarize, "the runtime enables speaker separation only when supported")
         XCTAssertEqual(draft.provider, "assemblyai")
-        XCTAssertEqual(draft.secretRef, "saved_key")
+        XCTAssertEqual(draft.secretRef, "assemblyai", "the key is named after its provider")
         XCTAssertEqual(draft.model, "saved-model")
 
         draft.language = .fr

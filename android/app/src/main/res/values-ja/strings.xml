@@ -64,7 +64,6 @@
     <string name="retry_in_minutes">%1$d分後</string>
     <string name="retry_in_hours">%1$d時間後</string>
     <string name="editor_min_duration">最短の長さ（秒）</string>
-    <string name="editor_secret">シークレット名</string>
     <string name="editor_provider">提供者</string>
     <string name="editor_api_key">APIキー</string>
     <string name="editor_invoke_url">呼び出しURL</string>
@@ -180,7 +179,7 @@
     <plurals name="alert_waiting">
         <item quantity="other">録音%1$d件が待機中です。</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">外部の文字起こしでは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
+    <string name="provider_disclosure_transcribe">外部の文字起こしでは、録音全体を%1$sに送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
     <string name="settings_consent_reminder">同意のリマインダー</string>
     <string name="consent_question">参加者に録音することを伝えましたか？</string>
     <string name="consent_body">この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。\n\n韓国：自分が参加する会話は録音できます（参加していない会話の録音は禁止）。\n米国：CA・CT・FL・HI・IL・MD・MA・MT・NH・OR・PA・WAでは全参加者の同意が必要です。\nEU：GDPRでは通知と適法な根拠が必要です。デンマークでは業務通話の明示的な同意が必要です。</string>

@@ -128,7 +128,7 @@ public final class ProcessingSettingsModel: ObservableObject {
     }
     private func updateSummary(_ draft: ProcessingDraft) {
         summaryKey = draft.mode == .local ? "On device" : "Off"
-        providerSummary = draft.mode == .external ? draft.provider : nil
+        providerSummary = draft.mode == .external ? SttProviders.shared.displayName(name: draft.provider) : nil
     }
     private func failed(_ error: Error) { message = .core(CoreMessage.stepFailed.code(arg: nil, detail: error.localizedDescription)) }
 }
@@ -173,9 +173,18 @@ public struct ProcessingSettingsView: View {
                     SectionFootnote(loc("On-device transcription does not separate speakers."))
                 }
                 if draft.mode == .external {
-                    BlueprintButton(draft.provider) { pickingProvider = true }
-                    ProviderDisclosure()
-                    BlueprintField(loc("Secret name"), text: field(\.secretRef), mono: true)
+                    // docs/09 원칙 4: a settings row, "Provider … ElevenLabs", like Language below.
+                    SectionRow(title: loc("Provider")) {
+                        #if os(macOS)
+                        BlueprintDropdown(loc("Provider"), options: model.providers.map(ProviderOption.init),
+                            selection: Binding(get: { ProviderOption(name: draft.provider) }, set: { option in
+                                model.edit { $0.selectProvider(value: option.name) }
+                            }), title: { SttProviders.shared.displayName(name: $0.name) })
+                        #else
+                        BlueprintButton(SttProviders.shared.displayName(name: draft.provider), tone: .quiet) { pickingProvider = true }
+                        #endif
+                    }
+                    ProviderDisclosure(provider: draft.provider)
                     ProcessingKeyField(model: model, name: draft.secretRef)
                     if WorkflowParser.shared.invokeUrlUse(provider: draft.provider) != .none {
                         BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()
@@ -185,7 +194,7 @@ public struct ProcessingSettingsView: View {
                     if !model.secretNames.isEmpty {
                         SectionHeader(loc("API keys"))
                         ForEach(model.secretNames, id: \.self) { name in
-                            SectionRow(title: name) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
+                            SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
                         }
                     }
                 }
@@ -221,7 +230,7 @@ public struct ProcessingSettingsView: View {
             if phase == .active { Task { await model.refreshLocal() } }
         }
         .blueprintDialog(isPresented: Binding(get: { deletingKey != nil }, set: { if !$0 { deletingKey = nil } })) {
-            BlueprintDialog(title: RecKitStrings.localized("Delete key: %@", deletingKey ?? "")) {
+            BlueprintDialog(title: RecKitStrings.localized("Delete key: %@", SttProviders.shared.displayName(name: deletingKey ?? ""))) {
                 BlueprintButton(loc("Cancel"), tone: .quiet) { deletingKey = nil }
                 BlueprintButton(loc("Delete")) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
             } content: { EmptyView() }
@@ -247,7 +256,7 @@ public struct ProcessingSettingsView: View {
                 BlueprintButton(loc("Close"), tone: .quiet) { pickingProvider = false }
             } content: {
                 ForEach(model.providers, id: \.self) { name in
-                    BlueprintRadioRow(name, selected: model.draft?.provider == name) {
+                    BlueprintRadioRow(SttProviders.shared.displayName(name: name), selected: model.draft?.provider == name) {
                         model.edit { $0.selectProvider(value: name) }; pickingProvider = false
                     }
                 }
@@ -265,6 +274,11 @@ public struct ProcessingSettingsView: View {
     }
     private func export() { Task { if let json = await model.export() { file = ProcessingFile(json: json); exporter = true } } }
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+private struct ProviderOption: Hashable, Identifiable {
+    let name: String
+    var id: String { name }
 }
 
 private struct SpeechLanguageOption: Hashable, Identifiable {

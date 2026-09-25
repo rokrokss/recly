@@ -236,6 +236,19 @@ class ProcessingSettingsTest {
     }
 
     @Test
+    fun `every provider has a display name and keeps its key under its own id`() {
+        for (provider in WorkflowParser.STT_PROVIDERS) {
+            val shown = recly.core.transcribe.SttProviders.displayName(provider)
+            assertTrue(shown != provider && shown.isNotBlank(), provider)
+        }
+        val draft = ProcessingDraft.from(ProcessingSettings(transcription = ProcessingTranscription(
+            mode = TranscriptionMode.EXTERNAL, external = ExternalTranscription("deepgram", "speech_api"))))
+        assertEquals("deepgram", draft.secretRef, "a stored shared name is not carried over")
+        draft.selectProvider("clova")
+        assertEquals("clova", draft.settings().transcription.external!!.secretRef)
+    }
+
+    @Test
     fun `a blank minimum length means no minimum`() {
         val draft = ProcessingDraft.from(ProcessingSettings())
         draft.minimumSeconds = " "

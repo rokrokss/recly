@@ -11,6 +11,7 @@ import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
 import recly.core.processing.*
 import java.util.Locale
+import recly.core.transcribe.SttProviders
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.model.Language
 import recly.core.workflow.*
@@ -20,7 +21,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
     val draft = model.draft ?: return
     val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in draft.languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
-    deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, name], onDismissRequest = { deletingKey = null }, actions = {
+    deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, SttProviders.displayName(name)], onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
         BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null })
     }) { Text(name) } }
@@ -38,10 +39,9 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
         }
         if (draft.mode == TranscriptionMode.LOCAL) Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall)
         if (draft.mode == TranscriptionMode.EXTERNAL) {
-            BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to it }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
+            BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to SttProviders.displayName(it) }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
-            Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE], style = MaterialTheme.typography.bodySmall)
-            BlueprintTextField(draft.secretRef, { v -> model.edit { it.secretRef = v } }, strings[Str.FIELD_SECRET_NAME])
+            Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE, SttProviders.displayName(draft.provider)], style = MaterialTheme.typography.bodySmall)
             ProcessingKey(model, draft.secretRef, strings)
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL])
             if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
@@ -49,7 +49,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
             if (model.secretNames.isNotEmpty()) {
                 SectionHeader(strings[Str.PROCESSING_SECRETS])
                 model.secretNames.forEach { name ->
-                    Text(name, style = MaterialTheme.typography.bodySmall)
+                    Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall)
                     BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
                 }
             }

@@ -228,7 +228,6 @@
   "Saving": "Сохранение",
   "Saving…": "Сохранение…",
   "Search transcript": "Поиск в расшифровке",
-  "Secret name": "Имя секрета",
   "Sending {0}": "Отправка {0}",
   "Settings": "Настройки",
   "Settings saved": "Настройки сохранены",
@@ -368,6 +367,6 @@
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся.",
   "Saved on this device": "Сохранён на этом устройстве",
   "Not saved on this device": "На этом устройстве ключ не сохранён",
-  "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись выбранному провайдеру.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.",
-  "Download Apple’s speech model to transcribe on this device.": "Загрузите речевую модель Apple для расшифровки на этом устройстве."
+  "Download Apple’s speech model to transcribe on this device.": "Загрузите речевую модель Apple для расшифровки на этом устройстве.",
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
 }

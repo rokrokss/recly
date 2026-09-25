@@ -342,14 +342,6 @@ class CrossShellDictionaryTest {
                 windows = "field.min.duration",
                 reckit = "Minimum length (s)",
             ),
-            Line(
-                what = "the secret-name field",
-                en = "Secret name",
-                ko = "시크릿 이름",
-                android = "editor_secret",
-                windows = "field.secret.name",
-                reckit = "Secret name",
-            ),
             // docs/08 "결과 파일": the window a desktop opens and the screen a phone pushes. What is
             // behind a row is the whole of the recording — its audio as well as its transcript — so
             // the surface is named after the row action that opens it, below. Android has only that

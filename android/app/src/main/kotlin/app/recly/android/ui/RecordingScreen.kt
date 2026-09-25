@@ -149,7 +149,7 @@ fun RecordingSection(
                     ),
                     NodeSpec(
                         label = stringResource(R.string.processing_transcription),
-                        value = if (state.processing.mode == recly.core.processing.TranscriptionMode.EXTERNAL) state.processing.external?.provider.orEmpty()
+                        value = if (state.processing.mode == recly.core.processing.TranscriptionMode.EXTERNAL) state.processing.external?.provider?.let(recly.core.transcribe.SttProviders::displayName).orEmpty()
                             else stringResource(state.processing.mode.label()),
                         onClick = if (canPick) onOpenProcessing else null,
                         onClickLabel = pickLabel,

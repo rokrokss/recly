@@ -44,7 +44,8 @@ class ProviderDisclosureTest {
             for (key in DISCLOSURES) {
                 assertEquals(
                     "",
-                    strings[key].filter { it.isDigit() },
+                    // Formatted as shown: the placeholder's own "1" is not a claim.
+                    strings[key, "ElevenLabs"].filter { it.isDigit() },
                     "$language/${key.key} names a number, which docs/15 §3 forbids",
                 )
             }
