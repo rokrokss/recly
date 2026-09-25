@@ -38,6 +38,7 @@ public struct TransferDisclosureList: View {
     private let targets: [TransferTarget]
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
 
     public init(targets: [TransferTarget]) { self.targets = targets }
 
@@ -45,16 +46,19 @@ public struct TransferDisclosureList: View {
         VStack(alignment: .leading, spacing: Space.s) {
             ForEach(targets, id: \.id) { target in
                 VStack(alignment: .leading, spacing: Space.xs) {
-                    Text(verbatim: target.provider)
+                    // Who: the company by name, and what kind of service it is (App Review 5.1.2(i)).
+                    Text(verbatim: SttProviders.shared.displayName(name: target.provider))
                         .font(blueprint.fonts.label)
+                    Text(verbatim: loc("A third-party AI speech recognition service. Recly does not operate it."))
+                        .font(blueprint.fonts.bodySmall)
                     Text(verbatim: target.endpoint)
                         .font(blueprint.fonts.monoSmall)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: loc("The full recording and language and speaker settings are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
+                    // The list's text colour would turn a plain `Link` into body text; this one reads as a link.
                     if let url = PrivacyLinks.provider(target.provider) {
-                        Link(loc("Provider privacy information"), destination: url)
-                            .font(blueprint.fonts.bodySmall)
+                        BlueprintDialogLink(loc("Provider privacy information")) { openURL(url) }
                     }
                     if target.kind == "transcribe",
                        target.endpoint != SttProviders.shared.defaultEndpoint(name: target.provider) {
@@ -198,7 +202,7 @@ public struct TransferPrivacyView: View {
                 }
                 ForEach(model.approved, id: \.id) { target in
                     VStack(alignment: .leading, spacing: Space.xs) {
-                        Text(verbatim: target.provider)
+                        Text(verbatim: SttProviders.shared.displayName(name: target.provider))
                         Text(verbatim: target.endpoint)
                             .font(blueprint.fonts.monoSmall)
                             .fixedSize(horizontal: false, vertical: true)

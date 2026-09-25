@@ -58,6 +58,40 @@ final class TransferPrivacyTests: XCTestCase {
         XCTAssertTrue(names.contains("existing"))
     }
 
+    /// docs/15: an external provider is saved only once the user allows sending to it. The question
+    /// comes with the save — not while recording — and once per destination.
+    func testSavingAnExternalProviderAsksOnceAndDecliningSavesNothing() async throws {
+        let bridge = try await bridge()
+        let model = ProcessingSettingsModel(core: bridge.core)
+        await model.reload()
+        model.edit { $0.mode = .external; $0.selectProvider(value: "groq"); $0.language = .en }
+        await model.save()
+        XCTAssertEqual(model.consentNeeded.map(\.provider), ["groq"])
+        XCTAssertTrue(model.dirty)
+
+        await model.answerConsent(allow: false)
+        XCTAssertTrue(model.consentNeeded.isEmpty)
+        XCTAssertTrue(model.dirty)
+        let declined = try await bridge.core.transferConsents.approved()
+        XCTAssertTrue(declined.isEmpty)
+
+        await model.save()
+        await model.answerConsent(allow: true)
+        XCTAssertFalse(model.dirty)
+        let approved = try await bridge.core.transferConsents.approved()
+        XCTAssertEqual(approved.map(\.provider), ["groq"])
+        // What was allowed is what a recording's plan will send to: nothing parks for permission.
+        let state = try await bridge.core.initializeProcessing()
+        let plan = ProcessingPlan.shared.compile(document: state.document)
+        let unallowed = try await bridge.core.transferConsents.missing(targets: TransferTargets.shared.forWorkflow(workflow: plan))
+        XCTAssertTrue(unallowed.isEmpty)
+
+        model.edit { $0.language = .ko }
+        await model.save()
+        XCTAssertTrue(model.consentNeeded.isEmpty)
+        XCTAssertFalse(model.dirty)
+    }
+
     func testPermissionAlertRoutesToPrivacyAndHasARecognizableBadge() {
         let reason = JobAlerts.reason(status: .needsConsent, lastError: nil)
         XCTAssertEqual(reason, .needsConsent)

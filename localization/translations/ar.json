@@ -372,5 +372,9 @@
   "Enter the key as client ID:client secret.": "أدخل المفتاح بالصيغة معرّف العميل:سر العميل.",
   "Replace key": "استبدال المفتاح",
   "Other providers’ keys": "مفاتيح المزوّدين الآخرين",
-  "Settings file": "ملف الإعدادات"
+  "Settings file": "ملف الإعدادات",
+  "Send recordings to {0}?": "هل تريد إرسال التسجيلات إلى {0}؟",
+  "Don't allow": "عدم السماح",
+  "Allow & save": "السماح والحفظ",
+  "A third-party AI speech recognition service. Recly does not operate it.": "خدمة تعرّف على الكلام بالذكاء الاصطناعي تابعة لجهة خارجية، ولا تديرها Recly."
 }

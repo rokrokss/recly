@@ -372,5 +372,9 @@
   "Enter the key as client ID:client secret.": "请按“客户端 ID:客户端密钥”的格式输入密钥。",
   "Replace key": "替换密钥",
   "Other providers’ keys": "其他提供商的密钥",
-  "Settings file": "设置文件"
+  "Settings file": "设置文件",
+  "Send recordings to {0}?": "要将录音发送到{0}吗？",
+  "Don't allow": "不允许",
+  "Allow & save": "允许并保存",
+  "A third-party AI speech recognition service. Recly does not operate it.": "这是第三方AI语音识别服务，并非由Recly运营。"
 }

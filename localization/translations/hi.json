@@ -372,5 +372,9 @@
   "Enter the key as client ID:client secret.": "कुंजी को क्लाइंट ID:क्लाइंट सीक्रेट के रूप में दर्ज करें।",
   "Replace key": "कुंजी बदलें",
   "Other providers’ keys": "अन्य प्रदाताओं की कुंजियाँ",
-  "Settings file": "सेटिंग फ़ाइल"
+  "Settings file": "सेटिंग फ़ाइल",
+  "Send recordings to {0}?": "रिकॉर्डिंग {0} को भेजें?",
+  "Don't allow": "अनुमति न दें",
+  "Allow & save": "अनुमति दें और सहेजें",
+  "A third-party AI speech recognition service. Recly does not operate it.": "यह किसी तृतीय पक्ष की AI वाक् पहचान सेवा है। Recly इसे संचालित नहीं करता।"
 }

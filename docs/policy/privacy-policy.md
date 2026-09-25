@@ -1,6 +1,6 @@
 # Recly Privacy Policy
 
-**Effective date: 2026-09-25**
+**Effective date: 2026-09-26**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
@@ -30,10 +30,11 @@ Recly is a **recording app**. Recordings are uploaded to **your own Google Drive
 **(1) Your Google Drive.**
 The app writes audio parts and `meta.json` into a recording folder. It uses only one permission — `drive.file` (files this app created) — and therefore **cannot see your other Drive files**. These files are yours and are visible only to you unless you share them.
 
-**(2) An external transcription provider you chose.**
+**(2) An external transcription provider you chose — a third-party AI speech recognition service.**
 Processing Settings offers on-device transcription, an external API, or Off. Only external mode, including existing queued external transcription, calls **the provider you selected, directly, with your own key**. Local mode does not fall back to an external provider.
 
-- External transcription: **the full joined audio file** is sent to the STT provider you chose.
+- External transcription sends **the full joined audio file** of each recording to the provider you chose, a **third-party AI speech recognition service that Recly does not operate**. It is used only to transcribe that recording: the transcript comes back to your device and is saved with the recording in your Google Drive.
+- On iPhone, nothing is sent to a provider until you allow it in the app — see *iPhone permission for external transcription* below.
 - There is no intermediary server. The request goes from your device to the provider.
 - How long that provider keeps the data and what it does with it is governed by **that provider's policy**, which Recly does not control. Review the provider's privacy policy before selecting the provider.
 - If you choose local transcription or Off, no audio or text is sent to an external transcription provider.
@@ -69,7 +70,7 @@ Apple model downloads and the StoreKit region lookup are described below. Recly 
 
 ### iPhone permission for external transcription
 
-Before a new external destination is used, the job waits for permission. **Settings → Privacy** shows the recipient, endpoint, data and purpose and lets you allow the transfer. This applies to new and existing jobs, including recordings received from Apple Watch. Recording itself and local transcription do not require external-transcription permission.
+When you save External API in **Settings → Recording processing** with a provider you have not allowed on this iPhone, the app first asks **“Send recordings to {provider}?”** It names the provider as a third-party AI speech recognition service, shows its endpoint, what is sent (the full audio of each recording, with the language and speaker options) and why (transcription), links to the provider’s privacy policy and says how to withdraw. **Don’t allow** leaves the settings unsaved; **Allow & save** saves them. Nothing is sent to a provider you have not allowed. The question comes with that save, once per provider and endpoint — not while you record. If permission is missing later, for example after you withdraw it, recordings (including those received from Apple Watch) wait, and **Settings → Privacy** lets you allow the transfer again. Recording itself and local transcription do not require this permission.
 
 Permission is remembered for the same provider and configured endpoint, independently of API keys. Changing the provider or destination, withdrawing permission, using a new device, or materially changing the data or purpose requires permission again. Permission is not exported with settings. On iPhone it is bound to a device-only Keychain marker, so restoring the database onto a different phone does not restore permission. **Withdraw permission** stops subsequent requests, including transcription status queries; an already dispatched request may finish. It does not delete data already sent or stored API keys. Google Drive access uses its separate Google authorization flow. Other platforms use their processing settings flow.
 

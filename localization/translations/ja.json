@@ -372,5 +372,9 @@
   "Enter the key as client ID:client secret.": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。",
   "Replace key": "キーを置き換え",
   "Other providers’ keys": "他の提供者のキー",
-  "Settings file": "設定ファイル"
+  "Settings file": "設定ファイル",
+  "Send recordings to {0}?": "録音を{0}に送信しますか？",
+  "Don't allow": "許可しない",
+  "Allow & save": "許可して保存",
+  "A third-party AI speech recognition service. Recly does not operate it.": "第三者のAI音声認識サービスです。Reclyは運営していません。"
 }

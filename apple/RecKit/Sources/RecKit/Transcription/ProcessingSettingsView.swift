@@ -19,6 +19,9 @@ public final class ProcessingSettingsModel: ObservableObject {
     @Published public private(set) var providerSummary: String?
     @Published public private(set) var secretNames: [String] = []
     @Published public private(set) var providers: [String] = []
+    /// docs/15: the destinations a save is waiting on the user's permission for. Asked here, when the
+    /// provider is chosen, and never while recording; once allowed, the same destination saves quietly.
+    @Published public private(set) var consentNeeded: [TransferTarget] = []
     private var stored: ProcessingSettingsStateReady?
     private let core: ReclyCore_
     private let canPrepare: () -> Bool
@@ -58,6 +61,9 @@ public final class ProcessingSettingsModel: ObservableObject {
                 let step = Step.Transcribe(id: "transcribe", onError: .abort, retry: Retry(maxAttempts: 5, initialDelaySec: 30, maxDelaySec: 3600), provider: draft.provider, secretRef: draft.secretRef, invokeUrl: draft.invokeUrl.isEmpty ? nil : draft.invokeUrl, language: draft.language, diarize: draft.settings().transcription.diarize, speakers: Speakers(min: 1, max: 8), model: draft.model.isEmpty ? nil : draft.model)
                 _ = try await core.deps.transcriptionPolicy.refresh()
                 if let issue = core.deps.transcriptionPolicy.issue(step: step, endpoint: nil) { message = .core(issue.code(arg: nil, detail: nil)); return }
+                // Empty where no permission is required (every shell but the iPhone's).
+                let missing = try await core.transferConsents.missing(targets: TransferTargets.shared.forStep(step: step).map { [$0] } ?? [])
+                if !missing.isEmpty { consentNeeded = missing; return }
             }
             let result = try await core.processingSettings.save(settings: draft.settings(), expectedRevision: stored.document.revision)
             if result is ProcessingSaveResultSaved {
@@ -67,6 +73,18 @@ public final class ProcessingSettingsModel: ObservableObject {
             } else if result is ProcessingSaveResultStale { message = .core(CoreMessage.stale.code(arg: nil, detail: nil)) }
             else { message = .key("These settings cannot be read by this version. The original data has been preserved.") }
         } catch { failed(error) }
+    }
+    /// The answer to the question [save] asked. Allowed: exactly the destinations shown are granted,
+    /// jobs waiting on them resume, and the save goes ahead. Declined: nothing is saved.
+    public func answerConsent(allow: Bool) async {
+        let shown = consentNeeded
+        consentNeeded = []
+        guard allow, !shown.isEmpty else { return }
+        do {
+            try await core.transferConsents.grant(targets: shown)
+            try await core.resumeConsentedJobs()
+        } catch { message = .key("Could not save transfer permissions"); return }
+        await save()
     }
     public func saveKey(_ name: String, value: String) async -> Bool {
         guard name.range(of: "^[a-z][a-z0-9_]{0,31}$", options: .regularExpression) != nil, !value.isEmpty else {
@@ -247,6 +265,17 @@ public struct ProcessingSettingsView: View {
                 BlueprintButton(loc("Cancel"), tone: .quiet) { deletingKey = nil }
                 BlueprintButton(loc("Delete")) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
             } content: { EmptyView() }
+        }
+        // docs/15 · App Review 5.1.2(i): what is sent, to whom, and the user's permission, before the
+        // provider is saved — and so before anything could be sent to it.
+        .blueprintDialog(isPresented: Binding(get: { !model.consentNeeded.isEmpty }, set: { if !$0 { Task { await model.answerConsent(allow: false) } } })) {
+            BlueprintDialog(title: RecKitStrings.localized("Send recordings to %@?", SttProviders.shared.displayName(name: model.consentNeeded.first?.provider ?? ""))) {
+                BlueprintButton(loc("Don't allow"), tone: .quiet) { Task { await model.answerConsent(allow: false) } }
+                BlueprintButton(loc("Allow & save"), tone: .primary) { Task { await model.answerConsent(allow: true) } }
+                    .accessibilityIdentifier("allow-and-save")
+            } content: {
+                TransferDisclosureList(targets: model.consentNeeded)
+            }
         }
         .fileImporter(isPresented: $importer, allowedContentTypes: [.json, .plainText]) { result in
             if case .success(let url) = result { Task { await model.pick(url) } }
