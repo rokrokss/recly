@@ -49,8 +49,8 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             // docs/09 "접근성" · 유동 타이포: the answers go across while they fit and downwards
             // when they do not — an answer clipped to a syllable makes the question unanswerable.
-            // Stacked they keep their order, which puts the primary one at the bottom: last, as it
-            // is last on the right, and nearest the thumb.
+            // Stacked they go full width and keep their order, which puts the primary one at the
+            // bottom: last, as it is last on the right, and nearest the thumb (docs/09 화면 원칙 8).
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Space.s) {
                     Spacer(minLength: 0)
@@ -59,6 +59,7 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
                 VStack(spacing: Space.s) {
                     actions
                 }
+                .environment(\.blueprintButtonFillsWidth, true)
             }
         }
         .padding(Space.m)

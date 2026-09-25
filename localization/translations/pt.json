@@ -5,7 +5,6 @@
   "A key this phone does not have": "Falta uma chave neste telefone",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "A gravação fica no relógio até o telefone confirmar o recebimento. A transferência é automática quando o telefone está perto, e só os arquivos recebidos são apagados aqui.",
   "API key": "Chave de API",
-  "API keys": "Chaves de API",
   "About": "Sobre",
   "Add a Google account, then sign in again": "Adicione uma conta Google e entre novamente",
   "Allow transfers and continue": "Permitir transferências e continuar",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0} · {1} em espera · {2} com falha",
   "{0} — the {1} environment variable can point at one.": "{0}; a variável de ambiente {1} pode indicar o caminho.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, gravado em {1}, duração {2}, {3}",
-  "API key saved": "Chave de API salva",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "O processamento pendente pausa até reconectar a mesma conta. Gravações, arquivos do Drive e chaves são mantidos.",
   "Saved on this device": "Salva neste dispositivo",
   "Not saved on this device": "Nenhuma chave salva neste dispositivo",
   "Download Apple’s speech model to transcribe on this device.": "Baixe o modelo de voz da Apple para transcrever neste dispositivo.",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "A transcrição externa envia a gravação inteira para {0}.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar.",
   "The provider is out of quota or is rate-limiting.": "A cota ou o limite de requisições do provedor foi atingido.",
-  "Enter the key as client ID:client secret.": "Digite a chave como ID do cliente:segredo do cliente."
+  "Enter the key as client ID:client secret.": "Digite a chave como ID do cliente:segredo do cliente.",
+  "Replace key": "Substituir chave",
+  "Other providers’ keys": "Chaves de outros provedores",
+  "Settings file": "Arquivo de configurações"
 }

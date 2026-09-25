@@ -88,7 +88,7 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         runCatching {
             core().secrets.put(name, value)
             saved()
-            _state.update { it.copy(secretNames = (it.secretNames + name).distinct(), message = UiMessage.Res(R.string.processing_key_saved)) }
+            _state.update { it.copy(secretNames = (it.secretNames + name).distinct(), message = null) }
         }.onFailure { failed(it) }
     }
 

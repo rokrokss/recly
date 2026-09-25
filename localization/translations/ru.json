@@ -5,7 +5,6 @@
   "A key this phone does not have": "На этом телефоне нет ключа",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "Запись остаётся на часах до подтверждения приёма телефоном. Когда телефон рядом, передача происходит автоматически; здесь удаляются только доставленные файлы.",
   "API key": "Ключ API",
-  "API keys": "Ключи API",
   "About": "О приложении",
   "Add a Google account, then sign in again": "Добавьте аккаунт Google и войдите снова",
   "Allow transfers and continue": "Разрешить передачу и продолжить",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0} · {1} в ожидании · {2} с ошибкой",
   "{0} — the {1} environment variable can point at one.": "{0}; путь можно указать в переменной окружения {1}.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, записано {1}, длительность {2}, {3}",
-  "API key saved": "Ключ API сохранён",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Обработка приостановится до повторного подключения того же аккаунта. Записи, файлы Drive и ключи сохранятся.",
   "Saved on this device": "Сохранён на этом устройстве",
   "Not saved on this device": "На этом устройстве ключ не сохранён",
   "Download Apple’s speech model to transcribe on this device.": "Загрузите речевую модель Apple для расшифровки на этом устройстве.",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.",
   "The provider is out of quota or is rate-limiting.": "Исчерпана квота провайдера или ограничена частота запросов.",
-  "Enter the key as client ID:client secret.": "Введите ключ в формате идентификатор клиента:секрет клиента."
+  "Enter the key as client ID:client secret.": "Введите ключ в формате идентификатор клиента:секрет клиента.",
+  "Replace key": "Заменить ключ",
+  "Other providers’ keys": "Ключи других провайдеров",
+  "Settings file": "Файл настроек"
 }

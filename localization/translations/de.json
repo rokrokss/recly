@@ -5,7 +5,6 @@
   "A key this phone does not have": "Ein Schlüssel fehlt auf diesem Telefon",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "Die Aufnahme bleibt auf der Uhr, bis das Telefon den Empfang bestätigt. In der Nähe erfolgt die Übertragung automatisch. Nur erfolgreich übertragene Dateien werden hier gelöscht.",
   "API key": "API-Schlüssel",
-  "API keys": "API-Schlüssel",
   "About": "Über",
   "Add a Google account, then sign in again": "Google-Konto hinzufügen und erneut anmelden",
   "Allow transfers and continue": "Übertragungen erlauben und fortfahren",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0} · {1} wartend · {2} fehlgeschlagen",
   "{0} — the {1} environment variable can point at one.": "{0}; die Umgebungsvariable {1} kann den Pfad angeben.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, aufgenommen {1}, Dauer {2}, {3}",
-  "API key saved": "API-Schlüssel gespeichert",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Ausstehende Verarbeitung pausiert, bis dasselbe Konto erneut verbunden ist. Aufnahmen, Drive-Dateien und Schlüssel bleiben erhalten.",
   "Saved on this device": "Auf diesem Gerät gespeichert",
   "Not saved on this device": "Auf diesem Gerät ist kein Schlüssel gespeichert",
   "Download Apple’s speech model to transcribe on this device.": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter.",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an {0}.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.",
   "The provider is out of quota or is rate-limiting.": "Kontingent oder Anfragelimit des Anbieters erreicht.",
-  "Enter the key as client ID:client secret.": "Geben Sie den Schlüssel als Client-ID:Client-Secret ein."
+  "Enter the key as client ID:client secret.": "Geben Sie den Schlüssel als Client-ID:Client-Secret ein.",
+  "Replace key": "Schlüssel ersetzen",
+  "Other providers’ keys": "Schlüssel anderer Anbieter",
+  "Settings file": "Einstellungsdatei"
 }

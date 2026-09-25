@@ -61,7 +61,7 @@ class ProcessingViewModel(
         if (!name.matches(Regex("[a-z][a-z0-9_]{0,31}")) || value.isBlank()) {
             message = (if (value.isBlank()) Str.SECRET_VALUE_REQUIRED else Str.SECRET_NAME_INVALID).message(); return@launch
         }
-        runCatching { core.secrets.put(name, value); secretNames = core.secrets.names(); saved(); message = Str.PROCESSING_KEY_SAVED.message() }.onFailure(::failed)
+        runCatching { core.secrets.put(name, value); secretNames = core.secrets.names(); saved(); message = null }.onFailure(::failed)
     }
     fun deleteKey(name: String) = scope.launch {
         runCatching { core.secrets.delete(name); secretNames = core.secrets.names() }.onFailure(::failed)

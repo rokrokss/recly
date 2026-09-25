@@ -59,7 +59,9 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
         if (draft.mode == TranscriptionMode.LOCAL) {
             when (state.local?.status) {
                 LocalEngineStatus.UNSUPPORTED -> Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall)
-                LocalEngineStatus.MODEL_REQUIRED -> BlueprintButton(stringResource(R.string.processing_prepare), { model.prepare() }, enabled = !state.busy)
+                LocalEngineStatus.MODEL_REQUIRED -> EndButtons {
+                    BlueprintButton(stringResource(R.string.processing_prepare), { model.prepare() }, enabled = !state.busy)
+                }
                 else -> Unit
             }
         }
@@ -78,17 +80,22 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             if (SttProviders.keyIsClientPair(draft.provider)) {
                 Text(stringResource(R.string.processing_key_client_pair), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             }
-            ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey)
+            ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey) { deletingKey = draft.secretRef }
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) {
                 ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
             }
             if (draft.acceptsModel) ProcessingField(R.string.processing_model, draft.model) { v -> model.edit { it.model = v } }
             // Keys only matter to an external provider, so the list lives with it.
-            if (state.secretNames.isNotEmpty()) {
-                SectionHeader(stringResource(R.string.processing_secrets))
-                state.secretNames.forEach { name ->
-                    Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall)
-                    BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
+            // The current provider's key is managed on its own row above; this lists the rest.
+            val others = state.secretNames.filter { it != draft.secretRef }
+            if (others.isNotEmpty()) {
+                SectionHeader(stringResource(R.string.processing_other_keys))
+                // docs/09 화면 원칙 8: an action that belongs to one item sits at the end of its row.
+                others.forEach { name ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+                        BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
+                    }
                 }
             }
         }
@@ -104,12 +111,14 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             }
         }
         state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-            BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy && state.dirty)
+        // Only a draft with changes has anything to commit; the buttons appearing is the sign that it does.
+        if (state.dirty) EndButtons {
+            BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy)
             BlueprintButton(stringResource(R.string.action_save), { model.save() }, tone = ButtonTone.PRIMARY,
-                enabled = !state.busy && languageSupported && state.dirty)
+                enabled = !state.busy && languageSupported)
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+        SectionHeader(stringResource(R.string.processing_settings_file))
+        EndButtons {
             BlueprintButton(stringResource(R.string.processing_export), { export.launch("recly-settings.json") }, tone = ButtonTone.QUIET,
                 enabled = state.stored is ProcessingSettingsState.Ready && !state.dirty)
             BlueprintButton(stringResource(R.string.processing_import), { importPicker.launch(arrayOf("application/json", "text/plain")) }, tone = ButtonTone.QUIET, enabled = !state.dirty)
@@ -130,22 +139,48 @@ private fun ProcessingRow(title: String, value: String, onClick: () -> Unit) {
     }
 }
 
+/** docs/09 화면 원칙 8: a button group in a settings block is end-aligned, the committing action last. */
+@Composable
+private fun EndButtons(content: @Composable FlowRowScope.() -> Unit) {
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End), content = content)
+}
+
 @Composable
 private fun ProcessingField(label: Int, value: String, change: (String) -> Unit) {
     OutlinedTextField(value, change, label = { Text(stringResource(label)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
 }
 
 @Composable
-private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save: (String, String, () -> Unit) -> Any) {
+/**
+ * docs/05 "시크릿": the value is never read back. A saved key is a row that says so — ✓ in the
+ * success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with Replace and
+ * Delete; the empty field only comes back to take a new value.
+ */
+private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save: (String, String, () -> Unit) -> Any, delete: () -> Unit) {
     var value by remember(name) { mutableStateOf("") }
-    // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
-    OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
-        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
-        supportingText = if (name.isBlank()) null else {
-            { Text(stringResource(if (name in saved) R.string.processing_key_on_device else R.string.processing_key_not_on_device)) }
-        })
-    BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = "" } },
-        enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
+    var replacing by remember(name) { mutableStateOf(false) }
+    if (name.isNotBlank() && name in saved && !replacing) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Space.s), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(stringResource(label), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+            Text("${stringResource(R.string.action_done)} ${stringResource(R.string.processing_key_on_device)}",
+                style = MaterialTheme.typography.bodyMedium, color = blueprint.success)
+        }
+        EndButtons {
+            BlueprintButton(stringResource(R.string.processing_key_replace), { replacing = true }, tone = ButtonTone.QUIET)
+            BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.QUIET)
+        }
+    } else {
+        OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
+            visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+            supportingText = if (name.isBlank() || replacing) null else {
+                { Text(stringResource(R.string.processing_key_not_on_device)) }
+            })
+        EndButtons {
+            if (replacing) BlueprintButton(stringResource(R.string.action_cancel), { value = ""; replacing = false }, tone = ButtonTone.QUIET)
+            BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = ""; replacing = false } },
+                enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
+        }
+    }
 }
 
 internal fun TranscriptionMode.label(): Int = when (this) {

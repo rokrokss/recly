@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -93,8 +94,9 @@ private fun Account(model: ShellModel, strings: Strings) {
         SectionFootnote(strings[Str.DISCONNECT_STILL_LISTED])
         BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
             modifier = Modifier.padding(horizontal = Space.m))
-        BlueprintButton(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled,
-            tone = ButtonTone.QUIET, modifier = Modifier.padding(horizontal = Space.m))
+        Row(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.End) {
+            BlueprintButton(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled, tone = ButtonTone.QUIET)
+        }
     }
 }
 
@@ -196,7 +198,8 @@ private fun Data(model: ShellModel, strings: Strings) {
     SettingsCard {
         // docs/09: a path is data, so it is monospace and it is shown rather than described.
         Mono(model.dataDir)
-        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], model::openDataDir, tone = ButtonTone.QUIET)
+        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
+            modifier = Modifier.align(Alignment.End))
     }
     HairLine()
 }

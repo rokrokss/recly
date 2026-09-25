@@ -5,7 +5,6 @@
   "A key this phone does not have": "このスマートフォンにキーがありません",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "スマートフォンが受信を確認するまで録音はウォッチに残ります。近づくと自動で転送され、届いたファイルだけがここから削除されます。",
   "API key": "APIキー",
-  "API keys": "APIキー",
   "About": "このアプリについて",
   "Add a Google account, then sign in again": "Googleアカウントを追加してから、もう一度ログインしてください",
   "Allow transfers and continue": "転送を許可して続ける",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0}・{1}件待機中・{2}件失敗",
   "{0} — the {1} environment variable can point at one.": "{0}。環境変数{1}で場所を指定できます。",
   "{0}, recorded {1}, length {2}, {3}": "{0}、録音日時{1}、長さ{2}、{3}",
-  "API key saved": "APIキーを保存しました",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "同じアカウントに再接続するまで処理を一時停止します。録音、Driveのファイル、キーは残ります。",
   "Saved on this device": "このデバイスに保存済み",
   "Not saved on this device": "このデバイスに保存されたキーはありません",
   "Download Apple’s speech model to transcribe on this device.": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。",
   "The provider is out of quota or is rate-limiting.": "提供者の利用枠またはリクエスト数の制限に達しました。",
-  "Enter the key as client ID:client secret.": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。"
+  "Enter the key as client ID:client secret.": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。",
+  "Replace key": "キーを置き換え",
+  "Other providers’ keys": "他の提供者のキー",
+  "Settings file": "設定ファイル"
 }

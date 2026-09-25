@@ -5,7 +5,6 @@
   "A key this phone does not have": "此手機上沒有此金鑰",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "錄音會保留在手錶上，直到手機確認收到。手機靠近後會自動傳輸，手錶只刪除已成功傳輸的檔案。",
   "API key": "API金鑰",
-  "API keys": "API金鑰",
   "About": "關於",
   "Add a Google account, then sign in again": "請新增Google帳戶後重新登入",
   "Allow transfers and continue": "允許傳輸並繼續",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0}·{1}項等待·{2}項失敗",
   "{0} — the {1} environment variable can point at one.": "{0}，可透過環境變數{1}指定路徑。",
   "{0}, recorded {1}, length {2}, {3}": "{0}，錄製於{1}，時長{2}，{3}",
-  "API key saved": "API金鑰已儲存",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "重新連接同一帳戶前，待處理工作將暫停。錄音、Drive檔案和金鑰都會保留。",
   "Saved on this device": "已儲存在此裝置上",
   "Not saved on this device": "此裝置上未儲存金鑰",
   "Download Apple’s speech model to transcribe on this device.": "下載Apple語音模型即可在此裝置上轉錄。",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部轉錄會將完整錄音傳送給{0}。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。",
   "The provider is out of quota or is rate-limiting.": "供應商配額用盡或觸發速率限制。",
-  "Enter the key as client ID:client secret.": "請依「用戶端 ID:用戶端密碼」的格式輸入金鑰。"
+  "Enter the key as client ID:client secret.": "請依「用戶端 ID:用戶端密碼」的格式輸入金鑰。",
+  "Replace key": "取代金鑰",
+  "Other providers’ keys": "其他供應商的金鑰",
+  "Settings file": "設定檔案"
 }

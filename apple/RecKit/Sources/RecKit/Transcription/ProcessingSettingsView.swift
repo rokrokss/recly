@@ -72,7 +72,7 @@ public final class ProcessingSettingsModel: ObservableObject {
         guard name.range(of: "^[a-z][a-z0-9_]{0,31}$", options: .regularExpression) != nil, !value.isEmpty else {
             message = .key("Starts with a lowercase letter; lowercase, digits and underscores, up to 32"); return false
         }
-        do { try await core.secrets.put(name: name, value: value); secretNames = try await core.secrets.names(); message = .key("API key saved"); return true }
+        do { try await core.secrets.put(name: name, value: value); secretNames = try await core.secrets.names(); message = nil; return true }
         catch { failed(error); return false }
     }
     public func deleteKey(_ name: String) async {
@@ -169,6 +169,7 @@ public struct ProcessingSettingsView: View {
                         SectionFootnote(loc("Download Apple’s speech model to transcribe on this device."))
                         BlueprintButton(loc("Prepare model")) { Task { await model.prepare() } }
                             .disabled(model.busy || !preparationAllowed)
+                            .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     SectionFootnote(loc("On-device transcription does not separate speakers."))
                 }
@@ -186,15 +187,18 @@ public struct ProcessingSettingsView: View {
                     }
                     ProviderDisclosure(provider: draft.provider)
                     if SttProviders.shared.keyIsClientPair(name: draft.provider) { SectionFootnote(loc("Enter the key as client ID:client secret.")) }
-                    ProcessingKeyField(model: model, name: draft.secretRef)
+                    ProcessingKeyField(model: model, name: draft.secretRef) { deletingKey = draft.secretRef }
+                        .id(draft.secretRef)
                     if WorkflowParser.shared.invokeUrlUse(provider: draft.provider) != .none {
                         BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()
                     }
                     if draft.acceptsModel { BlueprintField(loc("Model (optional)"), text: field(\.model), mono: true) }
                     // Keys only matter to an external provider, so the list lives with it.
-                    if !model.secretNames.isEmpty {
-                        SectionHeader(loc("API keys"))
-                        ForEach(model.secretNames, id: \.self) { name in
+                    // The current provider's key is managed on its own row above; this lists the rest.
+                    let others = model.secretNames.filter { $0 != draft.secretRef }
+                    if !others.isEmpty {
+                        SectionHeader(loc("Other providers’ keys"))
+                        ForEach(others, id: \.self) { name in
                             SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
                         }
                     }
@@ -214,14 +218,20 @@ public struct ProcessingSettingsView: View {
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
                 }
                 if let message = model.message { SectionFootnote(message.text) }
-                FlowLayout {
-                    BlueprintButton(loc("Cancel"), tone: .quiet) { Task { await model.reload() } }.disabled(model.busy || !model.dirty)
-                    BlueprintButton(loc("Save"), tone: .primary) { Task { await model.save() } }.disabled(model.busy || !model.languageSupported || !model.dirty)
+                // docs/09 화면 원칙 8: Cancel · Save only appear when there is something to save.
+                if model.dirty {
+                    FlowLayout(alignment: .trailing) {
+                        BlueprintButton(loc("Cancel"), tone: .quiet) { Task { await model.reload() } }.disabled(model.busy)
+                        BlueprintButton(loc("Save"), tone: .primary) { Task { await model.save() } }.disabled(model.busy || !model.languageSupported)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
-                FlowLayout {
+                SectionHeader(loc("Settings file"))
+                FlowLayout(alignment: .trailing) {
                     BlueprintButton(loc("Export settings"), tone: .quiet) { export() }.disabled(!model.canExport)
                     BlueprintButton(loc("Import settings"), tone: .quiet) { importer = true }.disabled(model.dirty)
                 }
+                .frame(maxWidth: .infinity, alignment: .trailing)
             } else if let message = model.message {
                 SectionFootnote(message.text)
             }
@@ -287,19 +297,41 @@ private struct SpeechLanguageOption: Hashable, Identifiable {
     var id: String { language.name }
 }
 
+/// docs/05 "시크릿": the value is never read back. A saved key is a row that says so — the chip's
+/// ✓ in the success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with
+/// Replace and Delete; the empty field only comes back to take a new value.
 private struct ProcessingKeyField: View {
+    @Environment(\.blueprint) private var blueprint
     @ObservedObject var model: ProcessingSettingsModel
     let name: String
+    let delete: () -> Void
     @State private var value = ""
+    @State private var replacing = false
     var body: some View {
-        BlueprintField(RecKitStrings.localized("API key"), text: $value, secure: true)
-        // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
-        if !name.isEmpty {
-            SectionFootnote(RecKitStrings.localized(model.secretNames.contains(name) ? "Saved on this device" : "Not saved on this device"))
+        if !name.isEmpty && model.secretNames.contains(name) && !replacing {
+            SectionRow(title: RecKitStrings.localized("API key")) {
+                Text(verbatim: "\(BlueprintChip.selectionMark) \(RecKitStrings.localized("Saved on this device"))")
+                    .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
+                    .foregroundStyle(blueprint.palette.success)
+            }
+            FlowLayout(alignment: .trailing) {
+                BlueprintButton(RecKitStrings.localized("Replace key"), tone: .quiet) { replacing = true }
+                BlueprintButton(RecKitStrings.localized("Delete"), tone: .quiet, action: delete)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        } else {
+            BlueprintField(RecKitStrings.localized("API key"), text: $value, secure: true)
+            if !name.isEmpty && !replacing { SectionFootnote(RecKitStrings.localized("Not saved on this device")) }
+            FlowLayout(alignment: .trailing) {
+                if replacing {
+                    BlueprintButton(RecKitStrings.localized("Cancel"), tone: .quiet) { value = ""; replacing = false }
+                }
+                BlueprintButton(RecKitStrings.localized("Save key"), tone: .quiet) {
+                    Task { if await model.saveKey(name, value: value) { value = ""; replacing = false } }
+                }.disabled(name.isEmpty || value.isEmpty)
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
         }
-        BlueprintButton(RecKitStrings.localized("Save key"), tone: .quiet) {
-            Task { if await model.saveKey(name, value: value) { value = "" } }
-        }.disabled(name.isEmpty || value.isEmpty)
     }
 }
 private struct ProcessingFile: FileDocument {

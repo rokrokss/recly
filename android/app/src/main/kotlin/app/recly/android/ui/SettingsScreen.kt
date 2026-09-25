@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -104,9 +105,12 @@ fun SettingsScreen(
                 BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
                     context.openUrl(GOOGLE_PERMISSIONS_URL)
                 }, modifier = Modifier.padding(horizontal = Space.m))
-                BlueprintButton(stringResource(R.string.disconnect_removed), onRevokeDebtSettled,
-                    tone = ButtonTone.QUIET,
-                    modifier = Modifier.padding(horizontal = Space.m).testTag("revoke-debt-settled"))
+                // docs/09 화면 원칙 8: the answer to the notice above it, end-aligned under it.
+                FlowRow(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+                    BlueprintButton(stringResource(R.string.disconnect_removed), onRevokeDebtSettled,
+                        tone = ButtonTone.QUIET,
+                        modifier = Modifier.testTag("revoke-debt-settled"))
+                }
             }
             main.message?.let {
                 Text(

@@ -5,10 +5,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import app.recly.windows.i18n.*
 import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
+import app.recly.windows.ui.theme.blueprint
 import recly.core.processing.*
 import java.util.Locale
 import recly.core.transcribe.SttProviders
@@ -43,15 +45,19 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
             Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE, SttProviders.displayName(draft.provider)], style = MaterialTheme.typography.bodySmall)
             if (SttProviders.keyIsClientPair(draft.provider)) Text(strings[Str.PROCESSING_KEY_CLIENT_PAIR], style = MaterialTheme.typography.bodySmall)
-            ProcessingKey(model, draft.secretRef, strings)
+            ProcessingKey(model, draft.secretRef, strings) { deletingKey = draft.secretRef }
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL])
             if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
             // Keys only matter to an external provider, so the list lives with it.
-            if (model.secretNames.isNotEmpty()) {
-                SectionHeader(strings[Str.PROCESSING_SECRETS])
-                model.secretNames.forEach { name ->
-                    Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall)
-                    BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
+            // The current provider's key is managed on its own row above; this lists the rest.
+            val others = model.secretNames.filter { it != draft.secretRef }
+            if (others.isNotEmpty()) {
+                SectionHeader(strings[Str.PROCESSING_OTHER_KEYS])
+                others.forEach { name ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+                        Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
+                        BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
+                    }
                 }
             }
         }
@@ -60,26 +66,47 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
             if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
         }
         model.message?.let { Text(it.text(strings)) }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
-            BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = model.dirty && !model.busy)
-            BlueprintButton(strings[Str.SAVE], { model.save() }, tone = ButtonTone.PRIMARY, enabled = !model.busy && languageSupported && model.dirty)
+        // docs/09: a form's buttons are end-aligned, the commit last — and only there while the draft has changes.
+        if (model.dirty) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = !model.busy)
+            BlueprintButton(strings[Str.SAVE], { model.save() }, tone = ButtonTone.PRIMARY, enabled = !model.busy && languageSupported)
         }
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
+        SectionHeader(strings[Str.PROCESSING_SETTINGS_FILE])
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             BlueprintButton(strings[Str.PROCESSING_EXPORT], { model.export() }, tone = ButtonTone.QUIET, enabled = model.stored is ProcessingSettingsState.Ready && !model.dirty)
             BlueprintButton(strings[Str.PROCESSING_IMPORT], { model.importSettings() }, tone = ButtonTone.QUIET, enabled = !model.dirty)
         }
     }
 }
 @Composable
-private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Strings) {
+/**
+ * docs/05 "시크릿": the value is never read back. A saved key is a row that says so — [SELECTION_MARK]
+ * in the success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with
+ * Replace and Delete; the empty field only comes back to take a new value.
+ */
+private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Strings, delete: () -> Unit) {
     var value by remember(name) { mutableStateOf("") }
-    // docs/05 "시크릿": the value is never read back, so the field stays empty and this line says whether one is stored.
-    OutlinedTextField(value, { value = it }, label = { Text(strings[Str.FIELD_API_KEY]) }, singleLine = true,
-        visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
-        supportingText = if (name.isBlank()) null else {
-            { Text(strings[if (name in model.secretNames) Str.PROCESSING_KEY_ON_DEVICE else Str.PROCESSING_KEY_NOT_ON_DEVICE]) }
-        })
-    BlueprintButton(strings[Str.PROCESSING_SAVE_KEY], { model.saveKey(name, value) { value = "" } }, enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
+    var replacing by remember(name) { mutableStateOf(false) }
+    if (name.isNotBlank() && name in model.secretNames && !replacing) {
+        Row(Modifier.fillMaxWidth().padding(vertical = Space.s), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+            Text(strings[Str.FIELD_API_KEY], style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+            Text("$SELECTION_MARK ${strings[Str.PROCESSING_KEY_ON_DEVICE]}", style = MaterialTheme.typography.bodyMedium, color = blueprint.success)
+        }
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            BlueprintButton(strings[Str.PROCESSING_KEY_REPLACE], { replacing = true }, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.QUIET)
+        }
+    } else {
+        OutlinedTextField(value, { value = it }, label = { Text(strings[Str.FIELD_API_KEY]) }, singleLine = true,
+            visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
+            supportingText = if (name.isBlank() || replacing) null else {
+                { Text(strings[Str.PROCESSING_KEY_NOT_ON_DEVICE]) }
+            })
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            if (replacing) BlueprintButton(strings[Str.CANCEL], { value = ""; replacing = false }, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.PROCESSING_SAVE_KEY], { model.saveKey(name, value) { value = ""; replacing = false } }, enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
+        }
+    }
 }
 internal fun TranscriptionMode.label(): Str = when (this) {
     TranscriptionMode.LOCAL -> Str.PROCESSING_LOCAL

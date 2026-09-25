@@ -5,7 +5,6 @@
   "A key this phone does not have": "Une clé manque sur ce téléphone",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "L’enregistrement reste sur la montre jusqu’à confirmation du téléphone. Le transfert est automatique quand le téléphone est proche ; seuls les fichiers reçus sont supprimés ici.",
   "API key": "Clé API",
-  "API keys": "Clés API",
   "About": "À propos",
   "Add a Google account, then sign in again": "Ajoutez un compte Google, puis reconnectez-vous",
   "Allow transfers and continue": "Autoriser les transferts et continuer",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0} · {1} en attente · {2} en échec",
   "{0} — the {1} environment variable can point at one.": "{0} ; la variable d’environnement {1} peut indiquer son emplacement.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, enregistré le {1}, durée {2}, {3}",
-  "API key saved": "Clé API enregistrée",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "Le traitement en attente est suspendu jusqu’à la reconnexion du même compte. Enregistrements, fichiers Drive et clés sont conservés.",
   "Saved on this device": "Enregistrée sur cet appareil",
   "Not saved on this device": "Aucune clé enregistrée sur cet appareil",
   "Download Apple’s speech model to transcribe on this device.": "Téléchargez le modèle vocal d’Apple pour transcrire sur cet appareil.",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcription externe envoie l’enregistrement complet à {0}.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.",
   "The provider is out of quota or is rate-limiting.": "Quota épuisé ou requêtes limitées chez le fournisseur.",
-  "Enter the key as client ID:client secret.": "Saisissez la clé au format ID client:secret client."
+  "Enter the key as client ID:client secret.": "Saisissez la clé au format ID client:secret client.",
+  "Replace key": "Remplacer la clé",
+  "Other providers’ keys": "Clés des autres fournisseurs",
+  "Settings file": "Fichier de réglages"
 }

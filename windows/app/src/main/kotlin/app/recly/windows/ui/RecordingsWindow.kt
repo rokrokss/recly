@@ -47,6 +47,7 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -141,17 +142,21 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
         }
         if (model.recents.isEmpty()) {
             item {
-                Text(
-                    strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY],
-                    modifier = Modifier.padding(Space.l),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = blueprint.textMuted,
-                )
-                if (!model.recentsLoading) BlueprintButton(
-                    strings[Str.TRAY_START], model::start,
-                    enabled = model.ready && !model.recording,
-                    modifier = Modifier.padding(horizontal = Space.m),
-                )
+                // docs/09: the one recovery action under a centred message is centred under it.
+                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY],
+                        modifier = Modifier.padding(Space.l),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = blueprint.textMuted,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (!model.recentsLoading) BlueprintButton(
+                        strings[Str.TRAY_START], model::start,
+                        enabled = model.ready && !model.recording,
+                        modifier = Modifier.padding(horizontal = Space.m),
+                    )
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ public enum ButtonTone: Sendable {
 public struct BlueprintButton: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.isEnabled) private var isEnabled
+    @Environment(\.blueprintButtonFillsWidth) private var fillsWidth
     private let label: String
     private let leading: String?
     private let tone: ButtonTone
@@ -59,7 +60,7 @@ public struct BlueprintButton: View {
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
             // docs/09 "접근성": the label is small, the button is not.
-            .frame(minWidth: minWidth, minHeight: minTouch)
+            .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.node)
@@ -91,6 +92,18 @@ public struct BlueprintButton: View {
 
     private var fill: Color {
         isEnabled && tone == .primary ? blueprint.palette.accent : .clear
+    }
+}
+
+private struct ButtonFillsWidthKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// docs/09 화면 원칙 8: a dialog's answers that no longer fit on one row stack full width.
+    var blueprintButtonFillsWidth: Bool {
+        get { self[ButtonFillsWidthKey.self] }
+        set { self[ButtonFillsWidthKey.self] = newValue }
     }
 }
 

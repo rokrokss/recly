@@ -190,6 +190,7 @@ public struct TransferPrivacyView: View {
                     }
                     .disabled(model.working)
                     .accessibilityIdentifier("allow-pending-transfers")
+                    .frame(maxWidth: .infinity, alignment: .trailing)
                 }
                 SectionHeader(loc("Allowed destinations"))
                 if model.approved.isEmpty {
@@ -204,10 +205,12 @@ public struct TransferPrivacyView: View {
                         if let url = PrivacyLinks.provider(target.provider) {
                             Link(loc("Provider privacy information"), destination: url)
                         }
+                        // docs/09 화면 원칙 8: the destination spans several lines, so its action sits under it, at the end.
                         BlueprintButton(loc("Withdraw permission"), tone: .quiet) {
                             Task { await model.revoke(target) }
                         }
                         .disabled(model.working)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                 }
                 Text(verbatim: loc("Withdrawing permission stops future requests. It does not delete data already sent or your saved API keys."))

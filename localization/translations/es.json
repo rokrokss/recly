@@ -5,7 +5,6 @@
   "A key this phone does not have": "Falta una clave en este teléfono",
   "A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.": "La grabación permanece en el reloj hasta que el teléfono confirma su recepción. Se transfiere automáticamente cuando el teléfono está cerca y solo se eliminan aquí los archivos recibidos.",
   "API key": "Clave API",
-  "API keys": "Claves API",
   "About": "Acerca de",
   "Add a Google account, then sign in again": "Añade una cuenta de Google y vuelve a iniciar sesión",
   "Allow transfers and continue": "Permitir transferencias y continuar",
@@ -362,12 +361,14 @@
   "{0} · {1} waiting · {2} failed": "{0} · {1} en espera · {2} con error",
   "{0} — the {1} environment variable can point at one.": "{0}; la variable de entorno {1} puede indicar su ubicación.",
   "{0}, recorded {1}, length {2}, {3}": "{0}, grabado {1}, duración {2}, {3}",
-  "API key saved": "Clave API guardada",
   "Pending processing pauses until you reconnect the same account. Recordings, Drive files and keys stay.": "El procesamiento pendiente se pausa hasta reconectar la misma cuenta. Se conservan grabaciones, archivos de Drive y claves.",
   "Saved on this device": "Guardada en este dispositivo",
   "Not saved on this device": "No hay ninguna clave guardada en este dispositivo",
   "Download Apple’s speech model to transcribe on this device.": "Descarga el modelo de voz de Apple para transcribir en este dispositivo.",
   "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcripción externa envía la grabación completa a {0}.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.",
   "The provider is out of quota or is rate-limiting.": "El proveedor agotó la cuota o limita las solicitudes.",
-  "Enter the key as client ID:client secret.": "Introduce la clave como ID de cliente:secreto de cliente."
+  "Enter the key as client ID:client secret.": "Introduce la clave como ID de cliente:secreto de cliente.",
+  "Replace key": "Reemplazar clave",
+  "Other providers’ keys": "Claves de otros proveedores",
+  "Settings file": "Archivo de ajustes"
 }

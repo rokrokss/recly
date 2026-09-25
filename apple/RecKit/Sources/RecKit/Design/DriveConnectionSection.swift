@@ -56,6 +56,7 @@ public struct DriveConnectionSection: View {
             SectionBlock {
                 BlueprintButton(DisconnectGuard.debtSettled.text, tone: .quiet, action: debtSettled)
                     .accessibilityIdentifier("revoke-debt-settled")
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
     }
