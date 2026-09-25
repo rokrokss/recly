@@ -67,13 +67,14 @@
     <string name="editor_provider">Провайдер</string>
     <string name="editor_api_key">Ключ API</string>
     <string name="editor_invoke_url">URL вызова</string>
-    <string name="editor_language">Язык</string>
+    <string name="editor_language">Язык речи</string>
     <string name="secret_name_invalid">Начинается со строчной буквы; строчные буквы, цифры и подчёркивания, до 32 символов</string>
     <string name="secret_value_required">Введите значение</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Загрузки</string>
     <string name="settings_wifi_only">Загружать только по Wi-Fi</string>
     <string name="settings_language">Язык</string>
+    <string name="settings_app_language">Язык приложения</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">Тема</string>

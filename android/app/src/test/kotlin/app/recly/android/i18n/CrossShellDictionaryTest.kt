@@ -431,6 +431,24 @@ class CrossShellDictionaryTest {
                 windows = "settings.language",
                 reckit = "Language",
             ),
+            // The two settings that choose a language are named apart: the app's own, and the one
+            // spoken in a recording — which is a hint to the recognizer, not a translation target.
+            Line(
+                what = "the app language row",
+                en = "App language",
+                ko = "앱 언어",
+                android = "settings_app_language",
+                windows = "settings.app.language",
+                reckit = "App language",
+            ),
+            Line(
+                what = "the language spoken in a recording",
+                en = "Spoken language",
+                ko = "녹음 언어",
+                android = "editor_language",
+                windows = "field.language",
+                reckit = "Spoken language",
+            ),
             Line(
                 what = "Korean, under its own name",
                 en = "한국어",

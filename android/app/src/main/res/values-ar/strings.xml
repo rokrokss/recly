@@ -67,13 +67,14 @@
     <string name="editor_provider">المزوّد</string>
     <string name="editor_api_key">مفتاح API</string>
     <string name="editor_invoke_url">رابط الاستدعاء</string>
-    <string name="editor_language">اللغة</string>
+    <string name="editor_language">لغة التسجيل</string>
     <string name="secret_name_invalid">يبدأ بحرف صغير؛ أحرف صغيرة وأرقام وشرطة سفلية، حتى 32 حرفًا</string>
     <string name="secret_value_required">أدخل قيمة</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">عمليات الرفع</string>
     <string name="settings_wifi_only">الرفع عبر Wi-Fi فقط</string>
     <string name="settings_language">اللغة</string>
+    <string name="settings_app_language">لغة التطبيق</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">المظهر</string>

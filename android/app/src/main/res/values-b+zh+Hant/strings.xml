@@ -67,13 +67,14 @@
     <string name="editor_provider">供應商</string>
     <string name="editor_api_key">API金鑰</string>
     <string name="editor_invoke_url">呼叫URL</string>
-    <string name="editor_language">語言</string>
+    <string name="editor_language">錄音語言</string>
     <string name="secret_name_invalid">以小寫字母開頭，僅含小寫字母、數字和底線，最多32個字元</string>
     <string name="secret_value_required">輸入值</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">上傳</string>
     <string name="settings_wifi_only">僅透過Wi-Fi上傳</string>
     <string name="settings_language">語言</string>
+    <string name="settings_app_language">應用程式語言</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">主題</string>

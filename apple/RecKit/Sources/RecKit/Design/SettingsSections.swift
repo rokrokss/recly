@@ -28,9 +28,9 @@ public struct LanguageSection: View {
     public var body: some View {
         SectionHeader(loc("Language")).padding(.horizontal, Space.m)
         #if os(macOS)
-        SectionRow(title: loc("Language")) {
+        SectionRow(title: loc("App language")) {
             BlueprintDropdown(
-                loc("Language"),
+                loc("App language"),
                 options: AppLanguage.Choice.choices,
                 selection: $language.effective,
                 title: title
@@ -39,7 +39,7 @@ public struct LanguageSection: View {
         }
         #else
         Button { picking = true } label: {
-            SectionRow(title: loc("Language")) {
+            SectionRow(title: loc("App language")) {
                 Text(verbatim: title(language.effective))
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
@@ -48,7 +48,7 @@ public struct LanguageSection: View {
         .buttonStyle(.plain)
         .accessibilityIdentifier("language")
         .blueprintDialog(isPresented: $picking) {
-            BlueprintDialog(title: loc("Language")) {
+            BlueprintDialog(title: loc("App language")) {
                 // Nothing to cancel: a choice is applied the moment it is made (rule 3), so the one
                 // answer here closes a question that has already been answered.
                 BlueprintButton(loc("Close"), tone: .quiet) { picking = false }

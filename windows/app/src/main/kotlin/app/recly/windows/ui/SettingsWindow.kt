@@ -110,13 +110,13 @@ private fun Account(model: ShellModel, strings: Strings) {
 private fun Language(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_LANGUAGE])
     TableRow(
-        title = strings[Str.SETTINGS_LANGUAGE],
+        title = strings[Str.SETTINGS_APP_LANGUAGE],
         trailing = {
             // Each language under its own name — a label that is never translated, so whoever
             // cannot read the language the app is currently in can still find the one they want
             // (docs/07 rule 1). What is marked is the language this window is in.
             BlueprintDropdown(
-                label = strings[Str.SETTINGS_LANGUAGE],
+                label = strings[Str.SETTINGS_APP_LANGUAGE],
                 options = AppLanguage.choices.map { (language, label) -> language to strings[label] },
                 selected = model.language,
                 onSelect = model::selectLanguage,

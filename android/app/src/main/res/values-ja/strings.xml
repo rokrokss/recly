@@ -67,13 +67,14 @@
     <string name="editor_provider">提供者</string>
     <string name="editor_api_key">APIキー</string>
     <string name="editor_invoke_url">呼び出しURL</string>
-    <string name="editor_language">言語</string>
+    <string name="editor_language">録音の言語</string>
     <string name="secret_name_invalid">英小文字で始め、英小文字・数字・アンダースコアを32文字以内で入力</string>
     <string name="secret_value_required">値を入力</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">アップロード</string>
     <string name="settings_wifi_only">Wi-Fiでのみアップロード</string>
     <string name="settings_language">言語</string>
+    <string name="settings_app_language">アプリの言語</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">テーマ</string>

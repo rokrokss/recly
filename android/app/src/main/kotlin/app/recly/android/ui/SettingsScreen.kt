@@ -131,7 +131,7 @@ fun SettingsScreen(
             // the one the words on this very screen were loaded in.
             val language = AppLanguage.effective(LocalConfiguration.current.locales[0])
             TableRow(
-                title = stringResource(R.string.settings_language),
+                title = stringResource(R.string.settings_app_language),
                 modifier = Modifier
                     .clickable(role = Role.Button) { pickingLanguage = true }
                     .testTag("language"),
@@ -145,7 +145,7 @@ fun SettingsScreen(
             )
             if (pickingLanguage) {
                 BlueprintDialog(
-                    title = stringResource(R.string.settings_language),
+                    title = stringResource(R.string.settings_app_language),
                     onDismissRequest = { pickingLanguage = false },
                     actions = {
                         // Nothing to cancel: a choice is applied the moment it is made (rule 3), so

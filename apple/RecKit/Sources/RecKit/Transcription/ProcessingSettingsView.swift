@@ -206,9 +206,9 @@ public struct ProcessingSettingsView: View {
                     }
                 }
                 if draft.mode != .off {
-                    SectionRow(title: loc("Language")) {
+                    SectionRow(title: loc("Spoken language")) {
                         #if os(macOS)
-                        BlueprintDropdown(loc("Language"), options: model.languages.map(SpeechLanguageOption.init),
+                        BlueprintDropdown(loc("Spoken language"), options: model.languages.map(SpeechLanguageOption.init),
                             selection: Binding(get: { SpeechLanguageOption(language: draft.language) }, set: { option in
                                 model.edit { $0.language = option.language }
                                 Task { await model.refreshLocal() }
@@ -253,7 +253,7 @@ public struct ProcessingSettingsView: View {
         }
         .fileExporter(isPresented: $exporter, document: file, contentType: .json, defaultFilename: "recly-settings") { _ in }
         .blueprintDialog(isPresented: $pickingLanguage) {
-            BlueprintDialog(title: loc("Language")) {
+            BlueprintDialog(title: loc("Spoken language")) {
                 BlueprintButton(loc("Close"), tone: .quiet) { pickingLanguage = false }
             } content: {
                 ForEach(model.languages, id: \.self) { language in

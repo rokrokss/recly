@@ -67,13 +67,14 @@
     <string name="editor_provider">प्रदाता</string>
     <string name="editor_api_key">API कुंजी</string>
     <string name="editor_invoke_url">कॉल URL</string>
-    <string name="editor_language">भाषा</string>
+    <string name="editor_language">रिकॉर्डिंग की भाषा</string>
     <string name="secret_name_invalid">छोटे अक्षर से शुरू; छोटे अक्षर, अंक और अंडरस्कोर, अधिकतम 32</string>
     <string name="secret_value_required">मान दर्ज करें</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">अपलोड</string>
     <string name="settings_wifi_only">केवल Wi-Fi से अपलोड करें</string>
     <string name="settings_language">भाषा</string>
+    <string name="settings_app_language">ऐप की भाषा</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">थीम</string>

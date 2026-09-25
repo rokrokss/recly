@@ -67,13 +67,14 @@
     <string name="editor_provider">Provedor</string>
     <string name="editor_api_key">Chave de API</string>
     <string name="editor_invoke_url">URL de chamada</string>
-    <string name="editor_language">Idioma</string>
+    <string name="editor_language">Idioma falado</string>
     <string name="secret_name_invalid">Começa com minúscula; minúsculas, números e sublinhados, até 32 caracteres</string>
     <string name="secret_value_required">Insira um valor</string>
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Envios</string>
     <string name="settings_wifi_only">Enviar somente por Wi-Fi</string>
     <string name="settings_language">Idioma</string>
+    <string name="settings_app_language">Idioma do app</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
     <string name="settings_theme">Tema</string>

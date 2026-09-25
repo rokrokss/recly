@@ -97,7 +97,7 @@
          budget cuts a long request off. -->
     <string name="editor_api_key">API key</string>
     <string name="editor_invoke_url">Invoke URL</string>
-    <string name="editor_language">Language</string>
+    <string name="editor_language">Spoken language</string>
 
     <!-- Secrets (docs/05 "시크릿"). -->
     <string name="secret_name_invalid">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
@@ -109,6 +109,7 @@
     <string name="settings_wifi_only">Upload on Wi-Fi only</string>
 
     <string name="settings_language">Language</string>
+    <string name="settings_app_language">App language</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
 
