@@ -273,7 +273,6 @@
   "The microphone permission is required": "Mikrofonberechtigung erforderlich",
   "The microphone permission is required.": "Mikrofonberechtigung erforderlich",
   "The provider did not finish in time. It will submit again.": "Der Anbieter wurde nicht rechtzeitig fertig. Die Anfrage wird erneut gesendet.",
-  "The provider is out of quota or is rate-limiting. It will try again.": "Kontingent oder Anfragelimit des Anbieters erreicht. Ein neuer Versuch folgt.",
   "The provider is out of quota — check its limits and billing": "Anbieterkontingent erschöpft. Limits und Abrechnung prüfen",
   "The provider rejected the key": "Der Anbieter hat den Schlüssel abgelehnt",
   "The provider rejected the key.": "Der Anbieter hat den Schlüssel abgelehnt",
@@ -368,5 +367,7 @@
   "Saved on this device": "Auf diesem Gerät gespeichert",
   "Not saved on this device": "Auf diesem Gerät ist kein Schlüssel gespeichert",
   "Download Apple’s speech model to transcribe on this device.": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter.",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an {0}.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Die externe Transkription sendet die gesamte Aufnahme an {0}.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.",
+  "The provider is out of quota or is rate-limiting.": "Kontingent oder Anfragelimit des Anbieters erreicht.",
+  "Enter the key as client ID:client secret.": "Geben Sie den Schlüssel als Client-ID:Client-Secret ein."
 }

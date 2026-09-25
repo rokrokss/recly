@@ -99,11 +99,15 @@ class GladiaProvider : SttProvider {
             "done" -> PollResult.Done(read(ctx, json))
             "queued", "processing" -> PollResult.Pending
             // The provider's own message is the only thing that says why, so it is kept verbatim.
-            "error" -> PollResult.Failed(
-                listOfNotNull(json.string("error_code"), json.string("message"))
-                    .joinToString(" ")
-                    .ifEmpty { "error" },
-            )
+            "error" -> {
+                val why = listOfNotNull(json.string("error_code"), json.string("message")).joinToString(" ").ifEmpty { "error" }
+                // `error_code` is the HTTP-style status of the failure (API reference, 2026-09-25): a
+                // 4xx is about the request or the file, so a new submission would fail the same way.
+                if (json.string("error_code")?.toIntOrNull() in 400..499) {
+                    throw StepFailure(retryable = false, reason = CoreMessage.UNSUPPORTED_AUDIO.code(detail = "gladia $why"))
+                }
+                PollResult.Failed(why)
+            }
 
             else -> throw StepFailure(
                 retryable = true,

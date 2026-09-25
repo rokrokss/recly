@@ -273,7 +273,6 @@
   "The microphone permission is required": "يلزم إذن الميكروفون",
   "The microphone permission is required.": "يلزم إذن الميكروفون",
   "The provider did not finish in time. It will submit again.": "لم ينتهِ المزوّد في الوقت المحدد. سيُعاد الإرسال.",
-  "The provider is out of quota or is rate-limiting. It will try again.": "نفدت حصة المزوّد أو قُيّد معدل الطلبات. ستتم إعادة المحاولة.",
   "The provider is out of quota — check its limits and billing": "نفدت حصة المزوّد. تحقق من الحدود والفوترة",
   "The provider rejected the key": "رفض المزوّد المفتاح",
   "The provider rejected the key.": "رفض المزوّد المفتاح",
@@ -368,5 +367,7 @@
   "Saved on this device": "محفوظ على هذا الجهاز",
   "Not saved on this device": "لا يوجد مفتاح محفوظ على هذا الجهاز",
   "Download Apple’s speech model to transcribe on this device.": "نزّل نموذج الكلام من Apple للنسخ على هذا الجهاز.",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "يرسل النسخ الخارجي التسجيل كاملًا إلى {0}.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "يرسل النسخ الخارجي التسجيل كاملًا إلى {0}.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.",
+  "The provider is out of quota or is rate-limiting.": "نفدت حصة المزوّد أو قُيّد معدل الطلبات.",
+  "Enter the key as client ID:client secret.": "أدخل المفتاح بالصيغة معرّف العميل:سر العميل."
 }

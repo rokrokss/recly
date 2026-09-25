@@ -86,6 +86,8 @@ class AzureProvider : SttProvider {
     /** An empty `locales` is how this API is told to detect the language itself. */
     private fun definition(ctx: SttContext): JsonObject = buildJsonObject {
         putJsonArray("locales") { locales(ctx.step.language).forEach { add(it) } }
+        // The default is `Masked` (fast transcription guide, 2026-09-25); a record is kept as said.
+        put("profanityFilterMode", "None")
         // The whole object is left out when diarization is off: `enabled: false` plus a speaker
         // count would be a request for something we are not asking for.
         if (ctx.step.diarize) {
@@ -98,11 +100,15 @@ class AzureProvider : SttProvider {
         }
     }
 
-    /** docs/08: the one provider that takes both halves of `ko-en` as locales of their own. */
+    /**
+     * docs/08: several locales make Azure pick one language for the whole file, so mixed Korean and
+     * English goes to the multilingual model with no locale — what the fast transcription guide
+     * recommends for audio that switches language (checked 2026-09-25).
+     */
     private fun locales(language: Language): List<String> = when (language) {
         Language.KO -> listOf(KO)
         Language.EN -> listOf(EN)
-        Language.KO_EN -> listOf(KO, EN)
+        Language.KO_EN -> emptyList()
         Language.AUTO -> emptyList()
         else -> listOf(TranscriptionLanguages.localeTag(language))
     }

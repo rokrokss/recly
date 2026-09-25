@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">Dieser Auftrag benötigt eine neuere App-Version: Er verwendet den Schritt „%1$s“</string>
     <string name="core_step_failed">Fehlgeschlagen: %1$s</string>
     <string name="core_auth_rejected">Der Anbieter hat den Schlüssel abgelehnt</string>
-    <string name="core_quota">Kontingent oder Anfragelimit des Anbieters erreicht. Ein neuer Versuch folgt.</string>
+    <string name="core_quota">Kontingent oder Anfragelimit des Anbieters erreicht.</string>
     <string name="core_provider_error">Beim Anbieter ist ein Fehler aufgetreten. Ein neuer Versuch folgt.</string>
     <string name="core_unsupported_audio">Der Anbieter hat dieses Audio nicht akzeptiert.</string>
     <string name="core_no_input_track">Diese Aufnahme hat keine Mono- oder Mischspur zur Transkription.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">Modell (optional)</string>
     <string name="processing_save_key">Schlüssel speichern</string>
     <string name="processing_key_saved">API-Schlüssel gespeichert</string>
+    <string name="processing_key_client_pair">Geben Sie den Schlüssel als Client-ID:Client-Secret ein.</string>
     <string name="processing_key_on_device">Auf diesem Gerät gespeichert</string>
     <string name="processing_key_not_on_device">Auf diesem Gerät ist kein Schlüssel gespeichert</string>
     <string name="processing_secrets">API-Schlüssel</string>

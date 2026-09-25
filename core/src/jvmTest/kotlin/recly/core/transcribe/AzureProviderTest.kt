@@ -106,8 +106,9 @@ class AzureProviderTest {
         val expected = mapOf(
             Language.KO to listOf(AzureProvider.KO),
             Language.EN to listOf(AzureProvider.EN),
-            // The one provider that takes both halves of 한영 혼용 at once.
-            Language.KO_EN to listOf(AzureProvider.KO, AzureProvider.EN),
+            // Several locales pick one language for the whole file; mixed speech goes to the
+            // multilingual model with none, as the fast transcription guide recommends.
+            Language.KO_EN to emptyList(),
             // An empty list is how this API is asked to detect the language itself.
             Language.AUTO to emptyList(),
         )
@@ -115,6 +116,7 @@ class AzureProviderTest {
             harness.server.reply(TRANSCRIBED)
             provider.submit(context(language = language), harness.audio)
             assertEquals(wanted, locales(definition(index)), "for $language")
+            assertEquals("None", definition(index)["profanityFilterMode"]!!.jsonPrimitive.content, "a record is kept as said")
         }
     }
 

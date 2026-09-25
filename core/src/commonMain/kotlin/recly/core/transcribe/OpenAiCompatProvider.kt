@@ -139,7 +139,9 @@ class OpenAiCompatProvider(private val profile: Profile) : SttProvider {
         Language.KO -> "ko"
         Language.EN -> "en"
         Language.KO_EN -> "ko"
-        Language.AUTO -> null
+        // Together's API reference defaults `language` to `en` and names `auto` for detection
+        // (checked 2026-09-25); the other three detect when the field is absent.
+        Language.AUTO -> if (profile == Profile.TOGETHER) "auto" else null
         else -> TranscriptionLanguages.code(language)
     }
 

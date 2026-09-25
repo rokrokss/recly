@@ -273,7 +273,6 @@
   "The microphone permission is required": "L’autorisation du microphone est nécessaire",
   "The microphone permission is required.": "L’autorisation du microphone est nécessaire",
   "The provider did not finish in time. It will submit again.": "Le fournisseur n’a pas terminé à temps. La demande sera renvoyée.",
-  "The provider is out of quota or is rate-limiting. It will try again.": "Quota épuisé ou requêtes limitées chez le fournisseur. Une nouvelle tentative suivra.",
   "The provider is out of quota — check its limits and billing": "Quota du fournisseur épuisé. Vérifiez les limites et la facturation",
   "The provider rejected the key": "Le fournisseur a refusé la clé",
   "The provider rejected the key.": "Le fournisseur a refusé la clé",
@@ -368,5 +367,7 @@
   "Saved on this device": "Enregistrée sur cet appareil",
   "Not saved on this device": "Aucune clé enregistrée sur cet appareil",
   "Download Apple’s speech model to transcribe on this device.": "Téléchargez le modèle vocal d’Apple pour transcrire sur cet appareil.",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcription externe envoie l’enregistrement complet à {0}.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser."
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcription externe envoie l’enregistrement complet à {0}.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.",
+  "The provider is out of quota or is rate-limiting.": "Quota épuisé ou requêtes limitées chez le fournisseur.",
+  "Enter the key as client ID:client secret.": "Saisissez la clé au format ID client:secret client."
 }

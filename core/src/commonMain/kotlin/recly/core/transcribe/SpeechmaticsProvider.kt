@@ -135,6 +135,14 @@ class SpeechmaticsProvider : SttProvider {
             put("operating_point", operatingPoint(ctx))
             // This API takes no speaker count at all: diarization is on or it is off.
             put("diarization", if (ctx.step.diarize) "speaker" else "none")
+            // `cmn` is written in Simplified unless asked otherwise (formatting docs, 2026-09-25).
+            if (ctx.step.language == Language.ZH_TW) put("output_locale", "cmn-Hant")
+        }
+        // By default a file whose language cannot be told with confidence is rejected, and a
+        // rejection is resubmitted; `allow` transcribes it in the best guess instead (batch API
+        // spec `LanguageIdentificationConfig`, 2026-09-25).
+        if (ctx.step.language == Language.AUTO) {
+            putJsonObject("language_identification_config") { put("low_confidence_action", "allow") }
         }
     }
 

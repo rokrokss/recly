@@ -93,7 +93,17 @@ class RevProvider : SttProvider {
             "transcribed" -> PollResult.Done(transcript(ctx, ref))
             "in_progress" -> PollResult.Pending
             // `failure` is the machine-readable token and `failure_detail` the sentence for a human.
-            "failed" -> PollResult.Failed(json.string("failure_detail") ?: json.string("failure") ?: "failed")
+            "failed" -> {
+                val failure = json.string("failure")
+                val detail = "rev ${failure.orEmpty()} ${json.string("failure_detail").orEmpty()}".trim()
+                // The `failure` enum (API reference, 2026-09-25): these say the audio or the account,
+                // and sending the same file again cannot change either answer.
+                when (failure) {
+                    in AUDIO_FAILURES -> throw StepFailure(retryable = false, reason = CoreMessage.UNSUPPORTED_AUDIO.code(detail = detail))
+                    in ACCOUNT_FAILURES -> throw StepFailure(retryable = false, reason = CoreMessage.QUOTA.code(detail = detail))
+                    else -> PollResult.Failed(json.string("failure_detail") ?: failure ?: "failed")
+                }
+            }
 
             else -> throw StepFailure(
                 retryable = true,
@@ -177,17 +187,19 @@ class RevProvider : SttProvider {
         )
     }
 
-    /** Punctuation is written against the word before it, so it takes no space of its own. */
-    private fun text(elements: List<JsonObject>): String = elements.fold(StringBuilder()) { text, element ->
-        if (text.isNotEmpty() && element.string("type") != PUNCT) text.append(' ')
-        text.append(value(element))
-    }.toString()
+    /**
+     * The spaces between words are elements of their own (`punct` with value `" "`, per the API
+     * reference's transcript example, checked 2026-09-25), so the values are joined as they come.
+     */
+    private fun text(elements: List<JsonObject>): String = elements.joinToString("") { value(it) }.trim()
 
     private fun value(element: JsonObject): String = element.string("value").orEmpty()
 
     private fun seconds(owner: JsonObject, key: String): Double? = owner[key]?.jsonPrimitive?.doubleOrNull
 
     companion object {
+        private val AUDIO_FAILURES = setOf("duration_exceeded", "duration_too_short", "invalid_media", "empty_media")
+        private val ACCOUNT_FAILURES = setOf("insufficient_balance", "invoicing_limit_exceeded")
         const val NAME = "rev"
         internal const val BASE = "https://api.rev.ai/speechtotext/v1"
         internal const val TRANSCRIPT_TYPE = "application/vnd.rev.transcript.v1.0+json"
@@ -195,7 +207,6 @@ class RevProvider : SttProvider {
         /** The other transcribers are human ones, and no polling loop can wait for those. */
         private const val MACHINE = "machine"
         private const val TEXT = "text"
-        private const val PUNCT = "punct"
         private const val JSON_TYPE = "application/json"
         private const val AUDIO_TYPE = "audio/mp4"
         private const val TIMEOUT_SEC = 60

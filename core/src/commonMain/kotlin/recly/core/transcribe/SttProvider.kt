@@ -173,6 +173,9 @@ object SttProviders {
         else -> name
     }
 
+    /** RTZR's key is a pair, `{clientId}:{clientSecret}` (docs/08), which the settings have to say. */
+    fun keyIsClientPair(name: String): Boolean = name == RtzrProvider.NAME
+
     /** The adapters that read `step.model`; the others pin their model or have none to choose. */
     fun acceptsModel(name: String): Boolean = when (name) {
         OpenAiCompatProvider.OPENAI_NAME, OpenAiCompatProvider.GROQ_NAME, OpenAiCompatProvider.TOGETHER_NAME,

@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">Esta tarefa precisa de uma versão mais recente: usa a etapa “%1$s”</string>
     <string name="core_step_failed">Falha: %1$s</string>
     <string name="core_auth_rejected">O provedor recusou a chave</string>
-    <string name="core_quota">A cota ou o limite de requisições do provedor foi atingido. Haverá nova tentativa.</string>
+    <string name="core_quota">A cota ou o limite de requisições do provedor foi atingido.</string>
     <string name="core_provider_error">Ocorreu um erro no provedor. Haverá nova tentativa.</string>
     <string name="core_unsupported_audio">O provedor não aceitou este áudio.</string>
     <string name="core_no_input_track">Esta gravação não tem faixa mono ou mixada para transcrever.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">Modelo (opcional)</string>
     <string name="processing_save_key">Salvar chave</string>
     <string name="processing_key_saved">Chave de API salva</string>
+    <string name="processing_key_client_pair">Digite a chave como ID do cliente:segredo do cliente.</string>
     <string name="processing_key_on_device">Salva neste dispositivo</string>
     <string name="processing_key_not_on_device">Nenhuma chave salva neste dispositivo</string>
     <string name="processing_secrets">Chaves de API</string>

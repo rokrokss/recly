@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -84,6 +85,19 @@ class SpeechmaticsProviderTest {
             val transcription = config(index)["transcription_config"]!!.jsonObject
             assertEquals(code, transcription["language"]?.jsonPrimitive?.content, "for $language")
         }
+    }
+
+    @Test
+    fun `traditional chinese is asked for by locale, and detection transcribes when unsure`() = runBlocking {
+        harness.server.reply("""{"id":"job-1"}""").reply("""{"id":"job-2"}""").reply("""{"id":"job-3"}""")
+        provider.submit(context(language = Language.ZH_TW), harness.audio)
+        provider.submit(context(language = Language.AUTO), harness.audio)
+        provider.submit(context(), harness.audio)
+
+        assertEquals("cmn-Hant", config(0)["transcription_config"]!!.jsonObject["output_locale"]!!.jsonPrimitive.content)
+        assertEquals("allow", config(1)["language_identification_config"]!!.jsonObject["low_confidence_action"]!!.jsonPrimitive.content)
+        assertNull(config(2)["language_identification_config"])
+        assertNull(config(2)["transcription_config"]!!.jsonObject["output_locale"])
     }
 
     @Test

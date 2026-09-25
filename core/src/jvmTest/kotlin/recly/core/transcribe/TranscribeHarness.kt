@@ -158,6 +158,7 @@ internal class FakeStt {
         /** Two speakers, one word list, times in milliseconds — the shape the API documents. */
         const val TWO_SPEAKERS = """
             {"id":"t-0001","status":"completed","language_code":"ko","audio_duration":1810.0,
+             "speech_model_used":"universal-2",
              "text":"안녕하세요 반갑습니다",
              "utterances":[
                {"start":0,"end":3200,"speaker":"A","text":"안녕하세요",

@@ -24,8 +24,10 @@ import recly.core.platform.HttpResult
  * `POST /v2/upload` with the raw bytes → `upload_url`, `POST /v2/transcript` → `id`,
  * `GET /v2/transcript/{id}` → `queued` / `processing` / `completed` / `error`.
  *
- * The model is pinned to `universal-2`: it is the newest one that speaks Korean, so the step's
- * `model` field does not apply here.
+ * `speech_models` is the documented routing list `universal-3-5-pro` → `universal-2` (API reference,
+ * 2026-09-25): a language the first does not speak, Korean among them, falls back to the second.
+ * The transcript records `speech_model_used`, the one that actually ran. The step's `model` field
+ * does not apply here.
  */
 class AssemblyAiProvider : SttProvider {
     override val name: String = NAME
@@ -111,7 +113,7 @@ class AssemblyAiProvider : SttProvider {
     /** `speakers_expected` is a single number, so it is only honest when min and max agree. */
     private fun request(ctx: SttContext, audioUrl: String): JsonObject = buildJsonObject {
         put("audio_url", audioUrl)
-        putJsonArray("speech_models") { add(MODEL) }
+        putJsonArray("speech_models") { MODELS.forEach { add(it) } }
         when (ctx.step.language) {
             Language.AUTO -> put("language_detection", true)
             else -> put("language_code", languageCode(ctx.step.language))
@@ -163,7 +165,7 @@ class AssemblyAiProvider : SttProvider {
             segments = segments,
             language = json.string("language_code"),
             durationSec = json["audio_duration"]?.jsonPrimitive?.doubleOrNull,
-            model = MODEL,
+            model = json.string("speech_model_used"),
         )
     }
 
@@ -186,7 +188,7 @@ class AssemblyAiProvider : SttProvider {
     companion object {
         const val NAME = "assemblyai"
         internal const val BASE = "https://api.assemblyai.com/v2"
-        internal const val MODEL = "universal-2"
+        internal val MODELS = listOf("universal-3-5-pro", "universal-2")
         private const val JSON_TYPE = "application/json"
         private const val AUDIO_TYPE = "application/octet-stream"
         private const val TIMEOUT_SEC = 60

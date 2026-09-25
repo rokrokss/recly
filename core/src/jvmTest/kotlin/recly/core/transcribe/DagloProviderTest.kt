@@ -261,9 +261,9 @@ class DagloProviderTest {
         const val TRANSCRIBED = """
             {"rid":"job-1","status":"transcribed","sttResults":[
               {"transcript":"안녕하세요 반갑습니다 네","words":[
-                {"word":"안녕하세요","startTime":{"seconds":"0","nanos":0},
+                {"word":"안녕하세요 ","startTime":{"seconds":"0","nanos":0},
                  "endTime":{"seconds":"1","nanos":500000000},"segmentId":0,"speaker":"1"},
-                {"word":"반갑습니다","startTime":{"seconds":"1","nanos":750000000},
+                {"word":"반갑습니다 ","startTime":{"seconds":"1","nanos":750000000},
                  "endTime":{"seconds":"3","nanos":250000000},"segmentId":0,"speaker":"1"},
                 {"word":"네","startTime":{"seconds":"3","nanos":750000000},
                  "endTime":{"seconds":"4","nanos":500000000},"segmentId":1,"speaker":"2"}

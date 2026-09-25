@@ -150,11 +150,21 @@ class GladiaProviderTest {
 
     @Test
     fun `a job the provider gave up on comes back as data`() = runBlocking {
-        harness.server.reply("""{"id":"job-1","status":"error","error_code":400,"message":"bad audio"}""")
+        harness.server.reply("""{"id":"job-1","status":"error","error_code":500,"message":"worker lost"}""")
 
         val failed = assertIs<PollResult.Failed>(provider.poll(context(), "job-1"))
 
-        assertEquals("400 bad audio", failed.reason)
+        assertEquals("500 worker lost", failed.reason)
+    }
+
+    @Test
+    fun `a job refused for the request or the file is not submitted again`() = runBlocking {
+        harness.server.reply("""{"id":"job-1","status":"error","error_code":400,"message":"bad audio"}""")
+
+        val failure = assertFailsWith<StepFailure> { provider.poll(context(), "job-1") }
+
+        assertEquals(false, failure.retryable)
+        assertEquals(CoreMessage.UNSUPPORTED_AUDIO, CoreMessageRef.parse(failure.reason)?.message)
     }
 
     @Test

@@ -273,7 +273,6 @@
   "The microphone permission is required": "マイクの許可が必要です",
   "The microphone permission is required.": "マイクの許可が必要です",
   "The provider did not finish in time. It will submit again.": "提供者の処理が時間内に終わりませんでした。再送信します。",
-  "The provider is out of quota or is rate-limiting. It will try again.": "提供者の利用枠またはリクエスト数の制限に達しました。再試行します。",
   "The provider is out of quota — check its limits and billing": "提供者の利用枠に達しました。上限と請求を確認してください",
   "The provider rejected the key": "提供者がキーを拒否しました",
   "The provider rejected the key.": "提供者がキーを拒否しました",
@@ -368,5 +367,7 @@
   "Saved on this device": "このデバイスに保存済み",
   "Not saved on this device": "このデバイスに保存されたキーはありません",
   "Download Apple’s speech model to transcribe on this device.": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部の文字起こしでは、録音全体を{0}に送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。",
+  "The provider is out of quota or is rate-limiting.": "提供者の利用枠またはリクエスト数の制限に達しました。",
+  "Enter the key as client ID:client secret.": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。"
 }

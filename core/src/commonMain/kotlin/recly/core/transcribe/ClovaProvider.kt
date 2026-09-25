@@ -81,10 +81,16 @@ class ClovaProvider : SttProvider {
         // `message` is the only thing that says why.
         val status = json.string("result")
         if (status != COMPLETED) {
-            throw StepFailure(
-                retryable = true,
-                reason = CoreMessage.PROVIDER_ERROR.code(detail = "clova $status ${json.string("message").orEmpty()}"),
-            )
+            val detail = "clova $status ${json.string("message").orEmpty()}".trim()
+            // The documented codes that no retry can change (overview status codes, 2026-09-25).
+            throw when (status) {
+                "ERROR_INVALID_SECRET" -> StepFailure(retryable = false, reason = CoreMessage.AUTH_REJECTED.code(detail = detail))
+                "ERROR_AUDIO_CONVERSION", "ERROR_AUDIO_EMPTY" ->
+                    StepFailure(retryable = false, reason = CoreMessage.UNSUPPORTED_AUDIO.code(detail = detail))
+                "ERROR_REQUEST_PARAMETER", "ERROR_PARAMS_FORMAT_INVALID" ->
+                    StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code(detail = detail))
+                else -> StepFailure(retryable = true, reason = CoreMessage.PROVIDER_ERROR.code(detail = detail))
+            }
         }
         return Submitted.Finished(read(ctx, json))
     }

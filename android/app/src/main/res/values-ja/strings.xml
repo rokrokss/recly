@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">このジョブは「%1$s」ステップを使うため、新しいバージョンのアプリが必要です</string>
     <string name="core_step_failed">失敗：%1$s</string>
     <string name="core_auth_rejected">提供者がキーを拒否しました</string>
-    <string name="core_quota">提供者の利用枠またはリクエスト数の制限に達しました。再試行します。</string>
+    <string name="core_quota">提供者の利用枠またはリクエスト数の制限に達しました。</string>
     <string name="core_provider_error">提供者でエラーが発生しました。自動で再試行します。</string>
     <string name="core_unsupported_audio">提供者がこの音声を受け付けませんでした。</string>
     <string name="core_no_input_track">この録音には文字起こし用のモノラルまたはミックストラックがありません。</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">モデル（任意）</string>
     <string name="processing_save_key">キーを保存</string>
     <string name="processing_key_saved">APIキーを保存しました</string>
+    <string name="processing_key_client_pair">キーは「クライアントID:クライアントシークレット」の形式で入力してください。</string>
     <string name="processing_key_on_device">このデバイスに保存済み</string>
     <string name="processing_key_not_on_device">このデバイスに保存されたキーはありません</string>
     <string name="processing_secrets">APIキー</string>

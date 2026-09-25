@@ -55,7 +55,7 @@ public enum CoreMessages {
         // docs/08 "오류": what to do about it is the whole sentence, and the provider's own line is
         // the code's detail — shown under it, never inside it.
         case .authRejected: return "The provider rejected the key."
-        case .quota: return "The provider is out of quota or is rate-limiting. It will try again."
+        case .quota: return "The provider is out of quota or is rate-limiting."
         case .providerError: return "Something went wrong at the provider. It will try again."
         case .unsupportedAudio: return "The provider would not accept this audio."
         case .noInputTrack: return "This recording has no mono or mix track to transcribe."

@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">تتطلب هذه المهمة إصدارًا أحدث من التطبيق لأنها تستخدم الخطوة «%1$s»</string>
     <string name="core_step_failed">فشل: %1$s</string>
     <string name="core_auth_rejected">رفض المزوّد المفتاح</string>
-    <string name="core_quota">نفدت حصة المزوّد أو قُيّد معدل الطلبات. ستتم إعادة المحاولة.</string>
+    <string name="core_quota">نفدت حصة المزوّد أو قُيّد معدل الطلبات.</string>
     <string name="core_provider_error">حدث خطأ لدى المزوّد. ستتم إعادة المحاولة.</string>
     <string name="core_unsupported_audio">لم يقبل المزوّد هذا الصوت.</string>
     <string name="core_no_input_track">لا يحتوي هذا التسجيل على مسار أحادي أو ممزوج للنسخ.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">النموذج (اختياري)</string>
     <string name="processing_save_key">حفظ المفتاح</string>
     <string name="processing_key_saved">تم حفظ مفتاح API</string>
+    <string name="processing_key_client_pair">أدخل المفتاح بالصيغة معرّف العميل:سر العميل.</string>
     <string name="processing_key_on_device">محفوظ على هذا الجهاز</string>
     <string name="processing_key_not_on_device">لا يوجد مفتاح محفوظ على هذا الجهاز</string>
     <string name="processing_secrets">مفاتيح API</string>

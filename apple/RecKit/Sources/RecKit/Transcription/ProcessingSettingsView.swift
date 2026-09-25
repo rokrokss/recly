@@ -185,6 +185,7 @@ public struct ProcessingSettingsView: View {
                         #endif
                     }
                     ProviderDisclosure(provider: draft.provider)
+                    if SttProviders.shared.keyIsClientPair(name: draft.provider) { SectionFootnote(loc("Enter the key as client ID:client secret.")) }
                     ProcessingKeyField(model: model, name: draft.secretRef)
                     if WorkflowParser.shared.invokeUrlUse(provider: draft.provider) != .none {
                         BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()

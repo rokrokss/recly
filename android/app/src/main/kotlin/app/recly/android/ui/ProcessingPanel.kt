@@ -75,6 +75,9 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 }) }
             }
             Text(stringResource(R.string.provider_disclosure_transcribe, SttProviders.displayName(draft.provider)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            if (SttProviders.keyIsClientPair(draft.provider)) {
+                Text(stringResource(R.string.processing_key_client_pair), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            }
             ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey)
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) {
                 ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }

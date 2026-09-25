@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">इस कार्य को नया ऐप संस्करण चाहिए: यह ‘%1$s’ चरण उपयोग करता है</string>
     <string name="core_step_failed">विफल: %1$s</string>
     <string name="core_auth_rejected">प्रदाता ने कुंजी अस्वीकार की</string>
-    <string name="core_quota">प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है। फिर कोशिश होगी।</string>
+    <string name="core_quota">प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है।</string>
     <string name="core_provider_error">प्रदाता में समस्या हुई। फिर कोशिश होगी।</string>
     <string name="core_unsupported_audio">प्रदाता ने यह ऑडियो स्वीकार नहीं किया।</string>
     <string name="core_no_input_track">इस रिकॉर्डिंग में ट्रांसक्रिप्शन के लिए मोनो या मिक्स ट्रैक नहीं है।</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">मॉडल (वैकल्पिक)</string>
     <string name="processing_save_key">कुंजी सहेजें</string>
     <string name="processing_key_saved">API कुंजी सहेजी गई</string>
+    <string name="processing_key_client_pair">कुंजी को क्लाइंट ID:क्लाइंट सीक्रेट के रूप में दर्ज करें।</string>
     <string name="processing_key_on_device">इस डिवाइस पर सहेजी गई</string>
     <string name="processing_key_not_on_device">इस डिवाइस पर कोई कुंजी सहेजी नहीं गई</string>
     <string name="processing_secrets">API कुंजियाँ</string>

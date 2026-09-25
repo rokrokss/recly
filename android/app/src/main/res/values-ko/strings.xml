@@ -107,7 +107,7 @@
     <string name="core_unsupported_step">이 잡에는 더 새로운 버전의 앱이 필요합니다: ‘%1$s’ 단계를 씁니다</string>
     <string name="core_step_failed">실패: %1$s</string>
     <string name="core_auth_rejected">제공자가 키를 거부했습니다.</string>
-    <string name="core_quota">제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다. 다시 시도합니다.</string>
+    <string name="core_quota">제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다.</string>
     <string name="core_provider_error">제공자 쪽에서 문제가 생겼습니다. 다시 시도합니다.</string>
     <string name="core_unsupported_audio">제공자가 이 오디오를 받아들이지 않았습니다.</string>
     <string name="core_no_input_track">이 녹음에는 전사할 모노·믹스 트랙이 없습니다.</string>
@@ -262,6 +262,7 @@
     <string name="processing_model">모델 (선택)</string>
     <string name="processing_save_key">키 저장</string>
     <string name="processing_key_saved">API 키를 저장했습니다</string>
+    <string name="processing_key_client_pair">키는 ‘클라이언트 ID:클라이언트 시크릿’ 형식으로 입력하세요.</string>
     <string name="processing_key_on_device">이 기기에 저장됨</string>
     <string name="processing_key_not_on_device">이 기기에 저장된 키 없음</string>
     <string name="processing_secrets">API 키</string>

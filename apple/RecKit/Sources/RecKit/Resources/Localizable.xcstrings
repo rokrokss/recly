@@ -7624,83 +7624,6 @@
         }
       }
     },
-    "The provider is out of quota or is rate-limiting. It will try again.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The provider is out of quota or is rate-limiting. It will try again."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다. 다시 시도합니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供者の利用枠またはリクエスト数の制限に達しました。再試行します。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "提供商配额用尽或触发速率限制，将重试。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "供應商配額用盡或觸發速率限制，將重試。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El proveedor agotó la cuota o limita las solicitudes. Se reintentará."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quota épuisé ou requêtes limitées chez le fournisseur. Une nouvelle tentative suivra."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kontingent oder Anfragelimit des Anbieters erreicht. Ein neuer Versuch folgt."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A cota ou o limite de requisições do provedor foi atingido. Haverá nova tentativa."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "نفدت حصة المزوّد أو قُيّد معدل الطلبات. ستتم إعادة المحاولة."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है। फिर कोशिश होगी।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Исчерпана квота провайдера или ограничена частота запросов. Попытка будет повторена."
-          }
-        }
-      }
-    },
     "The provider rejected the key.": {
       "extractionState": "manual",
       "localizations": {
@@ -16271,6 +16194,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "Загрузите речевую модель Apple для расшифровки на этом устройстве."
+          }
+        }
+      }
+    },
+    "The provider is out of quota or is rate-limiting.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provider is out of quota or is rate-limiting."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供者の利用枠またはリクエスト数の制限に達しました。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "提供商配额用尽或触发速率限制。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "供應商配額用盡或觸發速率限制。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El proveedor agotó la cuota o limita las solicitudes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quota épuisé ou requêtes limitées chez le fournisseur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontingent oder Anfragelimit des Anbieters erreicht."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A cota ou o limite de requisições do provedor foi atingido."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نفدت حصة المزوّد أو قُيّد معدل الطلبات."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Исчерпана квота провайдера или ограничена частота запросов."
+          }
+        }
+      }
+    },
+    "Enter the key as client ID:client secret.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter the key as client ID:client secret."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "키는 ‘클라이언트 ID:클라이언트 시크릿’ 형식으로 입력하세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キーは「クライアントID:クライアントシークレット」の形式で入力してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请按“客户端 ID:客户端密钥”的格式输入密钥。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "請依「用戶端 ID:用戶端密碼」的格式輸入金鑰。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce la clave como ID de cliente:secreto de cliente."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez la clé au format ID client:secret client."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geben Sie den Schlüssel als Client-ID:Client-Secret ein."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Digite a chave como ID do cliente:segredo do cliente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أدخل المفتاح بالصيغة معرّف العميل:سر العميل."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कुंजी को क्लाइंट ID:क्लाइंट सीक्रेट के रूप में दर्ज करें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Введите ключ в формате идентификатор клиента:секрет клиента."
           }
         }
       }

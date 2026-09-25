@@ -147,10 +147,10 @@ class DagloProvider : SttProvider {
                             start = time(turn.first(), "startTime"),
                             end = time(turn.last(), "endTime"),
                             speaker = turn.first().string("speaker"),
-                            // Words carry nothing but the word, so a turn's text is them with spaces.
-                            text = turn.joinToString(" ") { it.string("word").orEmpty() },
+                            // A word arrives with its trailing space ("안녕 "), so it is trimmed before joining.
+                            text = turn.joinToString(" ") { it.string("word").orEmpty().trim() },
                             words = turn.map {
-                                SttWord(time(it, "startTime"), time(it, "endTime"), it.string("word").orEmpty())
+                                SttWord(time(it, "startTime"), time(it, "endTime"), it.string("word").orEmpty().trim())
                             },
                         )
                     }

@@ -121,6 +121,8 @@ class DeepgramProviderTest {
         assertReason(402, CoreMessage.QUOTA, retryable = true)
         assertReason(503, CoreMessage.PROVIDER_ERROR, retryable = true)
         assertReason(400, CoreMessage.UNSUPPORTED_AUDIO, retryable = false)
+        // Deepgram's 422 is an interrupted or too-slow upload (errors page, 2026-09-25).
+        assertReason(422, CoreMessage.PROVIDER_ERROR, retryable = true)
     }
 
     private suspend fun assertReason(status: Int, message: CoreMessage, retryable: Boolean) {

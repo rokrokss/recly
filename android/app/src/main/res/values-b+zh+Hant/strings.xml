@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">此工作使用「%1$s」步驟，需要更新版本的應用程式</string>
     <string name="core_step_failed">失敗：%1$s</string>
     <string name="core_auth_rejected">供應商拒絕了金鑰</string>
-    <string name="core_quota">供應商配額用盡或觸發速率限制，將重試。</string>
+    <string name="core_quota">供應商配額用盡或觸發速率限制。</string>
     <string name="core_provider_error">供應商發生錯誤，將自動重試。</string>
     <string name="core_unsupported_audio">供應商無法接受此音訊。</string>
     <string name="core_no_input_track">此錄音沒有可轉錄的單聲道或混音軌道。</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">模型（選填）</string>
     <string name="processing_save_key">儲存金鑰</string>
     <string name="processing_key_saved">API金鑰已儲存</string>
+    <string name="processing_key_client_pair">請依「用戶端 ID:用戶端密碼」的格式輸入金鑰。</string>
     <string name="processing_key_on_device">已儲存在此裝置上</string>
     <string name="processing_key_not_on_device">此裝置上未儲存金鑰</string>
     <string name="processing_secrets">API金鑰</string>

@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">Для задачи нужна новая версия приложения: она использует шаг «%1$s»</string>
     <string name="core_step_failed">Ошибка: %1$s</string>
     <string name="core_auth_rejected">Провайдер отклонил ключ</string>
-    <string name="core_quota">Исчерпана квота провайдера или ограничена частота запросов. Попытка будет повторена.</string>
+    <string name="core_quota">Исчерпана квота провайдера или ограничена частота запросов.</string>
     <string name="core_provider_error">У провайдера произошла ошибка. Попытка будет повторена.</string>
     <string name="core_unsupported_audio">Провайдер не принял это аудио.</string>
     <string name="core_no_input_track">В записи нет моно- или смешанной дорожки для расшифровки.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">Модель (необязательно)</string>
     <string name="processing_save_key">Сохранить ключ</string>
     <string name="processing_key_saved">Ключ API сохранён</string>
+    <string name="processing_key_client_pair">Введите ключ в формате идентификатор клиента:секрет клиента.</string>
     <string name="processing_key_on_device">Сохранён на этом устройстве</string>
     <string name="processing_key_not_on_device">На этом устройстве ключ не сохранён</string>
     <string name="processing_secrets">Ключи API</string>

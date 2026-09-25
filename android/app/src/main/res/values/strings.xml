@@ -134,7 +134,7 @@
     <!-- docs/08 "오류": the transcribe table, in the words of someone who has to decide what to do
          next. The provider\'s own line rides along as the code\'s detail. -->
     <string name="core_auth_rejected">The provider rejected the key.</string>
-    <string name="core_quota">The provider is out of quota or is rate-limiting. It will try again.</string>
+    <string name="core_quota">The provider is out of quota or is rate-limiting.</string>
     <string name="core_provider_error">Something went wrong at the provider. It will try again.</string>
     <string name="core_unsupported_audio">The provider would not accept this audio.</string>
     <string name="core_no_input_track">This recording has no mono or mix track to transcribe.</string>
@@ -309,6 +309,7 @@
     <string name="processing_model">Model (optional)</string>
     <string name="processing_save_key">Save key</string>
     <string name="processing_key_saved">API key saved</string>
+    <string name="processing_key_client_pair">Enter the key as client ID:client secret.</string>
     <string name="processing_key_on_device">Saved on this device</string>
     <string name="processing_key_not_on_device">Not saved on this device</string>
     <string name="processing_secrets">API keys</string>

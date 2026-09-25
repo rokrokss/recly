@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">Esta tarea requiere una versión más reciente: usa un paso «%1$s»</string>
     <string name="core_step_failed">Error: %1$s</string>
     <string name="core_auth_rejected">El proveedor rechazó la clave</string>
-    <string name="core_quota">El proveedor agotó la cuota o limita las solicitudes. Se reintentará.</string>
+    <string name="core_quota">El proveedor agotó la cuota o limita las solicitudes.</string>
     <string name="core_provider_error">Hubo un error en el proveedor. Se reintentará.</string>
     <string name="core_unsupported_audio">El proveedor no aceptó este audio.</string>
     <string name="core_no_input_track">Esta grabación no tiene una pista mono o mezclada para transcribir.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">Modelo (opcional)</string>
     <string name="processing_save_key">Guardar clave</string>
     <string name="processing_key_saved">Clave API guardada</string>
+    <string name="processing_key_client_pair">Introduce la clave como ID de cliente:secreto de cliente.</string>
     <string name="processing_key_on_device">Guardada en este dispositivo</string>
     <string name="processing_key_not_on_device">No hay ninguna clave guardada en este dispositivo</string>
     <string name="processing_secrets">Claves API</string>

@@ -155,6 +155,24 @@ class ClovaProviderTest {
     }
 
     @Test
+    fun `a failure code no retry can change stops the step, and the rest are retried`() = runBlocking {
+        for ((code, message, retryable) in listOf(
+            Triple("ERROR_INVALID_SECRET", CoreMessage.AUTH_REJECTED, false),
+            Triple("ERROR_AUDIO_EMPTY", CoreMessage.UNSUPPORTED_AUDIO, false),
+            Triple("ERROR_REQUEST_PARAMETER", CoreMessage.STEP_FAILED, false),
+            Triple("ERROR_GATEWAY_TIMEOUT", CoreMessage.PROVIDER_ERROR, true),
+        )) {
+            val harness = ProviderHarness()
+            harness.server.reply("""{"result":"$code","message":"no"}""")
+            val failure = assertFailsWith<StepFailure> {
+                ClovaProvider().submit(harness.sttContext(ClovaProvider.NAME, "clova-key", invokeUrl = INVOKE_URL), harness.audio)
+            }
+            assertEquals(message, CoreMessageRef.parse(failure.reason)?.message, code)
+            assertEquals(retryable, failure.retryable, code)
+        }
+    }
+
+    @Test
     fun `a step with no invokeUrl cannot be run at all`() = runBlocking {
         val failure = assertFailsWith<StepFailure> {
             provider.submit(harness.sttContext(ClovaProvider.NAME, "clova-key"), harness.audio)

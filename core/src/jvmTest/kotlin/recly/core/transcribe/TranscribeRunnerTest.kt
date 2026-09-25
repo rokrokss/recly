@@ -62,13 +62,14 @@ class TranscribeRunnerTest {
     }
 
     @Test
-    fun `the submit body carries the pinned model, the language and the diarization hints`() = runBlocking {
+    fun `the submit body carries the model routing, the language and the diarization hints`() = runBlocking {
         val h = TranscribeHarness(participants = 4)
 
         h.run(h.transcribeStep(speakers = Speakers(min = 2, max = 6)))
 
         val body = h.stt.submitted().json()
-        assertEquals(listOf("universal-2"), body["speech_models"]!!.jsonArray.map { it.jsonPrimitive.content })
+        // The documented routing (2026-09-25): Korean falls back from the first model to the second.
+        assertEquals(listOf("universal-3-5-pro", "universal-2"), body["speech_models"]!!.jsonArray.map { it.jsonPrimitive.content })
         assertEquals(h.stt.uploadUrl, body["audio_url"]!!.jsonPrimitive.content)
         assertEquals("ko", body["language_code"]!!.jsonPrimitive.content)
         assertTrue(body["speaker_labels"]!!.jsonPrimitive.boolean)

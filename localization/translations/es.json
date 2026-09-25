@@ -273,7 +273,6 @@
   "The microphone permission is required": "Se necesita permiso para el micrófono",
   "The microphone permission is required.": "Se necesita permiso para el micrófono",
   "The provider did not finish in time. It will submit again.": "El proveedor no terminó a tiempo. Se enviará de nuevo.",
-  "The provider is out of quota or is rate-limiting. It will try again.": "El proveedor agotó la cuota o limita las solicitudes. Se reintentará.",
   "The provider is out of quota — check its limits and billing": "El proveedor agotó la cuota. Revisa los límites y la facturación",
   "The provider rejected the key": "El proveedor rechazó la clave",
   "The provider rejected the key.": "El proveedor rechazó la clave",
@@ -368,5 +367,7 @@
   "Saved on this device": "Guardada en este dispositivo",
   "Not saved on this device": "No hay ninguna clave guardada en este dispositivo",
   "Download Apple’s speech model to transcribe on this device.": "Descarga el modelo de voz de Apple para transcribir en este dispositivo.",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcripción externa envía la grabación completa a {0}.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo."
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "La transcripción externa envía la grabación completa a {0}.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.",
+  "The provider is out of quota or is rate-limiting.": "El proveedor agotó la cuota o limita las solicitudes.",
+  "Enter the key as client ID:client secret.": "Introduce la clave como ID de cliente:secreto de cliente."
 }

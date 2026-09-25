@@ -46,6 +46,11 @@ class DeepgramProvider : SttProvider {
                 timeoutSec = TIMEOUT_SEC,
             ),
         )
+        // Deepgram's 422 means the upload was cut off or too slow (errors page, 2026-09-25): a network
+        // problem worth another attempt, not a verdict on the audio.
+        if (result.status == 422) {
+            throw StepFailure(retryable = true, reason = CoreMessage.PROVIDER_ERROR.code(detail = "deepgram.listen HTTP 422"))
+        }
         if (result.status !in 200..299) throw Reasons.failure("deepgram.listen", result, CoreMessage.UNSUPPORTED_AUDIO)
         val json = result.jsonBody()
             ?: throw StepFailure(

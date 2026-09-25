@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">此任务使用“%1$s”步骤，需要更新版本的应用</string>
     <string name="core_step_failed">失败：%1$s</string>
     <string name="core_auth_rejected">提供商拒绝了密钥</string>
-    <string name="core_quota">提供商配额用尽或触发速率限制，将重试。</string>
+    <string name="core_quota">提供商配额用尽或触发速率限制。</string>
     <string name="core_provider_error">提供商发生错误，将自动重试。</string>
     <string name="core_unsupported_audio">提供商无法接受此音频。</string>
     <string name="core_no_input_track">此录音没有可转录的单声道或混音轨道。</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">模型（可选）</string>
     <string name="processing_save_key">保存密钥</string>
     <string name="processing_key_saved">API密钥已保存</string>
+    <string name="processing_key_client_pair">请按“客户端 ID:客户端密钥”的格式输入密钥。</string>
     <string name="processing_key_on_device">已保存在此设备上</string>
     <string name="processing_key_not_on_device">此设备上未保存密钥</string>
     <string name="processing_secrets">API密钥</string>

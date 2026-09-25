@@ -273,7 +273,6 @@
   "The microphone permission is required": "माइक्रोफ़ोन की अनुमति चाहिए",
   "The microphone permission is required.": "माइक्रोफ़ोन की अनुमति चाहिए",
   "The provider did not finish in time. It will submit again.": "प्रदाता समय पर पूरा नहीं कर सका। फिर सबमिट होगा।",
-  "The provider is out of quota or is rate-limiting. It will try again.": "प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है। फिर कोशिश होगी।",
   "The provider is out of quota — check its limits and billing": "प्रदाता का कोटा खत्म है। सीमा और बिलिंग जाँचें",
   "The provider rejected the key": "प्रदाता ने कुंजी अस्वीकार की",
   "The provider rejected the key.": "प्रदाता ने कुंजी अस्वीकार की",
@@ -368,5 +367,7 @@
   "Saved on this device": "इस डिवाइस पर सहेजी गई",
   "Not saved on this device": "इस डिवाइस पर कोई कुंजी सहेजी नहीं गई",
   "Download Apple’s speech model to transcribe on this device.": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें।",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग {0} को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग {0} को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।",
+  "The provider is out of quota or is rate-limiting.": "प्रदाता का कोटा खत्म या अनुरोध सीमा लागू है।",
+  "Enter the key as client ID:client secret.": "कुंजी को क्लाइंट ID:क्लाइंट सीक्रेट के रूप में दर्ज करें।"
 }

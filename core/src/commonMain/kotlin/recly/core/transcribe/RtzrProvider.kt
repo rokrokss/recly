@@ -35,6 +35,8 @@ import recly.core.platform.HttpPlan
  */
 class RtzrProvider : SttProvider {
     override val name: String = NAME
+    /** Files up to 4 hours (file STT docs, checked 2026-09-25); a 32 kbps recording can reach it. */
+    override val limits: SttLimits = SttLimits(maxDurationSec = 4 * 3600.0)
 
     override suspend fun submit(ctx: SttContext, file: Path): Submitted {
         val result = Reasons.send(
@@ -62,6 +64,11 @@ class RtzrProvider : SttProvider {
                 timeoutSec = UPLOAD_TIMEOUT_SEC,
             ),
         )
+        // 429 carries two codes (rate limits page, 2026-09-25): A0002 is too many jobs at once and
+        // passes, A0001 is the plan's usage used up, which no retry fixes.
+        if (result.status == 429 && "A0001" in result.body.decodeToString()) {
+            throw StepFailure(retryable = false, reason = CoreMessage.QUOTA.code(detail = "rtzr.transcribe HTTP 429 A0001"))
+        }
         if (result.status !in 200..299) throw Reasons.failure("rtzr.transcribe", result, CoreMessage.UNSUPPORTED_AUDIO)
         val id = result.jsonBody()?.string("id")
             ?: throw StepFailure(

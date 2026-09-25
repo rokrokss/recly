@@ -273,7 +273,6 @@
   "The microphone permission is required": "需要麥克風權限",
   "The microphone permission is required.": "需要麥克風權限",
   "The provider did not finish in time. It will submit again.": "供應商未在規定時間內完成，將重新提交。",
-  "The provider is out of quota or is rate-limiting. It will try again.": "供應商配額用盡或觸發速率限制，將重試。",
   "The provider is out of quota — check its limits and billing": "供應商配額用盡，請檢查限額和帳單",
   "The provider rejected the key": "供應商拒絕了金鑰",
   "The provider rejected the key.": "供應商拒絕了金鑰",
@@ -368,5 +367,7 @@
   "Saved on this device": "已儲存在此裝置上",
   "Not saved on this device": "此裝置上未儲存金鑰",
   "Download Apple’s speech model to transcribe on this device.": "下載Apple語音模型即可在此裝置上轉錄。",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部轉錄會將完整錄音傳送給{0}。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "外部轉錄會將完整錄音傳送給{0}。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。",
+  "The provider is out of quota or is rate-limiting.": "供應商配額用盡或觸發速率限制。",
+  "Enter the key as client ID:client secret.": "請依「用戶端 ID:用戶端密碼」的格式輸入金鑰。"
 }

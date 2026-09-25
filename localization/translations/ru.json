@@ -273,7 +273,6 @@
   "The microphone permission is required": "Нужно разрешение на микрофон",
   "The microphone permission is required.": "Нужно разрешение на микрофон",
   "The provider did not finish in time. It will submit again.": "Провайдер не завершил вовремя. Запрос будет отправлен снова.",
-  "The provider is out of quota or is rate-limiting. It will try again.": "Исчерпана квота провайдера или ограничена частота запросов. Попытка будет повторена.",
   "The provider is out of quota — check its limits and billing": "Квота провайдера исчерпана. Проверьте лимиты и оплату",
   "The provider rejected the key": "Провайдер отклонил ключ",
   "The provider rejected the key.": "Провайдер отклонил ключ",
@@ -368,5 +367,7 @@
   "Saved on this device": "Сохранён на этом устройстве",
   "Not saved on this device": "На этом устройстве ключ не сохранён",
   "Download Apple’s speech model to transcribe on this device.": "Загрузите речевую модель Apple для расшифровки на этом устройстве.",
-  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
+  "External transcription sends the whole recording to {0}.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it.": "Внешняя расшифровка отправляет всю запись в {0}.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.",
+  "The provider is out of quota or is rate-limiting.": "Исчерпана квота провайдера или ограничена частота запросов.",
+  "Enter the key as client ID:client secret.": "Введите ключ в формате идентификатор клиента:секрет клиента."
 }

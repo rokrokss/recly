@@ -125,13 +125,23 @@ class RevProviderTest {
     @Test
     fun `a failed job comes back as data, with the provider's own detail`() = runBlocking {
         harness.server.reply(
-            """{"id":"job-1","status":"failed","failure":"invalid_media",
-                "failure_detail":"the file could not be decoded"}""",
+            """{"id":"job-1","status":"failed","failure":"download_failure",
+                "failure_detail":"the media could not be fetched"}""",
         )
 
         val failed = assertIs<PollResult.Failed>(provider.poll(context(), "job-1"))
 
-        assertEquals("the file could not be decoded", failed.reason)
+        assertEquals("the media could not be fetched", failed.reason)
+    }
+
+    @Test
+    fun `a failure about the audio or the account is not submitted again`() = runBlocking {
+        for ((token, message) in listOf("invalid_media" to CoreMessage.UNSUPPORTED_AUDIO, "insufficient_balance" to CoreMessage.QUOTA)) {
+            harness.server.reply("""{"id":"job-1","status":"failed","failure":"$token"}""")
+            val failure = assertFailsWith<StepFailure> { provider.poll(context(), "job-1") }
+            assertEquals(false, failure.retryable, token)
+            assertEquals(message, CoreMessageRef.parse(failure.reason)?.message, token)
+        }
     }
 
     @Test
@@ -189,12 +199,16 @@ class RevProviderTest {
         const val KEY = "rev-key"
         const val TRANSCRIBED = """{"id":"job-1","status":"transcribed"}"""
 
-        /** The documented shape: one monologue per turn, punctuation without timestamps. */
+        /**
+         * The documented shape: one monologue per turn, punctuation without timestamps, and the
+         * space between words an element of its own.
+         */
         const val TRANSCRIPT = """
             {"monologues":[
               {"speaker":0,"elements":[
                 {"type":"text","value":"Hello","ts":0.0,"end_ts":1.5},
                 {"type":"punct","value":","},
+                {"type":"punct","value":" "},
                 {"type":"text","value":"there","ts":1.75,"end_ts":3.25}]},
               {"speaker":1,"elements":[
                 {"type":"text","value":"Hi","ts":3.75,"end_ts":4.5},

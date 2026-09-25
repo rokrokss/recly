@@ -57,6 +57,14 @@ class OpenAiCompatProviderTest {
     }
 
     @Test
+    fun `together is asked to detect by name, because an absent language means english there`() = runBlocking {
+        harness.server.reply(DIARIZED)
+        provider(Profile.TOGETHER).submit(context(Profile.TOGETHER, language = Language.AUTO), harness.audio)
+
+        assertEquals("auto", harness.server.request(0).multipartPart("language"))
+    }
+
+    @Test
     fun `every workflow language maps onto one the vendor knows`() = runBlocking {
         val expected = mapOf(
             Language.KO to "ko",

@@ -197,6 +197,24 @@ class RtzrProviderTest {
     }
 
     @Test
+    fun `a plan whose usage is used up is not retried, while too many jobs at once is`() = runBlocking {
+        harness.server.reply(TOKEN).reply(status = 429, body = """{"code":"A0001","msg":"usage exceeded"}""")
+        val spent = assertFailsWith<StepFailure> { provider.submit(context(), harness.audio) }
+        assertEquals(false, spent.retryable)
+        assertEquals(CoreMessage.QUOTA, CoreMessageRef.parse(spent.reason)?.message)
+
+        val busy = ProviderHarness()
+        busy.server.reply(TOKEN).reply(status = 429, body = """{"code":"A0002","msg":"too many"}""")
+        val later = assertFailsWith<StepFailure> { RtzrProvider().submit(busy.sttContext(RtzrProvider.NAME, SECRET), busy.audio) }
+        assertEquals(true, later.retryable)
+    }
+
+    @Test
+    fun `a file longer than four hours is not sent`() {
+        assertEquals(4 * 3600.0, RtzrProvider().limits.maxDurationSec)
+    }
+
+    @Test
     fun `a 429 with Retry-After is parked for exactly that long`() = runBlocking {
         harness.server.reply(TOKEN)
             .reply(status = 429, body = "slow down", headers = mapOf("Retry-After" to "90"))

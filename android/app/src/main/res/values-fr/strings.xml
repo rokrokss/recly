@@ -93,7 +93,7 @@
     <string name="core_unsupported_step">Cette tâche nécessite une version plus récente : elle utilise l’étape « %1$s »</string>
     <string name="core_step_failed">Échec : %1$s</string>
     <string name="core_auth_rejected">Le fournisseur a refusé la clé</string>
-    <string name="core_quota">Quota épuisé ou requêtes limitées chez le fournisseur. Une nouvelle tentative suivra.</string>
+    <string name="core_quota">Quota épuisé ou requêtes limitées chez le fournisseur.</string>
     <string name="core_provider_error">Une erreur est survenue chez le fournisseur. Une nouvelle tentative suivra.</string>
     <string name="core_unsupported_audio">Le fournisseur n’a pas accepté cet audio.</string>
     <string name="core_no_input_track">Cet enregistrement n’a pas de piste mono ou mixée à transcrire.</string>
@@ -230,6 +230,7 @@
     <string name="processing_model">Modèle (facultatif)</string>
     <string name="processing_save_key">Enregistrer la clé</string>
     <string name="processing_key_saved">Clé API enregistrée</string>
+    <string name="processing_key_client_pair">Saisissez la clé au format ID client:secret client.</string>
     <string name="processing_key_on_device">Enregistrée sur cet appareil</string>
     <string name="processing_key_not_on_device">Aucune clé enregistrée sur cet appareil</string>
     <string name="processing_secrets">Clés API</string>
