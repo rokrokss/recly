@@ -153,7 +153,6 @@ public struct ProcessingSettingsView: View {
         SectionBlock {
             if let draft = model.draft {
                 if model.importing { SectionFootnote(loc("Review the folder and transcription method before saving. Keys are not included.")) }
-                SectionFootnote(loc("Applies to new recordings. Watch recordings use these settings when received."))
                 BlueprintField(loc("Storage folder"), text: field(\.folder))
                 BlueprintField(loc("Minimum length (s)"), text: field(\.minimumSeconds), mono: true)
                 SectionHeader(loc("Transcription"))
@@ -167,24 +166,28 @@ public struct ProcessingSettingsView: View {
                     if model.preparingModel {
                         ProgressView(loc("Preparing speech model…"))
                     } else if model.local?.status == .modelRequired {
-                        SectionFootnote(loc("Download Apple’s speech model to transcribe on this device. Recordings waiting for this model will resume when it is ready."))
+                        SectionFootnote(loc("Download Apple’s speech model to transcribe on this device."))
                         BlueprintButton(loc("Prepare model")) { Task { await model.prepare() } }
                             .disabled(model.busy || !preparationAllowed)
-                    } else if model.local?.status == .ready {
-                        SectionFootnote(loc("Ready for on-device transcription"))
                     }
                     SectionFootnote(loc("On-device transcription does not separate speakers."))
                 }
                 if draft.mode == .external {
                     BlueprintButton(draft.provider) { pickingProvider = true }
                     ProviderDisclosure()
-                    SectionFootnote(loc("API keys stay on this device and are not included in exported settings."))
                     BlueprintField(loc("Secret name"), text: field(\.secretRef), mono: true)
                     ProcessingKeyField(model: model, name: draft.secretRef)
                     if WorkflowParser.shared.invokeUrlUse(provider: draft.provider) != .none {
                         BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()
                     }
                     if draft.acceptsModel { BlueprintField(loc("Model (optional)"), text: field(\.model), mono: true) }
+                    // Keys only matter to an external provider, so the list lives with it.
+                    if !model.secretNames.isEmpty {
+                        SectionHeader(loc("API keys"))
+                        ForEach(model.secretNames, id: \.self) { name in
+                            SectionRow(title: name) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
+                        }
+                    }
                 }
                 if draft.mode != .off {
                     SectionRow(title: loc("Language")) {
@@ -199,12 +202,6 @@ public struct ProcessingSettingsView: View {
                         #endif
                     }
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
-                }
-                if !model.secretNames.isEmpty {
-                    SectionHeader(loc("API keys"))
-                    ForEach(model.secretNames, id: \.self) { name in
-                        SectionRow(title: name) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
-                    }
                 }
                 if let message = model.message { SectionFootnote(message.text) }
                 FlowLayout {
@@ -227,7 +224,7 @@ public struct ProcessingSettingsView: View {
             BlueprintDialog(title: RecKitStrings.localized("Delete key: %@", deletingKey ?? "")) {
                 BlueprintButton(loc("Cancel"), tone: .quiet) { deletingKey = nil }
                 BlueprintButton(loc("Delete")) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
-            } content: { SectionFootnote(loc("API keys stay on this device and are not included in exported settings.")) }
+            } content: { EmptyView() }
         }
         .fileImporter(isPresented: $importer, allowedContentTypes: [.json, .plainText]) { result in
             if case .success(let url) = result { Task { await model.pick(url) } }

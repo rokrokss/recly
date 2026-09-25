@@ -4467,83 +4467,6 @@
         }
       }
     },
-    "Leave it empty to keep the timestamp name": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leave it empty to keep the timestamp name"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "비워두면 시각으로 지은 이름을 그대로 씁니다"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空欄なら日時を名前として使います"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "留空则使用时间戳名称"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "留空則使用時間戳記名稱"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Déjalo vacío para conservar el nombre con fecha y hora"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Laissez vide pour garder le nom horodaté"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leer lassen, um den Zeitstempel als Namen zu behalten"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deixe vazio para manter o nome com data e hora"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اتركه فارغًا للاحتفاظ بالاسم الزمني"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "टाइमस्टैम्प वाला नाम रखने के लिए खाली छोड़ें"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Оставьте пустым, чтобы сохранить имя с датой и временем"
-          }
-        }
-      }
-    },
     "Light": {
       "extractionState": "manual",
       "localizations": {
@@ -10631,73 +10554,73 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Running this step sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it."
+            "value": "External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.\nRead the provider's policy before you use it."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 단계를 실행하면 녹음 오디오 전체가 고른 업체로 전송됩니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요."
+            "value": "외부 전사는 녹음 오디오 전체를 고른 업체로 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このステップは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
+            "value": "外部の文字起こしでは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "运行此步骤会将完整录音发送给所选提供商。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
+            "value": "外部转录会将完整录音发送给所选提供商。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "執行此步驟會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
+            "value": "外部轉錄會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este paso envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo."
+            "value": "La transcripción externa envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cette étape envoie l’enregistrement complet au fournisseur choisi.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser."
+            "value": "La transcription externe envoie l’enregistrement complet au fournisseur choisi.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieser Schritt sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
+            "value": "Die externe Transkription sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta etapa envia a gravação inteira ao provedor escolhido.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar."
+            "value": "A transcrição externa envia a gravação inteira ao provedor escolhido.\nA retenção e o uso para treinamento dependem da política dele; o Recly não os controla.\nLeia a política do provedor antes de usar."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "ترسل هذه الخطوة التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
+            "value": "يرسل النسخ الخارجي التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "यह चरण पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
+            "value": "बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Этот шаг отправляет всю запись выбранному провайдеру.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
+            "value": "Внешняя расшифровка отправляет всю запись выбранному провайдеру.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера."
           }
         }
       }
@@ -13764,82 +13687,6 @@
         }
       }
     },
-    "Applies to new recordings. Watch recordings use these settings when received.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Applies to new recordings. Watch recordings use these settings when received."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "새 녹음부터 적용됩니다. 워치 녹음은 수신할 때 이 설정을 사용합니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新しい録音に適用されます。ウォッチの録音には受信時の設定を使います。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "适用于新录音。手表录音在接收时使用这些设置。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "適用於新錄音。手錶錄音在接收時使用這些設定。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se aplica a las nuevas grabaciones. Las del reloj usan estos ajustes al recibirse."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "S’applique aux nouveaux enregistrements. Ceux de la montre utilisent ces réglages à leur réception."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gilt für neue Aufnahmen. Aufnahmen von der Uhr verwenden diese Einstellungen beim Empfang."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aplica-se às novas gravações. As do relógio usam estas configurações ao serem recebidas."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تُطبّق على التسجيلات الجديدة. تستخدم تسجيلات الساعة هذه الإعدادات عند استلامها."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नई रिकॉर्डिंग पर लागू होगा। घड़ी की रिकॉर्डिंग मिलने पर ये सेटिंग लागू होंगी।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Применяется к новым записям. Записи с часов используют эти настройки при получении."
-          }
-        }
-      }
-    },
     "Storage folder": {
       "localizations": {
         "en": {
@@ -14752,82 +14599,6 @@
         }
       }
     },
-    "API keys stay on this device and are not included in exported settings.": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API keys stay on this device and are not included in exported settings."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API 키는 이 기기에 보관되며 내보내는 설정에는 포함되지 않습니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "APIキーはこのデバイスに保存され、設定の書き出しには含まれません。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API密钥仅保留在此设备上，不包含在导出的设置中。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API金鑰僅保留在此裝置上，不包含在匯出的設定中。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Las claves API se quedan en este dispositivo y no se incluyen al exportar ajustes."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les clés API restent sur cet appareil et ne sont pas exportées avec les réglages."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API-Schlüssel bleiben auf diesem Gerät und sind nicht in exportierten Einstellungen enthalten."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As chaves de API ficam neste dispositivo e não são incluídas nas configurações exportadas."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تبقى مفاتيح API على هذا الجهاز ولا تُضمّن في الإعدادات المُصدّرة."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "API कुंजियाँ इसी डिवाइस पर रहती हैं और एक्सपोर्ट की गई सेटिंग में शामिल नहीं होतीं।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ключи API остаются на этом устройстве и не включаются в экспорт настроек."
-          }
-        }
-      }
-    },
     "Transcribing on this device": {
       "localizations": {
         "en": {
@@ -15281,160 +15052,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подготовка речевой модели…"
-          }
-        }
-      }
-    },
-    "Download Apple’s speech model to transcribe on this device. Recordings waiting for this model will resume when it is ready.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Download Apple’s speech model to transcribe on this device. Recordings waiting for this model will resume when it is ready."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apple 음성 모델을 다운로드하면 이 기기에서 전사할 수 있습니다. 모델을 기다리던 녹음은 준비가 끝나면 이어서 처리합니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。準備ができると、待機中の録音を再開します。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下载Apple语音模型即可在此设备上转录。模型就绪后，等待的录音将继续处理。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "下載Apple語音模型即可在此裝置上轉錄。模型就緒後，等待的錄音將繼續處理。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Descarga el modelo de voz de Apple para transcribir en este dispositivo. Las grabaciones en espera se reanudarán cuando esté listo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Téléchargez le modèle vocal d’Apple pour transcrire sur cet appareil. Les enregistrements en attente reprendront quand il sera prêt."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter. Wartende Aufnahmen werden fortgesetzt, sobald es bereit ist."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Baixe o modelo de voz da Apple para transcrever neste dispositivo. As gravações em espera serão retomadas quando ele estiver pronto."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "نزّل نموذج الكلام من Apple للنسخ على هذا الجهاز. ستُستأنف التسجيلات المنتظرة عندما يصبح جاهزًا."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें। मॉडल तैयार होने पर प्रतीक्षारत रिकॉर्डिंग फिर शुरू होंगी।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Загрузите речевую модель Apple для расшифровки на этом устройстве. Ожидающие записи будут обработаны, когда модель будет готова."
-          }
-        }
-      }
-    },
-    "Ready for on-device transcription": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ready for on-device transcription"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "기기 내 전사 준비 완료"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "デバイス上で文字起こしできます"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "设备本地转录已就绪"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "裝置本機轉錄已就緒"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transcripción en el dispositivo lista"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Transcription sur l’appareil prête"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereit für Transkription auf dem Gerät"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronto para transcrição no dispositivo"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "جاهز للنسخ على الجهاز"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "डिवाइस पर ट्रांसक्रिप्शन तैयार है"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово к расшифровке на устройстве"
           }
         }
       }
@@ -16654,6 +16271,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "На этом устройстве ключ не сохранён"
+          }
+        }
+      }
+    },
+    "Download Apple’s speech model to transcribe on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download Apple’s speech model to transcribe on this device."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple 음성 모델을 다운로드하면 이 기기에서 전사할 수 있습니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下载Apple语音模型即可在此设备上转录。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "下載Apple語音模型即可在此裝置上轉錄。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga el modelo de voz de Apple para transcribir en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargez le modèle vocal d’Apple pour transcrire sur cet appareil."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixe o modelo de voz da Apple para transcrever neste dispositivo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نزّل نموذج الكلام من Apple للنسخ على هذا الجهاز."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузите речевую модель Apple для расшифровки на этом устройстве."
           }
         }
       }

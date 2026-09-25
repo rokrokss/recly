@@ -211,7 +211,6 @@ fun SettingsScreen(
             // a reminder that behaves differently on two devices has to explain itself.
             SwitchRow(
                 title = stringResource(R.string.settings_consent_reminder),
-                subtitle = stringResource(R.string.settings_consent_reminder_hint),
                 checked = settings.consentReminder,
                 onCheckedChange = onConsentReminder,
                 modifier = Modifier.testTag("consent-reminder"),
@@ -220,7 +219,6 @@ fun SettingsScreen(
             Section(stringResource(R.string.settings_uploads))
             SwitchRow(
                 title = stringResource(R.string.settings_wifi_only),
-                subtitle = stringResource(R.string.settings_wifi_only_hint),
                 checked = settings.wifiOnly,
                 onCheckedChange = onWifiOnly,
             )

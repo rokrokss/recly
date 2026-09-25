@@ -45,7 +45,6 @@
     <string name="recording_participants_unknown">Unknown</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">Recording title</string>
-    <string name="recording_title_hint">Leave it empty to keep the timestamp name</string>
     <string name="recording_title_save">Save</string>
     <string name="recording_title_skip">Skip</string>
     <string name="recording_mic_denied">The microphone permission is needed</string>
@@ -109,7 +108,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Upload on Wi-Fi only</string>
-    <string name="settings_wifi_only_hint">Never upload over mobile data.</string>
 
     <string name="settings_language">Language</string>
     <string name="settings_language_ko">한국어</string>
@@ -258,12 +256,11 @@
 
     <!-- docs/15 §3: what leaves the phone when this step runs, and whose policy decides what
          becomes of it afterwards. No retention claims, and no links until the URLs are confirmed. -->
-    <string name="provider_disclosure_transcribe">Running this step sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
+    <string name="provider_disclosure_transcribe">External transcription sends the whole recording to the provider you pick.\nHow long they keep it, and whether they train on it, is that provider\'s own policy — Recly does not control it.\nRead the provider\'s policy before you use it.</string>
 
     <!-- docs/12 M8 · ADR-011: the recording-consent reminder. The wording is the Mac\'s, word for
          word in both languages (ConsentTextTest holds the two together). -->
     <string name="settings_consent_reminder">Consent reminder</string>
-    <string name="settings_consent_reminder_hint">A phone cannot tell a meeting from anything else, so it asks once, before the first recording.</string>
     <string name="consent_question">Did you tell the participants about the recording?</string>
     <string name="consent_body">This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.\n\nKorea — you may record a conversation you are part of (recording one you are not is prohibited).\nUnited States — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA need every participant\'s consent.\nEU — the GDPR asks for notice and a lawful basis, and Denmark requires explicit consent for business calls.</string>
     <string name="consent_confirm">I told them · Start recording</string>
@@ -302,7 +299,6 @@
     <string name="processing_local">On device</string>
     <string name="processing_external">External API</string>
     <string name="processing_off">Off</string>
-    <string name="processing_new_recordings">Applies to new recordings. Watch recordings use these settings when received.</string>
     <string name="processing_storage">Storage folder</string>
     <string name="processing_transcription">Transcription</string>
     <string name="processing_saved">Settings saved</string>
@@ -317,7 +313,6 @@
     <string name="processing_key_on_device">Saved on this device</string>
     <string name="processing_key_not_on_device">Not saved on this device</string>
     <string name="processing_secrets">API keys</string>
-    <string name="processing_keys_not_exported">API keys stay on this device and are not included in exported settings.</string>
     <string name="processing_local_running">Transcribing on this device</string>
     <string name="processing_local_pending">Transcription pending</string>
     <string name="settings_language_ja">日本語</string>

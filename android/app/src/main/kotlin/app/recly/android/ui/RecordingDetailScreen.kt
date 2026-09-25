@@ -55,9 +55,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
-import app.recly.android.ui.component.BlueprintDialogText
 import app.recly.android.ui.component.ButtonTone
-import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.theme.MinTouch
@@ -214,10 +212,6 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
             onValueChange = { text = it },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().height(64.dp),
-        )
-        BlueprintDialogText(
-            stringResource(R.string.recording_title_hint),
-            tone = DialogTone.MUTED,
         )
     }
 }

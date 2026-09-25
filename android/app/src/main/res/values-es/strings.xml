@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">Desconocido</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">Título de la grabación</string>
-    <string name="recording_title_hint">Déjalo vacío para conservar el nombre con fecha y hora</string>
     <string name="recording_title_save">Guardar</string>
     <string name="recording_title_skip">Omitir</string>
     <string name="recording_mic_denied">Se necesita permiso para el micrófono</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Subidas</string>
     <string name="settings_wifi_only">Subir solo con Wi-Fi</string>
-    <string name="settings_wifi_only_hint">No subir nunca con datos móviles.</string>
     <string name="settings_language">Idioma</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">Grabaciones en espera: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">Este paso envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
+    <string name="provider_disclosure_transcribe">La transcripción externa envía la grabación completa al proveedor elegido.\nLa conservación y el uso para entrenamiento dependen de su política; Recly no los controla.\nLee la política del proveedor antes de usarlo.</string>
     <string name="settings_consent_reminder">Recordatorio de consentimiento</string>
-    <string name="settings_consent_reminder_hint">El teléfono no distingue las reuniones, por eso pregunta una vez antes de la primera grabación.</string>
     <string name="consent_question">¿Has avisado a los participantes de la grabación?</string>
     <string name="consent_body">Esta grabación no muestra ningún aviso a los demás participantes. Informarles es responsabilidad de quien graba.\n\nCorea: puedes grabar una conversación en la que participas (está prohibido grabar una en la que no participas).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA requieren el consentimiento de todos.\nUE: el RGPD exige informar y contar con una base jurídica; Dinamarca exige consentimiento explícito para llamadas de negocios.</string>
     <string name="consent_confirm">Ya he avisado · Iniciar grabación</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">En el dispositivo</string>
     <string name="processing_external">API externa</string>
     <string name="processing_off">Desactivado</string>
-    <string name="processing_new_recordings">Se aplica a las nuevas grabaciones. Las del reloj usan estos ajustes al recibirse.</string>
     <string name="processing_storage">Carpeta de almacenamiento</string>
     <string name="processing_transcription">Transcripción</string>
     <string name="processing_saved">Ajustes guardados</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">Guardada en este dispositivo</string>
     <string name="processing_key_not_on_device">No hay ninguna clave guardada en este dispositivo</string>
     <string name="processing_secrets">Claves API</string>
-    <string name="processing_keys_not_exported">Las claves API se quedan en este dispositivo y no se incluyen al exportar ajustes.</string>
     <string name="processing_local_running">Transcribiendo en este dispositivo</string>
     <string name="processing_local_pending">Transcripción pendiente</string>
     <string name="settings_language_ja">日本語</string>

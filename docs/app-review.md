@@ -34,7 +34,7 @@
 
    Launch the app, grant microphone access when prompted, record, stop and enter a title. Open the recording list to play the recording and view its processing status. Use Settings → Google Drive → Connect Drive to authorize uploads to your own Drive. Recording processing offers local transcription, an external API or Off; the user selects the provider and explicitly permits transmission on iPhone before those requests are sent. Permission can be withdrawn in Settings → Privacy.
 
-   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Settings → Google Drive → Disconnect Drive revokes Google access and clears this device’s connection after one confirmation, while retaining recordings and settings. API keys can be removed individually from the Settings → Recording processing → API keys; recordings can be deleted from the recording list.
+   Optional-feature review setup and credentials: [exact steps and location of private demo credentials, or explain which optional features are configured for review]. Required sample files: [none for microphone recording; list any files actually used for review]. Settings → Google Drive → Disconnect Drive revokes Google access and clears this device’s connection after one confirmation, while retaining recordings and settings. API keys can be removed individually from the Settings → Recording processing → External API → API keys; recordings can be deleted from the recording list.
 
 4. **External services**
 

@@ -33,7 +33,6 @@
     <string name="recording_participants_unknown">모름</string>
     <string name="recording_participants_many">6명 이상</string>
     <string name="recording_title_prompt">녹음 제목</string>
-    <string name="recording_title_hint">비워두면 시각으로 지은 이름을 그대로 씁니다</string>
     <string name="recording_title_save">저장</string>
     <string name="recording_title_skip">건너뛰기</string>
     <string name="recording_mic_denied">마이크 권한 필요</string>
@@ -86,7 +85,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">업로드</string>
     <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
-    <string name="settings_wifi_only_hint">모바일 데이터로는 업로드하지 않습니다.</string>
 
     <string name="settings_language">언어</string>
     <string name="settings_language_ko">한국어</string>
@@ -212,11 +210,10 @@
     </plurals>
 
     <!-- docs/15 §3 -->
-    <string name="provider_disclosure_transcribe">이 단계를 실행하면 녹음 오디오 전체가 고른 업체로 전송됩니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
+    <string name="provider_disclosure_transcribe">외부 전사는 녹음 오디오 전체를 고른 업체로 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
 
     <!-- docs/12 M8 · ADR-011: 문구는 Mac의 것을 그대로 쓴다(ConsentTextTest). -->
     <string name="settings_consent_reminder">동의 리마인더</string>
-    <string name="settings_consent_reminder_hint">폰은 회의를 따로 구분하지 못하므로 첫 녹음 전에 한 번만 묻습니다.</string>
     <string name="consent_question">참가자에게 녹음을 알렸습니까?</string>
     <string name="consent_body">이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다.</string>
     <string name="consent_confirm">알렸습니다 · 녹음 시작</string>
@@ -255,7 +252,6 @@
     <string name="processing_local">로컬</string>
     <string name="processing_external">외부 API</string>
     <string name="processing_off">전사 안 함</string>
-    <string name="processing_new_recordings">새 녹음부터 적용됩니다. 워치 녹음은 수신할 때 이 설정을 사용합니다.</string>
     <string name="processing_storage">저장 폴더</string>
     <string name="processing_transcription">전사</string>
     <string name="processing_saved">설정을 저장했습니다</string>
@@ -270,7 +266,6 @@
     <string name="processing_key_on_device">이 기기에 저장됨</string>
     <string name="processing_key_not_on_device">이 기기에 저장된 키 없음</string>
     <string name="processing_secrets">API 키</string>
-    <string name="processing_keys_not_exported">API 키는 이 기기에 보관되며 내보내는 설정에는 포함되지 않습니다.</string>
     <string name="processing_local_running">이 기기에서 전사 중</string>
     <string name="processing_local_pending">전사 대기 중</string>
     <string name="settings_language_ja">日本語</string>

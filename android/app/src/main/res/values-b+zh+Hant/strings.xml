@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">未知</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">錄音標題</string>
-    <string name="recording_title_hint">留空則使用時間戳記名稱</string>
     <string name="recording_title_save">儲存</string>
     <string name="recording_title_skip">略過</string>
     <string name="recording_mic_denied">需要麥克風權限</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">上傳</string>
     <string name="settings_wifi_only">僅透過Wi-Fi上傳</string>
-    <string name="settings_wifi_only_hint">不透過行動數據上傳。</string>
     <string name="settings_language">語言</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">%1$d筆錄音正在等待。</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">執行此步驟會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。</string>
+    <string name="provider_disclosure_transcribe">外部轉錄會將完整錄音傳送給所選供應商。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
-    <string name="settings_consent_reminder_hint">手機無法辨識是否為會議，因此會在首次錄音前詢問一次。</string>
     <string name="consent_question">您已告知參與者將進行錄音嗎？</string>
     <string name="consent_body">此錄音不會向會議中的其他人顯示任何提示。告知參與者是錄音者的責任。\n\n韓國：可以錄製自己參與的對話（禁止錄製自己未參與的對話）。\n美國：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有參與者同意。\n歐盟：GDPR要求告知並具備合法依據；丹麥要求商務通話取得明確同意。</string>
     <string name="consent_confirm">已告知·開始錄音</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">裝置本機</string>
     <string name="processing_external">外部API</string>
     <string name="processing_off">關閉</string>
-    <string name="processing_new_recordings">適用於新錄音。手錶錄音在接收時使用這些設定。</string>
     <string name="processing_storage">儲存資料夾</string>
     <string name="processing_transcription">轉錄</string>
     <string name="processing_saved">設定已儲存</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">已儲存在此裝置上</string>
     <string name="processing_key_not_on_device">此裝置上未儲存金鑰</string>
     <string name="processing_secrets">API金鑰</string>
-    <string name="processing_keys_not_exported">API金鑰僅保留在此裝置上，不包含在匯出的設定中。</string>
     <string name="processing_local_running">正在此裝置上轉錄</string>
     <string name="processing_local_pending">等待轉錄</string>
     <string name="settings_language_ja">日本語</string>

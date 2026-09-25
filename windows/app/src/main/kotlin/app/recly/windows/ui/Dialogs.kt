@@ -102,7 +102,6 @@ fun RenameDialog(
             )
         },
     ) {
-        BlueprintDialogText(strings[Str.TITLE_HINT], tone = DialogTone.MUTED)
         BlueprintTextField(
             value = title,
             onValueChange = { title = it },

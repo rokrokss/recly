@@ -27,7 +27,6 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
     Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
         SectionHeader(strings[Str.PROCESSING_TITLE])
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
-        Text(strings[Str.PROCESSING_NEW_RECORDINGS], style = MaterialTheme.typography.bodySmall)
         BlueprintTextField(draft.folder, { v -> model.edit { it.folder = v } }, strings[Str.PROCESSING_STORAGE])
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
         SectionHeader(strings[Str.PROCESSING_TRANSCRIPTION])
@@ -42,22 +41,22 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
             BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to it }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
             Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE], style = MaterialTheme.typography.bodySmall)
-            Text(strings[Str.PROCESSING_KEYS_NOT_EXPORTED], style = MaterialTheme.typography.bodySmall)
             BlueprintTextField(draft.secretRef, { v -> model.edit { it.secretRef = v } }, strings[Str.FIELD_SECRET_NAME])
             ProcessingKey(model, draft.secretRef, strings)
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL])
             if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
+            // Keys only matter to an external provider, so the list lives with it.
+            if (model.secretNames.isNotEmpty()) {
+                SectionHeader(strings[Str.PROCESSING_SECRETS])
+                model.secretNames.forEach { name ->
+                    Text(name, style = MaterialTheme.typography.bodySmall)
+                    BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
+                }
+            }
         }
         if (draft.mode != TranscriptionMode.OFF) {
             BlueprintDropdown(strings[Str.FIELD_LANGUAGE], draft.languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
             if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
-        }
-        if (model.secretNames.isNotEmpty()) {
-            SectionHeader(strings[Str.PROCESSING_SECRETS])
-            model.secretNames.forEach { name ->
-                Text(name, style = MaterialTheme.typography.bodySmall)
-                BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
-            }
         }
         model.message?.let { Text(it.text(strings)) }
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {

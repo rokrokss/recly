@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">غير معروف</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">عنوان التسجيل</string>
-    <string name="recording_title_hint">اتركه فارغًا للاحتفاظ بالاسم الزمني</string>
     <string name="recording_title_save">حفظ</string>
     <string name="recording_title_skip">تخطٍّ</string>
     <string name="recording_mic_denied">يلزم إذن الميكروفون</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">عمليات الرفع</string>
     <string name="settings_wifi_only">الرفع عبر Wi-Fi فقط</string>
-    <string name="settings_wifi_only_hint">عدم الرفع عبر بيانات الجوال.</string>
     <string name="settings_language">اللغة</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">التسجيلات المنتظرة: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">ترسل هذه الخطوة التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
+    <string name="provider_disclosure_transcribe">يرسل النسخ الخارجي التسجيل كاملًا إلى المزوّد المختار.\nتعتمد مدة الاحتفاظ والاستخدام للتدريب على سياسة المزوّد ولا يتحكم Recly بهما.\nاقرأ سياسة المزوّد قبل الاستخدام.</string>
     <string name="settings_consent_reminder">تذكير بالموافقة</string>
-    <string name="settings_consent_reminder_hint">لا يستطيع الهاتف تمييز الاجتماعات، لذا يسأل مرة واحدة قبل التسجيل الأول.</string>
     <string name="consent_question">هل أخبرت المشاركين بالتسجيل؟</string>
     <string name="consent_body">لا يظهر هذا التسجيل أي إشارة للمشاركين الآخرين. إبلاغهم مسؤولية من يسجّل.\n\nكوريا: يجوز تسجيل محادثة تشارك فيها، ويُحظر تسجيل محادثة لا تشارك فيها.\nالولايات المتحدة: تتطلب CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA موافقة جميع المشاركين.\nالاتحاد الأوروبي: تتطلب GDPR إخطارًا وأساسًا قانونيًا، وتتطلب الدنمارك موافقة صريحة للمكالمات التجارية.</string>
     <string name="consent_confirm">أخبرتهم · بدء التسجيل</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">على الجهاز</string>
     <string name="processing_external">API خارجي</string>
     <string name="processing_off">إيقاف</string>
-    <string name="processing_new_recordings">تُطبّق على التسجيلات الجديدة. تستخدم تسجيلات الساعة هذه الإعدادات عند استلامها.</string>
     <string name="processing_storage">مجلد التخزين</string>
     <string name="processing_transcription">النسخ النصي</string>
     <string name="processing_saved">تم حفظ الإعدادات</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">محفوظ على هذا الجهاز</string>
     <string name="processing_key_not_on_device">لا يوجد مفتاح محفوظ على هذا الجهاز</string>
     <string name="processing_secrets">مفاتيح API</string>
-    <string name="processing_keys_not_exported">تبقى مفاتيح API على هذا الجهاز ولا تُضمّن في الإعدادات المُصدّرة.</string>
     <string name="processing_local_running">جارٍ النسخ على هذا الجهاز</string>
     <string name="processing_local_pending">النسخ معلّق</string>
     <string name="settings_language_ja">日本語</string>

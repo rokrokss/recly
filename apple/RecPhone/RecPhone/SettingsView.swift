@@ -95,9 +95,6 @@ struct SettingsView: View {
             // the only way back on once the dialog's own "Do not ask again" has been used.
             SwitchRow(
                 title: loc("Consent reminder"),
-                subtitle: loc(
-                    "A phone cannot tell a meeting from anything else, so it asks once, before the first recording."
-                ),
                 isOn: $model.consentReminder
             )
             .accessibilityIdentifier("consent-reminder")
@@ -115,7 +112,6 @@ struct SettingsView: View {
             section(loc("Uploads"))
             SwitchRow(
                 title: loc("Upload on Wi-Fi only"),
-                subtitle: loc("Never upload over mobile data."),
                 isOn: $model.wifiOnly
             )
         }

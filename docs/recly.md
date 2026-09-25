@@ -1130,7 +1130,7 @@ Windows에서는 절대 선택되지 않는다.
 - **값은 기기 밖으로 나가지 않는다.** 파일로도, 내보내기로도, 워치로도 가지 않는다. 새 기기는 사용자가 다시
   입력한다 — 그 대신 어느 기기의 키가 새어도 다른 기기가 함께 새지 않는다.
 - 실행 시 값이 없으면 그 단계는 즉시 `MISSING_SECRET`으로 FAILED(재시도 없음), `onError` 적용.
-- UI: 공용 시크릿(API 키) 목록은 이름 조회·삭제만 제공한다. 새 키의 값은 녹음 처리 설정의 외부 전사 항목에서
+- UI: 공용 시크릿(API 키) 목록은 이름 조회·삭제만 제공하고, 외부 전사를 골랐을 때만 그 항목 안에 보인다(2026-09-25; 방식을 바꿔도 키는 지우지 않는다). 새 키의 값은 녹음 처리 설정의 외부 전사 항목에서
   입력받는다. 웹훅 서명 키 생성 동작(en `Generate a webhook signing key`)은 폐기됐다(2026-09-24).
 - **읽히지 않는 보안 저장소는 실패로 닫는다(fail closed).** 셸의 Keychain/Keystore/Credential Manager가 목록 조회
   자체를 거부하면(`errSecMissingEntitlement`, 잠긴 기기의 `errSecInteractionNotAllowed`, ACL 거부) 그 예외는 코어를

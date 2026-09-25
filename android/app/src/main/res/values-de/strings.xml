@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">Unbekannt</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">Aufnahmetitel</string>
-    <string name="recording_title_hint">Leer lassen, um den Zeitstempel als Namen zu behalten</string>
     <string name="recording_title_save">Speichern</string>
     <string name="recording_title_skip">Überspringen</string>
     <string name="recording_mic_denied">Mikrofonberechtigung erforderlich</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Nur über WLAN hochladen</string>
-    <string name="settings_wifi_only_hint">Nie über mobile Daten hochladen.</string>
     <string name="settings_language">Sprache</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">Wartende Aufnahmen: %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">Dieser Schritt sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
+    <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an den gewählten Anbieter.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
     <string name="settings_consent_reminder">Einwilligungserinnerung</string>
-    <string name="settings_consent_reminder_hint">Das Telefon kann Besprechungen nicht erkennen und fragt deshalb einmal vor der ersten Aufnahme nach.</string>
     <string name="consent_question">Haben Sie die Teilnehmenden über die Aufnahme informiert?</string>
     <string name="consent_body">Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.\n\nKorea: Gespräche, an denen Sie teilnehmen, dürfen aufgenommen werden; andere nicht.\nUSA: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA verlangen die Einwilligung aller Teilnehmenden.\nEU: Die DSGVO verlangt Information und eine Rechtsgrundlage; Dänemark verlangt ausdrückliche Einwilligung für geschäftliche Anrufe.</string>
     <string name="consent_confirm">Informiert · Aufnahme starten</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">Auf dem Gerät</string>
     <string name="processing_external">Externe API</string>
     <string name="processing_off">Aus</string>
-    <string name="processing_new_recordings">Gilt für neue Aufnahmen. Aufnahmen von der Uhr verwenden diese Einstellungen beim Empfang.</string>
     <string name="processing_storage">Speicherordner</string>
     <string name="processing_transcription">Transkription</string>
     <string name="processing_saved">Einstellungen gespeichert</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">Auf diesem Gerät gespeichert</string>
     <string name="processing_key_not_on_device">Auf diesem Gerät ist kein Schlüssel gespeichert</string>
     <string name="processing_secrets">API-Schlüssel</string>
-    <string name="processing_keys_not_exported">API-Schlüssel bleiben auf diesem Gerät und sind nicht in exportierten Einstellungen enthalten.</string>
     <string name="processing_local_running">Transkription auf diesem Gerät</string>
     <string name="processing_local_pending">Transkription ausstehend</string>
     <string name="settings_language_ja">日本語</string>

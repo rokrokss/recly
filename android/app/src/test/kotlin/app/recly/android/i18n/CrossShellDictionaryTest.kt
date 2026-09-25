@@ -270,15 +270,6 @@ class CrossShellDictionaryTest {
                 phone = "Recording title",
             ),
             Line(
-                what = "the title prompt's hint",
-                en = "Leave it empty to keep the timestamp name",
-                ko = "비워두면 시각으로 지은 이름을 그대로 씁니다",
-                android = "recording_title_hint",
-                windows = "title.hint",
-                mac = "Leave it empty to keep the timestamp name",
-                phone = "Leave it empty to keep the timestamp name",
-            ),
-            Line(
                 what = "the participant question",
                 en = "People in the room",
                 ko = "참석 인원",

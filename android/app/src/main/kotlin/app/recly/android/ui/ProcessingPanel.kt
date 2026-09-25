@@ -42,7 +42,6 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     }) { Text(name) } }
     Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
         if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall)
-        Text(stringResource(R.string.processing_new_recordings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
         ProcessingField(R.string.processing_storage, draft.folder) { v -> model.edit { it.folder = v } }
         ProcessingField(R.string.editor_min_duration, draft.minimumSeconds) { v -> model.edit { it.minimumSeconds = v } }
         SectionHeader(stringResource(R.string.processing_transcription))
@@ -77,6 +76,14 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
             }
             if (draft.acceptsModel) ProcessingField(R.string.processing_model, draft.model) { v -> model.edit { it.model = v } }
+            // Keys only matter to an external provider, so the list lives with it.
+            if (state.secretNames.isNotEmpty()) {
+                SectionHeader(stringResource(R.string.processing_secrets))
+                state.secretNames.forEach { name ->
+                    Text(name, style = MaterialTheme.typography.bodySmall)
+                    BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
+                }
+            }
         }
         if (draft.mode != TranscriptionMode.OFF) {
             Text(stringResource(R.string.editor_language), style = MaterialTheme.typography.labelMedium)
@@ -88,13 +95,6 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 draft.languages.forEach { language -> BlueprintRadioRow(transcriptionLanguageLabel(language), draft.language == language, {
                     model.edit { it.language = language }; pickingLanguage = false
                 }) }
-            }
-        }
-        if (state.secretNames.isNotEmpty()) {
-            SectionHeader(stringResource(R.string.processing_secrets))
-            state.secretNames.forEach { name ->
-                Text(name, style = MaterialTheme.typography.bodySmall)
-                BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
             }
         }
         state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }

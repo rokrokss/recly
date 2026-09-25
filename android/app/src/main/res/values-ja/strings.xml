@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">不明</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">録音タイトル</string>
-    <string name="recording_title_hint">空欄なら日時を名前として使います</string>
     <string name="recording_title_save">保存</string>
     <string name="recording_title_skip">スキップ</string>
     <string name="recording_mic_denied">マイクの許可が必要です</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">アップロード</string>
     <string name="settings_wifi_only">Wi-Fiでのみアップロード</string>
-    <string name="settings_wifi_only_hint">モバイルデータ通信ではアップロードしません。</string>
     <string name="settings_language">言語</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">録音%1$d件が待機中です。</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">このステップは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
+    <string name="provider_disclosure_transcribe">外部の文字起こしでは、選択した提供者に録音全体を送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
     <string name="settings_consent_reminder">同意のリマインダー</string>
-    <string name="settings_consent_reminder_hint">スマートフォンでは会議を判別できないため、初回の録音前に一度だけ確認します。</string>
     <string name="consent_question">参加者に録音することを伝えましたか？</string>
     <string name="consent_body">この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。\n\n韓国：自分が参加する会話は録音できます（参加していない会話の録音は禁止）。\n米国：CA・CT・FL・HI・IL・MD・MA・MT・NH・OR・PA・WAでは全参加者の同意が必要です。\nEU：GDPRでは通知と適法な根拠が必要です。デンマークでは業務通話の明示的な同意が必要です。</string>
     <string name="consent_confirm">伝えました・録音開始</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">デバイス上</string>
     <string name="processing_external">外部API</string>
     <string name="processing_off">オフ</string>
-    <string name="processing_new_recordings">新しい録音に適用されます。ウォッチの録音には受信時の設定を使います。</string>
     <string name="processing_storage">保存先フォルダ</string>
     <string name="processing_transcription">文字起こし</string>
     <string name="processing_saved">設定を保存しました</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">このデバイスに保存済み</string>
     <string name="processing_key_not_on_device">このデバイスに保存されたキーはありません</string>
     <string name="processing_secrets">APIキー</string>
-    <string name="processing_keys_not_exported">APIキーはこのデバイスに保存され、設定の書き出しには含まれません。</string>
     <string name="processing_local_running">このデバイスで文字起こし中</string>
     <string name="processing_local_pending">文字起こし待ち</string>
     <string name="settings_language_ja">日本語</string>

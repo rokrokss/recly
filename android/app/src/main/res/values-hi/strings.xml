@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">अज्ञात</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">रिकॉर्डिंग का शीर्षक</string>
-    <string name="recording_title_hint">टाइमस्टैम्प वाला नाम रखने के लिए खाली छोड़ें</string>
     <string name="recording_title_save">सहेजें</string>
     <string name="recording_title_skip">छोड़ें</string>
     <string name="recording_mic_denied">माइक्रोफ़ोन की अनुमति चाहिए</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">अपलोड</string>
     <string name="settings_wifi_only">केवल Wi-Fi से अपलोड करें</string>
-    <string name="settings_wifi_only_hint">मोबाइल डेटा से कभी अपलोड न करें।</string>
     <string name="settings_language">भाषा</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">प्रतीक्षारत रिकॉर्डिंग: %1$d।</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">यह चरण पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
+    <string name="provider_disclosure_transcribe">बाहरी ट्रांसक्रिप्शन पूरी रिकॉर्डिंग चुने हुए प्रदाता को भेजता है।\nकितने समय तक रखी जाएगी और प्रशिक्षण में उपयोग होगी या नहीं, यह प्रदाता की नीति है; Recly इसे नियंत्रित नहीं करता।\nउपयोग से पहले प्रदाता की नीति पढ़ें।</string>
     <string name="settings_consent_reminder">सहमति की याद दिलाएँ</string>
-    <string name="settings_consent_reminder_hint">फ़ोन मीटिंग की पहचान नहीं कर सकता, इसलिए पहली रिकॉर्डिंग से पहले एक बार पूछता है।</string>
     <string name="consent_question">क्या आपने प्रतिभागियों को रिकॉर्डिंग के बारे में बताया है?</string>
     <string name="consent_body">यह रिकॉर्डिंग मीटिंग के अन्य लोगों को कोई संकेत नहीं देती। उन्हें बताना रिकॉर्ड करने वाले की ज़िम्मेदारी है।\n\nकोरिया: आप उस बातचीत को रिकॉर्ड कर सकते हैं जिसमें आप शामिल हैं; अन्य बातचीत रिकॉर्ड करना प्रतिबंधित है।\nअमेरिका: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA में सभी प्रतिभागियों की सहमति चाहिए।\nEU: GDPR सूचना और वैध आधार माँगता है; डेनमार्क में व्यावसायिक कॉल के लिए स्पष्ट सहमति आवश्यक है।</string>
     <string name="consent_confirm">बता दिया · रिकॉर्डिंग शुरू करें</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">डिवाइस पर</string>
     <string name="processing_external">बाहरी API</string>
     <string name="processing_off">बंद</string>
-    <string name="processing_new_recordings">नई रिकॉर्डिंग पर लागू होगा। घड़ी की रिकॉर्डिंग मिलने पर ये सेटिंग लागू होंगी।</string>
     <string name="processing_storage">स्टोरेज फ़ोल्डर</string>
     <string name="processing_transcription">ट्रांसक्रिप्शन</string>
     <string name="processing_saved">सेटिंग सहेजी गई</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">इस डिवाइस पर सहेजी गई</string>
     <string name="processing_key_not_on_device">इस डिवाइस पर कोई कुंजी सहेजी नहीं गई</string>
     <string name="processing_secrets">API कुंजियाँ</string>
-    <string name="processing_keys_not_exported">API कुंजियाँ इसी डिवाइस पर रहती हैं और एक्सपोर्ट की गई सेटिंग में शामिल नहीं होतीं।</string>
     <string name="processing_local_running">इस डिवाइस पर ट्रांसक्रिप्शन जारी</string>
     <string name="processing_local_pending">ट्रांसक्रिप्शन बाकी</string>
     <string name="settings_language_ja">日本語</string>

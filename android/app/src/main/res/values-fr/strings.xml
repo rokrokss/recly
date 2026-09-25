@@ -28,7 +28,6 @@
     <string name="recording_participants_unknown">Inconnu</string>
     <string name="recording_participants_many">6+</string>
     <string name="recording_title_prompt">Titre de l’enregistrement</string>
-    <string name="recording_title_hint">Laissez vide pour garder le nom horodaté</string>
     <string name="recording_title_save">Enregistrer</string>
     <string name="recording_title_skip">Passer</string>
     <string name="recording_mic_denied">L’autorisation du microphone est nécessaire</string>
@@ -75,7 +74,6 @@
     <string name="settings_account">Google Drive</string>
     <string name="settings_uploads">Envois</string>
     <string name="settings_wifi_only">Envoyer uniquement en Wi-Fi</string>
-    <string name="settings_wifi_only_hint">Ne jamais envoyer via les données mobiles.</string>
     <string name="settings_language">Langue</string>
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
@@ -182,9 +180,8 @@
     <plurals name="alert_waiting">
         <item quantity="other">Enregistrements en attente : %1$d.</item>
     </plurals>
-    <string name="provider_disclosure_transcribe">Cette étape envoie l’enregistrement complet au fournisseur choisi.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
+    <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet au fournisseur choisi.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
     <string name="settings_consent_reminder">Rappel de consentement</string>
-    <string name="settings_consent_reminder_hint">Le téléphone ne peut pas reconnaître une réunion. Il pose donc la question une fois, avant le premier enregistrement.</string>
     <string name="consent_question">Avez-vous prévenu les participants de l’enregistrement ?</string>
     <string name="consent_body">Cet enregistrement n’affiche aucun signe aux autres participants. La personne qui enregistre doit les prévenir.\n\nCorée : vous pouvez enregistrer une conversation à laquelle vous participez (sinon, c’est interdit).\nÉtats-Unis : CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigent le consentement de tous les participants.\nUE : le RGPD exige une information et une base légale ; le Danemark exige un consentement explicite pour les appels professionnels.</string>
     <string name="consent_confirm">Je les ai prévenus · Enregistrer</string>
@@ -223,7 +220,6 @@
     <string name="processing_local">Sur l’appareil</string>
     <string name="processing_external">API externe</string>
     <string name="processing_off">Désactivé</string>
-    <string name="processing_new_recordings">S’applique aux nouveaux enregistrements. Ceux de la montre utilisent ces réglages à leur réception.</string>
     <string name="processing_storage">Dossier de stockage</string>
     <string name="processing_transcription">Transcription</string>
     <string name="processing_saved">Réglages enregistrés</string>
@@ -238,7 +234,6 @@
     <string name="processing_key_on_device">Enregistrée sur cet appareil</string>
     <string name="processing_key_not_on_device">Aucune clé enregistrée sur cet appareil</string>
     <string name="processing_secrets">Clés API</string>
-    <string name="processing_keys_not_exported">Les clés API restent sur cet appareil et ne sont pas exportées avec les réglages.</string>
     <string name="processing_local_running">Transcription sur cet appareil</string>
     <string name="processing_local_pending">Transcription en attente</string>
     <string name="settings_language_ja">日本語</string>

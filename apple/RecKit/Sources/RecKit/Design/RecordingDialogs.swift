@@ -119,7 +119,6 @@ public struct RenameDialog: View {
         } content: {
             BlueprintField(loc("Title"), text: $typed)
                 .accessibilityIdentifier("rename-field")
-            BlueprintDialogText(loc("Leave it empty to keep the timestamp name"), tone: .muted)
         }
     }
 
