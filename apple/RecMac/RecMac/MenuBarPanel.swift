@@ -195,6 +195,12 @@ final class MenuBarPanel {
 
         var body: some View {
             MenuPopover(model: model, language: language, theme: theme, maximumSize: limits.maximumSize)
+                // The panel takes its new size a turn after the content changes (see `scheduleFit`),
+                // so for one frame the content and the window disagree — a recording starting grows
+                // the header, for one. Pinned to the top, that frame only shows the bottom edge early
+                // or late; centred, the whole popover would jump by half the difference. A flexible
+                // frame keeps the content's own ideal size, which is what the panel is sized from.
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .environment(\.locale, language.locale)
                 .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 .blueprint()

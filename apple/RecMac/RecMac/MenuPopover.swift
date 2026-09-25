@@ -24,7 +24,12 @@ struct MenuPopover: View {
     @State private var expanded: String?
 
     var body: some View {
-        MenuPanelContent(maximumSize: maximumSize, preferredContentHeight: showingSettings ? 420 : 280) {
+        // One height for the ledger and the settings: a popover that changed size on "Hide settings"
+        // had its window follow a turn later (the panel resizes outside the layout pass that asked
+        // for it — see `MenuBarPanel.scheduleFit`), and that frame flashed a different layout. Each
+        // section still opens at its top: only the scrolled middle is rebuilt, never the header
+        // and footer around it.
+        MenuPanelContent(maximumSize: maximumSize, preferredContentHeight: 420, contentID: showingSettings) {
             header
             HairLine()
         } content: {
@@ -37,8 +42,6 @@ struct MenuPopover: View {
             HairLine()
             footer
         }
-        // Each section opens at its top; a settings scroll offset must not carry into the ledger.
-        .id(showingSettings)
         .background(blueprint.palette.surface)
         // A `LSUIElement` app has no window to hang a sheet off and the popover is the only surface
         // there is, so the dialogs are drawn *in* it — over the ledger, which is what they are
