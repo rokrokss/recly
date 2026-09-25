@@ -4,6 +4,7 @@ package recly.core.job
 
 import kotlin.test.*
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
@@ -158,6 +159,19 @@ class TransferConsentTest {
         assertEquals(JobStatus.DONE, f.store.get(id)!!.status)
         assertEquals(1, upload.calls)
         assertEquals(2, send.calls)
+    }
+
+    @Test
+    fun `a keychain that will not be read shows no grants instead of ending the observer`() = runBlocking {
+        val f = Fixture(emptyList(), requireTransferConsent = true)
+        val t = target(speech)
+        f.consents.grant(listOf(t))
+        val locked = object : SecureStore by MapSecureStore() {
+            override suspend fun get(ns: String, key: String): ByteArray? = error("keychain -34018")
+        }
+        val consents = TransferConsents(f.db, testDeps(secureStore = locked, requireTransferConsent = true))
+        assertFails { consents.approved() }
+        assertEquals(emptyList(), consents.observe().first())
     }
 
     @Test

@@ -155,6 +155,10 @@ public struct BlueprintDialogScrim<Content: View>: View {
 /// The page a [BlueprintDialog] is presented on: the dot grid, and the card centred on it.
 public struct BlueprintDialogSheet<Content: View>: View {
     private let content: Content
+    /// The card's height with its margin. The sheet is that tall, so a two-line question is not
+    /// left at the top of a half-screen of empty grid; a list taller than the screen stops at the
+    /// full height and scrolls.
+    @State private var height: CGFloat?
 
     public init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -165,12 +169,13 @@ public struct BlueprintDialogSheet<Content: View>: View {
             content
                 .padding(Space.m)
                 .frame(maxWidth: .infinity)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
         #if os(iOS)
-        .presentationDetents([.medium, .large])
+        .presentationDetents(height.map { [.height($0)] } ?? [.medium])
         #else
         .frame(minWidth: 460, minHeight: 300)
         #endif

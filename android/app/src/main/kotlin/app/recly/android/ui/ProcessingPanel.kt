@@ -40,7 +40,9 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     var deletingKey by remember { mutableStateOf<String?>(null) }
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let { model.export(it) } }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importSettings) }
-    SectionHeader(stringResource(R.string.processing_title))
+    // The same section heading as the rest of Settings (SettingsScreen `Section`).
+    SectionHeader(stringResource(R.string.processing_title), Modifier.padding(horizontal = Space.m))
+    HairLine()
     deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, SttProviders.displayName(name)), onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
         BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null })

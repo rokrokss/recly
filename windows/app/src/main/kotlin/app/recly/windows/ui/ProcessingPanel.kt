@@ -27,8 +27,10 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
         BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null })
     }) { Text(name) } }
+    // The same section heading as the rest of Settings (SettingsWindow `Section`).
+    SectionHeader(strings[Str.PROCESSING_TITLE], Modifier.padding(horizontal = Space.m))
+    HairLine()
     Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
-        SectionHeader(strings[Str.PROCESSING_TITLE])
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
         BlueprintTextField(draft.folder, { v -> model.edit { it.folder = v } }, strings[Str.PROCESSING_STORAGE])
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])

@@ -63,7 +63,7 @@ public final class ProcessingSettingsModel: ObservableObject {
             if result is ProcessingSaveResultSaved {
                 await reload(); message = .key("Settings saved"); onSaved?()
             } else if let invalid = result as? ProcessingSaveResultInvalid {
-                message = .core(CoreMessage.stepFailed.code(arg: nil, detail: invalid.errors.joined(separator: "\n")))
+                message = .key("Failed: %@", args: [.verbatim(invalid.errors.joined(separator: "\n"))])
             } else if result is ProcessingSaveResultStale { message = .core(CoreMessage.stale.code(arg: nil, detail: nil)) }
             else { message = .key("These settings cannot be read by this version. The original data has been preserved.") }
         } catch { failed(error) }
@@ -130,7 +130,9 @@ public final class ProcessingSettingsModel: ObservableObject {
         summaryKey = draft.mode == .local ? "On device" : "Off"
         providerSummary = draft.mode == .external ? SttProviders.shared.displayName(name: draft.provider) : nil
     }
-    private func failed(_ error: Error) { message = .core(CoreMessage.stepFailed.code(arg: nil, detail: error.localizedDescription)) }
+    // The reason goes in the sentence, as on Android and Windows: `UiMessage.text` shows a core
+    // code's sentence only, so a reason passed as its detail left "Failed:" with nothing after it.
+    private func failed(_ error: Error) { message = .key("Failed: %@", args: [.verbatim(error.localizedDescription)]) }
 }
 
 public struct ProcessingSettingsView: View {
