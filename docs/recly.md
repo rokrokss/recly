@@ -1459,7 +1459,7 @@ API가 ISO 언어 코드만 받으면 중국어 두 선택값은 `zh`, Speechmat
 | `groq` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.groq.com/openai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | **없다** — Groq에 화자분리가 없으므로 `diarize`는 무시하고 화자는 `null`. `verbose_json` 고정 | 위와 같음 | `whisper-large-v3-turbo` |
 | `together` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.together.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `response_format=verbose_json` + `timestamp_granularities=segment`, 그리고 `min_speakers`/`max_speakers`(범위) | 위와 같되 `auto`→`language=auto`(이 API는 `language`가 없으면 `en`이다 — API reference, 2026-09-25) | `openai/whisper-large-v3` |
 | `mistral` (Voxtral) | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.mistral.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `timestamp_granularities=segment`. 화자 수 힌트 없음 | 위와 같음 | `voxtral-mini-latest` |
-| `deepgram` | 헤더 `Authorization: Token {키}` | `POST https://api.deepgram.com/v1/listen?…` 쿼리(`model`, `smart_format=true`, `punctuate=true`, `utterances=true`), 본문은 파일 바이트 그대로, 동기 | 없음(동기) | `diarize_model=latest`만 보낸다(옛 `diarize` 플래그를 같이 보내면 거부된다). 화자 수 힌트 없음 | `ko`→`language=ko`, `en`→`language=en`, `ko-en`→`language=ko`, `auto`→`detect_language=true` | `nova-3` |
+| `deepgram` | 헤더 `Authorization: Token {키}` | `POST https://api.deepgram.com/v1/listen?…` 쿼리(`model`, `smart_format=true`, `punctuate=true`, `utterances=true`, 모델 개선 제외 `mip_opt_out=true`), 본문은 파일 바이트 그대로, 동기 | 없음(동기) | `diarize_model=latest`만 보낸다(옛 `diarize` 플래그를 같이 보내면 거부된다). 화자 수 힌트 없음 | `ko`→`language=ko`, `en`→`language=en`, `ko-en`→`language=ko`, `auto`→`detect_language=true` | `nova-3` |
 | `azure` (Fast transcription) | 헤더 `Ocp-Apim-Subscription-Key`; 값 = 키. `invokeUrl`은 리소스 엔드포인트(단계 필드, **필수**) | `POST {invokeUrl}/speechtotext/transcriptions:transcribe?api-version=2025-10-15` multipart(`audio`, `definition` JSON), 동기 | 없음(동기) | `diarization.enabled` + `maxSpeakers`(API가 받는 2..35로 클램프). `diarize: false`면 `diarization`을 아예 빼고 보낸다 | `ko`→`["ko-KR"]`, `en`→`["en-US"]`, `ko-en`→`[]`(여러 locale은 파일 전체를 한 언어로 처리하므로, 섞인 말은 locale 없이 다국어 모델에 맡긴다 — fast transcription 가이드 권장, 2026-09-25), `auto`→`[]`. `profanityFilterMode: "None"`(기본값 `Masked`는 욕설을 가린다) | — |
 | `daglo` (다글로) | 헤더 `Authorization: Bearer {키}` | `POST https://apis.daglo.ai/stt/v1/async/transcripts` multipart(`file`, `sttConfig` JSON) → `rid` | `GET https://apis.daglo.ai/stt/v1/async/transcripts/{rid}` → `transcribed`(완료) / `input_error`·`transcript_error`·`file_error`(종료 실패) / 그 밖은 진행 중 | `speakerDiarization.enable`, `speakerCountHint`(단일 값을 알고 2 이상일 때) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`mixed`, `auto`→`ko-KR` | `general` |
 | `speechmatics` | 헤더 `Authorization: Bearer {키}`. base 기본 `https://eu1.asr.api.speechmatics.com/v2`, `invokeUrl`로 대체 가능(예: `us1` 호스트) | `POST {base}/jobs` multipart(`data_file`, `config` JSON) → `id` | `GET {base}/jobs/{id}` → `running`(진행) / `rejected`·`deleted`·`expired`(종료 실패, 재제출) / `done`. `done`이면 같은 폴링에서 `GET {base}/jobs/{id}/transcript?format=json-v2` | `diarization: "speaker"`(아니면 `"none"`). 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`auto`(언어 식별; 감지된 언어는 토큰의 `alternatives[].language`에서 읽는다. 작업 설정에 `language_identification_config.low_confidence_action: "allow"` — 기본값은 확신이 없으면 거절이다), `zh-tw`→`cmn` + `output_locale: "cmn-Hant"`(기본 출력은 간체) | `enhanced`(`operating_point`) |
@@ -2720,34 +2720,34 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
   > How long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.
   > Read the provider's policy before you use it.
 
-- **링크는 아직 없다.** 아래 표의 provider별 정책 URL이 확정되지 않았으므로 문장만 넣고 링크는 걸지 않았다(없는
-  URL을 만들지 않는다).
+- **링크**: 이 세 줄에는 링크를 걸지 않는다. iPhone의 전송 허용 창과 설정 → 개인정보 보호는 아래 표의 공식 방침
+  링크(`PrivacyLinks`)를 건다(2026-09-26 확인).
 
-#### provider 보관 정책 — 확인 대상 (**전부 미확인, 방침 게시 전 확인할 것**)
+#### provider 보관 정책 — 2026-09-26 공식 문서 확인
 
 받는 것은 열넷 모두 같다 — **이어 붙인 오디오 트랙 한 파일**과 그 요청에 실린 **언어·화자분리 옵션**(§3 위 표).
-다른 것은 그 다음 그 업체가 무엇을 하느냐이고, 그것이 아래에서 확인할 것이다.
+다른 것은 그 다음 그 업체가 무엇을 하느냐다. API 상품 기준 기본값이다.
 
-| provider | 확인할 것 | 링크(경로 미확인) |
+| provider | 학습·보관 기본값(요약) | 공식 링크 |
 |---|---|---|
-| AssemblyAI (STT) | 오디오·전사 보관 기간, 삭제 API, 학습 사용 여부, 데이터 리전 | <https://www.assemblyai.com/> → Legal · Privacy Policy |
-| CLOVA Speech (네이버 클라우드, STT) | 업로드 파일 보관, 국내 리전, 학습 사용 여부 | <https://www.ncloud.com/> → 이용약관 · 개인정보처리방침 |
-| RTZR 리턴제로 (STT) | job 결과 보관 기간, 삭제 방법, 학습 사용 여부 | <https://www.rtzr.ai/> → 개인정보처리방침 |
-| OpenAI (STT) | 오디오 보관 기간, API 데이터의 학습 사용 여부, 데이터 리전 | <https://openai.com/> → Privacy Policy · API data usage |
-| Groq (STT) | 오디오 보관 기간, 학습 사용 여부, 무료 등급과 유료 등급의 차이 | <https://groq.com/> → Privacy Policy |
-| Together AI (STT) | 오디오 보관 기간, 학습 사용 여부, 데이터 리전 | <https://www.together.ai/> → Privacy Policy |
-| Mistral AI (Voxtral, STT) | 오디오 보관 기간, 학습 사용 여부, EU 리전 | <https://mistral.ai/> → Privacy Policy |
-| ElevenLabs (Scribe, STT) | 오디오 보관 기간, 학습 사용 여부, zero-retention 옵션 유무 | <https://elevenlabs.io/> → Privacy Policy |
-| Deepgram (STT) | 오디오 보관 기간, 학습 사용 여부, 데이터 리전 | <https://deepgram.com/> → Privacy Policy |
-| Microsoft Azure AI Speech (STT) | 오디오 보관 기간, 학습 사용 여부, 사용자가 고른 리소스 리전 | <https://azure.microsoft.com/> → Microsoft Privacy Statement · Azure AI 서비스 약관 |
-| 다글로 Daglo (STT) | job 결과 보관 기간, 삭제 방법, 국내 리전, 학습 사용 여부 | <https://daglo.ai/> → 개인정보처리방침 |
-| Speechmatics (STT) | job·전사 보관 기간, 학습 사용 여부, 리전 선택(`eu1`/`us1`) | <https://www.speechmatics.com/> → Privacy Policy |
-| Rev AI (STT) | job 보관 기간, 삭제 API, 사람이 듣는지, 학습 사용 여부 | <https://www.rev.ai/> → Privacy Policy |
-| Gladia (STT) | 업로드 파일·결과 보관 기간, 학습 사용 여부, EU 리전 | <https://www.gladia.io/> → Privacy Policy |
+| AssemblyAI | 학습에 쓸 수 있음(유료 계정은 대시보드에서 거부). 업로드 오디오 48시간 내 삭제, 녹취 30일 | <https://www.assemblyai.com/legal/privacy-policy> |
+| CLOVA Speech | 결과·로그 7일. 고객 동의 시에만 엔진 개선에 사용 | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> |
+| RTZR | 학습에 쓰지 않음. 배치 오디오 인식 후 삭제, 녹취 최대 3일 | <https://developers.rtzr.ai/privacy> |
+| OpenAI | 옵트인 없으면 학습 안 함. 전사 엔드포인트는 악용 감시 보관도 없음 | <https://developers.openai.com/api/docs/guides/your-data> |
+| Groq | 학습 안 함, 기본 보관 없음(장애·악용 조사 로그 최대 30일) | <https://console.groq.com/docs/your-data> |
+| Together AI | 기본 저장·제품 개선 사용(학습은 옵트인), 계정에서 저장 끔 가능 | <https://www.together.ai/privacy> |
+| Mistral AI | 악용 감시 30일 보관. 무료 모드는 거부 전까지 학습, 유료 기본값 불명시 | <https://legal.mistral.ai/terms/privacy-policy/> |
+| ElevenLabs | 계정에서 거부 전까지 모델 개선 사용, 요청 기록은 삭제할 때까지 | <https://elevenlabs.io/privacy-policy> |
+| Deepgram | 기본은 모델 개선용 보관이지만 **Recly는 모든 요청에 `mip_opt_out=true`를 보내** 처리 동안만 보관·학습 안 함 | <https://developers.deepgram.com/trust-security/your-data> |
+| Azure AI Speech | 학습 안 함, 빠른 전사 오디오 저장 안 함, 서비스 제공에만 처리 | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> |
+| Daglo | API 약관상 품질·성능 개선 사용 가능, 오디오 3개월, 거부 방법 불명시 | <https://developers.daglo.ai/privacy> |
+| Speechmatics | 옵트인 시에만 모델 개선(약관엔 녹취 사용권 조항), 배치 7일 후 삭제 | <https://www.speechmatics.com/legal/privacy-policy> |
+| Rev AI | 자체 음성 모델 학습에 사용 가능(생성형 제외), 최대 30일, API 거부 방법 못 찾음 | <https://www.rev.com/legal/privacy> |
+| Gladia | 최대 12개월 보관, 무료·Starter는 학습 가능(문서 간 불일치) | <https://www.gladia.io/privacy-notice> |
 
-**작성 규칙**: 위 표의 내용을 개인정보처리방침이나 앱 문구로 옮길 때 "이 provider는 N일 보관한다"처럼 단정하지
-않는다. 확인 전까지는 "provider의 정책을 따르며, 링크에서 확인하라"로만 쓴다. 확인되지 않은 보관 기간을 지어내지
-않는다.
+**작성 규칙**: 업체 약관은 바뀐다. 방침·앱 문구로 옮길 때는 확인 날짜와 공식 링크를 함께 두고, 인용하기 전에 공식
+문서로 다시 확인한다. 확인되지 않은 보관 기간·학습 여부를 지어내지 않는다. 모든 업체가 같은 수준으로 보호한다고
+쓰지 않는다(2026-09-26 사용자 결정: 14곳 유지, 방침에 업체별 차이 공개).
 
 **iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 그 작업에 고정된 처리 계획으로 계산한다.
 

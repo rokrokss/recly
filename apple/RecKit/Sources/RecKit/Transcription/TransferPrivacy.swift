@@ -14,21 +14,22 @@ public enum PrivacyLinks {
         policies[name].flatMap(URL.init(string:))
     }
 
-    // Public policy entry points, checked 2026-09-09. The account's service agreement may also apply.
+    // Each provider's official privacy or API data page, checked 2026-09-26 — the same links as the
+    // privacy policy's provider table (docs/15 "provider 보관 정책"). The account's service agreement may also apply.
     private static let policies: [String: String] = [
         "assemblyai": "https://www.assemblyai.com/legal/privacy-policy",
-        "openai": "https://openai.com/policies/privacy-policy/",
-        "groq": "https://groq.com/privacy-policy",
+        "openai": "https://developers.openai.com/api/docs/guides/your-data",
+        "groq": "https://console.groq.com/docs/your-data",
         "together": "https://www.together.ai/privacy",
-        "mistral": "https://legal.mistral.ai/terms/privacy-policy",
-        "deepgram": "https://deepgram.com/privacy",
+        "mistral": "https://legal.mistral.ai/terms/privacy-policy/",
+        "deepgram": "https://developers.deepgram.com/trust-security/your-data",
         "elevenlabs": "https://elevenlabs.io/privacy-policy",
-        "azure": "https://www.microsoft.com/en-us/privacy/privacystatement",
+        "azure": "https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security",
         "rev": "https://www.rev.com/legal/privacy",
         "speechmatics": "https://www.speechmatics.com/legal/privacy-policy",
-        "daglo": "https://daglo.ai/d/en/legal/privacy",
+        "daglo": "https://developers.daglo.ai/privacy",
         "rtzr": "https://developers.rtzr.ai/privacy",
-        "clova": "https://www.ncloud.com/policy/infou",
+        "clova": "https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p",
         "gladia": "https://www.gladia.io/privacy-notice",
     ]
 }

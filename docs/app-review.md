@@ -82,6 +82,8 @@
 
 보내기 전에 새 빌드로 실제 iPhone에서 확인 창을 촬영하고 `[ ]`를 채운다. API 키 없이도 확인 창까지 볼 수 있다.
 
+제3자의 “동등한 보호”(2026-09-26 사용자 결정: 14개 업체 유지, 방침에 업체별 차이 공개): 업체별 API 약관을 공식 문서로 확인한 결과 기본값으로 서비스 제공에만 쓰고 학습하지 않는 곳은 OpenAI·Groq·Azure·RTZR이고, Deepgram은 앱이 모든 요청에 `mip_opt_out=true`를 보내 같은 쪽이 된다. 방침 §3(2)는 전 업체의 동등한 보호를 주장하지 않고 업체별 보관·학습 조건과 방침 링크를 밝힌다. 이 때문에 5.1.1(i)로 다시 반려될 수 있다.
+
 > Hello App Review Team,
 >
 > Thank you for the review. Recly sends a recording to a third-party AI service only when the user chooses one: a speech-to-text provider such as OpenAI or ElevenLabs, selected in Settings → Recording processing → External API and used with the user's own API key. New installations use on-device transcription or no transcription, and send nothing to any AI service.
@@ -94,7 +96,7 @@
 >
 > The app also checks this permission before every request to a provider, including for recordings received from Apple Watch, so no audio reaches a provider the user has not allowed. Permission can be withdrawn at any time in Settings → Privacy.
 >
-> Our privacy policy (https://recly.dev/policy/privacy-policy), section 3(2), identifies these providers as third-party AI services and describes what is sent, how, and why, the in-app permission, and [the protection statement for third parties].
+> Our privacy policy (https://recly.dev/policy/privacy-policy), section 3(2), identifies these providers as third-party AI services and describes what is sent, how, and why, and the in-app permission. For each provider it links the provider’s privacy policy and summarizes what its API terms say about retention and model training, including which providers use the audio only to provide transcription by default.
 >
 > To see the permission screen: Settings → Recording processing → External API → choose a provider → Save. No API key is needed to reach it. [Screenshot or video URL]
 

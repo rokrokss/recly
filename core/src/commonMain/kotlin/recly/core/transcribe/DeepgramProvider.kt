@@ -81,6 +81,9 @@ class DeepgramProvider : SttProvider {
             null -> add("detect_language=true")
             else -> add("language=$code")
         }
+        // docs/15: out of the Model Improvement Program on every request — Deepgram then keeps the
+        // audio and transcript only while processing it (developers.deepgram.com, checked 2026-09-26).
+        add("mip_opt_out=true")
     }.joinToString("&")
 
     /** docs/08: no mixed-language code, and `auto` is this provider's own detection. */

@@ -41,22 +41,24 @@ Processing Settings offers on-device transcription, an external API, or Off. Onl
 
 The supported providers are listed below; availability may depend on your App Store region. **What is sent is the same whichever one you pick** — one audio track file, and the language and diarization options (the speaker-count hint) that ride on the same request. What happens to it afterwards — retention, training — differs by provider, so read that provider's own policy before you pick it.
 
-| Configured `provider` | Company | Policy |
-|---|---|---|
-| `assemblyai` | AssemblyAI | <https://www.assemblyai.com/> |
-| `clova` | NAVER Cloud CLOVA Speech | <https://www.ncloud.com/> |
-| `rtzr` | Return Zero (RTZR) | <https://www.rtzr.ai/> |
-| `openai` | OpenAI | <https://openai.com/> |
-| `groq` | Groq | <https://groq.com/> |
-| `together` | Together AI | <https://www.together.ai/> |
-| `mistral` | Mistral AI | <https://mistral.ai/> |
-| `elevenlabs` | ElevenLabs | <https://elevenlabs.io/> |
-| `deepgram` | Deepgram | <https://deepgram.com/> |
-| `azure` | Microsoft Azure AI Speech | <https://azure.microsoft.com/> |
-| `daglo` | Daglo | <https://daglo.ai/> |
-| `speechmatics` | Speechmatics | <https://www.speechmatics.com/> |
-| `rev` | Rev AI | <https://www.rev.ai/> |
-| `gladia` | Gladia | <https://www.gladia.io/> |
+| Configured `provider` | Company | Privacy policy | What its API terms say |
+|---|---|---|---|
+| `assemblyai` | AssemblyAI | <https://www.assemblyai.com/legal/privacy-policy> | May use submitted audio to train its models by default; paid accounts can opt out in the dashboard. Uploaded audio is deleted within 48 hours; transcripts are kept 30 days by default unless a shorter retention is set. |
+| `clova` | NAVER Cloud CLOVA Speech | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> | Keeps recognition results and logs for 7 days. Its CLOVA Speech terms allow using audio to improve the engine only with the customer’s consent. |
+| `rtzr` | Return Zero (RTZR) | <https://developers.rtzr.ai/privacy> | Does not use API audio or transcripts to train its models. Batch audio is deleted after recognition; transcripts are kept up to 3 days. |
+| `openai` | OpenAI | <https://developers.openai.com/api/docs/guides/your-data> | Does not use API data for training unless you opt in, and keeps no abuse-monitoring copy for the transcription endpoint. |
+| `groq` | Groq | <https://console.groq.com/docs/your-data> | Does not train on API data and keeps none by default; logs are kept up to 30 days only for troubleshooting or abuse investigation. |
+| `together` | Together AI | <https://www.together.ai/privacy> | Stores requests and responses by default and may use them for product improvement (training only if you opt in); the account can turn storage off. |
+| `mistral` | Mistral AI | <https://legal.mistral.ai/terms/privacy-policy/> | Keeps requests for 30 days for abuse monitoring. Free-mode data may be used for training unless you opt out; the paid default is not stated. |
+| `elevenlabs` | ElevenLabs | <https://elevenlabs.io/privacy-policy> | May use data to improve its models by default unless you opt out in your account settings; keeps request history until you delete it. |
+| `deepgram` | Deepgram | <https://developers.deepgram.com/trust-security/your-data> | Keeps audio and transcripts to improve its models unless a request opts out. Recly opts out on every request, so Deepgram keeps them only while processing the request and does not use them for training. |
+| `azure` | Microsoft Azure AI Speech | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> | Does not use customer data to train its speech models and does not store audio for fast transcription; processes the data only to provide the service. |
+| `daglo` | Daglo | <https://developers.daglo.ai/privacy> | Its API terms allow storing API input and using it for quality and performance improvement; audio is kept for 3 months. No opt-out is stated. |
+| `speechmatics` | Speechmatics | <https://www.speechmatics.com/legal/privacy-policy> | Uses data for model improvement only if the account opts in, although its terms reserve a licence over transcripts; batch audio and transcripts are deleted after 7 days. |
+| `rev` | Rev AI | <https://www.rev.com/legal/privacy> | May use content to train Rev’s own speech models by default (not generative AI); jobs are kept up to 30 days. No API opt-out was found. |
+| `gladia` | Gladia | <https://www.gladia.io/privacy-notice> | Keeps data up to 12 months by default. Its documents differ on training; free and Starter plan data may be used for training. |
+
+**How providers protect the audio (checked 2026-09-26).** Recly’s commitments in this policy cover Recly: it does not collect, sell or use your recordings. Once you allow a provider, that provider receives the audio under its own API terms, summarized above from its official pages. They do not all protect it the way this policy describes Recly’s handling: OpenAI, Groq, Microsoft Azure AI Speech and Return Zero (RTZR) by default, and Deepgram with the opt-out Recly sends on every request, use the audio only to provide transcription and do not train on it, while the others may keep it or use it to improve their models unless you change your account settings. Before you allow a provider, the app names it, shows what is sent and links to its privacy policy; review the data settings of your provider account, and withdraw permission in Settings → Privacy at any time. Provider terms change; the linked policies are authoritative.
 
 **(3) Your own paired devices — between watch and phone.**
 When you record on a Galaxy Watch or an Apple Watch, the **audio files and their metadata** (title, timestamps, duration, checksums) move to the paired phone, because the watch records and transfers while the phone handles upload and transcription. **Transfer does not depend on transcription settings.** In the other direction the phone sends only small control messages: receipt confirmations and, to an Apple Watch, the app’s language setting. Processing settings are never sent to the watch.

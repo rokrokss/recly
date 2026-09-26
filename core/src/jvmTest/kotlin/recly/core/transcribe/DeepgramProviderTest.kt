@@ -29,7 +29,7 @@ class DeepgramProviderTest {
         assertEquals("POST", request.method)
         assertEquals(
             "${DeepgramProvider.BASE}/listen?model=${DeepgramProvider.MODEL}&smart_format=true" +
-                "&punctuate=true&utterances=true&diarize_model=latest&language=ko",
+                "&punctuate=true&utterances=true&diarize_model=latest&language=ko&mip_opt_out=true",
             request.url,
         )
         assertEquals("Token deepgram-key", request.headers["Authorization"])
@@ -68,6 +68,8 @@ class DeepgramProviderTest {
             harness.server.reply(UTTERANCES)
             provider.submit(context(language = language), harness.audio)
             assertTrue(param in harness.server.request(index).url, "for $language")
+            // docs/15: every request opts out of Deepgram's model improvement, whatever else it asks.
+            assertTrue(harness.server.request(index).url.endsWith("&mip_opt_out=true"), "for $language")
         }
         // Detection replaces the language rather than joining it.
         assertFalse("&language=" in harness.server.request(3).url)

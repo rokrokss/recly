@@ -92,6 +92,14 @@ final class TransferPrivacyTests: XCTestCase {
         XCTAssertFalse(model.dirty)
     }
 
+    /// The permission screen links every provider it can ask about to that provider's own policy.
+    func testEveryProviderHasAnOfficialPrivacyLink() {
+        for provider in WorkflowParser.shared.STT_PROVIDERS {
+            let url = PrivacyLinks.provider(provider)
+            XCTAssertEqual(url?.scheme, "https", provider)
+        }
+    }
+
     func testPermissionAlertRoutesToPrivacyAndHasARecognizableBadge() {
         let reason = JobAlerts.reason(status: .needsConsent, lastError: nil)
         XCTAssertEqual(reason, .needsConsent)

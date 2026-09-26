@@ -41,22 +41,24 @@ Recly는 **녹음 앱**입니다. 녹음한 파일은 **사용자 자신의 Goog
 
 지원하는 업체는 아래와 같으며, App Store 지역에 따라 사용 가능 여부가 달라질 수 있습니다. **어느 것을 고르든 전송되는 내용은 같습니다** — 오디오 트랙 한 파일과 그 요청에 실리는 언어·화자분리 옵션(화자 수 힌트)입니다. 그 뒤의 보관·학습은 업체마다 다르므로, 고르기 전에 그 업체의 방침을 직접 읽으십시오.
 
-| 설정한 `provider` | 업체 | 방침 |
-|---|---|---|
-| `assemblyai` | AssemblyAI | <https://www.assemblyai.com/> |
-| `clova` | 네이버 클라우드 CLOVA Speech | <https://www.ncloud.com/> |
-| `rtzr` | 리턴제로 | <https://www.rtzr.ai/> |
-| `openai` | OpenAI | <https://openai.com/> |
-| `groq` | Groq | <https://groq.com/> |
-| `together` | Together AI | <https://www.together.ai/> |
-| `mistral` | Mistral AI | <https://mistral.ai/> |
-| `elevenlabs` | ElevenLabs | <https://elevenlabs.io/> |
-| `deepgram` | Deepgram | <https://deepgram.com/> |
-| `azure` | Microsoft Azure AI Speech | <https://azure.microsoft.com/> |
-| `daglo` | 다글로 | <https://daglo.ai/> |
-| `speechmatics` | Speechmatics | <https://www.speechmatics.com/> |
-| `rev` | Rev AI | <https://www.rev.ai/> |
-| `gladia` | Gladia | <https://www.gladia.io/> |
+| 설정한 `provider` | 업체 | 개인정보 처리방침 | API 약관의 내용 |
+|---|---|---|---|
+| `assemblyai` | AssemblyAI | <https://www.assemblyai.com/legal/privacy-policy> | 기본적으로 받은 오디오를 모델 학습에 쓸 수 있으며, 유료 계정은 대시보드에서 거부할 수 있습니다. 업로드한 오디오는 48시간 안에 지우고, 녹취는 보관 기간을 짧게 정하지 않으면 30일 보관합니다. |
+| `clova` | 네이버 클라우드 CLOVA Speech | <https://privacy.navercloudcorp.com/ko/ncp/PrivacyPolicy/ncp-p> | 인식 결과와 로그를 7일 보관합니다. CLOVA Speech 약관상 고객이 동의한 경우에만 엔진 성능 향상에 오디오를 씁니다. |
+| `rtzr` | 리턴제로 | <https://developers.rtzr.ai/privacy> | API 오디오와 녹취를 모델 학습에 쓰지 않습니다. 배치 오디오는 인식 후 지우고, 녹취는 최대 3일 보관합니다. |
+| `openai` | OpenAI | <https://developers.openai.com/api/docs/guides/your-data> | 직접 동의하지 않으면 API 데이터를 학습에 쓰지 않으며, 전사 엔드포인트는 악용 감시용 사본도 남기지 않습니다. |
+| `groq` | Groq | <https://console.groq.com/docs/your-data> | API 데이터를 학습에 쓰지 않고 기본적으로 보관하지 않습니다. 장애 대응·악용 조사 목적의 로그만 최대 30일 보관합니다. |
+| `together` | Together AI | <https://www.together.ai/privacy> | 기본적으로 요청과 응답을 저장하며 제품 개선에 쓸 수 있습니다(학습은 동의한 경우에만). 계정에서 저장을 끌 수 있습니다. |
+| `mistral` | Mistral AI | <https://legal.mistral.ai/terms/privacy-policy/> | 악용 감시를 위해 요청을 30일 보관합니다. 무료 모드 데이터는 거부하지 않으면 학습에 쓸 수 있으며, 유료 기본값은 명시돼 있지 않습니다. |
+| `elevenlabs` | ElevenLabs | <https://elevenlabs.io/privacy-policy> | 계정 설정에서 거부하지 않으면 기본적으로 데이터를 모델 개선에 쓸 수 있으며, 요청 기록은 지울 때까지 보관합니다. |
+| `deepgram` | Deepgram | <https://developers.deepgram.com/trust-security/your-data> | 요청에서 거부하지 않으면 오디오와 녹취를 모델 개선용으로 보관합니다. Recly는 모든 요청에서 거부하므로, Deepgram은 요청을 처리하는 동안만 보관하고 학습에 쓰지 않습니다. |
+| `azure` | Microsoft Azure AI Speech | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> | 고객 데이터를 음성 모델 학습에 쓰지 않고, 빠른 전사의 오디오를 저장하지 않으며, 서비스 제공 목적으로만 처리합니다. |
+| `daglo` | 다글로 | <https://developers.daglo.ai/privacy> | API 약관상 API로 받은 데이터를 저장해 품질·성능 개선에 쓸 수 있으며, 오디오를 3개월 보관합니다. 거부 방법은 명시돼 있지 않습니다. |
+| `speechmatics` | Speechmatics | <https://www.speechmatics.com/legal/privacy-policy> | 계정에서 동의한 경우에만 모델 개선에 쓴다고 안내하지만, 약관에는 녹취 사용권이 남아 있습니다. 배치 오디오와 녹취는 7일 뒤 지웁니다. |
+| `rev` | Rev AI | <https://www.rev.com/legal/privacy> | 기본적으로 콘텐츠를 Rev 자체 음성 모델 학습에 쓸 수 있습니다(생성형 AI 제외). 작업은 최대 30일 보관하며, API용 거부 방법은 찾지 못했습니다. |
+| `gladia` | Gladia | <https://www.gladia.io/privacy-notice> | 기본적으로 최대 12개월 보관합니다. 학습에 관한 문서끼리 내용이 다르며, 무료·Starter 요금제 데이터는 학습에 쓰일 수 있습니다. |
+
+**업체의 데이터 보호 수준(2026-09-26 확인).** 이 방침의 약속은 Recly에 관한 것입니다. Recly는 녹음을 수집·판매·이용하지 않습니다. 업체를 허용하면 그 업체는 위에 공식 문서를 바탕으로 요약한 자기 API 약관에 따라 오디오를 받습니다. 모든 업체가 이 방침이 설명하는 Recly의 처리와 같은 수준으로 보호하는 것은 아닙니다. OpenAI, Groq, Microsoft Azure AI Speech, 리턴제로(RTZR)는 기본값으로, Deepgram은 Recly가 모든 요청에 보내는 거부 옵션으로 오디오를 전사 제공에만 쓰고 학습에 쓰지 않지만, 나머지 업체는 계정 설정을 바꾸지 않으면 보관하거나 모델 개선에 쓸 수 있습니다. 앱은 허용하기 전에 업체 이름과 보내는 내용, 업체 개인정보 처리방침 링크를 보여 줍니다. 업체 계정의 데이터 설정을 확인하고, 언제든 설정 → 개인정보 보호에서 허용을 철회할 수 있습니다. 업체 약관은 바뀔 수 있으며, 연결된 방침이 기준입니다.
 
 **(3) 사용자가 짝 지은 사용자 자신의 기기 — 워치와 폰 사이**
 갤럭시 워치나 Apple Watch로 녹음하면, 그 **오디오 파일과 메타데이터(제목·시각·길이·체크섬)** 는 짝 지은 폰으로 넘어갑니다. 워치는 녹음과 전송을 담당하고 폰에서 업로드와 전사를 처리합니다. **이 전송은 전사 설정과 관계없이 일어납니다.** 반대 방향으로 폰이 보내는 것은 수신 확인과, Apple Watch의 경우 앱 언어 설정 같은 작은 제어 메시지뿐입니다. 처리 설정은 워치로 보내지 않습니다.
