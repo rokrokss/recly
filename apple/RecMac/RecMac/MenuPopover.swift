@@ -147,8 +147,6 @@ struct MenuPopover: View {
                         .disabled(!model.isReady)
                 }
                 Spacer(minLength: 0)
-                BlueprintButton(RecKitStrings.localized("Recording processing"), tone: .quiet) { showingSettings = true }
-
             }
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
