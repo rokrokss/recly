@@ -30,6 +30,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var deviceRecording = false
     /// docs/03 ADR-017: how the trip to Drive for the parts the retention sweep took is going.
     @Published public private(set) var driveFetch = DriveFetch.deciding
+    /// How much of that trip is done, 0 to 1, by the bytes of the parts it brings back.
+    @Published public private(set) var fetchProgress: Double = 0
 
     /// What the player bar has to say while the parts are on their way back, and after.
     public enum DriveFetch: Equatable, Sendable {
@@ -240,8 +242,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             return
         }
         driveFetch = .fetching
+        fetchProgress = 0
         do {
-            let fetched = try await core.audio(recordingId: recordingId)
+            let fetched = try await core.audio(recordingId: recordingId, progress: DriveFetchProgress { [weak self] fraction in
+                Task { @MainActor in self?.fetchProgress = fraction }
+            })
             audio = RecordingPlaylist.fetched(
                 parts: playedParts,
                 files: fetched.paths.map(\.name),
@@ -277,6 +282,17 @@ private enum Waveform {
     static let stepSec: Double = 5
 }
 
+/// The core's count of bytes back from Drive, as a fraction. It is called off the main thread.
+private final class DriveFetchProgress: NSObject, AudioFetchProgress {
+    private let update: @Sendable (Double) -> Void
+
+    init(_ update: @escaping @Sendable (Double) -> Void) { self.update = update }
+
+    func onProgress(doneBytes: Int64, totalBytes: Int64) {
+        update(totalBytes > 0 ? Double(doneBytes) / Double(totalBytes) : 0)
+    }
+}
+
 /// docs/09 화면 원칙 2: the detail is a page behind a ledger row rather than a pane in front of it,
 /// so the header carries the way back — docs/08's result file, the transcript as the speaker turns
 /// it is made of.
@@ -299,6 +315,10 @@ public struct RecordingDetailView: View {
     /// Whether the rename prompt is up. Here rather than in the model: a question cancelled is one
     /// the recording never heard, and the model is what the page has already answered.
     @State private var renaming = false
+    /// Whether this recording's audio came back from Drive while the page was open: its bars then
+    /// grow in once, where the loader stood, starting at [growStart].
+    @State private var fetched = false
+    @State private var growStart: Date?
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -430,9 +450,9 @@ public struct RecordingDetailView: View {
             if model.hasAudio {
                 waveform
             } else if model.driveFetch == .fetching {
-                // While the parts are coming back from Drive the row is already there, empty, so the
-                // bars arrive in place rather than the bar growing a row when they do.
-                waveformPlaceholder
+                // While the parts are coming back from Drive the row is already there, loading, so
+                // the bars arrive in place rather than the bar growing a row when they do.
+                waveformLoader
             }
             controls
             #if os(iOS)
@@ -449,6 +469,17 @@ public struct RecordingDetailView: View {
         .padding(.horizontal, Space.m)
         .padding(.vertical, Space.s)
         .background(blueprint.palette.surface)
+        .onChange(of: model.recordingId) { fetched = false; growStart = nil }
+        .onChange(of: model.driveFetch) { _, fetch in if fetch == .fetching { fetched = true } }
+        .onChange(of: model.waveform.isEmpty) { _, empty in
+            if !empty, fetched, !blueprint.reduceMotion { growStart = .now }
+        }
+        // The rise is 0.75 s; after it the timeline stops asking for frames.
+        .task(id: growStart) {
+            guard growStart != nil else { return }
+            try? await Task.sleep(for: .seconds(Self.growSec))
+            growStart = nil
+        }
     }
 
     /// docs/09 화면 원칙 2: the recording as a shape, and the one place on this page a second of it
@@ -457,8 +488,11 @@ public struct RecordingDetailView: View {
     /// the same take.
     private var waveform: some View {
         GeometryReader { geometry in
-            Canvas { context, size in
-                draw(waveform: &context, size: size)
+            TimelineView(.animation(minimumInterval: 1.0 / 60, paused: growStart == nil)) { timeline in
+                Canvas { context, size in
+                    let reveal = growStart.map { min(1, timeline.date.timeIntervalSince($0) / Self.growSec) } ?? 1
+                    draw(waveform: &context, size: size, reveal: reveal)
+                }
             }
             // The bars are 2pt of a 3pt column, so without this the gaps between them are not the
             // row and a drag that starts in one goes nowhere.
@@ -505,19 +539,66 @@ public struct RecordingDetailView: View {
         #endif
     }
 
-    /// The waveform row before there is a recording to draw in it: the same height and the same
-    /// hairline across the middle that [waveform] shows before its peaks are decoded, with nothing
-    /// to point at.
-    private var waveformPlaceholder: some View {
-        Canvas { context, size in
-            context.fill(
-                Path(CGRect(x: 0, y: (size.height - blueprint.line) / 2, width: size.width, height: blueprint.line)),
-                with: .color(blueprint.palette.grid)
-            )
+    /// docs/09 "모션": the waveform row while the recording comes back from Drive, with no words —
+    /// short ghost ticks where the bars will be, and a hard-edged band of ten that steps across them
+    /// left to right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing
+    /// or recording waveform does, and it leaves nothing filled behind it the way a playhead does.
+    /// With reduce motion the band stays off and the bar says it in words ([controls]).
+    private var waveformLoader: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30, paused: blueprint.reduceMotion)) { timeline in
+            Canvas { context, size in
+                let count = Int(size.width / Waveform.step)
+                let frame = Int(timeline.date.timeIntervalSinceReferenceDate * 30)
+                let head = blueprint.reduceMotion ? -1 : frame % (count + Self.loaderBand)
+                let tick = size.height * Self.loaderTick
+                for index in 0..<max(0, count) {
+                    let lit = index > head - Self.loaderBand && index <= head
+                    context.fill(
+                        Path(CGRect(x: CGFloat(index) * Waveform.step, y: (size.height - tick) / 2, width: Waveform.bar, height: tick)),
+                        with: .color(lit ? blueprint.palette.textMuted : blueprint.palette.grid)
+                    )
+                }
+            }
         }
         .frame(height: minTouch)
         .accessibilityHidden(true)
     }
+
+    /// docs/09: how far the trip to Drive is, in the place and the shape of the Play button it
+    /// becomes — the button's own outline, filling with the button's own colour, so that when it is
+    /// full it is the button. No words on it; VoiceOver hears the bar's sentence and the percentage.
+    private var fetchProgress: some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.node)
+        return GeometryReader { geometry in
+            blueprint.palette.accent
+                .frame(width: geometry.size.width * model.fetchProgress)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line))
+        .frame(width: playbackButtonMinWidth ?? minTouch * 2, height: minTouch)
+        .animation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion), value: model.fetchProgress)
+        .accessibilityElement()
+        .accessibilityLabel(Text(verbatim: loc("Fetching from Drive…")))
+        .accessibilityValue(Text(verbatim: "\(Int(model.fetchProgress * 100))%"))
+    }
+
+    /// Only with reduce motion, where the waveform row has stopped saying it.
+    @ViewBuilder private var fetchingWords: some View {
+        if blueprint.reduceMotion {
+            Text(verbatim: loc("Fetching from Drive…"))
+                .font(blueprint.fonts.monoBodySmall)
+                .foregroundStyle(blueprint.palette.textMuted)
+        }
+    }
+
+    /// docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound.
+    private static let loaderBand = 10
+    /// The ghost ticks' height, as a share of the row.
+    private static let loaderTick: CGFloat = 0.3
+    /// The bars' rise when a recording arrives from Drive, the last bar starting at 60%.
+    private static let growSec: Double = 0.75
+    private static let growSpread: Double = 0.6
 
     /// docs/09 "선": straight bars of one width on one gap, no caps and no gradient. Behind the
     /// playhead is the accent and ahead of it the muted colour, both at full opacity: docs/09 접근성
@@ -527,7 +608,7 @@ public struct RecordingDetailView: View {
     ///
     /// Nothing decoded yet (or a decode that failed) is one hairline across the middle: the row
     /// keeps its height and its playhead, so the bar does not change shape when the peaks arrive.
-    private func draw(waveform context: inout GraphicsContext, size: CGSize) {
+    private func draw(waveform context: inout GraphicsContext, size: CGSize, reveal: Double = 1) {
         let playhead = model.totalSec > 0 ? size.width * positionSec / model.totalSec : 0
         let bins = RecordingWaveform.bins(
             peaks: model.waveform,
@@ -546,8 +627,12 @@ public struct RecordingDetailView: View {
         }
         for (index, bin) in bins.enumerated() {
             let x = CGFloat(index) * Waveform.step
+            // Left first: each bar starts a little after the one before it and rises in 40% of the time.
+            let start = Self.growSpread * Double(index) / Double(max(1, bins.count - 1))
+            let k = min(max((reveal - start) / (1 - Self.growSpread), 0), 1)
+            let rise = 1 - pow(1 - k, 3)
             // Silence is a tick rather than nothing, so the row reads as the whole recording.
-            let height = max(Waveform.minBar, CGFloat(bin) * size.height)
+            let height = max(Waveform.minBar, CGFloat(bin) * size.height * rise)
             context.fill(
                 Path(CGRect(
                     x: x,
@@ -581,9 +666,15 @@ public struct RecordingDetailView: View {
     private var controls: some View {
         HStack(spacing: Space.s) {
             if model.driveFetch == .fetching {
-                // docs/03 ADR-017: where the clock is, because it is what the clock is instead of.
-                // No Play either — there is nothing whole to play until the parts are back.
-                LoadingText(text: loc("Fetching from Drive…"), font: blueprint.fonts.monoBodySmall, color: blueprint.palette.textMuted)
+                // docs/03 ADR-017: the button's place holds how far the trip is.
+                #if os(iOS)
+                fetchingWords
+                Spacer(minLength: Space.s)
+                fetchProgress
+                #else
+                fetchProgress
+                fetchingWords
+                #endif
             } else if model.hasAudio {
                 #if os(iOS)
                 Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")

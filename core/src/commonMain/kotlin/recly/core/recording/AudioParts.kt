@@ -29,6 +29,14 @@ data class RecordingAudio(
 )
 
 /**
+ * How much of a trip to Drive is done, in bytes of the parts it has to bring back — called once
+ * before the first part with nothing done, and after each part. Called off the main thread.
+ */
+fun interface AudioFetchProgress {
+    fun onProgress(doneBytes: Long, totalBytes: Long)
+}
+
+/**
  * Reads a recording's audio back for playback (docs/03 "로컬 저장"), the way
  * [recly.core.transcribe.RecordingResults] reads the transcript: the local file is the fast path
  * and the offline one, and Drive is the fallback for a part the retention sweep has already taken.
@@ -45,7 +53,11 @@ class AudioParts(
      * @param outputs the `StepOutput`s of the recording's jobs, newest last — where the Drive file
      * id of each uploaded part is (`files[] {part, track, fileId}`).
      */
-    suspend fun load(record: RecordingRecord, outputs: List<JsonObject>): RecordingAudio =
+    suspend fun load(
+        record: RecordingRecord,
+        outputs: List<JsonObject>,
+        progress: AudioFetchProgress? = null,
+    ): RecordingAudio =
         withContext(deps.io) {
             // What the recording was mixed down to if it has one, and the single track otherwise:
             // playing the mic and the system tracks at once is not this screen's job.
@@ -54,13 +66,25 @@ class AudioParts(
             val missing = mutableListOf<Int>()
             // An adopted recording has no upload output here; its parts' ids came with the row.
             val adopted = if (record.remote || record.driveSynced) recordings.driveFileIds(record.id) else emptyMap()
-            record.meta.parts.filter { it.track == track }.sortedBy { it.part }.forEach { part ->
+            val parts = record.meta.parts.filter { it.track == track }.sortedBy { it.part }
+            val fileIds = parts.associateWith { fileId(outputs, it) ?: adopted[it.part to it.track] }
+            // The trip is the parts that are not here and are in Drive; the local ones cost nothing.
+            val trip = parts.filter { !deps.fileSystem.exists(record.dir / it.file) && fileIds[it] != null }
+            val total = trip.sumOf { it.bytes }
+            var done = 0L
+            if (trip.isNotEmpty()) progress?.onProgress(0, total)
+            parts.forEach { part ->
                 val path = record.dir / part.file
-                when {
-                    deps.fileSystem.exists(path) -> paths += path
-                    fetch(record, part, fileId(outputs, part) ?: adopted[part.part to part.track]) -> paths += path
-                    else -> missing += part.part
+                if (deps.fileSystem.exists(path)) {
+                    paths += path
+                    return@forEach
                 }
+                val fetched = fetch(record, part, fileIds[part])
+                if (part in trip) {
+                    done += part.bytes
+                    progress?.onProgress(done, total)
+                }
+                if (fetched) paths += path else missing += part.part
             }
             RecordingAudio(track, paths, missing)
         }

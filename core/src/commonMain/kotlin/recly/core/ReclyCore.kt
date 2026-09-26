@@ -244,16 +244,16 @@ class ReclyCore(
      * The audio of one recording, for the detail screen to play: the `mix` track if it has one and
      * `mono` otherwise, in part order. A part the retention sweep has already taken is fetched
      * back from Drive and kept ([recly.core.job.Retention]); one that never got there is named in
-     * [RecordingAudio.missing] instead.
+     * [RecordingAudio.missing] instead. [progress] hears how far that trip is, in bytes.
      *
      * `@Throws` for the same reason [runDueJobs] has it: a fetch needs the account, and what a
      * missing token or a refusing network says has to reach the shell rather than end the process.
      */
     @Throws(Throwable::class)
-    suspend fun audio(recordingId: String): RecordingAudio {
+    suspend fun audio(recordingId: String, progress: recly.core.recording.AudioFetchProgress? = null): RecordingAudio {
         val record = recordings.get(recordingId)
             ?: return RecordingAudio(Track.MONO, emptyList(), emptyList())
-        return audio.load(record, outputs(recordingId))
+        return audio.load(record, outputs(recordingId), progress)
     }
 
     /**

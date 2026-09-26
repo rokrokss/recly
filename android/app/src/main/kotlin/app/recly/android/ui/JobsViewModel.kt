@@ -158,6 +158,8 @@ data class DetailState(
     val deviceRecording: Boolean = false,
     /** docs/03 ADR-017: how the trip to Drive for the parts the sweep took is going. */
     val driveFetch: DriveFetch = DriveFetch.DECIDING,
+    /** How much of that trip is done, 0 to 1, by the bytes of the parts it brings back. */
+    val fetchProgress: Float = 0f,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -415,9 +417,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.IDLE) }
             return
         }
-        updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.FETCHING) }
+        updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.FETCHING, fetchProgress = 0f) }
         try {
-            val fetched = core.audio(recordingId)
+            val fetched = core.audio(recordingId) { done, total ->
+                updateDetail(recordingId) { it.copy(fetchProgress = if (total > 0) done.toFloat() / total else 0f) }
+            }
             updateDetail(recordingId) {
                 it.copy(
                     audio = RecordingPlaylist.fetched(

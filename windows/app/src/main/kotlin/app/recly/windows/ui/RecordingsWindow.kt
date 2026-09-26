@@ -1,5 +1,17 @@
 package app.recly.windows.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import app.recly.windows.ui.theme.Motion
+import app.recly.windows.ui.theme.Radius
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.border
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -58,7 +70,6 @@ import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
-import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.Placeholder
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
@@ -295,6 +306,9 @@ private fun PlayerBar(
         if (!blocked()) player.prepare(detail.audio)
     }
     val positionSec = scrubSec ?: player.positionSec
+    // Having come back from Drive, the bars grow in once where the loader stood.
+    var fetched by remember(detail.recordingId) { mutableStateOf(false) }
+    LaunchedEffect(detail.driveFetch) { if (detail.driveFetch == DriveFetch.FETCHING) fetched = true }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -313,11 +327,12 @@ private fun PlayerBar(
                 label = strings[Str.PLAYER_POSITION],
                 onScrub = { scrubSec = it },
                 onSeek = { player.seek(detail.audio, it) },
+                growIn = fetched,
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
-            // While the parts are coming back from Drive the row is already there, empty, so the bars
-            // arrive in place rather than the pane growing a row when they do.
-            WaveformPlaceholder()
+            // While the parts are coming back from Drive the row is already there, loading, so the
+            // bars arrive in place rather than the pane growing a row when they do.
+            WaveformLoader()
         }
         if (player.failed) Text(strings[Str.PLAYER_ERROR], color = palette.danger)
         Row(
@@ -326,13 +341,9 @@ private fun PlayerBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             when {
-                // docs/03 ADR-017: where the clock is, because it is what the clock is instead of. No
-                // Play either — there is nothing whole to play until the parts are back.
-                detail.driveFetch == DriveFetch.FETCHING -> LoadingText(
-                    strings[Str.PLAYER_FETCHING],
-                    style = mono.small,
-                    color = palette.textMuted,
-                )
+                // docs/03 ADR-017: the button's place holds how far the trip is. No words: this shell
+                // is told nothing about reduce motion, so the waveform row above always says it.
+                detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(detail.fetchProgress, strings[Str.PLAYER_FETCHING])
 
                 !detail.audio.isEmpty -> {
                     // Not while this PC is recording: the microphone and the speaker are one session on
@@ -403,18 +414,69 @@ private fun PlayerBar(
 }
 
 /**
- * The waveform row before there is a recording to draw in it: the same height and the same hairline
- * across the middle that [Waveform] shows before its peaks are decoded, with nothing to point at.
+ * docs/09 "모션": the waveform row while the recording comes back from Drive, with no words — short
+ * ghost ticks where the bars will be, and a hard-edged band of ten that steps across them left to
+ * right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing or recording
+ * waveform does, and it leaves nothing filled behind it the way a playhead does. It always runs:
+ * Windows tells a Compose Desktop app nothing about reduce motion (the shared loader's note).
  */
 @Composable
-private fun WaveformPlaceholder() {
-    val grid = blueprint.grid
-    val hair = blueprint.line
+private fun WaveformLoader() {
+    val palette = blueprint
+    var frame by remember { mutableIntStateOf(0) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(LOADER_FRAME_MS)
+            frame++
+        }
+    }
     Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
-        val line = hair.toPx()
-        drawRect(color = grid, topLeft = Offset(0f, (size.height - line) / 2), size = Size(size.width, line))
+        val step = WaveformStep.toPx()
+        val count = (size.width / step).toInt()
+        val head = frame % (count + LOADER_BAND)
+        val tick = size.height * LOADER_TICK
+        for (index in 0 until count) {
+            val lit = index in head - LOADER_BAND + 1..head
+            drawRect(
+                color = if (lit) palette.textMuted else palette.grid,
+                topLeft = Offset(index * step, (size.height - tick) / 2),
+                size = Size(WaveformBar.toPx(), tick),
+            )
+        }
     }
 }
+
+/**
+ * docs/09: how far the trip to Drive is, in the place and the shape of the Play button it becomes —
+ * the button's own outline, filling with the button's own colour, so that when it is full it is the
+ * button. No words on it; a screen reader hears [label] and the percentage.
+ */
+@Composable
+private fun FetchProgress(fraction: Float, label: String) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    val shown by animateFloatAsState(fraction, tween(Motion.STANDARD_MS, easing = Motion.Standard))
+    Box(
+        Modifier
+            .size(width = MinTouch * 2, height = MinTouch)
+            .clip(shape)
+            .border(palette.line, palette.accent, shape)
+            .drawBehind { drawRect(palette.accent, size = Size(size.width * shown, size.height)) }
+            .clearAndSetSemantics {
+                contentDescription = label
+                progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+            },
+    )
+}
+
+/** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
+private const val LOADER_BAND = 10
+private const val LOADER_FRAME_MS = 33L
+/** The ghost ticks' height, as a share of the row. */
+private const val LOADER_TICK = 0.3f
+/** The bars' rise when a recording arrives from Drive: 750 ms in all, the last bar starting at 60%. */
+private const val GROW_MS = 750
+private const val GROW_SPREAD = 0.6f
 
 /**
  * docs/09 화면 원칙 2: the recording as a shape, and the one place on this page a second of it can
@@ -441,11 +503,17 @@ private fun Waveform(
     label: String,
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
+    growIn: Boolean = false,
 ) {
     val palette = blueprint
     val hair = palette.line
     val totalSec = audio.totalSec
     var focused by remember { mutableStateOf(false) }
+    // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks.
+    val reveal = remember(audio) { Animatable(if (growIn) 0f else 1f) }
+    LaunchedEffect(audio, peaks.isNotEmpty()) {
+        if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(GROW_MS, easing = LinearEasing))
+    }
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -511,10 +579,15 @@ private fun Waveform(
                 size = Size(size.width, line),
             )
         }
+        val shown = reveal.value
         bins.forEachIndexed { index, bin ->
             val x = index * step
+            // Left first: each bar starts a little after the one before it and rises in 40% of the time.
+            val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
+            val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
+            val rise = 1f - (1f - k) * (1f - k) * (1f - k)
             // Silence is a tick rather than nothing, so the row reads as the whole recording.
-            val height = maxOf(WaveformMinBar.toPx(), bin * size.height)
+            val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
             drawRect(
                 color = if (x <= playhead) palette.accent else palette.textMuted,
                 topLeft = Offset(x, (size.height - height) / 2),

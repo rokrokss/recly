@@ -2,6 +2,19 @@
 
 package app.recly.android.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import app.recly.android.ui.theme.LocalReduceMotion
+import app.recly.android.ui.theme.Motion
+import app.recly.android.ui.theme.Radius
 import androidx.compose.foundation.border
 import androidx.compose.foundation.focusable
 import androidx.compose.ui.input.key.*
@@ -58,7 +71,6 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
-import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
@@ -238,13 +250,16 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
             .padding(horizontal = Space.m, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        // While the parts are coming back from Drive the row is already there, empty, so the bars
-        // arrive in place rather than the page growing a row when they do.
+        // While the parts are coming back from Drive the row is already there, loading, so the
+        // bars arrive in place rather than the page growing a row when they do — and, having come
+        // from Drive, they grow in once where the loader was.
         val shown = !detail.audio.isEmpty || detail.driveFetch == DriveFetch.FETCHING
+        var fetched by remember(detail.recordingId) { mutableStateOf(false) }
+        LaunchedEffect(detail.driveFetch) { if (detail.driveFetch == DriveFetch.FETCHING) fetched = true }
         val waveform: @Composable () -> Unit = {
-            if (detail.audio.isEmpty) WaveformPlaceholder()
+            if (detail.audio.isEmpty) WaveformLoader()
             else Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
-                onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) })
+                onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) }, growIn = fetched)
         }
         if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
@@ -267,6 +282,8 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
  * @param peaks the recording's own timeline, or empty until the decode is through — the row keeps
  *   its height and its playhead either way, so the bar does not change shape when the peaks arrive.
  * @param onScrub where the finger is, while it is down, and null when it lets go.
+ * @param growIn the bars rise out of the centre line once, left first, when the peaks arrive — for
+ *   a recording that has just come back from Drive, where the loader stood a moment ago.
  */
 @Composable
 internal fun Waveform(
@@ -275,10 +292,16 @@ internal fun Waveform(
     positionSec: Double,
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
+    growIn: Boolean = false,
 ) {
     val palette = blueprint
     val hair = palette.line
     val totalSec = audio.totalSec
+    val reduce = LocalReduceMotion.current
+    val reveal = remember(audio) { Animatable(if (growIn && !reduce) 0f else 1f) }
+    LaunchedEffect(audio, peaks.isNotEmpty()) {
+        if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(GROW_MS, easing = LinearEasing))
+    }
     var focused by remember { mutableStateOf(false) }
     // docs/09 접근성: the row reports itself as the recording's position, and a reader that cannot
     // see the shape moves the playhead by setting it.
@@ -348,10 +371,15 @@ internal fun Waveform(
                 size = Size(size.width, line),
             )
         }
+        val shown = reveal.value
         bins.forEachIndexed { index, bin ->
             val x = index * step
+            // Left first: each bar starts a little after the one before it and rises in 40% of the time.
+            val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
+            val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
+            val rise = 1f - (1f - k) * (1f - k) * (1f - k)
             // Silence is a tick rather than nothing, so the row reads as the whole recording.
-            val height = maxOf(WaveformMinBar.toPx(), bin * size.height)
+            val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
             drawRect(
                 color = if (x <= playhead) palette.accent else palette.textMuted,
                 topLeft = Offset(x, (size.height - height) / 2),
@@ -367,18 +395,71 @@ internal fun Waveform(
 }
 
 /**
- * The waveform row before there is a recording to draw in it: the same height and the same hairline
- * across the middle that [Waveform] shows before its peaks are decoded, with nothing to point at.
+ * docs/09 "모션": the waveform row while the recording comes back from Drive, with no words — short
+ * ghost ticks where the bars will be, and a hard-edged band of ten that steps across them left to
+ * right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing or recording
+ * waveform does, and it leaves nothing filled behind it the way a playhead does. With reduce motion
+ * the band stays off and the bar says it in words ([PlayerControls]).
  */
 @Composable
-private fun WaveformPlaceholder() {
-    val grid = blueprint.grid
-    val hair = blueprint.line
+private fun WaveformLoader() {
+    val palette = blueprint
+    val reduce = LocalReduceMotion.current
+    var frame by remember { mutableIntStateOf(0) }
+    LaunchedEffect(reduce) {
+        while (!reduce) {
+            delay(LOADER_FRAME_MS)
+            frame++
+        }
+    }
     Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
-        val line = hair.toPx()
-        drawRect(color = grid, topLeft = Offset(0f, (size.height - line) / 2), size = Size(size.width, line))
+        val step = WaveformStep.toPx()
+        val count = (size.width / step).toInt()
+        val head = if (reduce) -1 else frame % (count + LOADER_BAND)
+        val tick = size.height * LOADER_TICK
+        for (index in 0 until count) {
+            val lit = index in head - LOADER_BAND + 1..head
+            drawRect(
+                color = if (lit) palette.textMuted else palette.grid,
+                topLeft = Offset(index * step, (size.height - tick) / 2),
+                size = Size(WaveformBar.toPx(), tick),
+            )
+        }
     }
 }
+
+/**
+ * docs/09: how far the trip to Drive is, in the place and the shape of the Play button it becomes —
+ * the button's own outline, filling with the button's own colour, so that when it is full it is the
+ * button. No words on it; a screen reader hears the bar's sentence and the percentage.
+ */
+@Composable
+private fun FetchProgress(fraction: Float) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    val label = stringResource(R.string.player_fetching)
+    val shown by animateFloatAsState(fraction, if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard))
+    Box(
+        Modifier
+            .size(width = 120.dp, height = 48.dp)
+            .clip(shape)
+            .border(palette.line, palette.accent, shape)
+            .drawBehind { drawRect(palette.accent, size = Size(size.width * shown, size.height)) }
+            .clearAndSetSemantics {
+                contentDescription = label
+                progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
+            },
+    )
+}
+
+/** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
+private const val LOADER_BAND = 10
+private const val LOADER_FRAME_MS = 33L
+/** The ghost ticks' height, as a share of the row. */
+private const val LOADER_TICK = 0.3f
+/** The bars' rise when a recording arrives from Drive: 750 ms in all, the last bar starting at 60%. */
+private const val GROW_MS = 750
+private const val GROW_SPREAD = 0.6f
 
 /**
  * docs/09 화면 원칙 2 · "간격": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
@@ -405,11 +486,20 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
     when {
         // docs/03 ADR-017: where the clock is, because it is what the clock is instead of. No
         // Play either — there is nothing whole to play until the parts are back.
-        detail.driveFetch == DriveFetch.FETCHING -> LoadingText(
-            stringResource(R.string.player_fetching),
-            style = mono.bodySmall,
-            color = palette.textMuted,
-        )
+        // docs/03 ADR-017: the button's place holds how far the trip is; the words are only for
+        // reduce motion, where the waveform row above has stopped saying it.
+        detail.driveFetch == DriveFetch.FETCHING -> Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Space.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f)) {
+                if (LocalReduceMotion.current) {
+                    Text(stringResource(R.string.player_fetching), style = mono.bodySmall, color = palette.textMuted)
+                }
+            }
+            FetchProgress(detail.fetchProgress)
+        }
 
         !detail.audio.isEmpty -> Row(
             modifier = Modifier.fillMaxWidth(),

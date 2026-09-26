@@ -90,6 +90,8 @@ data class RecordingDetail(
     val writing: Boolean = false,
     /** docs/03 ADR-017: how the trip to Drive for the parts the retention sweep took is going. */
     val driveFetch: DriveFetch = DriveFetch.DECIDING,
+    /** How much of that trip is done, 0 to 1, by the bytes of the parts it brings back. */
+    val fetchProgress: Float = 0f,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -980,8 +982,12 @@ class ShellModel(
             updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.IDLE) }
             return
         }
-        updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.FETCHING) }
-        runCatching { graph.core.audio(recordingId) }.fold(
+        updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.FETCHING, fetchProgress = 0f) }
+        runCatching {
+            graph.core.audio(recordingId) { done, total ->
+                updateDetail(recordingId) { it.copy(fetchProgress = if (total > 0) done.toFloat() / total else 0f) }
+            }
+        }.fold(
             onSuccess = { fetched ->
                 val audio = RecordingPlaylist.fetched(track, fetched.paths.map { it.name }, record.dir)
                 updateDetail(recordingId) {

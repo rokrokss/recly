@@ -64,6 +64,29 @@ class AudioPartsTest {
     }
 
     @Test
+    fun `a trip to Drive reports its progress in the bytes of the parts it brings back`() = runBlocking {
+        val h = harness()
+        h.purge()
+        val heard = mutableListOf<Pair<Long, Long>>()
+
+        h.audio.load(h.record(), listOf(h.uploadOutput())) { done, total -> heard += done to total }
+
+        val total = h.record().meta.parts.filter { it.track == Track.MONO }.sumOf { it.bytes }
+        val first = h.record().meta.parts.first { it.track == Track.MONO }.bytes
+        assertEquals(listOf(0L to total, first to total, total to total), heard)
+    }
+
+    @Test
+    fun `nothing is reported when every part is already here`() = runBlocking {
+        val h = harness()
+        val heard = mutableListOf<Pair<Long, Long>>()
+
+        h.audio.load(h.record(), listOf(h.uploadOutput())) { done, total -> heard += done to total }
+
+        assertEquals(emptyList(), heard)
+    }
+
+    @Test
     fun `parts the sweep took are fetched back from Drive, verified and kept`() = runBlocking {
         val h = harness()
         h.purge()
