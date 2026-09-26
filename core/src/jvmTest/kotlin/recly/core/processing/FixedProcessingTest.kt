@@ -188,6 +188,25 @@ class FixedProcessingTest {
         assertFalse(StepReport.localPending(job.workflow, h.store.stepsOf(job.id)))
     }
 
+    @Test fun `a local failure sitting out its backoff is a retry, not an automatic wait`() = runBlocking<Unit> {
+        val h = Harness(Engine(fail = true)); h.core.initializeProcessing(); h.capture(); val job = h.enqueue()
+        val upload = h.store.stepsOf(job.id).first()
+        h.store.updateStep(upload.copy(status = StepStatus.SUCCEEDED, output = buildJsonObject { put("folderId", "folder") }))
+        h.core.runLocalJobs()
+        assertTrue(StepReport.localPending(job.workflow, h.store.stepsOf(job.id)), "the pass that hands the audio to the engine only waits")
+
+        h.store.clearBackoff(job.id, START)
+        h.core.runLocalJobs()
+        val failed = h.store.stepsOf(job.id)[1]
+        assertEquals(StepStatus.PENDING, failed.status)
+        assertEquals(1, failed.attempts)
+        assertNotNull(failed.lastError)
+        assertEquals(JobStatus.WAITING, h.store.get(job.id)!!.status)
+        assertFalse(StepReport.localPending(job.workflow, h.store.stepsOf(job.id)), "the failure is shown, with its retry")
+        assertTrue(h.core.jobs.retry(job.id))
+        assertEquals(JobStatus.PENDING, h.store.get(job.id)!!.status, "the retry runs it now")
+    }
+
     @Test fun `a manual rerun runs what is left with the current settings and keeps finished work`() = runBlocking<Unit> {
         val h = Harness()
         val first = h.core.initializeProcessing().document

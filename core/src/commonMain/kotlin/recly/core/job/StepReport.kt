@@ -17,11 +17,15 @@ import recly.core.message.CoreMessageRef
  */
 object StepReport {
 
-    /** Automatic local waits are never a user-triggered retry, including thermal/OS pauses. */
+    /**
+     * Automatic local waits are never a user-triggered retry, including thermal/OS pauses. A local
+     * step that failed and is sitting out its backoff is not one of them: it keeps the failure in
+     * `last_error` (an automatic wait parks with none), and gets the retry every other step does.
+     */
     fun localPending(workflow: recly.core.model.Workflow?, steps: List<StepRun>): Boolean {
         val next = steps.firstOrNull { it.status != StepStatus.SUCCEEDED && it.status != StepStatus.SKIPPED } ?: return false
         return workflow?.steps?.firstOrNull { it.id == next.stepId } is recly.core.model.Step.LocalTranscribe &&
-            next.status in setOf(StepStatus.PENDING, StepStatus.RUNNING)
+            (next.status == StepStatus.RUNNING || next.status == StepStatus.PENDING && next.lastError == null)
     }
 
     /**
