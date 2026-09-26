@@ -16,7 +16,6 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
-import okio.source
 import recly.core.platform.Transport
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
@@ -163,22 +162,6 @@ class QwenSpeechEngine private constructor(
      * The native half, copied out of its jar once into [dir]. sherpa-onnx's own loader would copy it
      * to a new temporary folder on every launch, and Windows cannot delete a DLL that is loaded.
      */
-    private class Natives(private val fileSystem: FileSystem, private val dir: Path, private val resources: String) {
-        private val names = listOf(System.mapLibraryName("onnxruntime"), System.mapLibraryName("sherpa-onnx-jni"))
-
-        fun load() {
-            fileSystem.createDirectories(dir)
-            for (name in names) {
-                if (fileSystem.exists(dir / name)) continue
-                val temp = dir / "$name.tmp"
-                val input = javaClass.classLoader.getResourceAsStream("$resources/$name") ?: error("sherpa-onnx has no '$name' here")
-                input.source().use { source -> fileSystem.write(temp) { writeAll(source) } }
-                fileSystem.atomicMove(temp, dir / name)
-            }
-            System.setProperty("sherpa_onnx.native.path", dir.toString())
-        }
-    }
-
     companion object {
         private val paused = LocalTranscriptionResult(emptyList(), completed = false)
         private const val THREADS = 2
@@ -204,7 +187,9 @@ class QwenSpeechEngine private constructor(
             if (memory < MIN_MEMORY_BYTES || !bundled) return UnavailableLocalTranscriptionEngine()
             return QwenSpeechEngine(
                 LocalModelStore(transport, fileSystem, dataDir / "models" / Qwen3Asr.DIRECTORY, Qwen3Asr.files, io),
-                Natives(fileSystem, dataDir / "native" / Qwen3Asr.REVISION, resources),
+                Natives(fileSystem, dataDir / "native" / Qwen3Asr.REVISION) { name ->
+                    QwenSpeechEngine::class.java.classLoader.getResourceAsStream("$resources/$name")
+                },
             )
         }
 

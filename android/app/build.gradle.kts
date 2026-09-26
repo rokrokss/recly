@@ -69,6 +69,22 @@ android {
         buildConfig = true
     }
 
+    packaging {
+        jniLibs {
+            // sherpa-onnx (docs/05 "고정 처리 설정 도입"): its JNI library needs only onnxruntime; the C and C++
+            // API libraries are for other bindings. The engine runs only in a 64-bit process
+            // (`QwenSpeechEngine.make`), so the 32-bit ABIs carry none of it — about 90 MB off the APK.
+            excludes += listOf(
+                "**/libsherpa-onnx-c-api.so",
+                "**/libsherpa-onnx-cxx-api.so",
+                "lib/armeabi-v7a/libsherpa-onnx-jni.so",
+                "lib/armeabi-v7a/libonnxruntime.so",
+                "lib/x86/libsherpa-onnx-jni.so",
+                "lib/x86/libonnxruntime.so",
+            )
+        }
+    }
+
     // The worker test builds a real `WorkflowWorker` against a stub `Context` it never calls into
     // (the core and the scheduler are injected). Without this the stub android.jar throws on
     // construction instead of returning a default.

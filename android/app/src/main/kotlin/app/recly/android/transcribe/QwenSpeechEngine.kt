@@ -3,6 +3,7 @@ package app.recly.android.transcribe
 import android.app.ActivityManager
 import android.content.Context
 import android.os.PowerManager
+import android.os.Process
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineQwen3AsrModelConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
@@ -161,8 +162,12 @@ class QwenSpeechEngine private constructor(
         /** 8 GB phones report a little over 7 GiB, 6 GB ones about 5.5. */
         private const val MIN_MEMORY_BYTES = 6L shl 30
 
-        /** The placeholder on a phone without the memory for the model: `local` is then never offered. */
+        /**
+         * The placeholder on a phone without the memory for the model, or in a 32-bit process, whose
+         * ABIs the APK leaves sherpa-onnx out of (build.gradle.kts `packaging`): `local` is then never offered.
+         */
         fun make(context: Context, transport: Transport): LocalTranscriptionEngine {
+            if (!Process.is64Bit()) return UnavailableLocalTranscriptionEngine()
             val memory = ActivityManager.MemoryInfo()
             context.getSystemService(ActivityManager::class.java).getMemoryInfo(memory)
             if (memory.totalMem < MIN_MEMORY_BYTES) return UnavailableLocalTranscriptionEngine()
