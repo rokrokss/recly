@@ -429,6 +429,10 @@ public struct RecordingDetailView: View {
         VStack(alignment: .leading, spacing: Space.s) {
             if model.hasAudio {
                 waveform
+            } else if model.driveFetch == .fetching {
+                // While the parts are coming back from Drive the row is already there, empty, so the
+                // bars arrive in place rather than the bar growing a row when they do.
+                waveformPlaceholder
             }
             controls
             #if os(iOS)
@@ -501,6 +505,20 @@ public struct RecordingDetailView: View {
         #endif
     }
 
+    /// The waveform row before there is a recording to draw in it: the same height and the same
+    /// hairline across the middle that [waveform] shows before its peaks are decoded, with nothing
+    /// to point at.
+    private var waveformPlaceholder: some View {
+        Canvas { context, size in
+            context.fill(
+                Path(CGRect(x: 0, y: (size.height - blueprint.line) / 2, width: size.width, height: blueprint.line)),
+                with: .color(blueprint.palette.grid)
+            )
+        }
+        .frame(height: minTouch)
+        .accessibilityHidden(true)
+    }
+
     /// docs/09 "선": straight bars of one width on one gap, no caps and no gradient. Behind the
     /// playhead is the accent and ahead of it the muted colour, both at full opacity: docs/09 접근성
     /// asks 3:1 of a graphic, and the muted token faded out to hint at "not played yet" is under
@@ -565,9 +583,7 @@ public struct RecordingDetailView: View {
             if model.driveFetch == .fetching {
                 // docs/03 ADR-017: where the clock is, because it is what the clock is instead of.
                 // No Play either — there is nothing whole to play until the parts are back.
-                Text(verbatim: loc("Fetching from Drive…"))
-                    .font(blueprint.fonts.monoBodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
+                LoadingText(text: loc("Fetching from Drive…"), font: blueprint.fonts.monoBodySmall, color: blueprint.palette.textMuted)
             } else if model.hasAudio {
                 #if os(iOS)
                 Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")

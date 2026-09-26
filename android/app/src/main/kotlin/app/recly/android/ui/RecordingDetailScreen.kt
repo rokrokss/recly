@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -57,6 +58,7 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
+import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
@@ -236,17 +238,21 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
             .padding(horizontal = Space.m, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
+        // While the parts are coming back from Drive the row is already there, empty, so the bars
+        // arrive in place rather than the page growing a row when they do.
+        val shown = !detail.audio.isEmpty || detail.driveFetch == DriveFetch.FETCHING
         val waveform: @Composable () -> Unit = {
-            Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
+            if (detail.audio.isEmpty) WaveformPlaceholder()
+            else Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
                 onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) })
         }
-        if (LocalConfiguration.current.screenHeightDp < 480 && !detail.audio.isEmpty) {
+        if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { waveform() }
                 Box(Modifier.weight(2f)) { PlayerControls(detail, player, scrubSec) }
             }
         } else {
-            if (!detail.audio.isEmpty) waveform()
+            if (shown) waveform()
             PlayerControls(detail, player, scrubSec)
         }
         if (player.failed) Text(stringResource(R.string.player_error), color = palette.danger)
@@ -361,6 +367,20 @@ internal fun Waveform(
 }
 
 /**
+ * The waveform row before there is a recording to draw in it: the same height and the same hairline
+ * across the middle that [Waveform] shows before its peaks are decoded, with nothing to point at.
+ */
+@Composable
+private fun WaveformPlaceholder() {
+    val grid = blueprint.grid
+    val hair = blueprint.line
+    Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
+        val line = hair.toPx()
+        drawRect(color = grid, topLeft = Offset(0f, (size.height - line) / 2), size = Size(size.width, line))
+    }
+}
+
+/**
  * docs/09 화면 원칙 2 · "간격": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
  * bars there are is however many 3dp columns the row is wide — the shape is the recording's, and
  * the number of bars is the screen's.
@@ -385,7 +405,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
     when {
         // docs/03 ADR-017: where the clock is, because it is what the clock is instead of. No
         // Play either — there is nothing whole to play until the parts are back.
-        detail.driveFetch == DriveFetch.FETCHING -> Text(
+        detail.driveFetch == DriveFetch.FETCHING -> LoadingText(
             stringResource(R.string.player_fetching),
             style = mono.bodySmall,
             color = palette.textMuted,

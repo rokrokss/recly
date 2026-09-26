@@ -105,6 +105,9 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
 
+    // docs/05 "고정 처리 설정 도입": on-device transcription. The model itself is downloaded from settings.
+    implementation(libs.sherpa.onnx.android)
+
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
     implementation(libs.play.services.auth)

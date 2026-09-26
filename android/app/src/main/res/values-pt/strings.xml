@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s (compilação %2$d) · android %3$d</string>
     <string name="settings_about_device">dispositivo %1$s</string>
     <string name="settings_open_source">Avisos de código aberto</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">Excluir “%1$s”?</string>
     <string name="delete_local_only">Excluir apenas deste telefone</string>
     <string name="delete_with_drive">Excluir também a pasta do Drive</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">Grave localmente. Conecte o Drive para enviar.</string>
     <string name="drive_pending">Envio em espera</string>
     <string name="core_local_transcription_unavailable">A transcrição local não está disponível neste dispositivo. Escolha outro método.</string>
-    <string name="core_local_model_required">Prepare o modelo de voz nas configurações de transcrição.</string>
+    <string name="core_local_model_required">Baixe o modelo de reconhecimento de fala nas configurações de transcrição.</string>
     <string name="core_local_diarization_unavailable">Este mecanismo local não identifica falantes. Desative a função ou escolha uma API externa.</string>
     <string name="processing_title">Processamento de gravações</string>
     <string name="processing_local">No dispositivo</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">Pasta de armazenamento</string>
     <string name="processing_transcription">Transcrição</string>
     <string name="processing_saved">Configurações salvas</string>
-    <string name="processing_prepare">Preparar modelo</string>
+    <string name="processing_prepare">Baixar modelo</string>
+    <string name="processing_preparing">Baixando modelo…</string>
+    <string name="processing_model_download">Para transcrever neste dispositivo, baixe este modelo uma vez (cerca de 1 GB).</string>
+    <string name="processing_local_no_speakers">A transcrição no dispositivo não separa falantes.</string>
+    <string name="processing_download">Baixar</string>
+    <string name="processing_cellular_body">O modelo tem cerca de 1 GB.</string>
+    <string name="processing_cellular_title">Baixar usando dados móveis?</string>
+    <string name="processing_speech_model">Modelo de reconhecimento de fala</string>
     <string name="processing_export">Exportar configurações</string>
     <string name="processing_import">Importar configurações</string>
     <string name="processing_settings_file">Arquivo de configurações</string>

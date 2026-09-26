@@ -7470,6 +7470,83 @@
         }
       }
     },
+    "Speech recognition model": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speech recognition model"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음성 인식 모델"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声認識モデル"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "语音识别模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "語音辨識模型"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo de reconocimiento de voz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modèle de reconnaissance vocale"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spracherkennungsmodell"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modelo de reconhecimento de fala"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نموذج التعرّف على الكلام"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्पीच रिकग्निशन मॉडल"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Модель распознавания речи"
+          }
+        }
+      }
+    },
     "Spoken language": {
       "extractionState": "manual",
       "localizations": {
@@ -13539,78 +13616,78 @@
         }
       }
     },
-    "Prepare the speech model in transcription settings.": {
+    "Download the speech recognition model in transcription settings.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepare the speech model in transcription settings."
+            "value": "Download the speech recognition model in transcription settings."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전사 설정에서 음성 모델을 준비해 주세요."
+            "value": "전사 설정에서 음성 인식 모델을 다운로드해 주세요."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "文字起こしの設定で音声モデルを準備してください。"
+            "value": "文字起こし設定で音声認識モデルをダウンロードしてください。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在转录设置中准备语音模型。"
+            "value": "请在转录设置中下载语音识别模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請在轉錄設定中準備語音模型。"
+            "value": "請在轉錄設定中下載語音辨識模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepara el modelo de voz en los ajustes de transcripción."
+            "value": "Descarga el modelo de reconocimiento de voz en los ajustes de transcripción."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Préparez le modèle vocal dans les réglages de transcription."
+            "value": "Téléchargez le modèle de reconnaissance vocale dans les réglages de transcription."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sprachmodell in den Transkriptionseinstellungen vorbereiten."
+            "value": "Laden Sie das Spracherkennungsmodell in den Transkriptionseinstellungen herunter."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepare o modelo de voz nas configurações de transcrição."
+            "value": "Baixe o modelo de reconhecimento de fala nas configurações de transcrição."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أعدّ نموذج الكلام في إعدادات النسخ."
+            "value": "نزّل نموذج التعرّف على الكلام من إعدادات النسخ."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच मॉडल तैयार करें।"
+            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच रिकग्निशन मॉडल डाउनलोड करें।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подготовьте речевую модель в настройках расшифровки."
+            "value": "Загрузите модель распознавания речи в настройках расшифровки."
           }
         }
       }
@@ -14223,78 +14300,78 @@
         }
       }
     },
-    "Prepare model": {
+    "Download model": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepare model"
+            "value": "Download model"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "모델 준비"
+            "value": "모델 다운로드"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "モデルを準備"
+            "value": "モデルをダウンロード"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "准备模型"
+            "value": "下载模型"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "準備模型"
+            "value": "下載模型"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparar modelo"
+            "value": "Descargar modelo"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Préparer le modèle"
+            "value": "Télécharger le modèle"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Modell vorbereiten"
+            "value": "Modell herunterladen"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparar modelo"
+            "value": "Baixar modelo"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "إعداد النموذج"
+            "value": "تنزيل النموذج"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "मॉडल तैयार करें"
+            "value": "मॉडल डाउनलोड करें"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подготовить модель"
+            "value": "Загрузить модель"
           }
         }
       }
@@ -14988,73 +15065,73 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepare the speech model in transcription settings."
+            "value": "Download the speech recognition model in transcription settings."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전사 설정에서 음성 모델을 준비해 주세요."
+            "value": "전사 설정에서 음성 인식 모델을 다운로드해 주세요."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "文字起こしの設定で音声モデルを準備してください。"
+            "value": "文字起こし設定で音声認識モデルをダウンロードしてください。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在转录设置中准备语音模型。"
+            "value": "请在转录设置中下载语音识别模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請在轉錄設定中準備語音模型。"
+            "value": "請在轉錄設定中下載語音辨識模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepara el modelo de voz en los ajustes de transcripción."
+            "value": "Descarga el modelo de reconocimiento de voz en los ajustes de transcripción."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Préparez le modèle vocal dans les réglages de transcription."
+            "value": "Téléchargez le modèle de reconnaissance vocale dans les réglages de transcription."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sprachmodell in den Transkriptionseinstellungen vorbereiten."
+            "value": "Laden Sie das Spracherkennungsmodell in den Transkriptionseinstellungen herunter."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prepare o modelo de voz nas configurações de transcrição."
+            "value": "Baixe o modelo de reconhecimento de fala nas configurações de transcrição."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "أعدّ نموذج الكلام في إعدادات النسخ."
+            "value": "نزّل نموذج التعرّف على الكلام من إعدادات النسخ."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच मॉडल तैयार करें।"
+            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच रिकग्निशन मॉडल डाउनलोड करें।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подготовьте речевую модель в настройках расшифровки."
+            "value": "Загрузите модель распознавания речи в настройках расшифровки."
           }
         }
       }
@@ -15135,79 +15212,79 @@
         }
       }
     },
-    "Preparing speech model…": {
+    "Downloading model…": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparing speech model…"
+            "value": "Downloading model…"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "음성 모델 준비 중…"
+            "value": "모델 다운로드 중…"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "音声モデルの準備中…"
+            "value": "モデルをダウンロード中…"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在准备语音模型…"
+            "value": "正在下载模型…"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在準備語音模型…"
+            "value": "正在下載模型…"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparando modelo de voz…"
+            "value": "Descargando modelo…"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Préparation du modèle vocal…"
+            "value": "Téléchargement du modèle…"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sprachmodell wird vorbereitet…"
+            "value": "Modell wird heruntergeladen…"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Preparando modelo de voz…"
+            "value": "Baixando modelo…"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ إعداد نموذج الكلام…"
+            "value": "جارٍ تنزيل النموذج…"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "स्पीच मॉडल तैयार हो रहा है…"
+            "value": "मॉडल डाउनलोड हो रहा है…"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подготовка речевой модели…"
+            "value": "Загрузка модели…"
           }
         }
       }
@@ -16431,79 +16508,79 @@
         }
       }
     },
-    "Download Apple’s speech model to transcribe on this device.": {
+    "To transcribe on this device, download this model once.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download Apple’s speech model to transcribe on this device."
+            "value": "To transcribe on this device, download this model once."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "Apple 음성 모델을 다운로드하면 이 기기에서 전사할 수 있습니다."
+            "value": "이 기기에서 전사하려면 이 모델을 한 번 다운로드해야 합니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "Appleの音声モデルをダウンロードして、このデバイスで文字起こしを行います。"
+            "value": "このデバイスで文字起こしするには、このモデルを一度ダウンロードする必要があります。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "下载Apple语音模型即可在此设备上转录。"
+            "value": "要在此设备上转录，需要下载一次此模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "下載Apple語音模型即可在此裝置上轉錄。"
+            "value": "若要在此裝置上轉錄，需要下載一次此模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descarga el modelo de voz de Apple para transcribir en este dispositivo."
+            "value": "Para transcribir en este dispositivo, descarga este modelo una vez."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Téléchargez le modèle vocal d’Apple pour transcrire sur cet appareil."
+            "value": "Pour transcrire sur cet appareil, téléchargez ce modèle une fois."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laden Sie Apples Sprachmodell für Transkription auf diesem Gerät herunter."
+            "value": "Um auf diesem Gerät zu transkribieren, laden Sie dieses Modell einmal herunter."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baixe o modelo de voz da Apple para transcrever neste dispositivo."
+            "value": "Para transcrever neste dispositivo, baixe este modelo uma vez."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "نزّل نموذج الكلام من Apple للنسخ على هذا الجهاز."
+            "value": "للنسخ على هذا الجهاز، نزّل هذا النموذج مرة واحدة."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच मॉडल डाउनलोड करें।"
+            "value": "इस डिवाइस पर ट्रांसक्रिप्शन के लिए यह मॉडल एक बार डाउनलोड करें।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Загрузите речевую модель Apple для расшифровки на этом устройстве."
+            "value": "Чтобы расшифровывать на этом устройстве, один раз загрузите эту модель."
           }
         }
       }

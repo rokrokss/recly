@@ -38,8 +38,15 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | sha2 | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/RustCrypto/hashes> |
 | windows (windows-rs) | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/microsoft/windows-rs> |
 | FFmpeg (bundled `ffmpeg.exe` and its DLLs) | Windows | LGPL-2.1-or-later — see below | <https://ffmpeg.org/> |
+| sherpa-onnx (Android AAR, JVM jar and its native jar) | Android phone, Windows | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
+| ONNX Runtime (inside the sherpa-onnx AAR and native jar) | Android phone, Windows | MIT | <https://github.com/microsoft/onnxruntime> |
 | ajv, ajv-formats | `spec/` schema validation (development only, not shipped) | MIT | <https://github.com/ajv-validator/ajv> |
 | JUnit 4 | tests only, not shipped | EPL-1.0 | <https://github.com/junit-team/junit4> |
+
+The on-device transcription model is **not shipped**: the Android and Windows apps download it
+when the user prepares it in Settings (docs/recly.md §15). It is Qwen3-ASR 0.6B as exported for
+sherpa-onnx (Apache-2.0, <https://huggingface.co/Qwen/Qwen3-ASR-0.6B>) with the Silero VAD (MIT,
+<https://github.com/snakers4/silero-vad>).
 
 The two Google Maven artifacts marked proprietary are closed-source AARs. Each ships its own
 `third_party_licenses.txt` inside the archive, covering the open-source code Google embeds in them;

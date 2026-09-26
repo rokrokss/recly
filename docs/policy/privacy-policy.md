@@ -68,7 +68,7 @@ When you record on a Galaxy Watch or an Apple Watch, the **audio files and their
 - Once the phone confirms receipt, the watch deletes its own copy — no recording history accumulates on the watch.
 - API keys and tokens are never sent over this path.
 
-Apple model downloads and the StoreKit region lookup are described below. Recly adds no developer-operated endpoint for these features.
+Speech model downloads and the StoreKit region lookup are described below. Recly adds no developer-operated endpoint for these features.
 
 ### iPhone permission for external transcription
 
@@ -80,7 +80,7 @@ Permission is remembered for the same provider and configured endpoint, independ
 
 ### On-device transcription
 
-On iPhone and Mac with iOS or macOS 26 or later, new recording settings default to local transcription, and Apple Speech analyzes audio on the device. Other devices have no on-device engine yet, so their new settings start with transcription off. Preparing a missing language model is a separate action in Settings; Apple’s system service downloads the model assets. Recly does not send your recording to an external speech API for this local analysis. Original audio and finished transcripts still upload to your Google Drive as separate steps in the recording flow.
+On iPhone and Mac with iOS or macOS 26 or later, new recording settings default to local transcription, and Apple Speech analyzes audio on the device. On Android phones and Windows PCs with enough memory (about 8 GB or more), they default to local transcription with the open Qwen3-ASR model, which runs in the app on the device. Other devices have no on-device engine, so their new settings start with transcription off. Downloading a missing model is a separate action in Settings: on Apple devices Apple’s system service downloads the model assets; on Android and Windows the app downloads the model files (about 1 GB) from Hugging Face and GitHub. That download sends no recording, transcript, setting or key — those hosts see your IP address and which public files were requested — and each file is checked against a fixed checksum before use. Recly does not send your recording to an external speech API for this local analysis. Original audio and finished transcripts still upload to your Google Drive as separate steps in the recording flow.
 
 On those devices, choose an external provider if you want transcripts. Recly never silently switches local transcription to a paid or cloud API, and external transcription sends audio only to the provider you selected. Processing settings and API keys remain on the device; exported settings contain key references, not key values.
 

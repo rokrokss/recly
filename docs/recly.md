@@ -1080,8 +1080,8 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
   로컬은 실행 시 `supportsDiarization`을 확인해 실제 요청에 반영하며, 미지원인 Apple SpeechTranscriber도 전사를 계속한다.
 - `initialize()`는 저장된 설정이 없으면 기본값(로컬 전사, 메모 폴더 `recly/memo/{{yyyy}}-{{MM}}`)으로 **Ready**
   상태를 만든다. 옛 워크플로우 문서나 기기 포인터는 조사하지 않는다 — 이관·검토(`NeedsReview`) 상태는 없다.
-  셸이 로컬 엔진을 넘기지 않은 빌드(`LocalTranscriptionEngine.installed == false`: Android·Windows, OS 26 미만
-  Apple)는 로컬 대신 OFF로 준비한다 — 항상 실패하는 방식을 기본으로 두지 않는다. 셸은 이때 로컬 선택지를 숨기고,
+  셸이 로컬 엔진을 넘기지 않은 빌드·기기(`LocalTranscriptionEngine.installed == false`: OS 26 미만 Apple, 메모리
+  6 GiB 미만 Android·Windows, sherpa-onnx 네이티브 라이브러리가 없는 데스크톱)는 로컬 대신 OFF로 준비한다 — 항상 실패하는 방식을 기본으로 두지 않는다. 셸은 이때 로컬 선택지를 숨기고,
   이미 로컬이 저장돼 있으면 사용할 수 없다는 안내와 함께만 보여 준다.
 - 폴더 템플릿에는 `{{workflowName}}`과 `{{title}}`을 허용하지 않는다(워크플로우 이름이 없다).
 - endpoint HTTPS·모델 길이 등 제약에 어긋나는 설정은 저장·가져오기에서 거부한다. 입력을 잘라내거나 조용히
@@ -1099,16 +1099,32 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
   완료 결과를 먼저 원자적으로 로컬 저장하므로 결과 업로드 실패에서 API/모델을 다시 돌리지 않는다.
 - 로컬 실행은 `이 기기에서 전사 중`, 자동 재개 대기는 `전사 대기 중`으로 표시하고 강제 재시도 버튼을 제공하지 않는다.
   설정의 API 키 목록에서 저장된 키를 개별 삭제할 수 있으며 삭제 전 확인한다.
-- Apple의 로컬 엔진은 iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`이며, 언어 자산 준비는 설정에서 사용자가 요청한다.
-  녹음 시작·진행·종료 중에는 새 모델 준비 요청을 막는다. 이미 OS에 전달된 공유 자산 설치의 완료·재시도 시점은 OS가 관리한다.
-  설정에는 준비 중과 준비 완료를 표시한다. 모델 준비가 끝나면 같은 언어의 `LOCAL_MODEL_REQUIRED` 실패만 자동 재개하며,
+- 로컬 설정은 4셸이 같은 모양이다(2026-09-26): `음성 인식 모델` 행에 모델 이름(Apple `Apple Speech`, Android·Windows
+  `Qwen3-ASR 0.6B` — 제품명이라 번역하지 않는다), 모델이 없으면 `이 기기에서 전사하려면 이 모델(약 1GB)을 한 번 다운로드해야
+  합니다.`(Apple은 크기를 알 수 없어 뺀다)와 `모델 다운로드` 버튼, 받는 동안에는 §9 사각 로더와 `모델 다운로드 중…`,
+  그리고 `기기 내 전사에서는 화자를 구분하지 않습니다.` 받고 나면 안내와 버튼이 사라지고 이름 행만 남는다.
+  녹음 시작·진행·종료 중에는 `모델 다운로드`를 누를 수 없다. Android는 종량제 연결(모바일 데이터)이면 먼저 묻는다
+  (`모바일 데이터로 다운로드할까요?`); Windows는 종량제 여부를 알 방법이 없어 묻지 않는다.
+- Apple의 로컬 엔진은 iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`이며, 언어 자산 다운로드는 설정에서 사용자가 요청한다.
+  이미 OS에 전달된 공유 자산 설치의 완료·재시도 시점은 OS가 관리한다.
+  모델 다운로드가 끝나면 같은 언어의 `LOCAL_MODEL_REQUIRED` 실패만 자동 재개하며,
   완료된 업로드·저장한 전사 진행률·다른 실패·연결 해제 상태는 유지한다. 설치 전 열/전력 제한으로 보류되면 준비 버튼을 유지한다.
   파일 하나를 한 분석기에 공급하고 PCM은 제한된 버퍼로 읽는다. 여러 녹음 파트는 무손실 결합하며 임시 파일은 성공·실패·취소 시 정리한다.
   열 상태가 nominal이 아니거나 저전력 모드이면 대기/중단한다. 확정 구간을 저장해 다음 실행 기회에 재개한다.
 - 로컬 계산은 기기당 하나, 새 녹음 시작 시 양보한다. 플랫폼 실행 만료/취소도 native 분석기를 취소한다.
   로컬 전용 패스는 Drive 인증·네트워크 요청·결과 게시를 실행하지 않는다. 네트워크 업로드의 Wi-Fi 제약은 그대로다.
-- 현재 Android·Windows의 실제 로컬 추론 어댑터는 미구현이며, 이 두 플랫폼의 로컬 선택은 `지원 불가`로 표시한다.
-  무거운 CPU 추론이나 외부 API로 자동 대체하지 않는다. 실제 기기의 품질·발열·장문 검증은 완료를 주장하지 않는다.
+- Android·Windows의 로컬 엔진은 sherpa-onnx 1.13.8 위의 Qwen3-ASR 0.6B INT8(`Qwen3Asr`)이다(2026-09-26).
+  모델(약 1 GB, 7개 파일)은 앱에 넣지 않고 설정의 모델 다운로드에서만 받는다 — 커밋·크기·SHA-256으로 고정하고, 8 MB 범위
+  요청으로 받아 끊겨도 이어 받으며, 해시가 맞은 파일만 제자리로 옮긴다(`LocalModelStore`, 경로는 §15). 폴더는 Android
+  `noBackupFilesDir/models/`, Windows `{dataDir}/models/`이고 모델 revision마다 따로다. 한 번 받으면 다시 받지 않는다 —
+  런타임만 바뀌는 업데이트도 같은 폴더를 쓰고, 새 모델이 다 받아지면 이전 revision 폴더는 지운다.
+  Silero VAD가 녹음을 발화 구간으로 자르고, 구간은 20초 이하 조각으로 나눠 디코드한다 — 모델 문맥을 넘긴 입력에
+  sherpa-onnx는 오류 대신 빈 텍스트를 돌려준다. 조각마다 확정 구간을 저장하므로 취소·재개·대기는 조각 경계에서 걸린다.
+  타이밍은 구간 단위이고 화자 분리는 없다. CPU 2스레드로 돈다. Android는 열 상태가 `NONE`이 아니거나 절전 모드면
+  대기하고, Windows는 기다릴 열 신호가 없다. 언어는 이 모델이 아는 것만 고른다(우크라이나어 제외, 프롬프트에는 영어
+  이름으로 넘긴다). Windows는 네이티브 라이브러리를 jar에서 `{dataDir}/native/`로 한 번 풀어 쓴다 — sherpa-onnx 기본
+  로더는 실행마다 새 임시 폴더에 풀고, 로드된 DLL은 지울 수 없다. 추론은 앱 프로세스 안에서 돌고 캡처가 시작되면 멈춘다.
+  **실기기 발열·장문·정확도는 검증하지 않았다**(§20). 무거운 CPU 추론이나 외부 API로 자동 대체하지 않는다.
 - 로컬 전사 v2는 `speakerIdentification`과 `timing`을 명시한다. 화자 분리 미지원이면 `speakers=[]`, `speaker=""`이며
   단일 화자를 식별했다고 표현하지 않는다. v1 외부 API 결과와 기존 파일 읽기는 유지한다.
 
@@ -1602,7 +1618,7 @@ Drive 쓰기는 `drive.upload`와 같은 멱등 규칙(같은 이름 + 같은 md
 
 ### 없는 것
 
-로컬 provider(Whisper + pyannote, 데스크톱 전용), mic/sys 분리 전사로 "나" 식별, 화자 이름 편집·저장, 워치에서
+로컬 화자 분리, mic/sys 분리 전사로 "나" 식별, 화자 이름 편집·저장, 워치에서
 인원 수 입력. Gemini 어댑터도 없다 — 화자분리가 프롬프트로만 되고 타임스탬프를 믿을 수 없어 `transcript.json`의
 `start/end` 계약을 못 지킨다. 어댑터 인터페이스는 같으므로 provider를 더하는 것은 어댑터 하나를 더하는 일이다.
 
@@ -1690,7 +1706,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      `워크플로우를 선택하세요`(en `Choose a workflow`) 한 줄이다 — 그냥 시작하면 아무것도 실행되지 않는다는 사실과
      그것을 고치는 방법을 같은 자리에서 말한다.
    - **상태 노드**는 녹음기 상태 코드(`IDLE`·`STARTING`·`REC`·`STOPPING`)다. 유휴 상태에서 잡이 돌고
-     있으면(원장이 `UPLOADING`인 행이 있으면) `UPLOADING`(액센트)과 그 왼쪽에 회전하는 8pt 사각 로더 — `reduce
+     있으면(원장이 `UPLOADING`인 행이 있으면) `UPLOADING`(액센트)과 그 왼쪽에 회전하는 8pt 사각 로더(이 디자인의 **유일한 로더** —
+     진행률 없이 도는 일의 문구 옆에만 쓴다: `모델 다운로드 중…`, `Drive에서 받는 중…`도 같은 것이다. 시스템 스피너는 쓰지 않는다) — `reduce
      motion`이면 코드만. 녹음 중이면 `REC`가 우선한다. 원장은 코어의 잡 행 관찰(`jobs.observe()`)로 패스 도중에도
      갱신된다(Apple·Android·Windows 2026-09-03; Windows는 reduce motion 신호가 없어 로더가 항상 돈다).
      Windows는 셸 상태 `OPENING`(헬퍼 기동 전)·`NO_HELPER`·`NAMING`(제목 입력 중)을 더 쓴다.
@@ -1712,7 +1729,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    another device`) · `다른 기기에서 전사 중`(en `Transcribing on another device`)이다(§7).
    행 확장에 **동작 — 가로로 한 줄, 넘치면 다음 줄로 접는다(세로 나열 금지)**: `Drive 열기`(링크가 있을 때) ·
    `다시 시도`(**실패 상태 `FAILED`·`NEEDS_AUTH`·`NEEDS_SPACE`, 그리고 실패 뒤 백오프를 기다리는 `RETRY`**(4셸 모두, 2026-09-04; provider가 전사 중인 `TRANSCRIBING`은 제외 — 남의 시계다) **에서만**) · `키를 확인하세요`(`AUTH_REJECTED`) ·
-   `상세`(en `Details`; 상세 화면 — 데스크톱은 같은 이름의 창 — 을 연다) · `삭제`(녹음·업로드 중 제외). 상세는 원본이 본문이다: **로컬 파트 재생**(재생/일시정지 + `경과 / 총 길이` 모노 시계; 파형(파트를 디코드해 0.25초 창의 피크; 재생된 구간은 액센트) 위에 플레이헤드가 움직이고, 파형을 드래그·탭하면 그 시각으로 이동한다 — Apple·Android·Windows 2026-09-03; 트랙은 `mix`가 있으면 `mix`, 아니면 `mono`; 파일이 이 기기에 없으면 `이 기기에 오디오가 없습니다`(en `No audio on this device`)) 위에 녹취가 놓인다. 4셸 모두(2026-09-03; Apple은 RecKit 공용 뷰 + AVQueuePlayer, Android는 media3 ExoPlayer, Windows는 번들 ffmpeg가 PCM으로 풀어 `SourceDataLine`으로 냄 — JVM은 AAC를 못 푼다). 로컬에 없는 파트는 업로드된 녹음이면 `core.audio()`로 Drive에서 받아온다(`Drive에서 받는 중…`/`Drive에서 받지 못했습니다`); 받는 판단이 끝나기 전엔 재생 버튼을 보이지 않고, 일부만 받아지면 이어지는 앞부분만 재생한다. 이 기기에서 녹음 중이면 재생을 제공하지 않는다. "지금 올리기"는 없다(2026-09-02:
+   `상세`(en `Details`; 상세 화면 — 데스크톱은 같은 이름의 창 — 을 연다) · `삭제`(녹음·업로드 중 제외). 상세는 원본이 본문이다: **로컬 파트 재생**(재생/일시정지 + `경과 / 총 길이` 모노 시계; 파형(파트를 디코드해 0.25초 창의 피크; 재생된 구간은 액센트) 위에 플레이헤드가 움직이고, 파형을 드래그·탭하면 그 시각으로 이동한다 — Apple·Android·Windows 2026-09-03; 트랙은 `mix`가 있으면 `mix`, 아니면 `mono`; 파일이 이 기기에 없으면 `이 기기에 오디오가 없습니다`(en `No audio on this device`)) 위에 녹취가 놓인다. 4셸 모두(2026-09-03; Apple은 RecKit 공용 뷰 + AVQueuePlayer, Android는 media3 ExoPlayer, Windows는 번들 ffmpeg가 PCM으로 풀어 `SourceDataLine`으로 냄 — JVM은 AAC를 못 푼다). 로컬에 없는 파트는 업로드된 녹음이면 `core.audio()`로 Drive에서 받아온다(`Drive에서 받는 중…`/`Drive에서 받지 못했습니다`). 받는 동안 파형 자리에는 같은 높이의 빈 행(가운데 가는 선 —
+파형이 디코드되기 전의 모양)을 먼저 두고, 시계 자리의 `Drive에서 받는 중…` 옆에 사각 로더를 돌린다 — 받고 나면 막대가
+그 자리에 들어오고 화면 모양은 바뀌지 않는다(2026-09-26, 4셸). 받는 판단이 끝나기 전엔 재생 버튼을 보이지 않고, 일부만 받아지면 이어지는 앞부분만 재생한다. 이 기기에서 녹음 중이면 재생을 제공하지 않는다. "지금 올리기"는 없다(2026-09-02:
    잡 없는 녹음은 올릴 필요가 없고, 대기 중인 잡은 제 시각에 돈다). 메뉴바·트레이 팝오버와 데스크톱 상세 창도 같은 원장을
    쓴다 — **20행씩 읽고, 마지막 행이 보이면 다음 20행을 더한다**(무한 스크롤; 2026-09-04, 이전에는 팝오버·상세 창이 최근 5행).
    **Android·iPhone 상세의 재생 영역은 본문 아래에 고정한다**(2026-09-10). 녹취 본문만 스크롤하고, 파형 아래에
@@ -1794,7 +1813,7 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      설정의 `취소`·`저장`은 **바꾼 내용이 있을 때만** 나타난다 — 비활성 버튼 두 개가 늘 자리를 차지하지 않고, 나타나는
      것 자체가 저장할 게 있다는 신호다.
    - 한 항목에 붙은 동작은 그 행의 끝에 둔다(Drive 연결 해제, 다른 업체의 키 삭제). 항목이 여러 줄이면 그 아래에
-     끝 정렬한다. 입력칸·값·안내 바로 아래의 버튼(`키 저장`, `키 바꾸기`·`삭제`, `모델 준비`, 권한 철회 안내의 확인)도
+     끝 정렬한다. 입력칸·값·안내 바로 아래의 버튼(`키 저장`, `키 바꾸기`·`삭제`, `모델 다운로드`, 권한 철회 안내의 확인)도
      그 아래에 끝 정렬한다. 성격이 다른 묶음은 제목으로 나눈다(녹음 처리의 `설정 파일`: 내보내기·가져오기).
    - 가운데 정렬된 안내(빈 목록, 전사 불러오기 실패, 마이크 거부) 아래의 단독 복구 버튼은 가운데다.
    - 메뉴바 팝오버·트레이의 명령 줄은 주 동작(시작/정지·설정)이 시작, 보조·종료가 끝이다.
@@ -2605,17 +2624,30 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive(§1, Google OAuth 포함), (2) 사용자가 녹음
 처리 설정에서 **외부 API 전사를 골랐을 때만** 그 STT provider(§3), (3) **사용자가 짝 지은 자신의 다른 기기**(워치 ↔ 폰,
 §4) — 앞의 둘은 사용자의 계정·사용자의 키로 가고, 셋째는 사용자 자신의 기기 두 대 사이에 머문다. 그 외에 App
-Store 배포본은 아래 StoreKit 국가 조회를, Apple 로컬 전사는 사용자가 요청한 모델 자산 다운로드를 쓰고, 정책
+Store 배포본은 아래 StoreKit 국가 조회를, 로컬 전사는 사용자가 요청한 모델 다운로드(Apple 시스템 자산, Android·Windows는
+Hugging Face·GitHub의 공개 파일)를 쓰고, 정책
 링크는 사용자가 누를 때만 브라우저로 연다(§3 끝). 웹훅(§2)은 2026-09-24 폐기돼 더 이상 경로가 아니다.
 
 ### Apple 로컬 음성 모델 자산
 
-- 설정의 모델 준비를 직접 요청하면 Apple Speech `AssetInventory` 시스템 서비스가 언어 모델을 다운로드한다.
+- 설정의 모델 다운로드를 직접 요청하면 Apple Speech `AssetInventory` 시스템 서비스가 언어 모델을 다운로드한다.
   Apple이 관리하는 시스템 자산 다운로드이며 앱이 별도 서버 주소를 설정하거나 API 키를 전달하지 않는다.
 - `SpeechTranscriber` 처리에는 기기의 오디오 파일/PCM과 확정 결과를 사용한다. 로컬 전사 선택 자체로 외부 STT에
   오디오를 보내지 않으며, 기본 흐름의 원본·결과 Drive 업로드는 별도 단계로 유지한다.
 - 모델 없음·플랫폼 미지원·언어 미지원은 사용자 설정 동작이 필요한 상태다. 열·저전력·OS 실행 시간 대기는 일반 대기로
   표시하며 자동 재개 사유를 별도 경고하지 않는다. 이 정책은 기기의 발열이 0임을 보증하지 않는다.
+
+### Android·Windows 로컬 전사 모델
+
+- 설정의 **모델 다운로드**를 누를 때만 받는다(§5 "고정 처리 설정 도입"). 받는 곳은 두 곳이고 인증은 없다:
+  `https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/…`
+  (모델·토크나이저 6개 파일, 큰 파일은 `*.cdn.hf.co`로 리디렉션)와
+  `https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx`(VAD, `release-assets.githubusercontent.com`으로
+  리디렉션). 파일 목록·크기·해시는 코어 `Qwen3Asr.files`가 정본이다.
+- 요청은 `Range` 헤더를 붙인 GET뿐이다. 녹음·녹취·처리 설정·키·기기 식별자를 보내지 않는다. 호스트가 보는 것은 IP 주소,
+  HTTP 클라이언트의 User-Agent, 요청한 파일이다. 커밋·크기·SHA-256으로 고정돼 있어 호스트 쪽 파일이 바뀌면 설치하지 않는다.
+- 전사 자체는 기기 안에서 하며 오디오는 이 경로로 나가지 않는다. 원본·결과 Drive 업로드는 별도 단계로 유지한다.
+- Windows의 sherpa-onnx 네이티브 라이브러리는 앱에 들어 있고(jar), 받는 것이 아니다.
 
 ### 중국 본토 App Store
 
@@ -2969,6 +3001,7 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | 스키마 v2 마이그레이션 | `user_version = 1`인 실기 DB에 새 빌드를 덮어써도 크래시 없이 1 → 2로 올라감 |
 | Android `concat` 런타임 | 계측 테스트가 AAC 파트 2개를 만들어 이어 붙인 뒤 디코드 — 길이 오차 0, 전 프레임 디코드 통과(§8 무손실 복사·pts 이어 붙임) |
 | 교차 셸 문구 통일(§7 규칙 10·11, §9 화면 원칙 1) | 네 셸의 사전을 하나로 맞춘 뒤 실제로 확인: Android 에뮬레이터와 iPhone 시뮬레이터의 녹음 화면이 같은 노드 값(`phone` · 사용 중인 워크플로우 이름만 · `IDLE`)과 같은 헤더 meta(`phone · <id8>`)를 보이고, 폰의 피커가 워크플로우 이름만(`회의` 선택됨·`메모`)을, 정지 뒤 제목 프롬프트가 `Recording title` + `Leave it empty to keep the timestamp name` + `People in the room`(모름·2·3·4·5·6+)을 보인다. RecMac 카탈로그에 없던 `People in the room`·`Unknown`·`6+`(한국어에서 영어로 새던 자리)까지 포함해 `CrossShellDictionaryTest`가 en·ko를 잠근다 |
+| Android·Windows 로컬 전사 엔진(2026-09-26) | opt-in 스모크 테스트(`LocalSpeechSmokeTest`, 셸마다 하나)를 macOS 호스트의 Windows 셸 JVM과 Android 에뮬레이터(arm64, 메모리 8 GB)에서 실행: 모델 약 1 GB 범위 다운로드·해시 확인(JVM 108초, 에뮬레이터 164초) → 17.9초 한국어 TTS 클립이 발화 3구간으로 전사(모델 로드 포함 JVM 3.7초, 에뮬레이터 5.1초) → 첫 구간 뒤에서 재개 → 첫 체크포인트에서 취소. 에뮬레이터 설정 화면에서 파일 하나를 지운 뒤 모델 다운로드 → 그 파일만 다시 받아 준비 완료 |
 | 워크플로우 내보내기/가져오기 — **폐기(2026-09-24)** | 설정에서 내보낸 `recly-workflows.json`을 다른 기기에서 가져오기 → 목록이 교체되고, 이 기기의 기본·시크릿 값은 그대로(파일에 없음). 구 스키마 파일 가져오기 → 마이그레이션되어 저장 |
 
 **보류 — 전부 하드웨어·계정 대기이지 코드 문제가 아니다**
@@ -2981,6 +3014,7 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | Windows 실캡처(loopback, `IAudioSessionManager2` 감지), MSI·SmartScreen, Credential Manager 비우기, `/revoke` 실호출, 시스템 고대비 감지 | **Windows PC가 없다.** 컴파일·단위 테스트는 CI(`windows-latest`)가, MSI 생성은 릴리스 태그의 CI(`windows-release.yml`)가, UI는 macOS 호스트의 패키지 실행이 대신한다 |
 | `NEEDS_SPACE` 기기 재현 | 실제로 꽉 찬 Google Drive를 만들지 못했다. 코어는 페이크 Transport로(`DriveQuotaTest`), 셸은 단위 테스트와 개발 플래그로 배너·배지만 확인 |
 | 연결 해제의 실제 실행 | 누르면 그 계정의 grant가 **모든 기기에서** 사라져(revoke는 Cloud 프로젝트 단위) 남은 실기 로그인 확인이 전부 막힌다. 다이얼로그·경고 문구·"녹음 중에는 확인 비활성"까지는 UI로 봤고, revoke → `core.disconnect` 경로는 코어·셸 단위 테스트로만 |
+| Android·Windows 로컬 전사의 실기기 발열·배터리·장문(30~120분)·정확도, 녹음부터 게시까지의 실기 흐름 | 실험용 Android 폰과 Windows PC가 없다. 에뮬레이터와 macOS 호스트의 속도는 실기기 성능이 아니고, 스모크 클립은 합성 음성이다 |
 | M7 실키 인수(전사 시나리오 1·2·4) | STT 실제 키가 필요하다. 가짜 키로 `AUTH_REJECTED` → "키를 확인하세요" → 편집기 진입까지는 확인 |
 | iPhone·macOS 실기 로그인, TestFlight, 스토어 등록·서명 | Apple Developer / Play 등록이 필요하다 |
 

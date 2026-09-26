@@ -8,6 +8,7 @@ import app.recly.android.R
 import app.recly.android.auth.AndroidTokenProvider
 import app.recly.android.auth.GoogleAuth
 import app.recly.android.auth.PlayAuthorizer
+import app.recly.android.transcribe.QwenSpeechEngine
 import app.recly.recording.platform.AndroidSecureStore
 import app.recly.recording.platform.SystemClock
 import app.recly.recording.platform.deviceId
@@ -20,6 +21,7 @@ import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
 import recly.core.ReclyCore
+import recly.core.drive.KtorTransport
 import recly.core.model.Platform
 import recly.core.platform.AndroidRuntime
 import recly.core.platform.CoreDeps
@@ -55,12 +57,14 @@ object CoreModule {
 
         val dataDir = context.filesDir.absolutePath.toPath() / "rec"
         FileSystem.SYSTEM.createDirectories(dataDir)
+        val transport = KtorTransport()
 
         val deps = CoreDeps(
             clock = clock,
             logger = logger,
             secureStore = secureStore,
             tokenProvider = tokens,
+            transport = transport,
             fileSystem = FileSystem.SYSTEM,
             audio = AndroidAudioTools(Dispatchers.IO),
             dataDir = dataDir,
@@ -75,6 +79,7 @@ object CoreModule {
                 if (locale.language == "zh") app.recly.android.settings.AppLanguage.effective(locale).tag
                 else locale.toLanguageTag()
             },
+            localTranscription = QwenSpeechEngine.make(context, transport),
         )
 
         val core = ReclyCore(deps, AndroidRuntime.driverFactory(context, "rec.db"))

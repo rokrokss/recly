@@ -41,6 +41,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
@@ -57,6 +58,7 @@ import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
+import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.Placeholder
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
@@ -312,6 +314,10 @@ private fun PlayerBar(
                 onScrub = { scrubSec = it },
                 onSeek = { player.seek(detail.audio, it) },
             )
+        } else if (detail.driveFetch == DriveFetch.FETCHING) {
+            // While the parts are coming back from Drive the row is already there, empty, so the bars
+            // arrive in place rather than the pane growing a row when they do.
+            WaveformPlaceholder()
         }
         if (player.failed) Text(strings[Str.PLAYER_ERROR], color = palette.danger)
         Row(
@@ -322,7 +328,7 @@ private fun PlayerBar(
             when {
                 // docs/03 ADR-017: where the clock is, because it is what the clock is instead of. No
                 // Play either — there is nothing whole to play until the parts are back.
-                detail.driveFetch == DriveFetch.FETCHING -> Text(
+                detail.driveFetch == DriveFetch.FETCHING -> LoadingText(
                     strings[Str.PLAYER_FETCHING],
                     style = mono.small,
                     color = palette.textMuted,
@@ -393,6 +399,20 @@ private fun PlayerBar(
                 )
             }
         }
+    }
+}
+
+/**
+ * The waveform row before there is a recording to draw in it: the same height and the same hairline
+ * across the middle that [Waveform] shows before its peaks are decoded, with nothing to point at.
+ */
+@Composable
+private fun WaveformPlaceholder() {
+    val grid = blueprint.grid
+    val hair = blueprint.line
+    Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
+        val line = hair.toPx()
+        drawRect(color = grid, topLeft = Offset(0f, (size.height - line) / 2), size = Size(size.width, line))
     }
 }
 

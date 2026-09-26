@@ -19,11 +19,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.recly.android.R
 import app.recly.android.core.text
 import app.recly.android.ui.component.*
+import app.recly.recording.RecorderService
+import app.recly.recording.RecorderState
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import recly.core.model.Language
 import recly.core.processing.*
 import java.util.Locale
+import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.transcribe.LocalEngineStatus
@@ -36,8 +39,12 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     val state by model.state.collectAsState()
     val draft = state.draft ?: return
     var pickingLanguage by remember { mutableStateOf(false) }
-    val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in draft.languages
+    // docs/05 "고정 처리 설정 도입": on this device that means Qwen3-ASR, which has its own language list.
+    val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
+    val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
+    var confirmingDownload by remember { mutableStateOf(false) }
+    val recorder by RecorderService.state.collectAsState()
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let { model.export(it) } }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importSettings) }
     // The same section heading as the rest of Settings (SettingsScreen `Section`).
@@ -47,6 +54,11 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
         BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
         BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null })
     }) { Text(name) } }
+    // A gigabyte on a metered connection is the user's to agree to; Wi-Fi needs no question.
+    if (confirmingDownload) BlueprintDialog(title = stringResource(R.string.processing_cellular_title), onDismissRequest = { confirmingDownload = false }, actions = {
+        BlueprintButton(stringResource(R.string.action_cancel), { confirmingDownload = false }, tone = ButtonTone.QUIET)
+        BlueprintButton(stringResource(R.string.processing_download), { confirmingDownload = false; model.prepare() }, tone = ButtonTone.PRIMARY)
+    }) { BlueprintDialogText(stringResource(R.string.processing_cellular_body)) }
     Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
         if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall)
         ProcessingField(R.string.processing_storage, draft.folder) { v -> model.edit { it.folder = v } }
@@ -59,12 +71,25 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             }
         }
         if (draft.mode == TranscriptionMode.LOCAL) {
-            when (state.local?.status) {
-                LocalEngineStatus.UNSUPPORTED -> Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall)
-                LocalEngineStatus.MODEL_REQUIRED -> EndButtons {
-                    BlueprintButton(stringResource(R.string.processing_prepare), { model.prepare() }, enabled = !state.busy)
+            // The model by name, as iPhone and Mac show Apple Speech; a product name, not translated.
+            if (state.localInstalled) ProcessingRow(stringResource(R.string.processing_speech_model), Qwen3Asr.DISPLAY_NAME)
+            when {
+                // A language the model lacks has its own line below; this one is for the device.
+                !state.localInstalled || (state.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
+                    Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall)
+                state.preparing -> LoadingText(stringResource(R.string.processing_preparing), MaterialTheme.typography.bodySmall, blueprint.textMuted)
+                state.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
+                    Text(stringResource(R.string.processing_model_download), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                    EndButtons {
+                        // Not while recording, as on iPhone: the download is for later, the recording is now.
+                        BlueprintButton(stringResource(R.string.processing_prepare), {
+                            if (model.metered()) confirmingDownload = true else model.prepare()
+                        }, enabled = !state.busy && recorder == RecorderState.Idle)
+                    }
                 }
-                else -> Unit
+            }
+            if (state.localInstalled) {
+                Text(stringResource(R.string.processing_local_no_speakers), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             }
         }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
@@ -107,7 +132,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             if (pickingLanguage) BlueprintDialog(title = stringResource(R.string.editor_language), onDismissRequest = { pickingLanguage = false }, actions = {
                 BlueprintButton(stringResource(R.string.action_close), { pickingLanguage = false }, tone = ButtonTone.QUIET)
             }) {
-                draft.languages.forEach { language -> BlueprintRadioRow(transcriptionLanguageLabel(language), draft.language == language, {
+                languages.forEach { language -> BlueprintRadioRow(transcriptionLanguageLabel(language), draft.language == language, {
                     model.edit { it.language = language }; pickingLanguage = false
                 }) }
             }
@@ -128,11 +153,11 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     }
 }
 
-/** The app language row's shape (label, quiet value, tap to choose) without a second inset. */
+/** The app language row's shape (label, quiet value, tap to choose) without a second inset; no tap when there is no choice. */
 @Composable
-private fun ProcessingRow(title: String, value: String, onClick: () -> Unit) {
+private fun ProcessingRow(title: String, value: String, onClick: (() -> Unit)? = null) {
     Row(
-        Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick).padding(vertical = Space.s),
+        Modifier.fillMaxWidth().then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier).padding(vertical = Space.s),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {

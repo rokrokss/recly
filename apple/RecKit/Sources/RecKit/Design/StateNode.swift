@@ -44,8 +44,8 @@ public struct StateNode: View {
                 .tracking(0.6)
                 .foregroundStyle(blueprint.palette.textMuted)
             HStack(spacing: Space.xs) {
-                if spec.busy, !blueprint.reduceMotion {
-                    NodeLoader(color: spec.valueColor ?? blueprint.palette.text)
+                if spec.busy {
+                    BlueprintLoader(color: spec.valueColor ?? blueprint.palette.text)
                 }
                 Text(verbatim: spec.value)
                     .font(blueprint.fonts.monoBodySmall)
@@ -68,34 +68,6 @@ public struct StateNode: View {
                 )
         }
         .accessibilityElement(children: .combine)
-    }
-}
-
-/// The one loader this design has: an 8pt square outline turning beside a value, for work that is
-/// running with no percentage to show for it.
-///
-/// docs/09 "모션": motion is a state signal. Straight edges, no rounding and no fade — the square is
-/// the same shape everything else on the screen is. With reduce motion on it is not drawn at all
-/// (the caller's check): the code beside it already says `UPLOADING`, which is the whole message.
-private struct NodeLoader: View {
-    /// One full turn, slow enough to read as "still working" rather than "hurry".
-    private static let turn: Double = 1.2
-
-    @Environment(\.blueprint) private var blueprint
-    @State private var angle: Double = 0
-    let color: Color
-
-    var body: some View {
-        Rectangle()
-            .strokeBorder(color, lineWidth: blueprint.line)
-            .frame(width: 8, height: 8)
-            .rotationEffect(.degrees(angle))
-            .onAppear {
-                withAnimation(.linear(duration: Self.turn).repeatForever(autoreverses: false)) {
-                    angle = 360
-                }
-            }
-            .accessibilityHidden(true)
     }
 }
 

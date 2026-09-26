@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s (بناء %2$d) · android %3$d</string>
     <string name="settings_about_device">الجهاز %1$s</string>
     <string name="settings_open_source">إشعارات المصادر المفتوحة</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">حذف «%1$s»؟</string>
     <string name="delete_local_only">الحذف من هذا الهاتف فقط</string>
     <string name="delete_with_drive">حذف مجلد Drive أيضًا</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">سجّل محليًا. اربط Drive للرفع.</string>
     <string name="drive_pending">الرفع قيد الانتظار</string>
     <string name="core_local_transcription_unavailable">النسخ المحلي غير متاح على هذا الجهاز. اختر طريقة أخرى.</string>
-    <string name="core_local_model_required">أعدّ نموذج الكلام في إعدادات النسخ.</string>
+    <string name="core_local_model_required">نزّل نموذج التعرّف على الكلام من إعدادات النسخ.</string>
     <string name="core_local_diarization_unavailable">هذا المحرك المحلي لا يدعم تحديد المتحدثين. عطّل الميزة أو اختر API خارجيًا.</string>
     <string name="processing_title">معالجة التسجيلات</string>
     <string name="processing_local">على الجهاز</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">مجلد التخزين</string>
     <string name="processing_transcription">النسخ النصي</string>
     <string name="processing_saved">تم حفظ الإعدادات</string>
-    <string name="processing_prepare">إعداد النموذج</string>
+    <string name="processing_prepare">تنزيل النموذج</string>
+    <string name="processing_preparing">جارٍ تنزيل النموذج…</string>
+    <string name="processing_model_download">للنسخ على هذا الجهاز، نزّل هذا النموذج مرة واحدة (حوالي 1 غيغابايت).</string>
+    <string name="processing_local_no_speakers">النسخ على الجهاز لا يميّز المتحدثين.</string>
+    <string name="processing_download">تنزيل</string>
+    <string name="processing_cellular_body">حجم النموذج حوالي 1 غيغابايت.</string>
+    <string name="processing_cellular_title">التنزيل باستخدام بيانات الجوال؟</string>
+    <string name="processing_speech_model">نموذج التعرّف على الكلام</string>
     <string name="processing_export">تصدير الإعدادات</string>
     <string name="processing_import">استيراد الإعدادات</string>
     <string name="processing_settings_file">ملف الإعدادات</string>

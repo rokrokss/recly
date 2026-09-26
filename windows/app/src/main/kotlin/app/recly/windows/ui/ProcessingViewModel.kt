@@ -6,6 +6,7 @@ import kotlinx.coroutines.*
 import recly.core.ReclyCore
 import recly.core.message.CoreMessage
 import recly.core.processing.*
+import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.installed
 
 /** Draft and import preview survive window dismissal. Only Save affects future captures. */
@@ -26,15 +27,37 @@ class ProcessingViewModel(
     var secretNames: List<String> by mutableStateOf(emptyList()); private set
     /** Whether this build ships an on-device engine; the panel hides `local` when it does not. */
     val localInstalled: Boolean = core.deps.localTranscription.installed
+    /** The engine's answer for the draft's language: whether it needs its model, or cannot run here. */
+    var local: LocalEngineInfo? by mutableStateOf(null); private set
+    var preparing by mutableStateOf(false); private set
     init { reload() }
-    fun edit(change: (ProcessingDraft) -> Unit) { draft = draft?.snapshot()?.apply(change); dirty = true; message = null }
+    fun edit(change: (ProcessingDraft) -> Unit) {
+        val language = draft?.language
+        draft = draft?.snapshot()?.apply(change); dirty = true; message = null
+        if (draft?.language != language) refreshLocal()
+    }
     fun reload() = scope.launch {
         runCatching {
             stored = core.initializeProcessing()
             secretNames = core.secrets.names()
             val settings = (stored as? ProcessingSettingsState.Ready)?.document?.settings ?: ProcessingSettings()
             draft = ProcessingDraft.from(settings); summary = settings.transcription; dirty = false; importing = false
+            refreshLocal()
         }.onFailure(::failed)
+    }
+    fun refreshLocal() = scope.launch {
+        val language = draft?.language ?: return@launch
+        runCatching { local = core.localEngineInfo(language.name.lowercase().replace('_', '-')) }.onFailure(::failed)
+    }
+    /** docs/05 "고정 처리 설정 도입": the model download, only ever from this button. Recordings waiting on it resume. */
+    fun prepare() = scope.launch {
+        val language = draft?.language ?: return@launch
+        if (busy) return@launch
+        busy = true; preparing = true; message = null
+        try {
+            local = core.prepareLocalEngine(language.name.lowercase().replace('_', '-'))
+            onSaved()
+        } catch (error: Exception) { failed(error) } finally { busy = false; preparing = false }
     }
     fun save() = scope.launch {
         val current = draft ?: return@launch

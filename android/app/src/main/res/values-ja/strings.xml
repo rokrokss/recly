@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s（ビルド %2$d）・android %3$d</string>
     <string name="settings_about_device">デバイス %1$s</string>
     <string name="settings_open_source">オープンソース表記</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">「%1$s」を削除しますか？</string>
     <string name="delete_local_only">このスマートフォンからのみ削除</string>
     <string name="delete_with_drive">Driveのフォルダも削除</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">ローカルに録音します。アップロードにはDriveに接続してください。</string>
     <string name="drive_pending">アップロード待ち</string>
     <string name="core_local_transcription_unavailable">このデバイスではローカル文字起こしを利用できません。別の方法を選択してください。</string>
-    <string name="core_local_model_required">文字起こしの設定で音声モデルを準備してください。</string>
+    <string name="core_local_model_required">文字起こし設定で音声認識モデルをダウンロードしてください。</string>
     <string name="core_local_diarization_unavailable">このローカルエンジンは話者識別に対応していません。無効にするか、外部APIを選択してください。</string>
     <string name="processing_title">録音の処理</string>
     <string name="processing_local">デバイス上</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">保存先フォルダ</string>
     <string name="processing_transcription">文字起こし</string>
     <string name="processing_saved">設定を保存しました</string>
-    <string name="processing_prepare">モデルを準備</string>
+    <string name="processing_prepare">モデルをダウンロード</string>
+    <string name="processing_preparing">モデルをダウンロード中…</string>
+    <string name="processing_model_download">このデバイスで文字起こしするには、このモデル（約1 GB）を一度ダウンロードする必要があります。</string>
+    <string name="processing_local_no_speakers">デバイス上の文字起こしは話者を区別しません。</string>
+    <string name="processing_download">ダウンロード</string>
+    <string name="processing_cellular_body">モデルは約1 GBです。</string>
+    <string name="processing_cellular_title">モバイルデータでダウンロードしますか？</string>
+    <string name="processing_speech_model">音声認識モデル</string>
     <string name="processing_export">設定を書き出す</string>
     <string name="processing_import">設定を読み込む</string>
     <string name="processing_settings_file">設定ファイル</string>

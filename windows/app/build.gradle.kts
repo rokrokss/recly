@@ -65,6 +65,17 @@ kotlin {
     sourceSets.main { kotlin.srcDir(generateOAuthConfig) }
 }
 
+/** sherpa-onnx's name for this host, which is the one its native jar is published under. */
+val sherpaNative: String = run {
+    val os = System.getProperty("os.name").lowercase()
+    val arm = System.getProperty("os.arch").let { it == "aarch64" || it == "arm64" }
+    when {
+        "win" in os -> if (arm) "win-arm64" else "win-x64"
+        "mac" in os -> if (arm) "osx-aarch64" else "osx-x64"
+        else -> if (arm) "linux-aarch64" else "linux-x64"
+    }
+}
+
 dependencies {
     implementation(project(":core"))
 
@@ -82,6 +93,10 @@ dependencies {
     // nothing reaches them (see `SecureStores`, `LaunchAtLogin`).
     implementation(libs.jna)
     implementation(libs.jna.platform)
+    // docs/05 "고정 처리 설정 도입": on-device transcription. The JVM API, and the native half for the host that
+    // builds the app — the MSI is built on Windows x64, this development machine is a Mac.
+    implementation(libs.sherpa.onnx.jvm)
+    runtimeOnly("com.github.k2-fsa.sherpa-onnx:sherpa-onnx-native-lib-$sherpaNative:${libs.versions.sherpaOnnx.get()}")
 
     testImplementation(kotlin("test"))
     testImplementation(libs.kotlinx.coroutines.test)
@@ -100,6 +115,13 @@ tasks.test {
         "recly.acceptance.dataDir",
         "recly.acceptance.authUrlFile",
         "recly.acceptance.authTimeoutSec",
+        // `transcribe/LocalSpeechSmokeTest`, skipped unless `recly.localSpeech=1` reaches the worker.
+        "recly.localSpeech",
+        "recly.localSpeech.audio",
+        "recly.localSpeech.dataDir",
+        "recly.localSpeech.prepare",
+        "recly.localSpeech.language",
+        "recly.localSpeech.expected",
     ).forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
 }
 
@@ -126,7 +148,8 @@ compose.desktop {
             // crash at startup rather than a build error. `java.sql` is SQLDelight's JDBC driver
             // (found the hard way: the packaged app died on `java.sql.DriverManager`); `java.naming`
             // and `jdk.crypto.ec` are what TLS needs for Drive; `jdk.unsupported` is JNA's.
-            modules("java.sql", "java.naming", "jdk.crypto.ec", "jdk.unsupported")
+            // `jdk.management` is the total-memory read that decides whether the on-device engine runs.
+            modules("java.sql", "java.naming", "jdk.crypto.ec", "jdk.unsupported", "jdk.management")
             packageName = "Recly"
             packageVersion = installerVersion
             vendor = "Recly"

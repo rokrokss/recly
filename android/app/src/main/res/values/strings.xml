@@ -191,7 +191,7 @@
     <string name="settings_about_app">recly %1$s (build %2$d) · android %3$d</string>
     <string name="settings_about_device">device %1$s</string>
     <string name="settings_open_source">Open-source notices</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
 
     <!-- docs/03 "앱에서 지우기": one recording at a time, and Drive is a separate answer whose
          default is "leave it" — the irreversible half is never the default one. -->
@@ -293,7 +293,7 @@
     <string name="drive_optional">Record locally. Connect Drive to upload.</string>
     <string name="drive_pending">Upload waiting</string>
     <string name="core_local_transcription_unavailable">Local transcription is unavailable on this device. Choose another transcription method.</string>
-    <string name="core_local_model_required">Prepare the speech model in transcription settings.</string>
+    <string name="core_local_model_required">Download the speech recognition model in transcription settings.</string>
     <string name="core_local_diarization_unavailable">This local engine does not support speaker identification. Turn it off or choose an external API.</string>
     <string name="processing_title">Recording processing</string>
     <string name="processing_local">On device</string>
@@ -302,7 +302,14 @@
     <string name="processing_storage">Storage folder</string>
     <string name="processing_transcription">Transcription</string>
     <string name="processing_saved">Settings saved</string>
-    <string name="processing_prepare">Prepare model</string>
+    <string name="processing_prepare">Download model</string>
+    <string name="processing_preparing">Downloading model…</string>
+    <string name="processing_model_download">To transcribe on this device, download this model once (about 1 GB).</string>
+    <string name="processing_local_no_speakers">On-device transcription does not separate speakers.</string>
+    <string name="processing_download">Download</string>
+    <string name="processing_cellular_body">The model is about 1 GB.</string>
+    <string name="processing_cellular_title">Download over mobile data?</string>
+    <string name="processing_speech_model">Speech recognition model</string>
     <string name="processing_export">Export settings</string>
     <string name="processing_import">Import settings</string>
     <string name="processing_settings_file">Settings file</string>

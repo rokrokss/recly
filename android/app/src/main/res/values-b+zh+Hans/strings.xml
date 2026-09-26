@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s（构建%2$d）·android %3$d</string>
     <string name="settings_about_device">设备%1$s</string>
     <string name="settings_open_source">开源声明</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">删除“%1$s”？</string>
     <string name="delete_local_only">仅从此手机删除</string>
     <string name="delete_with_drive">同时删除Drive文件夹</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">本地录音。连接Drive后即可上传。</string>
     <string name="drive_pending">等待上传</string>
     <string name="core_local_transcription_unavailable">此设备不支持本地转录，请选择其他转录方式。</string>
-    <string name="core_local_model_required">请在转录设置中准备语音模型。</string>
+    <string name="core_local_model_required">请在转录设置中下载语音识别模型。</string>
     <string name="core_local_diarization_unavailable">此本地引擎不支持说话人识别。请关闭该功能或选择外部API。</string>
     <string name="processing_title">录音处理</string>
     <string name="processing_local">设备本地</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">存储文件夹</string>
     <string name="processing_transcription">转录</string>
     <string name="processing_saved">设置已保存</string>
-    <string name="processing_prepare">准备模型</string>
+    <string name="processing_prepare">下载模型</string>
+    <string name="processing_preparing">正在下载模型…</string>
+    <string name="processing_model_download">要在此设备上转录，需要下载一次此模型（约 1 GB）。</string>
+    <string name="processing_local_no_speakers">设备本地转录不区分说话人。</string>
+    <string name="processing_download">下载</string>
+    <string name="processing_cellular_body">模型约 1 GB。</string>
+    <string name="processing_cellular_title">使用移动数据下载？</string>
+    <string name="processing_speech_model">语音识别模型</string>
     <string name="processing_export">导出设置</string>
     <string name="processing_import">导入设置</string>
     <string name="processing_settings_file">设置文件</string>

@@ -64,7 +64,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Capture(model, strings)
             Startup(model, strings)
             Data(model, strings)
-            model.processing?.let { ProcessingPanel(it, strings) }
+            model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
             About(model, strings)
         }
     }

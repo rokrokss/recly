@@ -154,6 +154,7 @@ public final class ProcessingSettingsModel: ObservableObject {
 }
 
 public struct ProcessingSettingsView: View {
+    @Environment(\.blueprint) private var blueprint
     @ObservedObject private var model: ProcessingSettingsModel
     private let preparationAllowed: Bool
     @Environment(\.locale) private var locale
@@ -182,12 +183,23 @@ public struct ProcessingSettingsView: View {
                     }
                 }
                 if draft.mode == .local {
+                    // The model by name, as the phone and Windows show theirs; a product name, not translated.
+                    if LocalSpeechEngine.available {
+                        SectionRow(title: loc("Speech recognition model")) {
+                            Text(verbatim: "Apple Speech")
+                                .font(blueprint.fonts.bodySmall)
+                                .foregroundStyle(blueprint.palette.textMuted)
+                        }
+                    }
                     if model.local?.status == .unsupported { SectionFootnote(CoreMessages.sentence(.localTranscriptionUnavailable)) }
                     if model.preparingModel {
-                        ProgressView(loc("Preparing speech model…"))
+                        LoadingText(text: loc("Downloading model…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, Space.m)
+                            .padding(.vertical, Space.s)
                     } else if model.local?.status == .modelRequired {
-                        SectionFootnote(loc("Download Apple’s speech model to transcribe on this device."))
-                        BlueprintButton(loc("Prepare model")) { Task { await model.prepare() } }
+                        SectionFootnote(loc("To transcribe on this device, download this model once."))
+                        BlueprintButton(loc("Download model")) { Task { await model.prepare() } }
                             .disabled(model.busy || !preparationAllowed)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }

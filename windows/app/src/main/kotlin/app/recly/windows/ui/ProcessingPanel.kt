@@ -14,14 +14,18 @@ import app.recly.windows.ui.theme.blueprint
 import recly.core.processing.*
 import java.util.Locale
 import recly.core.transcribe.SttProviders
+import recly.core.transcribe.LocalEngineStatus
+import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.model.Language
 import recly.core.workflow.*
 
 @Composable
-fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
+fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAllowed: Boolean = true) {
     val draft = model.draft ?: return
-    val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in draft.languages
+    // docs/05 "고정 처리 설정 도입": on this device that means Qwen3-ASR, which has its own language list.
+    val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
+    val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
     deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, SttProviders.displayName(name)], onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
@@ -41,7 +45,29 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
                 BlueprintChip(strings[mode.label()], draft.mode == mode, { model.edit { it.mode = mode } })
             }
         }
-        if (draft.mode == TranscriptionMode.LOCAL) Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall)
+        if (draft.mode == TranscriptionMode.LOCAL) {
+            // The model by name, as the phone and the Mac show theirs; a product name, not translated.
+            if (model.localInstalled) {
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+                    Text(strings[Str.PROCESSING_SPEECH_MODEL], style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                    Text(Qwen3Asr.DISPLAY_NAME, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
+                }
+            }
+            when {
+                // A language the model lacks has its own line below; this one is for the device.
+                !model.localInstalled || (model.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
+                    Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall)
+                model.preparing -> LoadingText(strings[Str.PROCESSING_PREPARING], MaterialTheme.typography.bodySmall, blueprint.textMuted)
+                model.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
+                    Text(strings[Str.PROCESSING_MODEL_DOWNLOAD], style = MaterialTheme.typography.bodySmall)
+                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+                        // Not while recording, as on the Mac: the download is for later, the recording is now.
+                        BlueprintButton(strings[Str.PROCESSING_PREPARE], { model.prepare() }, enabled = !model.busy && preparationAllowed)
+                    }
+                }
+            }
+            if (model.localInstalled) Text(strings[Str.PROCESSING_LOCAL_NO_SPEAKERS], style = MaterialTheme.typography.bodySmall)
+        }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
             BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to SttProviders.displayName(it) }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
@@ -64,7 +90,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings) {
             }
         }
         if (draft.mode != TranscriptionMode.OFF) {
-            BlueprintDropdown(strings[Str.FIELD_LANGUAGE], draft.languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
+            BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
             if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
         }
         model.message?.let { Text(it.text(strings)) }

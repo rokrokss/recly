@@ -8,3 +8,6 @@
 # Ktor and Okio reference optional classes that are not on an Android classpath.
 -dontwarn org.slf4j.**
 -dontwarn java.lang.management.**
+
+# sherpa-onnx's JNI reads its config classes' fields and builds its result classes by name.
+-keep class com.k2fsa.sherpa.onnx.** { *; }

@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s（組建%2$d）·android %3$d</string>
     <string name="settings_about_device">裝置%1$s</string>
     <string name="settings_open_source">開源聲明</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">刪除「%1$s」？</string>
     <string name="delete_local_only">僅從此手機刪除</string>
     <string name="delete_with_drive">同時刪除Drive資料夾</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">本機錄音。連接Drive後即可上傳。</string>
     <string name="drive_pending">等待上傳</string>
     <string name="core_local_transcription_unavailable">此裝置不支援本機轉錄，請選擇其他轉錄方式。</string>
-    <string name="core_local_model_required">請在轉錄設定中準備語音模型。</string>
+    <string name="core_local_model_required">請在轉錄設定中下載語音辨識模型。</string>
     <string name="core_local_diarization_unavailable">此本機引擎不支援說話者識別。請關閉該功能或選擇外部API。</string>
     <string name="processing_title">錄音處理</string>
     <string name="processing_local">裝置本機</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">儲存資料夾</string>
     <string name="processing_transcription">轉錄</string>
     <string name="processing_saved">設定已儲存</string>
-    <string name="processing_prepare">準備模型</string>
+    <string name="processing_prepare">下載模型</string>
+    <string name="processing_preparing">正在下載模型…</string>
+    <string name="processing_model_download">若要在此裝置上轉錄，需要下載一次此模型（約 1 GB）。</string>
+    <string name="processing_local_no_speakers">裝置本機轉錄不區分說話者。</string>
+    <string name="processing_download">下載</string>
+    <string name="processing_cellular_body">模型約 1 GB。</string>
+    <string name="processing_cellular_title">要使用行動數據下載嗎？</string>
+    <string name="processing_speech_model">語音辨識模型</string>
     <string name="processing_export">匯出設定</string>
     <string name="processing_import">匯入設定</string>
     <string name="processing_settings_file">設定檔案</string>

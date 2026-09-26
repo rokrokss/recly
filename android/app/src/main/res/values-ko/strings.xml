@@ -159,7 +159,7 @@
     <string name="settings_about_app">recly %1$s (build %2$d) · android %3$d</string>
     <string name="settings_about_device">device %1$s</string>
     <string name="settings_open_source">오픈소스 고지</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
 
     <!-- docs/03 "앱에서 지우기" -->
     <string name="delete_title">‘%1$s’을(를) 삭제할까요?</string>
@@ -246,7 +246,7 @@
     <string name="drive_optional">기기에 녹음하고, Drive 연결 시 업로드합니다.</string>
     <string name="drive_pending">업로드 대기</string>
     <string name="core_local_transcription_unavailable">이 기기에서는 로컬 전사를 사용할 수 없습니다. 전사 방식을 변경해 주세요.</string>
-    <string name="core_local_model_required">전사 설정에서 음성 모델을 준비해 주세요.</string>
+    <string name="core_local_model_required">전사 설정에서 음성 인식 모델을 다운로드해 주세요.</string>
     <string name="core_local_diarization_unavailable">이 로컬 엔진은 화자 구분을 지원하지 않습니다. 화자 구분을 끄거나 외부 API를 선택해 주세요.</string>
     <string name="processing_title">녹음 처리</string>
     <string name="processing_local">로컬</string>
@@ -255,7 +255,14 @@
     <string name="processing_storage">저장 폴더</string>
     <string name="processing_transcription">전사</string>
     <string name="processing_saved">설정을 저장했습니다</string>
-    <string name="processing_prepare">모델 준비</string>
+    <string name="processing_prepare">모델 다운로드</string>
+    <string name="processing_preparing">모델 다운로드 중…</string>
+    <string name="processing_model_download">이 기기에서 전사하려면 이 모델(약 1GB)을 한 번 다운로드해야 합니다.</string>
+    <string name="processing_local_no_speakers">기기 내 전사에서는 화자를 구분하지 않습니다.</string>
+    <string name="processing_download">다운로드</string>
+    <string name="processing_cellular_body">모델은 약 1GB입니다.</string>
+    <string name="processing_cellular_title">모바일 데이터로 다운로드할까요?</string>
+    <string name="processing_speech_model">음성 인식 모델</string>
     <string name="processing_export">설정 내보내기</string>
     <string name="processing_import">설정 가져오기</string>
     <string name="processing_settings_file">설정 파일</string>

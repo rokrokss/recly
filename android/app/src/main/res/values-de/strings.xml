@@ -137,7 +137,7 @@
     <string name="settings_about_app">recly %1$s (Build %2$d) · android %3$d</string>
     <string name="settings_about_device">Gerät %1$s</string>
     <string name="settings_open_source">Open-Source-Hinweise</string>
-    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor — Apache-2.0</string>
+    <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
     <string name="delete_title">„%1$s“ löschen?</string>
     <string name="delete_local_only">Nur auf diesem Telefon löschen</string>
     <string name="delete_with_drive">Auch den Drive-Ordner löschen</string>
@@ -214,7 +214,7 @@
     <string name="drive_optional">Lokal aufnehmen. Zum Hochladen Drive verbinden.</string>
     <string name="drive_pending">Upload wartet</string>
     <string name="core_local_transcription_unavailable">Lokale Transkription ist auf diesem Gerät nicht verfügbar. Wählen Sie eine andere Methode.</string>
-    <string name="core_local_model_required">Sprachmodell in den Transkriptionseinstellungen vorbereiten.</string>
+    <string name="core_local_model_required">Laden Sie das Spracherkennungsmodell in den Transkriptionseinstellungen herunter.</string>
     <string name="core_local_diarization_unavailable">Diese lokale Engine unterstützt keine Sprechererkennung. Deaktivieren Sie sie oder wählen Sie eine externe API.</string>
     <string name="processing_title">Aufnahmeverarbeitung</string>
     <string name="processing_local">Auf dem Gerät</string>
@@ -223,7 +223,14 @@
     <string name="processing_storage">Speicherordner</string>
     <string name="processing_transcription">Transkription</string>
     <string name="processing_saved">Einstellungen gespeichert</string>
-    <string name="processing_prepare">Modell vorbereiten</string>
+    <string name="processing_prepare">Modell herunterladen</string>
+    <string name="processing_preparing">Modell wird heruntergeladen…</string>
+    <string name="processing_model_download">Um auf diesem Gerät zu transkribieren, laden Sie dieses Modell einmal herunter (ca. 1 GB).</string>
+    <string name="processing_local_no_speakers">Die Transkription auf dem Gerät unterscheidet keine Sprecher.</string>
+    <string name="processing_download">Herunterladen</string>
+    <string name="processing_cellular_body">Das Modell ist ca. 1 GB groß.</string>
+    <string name="processing_cellular_title">Über mobile Daten herunterladen?</string>
+    <string name="processing_speech_model">Spracherkennungsmodell</string>
     <string name="processing_export">Einstellungen exportieren</string>
     <string name="processing_import">Einstellungen importieren</string>
     <string name="processing_settings_file">Einstellungsdatei</string>

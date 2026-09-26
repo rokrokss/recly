@@ -7,6 +7,7 @@ import app.recly.windows.auth.GoogleAuth
 import app.recly.windows.auth.JvmTokenProvider
 import app.recly.windows.auth.TokenEndpoint
 import app.recly.windows.i18n.Localization
+import app.recly.windows.transcribe.QwenSpeechEngine
 import java.util.UUID
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -71,6 +72,7 @@ object AppModule {
             ),
             io = io,
             locale = localization.language.tag.ifEmpty { Host.language() },
+            localTranscription = QwenSpeechEngine.make(dataDir, transport, fileSystem, io),
         )
 
         val core = ReclyCore(deps, JvmDriverFactory(dataDir / databaseName))

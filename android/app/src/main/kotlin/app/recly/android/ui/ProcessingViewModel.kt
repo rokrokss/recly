@@ -1,6 +1,7 @@
 package app.recly.android.ui
 
 import android.app.Application
+import android.net.ConnectivityManager
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -27,6 +28,7 @@ data class ProcessingUiState(
     val importing: Boolean = false,
     val message: UiMessage? = null,
     val local: LocalEngineInfo? = null,
+    val preparing: Boolean = false,
     /** False when this build ships no on-device engine, so `local` is not offered as a choice. */
     val localInstalled: Boolean = false,
     val secretNames: List<String> = emptyList(),
@@ -41,7 +43,9 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     fun edit(change: (ProcessingDraft) -> Unit) {
+        val language = state.value.draft?.language
         _state.update { value -> value.copy(draft = value.draft?.snapshot()?.apply(change), dirty = true, message = null) }
+        if (state.value.draft?.language != language) viewModelScope.launch { runCatching { refreshLocal() }.onFailure { failed(it) } }
     }
 
     fun reload() = viewModelScope.launch {
@@ -92,12 +96,18 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         }.onFailure { failed(it) }
     }
 
+    /** Whether the download would go over a connection the user pays by the byte for. */
+    fun metered(): Boolean = getApplication<Application>().getSystemService(ConnectivityManager::class.java).isActiveNetworkMetered
+
+    /** docs/05 "고정 처리 설정 도입": the model download, only ever from this button. Recordings waiting on it resume. */
     fun prepare() = viewModelScope.launch {
-        _state.update { it.copy(busy = true) }
+        if (state.value.busy) return@launch
+        _state.update { it.copy(busy = true, preparing = true, message = null) }
         runCatching {
             val language = state.value.draft?.language ?: Language.KO
-            val info = core().deps.localTranscription.prepare(language.name.lowercase().replace('_', '-'))
-            _state.update { it.copy(busy = false, local = info) }
+            val info = core().prepareLocalEngine(language.name.lowercase().replace('_', '-'))
+            _state.update { it.copy(busy = false, preparing = false, local = info) }
+            WorkScheduler(getApplication()).runNow(expedited = false)
         }.onFailure { failed(it) }
     }
     fun deleteKey(name: String) = viewModelScope.launch {
@@ -139,5 +149,5 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         _state.update { it.copy(local = info) }
     }
     private suspend fun core() = CoreModule.get(getApplication()).core
-    private fun failed(error: Throwable) { _state.update { it.copy(busy = false, message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty())) } }
+    private fun failed(error: Throwable) { _state.update { it.copy(busy = false, preparing = false, message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty())) } }
 }
