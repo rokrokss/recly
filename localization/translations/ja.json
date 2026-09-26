@@ -395,5 +395,6 @@
   "Waiting for speech model": "音声モデル待ち",
   "{0} of {1}": "{1}中 {0}",
   "Recordings you make appear here.": "録音するとここに表示されます。",
-  "The model is {0}.": "モデルは{0}です。"
+  "The model is {0}.": "モデルは{0}です。",
+  "Loading waveform…": "波形を読み込み中…"
 }

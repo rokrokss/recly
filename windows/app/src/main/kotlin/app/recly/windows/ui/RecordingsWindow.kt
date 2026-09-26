@@ -133,7 +133,14 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
             if (detail == null) {
                 Placeholder(strings[Str.DETAIL_PICK])
             } else {
-                Detail(detail, player, { model.recording }, { model.playbackBlocked }, model::askToRename, model::reloadDetailResults, strings)
+                Detail(
+                    detail, player, { model.recording }, { model.playbackBlocked }, model::askToRename, model::reloadDetailResults,
+                    waveforms = WaveformKeeping(
+                        kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
+                        keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
+                    ),
+                    strings = strings,
+                )
             }
         }
     }
@@ -253,6 +260,8 @@ private fun Detail(
     /** docs/03: the name is the one thing on this page the user can change, so it is changed here. */
     onRename: () -> Unit,
     onReload: () -> Unit,
+    /** Where this recording's waveform is kept between opens ([WaveformPeaks.FILE]). */
+    waveforms: WaveformKeeping,
     strings: Strings,
 ) {
     ScreenHeader(
@@ -274,7 +283,7 @@ private fun Detail(
     )
     // A take still being written to has nothing whole to play, and nothing to say about it either.
     if (!detail.loading && !detail.writing) {
-        PlayerBar(detail, player, recording, blocked, strings)
+        PlayerBar(detail, player, recording, blocked, waveforms, strings)
         HairLine()
     }
     when {
@@ -312,6 +321,7 @@ private fun PlayerBar(
     player: RecordingPlayer,
     recording: () -> Boolean,
     blocked: () -> Boolean,
+    waveforms: WaveformKeeping,
     strings: Strings,
 ) {
     val palette = blueprint
@@ -324,14 +334,23 @@ private fun PlayerBar(
     // on a part the core is about to remove, and one that [RecordingPlayer.stop] — which the gate's
     // own effect above ran before the delete — had already been past. So none starts while it is
     // up, and the effect runs again on the way down, when there is something left to draw.
+    //
+    // The waveform the core kept for it comes first: when it still stands for these parts it is
+    // drawn at once and nothing is decoded — opening a recording used to decode every part of it,
+    // every time. A decode that runs is kept for the next open.
     LaunchedEffect(detail.audio, blocked()) {
         player.stop()
-        if (!blocked()) player.prepare(detail.audio)
+        if (!blocked() && !detail.audio.isEmpty) {
+            player.prepare(detail.audio, waveforms.kept(detail.audio), waveforms.keep)
+        }
     }
     val positionSec = scrubSec ?: player.positionSec
     // Having come back from Drive, the bars grow in once where the loader stood.
     var fetched by remember(detail.recordingId) { mutableStateOf(false) }
     LaunchedEffect(detail.driveFetch) { if (detail.driveFetch == DriveFetch.FETCHING) fetched = true }
+    // And having been decoded here, they grow in too — shorter, in place of the loader.
+    var decoded by remember(detail.audio) { mutableStateOf(false) }
+    LaunchedEffect(player.waveformDecoding) { if (player.waveformDecoding) decoded = true }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -342,7 +361,11 @@ private fun PlayerBar(
         // Whenever there is something to draw, and not only when it can be played: Play is what a
         // recording in progress or an undecided fetch gates, while a scrub before either is settled
         // is no more than where the next press will start.
-        if (!detail.audio.isEmpty) {
+        if (showsWaveformLoader(detail.audio, player.waveform, player.waveformFailed)) {
+            // The parts are here and their shape is not yet: the loader, never a flat line — a
+            // flat line reads as a silent recording. Play and the clock below do not wait for it.
+            WaveformLoader(strings[Str.PLAYER_WAVEFORM_LOADING])
+        } else if (!detail.audio.isEmpty) {
             Waveform(
                 audio = detail.audio,
                 peaks = player.waveform,
@@ -350,7 +373,8 @@ private fun PlayerBar(
                 label = strings[Str.PLAYER_POSITION],
                 onScrub = { scrubSec = it },
                 onSeek = { player.seek(detail.audio, it) },
-                growIn = fetched,
+                growIn = fetched || decoded,
+                growMs = if (fetched) GROW_MS else GROW_DECODED_MS,
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
             // While the parts are coming back from Drive the row is already there, loading, so the
@@ -437,14 +461,18 @@ private fun PlayerBar(
 }
 
 /**
- * docs/09 "모션": the waveform row while the recording comes back from Drive, with no words — short
- * ghost ticks where the bars will be, and a hard-edged band of ten that steps across them left to
- * right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing or recording
- * waveform does, and it leaves nothing filled behind it the way a playhead does. It always runs:
- * Windows tells a Compose Desktop app nothing about reduce motion (the shared loader's note).
+ * docs/09 "모션": the waveform row while the recording comes back from Drive, or while its parts are
+ * decoded into a shape, with no words — short ghost ticks where the bars will be, and a hard-edged
+ * band of ten that steps across them left to right, one bar a frame at 30 fps. It does not rise and
+ * fall or flow the way a playing or recording waveform does, and it leaves nothing filled behind it
+ * the way a playhead does. It always runs: Windows tells a Compose Desktop app nothing about reduce
+ * motion (the shared loader's note).
+ *
+ * [label] is what a screen reader hears for the row; the Drive fetch gives none, because the
+ * progress under it already says the same thing.
  */
 @Composable
-private fun WaveformLoader() {
+private fun WaveformLoader(label: String? = null) {
     val palette = blueprint
     var frame by remember { mutableIntStateOf(0) }
     LaunchedEffect(Unit) {
@@ -453,7 +481,7 @@ private fun WaveformLoader() {
             frame++
         }
     }
-    Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
+    Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics { label?.let { contentDescription = it } }) {
         val step = WaveformStep.toPx()
         val count = (size.width / step).toInt()
         val head = frame % (count + LOADER_BAND)
@@ -520,6 +548,8 @@ private const val LOADER_FRAME_MS = 33L
 private const val LOADER_TICK = 0.3f
 /** The bars' rise when a recording arrives from Drive: 750 ms in all, the last bar starting at 60%. */
 private const val GROW_MS = 750
+/** The same rise after a decode on this PC: short, because nothing travelled for it. */
+private const val GROW_DECODED_MS = 300
 private const val GROW_SPREAD = 0.6f
 
 /**
@@ -548,6 +578,7 @@ private fun Waveform(
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
     growIn: Boolean = false,
+    growMs: Int = GROW_MS,
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -556,7 +587,7 @@ private fun Waveform(
     // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks.
     val reveal = remember(audio) { Animatable(if (growIn) 0f else 1f) }
     LaunchedEffect(audio, peaks.isNotEmpty()) {
-        if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(GROW_MS, easing = LinearEasing))
+        if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
     }
     Canvas(
         modifier = Modifier
@@ -676,3 +707,20 @@ internal fun TranscriptAvailability.message(): Str = when (this) {
     TranscriptAvailability.EMPTY -> Str.DETAIL_TRANSCRIPT_EMPTY
     else -> Str.DETAIL_PENDING
 }
+
+/**
+ * docs/09 "모션": the waveform row is the loader while the parts on show have no shape yet and none
+ * failed to decode — never a flat line, which reads as a silent recording. A decode that failed
+ * leaves the baseline, which is then the truth: there is no shape to wait for.
+ */
+internal fun showsWaveformLoader(audio: RecordingPlaylist.Selection, peaks: FloatArray, failed: Boolean): Boolean =
+    !audio.isEmpty && peaks.isEmpty() && !failed
+
+/**
+ * The core's keeping of one recording's waveform, as the detail uses it: what was kept, when it
+ * still stands for the parts on show, and where a fresh decode goes.
+ */
+class WaveformKeeping(
+    val kept: suspend (RecordingPlaylist.Selection) -> FloatArray?,
+    val keep: (FloatArray) -> Unit,
+)

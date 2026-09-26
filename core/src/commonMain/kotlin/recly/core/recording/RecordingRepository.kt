@@ -746,6 +746,33 @@ class RecordingRepository(
         path
     }
 
+    /**
+     * The peaks a shell decoded for this recording before ([WaveformPeaks]), or null when there are
+     * none, the file is from another version, or the recording is gone. The shell checks the count
+     * against the parts it would decode and decodes again when they disagree.
+     */
+    @Throws(Throwable::class)
+    suspend fun waveform(recordingId: String): List<Float>? = locked {
+        val record = record(recordingId) ?: return@locked null
+        val file = record.dir / WaveformPeaks.FILE
+        if (!deps.fileSystem.exists(file)) return@locked null
+        WaveformPeaks.decode(deps.fileSystem.read(file) { readByteArray() })
+    }
+
+    /**
+     * Keeps [peaks] beside the recording's parts. Written whole and moved into place, under the lock
+     * [delete] takes, so a recording deleted meanwhile gets no file.
+     */
+    @Throws(Throwable::class)
+    suspend fun saveWaveform(recordingId: String, peaks: List<Float>): Unit = locked {
+        val record = record(recordingId) ?: return@locked
+        val file = record.dir / WaveformPeaks.FILE
+        val temp = record.dir / "${WaveformPeaks.FILE}.tmp"
+        deps.fileSystem.createDirectories(record.dir)
+        deps.fileSystem.write(temp) { write(WaveformPeaks.encode(peaks)) }
+        deps.fileSystem.atomicMove(temp, file)
+    }
+
     private suspend fun <T> locked(body: () -> T): T = withContext(deps.io) { mutex.withLock { body() } }
 
     private fun record(id: String): RecordingRecord? =

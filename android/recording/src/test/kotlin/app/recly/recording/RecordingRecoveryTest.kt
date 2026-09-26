@@ -19,6 +19,7 @@ import recly.core.model.Part
 import recly.core.model.RecordingStatus
 import recly.core.model.Track
 import recly.core.recording.MetaWriter
+import recly.core.recording.WaveformPeaks
 
 /**
  * What the next process finds. docs/03 promises a recording is recoverable up to its last
@@ -91,6 +92,29 @@ class RecordingRecoveryTest {
         assertEquals(902.0, recovered.durationSec)
         assertFalse(fs.exists(dir / file(3)))
         assertTrue("rec.recovered" in logger.events)
+    }
+
+    /**
+     * The waveform the shell keeps beside the parts (`WaveformPeaks.FILE`, and its temporary name
+     * while it is written) is not a part: it neither counts as audio nor gets set aside.
+     */
+    @Test
+    fun `a kept waveform beside the parts is neither a part nor a reason to drop the recording`() = runBlocking {
+        core.recordings.create(meta, dir)
+        write(1, 8_000)
+        fs.write(dir / WaveformPeaks.FILE) { write(ByteArray(12)) }
+        fs.write(dir / "${WaveformPeaks.FILE}.tmp") { write(ByteArray(3)) }
+
+        assertEquals(1, recovery.reconcile())
+
+        val recovered = core.recordings.get(meta.recordingId)!!.meta
+        assertEquals(RecordingStatus.FINALIZED, recovered.status)
+        assertEquals(listOf(1), recovered.parts.map { it.part })
+        assertTrue(fs.exists(dir / WaveformPeaks.FILE))
+        assertTrue(fs.exists(dir / "${WaveformPeaks.FILE}.tmp"))
+        assertFalse("rec.part.corrupt" in logger.events)
+        // Finalized and queued: the next pass has nothing left to do, waveform or not.
+        assertEquals(0, recovery.reconcile())
     }
 
     @Test

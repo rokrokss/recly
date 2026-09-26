@@ -128,6 +128,7 @@
     <string name="player_pause">Pause</string>
     <string name="player_no_audio">Kein Audio auf diesem Gerät</string>
     <string name="player_fetching">Abruf aus Drive…</string>
+    <string name="player_waveform_loading">Wellenform wird geladen…</string>
     <string name="player_fetch_failed">Abruf aus Drive fehlgeschlagen</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Warten auf Transkript; %1$d Min. vergangen</string>

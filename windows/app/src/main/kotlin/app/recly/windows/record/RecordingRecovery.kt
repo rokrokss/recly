@@ -10,6 +10,7 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
+import recly.core.recording.WaveformPeaks
 
 /**
  * docs/03 "복구", at the app level because on Windows the app is not the process that writes the
@@ -166,6 +167,8 @@ class RecordingRecovery(private val core: ReclyCore) {
                 name.endsWith(PartMarker.SUFFIX) -> Unit
                 name == meta -> Unit
                 name in registered -> Unit
+                // The kept waveform, whole or mid-write: the recording's own, never an unknown segment.
+                name == WaveformPeaks.FILE || name == "${WaveformPeaks.FILE}.tmp" -> Unit
 
                 name.endsWith(".m4a") -> {
                     // No `part_done` ever arrived for it, so nothing knows its duration or its hash

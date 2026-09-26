@@ -148,6 +148,7 @@
     <string name="player_pause">일시정지</string>
     <string name="player_no_audio">이 기기에 오디오가 없습니다</string>
     <string name="player_fetching">Drive에서 받는 중…</string>
+    <string name="player_waveform_loading">파형 불러오는 중…</string>
     <string name="player_fetch_failed">Drive에서 받지 못했습니다</string>
     <string name="player_position">위치</string>
     <string name="job_waiting_transcription">전사 결과를 기다리는 중 — %1$d분 경과</string>

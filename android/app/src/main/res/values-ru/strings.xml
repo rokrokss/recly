@@ -128,6 +128,7 @@
     <string name="player_pause">Пауза</string>
     <string name="player_no_audio">На этом устройстве нет аудио</string>
     <string name="player_fetching">Получение из Drive…</string>
+    <string name="player_waveform_loading">Загрузка формы волны…</string>
     <string name="player_fetch_failed">Не удалось получить из Drive</string>
     <string name="player_position">Позиция</string>
     <string name="job_waiting_transcription">Ожидание расшифровки; прошло %1$d мин</string>

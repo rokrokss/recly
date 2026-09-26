@@ -395,5 +395,6 @@
   "Waiting for speech model": "في انتظار نموذج الكلام",
   "{0} of {1}": "{0} من {1}",
   "Recordings you make appear here.": "ستظهر هنا التسجيلات التي تجريها.",
-  "The model is {0}.": "حجم النموذج {0}."
+  "The model is {0}.": "حجم النموذج {0}.",
+  "Loading waveform…": "جارٍ تحميل شكل الموجة…"
 }

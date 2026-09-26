@@ -156,10 +156,16 @@ data class DetailState(
     val audio: RecordingPlaylist.Selection = RecordingPlaylist.Selection.EMPTY,
     /**
      * docs/09 화면 원칙 2: the recording as a shape, one peak per
-     * [RecordingWaveform.WINDOW_SEC] window of `meta.json`'s own timeline — empty until the decode
-     * is through, and empty for good if it could not be.
+     * [recly.core.recording.WaveformPeaks.WINDOW_SEC] window of `meta.json`'s own timeline — empty
+     * until the kept peaks are read or the decode is through, and empty for good if it could not be.
      */
     val waveform: FloatArray = FloatArray(0),
+    /**
+     * The peaks for [audio] are on their way — read from the kept file, or decoded when there is
+     * none — and the row shows the waveform loader rather than a flat line a silent recording
+     * would be.
+     */
+    val waveformLoading: Boolean = false,
     /** A take still being written to has nothing whole to play yet, so the page offers nothing. */
     val writing: Boolean = false,
     /**
@@ -377,7 +383,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         core.recordings.observeAudio(recordingId).collectLatest { record ->
             val audio = record?.let { local(core, it) } ?: RecordingPlaylist.Selection.EMPTY
             updateDetail(recordingId) {
-                it.copy(loading = false, audio = audio, waveform = FloatArray(0),
+                // The same parts keep the shape already drawn of them; other parts wait for theirs.
+                val same = it.audio == audio && it.waveform.isNotEmpty()
+                it.copy(loading = false, audio = audio, waveform = if (same) it.waveform else FloatArray(0),
+                    waveformLoading = !same && !audio.isEmpty,
                     writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING)
             }
             fetchFromDrive(core, recordingId, record, audio)
@@ -392,21 +401,32 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
      * the job [closeDetail] and the next [openDetail] cancel: reading a whole recording for a bar
      * nobody is looking at is work the next page would be waiting behind.
      *
+     * The peaks the core kept for this recording come first, and only a recording without them —
+     * or with them for other parts — is decoded, and then kept ([RecordingWaveform.load]).
+     *
      * A decode that could not be made leaves the bar with its baseline and nothing to say — the
      * shape is what the clock beside it is drawn on, not something the page is about.
      */
     private suspend fun decodeWaveform(core: ReclyCore, recordingId: String) {
-        val audio = _state.value.detail?.takeIf { it.recordingId == recordingId }?.audio ?: return
-        if (audio.isEmpty) return
+        val detail = _state.value.detail?.takeIf { it.recordingId == recordingId } ?: return
+        val audio = detail.audio
+        val expected = RecordingWaveform.windows(audio.durations)
+        if (audio.isEmpty || (detail.waveform.isNotEmpty() && detail.waveform.size == expected)) return
         val peaks = try {
-            RecordingWaveform.peaks(audio)
+            RecordingWaveform.load(
+                expected = expected,
+                cached = { core.recordings.waveform(recordingId) },
+                decode = { RecordingWaveform.peaks(audio) },
+                save = { core.recordings.saveWaveform(recordingId, it.asList()) },
+            )
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
             core.deps.logger.log(Logger.Level.ERROR, "detail.waveform.failed", error = e)
+            updateDetail(recordingId) { it.copy(waveformLoading = false) }
             return
         }
-        updateDetail(recordingId) { it.copy(waveform = peaks) }
+        updateDetail(recordingId) { it.copy(waveform = peaks, waveformLoading = false) }
     }
 
     /** The parts of this recording that are still on this phone. */
@@ -433,6 +453,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             return
         }
         val parts = RecordingPlaylist.played(record.meta.parts)
+        // Every part is here: there is nothing to fetch, and no reason to wait on Drive to say so.
+        if (local.paths.size >= parts.size) {
+            updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.IDLE) }
+            return
+        }
         val uploaded = driveHasEveryPart(core, recordingId)
         if (!RecordingPlaylist.fetchesFromDrive(local.paths.size, parts.size, uploaded)) {
             updateDetail(recordingId) { it.copy(driveFetch = DriveFetch.IDLE) }

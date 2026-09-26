@@ -395,5 +395,6 @@
   "Waiting for speech model": "Wartet auf Sprachmodell",
   "{0} of {1}": "{0} von {1}",
   "Recordings you make appear here.": "Ihre Aufnahmen erscheinen hier.",
-  "The model is {0}.": "Das Modell ist {0} groß."
+  "The model is {0}.": "Das Modell ist {0} groß.",
+  "Loading waveform…": "Wellenform wird geladen…"
 }

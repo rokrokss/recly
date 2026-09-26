@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import okio.Path
 import okio.Path.Companion.toPath
@@ -216,6 +217,80 @@ class RecordingWaveformTest {
         assertContentEquals(floatArrayOf(0.5f, 0.5f), peaks)
     }
 
+    // --- The kept waveform (waveform.v1) -------------------------------------------------------------
+
+    /** Each part is its meta duration in windows, rounded up — the count a kept waveform must have. */
+    @Test
+    fun `a selection is as many windows as its parts' durations`() {
+        assertEquals(4, RecordingWaveform.windows(RecordingPlaylist.Selection(listOf(dir / "a", dir / "b"), listOf(0.5, 0.3))))
+        assertEquals(0, RecordingWaveform.windows(RecordingPlaylist.Selection.EMPTY))
+    }
+
+    /** Opening a recording used to decode every part of it, every time: what was kept is drawn at once. */
+    @Test
+    fun `a kept waveform that stands for the parts is drawn at once and nothing is decoded`() {
+        val spawns = CopyOnWriteArrayList<Path>()
+        val decoded = CopyOnWriteArrayList<FloatArray>()
+        val player = RecordingPlayer(spawn = { path, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
+        val kept = floatArrayOf(0.25f, 0.75f)
+
+        player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5)), kept) { decoded += it }
+
+        assertContentEquals(kept, player.waveform)
+        assertFalse(player.waveformDecoding)
+        Thread.sleep(50)
+        assertTrue(spawns.isEmpty(), "a kept waveform was decoded again")
+        assertTrue(decoded.isEmpty())
+    }
+
+    /** One of another length stands for other parts (a fetch came back with more): decoded, and kept. */
+    @Test
+    fun `a kept waveform of another length is decoded again and the decode is kept`() {
+        val spawns = CopyOnWriteArrayList<Path>()
+        val decoded = CopyOnWriteArrayList<FloatArray>()
+        val player = RecordingPlayer(spawn = { path, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
+
+        player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5)), floatArrayOf(0.1f, 0.2f, 0.3f)) { decoded += it }
+
+        val kept = await("the decode was not kept") { decoded.firstOrNull() }
+        assertContentEquals(floatArrayOf(0.5f, 0.5f), kept)
+        assertContentEquals(floatArrayOf(0.5f, 0.5f), player.waveform)
+        assertEquals(1, spawns.size)
+        assertFalse(player.waveformDecoding)
+    }
+
+    /** While the parts decode there are no peaks and no failure: the bar draws its loader, never a flat line. */
+    @Test
+    fun `while the parts decode the bar has its loader, not a baseline`() {
+        val release = java.util.concurrent.CountDownLatch(1)
+        val player = RecordingPlayer(spawn = { _, _ -> PcmProcess(pcm(List(8_000) { 16_384 }), gate = release) })
+        val audio = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5))
+
+        player.prepare(audio)
+
+        await("no decode started") { player.waveformDecoding.takeIf { it } }
+        assertTrue(showsWaveformLoader(audio, player.waveform, player.waveformFailed))
+        release.countDown()
+        await("nothing was decoded") { player.waveform.takeIf { it.isNotEmpty() } }
+        assertFalse(showsWaveformLoader(audio, player.waveform, player.waveformFailed))
+        assertFalse(player.waveformDecoding)
+    }
+
+    /** A decode that could not read a part is kept nowhere, and the bar draws its baseline rather than loading for ever. */
+    @Test
+    fun `a decode that fails is not kept and does not load for ever`() {
+        val decoded = CopyOnWriteArrayList<FloatArray>()
+        val player = RecordingPlayer(spawn = { _, _ -> PcmProcess(ByteArray(0), exit = 1) })
+        val audio = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5))
+
+        player.prepare(audio) { decoded += it }
+
+        await("the failure was not seen") { player.waveformFailed.takeIf { it } }
+        assertFalse(showsWaveformLoader(audio, player.waveform, player.waveformFailed))
+        assertFalse(player.waveformDecoding)
+        assertTrue(decoded.isEmpty())
+    }
+
     /** The one thing a test may wait for: a thread the player started getting as far as its work. */
     private fun <T : Any> await(what: String, read: () -> T?): T {
         val deadline = System.nanoTime() + AWAIT_NANOS
@@ -261,10 +336,29 @@ private class Dribble(private val bytes: ByteArray, private val at: Int) : Input
     }
 }
 
-/** An ffmpeg that has already written its part and exited, which is what a decode of one is. */
-private class PcmProcess(pcm: ByteArray, private val exit: Int = 0) : Process() {
+/**
+ * An ffmpeg that has already written its part and exited, which is what a decode of one is — or,
+ * with a [gate], one still working until the test lets it finish.
+ */
+private class PcmProcess(
+    pcm: ByteArray,
+    private val exit: Int = 0,
+    private val gate: java.util.concurrent.CountDownLatch? = null,
+) : Process() {
 
-    private val stdout = ByteArrayInputStream(pcm)
+    private val stdout: InputStream = object : InputStream() {
+        private val bytes = ByteArrayInputStream(pcm)
+
+        override fun read(): Int {
+            gate?.await()
+            return bytes.read()
+        }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int {
+            gate?.await()
+            return bytes.read(b, off, len)
+        }
+    }
 
     override fun getOutputStream(): OutputStream = OutputStream.nullOutputStream()
 

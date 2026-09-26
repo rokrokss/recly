@@ -20,8 +20,13 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// docs/09 화면 원칙 2: the shape of [audio], one peak per 0.25 s window, for the bar to draw a
     /// playhead across. Filled at the very end of [load] — after the trip to Drive, which is what
     /// settles which parts there are to draw — and left empty by a decode that failed. The bar
-    /// draws its baseline until then, and a recording is never held up by its picture.
+    /// shows the waveform loader until then ([waveformPending]), and a recording is never held up
+    /// by its picture: playback does not need it.
     @Published public private(set) var waveform: [Float] = []
+    /// True from the moment there is audio to draw until its peaks are settled — read from the
+    /// saved ones, decoded, or given up on. The bar shows the waveform loader meanwhile, never the
+    /// flat baseline, which would read as a silent recording.
+    @Published public private(set) var waveformPending = true
     /// A take still being written to has nothing whole to play yet, so the detail offers nothing.
     @Published public private(set) var writing = false
     /// Whether *any* recording on this device is being written right now — which is not the same
@@ -86,6 +91,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public func load() async {
         loading = true
         driveFetch = .deciding
+        waveformPending = true
         do {
             await reloadResults(repair: false)
             audio = localAudio(record: try await core.recordings.get(id: recordingId))
@@ -104,18 +110,40 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     private func finishAudioLoad() async {
+        waveformPending = true
         await fetchFromDrive()
-        guard !writing, !Task.isCancelled else { waveform = []; return }
+        guard !writing, !Task.isCancelled else {
+            waveform = []
+            waveformPending = false
+            return
+        }
         // docs/09 화면 원칙 2: the picture last, and inside the load rather than beside it. Last
         // because the trip to Drive is what settles which parts there are, and a decode of the
         // local prefix would be a picture of a different recording than the one that plays. Inside
         // because the `.task` that runs this load is also what cancels it: the Mac swaps the model
         // behind one view, and reading a whole recording for a bar nobody is looking at any more is
         // work the next pick would be waiting behind.
+        //
+        // The saved peaks first (`WaveformPeaks`): when they cover exactly this audio, there is
+        // nothing to decode and the bar is drawn at once.
+        if let saved = RecordingWaveform.cached(
+            (try? await core.recordings.waveform(recordingId: recordingId))?.map(\.floatValue),
+            for: audio
+        ) {
+            guard !Task.isCancelled else { return }
+            waveform = saved
+            waveformPending = false
+            return
+        }
         waveform = []
         let peaks = try? await RecordingWaveform.peaks(for: audio)
         guard !Task.isCancelled else { return }
         waveform = peaks ?? []
+        waveformPending = false
+        // Kept for the next open, beside the parts: nothing decodes this recording again.
+        if let peaks, !peaks.isEmpty {
+            try? await core.recordings.saveWaveform(recordingId: recordingId, peaks: peaks.map { KotlinFloat(float: $0) })
+        }
     }
 
     public func reloadResults(repair: Bool = true) async {
@@ -447,12 +475,18 @@ public struct RecordingDetailView: View {
     /// playhead is, and the button and the recording's own clock under that.
     private var playerBar: some View {
         VStack(alignment: .leading, spacing: Space.s) {
-            if model.hasAudio {
+            if model.hasAudio, !(model.waveformPending && model.waveform.isEmpty) {
                 waveform
+            } else if model.hasAudio {
+                // docs/09 "모션": the peaks are still being read or decoded — the same loader the
+                // Drive fetch shows, and not the baseline, which would be a silent recording.
+                // Playback does not need the peaks, so the rest of the bar is as it always is.
+                waveformLoader(label: loc("Loading waveform…"))
             } else if model.driveFetch == .fetching {
                 // While the parts are coming back from Drive the row is already there, loading, so
-                // the bars arrive in place rather than the bar growing a row when they do.
-                waveformLoader
+                // the bars arrive in place rather than the bar growing a row when they do. The
+                // fetch's own progress carries what a screen reader hears.
+                waveformLoader(label: nil)
             }
             controls
             #if os(iOS)
@@ -539,12 +573,14 @@ public struct RecordingDetailView: View {
         #endif
     }
 
-    /// docs/09 "모션": the waveform row while the recording comes back from Drive, with no words —
-    /// short ghost ticks where the bars will be, and a hard-edged band of ten that steps across them
-    /// left to right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing
-    /// or recording waveform does, and it leaves nothing filled behind it the way a playhead does.
-    /// With reduce motion the band stays off and the bar says it in words ([controls]).
-    private var waveformLoader: some View {
+    /// docs/09 "모션": the waveform row while the recording comes back from Drive, or while its peaks
+    /// are decoded, with no words — short ghost ticks where the bars will be, and a hard-edged band
+    /// of ten that steps across them left to right, one bar a frame at 30 fps. It does not rise and
+    /// fall or flow the way a playing or recording waveform does, and it leaves nothing filled
+    /// behind it the way a playhead does. With reduce motion the band stays off: for a Drive fetch
+    /// the bar says it in words ([controls]); for a decode the still ticks are all there is.
+    /// [label] is what a screen reader hears — nil where the fetch's progress already says it.
+    private func waveformLoader(label: String?) -> some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30, paused: blueprint.reduceMotion)) { timeline in
             Canvas { context, size in
                 let count = Int(size.width / Waveform.step)
@@ -561,7 +597,9 @@ public struct RecordingDetailView: View {
             }
         }
         .frame(height: minTouch)
-        .accessibilityHidden(true)
+        .accessibilityElement()
+        .accessibilityLabel(Text(verbatim: label ?? ""))
+        .accessibilityHidden(label == nil)
     }
 
     /// docs/09: how far the trip to Drive is, in the place and the shape of the Play button it

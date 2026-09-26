@@ -44,6 +44,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the Record tab's first-run card.
     @Published private(set) var modelDownload: ModelDownload?
+    /// docs/09 화면 원칙 2: the waveform of a recording this phone finalized or received from the
+    /// watch, decoded in the background and kept, so its detail opens with the bars already there.
+    private var waveforms: WaveformPrecompute?
     /// "Not now" on the first-run card, remembered on this phone so the card does not come back.
     @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
         didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
@@ -280,6 +283,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             download.onFinished = { [weak self] in self?.runner?.jobsDue() }
             await download.refresh()
             modelDownload = download
+            let waveforms = WaveformPrecompute(core: bridge.core)
+            waveforms.capturing = state != .idle
+            self.waveforms = waveforms
             let processing = ProcessingSettingsModel(core: bridge.core, download: download)
             await processing.reload()
             processing.onSaved = { [weak self] in
@@ -494,6 +500,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
         case .finalized(let outcome):
             note = "Waiting"
+            waveforms?.enqueue(recordingId: outcome.recordingId)
             logger.info(
                 """
                 shell.recording.stop id=\(outcome.recordingId, privacy: .public) \
@@ -622,6 +629,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         let wasRecording = isRecording
         state = next
         modelDownload?.capturing = next != .idle
+        waveforms?.capturing = next != .idle
         if isRecording, !wasRecording {
             capturedProcessingKey = processing?.summaryKey
             capturedProcessingProvider = processing?.providerSummary
@@ -756,7 +764,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func openWatchSession(core: ReclyCore_) {
         guard WCSession.isSupported() else { return }
         let receiver = WatchReceiver(
-            core: CoreWatchTransfer(core: core) { [weak self] in
+            core: CoreWatchTransfer(core: core, received: { [weak self] recordingId in
+                // Received whole from the watch: its waveform, like a recording made here.
+                await MainActor.run { self?.waveforms?.enqueue(recordingId: recordingId) }
+            }) { [weak self] in
                 await MainActor.run {
                     // The same two triggers a stop of the phone's own recording fires.
                     self?.runner?.jobsDue()

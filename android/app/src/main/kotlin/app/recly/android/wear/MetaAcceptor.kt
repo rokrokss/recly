@@ -1,6 +1,7 @@
 package app.recly.android.wear
 
 import app.recly.android.work.JobScheduler
+import app.recly.android.work.WaveformPrecompute
 import app.recly.datalayer.TransferPath
 import app.recly.datalayer.WearJson
 import kotlin.coroutines.cancellation.CancellationException
@@ -25,6 +26,9 @@ interface MetaFacade {
 
     /** Wakes the executor — the same path the phone recorder's own stop uses (docs/11 A5 (a)). */
     suspend fun onJobsDue()
+
+    /** Queues the received recording's waveform for decoding in the background; returns at once. */
+    fun precomputeWaveform(recordingId: String)
 
     suspend fun log(level: Logger.Level, event: String, fields: Map<String, Any?>, error: Throwable? = null)
 }
@@ -110,6 +114,8 @@ class MetaAcceptor(
             "transfer.enqueued",
             mapOf("recordingId" to path.recordingId, "enqueue" to enqueued::class.simpleName),
         )
+        // Received whole: the first open of it on this phone draws its waveform at once.
+        core.precomputeWaveform(path.recordingId)
     }
 
     /** Every ack names the id the *path* carried: it is the only id both sides agreed on. */
@@ -144,6 +150,8 @@ class CoreMetaFacade(
         withContext(core.deps.io) { core.enqueue(recordingId) }
 
     override suspend fun onJobsDue() = scheduler.onJobsDue()
+
+    override fun precomputeWaveform(recordingId: String) = WaveformPrecompute.request(core, recordingId)
 
     override suspend fun log(
         level: Logger.Level,

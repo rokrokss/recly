@@ -352,6 +352,9 @@ enum class Str {
     PROCESSING_DOWNLOAD,
     PROCESSING_MODEL_CANCEL,
 
+    /** The detail's waveform row while its parts are decoded into a shape — what a reader hears. */
+    PLAYER_WAVEFORM_LOADING,
+
     CORE_STALE,
     ;
 

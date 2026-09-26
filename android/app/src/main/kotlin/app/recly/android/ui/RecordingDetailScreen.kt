@@ -262,9 +262,14 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
         var fetched by remember(detail.recordingId) { mutableStateOf(false) }
         LaunchedEffect(detail.driveFetch) { if (detail.driveFetch == DriveFetch.FETCHING) fetched = true }
         val waveform: @Composable () -> Unit = {
-            if (detail.audio.isEmpty) WaveformLoader()
-            else Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
-                onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) }, growIn = fetched)
+            when (waveformSlot(detail)) {
+                WaveformSlot.FETCHING -> WaveformLoader()
+                // The peaks are being read or decoded: the loader, and never a flat line that
+                // would read as a silent recording. Play does not need them and stays as it is.
+                WaveformSlot.LOADING -> WaveformLoader(label = stringResource(R.string.player_waveform_loading))
+                WaveformSlot.WAVEFORM -> Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
+                    onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) }, growIn = fetched)
+            }
         }
         if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
@@ -399,15 +404,35 @@ internal fun Waveform(
     }
 }
 
+/** What the player bar's waveform row holds (see [PlayerBar]). */
+internal enum class WaveformSlot {
+    /** No part is here yet — the trip to Drive is under way; the fetch's progress speaks for it. */
+    FETCHING,
+
+    /** The parts are here and their peaks are on the way. */
+    LOADING,
+
+    WAVEFORM,
+}
+
+internal fun waveformSlot(detail: DetailState): WaveformSlot = when {
+    detail.audio.isEmpty -> WaveformSlot.FETCHING
+    detail.waveformLoading -> WaveformSlot.LOADING
+    else -> WaveformSlot.WAVEFORM
+}
+
 /**
- * docs/09 "모션": the waveform row while the recording comes back from Drive, with no words — short
- * ghost ticks where the bars will be, and a hard-edged band of ten that steps across them left to
- * right, one bar a frame at 30 fps. It does not rise and fall or flow the way a playing or recording
- * waveform does, and it leaves nothing filled behind it the way a playhead does. With reduce motion
- * the band stays off and the bar says it in words ([PlayerControls]).
+ * docs/09 "모션": the waveform row while the recording comes back from Drive, or while its peaks are
+ * read or decoded — short ghost ticks where the bars will be, and a hard-edged band of ten that
+ * steps across them left to right, one bar a frame at 30 fps. It does not rise and fall or flow the
+ * way a playing or recording waveform does, and it leaves nothing filled behind it the way a
+ * playhead does. With reduce motion the band stays off and the ticks stand still.
+ *
+ * [label] is what a screen reader hears; null for the Drive fetch, whose progress beside it says it
+ * ([PlayerControls]).
  */
 @Composable
-private fun WaveformLoader() {
+private fun WaveformLoader(label: String? = null) {
     val palette = blueprint
     val reduce = LocalReduceMotion.current
     var frame by remember { mutableIntStateOf(0) }
@@ -417,7 +442,7 @@ private fun WaveformLoader() {
             frame++
         }
     }
-    Canvas(Modifier.fillMaxWidth().height(MinTouch).clearAndSetSemantics {}) {
+    Canvas(Modifier.fillMaxWidth().height(MinTouch).testTag("waveform-loader").clearAndSetSemantics { label?.let { contentDescription = it } }) {
         val step = WaveformStep.toPx()
         val count = (size.width / step).toInt()
         val head = if (reduce) -1 else frame % (count + LOADER_BAND)

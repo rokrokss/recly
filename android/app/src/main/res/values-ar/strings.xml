@@ -128,6 +128,7 @@
     <string name="player_pause">إيقاف مؤقت</string>
     <string name="player_no_audio">لا يوجد صوت على هذا الجهاز</string>
     <string name="player_fetching">جارٍ الجلب من Drive…</string>
+    <string name="player_waveform_loading">جارٍ تحميل شكل الموجة…</string>
     <string name="player_fetch_failed">تعذّر الجلب من Drive</string>
     <string name="player_position">الموضع</string>
     <string name="job_waiting_transcription">بانتظار نتيجة النسخ؛ مضت %1$d دقيقة</string>

@@ -395,5 +395,6 @@
   "Waiting for speech model": "स्पीच मॉडल की प्रतीक्षा",
   "{0} of {1}": "{1} में से {0}",
   "Recordings you make appear here.": "आपकी रिकॉर्डिंग यहाँ दिखेंगी।",
-  "The model is {0}.": "मॉडल का आकार {0} है।"
+  "The model is {0}.": "मॉडल का आकार {0} है।",
+  "Loading waveform…": "वेवफ़ॉर्म लोड हो रहा है…"
 }

@@ -278,9 +278,16 @@ final class CoreWatchTransfer: WatchTransferCore {
     private let core: ReclyCore_
     /// `RecordingModel`'s executor triggers, as one call.
     private let jobsDue: @Sendable () async -> Void
+    /// A watch recording has arrived whole and been queued.
+    private let received: @Sendable (String) async -> Void
 
-    init(core: ReclyCore_, jobsDue: @escaping @Sendable () async -> Void) {
+    init(
+        core: ReclyCore_,
+        received: @escaping @Sendable (String) async -> Void,
+        jobsDue: @escaping @Sendable () async -> Void
+    ) {
         self.core = core
+        self.received = received
         self.jobsDue = jobsDue
     }
 
@@ -307,6 +314,7 @@ final class CoreWatchTransfer: WatchTransferCore {
 
     func enqueue(recordingId: String) async throws {
         _ = try await core.enqueue(recordingId: recordingId)
+        await received(recordingId)
     }
 
     func onJobsDue() async {

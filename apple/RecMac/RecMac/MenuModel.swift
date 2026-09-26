@@ -47,6 +47,9 @@ final class MenuModel: ObservableObject {
     /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the popover's first-run card.
     @Published private(set) var modelDownload: ModelDownload?
+    /// docs/09 화면 원칙 2: the waveform of a recording this Mac finalized, decoded in the background
+    /// and kept, so the Details window opens it with the bars already there.
+    private var waveforms: WaveformPrecompute?
     /// "Not now" on the first-run card, remembered on this Mac so the card does not come back.
     @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
         didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
@@ -236,6 +239,9 @@ final class MenuModel: ObservableObject {
             download.onFinished = { [weak self] in self?.runner?.jobsDue() }
             await download.refresh()
             modelDownload = download
+            let waveforms = WaveformPrecompute(core: bridge.core)
+            waveforms.capturing = !isIdle
+            self.waveforms = waveforms
             let processing = ProcessingSettingsModel(core: bridge.core, download: download)
             await processing.reload()
             processing.onSaved = { [weak self] in
@@ -521,6 +527,7 @@ final class MenuModel: ObservableObject {
                 // docs/12 "실행기" (a): the job exists now, so a pass runs immediately rather than
                 // waiting for the five-minute timer.
                 runner?.jobsDue()
+                waveforms?.enqueue(recordingId: outcome.recordingId)
                 note = "Waiting"
                 logger.info(
                     """
@@ -544,6 +551,7 @@ final class MenuModel: ObservableObject {
         let wasRecording = isRecording
         state = next
         modelDownload?.capturing = next != .idle
+        waveforms?.capturing = next != .idle
         if isRecording, !wasRecording {
             capturedProcessingKey = processing?.summaryKey
             capturedProcessingProvider = processing?.providerSummary

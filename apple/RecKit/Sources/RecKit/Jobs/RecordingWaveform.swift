@@ -1,5 +1,6 @@
 import AVFoundation
 import Foundation
+import ReclyCore
 
 /// docs/09 화면 원칙 2: the shape of the recording under the player bar's clock — what the detail
 /// draws a playhead across, and what a drag on it seeks through.
@@ -9,9 +10,23 @@ import Foundation
 /// decode that has to open every part. What the view holds between them is one `[Float]` of peaks
 /// on the recording's own timeline, 0…1, one per [windowSec] window.
 enum RecordingWaveform {
-    /// The default window: 0.25 s. Finer would be more windows
-    /// than a bar can be drawn for on any screen this runs on.
-    static let windowSec: Double = 0.25
+    /// The core's window (`WaveformPeaks.WINDOW_SEC`, 0.25 s) — the one the saved peaks are in.
+    /// Finer would be more windows than a bar can be drawn for on any screen this runs on.
+    static let windowSec: Double = WaveformPeaks.shared.WINDOW_SEC
+
+    /// How many windows [peaks] makes of a selection: each part `durationSec / windowSec`, rounded
+    /// up — the count it pads or truncates every part to.
+    static func windowCount(for selection: RecordingPlaylist.Selection, windowSec: Double = windowSec) -> Int {
+        selection.durations.reduce(0) { $0 + Int(($1 / windowSec).rounded(.up)) }
+    }
+
+    /// The saved peaks, when they are exactly the ones a decode of [selection] would make — the same
+    /// count of windows; otherwise nil, and the caller decodes (the parts changed, or the file is
+    /// from before they did).
+    static func cached(_ saved: [Float]?, for selection: RecordingPlaylist.Selection) -> [Float]? {
+        guard let saved, !saved.isEmpty, saved.count == windowCount(for: selection) else { return nil }
+        return saved
+    }
 
     /// The peaks resampled to exactly the number of bars there is room for, and normalised so the
     /// loudest one fills the row. A recording that was quiet throughout is still drawn as a shape

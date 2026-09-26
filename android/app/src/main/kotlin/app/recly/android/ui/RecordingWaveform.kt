@@ -9,10 +9,13 @@ import kotlin.coroutines.coroutineContext
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.roundToInt
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okio.Path
+import recly.core.recording.WaveformPeaks
 
 /**
  * docs/09 화면 원칙 2: the shape of the recording under the player bar's clock — what the detail
@@ -21,15 +24,49 @@ import okio.Path
  *
  * [bins] and [Windows] are the arithmetic the drawing is, and can be checked without a file or a
  * screen; [peaks] is the decode that has to open every part. What the page holds between them is
- * one `FloatArray` of peaks on the recording's own timeline, 0…1, one per [WINDOW_SEC] window.
+ * one `FloatArray` of peaks on the recording's own timeline, 0…1, one per
+ * [WaveformPeaks.WINDOW_SEC] window — and what the core keeps of it beside the parts
+ * ([WaveformPeaks.FILE]), so the decode happens once per recording and not once per open ([load]).
  */
 object RecordingWaveform {
 
     /**
-     * The default window: 0.25 s. Finer would be more windows
-     * than a bar can be drawn for on any screen this runs on.
+     * The number of windows [peaks] makes of a selection: each part's own share, rounded up, as
+     * [fit] cuts it. A kept waveform of any other length was made of other parts.
      */
-    const val WINDOW_SEC = 0.25
+    fun windows(durations: List<Double>, windowSec: Double = WaveformPeaks.WINDOW_SEC): Int =
+        durations.sumOf { ceil(it / windowSec).toInt().coerceAtLeast(0) }
+
+    /**
+     * The peaks of one selection: the kept ones when there are exactly [expected] of them, and
+     * otherwise a [decode] — whose result is kept for the next time. Reading or writing the kept
+     * file never costs the picture: a read that fails is a decode, and a write that fails leaves the
+     * next open to decode again.
+     */
+    suspend fun load(
+        expected: Int,
+        cached: suspend () -> List<Float>?,
+        decode: suspend () -> FloatArray,
+        save: suspend (FloatArray) -> Unit,
+    ): FloatArray {
+        val kept = try {
+            cached()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+        if (kept != null && kept.size == expected) return kept.toFloatArray()
+        val peaks = decode()
+        try {
+            save(peaks)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // The picture is drawn either way; the next open decodes again.
+        }
+        return peaks
+    }
 
     /**
      * The peaks resampled to exactly the number of bars there is room for, and normalised so the
@@ -59,7 +96,7 @@ object RecordingWaveform {
 
     /**
      * The samples of one part counted into windows, across whatever chunks the decoder hands them
-     * over in: a window is [WINDOW_SEC] of the part and not of a buffer. Pure, and the half of the
+     * over in: a window is [WaveformPeaks.WINDOW_SEC] of the part and not of a buffer. Pure, and the half of the
      * decode worth checking — where the cut falls is arithmetic, and `MediaCodec` is not something
      * a unit test has.
      *
@@ -105,7 +142,7 @@ object RecordingWaveform {
      * codec produced is not counted on, because the seconds the clock and the transcript below are
      * on are `meta.json`'s.
      */
-    fun fit(part: FloatArray, durationSec: Double, windowSec: Double = WINDOW_SEC): FloatArray {
+    fun fit(part: FloatArray, durationSec: Double, windowSec: Double = WaveformPeaks.WINDOW_SEC): FloatArray {
         val windows = ceil(durationSec / windowSec).toInt().coerceAtLeast(0)
         return FloatArray(windows) { part.getOrElse(it) { 0f } }
     }
@@ -122,11 +159,15 @@ object RecordingWaveform {
      * A part that could not be decoded throws rather than shortening the timeline: half a shape
      * under a whole clock would put the recording at the wrong seconds, and the bar has a baseline
      * to draw instead.
+     *
+     * [dispatcher] is where the decode loop runs — the background precompute hands it a
+     * low-priority thread of its own.
      */
     suspend fun peaks(
         selection: RecordingPlaylist.Selection,
-        windowSec: Double = WINDOW_SEC,
-    ): FloatArray = withContext(Dispatchers.IO) {
+        windowSec: Double = WaveformPeaks.WINDOW_SEC,
+        dispatcher: CoroutineDispatcher = Dispatchers.IO,
+    ): FloatArray = withContext(dispatcher) {
         val peaks = ArrayList<Float>()
         selection.paths.forEachIndexed { index, path ->
             fit(decode(path, windowSec), selection.durations[index], windowSec).forEach { peaks += it }

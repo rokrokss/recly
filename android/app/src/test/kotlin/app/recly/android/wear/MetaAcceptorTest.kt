@@ -67,6 +67,10 @@ class MetaAcceptorTest {
             failWake?.let { throw it }
         }
 
+        override fun precomputeWaveform(recordingId: String) {
+            ops += "waveform"
+        }
+
         override suspend fun log(
             level: Logger.Level,
             event: String,
@@ -94,7 +98,8 @@ class MetaAcceptorTest {
 
         MetaAcceptor(core, ack).accept(path, meta(ID))
 
-        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack"), ops)
+        // The waveform is queued last, after the ack: nothing the watch waits on waits on it.
+        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack", "waveform"), ops)
         assertEquals(listOf("""{"recordingId":"$ID","ok":true}"""), acks)
         assertEquals(ID, core.enqueueArgs)
     }
@@ -163,7 +168,7 @@ class MetaAcceptorTest {
 
         MetaAcceptor(core, ack).accept(path, meta(ID))
 
-        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack"), ops)
+        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack", "waveform"), ops)
         assertEquals(listOf("""{"recordingId":"$ID","ok":true}"""), acks)
         assertEquals(listOf(Logger.Level.WARN to "transfer.enqueued"), logs)
     }
@@ -174,7 +179,7 @@ class MetaAcceptorTest {
 
         MetaAcceptor(core, ack).accept(path, meta(ID))
 
-        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack"), ops)
+        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack", "waveform"), ops)
         assertTrue(acks.single().contains(""""ok":true"""))
         assertEquals(listOf(Logger.Level.WARN to "transfer.enqueued"), logs)
     }
@@ -185,7 +190,7 @@ class MetaAcceptorTest {
 
         MetaAcceptor(core, ack).accept(path, meta(ID))
 
-        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack"), ops)
+        assertEquals(listOf("acceptMeta", "enqueue", "onJobsDue", "ack", "waveform"), ops)
         assertEquals(listOf("""{"recordingId":"$ID","ok":true}"""), acks)
         assertEquals(listOf(Logger.Level.INFO to "transfer.enqueued"), logs)
     }

@@ -492,6 +492,14 @@ class CrossShellDictionaryTest {
                 reckit = "Cancel download",
             ),
             Line(
+                what = "the waveform row while its peaks are decoded",
+                en = "Loading waveform…",
+                ko = "파형 불러오는 중…",
+                android = "player_waveform_loading",
+                windows = "player.waveform.loading",
+                reckit = "Loading waveform…",
+            ),
+            Line(
                 what = "an empty list's second line",
                 en = "Recordings you make appear here.",
                 ko = "녹음하면 여기에 표시됩니다.",

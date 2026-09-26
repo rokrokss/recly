@@ -128,6 +128,7 @@
     <string name="player_pause">रोकें</string>
     <string name="player_no_audio">इस डिवाइस पर ऑडियो नहीं है</string>
     <string name="player_fetching">Drive से प्राप्त हो रहा है…</string>
+    <string name="player_waveform_loading">वेवफ़ॉर्म लोड हो रहा है…</string>
     <string name="player_fetch_failed">Drive से प्राप्त नहीं हो सका</string>
     <string name="player_position">स्थिति</string>
     <string name="job_waiting_transcription">ट्रांसक्रिप्शन परिणाम की प्रतीक्षा; %1$d मिनट बीते</string>

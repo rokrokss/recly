@@ -16,6 +16,7 @@ import okio.Path
 import recly.core.model.Part
 import recly.core.model.Track
 import recly.core.platform.Logger
+import recly.core.recording.WaveformPeaks
 
 /**
  * docs/08 "결과 파일": which of the files beside `meta.json` the detail plays back, and in what
@@ -193,15 +194,18 @@ class PlaybackGate {
  *
  * [bins] is the arithmetic the drawing is, and can be checked without a file or a screen; [peaks]
  * is the decode that has to open every part. What the bar holds between them is one `FloatArray` of
- * peaks on the recording's own timeline, 0…1, one per [WINDOW_SEC] window.
+ * peaks on the recording's own timeline, 0…1, one per [WaveformPeaks.WINDOW_SEC] window — the core's
+ * own window, because the core keeps them ([WaveformPeaks.FILE]) and every shell reads that file.
  */
 object RecordingWaveform {
 
     /**
-     * The default window: 0.25 s, the tick the clock already moves in. Finer would be more windows
-     * than a bar can be drawn for on any screen this runs on.
+     * How many windows [peaks] makes of [selection]: each part `durationSec / windowSec`, rounded
+     * up, summed — the count a kept waveform has to have to stand for this selection, and the one
+     * the decode pads or truncates every part to.
      */
-    const val WINDOW_SEC = 0.25
+    fun windows(selection: RecordingPlaylist.Selection, windowSec: Double = WaveformPeaks.WINDOW_SEC): Int =
+        selection.durations.sumOf { ceil(it / windowSec).toInt() }
 
     /**
      * The peaks resampled to exactly the number of bars there is room for, and normalised so the
@@ -231,7 +235,7 @@ object RecordingWaveform {
 
     /**
      * The parts of one selection decoded end to end, as the loudest sample in each [windowSec]
-     * window — with the player's own ffmpeg ([RecordingPlayer]'s `spawn`, from the start of each
+     * window — with the player's own ffmpeg ([RecordingPlayer.decoder], from the start of each
      * part), because the JVM cannot decode AAC and this is the decoder that is already here.
      *
      * The windows are counted against the durations `meta.json` recorded and not against what
@@ -252,7 +256,7 @@ object RecordingWaveform {
         spawn: (Path, Double) -> Process,
         cancelled: () -> Boolean = { false },
         onProcess: (Process?) -> Unit = {},
-        windowSec: Double = WINDOW_SEC,
+        windowSec: Double = WaveformPeaks.WINDOW_SEC,
     ): FloatArray {
         val peaks = ArrayList<Float>()
         selection.paths.forEachIndexed { index, path ->
@@ -275,7 +279,7 @@ object RecordingWaveform {
      */
     fun peaks(
         pcm: InputStream,
-        windowSec: Double = WINDOW_SEC,
+        windowSec: Double = WaveformPeaks.WINDOW_SEC,
         cancelled: () -> Boolean = { false },
     ): FloatArray {
         val perWindow = maxOf(1, (RATE * windowSec).roundToInt())
@@ -370,22 +374,7 @@ class RecordingPlayer(
      * ffmpeg is something a unit test has.
      */
     private val speaker: () -> SourceDataLine = { AudioSystem.getSourceDataLine(FORMAT) },
-    private val spawn: (Path, Double) -> Process = { path, seekSec ->
-        ProcessBuilder(
-            ffmpeg,
-            "-v", "error",
-            "-nostdin",
-            // Before `-i`, which is ffmpeg's accurate input seek: it decodes from the keyframe
-            // before the second asked for and writes from that second, so what a scrub hears and
-            // what the clock says are the same instant.
-            "-ss", seekSec.toString(),
-            "-i", path.toString(),
-            "-f", "s16le",
-            "-ac", CHANNELS.toString(),
-            "-ar", RATE.toString(),
-            "-",
-        ).redirectError(ProcessBuilder.Redirect.DISCARD).start()
-    },
+    private val spawn: (Path, Double) -> Process = decoder(ffmpeg),
     /**
      * How long [stop] waits for the decoding thread before saying it did not go. The default is the
      * one the shell runs on; a test pins the *answer* rather than the wall clock, and 2 s of real
@@ -405,11 +394,22 @@ class RecordingPlayer(
         private set
 
     /**
-     * docs/09 화면 원칙 2: the recording as a shape, one peak per [RecordingWaveform.WINDOW_SEC]
+     * docs/09 화면 원칙 2: the recording as a shape, one peak per [WaveformPeaks.WINDOW_SEC]
      * window of `meta.json`'s own timeline — empty until [prepare]'s decode is through, and empty
      * for good if it could not be.
      */
     var waveform: FloatArray by mutableStateOf(FloatArray(0))
+        private set
+
+    /**
+     * The decode for the selection on show could not be read — [waveform] stays empty for good, and
+     * the bar draws its baseline rather than the loader it draws while a decode is still going.
+     */
+    var waveformFailed: Boolean by mutableStateOf(false)
+        private set
+
+    /** A decode is running for the selection on show — the kept waveform did not stand for it. */
+    var waveformDecoding: Boolean by mutableStateOf(false)
         private set
 
     /**
@@ -458,23 +458,42 @@ class RecordingPlayer(
      * for, so that no ffmpeg of the last pick is still holding a file when this returns. [stop]
      * leaves a waveform that already arrived alone — the shape stays between one press and the
      * next, and only another recording replaces it.
+     *
+     * [cached] is what the core kept for this recording ([WaveformPeaks.FILE]): when it has exactly
+     * the windows this selection decodes to ([RecordingWaveform.windows]) it is drawn at once and
+     * nothing is decoded. Otherwise the parts are decoded and [onDecoded] is handed the peaks, for
+     * the core to keep — only a decode that ran to the end, never one that was stopped or failed.
      */
-    fun prepare(selection: RecordingPlaylist.Selection) {
+    fun prepare(
+        selection: RecordingPlaylist.Selection,
+        cached: FloatArray? = null,
+        onDecoded: (FloatArray) -> Unit = {},
+    ) {
         if (isPrepared(selection)) return
         // Outside the lock, because what it waits for is a thread that takes the lock ([drew]).
         stopDecoding()
-        startDecoding(selection)
+        startDecoding(selection, cached, onDecoded)
     }
 
     @Synchronized
     private fun isPrepared(selection: RecordingPlaylist.Selection): Boolean = prepared == selection
 
     @Synchronized
-    private fun startDecoding(selection: RecordingPlaylist.Selection) {
+    private fun startDecoding(
+        selection: RecordingPlaylist.Selection,
+        cached: FloatArray?,
+        onDecoded: (FloatArray) -> Unit,
+    ) {
         prepared = selection
+        waveformFailed = false
+        if (cached != null && !selection.isEmpty && cached.size == RecordingWaveform.windows(selection)) {
+            waveform = cached
+            return
+        }
         waveform = FloatArray(0)
         if (selection.isEmpty) return
-        decoding = WaveformDecode(selection).also { it.start() }
+        waveformDecoding = true
+        decoding = WaveformDecode(selection, onDecoded).also { it.start() }
     }
 
     /**
@@ -496,14 +515,25 @@ class RecordingPlayer(
         val going = decoding ?: return null
         decoding = null
         prepared = null
+        waveformDecoding = false
         return going
     }
 
     /** The decode that finished, if the bar is still on the recording it was for. */
     @Synchronized
-    private fun drew(decode: WaveformDecode, peaks: FloatArray) {
-        if (decoding !== decode) return
+    private fun drew(decode: WaveformDecode, peaks: FloatArray): Boolean {
+        if (decoding !== decode) return false
         waveform = peaks
+        waveformDecoding = false
+        return true
+    }
+
+    /** The decode that could not read its parts, if the bar is still on the recording it was for. */
+    @Synchronized
+    private fun failedDecode(decode: WaveformDecode) {
+        if (decoding !== decode) return
+        waveformFailed = true
+        waveformDecoding = false
     }
 
     /**
@@ -942,7 +972,10 @@ class RecordingPlayer(
      * A decode that could not read a part leaves the waveform empty rather than drawing a shape
      * that is not the recording's — the bar keeps its baseline, and the failure is in the log.
      */
-    private inner class WaveformDecode(val selection: RecordingPlaylist.Selection) {
+    private inner class WaveformDecode(
+        val selection: RecordingPlaylist.Selection,
+        private val onDecoded: (FloatArray) -> Unit,
+    ) {
 
         @Volatile private var cancelled = false
 
@@ -989,14 +1022,38 @@ class RecordingPlayer(
                     cancelled = { cancelled },
                     onProcess = { process = it },
                 )
-                if (!cancelled) drew(this, peaks)
+                // Kept by the core only when it is the whole of what was asked and still wanted.
+                if (!cancelled && drew(this, peaks)) onDecoded(peaks)
             } catch (e: Throwable) {
+                failedDecode(this)
                 logger()?.log(Logger.Level.ERROR, "shell.play.waveform.failed", error = e)
             }
         }
     }
 
     companion object {
+
+        /**
+         * ffmpeg writing one part as raw 16 kHz mono PCM on its stdout, from [seekSec] — the decoder
+         * playback feeds the speaker from, and the waveform its peaks from (here and in
+         * `WaveformPrecompute`).
+         */
+        fun decoder(ffmpeg: String): (Path, Double) -> Process = { path, seekSec ->
+            ProcessBuilder(
+                ffmpeg,
+                "-v", "error",
+                "-nostdin",
+                // Before `-i`, which is ffmpeg's accurate input seek: it decodes from the keyframe
+                // before the second asked for and writes from that second, so what a scrub hears and
+                // what the clock says are the same instant.
+                "-ss", seekSec.toString(),
+                "-i", path.toString(),
+                "-f", "s16le",
+                "-ac", CHANNELS.toString(),
+                "-ar", RATE.toString(),
+                "-",
+            ).redirectError(ProcessBuilder.Redirect.DISCARD).start()
+        }
 
         /**
          * Where the recording's own clock is: the parts already finished, on the seconds

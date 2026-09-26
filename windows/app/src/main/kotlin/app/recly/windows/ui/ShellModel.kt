@@ -53,6 +53,7 @@ import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.delay
@@ -410,13 +411,42 @@ class ShellModel(
      *
      * @return whether the speaker is off the files. False is a decoder that outlived the bound, and
      *   a destructive step is refused on it rather than made over a live handle ([PlaybackGate.cleaning]).
+     *
+     * The background waveform decode ([WaveformPrecompute]) reads the same files and is stopped the
+     * same way — it gives way to the gate on its own, and this waits for its ffmpeg to be gone.
      */
     private suspend fun stopPlayback(): Boolean {
-        val player = player ?: return true
+        val precomputed = withContext(Dispatchers.IO) { waveforms?.halt() ?: true }
+        val player = player ?: return precomputed
         val stopped = withContext(Dispatchers.IO) { player.stop() }
-        if (!stopped) graph?.core?.deps?.logger?.log(Logger.Level.ERROR, "shell.play.stop.timeout")
-        return stopped
+        if (!stopped || !precomputed) graph?.core?.deps?.logger?.log(Logger.Level.ERROR, "shell.play.stop.timeout")
+        return stopped && precomputed
     }
+
+    /**
+     * docs/09 화면 원칙 2: the waveform the core kept for [recordingId] ([WaveformPeaks.FILE]), when it
+     * still stands for [selection] — as many windows as the detail's decode would make of those parts.
+     * Null when there is none or it does not match, and the detail decodes.
+     */
+    suspend fun keptWaveform(recordingId: String, selection: RecordingPlaylist.Selection): FloatArray? {
+        val graph = graph ?: return null
+        val kept = runCatching { graph.core.recordings.waveform(recordingId) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.WARN, "shell.waveform.read.failed", error = it) }
+            .getOrNull() ?: return null
+        return kept.takeIf { it.size == RecordingWaveform.windows(selection) }?.toFloatArray()
+    }
+
+    /** What the detail decoded for [recordingId], kept beside its parts for the next open. */
+    fun keepWaveform(recordingId: String, peaks: FloatArray) {
+        val graph = graph ?: return
+        scope.launch(graph.core.deps.io) {
+            runCatching { graph.core.recordings.saveWaveform(recordingId, peaks.toList()) }
+                .onFailure { graph.core.deps.logger.log(Logger.Level.WARN, "shell.waveform.save.failed", error = it) }
+        }
+    }
+
+    /** docs/09 화면 원칙 2: a recording finalized here has its waveform worked out in the background. */
+    private var waveforms: WaveformPrecompute? = null
 
     private var runner: JobRunner? = null
     private var recorder: WindowsRecorder? = null
@@ -530,6 +560,19 @@ class ShellModel(
                 helperCrashed = true
                 status = HELPER_DIED.message()
             },
+        )
+
+        waveforms = WaveformPrecompute(
+            scope = scope,
+            worker = WAVEFORM_WORKER,
+            load = graph.core.recordings::get,
+            kept = graph.core.recordings::waveform,
+            keep = graph.core.recordings::saveWaveform,
+            spawn = RecordingPlayer.decoder(CaptureHelper.ffmpeg()),
+            exists = graph.core.deps.fileSystem::exists,
+            // A capture, or a delete or a disconnect removing files: the decode gives way to all three.
+            busy = { playbackGate.blocked },
+            logger = logger,
         )
 
         graph.core.initializeProcessing()
@@ -808,6 +851,8 @@ class ShellModel(
         val graph = graph ?: return
         runCatching { completeRecording(graph.core, outcome.recordingId, title, participants) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.enqueue.failed", error = it) }
+        // Kept, so its shape is worked out now, and the first open draws it at once.
+        waveforms?.enqueue(outcome.recordingId)
         // docs/12/14 "실행기" (a): the job exists now, so a pass runs immediately rather than
         // waiting for the five-minute timer.
         runner?.jobsDue()
@@ -1627,5 +1672,16 @@ class ShellModel(
 
         /** Windows' own settings scheme — a deep link, not a path (see `open`). */
         private const val SETTINGS_SCHEME = "ms-settings:"
+
+        /**
+         * The background waveform decode's one thread: at the lowest priority, so it never competes
+         * with the capture, the upload or a window for the CPU.
+         */
+        private val WAVEFORM_WORKER = java.util.concurrent.Executors.newSingleThreadExecutor { task ->
+            Thread(task, "recly-waveform-precompute").apply {
+                isDaemon = true
+                priority = Thread.MIN_PRIORITY
+            }
+        }.asCoroutineDispatcher()
     }
 }

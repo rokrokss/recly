@@ -8,6 +8,7 @@ import app.recly.android.entry.RecWidget
 import app.recly.android.ui.DisconnectGate
 import app.recly.android.work.JobAlertNotifier
 import app.recly.android.work.NextRun
+import app.recly.android.work.WaveformPrecompute
 import app.recly.android.work.WorkScheduler
 import app.recly.recording.RecorderHost
 import app.recly.recording.RecorderService
@@ -89,6 +90,9 @@ class RecApp : Application(), RecorderHost {
      * waits for the dialog and the ViewModel enqueues once it is answered.
      */
     override suspend fun onRecordingReady(recordingId: String, enqueue: Boolean) {
+        // Whole now, whichever way it stopped: its waveform is decoded in the background, so the
+        // first open draws it at once.
+        WaveformPrecompute.request(core(), recordingId)
         if (!enqueue) return
         if (core().enqueue(recordingId) is EnqueueResult.Enqueued) WorkScheduler(this).onJobsDue()
     }

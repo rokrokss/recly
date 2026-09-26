@@ -395,5 +395,6 @@
   "Waiting for speech model": "等待语音模型",
   "{0} of {1}": "{0} / {1}",
   "Recordings you make appear here.": "录音后会显示在这里。",
-  "The model is {0}.": "模型大小为 {0}。"
+  "The model is {0}.": "模型大小为 {0}。",
+  "Loading waveform…": "正在加载波形…"
 }

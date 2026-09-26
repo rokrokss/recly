@@ -28,6 +28,7 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Source
 import recly.core.model.Track
 import recly.core.recording.MetaWriter
+import recly.core.recording.WaveformPeaks
 
 /**
  * docs/03 "복구" as [RecordingRecovery] implements it for a shell that did not write the audio
@@ -59,6 +60,27 @@ class RecordingRecoveryTest {
         assertFalse(FileSystem.SYSTEM.exists(dir / tail))
         assertTrue(FileSystem.SYSTEM.exists(dir / "$tail.corrupt"))
         assertEquals(listOf(JobStatus.PENDING), core.recordings.jobStatuses(id))
+    }
+
+    /**
+     * The waveform the detail keeps beside the parts (`waveform.v1`, and its `.tmp` mid-write) is the
+     * recording's own file: not an unknown segment, never quarantined, never a reason to drop it.
+     */
+    @Test
+    fun `a kept waveform is the recording's own file and is left where it is`() = runBlocking {
+        val core = core()
+        val (id, dir, base) = open(core)
+        register(core, id, base, part = 1, sec = 900.0)
+        write(dir, MetaWriter.partFileName(base, 1, Track.MIC))
+        write(dir, WaveformPeaks.FILE)
+        write(dir, "${WaveformPeaks.FILE}.tmp")
+
+        assertEquals(1, RecordingRecovery(core).reconcile())
+
+        assertEquals(RecordingStatus.FINALIZED, assertNotNull(core.recordings.get(id)).meta.status)
+        assertTrue(FileSystem.SYSTEM.exists(dir / WaveformPeaks.FILE))
+        assertTrue(FileSystem.SYSTEM.exists(dir / "${WaveformPeaks.FILE}.tmp"))
+        assertFalse(FileSystem.SYSTEM.exists(dir / "${WaveformPeaks.FILE}.corrupt"))
     }
 
     @Test

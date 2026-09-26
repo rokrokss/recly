@@ -180,6 +180,7 @@
     <string name="player_pause">Pause</string>
     <string name="player_no_audio">No audio on this device</string>
     <string name="player_fetching">Fetching from Drive…</string>
+    <string name="player_waveform_loading">Loading waveform…</string>
     <string name="player_fetch_failed">Could not fetch from Drive</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Waiting for the transcription result — %1$d min elapsed</string>

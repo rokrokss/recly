@@ -128,6 +128,7 @@
     <string name="player_pause">暂停</string>
     <string name="player_no_audio">此设备上没有音频</string>
     <string name="player_fetching">正在从Drive获取…</string>
+    <string name="player_waveform_loading">正在加载波形…</string>
     <string name="player_fetch_failed">无法从Drive获取</string>
     <string name="player_position">位置</string>
     <string name="job_waiting_transcription">正在等待转录结果，已用时%1$d分钟</string>

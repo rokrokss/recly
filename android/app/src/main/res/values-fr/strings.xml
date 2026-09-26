@@ -128,6 +128,7 @@
     <string name="player_pause">Pause</string>
     <string name="player_no_audio">Aucun audio sur cet appareil</string>
     <string name="player_fetching">Récupération depuis Drive…</string>
+    <string name="player_waveform_loading">Chargement de la forme d’onde…</string>
     <string name="player_fetch_failed">Impossible de récupérer depuis Drive</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Transcription en attente ; %1$d min écoulées</string>
