@@ -185,7 +185,8 @@ actor SpeechFileReader {
     let format: AVAudioFormat
     let converter: AVAudioConverter
     private var emitted: AVAudioFramePosition = 0
-    private let origin: Double
+    /// The resume point as a frame of [format], so every buffer's start is a whole frame count.
+    private let origin: AVAudioFramePosition
     private let totalFrames: AVAudioFramePosition
 
     init(file: AVAudioFile, format: AVAudioFormat, startTime: Double) throws {
@@ -196,7 +197,7 @@ actor SpeechFileReader {
         }
         self.converter = converter
         file.framePosition = min(file.length, AVAudioFramePosition(max(0, startTime) * file.processingFormat.sampleRate))
-        origin = Double(file.framePosition) / file.processingFormat.sampleRate
+        origin = AVAudioFramePosition((Double(file.framePosition) / file.processingFormat.sampleRate * format.sampleRate).rounded())
         totalFrames = AVAudioFramePosition((Double(file.length - file.framePosition) / file.processingFormat.sampleRate * format.sampleRate).rounded())
         converter.primeMethod = .none
     }
@@ -223,9 +224,11 @@ actor SpeechFileReader {
         guard status != .error else { throw SpeechFileError.conversion }
         output.frameLength = min(output.frameLength, AVAudioFrameCount(totalFrames - emitted))
         guard output.frameLength > 0 else { return nil }
-        let start = origin + Double(emitted) / format.sampleRate
+        // Counted in the buffer's own frames: the analyzer rejects a start in other units (seconds at
+        // a 48 kHz timescale) as overlapping the previous buffer ten seconds into a 16 kHz recording.
+        let start = CMTime(value: origin + emitted, timescale: CMTimeScale(format.sampleRate))
         emitted += AVAudioFramePosition(output.frameLength)
-        return AnalyzerInput(buffer: output, bufferStartTime: CMTime(seconds: start, preferredTimescale: 48_000))
+        return AnalyzerInput(buffer: output, bufferStartTime: start)
     }
 }
 #endif

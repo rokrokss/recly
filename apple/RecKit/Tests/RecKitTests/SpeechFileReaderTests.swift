@@ -23,6 +23,7 @@ final class SpeechFileReaderTests: XCTestCase {
             var previousEnd = offset
             while let input = try await reader.next() {
                 XCTAssertEqual(input.bufferStartTime!.seconds, previousEnd, accuracy: 0.0001)
+                XCTAssertEqual(input.bufferStartTime, CMTime(value: CMTimeValue(offset * target.sampleRate) + CMTimeValue(frames), timescale: 16_000))
                 XCTAssertLessThanOrEqual(input.buffer.frameLength, 16_384)
                 frames += Int(input.buffer.frameLength)
                 previousEnd += Double(input.buffer.frameLength) / target.sampleRate
