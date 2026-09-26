@@ -127,12 +127,18 @@ val mono: MonoType
 fun ReclyDesktopTheme(
     dark: Boolean,
     highContrast: Boolean,
+    /**
+     * Whether the small labels are tracked out. Not in Korean: its sentences carry a zero-width
+     * WORD JOINER between the syllables of every word (`joinKoreanWords`), and Skia tracks each of
+     * those too, which would double the spacing inside a Korean word.
+     */
+    tracked: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val palette = remember(dark, highContrast) { blueprintColors(dark, highContrast) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val scale = remember(maxWidth) { fluidScale(maxWidth.value) }
-        val typography = remember(scale) { reclyTypography(scale) }
+        val typography = remember(scale, tracked) { reclyTypography(scale, tracked) }
         val monospace = remember(scale) { monoType(scale) }
         CompositionLocalProvider(
             LocalBlueprintColors provides palette,

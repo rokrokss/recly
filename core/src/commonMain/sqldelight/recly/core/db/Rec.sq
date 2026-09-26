@@ -277,7 +277,7 @@ UPDATE step_run SET ordinal = ? WHERE id = ?;
 
 resetStepRuns:
 UPDATE step_run SET status = 'PENDING', attempts = 0, next_attempt_at = NULL, last_error = NULL
-WHERE job_id = ? AND status IN ('PENDING', 'RUNNING', 'FAILED', 'NEEDS_AUTH', 'NEEDS_SPACE');
+WHERE job_id = ? AND status IN ('PENDING', 'RUNNING', 'FAILED', 'NEEDS_AUTH', 'NEEDS_SPACE', 'NEEDS_MODEL');
 
 -- "Run it now" on a job waiting out a backoff: the wait is dropped, the spent attempts are not.
 clearStepBackoff:
@@ -287,6 +287,11 @@ UPDATE step_run SET next_attempt_at = NULL WHERE job_id = ? AND status = 'PENDIN
 resumeConsentStepRuns:
 UPDATE step_run SET status = 'PENDING', next_attempt_at = NULL, last_error = NULL
 WHERE job_id = ? AND status = 'NEEDS_CONSENT';
+
+-- The model download resumes only the waiting step; attempts and its checkpoint stay.
+resumeModelStepRuns:
+UPDATE step_run SET status = 'PENDING', next_attempt_at = NULL, last_error = NULL
+WHERE job_id = ? AND status = 'NEEDS_MODEL';
 
 recoverRunningStepRuns:
 UPDATE step_run SET status = 'PENDING' WHERE status = 'RUNNING';

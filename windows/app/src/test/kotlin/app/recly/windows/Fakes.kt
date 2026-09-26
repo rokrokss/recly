@@ -16,6 +16,12 @@ import recly.core.platform.Clock
 import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 
+/**
+ * A Korean sentence as it was written: the table puts a WORD JOINER between the characters of each
+ * word (`joinKoreanWords`), which a test comparing the words themselves has no interest in.
+ */
+fun String.plain(): String = replace("\u2060", "")
+
 /** What every test in this module needs and nothing more. */
 val NOW: Instant = Instant.parse("2026-08-27T10:00:00Z")
 
@@ -74,6 +80,7 @@ class FakeSettings(
     override var theme: AppTheme = AppTheme.SYSTEM,
     override var disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,
     override var revokeDebt: Boolean = false,
+    override var modelPromptDismissed: Boolean = false,
 ) : Settings
 
 /**

@@ -49,6 +49,7 @@
     <string name="enqueue_queued">작업 대기열에 등록</string>
 
     <string name="jobs_empty">아직 녹음이 없습니다</string>
+    <string name="jobs_empty_hint">녹음하면 여기에 표시됩니다.</string>
     <string name="jobs_untitled">제목 없음</string>
     <string name="jobs_sign_in">Google Drive 연결</string>
     <string name="jobs_open_drive">Drive 열기</string>
@@ -221,6 +222,7 @@
     <string name="consent_link">관할별 녹음 동의 규정 보기</string>
     <string name="core_transfer_consent_required">이 대상으로 전송하기 전에 허용이 필요합니다</string>
     <string name="job_state_needs_consent">전송 허용 필요</string>
+    <string name="job_state_needs_model">음성 모델 대기</string>
     <string name="delete_key_title">키 삭제: %1$s</string>
     <string name="detail_not_requested">이 녹음에는 실행할 전사 단계가 없습니다.</string>
     <string name="detail_pending">전사가 아직 끝나지 않았습니다. 완료되면 여기에 결과가 표시됩니다.</string>
@@ -246,7 +248,7 @@
     <string name="drive_optional">기기에 녹음하고, Drive 연결 시 업로드합니다.</string>
     <string name="drive_pending">업로드 대기</string>
     <string name="core_local_transcription_unavailable">이 기기에서는 로컬 전사를 사용할 수 없습니다. 전사 방식을 변경해 주세요.</string>
-    <string name="core_local_model_required">전사 설정에서 음성 인식 모델을 다운로드해 주세요.</string>
+    <string name="core_local_model_required">음성 인식 모델을 아직 다운로드하지 않았습니다.</string>
     <string name="core_local_diarization_unavailable">이 로컬 엔진은 화자 구분을 지원하지 않습니다. 화자 구분을 끄거나 외부 API를 선택해 주세요.</string>
     <string name="processing_title">녹음 처리</string>
     <string name="processing_local">로컬</string>
@@ -256,11 +258,20 @@
     <string name="processing_transcription">전사</string>
     <string name="processing_saved">설정을 저장했습니다</string>
     <string name="processing_prepare">모델 다운로드</string>
-    <string name="processing_preparing">모델 다운로드 중…</string>
-    <string name="processing_model_download">이 기기에서 전사하려면 이 모델(약 1GB)을 한 번 다운로드해야 합니다.</string>
+    <string name="processing_download_progress">모델 다운로드 중… %1$d%%</string>
+    <string name="processing_download_bytes">%2$s 중 %1$s</string>
+    <string name="processing_resume_download">이어서 다운로드</string>
+    <string name="processing_download_on_wifi">Wi-Fi에서 다운로드</string>
+    <string name="processing_cancel_download">다운로드 취소</string>
+    <string name="processing_waiting_for_wifi">Wi-Fi 연결을 기다리는 중</string>
+    <string name="model_download_notification">음성 인식 모델 다운로드 중</string>
+    <string name="model_prompt_title">이 기기에서 전사하기</string>
+    <string name="model_prompt_body">이 기기에서 녹음을 전사하려면 음성 인식 모델(%1$s)을 한 번 다운로드하세요.</string>
+    <string name="action_not_now">나중에</string>
+    <string name="processing_model_download">이 기기에서 전사하려면 이 모델(%1$s)을 한 번 다운로드해야 합니다.</string>
     <string name="processing_local_no_speakers">기기 내 전사에서는 화자를 구분하지 않습니다.</string>
     <string name="processing_download">다운로드</string>
-    <string name="processing_cellular_body">모델은 약 1GB입니다.</string>
+    <string name="processing_cellular_body">모델은 %1$s입니다.</string>
     <string name="processing_cellular_title">모바일 데이터로 다운로드할까요?</string>
     <string name="processing_speech_model">음성 인식 모델</string>
     <string name="processing_export">설정 내보내기</string>

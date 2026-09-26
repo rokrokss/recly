@@ -58,6 +58,13 @@ class AppSettings(private val context: Context) {
      */
     val revokeDebt: Flow<Boolean> = context.store.data.map { it[REVOKE_DEBT] ?: false }
 
+    /**
+     * The Record tab's first-run card that offers the speech model: "Not now" puts it away for good
+     * on this device. The model stays one tap away in the processing settings, and a recording that
+     * waits for it says so in the list.
+     */
+    val modelPromptDismissed: Flow<Boolean> = context.store.data.map { it[MODEL_PROMPT_DISMISSED] ?: false }
+
     suspend fun setWifiOnly(value: Boolean) {
         context.store.edit { it[WIFI_ONLY] = value }
     }
@@ -90,6 +97,10 @@ class AppSettings(private val context: Context) {
         context.store.edit { it[REVOKE_DEBT] = value }
     }
 
+    suspend fun dismissModelPrompt() {
+        context.store.edit { it[MODEL_PROMPT_DISMISSED] = true }
+    }
+
     private companion object {
         val WIFI_ONLY = booleanPreferencesKey("wifi_only")
         val THEME = stringPreferencesKey("theme")
@@ -97,5 +108,6 @@ class AppSettings(private val context: Context) {
         val REVOKE_DEBT = booleanPreferencesKey("revoke_debt")
         val CONSENT_REMINDER = booleanPreferencesKey("consent_reminder")
         val CONSENT_ASKED = booleanPreferencesKey("consent_asked")
+        val MODEL_PROMPT_DISMISSED = booleanPreferencesKey("model_prompt_dismissed")
     }
 }

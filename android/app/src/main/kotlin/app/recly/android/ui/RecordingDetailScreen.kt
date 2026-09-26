@@ -7,11 +7,15 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.clipRect
+import java.text.NumberFormat
+import kotlin.math.floor
 import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.Motion
 import app.recly.android.ui.theme.Radius
@@ -34,6 +38,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -431,7 +436,10 @@ private fun WaveformLoader() {
 /**
  * docs/09: how far the trip to Drive is, in the place and the shape of the Play button it becomes —
  * the button's own outline, filling with the button's own colour, so that when it is full it is the
- * button. No words on it; a screen reader hears the bar's sentence and the percentage.
+ * button. It is sized by the Play label it will carry, so nothing moves when it becomes Play, and
+ * the percentage sits in it in the accent — in the button's own ink where the fill has reached it —
+ * so it never reads as an empty, disabled button. A screen reader hears the bar's sentence and the
+ * percentage.
  */
 @Composable
 private fun FetchProgress(fraction: Float) {
@@ -439,9 +447,14 @@ private fun FetchProgress(fraction: Float) {
     val shape = RoundedCornerShape(Radius.node)
     val label = stringResource(R.string.player_fetching)
     val shown by animateFloatAsState(fraction, if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard))
+    val percent = NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0])
+        .format(floor(fraction * 100.0) / 100.0)
+    val style = MaterialTheme.typography.labelLarge
     Box(
         Modifier
-            .size(width = 120.dp, height = 48.dp)
+            // BlueprintButton's own minimums, with the Play button's on top of them.
+            .sizeIn(minWidth = PlayMinWidth, minHeight = PlayMinHeight)
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
             .clip(shape)
             .border(palette.line, palette.accent, shape)
             .drawBehind { drawRect(palette.accent, size = Size(size.width * shown, size.height)) }
@@ -449,8 +462,30 @@ private fun FetchProgress(fraction: Float) {
                 contentDescription = label
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
             },
-    )
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            stringResource(R.string.player_play),
+            modifier = Modifier.padding(horizontal = Space.s, vertical = Space.xs),
+            style = style,
+            color = Color.Transparent,
+            maxLines = 3,
+        )
+        Text(percent, style = style, color = palette.accent, maxLines = 1)
+        Box(
+            Modifier
+                .matchParentSize()
+                .drawWithContent { clipRect(right = size.width * shown) { this@drawWithContent.drawContent() } },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(percent, style = style, color = palette.onAccent, maxLines = 1)
+        }
+    }
 }
+
+/** The Play button's size, which the fetch's progress takes before it becomes that button. */
+private val PlayMinWidth: Dp = 120.dp
+private val PlayMinHeight: Dp = 48.dp
 
 /** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
 private const val LOADER_BAND = 10
@@ -495,7 +530,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
         ) {
             Box(Modifier.weight(1f)) {
                 if (LocalReduceMotion.current) {
-                    Text(stringResource(R.string.player_fetching), style = mono.bodySmall, color = palette.textMuted)
+                    Text(stringResource(R.string.player_fetching), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
                 }
             }
             FetchProgress(detail.fetchProgress)
@@ -549,7 +584,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
                         }
                     },
                     modifier = Modifier
-                        .sizeIn(minWidth = 120.dp, minHeight = 48.dp)
+                        .sizeIn(minWidth = PlayMinWidth, minHeight = PlayMinHeight)
                         .testTag("play-pause"),
                     tone = ButtonTone.PRIMARY,
                 )

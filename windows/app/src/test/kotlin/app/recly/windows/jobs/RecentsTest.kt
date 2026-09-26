@@ -31,10 +31,12 @@ import recly.core.model.AudioSettings
 import recly.core.model.Codec
 import recly.core.model.DriveLocation
 import recly.core.model.Container
+import recly.core.model.Language
 import recly.core.model.Platform
 import recly.core.model.RecordingMeta
 import recly.core.model.RecordingStatus
 import recly.core.model.Source
+import recly.core.model.Step
 import recly.core.model.Track
 import recly.core.recording.RecordingRecord
 
@@ -55,6 +57,31 @@ class RecentsTest {
         assertEquals(Str.STATUS_SIGN_IN_NEEDED.message(), item.state)
         // The row's Retry reads the status rather than the sentence, so it is carried across.
         assertEquals(JobStatus.NEEDS_AUTH, item.jobStatus)
+    }
+
+    /**
+     * A recording waiting for the on-device speech model: a wait, not a failure — its own state, no
+     * Retry, and the language of the step that is waiting, which is what its Download starts in.
+     */
+    @Test
+    fun `a job waiting for the speech model says so and carries the waiting step's language`() {
+        val waiting = job("j", JobStatus.NEEDS_MODEL).let {
+            it.copy(workflow = it.workflow!!.copy(steps = listOf(Step.LocalTranscribe("speech", language = Language.ZH_CN))))
+        }
+        val steps = listOf(
+            step("upload"),
+            step("speech", status = StepStatus.NEEDS_MODEL, lastError = CoreMessage.LOCAL_MODEL_REQUIRED.code()),
+        )
+
+        val item = Recents.item(record(), waiting, steps)
+
+        assertEquals(Str.STATE_NEEDS_MODEL.message(), item.state)
+        assertEquals("NEEDS_MODEL", item.state.ledgerStatus().code)
+        assertEquals("zh-cn", item.modelLanguage)
+        assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending))
+        assertTrue(item.deletable)
+        // Only while it waits: the same job anywhere else has no model to download for.
+        assertNull(Recents.item(record(), waiting.copy(status = JobStatus.PENDING), steps).modelLanguage)
     }
 
     @Test

@@ -10,7 +10,10 @@ import app.recly.android.core.CoreModule
 import app.recly.android.core.UiMessage
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.work.JobScheduler
+import app.recly.android.work.ModelDownload
+import app.recly.android.work.ModelDownloadState
 import app.recly.android.work.WorkScheduler
+import app.recly.android.work.wireTag
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import kotlin.time.ExperimentalTime
@@ -30,6 +33,8 @@ import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.job.StepRun
+import recly.core.job.StepStatus
+import recly.core.model.Step
 import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
@@ -72,6 +77,8 @@ data class JobItem(
     val alert: AlertReason? = null,
     val localPending: Boolean = false,
     val localRunning: Boolean = false,
+    /** The waiting local step's language while the job waits for the speech model — what its download is for. */
+    val modelLanguage: String? = null,
 )
 
 enum class ItemState {
@@ -99,6 +106,9 @@ enum class ItemState {
     /** docs/10 "Drive 용량 초과": parked, not retried, until the user frees space and asks again. */
     NEEDS_SPACE,
     NEEDS_CONSENT,
+
+    /** Waiting for the on-device speech model: downloading it carries the job on. A wait, not a failure. */
+    NEEDS_MODEL,
     SKIPPED_SHORT,
 }
 
@@ -130,6 +140,8 @@ data class JobsUiState(
     val action: ProcessingState = ProcessingState.IDLE,
     /** Named, not resolved: this outlives the screen the language setting recreates (docs/07). */
     val message: UiMessage? = null,
+    /** The speech model download, for the banner and the rows that wait for it. */
+    val download: ModelDownloadState = ModelDownloadState(),
 )
 
 /** The recording detail screen (docs/08 deliverable 3). */
@@ -217,8 +229,17 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 }
         }
+        viewModelScope.launch {
+            ModelDownload.get(getApplication()).state.collect { download -> _state.update { it.copy(download = download) } }
+        }
         pullRemote()
     }
+
+    /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
+    fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)
+
+    /** The banner's "Cancel download"; the partial files stay for a later resume. */
+    fun cancelDownload() = ModelDownload.get(getApplication()).cancel()
 
     /**
      * docs/03 "다른 기기의 녹음": the ledger is back on screen, so what the other devices have
@@ -537,6 +558,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
                 alert = job?.let { alertReasonOf(it.status, error) },
+                modelLanguage = job?.takeIf { it.status == JobStatus.NEEDS_MODEL }?.let { waiting ->
+                    val run = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL }
+                    (waiting.workflow?.steps?.find { it.id == run?.stepId } as? Step.LocalTranscribe)?.language?.wireTag()
+                },
             )
         }
     }
@@ -603,6 +628,7 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
         JobStatus.FAILED -> ItemState.FAILED
         JobStatus.NEEDS_AUTH -> ItemState.NEEDS_AUTH
         JobStatus.NEEDS_CONSENT -> ItemState.NEEDS_CONSENT
+        JobStatus.NEEDS_MODEL -> ItemState.NEEDS_MODEL
         JobStatus.NEEDS_SPACE -> ItemState.NEEDS_SPACE
         JobStatus.SKIPPED_SHORT -> ItemState.SKIPPED_SHORT
     }

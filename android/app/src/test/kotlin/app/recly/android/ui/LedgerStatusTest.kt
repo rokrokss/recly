@@ -1,6 +1,7 @@
 package app.recly.android.ui
 
 import app.recly.android.ui.component.BadgeTone
+import app.recly.android.ui.component.LedgerStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -86,6 +87,33 @@ class LedgerStatusTest {
         assertEquals(BadgeTone.NEUTRAL, ItemState.PENDING.badge().tone)
         assertEquals(BadgeTone.SUCCESS, ItemState.NO_JOB.badge().tone)
         assertEquals(BadgeTone.NEUTRAL, ItemState.SKIPPED_SHORT.badge().tone)
+    }
+
+    /** A recording waiting for the speech model: its own code, in the tone of the other waits. */
+    @Test
+    fun `waiting for the speech model is its own row state`() {
+        assertEquals(LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING), ItemState.NEEDS_MODEL.badge())
+        assertEquals(ItemState.NEEDS_CONSENT.badge().tone, ItemState.NEEDS_MODEL.badge().tone)
+        assertFalse(ItemState.NEEDS_MODEL.failing(), "a wait, not a failure")
+        assertFalse(ItemState.NEEDS_MODEL.inFlight())
+    }
+
+    /** An expanded row's reason is red only for a failure; a wait takes its badge's warning. */
+    @Test
+    fun `only a failure's reason is red`() {
+        assertEquals(BadgeTone.DANGER, ItemState.FAILED.reasonTone())
+        listOf(ItemState.NEEDS_MODEL, ItemState.NEEDS_CONSENT, ItemState.NEEDS_SPACE, ItemState.WAITING).forEach { state ->
+            assertEquals(BadgeTone.WARNING, state.reasonTone(), "$state")
+        }
+        assertEquals(BadgeTone.NEUTRAL, ItemState.NEEDS_AUTH.reasonTone())
+        assertEquals(BadgeTone.NEUTRAL, ItemState.DONE.reasonTone())
+    }
+
+    /** The status column is measured with every code the ledger can show, so none is clipped. */
+    @Test
+    fun `the status column is measured with every code`() {
+        assertTrue("NEEDS_MODEL" in BADGE_CODES)
+        ItemState.entries.forEach { assertTrue(it.badge().code in BADGE_CODES, "$it") }
     }
 
     /** docs/10 "Drive 용량 초과": its own code, not a FAILED it would be mistaken for. */

@@ -148,6 +148,38 @@ fun DisconnectDialog(
     }
 }
 
+/**
+ * The speech model over a metered connection (the capture helper's `--network-cost`): about 1 GB is
+ * the user's to spend, so the download waits for the answer. An unknown connection is not asked about.
+ */
+@Composable
+fun MeteredDownloadDialog(
+    strings: Strings,
+    /** The model's size as this shell writes it ([ByteFormat]), or null when the engine does not say. */
+    size: String?,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onCancel: () -> Unit,
+    onDownload: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.PROCESSING_METERED_TITLE],
+        onDismissRequest = onCancel,
+        theme = theme,
+        height = METERED_HEIGHT,
+        // A title, one line and the answers: only as tall as that.
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.PROCESSING_DOWNLOAD], onDownload, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        size?.let { BlueprintDialogText(strings[Str.PROCESSING_MODEL_SIZE, it], tone = DialogTone.MUTED) }
+    }
+}
+
+/** Where the window opens before it takes the card's own height ([BlueprintDialog] `fitContent`). */
+private val METERED_HEIGHT: Dp = 160.dp
+
 /** One warning line, two answers about Drive, and the two buttons. */
 private val DELETE_HEIGHT: Dp = 280.dp
 

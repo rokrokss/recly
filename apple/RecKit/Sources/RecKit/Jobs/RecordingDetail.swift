@@ -566,28 +566,46 @@ public struct RecordingDetailView: View {
 
     /// docs/09: how far the trip to Drive is, in the place and the shape of the Play button it
     /// becomes — the button's own outline, filling with the button's own colour, so that when it is
-    /// full it is the button. No words on it; VoiceOver hears the bar's sentence and the percentage.
+    /// full it is the button. It is sized by a hidden Play button, so nothing moves when Play takes
+    /// its place, and it says the percentage inside it — accent on the empty part, the button's own
+    /// ink on the filled part — so at 0% it never reads as an empty or disabled button.
     private var fetchProgress: some View {
         let shape = RoundedRectangle(cornerRadius: Radius.node)
-        return GeometryReader { geometry in
-            blueprint.palette.accent
-                .frame(width: geometry.size.width * model.fetchProgress)
-                .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line))
-        .frame(width: playbackButtonMinWidth ?? minTouch * 2, height: minTouch)
-        .animation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion), value: model.fetchProgress)
-        .accessibilityElement()
-        .accessibilityLabel(Text(verbatim: loc("Fetching from Drive…")))
-        .accessibilityValue(Text(verbatim: "\(Int(model.fetchProgress * 100))%"))
+        let fraction = min(max(model.fetchProgress, 0), 1)
+        let percent = Text(verbatim: "\(Int((fraction * 100).rounded(.down)))%")
+            .font(blueprint.fonts.monoBodySmall)
+            .lineLimit(1)
+        return BlueprintButton(loc("Play"), tone: .primary, minWidth: playbackButtonMinWidth) {}
+            .hidden()
+            .overlay {
+                GeometryReader { geometry in
+                    let filled = geometry.size.width * fraction
+                    ZStack(alignment: .leading) {
+                        blueprint.palette.accent.frame(width: filled)
+                        percent
+                            .foregroundStyle(blueprint.palette.accent)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        percent
+                            .foregroundStyle(blueprint.palette.onAccent)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .mask(alignment: .leading) { Rectangle().frame(width: filled) }
+                    }
+                }
+                .clipShape(shape)
+                .overlay(shape.strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line))
+            }
+            .animation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion), value: model.fetchProgress)
+            .accessibilityElement()
+            .accessibilityLabel(Text(verbatim: loc("Fetching from Drive…")))
+            .accessibilityValue(Text(verbatim: "\(Int(fraction * 100))%"))
     }
 
-    /// Only with reduce motion, where the waveform row has stopped saying it.
+    /// Only with reduce motion, where the waveform row has stopped saying it — in the bar's own
+    /// sentence type, as "Could not fetch from Drive" is.
     @ViewBuilder private var fetchingWords: some View {
         if blueprint.reduceMotion {
             Text(verbatim: loc("Fetching from Drive…"))
-                .font(blueprint.fonts.monoBodySmall)
+                .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.textMuted)
         }
     }

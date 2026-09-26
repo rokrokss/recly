@@ -16,12 +16,20 @@ import recly.core.message.CoreMessageRef
  * The reasons are per *job*, not per step: a job the queue has stopped carrying is what the user
  * counts, and the same reason on five jobs is one line and one notification with a count on it.
  */
-enum class AlertReason(@param:StringRes val label: Int, val fix: FixSurface) {
+enum class AlertReason(
+    @param:StringRes val label: Int,
+    val fix: FixSurface,
+    /**
+     * A job parked on something to come — a sign-in, space, the speech model — rather than one that
+     * failed. The banner draws it in the warning its badge is; red is for failures.
+     */
+    val wait: Boolean = false,
+) {
     LOCAL_TRANSCRIPTION_UNAVAILABLE(R.string.core_local_transcription_unavailable, FixSurface.PROCESSING),
-    LOCAL_MODEL_REQUIRED(R.string.core_local_model_required, FixSurface.PROCESSING),
+    LOCAL_MODEL_REQUIRED(R.string.core_local_model_required, FixSurface.PROCESSING, wait = true),
     LOCAL_DIARIZATION_UNAVAILABLE(R.string.core_local_diarization_unavailable, FixSurface.PROCESSING),
-    NEEDS_AUTH(R.string.alert_needs_auth, FixSurface.SIGN_IN),
-    NEEDS_SPACE(R.string.alert_needs_space, FixSurface.DRIVE_STORAGE),
+    NEEDS_AUTH(R.string.alert_needs_auth, FixSurface.SIGN_IN, wait = true),
+    NEEDS_SPACE(R.string.alert_needs_space, FixSurface.DRIVE_STORAGE, wait = true),
     MISSING_SECRET(R.string.alert_missing_secret, FixSurface.SECRETS),
     AUTH_REJECTED(R.string.alert_auth_rejected, FixSurface.SECRETS),
     QUOTA(R.string.alert_quota, FixSurface.PROCESSING),
@@ -50,6 +58,8 @@ const val DRIVE_STORAGE_URL: String = "https://drive.google.com/settings/storage
 fun alertReasonOf(status: JobStatus, lastError: String?): AlertReason? = when (status) {
     JobStatus.NEEDS_AUTH -> AlertReason.NEEDS_AUTH
     JobStatus.NEEDS_SPACE -> AlertReason.NEEDS_SPACE
+    // A wait, not a failure: the list's banner starts the download, the notification opens settings.
+    JobStatus.NEEDS_MODEL -> AlertReason.LOCAL_MODEL_REQUIRED
     // Only a job the queue has given up on. A step that is still inside its retry budget is
     // `WAITING`, and docs/10 says plainly that those are not worth a notification.
     JobStatus.FAILED -> terminalReason(lastError)
@@ -60,7 +70,6 @@ private fun terminalReason(lastError: String?): AlertReason? {
     val ref = lastError?.let { CoreMessageRef.parse(it) } ?: return null
     return when (ref.message) {
         CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE
-        CoreMessage.LOCAL_MODEL_REQUIRED -> AlertReason.LOCAL_MODEL_REQUIRED
         CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> AlertReason.LOCAL_DIARIZATION_UNAVAILABLE
         CoreMessage.MISSING_SECRET -> AlertReason.MISSING_SECRET
         CoreMessage.AUTH_REJECTED -> AlertReason.AUTH_REJECTED
@@ -95,7 +104,7 @@ fun blockingError(steps: List<StepRun>): String? {
         ?: ordered.mapNotNull { it.lastError }.lastOrNull()
 }
 
-private val HOLDING_UP = setOf(StepStatus.FAILED, StepStatus.NEEDS_AUTH, StepStatus.NEEDS_SPACE)
+private val HOLDING_UP = setOf(StepStatus.FAILED, StepStatus.NEEDS_AUTH, StepStatus.NEEDS_SPACE, StepStatus.NEEDS_MODEL)
 
 /** The reasons across the whole queue (one per job), folded one entry per reason, in [AlertReason] order. */
 fun foldAlerts(reasons: List<AlertReason?>): List<JobAlert> = AlertReason.entries.mapNotNull { reason ->

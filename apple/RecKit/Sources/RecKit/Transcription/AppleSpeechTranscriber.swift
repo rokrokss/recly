@@ -50,19 +50,36 @@ import CoreMedia
 
 /// One native long-file session, with final-segment checkpoints and bounded PCM buffering.
 @available(iOS 26, macOS 26, *)
-private final class AppleSpeechTranscriber: LocalTranscriptionEngine, @unchecked Sendable {
+private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownloadCancelling, @unchecked Sendable {
     private let lock = NSLock()
     private var active: SpeechAnalyzer?
+    /// docs/05 "고정 처리 설정 도입": the system asset download in flight, kept so [__status] can say
+    /// how far it has got — the request is `ProgressReporting` — and the shell can stop it.
+    private var installing: Installing?
+
+    private struct Installing {
+        let language: String
+        let request: AssetInstallationRequest
+        let task: Task<Void, Error>
+    }
 
     func cancel() {
         let analyzer = lock.withLock { active }
         if let analyzer { Task { await analyzer.cancelAndFinishNow() } }
     }
 
+    func cancelDownload() {
+        lock.withLock { installing }?.task.cancel()
+    }
+
     func __status(language: String) async throws -> LocalEngineInfo {
         guard SpeechTranscriber.isAvailable, let locale = await locale(language) else { return info(.unsupported) }
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
-        guard await AssetInventory.status(forModules: [module]) == .installed else { return info(.modelRequired) }
+        guard await AssetInventory.status(forModules: [module]) == .installed else {
+            // The system does not say how big its assets are: a share of them, and no byte count.
+            let download = lock.withLock { installing }.flatMap { $0.language == language ? $0 : nil }
+            return info(.modelRequired, progress: download?.request.progress.fractionCompleted, downloading: download != nil)
+        }
         guard ProcessInfo.processInfo.thermalState == .nominal, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return info(.waiting) }
         return info(.ready)
     }
@@ -75,7 +92,11 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, @unchecked
         }
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
-            try await request.downloadAndInstall()
+            // Its own task, so the shell's Cancel reaches it however the call above it is bridged.
+            let task = Task { try await request.downloadAndInstall() }
+            lock.withLock { installing = Installing(language: language, request: request, task: task) }
+            defer { lock.withLock { installing = nil } }
+            try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
         }
         return try await __status(language: language)
     }
@@ -141,8 +162,11 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, @unchecked
         await LocalSpeechEngine.speechLocale(language)
     }
 
-    private func info(_ status: LocalEngineStatus) -> LocalEngineInfo {
-        LocalEngineInfo(status: status, name: "apple-speech", revision: "speech-\(ProcessInfo.processInfo.operatingSystemVersionString)", supportsDiarization: false)
+    private func info(_ status: LocalEngineStatus, progress: Double? = nil, downloading: Bool = false) -> LocalEngineInfo {
+        LocalEngineInfo(
+            status: status, name: "apple-speech", revision: "speech-\(ProcessInfo.processInfo.operatingSystemVersionString)",
+            supportsDiarization: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
+        )
     }
 }
 

@@ -391,14 +391,11 @@ class JobStore(
     }
 
     /** Model preparation releases only its blocked step, without resetting other work or consent. */
-    internal suspend fun resumeModelRequired(jobId: String, stepRunId: String, now: Instant): Boolean = locked {
+    internal suspend fun resumeModel(jobId: String, now: Instant): Boolean = locked {
         db.transactionWithResult {
             val row = queries.selectJobById(jobId).executeAsOneOrNull() ?: return@transactionWithResult false
-            if (row.status != JobStatus.FAILED.name || row.disconnected_status != null) return@transactionWithResult false
-            val blocked = queries.selectStepRunsByJob(jobId).executeAsList().map { it.toStepRun() }
-                .singleOrNull { it.status == StepStatus.FAILED } ?: return@transactionWithResult false
-            if (blocked.id != stepRunId || blocked.lastError != CoreMessage.LOCAL_MODEL_REQUIRED.code()) return@transactionWithResult false
-            writeStep(blocked.copy(status = StepStatus.PENDING, attempts = 0, nextAttemptAt = null, lastError = null))
+            if (row.status != JobStatus.NEEDS_MODEL.name || row.disconnected_status != null) return@transactionWithResult false
+            queries.resumeModelStepRuns(jobId)
             queries.updateJobStatus(JobStatus.PENDING.name, null, now.isoUtc(), jobId)
             true
         }

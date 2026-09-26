@@ -44,6 +44,13 @@ final class MenuModel: ObservableObject {
     /// a menu that was not told would go on showing the note it replaced.
     @Published private(set) var message: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
+    /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
+    /// banner, a waiting recording's row and the popover's first-run card.
+    @Published private(set) var modelDownload: ModelDownload?
+    /// "Not now" on the first-run card, remembered on this Mac so the card does not come back.
+    @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
+        didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
+    }
     private var capturedProcessingKey: String?
     private var capturedProcessingProvider: String?
     var processingSummary: String {
@@ -223,15 +230,30 @@ final class MenuModel: ObservableObject {
             // Before anything else can touch the directories: a part the last run could not file is
             // still on disk, and a recording left open is one nothing would ever act on.
             let recovered = await session.recoverIfIdle()
-            let processing = ProcessingSettingsModel(core: bridge.core, canPrepare: { [weak self] in self?.isIdle == true })
+            let download = ModelDownload(core: bridge.core)
+            download.capturing = !isIdle
+            // The recordings the download resumed are due now.
+            download.onFinished = { [weak self] in self?.runner?.jobsDue() }
+            await download.refresh()
+            modelDownload = download
+            let processing = ProcessingSettingsModel(core: bridge.core, download: download)
             await processing.reload()
-            processing.onSaved = { [weak self] in self?.objectWillChange.send(); self?.runner?.jobsDue() }
+            processing.onSaved = { [weak self] in
+                self?.objectWillChange.send()
+                self?.runner?.jobsDue()
+                Task { await download.refresh() }
+            }
             self.processing = processing
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
-            alertRouter.connect { [weak self] alert in self?.fix(alert) }
+            //
+            // A tap on the model notification opens the settings that carry the download, as it
+            // always has; the banner's own button is what starts it.
+            alertRouter.connect { [weak self] alert in
+                if alert.reason.fix == .modelDownload { self?.openEditor?() } else { self?.fix(alert) }
+            }
             // Before the executor: a Drive credential restored from Keychain is what decides
             // whether the first pass can do anything at all (docs/06).
             let auth = GoogleAuth(tokens: tokens)
@@ -521,6 +543,7 @@ final class MenuModel: ObservableObject {
     private func adopt(_ next: RecorderState) {
         let wasRecording = isRecording
         state = next
+        modelDownload?.capturing = next != .idle
         if isRecording, !wasRecording {
             capturedProcessingKey = processing?.summaryKey
             capturedProcessingProvider = processing?.providerSummary
@@ -741,6 +764,10 @@ final class MenuModel: ObservableObject {
         // processing settings.
         case .secrets, .editor:
             openEditor?()
+
+        // docs/05 "고정 처리 설정 도입": downloaded where the banner stands, not in the settings.
+        case .modelDownload:
+            modelDownload?.start()
         }
     }
 
@@ -1197,6 +1224,7 @@ private enum Defaults {
     private static let speakerKey = "speakerWarningSuppressed"
     private static let voiceProcessingKey = "voiceProcessing"
     private static let consentReminderKey = "consentReminder"
+    private static let modelPromptDismissedKey = "modelPromptDismissed"
 
     static var speakerWarningSuppressed: Bool {
         get { UserDefaults.standard.bool(forKey: speakerKey) }
@@ -1215,5 +1243,11 @@ private enum Defaults {
     /// because v1's answer to echo is headphones.
     static var voiceProcessing: Bool {
         UserDefaults.standard.bool(forKey: voiceProcessingKey)
+    }
+
+    /// docs/05 "고정 처리 설정 도입": "Not now" on the first-run model card.
+    static var modelPromptDismissed: Bool {
+        get { UserDefaults.standard.bool(forKey: modelPromptDismissedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: modelPromptDismissedKey) }
     }
 }

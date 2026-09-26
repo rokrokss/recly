@@ -34,6 +34,20 @@ class LocalModelStore(
     /** Size alone: a file only reaches its final name after its hash was checked. */
     fun installed(): Boolean = files.all { fileSystem.metadataOrNull(path(it.name))?.size == it.bytes }
 
+    /** Every file's bytes: the whole download. */
+    val totalBytes: Long = files.sumOf { it.bytes }
+
+    /** The share of [totalBytes] already on disk — installed files, and what the partial ones hold. */
+    fun progress(): Double {
+        val present = files.sumOf { file ->
+            val size = fileSystem.metadataOrNull(path(file.name))?.size?.takeIf { it == file.bytes }
+                ?: fileSystem.metadataOrNull(dir / "${file.name}.part")?.size
+                ?: 0L
+            minOf(size, file.bytes)
+        }
+        return present.toDouble() / totalBytes
+    }
+
     fun path(name: String): Path = dir / name
 
     @Throws(Throwable::class)

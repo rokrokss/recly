@@ -95,6 +95,7 @@ helper leaves real audio files behind, while those tests expect the directory to
 | `--mic-in-use Zoom.exe` | The capture session band. Reports this name on `detect on` |
 | `--encoder pcm\|ffmpeg\|mf` | `pcm` is container-less s16le (tests and development only) |
 | `--version` | Prints one line with the name and version and exits — the app uses it at startup to check the path and version of the bundled helper (M6-L3) |
+| `--network-cost` | Prints `metered`, `unmetered` or `unknown` for the internet connection and exits — the app asks before it downloads the speech model. Always `unknown` on a non-Windows build |
 
 ## Windows run verification
 

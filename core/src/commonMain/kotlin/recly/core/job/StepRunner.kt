@@ -84,6 +84,8 @@ internal fun StepContext.priorOutput(type: String): JsonObject? = workflow.prior
  *
  * [retryAfterSec] is a `Retry-After` the server sent (429, 503); it replaces the computed backoff,
  * capped by `retry.maxDelaySec` so a hostile or confused header cannot park a job for a month.
+ *
+ * [needsModel] parks the job until the on-device speech model is downloaded, spending nothing.
  */
 class StepFailure(
     val retryable: Boolean,
@@ -92,4 +94,5 @@ class StepFailure(
     val retryAfterSec: Long? = null,
     val needsSpace: Boolean = false,
     val needsConsent: Boolean = false,
+    val needsModel: Boolean = false,
 ) : Exception(reason)

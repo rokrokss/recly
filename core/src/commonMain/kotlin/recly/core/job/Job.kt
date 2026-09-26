@@ -12,10 +12,12 @@ import recly.core.model.Workflow
 /**
  * docs/10 "잡 상태 머신". [NEEDS_AUTH] and [NEEDS_SPACE] are the two terminal-until-a-person-acts
  * states: the scheduler never picks them up again and only `JobService.retry` moves them on.
+ * [NEEDS_MODEL] waits the same way for the on-device speech model: downloading it resumes the job
+ * (`ReclyCore.prepareLocalEngine`) — it is a wait, not a failure.
  */
-enum class JobStatus { PENDING, RUNNING, WAITING, DONE, FAILED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT, SKIPPED_SHORT }
+enum class JobStatus { PENDING, RUNNING, WAITING, DONE, FAILED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT, NEEDS_MODEL, SKIPPED_SHORT }
 
-enum class StepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT }
+enum class StepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, NEEDS_AUTH, NEEDS_SPACE, NEEDS_CONSENT, NEEDS_MODEL }
 
 /**
  * One recording × one workflow. [workflow] is the snapshot taken at enqueue time, so editing the

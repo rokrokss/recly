@@ -10,7 +10,6 @@ public final class ProcessingSettingsModel: ObservableObject {
     @Published public private(set) var draft: ProcessingDraft?
     @Published public private(set) var dirty = false
     @Published public private(set) var busy = false
-    @Published public private(set) var preparingModel = false
     @Published public private(set) var importing = false
     @Published public private(set) var message: UiMessage?
     @Published public private(set) var localLanguages: [Language] = []
@@ -24,12 +23,14 @@ public final class ProcessingSettingsModel: ObservableObject {
     @Published public private(set) var consentNeeded: [TransferTarget] = []
     private var stored: ProcessingSettingsStateReady?
     private let core: ReclyCore_
-    private let canPrepare: () -> Bool
+    /// The shell's one model download, which this screen's "Download model" shares with the
+    /// banner, the rows and the first-run card.
+    public let download: ModelDownload
     public var onSaved: (() -> Void)?
 
-    public init(core: ReclyCore_, canPrepare: @escaping () -> Bool = { true }) {
+    public init(core: ReclyCore_, download: ModelDownload? = nil) {
         self.core = core
-        self.canPrepare = canPrepare
+        self.download = download ?? ModelDownload(core: core)
     }
     public func reload() async {
         do {
@@ -97,17 +98,11 @@ public final class ProcessingSettingsModel: ObservableObject {
         do { try await core.secrets.delete(name: name); secretNames = try await core.secrets.names() }
         catch { failed(error) }
     }
-    public func prepare() async {
-        guard let draft, !busy, canPrepare() else { return }
-        let language = draft.language
-        busy = true; preparingModel = true; message = nil
-        defer { busy = false; preparingModel = false }
-        do {
-            let prepared = try await core.prepareLocalEngine(language: language.name.lowercased().replacingOccurrences(of: "_", with: "-"))
-            if self.draft?.language == language { local = prepared }
-            onSaved?()
-        }
-        catch { failed(error) }
+    /// The language on screen, which is the one whose model status this screen shows.
+    public func prepare() {
+        guard let draft, !busy else { return }
+        message = nil
+        download.start(language: ModelDownload.code(draft.language))
     }
     public func export() async -> String? {
         do { return try await core.processingSettings.exportJson() }
@@ -156,7 +151,7 @@ public final class ProcessingSettingsModel: ObservableObject {
 public struct ProcessingSettingsView: View {
     @Environment(\.blueprint) private var blueprint
     @ObservedObject private var model: ProcessingSettingsModel
-    private let preparationAllowed: Bool
+    @ObservedObject private var download: ModelDownload
     @Environment(\.locale) private var locale
     @Environment(\.scenePhase) private var scenePhase
     @State private var pickingLanguage = false
@@ -165,9 +160,9 @@ public struct ProcessingSettingsView: View {
     @State private var exporter = false
     @State private var file: ProcessingFile?
     @State private var deletingKey: String?
-    public init(model: ProcessingSettingsModel, preparationAllowed: Bool = true) {
+    public init(model: ProcessingSettingsModel) {
         self.model = model
-        self.preparationAllowed = preparationAllowed
+        self.download = model.download
     }
     public var body: some View {
         SectionHeader(loc("Recording processing")).padding(.horizontal, Space.m)
@@ -192,17 +187,21 @@ public struct ProcessingSettingsView: View {
                         }
                     }
                     if model.local?.status == .unsupported { SectionFootnote(CoreMessages.sentence(.localTranscriptionUnavailable)) }
-                    if model.preparingModel {
-                        LoadingText(text: loc("Downloading model…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, Space.m)
-                            .padding(.vertical, Space.s)
+                    if download.downloading {
+                        HStack(spacing: Space.s) {
+                            LoadingText(text: ModelDownload.progressText(download.progress), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                            Spacer(minLength: 0)
+                            // Not "Cancel": the form's own Cancel can stand a few rows below it.
+                            BlueprintButton(loc("Cancel download"), tone: .quiet) { download.cancel() }
+                        }
+                        .padding(.vertical, Space.s)
                     } else if model.local?.status == .modelRequired {
                         SectionFootnote(loc("To transcribe on this device, download this model once."))
-                        BlueprintButton(loc("Download model")) { Task { await model.prepare() } }
-                            .disabled(model.busy || !preparationAllowed)
+                        BlueprintButton(loc("Download model")) { model.prepare() }
+                            .disabled(model.busy || download.capturing)
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
+                    if let message = download.message { SectionFootnote(message.text) }
                     SectionFootnote(loc("On-device transcription does not separate speakers."))
                 }
                 if draft.mode == .external {
@@ -225,15 +224,6 @@ public struct ProcessingSettingsView: View {
                         BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()
                     }
                     if draft.acceptsModel { BlueprintField(loc("Model (optional)"), text: field(\.model), mono: true) }
-                    // Keys only matter to an external provider, so the list lives with it.
-                    // The current provider's key is managed on its own row above; this lists the rest.
-                    let others = model.secretNames.filter { $0 != draft.secretRef }
-                    if !others.isEmpty {
-                        SectionHeader(loc("Other providers’ keys"))
-                        ForEach(others, id: \.self) { name in
-                            SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .quiet) { deletingKey = name } }
-                        }
-                    }
                 }
                 if draft.mode != .off {
                     SectionRow(title: loc("Spoken language")) {
@@ -258,6 +248,19 @@ public struct ProcessingSettingsView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
+                // Keys only matter to an external provider, so the list lives with it — after the
+                // provider's own settings and their Save, since deleting one is not part of them.
+                // The current provider's key is managed on its own row above; this lists the rest.
+                if draft.mode == .external {
+                    let others = model.secretNames.filter { $0 != draft.secretRef }
+                    if !others.isEmpty {
+                        SectionHeader(loc("Other providers’ keys"))
+                        ForEach(others, id: \.self) { name in
+                            // docs/09: a delete that cannot be undone is red.
+                            SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .danger) { deletingKey = name } }
+                        }
+                    }
+                }
                 SectionHeader(loc("Settings file"))
                 FlowLayout(alignment: .trailing) {
                     BlueprintButton(loc("Export settings"), tone: .quiet) { export() }.disabled(!model.canExport)
@@ -272,10 +275,14 @@ public struct ProcessingSettingsView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { Task { await model.refreshLocal() } }
         }
+        // Wherever the download was started from, the model row here says what it came to.
+        .onChange(of: download.downloading) { _, running in
+            if !running { Task { await model.refreshLocal() } }
+        }
         .blueprintDialog(isPresented: Binding(get: { deletingKey != nil }, set: { if !$0 { deletingKey = nil } })) {
             BlueprintDialog(title: RecKitStrings.localized("Delete key: %@", SttProviders.shared.displayName(name: deletingKey ?? ""))) {
                 BlueprintButton(loc("Cancel"), tone: .quiet) { deletingKey = nil }
-                BlueprintButton(loc("Delete")) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
+                BlueprintButton(loc("Delete"), tone: .danger) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
             } content: { EmptyView() }
         }
         // docs/15 · App Review 5.1.2(i): what is sent, to whom, and the user's permission, before the
@@ -359,7 +366,7 @@ private struct ProcessingKeyField: View {
             }
             FlowLayout(alignment: .trailing) {
                 BlueprintButton(RecKitStrings.localized("Replace key"), tone: .quiet) { replacing = true }
-                BlueprintButton(RecKitStrings.localized("Delete"), tone: .quiet, action: delete)
+                BlueprintButton(RecKitStrings.localized("Delete"), tone: .danger, action: delete)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         } else {

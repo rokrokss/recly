@@ -30,7 +30,6 @@ enum class Str {
     PROCESSING_TRANSCRIPTION,
     PROCESSING_SAVED,
     PROCESSING_PREPARE,
-    PROCESSING_PREPARING,
     PROCESSING_MODEL_DOWNLOAD,
     PROCESSING_LOCAL_NO_SPEAKERS,
     PROCESSING_SPEECH_MODEL,
@@ -102,6 +101,7 @@ enum class Str {
     LEDGER_STATUS,
     LEDGER_ANNOUNCE,
     LEDGER_EMPTY,
+    LEDGER_EMPTY_HINT,
     RECENT_OPEN_DRIVE,
     RECENT_RETRY,
     /** The row's own action, which is not the window that names the transcript surface. */
@@ -339,6 +339,19 @@ enum class Str {
     PROCESSING_LOCAL_RUNNING,
     PROCESSING_LOCAL_PENDING,
 
+    // The on-device speech model: a recording waiting for it, the first-run card, and the download.
+    STATE_NEEDS_MODEL,
+    PROCESSING_MODEL_CARD_TITLE,
+    PROCESSING_MODEL_CARD_BODY,
+    PROCESSING_MODEL_NOT_NOW,
+    PROCESSING_MODEL_DOWNLOADING,
+    PROCESSING_MODEL_BYTES,
+    PROCESSING_MODEL_RESUME,
+    PROCESSING_METERED_TITLE,
+    PROCESSING_MODEL_SIZE,
+    PROCESSING_DOWNLOAD,
+    PROCESSING_MODEL_CANCEL,
+
     CORE_STALE,
     ;
 
@@ -353,9 +366,13 @@ enum class Str {
 class Strings internal constructor(
     /** `en` or `ko` — the language actually loaded, never `system`. */
     val language: String,
-    private val values: Map<Str, String>,
+    values: Map<Str, String>,
 ) {
     private val locale: Locale = Locale.forLanguageTag(language)
+
+    /** Korean keeps its words whole on a line ([joinKoreanWords]); the other languages are as written. */
+    private val values: Map<Str, String> =
+        if (language == StringTable.KOREAN) values.mapValues { joinKoreanWords(it.value) } else values
 
     /** [args] are `String.format` positionals, so `%1$d` gets an `Int` and `%1$s` anything. */
     operator fun get(key: Str, vararg args: Any?): String {
@@ -363,6 +380,32 @@ class Strings internal constructor(
         return if (args.isEmpty()) pattern else String.format(locale, pattern, *args)
     }
 }
+
+/**
+ * Korean breaks between words, never inside one — but Skia, which draws every line of this app, breaks
+ * Hangul between any two syllables, so "않았습니다" could end one line with "않" and start the next with
+ * "았습니다". A WORD JOINER (U+2060, zero width, no break either side) goes between two neighbouring
+ * characters of one word when either is a Hangul syllable, so the only places left to break are the
+ * spaces. Applied to this app's own sentences when the table is loaded, before any argument is put
+ * in: a title or a transcript the user wrote is never touched.
+ */
+internal fun joinKoreanWords(text: String): String {
+    if (text.none(::isHangul)) return text
+    val joined = StringBuilder(text.length * 2)
+    text.forEachIndexed { index, char ->
+        val previous = text.getOrNull(index - 1)
+        if (previous != null && !previous.isWhitespace() && !char.isWhitespace() && (isHangul(previous) || isHangul(char))) {
+            joined.append(WORD_JOINER)
+        }
+        joined.append(char)
+    }
+    return joined.toString()
+}
+
+private fun isHangul(char: Char): Boolean = char in '\uAC00'..'\uD7A3'
+
+/** U+2060: holds its two neighbours on one line, and draws nothing. */
+internal const val WORD_JOINER: Char = '\u2060'
 
 /** Where supported language tables are loaded, once each per process. */
 object StringTable {

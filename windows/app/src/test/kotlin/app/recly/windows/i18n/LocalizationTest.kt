@@ -1,5 +1,6 @@
 package app.recly.windows.i18n
 
+import app.recly.windows.plain
 import app.recly.windows.FakeSettings
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -37,7 +38,7 @@ class LocalizationTest {
         localization.language = AppLanguage.KOREAN
         seen += localization.strings.value[Str.TRAY_QUIT]
 
-        assertEquals(listOf("Quit", "종료"), seen)
+        assertEquals(listOf("Quit", "종료"), seen.map { it.plain() })
     }
 
     /** docs/07 rule 1: `system` is the system's language, and anything but `ko` is English. */

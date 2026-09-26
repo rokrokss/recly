@@ -11,6 +11,7 @@ import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.SileroVadModelConfig
 import com.k2fsa.sherpa.onnx.Vad
 import com.k2fsa.sherpa.onnx.VadModelConfig
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.ceil
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
@@ -41,6 +42,8 @@ class QwenSpeechEngine private constructor(
     private val store: LocalModelStore,
 ) : LocalTranscriptionEngine {
     @Volatile private var cancelled = false
+    /** Downloads in flight: `prepare` is the download, and `status` says whether one is running. */
+    private val downloads = AtomicInteger()
 
     override fun cancel() { cancelled = true }
 
@@ -52,7 +55,14 @@ class QwenSpeechEngine private constructor(
     })
 
     override suspend fun prepare(language: String): LocalEngineInfo {
-        if (Qwen3Asr.hint(language) != null) store.install()
+        if (Qwen3Asr.hint(language) != null) {
+            downloads.incrementAndGet()
+            try {
+                store.install()
+            } finally {
+                downloads.decrementAndGet()
+            }
+        }
         return status(language)
     }
 
@@ -147,7 +157,13 @@ class QwenSpeechEngine private constructor(
         ),
     )
 
-    private fun info(status: LocalEngineStatus) = LocalEngineInfo(status, Qwen3Asr.NAME, Qwen3Asr.REVISION)
+    /** The size, and how much of it is on disk while it is partly there — read from the disk, so it survives a restart. */
+    private fun info(status: LocalEngineStatus) = LocalEngineInfo(
+        status, Qwen3Asr.NAME, Qwen3Asr.REVISION,
+        modelBytes = store.totalBytes,
+        progress = store.progress().takeIf { it > 0.0 && it < 1.0 },
+        downloading = downloads.get() > 0,
+    )
 
     companion object {
         private val paused = LocalTranscriptionResult(emptyList(), completed = false)

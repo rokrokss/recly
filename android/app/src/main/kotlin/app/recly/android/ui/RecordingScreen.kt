@@ -98,6 +98,8 @@ fun RecordingSection(
     onCancelTitle: () -> Unit,
     onConsentAnswered: (Boolean, Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    /** The first-run card that offers the speech model, at the top of the tab ([ModelPromptCard]). */
+    prompt: @Composable () -> Unit = {},
 ) {
     val gate = rememberPermissionGate(
         refused = state.micRefused,
@@ -134,6 +136,7 @@ fun RecordingSection(
             // apart. The whole id is in Settings → About, where it is the point.
             meta = "${Source.PHONE.name.lowercase()} · ${rememberDeviceId().take(8)}",
         )
+        prompt()
         Box(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
             // docs/09 화면 원칙 1: the transcription node is the only one on this screen that takes
             // a tap — it opens the processing settings. The device and the state are readouts.

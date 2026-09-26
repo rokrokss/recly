@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Space
@@ -38,19 +39,21 @@ private val TIME_COLUMN = 68.dp
  * Wide enough for `1:02:33`, the longest thing [app.recly.windows.ui.LedgerFormat.length] mints.
  */
 private val LENGTH_COLUMN = 52.dp
-private val STATUS_COLUMN = 92.dp
 
-/** Aligns an expanded row's action with the right edge of the column's centered DONE badge. */
+/**
+ * Aligns an expanded row's action with the right edge of the column's centered DONE badge. [status]
+ * is the ledger's measured status column ([statusColumnWidth]).
+ */
 @Composable
-fun LedgerAction(content: @Composable () -> Unit) {
+fun LedgerAction(status: Dp, content: @Composable () -> Unit) {
     Layout(content = {
         Box { content() }
         StatusBadge(LedgerStatus("DONE", BadgeTone.SUCCESS), Modifier.clearAndSetSemantics {})
     }) { measurables, constraints ->
         val badge = measurables[1].measure(constraints.copy(
-            minWidth = 0, maxWidth = STATUS_COLUMN.roundToPx(), minHeight = 0,
+            minWidth = 0, maxWidth = status.roundToPx(), minHeight = 0,
         ))
-        val inset = ((STATUS_COLUMN.roundToPx() - badge.width) / 2).coerceAtLeast(0)
+        val inset = ((status.roundToPx() - badge.width) / 2).coerceAtLeast(0)
         val action = measurables[0].measure(constraints.copy(
             minWidth = 0, maxWidth = (constraints.maxWidth - inset).coerceAtLeast(0), minHeight = 0,
         ))
@@ -86,6 +89,8 @@ fun LedgerHeader(
     title: String,
     length: String,
     status: String,
+    /** The measured status column ([statusColumnWidth]), shared with every row under it. */
+    statusWidth: Dp,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier) {
@@ -99,7 +104,7 @@ fun LedgerHeader(
             Heading(time, Modifier.width(TIME_COLUMN))
             Heading(title, Modifier.weight(1f))
             Heading(length, Modifier.width(LENGTH_COLUMN), TextAlign.End)
-            Heading(status, Modifier.width(STATUS_COLUMN), TextAlign.Center)
+            Heading(status, Modifier.width(statusWidth), TextAlign.Center)
         }
         HairLine()
     }
@@ -131,6 +136,8 @@ fun LedgerRow(
     subtitle: String,
     length: String,
     status: LedgerStatus,
+    /** The measured status column ([statusColumnWidth]). */
+    statusWidth: Dp,
     announce: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -184,7 +191,7 @@ fun LedgerRow(
                 textAlign = TextAlign.End,
                 maxLines = 1,
             )
-            Box(Modifier.width(STATUS_COLUMN).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+            Box(Modifier.width(statusWidth).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
                 // docs/09 "모션": a state badge that swaps in place is the one transition this row
                 // has, and it is the short one — [Motion.BADGE_FADE_MS] on the standard easing.
                 Crossfade(

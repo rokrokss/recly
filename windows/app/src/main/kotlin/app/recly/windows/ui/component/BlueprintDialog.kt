@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.toggleable
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -85,13 +88,21 @@ fun BlueprintDialog(
      * so the caller hands its theme in and it is applied *inside* the dialog's own window instead.
      */
     theme: @Composable (@Composable () -> Unit) -> Unit = { it() },
+    /**
+     * A short question sized to its card rather than to [height]: the window opens at [height] and
+     * then takes the card's own height, once the card has been laid out in this window's type
+     * scale and language — so there is no empty band between the body and the answers. Its body
+     * does not scroll, so this is for a line or two and nothing longer.
+     */
+    fitContent: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
+    val state = rememberDialogState(width = width, height = height)
     DialogWindow(
         onCloseRequest = onDismissRequest,
         // The taskbar still wants a name for it, even though the card draws its own.
         title = title,
-        state = rememberDialogState(width = width, height = height),
+        state = state,
         undecorated = true,
         transparent = true,
         resizable = false,
@@ -101,7 +112,23 @@ fun BlueprintDialog(
         },
     ) {
         theme {
-            DialogCard(title, modifier, actions, content)
+            if (fitContent) {
+                val density = LocalDensity.current
+                Box(Modifier.fillMaxSize()) {
+                    DialogCard(
+                        title = title,
+                        // Measured at its own height whatever the window is now, and the window follows.
+                        modifier = modifier
+                            .wrapContentHeight(Alignment.Top, unbounded = true)
+                            .onSizeChanged { card -> state.size = DpSize(width, with(density) { card.height.toDp() }) },
+                        actions = actions,
+                        content = content,
+                        fill = false,
+                    )
+                }
+            } else {
+                DialogCard(title, modifier, actions, content, fill = true)
+            }
         }
     }
 }
@@ -112,6 +139,8 @@ private fun DialogCard(
     modifier: Modifier,
     actions: @Composable () -> Unit,
     content: @Composable ColumnScope.() -> Unit,
+    /** The window's whole height, the body scrolling in it; or, false, the card's own height. */
+    fill: Boolean,
 ) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
@@ -120,7 +149,7 @@ private fun DialogCard(
     var spill by remember(title) { mutableStateOf("") }
     Column(
         modifier = modifier
-            .fillMaxSize()
+            .then(if (fill) Modifier.fillMaxSize() else Modifier.fillMaxWidth())
             .border(palette.line, palette.grid, shape)
             .background(palette.surface, shape)
             .padding(Space.m),
@@ -142,7 +171,7 @@ private fun DialogCard(
         )
         Column(
             // Filled, so the answers sit at the foot of the card rather than halfway up it.
-            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()),
+            modifier = if (fill) Modifier.weight(1f).verticalScroll(rememberScrollState()) else Modifier,
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             if (spill.isNotEmpty()) {

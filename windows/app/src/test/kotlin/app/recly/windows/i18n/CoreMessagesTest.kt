@@ -1,5 +1,6 @@
 package app.recly.windows.i18n
 
+import app.recly.windows.plain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -33,7 +34,7 @@ class CoreMessagesTest {
         val message = coreMessage(CoreMessage.MISSING_SECRET.code("webhook_secret"))
 
         assertEquals("This device has no value for the secret ‘webhook_secret’", message.text(en))
-        assertEquals("이 기기에 시크릿 ‘webhook_secret’ 값이 없습니다", message.text(ko))
+        assertEquals("이 기기에 시크릿 ‘webhook_secret’ 값이 없습니다", message.text(ko).plain())
     }
 
     /** The one key whose argument is itself a code, resolved with the sentence around it. */
@@ -43,7 +44,7 @@ class CoreMessagesTest {
         val message = coreMessage(CoreMessage.RETRY_BUDGET_SPENT.code(inner))
 
         assertEquals("Out of retries: Failed: HTTP 503", message.text(en))
-        assertEquals("재시도 횟수를 다 썼습니다: 실패: HTTP 503", message.text(ko))
+        assertEquals("재시도 횟수를 다 썼습니다: 실패: HTTP 503", message.text(ko).plain())
     }
 
     /** docs/07 §5 compatibility: a row written before the keys existed is a sentence, shown as it is. */
@@ -72,7 +73,7 @@ class CoreMessagesTest {
         val code = CoreMessage.AUTH_REJECTED.code(detail = "transcribe 401")
 
         assertEquals("The provider rejected the key.", coreMessage(code).text(en))
-        assertEquals("제공자가 키를 거부했습니다.", coreMessage(code).text(ko))
+        assertEquals("제공자가 키를 거부했습니다.", coreMessage(code).text(ko).plain())
         assertEquals("transcribe 401", coreMessageDetail(code))
     }
 

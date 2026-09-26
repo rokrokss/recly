@@ -35,7 +35,7 @@ public enum CoreMessages {
     static func key(for message: CoreMessage) -> String {
         switch message {
         case .localTranscriptionUnavailable: return "Local transcription is unavailable on this device. Choose another transcription method."
-        case .localModelRequired: return "Download the speech recognition model in transcription settings."
+        case .localModelRequired: return "The speech recognition model isn't downloaded yet."
         case .localDiarizationUnavailable: return "This local engine does not support speaker identification. Turn it off or choose an external API."
         case .providerRegionRestricted: return "This transcription provider is unavailable in your App Store region."
         case .storefrontUnavailable: return "Waiting to verify your App Store region before continuing transcription."

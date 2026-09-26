@@ -14,6 +14,9 @@ public enum JobRunStatus: Sendable {
     /// parked state it is not something [NextRun] comes back for — the core does not poll Drive.
     case needsSpace
     case needsConsent
+    /// docs/10: waiting for the on-device speech model. Parked like consent — the download, not a
+    /// timer, is what brings it back.
+    case needsModel
     case skippedShort
 }
 

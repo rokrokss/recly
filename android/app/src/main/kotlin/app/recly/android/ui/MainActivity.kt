@@ -40,6 +40,7 @@ import app.recly.android.ui.component.BlueprintNavBar
 import app.recly.android.ui.component.NavGlyph
 import app.recly.android.ui.component.NavItem
 import app.recly.android.ui.theme.ReclyTheme
+import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.dotGrid
 import app.recly.android.work.WorkScheduler
@@ -206,7 +207,6 @@ class MainActivity : ComponentActivity() {
                         Tab.JOBS -> JobsTab(
                             state = jobs,
                             model = jobsModel,
-                            onRecord = { tab = Tab.RECORD },
                             // docs/08 AUTH_REJECTED: the key is kept in the processing settings, so
                             // that is where "check the key" has to land.
                             onCheckKey = { tab = Tab.SETTINGS },
@@ -331,6 +331,19 @@ private fun RecordTab(
         onCancelTitle = model::cancelTitle,
         onConsentAnswered = model::consentAnswered,
         modifier = modifier,
+        prompt = {
+            state.modelPrompt?.let { info ->
+                val metered = rememberMeteredGate(info.modelBytes)
+                ModelPromptCard(
+                    download = state.download,
+                    info = info,
+                    onDownload = { metered(model::downloadModel) },
+                    onNotNow = model::dismissModelPrompt,
+                    onCancel = model::cancelDownload,
+                    modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
+                )
+            }
+        },
     )
 }
 
@@ -339,7 +352,6 @@ private fun RecordTab(
 private fun JobsTab(
     state: JobsUiState,
     model: JobsViewModel,
-    onRecord: () -> Unit,
     onCheckKey: () -> Unit,
     onFix: (JobAlert) -> Unit,
     modifier: Modifier,
@@ -360,10 +372,11 @@ private fun JobsTab(
             onConfirmDelete = model::confirmDelete,
             onCancelDelete = model::cancelDelete,
             onDelete = model::delete,
-            onRecord = onRecord,
             onOpenDetail = model::openDetail,
             onCheckKey = { onCheckKey() },
             onFix = onFix,
+            onDownloadModel = model::downloadModel,
+            onCancelDownload = model::cancelDownload,
             modifier = modifier,
         )
     }

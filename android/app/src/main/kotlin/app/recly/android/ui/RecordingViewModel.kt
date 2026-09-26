@@ -11,7 +11,10 @@ import app.recly.android.R
 import app.recly.android.core.CoreModule
 import app.recly.android.core.UiMessage
 import app.recly.android.settings.AppSettings
+import app.recly.android.work.ModelDownload
+import app.recly.android.work.ModelDownloadState
 import app.recly.android.work.WorkScheduler
+import app.recly.android.work.wireTag
 import app.recly.recording.RecorderEvent
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
@@ -20,13 +23,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
+import recly.core.job.JobStatus
 import recly.core.recording.DeleteResult
+import recly.core.transcribe.LocalEngineInfo
+import recly.core.transcribe.LocalEngineStatus
+import recly.core.transcribe.installed
 
 /** A recording that has stopped and is waiting to be named before it is queued. */
 data class UntitledRecording(
@@ -58,6 +68,13 @@ data class RecordingUiState(
      * the permission itself, which the screen re-reads on every resume ([micGranted]).
      */
     val micRefused: Boolean = false,
+    /**
+     * The engine's reading for the saved language while the first-run card is up — it carries the
+     * model's size — and null while the card has nothing to say ([modelPromptVisible]).
+     */
+    val modelPrompt: LocalEngineInfo? = null,
+    /** The speech model download the card shows and starts. */
+    val download: ModelDownloadState = ModelDownloadState(),
 )
 
 /**
@@ -96,6 +113,37 @@ class RecordingViewModel @JvmOverloads constructor(
         viewModelScope.launch {
             completionEvents.collect { event -> onEvent(event) }
         }
+        viewModelScope.launch {
+            val core = core()
+            val installed = core.deps.localTranscription.installed
+            combine(
+                core.processingSettings.observe(),
+                recorder,
+                settings.modelPromptDismissed,
+                ModelDownload.get(getApplication()).state,
+                core.jobs.observe().map { jobs -> jobs.any { it.status == JobStatus.NEEDS_MODEL } }.distinctUntilChanged(),
+            ) { stored, capture, dismissed, download, waiting ->
+                val transcription = (stored as? recly.core.processing.ProcessingSettingsState.Ready)?.document?.settings?.transcription
+                val capturing = capture !is RecorderState.Idle
+                // Asked of the engine only when everything else already says yes: it reads the disk.
+                val info = transcription
+                    ?.takeIf { modelPromptVisible(it.mode, installed, LocalEngineStatus.MODEL_REQUIRED, dismissed, capturing, waiting) }
+                    ?.let { runCatching { core.localEngineInfo(it.language.wireTag()) }.getOrNull() }
+                val visible = modelPromptVisible(transcription?.mode, installed, info?.status, dismissed, capturing, waiting)
+                _state.update { it.copy(modelPrompt = info.takeIf { visible }, download = download) }
+            }.collect()
+        }
+    }
+
+    /** The card's "Download model": the saved settings' language, like the list's banner. */
+    fun downloadModel(onWifi: Boolean) = ModelDownload.get(getApplication()).start(null, onWifi)
+
+    /** The partial files stay for a later resume. */
+    fun cancelDownload() = ModelDownload.get(getApplication()).cancel()
+
+    /** "Not now": the card does not come back on this device. */
+    fun dismissModelPrompt() {
+        viewModelScope.launch { settings.dismissModelPrompt() }
     }
 
     /**

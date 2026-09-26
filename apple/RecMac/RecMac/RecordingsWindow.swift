@@ -24,11 +24,12 @@ struct RecordingsWindow: View {
                     // Lazy, so the page marker under the rows appears only when it is scrolled to.
                     LazyVStack(spacing: 0) {
                         if menu.recents.isEmpty {
-                            Text(verbatim: loc(menu.recentsLoading ? "Loading…" : "No recordings yet"))
-                                .foregroundStyle(blueprint.palette.textMuted)
-                                .padding(Space.m)
-                            if !menu.recentsLoading {
-                                BlueprintButton(loc("Start recording"), tone: .primary) { menu.start() }
+                            if menu.recentsLoading {
+                                EmptyListMessage(title: loc("Loading…"))
+                            } else {
+                                EmptyListMessage(title: loc("No recordings yet"), hint: loc("Recordings you make appear here.")) {
+                                    BlueprintButton(loc("Start recording"), tone: .primary) { menu.start() }
+                                }
                             }
                         }
                         ForEach(menu.recents) { item in
@@ -124,16 +125,18 @@ struct RecordingsWindow: View {
         // docs/08 "오류": what to do about it, and — for a key — where to do it. docs/07 §5:
         // `lastError` is a core message key, and a row an older build wrote is prose that
         // `CoreMessages` shows as it stands.
-        let fixes = item.needsKey || item.alert == .needsSpace
+        let fixes = item.needsKey || item.alert == .needsSpace || item.waitingForModel
         if (item.alert != .needsAuth && item.reason != nil) || fixes {
             VStack(alignment: .leading, spacing: Space.xs) {
-                if let reason = item.reason {
-                    Text(verbatim: reason.sentence)
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.danger)
-                }
+                // Red for a failure, the badge's warning tone for a job that is only waiting.
+                RowReason(item: item, download: menu.modelDownload, showsDetail: false)
                 if fixes {
                     FlowLayout {
+                        // docs/05 "고정 처리 설정 도입": the model this recording waits for, first.
+                        if item.waitingForModel, let download = menu.modelDownload {
+                            ModelDownloadButton(download: download, language: item.localLanguage)
+                                .accessibilityIdentifier("download-model")
+                        }
                         if item.needsKey {
                             BlueprintButton(RecordingDetailStrings.checkKey) {
                                 // The settings are a window of their own (`LSUIElement`), and it

@@ -42,6 +42,13 @@ public struct LedgerStatus: Equatable, Sendable {
         self.tone = tone
     }
 
+    /// Every code [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
+    /// measured against, so the widest of them fits at full size.
+    public static let ledgerCodes = [
+        "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "REC", "RETRY", "DONE", "FAILED",
+        "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN",
+    ]
+
     /// docs/09 화면 원칙 2: the badge is the state as a code, and the code is the same word the core
     /// and the logs use. What it *means* is [RecentItem.stateLabel], which is what VoiceOver hears.
     ///
@@ -65,6 +72,7 @@ public struct LedgerStatus: Equatable, Sendable {
         case "Done": return LedgerStatus(code: "DONE", tone: .success)
         case "Failed": return LedgerStatus(code: "FAILED", tone: .danger)
         case "Transfer permission needed": return LedgerStatus(code: "NEEDS_CONSENT", tone: .warning)
+        case "Waiting for speech model": return LedgerStatus(code: "NEEDS_MODEL", tone: .warning)
         case "Sign-in needed": return LedgerStatus(code: "NEEDS_AUTH", tone: .neutral)
         // docs/10 "Drive 용량 초과": a state of its own and not a failure — a retry is not what
         // clears it, and the row says so.
@@ -137,11 +145,9 @@ public struct StatusBadge: View {
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
             .lineLimit(1)
-            // A code that is truncated is not a code any more. The longest of them is
-            // `TRANSCRIBING`, which the ledger's status column is cut for — but the user's own type
-            // size can still outgrow it, and shrinking the letters keeps them readable where
-            // clipping does not.
-            .minimumScaleFactor(0.6)
+            // A code that is truncated or shrunk is not a code any more: the badge is always its
+            // own width, and the ledger's status column is measured to the widest one.
+            .fixedSize()
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .overlay {

@@ -29,7 +29,7 @@ struct RecordingsView: View {
             // docs/10 "iPhone": 목록 상단 배너 — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
-            AlertBanner(alerts: model.alerts) { model.fix($0) }
+            AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
             if let message = model.message {
                 Banner(message.text, tone: .warning)
                     .padding(.horizontal, Space.m)
@@ -49,13 +49,11 @@ struct RecordingsView: View {
                         row(item)
                     }
                     if model.recents.isEmpty {
-                        Text(verbatim: loc(model.recentsLoading ? "Loading…" : "No recordings yet"))
-                            .font(blueprint.fonts.bodySmall)
-                            .foregroundStyle(blueprint.palette.textMuted)
-                            .padding(Space.l)
-                        if !model.recentsLoading {
-                            BlueprintButton(loc("Record"), tone: .primary) { model.tab = .record }
-                        }
+                        // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
+                        EmptyListMessage(
+                            title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
+                            hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
+                        )
                     }
                 }
             }
@@ -142,18 +140,10 @@ struct RecordingsView: View {
 
             // docs/07 §5: what the core last said about this job, with its diagnostic under it —
             // the sentence translated, the diagnostic never. For a docs/08 "오류" the sentence is
-            // what to do next and the diagnostic is the provider's own words.
-            if item.alert != .needsAuth, let reason = item.reason {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: reason.sentence)
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.danger)
-                    if let detail = reason.detail {
-                        Text(verbatim: detail)
-                            .font(blueprint.fonts.monoSmall)
-                            .foregroundStyle(blueprint.palette.textMuted)
-                    }
-                }
+            // what to do next and the diagnostic is the provider's own words. Red for a failure,
+            // the badge's warning tone for a job that is only waiting.
+            if item.alert != .needsAuth {
+                RowReason(item: item, download: model.modelDownload)
             }
 
             // docs/09 "접근성" · 유동 타이포: several buttons across is a layout for ordinary type
@@ -177,6 +167,12 @@ struct RecordingsView: View {
     private func actions(_ item: RecentItem) -> some View {
         HStack(alignment: .top, spacing: Space.s) {
             FlowLayout {
+                // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
+                // language, first — and nothing while the download runs (the banner has it).
+                if item.waitingForModel, let download = model.modelDownload {
+                    ModelDownloadButton(download: download, language: item.localLanguage)
+                        .accessibilityIdentifier("download-model")
+                }
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }

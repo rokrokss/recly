@@ -230,10 +230,21 @@ struct MenuPopover: View {
     private var ledger: some View {
         // Lazy, so the page marker under the rows appears only when it is scrolled to.
         LazyVStack(spacing: 0) {
+            // docs/05 "고정 처리 설정 도입": the first-run card, above the ledger, for a Mac set to
+            // transcribe on device that has no speech model yet.
+            if let download = model.modelDownload {
+                ModelPromptCard(
+                    download: download,
+                    dismissed: model.modelPromptDismissed,
+                    waiting: model.alerts.contains { $0.reason == .localModel }
+                ) {
+                    model.modelPromptDismissed = true
+                }
+            }
             // docs/10 "macOS": 팝오버 상단 배너 — the same lines the notifications carry, one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it. It replaces the sign-in-only banner: `NEEDS_AUTH` is one of the seven.
-            AlertBanner(alerts: model.alerts) { model.fix($0) }
+            AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
             LedgerHeader(
                 time: loc("Time"),
                 title: loc("Title"),
@@ -307,15 +318,9 @@ struct MenuPopover: View {
                 // docs/07 §5: what the core last said about this job, with its diagnostic under it
                 // — the sentence translated, the diagnostic never. For a docs/08 "오류" the
                 // sentence is what to do next and the diagnostic is the provider's own words.
-                if item.alert != .needsAuth, let reason = item.reason {
-                    Text(verbatim: reason.sentence)
-                        .font(blueprint.fonts.sans(TypeSize.small))
-                        .foregroundStyle(blueprint.palette.danger)
-                    if let detail = reason.detail {
-                        Text(verbatim: detail)
-                            .font(blueprint.fonts.monoSmall)
-                            .foregroundStyle(blueprint.palette.textMuted)
-                    }
+                // Red for a failure, the badge's warning tone for a job that is only waiting.
+                if item.alert != .needsAuth {
+                    RowReason(item: item, download: model.modelDownload)
                 }
                 // More buttons than a 460pt popover holds in one line, and a label cut to a
                 // syllable says nothing — so they wrap onto a second line rather than becoming a
@@ -335,6 +340,12 @@ struct MenuPopover: View {
     private func actions(_ item: RecentItem) -> some View {
         HStack(alignment: .top, spacing: Space.s) {
             FlowLayout {
+                // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
+                // language, first — and nothing while the download runs (the banner has it).
+                if item.waitingForModel, let download = model.modelDownload {
+                    ModelDownloadButton(download: download, language: item.localLanguage)
+                        .accessibilityIdentifier("download-model")
+                }
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
@@ -421,7 +432,7 @@ struct SettingsPane: View {
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).
             if let processing = model.processing {
-                ProcessingSettingsView(model: processing, preparationAllowed: model.isIdle)
+                ProcessingSettingsView(model: processing)
             }
 
             // docs/09 트렌드 6: no mascot and no "handmade" line — what this build actually is.

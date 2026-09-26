@@ -34,6 +34,17 @@ struct RecordingView: View {
                 // phones apart. The whole id is in Settings → About, where it is the point.
                 meta: "\(Source.phone.name.lowercased()) · \(model.deviceId.prefix(8))"
             )
+            // docs/05 "고정 처리 설정 도입": the first-run card, at the top of the Record tab, for a
+            // phone set to transcribe on device that has no speech model yet.
+            if let download = model.modelDownload {
+                ModelPromptCard(
+                    download: download,
+                    dismissed: model.modelPromptDismissed,
+                    waiting: model.alerts.contains { $0.reason == .localModel }
+                ) {
+                    model.modelPromptDismissed = true
+                }
+            }
             // Only there: a `ScrollView` at every size would cost the dashboard the one thing it is
             // — a screen whose parts are spaced across the phone rather than stacked at the top of
             // it. Inside one, the spacer between the readouts and the record node proposes nothing

@@ -13,6 +13,7 @@ use std::time::{Duration, Instant};
 use recly_capture_helper::capture::{self, Buffer, Capture, Delivery, Source};
 use recly_capture_helper::detect::{MicWatcher, POLL_SEC};
 use recly_capture_helper::encode::{self, Kind};
+use recly_capture_helper::network;
 use recly_capture_helper::pipeline::drift::{DriftCompensator, INTERVAL_SEC};
 use recly_capture_helper::pipeline::resample::Resampler;
 use recly_capture_helper::pipeline::SAMPLE_RATE_HZ;
@@ -43,6 +44,13 @@ fn main() {
         let _ = std::io::stdout().flush();
         return;
     }
+    if options.network_cost {
+        // The app asks this before it downloads the speech model: `metered` is a question for the
+        // user, `unmetered` and `unknown` are not.
+        println!("{}", network::cost().as_str());
+        let _ = std::io::stdout().flush();
+        return;
+    }
     // The microphone-in-use poll runs on this thread, and `IAudioSessionManager2` is a COM object.
     #[cfg(windows)]
     let _apartment = capture::wasapi::Apartment::enter();
@@ -60,6 +68,8 @@ struct Options {
     self_test: bool,
     /// Print the version and exit — the app's path/version check (M6-L3 deliverable 3).
     version: bool,
+    /// Print whether the connection is metered and exit — asked before a model download.
+    network_cost: bool,
     /// Overrides the `segmentSec` of the `start` command, and takes a fraction of a second — a test
     /// cannot wait fifteen minutes for a boundary.
     segment_sec: Option<f64>,
@@ -83,6 +93,7 @@ impl Options {
             ffmpeg: "ffmpeg".into(),
             self_test: false,
             version: false,
+            network_cost: false,
             segment_sec: None,
             parts: None,
             die: false,
@@ -99,6 +110,7 @@ impl Options {
             match argument.as_str() {
                 "--self-test" => options.self_test = true,
                 "--version" => options.version = true,
+                "--network-cost" => options.network_cost = true,
                 "--fake-source" => {
                     // The shape `sine` is the only one there is; it is named so the flag reads as a
                     // choice rather than a switch, as the lane writes it.

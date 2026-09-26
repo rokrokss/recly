@@ -406,7 +406,7 @@ public enum DisconnectGuard {
         // Only the placeholder differs — Apple formats a [UiMessage] argument as a string.
         if let busy = result?.busyRecordings, !busy.isEmpty {
             return .key(
-                "Google access was revoked, but %@ recording(s) were still running and were kept — disconnect again once they have finished.",
+                "Google access was revoked. Recordings still running and kept: %@ — disconnect again once they have finished.",
                 args: [.verbatim("\(busy.count)")]
             )
         }
@@ -458,8 +458,8 @@ public enum DisconnectDevice: Sendable {
 
     var deleted: String {
         switch self {
-        case .phone: return "Disconnected — %@ recording(s) deleted from this phone."
-        case .mac: return "Disconnected — %@ recording(s) deleted from this Mac."
+        case .phone: return "Disconnected. Recordings deleted from this phone: %@"
+        case .mac: return "Disconnected. Recordings deleted from this Mac: %@"
         }
     }
 
@@ -492,8 +492,8 @@ public enum DisconnectDevice: Sendable {
     /// What the disconnect leaves behind, with the count the warning has to name.
     var unuploadedStay: String {
         switch self {
-        case .phone: return "%@ recording(s) have not reached Drive yet and stay on this phone."
-        case .mac: return "%@ recording(s) have not reached Drive yet and stay on this Mac."
+        case .phone: return "Recordings not yet in Drive, kept on this phone: %@"
+        case .mac: return "Recordings not yet in Drive, kept on this Mac: %@"
         }
     }
 

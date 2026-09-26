@@ -88,24 +88,34 @@ class ReclyCore(
     suspend fun prepareLocalEngine(language: String): recly.core.transcribe.LocalEngineInfo {
         val info = deps.localTranscription.prepare(language)
         if (info.status == LocalEngineStatus.READY || info.status == LocalEngineStatus.WAITING) {
-            // A model preparation action also releases recordings blocked only on that model.
-            // Quiescing keeps a pass that observed the missing model from failing after this scan.
-            jobs.quiesced {
-                for (job in jobs.list().filter { it.status == JobStatus.FAILED }) {
-                    val runs = jobs.steps(job.id)
-                    val blocked = runs.singleOrNull { it.status == StepStatus.FAILED } ?: continue
-                    if (blocked.lastError != CoreMessage.LOCAL_MODEL_REQUIRED.code()) continue
-                    val step = job.workflow?.steps?.find { it.id == blocked.stepId } as? Step.LocalTranscribe ?: continue
-                    if (step.language.wire == language) jobStore.resumeModelRequired(job.id, blocked.id, deps.clock.now())
-                }
-            }
+            // Quiescing keeps a pass that observed the missing model from parking after this scan.
+            jobs.quiesced { resumeModelWaits(prepared = language) }
         }
         return info
+    }
+
+    /**
+     * Releases the recordings waiting for a model that is here now: the one just [prepared], and any
+     * other language whose model the engine reports ready — one app-managed model covers every
+     * language, and Apple's per-locale assets may have arrived through another app.
+     */
+    private suspend fun resumeModelWaits(prepared: String? = null) {
+        val ready = mutableMapOf<String, Boolean>()
+        for (job in jobs.list().filter { it.status == JobStatus.NEEDS_MODEL }) {
+            val blocked = jobs.steps(job.id).singleOrNull { it.status == StepStatus.NEEDS_MODEL } ?: continue
+            val step = job.workflow?.steps?.find { it.id == blocked.stepId } as? Step.LocalTranscribe ?: continue
+            val language = step.language.wire
+            val here = language == prepared || ready.getOrPut(language) {
+                deps.localTranscription.status(language).status == LocalEngineStatus.READY
+            }
+            if (here) jobStore.resumeModel(job.id, deps.clock.now())
+        }
     }
 
     @Throws(Throwable::class)
     suspend fun runLocalJobs(): RunSummary {
         try {
+            resumeModelWaits()
             val first = jobs.runLocalJobs(deps.clock.now())
             if (first.alreadyRunning) return first
             localTranscription.awaitCurrent()

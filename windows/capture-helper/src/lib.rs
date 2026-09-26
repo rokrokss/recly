@@ -9,6 +9,7 @@
 pub mod capture;
 pub mod detect;
 pub mod encode;
+pub mod network;
 pub mod pipeline;
 pub mod protocol;
 pub mod recorder;

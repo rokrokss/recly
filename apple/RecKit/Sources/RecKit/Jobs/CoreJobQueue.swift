@@ -48,6 +48,7 @@ public extension JobRunStatus {
         case .needsAuth: self = .needsAuth
         case .needsSpace: self = .needsSpace
         case .needsConsent: self = .needsConsent
+        case .needsModel: self = .needsModel
         case .skippedShort: self = .skippedShort
         }
     }

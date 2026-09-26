@@ -41,6 +41,9 @@ class QwenSpeechEngine private constructor(
 ) : LocalTranscriptionEngine {
     @Volatile private var cancelled = false
 
+    /** Whether [prepare] is downloading right now — what settings and the card show a percentage for. */
+    @Volatile private var downloading = false
+
     override fun cancel() { cancelled = true }
 
     override suspend fun status(language: String): LocalEngineInfo = info(when {
@@ -49,8 +52,16 @@ class QwenSpeechEngine private constructor(
         else -> LocalEngineStatus.READY
     })
 
+    /** Cancelling the caller stops the download between chunks; what is on disk stays for the resume. */
     override suspend fun prepare(language: String): LocalEngineInfo {
-        if (Qwen3Asr.hint(language) != null) store.install()
+        if (Qwen3Asr.hint(language) != null) {
+            downloading = true
+            try {
+                store.install()
+            } finally {
+                downloading = false
+            }
+        }
         return status(language)
     }
 
@@ -156,7 +167,15 @@ class QwenSpeechEngine private constructor(
         .setDebug(false)
         .build()
 
-    private fun info(status: LocalEngineStatus) = LocalEngineInfo(status, Qwen3Asr.NAME, Qwen3Asr.REVISION)
+    /** The size and the share already on disk come from the store, so a restart still knows them. */
+    private fun info(status: LocalEngineStatus) = LocalEngineInfo(
+        status = status,
+        name = Qwen3Asr.NAME,
+        revision = Qwen3Asr.REVISION,
+        modelBytes = store.totalBytes,
+        progress = store.progress().takeIf { it > 0.0 && it < 1.0 },
+        downloading = downloading,
+    )
 
     /**
      * The native half, copied out of its jar once into [dir]. sherpa-onnx's own loader would copy it

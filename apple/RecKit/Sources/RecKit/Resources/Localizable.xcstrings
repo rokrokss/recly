@@ -155,13 +155,13 @@
         }
       }
     },
-    "%@ part(s) have not reached Drive yet and are deleted with it.": {
+    "Parts not yet in Drive, deleted with it: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ part(s) have not reached Drive yet and are deleted with it."
+            "value": "Parts not yet in Drive, deleted with it: %@"
           }
         },
         "ko": {
@@ -232,13 +232,13 @@
         }
       }
     },
-    "%@ recording(s) have not reached Drive yet and stay on this Mac.": {
+    "Recordings not yet in Drive, kept on this Mac: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ recording(s) have not reached Drive yet and stay on this Mac."
+            "value": "Recordings not yet in Drive, kept on this Mac: %@"
           }
         },
         "ko": {
@@ -309,13 +309,13 @@
         }
       }
     },
-    "%@ recording(s) have not reached Drive yet and stay on this phone.": {
+    "Recordings not yet in Drive, kept on this phone: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ recording(s) have not reached Drive yet and stay on this phone."
+            "value": "Recordings not yet in Drive, kept on this phone: %@"
           }
         },
         "ko": {
@@ -2542,13 +2542,13 @@
         }
       }
     },
-    "Disconnected — %@ recording(s) deleted from this Mac.": {
+    "Disconnected. Recordings deleted from this Mac: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disconnected — %@ recording(s) deleted from this Mac."
+            "value": "Disconnected. Recordings deleted from this Mac: %@"
           }
         },
         "ko": {
@@ -2619,13 +2619,13 @@
         }
       }
     },
-    "Disconnected — %@ recording(s) deleted from this phone.": {
+    "Disconnected. Recordings deleted from this phone: %@": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Disconnected — %@ recording(s) deleted from this phone."
+            "value": "Disconnected. Recordings deleted from this phone: %@"
           }
         },
         "ko": {
@@ -4236,13 +4236,13 @@
         }
       }
     },
-    "Google access was revoked, but %@ recording(s) were still running and were kept — disconnect again once they have finished.": {
+    "Google access was revoked. Recordings still running and kept: %@ — disconnect again once they have finished.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Google access was revoked, but %@ recording(s) were still running and were kept — disconnect again once they have finished."
+            "value": "Google access was revoked. Recordings still running and kept: %@ — disconnect again once they have finished."
           }
         },
         "ko": {
@@ -9318,6 +9318,83 @@
         }
       }
     },
+    "Waiting for speech model": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Waiting for speech model"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "음성 모델 대기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声モデル待ち"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待语音模型"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "等待語音模型"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esperando el modelo de voz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En attente du modèle vocal"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wartet auf Sprachmodell"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aguardando o modelo de fala"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في انتظار نموذج الكلام"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्पीच मॉडल की प्रतीक्षा"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ожидание речевой модели"
+          }
+        }
+      }
+    },
     "Untitled": {
       "extractionState": "manual",
       "localizations": {
@@ -10479,7 +10556,7 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "%@ recording(s) are waiting."
+            "value": "Recordings waiting: %@"
           }
         },
         "ko": {
@@ -13616,78 +13693,78 @@
         }
       }
     },
-    "Download the speech recognition model in transcription settings.": {
+    "The speech recognition model isn't downloaded yet.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download the speech recognition model in transcription settings."
+            "value": "The speech recognition model isn't downloaded yet."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전사 설정에서 음성 인식 모델을 다운로드해 주세요."
+            "value": "음성 인식 모델을 아직 다운로드하지 않았습니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "文字起こし設定で音声認識モデルをダウンロードしてください。"
+            "value": "音声認識モデルはまだダウンロードされていません。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在转录设置中下载语音识别模型。"
+            "value": "尚未下载语音识别模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請在轉錄設定中下載語音辨識模型。"
+            "value": "尚未下載語音辨識模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descarga el modelo de reconocimiento de voz en los ajustes de transcripción."
+            "value": "El modelo de reconocimiento de voz aún no se ha descargado."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Téléchargez le modèle de reconnaissance vocale dans les réglages de transcription."
+            "value": "Le modèle de reconnaissance vocale n’est pas encore téléchargé."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laden Sie das Spracherkennungsmodell in den Transkriptionseinstellungen herunter."
+            "value": "Das Spracherkennungsmodell ist noch nicht heruntergeladen."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baixe o modelo de reconhecimento de fala nas configurações de transcrição."
+            "value": "O modelo de reconhecimento de fala ainda não foi baixado."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "نزّل نموذج التعرّف على الكلام من إعدادات النسخ."
+            "value": "لم يتم تنزيل نموذج التعرّف على الكلام بعد."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच रिकग्निशन मॉडल डाउनलोड करें।"
+            "value": "स्पीच रिकग्निशन मॉडल अभी डाउनलोड नहीं हुआ है।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Загрузите модель распознавания речи в настройках расшифровки."
+            "value": "Модель распознавания речи ещё не загружена."
           }
         }
       }
@@ -15065,73 +15142,73 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download the speech recognition model in transcription settings."
+            "value": "The speech recognition model isn't downloaded yet."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "전사 설정에서 음성 인식 모델을 다운로드해 주세요."
+            "value": "음성 인식 모델을 아직 다운로드하지 않았습니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "文字起こし設定で音声認識モデルをダウンロードしてください。"
+            "value": "音声認識モデルはまだダウンロードされていません。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "请在转录设置中下载语音识别模型。"
+            "value": "尚未下载语音识别模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "請在轉錄設定中下載語音辨識模型。"
+            "value": "尚未下載語音辨識模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descarga el modelo de reconocimiento de voz en los ajustes de transcripción."
+            "value": "El modelo de reconocimiento de voz aún no se ha descargado."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Téléchargez le modèle de reconnaissance vocale dans les réglages de transcription."
+            "value": "Le modèle de reconnaissance vocale n’est pas encore téléchargé."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laden Sie das Spracherkennungsmodell in den Transkriptionseinstellungen herunter."
+            "value": "Das Spracherkennungsmodell ist noch nicht heruntergeladen."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baixe o modelo de reconhecimento de fala nas configurações de transcrição."
+            "value": "O modelo de reconhecimento de fala ainda não foi baixado."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "نزّل نموذج التعرّف على الكلام من إعدادات النسخ."
+            "value": "لم يتم تنزيل نموذج التعرّف على الكلام بعد."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "ट्रांसक्रिप्शन सेटिंग में स्पीच रिकग्निशन मॉडल डाउनलोड करें।"
+            "value": "स्पीच रिकग्निशन मॉडल अभी डाउनलोड नहीं हुआ है।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Загрузите модель распознавания речи в настройках расшифровки."
+            "value": "Модель распознавания речи ещё не загружена."
           }
         }
       }
@@ -15285,6 +15362,160 @@
           "stringUnit": {
             "state": "translated",
             "value": "Загрузка модели…"
+          }
+        }
+      }
+    },
+    "Downloading model… %d%%": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Downloading model… %d%%"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "모델 다운로드 중… %d%%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "モデルをダウンロード中… %d%%"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下载模型… %d%%"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "正在下載模型… %d%%"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descargando modelo… %d%%"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargement du modèle… %d %%"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Modell wird heruntergeladen… %d%%"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixando modelo… %d%%"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جارٍ تنزيل النموذج… %d%%"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मॉडल डाउनलोड हो रहा है… %d%%"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Загрузка модели… %d%%"
+          }
+        }
+      }
+    },
+    "Cancel download": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancel download"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다운로드 취소"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ダウンロードをキャンセル"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消下载"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取消下載"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar descarga"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annuler le téléchargement"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download abbrechen"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar download"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إلغاء التنزيل"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "डाउनलोड रद्द करें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Отменить загрузку"
           }
         }
       }
@@ -16581,6 +16812,237 @@
           "stringUnit": {
             "state": "translated",
             "value": "Чтобы расшифровывать на этом устройстве, один раз загрузите эту модель."
+          }
+        }
+      }
+    },
+    "Transcribe on this device": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribe on this device"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기에서 전사하기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このデバイスで文字起こし"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此设备上转录"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此裝置上轉錄"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcribir en este dispositivo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcrire sur cet appareil"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Auf diesem Gerät transkribieren"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcrever neste dispositivo"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النسخ على هذا الجهاز"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस डिवाइस पर ट्रांसक्राइब करें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расшифровка на этом устройстве"
+          }
+        }
+      }
+    },
+    "Download the speech recognition model once to transcribe recordings on this device.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Download the speech recognition model once to transcribe recordings on this device."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 기기에서 녹음을 전사하려면 음성 인식 모델을 한 번 다운로드하세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このデバイスで録音を文字起こしするには、音声認識モデルを一度ダウンロードしてください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要在此设备上转录录音，请下载一次语音识别模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "若要在此裝置上轉錄錄音，請下載一次語音辨識模型。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descarga una vez el modelo de reconocimiento de voz para transcribir grabaciones en este dispositivo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Téléchargez une fois le modèle de reconnaissance vocale pour transcrire les enregistrements sur cet appareil."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laden Sie das Spracherkennungsmodell einmal herunter, um Aufnahmen auf diesem Gerät zu transkribieren."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baixe uma vez o modelo de reconhecimento de fala para transcrever gravações neste dispositivo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نزّل نموذج التعرّف على الكلام مرة واحدة لنسخ التسجيلات على هذا الجهاز."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस डिवाइस पर रिकॉर्डिंग ट्रांसक्राइब करने के लिए स्पीच रिकग्निशन मॉडल एक बार डाउनलोड करें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Чтобы расшифровывать записи на этом устройстве, один раз загрузите модель распознавания речи."
+          }
+        }
+      }
+    },
+    "Not now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Not now"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나중에"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "後で"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "以后再说"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "稍後再說"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora no"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plus tard"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nicht jetzt"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agora não"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ليس الآن"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी नहीं"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не сейчас"
           }
         }
       }

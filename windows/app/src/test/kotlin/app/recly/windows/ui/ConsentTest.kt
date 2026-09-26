@@ -1,5 +1,6 @@
 package app.recly.windows.ui
 
+import app.recly.windows.plain
 import app.recly.windows.i18n.StringTable
 import java.io.File
 import kotlin.test.Test
@@ -34,7 +35,7 @@ class ConsentTest {
             for (key in shared) {
                 assertEquals(
                     true,
-                    catalog.contains(strings[key].escapedForJson()),
+                    catalog.contains(strings[key].plain().escapedForJson()),
                     "$language/${key.key} is not in the Mac's own wording: ${strings[key]}",
                 )
             }
@@ -46,7 +47,7 @@ class ConsentTest {
     fun `the guidance link is the one the Mac points at`() {
         assertTrue(File("../../apple/RecMac/RecMac/MenuModel.swift").readText().contains(Consent.LINK))
         for (language in LANGUAGES) {
-            assertTrue(catalog.contains(StringTable.of(language)[Consent.LINK_TEXT].escapedForJson()))
+            assertTrue(catalog.contains(StringTable.of(language)[Consent.LINK_TEXT].plain().escapedForJson()))
         }
     }
 

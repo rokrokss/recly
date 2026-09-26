@@ -28,6 +28,8 @@ features = [
     "Win32_System_Com_StructuredStorage",
     "Win32_System_Variant",
     "Win32_System_Threading",
+    # `--network-cost`: the internet connection profile's cost, read before a model download.
+    "Networking_Connectivity",
 ]
 
 [profile.release]

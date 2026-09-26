@@ -56,7 +56,7 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
         val info = deps.localTranscription.status(step.language.wire)
         when (info.status) {
             LocalEngineStatus.UNSUPPORTED -> throw failure(CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE)
-            LocalEngineStatus.MODEL_REQUIRED -> throw failure(CoreMessage.LOCAL_MODEL_REQUIRED)
+            LocalEngineStatus.MODEL_REQUIRED -> throw StepFailure(false, CoreMessage.LOCAL_MODEL_REQUIRED.code(), needsModel = true)
             LocalEngineStatus.WAITING -> return waiting(input)
             LocalEngineStatus.READY -> Unit
         }

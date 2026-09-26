@@ -20,6 +20,7 @@ import app.recly.windows.detect.NoDetection
 import app.recly.windows.detect.RunningApps
 import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.helper.HelperClient
+import app.recly.windows.helper.NetworkCost
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
@@ -220,6 +221,18 @@ class ShellModel(
     var settingsOpen: Boolean by mutableStateOf(false)
     var processing: ProcessingViewModel? by mutableStateOf(null)
         private set
+
+    /**
+     * docs/05: the on-device speech model's download, one per process — settings, the banner, a
+     * waiting row and the first-run card all go through it. Null until [load] has opened the core.
+     */
+    var modelDownload: ModelDownload? by mutableStateOf(null)
+        private set
+
+    /** "Not now" on the first-run card. Read at construction, like the other switches of this PC. */
+    var modelPromptDismissed: Boolean by mutableStateOf(settings.modelPromptDismissed)
+        private set
+
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
@@ -520,7 +533,21 @@ class ShellModel(
         )
 
         graph.core.initializeProcessing()
-        processing = ProcessingViewModel(graph.core, scope, ::saveSettingsFile, ::openSettingsFile) { runner?.jobsDue() }
+        val models = ModelDownload(
+            scope = scope,
+            read = graph.core::localEngineInfo,
+            prepare = graph.core::prepareLocalEngine,
+            // The helper reads the connection's cost; without one there is nothing to ask, and no question.
+            networkCost = {
+                command?.let { withContext(graph.core.deps.io) { CaptureHelper.networkCost(it) } } ?: NetworkCost.UNKNOWN
+            },
+            onPrepared = {
+                runner?.jobsDue()
+                processing?.refreshLocal()
+            },
+        )
+        modelDownload = models
+        processing = ProcessingViewModel(graph.core, scope, models, ::saveSettingsFile, ::openSettingsFile) { runner?.jobsDue() }
 
         // docs/03 "복구", before the tray can start anything: a recording the last run left open is
         // finished here, and one whose job never got made is queued — both before the first pass.
@@ -824,12 +851,14 @@ class ShellModel(
     }
 
     /**
-     * docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다." Four surfaces, and the
+     * docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다." Five surfaces, and the
      * only one that leaves the app is the storage page, because the space is Google's to give back.
      */
     fun fix(alert: JobAlert) = when (alert.reason.fix) {
         FixSurface.SIGN_IN -> signIn()
         FixSurface.DRIVE_STORAGE -> open(DRIVE_STORAGE_URL)
+        // The banner is over every waiting recording, so it downloads in the saved settings' language.
+        FixSurface.MODEL_DOWNLOAD -> downloadModel()
         // The key and the transcription settings are both in the settings window's processing panel.
         FixSurface.SECRETS, FixSurface.EDITOR -> { settingsOpen = true }
     }
@@ -1418,6 +1447,33 @@ class ShellModel(
             runner?.jobsDue()
         }
         needsAuth = false
+    }
+
+    // --- the speech model (docs/05) ------------------------------------------------------------
+
+    /** Not while a capture is running or coming up: the download is for later, the recording is now. */
+    val modelDownloadAllowed: Boolean get() = !recording && transition == null
+
+    /** The first-run card at the top of the popup ([showsModelCard]). */
+    val modelCardShown: Boolean
+        get() = showsModelCard(
+            mode = processing?.summary?.mode,
+            installed = processing?.localInstalled == true,
+            status = modelDownload?.info?.status,
+            dismissed = modelPromptDismissed,
+            capturing = !modelDownloadAllowed,
+            waiting = alerts.any { it.reason == AlertReason.LOCAL_MODEL_REQUIRED },
+        )
+
+    /** A waiting row's own language, or — from the banner and the card — the saved settings' one. */
+    fun downloadModel(language: String? = null) {
+        if (modelDownloadAllowed) modelDownload?.start(language)
+    }
+
+    /** The card's "Not now": this PC does not offer it again, and Settings still has the download. */
+    fun dismissModelPrompt() {
+        settings.modelPromptDismissed = true
+        modelPromptDismissed = true
     }
 
     // --- settings -------------------------------------------------------------------------------

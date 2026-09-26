@@ -4,11 +4,17 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.foundation.layout.defaultMinSize
+import java.text.NumberFormat
+import java.util.Locale
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Radius
 import kotlinx.coroutines.delay
@@ -155,20 +161,33 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
         }
         if (model.recents.isEmpty()) {
             item {
-                // docs/09: the one recovery action under a centred message is centred under it.
-                Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                // docs/09 화면 원칙 8: an empty list says so in the middle of the space the list would
+                // fill — a line, a muted line under it, and the one action a clear step below, centred.
+                Column(
+                    Modifier.fillParentMaxSize().padding(Space.l),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
                     Text(
                         strings[if (model.recentsLoading) Str.LIST_LOADING else Str.LEDGER_EMPTY],
-                        modifier = Modifier.padding(Space.l),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = blueprint.textMuted,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = blueprint.text,
                         textAlign = TextAlign.Center,
                     )
-                    if (!model.recentsLoading) BlueprintButton(
-                        strings[Str.TRAY_START], model::start,
-                        enabled = model.ready && !model.recording,
-                        modifier = Modifier.padding(horizontal = Space.m),
-                    )
+                    if (!model.recentsLoading) {
+                        Text(
+                            strings[Str.LEDGER_EMPTY_HINT],
+                            modifier = Modifier.padding(top = Space.xs),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = blueprint.textMuted,
+                            textAlign = TextAlign.Center,
+                        )
+                        BlueprintButton(
+                            strings[Str.TRAY_START], model::start,
+                            enabled = model.ready && !model.recording,
+                            modifier = Modifier.padding(top = Space.l),
+                        )
+                    }
                 }
             }
         }
@@ -186,6 +205,10 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         // be able to do by accident, which is why the button is out here. And never over one that
         // is being written to or uploaded ([RecentItem.deletable]).
         controls = {
+            // Waiting for the speech model: the row's one action is the download.
+            if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) {
+                ModelDownloadChip(model, strings, item.modelLanguage)
+            }
             Box(Modifier.weight(1f))
             if (item.deletable) {
                 BlueprintButton(
@@ -343,7 +366,7 @@ private fun PlayerBar(
             when {
                 // docs/03 ADR-017: the button's place holds how far the trip is. No words: this shell
                 // is told nothing about reduce motion, so the waveform row above always says it.
-                detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(detail.fetchProgress, strings[Str.PLAYER_FETCHING])
+                detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(detail.fetchProgress, strings[Str.PLAYER_FETCHING], strings)
 
                 !detail.audio.isEmpty -> {
                     // Not while this PC is recording: the microphone and the speaker are one session on
@@ -448,25 +471,46 @@ private fun WaveformLoader() {
 
 /**
  * docs/09: how far the trip to Drive is, in the place and the shape of the Play button it becomes —
- * the button's own outline, filling with the button's own colour, so that when it is full it is the
- * button. No words on it; a screen reader hears [label] and the percentage.
+ * the button's own outline, exactly its size (the Play label is laid out in it unseen, with the
+ * button's own padding), filling with the button's own colour, so that when it is full it is the
+ * button and nothing moves. The percentage is written in it in the accent — and in the button's own
+ * ink over the part already filled — so it never reads as an empty, disabled button. A screen reader
+ * hears [label] and the percentage.
  */
 @Composable
-private fun FetchProgress(fraction: Float, label: String) {
+private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     val shown by animateFloatAsState(fraction, tween(Motion.STANDARD_MS, easing = Motion.Standard))
+    val style = MaterialTheme.typography.labelLarge
+    val measurer = rememberTextMeasurer()
+    val percent = remember(fraction, strings.language) {
+        NumberFormat.getPercentInstance(Locale.forLanguageTag(strings.language)).format(fraction.coerceIn(0f, 1f))
+    }
     Box(
         Modifier
-            .size(width = MinTouch * 2, height = MinTouch)
+            // BlueprintButton's own box: the minimum touch height, and its padding around the label.
+            .defaultMinSize(minHeight = MinTouch)
             .clip(shape)
             .border(palette.line, palette.accent, shape)
-            .drawBehind { drawRect(palette.accent, size = Size(size.width * shown, size.height)) }
+            .drawWithContent {
+                val filled = size.width * shown
+                drawRect(palette.accent, size = Size(filled, size.height))
+                val text = measurer.measure(percent, style)
+                val at = Offset((size.width - text.size.width) / 2, (size.height - text.size.height) / 2)
+                clipRect(right = filled) { drawText(text, color = palette.onAccent, topLeft = at) }
+                clipRect(left = filled) { drawText(text, color = palette.accent, topLeft = at) }
+            }
             .clearAndSetSemantics {
                 contentDescription = label
                 progressBarRangeInfo = ProgressBarRangeInfo(fraction, 0f..1f)
-            },
-    )
+            }
+            .padding(horizontal = Space.s, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Unseen: only its size is wanted, which is the Play button's.
+        Text(strings[Str.PLAYER_PLAY], style = style, maxLines = 1, modifier = Modifier.alpha(0f))
+    }
 }
 
 /** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */

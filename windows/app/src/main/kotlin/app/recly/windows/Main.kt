@@ -43,6 +43,7 @@ import androidx.compose.ui.window.rememberWindowState
 import app.recly.windows.core.Host
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
+import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
@@ -50,6 +51,8 @@ import app.recly.windows.ui.Consent
 import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
 import app.recly.windows.ui.DisconnectDialog
+import app.recly.windows.ui.ByteFormat
+import app.recly.windows.ui.MeteredDownloadDialog
 import app.recly.windows.ui.RecordingsWindow
 import app.recly.windows.ui.RenameDialog
 import app.recly.windows.ui.SettingsWindow
@@ -71,6 +74,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.highContrastOf
 import app.recly.windows.ui.theme.observeSystemHighContrast
 import app.recly.windows.ui.trayMenu
+import java.util.Locale
 import java.awt.KeyboardFocusManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -201,6 +205,20 @@ fun main(args: Array<String>) {
             )
         }
 
+        // The speech model over a metered connection: asked from here for the same reason — the popup
+        // or the settings window that started the download may be gone by the time it is answered.
+        model.modelDownload?.let { download ->
+            if (download.meteredPrompt != null) {
+                MeteredDownloadDialog(
+                    strings = strings,
+                    size = download.info?.modelBytes?.let { ByteFormat.format(it, Locale.forLanguageTag(strings.language)) },
+                    theme = themed,
+                    onCancel = download::dismissMetered,
+                    onDownload = download::confirmMetered,
+                )
+            }
+        }
+
         model.disconnectPrompt?.let { prompt ->
             DisconnectDialog(
                 prompt = prompt,
@@ -243,6 +261,7 @@ private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> 
             AppTheme.DARK -> true
         },
         highContrast = dev.highContrast ?: highContrastOf(systemContrast),
+        tracked = strings.language != StringTable.KOREAN,
         content = {
             CompositionLocalProvider(LocalLayoutDirection provides if (strings.language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
         },

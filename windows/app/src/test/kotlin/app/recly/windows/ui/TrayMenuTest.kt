@@ -1,5 +1,6 @@
 package app.recly.windows.ui
 
+import app.recly.windows.plain
 import app.recly.windows.FakeSettings
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
@@ -34,7 +35,7 @@ class TrayMenuTest {
         )
         assertEquals(
             listOf("여는 중", "Google Drive 연결", "Recly 열기", "녹음 시작", "종료"),
-            korean,
+            korean.map { it.plain() },
         )
     }
 

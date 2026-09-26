@@ -143,6 +143,8 @@ class JobService(
             JobStatus.NEEDS_AUTH,
             // docs/10: nothing tells the core that space was freed, so "다시 시도" is the only way out.
             JobStatus.NEEDS_SPACE,
+            // A recording waiting for the model re-plans from the current settings — another mode.
+            JobStatus.NEEDS_MODEL,
             JobStatus.FAILED,
             JobStatus.SKIPPED_SHORT,
         )

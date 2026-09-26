@@ -13,6 +13,8 @@ import recly.core.transcribe.installed
 class ProcessingViewModel(
     private val core: ReclyCore,
     private val scope: CoroutineScope,
+    /** The shell's one model download; the panel's Download row starts and cancels it. */
+    val download: ModelDownload,
     private val saveFile: suspend (String, String) -> Boolean,
     private val openFile: suspend () -> String?,
     private val onSaved: () -> Unit,
@@ -29,7 +31,6 @@ class ProcessingViewModel(
     val localInstalled: Boolean = core.deps.localTranscription.installed
     /** The engine's answer for the draft's language: whether it needs its model, or cannot run here. */
     var local: LocalEngineInfo? by mutableStateOf(null); private set
-    var preparing by mutableStateOf(false); private set
     init { reload() }
     fun edit(change: (ProcessingDraft) -> Unit) {
         val language = draft?.language
@@ -42,6 +43,7 @@ class ProcessingViewModel(
             secretNames = core.secrets.names()
             val settings = (stored as? ProcessingSettingsState.Ready)?.document?.settings ?: ProcessingSettings()
             draft = ProcessingDraft.from(settings); summary = settings.transcription; dirty = false; importing = false
+            download.track(engineLanguage(settings.transcription.language))
             refreshLocal()
         }.onFailure(::failed)
     }
@@ -49,16 +51,8 @@ class ProcessingViewModel(
         val language = draft?.language ?: return@launch
         runCatching { local = core.localEngineInfo(language.name.lowercase().replace('_', '-')) }.onFailure(::failed)
     }
-    /** docs/05 "고정 처리 설정 도입": the model download, only ever from this button. Recordings waiting on it resume. */
-    fun prepare() = scope.launch {
-        val language = draft?.language ?: return@launch
-        if (busy) return@launch
-        busy = true; preparing = true; message = null
-        try {
-            local = core.prepareLocalEngine(language.name.lowercase().replace('_', '-'))
-            onSaved()
-        } catch (error: Exception) { failed(error) } finally { busy = false; preparing = false }
-    }
+    /** docs/05 "고정 처리 설정 도입": the model download, in the saved settings' language — the one waiting recordings resume in. */
+    fun prepare() = download.start(engineLanguage(summary.language))
     fun save() = scope.launch {
         val current = draft ?: return@launch
         if (busy) return@launch
@@ -72,6 +66,7 @@ class ProcessingViewModel(
                 is ProcessingSaveResult.Saved -> {
                     stored = ProcessingSettingsState.Ready(result.document); draft = ProcessingDraft.from(result.document.settings)
                     summary = result.document.settings.transcription; dirty = false; importing = false
+                    download.track(engineLanguage(summary.language))
                     message = Str.PROCESSING_SAVED.message(); onSaved()
                 }
                 is ProcessingSaveResult.Invalid -> message = coreMessage(CoreMessage.STEP_FAILED, result.errors.joinToString("\n"))

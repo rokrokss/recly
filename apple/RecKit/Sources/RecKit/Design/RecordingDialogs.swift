@@ -59,7 +59,7 @@ public struct DeleteDialog: View {
         if request.unuploaded > 0 {
             BlueprintDialogText(
                 loc(
-                    "%@ part(s) have not reached Drive yet and are deleted with it.",
+                    "Parts not yet in Drive, deleted with it: %@",
                     "\(request.unuploaded)"
                 ),
                 tone: .danger

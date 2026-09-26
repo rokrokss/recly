@@ -191,7 +191,10 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         }
         .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
         .foregroundStyle(blueprint.palette.textMuted)
-        .lineLimit(1)
+        // A value is read whole: at a narrow width it wraps, as [BlueprintButton]'s label does,
+        // rather than losing its end ("Deutsch (Deutsc…").
+        .lineLimit(3)
+        .multilineTextAlignment(.center)
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .frame(minHeight: minTouch)

@@ -5,9 +5,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.blueprint
@@ -34,12 +39,38 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         text = status.label,
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
-            .padding(horizontal = 6.dp, vertical = 3.dp),
+            .padding(horizontal = BADGE_PAD, vertical = 3.dp),
         style = mono.small,
         color = status.tone.ink(),
         maxLines = 1,
         textAlign = TextAlign.Center,
     )
+}
+
+/** The badge's own inset either side of its code. */
+private val BADGE_PAD: Dp = 6.dp
+
+/**
+ * The ledger's status column, measured rather than guessed: the widest of every [labels] the ledger
+ * can show, in the badge's own type — so the fluid scale and the language come with it, and no badge
+ * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp). Android's `statusColumnWidth` is the same
+ * rule.
+ */
+@Composable
+fun statusColumnWidth(labels: List<String>): Dp = statusColumn(textColumnWidth(labels, mono.small), blueprint.line)
+
+/** The widest code, plus the badge's padding and border on each side. */
+internal fun statusColumn(widest: Dp, line: Dp): Dp = widest + (BADGE_PAD + line) * 2
+
+/** The widest of [samples] on one line, in [style]. */
+@Composable
+fun textColumnWidth(samples: List<String>, style: TextStyle): Dp {
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    return remember(samples, style, density) {
+        val widest = samples.maxOfOrNull { measurer.measure(it, style, maxLines = 1).size.width } ?: 0
+        with(density) { widest.toDp() }
+    }
 }
 
 @Composable

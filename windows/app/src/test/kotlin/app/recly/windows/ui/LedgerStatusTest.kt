@@ -3,6 +3,9 @@
 package app.recly.windows.ui
 
 import app.recly.windows.job
+import androidx.compose.ui.unit.dp
+import app.recly.windows.ui.component.statusColumn
+import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
@@ -74,9 +77,40 @@ class LedgerStatusTest {
         // Something the user has to act on, but nothing is lost yet.
         assertEquals(BadgeTone.NEUTRAL, Str.STATUS_SIGN_IN_NEEDED.message().ledgerStatus().tone)
         assertEquals(BadgeTone.WARNING, Str.STATE_RETRY_WAIT.message().ledgerStatus().tone)
+        // Waiting for the speech model is a wait the user ends, worn like consent — never FAILED.
+        val model = Str.STATE_NEEDS_MODEL.message().ledgerStatus()
+        assertEquals("NEEDS_MODEL", model.code)
+        assertEquals(BadgeTone.WARNING, model.tone)
+        assertEquals(Str.STATE_CONSENT_REQUIRED.message().ledgerStatus().tone, model.tone)
         // Nothing is wrong and nothing is happening.
         assertEquals(BadgeTone.NEUTRAL, Str.STATUS_WAITING.message().ledgerStatus().tone)
         assertEquals(BadgeTone.NEUTRAL, Str.STATE_TOO_SHORT.message().ledgerStatus().tone)
+    }
+
+    /**
+     * docs/09 화면 원칙 2: the status column is measured against every label a badge can wear, so
+     * `NEEDS_MODEL` — cut to "NEEDS_MODE" at the old fixed width — and the rest always fit whole.
+     */
+    @Test
+    fun `the status column is measured against every badge the ledger can wear`() {
+        val strings = StringTable.of(StringTable.BASE)
+        val labels = ledgerBadgeLabels(strings)
+        assertTrue("NEEDS_MODEL" in labels)
+        assertTrue(strings[Str.DRIVE_PENDING] in labels, "NEEDS_AUTH is drawn in words")
+        assertTrue("UNKNOWN" in labels)
+        LedgerStates.forEach { (key, badge) ->
+            assertTrue(key.message().ledgerStatus(strings).label in labels, "${badge.code} is not measured")
+        }
+        // The widest label, plus the badge's padding and border either side.
+        assertEquals(100.dp, statusColumn(widest = 86.dp, line = 1.dp))
+    }
+
+    /** docs/09: red is failure. A job that is waiting says why in its badge's warning tone. */
+    @Test
+    fun `only a failure's reason is red`() {
+        assertEquals(BadgeTone.DANGER, reasonTone(JobStatus.FAILED))
+        listOf(JobStatus.NEEDS_MODEL, JobStatus.NEEDS_CONSENT, JobStatus.NEEDS_AUTH, JobStatus.NEEDS_SPACE, JobStatus.WAITING)
+            .forEach { assertEquals(BadgeTone.WARNING, reasonTone(it), "$it") }
     }
 
     /** A title the user typed is not a state, and it must not be drawn as a blank cell. */

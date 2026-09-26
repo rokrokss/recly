@@ -92,6 +92,12 @@ class LedgerRemoteStateTest {
         )
     }
 
+    /** A job parked for the speech model is a row that says so, not a failure or a retry. */
+    @Test
+    fun `a job waiting for the speech model is NEEDS_MODEL`() {
+        assertEquals(ItemState.NEEDS_MODEL, stateOf(record(), job("j", JobStatus.NEEDS_MODEL, nextRunAt = null)))
+    }
+
     private fun record(
         source: Source = Source.PHONE,
         status: RecordingStatus = RecordingStatus.FINALIZED,

@@ -41,6 +41,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// [status] can format it in the language the screen is being drawn in.
     private var noteCount: Int?
     @Published private(set) var processing: ProcessingSettingsModel?
+    /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
+    /// banner, a waiting recording's row and the Record tab's first-run card.
+    @Published private(set) var modelDownload: ModelDownload?
+    /// "Not now" on the first-run card, remembered on this phone so the card does not come back.
+    @Published var modelPromptDismissed: Bool = Defaults.modelPromptDismissed {
+        didSet { Defaults.modelPromptDismissed = modelPromptDismissed }
+    }
     private var capturedProcessingKey: String?
     private var capturedProcessingProvider: String?
     var processingSummary: String {
@@ -267,16 +274,31 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             let recovered = await session.recoverIfIdle()
             // And before the first pill of this run: the last one's is still counting up.
             await activity.endStale()
-            let processing = ProcessingSettingsModel(core: bridge.core, canPrepare: { [weak self] in self?.state == .idle })
+            let download = ModelDownload(core: bridge.core)
+            download.capturing = state != .idle
+            // The recordings the download resumed are due now.
+            download.onFinished = { [weak self] in self?.runner?.jobsDue() }
+            await download.refresh()
+            modelDownload = download
+            let processing = ProcessingSettingsModel(core: bridge.core, download: download)
             await processing.reload()
-            processing.onSaved = { [weak self] in self?.objectWillChange.send(); self?.runner?.jobsDue() }
+            processing.onSaved = { [weak self] in
+                self?.objectWillChange.send()
+                self?.runner?.jobsDue()
+                Task { await download.refresh() }
+            }
             self.processing = processing
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
-            alertRouter.connect { [weak self] alert in self?.fix(alert) }
+            //
+            // A tap on the model notification opens the settings that carry the download, as it
+            // always has; the banner's own button is what starts it.
+            alertRouter.connect { [weak self] alert in
+                if alert.reason.fix == .modelDownload { self?.showProcessingSettings() } else { self?.fix(alert) }
+            }
             // Before the executor: a Drive credential restored from Keychain is what decides
             // whether the first pass can do anything at all (docs/06).
             let auth = GoogleAuth(tokens: tokens)
@@ -599,6 +621,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func adopt(_ next: RecorderState) {
         let wasRecording = isRecording
         state = next
+        modelDownload?.capturing = next != .idle
         if isRecording, !wasRecording {
             capturedProcessingKey = processing?.summaryKey
             capturedProcessingProvider = processing?.providerSummary
@@ -689,6 +712,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 _ = self.runner?.run()
+                // The system may have installed the speech assets while the app was away.
+                Task { await self.modelDownload?.refresh() }
                 // Whatever relaunch a latched upload finish belonged to, it ended here: nobody came
                 // for it with a system completion handler (docs/13 I4).
                 self.transport.clearEarlyFinish()
@@ -927,6 +952,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         // processing settings.
         case .secrets, .editor:
             tab = .settings
+
+        // docs/05 "고정 처리 설정 도입": downloaded where the banner stands, not in the settings.
+        case .modelDownload:
+            modelDownload?.start()
         }
     }
 
@@ -1138,6 +1167,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 private enum Defaults {
     private static let consentReminderKey = "consentReminder"
     private static let consentAskedKey = "consentAsked"
+    private static let modelPromptDismissedKey = "modelPromptDismissed"
 
     /// docs/12 M8: on until the user turns it off — the one default here that is not `false`, so it
     /// is the absence of the key and not its value that has to be read (the Mac's `Defaults` reads
@@ -1156,4 +1186,10 @@ private enum Defaults {
     /// docs/12 M8: the Mac asks before every meeting recording; a phone cannot tell a meeting from
     /// anything else, so it asks once — the setting *and* the answer together.
     static var askConsent: Bool { consentReminder && !consentAsked }
+
+    /// docs/05 "고정 처리 설정 도입": "Not now" on the first-run model card.
+    static var modelPromptDismissed: Bool {
+        get { UserDefaults.standard.bool(forKey: modelPromptDismissedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: modelPromptDismissedKey) }
+    }
 }

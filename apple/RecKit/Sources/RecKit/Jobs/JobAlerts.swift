@@ -37,7 +37,8 @@ public enum AlertReason: String, CaseIterable, Sendable {
     public var code: String {
         switch self {
         case .localUnavailable: return "LOCAL_TRANSCRIPTION_UNAVAILABLE"
-        case .localModel: return "LOCAL_MODEL_REQUIRED"
+        // The job's own status, as consent's is: the long message code squeezed the banner's line.
+        case .localModel: return "NEEDS_MODEL"
         case .localDiarization: return "LOCAL_DIARIZATION_UNAVAILABLE"
         case .needsConsent: return "NEEDS_CONSENT"
         case .needsAuth: return "NEEDS_AUTH"
@@ -48,13 +49,23 @@ public enum AlertReason: String, CaseIterable, Sendable {
         }
     }
 
+    /// A job parked until someone acts, not one that failed: its banner line and its row's sentence
+    /// are drawn in the warning tone its badge wears, never in the red that means failure.
+    public var isWait: Bool {
+        switch self {
+        case .needsConsent, .needsAuth, .needsSpace, .localModel: return true
+        case .localUnavailable, .localDiarization, .missingSecret, .authRejected, .quota: return false
+        }
+    }
+
     public var fix: FixSurface {
         switch self {
         case .needsConsent: return .privacy
         case .needsAuth: return .signIn
         case .needsSpace: return .driveStorage
         case .missingSecret, .authRejected: return .secrets
-        case .quota, .localUnavailable, .localModel, .localDiarization: return .editor
+        case .localModel: return .modelDownload
+        case .quota, .localUnavailable, .localDiarization: return .editor
         }
     }
 }
@@ -68,6 +79,9 @@ public enum FixSurface: CaseIterable, Sendable {
     case driveStorage
     case secrets
     case editor
+    /// docs/05 "고정 처리 설정 도입": the one fix that is an action rather than a screen — the
+    /// recordings are waiting for the speech model, so the button downloads it where it stands.
+    case modelDownload
 
     /// docs/07 rule 3: the key, resolved where the banner draws its button.
     ///
@@ -82,6 +96,7 @@ public enum FixSurface: CaseIterable, Sendable {
         case .driveStorage: return "Open Drive storage"
         case .secrets: return "Check the key"
         case .editor: return "Recording processing"
+        case .modelDownload: return "Download model"
         }
     }
 
@@ -167,6 +182,8 @@ public enum JobAlerts {
     public static func reason(status: JobStatus, lastError: String?) -> AlertReason? {
         switch status {
         case .needsConsent: return .needsConsent
+        // docs/10: a wait for the on-device model, parked like consent rather than failed.
+        case .needsModel: return .localModel
         case .needsAuth: return .needsAuth
         case .needsSpace: return .needsSpace
         // Only a job the queue has given up on. A step that is still inside its retry budget is
@@ -180,7 +197,6 @@ public enum JobAlerts {
         guard let lastError, let ref = CoreMessageRef.companion.parse(code: lastError) else { return nil }
         switch ref.message {
         case .localTranscriptionUnavailable: return .localUnavailable
-        case .localModelRequired: return .localModel
         case .localDiarizationUnavailable: return .localDiarization
         case .missingSecret: return .missingSecret
         case .authRejected: return .authRejected
@@ -225,7 +241,7 @@ public enum JobAlerts {
         return ordered.last { $0.lastError != nil } ?? holdingUp
     }
 
-    private static let holdingUp: Set<StepStatus> = [.failed, .needsAuth, .needsSpace, .needsConsent]
+    private static let holdingUp: Set<StepStatus> = [.failed, .needsAuth, .needsSpace, .needsConsent, .needsModel]
 
     /// One job of the queue, folded down to what the banner and the notification need of it.
     public static func source(status: JobStatus, steps: [StepRun]) -> AlertSource {

@@ -169,5 +169,11 @@ class PreviewTest {
                 writes += "revokeDebt"
                 field = value
             }
+
+        override var modelPromptDismissed: Boolean = false
+            set(value) {
+                writes += "modelPromptDismissed"
+                field = value
+            }
     }
 }

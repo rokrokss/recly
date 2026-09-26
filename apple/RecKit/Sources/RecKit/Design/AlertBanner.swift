@@ -6,10 +6,14 @@ public struct AlertBanner: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     private let alerts: [JobAlert]
+    /// The shell's model download (docs/05 "고정 처리 설정 도입"). While it runs, the line of the
+    /// recordings waiting for the model is its progress and its button cancels it.
+    private let download: ModelDownload?
     private let fix: (JobAlert) -> Void
 
-    public init(alerts: [JobAlert], fix: @escaping (JobAlert) -> Void) {
+    public init(alerts: [JobAlert], download: ModelDownload? = nil, fix: @escaping (JobAlert) -> Void) {
         self.alerts = alerts
+        self.download = download
         self.fix = fix
     }
 
@@ -29,8 +33,12 @@ public struct AlertBanner: View {
                         }
                         .padding(.horizontal, Space.m)
                         .padding(.vertical, Space.s)
+                    } else if alert.reason.fix == .modelDownload, let download {
+                        ModelWaitLine(alert: alert, download: download, fix: fix)
                     } else {
-                        failureRow(alert)
+                        AlertLine(alert: alert, line: alert.reason.label, fix: fix) {
+                            BlueprintButton(alert.reason.fix.label) { fix(alert) }
+                        }
                     }
                 }
                 HairLine()
@@ -39,15 +47,47 @@ public struct AlertBanner: View {
             .accessibilityIdentifier("alert-banner")
         }
     }
+}
 
-    private func failureRow(_ alert: JobAlert) -> some View {
+/// The recordings waiting for the speech model: the reason and its download, or — while the one
+/// download runs — how far it is and the way to stop it. Never "not downloaded yet" then.
+private struct ModelWaitLine: View {
+    let alert: JobAlert
+    @ObservedObject var download: ModelDownload
+    let fix: (JobAlert) -> Void
+
+    var body: some View {
+        if download.downloading {
+            AlertLine(alert: alert, line: ModelDownload.progressText(download.progress), fix: { _ in }) {
+                BlueprintButton(RecKitStrings.localized("Cancel download"), tone: .quiet) { download.cancel() }
+            }
+        } else {
+            AlertLine(alert: alert, line: alert.reason.label, fix: fix) {
+                BlueprintButton(alert.reason.fix.label) { fix(alert) }
+                    .disabled(download.capturing)
+            }
+        }
+    }
+}
+
+/// One reason: what it is, how many recordings are behind it, the code, and the fix. The line is
+/// red for a failure and the badge's warning tone for a job that is only waiting (docs/09
+/// "모든 상태는 색 + 텍스트": red means failed).
+private struct AlertLine<Action: View>: View {
+    @Environment(\.blueprint) private var blueprint
+    let alert: JobAlert
+    let line: String
+    let fix: (JobAlert) -> Void
+    @ViewBuilder let action: () -> Action
+
+    var body: some View {
         HStack(spacing: Space.s) {
             Button { fix(alert) } label: {
                 HStack(spacing: Space.s) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: alert.reason.label)
+                        Text(verbatim: line)
                             .font(blueprint.fonts.bodySmall)
-                            .foregroundStyle(blueprint.palette.danger)
+                            .foregroundStyle(alert.reason.isWait ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.danger)
                         Text(verbatim: alert.waiting)
                             .font(blueprint.fonts.sans(TypeSize.small))
                             .foregroundStyle(blueprint.palette.textMuted)
@@ -64,13 +104,13 @@ public struct AlertBanner: View {
             // docs/09 "접근성": one node with a sentence in it, not a reason, a count and
             // a code read out as three separate things (the same rule as `LedgerRow`).
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: "\(alert.reason.label) \(alert.waiting)"))
+            .accessibilityLabel(Text(verbatim: "\(line) \(alert.waiting)"))
             .accessibilityAddTraits(.isButton)
             // docs/10: "탭하면 고칠 수 있는 화면으로 간다". The row goes there when it is
             // pressed, but only the button says *where* — a line that is tappable
             // without saying what the tap opens is a fix the user has to guess at, and
             // the Windows banner has named its surface all along.
-            BlueprintButton(alert.reason.fix.label) { fix(alert) }
+            action()
                 .accessibilityIdentifier("alert-fix")
         }
         .padding(.trailing, Space.m)

@@ -4,6 +4,7 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
 
 /**
@@ -62,6 +63,19 @@ private fun mono(size: Float, letterSpacing: Float = 0f) = TextStyle(
     fontSize = size.sp,
     lineHeight = (size * 1.35f).sp,
     letterSpacing = letterSpacing.sp,
+    lineBreak = WordLineBreak,
+)
+
+/**
+ * docs/07: Korean breaks between words, never inside one ("않/았습니다"). Compose's default line
+ * break sets the word style to none, which switches off Android's own phrase breaking for Korean;
+ * `Phrase` asks for it back. Other scripts break as they always did. Every style of the theme
+ * carries it, so every `Text` does.
+ */
+val WordLineBreak: LineBreak = LineBreak(
+    strategy = LineBreak.Strategy.Simple,
+    strictness = LineBreak.Strictness.Normal,
+    wordBreak = LineBreak.WordBreak.Phrase,
 )
 
 /** The M3 slots, on the same six sizes, so a component we keep is drawn on the same scale. */
@@ -73,6 +87,7 @@ fun reclyTypography(scale: Float): Typography {
         fontSize = (size * scale).sp,
         lineHeight = (size * scale * 1.4f).sp,
         letterSpacing = spacing.sp,
+        lineBreak = WordLineBreak,
     )
     return default.copy(
         displaySmall = sans(Type.TIMER),

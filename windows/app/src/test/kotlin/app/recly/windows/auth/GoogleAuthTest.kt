@@ -2,6 +2,7 @@
 
 package app.recly.windows.auth
 
+import app.recly.windows.plain
 import app.recly.windows.FixedClock
 import app.recly.windows.MemorySecureStore
 import app.recly.windows.SilentLogger
@@ -202,7 +203,7 @@ class GoogleAuthTest {
         assertIs<SignInResult.Failed>(result)
         // docs/07: the loopback's own verdict is a key, so the tray says it in the app's language.
         assertEquals(Str.AUTH_STATE_MISMATCH.message(), result.reason)
-        assertEquals("이 로그인의 리디렉션이 아닙니다", result.reason.text(StringTable.of(StringTable.KOREAN)))
+        assertEquals("이 로그인의 리디렉션이 아닙니다", result.reason.text(StringTable.of(StringTable.KOREAN)).plain())
         assertEquals(0, endpoint.exchanges)
     }
 

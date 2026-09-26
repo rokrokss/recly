@@ -221,6 +221,23 @@ object CaptureHelper {
             if (text.isBlank()) Str.SELF_TEST_EMPTY.message() else UiMessage.Text(text)
         }.getOrElse { Str.SELF_TEST_FAILED.message(it.message.orEmpty()) }
 
+    /**
+     * `--network-cost`: whether the internet connection is metered, asked before the speech model
+     * download (about 1 GB). Anything that is not a clear answer — a helper that would not run, an
+     * older one that does not know the flag, one that took too long — is [NetworkCost.UNKNOWN], and
+     * the download goes ahead without asking.
+     */
+    fun networkCost(command: List<String>, timeoutMs: Long = VERSION_TIMEOUT_MS): NetworkCost = runCatching {
+        val process = ProcessBuilder(command + "--network-cost").redirectErrorStream(true).start()
+        process.outputStream.close()
+        val text = process.inputStream.bufferedReader().use { it.readText() }
+        if (!process.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
+            process.destroyForcibly()
+            return NetworkCost.UNKNOWN
+        }
+        NetworkCost.parse(text)
+    }.getOrDefault(NetworkCost.UNKNOWN)
+
     private const val VERSION_TIMEOUT_MS = 2_000L
 
     private const val SELF_TEST_TIMEOUT_MS = 30_000L
@@ -238,4 +255,22 @@ object CaptureHelper {
         } else {
             "ffmpeg"
         }
+}
+
+/** The helper's answer to `--network-cost`: one word, `metered`, `unmetered` or `unknown`. */
+enum class NetworkCost {
+    METERED,
+    UNMETERED,
+    UNKNOWN,
+    ;
+
+    companion object {
+        /** The first line that says anything; a word this app does not know is [UNKNOWN]. */
+        fun parse(output: String?): NetworkCost =
+            when (output?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim()) {
+                "metered" -> METERED
+                "unmetered" -> UNMETERED
+                else -> UNKNOWN
+            }
+    }
 }

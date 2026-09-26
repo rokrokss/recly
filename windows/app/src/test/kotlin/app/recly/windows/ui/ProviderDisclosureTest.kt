@@ -1,5 +1,6 @@
 package app.recly.windows.ui
 
+import app.recly.windows.plain
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import java.io.File
@@ -25,7 +26,7 @@ class ProviderDisclosureTest {
             val strings = StringTable.of(language)
             for (key in DISCLOSURES) {
                 assertTrue(
-                    xml.contains(strings[key].escapedForXml()),
+                    xml.contains(strings[key].plain().escapedForXml()),
                     "$language/${key.key} is not the phone's wording: ${strings[key]}",
                 )
             }

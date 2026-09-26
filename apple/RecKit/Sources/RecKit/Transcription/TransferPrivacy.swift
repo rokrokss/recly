@@ -50,13 +50,16 @@ public struct TransferDisclosureList: View {
                     // Who: the company by name, and what kind of service it is (App Review 5.1.2(i)).
                     Text(verbatim: SttProviders.shared.displayName(name: target.provider))
                         .font(blueprint.fonts.label)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: loc("A third-party AI speech recognition service. Recly does not operate it."))
                         .font(blueprint.fonts.bodySmall)
+                        .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: target.endpoint)
                         .font(blueprint.fonts.monoSmall)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: loc("The full recording and language and speaker settings are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
+                        .fixedSize(horizontal: false, vertical: true)
                     // The list's text colour would turn a plain `Link` into body text; this one reads as a link.
                     if let url = PrivacyLinks.provider(target.provider) {
                         BlueprintDialogLink(loc("Provider privacy information")) { openURL(url) }
@@ -65,11 +68,14 @@ public struct TransferDisclosureList: View {
                        target.endpoint != SttProviders.shared.defaultEndpoint(name: target.provider) {
                         Text(verbatim: loc("For a custom endpoint, also check its operator’s privacy policy."))
                             .font(blueprint.fonts.bodySmall)
+                            .fixedSize(horizontal: false, vertical: true)
                     }
                 }
             }
+            // A required disclosure is never cut to "…": every line takes the height it needs.
             Text(verbatim: loc("Permission covers future recordings on this device. You can withdraw it in Settings → Privacy."))
                 .font(blueprint.fonts.bodySmall)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .foregroundStyle(blueprint.palette.text)
         .accessibilityIdentifier("transfer-disclosure")

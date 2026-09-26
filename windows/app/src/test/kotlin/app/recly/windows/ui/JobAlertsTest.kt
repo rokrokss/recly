@@ -2,6 +2,8 @@
 
 package app.recly.windows.ui
 
+import app.recly.windows.ui.component.BadgeTone
+import app.recly.windows.ui.component.LedgerStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -26,6 +28,28 @@ class JobAlertsTest {
     fun `a parked job names its own reason`() {
         assertEquals(AlertReason.NEEDS_AUTH, alertReasonOf(JobStatus.NEEDS_AUTH, null))
         assertEquals(AlertReason.NEEDS_SPACE, alertReasonOf(JobStatus.NEEDS_SPACE, null))
+    }
+
+    /**
+     * A recording waiting for the on-device speech model is parked, not failed: the reason comes from
+     * its status, like the two above, and the fix is the download itself.
+     */
+    @Test
+    fun `a recording waiting for the speech model names the model, whatever its step says`() {
+        assertEquals(AlertReason.LOCAL_MODEL_REQUIRED, alertReasonOf(JobStatus.NEEDS_MODEL, null))
+        assertEquals(
+            AlertReason.LOCAL_MODEL_REQUIRED,
+            alertReasonOf(JobStatus.NEEDS_MODEL, CoreMessage.LOCAL_MODEL_REQUIRED.code()),
+        )
+        assertEquals(FixSurface.MODEL_DOWNLOAD, AlertReason.LOCAL_MODEL_REQUIRED.fix)
+        // The banner wears the job's own status, as a wait — the long reason code squeezed its line.
+        assertEquals(LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING), AlertReason.LOCAL_MODEL_REQUIRED.badge())
+    }
+
+    /** A failed job no longer carries the model's code, and one that did would not be the model's. */
+    @Test
+    fun `a failure is never the speech model`() {
+        assertNull(alertReasonOf(JobStatus.FAILED, CoreMessage.LOCAL_MODEL_REQUIRED.code()))
     }
 
     @Test
@@ -200,6 +224,20 @@ class JobAlertsTest {
         )
     }
 
+    /** The waiting step is the one the banner's line is about, though it has not failed. */
+    @Test
+    fun `a job waiting for the model folds to the model's reason on the waiting step`() {
+        val steps = listOf(
+            step(0, StepStatus.SUCCEEDED, null),
+            step(1, StepStatus.NEEDS_MODEL, CoreMessage.LOCAL_MODEL_REQUIRED.code()),
+        )
+
+        assertEquals(
+            AlertSource(AlertReason.LOCAL_MODEL_REQUIRED, "w1", null, "step1"),
+            alertSource(JobStatus.NEEDS_MODEL, "w1", steps),
+        )
+    }
+
     /** `AUTH_REJECTED` is a provider refusing a value; it never says which key held it. */
     @Test
     fun `a rejected key names no secret, because the code carries none`() {
@@ -232,5 +270,6 @@ class JobAlertsTest {
         assertEquals(FixSurface.SECRETS, AlertReason.MISSING_SECRET.fix)
         assertEquals(FixSurface.SECRETS, AlertReason.AUTH_REJECTED.fix)
         assertEquals(FixSurface.EDITOR, AlertReason.QUOTA.fix)
+        assertEquals(FixSurface.MODEL_DOWNLOAD, AlertReason.LOCAL_MODEL_REQUIRED.fix)
     }
 }

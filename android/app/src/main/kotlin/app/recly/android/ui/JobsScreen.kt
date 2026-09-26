@@ -53,11 +53,13 @@ import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.component.StatusBadge
+import app.recly.android.ui.component.ink
 import app.recly.android.ui.component.ledgerColumns
 import app.recly.android.ui.component.ledgerLayout
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import app.recly.android.work.ModelDownloadState
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -77,16 +79,19 @@ fun JobsScreen(
     onConfirmDelete: (JobItem) -> Unit,
     onCancelDelete: () -> Unit,
     onDelete: (DeleteRequest, Boolean) -> Unit,
-    onRecord: () -> Unit,
     onOpenDetail: (JobItem) -> Unit,
     /** docs/08 AUTH_REJECTED: "check the key" is only useful with the key's settings behind it. */
     onCheckKey: (JobItem) -> Unit,
     /** docs/10: the banner is not a notice, it is the way to the screen that fixes the thing. */
     onFix: (JobAlert) -> Unit,
+    /** The speech model download: a waiting row's step language, or null (the banner) for the saved settings'. */
+    onDownloadModel: (language: String?, onWifi: Boolean) -> Unit,
+    onCancelDownload: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = blueprint
     var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    val metered = rememberMeteredGate(state.download.info?.modelBytes)
 
     state.confirmDelete?.let { request ->
         DeleteDialog(request = request, onCancel = onCancelDelete, onDelete = onDelete)
@@ -103,7 +108,13 @@ fun JobsScreen(
             ),
         )
 
-        AlertBanner(state.alerts, onFix)
+        AlertBanner(
+            alerts = state.alerts,
+            download = state.download,
+            onFix = onFix,
+            onDownloadModel = { metered { wifi -> onDownloadModel(null, wifi) } },
+            onCancelDownload = onCancelDownload,
+        )
 
         if (state.loading || state.items.isEmpty()) {
             HairLine()
@@ -115,13 +126,20 @@ fun JobsScreen(
                 if (state.loading) {
                     Text(stringResource(R.string.list_loading), color = palette.textMuted)
                 } else {
+                    // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
                     Text(
                         stringResource(R.string.jobs_empty),
                         style = MaterialTheme.typography.bodyMedium,
+                        color = palette.text,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        stringResource(R.string.jobs_empty_hint),
+                        modifier = Modifier.padding(top = Space.xs),
+                        style = MaterialTheme.typography.bodySmall,
                         color = palette.textMuted,
                         textAlign = TextAlign.Center,
                     )
-                    BlueprintButton(stringResource(R.string.tab_record), onRecord, tone = ButtonTone.PRIMARY)
                 }
             }
             return@Column
@@ -200,6 +218,8 @@ fun JobsScreen(
                                 onOpenDetail = { onOpenDetail(item) },
                                 onCheckKey = { onCheckKey(item) },
                                 onFixAuth = { onFix(JobAlert(AlertReason.NEEDS_AUTH, 1)) },
+                                download = state.download,
+                                onDownloadModel = { metered { wifi -> onDownloadModel(item.modelLanguage, wifi) } },
                             )
                         }
                     }
@@ -223,6 +243,8 @@ private fun ExpandedRow(
     onOpenDetail: () -> Unit,
     onCheckKey: () -> Unit,
     onFixAuth: () -> Unit,
+    download: ModelDownloadState,
+    onDownloadModel: () -> Unit,
 ) {
     val palette = blueprint
     val context = LocalContext.current
@@ -250,12 +272,15 @@ private fun ExpandedRow(
         // wrote is prose, which `coreMessage` shows as it stands. Whatever diagnostic rode along
         // with the key is not translated and goes under it, in monospace: for a docs/08 "오류" that
         // is the provider's own words, which are what a support question quotes.
-        item.error?.takeIf { item.state != ItemState.NEEDS_AUTH }?.let { error ->
+        // A recording waiting for the model says nothing of it while the download runs: the banner
+        // carries the progress, and "not downloaded yet" would be wrong a minute later.
+        item.error?.takeIf { item.state != ItemState.NEEDS_AUTH && !(item.state == ItemState.NEEDS_MODEL && download.active) }?.let { error ->
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
                     coreMessage(error).text(),
                     style = MaterialTheme.typography.bodySmall,
-                    color = palette.danger,
+                    // Red is for a failure; a wait says what it waits for in its badge's own tone.
+                    color = item.state.reasonTone().ink(),
                 )
                 coreMessageDetail(error)?.let { detail ->
                     Text(detail, style = mono.small, color = palette.textMuted)
@@ -269,6 +294,16 @@ private fun ExpandedRow(
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalArrangement = Arrangement.spacedBy(Space.s),
             ) {
+                // The one thing that carries a waiting recording on, first and filled. Nothing while
+                // the download runs: the banner has its progress and its cancel.
+                if (item.state == ItemState.NEEDS_MODEL && !download.active) {
+                    BlueprintButton(
+                        label = modelDownloadLabel(download.info),
+                        onClick = onDownloadModel,
+                        tone = ButtonTone.PRIMARY,
+                        modifier = Modifier.testTag("download-model"),
+                    )
+                }
                 item.link?.let { link ->
                     BlueprintButton(
                         label = stringResource(R.string.jobs_open_drive),
@@ -309,7 +344,8 @@ private fun ExpandedRow(
                     // have earned one, offer no upload. The three that are happening elsewhere
                     // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
                     // this device's to make due.
-                    ItemState.NEEDS_CONSENT, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
+                    // A recording waiting for the model has its download first in the row, above.
+                    ItemState.NEEDS_CONSENT, ItemState.NEEDS_MODEL, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
                     ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
                     ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
                     -> Unit
@@ -352,12 +388,48 @@ private fun ExpandedRow(
  * behind it, and the row is the way to the screen that fixes it.
  */
 @Composable
-private fun AlertBanner(alerts: List<JobAlert>, onFix: (JobAlert) -> Unit) {
+private fun AlertBanner(
+    alerts: List<JobAlert>,
+    download: ModelDownloadState,
+    onFix: (JobAlert) -> Unit,
+    onDownloadModel: () -> Unit,
+    onCancelDownload: () -> Unit,
+) {
     if (alerts.isEmpty()) return
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface).testTag("alert-banner")) {
         HairLine()
         alerts.forEach { alert ->
+            // The recordings wait for the model, and the fix is the download itself, right here.
+            // While it runs, the line is its progress and the button its cancel.
+            if (alert.reason == AlertReason.LOCAL_MODEL_REQUIRED) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        if (download.active) {
+                            ModelDownloadLines(download, download.info)
+                        } else {
+                            Text(stringResource(alert.reason.label), style = MaterialTheme.typography.bodyMedium, color = palette.warningInk)
+                            Text(
+                                pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = palette.textMuted,
+                            )
+                        }
+                    }
+                    if (download.active) {
+                        BlueprintButton(stringResource(R.string.processing_cancel_download), onCancelDownload,
+                            tone = ButtonTone.QUIET, modifier = Modifier.testTag("alert-cancel-download"))
+                    } else {
+                        BlueprintButton(modelDownloadLabel(download.info), onDownloadModel,
+                            modifier = Modifier.testTag("alert-download-model"))
+                    }
+                }
+                return@forEach
+            }
             if (alert.reason == AlertReason.NEEDS_AUTH) {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
@@ -392,7 +464,8 @@ private fun AlertBanner(alerts: List<JobAlert>, onFix: (JobAlert) -> Unit) {
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(reason, style = MaterialTheme.typography.bodyMedium, color = palette.danger)
+                    // Red is for a failure; a wait (Drive out of space) is the warning its badge is.
+                    Text(reason, style = MaterialTheme.typography.bodyMedium, color = if (alert.reason.wait) palette.warningInk else palette.danger)
                     Text(waiting, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
                 }
                 StatusBadge(LedgerStatus(alert.reason.name, BadgeTone.WARNING))
@@ -494,6 +567,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.FAILED -> LedgerStatus("FAILED", BadgeTone.DANGER)
     ItemState.NEEDS_AUTH -> LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL)
     ItemState.NEEDS_CONSENT -> LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING)
+    ItemState.NEEDS_MODEL -> LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING)
     ItemState.NEEDS_SPACE -> LedgerStatus("NO_SPACE", BadgeTone.WARNING)
     ItemState.SKIPPED_SHORT -> LedgerStatus("SKIPPED", BadgeTone.NEUTRAL)
 }
@@ -509,12 +583,22 @@ fun JobItem.badge(): LedgerStatus =
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
 
 /**
+ * The tone of the sentence an expanded row gives for its state: red only for a failure, the warning
+ * of a wait's own badge (`NEEDS_MODEL`, `NEEDS_CONSENT`, `NO_SPACE`, `RETRY`), and quiet otherwise.
+ */
+internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
+    BadgeTone.DANGER -> BadgeTone.DANGER
+    BadgeTone.WARNING -> BadgeTone.WARNING
+    BadgeTone.NEUTRAL, BadgeTone.ACCENT, BadgeTone.SUCCESS -> BadgeTone.NEUTRAL
+}
+
+/**
  * Every code the ledger's last column can hold, so the column can be as wide as the widest of them
  * rather than as wide as whatever happens to be on screen — the width must not change as rows
  * arrive. Derived from [badge] itself, so a state added later is measured without anyone
  * remembering to come back here.
  */
-private val BADGE_CODES: List<String> =
+internal val BADGE_CODES: List<String> =
     ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code
 
 /**
@@ -564,6 +648,7 @@ private fun label(item: JobItem): String = if (item.localPending) stringResource
     ItemState.FAILED -> stringResource(R.string.job_state_failed)
     ItemState.NEEDS_AUTH -> stringResource(R.string.job_state_needs_auth)
     ItemState.NEEDS_CONSENT -> stringResource(R.string.job_state_needs_consent)
+    ItemState.NEEDS_MODEL -> stringResource(R.string.job_state_needs_model)
     ItemState.NEEDS_SPACE -> stringResource(R.string.job_state_needs_space)
     ItemState.SKIPPED_SHORT -> stringResource(R.string.job_state_skipped_short)
 }

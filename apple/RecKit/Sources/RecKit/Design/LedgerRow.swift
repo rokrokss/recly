@@ -4,9 +4,32 @@ import SwiftUI
 private enum Column {
     static let time: CGFloat = 62
     static let length: CGFloat = 44
-    /// Wide enough for `TRANSCRIBING`, the longest code `LedgerStatus` mints — the badge shrinks
-    /// its letters rather than clipping them when a type size outgrows even that.
-    static let status: CGFloat = 96
+}
+
+/// The status column: as wide as the widest badge the ledger can show, measured at the type size
+/// in use rather than guessed — so every code fits at full size and none is shrunk (the header and
+/// every row measure the same set, so they line up).
+private struct StatusColumn<Content: View>: View {
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach(LedgerStatus.ledgerCodes, id: \.self) { code in
+                StatusBadge(LedgerStatus(code: code, tone: .neutral)).hidden()
+            }
+            content
+        }
+        .fixedSize()
+        .coordinateSpace(name: StatusColumnSpace.name)
+    }
+}
+
+private enum StatusColumnSpace {
+    static let name = "ledger.status"
 }
 
 /// The rendered status edge, for actions in the expansion beneath this row.
@@ -50,7 +73,7 @@ public struct LedgerHeader: View {
                 heading(time).frame(width: Column.time, alignment: .leading)
                 heading(title).frame(maxWidth: .infinity, alignment: .leading)
                 heading(length).frame(width: Column.length, alignment: .trailing)
-                heading(status).frame(width: Column.status, alignment: .center)
+                StatusColumn { heading(status) }
             }
             .padding(.horizontal, Space.m)
             .padding(.vertical, 6)
@@ -188,16 +211,18 @@ public struct LedgerRow<Trailing: View>: View {
             what.frame(maxWidth: .infinity, alignment: .leading)
             howLong
                 .frame(width: Column.length, alignment: .trailing)
-            StatusBadge(status)
-                .background {
-                    GeometryReader { geometry in
-                        Color.clear.preference(
-                            key: LedgerStatusTrailingInset.self,
-                            value: max(0, (Column.status - geometry.size.width) / 2)
-                        )
+            StatusColumn {
+                StatusBadge(status)
+                    .background {
+                        // Centred in its column, so the gap before the badge is the gap after it.
+                        GeometryReader { geometry in
+                            Color.clear.preference(
+                                key: LedgerStatusTrailingInset.self,
+                                value: max(0, geometry.frame(in: .named(StatusColumnSpace.name)).minX)
+                            )
+                        }
                     }
-                }
-                .frame(width: Column.status)
+            }
         }
     }
 

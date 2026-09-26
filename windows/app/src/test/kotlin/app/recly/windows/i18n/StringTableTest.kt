@@ -1,9 +1,11 @@
 package app.recly.windows.i18n
 
+import app.recly.windows.plain
 import java.io.File
 import java.util.Properties
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
@@ -82,11 +84,93 @@ class StringTableTest {
         assertEquals("다른 기기에서 전사 중", ko.getValue(Str.STATE_REMOTE_TRANSCRIBING.key))
     }
 
+    /**
+     * The speech model's wait and download (2026-09-26), this shell's half of the cross-shell
+     * dictionary: the same words on the phones and the Macs, held here so they do not drift.
+     */
+    @Test
+    fun `the speech model wait is worded the same on every shell`() {
+        val en = StringTable.of(StringTable.BASE)
+        val ko = StringTable.of(StringTable.KOREAN)
+        val pinned = listOf(
+            Triple(Str.STATE_NEEDS_MODEL, "Waiting for speech model", "음성 모델 대기"),
+            Triple(Str.CORE_LOCAL_MODEL_REQUIRED, "The speech recognition model isn't downloaded yet.", "음성 인식 모델을 아직 다운로드하지 않았습니다."),
+            Triple(Str.PROCESSING_MODEL_CARD_TITLE, "Transcribe on this device", "이 기기에서 전사하기"),
+            Triple(Str.PROCESSING_MODEL_NOT_NOW, "Not now", "나중에"),
+            Triple(Str.PROCESSING_PREPARE, "Download model", "모델 다운로드"),
+            Triple(Str.PROCESSING_MODEL_RESUME, "Resume download", "이어서 다운로드"),
+            Triple(Str.PROCESSING_METERED_TITLE, "Download over a metered connection?", "데이터 요금이 부과되는 연결로 다운로드할까요?"),
+            Triple(Str.PROCESSING_MODEL_CANCEL, "Cancel download", "다운로드 취소"),
+        )
+        pinned.forEach { (key, english, korean) ->
+            assertEquals(english, en[key], key.name)
+            assertEquals(korean, ko[key].plain(), key.name)
+        }
+        assertEquals(
+            "Download the speech recognition model (988 MB) once to transcribe recordings on this device.",
+            en[Str.PROCESSING_MODEL_CARD_BODY, "988 MB"],
+        )
+        assertEquals("이 기기에서 녹음을 전사하려면 음성 인식 모델(988 MB)을 한 번 다운로드하세요.", ko[Str.PROCESSING_MODEL_CARD_BODY, "988 MB"].plain())
+        assertEquals("To transcribe on this device, download this model once (988 MB).", en[Str.PROCESSING_MODEL_DOWNLOAD, "988 MB"])
+        assertEquals("이 기기에서 전사하려면 이 모델(988 MB)을 한 번 다운로드해야 합니다.", ko[Str.PROCESSING_MODEL_DOWNLOAD, "988 MB"].plain())
+        assertEquals("The model is 988 MB.", en[Str.PROCESSING_MODEL_SIZE, "988 MB"])
+        assertEquals("모델은 988 MB입니다.", ko[Str.PROCESSING_MODEL_SIZE, "988 MB"].plain())
+        assertEquals("Downloading model… 42%", en[Str.PROCESSING_MODEL_DOWNLOADING, 42])
+        assertEquals("모델 다운로드 중… 42%", ko[Str.PROCESSING_MODEL_DOWNLOADING, 42].plain())
+        assertEquals("412 MB of 988 MB", en[Str.PROCESSING_MODEL_BYTES, "412 MB", "988 MB"])
+        assertEquals("988 MB 중 412 MB", ko[Str.PROCESSING_MODEL_BYTES, "412 MB", "988 MB"].plain())
+    }
+
+    /** English counts say the number after the thing counted, never "recording(s)". */
+    @Test
+    fun `English counts have no parenthesised plural`() {
+        val en = read(StringTable.BASE)
+        // "(s)" there is seconds, not a plural.
+        val plurals = en.filterKeys { it != Str.FIELD_MIN_DURATION.key }.filterValues { "(s)" in it }
+        assertEquals(emptyMap(), plurals)
+        val strings = StringTable.of(StringTable.BASE)
+        assertEquals("Recordings waiting: 2", strings[Str.ALERT_WAITING, 2])
+        assertEquals("Parts not yet in Drive, deleted with it: 3", strings[Str.DELETE_UNUPLOADED, 3])
+        assertEquals("Recordings not yet in Drive, kept on this PC: 1", strings[Str.DISCONNECT_UNUPLOADED, 1])
+        assertEquals("Disconnected. Recordings deleted from this PC: 4", strings[Str.DISCONNECT_DELETED, 4])
+        assertEquals(
+            "Google access was revoked. Recordings still running and kept: 1 — disconnect again once they have finished.",
+            strings[Str.DISCONNECT_BUSY, 1],
+        )
+    }
+
+    /**
+     * Korean breaks only at its spaces: the table holds each word together with WORD JOINERs, so
+     * Skia — which would otherwise break between any two syllables — cannot end a line inside one.
+     */
+    @Test
+    fun `Korean words are held together and every other table is as written`() {
+        val ko = StringTable.of(StringTable.KOREAN)[Str.CORE_LOCAL_MODEL_REQUIRED]
+        assertEquals("음성 인식 모델을 아직 다운로드하지 않았습니다.", ko.plain())
+        // The only places left to break are the spaces.
+        ko.split(' ').forEach { word ->
+            word.windowed(2).forEach { pair -> assertTrue(WORD_JOINER in pair, "a break inside \"${word.plain()}\"") }
+        }
+        assertEquals("않\u2060았\u2060습\u2060니\u2060다\u2060.", ko.split(' ').last())
+        val en = StringTable.of(StringTable.BASE)[Str.CORE_LOCAL_MODEL_REQUIRED]
+        assertFalse(WORD_JOINER in en)
+        assertEquals("Drive\u2060에", joinKoreanWords("Drive에"), "a particle stays on the word it follows")
+        assertEquals("모\u2060델\u2060(%1\$s)\u2060을", joinKoreanWords("모델(%1\$s)을"), "an argument's place stays on its word")
+    }
+
+    /** What the user wrote goes in as it is: only the app's own sentence is joined. */
+    @Test
+    fun `an argument is put in untouched`() {
+        val title = "주간 회의"
+        val sentence = StringTable.of(StringTable.KOREAN)[Str.DELETE_TITLE, title]
+        assertTrue(title in sentence, "the title was joined")
+    }
+
     /** The loader reads UTF-8 (`Properties.load(InputStream)` would not) and formats positionally. */
     @Test
     fun `a loaded table formats its arguments in its own language`() {
         assertEquals("Deferred 2", StringTable.of(StringTable.BASE)[Str.STATUS_DEFERRED, 2])
-        assertEquals("보류 2", StringTable.of(StringTable.KOREAN)[Str.STATUS_DEFERRED, 2])
+        assertEquals("보류 2", StringTable.of(StringTable.KOREAN)[Str.STATUS_DEFERRED, 2].plain())
     }
 
     /** docs/07 rule 1: regional tags resolve to their supported language, with English as the fallback. */

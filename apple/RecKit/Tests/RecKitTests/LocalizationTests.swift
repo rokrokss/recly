@@ -485,7 +485,7 @@ final class UiMessageTests: XCTestCase {
         AppLanguage.current = .ko
         let korean = stored.text
 
-        XCTAssertEqual(english, "3 recording(s) are waiting.")
+        XCTAssertEqual(english, "Recordings waiting: 3")
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
         XCTAssertTrue(korean.contains("3"), "the count did not survive: \(korean)")
     }

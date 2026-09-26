@@ -8,12 +8,14 @@ import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.coreMessageDetail
+import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.ui.component.BadgeTone
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LedgerStatus
+import app.recly.windows.ui.component.ink
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import java.time.Instant
@@ -55,14 +57,27 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     // retries, and the banner beside it is what offers the storage page.
     Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING),
     Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING),
+    // Waiting for the on-device speech model: like consent, a wait the user ends, not a failure.
+    Str.STATE_NEEDS_MODEL to LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING),
     Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL),
 )
 
+/**
+ * docs/09 화면 원칙 2: every label a ledger badge can wear — each state's code, `NEEDS_AUTH` as the
+ * words it is drawn in, and `UNKNOWN` — which is what the status column is measured against, so none
+ * of them is ever cut to fit.
+ */
+fun ledgerBadgeLabels(strings: Strings): List<String> =
+    LedgerStates.keys.map { it.message().ledgerStatus(strings).label } + UNKNOWN_STATE
+
 /** The state as a badge. Anything the map does not know is still a code, never a blank cell. */
 fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
-    val status = LedgerStates[(this as? UiMessage.Res)?.key] ?: LedgerStatus("UNKNOWN", BadgeTone.NEUTRAL)
+    val status = LedgerStates[(this as? UiMessage.Res)?.key] ?: LedgerStatus(UNKNOWN_STATE, BadgeTone.NEUTRAL)
     return if (status.code == "NEEDS_AUTH" && strings != null) status.copy(label = strings[Str.DRIVE_PENDING]) else status
 }
+
+/** What a badge says for a state this ledger does not know — still a code, never a blank cell. */
+private const val UNKNOWN_STATE = "UNKNOWN"
 
 /**
  * docs/07 §5 · docs/08 "오류": what the core last said about this row — the sentence translated, the
@@ -77,18 +92,28 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? = null) {
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
+    // Waiting for the speech model is not a failure: the state and the row's Download say it.
+    if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) return
     val error = item.lastError ?: return
     val palette = blueprint
     Text(
         coreMessage(error).text(strings),
         style = MaterialTheme.typography.bodySmall,
-        color = palette.danger,
+        color = reasonTone(item.jobStatus).ink(),
     )
     coreMessageDetail(error)?.let {
         Text(it, style = mono.small, color = palette.textMuted)
     }
     if (onCheckKey != null) CheckKeyButton(item, strings, onCheckKey)
 }
+
+/**
+ * docs/09 "모든 상태는 색 + 텍스트": red says failure and nothing else. A job the queue gave up on
+ * ([JobStatus.FAILED]) says why in the failure colour; one that is waiting — for consent, a sign-in,
+ * space, the model, or its next attempt — says it in the warning tone its badge wears.
+ */
+fun reasonTone(status: recly.core.job.JobStatus?): BadgeTone =
+    if (status == recly.core.job.JobStatus.FAILED) BadgeTone.DANGER else BadgeTone.WARNING
 
 /**
  * docs/09 화면 원칙 2 lists `키를 확인하세요` among a row's actions, in the one line the others are in —

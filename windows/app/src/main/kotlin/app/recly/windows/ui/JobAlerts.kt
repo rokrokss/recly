@@ -23,7 +23,8 @@ import recly.core.message.CoreMessageRef
  */
 enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
     LOCAL_TRANSCRIPTION_UNAVAILABLE(Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE, "LOCAL_TRANSCRIPTION_UNAVAILABLE", FixSurface.EDITOR),
-    LOCAL_MODEL_REQUIRED(Str.CORE_LOCAL_MODEL_REQUIRED, "LOCAL_MODEL_REQUIRED", FixSurface.EDITOR),
+    // Worn as the job's own status, like `NEEDS_CONSENT`: it is a wait, and the ledger rows say the same.
+    LOCAL_MODEL_REQUIRED(Str.CORE_LOCAL_MODEL_REQUIRED, "NEEDS_MODEL", FixSurface.MODEL_DOWNLOAD),
     LOCAL_DIARIZATION_UNAVAILABLE(Str.CORE_LOCAL_DIARIZATION_UNAVAILABLE, "LOCAL_DIARIZATION_UNAVAILABLE", FixSurface.EDITOR),
     NEEDS_AUTH(Str.ALERT_NEEDS_AUTH, "NEEDS_AUTH", FixSurface.SIGN_IN),
     NEEDS_SPACE(Str.ALERT_NEEDS_SPACE, "NEEDS_SPACE", FixSurface.DRIVE_STORAGE),
@@ -46,6 +47,9 @@ enum class FixSurface(val label: Str) {
     DRIVE_STORAGE(Str.JOBS_OPEN_STORAGE),
     SECRETS(Str.REASON_CHECK_KEY),
     EDITOR(Str.PROCESSING_TITLE),
+
+    /** The on-device speech model: the fix is the download itself, started from the banner. */
+    MODEL_DOWNLOAD(Str.PROCESSING_PREPARE),
 }
 
 /** docs/10 "Drive 용량 초과": where "free some up" actually happens. */
@@ -87,6 +91,8 @@ data class AlertSource(
 fun alertReasonOf(status: JobStatus, lastError: String?): AlertReason? = when (status) {
     JobStatus.NEEDS_AUTH -> AlertReason.NEEDS_AUTH
     JobStatus.NEEDS_SPACE -> AlertReason.NEEDS_SPACE
+    // A wait rather than a failure, and the download is what ends it.
+    JobStatus.NEEDS_MODEL -> AlertReason.LOCAL_MODEL_REQUIRED
     // Only a job the queue has given up on. A step that is still inside its retry budget is
     // `WAITING`, and docs/10 says plainly that those are not worth a notification.
     JobStatus.FAILED -> terminalReason(lastError)
@@ -97,7 +103,6 @@ private fun terminalReason(lastError: String?): AlertReason? {
     val ref = lastError?.let { CoreMessageRef.parse(it) } ?: return null
     return when (ref.message) {
         CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE -> AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE
-        CoreMessage.LOCAL_MODEL_REQUIRED -> AlertReason.LOCAL_MODEL_REQUIRED
         CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> AlertReason.LOCAL_DIARIZATION_UNAVAILABLE
         CoreMessage.MISSING_SECRET -> AlertReason.MISSING_SECRET
         CoreMessage.AUTH_REJECTED -> AlertReason.AUTH_REJECTED

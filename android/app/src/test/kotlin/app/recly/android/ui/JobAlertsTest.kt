@@ -25,6 +25,38 @@ class JobAlertsTest {
         assertEquals(AlertReason.NEEDS_SPACE, alertReasonOf(JobStatus.NEEDS_SPACE, null))
     }
 
+    /**
+     * A recording waiting for the speech model is a wait the status itself names, not a failure a
+     * `last_error` has to explain — and a FAILED job no longer carries the code at all.
+     */
+    @Test
+    fun `a recording waiting for the speech model alerts from its status`() {
+        assertEquals(AlertReason.LOCAL_MODEL_REQUIRED, alertReasonOf(JobStatus.NEEDS_MODEL, null))
+        assertEquals(AlertReason.LOCAL_MODEL_REQUIRED, alertReasonOf(JobStatus.NEEDS_MODEL, CoreMessage.LOCAL_MODEL_REQUIRED.code()))
+        assertNull(alertReasonOf(JobStatus.FAILED, CoreMessage.LOCAL_MODEL_REQUIRED.code()))
+    }
+
+    /** Red is for failures: a job parked on a sign-in, space or the model is a wait, and says so in warning. */
+    @Test
+    fun `only the parked reasons are waits`() {
+        assertEquals(
+            setOf(AlertReason.NEEDS_AUTH, AlertReason.NEEDS_SPACE, AlertReason.LOCAL_MODEL_REQUIRED),
+            AlertReason.entries.filter { it.wait }.toSet(),
+        )
+    }
+
+    /** The row's sentence is the waiting step's own, not a later step's leftover complaint. */
+    @Test
+    fun `the step waiting for the model is the one the row reports`() {
+        val steps = listOf(
+            step(0, StepStatus.SUCCEEDED, null),
+            step(1, StepStatus.NEEDS_MODEL, CoreMessage.LOCAL_MODEL_REQUIRED.code()),
+            step(2, StepStatus.PENDING, CoreMessage.PROVIDER_ERROR.code(detail = "500")),
+        )
+
+        assertEquals(CoreMessage.LOCAL_MODEL_REQUIRED.code(), blockingError(steps))
+    }
+
     @Test
     fun `a job that is still being carried calls nobody`() {
         listOf(JobStatus.PENDING, JobStatus.RUNNING, JobStatus.WAITING, JobStatus.DONE).forEach { status ->

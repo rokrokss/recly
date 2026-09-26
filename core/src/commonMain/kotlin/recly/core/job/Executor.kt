@@ -155,6 +155,10 @@ class Executor(
                 store.park(run, JobStatus.NEEDS_CONSENT, null, deps.clock.now())
                 return
             }
+            if (run.status == StepStatus.NEEDS_MODEL) {
+                store.park(run, JobStatus.NEEDS_MODEL, null, deps.clock.now())
+                return
+            }
             val waitUntil = run.nextAttemptAt
             if (waitUntil != null && waitUntil > now) {
                 store.park(run, JobStatus.WAITING, waitUntil, deps.clock.now())
@@ -282,6 +286,7 @@ class Executor(
         } catch (e: StepFailure) {
             return when {
                 e.needsConsent -> needsConsent(running, e.reason)
+                e.needsModel -> needsModel(running, e.reason)
                 e.needsAuth -> needsAuth(job, running, e.reason)
                 e.needsSpace -> needsSpace(job, running, e.reason)
                 else -> failed(job, running, step, e.retryable, e.reason, e.retryAfterSec)
@@ -337,6 +342,17 @@ class Executor(
         store.park(
             run.copy(status = StepStatus.NEEDS_CONSENT, nextAttemptAt = null, lastError = reason),
             JobStatus.NEEDS_CONSENT,
+            null,
+            deps.clock.now(),
+        )
+        return Outcome.Stop
+    }
+
+    /** The on-device model is not downloaded yet: a wait like consent, resumed by the download. */
+    private suspend fun needsModel(run: StepRun, reason: String): Outcome {
+        store.park(
+            run.copy(status = StepStatus.NEEDS_MODEL, nextAttemptAt = null, lastError = reason),
+            JobStatus.NEEDS_MODEL,
             null,
             deps.clock.now(),
         )

@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
@@ -46,6 +47,8 @@ import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.StateNodeRow
 import app.recly.windows.ui.component.StatusBadge
+import app.recly.windows.ui.component.statusColumnWidth
+import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -221,7 +224,14 @@ private fun Ledger(
     onExpand: (String) -> Unit,
 ) {
     val palette = blueprint
+    // docs/09 화면 원칙 2: the status column is as wide as the widest badge this ledger can wear.
+    val statusWidth = maxOf(
+        statusColumnWidth(ledgerBadgeLabels(strings)),
+        textColumnWidth(listOf(strings[Str.LEDGER_STATUS]), MaterialTheme.typography.labelSmall),
+    )
     LazyColumn(modifier) {
+        // The first-run offer of the speech model, at the top while the model is really missing.
+        if (model.modelCardShown) item { ModelCard(model, strings) }
         item { AlertBanner(model, strings) }
         item {
             LedgerHeader(
@@ -229,6 +239,7 @@ private fun Ledger(
                 title = strings[Str.LEDGER_TITLE],
                 length = strings[Str.LEDGER_LENGTH],
                 status = strings[Str.LEDGER_STATUS],
+                statusWidth = statusWidth,
             )
         }
         items(model.recents, key = { it.id }) { item ->
@@ -236,7 +247,7 @@ private fun Ledger(
             if (item.id == model.recents.last().id) {
                 LaunchedEffect(item.id) { model.loadMoreRecents() }
             }
-            RecentRow(item, model, strings, expanded == item.id) { onExpand(item.id) }
+            RecentRow(item, model, strings, expanded == item.id, statusWidth) { onExpand(item.id) }
         }
         if (model.recents.isEmpty()) {
             item {
@@ -281,6 +292,12 @@ private fun Ledger(
 private fun AlertBanner(model: ShellModel, strings: Strings) {
     val palette = blueprint
     model.alerts.forEach { alert ->
+        // The model's line is the download itself while one runs ([ModelBanner]).
+        if (alert.reason == AlertReason.LOCAL_MODEL_REQUIRED) {
+            ModelBanner(model, strings, alert)
+            HairLine()
+            return@forEach
+        }
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -334,6 +351,7 @@ private fun RecentRow(
     model: ShellModel,
     strings: Strings,
     open: Boolean,
+    statusWidth: Dp,
     onClick: () -> Unit,
 ) {
     val locale = Locale.forLanguageTag(strings.language)
@@ -345,6 +363,7 @@ private fun RecentRow(
         subtitle = "",
         length = length,
         status = item.state.ledgerStatus(strings),
+        statusWidth = statusWidth,
         announce = strings[
             Str.LEDGER_ANNOUNCE,
             item.title.text(strings),
@@ -372,6 +391,11 @@ private fun RecentRow(
                     horizontalArrangement = Arrangement.spacedBy(Space.s),
                     verticalArrangement = Arrangement.spacedBy(Space.s),
                 ) {
+                    // Waiting for the speech model: the download, in this recording's own language, is
+                    // the row's first action — and absent while one runs, which the banner shows.
+                    if (item.jobStatus == JobStatus.NEEDS_MODEL) {
+                        ModelDownloadChip(model, strings, item.modelLanguage)
+                    }
                     if (item.link != null) {
                         BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
                     }
@@ -399,7 +423,7 @@ private fun RecentRow(
                 // docs/03 "앱에서 지우기": the dialog asks about Drive; this only opens it. Never
                 // over a recording that is being written to or uploaded ([RecentItem.deletable]).
                 if (item.deletable) {
-                    LedgerAction {
+                    LedgerAction(statusWidth) {
                         BlueprintButton(
                             label = strings[Str.DELETE],
                             onClick = { model.askToDelete(item) },

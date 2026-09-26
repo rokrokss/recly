@@ -44,6 +44,8 @@ class TrayPopupTest {
         assertFalse(retryable(JobStatus.DONE, transcribing = false))
         // docs/03: too short to be worth a workflow, which a retry would not change.
         assertFalse(retryable(JobStatus.SKIPPED_SHORT, transcribing = false))
+        // Waiting for the speech model: the row's action is the download, never a Retry.
+        assertFalse(retryable(JobStatus.NEEDS_MODEL, transcribing = false))
         // The recording never got a job, so there is nothing to retry. docs/03: and a
         // recording another device made has no job here either, whatever it is doing over there.
         assertFalse(retryable(null, transcribing = false))

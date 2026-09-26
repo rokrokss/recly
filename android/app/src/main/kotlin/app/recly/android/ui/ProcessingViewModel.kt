@@ -1,7 +1,6 @@
 package app.recly.android.ui
 
 import android.app.Application
-import android.net.ConnectivityManager
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -9,7 +8,10 @@ import app.recly.android.R
 import app.recly.android.core.CoreModule
 import app.recly.android.core.UiMessage
 import app.recly.android.core.coreMessage
+import app.recly.android.work.ModelDownload
+import app.recly.android.work.ModelDownloadState
 import app.recly.android.work.WorkScheduler
+import app.recly.android.work.wireTag
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -28,7 +30,8 @@ data class ProcessingUiState(
     val importing: Boolean = false,
     val message: UiMessage? = null,
     val local: LocalEngineInfo? = null,
-    val preparing: Boolean = false,
+    /** The speech model download, which Settings shares with the list and the Record tab. */
+    val download: ModelDownloadState = ModelDownloadState(),
     /** False when this build ships no on-device engine, so `local` is not offered as a choice. */
     val localInstalled: Boolean = false,
     val secretNames: List<String> = emptyList(),
@@ -40,6 +43,14 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
     val state = _state.asStateFlow()
     init {
         reload()
+        viewModelScope.launch {
+            ModelDownload.get(getApplication()).state.collect { download ->
+                val before = state.value.download.phase
+                _state.update { it.copy(download = download) }
+                // A download that started, stopped or finished changes what the engine says.
+                if (download.phase != before) runCatching { refreshLocal() }.onFailure { failed(it) }
+            }
+        }
     }
 
     fun edit(change: (ProcessingDraft) -> Unit) {
@@ -53,7 +64,7 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
             val core = core()
             val stored = core.initializeProcessing()
             _state.value = ProcessingUiState(stored, ProcessingDraft.from(stored.document.settings), secretNames = core.secrets.names(),
-                localInstalled = core.deps.localTranscription.installed)
+                localInstalled = core.deps.localTranscription.installed, download = state.value.download)
             refreshLocal()
         }.onFailure { failed(it) }
     }
@@ -96,20 +107,15 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         }.onFailure { failed(it) }
     }
 
-    /** Whether the download would go over a connection the user pays by the byte for. */
-    fun metered(): Boolean = getApplication<Application>().getSystemService(ConnectivityManager::class.java).isActiveNetworkMetered
+    /**
+     * docs/05 "고정 처리 설정 도입": the model download, for the language on screen — the status line
+     * above the button is that language's. Recordings waiting on it resume ([ModelDownload]).
+     */
+    fun downloadModel(onWifi: Boolean) =
+        ModelDownload.get(getApplication()).start((state.value.draft?.language ?: Language.KO).wireTag(), onWifi)
 
-    /** docs/05 "고정 처리 설정 도입": the model download, only ever from this button. Recordings waiting on it resume. */
-    fun prepare() = viewModelScope.launch {
-        if (state.value.busy) return@launch
-        _state.update { it.copy(busy = true, preparing = true, message = null) }
-        runCatching {
-            val language = state.value.draft?.language ?: Language.KO
-            val info = core().prepareLocalEngine(language.name.lowercase().replace('_', '-'))
-            _state.update { it.copy(busy = false, preparing = false, local = info) }
-            WorkScheduler(getApplication()).runNow(expedited = false)
-        }.onFailure { failed(it) }
-    }
+    /** The partial files stay for a later resume. */
+    fun cancelDownload() = ModelDownload.get(getApplication()).cancel()
     fun deleteKey(name: String) = viewModelScope.launch {
         runCatching {
             core().secrets.delete(name)
@@ -149,5 +155,5 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         _state.update { it.copy(local = info) }
     }
     private suspend fun core() = CoreModule.get(getApplication()).core
-    private fun failed(error: Throwable) { _state.update { it.copy(busy = false, preparing = false, message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty())) } }
+    private fun failed(error: Throwable) { _state.update { it.copy(busy = false, message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty())) } }
 }

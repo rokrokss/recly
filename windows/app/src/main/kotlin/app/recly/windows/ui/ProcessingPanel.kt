@@ -1,12 +1,14 @@
 @file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 package app.recly.windows.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.*
 import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
@@ -29,12 +31,18 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
     var deletingKey by remember { mutableStateOf<String?>(null) }
     deletingKey?.let { name -> BlueprintDialog(title = strings[Str.DELETE_KEY_TITLE, SttProviders.displayName(name)], onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
-        BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null })
+        // Irreversible, so the danger tone, as every Delete that cannot be undone wears it.
+        BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER)
     }) { Text(name) } }
     // The same section heading as the rest of Settings (SettingsWindow `Section`).
     SectionHeader(strings[Str.PROCESSING_TITLE], Modifier.padding(horizontal = Space.m))
     HairLine()
-    Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+    // On the surface, with the same inset as the other settings sections' blocks (SettingsWindow
+    // `SettingsCard`): one left edge and one right edge for every label, row and button group in it.
+    Column(
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(Space.s),
+    ) {
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
         BlueprintTextField(draft.folder, { v -> model.edit { it.folder = v } }, strings[Str.PROCESSING_STORAGE])
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
@@ -48,8 +56,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         if (draft.mode == TranscriptionMode.LOCAL) {
             // The model by name, as the phone and the Mac show theirs; a product name, not translated.
             if (model.localInstalled) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
-                    Text(strings[Str.PROCESSING_SPEECH_MODEL], style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+                LabelledRow(strings[Str.PROCESSING_SPEECH_MODEL]) {
                     Text(Qwen3Asr.DISPLAY_NAME, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
                 }
             }
@@ -57,40 +64,34 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                 // A language the model lacks has its own line below; this one is for the device.
                 !model.localInstalled || (model.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
                     Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall)
-                model.preparing -> LoadingText(strings[Str.PROCESSING_PREPARING], MaterialTheme.typography.bodySmall, blueprint.textMuted)
                 model.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
-                    Text(strings[Str.PROCESSING_MODEL_DOWNLOAD], style = MaterialTheme.typography.bodySmall)
-                    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-                        // Not while recording, as on the Mac: the download is for later, the recording is now.
-                        BlueprintButton(strings[Str.PROCESSING_PREPARE], { model.prepare() }, enabled = !model.busy && preparationAllowed)
+                    (model.local?.modelBytes ?: model.download.info?.modelBytes)?.let { bytes ->
+                        val size = ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))
+                        Text(strings[Str.PROCESSING_MODEL_DOWNLOAD, size], style = MaterialTheme.typography.bodySmall)
                     }
+                    // Not while recording, as on the Mac: the download is for later, the recording is now.
+                    ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
                 }
             }
             if (model.localInstalled) Text(strings[Str.PROCESSING_LOCAL_NO_SPEAKERS], style = MaterialTheme.typography.bodySmall)
         }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
-            BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to SttProviders.displayName(it) }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
+            // A labelled row, as the other shells draw it: the dropdown alone said only its value.
+            LabelledRow(strings[Str.FIELD_PROVIDER]) {
+                BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to SttProviders.displayName(it) }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
+            }
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
             Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE, SttProviders.displayName(draft.provider)], style = MaterialTheme.typography.bodySmall)
             if (SttProviders.keyIsClientPair(draft.provider)) Text(strings[Str.PROCESSING_KEY_CLIENT_PAIR], style = MaterialTheme.typography.bodySmall)
             ProcessingKey(model, draft.secretRef, strings) { deletingKey = draft.secretRef }
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL])
             if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
-            // Keys only matter to an external provider, so the list lives with it.
-            // The current provider's key is managed on its own row above; this lists the rest.
-            val others = model.secretNames.filter { it != draft.secretRef }
-            if (others.isNotEmpty()) {
-                SectionHeader(strings[Str.PROCESSING_OTHER_KEYS])
-                others.forEach { name ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
-                        Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodySmall, modifier = Modifier.weight(1f))
-                        BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.QUIET)
-                    }
-                }
-            }
         }
+        // The last setting of either method, and a labelled row like the provider's.
         if (draft.mode != TranscriptionMode.OFF) {
-            BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
+            LabelledRow(strings[Str.FIELD_LANGUAGE]) {
+                BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
+            }
             if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
         }
         model.message?.let { Text(it.text(strings)) }
@@ -98,6 +99,18 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         if (model.dirty) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = !model.busy)
             BlueprintButton(strings[Str.SAVE], { model.save() }, tone = ButtonTone.PRIMARY, enabled = !model.busy && languageSupported)
+        }
+        // Keys only matter to an external provider, so the list lives with it — after the form it
+        // belongs to, because deleting one is not part of that form's Save.
+        // The current provider's key is managed on its own row above; this lists the rest.
+        val others = model.secretNames.filter { it != draft.secretRef }
+        if (draft.mode == TranscriptionMode.EXTERNAL && others.isNotEmpty()) {
+            SectionHeader(strings[Str.PROCESSING_OTHER_KEYS])
+            others.forEach { name ->
+                LabelledRow(SttProviders.displayName(name)) {
+                    BlueprintButton(strings[Str.DELETE], { deletingKey = name }, tone = ButtonTone.DANGER)
+                }
+            }
         }
         SectionHeader(strings[Str.PROCESSING_SETTINGS_FILE])
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
@@ -122,7 +135,7 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
         }
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             BlueprintButton(strings[Str.PROCESSING_KEY_REPLACE], { replacing = true }, tone = ButtonTone.QUIET)
-            BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.DANGER)
         }
     } else {
         OutlinedTextField(value, { value = it }, label = { Text(strings[Str.FIELD_API_KEY]) }, singleLine = true,
@@ -136,6 +149,15 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
         }
     }
 }
+/** A setting's name at the start and its control at the end — the settings table's row, inside the block. */
+@Composable
+private fun LabelledRow(label: String, trailing: @Composable () -> Unit) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+        trailing()
+    }
+}
+
 internal fun TranscriptionMode.label(): Str = when (this) {
     TranscriptionMode.LOCAL -> Str.PROCESSING_LOCAL
     TranscriptionMode.EXTERNAL -> Str.PROCESSING_EXTERNAL

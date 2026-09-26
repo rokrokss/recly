@@ -52,6 +52,18 @@ class LocalModelStoreTest {
     }
 
     @Test
+    fun `progress counts installed files and what the partial ones already hold`() = runBlocking {
+        val store = store(file("big", big), file("small", small))
+        assertEquals((big.size + small.size).toLong(), store.totalBytes)
+        assertEquals(0.0, store.progress())
+        fs.createDirectories(dir)
+        fs.write(dir / "big.part") { write(big, 0, 4 * 1024 * 1024) }
+        assertEquals(4.0 * 1024 * 1024 / store.totalBytes, store.progress())
+        store.install()
+        assertEquals(1.0, store.progress())
+    }
+
+    @Test
     fun `an interrupted download resumes from what is on disk`() = runBlocking {
         fs.createDirectories(dir)
         fs.write(dir / "big.part") { write(big, 0, 8 * 1024 * 1024) }

@@ -14,15 +14,19 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.recly.android.R
+import app.recly.android.core.coreMessage
 import app.recly.android.core.text
+import app.recly.android.work.modelSize
 import app.recly.android.ui.component.*
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
+import recly.core.message.CoreMessage
 import recly.core.model.Language
 import recly.core.processing.*
 import java.util.Locale
@@ -43,7 +47,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
     val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
-    var confirmingDownload by remember { mutableStateOf(false) }
+    val metered = rememberMeteredGate((state.download.info ?: state.local)?.modelBytes)
     val recorder by RecorderService.state.collectAsState()
     val export = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { it?.let { model.export(it) } }
     val importPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { it?.let(model::importSettings) }
@@ -52,13 +56,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     HairLine()
     deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, SttProviders.displayName(name)), onDismissRequest = { deletingKey = null }, actions = {
         BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
-        BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null })
+        BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER)
     }) { Text(name) } }
-    // A gigabyte on a metered connection is the user's to agree to; Wi-Fi needs no question.
-    if (confirmingDownload) BlueprintDialog(title = stringResource(R.string.processing_cellular_title), onDismissRequest = { confirmingDownload = false }, actions = {
-        BlueprintButton(stringResource(R.string.action_cancel), { confirmingDownload = false }, tone = ButtonTone.QUIET)
-        BlueprintButton(stringResource(R.string.processing_download), { confirmingDownload = false; model.prepare() }, tone = ButtonTone.PRIMARY)
-    }) { BlueprintDialogText(stringResource(R.string.processing_cellular_body)) }
     Column(Modifier.fillMaxWidth().padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
         if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall)
         ProcessingField(R.string.processing_storage, draft.folder) { v -> model.edit { it.folder = v } }
@@ -77,14 +76,26 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 // A language the model lacks has its own line below; this one is for the device.
                 !state.localInstalled || (state.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
                     Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall)
-                state.preparing -> LoadingText(stringResource(R.string.processing_preparing), MaterialTheme.typography.bodySmall, blueprint.textMuted)
                 state.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
-                    Text(stringResource(R.string.processing_model_download), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                    val download = state.download
+                    // The download's own reading moves while it runs; the partial bytes are the same disk either way.
+                    val reading = download.info ?: state.local
+                    reading?.modelBytes?.let { size ->
+                        Text(stringResource(R.string.processing_model_download, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                    }
+                    ModelDownloadLines(download, reading)
+                    download.error?.let { error ->
+                        Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+                    }
                     EndButtons {
-                        // Not while recording, as on iPhone: the download is for later, the recording is now.
-                        BlueprintButton(stringResource(R.string.processing_prepare), {
-                            if (model.metered()) confirmingDownload = true else model.prepare()
-                        }, enabled = !state.busy && recorder == RecorderState.Idle)
+                        if (download.active) {
+                            BlueprintButton(stringResource(R.string.processing_cancel_download), model::cancelDownload, tone = ButtonTone.QUIET,
+                                modifier = Modifier.testTag("model-cancel"))
+                        } else {
+                            // Not while recording, as on iPhone: the download is for later, the recording is now.
+                            BlueprintButton(modelDownloadLabel(reading), { metered(model::downloadModel) },
+                                enabled = !state.busy && recorder == RecorderState.Idle, modifier = Modifier.testTag("model-download"))
+                        }
                     }
                 }
             }
@@ -112,19 +123,6 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
             }
             if (draft.acceptsModel) ProcessingField(R.string.processing_model, draft.model) { v -> model.edit { it.model = v } }
-            // Keys only matter to an external provider, so the list lives with it.
-            // The current provider's key is managed on its own row above; this lists the rest.
-            val others = state.secretNames.filter { it != draft.secretRef }
-            if (others.isNotEmpty()) {
-                SectionHeader(stringResource(R.string.processing_other_keys))
-                // docs/09 화면 원칙 8: an action that belongs to one item sits at the end of its row.
-                others.forEach { name ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
-                        BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.QUIET)
-                    }
-                }
-            }
         }
         if (draft.mode != TranscriptionMode.OFF) {
             ProcessingRow(stringResource(R.string.editor_language), transcriptionLanguageLabel(draft.language)) { pickingLanguage = true }
@@ -143,6 +141,20 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy)
             BlueprintButton(stringResource(R.string.action_save), { model.save() }, tone = ButtonTone.PRIMARY,
                 enabled = !state.busy && languageSupported)
+        }
+        // Keys only matter to an external provider, so the list lives with it — after the draft's
+        // own Save, since deleting a key is not part of it. The current provider's key is managed
+        // on its own row above; this lists the rest.
+        val others = state.secretNames.filter { it != draft.secretRef }
+        if (draft.mode == TranscriptionMode.EXTERNAL && others.isNotEmpty()) {
+            SectionHeader(stringResource(R.string.processing_other_keys))
+            // docs/09 화면 원칙 8: an action that belongs to one item sits at the end of its row.
+            others.forEach { name ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
+                    BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.DANGER)
+                }
+            }
         }
         SectionHeader(stringResource(R.string.processing_settings_file))
         EndButtons {
@@ -194,7 +206,7 @@ private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save
         }
         EndButtons {
             BlueprintButton(stringResource(R.string.processing_key_replace), { replacing = true }, tone = ButtonTone.QUIET)
-            BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.QUIET)
+            BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.DANGER)
         }
     } else {
         OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,

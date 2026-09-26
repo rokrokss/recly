@@ -6,6 +6,7 @@ import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.ui.blockingError
+import app.recly.windows.ui.engineLanguage
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.serialization.json.JsonObject
@@ -15,7 +16,9 @@ import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.job.StepRun
+import recly.core.job.StepStatus
 import recly.core.model.RecordingStatus
+import recly.core.model.Step
 import recly.core.recording.RecordingRecord
 import recly.core.transcribe.TranscribeRunner
 
@@ -60,6 +63,11 @@ data class RecentItem(
      */
     val remote: Boolean = false,
     val localPending: Boolean = false,
+    /**
+     * The spoken language of the step waiting for the on-device speech model, while the job is
+     * `NEEDS_MODEL`: the row's Download starts the download in it, which is what resumes this job.
+     */
+    val modelLanguage: String? = null,
 ) {
     /**
      * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": a recording being written to or uploaded right
@@ -130,7 +138,15 @@ object Recents {
             waitingMinutes = waiting,
             remote = record.remote,
             localPending = local,
+            modelLanguage = if (job?.status == JobStatus.NEEDS_MODEL) modelLanguage(job, steps) else null,
         )
+    }
+
+    /** The language of the local transcription step that is waiting for the model. */
+    private fun modelLanguage(job: Job, steps: List<StepRun>): String? {
+        val waiting = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL } ?: return null
+        val step = job.workflow?.steps?.find { it.id == waiting.stepId } as? Step.LocalTranscribe ?: return null
+        return engineLanguage(step.language)
     }
 
     /**
@@ -179,6 +195,8 @@ object Recents {
             // over a full Drive is the same 403 again, and freeing space is the only way past it.
             JobStatus.NEEDS_CONSENT -> Str.STATE_CONSENT_REQUIRED
             JobStatus.NEEDS_SPACE -> Str.STATE_NO_SPACE
+            // A wait, not a failure: the model download is what carries it on (the row offers it).
+            JobStatus.NEEDS_MODEL -> Str.STATE_NEEDS_MODEL
             JobStatus.SKIPPED_SHORT -> Str.STATE_TOO_SHORT
         }.message()
     }

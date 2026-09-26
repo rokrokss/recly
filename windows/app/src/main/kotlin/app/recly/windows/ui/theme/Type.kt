@@ -70,7 +70,7 @@ private fun mono(size: Float, letterSpacing: Float = 0f) = TextStyle(
 )
 
 /** The M3 slots, on the same six sizes, so a component we keep is drawn on the same scale. */
-fun reclyTypography(scale: Float): Typography {
+fun reclyTypography(scale: Float, tracked: Boolean = true): Typography {
     val default = Typography()
     fun sans(size: Float, weight: FontWeight = FontWeight.Normal, spacing: Float = 0f) = TextStyle(
         fontFamily = FontFamily.Default,
@@ -92,6 +92,6 @@ fun reclyTypography(scale: Float): Typography {
         labelLarge = sans(Type.BODY_SMALL, FontWeight.Medium),
         labelMedium = sans(Type.SMALL, FontWeight.Medium),
         // The section headers and node kickers of the mockup: small, tracked out, never shouted.
-        labelSmall = sans(Type.SMALL, FontWeight.Medium, spacing = 0.6f),
+        labelSmall = sans(Type.SMALL, FontWeight.Medium, spacing = if (tracked) 0.6f else 0f),
     )
 }

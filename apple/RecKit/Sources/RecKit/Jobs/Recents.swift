@@ -130,6 +130,17 @@ public struct RecentItem: Identifiable, Sendable {
     /// because a state *label* cannot tell `NEEDS_SPACE` from any other parked job.
     public let alert: AlertReason?
 
+    /// docs/05 "고정 처리 설정 도입": the language of the on-device step a `NEEDS_MODEL` job is
+    /// waiting on — the model its "Download model" fetches. Nil for every other job.
+    public let localLanguage: String?
+
+    /// Whether the job is waiting for the speech model, which is what the row's download is for.
+    public var waitingForModel: Bool { state == "Waiting for speech model" }
+
+    /// The tone [reason] is drawn in: red for a failure, and the warning tone of the badge for a job
+    /// that is only waiting (consent, sign-in, Drive space, the speech model).
+    public var reasonTone: BadgeTone { alert?.isWait == true ? .warning : .danger }
+
     public init(
         id: String,
         jobId: String?,
@@ -142,7 +153,8 @@ public struct RecentItem: Identifiable, Sendable {
         nextRunAt: Date? = nil,
         durationSec: Double? = nil,
         remote: Bool = false,
-        alert: AlertReason? = nil
+        alert: AlertReason? = nil,
+        localLanguage: String? = nil
     ) {
         self.id = id
         self.jobId = jobId
@@ -156,6 +168,7 @@ public struct RecentItem: Identifiable, Sendable {
         self.durationSec = durationSec
         self.remote = remote
         self.alert = alert
+        self.localLanguage = localLanguage
     }
 }
 
@@ -204,7 +217,8 @@ public enum Recents {
                     },
                     durationSec: record.meta.durationSec?.doubleValue,
                     remote: record.remote,
-                    alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) }
+                    alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
+                    localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil }
                 )
             )
         }
@@ -242,6 +256,9 @@ public enum Recents {
         case .done: return "Done"
         case .failed: return "Failed"
         case .needsConsent: return "Transfer permission needed"
+        // docs/05 "고정 처리 설정 도입": a wait for the on-device model, not a failure — the download
+        // brings it back, and a retry would only park it again.
+        case .needsModel: return "Waiting for speech model"
         case .needsAuth: return "Sign-in needed"
         // docs/10 "Drive 용량 초과": parked rather than failed, and nothing retries it on its own —
         // the row's own state, so the list can offer the storage page instead of a retry that
@@ -274,7 +291,7 @@ public enum Recents {
     /// is in, and the header's number is about recordings.
     private static let waiting: Set<String> = [
         "Transcribing on this device", "Transcription pending",
-        "Waiting", "Retry pending", "Transfer permission needed",
+        "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",
         "Receiving from the watch", "Uploading on another device",
     ]
 
@@ -298,6 +315,15 @@ public enum Recents {
     /// The desktop never asks: nothing is ever received on a Mac.
     public static func receiving(_ items: [RecentItem]) -> Bool {
         items.contains { $0.state == "Receiving from the watch" }
+    }
+
+    /// The language of the local step a `NEEDS_MODEL` job is parked on, as the core names it — the
+    /// one `ReclyCore.prepareLocalEngine` has to download for this job to resume.
+    static func localLanguage(job: ReclyCore.Job, steps: [StepRun]) -> String? {
+        let waiting = steps.first { $0.status == .needsModel }?.stepId
+        let local = job.workflow?.steps.compactMap { $0 as? Step.LocalTranscribe } ?? []
+        let step = local.first { $0.id == waiting } ?? local.first
+        return step.map { $0.language.name.lowercased().replacingOccurrences(of: "_", with: "-") }
     }
 
     /// The last thing a step complained about, as the core wrote it — a `CoreMessage` code

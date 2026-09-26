@@ -587,7 +587,7 @@ final class DisconnectCompletionTests: XCTestCase {
 
         XCTAssertEqual(
             english,
-            "Google access was revoked, but 2 recording(s) were still running and were kept"
+            "Google access was revoked. Recordings still running and kept: 2"
                 + " — disconnect again once they have finished."
         )
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")

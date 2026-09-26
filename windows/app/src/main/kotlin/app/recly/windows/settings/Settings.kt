@@ -96,6 +96,12 @@ interface Settings {
      */
     var revokeDebt: Boolean
 
+    /**
+     * "Not now" on the first-run card that offers the on-device speech model: this PC does not ask
+     * again. Settings keeps its own Download row, so nothing is lost by it.
+     */
+    var modelPromptDismissed: Boolean
+
     companion object {
         fun create(): Settings = PreferenceSettings()
     }
@@ -143,6 +149,10 @@ class PreferenceSettings(
             prefs.flush()
         }
 
+    override var modelPromptDismissed: Boolean
+        get() = prefs.getBoolean(MODEL_PROMPT_DISMISSED, false)
+        set(value) = prefs.putBoolean(MODEL_PROMPT_DISMISSED, value)
+
     private companion object {
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */
         const val NODE = "app/recly/windows"
@@ -151,5 +161,6 @@ class PreferenceSettings(
         const val THEME = "theme"
         const val DISCONNECT_PHASE = "disconnectPhase"
         const val REVOKE_DEBT = "revokeDebt"
+        const val MODEL_PROMPT_DISMISSED = "modelPromptDismissed"
     }
 }

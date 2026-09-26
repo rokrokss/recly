@@ -49,28 +49,64 @@ class FixedProcessingTest {
         assertEquals(2, transcript.segments.map { it.speaker }.distinct().size)
     }
 
-    @Test fun `model preparation resumes only matching local failures and preserves completed work`() = runBlocking<Unit> {
-        val engine = Engine(); val h = Harness(engine)
+    @Test fun `a missing model parks the recording, and downloading it carries on`() = runBlocking<Unit> {
+        var ready = false
+        val engine = object : Engine() {
+            override suspend fun status(language: String) =
+                LocalEngineInfo(if (ready) LocalEngineStatus.READY else LocalEngineStatus.MODEL_REQUIRED, "fake-local", "test-1")
+        }
+        val h = Harness(engine); h.core.initializeProcessing(); h.capture(); val job = h.enqueue()
+        val upload = h.store.stepsOf(job.id).first()
+        h.store.updateStep(upload.copy(status = StepStatus.SUCCEEDED, output = buildJsonObject { put("folderId", "folder") }))
+        h.core.runLocalJobs()
+        val waiting = h.store.stepsOf(job.id)[1]
+        assertEquals(JobStatus.NEEDS_MODEL, h.store.get(job.id)!!.status, "a wait, not a failure")
+        assertEquals(StepStatus.NEEDS_MODEL, waiting.status)
+        assertEquals(CoreMessage.LOCAL_MODEL_REQUIRED.code(), waiting.lastError)
+        assertEquals(0, waiting.attempts, "waiting spends no attempt")
+        h.core.runLocalJobs()
+        assertEquals(JobStatus.NEEDS_MODEL, h.store.get(job.id)!!.status, "nothing picks it up until the model is here")
+
+        ready = true
+        assertEquals(LocalEngineStatus.READY, h.core.prepareLocalEngine("ko").status)
+        assertEquals(JobStatus.PENDING, h.store.get(job.id)!!.status)
+        h.core.runLocalJobs()
+        assertEquals(StepStatus.SUCCEEDED, h.store.stepsOf(job.id)[1].status)
+    }
+
+    @Test fun `model preparation resumes the waits whose model is ready and preserves completed work`() = runBlocking<Unit> {
+        // English has no model yet; Korean, the language prepared, and Japanese, ready through another
+        // download, do.
+        val engine = object : Engine() {
+            override suspend fun status(language: String) = LocalEngineInfo(
+                if (language == "en") LocalEngineStatus.MODEL_REQUIRED else LocalEngineStatus.READY, "fake-local", "test-1")
+        }
+        val h = Harness(engine)
         h.core.initializeProcessing(); h.capture(); val matching = h.enqueue()
         val runs = h.store.stepsOf(matching.id)
         val upload = runs[0].copy(status = StepStatus.SUCCEEDED, attempts = 1,
             output = buildJsonObject { put("folderId", "kept") })
         h.store.updateStep(upload)
-        h.store.updateStep(runs[1].copy(status = StepStatus.FAILED, attempts = 1,
+        h.store.updateStep(runs[1].copy(status = StepStatus.NEEDS_MODEL, attempts = 1,
             lastError = CoreMessage.LOCAL_MODEL_REQUIRED.code()))
         val checkpoint = buildJsonObject { put("input", "preserved") }
         h.store.saveStepState(runs[1].id, checkpoint)
-        h.store.updateJob(matching.id, JobStatus.FAILED, null, START)
-        suspend fun failed(id: String, step: Step, error: String): Job {
+        h.store.updateJob(matching.id, JobStatus.NEEDS_MODEL, null, START)
+        suspend fun parked(id: String, step: Step, error: String, status: StepStatus, jobStatus: JobStatus): Job {
             val workflow = Workflow(id, "Untouched", START.isoUtc(), steps = listOf(step))
             val job = h.store.enqueue(h.id, workflow, START)!!
-            h.store.updateStep(h.store.stepsOf(job.id).single().copy(status = StepStatus.FAILED, attempts = 3, lastError = error))
-            h.store.updateJob(job.id, JobStatus.FAILED, null, START)
+            h.store.updateStep(h.store.stepsOf(job.id).single().copy(status = status, attempts = 3, lastError = error))
+            h.store.updateJob(job.id, jobStatus, null, START)
             return h.store.get(job.id)!!
         }
-        val english = failed("english", Step.LocalTranscribe("speech", language = Language.EN), CoreMessage.LOCAL_MODEL_REQUIRED.code())
-        val external = failed("external", Step.Transcribe("speech", provider = "assemblyai", secretRef = "key"), "AUTH_REJECTED")
-        val unrelated = failed("unrelated", Step.LocalTranscribe("speech"), CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE.code())
+        val english = parked("english", Step.LocalTranscribe("speech", language = Language.EN),
+            CoreMessage.LOCAL_MODEL_REQUIRED.code(), StepStatus.NEEDS_MODEL, JobStatus.NEEDS_MODEL)
+        val japanese = parked("japanese", Step.LocalTranscribe("speech", language = Language.JA),
+            CoreMessage.LOCAL_MODEL_REQUIRED.code(), StepStatus.NEEDS_MODEL, JobStatus.NEEDS_MODEL)
+        val external = parked("external", Step.Transcribe("speech", provider = "assemblyai", secretRef = "key"),
+            "AUTH_REJECTED", StepStatus.FAILED, JobStatus.FAILED)
+        val unrelated = parked("unrelated", Step.LocalTranscribe("speech"),
+            CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE.code(), StepStatus.FAILED, JobStatus.FAILED)
         val untouched = listOf(english, external, unrelated).associateWith { h.store.stepsOf(it.id) }
 
         assertEquals(LocalEngineStatus.READY, h.core.prepareLocalEngine("ko").status)
@@ -78,9 +114,10 @@ class FixedProcessingTest {
         assertEquals(JobStatus.PENDING, h.store.get(matching.id)!!.status)
         assertEquals(upload, resumed[0])
         assertEquals(StepStatus.PENDING, resumed[1].status)
-        assertEquals(0, resumed[1].attempts); assertNull(resumed[1].lastError)
+        assertEquals(1, resumed[1].attempts); assertNull(resumed[1].lastError)
         assertEquals(checkpoint, resumed[1].state)
         assertEquals(runs[2], resumed[2])
+        assertEquals(JobStatus.PENDING, h.store.get(japanese.id)!!.status, "another language whose model is ready")
         for ((job, steps) in untouched) {
             assertEquals(job, h.store.get(job.id)); assertEquals(steps, h.store.stepsOf(job.id))
         }
@@ -95,8 +132,8 @@ class FixedProcessingTest {
             h.core.initializeProcessing(); h.capture(); val job = h.enqueue()
             val runs = h.store.stepsOf(job.id)
             h.store.updateStep(runs[0].copy(status = StepStatus.SUCCEEDED))
-            h.store.updateStep(runs[1].copy(status = StepStatus.FAILED, lastError = CoreMessage.LOCAL_MODEL_REQUIRED.code()))
-            h.store.updateJob(job.id, JobStatus.FAILED, null, START)
+            h.store.updateStep(runs[1].copy(status = StepStatus.NEEDS_MODEL, lastError = CoreMessage.LOCAL_MODEL_REQUIRED.code()))
+            h.store.updateJob(job.id, JobStatus.NEEDS_MODEL, null, START)
             if (status == LocalEngineStatus.READY) h.store.disconnectDrive()
             val before = h.store.get(job.id)
             val steps = h.store.stepsOf(job.id)

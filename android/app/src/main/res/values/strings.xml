@@ -32,7 +32,7 @@
     <string name="auth_sign_in_failed">Sign-in failed: %1$s</string>
     <string name="auth_add_account">Add a Google account, then sign in again</string>
     <string name="auth_drive_granted">Drive access granted</string>
-    <string name="auth_drive_granted_unparked">Drive access granted — restarting %1$d waiting job(s)</string>
+    <string name="auth_drive_granted_unparked">Drive access granted. Restarting waiting recordings: %1$d</string>
     <string name="auth_drive_failed">Drive access failed: %1$s</string>
 
     <!-- Recording screen (docs/11 A3). -->
@@ -64,6 +64,7 @@
 
     <!-- Job list (docs/11 A4). -->
     <string name="jobs_empty">No recordings yet</string>
+    <string name="jobs_empty_hint">Recordings you make appear here.</string>
     <string name="jobs_untitled">Untitled</string>
     <string name="jobs_sign_in">Connect Google Drive</string>
     <string name="jobs_open_drive">Open in Drive</string>
@@ -221,8 +222,8 @@
         <item quantity="one">%1$d recording has not reached Drive yet and stays on this phone.</item>
         <item quantity="other">%1$d recordings have not reached Drive yet and stay on this phone.</item>
     </plurals>
-    <string name="disconnect_deleted">Disconnected — %1$d recording(s) deleted from this phone.</string>
-    <string name="disconnect_busy">Google access was revoked, but %1$d recording(s) were still running and were kept — disconnect again once they have finished.</string>
+    <string name="disconnect_deleted">Disconnected. Recordings deleted from this phone: %1$d</string>
+    <string name="disconnect_busy">Google access was revoked. Recordings still running and kept: %1$d — disconnect again once they have finished.</string>
     <!-- docs/03: a live capture has no job yet, so the core's own Busy guard does not cover it. -->
     <string name="disconnect_stop_recording">Stop the recording first</string>
     <!-- docs/06: a disconnect whose local half failed is still owed, and owns the account slot. -->
@@ -268,6 +269,7 @@
     <string name="consent_link">Recording-consent rules by jurisdiction</string>
     <string name="core_transfer_consent_required">Permission is needed before sending to this destination</string>
     <string name="job_state_needs_consent">Transfer permission needed</string>
+    <string name="job_state_needs_model">Waiting for speech model</string>
     <string name="delete_key_title">Delete key: %1$s</string>
     <string name="detail_not_requested">This recording has no transcription step to run.</string>
     <string name="detail_pending">Transcription is not finished yet. The result will appear here when ready.</string>
@@ -293,7 +295,7 @@
     <string name="drive_optional">Record locally. Connect Drive to upload.</string>
     <string name="drive_pending">Upload waiting</string>
     <string name="core_local_transcription_unavailable">Local transcription is unavailable on this device. Choose another transcription method.</string>
-    <string name="core_local_model_required">Download the speech recognition model in transcription settings.</string>
+    <string name="core_local_model_required">The speech recognition model isn\'t downloaded yet.</string>
     <string name="core_local_diarization_unavailable">This local engine does not support speaker identification. Turn it off or choose an external API.</string>
     <string name="processing_title">Recording processing</string>
     <string name="processing_local">On device</string>
@@ -303,11 +305,20 @@
     <string name="processing_transcription">Transcription</string>
     <string name="processing_saved">Settings saved</string>
     <string name="processing_prepare">Download model</string>
-    <string name="processing_preparing">Downloading model…</string>
-    <string name="processing_model_download">To transcribe on this device, download this model once (about 1 GB).</string>
+    <string name="processing_download_progress">Downloading model… %1$d%%</string>
+    <string name="processing_download_bytes">%1$s of %2$s</string>
+    <string name="processing_resume_download">Resume download</string>
+    <string name="processing_download_on_wifi">Download on Wi-Fi</string>
+    <string name="processing_cancel_download">Cancel download</string>
+    <string name="processing_waiting_for_wifi">Waiting for Wi-Fi</string>
+    <string name="model_download_notification">Downloading speech recognition model</string>
+    <string name="model_prompt_title">Transcribe on this device</string>
+    <string name="model_prompt_body">Download the speech recognition model (%1$s) once to transcribe recordings on this device.</string>
+    <string name="action_not_now">Not now</string>
+    <string name="processing_model_download">To transcribe on this device, download this model once (%1$s).</string>
     <string name="processing_local_no_speakers">On-device transcription does not separate speakers.</string>
     <string name="processing_download">Download</string>
-    <string name="processing_cellular_body">The model is about 1 GB.</string>
+    <string name="processing_cellular_body">The model is %1$s.</string>
     <string name="processing_cellular_title">Download over mobile data?</string>
     <string name="processing_speech_model">Speech recognition model</string>
     <string name="processing_export">Export settings</string>

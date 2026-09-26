@@ -3,11 +3,20 @@ package recly.core.transcribe
 /** Capability is independent of the selected preference; no implicit network or CPU fallback. */
 enum class LocalEngineStatus { READY, MODEL_REQUIRED, UNSUPPORTED, WAITING }
 
+/**
+ * [modelBytes] is what [LocalTranscriptionEngine.prepare] downloads, when the engine knows it (the
+ * app-managed model; Apple's system assets do not say). [progress] is how much of the model is
+ * already here, 0–1, while it is partly downloaded, and [downloading] whether a download is running
+ * now — so settings can show a percentage, and "resume" instead of "download".
+ */
 data class LocalEngineInfo(
     val status: LocalEngineStatus,
     val name: String,
     val revision: String,
     val supportsDiarization: Boolean = false,
+    val modelBytes: Long? = null,
+    val progress: Double? = null,
+    val downloading: Boolean = false,
 )
 
 data class LocalTranscriptionRequest(
@@ -31,7 +40,7 @@ interface LocalTranscriptionEngine {
     @Throws(Throwable::class)
     suspend fun status(language: String): LocalEngineInfo
 
-    /** Explicit model preparation, called only from the settings action. */
+    /** Explicit model preparation, called only from a user's download action (settings, a waiting recording, the first-run card). */
     @Throws(Throwable::class)
     suspend fun prepare(language: String): LocalEngineInfo
 

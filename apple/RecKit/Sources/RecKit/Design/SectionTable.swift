@@ -103,6 +103,9 @@ extension SectionHeader where Trailing == EmptyView {
 /// right. Square corners — docs/09 gives a table row a radius of zero.
 public struct SectionRow<Trailing: View>: View {
     @Environment(\.blueprint) private var blueprint
+    /// Inside a [SectionBlock] the block already holds the inset, and a second one would start this
+    /// row — and end its control — a step inside everything else in the block.
+    @Environment(\.insideSectionBlock) private var insideBlock
     private let title: String
     private let subtitle: String?
     private let trailing: Trailing
@@ -129,7 +132,7 @@ public struct SectionRow<Trailing: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 trailing
             }
-            .padding(.horizontal, Space.m)
+            .padding(.horizontal, insideBlock ? 0 : Space.m)
             .padding(.vertical, 12)
             .frame(minHeight: minTouch)
             HairLine()
@@ -147,6 +150,8 @@ extension SectionRow where Trailing == EmptyView {
 /// Supporting copy below a settings row uses the table's quiet type and inset (docs/09).
 public struct SectionFootnote: View {
     @Environment(\.blueprint) private var blueprint
+    /// The block's own inset is the footnote's inside a [SectionBlock] (see [SectionRow]).
+    @Environment(\.insideSectionBlock) private var insideBlock
     private let text: String
 
     public init(_ text: String) { self.text = text }
@@ -157,7 +162,7 @@ public struct SectionFootnote: View {
             .foregroundStyle(blueprint.palette.textMuted)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Space.m)
+            .padding(.horizontal, insideBlock ? 0 : Space.m)
             .padding(.vertical, Space.s)
     }
 }
@@ -177,12 +182,27 @@ public struct SectionBlock<Content: View>: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 content
             }
+            // docs/09 화면 원칙 8: one left edge and one right edge in the block — this inset is
+            // the rows' and footnotes' too, so they do not add their own.
+            .environment(\.insideSectionBlock, true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
             HairLine()
         }
         .background(blueprint.palette.surface)
+    }
+}
+
+private struct InsideSectionBlockKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// True under a [SectionBlock], whose padding already insets what is in it.
+    var insideSectionBlock: Bool {
+        get { self[InsideSectionBlockKey.self] }
+        set { self[InsideSectionBlockKey.self] = newValue }
     }
 }
 

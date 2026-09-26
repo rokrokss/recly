@@ -123,7 +123,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var processingSettings: some View {
         if let processing = model.processing {
-            ProcessingSettingsView(model: processing, preparationAllowed: model.state == .idle)
+            ProcessingSettingsView(model: processing)
         }
     }
 
