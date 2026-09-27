@@ -289,6 +289,7 @@
     <string name="processing_key_not_on_device">이 기기에 저장된 키 없음</string>
     <string name="processing_local_running">이 기기에서 전사 중</string>
     <string name="processing_local_pending">전사 대기 중</string>
+    <string name="processing_local_cooling">기기가 식을 때까지 대기 중</string>
     <string name="settings_language_ja">日本語</string>
     <string name="settings_language_zh_hans">简体中文</string>
     <string name="settings_language_zh_hant">繁體中文</string>

@@ -77,6 +77,8 @@ data class JobItem(
     val alert: AlertReason? = null,
     val localPending: Boolean = false,
     val localRunning: Boolean = false,
+    /** Held back for heat rather than queued (docs/05 "고정 처리 설정 도입"). */
+    val localCooling: Boolean = false,
     /** The waiting local step's language while the job waits for the speech model — what its download is for. */
     val modelLanguage: String? = null,
 )
@@ -580,6 +582,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 waitingMinutes = StepReport.waitingMinutes(steps, now),
                 localPending = job?.status in setOf(JobStatus.WAITING, JobStatus.PENDING, JobStatus.RUNNING) && StepReport.localPending(job?.workflow, steps),
                 localRunning = core.localTranscription.isRunning(record.id),
+                localCooling = core.localTranscription.coolingDown,
                 link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
                 alert = job?.let { alertReasonOf(it.status, error) },

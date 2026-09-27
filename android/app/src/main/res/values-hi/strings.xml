@@ -257,6 +257,7 @@
     <string name="processing_key_not_on_device">इस डिवाइस पर कोई कुंजी सहेजी नहीं गई</string>
     <string name="processing_local_running">इस डिवाइस पर ट्रांसक्रिप्शन जारी</string>
     <string name="processing_local_pending">ट्रांसक्रिप्शन बाकी</string>
+    <string name="processing_local_cooling">डिवाइस के ठंडा होने का इंतज़ार</string>
     <string name="settings_language_ja">日本語</string>
     <string name="settings_language_zh_hans">简体中文</string>
     <string name="settings_language_zh_hant">繁體中文</string>

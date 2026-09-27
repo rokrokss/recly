@@ -468,6 +468,13 @@ class CrossShellDictionaryTest {
                 reckit = "The speech recognition model isn't downloaded yet.",
             ),
             Line(
+                what = "a local transcription held back for heat (Windows has no thermal signal)",
+                en = "Waiting for the device to cool down",
+                ko = "기기가 식을 때까지 대기 중",
+                android = "processing_local_cooling",
+                reckit = "Waiting for the device to cool down",
+            ),
+            Line(
                 what = "the one-time prompt's title",
                 en = "Transcribe on this device",
                 ko = "이 기기에서 전사하기",

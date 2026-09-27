@@ -80,16 +80,14 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
             let download = lock.withLock { installing }.flatMap { $0.language == language ? $0 : nil }
             return info(.modelRequired, progress: download?.request.progress.fractionCompleted, downloading: download != nil)
         }
-        guard ProcessInfo.processInfo.thermalState == .nominal, !ProcessInfo.processInfo.isLowPowerModeEnabled else { return info(.waiting) }
+        guard !Self.tooHot else { return info(.waiting) }
         return info(.ready)
     }
 
     func __prepare(language: String) async throws -> LocalEngineInfo {
         guard SpeechTranscriber.isAvailable, let locale = await locale(language) else { return info(.unsupported) }
-        guard ProcessInfo.processInfo.thermalState == .nominal, !ProcessInfo.processInfo.isLowPowerModeEnabled else {
-            // Keep the preparation action available if admission was denied before installation.
-            return try await __status(language: language)
-        }
+        // No thermal or power gate here: that is for transcribing. The download is what the user just
+        // asked for, and the install is the system's to schedule (docs/05 "고정 처리 설정 도입").
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
             // Its own task, so the shell's Cancel reaches it however the call above it is bridged.
@@ -115,7 +113,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         let monitor = Task {
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(1))
-                if ProcessInfo.processInfo.thermalState != .nominal || ProcessInfo.processInfo.isLowPowerModeEnabled {
+                if Self.tooHot {
                     await admission.pause()
                     await analyzer.cancelAndFinishNow()
                     return
@@ -156,6 +154,14 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         } onCancel: {
             Task { await analyzer.cancelAndFinishNow() }
         }
+    }
+
+    /// docs/05 "고정 처리 설정 도입": transcribe unless the device is really hot. `.serious` is where Apple
+    /// says the system itself cuts performance and apps should stop CPU work; `.fair` is routine while
+    /// charging, and a user would never guess it is why nothing was transcribed. Low Power Mode does
+    /// not hold it back either.
+    private static var tooHot: Bool {
+        ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
     }
 
     private func locale(_ language: String) async -> Locale? {

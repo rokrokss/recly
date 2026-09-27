@@ -87,7 +87,8 @@ public final class ModelDownload: ObservableObject {
         if let language = requested ?? saved.map(Self.code) {
             let poll = Task { await self.poll(language) }
             do {
-                _ = try await core.prepareLocalEngine(language: language)
+                let info = try await core.prepareLocalEngine(language: language)
+                message = Self.unfinished(info.status, cancelled: cancelled)
             } catch {
                 if !cancelled { message = .key("Failed: %@", args: [.verbatim(error.localizedDescription)]) }
             }
@@ -110,6 +111,14 @@ public final class ModelDownload: ObservableObject {
             else { continue }
             progress = info.progress?.doubleValue
         }
+    }
+
+    /// A download that ended with the model still missing, and not because it was cancelled: the
+    /// system declined or dropped the request. Without this line the button simply came back, as if
+    /// the tap had done nothing.
+    nonisolated static func unfinished(_ status: LocalEngineStatus?, cancelled: Bool) -> UiMessage? {
+        guard !cancelled, status == .modelRequired else { return nil }
+        return .key("The model didn’t finish downloading. Try again.")
     }
 
     /// The core's wire code for a language (`zh_cn` → `zh-cn`).

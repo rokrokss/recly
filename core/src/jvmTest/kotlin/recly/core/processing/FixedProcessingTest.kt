@@ -207,6 +207,21 @@ class FixedProcessingTest {
         assertEquals(JobStatus.PENDING, h.store.get(job.id)!!.status, "the retry runs it now")
     }
 
+    @Test fun `a heat wait is said, and clears once the engine is ready again`() = runBlocking<Unit> {
+        var hot = true
+        val engine = object : Engine() {
+            override suspend fun status(language: String) =
+                LocalEngineInfo(if (hot) LocalEngineStatus.WAITING else LocalEngineStatus.READY, "fake-local", "test-1")
+        }
+        val h = Harness(engine); h.core.initializeProcessing(); h.capture(); val ctx = h.context(h.enqueue())
+        assertIs<StepOutcome.Waiting>(h.core.localTranscription.run(ctx))
+        assertTrue(h.core.localTranscription.coolingDown)
+
+        hot = false
+        h.core.localTranscription.run(ctx); h.core.localTranscription.awaitCurrent()
+        assertFalse(h.core.localTranscription.coolingDown)
+    }
+
     @Test fun `a manual rerun runs what is left with the current settings and keeps finished work`() = runBlocking<Unit> {
         val h = Harness()
         val first = h.core.initializeProcessing().document

@@ -2,6 +2,7 @@
 
 package recly.core.transcribe
 
+import kotlin.concurrent.Volatile
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,6 +44,15 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
         var running = false
     }
 
+    /**
+     * Whether the engine last said it is holding back for heat (`WAITING`) — the one wait a user
+     * cannot guess, so the rows say it instead of a bare "pending" (docs/05 "고정 처리 설정 도입").
+     * Every reading of the engine sets it, so it clears on the next pass once the device has cooled.
+     */
+    @Volatile
+    var coolingDown: Boolean = false
+        private set
+
     @Throws(Throwable::class)
     suspend fun isRunning(recordingId: String): Boolean = gate.withLock {
         active.values.any { it.recordingId == recordingId && it.running }
@@ -54,6 +64,7 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
         val checkpoint = withContext(deps.io) { checkpoint(ctx, input) }
         if (checkpoint?.complete == true && deps.fileSystem.exists(ctx.recording.dir / resultName(ctx.stepRunId))) return done(input, ctx)
         val info = deps.localTranscription.status(step.language.wire)
+        coolingDown = info.status == LocalEngineStatus.WAITING
         when (info.status) {
             LocalEngineStatus.UNSUPPORTED -> throw failure(CoreMessage.LOCAL_TRANSCRIPTION_UNAVAILABLE)
             LocalEngineStatus.MODEL_REQUIRED -> throw StepFailure(false, CoreMessage.LOCAL_MODEL_REQUIRED.code(), needsModel = true)

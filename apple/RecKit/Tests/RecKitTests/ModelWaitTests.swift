@@ -234,6 +234,24 @@ final class ModelPromptTests: XCTestCase {
         XCTAssertEqual(ModelDownload.progressText(0.07), "모델 다운로드 중… 7%")
     }
 
+    /// docs/05: a download that ends with the model still missing says so; a cancel, or a model that
+    /// arrived, says nothing.
+    func testADownloadThatEndsWithoutTheModelSaysSo() {
+        AppLanguage.current = .en
+        XCTAssertEqual(
+            ModelDownload.unfinished(.modelRequired, cancelled: false)?.text,
+            "The model didn’t finish downloading. Try again."
+        )
+        XCTAssertNil(ModelDownload.unfinished(.modelRequired, cancelled: true))
+        XCTAssertNil(ModelDownload.unfinished(.ready, cancelled: false))
+        XCTAssertNil(ModelDownload.unfinished(.waiting, cancelled: false))
+        AppLanguage.current = .ko
+        XCTAssertEqual(
+            ModelDownload.unfinished(.modelRequired, cancelled: false)?.text,
+            "모델 다운로드가 끝나지 않았습니다. 다시 시도해 주세요."
+        )
+    }
+
     /// The cross-shell dictionary's wording, in both languages (Apple's body names no size).
     func testTheCardSaysTheDictionaryWording() {
         let texts: [(en: String, ko: String)] = [
@@ -352,7 +370,7 @@ final class LedgerCodeTests: XCTestCase {
 
     func testEveryCodeARowCanShowIsMeasured() {
         let states = [
-            "Receiving from the watch", "Uploading on another device", "Transcription pending",
+            "Receiving from the watch", "Uploading on another device", "Transcription pending", "Waiting for the device to cool down",
             "Transcribing on another device", "Transcribing on this device", "Recording", "Waiting",
             "Uploading", "Retry pending", "Done", "Failed", "Transfer permission needed",
             "Waiting for speech model", "Sign-in needed", "No space in Drive", "Too short", "not a state",

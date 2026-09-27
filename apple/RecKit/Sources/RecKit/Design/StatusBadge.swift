@@ -62,7 +62,7 @@ public struct LedgerStatus: Equatable, Sendable {
         // and would otherwise read as `REC` (see [Recents.stateLabel], which orders them the same).
         case "Receiving from the watch": return LedgerStatus(code: "RECEIVING", tone: .accent)
         case "Uploading on another device": return LedgerStatus(code: "UPLOADING", tone: .accent)
-        case "Transcription pending": return LedgerStatus(code: "PENDING", tone: .neutral)
+        case "Transcription pending", "Waiting for the device to cool down": return LedgerStatus(code: "PENDING", tone: .neutral)
         case "Transcribing on another device", "Transcribing on this device":
             return LedgerStatus(code: "TRANSCRIBING", tone: .accent)
         case "Recording": return LedgerStatus(code: "REC", tone: .danger)

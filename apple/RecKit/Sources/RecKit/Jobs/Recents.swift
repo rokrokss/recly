@@ -208,7 +208,7 @@ public enum Recents {
                     jobId: job?.id,
                     title: record.meta.title ?? "",
                     startedAt: record.meta.startedAt,
-                    state: localPending ? (localRunning ? "Transcribing on this device" : "Transcription pending") : stateLabel(record: record, job: job),
+                    state: localPending ? localState(running: localRunning, core: core) : stateLabel(record: record, job: job),
                     link: driveLink(steps) ?? record.driveFolderUrl.flatMap(URL.init(string:)),
                     lastError: error,
                     waitingMinutes: waiting,
@@ -223,6 +223,13 @@ public enum Recents {
             )
         }
         return items
+    }
+
+    /// A local transcription that is not running is either queued or held back for heat — the one
+    /// wait a user cannot guess, so it is said (docs/05 "고정 처리 설정 도입").
+    static func localState(running: Bool, core: ReclyCore_) -> String {
+        if running { return "Transcribing on this device" }
+        return core.localTranscription.coolingDown ? "Waiting for the device to cool down" : "Transcription pending"
     }
 
     static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?) -> String {
@@ -290,7 +297,7 @@ public enum Recents {
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings.
     private static let waiting: Set<String> = [
-        "Transcribing on this device", "Transcription pending",
+        "Transcribing on this device", "Transcription pending", "Waiting for the device to cool down",
         "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",
         "Receiving from the watch", "Uploading on another device",
     ]

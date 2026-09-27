@@ -95,7 +95,7 @@ final class LedgerStatusTests: XCTestCase {
     private let states = [
         "Recording", "Waiting", "Uploading",
         "Retry pending", "Done", "Failed", "Sign-in needed", "No space in Drive", "Too short",
-        "Transcription pending", "Transcribing on this device",
+        "Transcription pending", "Waiting for the device to cool down", "Transcribing on this device",
     ]
 
     func testEveryStateHasACodeAndATone() {
@@ -111,7 +111,7 @@ final class LedgerStatusTests: XCTestCase {
         let shared = Dictionary(grouping: states, by: { LedgerStatus.forRecent(state: $0).code })
             .filter { $0.value.count > 1 }
         XCTAssertEqual(shared, [
-            "PENDING": ["Waiting", "Transcription pending"],
+            "PENDING": ["Waiting", "Transcription pending", "Waiting for the device to cool down"],
         ])
     }
 

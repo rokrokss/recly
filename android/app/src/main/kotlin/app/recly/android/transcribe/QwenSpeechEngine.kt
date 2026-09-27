@@ -132,8 +132,12 @@ class QwenSpeechEngine private constructor(
         return true
     }
 
-    private fun admitted(): Boolean =
-        power.currentThermalStatus < PowerManager.THERMAL_STATUS_LIGHT && !power.isPowerSaveMode
+    /**
+     * docs/05 "고정 처리 설정 도입": transcribe unless the device is really hot. `SEVERE` is where Android
+     * defines a large impact on the user and JobScheduler stops every job; `LIGHT` and `MODERATE` are
+     * routine while charging. Battery Saver does not hold it back.
+     */
+    private fun admitted(): Boolean = power.currentThermalStatus < PowerManager.THERMAL_STATUS_SEVERE
 
     private fun recognizerConfig() = OfflineRecognizerConfig(
         modelConfig = OfflineModelConfig(

@@ -629,7 +629,11 @@ fun ItemState.failing(): Boolean =
  */
 @Composable
 private fun label(item: JobItem): String = if (item.localPending) stringResource(
-    if (item.localRunning) R.string.processing_local_running else R.string.processing_local_pending
+    when {
+        item.localRunning -> R.string.processing_local_running
+        item.localCooling -> R.string.processing_local_cooling
+        else -> R.string.processing_local_pending
+    }
 ) else when (item.state) {
     ItemState.RECORDING -> stringResource(R.string.job_state_recording)
     ItemState.RECEIVING -> stringResource(R.string.job_state_receiving)
