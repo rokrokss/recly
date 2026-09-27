@@ -654,6 +654,8 @@ final class MenuModel: ObservableObject {
             defer { if existing == nil { anchor.close() } }
             do {
                 account = try await auth.signIn(presenting: anchor)
+                // What the last disconnect said is over once Drive is connected again.
+                message = nil
                 logger.info("auth.signIn.ok")
                 // docs/06: a job parked in NEEDS_AUTH resumes when the user signs in.
                 await unpark()
