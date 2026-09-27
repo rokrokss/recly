@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">Wi-Fi की प्रतीक्षा</string>
     <string name="model_download_notification">स्पीच रिकग्निशन मॉडल डाउनलोड हो रहा है</string>
     <string name="model_prompt_title">इस डिवाइस पर ट्रांसक्राइब करें</string>
-    <string name="model_prompt_body">इस डिवाइस पर रिकॉर्डिंग ट्रांसक्राइब करने के लिए स्पीच रिकग्निशन मॉडल (%1$s) एक बार डाउनलोड करें।</string>
+    <string name="model_prompt_body">डिवाइस पर ट्रांसक्रिप्शन के लिए Qwen3-ASR (%1$s) चाहिए, जो एक ओपन-सोर्स स्पीच रिकग्निशन मॉडल है।</string>
     <string name="action_not_now">अभी नहीं</string>
     <string name="processing_model_download">इस डिवाइस पर ट्रांसक्रिप्शन के लिए यह मॉडल (%1$s) एक बार डाउनलोड करें।</string>
     <string name="processing_local_no_speakers">डिवाइस पर ट्रांसक्रिप्शन वक्ताओं को अलग नहीं करता।</string>

@@ -107,10 +107,10 @@ class StringTableTest {
             assertEquals(korean, ko[key].plain(), key.name)
         }
         assertEquals(
-            "Download the speech recognition model (988 MB) once to transcribe recordings on this device.",
+            "On-device transcription needs Qwen3-ASR (988 MB), an open-source speech recognition model.",
             en[Str.PROCESSING_MODEL_CARD_BODY, "988 MB"],
         )
-        assertEquals("이 기기에서 녹음을 전사하려면 음성 인식 모델(988 MB)을 한 번 다운로드하세요.", ko[Str.PROCESSING_MODEL_CARD_BODY, "988 MB"].plain())
+        assertEquals("기기 내 전사에는 오픈소스 음성 인식 모델 Qwen3-ASR(988 MB)이 필요합니다.", ko[Str.PROCESSING_MODEL_CARD_BODY, "988 MB"].plain())
         assertEquals("To transcribe on this device, download this model once (988 MB).", en[Str.PROCESSING_MODEL_DOWNLOAD, "988 MB"])
         assertEquals("이 기기에서 전사하려면 이 모델(988 MB)을 한 번 다운로드해야 합니다.", ko[Str.PROCESSING_MODEL_DOWNLOAD, "988 MB"].plain())
         assertEquals("The model is 988 MB.", en[Str.PROCESSING_MODEL_SIZE, "988 MB"])

@@ -16970,79 +16970,79 @@
         }
       }
     },
-    "Download the speech recognition model once to transcribe recordings on this device.": {
+    "On-device transcription needs Apple’s speech recognition model.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Download the speech recognition model once to transcribe recordings on this device."
+            "value": "On-device transcription needs Apple’s speech recognition model."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 기기에서 녹음을 전사하려면 음성 인식 모델을 한 번 다운로드하세요."
+            "value": "기기 내 전사에는 Apple 음성 인식 모델이 필요합니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "このデバイスで録音を文字起こしするには、音声認識モデルを一度ダウンロードしてください。"
+            "value": "デバイス上の文字起こしには、Appleの音声認識モデルが必要です。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "要在此设备上转录录音，请下载一次语音识别模型。"
+            "value": "设备本地转录需要 Apple 的语音识别模型。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "若要在此裝置上轉錄錄音，請下載一次語音辨識模型。"
+            "value": "裝置本機轉錄需要 Apple 的語音辨識模型。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Descarga una vez el modelo de reconocimiento de voz para transcribir grabaciones en este dispositivo."
+            "value": "La transcripción en el dispositivo necesita el modelo de reconocimiento de voz de Apple."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Téléchargez une fois le modèle de reconnaissance vocale pour transcrire les enregistrements sur cet appareil."
+            "value": "La transcription sur l’appareil nécessite le modèle de reconnaissance vocale d’Apple."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Laden Sie das Spracherkennungsmodell einmal herunter, um Aufnahmen auf diesem Gerät zu transkribieren."
+            "value": "Die Transkription auf dem Gerät benötigt das Spracherkennungsmodell von Apple."
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Baixe uma vez o modelo de reconhecimento de fala para transcrever gravações neste dispositivo."
+            "value": "A transcrição no dispositivo precisa do modelo de reconhecimento de fala da Apple."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "نزّل نموذج التعرّف على الكلام مرة واحدة لنسخ التسجيلات على هذا الجهاز."
+            "value": "يحتاج النسخ على الجهاز إلى نموذج Apple للتعرّف على الكلام."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "इस डिवाइस पर रिकॉर्डिंग ट्रांसक्राइब करने के लिए स्पीच रिकग्निशन मॉडल एक बार डाउनलोड करें।"
+            "value": "डिवाइस पर ट्रांसक्रिप्शन के लिए Apple का स्पीच रिकग्निशन मॉडल चाहिए।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чтобы расшифровывать записи на этом устройстве, один раз загрузите модель распознавания речи."
+            "value": "Для расшифровки на устройстве нужна модель распознавания речи Apple."
           }
         }
       }

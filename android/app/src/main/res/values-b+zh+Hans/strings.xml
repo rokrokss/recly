@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">正在等待 Wi-Fi</string>
     <string name="model_download_notification">正在下载语音识别模型</string>
     <string name="model_prompt_title">在此设备上转录</string>
-    <string name="model_prompt_body">要在此设备上转录录音，请下载一次语音识别模型（%1$s）。</string>
+    <string name="model_prompt_body">设备本地转录需要开源语音识别模型 Qwen3-ASR（%1$s）。</string>
     <string name="action_not_now">以后再说</string>
     <string name="processing_model_download">要在此设备上转录，需要下载一次此模型（%1$s）。</string>
     <string name="processing_local_no_speakers">设备本地转录不区分说话人。</string>

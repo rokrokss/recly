@@ -239,8 +239,8 @@ final class ModelPromptTests: XCTestCase {
         let texts: [(en: String, ko: String)] = [
             ("Transcribe on this device", "이 기기에서 전사하기"),
             (
-                "Download the speech recognition model once to transcribe recordings on this device.",
-                "이 기기에서 녹음을 전사하려면 음성 인식 모델을 한 번 다운로드하세요."
+                "On-device transcription needs Apple’s speech recognition model.",
+                "기기 내 전사에는 Apple 음성 인식 모델이 필요합니다."
             ),
             ("Not now", "나중에"),
             ("Download model", "모델 다운로드"),

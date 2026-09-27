@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">في انتظار Wi-Fi</string>
     <string name="model_download_notification">جارٍ تنزيل نموذج التعرّف على الكلام</string>
     <string name="model_prompt_title">النسخ على هذا الجهاز</string>
-    <string name="model_prompt_body">نزّل نموذج التعرّف على الكلام (%1$s) مرة واحدة لنسخ التسجيلات على هذا الجهاز.</string>
+    <string name="model_prompt_body">يحتاج النسخ على الجهاز إلى Qwen3-ASR (%1$s)، وهو نموذج مفتوح المصدر للتعرّف على الكلام.</string>
     <string name="action_not_now">ليس الآن</string>
     <string name="processing_model_download">للنسخ على هذا الجهاز، نزّل هذا النموذج مرة واحدة (%1$s).</string>
     <string name="processing_local_no_speakers">النسخ على الجهاز لا يميّز المتحدثين.</string>

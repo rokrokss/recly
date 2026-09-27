@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">Ожидание Wi-Fi</string>
     <string name="model_download_notification">Загрузка модели распознавания речи</string>
     <string name="model_prompt_title">Расшифровка на этом устройстве</string>
-    <string name="model_prompt_body">Чтобы расшифровывать записи на этом устройстве, один раз загрузите модель распознавания речи (%1$s).</string>
+    <string name="model_prompt_body">Для расшифровки на устройстве нужна Qwen3-ASR (%1$s) — модель распознавания речи с открытым исходным кодом.</string>
     <string name="action_not_now">Не сейчас</string>
     <string name="processing_model_download">Чтобы расшифровывать на этом устройстве, один раз загрузите эту модель (%1$s).</string>
     <string name="processing_local_no_speakers">Расшифровка на устройстве не разделяет говорящих.</string>

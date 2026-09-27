@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">Esperando Wi-Fi</string>
     <string name="model_download_notification">Descargando el modelo de reconocimiento de voz</string>
     <string name="model_prompt_title">Transcribir en este dispositivo</string>
-    <string name="model_prompt_body">Descarga una vez el modelo de reconocimiento de voz (%1$s) para transcribir grabaciones en este dispositivo.</string>
+    <string name="model_prompt_body">La transcripción en el dispositivo necesita Qwen3-ASR (%1$s), un modelo de reconocimiento de voz de código abierto.</string>
     <string name="action_not_now">Ahora no</string>
     <string name="processing_model_download">Para transcribir en este dispositivo, descarga este modelo una vez (%1$s).</string>
     <string name="processing_local_no_speakers">La transcripción en el dispositivo no separa hablantes.</string>

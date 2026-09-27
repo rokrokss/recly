@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">Warten auf WLAN</string>
     <string name="model_download_notification">Spracherkennungsmodell wird heruntergeladen</string>
     <string name="model_prompt_title">Auf diesem Gerät transkribieren</string>
-    <string name="model_prompt_body">Laden Sie das Spracherkennungsmodell (%1$s) einmal herunter, um Aufnahmen auf diesem Gerät zu transkribieren.</string>
+    <string name="model_prompt_body">Die Transkription auf dem Gerät benötigt Qwen3-ASR (%1$s), ein Open-Source-Spracherkennungsmodell.</string>
     <string name="action_not_now">Nicht jetzt</string>
     <string name="processing_model_download">Um auf diesem Gerät zu transkribieren, laden Sie dieses Modell einmal herunter (%1$s).</string>
     <string name="processing_local_no_speakers">Die Transkription auf dem Gerät unterscheidet keine Sprecher.</string>

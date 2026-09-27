@@ -235,7 +235,7 @@
     <string name="processing_waiting_for_wifi">Wi-Fiを待機中</string>
     <string name="model_download_notification">音声認識モデルをダウンロード中</string>
     <string name="model_prompt_title">このデバイスで文字起こし</string>
-    <string name="model_prompt_body">このデバイスで録音を文字起こしするには、音声認識モデル（%1$s）を一度ダウンロードしてください。</string>
+    <string name="model_prompt_body">デバイス上の文字起こしには、オープンソースの音声認識モデル Qwen3-ASR（%1$s）が必要です。</string>
     <string name="action_not_now">後で</string>
     <string name="processing_model_download">このデバイスで文字起こしするには、このモデル（%1$s）を一度ダウンロードする必要があります。</string>
     <string name="processing_local_no_speakers">デバイス上の文字起こしは話者を区別しません。</string>

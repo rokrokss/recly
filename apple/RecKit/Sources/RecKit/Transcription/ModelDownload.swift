@@ -194,7 +194,7 @@ public struct ModelPromptCard: View {
                     .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
                     .foregroundStyle(blueprint.palette.text)
                 // Apple does not say how big its speech assets are, so the body names no size.
-                Text(verbatim: loc("Download the speech recognition model once to transcribe recordings on this device."))
+                Text(verbatim: loc("On-device transcription needs Apple’s speech recognition model."))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .fixedSize(horizontal: false, vertical: true)
