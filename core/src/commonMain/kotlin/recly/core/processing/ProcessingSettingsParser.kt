@@ -14,6 +14,8 @@ import recly.core.model.Language
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.model.Workflow
 import recly.core.model.recJson
+import recly.core.transcribe.SttProviders
+import recly.core.workflow.InvokeUrlUse
 import recly.core.workflow.WorkflowParser
 
 sealed interface ProcessingParseResult {
@@ -71,11 +73,10 @@ object ProcessingSettingsParser {
             errors += "the selected provider or model does not support this language"
         }
         if (external?.model != null && external.model.length !in 1..100) errors += "model must be 1..100 characters"
-        external?.invokeUrl?.let { url ->
-            val valid = runCatching {
-                url.startsWith("https://") && url.none(Char::isWhitespace) && Url(url).host.isNotEmpty()
-            }.getOrDefault(false)
-            if (!valid) errors += "invokeUrl must be an absolute https URL"
+        external?.invokeUrl?.let { url -> if (!httpsUrl(url)) errors += "invokeUrl must be an absolute https URL" }
+        transcription.providerDetails.forEach { (provider, details) ->
+            if (provider !in WorkflowParser.STT_PROVIDERS) errors += "providerDetails has an unknown provider '$provider'"
+            else if (!keeps(provider, details)) errors += "providerDetails for '$provider' is not a value that provider takes"
         }
         // Reuse the plan's provider, language, speaker, template and timestamp rules. This synthetic
         // workflow is validation only; it is never stored or executed.
@@ -100,6 +101,24 @@ object ProcessingSettingsParser {
         ))
         return errors
     }
+
+    /**
+     * Whether [details] is something [provider] takes — an invoke URL only where it reads one, a
+     * complete https address with no `{placeholder}` left, a model only where it accepts one — and not
+     * empty. The draft remembers exactly these; validation accepts nothing else.
+     */
+    fun keeps(provider: String, details: ProviderDetails): Boolean {
+        val url = details.invokeUrl
+        val model = details.model
+        if (url == null && model == null) return false
+        if (url != null && (WorkflowParser.invokeUrlUse(provider) == InvokeUrlUse.NONE || !httpsUrl(url) || '{' in url || '}' in url)) return false
+        if (model != null && (!SttProviders.acceptsModel(provider) || model.length !in 1..100)) return false
+        return true
+    }
+
+    private fun httpsUrl(url: String): Boolean = runCatching {
+        url.startsWith("https://") && url.none(Char::isWhitespace) && Url(url).host.isNotEmpty()
+    }.getOrDefault(false)
 
     private fun hasNull(value: JsonElement): Boolean = when (value) {
         JsonNull -> true

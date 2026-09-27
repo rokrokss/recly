@@ -223,7 +223,8 @@ class ProcessingSettingsTest {
         assertTrue(draft.acceptsModel)
         draft.selectProvider("clova")
         assertEquals("", draft.model)
-        assertEquals(WorkflowParser.invokeUrlTemplate("clova"), draft.invokeUrl)
+        assertEquals("", draft.invokeUrl, "the address's shape is the field's placeholder, not a value to edit")
+        assertEquals(WorkflowParser.invokeUrlTemplate("clova"), draft.invokeUrlHint)
         assertFalse(draft.acceptsModel)
         draft.selectProvider("openai")
         assertEquals("", draft.invokeUrl, "an optional endpoint starts empty instead of reusing CLOVA's")
@@ -233,6 +234,48 @@ class ProcessingSettingsTest {
         assertEquals("whisper-1", draft.model, "re-selecting the same provider keeps its fields")
         assertEquals("whisper-1", draft.settings().transcription.external!!.model)
         assertEquals(10, WorkflowParser.STT_PROVIDERS.count { recly.core.transcribe.SttProviders.acceptsModel(it) })
+    }
+
+    @Test
+    fun `a provider's address and model come back when it is chosen again, saved or not`() {
+        val clova = "https://clovaspeech-gw.ncloud.com/external/v1/1234/0123456789abcdef"
+        val draft = ProcessingDraft.from(ProcessingSettings(transcription = ProcessingTranscription(
+            mode = TranscriptionMode.EXTERNAL, external = ExternalTranscription("clova", "clova", invokeUrl = clova))))
+        draft.selectProvider("openai")
+        draft.model = "whisper-1"
+        assertEquals("", draft.invokeUrl, "CLOVA's address is not OpenAI's")
+        draft.selectProvider("clova")
+        assertEquals(clova, draft.invokeUrl, "coming back in the same edit")
+
+        draft.selectProvider("openai")
+        assertEquals("whisper-1", draft.model)
+        val saved = draft.settings()
+        assertEquals(ExternalTranscription("openai", "openai", model = "whisper-1"), saved.transcription.external)
+        assertEquals(mapOf("clova" to ProviderDetails(invokeUrl = clova), "openai" to ProviderDetails(model = "whisper-1")),
+            saved.transcription.providerDetails)
+
+        val reopened = ProcessingDraft.from(saved)
+        reopened.selectProvider("clova")
+        assertEquals(clova, reopened.invokeUrl, "coming back after saving another provider")
+    }
+
+    @Test
+    fun `a value that would not save is not remembered, and a stored one is checked like the one in use`() {
+        val draft = ProcessingDraft.from(ProcessingSettings(transcription = ProcessingTranscription(
+            mode = TranscriptionMode.EXTERNAL, external = ExternalTranscription("azure", "azure"))))
+        draft.invokeUrl = "https://{resourceName}.cognitiveservices.azure.com"
+        draft.selectProvider("openai")
+        assertEquals(emptyMap(), draft.settings().transcription.providerDetails)
+
+        fun valid(details: Map<String, ProviderDetails>) = ProcessingSettingsParser.validate(ProcessingSettingsDocument(
+            1, 0, "2026-09-28T00:00:00Z", "test", ProcessingSettings(transcription = ProcessingTranscription(providerDetails = details)),
+        )).isEmpty()
+        assertTrue(valid(mapOf("clova" to ProviderDetails(invokeUrl = "https://clovaspeech-gw.ncloud.com/external/v1/1/2"))))
+        assertFalse(valid(mapOf("clova" to ProviderDetails(invokeUrl = "http://clovaspeech-gw.ncloud.com/x"))))
+        assertTrue(valid(mapOf("openai" to ProviderDetails(invokeUrl = "https://example.com/v1"))), "an optional address")
+        assertFalse(valid(mapOf("assemblyai" to ProviderDetails(model = "best"))), "a provider that takes no model")
+        assertFalse(valid(mapOf("nobody" to ProviderDetails(model = "x"))))
+        assertFalse(valid(mapOf("openai" to ProviderDetails())))
     }
 
     @Test

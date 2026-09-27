@@ -3,6 +3,7 @@ package recly.core.processing
 import recly.core.model.Language
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.TranscriptionLanguages
+import recly.core.workflow.InvokeUrlUse
 import recly.core.workflow.WorkflowParser
 
 /** UI-only input. Invalid/unfinished values never enter the persisted settings document. */
@@ -15,6 +16,8 @@ data class ProcessingDraft(
     var invokeUrl: String,
     var model: String,
     private val retainedExternal: ExternalTranscription?,
+    /** Every provider's entries as typed, this one's included once it is left (docs/05 "시크릿"). */
+    private var details: Map<String, ProviderDetails> = emptyMap(),
 ) {
     fun snapshot(): ProcessingDraft = copy()
 
@@ -36,15 +39,35 @@ data class ProcessingDraft(
         storage = ProcessingStorage(folder, minimumSeconds.trim().ifEmpty { "0" }.toIntOrNull() ?: -1),
         transcription = ProcessingTranscription(mode = mode, language = language,
             external = if (mode == TranscriptionMode.EXTERNAL) ExternalTranscription(provider, secretRef,
-                invokeUrl.takeIf { it.isNotEmpty() }, model.takeIf { it.isNotEmpty() }) else retainedExternal),
+                invokeUrl.takeIf { it.isNotEmpty() }, model.takeIf { it.isNotEmpty() }) else retainedExternal,
+            // A value that would not save is not remembered either: it is the one being fixed, not
+            // one to bring back.
+            providerDetails = remembered().filter { (name, details) -> ProcessingSettingsParser.keeps(name, details) }),
     ).forNewRecordings()
 
-    /** Model names and addresses belong to one provider; carrying them over sends them to another. */
+    /**
+     * Model names and addresses belong to one provider; carrying them over sends them to another. The
+     * ones left behind are remembered, so coming back to that provider brings them back. The field
+     * starts empty — the address's shape is the field's placeholder ([invokeUrlHint]), not a value
+     * to edit character by character.
+     */
     fun selectProvider(value: String) {
         if (value == provider) return
+        details = remembered()
         provider = value
-        model = ""
-        invokeUrl = WorkflowParser.invokeUrlTemplate(value).orEmpty()
+        invokeUrl = details[value]?.invokeUrl.orEmpty()
+        model = details[value]?.model.orEmpty()
+    }
+
+    /** The address's shape for [provider] (`https://…/{appId}/{invokeKey}`), shown while the field is empty. */
+    val invokeUrlHint: String? get() = WorkflowParser.invokeUrlTemplate(provider)
+
+    private fun remembered(): Map<String, ProviderDetails> {
+        val entry = ProviderDetails(
+            invokeUrl.takeIf { it.isNotEmpty() && WorkflowParser.invokeUrlUse(provider) != InvokeUrlUse.NONE },
+            model.takeIf { it.isNotEmpty() && acceptsModel },
+        )
+        return if (entry.invokeUrl == null && entry.model == null) details - provider else details + (provider to entry)
     }
 
     companion object {
@@ -52,7 +75,7 @@ data class ProcessingDraft(
             val t = settings.transcription
             return ProcessingDraft(settings.storage.folder, settings.storage.minDurationSec.toString(), t.mode,
                 t.language, t.external?.provider ?: "elevenlabs",
-                t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external)
+                t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external, t.providerDetails)
         }
     }
 }

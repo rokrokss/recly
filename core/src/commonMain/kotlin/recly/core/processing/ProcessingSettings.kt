@@ -60,6 +60,19 @@ data class ProcessingTranscription(
     val speakers: Speakers = Speakers(),
     /** Retained while another mode is selected, so switching off does not discard configuration. */
     val external: ExternalTranscription? = null,
+    /**
+     * docs/05 "시크릿": what was entered for each provider — its invoke URL and model — kept the way
+     * its key is, so choosing another provider and coming back does not ask for them again.
+     * [external] is the one in use; this only remembers, and never hands one provider's values to
+     * another.
+     */
+    val providerDetails: Map<String, ProviderDetails> = emptyMap(),
+)
+
+@Serializable
+data class ProviderDetails(
+    val invokeUrl: String? = null,
+    val model: String? = null,
 )
 
 @Serializable

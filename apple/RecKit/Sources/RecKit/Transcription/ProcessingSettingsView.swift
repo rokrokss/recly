@@ -221,7 +221,7 @@ public struct ProcessingSettingsView: View {
                     ProcessingKeyField(model: model, name: draft.secretRef) { deletingKey = draft.secretRef }
                         .id(draft.secretRef)
                     if WorkflowParser.shared.invokeUrlUse(provider: draft.provider) != .none {
-                        BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true).processingURLEntry()
+                        BlueprintField(loc("Invoke URL"), text: field(\.invokeUrl), mono: true, placeholder: draft.invokeUrlHint).processingURLEntry()
                     }
                     if draft.acceptsModel { BlueprintField(loc("Model (optional)"), text: field(\.model), mono: true) }
                 }

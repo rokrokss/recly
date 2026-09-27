@@ -120,7 +120,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             }
             ProcessingSecret(draft.secretRef, R.string.editor_api_key, state.secretNames, model::saveKey) { deletingKey = draft.secretRef }
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) {
-                ProcessingField(R.string.editor_invoke_url, draft.invokeUrl) { v -> model.edit { it.invokeUrl = v } }
+                ProcessingField(R.string.editor_invoke_url, draft.invokeUrl, draft.invokeUrlHint) { v -> model.edit { it.invokeUrl = v } }
             }
             if (draft.acceptsModel) ProcessingField(R.string.processing_model, draft.model) { v -> model.edit { it.model = v } }
         }
@@ -185,8 +185,11 @@ private fun EndButtons(content: @Composable FlowRowScope.() -> Unit) {
 }
 
 @Composable
-private fun ProcessingField(label: Int, value: String, change: (String) -> Unit) {
-    OutlinedTextField(value, change, label = { Text(stringResource(label)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+private fun ProcessingField(label: Int, value: String, placeholder: String? = null, change: (String) -> Unit) {
+    OutlinedTextField(
+        value, change, label = { Text(stringResource(label)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+        placeholder = placeholder?.let { { Text(it) } },
+    )
 }
 
 @Composable

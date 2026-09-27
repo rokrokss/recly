@@ -1090,6 +1090,10 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
   이 기기의 새 revision으로 저장한다. 미래 버전·미지 필드·명시적 null·손상 문서는 기본값으로 대체하지 않는다.
 - OFF/로컬로 바꿔도 유효한 기존 외부 설정은 보존한다. 미완성 입력 초안은 셸에서 관리하며, 저장된 설정에는
   비활성 필드를 포함해 검증을 통과한 값만 둔다. 동작 방식 변경으로 키 값을 지우지 않는다.
+- 업체별 `invokeUrl`·`model`도 키처럼 업체마다 기억한다(`transcription.providerDetails`, 2026-09-28). 다른 업체를
+  골랐다가 돌아오면 편집 중이든 저장한 뒤든 되살린다. 한 업체의 값을 다른 업체로 넘기지는 않는다. 저장할 수 없는 값
+  (자리표시자가 남은 주소 등)은 기억하지 않는다. `invokeUrl` 입력란은 비워 두고 주소 형식
+  (`https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}` 등)은 자리표시 문구로만 보인다.
 - `read()`/`observe()`는 초기화 부작용이 없다. 셸은 시작할 때 `initialize()`를 부른다. Watch에서는 이 초기화를
   실행하지 않는다.
 
@@ -1461,7 +1465,7 @@ interface TokenProvider {
 | `language` | `ko` | `ko` \| `en` \| `ko-en` \| `auto`. provider가 못 받는 값은 어댑터가 가장 가까운 값으로 매핑 |
 | `diarize` | `true` | 화자분리 요청 여부 |
 | `speakers.min` / `speakers.max` | 1 / 10 | 화자 수 힌트. 메타 `context.participants`가 있으면 `min = max = participants`로 **덮어쓴다**(녹음 시점 정보가 워크플로우 기본값보다 정확하다). 상한은 10명이라 `6+`는 그 위쪽 전부를 뜻한다 |
-| `model` | provider 기본 | provider별 모델 이름. 자유 문자열, 검증은 provider가 한다. 모델을 고정했거나 고를 모델이 없는 `clova`·`assemblyai`·`azure`·`rev`는 이 값을 읽지 않으므로(`SttProviders.acceptsModel`) 고정 처리 계획은 보내지 않고 설정 화면은 입력란을 숨긴다. 설정 화면에서 제공자를 바꾸면 모델과 `invokeUrl`(필수 제공자는 템플릿)을 비운다 — 다른 제공자의 이름·주소가 넘어가지 않게 |
+| `model` | provider 기본 | provider별 모델 이름. 자유 문자열, 검증은 provider가 한다. 모델을 고정했거나 고를 모델이 없는 `clova`·`assemblyai`·`azure`·`rev`는 이 값을 읽지 않으므로(`SttProviders.acceptsModel`) 고정 처리 계획은 보내지 않고 설정 화면은 입력란을 숨긴다. 설정 화면에서 제공자를 바꾸면 모델과 `invokeUrl`을 그 제공자에 기억된 값으로 채운다(없으면 빈칸, 필수 제공자의 주소 형식은 자리표시 문구) — 다른 제공자의 이름·주소가 넘어가지 않게(§5 `providerDetails`) |
 
 입력 트랙: 녹음 `tracks`에 `mono`가 있으면 `mono`, 아니면 `mix`. 둘 다 없으면 단계
 `FAILED(NO_INPUT_TRACK)`(비재시도).
