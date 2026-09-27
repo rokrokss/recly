@@ -35,6 +35,22 @@ final class LedgerFormatTests: XCTestCase {
         XCTAssertEqual(korean, expected, "the Korean ledger still writes the day first")
     }
 
+    /// The time half is `HH:mm` in every language too. English is a twelve-hour locale, and with the
+    /// day period left off it wrote a recording started at 15:05 as `03:05` — the same text as one
+    /// started at 03:05.
+    func testTheTimeColumnIsTwentyFourHourInEveryLanguage() throws {
+        let components = DateComponents(year: 2026, month: 2, day: 9, hour: 15, minute: 5)
+        let date = try XCTUnwrap(Calendar.autoupdatingCurrent.date(from: components))
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let iso = formatter.string(from: date)
+
+        for language in AppLanguage.Choice.choices {
+            AppLanguage.current = language
+            XCTAssertEqual(LedgerFormat.time(iso), "15:05", language.rawValue)
+        }
+    }
+
     /// docs/07 rule 7 is untouched for the date in *words*: the sentence a screen reader says about
     /// a row is still the locale's own.
     func testTheSpokenDateIsStillTheLocalesOwn() {

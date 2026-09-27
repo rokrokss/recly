@@ -1,8 +1,8 @@
 import Foundation
 
 /// docs/09 화면 원칙 2: what the ledger's monospace columns say. Numbers and clock faces, never
-/// prose — but still through the platform's own formatters, because docs/07 rule 7 keeps dates and
-/// times in the user's locale even when they are two digits wide.
+/// prose — fixed-width patterns that read the same in every language. Only the sentence a row says
+/// ([startedAt]) goes through the locale's own formatter, which is what docs/07 rule 7 is about.
 public enum LedgerFormat {
     /// A recording that has not been finalized has no length yet, and a blank column reads like a
     /// missing value rather than like one that is not in yet.
@@ -26,13 +26,19 @@ public enum LedgerFormat {
         )
     }
 
-    /// `15:04`, twenty-four hour where the locale is.
+    /// `15:04`, twenty-four hour in every language.
+    ///
+    /// docs/09 화면 원칙 2: the same fixed-width pattern as [date]. A twelve-hour locale's clock
+    /// does not fit it — without the day period `03:05` is either end of the day, and with it the
+    /// column is no longer five wide. The spoken [startedAt] keeps the locale's own clock.
     public static func time(_ iso: String) -> String {
         guard let date = parse(iso) else { return "" }
         return date.formatted(
-            Date.FormatStyle(locale: AppLanguage.locale)
-                .hour(.twoDigits(amPM: .omitted))
-                .minute(.twoDigits)
+            .verbatim(
+                "\(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)):\(minute: .twoDigits)",
+                timeZone: .autoupdatingCurrent,
+                calendar: .autoupdatingCurrent
+            )
         )
     }
 

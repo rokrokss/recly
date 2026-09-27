@@ -11,6 +11,8 @@ import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.jobs.Recents
 import app.recly.windows.ui.component.BadgeTone
+import java.time.LocalDateTime
+import java.time.ZoneId
 import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -129,6 +131,18 @@ class LedgerStatusTest {
         assertEquals(5, LedgerFormat.time(at).length, "the time column is not HH:mm")
         assertTrue(LedgerFormat.spoken(at, Locale.ENGLISH).contains("2026"))
         assertTrue(LedgerFormat.spoken(at, Locale.KOREAN).contains("2026"))
+    }
+
+    /**
+     * docs/09 화면 원칙 2: `HH:mm`, twenty-four hour — a twelve-hour clock is five wide too, and without
+     * the day period it writes 15:05 as `03:05`, the same text as 03:05.
+     */
+    @Test
+    fun `the time column is twenty-four hour`() {
+        val at = LocalDateTime.of(2026, 2, 9, 15, 5).atZone(ZoneId.systemDefault()).toInstant().toString()
+
+        assertEquals("02-09", LedgerFormat.date(at))
+        assertEquals("15:05", LedgerFormat.time(at))
     }
 
     /** A timestamp the parser cannot read is data too — it is shown, not hidden. */

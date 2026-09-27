@@ -678,12 +678,12 @@ private fun startedAt(isoUtc: String, pattern: Int): String {
  * in every language — a locale that says the day first would not line up under the heading. The
  * spoken date the row announces is the locale's own words, and that one stays [startedAt].
  */
-private fun ledgerColumn(isoUtc: String, format: DateTimeFormatter): String = runCatching {
+internal fun ledgerColumn(isoUtc: String, format: DateTimeFormatter): String = runCatching {
     format.format(Instant.parse(isoUtc).atZone(ZoneId.systemDefault()))
 }.getOrDefault(isoUtc)
 
-private val LEDGER_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-dd", Locale.ROOT)
-private val LEDGER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
+internal val LEDGER_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("MM-dd", Locale.ROOT)
+internal val LEDGER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.ROOT)
 
 private const val EMPTY_LENGTH = "--:--"
 
