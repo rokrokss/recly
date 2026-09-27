@@ -89,11 +89,13 @@ a watch and getting past the Windows SmartScreen warning. Building from source i
    uploads the result. Choose the transcription method and storage folder in Settings. Turning
    transcription off keeps the original upload.
 
-New installations default to on-device transcription where the app ships an on-device engine. The
-Apple adapter requires iOS/macOS 26, supported hardware and language assets. Android, Windows and
-Apple devices below OS 26 have no engine yet, so new installations there start with transcription
-off and do not offer on-device; select an external API to transcribe. Local transcription has no automatic
-cloud fallback.
+New installations default to on-device transcription where the device has an engine. Apple devices
+use Apple's speech recognizer, which requires iOS/macOS 26, supported hardware and language assets.
+Android phones and Windows PCs use the open-source Qwen3-ASR 0.6B model, which needs a 64-bit device
+with at least 6 GiB of memory (in practice an 8 GB phone) and a one-time download of about 1 GB that
+starts only when you ask for it. Devices without an engine start with transcription off and do not
+offer on-device; select an external API to transcribe. On-device transcription does not separate
+speakers and has no automatic cloud fallback.
 
 The interface supports English, Korean, Japanese, Simplified and Traditional Chinese, Spanish,
 French, German, Portuguese, Arabic, Hindi and Russian. Transcription offers 20 language choices,
