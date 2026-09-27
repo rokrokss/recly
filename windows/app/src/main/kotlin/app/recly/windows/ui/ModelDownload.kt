@@ -85,7 +85,7 @@ class ModelDownload(
         val target = language ?: this.language ?: return
         if (job?.isActive == true || meteredPrompt != null) return
         failure = null
-        job = scope.launch {
+        job = launchJob {
             if (networkCost() == NetworkCost.METERED) meteredPrompt = target else download(target)
         }
     }
@@ -96,7 +96,7 @@ class ModelDownload(
         val target = meteredPrompt ?: return
         meteredPrompt = null
         if (job?.isActive == true) return
-        job = scope.launch { download(target) }
+        job = launchJob { download(target) }
     }
 
     /** The metered question's Cancel: nothing is downloaded. */
@@ -108,6 +108,14 @@ class ModelDownload(
     fun cancel() {
         job?.cancel()
     }
+
+    /**
+     * [running] clears when the job has completed, not in [download]'s `finally`: the job is still
+     * active while its children wind down, and a start in that gap — the surfaces offer it as soon
+     * as the flag clears — would be dropped by [start]'s own guard.
+     */
+    private fun launchJob(block: suspend CoroutineScope.() -> Unit): Job =
+        scope.launch(block = block).also { it.invokeOnCompletion { running = false } }
 
     private suspend fun download(language: String) = coroutineScope<Unit> {
         running = true
@@ -129,9 +137,8 @@ class ModelDownload(
             failure = coreMessage(CoreMessage.STEP_FAILED, e.message ?: e::class.simpleName.orEmpty())
         } finally {
             poll.cancel()
-            // The last reading before the flag: a surface that sees it stop sees where it stopped.
+            // The last reading before the flag clears: a surface that sees it stop sees where it stopped.
             withContext(NonCancellable) { reread(this@ModelDownload.language ?: language) }
-            running = false
         }
     }
 

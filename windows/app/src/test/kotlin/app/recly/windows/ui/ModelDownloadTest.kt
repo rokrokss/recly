@@ -221,6 +221,21 @@ class ModelDownloadTest {
         assertNull(download.failure)
     }
 
+    @Test
+    fun `a start right after a failure is never dropped`() = runBlocking {
+        // The gap this guards is a few scheduler turns wide, so a single try rarely lands in it.
+        repeat(300) {
+            var fail = true
+            val fake = FakeEngine(prepare = { if (fail) error("model download returned HTTP 503") })
+            val download = fake.download(this)
+            download.start("ko")
+            until { download.failure != null && !download.running }
+            fail = false
+            download.start("ko")
+            until { fake.due == 1 && !download.running }
+        }
+    }
+
     private fun card(
         mode: TranscriptionMode? = TranscriptionMode.LOCAL,
         installed: Boolean = true,
