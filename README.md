@@ -15,6 +15,13 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/design/screenshots/en/01-record-for-your-ai.png" width="24%" alt="Record for your AI: your recordings, your Drive, your choice of transcription">
+  <img src="docs/design/screenshots/en/02-transcribe.png" width="24%" alt="Transcribe on device: read along, then jump to any moment">
+  <img src="docs/design/screenshots/en/03-drive.png" width="24%" alt="Saved to your Drive: no Recly account, no Recly server">
+  <img src="docs/design/screenshots/en/04-record.png" width="24%" alt="Record in one tap on iPhone or Apple Watch">
+</p>
+
 <p align="center"><img src="docs/design/flow.svg" width="100%" alt="Press record on your watch, phone, Mac or Windows PC → the phone or PC uploads to your Google Drive and transcribes with your own key → anything, with your own AI"></p>
 
 A Plaud or a NotePin sells you three things: a recorder, transcription, and AI notes. You already
@@ -136,11 +143,9 @@ All six share one Kotlin Multiplatform core: the fixed recording flow, resumable
 transcription adapters and the job queue.
 
 <p align="center">
-  <img src="docs/design/screenshots/galaxy-watch.png" height="150" alt="Galaxy Watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/android-phone.png" height="300" alt="Android phone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/mac.png" height="250" alt="macOS menu bar">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/iphone.png" height="300" alt="iPhone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/apple-watch.png" height="150" alt="Apple Watch">
+  <img src="docs/design/screenshots/en/galaxy-watch.png" height="170" alt="Galaxy Watch, recording">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/en/android-phone.png" height="380" alt="Android phone: record in one tap on your phone or Wear OS watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/en/apple-watch.png" height="190" alt="Apple Watch, ready to record">
 </p>
 
 ## Privacy

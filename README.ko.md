@@ -15,6 +15,13 @@
 
 </div>
 
+<p align="center">
+  <img src="docs/design/screenshots/ko/01-record-for-your-ai.png" width="24%" alt="내 AI를 위한 녹음기: 녹음은 내 드라이브에, 전사는 원하는 방식으로">
+  <img src="docs/design/screenshots/ko/02-transcribe.png" width="24%" alt="기기에서 바로 전사: 읽으면서 원하는 순간으로 이동">
+  <img src="docs/design/screenshots/ko/03-drive.png" width="24%" alt="내 Google 드라이브에 저장: Recly 계정도, Recly 서버도 없습니다">
+  <img src="docs/design/screenshots/ko/04-record.png" width="24%" alt="iPhone과 Apple Watch에서 탭 한 번으로 녹음">
+</p>
+
 <p align="center"><img src="docs/design/flow.svg" width="100%" alt="워치·폰·Mac·Windows PC에서 녹음 버튼 → 폰이나 PC가 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
 
 Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹음기는 이미 손목에 있고 AI는 이미
@@ -125,11 +132,9 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 업로드, 녹취 어댑터, 작업 큐가 거기 있습니다.
 
 <p align="center">
-  <img src="docs/design/screenshots/galaxy-watch.png" height="150" alt="Galaxy Watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/android-phone.png" height="300" alt="Android 폰">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/mac.png" height="250" alt="macOS 메뉴바">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/iphone.png" height="300" alt="iPhone">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/apple-watch.png" height="150" alt="Apple Watch">
+  <img src="docs/design/screenshots/ko/galaxy-watch.png" height="170" alt="녹음 중인 Galaxy Watch">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/ko/android-phone.png" height="380" alt="Android 폰: 휴대전화와 Wear OS 시계에서 탭 한 번으로 녹음">&nbsp;&nbsp;
+  <img src="docs/design/screenshots/ko/apple-watch.png" height="190" alt="녹음 대기 중인 Apple Watch">
 </p>
 
 ## 프라이버시
