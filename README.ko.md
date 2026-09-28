@@ -4,7 +4,9 @@
 
 # Recly
 
-**Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디오는 내 Drive에, 녹취는 내 키로, 노트는 내 AI가.**
+**AI 녹음기는 이미 손목에 있습니다.**
+
+Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디오는 내 Drive에, 녹취는 내 키로, 노트는 내 AI가.
 
 [다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
 

@@ -4,7 +4,9 @@
 
 # Recly
 
-**A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.**
+**Your AI recorder is already on your wrist.**
+
+A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.
 
 [Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
