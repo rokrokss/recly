@@ -1,5 +1,12 @@
-# GitHub Pages serves this directory. recly.md is the (Korean) design document, not a web page, and
-# its `{{ … }}` samples would fail Jekyll's Liquid pass; design/ holds icon sources.
+# GitHub Pages serves this directory. index.html and ko/index.html are the product pages, written
+# as plain HTML; every Markdown page renders through _layouts/default.html. recly.md is the
+# (Korean) design document, not a web page, and its `{{ … }}` samples would fail Jekyll's Liquid
+# pass. design/ is served: the pages use its icon and screenshots.
+title: Recly
+description: >-
+  Open-source audio recorder for Galaxy Watch, Android, Apple Watch, iPhone, macOS and Windows.
+  Recordings go to your own Google Drive; there is no Recly server.
+plugins:
+  - jekyll-seo-tag
 exclude:
   - recly.md
-  - design/

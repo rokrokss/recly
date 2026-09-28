@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+{%- if page.path contains '.ko.' -%}{%- assign ko = true -%}{%- else -%}{%- assign ko = false -%}{%- endif %}
+<html lang="{% if ko %}ko{% else %}en{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% seo %}
+  <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="/design/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/site.css">
+</head>
+<body>
+<a class="skip" href="#main">{% if ko %}본문으로 건너뛰기{% else %}Skip to content{% endif %}</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="{% if ko %}/ko/{% else %}/{% endif %}"><img src="/design/icon.svg" alt="" width="28" height="28">Recly</a>
+    <nav class="nav" aria-label="{% if ko %}사이트{% else %}Site{% endif %}">
+      {%- if ko %}
+      <a href="/ko/#how">동작 방식</a>
+      <a href="/install.html">설치 안내</a>
+      <a href="/policy/privacy-policy.ko">개인정보처리방침</a>
+      {%- else %}
+      <a href="/#how">How it works</a>
+      <a href="/install.html">Install guide</a>
+      <a href="/policy/privacy-policy">Privacy</a>
+      {%- endif %}
+    </nav>
+    <div class="header-actions">
+      <a class="gh" href="https://github.com/rokrokss/recly">GitHub</a>
+      <a class="btn btn-primary" href="{% if ko %}/ko/{% else %}/{% endif %}#download">{% if ko %}다운로드{% else %}Download{% endif %}</a>
+    </div>
+  </div>
+</header>
+
+<main id="main" class="doc">
+  <div class="wrap">
+    <p class="doc-meta"><span>docs/{{ page.path }}</span><a href="https://github.com/rokrokss/recly/blob/main/docs/{{ page.path }}">{% if ko %}GitHub에서 보기{% else %}View on GitHub{% endif %}</a></p>
+    <article class="prose">
+{{ content }}
+    </article>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-base">
+      <span>AGPL-3.0-or-later · {% if ko %}"Recly"와 Recly 로고는 프로젝트의 상표입니다.{% else %}"Recly" and the Recly logo are trademarks of the project.{% endif %}</span>
+      <span>{% if ko %}연락처{% else %}Contact{% endif %} <a href="mailto:q0115643@gmail.com">q0115643@gmail.com</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

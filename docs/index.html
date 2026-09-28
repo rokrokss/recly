@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Recly — your AI recorder is already on your wrist</title>
+  <meta name="description" content="Skip the $159 AI recorder. Recly turns the Galaxy Watch or Apple Watch you already wear into one, transcribes on the device for free, and keeps the audio in your own Google Drive. Open source, no Recly server.">
+  <link rel="canonical" href="https://recly.dev/">
+  <link rel="alternate" hreflang="en" href="https://recly.dev/">
+  <link rel="alternate" hreflang="ko" href="https://recly.dev/ko/">
+  <link rel="alternate" hreflang="x-default" href="https://recly.dev/">
+  <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Recly">
+  <meta property="og:title" content="Recly — your AI recorder is already on your wrist">
+  <meta property="og:description" content="Skip the $159 recorder: one shortcut on the watch you already wear, free on-device transcription, notes by the AI you already use. Open source.">
+  <meta property="og:url" content="https://recly.dev/">
+  <meta property="og:image" content="https://recly.dev/assets/og.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:locale:alternate" content="ko_KR">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="/design/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="/assets/site.css">
+  <script src="/assets/site.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/"><img src="/design/icon.svg" alt="" width="28" height="28">Recly</a>
+    <nav class="nav" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#transcription">Transcription</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#skills">Skills</a>
+      <a href="#open-source">Open source</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/ko/" hreflang="ko" lang="ko">한국어</a>
+      <a class="gh" href="https://github.com/rokrokss/recly">GitHub</a>
+      <a class="btn btn-primary" href="#download">Download</a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+<section class="hero" id="top">
+  <div class="wrap">
+    <div>
+      <p class="hero-meta"><span class="dot" aria-hidden="true"></span>Free · Open source · AGPL-3.0-or-later · <a data-version href="https://github.com/rokrokss/recly/releases">Pre-release builds</a></p>
+      <h1>Your AI recorder is already on your wrist.</h1>
+      <p class="lede">A Plaud costs $159 or more, plus a plan once the free 300 minutes a month run out. Recly turns the Galaxy Watch or Apple Watch you already wear into that recorder with one shortcut, transcribes on the device for free, and leaves the notes to the AI you already pay for.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="#download">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+          Download
+        </a>
+        <a class="btn" href="https://github.com/rokrokss/recly">
+          <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          View source
+        </a>
+      </div>
+      <ul class="platforms" aria-label="Platforms">
+        <li>Galaxy Watch</li><li>Android</li><li>Apple Watch</li><li>iPhone</li><li>macOS</li><li>Windows</li>
+      </ul>
+    </div>
+    <figure class="stage">
+      <div class="stage-row">
+        <figure>
+          <img class="dev-round" src="/design/screenshots/en/galaxy-watch.png" width="454" height="454" alt="Galaxy Watch recording, timer at 00:05">
+          <figcaption>wear os</figcaption>
+        </figure>
+        <figure>
+          <img class="dev-phone" src="/design/screenshots/en/android-phone.png" width="540" height="960" alt="Android phone: record in one tap on your phone or Wear OS watch">
+          <figcaption>android</figcaption>
+        </figure>
+        <figure>
+          <img class="dev-square" src="/design/screenshots/en/apple-watch.png" width="422" height="514" alt="Apple Watch, ready to record">
+          <figcaption>watchos</figcaption>
+        </figure>
+      </div>
+      <figcaption class="stage-note"><span>fig. 1 — recorders you already own</span><span>6 clients · 1 core</span></figcaption>
+    </figure>
+  </div>
+</section>
+
+<section id="idea">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>01</b> The idea</p>
+      <h2>You already own two of the three parts.</h2>
+      <p class="lede">A Plaud sells you three things: a recorder, transcription and AI notes. You already wear the recorder, and you already pay for the AI. Recly supplies the missing piece, for free, and keeps the original audio in your own Google Drive.</p>
+    </div>
+    <table class="ledger compare">
+      <thead><tr><th><span class="sr-only">Part</span></th><th>Plaud</th><th>Recly</th></tr></thead>
+      <tbody>
+        <tr><td>Recorder</td><td data-label="Plaud">Plaud Note or NotePin: $159–$189</td><td data-label="Recly">The Galaxy Watch or Apple Watch you already wear: <strong>$0</strong></td></tr>
+        <tr><td>Start recording</td><td data-label="Plaud">The recorder's button</td><td data-label="Recly">Galaxy Watch: double press the home key. Apple Watch: the Action button on an Ultra, or one tap.</td></tr>
+        <tr><td>Transcription</td><td data-label="Plaud">300 minutes a month free, then $8.33–$19.99 a month, billed yearly</td><td data-label="Recly">On the device: <strong>$0</strong>, no minute cap. Or your own API key, at the provider's rate.</td></tr>
+        <tr><td>AI notes</td><td data-label="Plaud">In the Plaud app</td><td data-label="Recly">The AI you already pay for (Claude, ChatGPT, Codex), through Recly's skills</td></tr>
+      </tbody>
+    </table>
+    <p class="fine">Plaud prices are US list prices on plaud.ai, checked September 2026.</p>
+  </div>
+</section>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>02</b> How it works</p>
+      <h2>From a press to your own AI, with nothing in between.</h2>
+      <p class="lede">All six clients run the same fixed recording flow. Nothing waits on a Recly server, because there isn't one.</p>
+    </div>
+    <ol class="flow">
+      <li>
+        <span class="step">01 · Record <span class="rec" aria-hidden="true"></span></span>
+        <h3>Watch, phone, Mac or PC</h3>
+        <p>Tap record, bind it to the Galaxy Watch home key, or let the desktop notice a meeting and ask.</p>
+        <code>00:12:34</code>
+      </li>
+      <li>
+        <span class="step">02 · Store</span>
+        <h3>Your Google Drive</h3>
+        <p>The phone or PC uploads the original as it is. Watches hand off to the phone first. Offline, it waits and retries.</p>
+        <code>recly/2026/2026-09/</code>
+      </li>
+      <li>
+        <span class="step">03 · Transcribe</span>
+        <h3>On device, or your key</h3>
+        <p>After the original is safe, the transcript is written back next to it. Speakers are separated when the provider supports it.</p>
+        <code>transcript.json</code>
+      </li>
+      <li>
+        <span class="step">04 · Notes</span>
+        <h3>Your own AI agent</h3>
+        <p>Your agent reads the transcript from Drive and writes minutes, decisions or lecture notes into Notion.</p>
+        <code>recly-notes · recly-notion</code>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>03</b> Why Recly</p>
+      <h2>Record anywhere. Keep everything. Owe no one.</h2>
+    </div>
+    <div class="cards">
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="6" width="10" height="12" rx="2"/><path d="M9 6V3h6v3M9 18v3h6v-3"/><rect x="10.5" y="10.5" width="3" height="3" rx=".5"/></svg></div>
+        <h3>The recorder you already wear</h3>
+        <p>A double press of the Galaxy Watch's home key starts recording; the watch hands the audio to your phone, and the phone does the rest. Apple Watch records in one tap, or from the Action button on an Ultra.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M9 20h6M12 16v4M8 9v2M11 8v4M14 8.5v3M17 9v2"/></svg></div>
+        <h3>Meetings on your desktop</h3>
+        <p>The Mac menu-bar app and the Windows tray app capture your mic and the other side of a Zoom, Teams or Meet call as separate tracks. They notice the meeting and ask first.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-8l-2-2.5H4a1 1 0 0 0-1 1z"/></svg></div>
+        <h3>Your Drive is the only storage</h3>
+        <p>Recordings go to a folder like <code>recly/2026/2026-09/</code> in your own Google Drive, through <code>drive.file</code>, the narrowest permission Google offers.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></div>
+        <h3>Nothing gets lost</h3>
+        <p>No network? Recordings wait and retry. The original is never deleted before Drive has confirmed the upload.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></div>
+        <h3>Files are the interface</h3>
+        <p>Transcripts are plain files next to the recording, in a <a href="https://github.com/rokrokss/recly/tree/main/spec">documented format</a>. Any agent, script or app can read them.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></div>
+        <h3>Nothing covert</h3>
+        <p>Recording is always visible, and there is no bot joining your call. No analytics, no crash reporting, no update pings.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="band" id="screens">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>04</b> Screens</p>
+      <h2>One design language, from the wrist to the desktop.</h2>
+      <p class="lede">Monospace for the data, square nodes for state, a single blue accent. Light and dark follow your system.</p>
+    </div>
+    <ul class="gallery">
+      <li><img src="/design/screenshots/en/01-record-for-your-ai.png" width="540" height="1173" loading="lazy" alt="Record for your AI: your recordings, your Drive, your choice of transcription"></li>
+      <li><img src="/design/screenshots/en/02-transcribe.png" width="540" height="1173" loading="lazy" alt="Transcribe on device: read along, then jump to any moment"></li>
+      <li><img src="/design/screenshots/en/03-drive.png" width="540" height="1173" loading="lazy" alt="Saved to your Drive: no Recly account, no Recly server"></li>
+      <li><img src="/design/screenshots/en/04-record.png" width="540" height="1173" loading="lazy" alt="Record in one tap on iPhone or Apple Watch"></li>
+    </ul>
+  </div>
+</section>
+
+<section id="transcription">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>05</b> Transcription</p>
+      <h2>On the device, or with your own key.</h2>
+      <p class="lede">Choose per device in Settings. On-device transcription never falls back to a cloud service you did not pick.</p>
+    </div>
+    <div class="modes">
+      <article class="card">
+        <h3>On device <span class="badge badge-ok">Default</span></h3>
+        <p>New installs start here wherever the device has an engine. No audio goes to a speech service. It does not separate speakers.</p>
+      </article>
+      <article class="card">
+        <h3>External API <span class="badge">Your key</span></h3>
+        <p>Pick one of 14 providers and enter your own API key on the device. The joined audio goes to that provider only, and speakers are separated when it supports it.</p>
+      </article>
+      <article class="card">
+        <h3>Off <span class="badge badge-soon">Upload only</span></h3>
+        <p>Keep the original upload to Drive and skip transcription entirely.</p>
+      </article>
+    </div>
+    <div class="split">
+      <div>
+        <p class="sub">On-device engines</p>
+        <table class="ledger">
+          <thead><tr><th>Device</th><th>Engine</th><th>Needs</th></tr></thead>
+          <tbody>
+            <tr><td>iPhone · Mac</td><td data-label="Engine">Apple's speech recognizer</td><td data-label="Needs">iOS or macOS 26, supported hardware and language assets</td></tr>
+            <tr><td>Android · Windows</td><td data-label="Engine">Qwen3-ASR 0.6B, open source</td><td data-label="Needs">64-bit, 6 GiB+ memory (an 8 GB phone in practice), a one-time ~1 GB download you start</td></tr>
+            <tr><td>Watches</td><td data-label="Engine">—</td><td data-label="Needs">Record and hand off; the paired phone transcribes</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <p class="sub">14 providers, your key</p>
+        <ul class="chips">
+          <li>AssemblyAI</li><li>Azure AI Speech</li><li>CLOVA Speech</li><li>Daglo</li><li>Deepgram</li><li>ElevenLabs</li><li>Gladia</li><li>Groq</li><li>Mistral AI</li><li>OpenAI</li><li>Rev AI</li><li>RTZR</li><li>Speechmatics</li><li>Together AI</li>
+        </ul>
+        <p class="fine">20 transcription languages, filtered by what the provider or the device's engine supports. The apps speak English, Korean, Japanese, Simplified and Traditional Chinese, Spanish, French, German, Portuguese, Arabic, Hindi and Russian.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="privacy">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>06</b> Privacy</p>
+      <h2>There is no Recly server to trust.</h2>
+      <p class="lede">The only places data can go are your Google Drive, the transcription provider you chose, and your own paired watch or phone.</p>
+    </div>
+    <div class="stats">
+      <div><span class="n">0</span><span class="t">Recly servers, databases or accounts</span></div>
+      <div><span class="n">drive.file</span><span class="t">The narrowest Drive permission Google offers</span></div>
+      <div><span class="n">0</span><span class="t">Analytics, crash reports or update pings</span></div>
+    </div>
+    <table class="ledger">
+      <thead><tr><th>Step</th><th>Where it happens</th><th>What leaves your device</th></tr></thead>
+      <tbody>
+        <tr><td>Recording</td><td data-label="Where it happens">Your watch, phone or desktop</td><td data-label="What leaves your device">Nothing. A watch hands the audio to your paired phone, and only there.</td></tr>
+        <tr><td>Storage</td><td data-label="Where it happens">Your Google Drive</td><td data-label="What leaves your device">The audio parts and a small metadata file, to your own account.</td></tr>
+        <tr><td>Transcription</td><td data-label="Where it happens">On device, or a provider you chose with your own key</td><td data-label="What leaves your device">On device: no audio to any speech service. External: the joined audio to the provider you selected. Results are written next to the recording in Drive.</td></tr>
+        <tr><td>Notes</td><td data-label="Where it happens">Your own AI agent</td><td data-label="What leaves your device">The agent reads the transcript from your Drive and writes to your Notion. Recly is not involved.</td></tr>
+        <tr><td>Settings, API keys</td><td data-label="Where it happens">Your device</td><td data-label="What leaves your device">Nothing is synced. Export moves configuration only; keys are entered separately on each device.</td></tr>
+      </tbody>
+    </table>
+    <p class="fine">Every network path, with nothing left out, is in the <a href="/policy/privacy-policy">privacy policy</a>. Any change that adds a network call has to update that list first.</p>
+  </div>
+</section>
+
+<section id="skills">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>07</b> Notes</p>
+      <h2>Notes are your agent's job, not a paid tier.</h2>
+      <p class="lede">Recly's pipeline ends at the transcript on purpose. It ships skills for the AI you already use instead: Drive stays the archive the app writes, and the notes, with every later edit, live in your Notion.</p>
+    </div>
+    <div class="split">
+      <div class="cards stack">
+        <article class="card">
+          <h3><code>recly-notes</code></h3>
+          <p>Finds a recording, the latest or the one you name, reads its transcript and writes minutes, a decision log, interview or lecture notes, or a memo.</p>
+        </article>
+        <article class="card">
+          <h3><code>recly-notion</code></h3>
+          <p>Keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later.</p>
+        </article>
+      </div>
+      <div>
+        <p class="sub">Install</p>
+        <div class="term">
+          <div class="term-row">
+            <span class="who">Any agent with Agent Skills</span>
+            <pre id="cmd-skills">npx skills add rokrokss/recly</pre>
+            <button class="btn btn-quiet" type="button" data-copy="cmd-skills" data-done="Copied ✓" data-fail="Copy failed">Copy</button>
+          </div>
+          <div class="term-row">
+            <span class="who">Claude Code</span>
+            <pre id="cmd-plugin">/plugin marketplace add rokrokss/recly
+/plugin install recly@recly</pre>
+            <button class="btn btn-quiet" type="button" data-copy="cmd-plugin" data-done="Copied ✓" data-fail="Copy failed">Copy</button>
+          </div>
+        </div>
+        <p class="fine">Using the Claude or ChatGPT app? Upload <a data-asset="^recly-notes\.zip$" href="https://github.com/rokrokss/recly/releases">recly-notes.zip</a> and <a data-asset="^recly-notion\.zip$" href="https://github.com/rokrokss/recly/releases">recly-notion.zip</a>. Setup for each app is in <a href="https://github.com/rokrokss/recly/blob/main/skills/README.md">skills/README.md</a>.</p>
+        <ul class="prompts">
+          <li>"Make minutes from the latest recording and put them in Notion."</li>
+          <li>"What did we decide about pricing last week?"</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="download">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker"><b>08</b> Download</p>
+      <h2>Get Recly.</h2>
+      <p class="lede">Store releases are coming soon. Until then, pre-release builds are on GitHub Releases, and the <a href="/install.html">install guide</a> walks through each platform.</p>
+    </div>
+    <div class="downloads">
+      <article class="dl">
+        <header><div><h3>macOS</h3><p class="req">macOS 14.4+ · Apple Silicon</p></div><span class="badge badge-ok">Notarized</span></header>
+        <p>Menu-bar app for meetings: your mic and the call's audio as separate tracks.</p>
+        <div class="actions">
+          <a class="btn btn-primary" data-asset="^Recly-macOS-.*\.dmg$" href="https://github.com/rokrokss/recly/releases">Download .dmg <span class="size"></span></a>
+          <a href="/install.html#macos">Install guide</a>
+        </div>
+        <p class="soon">Soon: Homebrew</p>
+      </article>
+      <article class="dl">
+        <header><div><h3>Windows</h3><p class="req">Windows 11 · x64</p></div><span class="badge badge-soon">Unsigned</span></header>
+        <p>Tray app for meetings. SmartScreen will warn until the MSI is code-signed.</p>
+        <div class="actions">
+          <a class="btn btn-primary" data-asset="^Recly-.*\.msi$" href="https://github.com/rokrokss/recly/releases">Download .msi <span class="size"></span></a>
+          <a href="/install.html#windows">Get past SmartScreen</a>
+        </div>
+        <p class="soon">Soon: signed MSI · winget</p>
+      </article>
+      <article class="dl">
+        <header><div><h3>Android phone</h3><p class="req">Android 14+</p></div><span class="badge badge-ok">APK</span></header>
+        <p>Records, signs in to Google, uploads and transcribes, including for your Galaxy Watch.</p>
+        <div class="actions">
+          <a class="btn btn-primary" data-asset="^Recly-Android-.*\.apk$" href="https://github.com/rokrokss/recly/releases">Download .apk <span class="size"></span></a>
+          <a href="/install.html#android-phone">Install guide</a>
+        </div>
+        <p class="soon">Soon: Google Play</p>
+      </article>
+      <article class="dl">
+        <header><div><h3>Galaxy Watch</h3><p class="req">Wear OS 5+ · with Android phone</p></div><span class="badge badge-ok">APK</span></header>
+        <p>Records and hands off to the phone, so install both. The APK goes on over ADB.</p>
+        <div class="actions">
+          <a class="btn btn-primary" data-asset="^Recly-WearOS-.*\.apk$" href="https://github.com/rokrokss/recly/releases">Download .apk <span class="size"></span></a>
+          <a href="/install.html#galaxy-watch">Install over ADB</a>
+        </div>
+        <p class="soon">Soon: Google Play</p>
+      </article>
+      <article class="dl">
+        <header><div><h3>iPhone</h3><p class="req">iOS 17+</p></div><span class="badge badge-soon">Coming</span></header>
+        <p>Records, signs in to Google, uploads and transcribes, including for your Apple Watch.</p>
+        <div class="actions">
+          <a class="btn" href="/development.html">Build from source</a>
+        </div>
+        <p class="soon">Soon: App Store · TestFlight</p>
+      </article>
+      <article class="dl">
+        <header><div><h3>Apple Watch</h3><p class="req">watchOS 10+ · with iPhone</p></div><span class="badge badge-soon">Coming</span></header>
+        <p>Records in one tap and hands off to the iPhone.</p>
+        <div class="actions">
+          <a class="btn" href="/development.html">Build from source</a>
+        </div>
+        <p class="soon">Soon: App Store</p>
+      </article>
+    </div>
+    <p class="release-line">
+      <span>Latest: <a data-version href="https://github.com/rokrokss/recly/releases">see Releases</a> · every release carries <code>SHA256SUMS</code> and <code>BUILDINFO.md</code></span>
+      <a href="https://github.com/rokrokss/recly/releases">All releases →</a>
+    </p>
+  </div>
+</section>
+
+<section id="open-source">
+  <div class="wrap split">
+    <div>
+      <p class="kicker"><b>09</b> Open source</p>
+      <h2>Open down to the design document.</h2>
+      <p class="lede">Every client is on GitHub under AGPL-3.0-or-later, with the design source of truth, the data contracts and the release process in the same repository.</p>
+      <p class="license-note">Two additional permissions in <a href="https://github.com/rokrokss/recly/blob/main/LICENSE-EXCEPTIONS.md">LICENSE-EXCEPTIONS.md</a> let the apps ship through app stores. There is no CLA.</p>
+      <ul class="links">
+        <li><a href="https://github.com/rokrokss/recly"><span>Source code</span><small>rokrokss/recly on GitHub</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/issues/new/choose"><span>Issues</span><small>Bugs, questions and ideas</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/blob/main/CONTRIBUTING.md"><span>Contributing</span><small>Conventions for changes</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/blob/main/SECURITY.md"><span>Security</span><small>Report vulnerabilities privately</small></a></li>
+        <li><a href="/development.html"><span>Development</span><small>Build and test every client</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/tree/main/spec"><span>Spec</span><small>JSON Schemas every client honors</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/blob/main/docs/recly.md"><span>Design document</span><small>The source of truth, in Korean</small></a></li>
+        <li><a href="https://github.com/rokrokss/recly/blob/main/AGENTS.md"><span>AGENTS.md</span><small>Orientation for coding agents</small></a></li>
+      </ul>
+    </div>
+    <div class="arch" role="img" aria-label="Six clients — Galaxy Watch, Android, Apple Watch, iPhone, macOS and Windows — share one Kotlin Multiplatform core: the recording flow, resumable Drive uploads, transcription adapters and the job queue.">
+      <p class="sub">fig. 2 — six clients, one core</p>
+      <ul class="arch-clients">
+        <li>Galaxy Watch<small>Wear Compose</small></li>
+        <li>Android<small>Compose</small></li>
+        <li>Apple Watch<small>SwiftUI</small></li>
+        <li>iPhone<small>SwiftUI</small></li>
+        <li>macOS<small>SwiftUI</small></li>
+        <li>Windows<small>Compose + Rust</small></li>
+      </ul>
+      <div class="arch-bus"></div>
+      <div class="arch-core">
+        <strong>Kotlin Multiplatform core</strong>
+        <span>recording flow · resumable Drive upload · transcription adapters · job queue</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <a class="brand" href="/"><img src="/design/icon.svg" alt="" width="28" height="28">Recly</a>
+        <p>Record on the devices you own. Keep the audio in your Drive.</p>
+      </div>
+      <div>
+        <h2>Product</h2>
+        <ul>
+          <li><a href="#download">Download</a></li>
+          <li><a href="/install.html">Install guide</a></li>
+          <li><a href="/policy/privacy-policy">Privacy policy</a></li>
+          <li><a href="/ko/" hreflang="ko" lang="ko">한국어</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Project</h2>
+        <ul>
+          <li><a href="https://github.com/rokrokss/recly">GitHub</a></li>
+          <li><a href="https://github.com/rokrokss/recly/releases">Releases</a></li>
+          <li><a href="https://github.com/rokrokss/recly/issues">Issues</a></li>
+          <li><a href="https://github.com/rokrokss/recly/blob/main/CONTRIBUTING.md">Contributing</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Legal</h2>
+        <ul>
+          <li><a href="https://github.com/rokrokss/recly/blob/main/LICENSE">License</a></li>
+          <li><a href="https://github.com/rokrokss/recly/blob/main/TRADEMARK.md">Trademark</a></li>
+          <li><a href="https://github.com/rokrokss/recly/blob/main/THIRD-PARTY-NOTICES.md">Third-party notices</a></li>
+          <li><a href="https://github.com/rokrokss/recly/blob/main/SECURITY.md">Security</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-base">
+      <span>AGPL-3.0-or-later · "Recly" and the Recly logo are trademarks of the project.</span>
+      <span>Contact <a href="mailto:q0115643@gmail.com">q0115643@gmail.com</a></span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
