@@ -90,7 +90,7 @@ struct RecordingView: View {
             nodes.padding(.horizontal, Space.m)
 
             VStack(spacing: 12) {
-                MonoTimer(model.isRecording ? model.elapsed : "00:00")
+                MonoTimer(model.isRecording ? model.elapsed : LedgerFormat.clock(0))
                     .accessibilityIdentifier("elapsed")
                 // docs/09 화면 원칙 6: the same strip the menu bar draws, under the timer — what is
                 // being written, while it is being written. Nothing stands in for it when idle:
@@ -105,10 +105,17 @@ struct RecordingView: View {
 
             VStack(spacing: 10) {
                 recordNode
-                Text(model.status)
+                // A space when there is nothing to say, so the line keeps its height and the node
+                // above it never moves.
+                Text(model.status.isEmpty ? " " : model.status)
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
+                    // A refused start or an unfinished save is a sentence, not a word: it wraps
+                    // under the node rather than running to the edge.
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, Space.m)
                     .accessibilityIdentifier("status")
+                    .accessibilityHidden(model.status.isEmpty)
                 if model.microphoneDenied {
                     VStack(spacing: Space.s) {
                         Text("The microphone permission is required.")

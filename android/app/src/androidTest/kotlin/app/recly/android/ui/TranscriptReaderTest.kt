@@ -7,6 +7,7 @@ import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import okio.Path.Companion.toPath
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.Modifier
@@ -45,10 +46,32 @@ class TranscriptReaderTest {
         ui.onNodeWithTag("waveform").performSemanticsAction(SemanticsActions.RequestFocus) { it() }
         ui.onNodeWithTag("waveform").assertIsFocused().performKeyInput { pressKey(Key.DirectionRight) }
         ui.runOnIdle { assertEquals(5.0, position) }
+        // A screen reader hears the playhead as the clock beside it says it (the iPhone's value).
+        ui.onNodeWithTag("waveform").assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "00:00:05"))
         ui.onNodeWithTag("waveform").performKeyInput { pressKey(Key.DirectionLeft) }
         ui.runOnIdle { assertEquals(0.0, position) }
         ui.onNodeWithTag("waveform").performKeyInput { pressKey(Key.Tab) }
         ui.onNodeWithTag("after-waveform").assertIsFocused()
+    }
+
+    /** A seek the screen stopped allowing (a recording started) is refused by a tap, too. */
+    @Test fun aTapCallsTheSeekPassedLast() {
+        val audio = RecordingPlaylist.Selection(listOf("unused.m4a".toPath()), listOf(20.0))
+        var recording by mutableStateOf(false)
+        var position = 0.0
+        ui.setContent {
+            ReclyTheme {
+                // Captured by value, as the detail's own `detail.deviceRecording` is.
+                val refused = recording
+                Waveform(audio, floatArrayOf(), 0.0, {}, { if (!refused) position = it })
+            }
+        }
+        ui.onNodeWithTag("waveform").performTouchInput { click(center) }
+        ui.runOnIdle { assertEquals(10.0, position, 0.5) }
+        position = 0.0
+        recording = true
+        ui.onNodeWithTag("waveform").performTouchInput { click(center) }
+        ui.runOnIdle { assertEquals(0.0, position) }
     }
 
     @Test fun seekAndHeaderCopyKeepTheCompleteTranscript() {

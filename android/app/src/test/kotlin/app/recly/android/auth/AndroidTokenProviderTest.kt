@@ -110,6 +110,21 @@ class AndroidTokenProviderTest {
         assertEquals(0, authorizer.calls, "an interactive grant is already a valid token")
     }
 
+    /** docs/06 Android: what the settings row calls connected — a grant adopted, until it is dropped. */
+    @Test
+    fun aGrantIsHeldFromItsAdoptionUntilItIsInvalidated() = runTest {
+        val store = FakeSecureStore()
+        val provider = AndroidTokenProvider(FakeAuthorizer(), store, clock)
+        assertEquals(false, provider.held(), "an identity whose consent was closed holds nothing")
+
+        provider.adopt("interactive", START + 30.minutes)
+        assertEquals(true, provider.held())
+        assertEquals(true, AndroidTokenProvider(FakeAuthorizer(), store, clock).held(), "and after a restart")
+
+        provider.invalidate()
+        assertEquals(false, provider.held())
+    }
+
     @Test
     fun invalidateEvictsTheTokenFromPlayServices() = runTest {
         val authorizer = CachingAuthorizer(clock, "t1", "t2")

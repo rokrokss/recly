@@ -11,6 +11,7 @@ import androidx.credentials.ClearCredentialStateRequest
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.RevokeAccessRequest
@@ -46,6 +47,12 @@ class GoogleAuth(
         secureStore.get(NS_ACCOUNT, KEY_EMAIL)?.decodeToString()
 
     /**
+     * Whether a Drive grant is held — what [authorizeDrive] or a silent refresh last adopted. An
+     * [account] without one is an identity whose consent screen was closed: not connected (docs/06).
+     */
+    suspend fun driveGranted(): Boolean = tokens.held()
+
+    /**
      * The [SignInMode] ladder of docs/06 Android: each rung is Google's documented answer to the
      * one before it finding no credential at all. Past the last rung there is no Google account on
      * the device, which only the system add-account screen can fix — [SignInResult.NoAccount], and
@@ -53,7 +60,8 @@ class GoogleAuth(
      *
      * `NoCredentialException` is the only exception worth descending on: a cancellation or a Play
      * Services failure means this rung *could* have worked, and retrying it lower would only put a
-     * second picker in front of a user who just dismissed one.
+     * second picker in front of a user who just dismissed one. The cancellation is its own answer
+     * ([SignInResult.Cancelled]): the user closed the picker, and nothing failed.
      */
     suspend fun signIn(activity: Activity): SignInResult {
         SignInMode.entries.forEachIndexed { index, mode ->
@@ -62,6 +70,8 @@ class GoogleAuth(
                 credentials.requestEmail(activity, mode)
             } catch (e: NoCredentialException) {
                 return@forEachIndexed
+            } catch (e: GetCredentialCancellationException) {
+                return SignInResult.Cancelled
             } catch (e: Exception) {
                 return SignInResult.Failed(e.message ?: e::class.java.simpleName)
             }
@@ -88,10 +98,8 @@ class GoogleAuth(
         } else {
             val pending = first.pendingIntent
                 ?: return AuthorizeResult.Failed(CoreMessage.DRIVE_CONSENT_REQUIRED.code())
-            // docs/07 §5: the reasons the user acts on are keys; the rest are Play Services' own
-            // words and reach the screen as they are.
-            val data = resolver.resolve(pending)
-                ?: return AuthorizeResult.Failed(CoreMessage.SIGN_IN_CANCELLED.code())
+            // A consent screen the user backed out of is their answer, not a failure.
+            val data = resolver.resolve(pending) ?: return AuthorizeResult.Cancelled
             try {
                 client.getAuthorizationResultFromIntent(data)
             } catch (e: Exception) {
@@ -161,6 +169,9 @@ sealed interface SignInResult {
 
     /** No Google account on the device at all: the user has to add one before signing in. */
     data object NoAccount : SignInResult
+
+    /** The user closed the account picker (`GetCredentialCancellationException`). */
+    data object Cancelled : SignInResult
 
     data class Failed(val reason: String) : SignInResult
 }

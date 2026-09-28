@@ -27,15 +27,9 @@ final class MenuModel: ObservableObject {
     /// screen follows a language change. [AppStrings.localized] hands a sentence it does not know
     /// back unchanged.
     @Published private(set) var note = "Opening" {
-        // Both belong to the note they were set with; a new note has neither until it says so.
-        didSet {
-            noteCount = nil
-            message = nil
-        }
+        // The message belongs to the note it was set with; a new note has none until it says so.
+        didSet { message = nil }
     }
-    /// The argument of the one note that takes one (`Deferred %@`), set right after the key so that
-    /// [status] can format it in the language the menu is being drawn in.
-    private var noteCount: Int?
     /// docs/07 rule 3: what a delete or a disconnect had to say, which is RecKit's message
     /// rather than a key of this app's — kept as the message and resolved by [status], for the same
     /// reason [note] is kept as a key. Named as the phone's own slot is, because it is the same one.
@@ -99,6 +93,9 @@ final class MenuModel: ObservableObject {
     @Published private(set) var revokeDebt = DisconnectDefaults.revokeDebt
     /// The signed-in Google account, or nil.
     @Published private(set) var account: String?
+    /// docs/09 화면 원칙 5: where the settings' Connect is, which its button shows in place — "…"
+    /// while the sign-in runs, ✓ when Drive is connected, and back to itself when it was not.
+    @Published private(set) var signInState: ProcessingState = .idle
     /// docs/08 결과 파일: the recording the transcript window is showing, once one is picked.
     @Published private(set) var detail: RecordingDetailModel?
     /// docs/12 "실행기": `SMAppService`. Written from the system's own answer, never from the
@@ -346,7 +343,7 @@ final class MenuModel: ObservableObject {
     /// The menu's first line. The state has the say whenever a recording is in flight; [note] is
     /// what is left to show when there is none.
     var status: String {
-        RecorderStatusLine.text(state: state, note: note, count: noteCount, message: message)
+        RecorderStatusLine.text(state: state, note: note, message: message)
     }
 
     /// The menu bar icon: the app mark's 22-point monochrome template (docs/09 "앱 아이콘"), so the
@@ -484,9 +481,9 @@ final class MenuModel: ObservableObject {
 
         case .deferred(let recordingId, let pending):
             // Not finalized on purpose: there is nothing to name and nothing to queue until the
-            // missing parts are filed, which the next recovery pass does.
-            note = "Deferred %@"
-            noteCount = Int(pending)
+            // missing parts are filed, which the next recovery pass does. How many is the log's to
+            // say, not the menu's.
+            note = "Could not finish saving — it is recovered on the next run"
             logger.error("shell.recording.deferred id=\(recordingId, privacy: .public) pending=\(pending, privacy: .public)")
 
         case .finalized(let outcome):
@@ -510,7 +507,8 @@ final class MenuModel: ObservableObject {
                         core: core, recordingId: outcome.recordingId, deleteDrive: false
                     )
                     switch result {
-                    case .deleted, .notFound: note = "Recording discarded"
+                    // The user asked for it to go, so its going is not news: back to idle.
+                    case .deleted, .notFound: note = "Waiting"
                     case .busy, .unavailable: note = "Could not discard the recording"
                     }
                     await refreshRecents()
@@ -646,6 +644,7 @@ final class MenuModel: ObservableObject {
             return
         }
         guard let auth else { return }
+        signInState = .processing
         Task {
             // Reuse the app's window as the authentication anchor; a browser handoff needs no
             // additional instruction window. A cold notification may have no visible window yet.
@@ -656,13 +655,16 @@ final class MenuModel: ObservableObject {
                 account = try await auth.signIn(presenting: anchor)
                 // What the last disconnect said is over once Drive is connected again.
                 message = nil
+                signInState = .done
                 logger.info("auth.signIn.ok")
                 // docs/06: a job parked in NEEDS_AUTH resumes when the user signs in.
                 await unpark()
             } catch GoogleAuth.Failure.canceled {
                 // The user closed the consent sheet. Nothing failed, so nothing is said.
+                signInState = .failed
                 logger.info("auth.signIn.canceled")
             } catch {
+                signInState = .failed
                 note = "Sign-in failed"
                 logger.error("auth.signIn.failed error=\(String(describing: error), privacy: .public)")
                 presentAuthFailure(error)
@@ -814,7 +816,8 @@ final class MenuModel: ObservableObject {
                     recordingId: item.id,
                     title: item.titleLabel,
                     unuploaded: unuploaded,
-                    remote: item.remote
+                    remote: item.remote,
+                    hasDriveFolder: item.link != nil
                 ),
                 source: source
             )
@@ -1023,7 +1026,7 @@ final class MenuModel: ObservableObject {
         microphoneRecovering = recorder?.microphoneRecovering ?? false
         captureHealth = recorder?.systemCaptureHealth ?? .healthy
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
-        elapsed = LedgerFormat.elapsed(total)
+        elapsed = LedgerFormat.clock(total)
     }
 
     /// docs/09 화면 원칙 6: the levels behind the live strip, asked for ten times a second by the

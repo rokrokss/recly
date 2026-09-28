@@ -572,6 +572,38 @@ class CrossShellDictionaryTest {
                 mac = "Signed out",
                 phone = "Signed out",
             ),
+            // docs/06: what the Drive row says when connecting failed — the phones' own line, with the
+            // reason kept for the log. The Apple key is older than its words.
+            Line(
+                what = "the failed Drive connection",
+                en = "Could not connect Drive",
+                ko = "Drive에 연결하지 못했습니다",
+                android = "auth_connect_failed",
+                mac = "The sign-in failed",
+                phone = "The sign-in failed",
+            ),
+            // docs/15 "사용자가 여는 정책 페이지": the settings section that opens Recly's own policy.
+            Line(
+                what = "the privacy section",
+                en = "Privacy",
+                ko = "개인정보 보호",
+                android = "settings_privacy",
+                reckit = "Privacy",
+            ),
+            Line(
+                what = "the privacy policy row",
+                en = "Privacy Policy",
+                ko = "개인정보 처리방침",
+                android = "settings_privacy_policy",
+                reckit = "Privacy Policy",
+            ),
+            Line(
+                what = "the link that opens it",
+                en = "Open",
+                ko = "열기",
+                android = "action_open",
+                reckit = "Open",
+            ),
             Line(
                 what = "the sign-in button",
                 en = "Connect Google Drive",
@@ -612,17 +644,6 @@ class CrossShellDictionaryTest {
                 android = "delete_drive_failed",
                 reckit = "Deleted here, but Drive refused: %@",
             ),
-            // docs/13 deliverable 1: the microphone is what this app is for, so a refusal is said
-            // the same way wherever the user meets it — the note the recorder puts up, and the line
-            // over the way back into the system settings.
-            Line(
-                what = "the microphone refusal",
-                en = "The microphone permission is needed",
-                ko = "마이크 권한 필요",
-                android = "recording_mic_denied",
-                mac = "The microphone permission is needed",
-                phone = "The microphone permission is needed",
-            ),
             // The Mac says this in an alert, whose `messageText` carries no full stop; the two
             // phones say it as a line on the recording screen, and it is a sentence there.
             Line(
@@ -639,6 +660,39 @@ class CrossShellDictionaryTest {
                 android = "action_open_settings",
                 mac = "Open System Settings",
                 phone = "Open System Settings",
+            ),
+            // docs/13 deliverable 1: under a refused record button the phones say it shorter than
+            // the settings row does.
+            Line(
+                what = "the way back on under the record button",
+                en = "Open Settings",
+                ko = "설정 열기",
+                android = "recording_open_settings",
+                phone = "Open Settings",
+            ),
+            // docs/09: the record node draws a square and no words, so this is its name.
+            Line(
+                what = "the record button to a screen reader",
+                en = "Start recording",
+                ko = "녹음 시작",
+                android = "recording_start_label",
+                phone = "Start recording",
+            ),
+            // docs/09: the line under the record button, and the one thing it says when a recording breaks.
+            Line(
+                what = "a recording that failed",
+                en = "The recording failed",
+                ko = "녹음 실패",
+                android = "recording_failed",
+                phone = "The recording failed",
+            ),
+            // The tab is "List"; the screen is what is in it.
+            Line(
+                what = "the recordings screen's title",
+                en = "Recordings",
+                ko = "녹음",
+                android = "jobs_title",
+                phone = "Recordings",
             ),
             // docs/09 "접근성": what a screen reader is told a ledger row is. Everything the row
             // draws, as one sentence — and the date and the length inside it are locale-formatted,

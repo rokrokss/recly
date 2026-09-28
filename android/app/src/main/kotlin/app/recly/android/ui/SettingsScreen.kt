@@ -4,7 +4,6 @@ package app.recly.android.ui
 
 import android.os.Build
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -16,17 +15,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import app.recly.android.BuildConfig
 import app.recly.android.R
@@ -34,10 +28,11 @@ import app.recly.android.settings.AppLanguage
 import app.recly.android.settings.AppTheme
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
+import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogLink
 import app.recly.android.ui.component.BlueprintDialogText
-import app.recly.android.ui.component.BlueprintRadioRow
+import app.recly.android.ui.component.BlueprintDropdown
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.HairLine
@@ -50,11 +45,12 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import app.recly.android.ui.component.TableRow
+import java.util.Locale
 import kotlin.time.ExperimentalTime
 
 /**
- * docs/11 A10 as docs/09 화면 원칙 4 draws it: a section table — account, language, capture,
- * uploads, processing — closed by an honest block of what this build actually is.
+ * docs/11 A10 as docs/09 화면 원칙 4 draws it: a section table — account, language, theme, capture,
+ * uploads, processing, privacy — closed by an honest block of what this build actually is.
  */
 @Composable
 fun SettingsScreen(
@@ -81,7 +77,10 @@ fun SettingsScreen(
             Section(stringResource(R.string.settings_account))
             val context = LocalContext.current
             val signInBlocker = DisconnectGuard.signInBlocker(main.disconnectPhase.owed)
-            if (main.email != null || main.disconnectPhase.owed || main.disconnecting) {
+            // docs/06 Android: an account without the Drive grant — a consent screen that was
+            // closed — is not connected, and the row says so with the way to connect, as the
+            // iPhone's does. Only a disconnect still owed keeps the disconnect row without one.
+            if (main.driveConnected || main.disconnectPhase.owed || main.disconnecting) {
                 TableRow(title = main.email ?: stringResource(if (main.disconnecting) R.string.settings_account else R.string.drive_attention), trailing = {
                     BlueprintButton(
                         stringResource(if (main.disconnecting) R.string.drive_disconnecting else R.string.drive_disconnect),
@@ -112,6 +111,16 @@ fun SettingsScreen(
                         modifier = Modifier.testTag("revoke-debt-settled"))
                 }
             }
+            // iPhone's `authNote`: a connection that failed, in the failure colour (docs/09 — red is
+            // a failure). A closed picker or consent screen is the user's answer and says nothing.
+            main.authNote?.let {
+                Text(
+                    it.text(),
+                    modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.danger,
+                )
+            }
             main.message?.let {
                 Text(
                     it.text(),
@@ -125,65 +134,37 @@ fun SettingsScreen(
             // choices behind it: the list of languages grows, and a row stays one line however long
             // that list gets.
             Section(stringResource(R.string.settings_language))
-            var pickingLanguage by rememberSaveable { mutableStateOf(false) }
-            // What the row says and the dialog marks is the language the app is in right now: with
+            // What the row says and the menu marks is the language the app is in right now: with
             // nothing chosen the app follows the system, and the locale the resources resolved to is
             // the one the words on this very screen were loaded in.
             val language = AppLanguage.effective(LocalConfiguration.current.locales[0])
             TableRow(
                 title = stringResource(R.string.settings_app_language),
-                modifier = Modifier
-                    .clickable(role = Role.Button) { pickingLanguage = true }
-                    .testTag("language"),
                 trailing = {
-                    Text(
-                        stringResource(language.labelRes()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.textMuted,
+                    // Each language under its own name — a label that is never translated, so
+                    // whoever cannot read the language the app is currently in can still find the
+                    // one they want (docs/07 rule 1). A choice is applied the moment it is made
+                    // (rule 3), so there is nothing to confirm.
+                    BlueprintDropdown(
+                        label = stringResource(R.string.settings_app_language),
+                        options = AppLanguage.choices,
+                        selected = language,
+                        onSelect = onLanguage,
+                        modifier = Modifier.testTag("language"),
+                        title = { stringResource(it.labelRes()) },
                     )
                 },
             )
-            if (pickingLanguage) {
-                BlueprintDialog(
-                    title = stringResource(R.string.settings_app_language),
-                    onDismissRequest = { pickingLanguage = false },
-                    actions = {
-                        // Nothing to cancel: a choice is applied the moment it is made (rule 3), so
-                        // the one answer here closes a question that has already been answered.
-                        BlueprintButton(
-                            label = stringResource(R.string.action_close),
-                            onClick = { pickingLanguage = false },
-                            tone = ButtonTone.QUIET,
-                        )
-                    },
-                ) {
-                    // Each language under its own name — a label that is never translated, so
-                    // whoever cannot read the language the app is currently in can still find the
-                    // one they want (docs/07 rule 1).
-                    AppLanguage.choices.forEach { choice ->
-                        BlueprintRadioRow(
-                            label = stringResource(choice.labelRes()),
-                            selected = language == choice,
-                            onSelect = {
-                                pickingLanguage = false
-                                onLanguage(choice)
-                            },
-                            modifier = Modifier.testTag("language-${choice.name.lowercase()}"),
-                        )
-                    }
-                }
-            }
 
             // docs/09 "접근성": the system's dark mode is the default and the only one the app has
             // an opinion about — this is the user's override of it, on this device alone, exactly
             // as the PC's Settings window offers it.
             Section(stringResource(R.string.settings_theme))
-            FlowRow(
+            FillRow(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(palette.surface)
                     .padding(horizontal = Space.m, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
             ) {
                 AppTheme.entries.forEach { choice ->
                     BlueprintChip(
@@ -206,6 +187,9 @@ fun SettingsScreen(
                     BlueprintButton(
                         label = stringResource(R.string.action_open_settings),
                         onClick = { settingsContext.openAppSettings() },
+                        // Always here, so nothing to call attention to: the Record screen's own
+                        // accent button is the one a refusal brings (2026-09-29).
+                        tone = ButtonTone.QUIET,
                         modifier = Modifier.testTag("microphone-settings"),
                     )
                 },
@@ -229,6 +213,24 @@ fun SettingsScreen(
 
             ProcessingPanel()
 
+            // docs/15 "사용자가 여는 정책 페이지": Recly's own privacy policy, in the browser, right
+            // before About as on the iPhone. Only the policy: the iPhone's "Allowed destinations" is
+            // its transfer permission (docs/15), which this shell does not ask for.
+            Section(stringResource(R.string.settings_privacy))
+            val policyLocale = LocalConfiguration.current.locales[0]
+            TableRow(
+                title = stringResource(R.string.settings_privacy_policy),
+                trailing = {
+                    BlueprintButton(
+                        label = stringResource(R.string.action_open),
+                        onClick = { context.openUrl(privacyPolicyUrl(policyLocale)) },
+                        // A way out that is always here, like the microphone's: quiet.
+                        tone = ButtonTone.QUIET,
+                        modifier = Modifier.testTag("privacy-policy"),
+                    )
+                },
+            )
+
             // docs/09 트렌드 6: no mascot, no "handmade" line — the build, in monospace.
             Section(stringResource(R.string.settings_about))
             Column(
@@ -247,7 +249,9 @@ fun SettingsScreen(
                     ),
                 )
                 About(stringResource(R.string.settings_about_device, rememberDeviceId()))
-                About(stringResource(R.string.settings_open_source))
+                // A heading in words over the list it heads, so in the sans: only the build itself
+                // is monospace, as on the iPhone.
+                Text(stringResource(R.string.settings_open_source), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
                 About(stringResource(R.string.settings_open_source_value))
             }
             HairLine()
@@ -292,6 +296,13 @@ private fun DisconnectDialog(
 
 /** docs/03: where a user takes the grant away themselves, linked from Drive settings. */
 private const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
+
+/**
+ * docs/15 "사용자가 여는 정책 페이지": the iPhone's `PrivacyLinks.recly` — the Korean page when the app
+ * is in Korean, the English one in every other language.
+ */
+internal fun privacyPolicyUrl(locale: Locale): String =
+    "https://recly.dev/policy/" + if (locale.language == "ko") "privacy-policy.ko" else "privacy-policy"
 
 @Composable
 private fun Section(title: String) {

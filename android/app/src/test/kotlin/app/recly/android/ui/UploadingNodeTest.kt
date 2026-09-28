@@ -31,6 +31,18 @@ class UploadingNodeTest {
         assertFalse(uploading(emptyList()))
     }
 
+    /**
+     * A transcription on this device is not an upload: the row says `TRANSCRIBING`, and the node
+     * does not borrow the job's `RUNNING` for it — as on the iPhone.
+     */
+    @Test
+    fun `a transcription on this device is not uploading`() {
+        val local = item(ItemState.RUNNING).copy(localPending = true, localRunning = true)
+
+        assertFalse(uploading(listOf(local)))
+        assertNull(ledgerCode(listOf(local, item(ItemState.DONE))))
+    }
+
     /** A queued job runs at its own time, and a finished one is not news. */
     @Test
     fun `pending and done alone are not uploading`() {

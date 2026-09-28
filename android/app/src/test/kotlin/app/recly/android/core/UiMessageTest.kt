@@ -15,14 +15,14 @@ class UiMessageTest {
 
     /** Copied from `values/strings.xml` and `values-ko/strings.xml` — the real sentences. */
     private val english = mapOf(
-        R.string.auth_sign_in_failed to "Sign-in failed: %1\$s",
+        R.string.delete_drive_failed to "Deleted here, but Drive refused: %1\$s",
         R.string.core_sign_in_cancelled to "The sign-in was cancelled",
         R.string.core_retry_budget_spent to "Out of retries: %1\$s",
         R.string.core_missing_secret to "This device has no value for the secret ‘%1\$s’",
     )
 
     private val korean = mapOf(
-        R.string.auth_sign_in_failed to "로그인 실패: %1\$s",
+        R.string.delete_drive_failed to "이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: %1\$s",
         R.string.core_sign_in_cancelled to "로그인이 취소되었습니다",
         R.string.core_retry_budget_spent to "재시도 횟수를 다 썼습니다: %1\$s",
         R.string.core_missing_secret to "이 기기에 시크릿 ‘%1\$s’ 값이 없습니다",
@@ -31,16 +31,16 @@ class UiMessageTest {
     private fun strings(table: Map<Int, String>): (Int, List<Any>) -> String =
         { id, args -> table.getValue(id).format(*args.toTypedArray()) }
 
-    /** The shape `MainViewModel.reason` builds: a sentence of ours with a core code inside it. */
+    /** A sentence of ours with a core code inside it. */
     @Test
     fun `a message held past a language change renders in the new language`() {
         val message = UiMessage.Res(
-            R.string.auth_sign_in_failed,
+            R.string.delete_drive_failed,
             listOf(coreMessage(CoreMessage.SIGN_IN_CANCELLED.code())),
         )
 
-        assertEquals("Sign-in failed: The sign-in was cancelled", message.text(strings(english)))
-        assertEquals("로그인 실패: 로그인이 취소되었습니다", message.text(strings(korean)))
+        assertEquals("Deleted here, but Drive refused: The sign-in was cancelled", message.text(strings(english)))
+        assertEquals("이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: 로그인이 취소되었습니다", message.text(strings(korean)))
     }
 
     /** The core nests too: the argument of `RETRY_BUDGET_SPENT` is the code that spent the last try. */

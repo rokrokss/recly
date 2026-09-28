@@ -14,7 +14,7 @@ import kotlin.test.assertNull
 /** Exercises connection controls with callbacks that never touch a real Google account. */
 class DriveSettingsTest {
     @get:Rule val ui = createComposeRule()
-    private val main = mutableStateOf(MainUiState(loading = false, email = "test@example.test"))
+    private val main = mutableStateOf(MainUiState(loading = false, email = "test@example.test", driveGranted = true))
     private var deleteRecordings: Boolean? = null
     private var recording = false
     private var holdDisconnect = false
@@ -56,6 +56,17 @@ class DriveSettingsTest {
         ui.onNodeWithTag("disconnect").performClick()
         ui.onNodeWithTag("disconnect-confirm").performClick()
         ui.runOnIdle { assertEquals(false, deleteRecordings) }
+    }
+
+    /** docs/06 Android: a closed consent screen leaves the account without the grant — and a way to connect. */
+    @Test fun anAccountWithoutTheDriveGrantOffersConnectAgain() {
+        main.value = main.value.copy(driveGranted = false)
+        show()
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        ui.onNodeWithTag("disconnect").assertDoesNotExist()
+        ui.onNodeWithText("test@example.test").assertDoesNotExist()
+        ui.onNodeWithText(context.getString(R.string.signed_out)).assertExists()
+        ui.onNodeWithText(context.getString(R.string.drive_connect)).assertIsEnabled()
     }
 
     @Test fun pendingRevocationKeepsRetryVisibleAndPreventsLocalSignOut() {

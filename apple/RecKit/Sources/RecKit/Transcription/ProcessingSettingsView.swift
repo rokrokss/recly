@@ -172,9 +172,9 @@ public struct ProcessingSettingsView: View {
                 BlueprintField(loc("Storage folder"), text: field(\.folder))
                 BlueprintField(loc("Minimum length (s)"), text: field(\.minimumSeconds), mono: true)
                 SectionHeader(loc("Transcription"))
-                FlowLayout {
+                ChoiceRow {
                     ForEach([TranscriptionMode.local, .external, .off].filter { $0 != .local || LocalSpeechEngine.available || draft.mode == .local }, id: \.self) { mode in
-                        BlueprintChip(loc(mode == .local ? "On device" : mode == .external ? "External API" : "Off"), selected: draft.mode == mode) { model.selectMode(mode) }
+                        BlueprintChip(loc(mode == .local ? "On device" : mode == .external ? "External API" : "Off"), selected: draft.mode == mode, fill: true) { model.selectMode(mode) }
                     }
                 }
                 if draft.mode == .local {

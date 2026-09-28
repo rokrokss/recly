@@ -52,28 +52,26 @@ public struct DeleteDialog: View {
         }
     }
 
-    /// docs/03: the two answers about Drive, and the count that is only ever about this device's own
-    /// parts — neither of which a row this device did not record has.
+    /// docs/03: the two answers about Drive, and the warning that is only ever about this device's own
+    /// audio — neither of which a row this device did not record has. No count: parts are not
+    /// something the user reads.
     @ViewBuilder
     private var choices: some View {
         if request.unuploaded > 0 {
-            BlueprintDialogText(
-                loc(
-                    "Parts not yet in Drive, deleted with it: %@",
-                    "\(request.unuploaded)"
-                ),
-                tone: .danger
-            )
+            BlueprintDialogText(loc("Audio not yet in Drive is deleted with it."), tone: .danger)
             .accessibilityIdentifier("delete-unuploaded")
         }
-        BlueprintRadioRow(loc(device.deleteHereOnly), selected: !deleteDrive) {
-            deleteDrive = false
+        // Nothing ever reached Drive, so there is no second answer to choose between.
+        if request.hasDriveFolder {
+            BlueprintRadioRow(loc(device.deleteHereOnly), selected: !deleteDrive) {
+                deleteDrive = false
+            }
+            .accessibilityIdentifier("delete-local-only")
+            BlueprintRadioRow(loc("Also delete the Drive folder"), selected: deleteDrive) {
+                deleteDrive = true
+            }
+            .accessibilityIdentifier("delete-with-drive")
         }
-        .accessibilityIdentifier("delete-local-only")
-        BlueprintRadioRow(loc("Also delete the Drive folder"), selected: deleteDrive) {
-            deleteDrive = true
-        }
-        .accessibilityIdentifier("delete-with-drive")
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

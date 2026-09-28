@@ -21,12 +21,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
     @Published private(set) var state: RecorderState = .idle
     /// docs/07 rule 3: a *key*, resolved by [status] where the screen draws it.
-    @Published private(set) var note = "Opening" {
-        // The count belongs to the note it was set with; a new note has none until it says so.
-        didSet { noteCount = nil }
-    }
-    /// The argument of the one note that takes one (`Deferred %@`), set right after the key.
-    private var noteCount: Int?
+    @Published private(set) var note = "Opening"
     @Published private(set) var elapsed = ""
     @Published private(set) var isReady = false
     /// Recordings the phone has not acked yet — the audio is still on this watch until it does.
@@ -145,7 +140,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     }
 
     var status: String {
-        RecorderStatusLine.text(state: state, note: note, count: noteCount)
+        RecorderStatusLine.text(state: state, note: note)
     }
 
     // MARK: - Start and stop
@@ -197,8 +192,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         case .deferred(let recordingId, let pending):
             // Not finalized on purpose, so nothing is handed over that is missing a part: the next
             // recovery pass files them and the launch-time sweep queues the recording then.
-            note = "Deferred %@"
-            noteCount = Int(pending)
+            // What happened and that nothing is lost, as Wear says it; the count of parts is the log's.
+            note = "Could not finish saving — recovered next time"
             logger.error(
                 """
                 shell.recording.deferred id=\(recordingId, privacy: .public) \

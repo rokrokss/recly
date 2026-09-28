@@ -54,6 +54,9 @@ class RecordingPlayer(context: Context) {
                 .build(),
             /* handleAudioFocus = */ true,
         )
+        // Headphones pulled out mid-sentence pause it rather than carry on out of the speaker — the
+        // same as the iPhone, where the route change pauses `AVQueuePlayer` on its own.
+        setHandleAudioBecomingNoisy(true)
         repeatMode = Player.REPEAT_MODE_OFF
     }
 

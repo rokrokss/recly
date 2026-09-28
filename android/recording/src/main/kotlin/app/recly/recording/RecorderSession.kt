@@ -143,6 +143,8 @@ internal class RecorderSession(
                         }
                     }
                 } catch (e: Exception) {
+                    // The screen says only that it failed; why is kept here, as a capture failure is.
+                    runCatching { host.core().deps.logger.log(Logger.Level.ERROR, "rec.recorder.failed", emptyMap(), e) }
                     events.emit(RecorderEvent.Failed(null, e.message ?: e::class.simpleName.orEmpty()))
                 } finally {
                     state.value = RecorderState.Idle

@@ -265,8 +265,8 @@ private fun Detail(
     strings: Strings,
 ) {
     ScreenHeader(
+        // The title alone: the recording's id is not something the user reads (docs/09 화면 원칙 2).
         title = detail.title.text(strings),
-        meta = detail.recordingId,
         // Not while the take is still being written to: the core refuses to rename a recording that
         // is still running, so offering it here would be offering nothing.
         trailing = if (detail.loading || detail.writing) {
@@ -703,6 +703,7 @@ private fun millis(seconds: Double): Long = (seconds * 1000).toLong()
 internal fun TranscriptAvailability.message(): Str = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> Str.DETAIL_NOT_REQUESTED
     TranscriptAvailability.FAILED -> Str.DETAIL_FAILED
+    TranscriptAvailability.PARKED -> Str.DETAIL_PARKED
     TranscriptAvailability.UNAVAILABLE -> Str.DETAIL_UNAVAILABLE
     TranscriptAvailability.EMPTY -> Str.DETAIL_TRANSCRIPT_EMPTY
     else -> Str.DETAIL_PENDING

@@ -389,8 +389,8 @@ struct MenuPopover: View {
     }
 }
 
-/// docs/09 화면 원칙 4: the settings the menu used to carry, as a section table — account, capture,
-/// language, and the honest system block at the bottom.
+/// docs/09 화면 원칙 4: the settings the menu used to carry, as a section table — account, language,
+/// theme, capture, recording processing, and the honest system block at the bottom.
 struct SettingsPane: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
@@ -405,9 +405,18 @@ struct SettingsPane: View {
                 account: model.account, connected: model.hasGoogleCredential,
                 configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
                 revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
+                signInState: model.signInState,
                 signIn: model.signIn, disconnect: { model.askToDisconnect(from: surface) },
                 permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
             )
+
+            // docs/07 rule 2·3: the same block the phone's settings tab draws, so it is drawn
+            // once (RecKit).
+            LanguageSection(language: language)
+
+            // docs/09 "접근성": the one override of the system's light/dark, and the same block the
+            // phone's settings tab draws (RecKit).
+            ThemeSection(theme: theme)
 
             section(loc("Capture"))
             // docs/12 "실행기": `SMAppService`, written from the system's own answer.
@@ -418,14 +427,6 @@ struct SettingsPane: View {
             // docs/12 M8: the reminder is on by default and this is where it goes off — and back
             // on, which the alert's own "Do not ask again" cannot do.
             SwitchRow(title: loc("Consent check before recording"), isOn: $model.consentReminder)
-
-            // docs/07 rule 2·3: the same block the phone's settings tab draws, so it is drawn
-            // once (RecKit).
-            LanguageSection(language: language)
-
-            // docs/09 "접근성": the one override of the system's light/dark, and the same block the
-            // phone's settings tab draws (RecKit).
-            ThemeSection(theme: theme)
 
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).

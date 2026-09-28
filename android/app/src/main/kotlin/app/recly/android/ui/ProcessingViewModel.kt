@@ -59,6 +59,9 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         if (state.value.draft?.language != language) viewModelScope.launch { runCatching { refreshLocal() }.onFailure { failed(it) } }
     }
 
+    /** The method chips — iPhone's `selectMode`, with its language rule ([selectTranscriptionMode]). */
+    fun selectMode(mode: TranscriptionMode, deviceLocale: String) = edit { it.selectTranscriptionMode(mode, deviceLocale) }
+
     fun reload() = viewModelScope.launch {
         runCatching {
             val core = core()
@@ -135,16 +138,12 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
 
     fun importSettings(source: Uri) = viewModelScope.launch {
         runCatching {
-            val json = withContext(Dispatchers.IO) {
-                getApplication<Application>().contentResolver.openInputStream(source)!!.use { input ->
-                    val bytes = input.readNBytes(1_048_577)
-                    require(bytes.size <= 1_048_576)
-                    bytes.decodeToString()
-                }
+            val bytes = withContext(Dispatchers.IO) {
+                getApplication<Application>().contentResolver.openInputStream(source)!!.use { it.readNBytes(IMPORT_LIMIT + 1) }
             }
-            when (val result = ProcessingSettingsParser.parse(json)) {
-                is ProcessingParseResult.Valid -> _state.update { it.copy(draft = ProcessingDraft.from(result.document.settings), dirty = true, importing = true, message = null) }
-                else -> _state.update { it.copy(message = UiMessage.Res(R.string.processing_unreadable)) }
+            when (val result = importedSettings(bytes)) {
+                null -> _state.update { it.copy(message = UiMessage.Res(R.string.processing_unreadable)) }
+                else -> _state.update { it.copy(draft = ProcessingDraft.from(result.document.settings), dirty = true, importing = true, message = null) }
             }
         }.onFailure { failed(it) }
     }
@@ -157,3 +156,14 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
     private suspend fun core() = CoreModule.get(getApplication()).core
     private fun failed(error: Throwable) { _state.update { it.copy(busy = false, message = coreMessage(CoreMessage.STEP_FAILED, error.message.orEmpty())) } }
 }
+
+/** The largest settings file an import reads — the iPhone's limit. */
+internal const val IMPORT_LIMIT: Int = 1_048_576
+
+/**
+ * What an import of [bytes] offers as a draft, or null for a file this version cannot read — one
+ * over [IMPORT_LIMIT] included, which is the iPhone's same sentence rather than a failure of its own.
+ */
+internal fun importedSettings(bytes: ByteArray): ProcessingParseResult.Valid? =
+    if (bytes.size > IMPORT_LIMIT) null else ProcessingSettingsParser.parse(bytes.decodeToString()) as? ProcessingParseResult.Valid
+

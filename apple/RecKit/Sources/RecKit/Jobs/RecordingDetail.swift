@@ -197,6 +197,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         switch availability {
         case .notRequested: key = "This recording has no transcription step to run."
         case .failed: key = "Transcription could not finish. Check this recording in the list for the next action."
+        case .parked: key = "Transcription is waiting. Check this recording in the list for what it needs."
         case .unavailable: key = "Could not load the transcript. Try again."
         case .empty: key = "Transcription finished with no text. Play the recording to check the audio."
         default: key = "Transcription is not finished yet. The result will appear here when ready."
@@ -363,7 +364,7 @@ public struct RecordingDetailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: model.title, meta: model.recordingId, trailingAlignment: .trailing) {
+            ScreenHeader(title: model.title, trailingAlignment: .trailing) {
                 HStack(spacing: Space.s) {
                     if !model.loading, model.availability != .empty, let document = model.document {
                         TranscriptCopyButton(document: document)
@@ -546,7 +547,7 @@ public struct RecordingDetailView: View {
         .accessibilityLabel(Text(verbatim: loc("Position")))
         // docs/09 접근성: the same stamp the clock beside it shows, because that is what the
         // playhead is — a drag has no reading of its own to give.
-        .accessibilityValue(Text(verbatim: LedgerFormat.elapsed(Int(positionSec))))
+        .accessibilityValue(Text(verbatim: LedgerFormat.clock(Int(positionSec))))
         .accessibilityAdjustableAction { direction in
             switch direction {
             case .increment: seek(toSec: positionSec + Waveform.stepSec)
@@ -712,7 +713,7 @@ public struct RecordingDetailView: View {
 
     private var playbackButtonMinWidth: CGFloat? {
         #if os(iOS)
-        120
+        playButtonMinWidth
         #else
         nil
         #endif
@@ -733,7 +734,7 @@ public struct RecordingDetailView: View {
                 #endif
             } else if model.hasAudio {
                 #if os(iOS)
-                Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")
+                Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 Spacer(minLength: Space.s)
@@ -764,7 +765,7 @@ public struct RecordingDetailView: View {
                 }
                 // docs/07 rule 4: a clock is a stamp, not a sentence.
                 #if !os(iOS)
-                Text(verbatim: "\(LedgerFormat.elapsed(Int(positionSec))) / \(LedgerFormat.elapsed(Int(model.totalSec)))")
+                Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 #endif
@@ -833,3 +834,8 @@ public enum RecordingDetailStrings {
     public static var open: String { RecKitStrings.localized("Details") }
     public static var checkKey: String { RecKitStrings.localized("Check the key") }
 }
+
+/// The phone's Play button, and the ledger row's Details button that opens the page it is on: the
+/// row's most used action, so it is not left the narrowest ("상세" is two letters). Android's
+/// `PlayMinWidth` and `DetailMinWidth` are the same 120.
+public let playButtonMinWidth: CGFloat = 120

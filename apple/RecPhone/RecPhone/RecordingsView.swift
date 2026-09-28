@@ -200,9 +200,11 @@ struct RecordingsView: View {
                         .accessibilityIdentifier("check-key")
                 }
                 // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
-                // after (`RecordingDetailModel`).
-                BlueprintButton(RecordingDetailStrings.open) { detail = model.detail(for: item) }
-                    .accessibilityIdentifier("open-detail")
+                // after (`RecordingDetailModel`). As wide as the detail's own Play button.
+                BlueprintButton(RecordingDetailStrings.open, minWidth: playButtonMinWidth) {
+                    detail = model.detail(for: item)
+                }
+                .accessibilityIdentifier("open-detail")
             }
             Spacer(minLength: 0)
             // docs/03: a recording being written to, arriving from the watch, or uploaded right now

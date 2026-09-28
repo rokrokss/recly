@@ -14,7 +14,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.clipRect
-import java.text.NumberFormat
 import kotlin.math.floor
 import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.Motion
@@ -51,6 +50,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.Alignment
@@ -68,6 +68,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -138,9 +139,9 @@ fun RecordingDetailScreen(
 
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = modifier.fillMaxSize()) {
+        // The title alone: the recording's id is the ledger's key, not something the user reads by.
         if (!keyboardVisible) ScreenHeader(
             title = detail.title ?: stringResource(R.string.jobs_untitled),
-            meta = detail.recordingId,
             trailingAlignment = Alignment.TopEnd,
             trailing = {
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -149,8 +150,9 @@ fun RecordingDetailScreen(
                             transcript.segments.any { it.text.isNotBlank() }
                         }?.let { TranscriptCopyButton(it) }
                         // Not while the recorder is still writing into this take: the core refuses to
-                        // rename one, and an action that does nothing is not one to offer.
-                        if (!detail.writing) {
+                        // rename one, and an action that does nothing is not one to offer. Not before
+                        // the load has said which of the two this is, either.
+                        if (!detail.loading && !detail.writing) {
                             BlueprintButton(
                                 label = stringResource(R.string.detail_rename),
                                 onClick = { renaming = true },
@@ -229,6 +231,7 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
+            label = { Text(stringResource(R.string.recording_title_field)) },
             singleLine = true,
             modifier = Modifier.fillMaxWidth().height(64.dp),
         )
@@ -267,8 +270,10 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
                 // The peaks are being read or decoded: the loader, and never a flat line that
                 // would read as a silent recording. Play does not need them and stays as it is.
                 WaveformSlot.LOADING -> WaveformLoader(label = stringResource(R.string.player_waveform_loading))
+                // No seek while this phone is recording, as the transcript's times allow none: the
+                // microphone is the recorder's, and the player was stopped for it.
                 WaveformSlot.WAVEFORM -> Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
-                    onScrub = { scrubSec = it }, onSeek = { player.seek(detail.audio, it) }, growIn = fetched)
+                    onScrub = { scrubSec = it }, onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) }, growIn = fetched)
             }
         }
         if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
@@ -280,7 +285,7 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
             if (shown) waveform()
             PlayerControls(detail, player, scrubSec)
         }
-        if (player.failed) Text(stringResource(R.string.player_error), color = palette.danger)
+        if (player.failed) Text(stringResource(R.string.player_error), style = MaterialTheme.typography.bodyMedium, color = palette.danger)
     }
 }
 
@@ -313,9 +318,15 @@ internal fun Waveform(
         if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(GROW_MS, easing = LinearEasing))
     }
     var focused by remember { mutableStateOf(false) }
+    // The drag below outlives the composition it started in (it is keyed on the recording alone),
+    // so it calls whatever the caller passed last — a seek refused since then stays refused.
+    val scrub by rememberUpdatedState(onScrub)
+    val seek by rememberUpdatedState(onSeek)
     // docs/09 접근성: the row reports itself as the recording's position, and a reader that cannot
-    // see the shape moves the playhead by setting it.
+    // see the shape moves the playhead by setting it — and hears where it is as the clock beside
+    // it says it, because that is what the playhead is.
     val label = stringResource(R.string.player_position)
+    val stamp = hms(positionSec.toLong())
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -325,6 +336,7 @@ internal fun Waveform(
             .onFocusChanged { focused = it.isFocused }
             .semantics {
                 contentDescription = label
+                stateDescription = stamp
                 progressBarRangeInfo =
                     ProgressBarRangeInfo(positionSec.toFloat(), 0f..totalSec.toFloat().coerceAtLeast(0f))
                 setProgress { target ->
@@ -348,18 +360,18 @@ internal fun Waveform(
                 awaitEachGesture {
                     val down = awaitFirstDown(requireUnconsumed = false)
                     var sec = second(down.position.x, size.width, totalSec)
-                    onScrub(sec)
+                    scrub(sec)
                     down.consume()
                     var pressed = true
                     while (pressed) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                         sec = second(change.position.x, size.width, totalSec)
-                        onScrub(sec)
+                        scrub(sec)
                         change.consume()
                         pressed = change.pressed
                     }
-                    onSeek(sec)
-                    onScrub(null)
+                    seek(sec)
+                    scrub(null)
                 }
             },
     ) {
@@ -472,8 +484,10 @@ private fun FetchProgress(fraction: Float) {
     val shape = RoundedCornerShape(Radius.node)
     val label = stringResource(R.string.player_fetching)
     val shown by animateFloatAsState(fraction, if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard))
-    val percent = NumberFormat.getPercentInstance(LocalConfiguration.current.locales[0])
-        .format(floor(fraction * 100.0) / 100.0)
+    // docs/09 "타이포": a count of bytes is data, so it is a monospace stamp — the same `n%` in every
+    // language, as the iPhone writes it.
+    val percent = "${floor(fraction * 100.0).toInt()}%"
+    val percentStyle = mono.bodySmall
     val style = MaterialTheme.typography.labelLarge
     Box(
         Modifier
@@ -496,14 +510,14 @@ private fun FetchProgress(fraction: Float) {
             color = Color.Transparent,
             maxLines = 3,
         )
-        Text(percent, style = style, color = palette.accent, maxLines = 1)
+        Text(percent, style = percentStyle, color = palette.accent, maxLines = 1)
         Box(
             Modifier
                 .matchParentSize()
                 .drawWithContent { clipRect(right = size.width * shown) { this@drawWithContent.drawContent() } },
             contentAlignment = Alignment.Center,
         ) {
-            Text(percent, style = style, color = palette.onAccent, maxLines = 1)
+            Text(percent, style = percentStyle, color = palette.onAccent, maxLines = 1)
         }
     }
 }
@@ -641,7 +655,7 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
 private fun Notice(text: String, onRetry: (() -> Unit)? = null) {
     Column(
         modifier = Modifier.fillMaxSize().padding(Space.l),
-        verticalArrangement = Arrangement.Center,
+        verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -657,6 +671,7 @@ private fun Notice(text: String, onRetry: (() -> Unit)? = null) {
 internal fun TranscriptAvailability.message(): Int = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> R.string.detail_not_requested
     TranscriptAvailability.FAILED -> R.string.detail_failed
+    TranscriptAvailability.PARKED -> R.string.detail_parked
     TranscriptAvailability.UNAVAILABLE -> R.string.detail_unavailable
     TranscriptAvailability.EMPTY -> R.string.detail_transcript_empty
     else -> R.string.detail_pending

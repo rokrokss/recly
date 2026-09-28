@@ -39,11 +39,7 @@ import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.installed
 
 /** A recording that has stopped and is waiting to be named before it is queued. */
-data class UntitledRecording(
-    val recordingId: String,
-    val durationSec: Double,
-    val parts: Int,
-)
+data class UntitledRecording(val recordingId: String)
 
 data class RecordingUiState(
     val processing: recly.core.processing.ProcessingTranscription = recly.core.processing.ProcessingTranscription(),
@@ -57,8 +53,8 @@ data class RecordingUiState(
     /** docs/12 M8: true while the consent reminder is up, and the recording is waiting on it. */
     val consentPrompt: Boolean = false,
     /**
-     * What just happened, as names rather than sentences — a stop reports two or three things at
-     * once, and this ViewModel outlives the screen the language setting recreates (docs/07).
+     * What just happened, as names rather than sentences — a stop can report two things at once,
+     * and this ViewModel outlives the screen the language setting recreates (docs/07).
      */
     val messages: List<UiMessage> = emptyList(),
     /**
@@ -236,9 +232,12 @@ class RecordingViewModel @JvmOverloads constructor(
     /** The user went somewhere else in the app: a tap they have moved on from is not a recording. */
     fun dropAutoStart() = _state.update { it.copy(autoStart = null) }
 
-    fun micDenied() = _state.update {
-        it.copy(micRefused = true, messages = listOf(res(R.string.recording_mic_denied)))
-    }
+    /** What the last start or stop said is about that moment; coming back to the tab later is not it. */
+    fun clearMessages() = _state.update { it.copy(messages = emptyList()) }
+
+    // The refusal is said once, by the red line and its Open Settings button under the node; the
+    // status line above them stays empty rather than say it again.
+    fun micDenied() = _state.update { it.copy(micRefused = true) }
 
     /**
      * The permission is there — asked for and given, or given back in the system settings, which is
@@ -249,10 +248,7 @@ class RecordingViewModel @JvmOverloads constructor(
         if (!state.micRefused) {
             state
         } else {
-            state.copy(
-                micRefused = false,
-                messages = state.messages - res(R.string.recording_mic_denied),
-            )
+            state.copy(micRefused = false)
         }
     }
 
@@ -278,9 +274,10 @@ class RecordingViewModel @JvmOverloads constructor(
         // Claim the prompt synchronously: another click must not save or delete this take again.
         _state.update { it.copy(untitled = null) }
         viewModelScope.launch {
+            // The user asked for it to go, so its going is not news; only a failure is said.
             val message = try {
                 when (core().recordings.delete(untitled.recordingId, deleteDrive = false)) {
-                    is DeleteResult.Deleted, DeleteResult.NotFound -> res(R.string.recording_discarded)
+                    is DeleteResult.Deleted, DeleteResult.NotFound -> null
                     DeleteResult.Busy -> res(R.string.recording_discard_failed)
                 }
             } catch (cancelled: kotlinx.coroutines.CancellationException) {
@@ -288,34 +285,35 @@ class RecordingViewModel @JvmOverloads constructor(
             } catch (_: Exception) {
                 res(R.string.recording_discard_failed)
             }
-            _state.update { it.copy(messages = listOf(message)) }
+            _state.update { it.copy(messages = listOfNotNull(message)) }
         }
     }
 
+    /**
+     * docs/09: a stop that went as asked is not news — the line under the button goes back to
+     * saying what the recorder is doing, as the iPhone's does. How many parts it took is not the
+     * user's to read (2026-09-03).
+     */
     private fun onEvent(event: RecorderEvent) = when (event) {
-        is RecorderEvent.Finished -> {
-            if (event.deferred) {
-                // The recording is on disk but its meta is still open; nothing to name or queue.
+        is RecorderEvent.Finished -> when {
+            // The recording is on disk but its meta is still open; nothing to name or queue.
+            event.deferred ->
                 _state.update { it.copy(messages = listOf(res(R.string.recording_finish_deferred))) }
-            } else if (!event.enqueue) {
-                // Stopped from the app: finalized, not queued, waiting for a name.
-                _state.update {
-                    it.copy(
-                        untitled = UntitledRecording(event.recordingId, event.durationSec, event.parts),
-                        messages = listOf(summary(event.parts, event.durationSec)),
-                    )
-                }
-            } else {
-                // Stopped from the notification, or by a failure: there was nobody to ask, so
-                // `RecApp.onRecordingReady` has already queued it. What the queue made of it is not
-                // reported here — the service hands the recording over and does not wait for an
-                // answer, and the job list is where a recording's job is looked at anyway.
-                _state.update { it.copy(messages = listOf(summary(event.parts, event.durationSec))) }
-            }
+
+            // Stopped from the app: finalized, not queued, waiting for a name.
+            !event.enqueue -> _state.update { it.copy(untitled = UntitledRecording(event.recordingId)) }
+
+            // Stopped from the notification, or by a failure: there was nobody to ask, so
+            // `RecApp.onRecordingReady` has already queued it, and a failure has said so already.
+            // What the queue made of it is not reported here — the service hands the recording
+            // over and does not wait for an answer, and the list is where a job is looked at.
+            else -> Unit
         }
 
+        // The cause is the recorder's own words and is logged there (`rec.recorder.failed`); the
+        // user is told what happened, in the iPhone's words.
         is RecorderEvent.Failed ->
-            _state.update { it.copy(messages = listOf(res(R.string.recording_failed, event.reason))) }
+            _state.update { it.copy(messages = listOf(res(R.string.recording_failed))) }
     }
 
     /** Clears the prompt first: whatever the queue says, the recording is safe on disk already. */
@@ -328,22 +326,11 @@ class RecordingViewModel @JvmOverloads constructor(
             // docs/11 A5 trigger (a). This is the deferred half of the stop: the service could not
             // wake the scheduler because there was no job yet, so it happens here.
             if (enqueued is EnqueueResult.Enqueued) WorkScheduler(getApplication()).onJobsDue()
-            _state.update {
-                it.copy(
-                    messages = listOfNotNull(
-                        summary(untitled.parts, untitled.durationSec),
-                        problem,
-                        enqueued.describe(),
-                    ),
-                )
-            }
+            _state.update { it.copy(messages = listOfNotNull(problem, enqueued.describe())) }
         }
     }
 
     private suspend fun core(): ReclyCore = CoreModule.get(getApplication<Application>()).core
-
-    private fun summary(parts: Int, durationSec: Double): UiMessage =
-        res(R.string.recording_saved, parts, durationSec.toInt())
 
     private fun res(@StringRes id: Int, vararg args: Any): UiMessage = UiMessage.Res(id, args.toList())
 }
@@ -362,13 +349,14 @@ internal fun autoStartStillWanted(requestedAt: Long, now: Long): Boolean =
 /** Long enough for a cold start on a slow phone, short enough that nobody has forgotten the tap. */
 internal const val AUTO_START_TTL_MS: Long = 10_000
 
-/** ADR-016's selection rules, in the words of the person who just stopped a recording. */
-internal fun EnqueueResult.describe(): UiMessage = UiMessage.Res(
-    when (this) {
-        EnqueueResult.NoWorkflow -> R.string.enqueue_no_workflow
-        EnqueueResult.PartsPurged -> R.string.enqueue_parts_purged
-        is EnqueueResult.SkippedShort -> R.string.enqueue_skipped_short
-        EnqueueResult.AlreadySynced, is EnqueueResult.AlreadyDone -> R.string.enqueue_already_done
-        is EnqueueResult.Enqueued -> R.string.enqueue_queued
-    },
-)
+/**
+ * ADR-016's selection rules, in the words of the person who just stopped a recording. A recording
+ * queued as asked is not news — the line goes back to waiting, as the iPhone's does.
+ */
+internal fun EnqueueResult.describe(): UiMessage? = when (this) {
+    EnqueueResult.NoWorkflow -> R.string.enqueue_no_workflow
+    EnqueueResult.PartsPurged -> R.string.enqueue_parts_purged
+    is EnqueueResult.SkippedShort -> R.string.enqueue_skipped_short
+    EnqueueResult.AlreadySynced, is EnqueueResult.AlreadyDone -> R.string.enqueue_already_done
+    is EnqueueResult.Enqueued -> null
+}?.let { UiMessage.Res(it) }

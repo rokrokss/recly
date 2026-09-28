@@ -397,10 +397,6 @@ final class CountWordingTests: XCTestCase {
         let cases: [(key: String, en: String, ko: String)] = [
             ("alert.waiting", "Recordings waiting: 3", "녹음 3건이 기다리는 중입니다."),
             (
-                "Parts not yet in Drive, deleted with it: %@",
-                "Parts not yet in Drive, deleted with it: 3", "아직 Drive에 올라가지 않은 파트 3개가 함께 지워집니다."
-            ),
-            (
                 DisconnectDevice.mac.unuploadedStay,
                 "Recordings not yet in Drive, kept on this Mac: 3", "아직 Drive에 올라가지 않은 녹음 3건은 이 Mac에 남습니다."
             ),

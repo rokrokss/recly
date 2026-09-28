@@ -66,4 +66,22 @@ final class LedgerFormatTests: XCTestCase {
     func testAnUnreadableStampIsBlank() {
         XCTAssertEqual(LedgerFormat.date("not a date"), "")
     }
+
+    /// docs/09 "타이포": the timer, the playback clock and a transcript stamp are `00:12:34` from
+    /// the first second — Android's `hms` — and the hours run past 24 rather than wrapping.
+    func testTheClockAlwaysShowsTheHours() {
+        XCTAssertEqual(LedgerFormat.clock(0), "00:00:00")
+        XCTAssertEqual(LedgerFormat.clock(754), "00:12:34")
+        XCTAssertEqual(LedgerFormat.clock(3723), "01:02:03")
+        XCTAssertEqual(LedgerFormat.clock(25 * 3600), "25:00:00")
+        XCTAssertEqual(LedgerFormat.clock(-5), "00:00:00")
+    }
+
+    /// The ledger's length column keeps the shape Android and Windows write in it: minutes under
+    /// the hour, the hour unpadded past it, and the placeholder for a length that is not in yet.
+    func testTheLengthColumnKeepsItsShortShape() {
+        XCTAssertEqual(LedgerFormat.length(250.9), "04:10")
+        XCTAssertEqual(LedgerFormat.length(3753), "1:02:33")
+        XCTAssertEqual(LedgerFormat.length(nil), LedgerFormat.noLength)
+    }
 }

@@ -130,7 +130,6 @@ class StringTableTest {
         assertEquals(emptyMap(), plurals)
         val strings = StringTable.of(StringTable.BASE)
         assertEquals("Recordings waiting: 2", strings[Str.ALERT_WAITING, 2])
-        assertEquals("Parts not yet in Drive, deleted with it: 3", strings[Str.DELETE_UNUPLOADED, 3])
         assertEquals("Recordings not yet in Drive, kept on this PC: 1", strings[Str.DISCONNECT_UNUPLOADED, 1])
         assertEquals("Disconnected. Recordings deleted from this PC: 4", strings[Str.DISCONNECT_DELETED, 4])
         assertEquals(
@@ -169,8 +168,8 @@ class StringTableTest {
     /** The loader reads UTF-8 (`Properties.load(InputStream)` would not) and formats positionally. */
     @Test
     fun `a loaded table formats its arguments in its own language`() {
-        assertEquals("Deferred 2", StringTable.of(StringTable.BASE)[Str.STATUS_DEFERRED, 2])
-        assertEquals("보류 2", StringTable.of(StringTable.KOREAN)[Str.STATUS_DEFERRED, 2].plain())
+        assertEquals("Recordings waiting: 2", StringTable.of(StringTable.BASE)[Str.ALERT_WAITING, 2])
+        assertEquals("녹음 2건이 기다리는 중입니다.", StringTable.of(StringTable.KOREAN)[Str.ALERT_WAITING, 2].plain())
     }
 
     /** docs/07 rule 1: regional tags resolve to their supported language, with English as the fallback. */

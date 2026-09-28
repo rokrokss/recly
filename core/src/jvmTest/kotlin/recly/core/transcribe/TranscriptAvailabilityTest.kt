@@ -27,9 +27,24 @@ class TranscriptAvailabilityTest {
     fun `not requested and unfinished and failed results are distinct`() {
         assertEquals(TranscriptAvailability.NOT_REQUESTED, missingTranscriptAvailability(record, emptyList(), emptyList()))
         assertEquals(TranscriptAvailability.PENDING, availability(JobStatus.RUNNING, StepStatus.RUNNING))
-        assertEquals(TranscriptAvailability.FAILED, availability(JobStatus.NEEDS_AUTH, StepStatus.NEEDS_AUTH))
+        assertEquals(TranscriptAvailability.PARKED, availability(JobStatus.NEEDS_AUTH, StepStatus.NEEDS_AUTH))
         assertEquals(TranscriptAvailability.NOT_REQUESTED, availability(JobStatus.SKIPPED_SHORT, StepStatus.PENDING))
         assertEquals(TranscriptAvailability.UNAVAILABLE, availability(JobStatus.DONE, StepStatus.SUCCEEDED))
+    }
+
+    /** Drive not connected, no space, no transfer permission, no model: waiting on the user, not failed. */
+    @Test
+    fun `a job waiting on the user has a parked transcription rather than a failed one`() {
+        assertEquals(TranscriptAvailability.PARKED, availability(JobStatus.NEEDS_AUTH, StepStatus.PENDING))
+        assertEquals(TranscriptAvailability.PARKED, availability(JobStatus.NEEDS_SPACE, StepStatus.PENDING))
+        assertEquals(TranscriptAvailability.PARKED, availability(JobStatus.NEEDS_MODEL, StepStatus.NEEDS_MODEL))
+        assertEquals(TranscriptAvailability.PARKED, missingTranscriptAvailability(record, listOf(job.copy(status = JobStatus.NEEDS_CONSENT)), emptyList()))
+    }
+
+    /** A transcription that did fail stays failed, whatever the job is waiting for afterwards. */
+    @Test
+    fun `a failed transcribe is not parked by a later wait`() {
+        assertEquals(TranscriptAvailability.FAILED, availability(JobStatus.NEEDS_AUTH, StepStatus.FAILED))
     }
 
     @Test

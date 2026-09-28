@@ -4,6 +4,7 @@ package app.recly.android.auth
 
 import android.app.Activity
 import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialUnknownException
 import androidx.credentials.exceptions.NoCredentialException
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -96,11 +97,22 @@ class GoogleAuthSignInTest {
         )
 
         assertEquals(
-            SignInResult.Failed("cancelled"),
+            SignInResult.Cancelled,
             auth(requester).signIn(activity),
-            "a cancellation is the user's answer, not a reason to descend",
+            "a cancellation is the user's answer, not a reason to descend — and not a failure",
         )
         assertEquals(listOf(SignInMode.AUTHORIZED, SignInMode.ALL_ACCOUNTS), requester.asked)
+    }
+
+    @Test
+    fun aPlayServicesFailureIsAFailureWithItsReason() = runTest {
+        val requester = FakeRequester(SignInMode.AUTHORIZED to Answer.Broken("Play Services is out of date"))
+        val store = FakeSecureStore()
+
+        assertEquals(SignInResult.Failed("Play Services is out of date"), auth(requester, store).signIn(activity))
+
+        assertEquals(listOf(SignInMode.AUTHORIZED), requester.asked, "a failure does not descend either")
+        assertNull(store.get("account", "email"), "nothing is signed in")
     }
 
     private val logger = RecordingLogger()
@@ -125,6 +137,8 @@ class GoogleAuthSignInTest {
         data object NoCredential : Answer
 
         data object Cancelled : Answer
+
+        data class Broken(val message: String) : Answer
     }
 
     /** Answers each rung of the ladder once; being asked anything else is the test failing. */
@@ -138,6 +152,7 @@ class GoogleAuthSignInTest {
                 is Answer.Email -> answer.value
                 Answer.NoCredential -> throw NoCredentialException("No credentials available")
                 Answer.Cancelled -> throw GetCredentialCancellationException("cancelled")
+                is Answer.Broken -> throw GetCredentialUnknownException(answer.message)
             }
         }
     }

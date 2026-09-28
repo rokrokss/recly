@@ -1,6 +1,7 @@
 package recly.core.processing
 
 import recly.core.model.Language
+import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.workflow.InvokeUrlUse
@@ -77,5 +78,20 @@ data class ProcessingDraft(
                 t.language, t.external?.provider ?: "elevenlabs",
                 t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external, t.providerDetails)
         }
+    }
+}
+
+/**
+ * docs/05 "고정 처리 설정 도입": on Android and Windows on-device is Qwen3-ASR, whose list has no "Automatic" and
+ * no "Korean and English" — both are an external provider's. Switching to it from either takes the
+ * language of [deviceLocale] when the model has it, and English when it does not, rather than
+ * leaving a Save that cannot be pressed. iPhone's `selectAppleTranscriptionMode`, the same rule; a
+ * language the user chose explicitly stays, with the line that says the model lacks it.
+ */
+fun ProcessingDraft.selectTranscriptionMode(value: TranscriptionMode, deviceLocale: String) {
+    mode = value
+    if (value != TranscriptionMode.LOCAL) return
+    if (language == Language.AUTO || language == Language.KO_EN) {
+        language = TranscriptionLanguages.preferred(deviceLocale).takeIf { it in Qwen3Asr.languages } ?: Language.EN
     }
 }

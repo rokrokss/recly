@@ -43,7 +43,8 @@ class AndroidTokenProvider(
         if (held != null) authorizer.clearToken(held.value)
         when (val result = authorizer.authorize()) {
             is AuthorizeResult.Granted -> remember(Token(result.accessToken, result.expiresAt)).value
-            AuthorizeResult.NeedsConsent ->
+            // Either way the grant needs the user, in an activity this provider does not have.
+            AuthorizeResult.NeedsConsent, AuthorizeResult.Cancelled ->
                 // docs/07 §5: a key, not a sentence — the app screen turns it into words.
                 throw AuthRequiredException(CoreMessage.DRIVE_REAUTH)
             is AuthorizeResult.Failed -> throw AuthorizationFailedException(result.reason)
@@ -60,6 +61,12 @@ class AndroidTokenProvider(
         if (held != null) authorizer.clearToken(held.value)
         forget()
     }
+
+    /**
+     * Whether a grant is on hand at all, fresh or due for its silent refresh — what the settings row
+     * calls connected ([GoogleAuth.driveGranted]).
+     */
+    suspend fun held(): Boolean = mutex.withLock { (cached ?: read()) != null }
 
     /** The interactive half ([GoogleAuth]) already holds a fresh grant; this adopts it. */
     suspend fun adopt(accessToken: String, expiresAt: Instant): Unit = mutex.withLock {

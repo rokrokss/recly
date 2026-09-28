@@ -44,6 +44,9 @@ sealed interface AuthorizeResult {
     /** `hasResolution()`: the user must approve in an activity. docs/06 parks the job in NEEDS_AUTH. */
     data object NeedsConsent : AuthorizeResult
 
+    /** The user closed the consent screen — which only [GoogleAuth.authorizeDrive] ever shows. */
+    data object Cancelled : AuthorizeResult
+
     /** Offline, no Play Services, no account — transient, so the core keeps its retries. */
     data class Failed(val reason: String) : AuthorizeResult
 }

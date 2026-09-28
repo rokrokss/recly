@@ -2,6 +2,7 @@ package app.recly.android.ui
 
 import androidx.annotation.StringRes
 import app.recly.android.R
+import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
 import recly.core.job.StepStatus
@@ -33,6 +34,13 @@ enum class AlertReason(
     MISSING_SECRET(R.string.alert_missing_secret, FixSurface.SECRETS),
     AUTH_REJECTED(R.string.alert_auth_rejected, FixSurface.SECRETS),
     QUOTA(R.string.alert_quota, FixSurface.PROCESSING),
+    ;
+
+    /**
+     * docs/09 화면 원칙 2: the banner row's badge is the state as a code. A wait on the model is the
+     * job's own status, as on the iPhone — the long message code squeezed the line.
+     */
+    val code: String get() = if (this == LOCAL_MODEL_REQUIRED) "NEEDS_MODEL" else name
 }
 
 /**
@@ -40,8 +48,16 @@ enum class AlertReason(
  * [SECRETS] and [PROCESSING] are the processing settings, where the keys live too. [DRIVE_STORAGE]
  * is the one that leaves the app, because the space is Google's to give back
  * (<https://drive.google.com/settings/storage>).
+ *
+ * [label] is the banner's button: the surface names itself, because a fix that does not say which
+ * screen it opens is the same promise with the answer left out — the iPhone's `FixSurface.label`.
  */
-enum class FixSurface { SIGN_IN, DRIVE_STORAGE, SECRETS, PROCESSING }
+enum class FixSurface(@param:StringRes val label: Int) {
+    SIGN_IN(R.string.drive_connect),
+    DRIVE_STORAGE(R.string.jobs_open_storage),
+    SECRETS(R.string.job_reason_check_key),
+    PROCESSING(R.string.processing_title),
+}
 
 /** One reason and how many jobs are stuck on it — the banner line, and the notification body. */
 data class JobAlert(val reason: AlertReason, val count: Int)
@@ -105,6 +121,22 @@ fun blockingError(steps: List<StepRun>): String? {
 }
 
 private val HOLDING_UP = setOf(StepStatus.FAILED, StepStatus.NEEDS_AUTH, StepStatus.NEEDS_SPACE, StepStatus.NEEDS_MODEL)
+
+/**
+ * docs/10 rule 3: the list's banner, folded over **every** job the queue is carrying — the same
+ * fold `JobAlertNotifier` makes for the notifications. The list is not the queue: it is the newest
+ * recordings with the newest job of each, and a job blocked on a missing key further back is still
+ * blocked (the iPhone's `JobAlerts.sources(core:)`). A parked job says why in its own status; only
+ * a FAILED one has to be asked for its [steps], and asking every job on every change would be a
+ * query per row per change.
+ */
+suspend fun queueAlerts(jobs: List<Job>, steps: suspend (jobId: String) -> List<StepRun>): List<JobAlert> =
+    foldAlerts(
+        jobs.map { job ->
+            val error = if (job.status == JobStatus.FAILED) blockingError(steps(job.id)) else null
+            alertReasonOf(job.status, error)
+        },
+    )
 
 /** The reasons across the whole queue (one per job), folded one entry per reason, in [AlertReason] order. */
 fun foldAlerts(reasons: List<AlertReason?>): List<JobAlert> = AlertReason.entries.mapNotNull { reason ->

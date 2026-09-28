@@ -28,7 +28,7 @@ public struct AlertBanner: View {
                                 .font(blueprint.fonts.bodySmall)
                                 .foregroundStyle(blueprint.palette.textMuted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            BlueprintButton(RecKitStrings.localized("Connect Google Drive")) { fix(alert) }
+                            BlueprintButton(RecKitStrings.localized("Connect Drive")) { fix(alert) }
                                 .accessibilityIdentifier("alert-fix")
                         }
                         .padding(.horizontal, Space.m)

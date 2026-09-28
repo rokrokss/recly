@@ -155,83 +155,6 @@
         }
       }
     },
-    "Parts not yet in Drive, deleted with it: %@": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parts not yet in Drive, deleted with it: %@"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "아직 Drive에 올라가지 않은 파트 %@개가 함께 지워집니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Driveに未送信の%@パートも削除されます。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未上传至Drive的%@段音频也将删除。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "尚未上傳至Drive的%@段音訊也將刪除。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Se eliminarán también las partes aún no subidas a Drive: %@."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les parties non encore envoyées à Drive seront aussi supprimées : %@."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Noch nicht zu Drive übertragene Teile werden ebenfalls gelöscht: %@."
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "As partes ainda não enviadas ao Drive também serão excluídas: %@."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ستُحذف أيضًا الأجزاء التي لم تصل إلى Drive وعددها %@."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drive तक नहीं पहुँचे भाग भी हटेंगे: %@।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Также удалятся ещё не загруженные в Drive части: %@."
-          }
-        }
-      }
-    },
     "Recordings not yet in Drive, kept on this Mac: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -12853,7 +12776,7 @@
         }
       }
     },
-    "Connect Google Drive": {
+    "Connect Drive": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -17658,6 +17581,237 @@
           "stringUnit": {
             "state": "translated",
             "value": "Файл настроек"
+          }
+        }
+      }
+    },
+    "This cannot be retried right now": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This cannot be retried right now"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "지금은 재시도할 수 없는 상태입니다"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今は再試行できません"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前无法重试"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "目前無法重試"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se puede reintentar ahora"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de réessayer maintenant"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erneuter Versuch momentan nicht möglich"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não é possível tentar novamente agora"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لا يمكن إعادة المحاولة الآن"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अभी फिर कोशिश नहीं हो सकती"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сейчас повторить нельзя"
+          }
+        }
+      }
+    },
+    "Transcription is waiting. Check this recording in the list for what it needs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transcription is waiting. Check this recording in the list for what it needs."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "전사가 대기 중입니다. 목록에서 이 녹음에 필요한 조치를 확인해 주세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字起こしは待機中です。一覧でこの録音に必要な操作を確認してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转录正在等待。请在列表中查看此录音需要的操作。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉錄正在等待。請在列表中查看此錄音需要的操作。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcripción está en espera. Revisa en la lista qué necesita esta grabación."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcription est en attente. Consultez la liste pour voir ce dont cet enregistrement a besoin."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Transkription wartet. Prüfen Sie in der Liste, was diese Aufnahme benötigt."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A transcrição está aguardando. Veja na lista o que esta gravação precisa."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النسخ في الانتظار. راجع القائمة لمعرفة ما يحتاجه هذا التسجيل."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ट्रांसक्रिप्शन प्रतीक्षा में है। सूची में देखें कि इस रिकॉर्डिंग को क्या चाहिए।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расшифровка ожидает. Посмотрите в списке, что нужно для этой записи."
+          }
+        }
+      }
+    },
+    "Audio not yet in Drive is deleted with it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio not yet in Drive is deleted with it."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 Drive에 올라가지 않은 오디오도 함께 지워집니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Driveに未送信の音声も削除されます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未上传至Drive的音频也将删除。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "尚未上傳至Drive的音訊也將刪除。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "También se eliminará el audio que aún no se ha subido a Drive."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’audio pas encore envoyé à Drive sera aussi supprimé."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Noch nicht zu Drive übertragenes Audio wird ebenfalls gelöscht."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O áudio ainda não enviado ao Drive também será excluído."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سيُحذف أيضًا الصوت الذي لم يصل إلى Drive بعد."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive तक नहीं पहुँचा ऑडियो भी हटेगा।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Также удалится аудио, ещё не загруженное в Drive."
           }
         }
       }

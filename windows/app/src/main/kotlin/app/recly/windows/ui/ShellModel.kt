@@ -791,7 +791,7 @@ class ShellModel(
                 // docs/03: a stop that could not file every part finalizes nothing — the recovery
                 // pass at the next launch does, once the marked parts are in the meta.
                 val result = recorder.stop()
-                if (result is StopResult.Deferred) status = Str.STATUS_DEFERRED.message(result.pending)
+                if (result is StopResult.Deferred) status = Str.STATUS_DEFERRED.message()
             } finally {
                 transition = null
             }
@@ -823,7 +823,8 @@ class ShellModel(
                 }.fold(
                     onSuccess = { result ->
                         when (result) {
-                            is DeleteResult.Deleted, DeleteResult.NotFound -> Str.RECORDING_DISCARDED.message()
+                            // The user asked for it to go, so its going is not news: back to idle.
+                            is DeleteResult.Deleted, DeleteResult.NotFound -> Str.STATUS_WAITING.message()
                             DeleteResult.Busy -> Str.RECORDING_DISCARD_FAILED.message()
                         }
                     },

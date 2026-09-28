@@ -35,5 +35,18 @@ internal fun missingTranscriptAvailability(
     }) {
         return TranscriptAvailability.PENDING
     }
+    // A job waiting on the user has not failed its transcription: the step has yet to run, or it
+    // stopped on the same wait the job did.
+    if (requested.any { job ->
+        job.status in PARKED_JOBS &&
+            transcription.filter { it.jobId == job.id }.all { it.status in PARKED_STEPS }
+    }) {
+        return TranscriptAvailability.PARKED
+    }
     return TranscriptAvailability.FAILED
 }
+
+private val PARKED_JOBS = setOf(JobStatus.NEEDS_AUTH, JobStatus.NEEDS_SPACE, JobStatus.NEEDS_CONSENT, JobStatus.NEEDS_MODEL)
+private val PARKED_STEPS = setOf(
+    StepStatus.PENDING, StepStatus.NEEDS_AUTH, StepStatus.NEEDS_SPACE, StepStatus.NEEDS_CONSENT, StepStatus.NEEDS_MODEL,
+)

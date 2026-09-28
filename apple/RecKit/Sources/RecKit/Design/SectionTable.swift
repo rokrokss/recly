@@ -398,15 +398,19 @@ public struct BlueprintChip: View {
     @Environment(\.blueprint) private var blueprint
     private let label: String
     private let selected: Bool
+    private let fill: Bool
     private let action: () -> Void
 
     /// The glyph a chosen chip wears. Not an SF Symbol: it sits in the label's own line of text, at
     /// the label's own size, and grows with it.
     public static let selectionMark = "✓"
 
-    public init(_ label: String, selected: Bool, action: @escaping () -> Void) {
+    /// - Parameter fill: take the width and height the row gives it — [ChoiceRow] on the phone —
+    ///   rather than only the label's own.
+    public init(_ label: String, selected: Bool, fill: Bool = false, action: @escaping () -> Void) {
         self.label = label
         self.selected = selected
+        self.fill = fill
         self.action = action
     }
 
@@ -420,7 +424,12 @@ public struct BlueprintChip: View {
                 .padding(.vertical, 6)
                 // docs/09 "접근성": in *both* directions. A height alone left a two-letter chip —
                 // "ko", "2" — a target barely half as wide as it is tall.
-                .frame(minWidth: minTouch, minHeight: minTouch)
+                .frame(
+                    minWidth: minTouch,
+                    maxWidth: fill ? .infinity : nil,
+                    minHeight: minTouch,
+                    maxHeight: fill ? .infinity : nil
+                )
                 .overlay {
                     RoundedRectangle(cornerRadius: Radius.node)
                         .strokeBorder(

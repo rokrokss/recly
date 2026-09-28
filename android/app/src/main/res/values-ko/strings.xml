@@ -11,6 +11,7 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">시스템 설정 열기</string>
+    <string name="action_open">열기</string>
 
     <string name="tab_record">녹음</string>
     <string name="tab_jobs">목록</string>
@@ -19,35 +20,33 @@
     <string name="sign_in">Google Drive 연결</string>
     <string name="sign_out">이 기기에서 Drive 사용 중지</string>
     <string name="signed_out">Drive 연결 안 됨</string>
-    <string name="auth_sign_in_failed">로그인 실패: %1$s</string>
-    <string name="auth_add_account">Google 계정을 추가한 뒤 다시 로그인하세요</string>
-    <string name="auth_drive_granted">Drive 권한 승인됨</string>
-    <string name="auth_drive_granted_unparked">Drive 권한 승인됨 — 대기 중이던 작업 %1$d건 재시작</string>
-    <string name="auth_drive_failed">Drive 권한 실패: %1$s</string>
+    <string name="auth_connect_failed">Drive에 연결하지 못했습니다</string>
+    <string name="auth_add_account">Google 계정을 추가한 뒤 다시 Drive에 연결하세요</string>
 
     <string name="recording_start">시작</string>
     <string name="recording_stop">정지</string>
     <string name="recording_busy">…</string>
+    <string name="recording_start_label">녹음 시작</string>
 
     <string name="recording_participants">참석 인원</string>
     <string name="recording_participants_unknown">모름</string>
     <string name="recording_participants_many">6명 이상</string>
     <string name="recording_title_prompt">녹음 제목</string>
+    <string name="recording_title_field">제목</string>
     <string name="recording_title_save">저장</string>
     <string name="recording_title_skip">건너뛰기</string>
-    <string name="recording_mic_denied">마이크 권한 필요</string>
     <string name="recording_mic_required">마이크 권한이 필요합니다.</string>
+    <string name="recording_open_settings">설정 열기</string>
     <string name="recording_title_too_late">제목을 저장하기엔 이미 늦었습니다 — 업로드가 시작되었습니다</string>
     <string name="recording_finish_deferred">저장을 마무리하지 못했습니다 — 다음 실행 시 복구됩니다</string>
-    <string name="recording_failed">녹음 실패: %1$s</string>
-    <string name="recording_saved">저장됨 — %1$d개 파트, %2$d초</string>
+    <string name="recording_failed">녹음 실패</string>
 
     <string name="enqueue_no_workflow">계속하려면 녹음 처리 설정을 확인하세요</string>
     <string name="enqueue_parts_purged">파트가 이미 정리됨</string>
     <string name="enqueue_skipped_short">너무 짧아 건너뜀</string>
     <string name="enqueue_already_done">이미 처리됨</string>
-    <string name="enqueue_queued">작업 대기열에 등록</string>
 
+    <string name="jobs_title">녹음</string>
     <string name="jobs_empty">아직 녹음이 없습니다</string>
     <string name="jobs_empty_hint">녹음하면 여기에 표시됩니다.</string>
     <string name="jobs_untitled">제목 없음</string>
@@ -157,6 +156,8 @@
     <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
     <string name="settings_capture">캡처</string>
     <string name="settings_microphone">마이크</string>
+    <string name="settings_privacy">개인정보 보호</string>
+    <string name="settings_privacy_policy">개인정보 처리방침</string>
     <string name="settings_about">정보</string>
     <string name="settings_about_app">recly %1$s (build %2$d) · android %3$d</string>
     <string name="settings_about_device">device %1$s</string>
@@ -170,9 +171,7 @@
     <string name="delete_remote_body">다른 기기에서 녹음한 것입니다. 지우면 Drive와 모든 기기에서 사라집니다.</string>
     <string name="delete_busy">아직 업로드 중입니다 — 끝난 뒤에 다시 시도하세요</string>
     <string name="delete_drive_failed">이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: %1$s</string>
-    <plurals name="delete_unuploaded">
-        <item quantity="other">아직 Drive에 올라가지 않은 파트 %1$d개가 함께 지워집니다.</item>
-    </plurals>
+    <string name="delete_unuploaded">아직 Drive에 올라가지 않은 오디오도 함께 지워집니다.</string>
 
     <!-- docs/03 "로그아웃 vs 연결 해제" · docs/06 -->
     <string name="settings_disconnect">연결 해제</string>
@@ -228,6 +227,7 @@
     <string name="detail_not_requested">이 녹음에는 실행할 전사 단계가 없습니다.</string>
     <string name="detail_pending">전사가 아직 끝나지 않았습니다. 완료되면 여기에 결과가 표시됩니다.</string>
     <string name="detail_failed">전사를 완료하지 못했습니다. 목록에서 이 녹음의 상태와 필요한 조치를 확인해 주세요.</string>
+    <string name="detail_parked">전사가 대기 중입니다. 목록에서 이 녹음에 필요한 조치를 확인해 주세요.</string>
     <string name="detail_unavailable">전사 결과를 불러오지 못했습니다. 다시 시도해 주세요.</string>
     <string name="player_error">이 녹음을 재생하지 못했습니다. 다시 재생해 주세요.</string>
     <string name="player_buffering">재생 준비 중…</string>
@@ -238,8 +238,7 @@
     <string name="transcript_no_matches">일치하는 내용이 없습니다</string>
     <string name="transcript_clear_search">검색 지우기</string>
     <string name="transcript_seek">%1$s 위치로 이동</string>
-    <string name="recording_discarded">녹음을 버렸습니다</string>
-    <string name="recording_discard_failed">녹음을 버리지 못했습니다</string>
+    <string name="recording_discard_failed">녹음을 삭제하지 못했습니다</string>
     <string name="core_provider_region_restricted">이 전사 제공업체는 현재 App Store 지역에서 사용할 수 없습니다.</string>
     <string name="core_storefront_unavailable">전사를 계속하기 전에 App Store 지역 확인을 기다리고 있습니다.</string>
     <string name="drive_disconnect">연결 해제</string>

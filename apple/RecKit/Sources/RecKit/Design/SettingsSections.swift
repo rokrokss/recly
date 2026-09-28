@@ -96,9 +96,9 @@ public struct ThemeSection: View {
     public var body: some View {
         SectionHeader(loc("Theme")).padding(.horizontal, Space.m)
         SectionBlock {
-            FlowLayout {
+            ChoiceRow {
                 ForEach(AppTheme.Choice.allCases) { choice in
-                    BlueprintChip(choice.label, selected: theme.choice == choice) {
+                    BlueprintChip(choice.label, selected: theme.choice == choice, fill: true) {
                         theme.choice = choice
                     }
                     .accessibilityIdentifier("theme-" + choice.rawValue)

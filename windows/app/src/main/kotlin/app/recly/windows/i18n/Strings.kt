@@ -57,6 +57,7 @@ enum class Str {
     DETAIL_NOT_REQUESTED,
     DETAIL_PENDING,
     DETAIL_FAILED,
+    DETAIL_PARKED,
     DETAIL_UNAVAILABLE,
     DETAIL_TRANSCRIPT_EMPTY,
     PLAYER_ERROR,
@@ -109,7 +110,6 @@ enum class Str {
 
     WINDOW_SETTINGS,
     RECORDING_TITLE,
-    RECORDING_DISCARDED,
     RECORDING_DISCARD_FAILED,
     // docs/03: the stop dialog also asks how many people were in the room, as the phones do.
     RECORDING_PARTICIPANTS,

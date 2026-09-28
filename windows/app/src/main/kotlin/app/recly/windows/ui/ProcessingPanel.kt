@@ -50,7 +50,9 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
             // No on-device engine in this build: offer `local` only to a draft that already holds it.
             TranscriptionMode.entries.filter { it != TranscriptionMode.LOCAL || model.localInstalled || draft.mode == TranscriptionMode.LOCAL }.forEach { mode ->
-                BlueprintChip(strings[mode.label()], draft.mode == mode, { model.edit { it.mode = mode } })
+                // The language the app is in stands in for Automatic and mixed Korean, which Qwen3-ASR does not
+                // have — the phone's rule (ProcessingDraft.selectTranscriptionMode).
+                BlueprintChip(strings[mode.label()], draft.mode == mode, { model.edit { it.selectTranscriptionMode(mode, strings.language) } })
             }
         }
         if (draft.mode == TranscriptionMode.LOCAL) {

@@ -45,6 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -52,6 +54,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.recly.android.R
+import app.recly.android.core.UiMessage
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintCheckRow
 import app.recly.android.ui.component.BlueprintChip
@@ -204,22 +207,15 @@ fun RecordingSection(
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             RecordNode(recorder = recorder, busy = busy, onStart = begin, onStop = onStop)
+            // One line, however many things there are to say (`map` is inline, so the lookups are
+            // allowed to be composable; `joinToString`'s transform would not be).
             Text(
-                stringResource(if (busy) R.string.recording_busy else recorder.actionLabel()),
-                style = MaterialTheme.typography.bodyMedium,
+                statusLine(recorder, state.messages).map { it.text() }.joinToString(" · "),
+                modifier = Modifier.padding(horizontal = Space.m).testTag("status"),
+                style = MaterialTheme.typography.bodySmall,
                 color = palette.textMuted,
+                textAlign = TextAlign.Center,
             )
-            // One line, however many things the stop had to report (`map` is inline, so the lookups
-            // are allowed to be composable; `joinToString`'s transform would not be).
-            if (state.messages.isNotEmpty()) {
-                Text(
-                    state.messages.map { it.text() }.joinToString(" · "),
-                    modifier = Modifier.padding(horizontal = Space.m),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.textMuted,
-                    textAlign = TextAlign.Center,
-                )
-            }
             // docs/13 deliverable 1: a refusal is not something the app can retry its way out of —
             // after the second one the system dialog does not open at all — so the screen offers
             // the one thing that can undo it, in the iPhone's own words.
@@ -232,7 +228,7 @@ fun RecordingSection(
                     textAlign = TextAlign.Center,
                 )
                 BlueprintButton(
-                    label = stringResource(R.string.action_open_settings),
+                    label = stringResource(R.string.recording_open_settings),
                     onClick = { context.openAppSettings() },
                     modifier = Modifier.testTag("open-settings"),
                 )
@@ -326,10 +322,11 @@ private fun RecordNode(recorder: RecorderState, busy: Boolean, onStart: () -> Un
             )
             .clickable(
                 enabled = !busy,
-                onClickLabel = label,
                 role = Role.Button,
                 onClick = if (recording) onStop else onStart,
-            ),
+            )
+            // The node draws a square and no words, so this is its name — the iPhone's own.
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         if (busy) {
@@ -378,8 +375,11 @@ private fun rememberBusyHold(working: Boolean): Boolean {
  * docs/09 화면 원칙 1: the ledger's own `UPLOADING` — a job that is running right now. The rows are
  * already live through `jobs.observe()`, so the node follows a pass that starts and ends while the
  * recording screen is the one on top, without asking the core anything of its own.
+ *
+ * A transcription on this device is not an upload, and its row says `TRANSCRIBING` — the iPhone's
+ * node does not borrow it either (`Recents.uploading`).
  */
-fun uploading(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RUNNING }
+fun uploading(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RUNNING && !it.localPending }
 
 /** docs/03 "워치 → 폰 전송 계약": the watch is handing a recording over to this phone right now. */
 fun receiving(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RECEIVING }
@@ -404,10 +404,19 @@ private fun RecorderState.code(): String = when (this) {
 }
 
 private fun RecorderState.actionLabel(): Int = when (this) {
-    RecorderState.Idle -> R.string.recording_start
+    RecorderState.Idle -> R.string.recording_start_label
     is RecorderState.Recording -> R.string.recording_stop
     RecorderState.Starting, RecorderState.Stopping -> R.string.recording_busy
 }
+
+/**
+ * docs/09 화면 원칙 1: the line under the record button says something only when there is news —
+ * what the last start or stop had to say, while the recorder is idle. What the recorder is doing
+ * is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
+ * (2026-09-29). The line keeps its height either way, so the button never moves.
+ */
+internal fun statusLine(recorder: RecorderState, messages: List<UiMessage>): List<UiMessage> =
+    if (recorder == RecorderState.Idle) messages else emptyList()
 
 /**
  * What the record node does, and what the screen says when the microphone has been refused —

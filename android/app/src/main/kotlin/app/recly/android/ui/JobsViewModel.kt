@@ -73,8 +73,6 @@ data class JobItem(
      */
     val link: String?,
     val nextRunAt: Instant?,
-    /** docs/10: why this job is the user's to fix, or null when it is not (banner, notification). */
-    val alert: AlertReason? = null,
     val localPending: Boolean = false,
     val localRunning: Boolean = false,
     /** Held back for heat rather than queued (docs/05 "고정 처리 설정 도입"). */
@@ -140,8 +138,13 @@ data class JobsUiState(
     val detail: DetailState? = null,
     /** Where the row action the user last asked for is (docs/09), for the button that asked. */
     val action: ProcessingState = ProcessingState.IDLE,
-    /** Named, not resolved: this outlives the screen the language setting recreates (docs/07). */
+    /**
+     * What the last delete or retry had to say, until it is tapped away or a recording starts.
+     * Named, not resolved: this outlives the screen the language setting recreates (docs/07).
+     */
     val message: UiMessage? = null,
+    /** docs/03: a pull-to-refresh is asking Drive what the other devices have uploaded. */
+    val refreshing: Boolean = false,
     /** The speech model download, for the banner and the rows that wait for it. */
     val download: ModelDownloadState = ModelDownloadState(),
 )
@@ -225,11 +228,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             ) { jobs, recorder, _ -> jobs to recorder }
                 .collect { (jobs, recorder) ->
                     val items = items(core, jobs)
+                    val alerts = queueAlerts(jobs) { id -> core.jobs.steps(id) }
                     _state.update {
                         it.copy(
                             loading = false,
                             items = items,
-                            alerts = foldAlerts(items.map { row -> row.alert }),
+                            alerts = alerts,
                             // The open detail's Play goes away for as long as the recorder holds
                             // the microphone, wherever the recording was started from.
                             detail = it.detail?.copy(deviceRecording = capturing(recorder)),
@@ -256,14 +260,36 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun refresh() = pullRemote()
 
     /**
+     * docs/03: a pull-to-refresh is the user asking for everything, so it is awaited and the list
+     * says it is loading until Drive has answered — the rows themselves arrive on
+     * `recordings.observe()`, as every other adoption does. One pull at a time.
+     */
+    fun pullToRefresh() {
+        if (_state.value.refreshing) return
+        _state.update { it.copy(refreshing = true) }
+        viewModelScope.launch {
+            try {
+                pull()
+            } finally {
+                _state.update { it.copy(refreshing = false) }
+            }
+        }
+    }
+
+    /** The list message tapped away — or a recording started, which is where the iPhone clears it. */
+    fun dismissMessage() = _state.update { it.copy(message = null) }
+
+    /**
      * Fire and forget: the list draws what this phone already knows and gains the rest when Drive
      * answers. The pull never throws — a phone with nobody signed in simply has nothing to adopt.
      */
     private fun pullRemote() {
-        viewModelScope.launch {
-            val core = core()
-            withContext(core.deps.io) { core.pullRemoteRecordings(force = true) }
-        }
+        viewModelScope.launch { pull() }
+    }
+
+    private suspend fun pull() {
+        val core = core()
+        withContext(core.deps.io) { core.pullRemoteRecordings(force = true) }
     }
 
     /** docs/10: `FAILED`·`SKIPPED_SHORT`·`NEEDS_AUTH` go back to `PENDING` with a fresh budget. */
@@ -585,7 +611,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 localCooling = core.localTranscription.coolingDown,
                 link = linkOf(steps) ?: record.driveFolderUrl,
                 nextRunAt = job?.nextRunAt,
-                alert = job?.let { alertReasonOf(it.status, error) },
                 modelLanguage = job?.takeIf { it.status == JobStatus.NEEDS_MODEL }?.let { waiting ->
                     val run = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL }
                     (waiting.workflow?.steps?.find { it.id == run?.stepId } as? Step.LocalTranscribe)?.language?.wireTag()

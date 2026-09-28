@@ -295,15 +295,16 @@ public enum Recents {
     /// docs/09 화면 원칙 2 (2026-09-04): a recording still arriving from the watch, and one another
     /// device is still uploading, are both work the user is waiting on — the header counts them the
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
-    /// is in, and the header's number is about recordings.
+    /// is in, and the header's number is about recordings. `Sign-in needed` is a wait too: its badge
+    /// says "Upload waiting", and it goes on by itself once Drive is connected.
     private static let waiting: Set<String> = [
         "Transcribing on this device", "Transcription pending", "Waiting for the device to cool down",
         "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",
-        "Receiving from the watch", "Uploading on another device",
+        "Receiving from the watch", "Uploading on another device", "Sign-in needed",
     ]
 
     private static let failing: Set<String> =
-        ["Failed", "Sign-in needed", "No space in Drive", "Too short"]
+        ["Failed", "No space in Drive", "Too short"]
 
     /// Whether a job is running right now, off the same `"Uploading"` key the ledger badge reads.
     ///

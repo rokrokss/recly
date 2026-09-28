@@ -342,9 +342,9 @@ final class RecentsSummaryTests: XCTestCase {
         super.tearDown()
     }
 
-    /// A queued job and one waiting out a backoff are waiting; a finalized recording without a job
-    /// is done. A failure, a sign-in, Drive's space and a recording too short to keep have all
-    /// stopped. What is moving or finished is counted in the total and nowhere else.
+    /// A queued job, one waiting out a backoff and one waiting for Drive are waiting; a finalized
+    /// recording without a job is done. A failure, Drive's space and a recording too short to keep
+    /// have all stopped. What is moving or finished is counted in the total and nowhere else.
     func testTheHeaderCountsWhatIsWaitingAndWhatHasStopped() {
         let items = [
             "Waiting", "Retry pending", "Done",
@@ -352,7 +352,7 @@ final class RecentsSummaryTests: XCTestCase {
             "Uploading", "Done", "Recording",
         ].map(item(state:))
 
-        XCTAssertEqual(Recents.summary(items), "10 · 2 waiting · 4 failed")
+        XCTAssertEqual(Recents.summary(items), "10 · 3 waiting · 3 failed")
     }
 
     /// Nothing recorded yet: the zeros are still said, because a header that changes shape as rows

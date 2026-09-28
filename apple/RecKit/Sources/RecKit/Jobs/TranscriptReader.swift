@@ -27,7 +27,7 @@ struct TranscriptReader: View {
             LazyVStack(alignment: .leading, spacing: Space.s) {
                 ForEach(document.blocks, id: \.index) { block in
                     VStack(alignment: .leading, spacing: Space.xs) {
-                        let stamp = LedgerFormat.elapsed(Int(block.start))
+                        let stamp = LedgerFormat.clock(Int(block.start))
                         BlueprintButton(block.speaker.isEmpty ? stamp : "\(stamp) \(block.speaker)", tone: .quiet, mono: true) {
                             onSeek(block.start)
                         }

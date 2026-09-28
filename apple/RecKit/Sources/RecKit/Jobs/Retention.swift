@@ -79,14 +79,24 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
     /// There is no local half to keep, so the dialog has no question to ask — it says what the
     /// deletion reaches instead.
     public let remote: Bool
+    /// Whether a Drive folder exists to delete at all — the row's [RecentItem.link]. Without one
+    /// there is no second answer to choose between.
+    public let hasDriveFolder: Bool
 
     public var id: String { recordingId }
 
-    public init(recordingId: String, title: String, unuploaded: Int, remote: Bool = false) {
+    public init(
+        recordingId: String,
+        title: String,
+        unuploaded: Int,
+        remote: Bool = false,
+        hasDriveFolder: Bool
+    ) {
         self.recordingId = recordingId
         self.title = title
         self.unuploaded = unuploaded
         self.remote = remote
+        self.hasDriveFolder = hasDriveFolder
     }
 }
 

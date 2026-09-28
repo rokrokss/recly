@@ -40,7 +40,7 @@ class UiStandardsTest {
             ui.onNodeWithText(ui.activity.getString(R.string.drive_connect)).assertExists()
         }
         ui.onNodeWithText(ui.activity.getString(R.string.tab_record)).performClick()
-        ui.onNodeWithText(ui.activity.getString(R.string.recording_start)).assertIsEnabled()
+        ui.onNodeWithContentDescription(ui.activity.getString(R.string.recording_start_label)).assertIsEnabled()
     }
 
     @Test fun koreanNavigationRemainsWhole() {

@@ -2,11 +2,15 @@
 
 package app.recly.android.ui
 
+import app.recly.android.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
+import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.json.JsonObject
+import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
 import recly.core.job.StepStatus
@@ -191,4 +195,72 @@ class JobAlertsTest {
         assertEquals(FixSurface.SECRETS, AlertReason.AUTH_REJECTED.fix)
         assertEquals(FixSurface.PROCESSING, AlertReason.QUOTA.fix)
     }
+
+    /** The banner's button names the screen it opens, in the words the iPhone's banner uses. */
+    @Test
+    fun `every fix screen names itself on the banner`() {
+        assertEquals(R.string.jobs_open_storage, FixSurface.DRIVE_STORAGE.label)
+        assertEquals(R.string.job_reason_check_key, FixSurface.SECRETS.label)
+        assertEquals(R.string.processing_title, FixSurface.PROCESSING.label)
+        assertEquals(R.string.drive_connect, FixSurface.SIGN_IN.label)
+    }
+
+    /** The banner's code for a wait on the model is the job's own status, as the row's badge is. */
+    @Test
+    fun `the banner codes are the states the core and the rows use`() {
+        assertEquals("NEEDS_MODEL", AlertReason.LOCAL_MODEL_REQUIRED.code)
+        assertEquals(ItemState.NEEDS_MODEL.badge().code, AlertReason.LOCAL_MODEL_REQUIRED.code)
+        AlertReason.entries.filter { it != AlertReason.LOCAL_MODEL_REQUIRED }.forEach { reason ->
+            assertEquals(reason.name, reason.code)
+        }
+    }
+
+    /**
+     * docs/10 rule 3: the banner counts the queue, not the rows the list shows — two jobs of one
+     * recording are two, and every job is folded whichever recording it belongs to.
+     */
+    @Test
+    fun `the banner folds every job in the queue`() = runTest {
+        val jobs = listOf(
+            job("a", "r1", JobStatus.FAILED),
+            job("b", "r1", JobStatus.FAILED),
+            job("c", "r2", JobStatus.NEEDS_SPACE),
+            job("d", "r3", JobStatus.DONE),
+        )
+        val missing = listOf(step(0, StepStatus.FAILED, CoreMessage.MISSING_SECRET.code("openai_key")))
+
+        val alerts = queueAlerts(jobs) { missing }
+
+        assertEquals(
+            listOf(JobAlert(AlertReason.NEEDS_SPACE, 1), JobAlert(AlertReason.MISSING_SECRET, 2)),
+            alerts,
+        )
+    }
+
+    /** A parked job says why in its own status, so only a FAILED one is asked for its steps. */
+    @Test
+    fun `only a failed job has its steps read`() = runTest {
+        val asked = mutableListOf<String>()
+        val jobs = listOf(
+            job("a", "r1", JobStatus.NEEDS_AUTH),
+            job("b", "r2", JobStatus.NEEDS_MODEL),
+            job("c", "r3", JobStatus.WAITING),
+            job("d", "r4", JobStatus.FAILED),
+        )
+
+        queueAlerts(jobs) { id -> asked += id; emptyList() }
+
+        assertEquals(listOf("d"), asked)
+    }
+
+    private fun job(id: String, recordingId: String, status: JobStatus): Job = Job(
+        id = id,
+        recordingId = recordingId,
+        workflowId = "w",
+        workflow = null,
+        status = status,
+        createdAt = Instant.fromEpochMilliseconds(0),
+        updatedAt = Instant.fromEpochMilliseconds(0),
+        nextRunAt = null,
+    )
 }

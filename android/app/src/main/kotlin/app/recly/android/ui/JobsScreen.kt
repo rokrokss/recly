@@ -3,20 +3,27 @@
 package app.recly.android.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +63,9 @@ import app.recly.android.ui.component.StatusBadge
 import app.recly.android.ui.component.ink
 import app.recly.android.ui.component.ledgerColumns
 import app.recly.android.ui.component.ledgerLayout
+import app.recly.android.ui.component.statusColumnWidth
+import app.recly.android.ui.theme.MinTouch
+import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
@@ -87,6 +97,9 @@ fun JobsScreen(
     /** The speech model download: a waiting row's step language, or null (the banner) for the saved settings'. */
     onDownloadModel: (language: String?, onWifi: Boolean) -> Unit,
     onCancelDownload: () -> Unit,
+    /** docs/03: the pull — this phone's list and what the other devices have put in Drive. */
+    onRefresh: () -> Unit,
+    onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = blueprint
@@ -98,12 +111,13 @@ fun JobsScreen(
     }
 
     Column(modifier.fillMaxSize()) {
+        // The tab is "List"; the screen is what is in it, as on the iPhone.
         ScreenHeader(
-            title = stringResource(R.string.tab_jobs),
+            title = stringResource(R.string.jobs_title),
             meta = stringResource(
                 R.string.jobs_summary,
                 state.items.size,
-                state.items.count { it.state.waiting() },
+                state.items.count { it.waiting() },
                 state.items.count { it.state.failing() },
             ),
         )
@@ -116,30 +130,52 @@ fun JobsScreen(
             onCancelDownload = onCancelDownload,
         )
 
+        // What the last delete or retry had to say, above the ledger and whatever is in it — an
+        // empty list included, since the delete that emptied it is what it is about. A warning and
+        // not red (docs/09 "접근성": red is a failed state or a delete), and a tap puts it away.
+        state.message?.let { message ->
+            MessageBanner(
+                text = message.text(),
+                onDismiss = onDismissMessage,
+                modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
+            )
+        }
+
         if (state.loading || state.items.isEmpty()) {
             HairLine()
-            Column(
-                modifier = Modifier.fillMaxWidth().weight(1f).padding(Space.l),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally,
+            Refreshable(
+                refreshing = state.refreshing,
+                onRefresh = onRefresh,
+                modifier = Modifier.fillMaxWidth().weight(1f),
             ) {
-                if (state.loading) {
-                    Text(stringResource(R.string.list_loading), color = palette.textMuted)
-                } else {
-                    // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
-                    Text(
-                        stringResource(R.string.jobs_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.text,
-                        textAlign = TextAlign.Center,
-                    )
-                    Text(
-                        stringResource(R.string.jobs_empty_hint),
-                        modifier = Modifier.padding(top = Space.xs),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.textMuted,
-                        textAlign = TextAlign.Center,
-                    )
+                // A list of one page-sized item, so the pull reaches it however little is in it.
+                LazyColumn(Modifier.fillMaxSize()) {
+                    item {
+                        Column(
+                            modifier = Modifier.fillParentMaxSize().padding(Space.l),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            if (state.loading) {
+                                Text(stringResource(R.string.list_loading), color = palette.textMuted)
+                            } else {
+                                // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
+                                Text(
+                                    stringResource(R.string.jobs_empty),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = palette.text,
+                                    textAlign = TextAlign.Center,
+                                )
+                                Text(
+                                    stringResource(R.string.jobs_empty_hint),
+                                    modifier = Modifier.padding(top = Space.xs),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = palette.textMuted,
+                                    textAlign = TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
                 }
             }
             return@Column
@@ -172,55 +208,51 @@ fun JobsScreen(
                     layout = layout,
                 )
 
-                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
-                    state.message?.let { message ->
-                        item {
-                            Text(
-                                message.text(),
-                                modifier = Modifier.padding(Space.m),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = palette.danger,
-                            )
-                        }
-                    }
-                    items(state.items, key = { it.recordingId }) { item ->
-                        val open = expanded == item.recordingId
-                        LedgerRow(
-                            modifier = Modifier.testTag("recording-${item.recordingId}"),
-                            date = ledgerColumn(item.startedAt, LEDGER_DATE),
-                            time = ledgerColumn(item.startedAt, LEDGER_TIME),
-                            title = item.title ?: stringResource(R.string.jobs_untitled),
-                            subtitle = "",
-                            length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
-                            status = item.badge(),
-                            columns = columns,
-                            announce = stringResource(
-                                R.string.jobs_row_description,
-                                item.title ?: stringResource(R.string.jobs_untitled),
-                                startedAt(item.startedAt, R.string.jobs_started_at_format),
-                                item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
-                                label(item),
-                            ),
-                            expanded = open,
-                            toggleLabel = stringResource(
-                                if (open) R.string.jobs_row_collapse else R.string.jobs_row_expand,
-                            ),
-                            onClick = { expanded = if (open) null else item.recordingId },
-                            layout = layout,
-                        )
-                        if (open) {
-                            ExpandedRow(
-                                item = item,
+                Refreshable(
+                    refreshing = state.refreshing,
+                    onRefresh = onRefresh,
+                    modifier = Modifier.fillMaxWidth().weight(1f),
+                ) {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(state.items, key = { it.recordingId }) { item ->
+                            val open = expanded == item.recordingId
+                            LedgerRow(
+                                modifier = Modifier.testTag("recording-${item.recordingId}"),
+                                date = ledgerColumn(item.startedAt, LEDGER_DATE),
+                                time = ledgerColumn(item.startedAt, LEDGER_TIME),
+                                title = item.title ?: stringResource(R.string.jobs_untitled),
+                                subtitle = "",
+                                length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
+                                status = item.badge(),
                                 columns = columns,
-                                action = state.action,
-                                onRetry = { onRetry(item) },
-                                onDelete = { onConfirmDelete(item) },
-                                onOpenDetail = { onOpenDetail(item) },
-                                onCheckKey = { onCheckKey(item) },
-                                onFixAuth = { onFix(JobAlert(AlertReason.NEEDS_AUTH, 1)) },
-                                download = state.download,
-                                onDownloadModel = { metered { wifi -> onDownloadModel(item.modelLanguage, wifi) } },
+                                announce = stringResource(
+                                    R.string.jobs_row_description,
+                                    item.title ?: stringResource(R.string.jobs_untitled),
+                                    startedAt(item.startedAt, R.string.jobs_started_at_format),
+                                    item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
+                                    label(item),
+                                ),
+                                expanded = open,
+                                toggleLabel = stringResource(
+                                    if (open) R.string.jobs_row_collapse else R.string.jobs_row_expand,
+                                ),
+                                onClick = { expanded = if (open) null else item.recordingId },
+                                layout = layout,
                             )
+                            if (open) {
+                                ExpandedRow(
+                                    item = item,
+                                    columns = columns,
+                                    action = state.action,
+                                    onRetry = { onRetry(item) },
+                                    onDelete = { onConfirmDelete(item) },
+                                    onOpenDetail = { onOpenDetail(item) },
+                                    onCheckKey = { onCheckKey(item) },
+                                    onFixAuth = { onFix(JobAlert(AlertReason.NEEDS_AUTH, 1)) },
+                                    download = state.download,
+                                    onDownloadModel = { metered { wifi -> onDownloadModel(item.modelLanguage, wifi) } },
+                                )
+                            }
                         }
                     }
                 }
@@ -362,13 +394,14 @@ private fun ExpandedRow(
                 // when there is one — on every shell alike, so it is offered on every row. A recording
                 // still being written to is a thing to look at as well, and the detail says so itself
                 // rather than being hidden for it (`DetailState.writing`).
+                // The row's most used action, so it is not left the narrowest: "상세" is two letters.
                 BlueprintButton(
                     label = stringResource(R.string.detail_open),
                     onClick = onOpenDetail,
-                    modifier = Modifier.testTag("open-detail"),
+                    modifier = Modifier.widthIn(min = DetailMinWidth).testTag("open-detail"),
                 )
             }
-            if (!item.state.inFlight()) {
+            if (!item.inFlight()) {
                 LedgerAction(columns) {
                     BlueprintButton(
                         label = stringResource(R.string.action_delete),
@@ -403,12 +436,9 @@ private fun AlertBanner(
             // The recordings wait for the model, and the fix is the download itself, right here.
             // While it runs, the line is its progress and the button its cancel.
             if (alert.reason == AlertReason.LOCAL_MODEL_REQUIRED) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                AlertLine(
+                    code = alert.reason.code,
+                    lines = {
                         if (download.active) {
                             ModelDownloadLines(download, download.info)
                         } else {
@@ -419,7 +449,8 @@ private fun AlertBanner(
                                 color = palette.textMuted,
                             )
                         }
-                    }
+                    },
+                ) {
                     if (download.active) {
                         BlueprintButton(stringResource(R.string.processing_cancel_download), onCancelDownload,
                             tone = ButtonTone.QUIET, modifier = Modifier.testTag("alert-cancel-download"))
@@ -452,27 +483,119 @@ private fun AlertBanner(
             }
             val reason = stringResource(alert.reason.label)
             val waiting = pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(onClick = { onFix(alert) })
-                    // docs/09 "접근성": one node with a sentence in it, not a reason, a count and a
-                    // code read out as three separate things (the same rule as [LedgerRow]).
-                    .semantics(mergeDescendants = true) { contentDescription = "$reason $waiting" }
-                    .padding(horizontal = Space.m, vertical = Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            AlertLine(
+                code = alert.reason.code,
+                // docs/09 "접근성": one node with a sentence in it, not a reason, a count and a code
+                // read out as three separate things (the same rule as [LedgerRow]).
+                description = "$reason $waiting",
+                onClick = { onFix(alert) },
+                lines = {
                     // Red is for a failure; a wait (Drive out of space) is the warning its badge is.
                     Text(reason, style = MaterialTheme.typography.bodyMedium, color = if (alert.reason.wait) palette.warningInk else palette.danger)
                     Text(waiting, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
-                }
-                StatusBadge(LedgerStatus(alert.reason.name, BadgeTone.WARNING))
+                },
+            ) {
+                // docs/10: "탭하면 고칠 수 있는 화면으로 간다". The row goes there when it is pressed,
+                // but only the button says *where* — a line that is tappable without saying what
+                // the tap opens is a fix the user has to guess at.
+                BlueprintButton(
+                    stringResource(alert.reason.fix.label),
+                    onClick = { onFix(alert) },
+                    modifier = Modifier.testTag("alert-fix"),
+                )
             }
         }
         HairLine()
     }
+}
+
+/**
+ * One reason: what it is, how many recordings are behind it, the code, and what to press — the
+ * iPhone's `AlertLine`. The code and the button take at most half the row and fold onto a second
+ * line there when they do not fit side by side, so a long code such as
+ * `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line.
+ */
+@Composable
+private fun AlertLine(
+    code: String,
+    lines: @Composable ColumnScope.() -> Unit,
+    description: String? = null,
+    onClick: (() -> Unit)? = null,
+    action: @Composable () -> Unit,
+) {
+    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
+        // Half the row, or the code's own width where that is more: a code is never cut.
+        val trailing = maxOf(maxWidth / 2, statusColumnWidth(listOf(code)))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(Space.s),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+                    .then(
+                        if (description != null) {
+                            Modifier.semantics(mergeDescendants = true) { contentDescription = description }
+                        } else {
+                            Modifier
+                        },
+                    )
+                    .padding(vertical = Space.s),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                content = lines,
+            )
+            FlowRow(
+                modifier = Modifier.widthIn(max = trailing).padding(vertical = Space.s),
+                horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+                verticalArrangement = Arrangement.spacedBy(Space.xs),
+                itemVerticalAlignment = Alignment.CenterVertically,
+            ) {
+                StatusBadge(LedgerStatus(code, BadgeTone.WARNING))
+                action()
+            }
+        }
+    }
+}
+
+/**
+ * What the last delete or retry had to say, as the iPhone's warning banner: the sentence in the
+ * warning's ink on the surface, inside the warning's edge. A tap puts it away.
+ */
+@Composable
+private fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = MinTouch)
+            .background(palette.surface, shape)
+            .border(palette.line, palette.warning, shape)
+            .clickable(onClickLabel = stringResource(R.string.action_close), onClick = onDismiss)
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .testTag("message"),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(text, style = MaterialTheme.typography.bodySmall, color = palette.warningInk)
+    }
+}
+
+/**
+ * docs/03: a pull is the user asking for everything — this phone's list and what the other devices
+ * have put in Drive. docs/09 "모션": the platform's own pull indicator, the one place the system's
+ * spinner is allowed (2026-09-29): it follows the finger and settles back without a word, so a pull
+ * that Drive answers at once does not flash a line of text on and off.
+ */
+@Composable
+private fun Refreshable(
+    refreshing: Boolean,
+    onRefresh: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    PullToRefreshBox(isRefreshing = refreshing, onRefresh = onRefresh, modifier = modifier) { content() }
 }
 
 /**
@@ -513,20 +636,18 @@ private fun DeleteDialog(
         },
     ) {
         if (request.remote) {
+            // What happens, said plainly: the red is the Delete button's (docs/09 "접근성").
             BlueprintDialogText(
                 stringResource(R.string.delete_remote_body),
-                tone = DialogTone.DANGER,
                 modifier = Modifier.testTag("delete-remote"),
             )
             return@BlueprintDialog
         }
+        // That some of it is only here, not how many parts — a count of files is not the user's
+        // to read (docs/09 화면 원칙 2).
         if (request.unuploaded > 0) {
             BlueprintDialogText(
-                pluralStringResource(
-                    R.plurals.delete_unuploaded,
-                    request.unuploaded,
-                    request.unuploaded,
-                ),
+                stringResource(R.string.delete_unuploaded),
                 tone = DialogTone.DANGER,
                 modifier = Modifier.testTag("delete-unuploaded"),
             )
@@ -580,6 +701,9 @@ fun ItemState.badge(): LedgerStatus = when (this) {
 fun JobItem.badge(): LedgerStatus =
     if (waitingMinutes != null || localRunning) TRANSCRIBING_BADGE else if (localPending) ItemState.PENDING.badge() else state.badge()
 
+/** The row's Details button, as wide as the detail's own Play button. */
+private val DetailMinWidth = 120.dp
+
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
 
 /**
@@ -604,11 +728,21 @@ internal val BADGE_CODES: List<String> =
 /**
  * The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. A recording on
  * its way here — from the watch, or from another device's upload — is one the list is waiting for
- * (docs/03 "다른 기기의 녹음"); one another device is transcribing has already arrived.
+ * (docs/03 "다른 기기의 녹음"); one another device is transcribing has already arrived. A job parked
+ * until the user allows a transfer or downloads the speech model is waiting too, not failed — the
+ * iPhone's `Recents.summary` counts the same states.
  */
+// NEEDS_AUTH is a wait: its badge says "Upload waiting", and it goes on by itself once Drive is connected.
 fun ItemState.waiting(): Boolean =
-    this == ItemState.PENDING || this == ItemState.WAITING ||
+    this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NEEDS_AUTH ||
+        this == ItemState.NEEDS_CONSENT || this == ItemState.NEEDS_MODEL ||
         this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
+
+/**
+ * The row's own count: a transcription on this device — queued, running, or held back for heat —
+ * is waited for whatever the job's status says while it runs (`RUNNING` included).
+ */
+fun JobItem.waiting(): Boolean = localPending || state.waiting()
 
 /**
  * docs/09 화면 원칙 2: a recording something is doing to it right now, so there is nothing on the
@@ -619,8 +753,15 @@ fun ItemState.inFlight(): Boolean =
     this == ItemState.RECORDING || this == ItemState.RUNNING ||
         this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
 
+/**
+ * The row's own answer: a transcription on this device is not an upload, and deleting its
+ * recording is something the core does for it — it stops the transcription first
+ * (`LocalTranscriptionService.deleting`). The iPhone offers Delete there too (`RecentItem.canDelete`).
+ */
+fun JobItem.inFlight(): Boolean = !localPending && state.inFlight()
+
 fun ItemState.failing(): Boolean =
-    this == ItemState.FAILED || this == ItemState.NEEDS_AUTH || this == ItemState.NEEDS_SPACE ||
+    this == ItemState.FAILED || this == ItemState.NEEDS_SPACE ||
         this == ItemState.SKIPPED_SHORT
 
 /**

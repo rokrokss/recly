@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalTime::class)
+
 package app.recly.android.ui
 
 import app.recly.android.ui.component.BadgeTone
 import app.recly.android.ui.component.LedgerStatus
 import kotlin.test.Test
+import kotlin.time.ExperimentalTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -129,9 +132,39 @@ class LedgerStatusTest {
         ItemState.entries.forEach { state ->
             assertTrue(!(state.waiting() && state.failing()), "$state is counted twice")
         }
-        assertEquals(4, ItemState.entries.count { it.waiting() })
+        assertEquals(7, ItemState.entries.count { it.waiting() })
         assertFalse(ItemState.NO_JOB.waiting())
-        assertEquals(4, ItemState.entries.count { it.failing() })
+        assertEquals(3, ItemState.entries.count { it.failing() })
+    }
+
+    /**
+     * The iPhone's `Recents.summary`: a job parked until the user allows a transfer or downloads
+     * the speech model is waiting, not failed — and so is one waiting for Drive (`NEEDS_AUTH`, badge
+     * "Upload waiting"), on both phones.
+     */
+    @Test
+    fun `a job parked on the user counts as waiting`() {
+        assertTrue(ItemState.NEEDS_CONSENT.waiting())
+        assertTrue(ItemState.NEEDS_MODEL.waiting())
+        assertTrue(ItemState.NEEDS_AUTH.waiting())
+        assertFalse(ItemState.RUNNING.waiting(), "an upload is happening, not waited for")
+    }
+
+    /**
+     * docs/05 "고정 처리 설정 도입": a transcription on this device is waited for whatever the job's
+     * status says while it runs — and it is not an upload, so it neither holds back Delete nor
+     * lends the Record screen `UPLOADING` (the iPhone's `RecentItem.canDelete`, `Recents.uploading`).
+     */
+    @Test
+    fun `a transcription on this device is waited for and can be deleted`() {
+        listOf(ItemState.PENDING, ItemState.RUNNING, ItemState.WAITING).forEach { state ->
+            val local = item(state, localPending = true)
+            assertTrue(local.waiting(), "$state")
+            assertFalse(local.inFlight(), "$state")
+        }
+        assertFalse(uploading(listOf(item(ItemState.RUNNING, localPending = true))))
+        assertTrue(item(ItemState.RUNNING).inFlight(), "an upload keeps its recording")
+        assertFalse(item(ItemState.RUNNING).waiting())
     }
 
     /**
@@ -145,4 +178,19 @@ class LedgerStatusTest {
         assertFalse(ItemState.REMOTE_TRANSCRIBING.waiting())
         assertFalse(ItemState.REMOTE_TRANSCRIBING.failing())
     }
+
+    private fun item(state: ItemState, localPending: Boolean = false): JobItem = JobItem(
+        recordingId = "01J0${state.name}",
+        jobId = "job",
+        title = null,
+        startedAt = "2026-09-29T09:00:00Z",
+        durationSec = 60.0,
+        state = state,
+        error = null,
+        waitingMinutes = null,
+        link = null,
+        nextRunAt = null,
+        localPending = localPending,
+        localRunning = localPending && state == ItemState.RUNNING,
+    )
 }

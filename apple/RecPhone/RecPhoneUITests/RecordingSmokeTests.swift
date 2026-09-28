@@ -63,7 +63,7 @@ final class RecordingSmokeTests: XCTestCase {
         let elapsed = app.staticTexts["elapsed"]
         XCTAssertTrue(elapsed.waitForExistence(timeout: 15))
         XCTAssertTrue(
-            NSPredicate(format: "label >= %@", "00:16").expect(on: elapsed, in: self, timeout: 30),
+            NSPredicate(format: "label >= %@", "00:00:16").expect(on: elapsed, in: self, timeout: 30),
             "the recording did not keep going: \(elapsed.label)"
         )
         add(screenshot(named: "recording"))
@@ -77,14 +77,9 @@ final class RecordingSmokeTests: XCTestCase {
         field.typeText("시뮬레이터 스모크")
         app.buttons["saveTitle"].tap()
 
-        XCTAssertTrue(
-            // The app runs in whatever language the simulator is set to; the smoke asks for none
-            // in particular, so it asserts on the base language (docs/07 rule 1).
-            NSPredicate(format: "label == %@", "Waiting").expect(
-                on: app.staticTexts["status"], in: self, timeout: 30
-            ),
-            "the app did not settle after the stop"
-        )
+        // Settled means the record node offers a start again; the line under it stays empty when
+        // the stop went as asked (docs/09 화면 원칙 1).
+        XCTAssertTrue(app.buttons["start"].waitForExistence(timeout: 30), "the app did not settle after the stop")
         add(screenshot(named: "after the stop"))
     }
 

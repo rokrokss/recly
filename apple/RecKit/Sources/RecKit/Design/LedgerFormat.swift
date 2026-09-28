@@ -50,12 +50,22 @@ public enum LedgerFormat {
         )
     }
 
-    /// `42:10`, or `1:02:33` past the hour — the same shape the recorder's own clock uses.
+    /// `42:10`, or `1:02:33` past the hour — what Android and Windows write in the same column.
     public static func length(_ seconds: Double?) -> String {
         guard let seconds, seconds >= 0 else { return noLength }
         return elapsed(Int(seconds.rounded(.down)))
     }
 
+    /// docs/09 "타이포": `00:12:34` — the record timer, the detail's playback clock and a transcript
+    /// turn's stamp. Fixed width, because a timer that reflows is a distraction; the hours are not
+    /// wrapped at 24, because a recording is not a clock.
+    public static func clock(_ seconds: Int) -> String {
+        let total = max(0, seconds)
+        return String(format: "%02d:%02d:%02d", total / 3600, (total / 60) % 60, total % 60)
+    }
+
+    /// [length]'s shape, and the watch's timer: a watch does not have the width for `00:` in front
+    /// of a short memo (Wear's `formatElapsed` is the same).
     public static func elapsed(_ seconds: Int) -> String {
         seconds >= 3600
             ? String(format: "%d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60)

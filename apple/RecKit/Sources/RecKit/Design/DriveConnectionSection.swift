@@ -9,6 +9,7 @@ public struct DriveConnectionSection: View {
     private let disconnecting: Bool
     private let revokeDebt: Bool
     private let blocker: String?
+    private let signInState: ProcessingState
     private let signIn: () -> Void
     private let disconnect: () -> Void
     private let permissions: () -> Void
@@ -16,7 +17,8 @@ public struct DriveConnectionSection: View {
     @Environment(\.locale) private var locale
 
     public init(account: String?, connected: Bool, configured: Bool, pending: Bool, disconnecting: Bool,
-                revokeDebt: Bool, blocker: String?, signIn: @escaping () -> Void,
+                revokeDebt: Bool, blocker: String?, signInState: ProcessingState,
+                signIn: @escaping () -> Void,
                 disconnect: @escaping () -> Void,
                 permissions: @escaping () -> Void, debtSettled: @escaping () -> Void) {
         self.account = account
@@ -26,6 +28,7 @@ public struct DriveConnectionSection: View {
         self.disconnecting = disconnecting
         self.revokeDebt = revokeDebt
         self.blocker = blocker
+        self.signInState = signInState
         self.signIn = signIn
         self.disconnect = disconnect
         self.permissions = permissions
@@ -44,7 +47,8 @@ public struct DriveConnectionSection: View {
         } else {
             SectionRow(title: loc("Drive not connected"),
                        subtitle: loc("Record locally. Connect Drive to upload.")) {
-                BlueprintButton(loc("Connect Google Drive"), action: signIn)
+                // docs/09 화면 원칙 5: the sign-in's progress is the button's own, in its place.
+                ProcessingButton(loc("Connect Drive"), state: signInState, action: signIn)
                     .disabled(!configured || blocker != nil)
                     .accessibilityIdentifier("signIn")
             }

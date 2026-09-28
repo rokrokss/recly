@@ -34,12 +34,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// on screen follows a language change. [AppStrings.localized] hands a sentence it does not
     /// know back unchanged.
     @Published private(set) var note = "Opening" {
-        // The count belongs to the note it was set with; a new note has none until it says so.
-        didSet { noteCount = nil }
+        // The message belongs to the note it was set with; a new note has none until it says so.
+        didSet { statusMessage = nil }
     }
-    /// The argument of the one note that takes one (`Deferred %@`), set right after the key so that
-    /// [status] can format it in the language the screen is being drawn in.
-    private var noteCount: Int?
+    /// docs/07 rule 3: a start the disconnect refused, said on the Record screen where the start was
+    /// asked for — RecKit's message rather than a key of this app's, so it is kept as the message
+    /// and resolved by [status], as the Mac's own slot is. It outranks the note while it stands.
+    @Published private(set) var statusMessage: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
     /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the Record tab's first-run card.
@@ -74,6 +75,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/07 rule 3: what became of the last sign-in attempt, kept as the failure rather than as
     /// words — [authNote] makes the sentence where the settings tab draws it.
     @Published private(set) var authError: Error?
+    /// docs/09 화면 원칙 5: where the settings tab's Connect is, which its button shows in place —
+    /// "…" while the sign-in runs, ✓ when Drive is connected, and back to itself when it was not.
+    @Published private(set) var signInState: ProcessingState = .idle
     @Published private(set) var transferPrivacy: TransferPrivacyModel?
     @Published var privacyPresented = false
     /// docs/09 트렌드 2: where the one operation a ledger row can start — an upload now, a retry —
@@ -85,7 +89,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var deviceId = ""
     /// Which of the tabs is on screen, so an action taken on one can land on another —
     /// docs/08 "오류": "check the key" is on the list and the settings it means are a tab away.
-    @Published var tab: PhoneTab = .record
+    @Published var tab: PhoneTab = .record {
+        // The line under the record button is news from the last start or stop; it does not wait
+        // on the tab for the user to come back to it.
+        didSet { if tab != .record, state == .idle { note = "Waiting" } }
+    }
 
     /// A recording that has ended and has not been named yet.
     struct Naming: Identifiable, Equatable {
@@ -96,8 +104,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/10: the user-fixable failures across the queue, folded one line per reason — the
     /// banner at the top of the list, and the local notifications.
     @Published private(set) var alerts: [JobAlert] = []
-    /// docs/07 rule 3: what the last delete or disconnect had to say, kept as a message rather than
-    /// as words so a line still on screen answers a language change.
+    /// docs/07 rule 3: what the last delete, disconnect or refused retry had to say, kept as a message
+    /// rather than as words so a line still on screen answers a language change.
     @Published private(set) var message: UiMessage?
     /// Non-nil while the docs/03 delete dialog is up.
     @Published var deleteRequest: DeleteRequest?
@@ -400,9 +408,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
+    /// docs/09 화면 원칙 1: the line under the record button says something only when there is news —
+    /// what the last start or stop had to say, while the recorder is idle. What the recorder is doing
+    /// is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
+    /// (2026-09-29).
     var status: String {
-        RecorderStatusLine.text(state: state, note: note, count: noteCount)
+        guard state == .idle, statusMessage != nil || !Self.quietNotes.contains(note) else { return "" }
+        return RecorderStatusLine.text(state: state, note: note, message: statusMessage)
     }
+
+    /// The notes that only say the recorder is there — not news.
+    private static let quietNotes: Set<String> = ["Opening", "Waiting"]
 
     // MARK: - Start and stop
 
@@ -411,11 +427,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// phone cannot tell a meeting from anything else, so the trigger is the first recording and the
     /// settings switch says as much.
     func start() {
-        message = nil
+        statusMessage = nil
         // docs/03: before the question, not after it — a disconnect's clean-up walks the recording
         // directory, and there is nothing to ask about a capture that is about to be refused.
         if let blocker = DisconnectGate.startBlocker() {
-            message = blocker
+            statusMessage = blocker
             logger.info("shell.recording.start.refused reason=disconnecting")
             return
         }
@@ -457,7 +473,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 await updateActivity()
                 logger.info("shell.recording.start id=\(recordingId, privacy: .public)")
             } catch let error as RecorderError where error.kind == .microphoneDenied {
-                note = "The microphone permission is needed"
+                // Said once, by the red line and its Open Settings button under the node; the status
+                // line above them stays empty rather than say it again.
+                note = "Waiting"
                 microphoneDenied = true
             } catch {
                 note = "The recording failed"
@@ -469,7 +487,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         // already opening, which the session would have refused anyway and has nothing to add.
         let blocker = DisconnectGate.startBlocker()
         if let blocker {
-            message = blocker
+            statusMessage = blocker
             logger.info("shell.recording.start.refused reason=disconnecting")
         }
         return blocker
@@ -488,9 +506,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
         case .deferred(let recordingId, let pending):
             // Not finalized on purpose: there is nothing to name and nothing to queue until the
-            // missing parts are filed, which the next recovery pass does.
-            note = "Deferred %@"
-            noteCount = Int(pending)
+            // missing parts are filed, which the next recovery pass does. How many is the log's to
+            // say, not the screen's.
+            note = "Could not finish saving — it is recovered on the next run"
             logger.error(
                 """
                 shell.recording.deferred id=\(recordingId, privacy: .public) \
@@ -546,7 +564,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         let result = await RecordingDeletion.delete(core: core, recordingId: naming.id, deleteDrive: false)
         switch result {
         case .deleted, .notFound:
-            note = "Recording discarded"
+            // The user asked for it to go, so its going is not news: back to idle.
+            note = "Waiting"
         case .busy, .unavailable:
             note = "Could not discard the recording"
         }
@@ -665,7 +684,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// seconds is not three seconds of recording.
     private func tick() {
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
-        elapsed = LedgerFormat.elapsed(total)
+        elapsed = LedgerFormat.clock(total)
         // docs/13 "8시간 상한이면 갱신", checked here rather than from a timer of its own.
         Task { await activity.refreshIfNeeded() }
     }
@@ -834,21 +853,25 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             return
         }
         guard let auth, let anchor = Self.anchor() else { return }
+        signInState = .processing
         Task {
             do {
                 account = try await auth.signIn(presenting: anchor)
                 authError = nil
                 // What the last disconnect said is over once Drive is connected again.
                 message = nil
+                signInState = .done
                 logger.info("auth.signIn.ok")
                 // docs/06: a job parked in NEEDS_AUTH resumes when the user signs in.
                 await unpark()
             } catch GoogleAuth.Failure.canceled {
                 // The user closed the consent sheet. Nothing failed, so nothing is said.
                 authError = nil
+                signInState = .failed
                 logger.info("auth.signIn.canceled")
             } catch {
                 authError = error
+                signInState = .failed
                 logger.error("auth.signIn.failed error=\(String(describing: error), privacy: .public)")
             }
         }
@@ -998,7 +1021,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 recordingId: item.id,
                 title: item.titleLabel,
                 unuploaded: unuploaded,
-                remote: item.remote
+                remote: item.remote,
+                hasDriveFolder: item.link != nil
             )
         }
     }
@@ -1131,7 +1155,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         perform {
             guard let core = self.bridge?.core else { return false }
             guard (try? await core.jobs.retry(jobId: jobId).boolValue) == true else {
-                self.note = "This cannot be retried right now"
+                // On the list, where the retry was asked for — not under the Record button.
+                self.message = .key("This cannot be retried right now")
                 return false
             }
             self.runner?.jobsDue()

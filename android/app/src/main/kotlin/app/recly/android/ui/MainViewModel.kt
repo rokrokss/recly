@@ -15,7 +15,6 @@ import app.recly.android.core.AppGraph
 import app.recly.android.core.CoreMessages
 import app.recly.android.core.CoreModule
 import app.recly.android.core.UiMessage
-import app.recly.android.core.coreMessage
 import app.recly.android.settings.AppSettings
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.work.WorkScheduler
@@ -53,7 +52,14 @@ data class MainUiState(
     val disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,
     /** docs/03: a revoke Google refused, so the grant is still listed and only the user can fix it. */
     val revokeDebt: Boolean = false,
-)
+    /** docs/06 Android: a Drive grant is held. An account without one is a consent never given. */
+    val driveGranted: Boolean = false,
+    /** iPhone's `authNote`: why the last Drive connection failed, in the failure colour (see [signInNote]). */
+    val authNote: UiMessage? = null,
+) {
+    /** What the Drive row calls connected: the account, and its grant — identity alone is not (docs/06). */
+    val driveConnected: Boolean get() = email != null && driveGranted
+}
 
 /**
  * The whole of the M2-L1 screen: who is signed in, and whether the core can reach Drive.
@@ -105,6 +111,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
                 it.copy(
                     loading = false,
                     email = graph().auth.account(),
+                    driveGranted = graph().auth.driveGranted(),
                     disconnectPhase = settings.disconnectPhase.first(),
                     revokeDebt = settings.revokeDebt.first(),
                 )
@@ -129,24 +136,17 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
     }
 
     private fun attemptSignIn(activity: Activity) = work { graph ->
-        when (val signedIn = graph.auth.signIn(activity)) {
-            is SignInResult.Failed -> {
-                _state.update { it.copy(message = reason(R.string.auth_sign_in_failed, signedIn.reason)) }
-                false
-            }
-
-            SignInResult.NoAccount -> {
-                addAccount.onNoAccount()
-                _state.update { it.copy(message = UiMessage.Res(R.string.auth_add_account)) }
-                false
-            }
-
-            is SignInResult.SignedIn -> {
-                _state.update { it.copy(email = signedIn.email) }
-                // Identity is not authorization (docs/06): the Drive grant is a separate consent.
-                authorize(graph, activity)
-            }
+        val signedIn = graph.auth.signIn(activity)
+        if (signedIn is SignInResult.Failed) {
+            // Play Services' words go to the log; the screen says only that Drive could not be connected.
+            graph.core.deps.logger.log(Logger.Level.WARN, "auth.signIn.failed", mapOf("reason" to signedIn.reason))
         }
+        if (signedIn == SignInResult.NoAccount) addAccount.onNoAccount()
+        _state.update { it.copy(authNote = signInNote(signedIn)) }
+        if (signedIn !is SignInResult.SignedIn) return@work false
+        _state.update { it.copy(email = signedIn.email) }
+        // Identity is not authorization (docs/06): the Drive grant is a separate consent.
+        authorize(graph, activity)
     }
 
     /**
@@ -172,24 +172,20 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
         }
     }
 
-    /** @return whether the grant is in hand — the message says which way it went either way. */
+    /**
+     * @return whether the grant is in hand. As on the iPhone, success says nothing — the row turning
+     * into the account is the answer — and neither does a closed consent screen; only a failure
+     * leaves a line (see [authorizeNote]).
+     */
     private suspend fun authorize(graph: AppGraph, activity: Activity): Boolean {
         val authorized = graph.auth.authorizeDrive(activity, resolver)
-        val message = when (authorized) {
-            is AuthorizeResult.Granted -> {
-                val unparked = unparkNeedsAuth(graph)
-                if (unparked > 0) {
-                    UiMessage.Res(R.string.auth_drive_granted_unparked, listOf(unparked))
-                } else {
-                    UiMessage.Res(R.string.auth_drive_granted)
-                }
-            }
-
-            AuthorizeResult.NeedsConsent -> UiMessage.Res(CoreMessages.resourceOf(CoreMessage.DRIVE_CONSENT_REQUIRED))
-
-            is AuthorizeResult.Failed -> reason(R.string.auth_drive_failed, authorized.reason)
+        if (authorized is AuthorizeResult.Failed) {
+            graph.core.deps.logger.log(Logger.Level.WARN, "auth.authorize.failed", mapOf("reason" to authorized.reason))
         }
-        _state.update { it.copy(message = message) }
+        // The row reads the store rather than the result: a consent closed over a grant this phone
+        // already held leaves that grant as it was.
+        _state.update { it.copy(authNote = authorizeNote(authorized), driveGranted = graph.auth.driveGranted()) }
+        if (authorized is AuthorizeResult.Granted) unparkNeedsAuth(graph)
         return authorized is AuthorizeResult.Granted
     }
 
@@ -197,9 +193,9 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
      * docs/10 "잡 상태 머신": `NEEDS_AUTH ──sign in──► PENDING`. A job parked for want of a token is
      * the one thing signing in is supposed to fix, and nothing else in the app would ever unpark it.
      */
-    private suspend fun unparkNeedsAuth(graph: AppGraph): Int {
+    private suspend fun unparkNeedsAuth(graph: AppGraph) {
         kotlinx.coroutines.withContext(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
-        return try {
+        try {
             graph.core.reconnectDrive()
         } finally {
             // A transient owner lookup failure must still leave a scheduled verification pass.
@@ -216,7 +212,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
             return@work false
         }
         graph.auth.signOut()
-        _state.update { it.copy(email = null, message = null) }
+        _state.update { it.copy(email = null, driveGranted = false, message = null, authNote = null) }
         true
     }
 
@@ -329,7 +325,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
             }
         }
         // The account stays cleared whatever happens below: the grant is gone.
-        _state.update { it.copy(email = null) }
+        _state.update { it.copy(email = null, driveGranted = false) }
         // Once more, now the revoke has had its wait. The gate refuses a start it is asked
         // about, and `RecorderService` asks — but a start that was already in flight when the
         // gate shut is answered here, before anything of this phone is deleted. The phase is
@@ -445,7 +441,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
         if (_state.value.busy) return
         // Publish before scheduling: the confirmation closes and repeat taps are blocked immediately.
         _state.update {
-            it.copy(busy = true, action = ProcessingState.PROCESSING, message = null,
+            it.copy(busy = true, action = ProcessingState.PROCESSING, message = null, authNote = null,
                 disconnecting = disconnecting, disconnect = if (disconnecting) null else it.disconnect)
         }
         viewModelScope.processing(
@@ -457,19 +453,31 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
                         disconnecting = disconnecting && running,
                         action = phase,
                         message = if (running) null else it.message,
+                        authNote = if (running) null else it.authNote,
                     )
                 }
             },
         ) { block(graph()) }
     }
 
-    /**
-     * A reason is a [CoreMessage] code when the shell had one, and a diagnostic otherwise. Either
-     * way it is nested into the sentence as a message rather than resolved into it — this state
-     * outlives the screen the language setting recreates (docs/07 rule 3).
-     */
-    private fun reason(id: Int, reason: String): UiMessage =
-        UiMessage.Res(id, listOf(coreMessage(reason)))
-
     private suspend fun graph(): AppGraph = CoreModule.get(getApplication())
+}
+
+/**
+ * iPhone's `authNote`, for the account picker: a closed picker is the user's answer and says nothing
+ * (docs/06 Android). A failure says only that Drive could not be connected — the reason is Play
+ * Services' own words, which go to the log. No account at all is the one failure the user can fix
+ * from here, so it says how.
+ */
+internal fun signInNote(result: SignInResult): UiMessage? = when (result) {
+    is SignInResult.SignedIn, SignInResult.Cancelled -> null
+    SignInResult.NoAccount -> UiMessage.Res(R.string.auth_add_account)
+    is SignInResult.Failed -> UiMessage.Res(R.string.auth_connect_failed)
+}
+
+/** The same for the Drive consent that follows the picker: nothing on a grant or a closed screen. */
+internal fun authorizeNote(result: AuthorizeResult): UiMessage? = when (result) {
+    is AuthorizeResult.Granted, AuthorizeResult.Cancelled -> null
+    AuthorizeResult.NeedsConsent -> UiMessage.Res(CoreMessages.resourceOf(CoreMessage.DRIVE_CONSENT_REQUIRED))
+    is AuthorizeResult.Failed -> UiMessage.Res(R.string.auth_connect_failed)
 }

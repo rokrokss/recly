@@ -69,7 +69,14 @@ final class BlueprintSurfaceTests: XCTestCase {
         attach("recordings list")
         app.buttons["delete"].firstMatch.tap()
 
-        XCTAssertTrue(app.buttons["delete-local-only"].waitForExistence(timeout: 5), "no delete dialog")
+        XCTAssertTrue(app.buttons["delete-confirm"].waitForExistence(timeout: 5), "no delete dialog")
+        // Nothing of this recording reached Drive, so there is no second answer to default.
+        guard app.buttons["delete-local-only"].exists else {
+            XCTAssertFalse(app.buttons["delete-with-drive"].exists)
+            attach("delete dialog")
+            app.buttons["Cancel"].firstMatch.tap()
+            return
+        }
         // docs/03: "되돌릴 수 없는 쪽을 기본값으로 두지 않는다."
         XCTAssertTrue(app.buttons["delete-local-only"].isSelected, "Drive was the default answer")
         XCTAssertFalse(app.buttons["delete-with-drive"].isSelected)

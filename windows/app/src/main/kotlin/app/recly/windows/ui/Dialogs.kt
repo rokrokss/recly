@@ -52,11 +52,11 @@ fun DeleteDialog(
         if (request.remote) {
             // docs/03: what it costs, not a question — the Drive folder is the only copy there is,
             // and it is the one every device reads.
-            BlueprintDialogText(strings[Str.DELETE_REMOTE_BODY], tone = DialogTone.DANGER)
+            BlueprintDialogText(strings[Str.DELETE_REMOTE_BODY])
         } else {
             if (request.unuploaded > 0) {
                 BlueprintDialogText(
-                    strings[Str.DELETE_UNUPLOADED, request.unuploaded],
+                    strings[Str.DELETE_UNUPLOADED],
                     tone = DialogTone.DANGER,
                 )
             }

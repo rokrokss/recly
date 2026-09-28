@@ -17,8 +17,9 @@ import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
 
 /** What a recording's detail screen shows (docs/08 "결과 파일"). It is absent until a `transcribe`
- * step has run. */
-enum class TranscriptAvailability { PENDING, NOT_REQUESTED, FAILED, UNAVAILABLE, READY, EMPTY }
+ * step has run. [PARKED] is a transcription that has not failed but will not run until the user
+ * does something the list offers — connect Drive, free space, allow the transfer, get the model. */
+enum class TranscriptAvailability { PENDING, NOT_REQUESTED, FAILED, UNAVAILABLE, READY, EMPTY, PARKED }
 
 data class RecordingResult(
     val transcript: Transcript? = null,

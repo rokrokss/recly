@@ -1,10 +1,11 @@
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 4: settings are a section table — account / capture / uploads / language / theme,
-/// and at the bottom the honest system block in monospace (docs/09 트렌드 6: version, build, device
-/// id, open-source notices). The phone has no launch-at-login to offer (docs/12's `SMAppService` is
-/// a Mac's) and no automatic recording (ADR-011).
+/// docs/09 화면 원칙 4: settings are a section table — account / language / theme / capture /
+/// uploads / recording processing / privacy, and at the bottom the honest system block in monospace
+/// (docs/09 트렌드 6: version, build, device id, open-source notices). The phone has no
+/// launch-at-login to offer (docs/12's `SMAppService` is a Mac's) and no automatic recording
+/// (ADR-011).
 struct SettingsView: View {
     @ObservedObject var model: RecordingModel
     @ObservedObject var language: AppLanguage
@@ -13,20 +14,21 @@ struct SettingsView: View {
     /// docs/07 rule 3: the rows below draw strings resolved outside SwiftUI, and reading the locale
     /// is what declares the dependency that redraws them when the language changes.
     @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 0) {
                     account
-                    microphone
-                    uploads
                     // docs/07 rule 2·3: the same block the Mac's settings pane draws, so it is
                     // drawn once (RecKit).
                     LanguageSection(language: language)
                     // docs/09 "접근성": the one override of the system's light/dark, and the same
                     // block the Mac's settings pane draws (RecKit).
                     ThemeSection(theme: theme)
+                    microphone
+                    uploads
                     processingSettings
                     privacy
                     about
@@ -69,6 +71,7 @@ struct SettingsView: View {
             account: model.account, connected: model.hasGoogleCredential,
             configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
             revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
+            signInState: model.signInState,
             signIn: model.signIn, disconnect: model.askToDisconnect,
             permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
         )
@@ -87,7 +90,9 @@ struct SettingsView: View {
         Group {
             section(loc("Capture"))
             SectionRow(title: loc("Microphone")) {
-                BlueprintButton(loc("Open System Settings")) { model.openSettings() }
+                // Always here, so nothing to call attention to: the Record screen's own accent button is
+                // the one a refusal brings (2026-09-29).
+                BlueprintButton(loc("Open System Settings"), tone: .quiet) { model.openSettings() }
             }
             // docs/12 M8: the Mac asks before every meeting recording. A phone has no meeting
             // detection, so it asks once before the first one — and the subtitle says so, because a
@@ -131,7 +136,10 @@ struct SettingsView: View {
         Group {
             section(RecKitStrings.localized("Privacy"))
             SectionRow(title: RecKitStrings.localized("Privacy Policy")) {
-                Link(RecKitStrings.localized("Open"), destination: PrivacyLinks.recly(locale: locale))
+                // A way out that is always here, like the microphone's: quiet.
+                BlueprintButton(RecKitStrings.localized("Open"), tone: .quiet) {
+                    openURL(PrivacyLinks.recly(locale: locale))
+                }
             }
             if model.transferPrivacy != nil {
                 SectionRow(title: RecKitStrings.localized("Allowed destinations")) {

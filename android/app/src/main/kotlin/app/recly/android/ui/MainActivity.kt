@@ -152,6 +152,15 @@ class MainActivity : ComponentActivity() {
                     // Leaving the Record tab forgets an auto-start the user has navigated away from —
                     // it must not start a recording behind another screen later.
                     if (tab != Tab.RECORD) recordingModel.dropAutoStart()
+                    // The line under the record button is news from the last start or stop; it does
+                    // not wait on the tab for the user to come back to it.
+                    if (tab != Tab.RECORD) recordingModel.clearMessages()
+                    // docs/03 "다른 기기의 녹음": the ledger is on screen, so what the other devices
+                    // have uploaded since is asked for — beside the list, never in front of it.
+                    if (tab == Tab.JOBS) jobsModel.refresh()
+                    // A recording's detail is a page inside the List tab, not a place the tab keeps:
+                    // leaving the tab by any way closes it, so coming back is the list.
+                    if (tab != Tab.JOBS) jobsModel.closeDetail()
                 }
 
                 // docs/10 "탭하면 고칠 수 있는 화면으로 간다": the one mapping, shared by the list's
@@ -194,7 +203,12 @@ class MainActivity : ComponentActivity() {
                                     glyph = entry.glyph,
                                     label = stringResource(entry.label),
                                     selected = tab == entry,
-                                    onClick = { tab = entry },
+                                    // The List tab tapped again from a recording's detail is the way
+                                    // back to the list, as Back is.
+                                    onClick = {
+                                        if (entry == Tab.JOBS && tab == Tab.JOBS && jobs.detail != null) jobsModel.closeDetail()
+                                        tab = entry
+                                    },
                                 )
                             },
                         )
@@ -202,7 +216,16 @@ class MainActivity : ComponentActivity() {
                 ) { insets ->
                     val content = Modifier.fillMaxSize().padding(insets)
                     when (tab) {
-                        Tab.RECORD -> RecordTab(recording, recorder, jobs, recordingModel, content, onOpenProcessing = { tab = Tab.SETTINGS })
+                        Tab.RECORD -> RecordTab(
+                            recording, recorder, jobs, recordingModel, content,
+                            onOpenProcessing = { tab = Tab.SETTINGS },
+                            // A new recording is where the list's last message stops being news, as
+                            // on the iPhone.
+                            onStart = {
+                                jobsModel.dismissMessage()
+                                recordingModel.start()
+                            },
+                        )
 
                         Tab.JOBS -> JobsTab(
                             state = jobs,
@@ -314,6 +337,7 @@ private fun RecordTab(
     model: RecordingViewModel,
     modifier: Modifier,
     onOpenProcessing: () -> Unit,
+    onStart: () -> Unit,
 ) {
     RecordingSection(
         state = state,
@@ -322,7 +346,7 @@ private fun RecordTab(
         // ledger is the same live list the jobs tab draws.
         ledger = ledgerCode(jobs.items),
         onOpenProcessing = onOpenProcessing,
-        onStart = model::start,
+        onStart = onStart,
         onStop = model::stop,
         onMicDenied = model::micDenied,
         onMicGranted = model::micGranted,
@@ -377,6 +401,8 @@ private fun JobsTab(
             onFix = onFix,
             onDownloadModel = model::downloadModel,
             onCancelDownload = model::cancelDownload,
+            onRefresh = model::pullToRefresh,
+            onDismissMessage = model::dismissMessage,
             modifier = modifier,
         )
     }

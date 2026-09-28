@@ -12,12 +12,10 @@ import app.recly.android.ui.AlertReason
 import app.recly.android.ui.JobAlert
 import app.recly.android.ui.MainActivity
 import app.recly.android.ui.alertReasonOf
-import app.recly.android.ui.blockingError
-import app.recly.android.ui.foldAlerts
+import app.recly.android.ui.queueAlerts
 import kotlin.time.ExperimentalTime
 import recly.core.ReclyCore
 import recly.core.job.Job
-import recly.core.job.JobStatus
 import app.recly.recording.R as RecordingR
 
 /**
@@ -42,14 +40,8 @@ class JobAlertNotifier(private val context: Context) {
         core.jobs.observe().collect { jobs -> JobAlertShade.publish(SystemShade(context), alerts(core, jobs)) }
     }
 
-    private suspend fun alerts(core: ReclyCore, jobs: List<Job>): List<JobAlert> = foldAlerts(
-        jobs.map { job ->
-            // A parked job says why in its own status; only a FAILED one has to be asked, and
-            // asking for every job on every emission would be a query per row per change.
-            val error = if (job.status == JobStatus.FAILED) blockingError(core.jobs.steps(job.id)) else null
-            alertReasonOf(job.status, error)
-        },
-    )
+    // The list's banner folds the same queue the same way.
+    private suspend fun alerts(core: ReclyCore, jobs: List<Job>): List<JobAlert> = queueAlerts(jobs) { core.jobs.steps(it) }
 
     companion object {
         /**
