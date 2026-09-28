@@ -70,7 +70,7 @@ Store releases are coming soon. Until then, pre-release builds are on the
 | Galaxy Watch | Wear OS 5+ | APK from Releases, installed over ADB ([how](docs/install.md#galaxy-watch)) | Google Play |
 | iPhone | iOS 17+ | Build from source | App Store · TestFlight |
 | Apple Watch | watchOS 10+ | Build from source, with the iPhone app | App Store |
-| macOS | macOS 14.4+ | Build from source | Notarized DMG · Homebrew |
+| macOS | macOS 14.4+, Apple Silicon | Notarized DMG from [Releases](https://github.com/rokrokss/recly/releases) | Homebrew |
 | Windows | Windows 11 | MSI from [Releases](https://github.com/rokrokss/recly/releases) (unsigned, see [guide](docs/install.md#windows)) | Signed MSI · winget |
 
 The [install guide](docs/install.md) has the step-by-step for each platform, including sideloading

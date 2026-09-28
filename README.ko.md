@@ -66,7 +66,7 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 | Galaxy Watch | Wear OS 5 이상 | Releases의 APK를 ADB로 설치([방법](docs/install.md#galaxy-watch)) | Google Play |
 | iPhone | iOS 17 이상 | 소스에서 빌드 | App Store · TestFlight |
 | Apple Watch | watchOS 10 이상 | iPhone 앱과 함께 소스에서 빌드 | App Store |
-| macOS | macOS 14.4 이상 | 소스에서 빌드 | 공증된 DMG · Homebrew |
+| macOS | macOS 14.4 이상, Apple Silicon | [Releases](https://github.com/rokrokss/recly/releases)의 공증된 DMG | Homebrew |
 | Windows | Windows 11 | [Releases](https://github.com/rokrokss/recly/releases)의 MSI(미서명, [안내](docs/install.md#windows)) | 서명된 MSI · winget |
 
 플랫폼별 순서, 워치 사이드로드, Windows SmartScreen 경고 넘기기는 [설치 안내](docs/install.md)에 있습니다.
