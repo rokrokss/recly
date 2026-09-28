@@ -381,7 +381,7 @@ public struct RecordingDetailView: View {
                     if let onClose {
                         // Leaving the page stops what it was playing: the sheet is gone but this view
                         // is not torn down synchronously with it.
-                        BlueprintButton(loc("Close"), tone: .quiet) {
+                        BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) {
                             player.stop()
                             onClose()
                         }

@@ -65,6 +65,8 @@ fun BlueprintDialog(
     onDismissRequest: () -> Unit,
     actions: @Composable () -> Unit,
     modifier: Modifier = Modifier,
+    /** The answers in a stack whatever the width — for three of them, which a phone only just fits. */
+    stackedActions: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = blueprint
@@ -107,7 +109,7 @@ fun BlueprintDialog(
                 }
                 content()
             }
-            DialogActions(actions)
+            DialogActions(actions, stackedActions)
         }
     }
 }
@@ -121,14 +123,14 @@ fun BlueprintDialog(
  * bottom: last, the same as it is last on the right, and nearest the thumb.
  */
 @Composable
-private fun DialogActions(actions: @Composable () -> Unit) {
+private fun DialogActions(actions: @Composable () -> Unit, alwaysStacked: Boolean) {
     val spacing = with(LocalDensity.current) { Space.s.roundToPx() }
     Layout(content = actions, modifier = Modifier.fillMaxWidth()) { measurables, constraints ->
         val width = constraints.maxWidth
         // maxIntrinsicWidth and not a trial measure: a measurable may only be measured once, and
         // this has to know the answer before it can choose the constraints to measure with.
         val natural = measurables.map { it.maxIntrinsicWidth(Constraints.Infinity) }
-        val stacked = stackActions(width, natural, spacing)
+        val stacked = alwaysStacked || stackActions(width, natural, spacing)
         val placeables = measurables.map { measurable ->
             measurable.measure(
                 if (stacked) Constraints.fixedWidth(width) else Constraints(maxWidth = width),

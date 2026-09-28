@@ -303,7 +303,7 @@ private struct ConsentDialog: View {
 
     var body: some View {
         BlueprintDialog(title: loc("Did you tell the participants about the recording?")) {
-            BlueprintButton(loc("Cancel"), tone: .quiet) { answer(false, suppress) }
+            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { answer(false, suppress) }
             BlueprintButton(loc("I told them · Start recording"), tone: .primary) {
                 answer(true, suppress)
             }
@@ -373,7 +373,7 @@ private struct NamingSheet: View {
                 }
                 HStack(spacing: Space.s) {
                     Spacer(minLength: 0)
-                    BlueprintButton(loc("Cancel"), tone: .quiet) { onCancel() }
+                    BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { onCancel() }
                     BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave() }
                         .accessibilityIdentifier("saveTitle")
                 }

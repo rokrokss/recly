@@ -166,6 +166,7 @@ fun RecordingDetailScreen(
                         onClick = onClose,
                         modifier = Modifier.testTag("detail-close"),
                         tone = ButtonTone.QUIET,
+                        minWidth = MinTouch,
                     )
                 }
             },
@@ -219,6 +220,7 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
                 label = stringResource(R.string.action_cancel),
                 onClick = onCancel,
                 tone = ButtonTone.QUIET,
+                minWidth = MinTouch,
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),

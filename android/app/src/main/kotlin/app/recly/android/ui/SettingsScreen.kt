@@ -41,6 +41,7 @@ import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.component.SectionHeader
 import app.recly.android.ui.component.SectionFootnote
 import app.recly.android.ui.component.SwitchRow
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
@@ -277,6 +278,7 @@ private fun DisconnectDialog(
                 label = stringResource(R.string.action_cancel),
                 onClick = onCancel,
                 tone = ButtonTone.QUIET,
+                minWidth = MinTouch,
             )
             BlueprintButton(
                 label = stringResource(R.string.settings_disconnect),

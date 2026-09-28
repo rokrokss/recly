@@ -68,6 +68,7 @@ import app.recly.android.ui.component.MonoTimer
 import app.recly.android.ui.component.NodeSpec
 import app.recly.android.ui.component.ScreenHeader
 import app.recly.android.ui.component.StateNodeRow
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -267,6 +268,7 @@ private fun ConsentDialog(onAnswer: (Boolean, Boolean) -> Unit) {
                 label = stringResource(R.string.action_cancel),
                 onClick = { onAnswer(false, suppress) },
                 tone = ButtonTone.QUIET,
+                minWidth = MinTouch,
             )
             BlueprintButton(
                 label = stringResource(R.string.consent_confirm),
@@ -517,6 +519,7 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit) {
                 label = stringResource(R.string.action_cancel),
                 onClick = onCancel,
                 tone = ButtonTone.QUIET,
+                minWidth = MinTouch,
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),

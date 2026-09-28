@@ -60,6 +60,14 @@ object Space {
  */
 val MinTouch: Dp = 48.dp
 
+/**
+ * docs/09 "형태": the narrowest a worded button is (2026-09-29). A two-letter label — `열기`, `Open` —
+ * no longer makes the narrowest thing on the screen, and short buttons side by side come out one
+ * width. Close, Delete and Cancel keep their own width ([MinTouch]), as do buttons whose label is
+ * data (monospace): the user's call, and none of them needs to be found.
+ */
+val ButtonMinWidth: Dp = 88.dp
+
 /** docs/09 "형태": 4 for a node, 8 for a card, 0 for a table row. Badges and chips take half a node. */
 object Radius {
     val node: Dp = 4.dp

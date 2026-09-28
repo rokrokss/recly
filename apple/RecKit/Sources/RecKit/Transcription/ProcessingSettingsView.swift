@@ -243,7 +243,7 @@ public struct ProcessingSettingsView: View {
                 // docs/09 화면 원칙 8: Cancel · Save only appear when there is something to save.
                 if model.dirty {
                     FlowLayout(alignment: .trailing) {
-                        BlueprintButton(loc("Cancel"), tone: .quiet) { Task { await model.reload() } }.disabled(model.busy)
+                        BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { Task { await model.reload() } }.disabled(model.busy)
                         BlueprintButton(loc("Save"), tone: .primary) { Task { await model.save() } }.disabled(model.busy || !model.languageSupported)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
@@ -257,7 +257,7 @@ public struct ProcessingSettingsView: View {
                         SectionHeader(loc("Other providers’ keys"))
                         ForEach(others, id: \.self) { name in
                             // docs/09: a delete that cannot be undone is red.
-                            SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .danger) { deletingKey = name } }
+                            SectionRow(title: SttProviders.shared.displayName(name: name)) { BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) { deletingKey = name } }
                         }
                     }
                 }
@@ -281,8 +281,8 @@ public struct ProcessingSettingsView: View {
         }
         .blueprintDialog(isPresented: Binding(get: { deletingKey != nil }, set: { if !$0 { deletingKey = nil } })) {
             BlueprintDialog(title: RecKitStrings.localized("Delete key: %@", SttProviders.shared.displayName(name: deletingKey ?? ""))) {
-                BlueprintButton(loc("Cancel"), tone: .quiet) { deletingKey = nil }
-                BlueprintButton(loc("Delete"), tone: .danger) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
+                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { deletingKey = nil }
+                BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) { if let name = deletingKey { Task { await model.deleteKey(name) } }; deletingKey = nil }
             } content: { EmptyView() }
         }
         // docs/15 · App Review 5.1.2(i): what is sent, to whom, and the user's permission, before the
@@ -302,7 +302,7 @@ public struct ProcessingSettingsView: View {
         .fileExporter(isPresented: $exporter, document: file, contentType: .json, defaultFilename: "recly-settings") { _ in }
         .blueprintDialog(isPresented: $pickingLanguage) {
             BlueprintDialog(title: loc("Spoken language")) {
-                BlueprintButton(loc("Close"), tone: .quiet) { pickingLanguage = false }
+                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingLanguage = false }
             } content: {
                 ForEach(model.languages, id: \.self) { language in
                     BlueprintRadioRow(speechLanguageTitle(language), selected: model.draft?.language == language) {
@@ -314,7 +314,7 @@ public struct ProcessingSettingsView: View {
         }
         .blueprintDialog(isPresented: $pickingProvider) {
             BlueprintDialog(title: loc("Provider")) {
-                BlueprintButton(loc("Close"), tone: .quiet) { pickingProvider = false }
+                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingProvider = false }
             } content: {
                 ForEach(model.providers, id: \.self) { name in
                     BlueprintRadioRow(SttProviders.shared.displayName(name: name), selected: model.draft?.provider == name) {
@@ -366,7 +366,7 @@ private struct ProcessingKeyField: View {
             }
             FlowLayout(alignment: .trailing) {
                 BlueprintButton(RecKitStrings.localized("Replace key"), tone: .quiet) { replacing = true }
-                BlueprintButton(RecKitStrings.localized("Delete"), tone: .danger, action: delete)
+                BlueprintButton(RecKitStrings.localized("Delete"), tone: .danger, minWidth: minTouch, action: delete)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         } else {
@@ -374,7 +374,7 @@ private struct ProcessingKeyField: View {
             if !name.isEmpty && !replacing { SectionFootnote(RecKitStrings.localized("Not saved on this device")) }
             FlowLayout(alignment: .trailing) {
                 if replacing {
-                    BlueprintButton(RecKitStrings.localized("Cancel"), tone: .quiet) { value = ""; replacing = false }
+                    BlueprintButton(RecKitStrings.localized("Cancel"), tone: .quiet, minWidth: minTouch) { value = ""; replacing = false }
                 }
                 BlueprintButton(RecKitStrings.localized("Save key"), tone: .quiet) {
                     Task { if await model.saveKey(name, value: value) { value = ""; replacing = false } }

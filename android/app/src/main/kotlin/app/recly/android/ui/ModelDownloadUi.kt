@@ -31,6 +31,7 @@ import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogText
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.LoadingText
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -72,8 +73,10 @@ fun rememberMeteredGate(modelBytes: Long?): ((onWifi: Boolean) -> Unit) -> Unit 
     val context = LocalContext.current
     var pending by remember { mutableStateOf<((Boolean) -> Unit)?>(null) }
     pending?.let { start ->
-        BlueprintDialog(title = stringResource(R.string.processing_cellular_title), onDismissRequest = { pending = null }, actions = {
-            BlueprintButton(stringResource(R.string.action_cancel), { pending = null }, tone = ButtonTone.QUIET)
+        // Three answers stand stacked in every language (2026-09-29): a row of them only just fits a
+        // phone, and it fitting in one language and not in another made the same question two shapes.
+        BlueprintDialog(title = stringResource(R.string.processing_cellular_title), onDismissRequest = { pending = null }, stackedActions = true, actions = {
+            BlueprintButton(stringResource(R.string.action_cancel), { pending = null }, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(stringResource(R.string.processing_download_on_wifi), { pending = null; start(true) },
                 modifier = Modifier.testTag("download-on-wifi"))
             BlueprintButton(stringResource(R.string.processing_download), { pending = null; start(false) }, tone = ButtonTone.PRIMARY)

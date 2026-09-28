@@ -10,7 +10,6 @@ struct RecordingsView: View {
     @ObservedObject var model: RecordingModel
     @Environment(\.blueprint) private var blueprint
     @Environment(\.dynamicTypeSize) private var typeSize
-    @State private var statusTrailingInsets: [String: CGFloat] = [:]
     @State private var expanded: String?
     /// docs/08 "결과 파일": the recording whose transcript is being read, as a page over the list —
     /// the ledger has no navigation stack to push onto (docs/09 화면 원칙 2).
@@ -120,7 +119,6 @@ struct RecordingsView: View {
             }
         )
         .accessibilityIdentifier("state")
-        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
         if expanded == item.id {
             expansion(item)
         }
@@ -165,55 +163,51 @@ struct RecordingsView: View {
     /// The things that can still be done about this recording, across the row and onto a second
     /// line when they do not fit.
     private func actions(_ item: RecentItem) -> some View {
-        HStack(alignment: .top, spacing: Space.s) {
-            FlowLayout {
-                // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
-                // language, first — and nothing while the download runs (the banner has it).
-                if item.waitingForModel, let download = model.modelDownload {
-                    ModelDownloadButton(download: download, language: item.localLanguage)
-                        .accessibilityIdentifier("download-model")
-                }
-                if item.link != nil {
-                    BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
-                }
-                // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing that
-                // changes the answer is on Google's storage page.
-                if item.alert == .needsSpace {
-                    BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
-                        .accessibilityIdentifier("open-storage")
-                }
-                if item.alert == .needsConsent {
-                    BlueprintButton(RecKitStrings.localized("Review transfers")) {
-                        model.fix(JobAlert(reason: .needsConsent, count: 1))
-                    }
-                    .accessibilityIdentifier("review-transfers")
-                }
-                // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
-                // comes back on its own `next_run_at`, and there is nothing to ask for.
-                if item.canRetry {
-                    ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
-                }
-                // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
-                // that is where "check the key" lands — which on a phone means the settings tab.
-                if item.needsKey {
-                    BlueprintButton(RecordingDetailStrings.checkKey) { model.showProcessingSettings() }
-                        .accessibilityIdentifier("check-key")
-                }
-                // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
-                // after (`RecordingDetailModel`). As wide as the detail's own Play button.
-                BlueprintButton(RecordingDetailStrings.open, minWidth: playButtonMinWidth) {
-                    detail = model.detail(for: item)
-                }
-                .accessibilityIdentifier("open-detail")
+        // docs/09 화면 원칙 2: Delete ends the last line, across the row's whole width.
+        ActionFlowLayout(trailingLast: item.canDelete) {
+            // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
+            // language, first — and nothing while the download runs (the banner has it).
+            if item.waitingForModel, let download = model.modelDownload {
+                ModelDownloadButton(download: download, language: item.localLanguage)
+                    .accessibilityIdentifier("download-model")
             }
-            Spacer(minLength: 0)
+            if item.link != nil {
+                BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
+            }
+            // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing that
+            // changes the answer is on Google's storage page.
+            if item.alert == .needsSpace {
+                BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
+                    .accessibilityIdentifier("open-storage")
+            }
+            if item.alert == .needsConsent {
+                BlueprintButton(RecKitStrings.localized("Review transfers")) {
+                    model.fix(JobAlert(reason: .needsConsent, count: 1))
+                }
+                .accessibilityIdentifier("review-transfers")
+            }
+            // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+            // comes back on its own `next_run_at`, and there is nothing to ask for.
+            if item.canRetry {
+                ProcessingButton(loc("Retry"), state: model.action) { model.retry(item) }
+            }
+            // docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so
+            // that is where "check the key" lands — which on a phone means the settings tab.
+            if item.needsKey {
+                BlueprintButton(RecordingDetailStrings.checkKey) { model.showProcessingSettings() }
+                    .accessibilityIdentifier("check-key")
+            }
+            // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
+            // after (`RecordingDetailModel`). As wide as the detail's own Play button.
+            BlueprintButton(RecordingDetailStrings.open, minWidth: playButtonMinWidth) {
+                detail = model.detail(for: item)
+            }
+                .accessibilityIdentifier("open-detail")
             // docs/03: a recording being written to, arriving from the watch, or uploaded right now
             // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
             if item.canDelete {
-                BlueprintButton(loc("Delete"), tone: .danger) { model.confirmDelete(item) }
+                BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) { model.confirmDelete(item) }
                     .accessibilityIdentifier("delete")
-                    .fixedSize(horizontal: true, vertical: false)
-                    .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

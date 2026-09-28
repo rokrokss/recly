@@ -24,7 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.Dp
 import app.recly.android.R
+import app.recly.android.ui.theme.ButtonMinWidth
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.ProcessingPhase
 import app.recly.android.ui.theme.Radius
@@ -49,6 +51,8 @@ fun BlueprintButton(
     leading: String? = null,
     /** Monospace for a button whose label is data — a template variable, a field name. */
     monospace: Boolean = false,
+    /** [ButtonMinWidth] for a worded button; [MinTouch] for data and for Close, Delete and Cancel. */
+    minWidth: Dp = if (monospace) MinTouch else ButtonMinWidth,
 ) {
     val palette = blueprint
     val ink = when {
@@ -70,7 +74,7 @@ fun BlueprintButton(
         modifier = modifier
             // docs/09 "접근성": the label is small, the button is not — in both directions. A height
             // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
-            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
             .border(palette.line, edge, RoundedCornerShape(Radius.node))
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)

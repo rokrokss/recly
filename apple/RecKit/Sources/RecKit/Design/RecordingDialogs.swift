@@ -33,8 +33,8 @@ public struct DeleteDialog: View {
 
     public var body: some View {
         BlueprintDialog(title: loc("Delete ‘%@’?", request.title)) {
-            BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
-            BlueprintButton(loc("Delete"), tone: .danger) {
+            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { cancel() }
+            BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) {
                 delete(request, request.remote || deleteDrive)
             }
             .accessibilityIdentifier("delete-confirm")
@@ -111,7 +111,7 @@ public struct RenameDialog: View {
 
     public var body: some View {
         BlueprintDialog(title: loc("Recording title")) {
-            BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
+            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { cancel() }
             BlueprintButton(loc("Save"), tone: .primary) { rename(typed) }
                 .accessibilityIdentifier("rename-save")
         } content: {
@@ -147,7 +147,7 @@ public struct DisconnectDialog: View {
 
     public var body: some View {
         BlueprintDialog(title: loc("Disconnect Recly from Google?")) {
-            BlueprintButton(loc("Cancel"), tone: .quiet) { cancel() }
+            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { cancel() }
             BlueprintButton(loc("Disconnect"), tone: .danger) { confirm(false) }
                 .disabled(!prompt.canConfirm)
                 .accessibilityIdentifier("disconnect-confirm")

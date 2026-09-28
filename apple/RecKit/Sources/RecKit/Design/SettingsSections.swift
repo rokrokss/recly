@@ -51,7 +51,7 @@ public struct LanguageSection: View {
             BlueprintDialog(title: loc("App language")) {
                 // Nothing to cancel: a choice is applied the moment it is made (rule 3), so the one
                 // answer here closes a question that has already been answered.
-                BlueprintButton(loc("Close"), tone: .quiet) { picking = false }
+                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { picking = false }
             } content: {
                 ForEach(AppLanguage.Choice.choices) { choice in
                     BlueprintRadioRow(title(choice), selected: language.effective == choice) {

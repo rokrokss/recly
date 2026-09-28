@@ -61,8 +61,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     // No body, as on the iPhone: the title names the provider, and the key's stored name is not
     // something the user ever typed.
     deletingKey?.let { name -> BlueprintDialog(title = stringResource(R.string.delete_key_title, SttProviders.displayName(name)), onDismissRequest = { deletingKey = null }, actions = {
-        BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET)
-        BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER)
+        BlueprintButton(stringResource(R.string.action_cancel), { deletingKey = null }, tone = ButtonTone.QUIET, minWidth = MinTouch)
+        BlueprintButton(stringResource(R.string.action_delete), { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER, minWidth = MinTouch)
     }) { } }
     // One block of the section table, as the theme chips and the about lines are: the table's
     // surface, its insets, and its rule under it.
@@ -165,7 +165,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             // Only a draft with changes has anything to commit; the buttons appearing is the sign that it does.
             if (state.dirty) EndButtons {
-                BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy)
+                BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy, minWidth = MinTouch)
                 BlueprintButton(stringResource(R.string.action_save), { model.save() }, tone = ButtonTone.PRIMARY,
                     enabled = !state.busy && languageSupported)
             }
@@ -179,7 +179,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 others.forEach { name ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
-                        BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.DANGER)
+                        BlueprintButton(stringResource(R.string.action_delete), { deletingKey = name }, tone = ButtonTone.DANGER, minWidth = MinTouch)
                     }
                 }
             }
@@ -273,7 +273,7 @@ private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save
         }
         EndButtons {
             BlueprintButton(stringResource(R.string.processing_key_replace), { replacing = true }, tone = ButtonTone.QUIET)
-            BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.DANGER)
+            BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.DANGER, minWidth = MinTouch)
         }
     } else {
         OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
@@ -282,7 +282,7 @@ private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save
                 { Text(stringResource(R.string.processing_key_not_on_device)) }
             })
         EndButtons {
-            if (replacing) BlueprintButton(stringResource(R.string.action_cancel), { value = ""; replacing = false }, tone = ButtonTone.QUIET)
+            if (replacing) BlueprintButton(stringResource(R.string.action_cancel), { value = ""; replacing = false }, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = ""; replacing = false } },
                 enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
         }

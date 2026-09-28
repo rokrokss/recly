@@ -21,8 +21,20 @@ public struct BlueprintButton: View {
     private let minWidth: CGFloat?
     private let action: () -> Void
 
+    /// docs/09 "형태": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
+    /// label — `열기`, `Open` — no longer makes the narrowest thing on the screen, and short buttons
+    /// side by side come out one width. Close, Delete and Cancel keep their own width (they pass
+    /// [minTouch]), as do buttons whose label is data. Not on the Mac: its menu is too narrow a
+    /// panel to widen every button in, and the question was asked about the phones.
+    #if os(iOS)
+    public static let wordedMinWidth: CGFloat? = 88
+    #else
+    public static let wordedMinWidth: CGFloat? = nil
+    #endif
+
     /// - Parameter mono: for a label that is data — a provider id — rather than a word, as
     ///   [BlueprintField]'s own `mono` is, and as the other two shells' `BlueprintButton` already had.
+    /// - Parameter minWidth: [wordedMinWidth] when not given, except for a data label.
     public init(
         _ label: String,
         tone: ButtonTone = .accent,
@@ -35,7 +47,7 @@ public struct BlueprintButton: View {
         self.tone = tone
         self.leading = leading
         self.mono = mono
-        self.minWidth = minWidth
+        self.minWidth = minWidth ?? (mono ? nil : Self.wordedMinWidth)
         self.action = action
     }
 
