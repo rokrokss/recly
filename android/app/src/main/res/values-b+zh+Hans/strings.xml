@@ -208,6 +208,7 @@
     <string name="transcript_seek">前往%1$s</string>
     <string name="recording_discard_failed">无法丢弃录音</string>
     <string name="core_provider_region_restricted">此转录提供商在您的App Store地区不可用。</string>
+    <string name="core_provider_not_offered">此转录提供商在iPhone应用中不可用。请选择其他提供商。</string>
     <string name="core_storefront_unavailable">正在等待验证App Store地区，以继续转录。</string>
     <string name="drive_disconnect">断开Drive</string>
     <string name="drive_disconnecting">正在断开连接…</string>

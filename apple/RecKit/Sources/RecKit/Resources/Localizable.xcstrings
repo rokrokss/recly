@@ -6392,6 +6392,237 @@
         }
       }
     },
+    "ElevenLabs uses recordings to improve its models unless this is turned off in your ElevenLabs account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs uses recordings to improve its models unless this is turned off in your ElevenLabs account."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs는 ElevenLabs 계정에서 이 설정을 끄지 않으면 녹음을 모델 개선에 사용합니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabsは、ElevenLabsアカウントでこの設定をオフにしない限り、録音をモデルの改善に使用します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除非您在ElevenLabs账号中关闭此设置，否则ElevenLabs会使用录音改进其模型。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "除非您在ElevenLabs帳戶中關閉此設定，否則ElevenLabs會使用錄音改進其模型。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs usa las grabaciones para mejorar sus modelos, salvo que lo desactives en tu cuenta de ElevenLabs."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs utilise les enregistrements pour améliorer ses modèles, sauf si vous le désactivez dans votre compte ElevenLabs."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs verwendet Aufnahmen zur Verbesserung seiner Modelle, sofern Sie dies nicht in Ihrem ElevenLabs-Konto deaktivieren."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A ElevenLabs usa as gravações para melhorar seus modelos, a menos que isso seja desativado na sua conta ElevenLabs."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تستخدم ElevenLabs التسجيلات لتحسين نماذجها ما لم يتم إيقاف ذلك في حسابك على ElevenLabs."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "जब तक आप अपने ElevenLabs खाते में इसे बंद नहीं करते, ElevenLabs रिकॉर्डिंग का उपयोग अपने मॉडल सुधारने के लिए करता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs использует записи для улучшения своих моделей, если это не отключено в вашем аккаунте ElevenLabs."
+          }
+        }
+      }
+    },
+    "How to turn it off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to turn it off"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "끄는 방법"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "オフにする方法"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何关闭"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如何關閉"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cómo desactivarlo"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comment le désactiver"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "So deaktivieren Sie es"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Como desativar"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "كيفية إيقافه"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इसे बंद कैसे करें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Как отключить"
+          }
+        }
+      }
+    },
+    "I turned off model training in my ElevenLabs account.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I turned off model training in my ElevenLabs account."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabs 계정에서 모델 학습을 껐습니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ElevenLabsアカウントでモデルの学習をオフにしました。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我已在ElevenLabs账号中关闭模型训练。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "我已在ElevenLabs帳戶中關閉模型訓練。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "He desactivado el entrenamiento de modelos en mi cuenta de ElevenLabs."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "J’ai désactivé l’entraînement des modèles dans mon compte ElevenLabs."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ich habe das Modelltraining in meinem ElevenLabs-Konto deaktiviert."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desativei o treinamento de modelos na minha conta ElevenLabs."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أوقفتُ تدريب النماذج في حسابي على ElevenLabs."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "मैंने अपने ElevenLabs खाते में मॉडल प्रशिक्षण बंद कर दिया है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Обучение моделей в моём аккаунте ElevenLabs отключено."
+          }
+        }
+      }
+    },
     "Receiving from the watch": {
       "extractionState": "manual",
       "localizations": {
@@ -12391,6 +12622,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "Этот провайдер расшифровки недоступен в вашем регионе App Store."
+          }
+        }
+      }
+    },
+    "This transcription provider is unavailable in the iPhone app. Choose another provider.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This transcription provider is unavailable in the iPhone app. Choose another provider."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 전사 제공업체는 iPhone 앱에서 사용할 수 없습니다. 다른 제공업체를 선택하세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "この文字起こし提供者はiPhoneアプリでは利用できません。別の提供者を選択してください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此转录提供商在iPhone应用中不可用。请选择其他提供商。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此轉錄供應商在iPhone App中無法使用。請選擇其他供應商。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este proveedor no está disponible en la app para iPhone. Elige otro proveedor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce fournisseur est indisponible dans l’app iPhone. Choisissez un autre fournisseur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Transkriptionsanbieter ist in der iPhone-App nicht verfügbar. Wählen Sie einen anderen Anbieter."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este provedor não está disponível no app para iPhone. Escolha outro provedor."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مزوّد النسخ هذا غير متاح في تطبيق iPhone. اختر مزوّدًا آخر."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह ट्रांसक्रिप्शन प्रदाता iPhone ऐप में उपलब्ध नहीं है। कोई दूसरा प्रदाता चुनें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот провайдер расшифровки недоступен в приложении для iPhone. Выберите другого провайдера."
           }
         }
       }

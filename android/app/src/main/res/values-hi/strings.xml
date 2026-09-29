@@ -208,6 +208,7 @@
     <string name="transcript_seek">%1$s पर जाएँ</string>
     <string name="recording_discard_failed">रिकॉर्डिंग छोड़ी नहीं जा सकी</string>
     <string name="core_provider_region_restricted">यह ट्रांसक्रिप्शन प्रदाता आपके App Store क्षेत्र में उपलब्ध नहीं है।</string>
+    <string name="core_provider_not_offered">यह ट्रांसक्रिप्शन प्रदाता iPhone ऐप में उपलब्ध नहीं है। कोई दूसरा प्रदाता चुनें।</string>
     <string name="core_storefront_unavailable">ट्रांसक्रिप्शन जारी रखने से पहले App Store क्षेत्र की पुष्टि की प्रतीक्षा।</string>
     <string name="drive_disconnect">Drive डिस्कनेक्ट करें</string>
     <string name="drive_disconnecting">डिस्कनेक्ट हो रहा है…</string>

@@ -28,6 +28,10 @@ import recly.core.platform.HttpResult
  * 2026-09-25): a language the first does not speak, Korean among them, falls back to the second.
  * The transcript records `speech_model_used`, the one that actually ran. The step's `model` field
  * does not apply here.
+ *
+ * Every call goes to the EU region (docs/15 "provider 보관 정책", 2026-09-29): AssemblyAI's
+ * documentation says files submitted to its European servers are not used for model training,
+ * without naming a plan. The same API key works there; nothing else in the request changes.
  */
 class AssemblyAiProvider : SttProvider {
     override val name: String = NAME
@@ -187,7 +191,7 @@ class AssemblyAiProvider : SttProvider {
 
     companion object {
         const val NAME = "assemblyai"
-        internal const val BASE = "https://api.assemblyai.com/v2"
+        internal const val BASE = "https://api.eu.assemblyai.com/v2"
         internal val MODELS = listOf("universal-3-5-pro", "universal-2")
         private const val JSON_TYPE = "application/json"
         private const val AUDIO_TYPE = "application/octet-stream"

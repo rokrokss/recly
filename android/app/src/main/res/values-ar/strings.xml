@@ -208,6 +208,7 @@
     <string name="transcript_seek">الانتقال إلى %1$s</string>
     <string name="recording_discard_failed">تعذّر تجاهل التسجيل</string>
     <string name="core_provider_region_restricted">مزوّد النسخ هذا غير متاح في منطقة App Store لديك.</string>
+    <string name="core_provider_not_offered">مزوّد النسخ هذا غير متاح في تطبيق iPhone. اختر مزوّدًا آخر.</string>
     <string name="core_storefront_unavailable">بانتظار التحقق من منطقة App Store قبل متابعة النسخ.</string>
     <string name="drive_disconnect">فصل Drive</string>
     <string name="drive_disconnecting">جارٍ الفصل…</string>

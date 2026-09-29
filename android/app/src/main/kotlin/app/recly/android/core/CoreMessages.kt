@@ -19,6 +19,7 @@ object CoreMessages {
         CoreMessage.LOCAL_MODEL_REQUIRED -> R.string.core_local_model_required
         CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE -> R.string.core_local_diarization_unavailable
         CoreMessage.PROVIDER_REGION_RESTRICTED -> R.string.core_provider_region_restricted
+        CoreMessage.PROVIDER_NOT_OFFERED -> R.string.core_provider_not_offered
         CoreMessage.STOREFRONT_UNAVAILABLE -> R.string.core_storefront_unavailable
         CoreMessage.TRANSFER_CONSENT_REQUIRED -> R.string.core_transfer_consent_required
         CoreMessage.NEEDS_AUTH -> R.string.core_needs_auth
@@ -48,6 +49,7 @@ object CoreMessages {
         CoreMessage.LOCAL_MODEL_REQUIRED,
         CoreMessage.LOCAL_DIARIZATION_UNAVAILABLE,
         CoreMessage.PROVIDER_REGION_RESTRICTED,
+        CoreMessage.PROVIDER_NOT_OFFERED,
         CoreMessage.STOREFRONT_UNAVAILABLE,
         CoreMessage.TRANSFER_CONSENT_REQUIRED,
         CoreMessage.NEEDS_AUTH,

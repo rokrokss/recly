@@ -291,6 +291,7 @@
     <string name="transcript_seek">Go to %1$s</string>
     <string name="recording_discard_failed">Could not discard the recording</string>
     <string name="core_provider_region_restricted">This transcription provider is unavailable in your App Store region.</string>
+    <string name="core_provider_not_offered">This transcription provider is unavailable in the iPhone app. Choose another provider.</string>
     <string name="core_storefront_unavailable">Waiting to verify your App Store region before continuing transcription.</string>
     <string name="drive_disconnect">Disconnect Drive</string>
     <string name="drive_disconnecting">Disconnecting…</string>

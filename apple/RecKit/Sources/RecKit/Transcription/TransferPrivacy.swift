@@ -14,10 +14,10 @@ public enum PrivacyLinks {
         policies[name].flatMap(URL.init(string:))
     }
 
-    // Each provider's official privacy or API data page, checked 2026-09-26 — the same links as the
-    // privacy policy's provider table (docs/15 "provider 보관 정책"). The account's service agreement may also apply.
+    // Each provider's official privacy or API data page, checked 2026-09-26 (AssemblyAI 2026-09-29) — the
+    // same links as the privacy policy's provider table (docs/15 "provider 보관 정책"). The account's service agreement may also apply.
     private static let policies: [String: String] = [
-        "assemblyai": "https://www.assemblyai.com/legal/privacy-policy",
+        "assemblyai": "https://www.assemblyai.com/docs/data-retention-and-model-training",
         "openai": "https://developers.openai.com/api/docs/guides/your-data",
         "groq": "https://console.groq.com/docs/your-data",
         "together": "https://www.together.ai/privacy",
@@ -34,14 +34,31 @@ public enum PrivacyLinks {
     ]
 }
 
+/// docs/15 "iPhone 제공 업체" (App Review 5.1.1(i)): ElevenLabs trains on audio unless the account
+/// has turned that off, and Recly cannot see the account — so the user says it has, before allowing.
+public enum TrainingOptOut {
+    static let provider = "elevenlabs"
+    // ElevenLabs' own help page for the "Improve the models for everyone" toggle, checked 2026-09-29.
+    static let help = URL(string: "https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models")!
+
+    public static func required(_ targets: [TransferTarget]) -> Bool {
+        targets.contains { $0.provider == provider }
+    }
+}
+
 /// The disclosure that precedes a parked job's approval.
 public struct TransferDisclosureList: View {
     private let targets: [TransferTarget]
+    @Binding private var trainingOff: Bool
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
 
-    public init(targets: [TransferTarget]) { self.targets = targets }
+    /// [trainingOff] is the answer the allow button waits for when [TrainingOptOut] requires one.
+    public init(targets: [TransferTarget], trainingOff: Binding<Bool>) {
+        self.targets = targets
+        _trainingOff = trainingOff
+    }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
@@ -63,6 +80,14 @@ public struct TransferDisclosureList: View {
                     // The list's text colour would turn a plain `Link` into body text; this one reads as a link.
                     if let url = PrivacyLinks.provider(target.provider) {
                         BlueprintDialogLink(loc("Provider privacy information")) { openURL(url) }
+                    }
+                    if target.provider == TrainingOptOut.provider {
+                        Text(verbatim: loc("ElevenLabs uses recordings to improve its models unless this is turned off in your ElevenLabs account."))
+                            .font(blueprint.fonts.bodySmall)
+                            .fixedSize(horizontal: false, vertical: true)
+                        BlueprintDialogLink(loc("How to turn it off")) { openURL(TrainingOptOut.help) }
+                        BlueprintCheckRow(loc("I turned off model training in my ElevenLabs account."), isOn: $trainingOff)
+                            .accessibilityIdentifier("training-off")
                     }
                     if target.kind == "transcribe",
                        target.endpoint != SttProviders.shared.defaultEndpoint(name: target.provider) {
@@ -180,6 +205,7 @@ public final class TransferPrivacyModel: ObservableObject {
 
 public struct TransferPrivacyView: View {
     @ObservedObject private var model: TransferPrivacyModel
+    @State private var trainingOff = false
     @Environment(\.locale) private var locale
     @Environment(\.blueprint) private var blueprint
 
@@ -195,11 +221,12 @@ public struct TransferPrivacyView: View {
                 }
                 if !pending.isEmpty {
                     SectionHeader(loc("Transfer permission needed"))
-                    TransferDisclosureList(targets: pending)
+                    TransferDisclosureList(targets: pending, trainingOff: $trainingOff)
                     BlueprintButton(loc("Allow transfers and continue"), tone: .primary) {
+                        trainingOff = false
                         Task { await model.allowPending(pending) }
                     }
-                    .disabled(model.working)
+                    .disabled(model.working || (TrainingOptOut.required(pending) && !trainingOff))
                     .accessibilityIdentifier("allow-pending-transfers")
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }

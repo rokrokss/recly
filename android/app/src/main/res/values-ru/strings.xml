@@ -208,6 +208,7 @@
     <string name="transcript_seek">Перейти к %1$s</string>
     <string name="recording_discard_failed">Не удалось удалить несохранённую запись</string>
     <string name="core_provider_region_restricted">Этот провайдер расшифровки недоступен в вашем регионе App Store.</string>
+    <string name="core_provider_not_offered">Этот провайдер расшифровки недоступен в приложении для iPhone. Выберите другого провайдера.</string>
     <string name="core_storefront_unavailable">Ожидание проверки региона App Store перед продолжением расшифровки.</string>
     <string name="drive_disconnect">Отключить Drive</string>
     <string name="drive_disconnecting">Отключение…</string>

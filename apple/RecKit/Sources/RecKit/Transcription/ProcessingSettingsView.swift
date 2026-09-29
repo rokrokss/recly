@@ -160,6 +160,7 @@ public struct ProcessingSettingsView: View {
     @State private var exporter = false
     @State private var file: ProcessingFile?
     @State private var deletingKey: String?
+    @State private var trainingOff = false
     public init(model: ProcessingSettingsModel) {
         self.model = model
         self.download = model.download
@@ -287,13 +288,14 @@ public struct ProcessingSettingsView: View {
         }
         // docs/15 · App Review 5.1.2(i): what is sent, to whom, and the user's permission, before the
         // provider is saved — and so before anything could be sent to it.
-        .blueprintDialog(isPresented: Binding(get: { !model.consentNeeded.isEmpty }, set: { if !$0 { Task { await model.answerConsent(allow: false) } } })) {
+        .blueprintDialog(isPresented: Binding(get: { !model.consentNeeded.isEmpty }, set: { if !$0 { trainingOff = false; Task { await model.answerConsent(allow: false) } } })) {
             BlueprintDialog(title: RecKitStrings.localized("Send recordings to %@?", SttProviders.shared.displayName(name: model.consentNeeded.first?.provider ?? ""))) {
-                BlueprintButton(loc("Don't allow"), tone: .quiet) { Task { await model.answerConsent(allow: false) } }
-                BlueprintButton(loc("Allow & save"), tone: .primary) { Task { await model.answerConsent(allow: true) } }
+                BlueprintButton(loc("Don't allow"), tone: .quiet) { trainingOff = false; Task { await model.answerConsent(allow: false) } }
+                BlueprintButton(loc("Allow & save"), tone: .primary) { trainingOff = false; Task { await model.answerConsent(allow: true) } }
+                    .disabled(TrainingOptOut.required(model.consentNeeded) && !trainingOff)
                     .accessibilityIdentifier("allow-and-save")
             } content: {
-                TransferDisclosureList(targets: model.consentNeeded)
+                TransferDisclosureList(targets: model.consentNeeded, trainingOff: $trainingOff)
             }
         }
         .fileImporter(isPresented: $importer, allowedContentTypes: [.json, .plainText]) { result in

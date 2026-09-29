@@ -208,6 +208,7 @@
     <string name="transcript_seek">Ir a %1$s</string>
     <string name="recording_discard_failed">No se pudo descartar la grabación</string>
     <string name="core_provider_region_restricted">Este proveedor no está disponible en tu región de App Store.</string>
+    <string name="core_provider_not_offered">Este proveedor no está disponible en la app para iPhone. Elige otro proveedor.</string>
     <string name="core_storefront_unavailable">Esperando a verificar tu región de App Store para continuar la transcripción.</string>
     <string name="drive_disconnect">Desconectar Drive</string>
     <string name="drive_disconnecting">Desconectando…</string>

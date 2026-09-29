@@ -212,7 +212,7 @@ internal class TranscribeHarness(
         transport = RoutingTransport(
             extraSttHost ?: "https://nothing.invalid",
             other.transport(fs),
-            RoutingTransport("https://api.assemblyai.com", stt.transport(fs), mockTransport(drive, fs)),
+            RoutingTransport("https://api.eu.assemblyai.com", stt.transport(fs), mockTransport(drive, fs)),
         ),
         audio = audio,
     )

@@ -19,6 +19,9 @@ enum class CoreMessage {
     /** docs/15: a transcription integration is unavailable in this App Store region. */
     PROVIDER_REGION_RESTRICTED,
 
+    /** docs/15 "iPhone 제공 업체": the App Store shell does not offer this transcription provider. */
+    PROVIDER_NOT_OFFERED,
+
     /** StoreKit has not supplied a region; wait without sending audio or spending retries. */
     STOREFRONT_UNAVAILABLE,
 

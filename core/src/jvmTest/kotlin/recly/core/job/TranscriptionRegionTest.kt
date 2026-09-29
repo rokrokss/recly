@@ -12,6 +12,7 @@ import recly.core.model.Step
 import recly.core.platform.*
 import recly.core.testing.*
 import recly.core.transcribe.*
+import recly.core.workflow.WorkflowParser
 
 class TranscriptionRegionTest {
     private fun sttStep() = Step.Transcribe(id = "stt", provider = "assemblyai", secretRef = "stt_key")
@@ -28,6 +29,33 @@ class TranscriptionRegionTest {
         f.service.runDueJobs()
         assertEquals(JobStatus.FAILED, f.store.get(id)!!.status)
         assertEquals(CoreMessage.PROVIDER_REGION_RESTRICTED.code(), f.store.stepsOf(id).single().lastError)
+        assertEquals(0, runner.calls)
+    }
+
+    @Test
+    fun `the App Store shell offers only providers that keep the audio out of training`() = runBlocking<Unit> {
+        val policy = TranscriptionPolicy(Region("USA"))
+        policy.refresh()
+        val offered = setOf("openai", "groq", "azure", "rtzr", "deepgram", "clova", "elevenlabs", "assemblyai")
+        assertEquals(offered, WorkflowParser.STT_PROVIDERS.filter(policy::providerAvailable).toSet())
+        for (provider in WorkflowParser.STT_PROVIDERS - offered) {
+            val failure = assertFailsWith<StepFailure>(provider) { policy.requireAllowed(sttStep().copy(provider = provider)) }
+            assertEquals(CoreMessage.PROVIDER_NOT_OFFERED.code(), failure.reason)
+        }
+        for (provider in offered) policy.requireAllowed(sttStep().copy(provider = provider))
+        // Shells without a storefront policy keep every provider.
+        assertEquals(WorkflowParser.STT_PROVIDERS, WorkflowParser.STT_PROVIDERS.filter(TranscriptionPolicy()::providerAvailable))
+    }
+
+    @Test
+    fun `a saved step for a provider the App Store shell does not offer fails before consent or any request`() = runBlocking<Unit> {
+        val runner = ScriptedRunner("transcribe") { _, _ -> output("text" to "must not run") }
+        val f = Fixture(listOf(runner), requireTransferConsent = true,
+            transcriptionPolicy = TranscriptionPolicy(Region("USA")))
+        val id = f.enqueue(f.seed(), sttStep().copy(provider = "gladia"))
+        f.service.runDueJobs()
+        assertEquals(JobStatus.FAILED, f.store.get(id)!!.status)
+        assertEquals(CoreMessage.PROVIDER_NOT_OFFERED.code(), f.store.stepsOf(id).single().lastError)
         assertEquals(0, runner.calls)
     }
 

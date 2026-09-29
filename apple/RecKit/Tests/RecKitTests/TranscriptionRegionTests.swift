@@ -31,11 +31,12 @@ final class TranscriptionRegionTests: XCTestCase {
         XCTAssertTrue(model.providers.contains("groq"))
         region.code = "USA"
         await model.refreshProviders()
-        XCTAssertTrue(model.providers.contains("openai"))
+        // docs/15 "iPhone 제공 업체": the providers that keep the audio out of training.
+        XCTAssertEqual(Set(model.providers), ["openai", "groq", "azure", "rtzr", "deepgram", "clova", "elevenlabs", "assemblyai"])
         region.code = "CHN"
         await model.refreshProviders()
         XCTAssertFalse(model.providers.contains("openai"))
-        XCTAssertEqual(model.providers.count, 13)
+        XCTAssertEqual(model.providers.count, 7)
         region.code = "HKG"
         await model.refreshProviders()
         XCTAssertTrue(model.providers.contains("openai"))

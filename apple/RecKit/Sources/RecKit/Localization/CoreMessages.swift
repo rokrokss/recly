@@ -38,6 +38,7 @@ public enum CoreMessages {
         case .localModelRequired: return "The speech recognition model isn't downloaded yet."
         case .localDiarizationUnavailable: return "This local engine does not support speaker identification. Turn it off or choose an external API."
         case .providerRegionRestricted: return "This transcription provider is unavailable in your App Store region."
+        case .providerNotOffered: return "This transcription provider is unavailable in the iPhone app. Choose another provider."
         case .storefrontUnavailable: return "Waiting to verify your App Store region before continuing transcription."
         case .transferConsentRequired: return "Permission is needed before sending to this destination"
         case .needsAuth: return "Sign in again to carry on"
@@ -67,7 +68,7 @@ public enum CoreMessages {
     /// The keys whose sentence has a `%@` in it; the rest are looked up without one.
     static func takesArgument(_ message: CoreMessage) -> Bool {
         switch message {
-        case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
+        case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .providerNotOffered, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
              .noInputTrack, .resultTimeout:
             return false

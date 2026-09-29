@@ -1497,6 +1497,7 @@ interface TokenProvider {
 
 새 외부 전사 설정의 목록과 기본 선택은 **ElevenLabs → CLOVA → AssemblyAI → RTZR → OpenAI → Groq →
 Together → Mistral → Deepgram → Azure → Daglo → Speechmatics → Rev → Gladia** 순이다. 저장된 제공자는 바꾸지 않는다.
+iPhone(App Store)은 §15 "iPhone 제공 업체"의 여덟 곳만 같은 순서로 보인다(2026-09-29).
 
 전사 언어는 `ko`, `en`, `ja`, `zh-cn`, `zh-tw`, `es`, `fr`, `de`, `pt`, `ar`, `hi`, `ru`, `it`, `id`, `tr`,
 `vi`, `th`, `nl`, `pl`, `uk` 20개 선택값에 기존 `ko-en`·`auto`를 더한다. 새 설정의 초기 언어는 기기 언어에서 정한다.
@@ -1510,7 +1511,7 @@ API가 ISO 언어 코드만 받으면 중국어 두 선택값은 `zh`, Speechmat
 |---|---|---|---|---|---|---|
 | `elevenlabs` (Scribe) | 헤더 `xi-api-key`; 값 = 키 | `POST https://api.elevenlabs.io/v1/speech-to-text` multipart(`file`, `model_id`, `language_code`, `diarize`, `num_speakers`, `timestamps_granularity=word`, `tag_audio_events=false`), 동기 | 없음(동기) | `diarize`, `num_speakers`(단일 값을 알 때만) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략 | `scribe_v2` |
 | `clova` (Naver CLOVA Speech 장문) | 헤더 `X-CLOVASPEECH-API-KEY`; 값 = 키 문자열. `invokeUrl`은 단계 필드 | `POST {invokeUrl}/recognizer/upload` multipart(`media`, `params` JSON), `completion: "sync"`(≤2 h; 결과가 응답 본문) | 없음(동기). HTTP 타임아웃 15분 | `diarization.enable`, `speakerCountMin/Max`(≤10) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`enko`, `auto`→`ko-KR` | — |
-| `assemblyai` | 헤더 `authorization`; 값 = 키 | `POST /v2/upload`(바이트) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-3-5-pro","universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected`(min=max일 때) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-3-5-pro` → `universal-2`(문서의 기본 라우팅, 2026-09-25 — 한국어처럼 앞 모델이 못 하는 언어는 뒤 모델로 넘어간다. 전사 파일의 `model`은 응답의 `speech_model_used`) |
+| `assemblyai` | 헤더 `authorization`; 값 = 키 | 기본 주소 `https://api.eu.assemblyai.com/v2`(EU 리전 — 학습 제외, §15 "provider 보관 정책", 2026-09-29). `POST /v2/upload`(바이트) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-3-5-pro","universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected`(min=max일 때) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-3-5-pro` → `universal-2`(문서의 기본 라우팅, 2026-09-25 — 한국어처럼 앞 모델이 못 하는 언어는 뒤 모델로 넘어간다. 전사 파일의 `model`은 응답의 `speech_model_used`) |
 | `rtzr` (리턴제로) | 값 = `{clientId}:{clientSecret}`. `POST /v1/authenticate` → JWT(6 h) 캐시(단계 state) | `POST /v1/transcribe` multipart(`file`, `config` JSON) → `id` | `GET /v1/transcribe/{id}` → `transcribing`/`completed`/`failed`. `Waiting(30s)` | `use_diarization`, `diarization.spk_count`(min=max일 때만 전달) | `sommers`는 `ko`/`ja`만 → `ko`→`sommers`; `en`·`ko-en`·`auto`는 `model_name: "whisper"` + `language: "en"`/`"multi"`/`"detect"` | `sommers` |
 | `openai` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart(`file`, `model`, `language`), 동기(응답 본문이 결과). base 기본 `https://api.openai.com/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | 모델 이름이 정한다 — 이름에 `diarize`가 있으면 `response_format=diarized_json` + `chunking_strategy=auto`, `whisper`로 시작하면 `verbose_json` + `timestamp_granularities[]=segment`, 그 밖은 `json`. 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략(자동 감지) | `diarize`면 `gpt-4o-transcribe-diarize`, 아니면 `whisper-1` |
 | `groq` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.groq.com/openai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | **없다** — Groq에 화자분리가 없으므로 `diarize`는 무시하고 화자는 `null`. `verbose_json` 고정 | 위와 같음 | `whisper-large-v3-turbo` |
@@ -2757,6 +2758,29 @@ Hugging Face·GitHub의 공개 파일)를 쓰고, 정책
 - StoreKit의 현재 국가 정보는 사용 직전에 읽고 설정 화면은 `Storefront.updates`를 구독한다. 이전 국가를 디스크에 저장해 허용 근거로 재사용하지 않는다.
 - 추가 시스템 서비스 경로: Apple StoreKit에 App Store 국가 정보를 요청한다. Recly가 이 조회에 녹음·녹취록·처리 설정·외부 업체 API 키를 전달하지 않는다. Apple의 시스템 서비스가 계정/storefront 정보를 관리하며, 앱이 별도의 IP 위치 조회 서버를 호출하지 않는다.
 
+### iPhone 제공 업체
+
+2026-09-29 심사 대응(App Review 5.1.1(i) — 방침이 제3자의 "same or equal protection"을 확인해야 한다): iPhone은 녹음을
+모델 학습에 쓰지 않는 업체만 제공한다. 방침 §3(2) "Providers offered on iPhone"이 이 목록으로 동등 보호를 확인한다.
+Android·Windows·직접 배포 macOS는 열넷을 그대로 두고 방침에 업체별 차이를 공개한다(사용자 결정).
+
+| 업체 | 학습 제외 근거 |
+|---|---|
+| OpenAI · Groq · Azure AI Speech · RTZR | 기본값 |
+| Deepgram | Recly가 모든 요청에 `mip_opt_out=true`를 보낸다 |
+| AssemblyAI | Recly가 모든 플랫폼에서 EU 리전(`api.eu.assemblyai.com`)으로 보낸다 — 문서상 유럽 서버로 보낸 파일은 학습 제외(요금제 조건 없음) |
+| CLOVA Speech | 약관상 고객 동의가 있을 때만 엔진 개선에 사용 |
+| ElevenLabs | 계정의 "Improve the models for everyone"을 끈 경우만. 앱이 확인할 수 없으므로 전송 허용 창이 사용자에게 확인받는다 |
+
+- 코어 `TranscriptionPolicy.APP_STORE_PROVIDERS`가 정본이다. App Store 셸(`TranscriptionPolicy(region)`)에서만 켜진다.
+  설정의 제공자 목록에서 나머지를 숨기고, 저장·가져오기 확인과 실행 직전 검사(`requireAllowed`)는 `PROVIDER_NOT_OFFERED`로
+  막는다 — 이미 큐에 있는 잡도 요청 전에 실패한다. 저장된 설정이나 키를 자동 삭제하지 않는다.
+- ElevenLabs 전송 허용(설정 저장 창과 설정 → 개인정보 보호의 허용 버튼)은 "ElevenLabs 계정에서 모델 학습을 껐습니다"
+  확인란을 체크해야 켜진다. 창은 ElevenLabs가 끄지 않으면 녹음을 모델 개선에 쓴다는 사실과 ElevenLabs 안내 페이지
+  (<https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models>, 2026-09-29 확인)를
+  보인다. ElevenLabs의 EU 데이터 거주·무보관 모드는 Enterprise 전용이라 쓰지 않는다.
+- 제외(iPhone): Together AI, Mistral AI, Daglo, Speechmatics, Rev AI, Gladia.
+
 ### §0 기기 안에만 있는 것
 
 | 데이터 | 어디에 | 나가는가 |
@@ -2859,14 +2883,14 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 
 | provider | 학습·보관 기본값(요약) | 공식 링크 |
 |---|---|---|
-| AssemblyAI | 학습에 쓸 수 있음(유료 계정은 대시보드에서 거부). 업로드 오디오 48시간 내 삭제, 녹취 30일 | <https://www.assemblyai.com/legal/privacy-policy> |
-| CLOVA Speech | 결과·로그 7일. 고객 동의 시에만 엔진 개선에 사용 | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> |
+| AssemblyAI | Recly는 EU 리전으로 보냄 — 문서상 유럽 서버로 보낸 파일은 학습 제외(요금제 조건 없음. 미국 리전 기본값은 학습, 유료만 거부 가능; 약관 §4.3에는 EU 예외가 없어 "문서에 따르면"으로 인용). 업로드 오디오 48시간 내 삭제, 녹취 30일 (2026-09-29) | <https://www.assemblyai.com/docs/data-retention-and-model-training> |
+| CLOVA Speech | 고객 동의 시에만 엔진 개선에 사용(약관 §4②), 인식 결과·실행 로그 분쟁 대응용 7일(§7①). 오디오 자체 보관 기간은 공개 안 됨 (2026-09-29 약관 <https://www.ncloud.com/policy/terms/clsph>) | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> |
 | RTZR | 학습에 쓰지 않음. 배치 오디오 인식 후 삭제, 녹취 최대 3일 | <https://developers.rtzr.ai/privacy> |
 | OpenAI | 옵트인 없으면 학습 안 함. 전사 엔드포인트는 악용 감시 보관도 없음 | <https://developers.openai.com/api/docs/guides/your-data> |
 | Groq | 학습 안 함, 기본 보관 없음(장애·악용 조사 로그 최대 30일) | <https://console.groq.com/docs/your-data> |
 | Together AI | 기본 저장·제품 개선 사용(학습은 옵트인), 계정에서 저장 끔 가능 | <https://www.together.ai/privacy> |
 | Mistral AI | 악용 감시 30일 보관. 무료 모드는 거부 전까지 학습, 유료 기본값 불명시 | <https://legal.mistral.ai/terms/privacy-policy/> |
-| ElevenLabs | 계정에서 거부 전까지 모델 개선 사용, 요청 기록은 삭제할 때까지 | <https://elevenlabs.io/privacy-policy> |
+| ElevenLabs | Enterprise가 아니면 유료도 기본 학습. 계정 Data use의 "Improve the models for everyone"을 끄면 이후 데이터부터 제외(API 없음). 요청별 `enable_logging=false`는 Enterprise 전용. 요청 기록은 삭제할 때까지 (2026-09-29) | <https://elevenlabs.io/privacy-policy> |
 | Deepgram | 기본은 모델 개선용 보관이지만 **Recly는 모든 요청에 `mip_opt_out=true`를 보내** 처리 동안만 보관·학습 안 함 | <https://developers.deepgram.com/trust-security/your-data> |
 | Azure AI Speech | 학습 안 함, 빠른 전사 오디오 저장 안 함, 서비스 제공에만 처리 | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> |
 | Daglo | API 약관상 품질·성능 개선 사용 가능, 오디오 3개월, 거부 방법 불명시 | <https://developers.daglo.ai/privacy> |
@@ -2876,11 +2900,12 @@ Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
 
 **작성 규칙**: 업체 약관은 바뀐다. 방침·앱 문구로 옮길 때는 확인 날짜와 공식 링크를 함께 두고, 인용하기 전에 공식
 문서로 다시 확인한다. 확인되지 않은 보관 기간·학습 여부를 지어내지 않는다. 모든 업체가 같은 수준으로 보호한다고
-쓰지 않는다(2026-09-26 사용자 결정: 14곳 유지, 방침에 업체별 차이 공개).
+쓰지 않는다 — 동등 보호를 확인하는 것은 "iPhone 제공 업체"의 여덟 곳뿐이고, 그 근거는 그 절의 표다. 나머지는 방침에
+업체별 차이를 공개한다(2026-09-26 사용자 결정: 14곳 유지 → 2026-09-29 재반려 뒤 iPhone만 여덟 곳).
 
 **iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 그 작업에 고정된 처리 계획으로 계산한다.
 
-녹음 처리 설정 저장은 아직 허용하지 않은 대상이면 확인 창 “녹음을 {업체}에 보낼까요?”를 띄운다. 받는 곳(업체 이름, “제3자 AI 음성 인식 서비스이며 Recly가 운영하지 않는다”, 주소), 보내는 데이터와 목적, 업체 방침 링크, 철회 방법을 보이고 “허용 안 함”·“허용하고 저장”으로 답한다(App Review 5.1.1(i)·5.1.2(i)). 허용하지 않으면 저장하지 않는다. 묻는 곳은 이 설정 저장뿐이고 녹음 중에는 묻지 않는다. 가져오기는 편집 가능한 미리보기로 초안에 들어가므로 저장할 때 같은 확인을 거친다. 같은 대상이면 추가 확인 없이 일반 저장이다(2026-09-26 복원 — 2026-09-25 고정 처리 계획 전환에서 빠졌던 확인). API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 설정 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
+녹음 처리 설정 저장은 아직 허용하지 않은 대상이면 확인 창 “녹음을 {업체}에 보낼까요?”를 띄운다. 받는 곳(업체 이름, “제3자 AI 음성 인식 서비스이며 Recly가 운영하지 않는다”, 주소), 보내는 데이터와 목적, 업체 방침 링크, 철회 방법을 보이고 “허용 안 함”·“허용하고 저장”으로 답한다(App Review 5.1.1(i)·5.1.2(i)). ElevenLabs는 학습을 껐다는 확인란을 체크해야 허용할 수 있다("iPhone 제공 업체"). 허용하지 않으면 저장하지 않는다. 묻는 곳은 이 설정 저장뿐이고 녹음 중에는 묻지 않는다. 가져오기는 편집 가능한 미리보기로 초안에 들어가므로 저장할 때 같은 확인을 거친다. 같은 대상이면 추가 확인 없이 일반 저장이다(2026-09-26 복원 — 2026-09-25 고정 처리 계획 전환에서 빠졌던 확인). API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 설정 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
 
 기존 작업과 Watch 수신 작업은 팝업 없이 허용 대기로 남고 목록에서 설정 → 개인정보 보호로 이동해 해결한다. 같은 화면에서 허용을 철회할 수 있다. 철회는 이미 보낸 데이터나 API 키를 삭제하지 않는다. Google Drive는 별도 Google OAuth를 사용한다. 참가자 녹음 동의 안내(§12·§13)와도 별개의 허용이다.
 

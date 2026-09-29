@@ -208,6 +208,7 @@
     <string name="transcript_seek">Zu %1$s</string>
     <string name="recording_discard_failed">Aufnahme konnte nicht verworfen werden</string>
     <string name="core_provider_region_restricted">Dieser Transkriptionsanbieter ist in Ihrer App-Store-Region nicht verfügbar.</string>
+    <string name="core_provider_not_offered">Dieser Transkriptionsanbieter ist in der iPhone-App nicht verfügbar. Wählen Sie einen anderen Anbieter.</string>
     <string name="core_storefront_unavailable">Warten auf Prüfung Ihrer App-Store-Region, bevor die Transkription fortgesetzt wird.</string>
     <string name="drive_disconnect">Drive trennen</string>
     <string name="drive_disconnecting">Wird getrennt…</string>

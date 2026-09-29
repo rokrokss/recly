@@ -23,9 +23,9 @@ final class TransferPrivacyTests: XCTestCase {
         )
     }
 
-    /// Two transcription destinations, as the fixed plan's `transcribe` step names them.
-    private func transcribeTargets() -> [TransferTarget] {
-        ["openai", "groq"].compactMap { provider in
+    /// Transcription destinations, as the fixed plan's `transcribe` step names them.
+    private func transcribeTargets(_ providers: [String] = ["openai", "groq"]) -> [TransferTarget] {
+        providers.compactMap { provider in
             TransferTargets.shared.forStep(step: Step.Transcribe(
                 id: "transcribe",
                 onError: .abort,
@@ -98,6 +98,13 @@ final class TransferPrivacyTests: XCTestCase {
             let url = PrivacyLinks.provider(provider)
             XCTAssertEqual(url?.scheme, "https", provider)
         }
+    }
+
+    /// docs/15 "iPhone 제공 업체": only ElevenLabs, which trains unless the account turns it off,
+    /// waits for the user to say the account has.
+    func testOnlyElevenLabsAsksWhetherTrainingIsOff() {
+        XCTAssertTrue(TrainingOptOut.required(transcribeTargets(["groq", "elevenlabs"])))
+        XCTAssertFalse(TrainingOptOut.required(transcribeTargets(["openai", "groq", "azure", "rtzr", "deepgram", "clova", "assemblyai"])))
     }
 
     func testPermissionAlertRoutesToPrivacyAndHasARecognizableBadge() {

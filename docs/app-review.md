@@ -102,3 +102,50 @@
 
 App Review Information → Notes에도 같은 요지(외부 API 선택 시에만 제3자 AI 전송, 저장 시 허락, 확인 경로)를 넣는다.
 
+
+
+## 2026-09-29 · Guideline 5.1.1(i)·5.1.2(i) 재반려 답변
+
+지적: 빌드 26(0.1.0)에 같은 문구로 “The issues we previously identified still need your attention.” 어느 요구사항이 남았는지는 적혀 있지 않다.
+
+진단: 빌드 26에는 저장 시 확인 창(48e0fff)과 업체별 약관 공개(c09bbb3)가 들어 있었다. 요구사항 넷 가운데 문자 그대로 어긋난 것은 방침이었다. 5.1.1(i)은 제3자가 “same or equal protection”을 제공한다고 **확인**하라고 요구하는데, 방침 §3(2)는 업체들이 모두 같은 수준으로 보호하지는 않는다고 적었다. 빌드 26 제출 때 Resolution Center 답변은 보내지 않았고 Notes만 적었다.
+
+대응(2026-09-29 사용자 결정):
+- iPhone은 녹음을 학습에 쓰지 않는 여덟 곳만 제공한다(recly.md §15 “iPhone 제공 업체”). 방침 §3(2) “Providers offered on iPhone”이 동등 보호를 확인한다.
+- AssemblyAI는 모든 플랫폼에서 EU 리전으로 보낸다.
+- ElevenLabs는 학습을 껐다는 확인란을 체크해야 허용할 수 있다.
+- 이번에는 Resolution Center 답변과 Notes를 **둘 다** 보낸다.
+
+보내기 전에:
+- AssemblyAI EU 실호출 확인이 통과해야 한다. 한국어 요청이 `universal-2`로 가는지, 화자 분리가 되는지 확인한다.
+- 새 빌드로 실제 iPhone(또는 시뮬레이터)에서 ElevenLabs 확인 창을 촬영하고 `[ ]`를 채운다.
+- 방침이 recly.dev에 반영됐는지 확인한다.
+
+> Hello App Review Team,
+>
+> Thank you for the follow-up. We have revised both the app and the privacy policy in build [version/build].
+>
+> Recly sends a recording to a third-party AI service only when the user chooses an external speech-to-text provider in Settings → Recording processing → External API, using their own API key. New installations transcribe on device and send nothing to any AI service.
+>
+> **What is sent, to whom, and permission (5.1.2(i)).** Saving External API with a provider not yet allowed on this iPhone first shows “Send recordings to [Provider]?”. This screen:
+> - names the recipient: the provider, described as a third-party AI speech recognition service that Recly does not operate, with its endpoint;
+> - states what is sent and why: the full audio of each recording, with the language and speaker settings, for transcription;
+> - links to the provider’s privacy information and explains how to withdraw permission (Settings → Privacy);
+> - asks for permission with “Don’t allow” and “Allow & save”. If the user declines, the settings are not saved and nothing is sent.
+>
+> For ElevenLabs, the screen also explains that ElevenLabs uses recordings to improve its models unless this is turned off in the ElevenLabs account. It links to ElevenLabs’ instructions, and keeps “Allow & save” disabled until the user confirms it is turned off. The app checks the permission again before every request to a provider, including for recordings received from Apple Watch.
+>
+> **Privacy policy (5.1.1(i)).** Our privacy policy (https://recly.dev/policy/privacy-policy), section 3(2), states what the app sends, how and why, and names each third-party AI provider. In this build the iPhone app offers only providers that do not use recordings to train their models. The policy’s “Providers offered on iPhone” paragraph confirms that these providers provide the same or equal protection of user data as the policy, and gives the basis for each:
+> - OpenAI, Groq, Microsoft Azure AI Speech and RTZR, by default;
+> - Deepgram, through the opt-out the app sends with every request;
+> - AssemblyAI, through its EU servers, which the app uses for every request;
+> - NAVER CLOVA Speech, under terms that allow engine improvement only with the customer’s consent;
+> - ElevenLabs, once training is turned off in the user’s account, as confirmed on the permission screen.
+>
+> Providers that do not meet this standard have been removed from the iPhone app.
+>
+> **To see the permission screen:** Settings → Recording processing → External API → choose a provider (for example ElevenLabs) → Save. No API key is needed. Screenshots: [URL]
+
+App Review Information → Notes (요지):
+
+> Third-party AI: Recly sends audio to a speech-to-text provider only when the user selects External API in Settings → Recording processing, using their own API key; the default is on-device transcription. Before saving a provider, the app shows “Send recordings to [Provider]?” (recipient, data sent, purpose, provider privacy link, withdrawal) with “Don’t allow” / “Allow & save”; ElevenLabs additionally requires confirming that model training is off in the ElevenLabs account. The iPhone app offers only providers that do not train on recordings; see privacy policy §3(2) “Providers offered on iPhone”. Path: Settings → Recording processing → External API → pick a provider → Save (no key needed).

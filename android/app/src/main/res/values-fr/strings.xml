@@ -208,6 +208,7 @@
     <string name="transcript_seek">Aller à %1$s</string>
     <string name="recording_discard_failed">Impossible d’abandonner l’enregistrement</string>
     <string name="core_provider_region_restricted">Ce fournisseur est indisponible dans votre région App Store.</string>
+    <string name="core_provider_not_offered">Ce fournisseur est indisponible dans l’app iPhone. Choisissez un autre fournisseur.</string>
     <string name="core_storefront_unavailable">Vérification de votre région App Store avant de poursuivre la transcription.</string>
     <string name="drive_disconnect">Déconnecter Drive</string>
     <string name="drive_disconnecting">Déconnexion…</string>

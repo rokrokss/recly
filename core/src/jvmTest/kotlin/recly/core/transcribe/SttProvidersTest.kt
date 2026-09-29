@@ -19,6 +19,12 @@ class SttProvidersTest {
         )
     }
 
+    /** docs/15 "provider 보관 정책": AssemblyAI keeps files sent to its EU region out of training. */
+    @Test
+    fun `AssemblyAI is called and disclosed at its EU region`() {
+        assertEquals("https://api.eu.assemblyai.com/v2", SttProviders.defaultEndpoint("assemblyai"))
+    }
+
     @Test
     fun `a name the registry does not know is null rather than a broken provider`() {
         assertNull(SttProviders.create("whisper-local"))

@@ -208,6 +208,7 @@
     <string name="transcript_seek">%1$sへ移動</string>
     <string name="recording_discard_failed">録音を破棄できませんでした</string>
     <string name="core_provider_region_restricted">この文字起こし提供者は、お使いのApp Storeの地域では利用できません。</string>
+    <string name="core_provider_not_offered">この文字起こし提供者はiPhoneアプリでは利用できません。別の提供者を選択してください。</string>
     <string name="core_storefront_unavailable">文字起こしを続ける前に、App Storeの地域を確認しています。</string>
     <string name="drive_disconnect">Driveの接続を解除</string>
     <string name="drive_disconnecting">接続解除中…</string>
