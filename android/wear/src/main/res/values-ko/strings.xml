@@ -27,7 +27,7 @@
     <string name="info_open">안내</string>
     <string name="info_back">닫기</string>
     <string name="info_shortcut_title">홈 키 두 번 → 녹음</string>
-    <string name="info_shortcut_body">워치 설정 → 고급 기능 → 키 사용자화 → 홈 키 두 번 누르기 → 앱 열기에서 "Recly 녹음"을 고르면 앱을 열 필요 없이 두 번 누르는 즉시 녹음이 시작됩니다. "Recly"를 고르면 앱만 열립니다.</string>
+    <string name="info_shortcut_body">워치 설정 → 고급 기능 → 키 사용자화 → 홈 키 두 번 누르기 → 앱 열기에서 \"Recly 녹음\"을 고르면 앱을 열 필요 없이 두 번 누르는 즉시 녹음이 시작됩니다. \"Recly\"를 고르면 앱만 열립니다.</string>
     <string name="info_battery_title">Galaxy Wearable 배터리 최적화 해제</string>
     <string name="info_battery_body">폰 설정 → 배터리 → 백그라운드 사용 제한에서 Galaxy Wearable을 제외하세요. 최적화가 켜져 있으면 블루투스 연결이 끊겨 녹음이 폰으로 넘어가지 않습니다.</string>
     <string name="info_transfer_title">전송</string>

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,9 +27,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ButtonDefaults
@@ -90,62 +94,82 @@ private fun RecordScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Text(
-                text = formatElapsed(elapsedSeconds(state.startedAt)),
-                style = WearBlueprint.timer,
-                color = WearBlueprint.text,
-                maxLines = 1,
-            )
-
-            // docs/09 §7 "상태 한 줄": the state as a code and a colour, and — when a stop had
-            // something to report — what it was, because on a watch there is nowhere else to put it.
-            Text(
-                text = state.message?.text() ?: stringResource(statusLabel(state)),
-                style = WearBlueprint.small,
-                color = if (state.canStop) WearBlueprint.danger else WearBlueprint.textMuted,
-                textAlign = TextAlign.Center,
-                maxLines = 2,
-            )
-
-            Spacer(Modifier.height(10.dp))
-            RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
-
-            Spacer(Modifier.height(8.dp))
-            // docs/11 "주의": Samsung will delay the worker, so the badge says "n waiting" rather
-            // than pretending the phone has it. A refusal is worse news than a wait and gets its
-            // own line — the audio is still on this watch and nothing will retry it.
-            // docs/11 W2: while a pass has a phone and is handing files over, the same count is
-            // "n sending" — a delayed worker and a transfer in flight are the user's two questions
-            // about the same number, and only the sender can tell them apart.
-            Text(
-                text = stringResource(
-                    if (state.handingOver) R.string.sending_badge else R.string.pending_badge,
-                    state.pending,
-                ),
-                style = WearBlueprint.small,
-                color = WearBlueprint.textMuted,
-                maxLines = 3,
-            )
-            if (state.failed > 0) {
+            FitToWatch {
                 Text(
-                    text = stringResource(R.string.transfer_failed_badge, state.failed),
+                    text = formatElapsed(elapsedSeconds(state.startedAt)),
+                    style = WearBlueprint.timer,
+                    color = WearBlueprint.text,
+                    maxLines = 1,
+                )
+
+                // docs/09 §7 "상태 한 줄": the state as a code and a colour, and — when a stop had
+                // something to report — what it was, because on a watch there is nowhere else to put it.
+                Text(
+                    text = state.message?.text() ?: stringResource(statusLabel(state)),
                     style = WearBlueprint.small,
-                    color = WearBlueprint.danger,
+                    color = if (state.canStop) WearBlueprint.danger else WearBlueprint.textMuted,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                )
+
+                Spacer(Modifier.height(10.dp))
+                RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
+
+                Spacer(Modifier.height(8.dp))
+                // docs/11 "주의": Samsung will delay the worker, so the badge says "n waiting" rather
+                // than pretending the phone has it. A refusal is worse news than a wait and gets its
+                // own line — the audio is still on this watch and nothing will retry it.
+                // docs/11 W2: while a pass has a phone and is handing files over, the same count is
+                // "n sending" — a delayed worker and a transfer in flight are the user's two questions
+                // about the same number, and only the sender can tell them apart.
+                Text(
+                    text = stringResource(
+                        if (state.handingOver) R.string.sending_badge else R.string.pending_badge,
+                        state.pending,
+                    ),
+                    style = WearBlueprint.small,
+                    color = WearBlueprint.textMuted,
                     maxLines = 3,
                 )
-            }
+                if (state.failed > 0) {
+                    Text(
+                        text = stringResource(R.string.transfer_failed_badge, state.failed),
+                        style = WearBlueprint.small,
+                        color = WearBlueprint.danger,
+                        maxLines = 3,
+                    )
+                }
 
-            Spacer(Modifier.height(6.dp))
-            CompactButton(
-                onClick = onInfo,
-                shape = RoundedCornerShape(WearBlueprint.radius),
-                colors = ButtonDefaults.outlinedButtonColors(),
-                border = BorderStroke(WearBlueprint.line, WearBlueprint.grid),
-                label = { Text(text = stringResource(R.string.info_open), maxLines = 1) },
-            )
+                Spacer(Modifier.height(6.dp))
+                CompactButton(
+                    onClick = onInfo,
+                    shape = RoundedCornerShape(WearBlueprint.radius),
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    border = BorderStroke(WearBlueprint.line, WearBlueprint.grid),
+                    label = { Text(text = stringResource(R.string.info_open), maxLines = 1) },
+                )
+            }
         }
     }
 }
+
+/**
+ * docs/09 "유동 타이포": the record screen is drawn for a large round watch, and a smaller one gets
+ * the same screen scaled down to its width — at the drawn size the Help button sat under the curve
+ * of a 192dp watch. Larger watches keep the drawn size.
+ */
+@Composable
+private fun FitToWatch(content: @Composable () -> Unit) {
+    val scale = (LocalConfiguration.current.screenWidthDp / DRAWN_FOR_WIDTH_DP).coerceAtMost(1f)
+    val density = LocalDensity.current
+    CompositionLocalProvider(
+        LocalDensity provides Density(density.density * scale, density.fontScale),
+        content = content,
+    )
+}
+
+/** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
+private const val DRAWN_FOR_WIDTH_DP = 227f
 
 /** docs/09 "형태": the round button is a square node here too — filled while it is recording. */
 @Composable

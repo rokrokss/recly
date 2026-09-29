@@ -37,7 +37,7 @@
     <string name="info_open">Help</string>
     <string name="info_back">Close</string>
     <string name="info_shortcut_title">Double home key → record</string>
-    <string name="info_shortcut_body">Watch Settings → Advanced features → Customise keys → Double press home key → Open app, and choose "Recly Record". Recording then starts from the double press, without opening the app first. Choose "Recly" instead to only open the app.</string>
+    <string name="info_shortcut_body">Watch Settings → Advanced features → Customise keys → Double press home key → Open app, and choose \"Recly Record\". Recording then starts from the double press, without opening the app first. Choose \"Recly\" instead to only open the app.</string>
     <string name="info_battery_title">Turn off battery optimisation for Galaxy Wearable</string>
     <string name="info_battery_body">On the phone: Settings → Battery → Background usage limits, and take Galaxy Wearable off the list. With optimisation on, the Bluetooth link drops and recordings never reach the phone.</string>
     <string name="info_transfer_title">Transfer</string>
