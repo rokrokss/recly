@@ -97,7 +97,7 @@
         <tr><td>Recorder</td><td data-label="Plaud">Plaud Note or NotePin: $159–$189</td><td data-label="Recly">The Galaxy Watch or Apple Watch you already wear: <strong>$0</strong></td></tr>
         <tr><td>Start recording</td><td data-label="Plaud">The recorder's button</td><td data-label="Recly">Galaxy Watch: double press the home key. Apple Watch: the Action button on an Ultra, or one tap.</td></tr>
         <tr><td>Transcription</td><td data-label="Plaud">300 minutes a month free, then $8.33–$19.99 a month, billed yearly</td><td data-label="Recly">On the device: <strong>$0</strong>, no minute cap. Or your own API key, at the provider's rate.</td></tr>
-        <tr><td>AI notes</td><td data-label="Plaud">In the Plaud app</td><td data-label="Recly">The AI you already pay for (Claude, ChatGPT, Codex), through Recly's skills</td></tr>
+        <tr><td>AI notes</td><td data-label="Plaud">In the Plaud app</td><td data-label="Recly">The AI you already pay for (Claude, ChatGPT, Codex), with your own skills, starting from Recly's examples</td></tr>
       </tbody>
     </table>
     <p class="fine">Plaud prices are US list prices on plaud.ai, checked September 2026.</p>
@@ -133,7 +133,7 @@
       <li>
         <span class="step">04 · Notes</span>
         <h3>Your own AI agent</h3>
-        <p>Your agent reads the transcript from Drive and writes minutes, decisions or lecture notes into Notion.</p>
+        <p>Your agent reads the transcript from Drive and writes the notes you want. The example skills write minutes, decisions or lecture notes into Notion.</p>
         <code>recly-notes · recly-notion</code>
       </li>
     </ol>
@@ -259,7 +259,7 @@
         <tr><td>Recording</td><td data-label="Where it happens">Your watch, phone or desktop</td><td data-label="What leaves your device">Nothing. A watch hands the audio to your paired phone, and only there.</td></tr>
         <tr><td>Storage</td><td data-label="Where it happens">Your Google Drive</td><td data-label="What leaves your device">The audio parts and a small metadata file, to your own account.</td></tr>
         <tr><td>Transcription</td><td data-label="Where it happens">On device, or a provider you chose with your own key</td><td data-label="What leaves your device">On device: no audio to any speech service. External: the joined audio to the provider you selected. Results are written next to the recording in Drive.</td></tr>
-        <tr><td>Notes</td><td data-label="Where it happens">Your own AI agent</td><td data-label="What leaves your device">The agent reads the transcript from your Drive and writes to your Notion. Recly is not involved.</td></tr>
+        <tr><td>Notes</td><td data-label="Where it happens">Your own AI agent</td><td data-label="What leaves your device">The agent reads the transcript from your Drive and writes wherever you keep notes (Notion, in the example skills). Recly is not involved.</td></tr>
         <tr><td>Settings, API keys</td><td data-label="Where it happens">Your device</td><td data-label="What leaves your device">Nothing is synced. Export moves configuration only; keys are entered separately on each device.</td></tr>
       </tbody>
     </table>
@@ -272,7 +272,7 @@
     <div class="section-head">
       <p class="kicker"><b>07</b> Notes</p>
       <h2>Notes are your agent's job, not a paid tier.</h2>
-      <p class="lede">Recly's pipeline ends at the transcript on purpose. It ships skills for the AI you already use instead: Drive stays the archive the app writes, and the notes, with every later edit, live in your Notion.</p>
+      <p class="lede">Recly's pipeline ends at the transcript on purpose. Instead of a notes feature, it ships two example skills for the AI you already use: use them as they are, change them, or write your own for your format and your notes app. Drive stays the archive the app writes; in the examples, the notes and every later edit live in your Notion.</p>
     </div>
     <div class="split">
       <div class="cards stack">
@@ -305,6 +305,7 @@
           <li>"Make minutes from the latest recording and put them in Notion."</li>
           <li>"What did we decide about pricing last week?"</li>
         </ul>
+        <p class="fine">Want another format, or notes outside Notion? Each skill is one Markdown file: edit it, or copy it and write your own. <a href="https://github.com/rokrokss/recly/blob/main/skills/README.md#write-your-own">How to write your own</a>.</p>
       </div>
     </div>
   </div>

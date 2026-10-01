@@ -97,7 +97,7 @@
         <tr><td>녹음기</td><td data-label="Plaud">Plaud Note·NotePin: $159–$189</td><td data-label="Recly">이미 차고 있는 Galaxy Watch·Apple Watch: <strong>$0</strong></td></tr>
         <tr><td>녹음 시작</td><td data-label="Plaud">녹음기 버튼</td><td data-label="Recly">Galaxy Watch: 홈 키 두 번 누르기. Apple Watch: Ultra의 액션 버튼, 또는 탭 한 번.</td></tr>
         <tr><td>전사</td><td data-label="Plaud">월 300분 무료, 그 이상은 월 $8.33–$19.99(연간 결제)</td><td data-label="Recly">기기 안에서: <strong>$0</strong>, 분 제한 없음. 또는 내 API 키로, 업체 요금대로.</td></tr>
-        <tr><td>AI 노트</td><td data-label="Plaud">Plaud 앱 안에서</td><td data-label="Recly">이미 구독 중인 AI(Claude, ChatGPT, Codex)가 Recly 스킬로</td></tr>
+        <tr><td>AI 노트</td><td data-label="Plaud">Plaud 앱 안에서</td><td data-label="Recly">이미 구독 중인 AI(Claude, ChatGPT, Codex)가 내 스킬로(Recly 예시 스킬에서 출발)</td></tr>
       </tbody>
     </table>
     <p class="fine">Plaud 가격은 plaud.ai 미국 정가이며 2026년 9월에 확인했습니다.</p>
@@ -133,7 +133,7 @@
       <li>
         <span class="step">04 · 노트</span>
         <h3>내 AI 에이전트</h3>
-        <p>에이전트가 Drive에서 녹취록을 읽고 회의록, 결정 기록, 강의 노트를 Notion에 씁니다.</p>
+        <p>에이전트가 Drive에서 녹취록을 읽고 원하는 노트를 씁니다. 예시 스킬은 회의록, 결정 기록, 강의 노트를 Notion에 씁니다.</p>
         <code>recly-notes · recly-notion</code>
       </li>
     </ol>
@@ -259,7 +259,7 @@
         <tr><td>녹음</td><td data-label="실행되는 곳">내 워치·폰·데스크톱</td><td data-label="기기를 떠나는 것">없음. 워치는 짝 지은 내 폰으로만 오디오를 넘깁니다.</td></tr>
         <tr><td>저장</td><td data-label="실행되는 곳">내 Google Drive</td><td data-label="기기를 떠나는 것">오디오 파트와 작은 메타데이터 파일, 내 계정으로.</td></tr>
         <tr><td>전사</td><td data-label="실행되는 곳">기기 안, 또는 내가 고른 업체(내 키로)</td><td data-label="기기를 떠나는 것">기기 내: 음성 인식 서비스로 가는 오디오 없음. 외부: 합친 오디오가 내가 고른 업체로. 결과는 Drive의 녹음 옆에 기록됩니다.</td></tr>
-        <tr><td>노트</td><td data-label="실행되는 곳">내 AI 에이전트</td><td data-label="기기를 떠나는 것">에이전트가 내 Drive에서 녹취록을 읽고 내 Notion에 씁니다. Recly는 관여하지 않습니다.</td></tr>
+        <tr><td>노트</td><td data-label="실행되는 곳">내 AI 에이전트</td><td data-label="기기를 떠나는 것">에이전트가 내 Drive에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). Recly는 관여하지 않습니다.</td></tr>
         <tr><td>설정, API 키</td><td data-label="실행되는 곳">기기 안</td><td data-label="기기를 떠나는 것">동기화하지 않습니다. 내보내기는 설정만 옮기고, 키는 기기마다 따로 입력합니다.</td></tr>
       </tbody>
     </table>
@@ -272,7 +272,7 @@
     <div class="section-head">
       <p class="kicker"><b>07</b> 노트</p>
       <h2>노트는 유료 기능이 아니라 내 에이전트의 몫.</h2>
-      <p class="lede">Recly의 파이프라인은 일부러 녹취록에서 끝납니다. 대신 이미 쓰는 AI를 위한 스킬을 함께 배포합니다. Drive는 앱이 쓰는 원본 보관소이고, 노트와 그 뒤의 모든 수정은 내 Notion에 남습니다.</p>
+      <p class="lede">Recly의 파이프라인은 일부러 녹취록에서 끝납니다. 노트 기능 대신 이미 쓰는 AI를 위한 예시 스킬 두 개를 함께 배포합니다. 그대로 쓰거나, 고치거나, 내 양식과 노트 앱에 맞게 직접 만들어 쓰세요. Drive는 앱이 쓰는 원본 보관소이고, 예시 스킬에서는 노트와 그 뒤의 모든 수정이 내 Notion에 남습니다.</p>
     </div>
     <div class="split">
       <div class="cards stack">
@@ -305,6 +305,7 @@
           <li>"최근 녹음으로 회의록 만들어서 Notion에 넣어 줘"</li>
           <li>"지난주에 가격에 대해 뭘 결정했지?"</li>
         </ul>
+        <p class="fine">다른 양식이 필요하거나 Notion이 아닌 곳에 노트를 두고 싶나요? 스킬은 마크다운 파일 하나라 고치거나, 복사해서 직접 만들 수 있습니다. <a href="https://github.com/rokrokss/recly/blob/main/skills/README.md#write-your-own">직접 만드는 법</a>.</p>
       </div>
     </div>
   </div>

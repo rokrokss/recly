@@ -1,10 +1,12 @@
 # Recly skills for your agent
 
 Recly's pipeline ends at the transcript on purpose. Turning it into notes is your own AI agent's
-job, so this folder is a plugin of two skills your agent can read. Google Drive stays the archive
-the app writes and the agent only reads; the notes, and every later edit, live in your Notion.
+job, so this folder is a plugin of two example skills your agent can read. They are a starting
+point: use them as they are, change them, or [write your own](#write-your-own). Google Drive stays
+the archive the app writes and the agent only reads; in these examples the notes, and every later
+edit, live in your Notion.
 
-| Skill | What it does |
+| Example skill | What it does |
 |---|---|
 | [`recly-notes`](recly-notes/SKILL.md) | Finds a recording (the latest, or the one you name), reads its transcript and writes minutes, a decision log, interview or lecture notes, or a memo |
 | [`recly-notion`](recly-notion/SKILL.md) | Keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
@@ -50,4 +52,18 @@ Chat inside that project.
 *"Make minutes from the latest recording and put them in Notion."*
 *"What did we decide about pricing last week?"*
 
-Don't like the format? Edit the skill file. That is the point.
+## Write your own
+
+The examples are a starting point. Want another format, another language, or notes in an app
+other than Notion? Edit them, or write your own. That is the point.
+
+- **What your skill reads.** Each recording is a folder in your Drive, like
+  `recly/2026/2026-09/{base}/`. It holds the audio parts (`{base}_p001_mono.m4a`, ...),
+  `{base}.meta.json` ([schema](../spec/recording.meta.schema.json)) and, once transcribed,
+  `{base}.transcript.txt` (plain text) and `{base}.transcript.json` (segments with start, end and
+  speaker; [schema](../spec/transcript.schema.json)).
+- **What a skill is.** One Markdown file, `SKILL.md`, of instructions your agent follows. Copy
+  `recly-notes/SKILL.md` into a folder of your own, keep its "Find the recording" part, and rewrite
+  the rest.
+- **Where the notes go.** Your agent needs a connector or MCP server for that app, the way the
+  examples use Notion's.

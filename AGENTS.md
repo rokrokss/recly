@@ -24,7 +24,7 @@ android/     :app (phone) · :wear (Galaxy Watch) · :recording (shared recorder
 apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / RecMac
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled ffmpeg
 spec/        JSON Schema + examples — the contract every client honors
-skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
+skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 scripts/     icon rendering
 docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```

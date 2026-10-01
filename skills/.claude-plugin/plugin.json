@@ -1,6 +1,6 @@
 {
   "name": "recly",
-  "description": "Agent skills for Recly recordings: read a transcript from your own Google Drive, write notes, and keep them in Notion.",
+  "description": "Example agent skills for Recly recordings: read a transcript from your own Google Drive, write notes, and keep them in Notion. Adapt them or write your own.",
   "version": "0.0.2",
   "author": {
     "name": "Hyungrok Kim"

@@ -55,7 +55,7 @@ transcription on a supported device or with **your own** API key, and keeps the 
 | Recording | Your watch, phone or desktop | Nothing. A watch hands the audio to your paired phone, and only there. |
 | Storage | Your Google Drive | The audio parts and a small metadata file, to your own account. |
 | Transcription | On device, or a provider you chose with your own key | Local transcription sends no audio to an ASR service. External mode sends the joined audio to the selected provider. Results are written next to the recording in Drive. |
-| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes to your Notion. Recly is not involved. |
+| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes wherever you keep them (Notion, in the example skills). Recly is not involved. |
 | Processing settings and API keys | Your device | Nothing is synced. Settings → Export/Import moves configuration only; enter keys separately on each device. |
 
 The full list of every network path, with nothing left out, is in the
@@ -111,11 +111,13 @@ Settings and transcript formats are documented in [`spec/`](spec/).
 ## Notes: bring your own agent
 
 Recly's pipeline ends at the transcript on purpose. Turning it into notes is something your
-existing AI subscription already does well, so Recly ships **skills** for your agent instead of a
-metered feature. Drive stays the archive the app writes and the agent only reads it. The notes,
-and every edit you make to them later, live in your Notion.
+existing AI subscription already does well, so Recly ships two **example skills** for your agent
+instead of a metered feature. They are a starting point: use them as they are, change them, or
+write your own for your format and the app you keep notes in. Drive stays the archive the app
+writes and the agent only reads it. In the examples, the notes, and every edit you make to them
+later, live in your Notion.
 
-| Skill | What it does |
+| Example skill | What it does |
 |---|---|
 | [`recly-notes`](skills/recly-notes/SKILL.md) | Finds a recording (the latest, or the one you name), reads its transcript and writes minutes, a decision log, interview or lecture notes, or a memo |
 | [`recly-notion`](skills/recly-notion/SKILL.md) | Keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
@@ -132,7 +134,8 @@ ChatGPT apps instead of a coding agent? The same five files work there too. Setu
 [skills/README.md](skills/README.md).
 
 Then ask: *"Make minutes from the latest recording and put them in Notion"* or *"What did we
-decide about pricing last week?"*. Don't like the format? Edit the skill file. That is the point.
+decide about pricing last week?"*. Want another format, or notes somewhere other than Notion?
+Edit a skill, or copy one and [write your own](skills/README.md#write-your-own). That is the point.
 
 ## Clients
 
@@ -181,7 +184,7 @@ android/     :app (phone), :wear (Galaxy Watch), :recording (shared recorder), :
 apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / RecMac
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI)
 spec/        JSON Schema + examples — the contract every client honors
-skills/      the `recly` agent plugin — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
+skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 scripts/     icon rendering
 docs/        recly.md (the design source of truth) + install.md + development.md + policy/
 ```
@@ -191,5 +194,5 @@ docs/        recly.md (the design source of truth) + install.md + development.md
 | [docs/development.md](docs/development.md) | Build and test every client, values filled in locally (OAuth client IDs), cutting a release |
 | [docs/recly.md](docs/recly.md) | **The design source of truth** (Korean). Architecture, the internal step model, recording and retention, processing settings and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
 | [spec/](spec/) | Machine-readable contract: `recording-settings.schema.json`, `recording.meta.schema.json`, `transcript.schema.json`, `examples/` |
-| [skills/README.md](skills/README.md) | The `recly` plugin: what the two skills do and how to set them up in Claude Code, the Claude app and ChatGPT |
+| [skills/README.md](skills/README.md) | The `recly` plugin: what the two example skills do, how to set them up in Claude Code, the Claude app and ChatGPT, and how to write your own |
 | [AGENTS.md](AGENTS.md) | Orientation for coding agents working in this repository |
