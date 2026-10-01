@@ -36,10 +36,10 @@
     <a class="brand" href="/ko/"><img src="/design/icon.svg" alt="" width="28" height="28">Recly</a>
     <nav class="nav" aria-label="섹션">
       <a href="#how">동작 방식</a>
-      <a href="#features">기능</a>
+      <a href="#features">왜 Recly인가</a>
       <a href="#transcription">전사</a>
       <a href="#privacy">프라이버시</a>
-      <a href="#skills">스킬</a>
+      <a href="#skills">노트</a>
       <a href="#open-source">오픈소스</a>
     </nav>
     <div class="header-actions">
@@ -90,7 +90,7 @@
       <tbody>
         <tr><td>녹음기</td><td data-label="Plaud">Plaud Note·NotePin: $159–$189</td><td data-label="Recly">이미 차고 있는 Galaxy Watch·Apple Watch: <strong>$0</strong></td></tr>
         <tr><td>녹음 시작</td><td data-label="Plaud">녹음기 버튼</td><td data-label="Recly">Galaxy Watch: 홈 키 두 번 누르기. Apple Watch: Ultra의 액션 버튼, 또는 탭 한 번.</td></tr>
-        <tr><td>전사</td><td data-label="Plaud">월 300분 무료, 그 이상은 월 $8.33–$19.99(연간 결제)</td><td data-label="Recly">기기 안에서: <strong>$0</strong>, 분 제한 없음. 또는 내 API 키로, provider 요금대로.</td></tr>
+        <tr><td>전사</td><td data-label="Plaud">월 300분 무료, 그 이상은 월 $8.33–$19.99(연간 결제)</td><td data-label="Recly">기기 안에서: <strong>$0</strong>, 분 제한 없음. 또는 내 API 키로, 업체 요금대로.</td></tr>
         <tr><td>AI 노트</td><td data-label="Plaud">Plaud 앱 안에서</td><td data-label="Recly">이미 구독 중인 AI(Claude, ChatGPT, Codex)가 Recly 스킬로</td></tr>
       </tbody>
     </table>
@@ -121,7 +121,7 @@
       <li>
         <span class="step">03 · 전사</span>
         <h3>기기 안, 또는 내 키로</h3>
-        <p>원본이 안전해진 뒤 녹취록을 그 옆에 씁니다. provider가 지원하면 화자를 구분합니다.</p>
+        <p>원본이 안전해진 뒤 녹취록을 그 옆에 씁니다. 업체가 지원하면 화자를 구분합니다.</p>
         <code>transcript.json</code>
       </li>
       <li>
@@ -205,7 +205,7 @@
       </article>
       <article class="card">
         <h3>외부 API <span class="badge">내 키</span></h3>
-        <p>provider 14곳(iPhone은 8곳) 중 하나를 고르고 기기에 내 API 키를 넣습니다. 합친 오디오는 그 provider에게만 가고, 지원하면 화자를 구분합니다.</p>
+        <p>업체 14곳(iPhone은 8곳) 중 하나를 고르고 기기에 내 API 키를 넣습니다. 합친 오디오는 그 업체에만 가고, 지원하면 화자를 구분합니다.</p>
       </article>
       <article class="card">
         <h3>전사 안 함 <span class="badge badge-soon">업로드만</span></h3>
@@ -225,11 +225,11 @@
         </table>
       </div>
       <div>
-        <p class="sub">provider 14곳, 내 키로</p>
+        <p class="sub">업체 14곳, 내 키로</p>
         <ul class="chips">
           <li>AssemblyAI</li><li>Azure AI Speech</li><li>CLOVA Speech</li><li>Daglo</li><li>Deepgram</li><li>ElevenLabs</li><li>Gladia</li><li>Groq</li><li>Mistral AI</li><li>OpenAI</li><li>Rev AI</li><li>RTZR</li><li>Speechmatics</li><li>Together AI</li>
         </ul>
-        <p class="fine">전사 언어는 20개이며, provider나 기기 엔진이 지원하는 언어만 표시합니다. 앱 화면은 영어·한국어·일본어·중국어 간체/번체·스페인어·프랑스어·독일어·포르투갈어·아랍어·힌디어·러시아어를 지원합니다.</p>
+        <p class="fine">전사 언어는 20개이며, 업체나 기기 엔진이 지원하는 언어만 표시합니다. 앱 화면은 영어·한국어·일본어·중국어 간체/번체·스페인어·프랑스어·독일어·포르투갈어·아랍어·힌디어·러시아어를 지원합니다.</p>
       </div>
     </div>
   </div>
@@ -240,7 +240,7 @@
     <div class="section-head">
       <p class="kicker"><b>06</b> 프라이버시</p>
       <h2>믿어야 할 Recly 서버가 없습니다.</h2>
-      <p class="lede">데이터가 갈 수 있는 곳은 내 Google Drive, 내가 고른 전사 provider, 짝 지은 내 워치나 폰뿐입니다.</p>
+      <p class="lede">데이터가 갈 수 있는 곳은 내 Google Drive, 내가 고른 전사 업체, 짝 지은 내 워치나 폰뿐입니다.</p>
     </div>
     <div class="stats">
       <div><span class="n">0</span><span class="t">Recly 서버·데이터베이스·계정</span></div>
@@ -252,7 +252,7 @@
       <tbody>
         <tr><td>녹음</td><td data-label="실행되는 곳">내 워치·폰·데스크톱</td><td data-label="기기를 떠나는 것">없음. 워치는 짝 지은 내 폰으로만 오디오를 넘깁니다.</td></tr>
         <tr><td>저장</td><td data-label="실행되는 곳">내 Google Drive</td><td data-label="기기를 떠나는 것">오디오 파트와 작은 메타데이터 파일, 내 계정으로.</td></tr>
-        <tr><td>전사</td><td data-label="실행되는 곳">기기 안, 또는 내가 고른 provider(내 키로)</td><td data-label="기기를 떠나는 것">기기 내: 음성 인식 서비스로 가는 오디오 없음. 외부: 합친 오디오가 내가 고른 provider로. 결과는 Drive의 녹음 옆에 기록됩니다.</td></tr>
+        <tr><td>전사</td><td data-label="실행되는 곳">기기 안, 또는 내가 고른 업체(내 키로)</td><td data-label="기기를 떠나는 것">기기 내: 음성 인식 서비스로 가는 오디오 없음. 외부: 합친 오디오가 내가 고른 업체로. 결과는 Drive의 녹음 옆에 기록됩니다.</td></tr>
         <tr><td>노트</td><td data-label="실행되는 곳">내 AI 에이전트</td><td data-label="기기를 떠나는 것">에이전트가 내 Drive에서 녹취록을 읽고 내 Notion에 씁니다. Recly는 관여하지 않습니다.</td></tr>
         <tr><td>설정, API 키</td><td data-label="실행되는 곳">기기 안</td><td data-label="기기를 떠나는 것">동기화하지 않습니다. 내보내기는 설정만 옮기고, 키는 기기마다 따로 입력합니다.</td></tr>
       </tbody>
@@ -397,6 +397,8 @@
       <div>
         <h2>제품</h2>
         <ul>
+          <li><a href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store</a></li>
+          <li><a href="https://play.google.com/store/apps/details?id=app.recly">Google Play</a></li>
           <li><a href="#download">다운로드</a></li>
           <li><a href="/install.html">설치 안내</a></li>
           <li><a href="/policy/privacy-policy.ko">개인정보처리방침</a></li>

@@ -101,14 +101,14 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 .brand img { width: 28px; height: 28px; border-radius: 6px; }
 
 .nav { display: flex; gap: 22px; margin-right: auto; }
-.nav a, .header-actions a { color: var(--muted); text-decoration: none; font-size: 0.92rem; }
+.nav a, .header-actions a { color: var(--muted); text-decoration: none; font-size: 0.92rem; white-space: nowrap; }
 .nav a:hover, .header-actions a:hover { color: var(--ink); }
 
 .header-actions { display: flex; align-items: center; gap: 16px; margin-left: auto; }
 .header-actions .btn { height: 36px; padding: 0 14px; font-size: 0.9rem; }
 .header-actions .btn-primary { color: #FFFFFF; }
 
-@media (max-width: 880px) { .nav { display: none; } }
+@media (max-width: 960px) { .nav { display: none; } }
 @media (max-width: 420px) { .header-actions .gh { display: none; } }
 
 /* ── Buttons, badges, kickers ────────────────────────────────────────────── */
