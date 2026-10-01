@@ -24,7 +24,7 @@ Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디
   <img src="docs/design/screenshots/ko/04-record.png" width="24%" alt="iPhone과 Apple Watch에서 탭 한 번으로 녹음">
 </p>
 
-<p align="center"><img src="docs/design/flow.svg" width="100%" alt="워치·폰·Mac·Windows PC에서 녹음 버튼 → 폰이나 PC가 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
+<p align="center"><img src="docs/design/flow.ko.svg" width="100%" alt="워치·폰·Mac·Windows PC에서 녹음 버튼 → 폰이나 PC가 내 Google Drive에 올리고 내 키로 녹취 → 그다음은 내 AI로 무엇이든"></p>
 
 Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹음기는 이미 손목에 있고 AI는 이미
 구독 중입니다. Recly는 지원 기기의 로컬 전사 또는 **내** API 키로 녹취를 만들고, 원본 오디오와 결과를

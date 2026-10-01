@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="Press record on your watch, your phone, or your Mac or Windows PC. A watch hands off to the phone; the phone or the PC uploads to your Google Drive and transcribes with your own key. Then anything, with your own AI.">
-  <!-- README hero: the path from a press to your own AI. Same palette as icon.svg
-       (ground #F7F7F5, surface #FFFFFF, ink #111111, record #DA1E28) so it reads the same on
-       GitHub's light and dark pages. Fonts are the system stack: GitHub serves this as an <img>.
-       Also on recly.dev. flow.ko.svg is the Korean copy: change the two together. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="워치, 폰, Mac이나 Windows PC에서 녹음을 누릅니다. 워치는 폰으로 넘기고, 폰이나 PC가 내 Google Drive에 올리고 내 키로 전사합니다. 그다음은 내 AI로 무엇이든.">
+  <!-- Korean copy of flow.svg, for README.ko.md and recly.dev/ko/. Only the text differs:
+       change the two together. -->
   <defs>
     <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
       <circle cx="12" cy="12" r="1.6" fill="#888884" opacity="0.28"/>
@@ -11,7 +9,7 @@
       <path d="M0,0 L10,5 L0,10 z" fill="#111111"/>
     </marker>
     <style>
-      .t  { font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: #111111; }
+      .t  { font-family: -apple-system, "SF Pro Text", "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", Roboto, "Noto Sans KR", "Helvetica Neue", Arial, sans-serif; fill: #111111; }
       .title { font-size: 18px; font-weight: 700; }
       .sub   { font-size: 14px; fill: #6B6B68; }
       .band  { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: #6B6B68; }
@@ -30,14 +28,14 @@
     <line x1="40" y1="64" x2="850" y2="64" stroke="#111111" stroke-width="1.5"/>
     <line x1="40" y1="58" x2="40" y2="70" stroke="#111111" stroke-width="1.5"/>
     <line x1="850" y1="58" x2="850" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="270" y="52" width="350" height="24" fill="#F7F7F5"/>
-    <text x="445" y="69" text-anchor="middle">Recly · one press, then automatic</text>
+    <rect x="321" y="52" width="248" height="24" fill="#F7F7F5"/>
+    <text x="445" y="69" text-anchor="middle">Recly · 한 번 누르면 나머지는 자동</text>
 
     <line x1="880" y1="64" x2="1130" y2="64" stroke="#111111" stroke-width="1.5"/>
     <line x1="880" y1="58" x2="880" y2="70" stroke="#111111" stroke-width="1.5"/>
     <line x1="1130" y1="58" x2="1130" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="920" y="52" width="170" height="24" fill="#F7F7F5"/>
-    <text x="1005" y="69" text-anchor="middle">Yours · just ask</text>
+    <rect x="922" y="52" width="166" height="24" fill="#F7F7F5"/>
+    <text x="1005" y="69" text-anchor="middle">내 AI · 묻기만 하면 됨</text>
   </g>
 
   <!-- wires: watch → phone → Drive → AI, and the desktop straight into Drive -->
@@ -55,8 +53,8 @@
       <rect x="4" y="9" width="40" height="34" rx="9" class="ink"/>
       <rect x="18" y="20" width="12" height="12" rx="2" fill="#DA1E28"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Press record</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">on the watch you already wear</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">녹음 누르기</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">이미 차고 있는 워치에서</text>
   </g>
 
   <!-- 1b · desktop -->
@@ -68,8 +66,8 @@
       <line x1="32" y1="40" x2="32" y2="52" class="ink"/>
       <rect x="26" y="14" width="12" height="12" rx="2" fill="#DA1E28"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Or record a meeting</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">Mac or Windows PC, both sides</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">또는 회의 녹음</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">Mac·Windows PC, 통화 양쪽 모두</text>
   </g>
 
   <!-- 2 · phone -->
@@ -81,8 +79,8 @@
       <rect x="9" y="19" width="12" height="12" rx="2" fill="#DA1E28"/>
       <circle cx="15" cy="46" r="1.8" fill="#111111"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Hands off to your phone</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">by itself, or press record here instead</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">폰으로 넘기기</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">자동으로, 또는 폰에서 바로 녹음</text>
   </g>
 
   <!-- 3 · drive + transcript -->
@@ -98,8 +96,8 @@
         <line x1="8" y1="42" x2="19" y2="42" class="ink"/>
       </g>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Uploads and transcribes</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">by itself, into your Google Drive</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">업로드와 전사</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">자동으로, 내 Google Drive에</text>
   </g>
 
   <!-- 4 · your AI -->
@@ -109,12 +107,12 @@
       <path d="M28,0 c2,14 8,20 22,22 c-14,2 -20,8 -22,22 c-2,-14 -8,-20 -22,-22 c14,-2 20,-8 22,-22 z" fill="#DA1E28"/>
       <path d="M8,34 c1,7 4,10 11,11 c-7,1 -10,4 -11,11 c-1,-7 -4,-10 -11,-11 c7,-1 10,-4 11,-11 z" fill="#DA1E28"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">Anything, with your own AI</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">Claude, ChatGPT or Codex reads it</text>
+    <text class="t title" x="125" y="98" text-anchor="middle">내 AI로 무엇이든</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">Claude, ChatGPT, Codex가 읽고 정리</text>
   </g>
 
   <g class="t note" text-anchor="middle" style="font-size:14px">
-    <text x="845" y="406">Your Drive, your speech-to-text key, your AI.</text>
-    <text x="845" y="428">No Recly server anywhere on this path.</text>
+    <text x="845" y="406">내 Drive, 내 전사 키, 내 AI.</text>
+    <text x="845" y="428">이 경로 어디에도 Recly 서버는 없습니다.</text>
   </g>
 </svg>
