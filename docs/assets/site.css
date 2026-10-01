@@ -108,6 +108,19 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 .header-actions .btn { height: 36px; padding: 0 14px; font-size: 0.9rem; }
 .header-actions .btn-primary { color: #FFFFFF; }
 
+.lang { position: relative; }
+.lang summary { display: flex; align-items: center; gap: 6px; height: 36px; color: var(--muted); font-size: 0.92rem; cursor: pointer; list-style: none; user-select: none; }
+.lang summary::-webkit-details-marker { display: none; }
+.lang summary:hover, .lang[open] summary { color: var(--ink); }
+.lang summary svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.2; }
+.lang summary .chev { width: 10px; height: 10px; stroke-width: 1.4; }
+.lang[open] summary .chev { transform: rotate(180deg); }
+.lang .code { font-family: var(--mono); font-size: 0.82rem; }
+.lang-menu { position: absolute; top: calc(100% + 8px); right: 0; min-width: 132px; margin: 0; padding: 4px; list-style: none; background: var(--surface); border: 1px solid var(--grid); border-radius: var(--r-card); }
+.header-actions .lang-menu a { display: block; padding: 7px 10px; border-radius: var(--r-node); color: var(--ink); }
+.header-actions .lang-menu a:hover { background: var(--ground); }
+.header-actions .lang-menu a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
 @media (max-width: 960px) { .nav { display: none; } }
 @media (max-width: 420px) { .header-actions .gh { display: none; } }
 

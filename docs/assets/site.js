@@ -16,6 +16,19 @@
     });
   });
 
+  // The language menu is a plain <details>; this only closes it on an outside click or Escape.
+  document.querySelectorAll("details.lang").forEach(function (menu) {
+    document.addEventListener("click", function (event) {
+      if (menu.open && !menu.contains(event.target)) menu.open = false;
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && menu.open) {
+        menu.open = false;
+        menu.querySelector("summary").focus();
+      }
+    });
+  });
+
   var slots = document.querySelectorAll("[data-asset]");
   var versions = document.querySelectorAll("[data-version]");
   if (!slots.length && !versions.length) return;
