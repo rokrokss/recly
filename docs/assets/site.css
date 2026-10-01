@@ -180,7 +180,8 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 
 .hero { padding: clamp(48px, 8vw, 96px) 0 clamp(56px, 8vw, 104px); border-top: 0; }
-.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 72px); align-items: center; }
+.hero .wrap { display: grid; gap: clamp(40px, 6vw, 64px); }
+.hero .wrap > div { max-width: 760px; }
 .hero .lede { margin-top: 22px; color: var(--ink); opacity: 0.82; }
 .hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 24px; color: var(--muted); font: 0.8rem/1.4 var(--mono); }
 .hero-meta a { color: inherit; }
@@ -188,24 +189,6 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .platforms { display: flex; flex-wrap: wrap; gap: 6px; margin: 28px 0 0; padding: 0; list-style: none; }
 .platforms li { padding: 3px 8px; border: 1px solid var(--grid); border-radius: var(--r-badge); background: var(--surface); color: var(--muted); font: 0.78rem/1.4 var(--mono); }
-
-.stage {
-  position: relative;
-  margin: 0;
-  padding: clamp(20px, 3vw, 36px) clamp(16px, 3vw, 32px);
-  border: 1px solid var(--grid);
-  border-radius: var(--r-card);
-  background: var(--surface);
-}
-.stage-row { display: flex; align-items: flex-end; justify-content: center; gap: clamp(24px, 4vw, 48px); }
-.stage figure { margin: 0; display: grid; justify-items: center; gap: 10px; }
-.stage figcaption { color: var(--muted); font: 0.74rem/1 var(--mono); }
-.stage .dev-round { width: clamp(120px, 16vw, 210px); border-radius: 50%; box-shadow: 0 0 0 1px var(--grid); }
-.stage .dev-square { width: clamp(104px, 13.5vw, 180px); border-radius: 22%; box-shadow: 0 0 0 1px var(--grid); }
-
-@media (max-width: 900px) {
-  .hero .wrap { grid-template-columns: 1fr; }
-}
 
 /* ── Nodes and connectors ────────────────────────────────────────────────── */
 
@@ -220,8 +203,8 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* The README's flow diagram (design/flow.svg); the step cards below it carry the same text. */
-.diagram { margin: 0 0 clamp(32px, 5vw, 56px); }
+/* The hero's flow diagram (design/flow.svg, as in the README); "How it works" spells out each step. */
+.diagram { margin: 0; }
 .diagram img { display: block; width: 100%; height: auto; }
 .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 44px; margin: 0; padding: 0; list-style: none; }
 .flow li { position: relative; display: flex; flex-direction: column; min-height: 100%; padding: 18px; border: 1px solid var(--ink); border-radius: var(--r-node); background: var(--surface); }
