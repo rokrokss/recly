@@ -62,14 +62,14 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 폰과 워치 앱은 [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443)와 [Google Play](https://play.google.com/store/apps/details?id=app.recly)에
 있습니다. Mac과 Windows 앱은 [Releases](https://github.com/rokrokss/recly/releases)에 있습니다.
 
-| 플랫폼 | 요구 사항 | 받는 곳 | 곧 |
-|---|---|---|---|
-| Android 폰 | Android 14 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly) | |
-| Galaxy Watch | Wear OS 5 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly), Android 폰 앱과 함께 | |
-| iPhone | iOS 17 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
-| Apple Watch | watchOS 10 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443)의 iPhone 앱에 포함 | |
-| macOS | macOS 14.4 이상, Apple Silicon | [Releases](https://github.com/rokrokss/recly/releases)의 공증된 DMG | Homebrew |
-| Windows | Windows 11 | [Releases](https://github.com/rokrokss/recly/releases)의 MSI(미서명, [안내](docs/install.md#windows)) | 서명된 MSI · winget |
+| 플랫폼 | 요구 사항 | 받는 곳 |
+|---|---|---|
+| Android 폰 | Android 14 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly) |
+| Galaxy Watch | Wear OS 5 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly), Android 폰 앱과 함께 |
+| iPhone | iOS 17 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) |
+| Apple Watch | watchOS 10 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443)의 iPhone 앱에 포함 |
+| macOS | macOS 14.4 이상, Apple Silicon | [Releases](https://github.com/rokrokss/recly/releases)의 공증된 DMG |
+| Windows | Windows 11 | [Releases](https://github.com/rokrokss/recly/releases)의 MSI(미서명, [안내](docs/install.md#windows)) |
 
 사이드로드용 Android 폰·워치 APK도 릴리스마다 함께 올라갑니다. 플랫폼별 순서, 워치 사이드로드,
 Windows SmartScreen 경고 넘기기는 [설치 안내](docs/install.md)에 있습니다.

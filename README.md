@@ -67,14 +67,14 @@ The phone and watch apps are on the [App Store](https://apps.apple.com/app/recly
 [Google Play](https://play.google.com/store/apps/details?id=app.recly). The Mac and Windows apps are on the
 [Releases](https://github.com/rokrokss/recly/releases) page.
 
-| Platform | Requires | Get it | Soon |
-|---|---|---|---|
-| Android phone | Android 14+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly) | |
-| Galaxy Watch | Wear OS 5+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly), with the Android phone app | |
-| iPhone | iOS 17+ | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
-| Apple Watch | watchOS 10+ | Comes with the iPhone app from the [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
-| macOS | macOS 14.4+, Apple Silicon | Notarized DMG from [Releases](https://github.com/rokrokss/recly/releases) | Homebrew |
-| Windows | Windows 11 | MSI from [Releases](https://github.com/rokrokss/recly/releases) (unsigned, see [guide](docs/install.md#windows)) | Signed MSI · winget |
+| Platform | Requires | Get it |
+|---|---|---|
+| Android phone | Android 14+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly) |
+| Galaxy Watch | Wear OS 5+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly), with the Android phone app |
+| iPhone | iOS 17+ | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) |
+| Apple Watch | watchOS 10+ | Comes with the iPhone app from the [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) |
+| macOS | macOS 14.4+, Apple Silicon | Notarized DMG from [Releases](https://github.com/rokrokss/recly/releases) |
+| Windows | Windows 11 | MSI from [Releases](https://github.com/rokrokss/recly/releases) (unsigned, see [guide](docs/install.md#windows)) |
 
 Each release also carries the Android phone and watch APKs for sideloading. The
 [install guide](docs/install.md) has the step-by-step for each platform, including sideloading a
