@@ -837,6 +837,12 @@ My Drive/
   하며(불일치 → `RECORDING_ID_MISMATCH` nack, 코어 호출 없음), **`ack-meta ok:true`는 enqueue와 실행기 깨우기까지
   끝난 뒤에만** 보낸다 — 그 전에 실패하면 ack하지 않고 워치의 재전송에 맡긴다(`acceptMeta`·`enqueue`는 멱등).
   메타 없이 파트만 온 상태로 24시간이 지나면 고아 파트를 삭제한다.
+- 메타 전의 임시 행은 **수신기의 것**이다: 폰의 `RecordingRecovery`는 `TransferReceiver.receiving(recordingId)`가
+  참인(수신기가 첫 파트에 남긴 `transfer.pending.*` 표시가 있는) `recording` 행을 건너뛰고, 그 행은 메타 도착 또는
+  24시간 고아 정리로만 닫힌다. 임시 행은 `tracks`가 비고 파트 길이가 0이라, 크래시 복구처럼 finalize하면 그 빈 값이
+  메타에 굳어 Job이 `NO_INPUT_TRACK`으로 실패한다(2026-10-01, 파트와 메타 사이에 재시작된 iPhone 실기에서 발견).
+  `RecordingRecord.receiving`(행 모양 판별)으로 대신하지 않는 것은 워치도 같은 복구로 **자기** `source = watch`
+  녹음을 되살리기 때문이다.
 - **알려진 한계**: `ack-meta ok:true`가 유실되면 워치는 메타를 재전송하고, 폰이 이미 업로드·정리해
   `Incomplete(전 파트)`를 돌려주더라도 워치는 파트를 아직 갖고 있으므로(ok 전 삭제 금지) 파트·메타를 다시 보내
   수렴한다(폰의 `acceptPart`는 덮어쓰기, `enqueue`는 `AlreadyDone`). `ack-meta ok:false`에서 워치가 완료 처리하는
@@ -2304,9 +2310,10 @@ android/
   보이는 액티비티·타일·알림 액션에서(while-in-use 규칙). 정지 시 **즉시** `finalize`(제목 null) → 폰 UI는 그 뒤에 제목
   다이얼로그(`updateTitle`) → `jobs.enqueue`; 알림의 정지 액션은 바로 enqueue. 워치면 `TransferQueue.add`. 중복
   정지는 무시하고, finalize·enqueue는 서비스 수명과 무관한 스코프에서 끝까지 실행한다.
-- `RecordingRecovery.reconcile()`: 앱 시작과 새 녹음 시작 전에 `status = recording`인 행을 찾아 디스크의 미등록
-  파트를 등록·finalize하고, finalize됐지만 처리되지 않은 녹음을 `RecorderHost.onRecordingReady(recordingId,
-  enqueue=true)`로 넘긴다(프로세스 사망·다이얼로그 중 종료 복구, §3).
+- `RecordingRecovery.reconcile()`: 앱 시작과 새 녹음 시작 전에 `status = recording`인 행(워치에서 받는 중인 행은
+  제외, §3 "워치 → 폰 전송 계약")을 찾아 디스크의 미등록 파트를 등록·finalize하고, finalize됐지만 처리되지 않은
+  녹음을 `RecorderHost.onRecordingReady(recordingId, enqueue=true)`로 넘긴다(프로세스 사망·다이얼로그 중 종료 복구,
+  §3).
 - **enqueue 정책은 호스트가 정한다**: `RecorderService`와 `RecordingRecovery`는 `core.enqueue`를 직접 부르지 않고
   finalize 뒤 `RecorderHost.onRecordingReady(recordingId, enqueue)`를 호출한다. 폰 호스트는 `enqueue`면
   `core.enqueue` + `onJobsDue`, 아니면 제목 다이얼로그가 나중에 enqueue. 워치 호스트는 플래그와 무관하게

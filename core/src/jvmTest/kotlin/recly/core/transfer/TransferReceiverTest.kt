@@ -173,6 +173,31 @@ class TransferReceiverTest {
         assertNotNull(recordings.get(watchMeta.recordingId))
     }
 
+    /**
+     * The row a transfer opens says `recording` and has no tracks until the meta lands; a recovery
+     * pass asks this before treating it as a recording the process died in.
+     */
+    @Test
+    fun `a row the receiver opened is receiving until its meta lands`() = runBlocking {
+        accept(1)
+        assertTrue(receiver.receiving(watchMeta.recordingId))
+
+        assertIs<AcceptMetaResult.Incomplete>(receiver.acceptMeta(recJson.encodeToString(metaFor(1, 2))))
+        assertTrue(receiver.receiving(watchMeta.recordingId))
+
+        accept(2)
+        assertIs<AcceptMetaResult.Complete>(receiver.acceptMeta(recJson.encodeToString(metaFor(1, 2))))
+        assertFalse(receiver.receiving(watchMeta.recordingId))
+    }
+
+    @Test
+    fun `a recording this device is making is not receiving`() = runBlocking {
+        val own = testMeta(recordingId = "01J9ZZZZZZZZZZZZZZZZZZZZZZ")
+        recordings.create(own, "/data/recordings/own".toPath())
+
+        assertFalse(receiver.receiving(own.recordingId))
+    }
+
     @Test
     fun `malformed meta json is reported rather than thrown`() = runBlocking<Unit> {
         assertIs<AcceptMetaResult.Invalid>(receiver.acceptMeta("""{"schema":1}"""))

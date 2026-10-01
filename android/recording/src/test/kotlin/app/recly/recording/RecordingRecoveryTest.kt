@@ -19,6 +19,7 @@ import recly.core.model.Part
 import recly.core.model.RecordingStatus
 import recly.core.model.Track
 import recly.core.recording.MetaWriter
+import recly.core.recording.PartHasher
 import recly.core.recording.WaveformPeaks
 
 /**
@@ -159,6 +160,26 @@ class RecordingRecoveryTest {
         assertEquals(1, core.recordings.jobStatuses(meta.recordingId).size)
         assertEquals(listOf(meta.recordingId to true), host.ready)
         assertTrue("rec.recovered.ready" in logger.events)
+    }
+
+    /**
+     * A watch recording the phone is still receiving: its first part is filed and its meta has not
+     * landed, so its row says `recording` with no tracks. Closing it as a recording this process
+     * died in would freeze that into the meta and queue a job with nothing to transcribe.
+     */
+    @Test
+    fun `a watch recording still arriving is left for its meta`() = runBlocking {
+        val watchId = "01M10N83M5TAQ396AT8F9PGWFY"
+        val staged = "/incoming/20260826T010000Z_watch_01M10N83_p001_mono.m4a".toPath()
+        fs.createDirectories(staged.parent!!)
+        fs.write(staged) { write(ByteArray(8_000)) }
+        assertTrue(core.transfer.acceptPart(watchId, 1, Track.MONO, PartHasher.sha256(fs, staged), staged).ok)
+
+        assertEquals(0, recovery.reconcile())
+
+        assertEquals(RecordingStatus.RECORDING, core.recordings.get(watchId)!!.meta.status)
+        assertTrue(core.recordings.jobStatuses(watchId).isEmpty())
+        assertTrue(host.ready.isEmpty())
     }
 
     @Test

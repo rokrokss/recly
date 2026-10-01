@@ -97,6 +97,36 @@ final class RecordingRecoveryTests: XCTestCase {
         XCTAssertEqual(again, 0)
     }
 
+    /// A watch recording the phone is still receiving: `TransferReceiver` filed its first part and
+    /// the meta has not landed, so the row says `recording` with no tracks and no lengths. Closing
+    /// it as a recording this process died in would freeze that into the meta and queue a job with
+    /// nothing to transcribe — which is what a phone restarted between the two did (2026-10-01).
+    func testAWatchRecordingStillArrivingIsLeftForItsMeta() async throws {
+        let bridge = try await makeBridge()
+        let staging = dataDirectory.appendingPathComponent("incoming", isDirectory: true)
+        try FileManager.default.createDirectory(at: staging, withIntermediateDirectories: true)
+        _ = try writeSegment(seconds: 1, to: staging, part: 1)
+        let staged = file(in: staging, part: 1)
+        let recordingId = Ulid.shared.generate(clock: FixedKotlinClock(bridge.deps.clock.now()))
+        let sha256 = try await PartHasher.shared.sha256(fs: OkioFileSystem.companion.SYSTEM, path: staged.okioPath)
+        let ack = try await bridge.core.transfer.acceptPart(
+            recordingId: recordingId,
+            part: 1,
+            track: Track.mono,
+            sha256Claimed: sha256,
+            tmpPath: staged.okioPath
+        )
+        XCTAssertTrue(ack.ok)
+
+        let touched = await RecordingRecovery(core: bridge.core).reconcile()
+
+        XCTAssertEqual(touched, 0)
+        let row = try await bridge.core.recordings.get(id: recordingId)
+        XCTAssertEqual(try XCTUnwrap(row).meta.status, RecordingStatus.recording)
+        let jobs = try await bridge.core.recordings.jobStatuses(recordingId: recordingId)
+        XCTAssertTrue(jobs.isEmpty, "the watch's meta is what finalizes and queues it")
+    }
+
     /// The crash this is all for: the boundary wrote its `.pending` marker and died before the row
     /// landed. The next pass files the part, clears the marker, closes the meta and queues the job.
     func testAPendingMarkerIsClearedWhenTheNextPassFilesThePart() async throws {

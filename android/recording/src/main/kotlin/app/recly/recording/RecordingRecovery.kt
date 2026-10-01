@@ -51,6 +51,10 @@ class RecordingRecovery internal constructor(
 
     /** Files first, then the row: a finalize with parts missing would write the wrong duration. */
     private suspend fun recover(record: RecordingRecord): Boolean {
+        // A watch recording still arriving is the transfer receiver's row, not one this process
+        // died in: it closes when the watch's meta lands, or goes with the receiver's 24-hour
+        // orphan purge (docs/03 "워치 → 폰 전송 계약").
+        if (core.transfer.receiving(record.id)) return false
         val reconciled = reconciler.reconcile(record.id) ?: return false
 
         if (reconciled.files == 0) {

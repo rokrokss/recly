@@ -62,6 +62,10 @@ public actor RecordingRecovery {
 
     /// Files first, then the row: a finalize with parts missing would write the wrong duration.
     private func recover(_ record: RecordingRecord) async throws -> Bool {
+        // A watch recording still arriving is the transfer receiver's row, not one this process
+        // died in: it closes when the watch's meta lands, or goes with the receiver's 24-hour
+        // orphan purge (docs/03 "워치 → 폰 전송 계약"). (The Android `RecordingRecovery` does the same.)
+        if try await core.transfer.receiving(recordingId: record.id).boolValue { return false }
         guard let reconciled = try await reconciler.reconcile(recordingId: record.id) else { return false }
 
         if reconciled.files == 0 {

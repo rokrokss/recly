@@ -163,6 +163,22 @@ class TransferReceiver(
     }
 
     /**
+     * Whether [recordingId] is a row this receiver opened for a transfer whose meta has not landed
+     * yet. Such a row says `recording` with no tracks and no lengths, and it is not this device's to
+     * close: a recovery pass that finalized it as a recording the process died in would freeze those
+     * empty fields into the meta and enqueue it, and the watch's meta would arrive too late to stop
+     * the job failing. Behind the lock, so a pass that listed the row while [acceptPart] was still
+     * filing it waits for the marker instead of reading its absence.
+     *
+     * Not [RecordingRepository]'s `RecordingRecord.receiving`: that reads the row's shape, which on
+     * a watch is also the watch's own recording in progress — and the watches run the same recovery.
+     * This is the receiver's own marker, so it is true only on the device a transfer is landing on.
+     */
+    suspend fun receiving(recordingId: String): Boolean = locked {
+        queries.kvGet(pendingKey(recordingId)).executeAsOneOrNull() != null
+    }
+
+    /**
      * docs/03: parts without a meta after 24 hours are rubbish — the watch gave up, or was reset.
      * Only rows this receiver opened and that never got their meta are candidates.
      */
