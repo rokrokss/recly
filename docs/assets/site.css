@@ -180,8 +180,14 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 /* ── Hero ────────────────────────────────────────────────────────────────── */
 
 .hero { padding: clamp(48px, 8vw, 96px) 0 clamp(56px, 8vw, 104px); border-top: 0; }
-.hero .wrap { display: grid; gap: clamp(40px, 6vw, 64px); }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: clamp(40px, 6vw, 64px) 32px; }
 .hero .wrap > div { max-width: 760px; }
+.hero-watch { width: clamp(160px, 18vw, 220px); height: auto; border-radius: 22%; box-shadow: 0 0 0 1px var(--grid); }
+.hero .diagram { grid-column: 1 / -1; }
+@media (max-width: 900px) {
+  .hero .wrap { grid-template-columns: minmax(0, 1fr); }
+  .hero-watch { display: none; }
+}
 .hero .lede { margin-top: 22px; color: var(--ink); opacity: 0.82; }
 .hero-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 24px; color: var(--muted); font: 0.8rem/1.4 var(--mono); }
 .hero-meta a { color: inherit; }
