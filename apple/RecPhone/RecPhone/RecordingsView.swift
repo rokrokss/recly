@@ -8,6 +8,8 @@ import SwiftUI
 /// about it (docs/13 I3 "목록").
 struct RecordingsView: View {
     @ObservedObject var model: RecordingModel
+    /// Changes whenever the List tab is tapped: the ledger goes back to every row closed.
+    var collapse = 0
     @Environment(\.blueprint) private var blueprint
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded: String?
@@ -66,6 +68,7 @@ struct RecordingsView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .dotGridBackground()
+        .onChange(of: collapse) { expanded = nil }
         .task { await model.refreshRecents() }
         // docs/03: and beside it, never in front of it — the list is drawn from what is already
         // here, and a row another device uploaded arrives on the recordings observation.

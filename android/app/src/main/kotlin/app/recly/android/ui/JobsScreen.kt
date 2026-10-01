@@ -100,9 +100,11 @@ fun JobsScreen(
     onRefresh: () -> Unit,
     onDismissMessage: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Changes when the List tab is tapped again on the list: the ledger goes back to every row closed. */
+    collapse: Int = 0,
 ) {
     val palette = blueprint
-    var expanded by rememberSaveable { mutableStateOf<String?>(null) }
+    var expanded by rememberSaveable(collapse) { mutableStateOf<String?>(null) }
     val metered = rememberMeteredGate(state.download.info?.modelBytes)
 
     state.confirmDelete?.let { request ->

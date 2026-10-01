@@ -27,7 +27,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -141,6 +143,9 @@ class MainActivity : ComponentActivity() {
                 val recorder by recordingModel.recorder.collectAsState()
                 val jobs by jobsModel.state.collectAsState()
                 var tab by rememberSaveable { mutableStateOf(Tab.RECORD) }
+                // Leaving the tab already closes the list's open row — the list leaves composition
+                // with it. A tap on the List tab while it is showing is the one that has to say so.
+                var listTaps by remember { mutableIntStateOf(0) }
                 // docs/11 A9: a tile, widget or shortcut tap is a request to record *now*, so it
                 // brings the Record tab with it. The tab is remembered across a restore, and a
                 // request left lying behind another tab used to be spent on whatever switch to
@@ -203,10 +208,13 @@ class MainActivity : ComponentActivity() {
                                     glyph = entry.glyph,
                                     label = stringResource(entry.label),
                                     selected = tab == entry,
-                                    // The List tab tapped again from a recording's detail is the way
-                                    // back to the list, as Back is.
+                                    // The List tab tapped again shows the list as it opens: from a
+                                    // recording's detail that is the way back, as Back is, and on the
+                                    // list it closes the open row (docs/09 화면 원칙 2).
                                     onClick = {
-                                        if (entry == Tab.JOBS && tab == Tab.JOBS && jobs.detail != null) jobsModel.closeDetail()
+                                        if (entry == Tab.JOBS && tab == Tab.JOBS) {
+                                            if (jobs.detail != null) jobsModel.closeDetail() else listTaps++
+                                        }
                                         tab = entry
                                     },
                                 )
@@ -235,6 +243,7 @@ class MainActivity : ComponentActivity() {
                             onCheckKey = { tab = Tab.SETTINGS },
                             onFix = { alert -> goFix(alert.reason) },
                             modifier = content,
+                            collapse = listTaps,
                         )
 
                         Tab.SETTINGS -> SettingsTab(
@@ -379,6 +388,7 @@ private fun JobsTab(
     onCheckKey: () -> Unit,
     onFix: (JobAlert) -> Unit,
     modifier: Modifier,
+    collapse: Int,
 ) {
     val detail = state.detail
     if (detail != null) {
@@ -404,6 +414,7 @@ private fun JobsTab(
             onRefresh = model::pullToRefresh,
             onDismissMessage = model::dismissMessage,
             modifier = modifier,
+            collapse = collapse,
         )
     }
 }
