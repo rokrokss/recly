@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recly — AI 녹음기는 이미 손목에 있습니다</title>
-  <meta name="description" content="$159짜리 AI 녹음기를 살 필요 없습니다. Recly는 이미 차고 있는 Galaxy Watch·Apple Watch를 녹음기로 만들고, 기기 안에서 무료로 전사하고, 오디오는 내 Google Drive에 남깁니다. 오픈소스, Recly 서버 없음.">
+  <meta name="description" content="$159짜리 AI 녹음기를 살 필요 없습니다. Recly는 이미 차고 있는 Galaxy Watch·Apple Watch를 녹음기로 만들고, 기기 안에서 무료로 전사하고, 오디오는 내 Google Drive에 남깁니다. 오픈소스, Recly 서버 없음. App Store·Google Play에서 받을 수 있습니다.">
+  <meta name="apple-itunes-app" content="app-id=6809930443">
   <link rel="canonical" href="https://recly.dev/ko/">
   <link rel="alternate" hreflang="en" href="https://recly.dev/">
   <link rel="alternate" hreflang="ko" href="https://recly.dev/ko/">
@@ -54,7 +55,7 @@
 <section class="hero" id="top">
   <div class="wrap">
     <div>
-      <p class="hero-meta"><span class="dot" aria-hidden="true"></span>무료 · 오픈소스 · AGPL-3.0-or-later · <a data-version href="https://github.com/rokrokss/recly/releases">프리릴리스 빌드</a></p>
+      <p class="hero-meta"><span class="dot" aria-hidden="true"></span>무료 · 오픈소스 · AGPL-3.0-or-later · <span><a href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store</a>·<a href="https://play.google.com/store/apps/details?id=app.recly">Google Play</a> 출시</span></p>
       <h1>AI 녹음기는 이미 손목에 있습니다.</h1>
       <p class="lede">Plaud는 기기만 $159부터이고, 월 300분 무료를 넘기면 요금제가 붙습니다. Recly는 이미 차고 있는 Galaxy Watch나 Apple Watch를 단축키 하나로 그 녹음기로 만들고, 기기 안에서 무료로 전사하고, 노트는 이미 구독 중인 AI에게 맡깁니다.</p>
       <div class="hero-actions">
@@ -322,9 +323,39 @@
     <div class="section-head">
       <p class="kicker"><b>08</b> 다운로드</p>
       <h2>Recly 받기.</h2>
-      <p class="lede">스토어 출시는 곧 예정입니다. 그전까지는 GitHub Releases의 프리릴리스 빌드를 쓸 수 있고, 플랫폼별 순서는 <a href="/install.html">설치 안내</a>(영문)에 있습니다.</p>
+      <p class="lede">폰과 워치 앱은 App Store와 Google Play에 있습니다. Mac과 Windows 앱은 GitHub Releases에 있고, 플랫폼별 순서는 <a href="/install.html">설치 안내</a>(영문)에 있습니다.</p>
     </div>
     <div class="downloads">
+      <article class="dl">
+        <header><div><h3>Android 폰</h3><p class="req">Android 14 이상</p></div><span class="badge badge-ok">Google Play</span></header>
+        <p>녹음, Google 로그인, 업로드와 전사를 합니다. Galaxy Watch 녹음도 여기서 처리합니다.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=app.recly">Google Play에서 받기</a>
+          <a href="/install.html#android-phone">APK로 설치하기</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>Galaxy Watch</h3><p class="req">Wear OS 5 이상 · Android 폰 필요</p></div><span class="badge badge-ok">Google Play</span></header>
+        <p>녹음해서 폰에 넘기므로 둘 다 설치하세요.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=app.recly">Google Play에서 받기</a>
+          <a href="/install.html#galaxy-watch">설치 안내</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>iPhone</h3><p class="req">iOS 17 이상</p></div><span class="badge badge-ok">App Store</span></header>
+        <p>녹음, Google 로그인, 업로드와 전사를 합니다. Apple Watch 녹음도 여기서 처리합니다.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store에서 다운로드</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>Apple Watch</h3><p class="req">watchOS 10 이상 · iPhone 필요</p></div><span class="badge badge-ok">App Store</span></header>
+        <p>탭 한 번으로 녹음하고 iPhone에 넘깁니다. iPhone 앱에 함께 들어 있습니다.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store에서 다운로드</a>
+        </div>
+      </article>
       <article class="dl">
         <header><div><h3>macOS</h3><p class="req">macOS 14.4 이상 · Apple Silicon</p></div><span class="badge badge-ok">공증됨</span></header>
         <p>회의용 메뉴 막대 앱. 내 마이크와 통화 소리를 트랙을 나눠 담습니다.</p>
@@ -342,40 +373,6 @@
           <a href="/install.html#windows">SmartScreen 넘기기</a>
         </div>
         <p class="soon">곧: 서명된 MSI · winget</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Android 폰</h3><p class="req">Android 14 이상</p></div><span class="badge badge-ok">APK</span></header>
-        <p>녹음, Google 로그인, 업로드와 전사를 합니다. Galaxy Watch 녹음도 여기서 처리합니다.</p>
-        <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-Android-.*\.apk$" href="https://github.com/rokrokss/recly/releases">.apk 다운로드 <span class="size"></span></a>
-          <a href="/install.html#android-phone">설치 안내</a>
-        </div>
-        <p class="soon">곧: Google Play</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Galaxy Watch</h3><p class="req">Wear OS 5 이상 · Android 폰 필요</p></div><span class="badge badge-ok">APK</span></header>
-        <p>녹음해서 폰에 넘기므로 둘 다 설치하세요. APK는 ADB로 설치합니다.</p>
-        <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-WearOS-.*\.apk$" href="https://github.com/rokrokss/recly/releases">.apk 다운로드 <span class="size"></span></a>
-          <a href="/install.html#galaxy-watch">ADB로 설치하기</a>
-        </div>
-        <p class="soon">곧: Google Play</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>iPhone</h3><p class="req">iOS 17 이상</p></div><span class="badge badge-soon">준비 중</span></header>
-        <p>녹음, Google 로그인, 업로드와 전사를 합니다. Apple Watch 녹음도 여기서 처리합니다.</p>
-        <div class="actions">
-          <a class="btn" href="/development.html">소스에서 빌드</a>
-        </div>
-        <p class="soon">곧: App Store · TestFlight</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Apple Watch</h3><p class="req">watchOS 10 이상 · iPhone 필요</p></div><span class="badge badge-soon">준비 중</span></header>
-        <p>탭 한 번으로 녹음하고 iPhone에 넘깁니다.</p>
-        <div class="actions">
-          <a class="btn" href="/development.html">소스에서 빌드</a>
-        </div>
-        <p class="soon">곧: App Store</p>
       </article>
     </div>
     <p class="release-line">

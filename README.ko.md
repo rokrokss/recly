@@ -8,7 +8,7 @@
 
 Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디오는 내 Drive에, 녹취는 내 키로, 노트는 내 AI가.
 
-[다운로드](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
+[App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) · [Google Play](https://play.google.com/store/apps/details?id=app.recly) · [Mac·Windows](#recly-받기) · [설치 안내](docs/install.md) · [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko) · [Issues](https://github.com/rokrokss/recly/issues) · [English](README.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -59,19 +59,20 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 
 ## Recly 받기
 
-스토어 출시는 곧 예정입니다. 그전까지는 [Releases](https://github.com/rokrokss/recly/releases)의 프리릴리스
-빌드를 쓸 수 있습니다.
+폰과 워치 앱은 [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443)와 [Google Play](https://play.google.com/store/apps/details?id=app.recly)에
+있습니다. Mac과 Windows 앱은 [Releases](https://github.com/rokrokss/recly/releases)에 있습니다.
 
-| 플랫폼 | 요구 사항 | 지금 | 곧 |
+| 플랫폼 | 요구 사항 | 받는 곳 | 곧 |
 |---|---|---|---|
-| Android 폰 | Android 14 이상 | [Releases](https://github.com/rokrokss/recly/releases)의 APK | Google Play |
-| Galaxy Watch | Wear OS 5 이상 | Releases의 APK를 ADB로 설치([방법](docs/install.md#galaxy-watch)) | Google Play |
-| iPhone | iOS 17 이상 | 소스에서 빌드 | App Store · TestFlight |
-| Apple Watch | watchOS 10 이상 | iPhone 앱과 함께 소스에서 빌드 | App Store |
+| Android 폰 | Android 14 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly) | |
+| Galaxy Watch | Wear OS 5 이상 | [Google Play](https://play.google.com/store/apps/details?id=app.recly), Android 폰 앱과 함께 | |
+| iPhone | iOS 17 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
+| Apple Watch | watchOS 10 이상 | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443)의 iPhone 앱에 포함 | |
 | macOS | macOS 14.4 이상, Apple Silicon | [Releases](https://github.com/rokrokss/recly/releases)의 공증된 DMG | Homebrew |
 | Windows | Windows 11 | [Releases](https://github.com/rokrokss/recly/releases)의 MSI(미서명, [안내](docs/install.md#windows)) | 서명된 MSI · winget |
 
-플랫폼별 순서, 워치 사이드로드, Windows SmartScreen 경고 넘기기는 [설치 안내](docs/install.md)에 있습니다.
+사이드로드용 Android 폰·워치 APK도 릴리스마다 함께 올라갑니다. 플랫폼별 순서, 워치 사이드로드,
+Windows SmartScreen 경고 넘기기는 [설치 안내](docs/install.md)에 있습니다.
 소스 빌드는 [docs/development.md](docs/development.md)를 보세요.
 
 ## 동작 방식

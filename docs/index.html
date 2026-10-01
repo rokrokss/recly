@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recly — your AI recorder is already on your wrist</title>
-  <meta name="description" content="Skip the $159 AI recorder. Recly turns the Galaxy Watch or Apple Watch you already wear into one, transcribes on the device for free, and keeps the audio in your own Google Drive. Open source, no Recly server.">
+  <meta name="description" content="Skip the $159 AI recorder. Recly turns the Galaxy Watch or Apple Watch you already wear into one, transcribes on the device for free, and keeps the audio in your own Google Drive. Open source, no Recly server. On the App Store and Google Play.">
+  <meta name="apple-itunes-app" content="app-id=6809930443">
   <link rel="canonical" href="https://recly.dev/">
   <link rel="alternate" hreflang="en" href="https://recly.dev/">
   <link rel="alternate" hreflang="ko" href="https://recly.dev/ko/">
@@ -54,7 +55,7 @@
 <section class="hero" id="top">
   <div class="wrap">
     <div>
-      <p class="hero-meta"><span class="dot" aria-hidden="true"></span>Free · Open source · AGPL-3.0-or-later · <a data-version href="https://github.com/rokrokss/recly/releases">Pre-release builds</a></p>
+      <p class="hero-meta"><span class="dot" aria-hidden="true"></span>Free · Open source · AGPL-3.0-or-later · <span>Now on the <a href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store</a> and <a href="https://play.google.com/store/apps/details?id=app.recly">Google Play</a></span></p>
       <h1>Your AI recorder is already on your wrist.</h1>
       <p class="lede">A Plaud costs $159 or more, plus a plan once the free 300 minutes a month run out. Recly turns the Galaxy Watch or Apple Watch you already wear into that recorder with one shortcut, transcribes on the device for free, and leaves the notes to the AI you already pay for.</p>
       <div class="hero-actions">
@@ -322,9 +323,39 @@
     <div class="section-head">
       <p class="kicker"><b>08</b> Download</p>
       <h2>Get Recly.</h2>
-      <p class="lede">Store releases are coming soon. Until then, pre-release builds are on GitHub Releases, and the <a href="/install.html">install guide</a> walks through each platform.</p>
+      <p class="lede">The phone and watch apps are on the App Store and Google Play. The Mac and Windows apps are on GitHub Releases, and the <a href="/install.html">install guide</a> walks through each platform.</p>
     </div>
     <div class="downloads">
+      <article class="dl">
+        <header><div><h3>Android phone</h3><p class="req">Android 14+</p></div><span class="badge badge-ok">Google Play</span></header>
+        <p>Records, signs in to Google, uploads and transcribes, including for your Galaxy Watch.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=app.recly">Get it on Google Play</a>
+          <a href="/install.html#android-phone">Sideload the APK</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>Galaxy Watch</h3><p class="req">Wear OS 5+ · with Android phone</p></div><span class="badge badge-ok">Google Play</span></header>
+        <p>Records and hands off to the phone, so install both.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=app.recly">Get it on Google Play</a>
+          <a href="/install.html#galaxy-watch">Install guide</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>iPhone</h3><p class="req">iOS 17+</p></div><span class="badge badge-ok">App Store</span></header>
+        <p>Records, signs in to Google, uploads and transcribes, including for your Apple Watch.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">Download on the App Store</a>
+        </div>
+      </article>
+      <article class="dl">
+        <header><div><h3>Apple Watch</h3><p class="req">watchOS 10+ · with iPhone</p></div><span class="badge badge-ok">App Store</span></header>
+        <p>Records in one tap and hands off to the iPhone. It comes with the iPhone app.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">Download on the App Store</a>
+        </div>
+      </article>
       <article class="dl">
         <header><div><h3>macOS</h3><p class="req">macOS 14.4+ · Apple Silicon</p></div><span class="badge badge-ok">Notarized</span></header>
         <p>Menu-bar app for meetings: your mic and the call's audio as separate tracks.</p>
@@ -342,40 +373,6 @@
           <a href="/install.html#windows">Get past SmartScreen</a>
         </div>
         <p class="soon">Soon: signed MSI · winget</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Android phone</h3><p class="req">Android 14+</p></div><span class="badge badge-ok">APK</span></header>
-        <p>Records, signs in to Google, uploads and transcribes, including for your Galaxy Watch.</p>
-        <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-Android-.*\.apk$" href="https://github.com/rokrokss/recly/releases">Download .apk <span class="size"></span></a>
-          <a href="/install.html#android-phone">Install guide</a>
-        </div>
-        <p class="soon">Soon: Google Play</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Galaxy Watch</h3><p class="req">Wear OS 5+ · with Android phone</p></div><span class="badge badge-ok">APK</span></header>
-        <p>Records and hands off to the phone, so install both. The APK goes on over ADB.</p>
-        <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-WearOS-.*\.apk$" href="https://github.com/rokrokss/recly/releases">Download .apk <span class="size"></span></a>
-          <a href="/install.html#galaxy-watch">Install over ADB</a>
-        </div>
-        <p class="soon">Soon: Google Play</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>iPhone</h3><p class="req">iOS 17+</p></div><span class="badge badge-soon">Coming</span></header>
-        <p>Records, signs in to Google, uploads and transcribes, including for your Apple Watch.</p>
-        <div class="actions">
-          <a class="btn" href="/development.html">Build from source</a>
-        </div>
-        <p class="soon">Soon: App Store · TestFlight</p>
-      </article>
-      <article class="dl">
-        <header><div><h3>Apple Watch</h3><p class="req">watchOS 10+ · with iPhone</p></div><span class="badge badge-soon">Coming</span></header>
-        <p>Records in one tap and hands off to the iPhone.</p>
-        <div class="actions">
-          <a class="btn" href="/development.html">Build from source</a>
-        </div>
-        <p class="soon">Soon: App Store</p>
       </article>
     </div>
     <p class="release-line">

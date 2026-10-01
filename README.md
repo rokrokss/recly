@@ -8,7 +8,7 @@
 
 A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.
 
-[Download](#get-recly) · [Install guide](docs/install.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
+[App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) · [Google Play](https://play.google.com/store/apps/details?id=app.recly) · [Mac & Windows](#get-recly) · [Install guide](docs/install.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?include_prereleases&label=release)](https://github.com/rokrokss/recly/releases)
@@ -63,20 +63,22 @@ The full list of every network path, with nothing left out, is in the
 
 ## Get Recly
 
-Store releases are coming soon. Until then, pre-release builds are on the
+The phone and watch apps are on the [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) and
+[Google Play](https://play.google.com/store/apps/details?id=app.recly). The Mac and Windows apps are on the
 [Releases](https://github.com/rokrokss/recly/releases) page.
 
-| Platform | Requires | Today | Soon |
+| Platform | Requires | Get it | Soon |
 |---|---|---|---|
-| Android phone | Android 14+ | APK from [Releases](https://github.com/rokrokss/recly/releases) | Google Play |
-| Galaxy Watch | Wear OS 5+ | APK from Releases, installed over ADB ([how](docs/install.md#galaxy-watch)) | Google Play |
-| iPhone | iOS 17+ | Build from source | App Store · TestFlight |
-| Apple Watch | watchOS 10+ | Build from source, with the iPhone app | App Store |
+| Android phone | Android 14+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly) | |
+| Galaxy Watch | Wear OS 5+ | [Google Play](https://play.google.com/store/apps/details?id=app.recly), with the Android phone app | |
+| iPhone | iOS 17+ | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
+| Apple Watch | watchOS 10+ | Comes with the iPhone app from the [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) | |
 | macOS | macOS 14.4+, Apple Silicon | Notarized DMG from [Releases](https://github.com/rokrokss/recly/releases) | Homebrew |
 | Windows | Windows 11 | MSI from [Releases](https://github.com/rokrokss/recly/releases) (unsigned, see [guide](docs/install.md#windows)) | Signed MSI · winget |
 
-The [install guide](docs/install.md) has the step-by-step for each platform, including sideloading
-a watch and getting past the Windows SmartScreen warning. Building from source is in
+Each release also carries the Android phone and watch APKs for sideloading. The
+[install guide](docs/install.md) has the step-by-step for each platform, including sideloading a
+watch and getting past the Windows SmartScreen warning. Building from source is in
 [docs/development.md](docs/development.md).
 
 ## How it works
