@@ -197,12 +197,11 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
   border-radius: var(--r-card);
   background: var(--surface);
 }
-.stage-row { display: flex; align-items: flex-end; justify-content: center; gap: clamp(12px, 2.5vw, 28px); }
+.stage-row { display: flex; align-items: flex-end; justify-content: center; gap: clamp(24px, 4vw, 48px); }
 .stage figure { margin: 0; display: grid; justify-items: center; gap: 10px; }
 .stage figcaption { color: var(--muted); font: 0.74rem/1 var(--mono); }
-.stage .dev-round { width: clamp(90px, 11vw, 150px); border-radius: 50%; box-shadow: 0 0 0 1px var(--grid); }
-.stage .dev-phone { width: clamp(160px, 20vw, 270px); border-radius: 18px; box-shadow: 0 0 0 1px var(--grid); }
-.stage .dev-square { width: clamp(80px, 10vw, 132px); border-radius: 22%; box-shadow: 0 0 0 1px var(--grid); }
+.stage .dev-round { width: clamp(120px, 16vw, 210px); border-radius: 50%; box-shadow: 0 0 0 1px var(--grid); }
+.stage .dev-square { width: clamp(104px, 13.5vw, 180px); border-radius: 22%; box-shadow: 0 0 0 1px var(--grid); }
 .stage-note span { white-space: nowrap; }
 .stage-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 20px; padding-top: 12px; border-top: 1px solid var(--grid); color: var(--muted); font: 0.72rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; }
 
