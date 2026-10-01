@@ -34,8 +34,8 @@ android {
         applicationId = "app.recly"
         minSdk = 34
         targetSdk = 36
-        versionCode = 35
-        versionName = "0.1.0"
+        versionCode = 36
+        versionName = "0.1.1"
         resValue("string", "google_server_client_id", googleServerClientId)
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
