@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.intOrNull
 import okio.Path
-import recly.core.drive.DriveApi
+import recly.core.storage.CloudFiles
 import recly.core.drive.string
 import recly.core.model.Part
 import recly.core.model.Track
@@ -45,7 +45,7 @@ fun interface AudioFetchProgress {
  * and marked present again — so the trip is made once and the sweep starts its window over.
  */
 class AudioParts(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val recordings: RecordingRepository,
     private val deps: CoreDeps,
 ) {

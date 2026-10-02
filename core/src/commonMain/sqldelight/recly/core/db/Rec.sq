@@ -86,11 +86,12 @@ resumeAuthStepRuns:
 UPDATE step_run SET status = 'PENDING', last_error = NULL
 WHERE job_id = ? AND status = 'NEEDS_AUTH';
 
-deleteCompletedStepRuns:
-DELETE FROM step_run WHERE job_id IN (SELECT id FROM job WHERE status = 'DONE');
+-- "연결 해제" (docs/03) takes completed jobs one at a time, leaving iCloud's (docs/03 "저장 위치").
+deleteStepRunsByJob:
+DELETE FROM step_run WHERE job_id = ?;
 
-deleteCompletedJobs:
-DELETE FROM job WHERE status = 'DONE';
+deleteJobById:
+DELETE FROM job WHERE id = ?;
 
 syncGet:
 SELECT value FROM sync_state WHERE key = ?;

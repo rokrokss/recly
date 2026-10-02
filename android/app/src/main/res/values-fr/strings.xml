@@ -84,6 +84,9 @@
     <string name="core_needs_auth">Connectez Google Drive pour reprendre les envois</string>
     <string name="core_drive_reauth">L’accès à Google Drive doit être autorisé à nouveau</string>
     <string name="core_drive_storage_full">Google Drive est plein. Libérez de l’espace et réessayez</string>
+    <string name="core_icloud_unavailable">iCloud Drive n’est pas disponible. Dans Réglages, sous iCloud, vérifiez que iCloud Drive et Recly sont activés.</string>
+    <string name="core_icloud_storage_full">iCloud est plein. Libérez de l’espace et réessayez</string>
+    <string name="core_icloud_uploading">Envoi vers iCloud</string>
     <string name="core_drive_consent_required">L’accès à Drive nécessite votre consentement</string>
     <string name="core_sign_in_cancelled">La connexion a été annulée</string>
     <string name="core_missing_secret">Cet appareil n’a pas de valeur pour le secret « %1$s »</string>

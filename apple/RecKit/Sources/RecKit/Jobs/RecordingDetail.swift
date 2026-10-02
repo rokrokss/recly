@@ -79,6 +79,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     private var directory: URL?
     private var audioRecord: RecordingRecord?
 
+    /// docs/03 "저장 위치": the audio comes back from the app's iCloud folder rather than from Drive.
+    public var icloud: Bool { audioRecord?.storage == .icloud }
+
     public init(core: ReclyCore_, recordingId: String, title: String, playbackGate: RecordingPlaybackGate? = nil) {
         self.core = core
         self.recordingId = recordingId
@@ -492,7 +495,7 @@ public struct RecordingDetailView: View {
             controls
             #if os(iOS)
             if model.driveFetch == .failed {
-                Text(verbatim: loc("Could not fetch from Drive"))
+                Text(verbatim: loc(model.icloud ? "Could not fetch from iCloud" : "Could not fetch from Drive"))
                     .font(blueprint.fonts.bodySmall).foregroundStyle(blueprint.palette.textMuted)
             }
             #endif
@@ -635,7 +638,7 @@ public struct RecordingDetailView: View {
             }
             .animation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion), value: model.fetchProgress)
             .accessibilityElement()
-            .accessibilityLabel(Text(verbatim: loc("Fetching from Drive…")))
+            .accessibilityLabel(Text(verbatim: loc(model.icloud ? "Fetching from iCloud…" : "Fetching from Drive…")))
             .accessibilityValue(Text(verbatim: "\(Int(fraction * 100))%"))
     }
 
@@ -643,7 +646,7 @@ public struct RecordingDetailView: View {
     /// sentence type, as "Could not fetch from Drive" is.
     @ViewBuilder private var fetchingWords: some View {
         if blueprint.reduceMotion {
-            Text(verbatim: loc("Fetching from Drive…"))
+            Text(verbatim: loc(model.icloud ? "Fetching from iCloud…" : "Fetching from Drive…"))
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.textMuted)
         }
@@ -782,7 +785,7 @@ public struct RecordingDetailView: View {
             if model.driveFetch == .failed {
                 // Beside the clock when some parts are here and on its own when none are: either
                 // way it is what stands between the page and the whole recording.
-                Text(verbatim: loc("Could not fetch from Drive"))
+                Text(verbatim: loc(model.icloud ? "Could not fetch from iCloud" : "Could not fetch from Drive"))
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
             }

@@ -84,6 +84,9 @@
     <string name="core_needs_auth">Conecta Google Drive para continuar las subidas</string>
     <string name="core_drive_reauth">Debes volver a permitir el acceso a Google Drive</string>
     <string name="core_drive_storage_full">Google Drive no tiene espacio. Libera espacio y vuelve a intentarlo</string>
+    <string name="core_icloud_unavailable">iCloud Drive no está disponible. En Ajustes, dentro de iCloud, comprueba que iCloud Drive y Recly estén activados.</string>
+    <string name="core_icloud_storage_full">iCloud no tiene espacio. Libera espacio y vuelve a intentarlo</string>
+    <string name="core_icloud_uploading">Subiendo a iCloud</string>
     <string name="core_drive_consent_required">El acceso a Drive necesita tu consentimiento</string>
     <string name="core_sign_in_cancelled">Se canceló el inicio de sesión</string>
     <string name="core_missing_secret">Este dispositivo no tiene el valor del secreto «%1$s»</string>

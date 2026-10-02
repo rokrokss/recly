@@ -7,7 +7,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import okio.ByteString.Companion.toByteString
 import okio.Path
-import recly.core.drive.DriveApi
+import recly.core.storage.CloudFiles
 import recly.core.drive.DriveFileMeta
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
@@ -24,7 +24,7 @@ internal val resultFileMutex = Mutex()
  * different md5 is overwritten — running the workflow again makes the newest result the canonical
  * one instead of piling up duplicates.
  */
-internal class ResultFiles(private val api: DriveApi, private val deps: CoreDeps) {
+internal class ResultFiles(private val api: CloudFiles, private val deps: CoreDeps) {
     suspend fun write(
         dir: Path,
         folderId: String,

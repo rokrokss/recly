@@ -27,6 +27,10 @@ import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import recly.core.recording.PartHasher
 import recly.core.recording.RecordingRepository
+import recly.core.storage.CloudFiles
+import recly.core.storage.CloudStorage
+import recly.core.storage.StorageKind
+import recly.core.storage.StorageUnavailableException
 import recly.core.workflow.Template
 import recly.core.workflow.TemplateContext
 
@@ -39,9 +43,14 @@ import recly.core.workflow.TemplateContext
  * `md5Checksum` already matches the local one is skipped, and the resume point of the file in
  * flight is written to `state_json` after every chunk. Nothing the user may have put in the
  * folder themselves is ever deleted — only a file this step just uploaded and found corrupt.
+ *
+ * The step's [Step.DriveUpload.store] picks the storage (docs/03 "저장 위치"). In iCloud the files are
+ * copied into the app's folder and the system uploads them later, so the step waits — spending no
+ * attempt — until iCloud holds every one ([CloudFiles.settled]), and waits the same way while iCloud
+ * cannot be used from this device at all.
  */
 class DriveUploadRunner(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val folders: FolderResolver,
     private val store: DriveStore,
     private val recordings: RecordingRepository,
@@ -59,16 +68,26 @@ class DriveUploadRunner(
                 reason = CoreMessage.STEP_FAILED.code("$TYPE runner got a ${ctx.step::class.simpleName}"),
             )
         val rendered = renderFolder(step, ctx)
-        return StepOutcome.Done(uploaded(ctx, step, rendered))
+        val files = api.forKind(step.store) ?: return unavailable(ctx)
+        return try {
+            uploaded(ctx, step, rendered, files)
+        } catch (e: StorageUnavailableException) {
+            unavailable(ctx)
+        }
     }
+
+    /** iCloud cannot be used from this device right now: looked at again later, not failed. */
+    private fun unavailable(ctx: StepContext): StepOutcome =
+        StepOutcome.Waiting(UNAVAILABLE_WAIT_SEC, ctx.state ?: JsonObject(emptyMap()), CoreMessage.ICLOUD_UNAVAILABLE.code())
 
     private suspend fun uploaded(
         ctx: StepContext,
         step: Step.DriveUpload,
         rendered: String,
-    ): StepOutput =
+        files: CloudFiles,
+    ): StepOutcome =
         try {
-            attempt(ctx, step, rendered, DriveUploadState.from(ctx.state))
+            attempt(ctx, step, rendered, DriveUploadState.from(ctx.state), files)
         } catch (e: DriveNotFound) {
             // A folder we had an id for is gone. Everything we remember about it — the cached path
             // ids and the per-file ids that lived inside it — is worthless, so drop it and resolve
@@ -82,7 +101,7 @@ class DriveUploadRunner(
             val cleared = DriveUploadState()
             ctx.saveState(cleared.toJson())
             try {
-                attempt(ctx, step, rendered, cleared)
+                attempt(ctx, step, rendered, cleared, files)
             } catch (again: DriveNotFound) {
                 throw StepFailure(
                     retryable = true,
@@ -96,19 +115,22 @@ class DriveUploadRunner(
         step: Step.DriveUpload,
         rendered: String,
         initial: DriveUploadState,
-    ): StepOutput {
+        files: CloudFiles,
+    ): StepOutcome {
         val meta = ctx.recording.meta
         val base = MetaWriter.baseName(meta)
         var state = initial
 
-        // A saved folder id is a claim about Drive, not a fact. If the folder was deleted or
-        // trashed between runs, everything we uploaded into it went with it.
+        // A saved folder id is a claim about the storage, not a fact. If the folder was deleted or
+        // trashed between runs, everything we uploaded into it went with it — and one in the other
+        // storage is not where this step uploads any more.
         val saved = state.folderId
-        if (saved != null && !folderAlive(saved)) {
+        if (saved != null && (StorageKind.ofId(saved) != step.store || !folderAlive(saved, files))) {
             state = DriveUploadState()
             ctx.saveState(state.toJson())
         }
-        val folder = folder(ctx, state, rendered, base)
+        val resumed = state.folderId != null
+        val folder = folder(ctx, state, rendered, base, files)
         state = state.copy(folderId = folder.id, folderWebViewLink = folder.webViewLink)
         ctx.saveState(state.toJson())
         store.rememberRecordingFolder(ctx.recording.id, folder.id)
@@ -118,7 +140,12 @@ class DriveUploadRunner(
         // The folder exists before the first byte does, and it is the only thing another device can
         // see while this one uploads (docs/03 "다른 기기의 녹음"): what comes after this step goes on it
         // now, so a list elsewhere can say "전사 중" instead of showing a finished recording.
-        marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
+        // In iCloud a resumed attempt is one waiting for the system's upload, every 30 seconds, and its
+        // folder was marked when it was made: the same marker again would only send every device to
+        // read the folder file again (docs/03 "저장 위치").
+        if (!resumed || step.store == StorageKind.DRIVE) {
+            marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
+        }
         // Before the first byte goes out, and into the output rather than the state: a NEEDS_SPACE
         // park drops `state_json` (docs/10), and "Drive에서도 삭제" (docs/03) still has to know which
         // folder this recording made. Overwritten by the full output when the step finishes.
@@ -138,6 +165,7 @@ class DriveUploadRunner(
                 mimeType = PART_MIME,
                 md5 = partMd5(ctx, part),
                 save = { state = it },
+                files = files,
             )
             uploaded += entry(part.part, part.track.wire, part.file, bytes, part.sha256, file)
         }
@@ -155,17 +183,25 @@ class DriveUploadRunner(
                 mimeType = META_MIME,
                 md5 = PartHasher.md5(deps.fileSystem, path),
                 save = { state = it },
+                files = files,
             )
             uploaded += entry(0, META_KEY, name, bytes, PartHasher.sha256(deps.fileSystem, path), file)
         }
 
-        return StepOutput(
-            buildJsonObject {
-                put("folderId", folder.id)
-                folder.webViewLink?.let { put("folderWebViewLink", it) }
-                put("path", "$rendered/$base")
-                putJsonArray("files") { uploaded.forEach { add(it) } }
-            },
+        // docs/03 "저장 위치": iCloud uploads from the folder in its own time. Done is when it holds
+        // every file; until then the step comes back and looks, each file already in place skipped.
+        if (!files.settled(uploaded.mapNotNull { it.string("fileId") })) {
+            return StepOutcome.Waiting(SETTLE_WAIT_SEC, state.toJson(), CoreMessage.ICLOUD_UPLOADING.code())
+        }
+        return StepOutcome.Done(
+            StepOutput(
+                buildJsonObject {
+                    put("folderId", folder.id)
+                    folder.webViewLink?.let { put("folderWebViewLink", it) }
+                    put("path", "$rendered/$base")
+                    putJsonArray("files") { uploaded.forEach { add(it) } }
+                },
+            ),
         )
     }
 
@@ -177,34 +213,36 @@ class DriveUploadRunner(
         }
 
     /** A trashed folder is as good as deleted: Drive will not list its children any more. */
-    private suspend fun folderAlive(folderId: String): Boolean {
-        val json = api.getFile(folderId, "id,trashed,parents") ?: return false
+    private suspend fun folderAlive(folderId: String, files: CloudFiles): Boolean {
+        val json = files.getFile(folderId, "id,trashed,parents") ?: return false
         return json["trashed"]?.jsonPrimitive?.booleanOrNull != true
     }
 
     /**
      * The recording's own folder under the resolved path. A verified id skips both round trips;
-     * the `description`/`appProperties` are only written when we are the one creating it (docs/03).
+     * the `description`/`appProperties` are only written when we are the one creating it (docs/03) —
+     * or, in iCloud, when an earlier attempt made the folder and stopped before its property file.
      */
     private suspend fun folder(
         ctx: StepContext,
         state: DriveUploadState,
         rendered: String,
         base: String,
+        files: CloudFiles,
     ): DriveFile {
         state.folderId?.let { return DriveFile(it, base, null, state.folderWebViewLink) }
-        val parent = folders.resolve(rendered)
-        val existing = api.findChild(parent, base, DriveApi.FOLDER_MIME)
-        if (existing != null) return existing
-        return api.createFolder(
-            name = base,
-            parentId = parent,
-            description = ctx.recording.meta.title,
-            appProperties = buildMap {
-                put("recordingId", ctx.recording.id)
-                put("workflowId", ctx.job.workflowId)
-            },
-        )
+        val parent = folders.resolve(rendered, files)
+        val description = ctx.recording.meta.title
+        val appProperties = buildMap {
+            put("recordingId", ctx.recording.id)
+            put("workflowId", ctx.job.workflowId)
+        }
+        val existing = files.findChild(parent, base, DriveApi.FOLDER_MIME)
+        if (existing != null) {
+            files.completeFolder(existing, description, appProperties)
+            return existing
+        }
+        return files.createFolder(name = base, parentId = parent, description = description, appProperties = appProperties)
     }
 
     /** Returns the Drive file and the byte count that was uploaded. */
@@ -218,6 +256,7 @@ class DriveUploadRunner(
         mimeType: String,
         md5: String,
         save: (DriveUploadState) -> Unit,
+        files: CloudFiles,
     ): Pair<DriveFile, Long> {
         var current = state
 
@@ -230,36 +269,36 @@ class DriveUploadRunner(
         // An earlier run uploaded a corrupt file and did not get to delete it. Finish that first,
         // or the find-by-name below would adopt the very file we rejected.
         current.files[key]?.pendingDelete?.let { pending ->
-            api.delete(pending)
+            files.delete(pending)
             persist(UploadState())
         }
 
         val size = deps.fileSystem.metadata(path).size
             ?: throw StepFailure(retryable = false, reason = CoreMessage.STEP_FAILED.code("cannot size '$name'"))
 
-        already(current.files[key], md5)?.let {
+        already(current.files[key], md5, files)?.let {
             deps.logger.log(Logger.Level.INFO, "drive.skip", mapOf("name" to name, "fileId" to it.id))
             return it to size
         }
         // Drive allows several children with the same name, and we cannot prove the ones we did
         // not just upload are ours — so pick the one that matches and leave the rest alone.
-        api.findChildren(folderId, name).firstOrNull { it.md5 == md5 }?.let {
+        files.findChildren(folderId, name).firstOrNull { it.md5 == md5 }?.let {
             persist(UploadState(fileId = it.id))
             deps.logger.log(Logger.Level.INFO, "drive.skip", mapOf("name" to name, "fileId" to it.id))
             return it to size
         }
 
         val meta = DriveFileMeta(name = name, parents = listOf(folderId), mimeType = mimeType)
-        val file = if (size <= api.multipartLimit) {
-            api.multipartUpload(meta, deps.fileSystem.read(path) { readByteArray() })
+        val file = if (size <= files.multipartLimit) {
+            files.multipartUpload(meta, deps.fileSystem.read(path) { readByteArray() })
         } else {
-            api.uploadResumable(meta, path, size, current.files[key]) { upload -> persist(upload) }
+            files.uploadResumable(meta, path, size, current.files[key]) { upload -> persist(upload) }
         }
         if (file.md5 != md5) {
             // A file with the wrong content is worse than no file: the next attempt would find it
             // by name. Record the intent to delete before deleting, so a failure here is resumable.
             persist(UploadState(pendingDelete = file.id))
-            api.delete(file.id)
+            files.delete(file.id)
             persist(UploadState())
             throw StepFailure(
                 retryable = true,
@@ -271,9 +310,9 @@ class DriveUploadRunner(
     }
 
     /** A file the state claims we uploaded, confirmed against Drive rather than trusted. */
-    private suspend fun already(saved: UploadState?, md5: String): DriveFile? {
+    private suspend fun already(saved: UploadState?, md5: String, files: CloudFiles): DriveFile? {
         val fileId = saved?.fileId ?: return null
-        val file = DriveFile.from(api.getFile(fileId, ResumableUploadPlanner.FILE_FIELDS)) ?: return null
+        val file = DriveFile.from(files.getFile(fileId, ResumableUploadPlanner.FILE_FIELDS)) ?: return null
         return file.takeIf { it.md5 == md5 }
     }
 
@@ -310,8 +349,14 @@ class DriveUploadRunner(
         internal const val META_MIME = "application/json"
         internal const val META_KEY = "meta"
 
+        /** How soon a step waiting for iCloud's own upload looks again (docs/03 "저장 위치"). */
+        internal const val SETTLE_WAIT_SEC = 30
+
+        /** How soon a step waiting for iCloud to become usable looks again. */
+        internal const val UNAVAILABLE_WAIT_SEC = 300
+
         fun create(db: RecDatabase, deps: CoreDeps): DriveUploadRunner {
-            val api = DriveApi(deps)
+            val api = CloudStorage.of(deps)
             val store = DriveStore(db, deps)
             return DriveUploadRunner(
                 api,

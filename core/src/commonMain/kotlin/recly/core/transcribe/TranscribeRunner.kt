@@ -13,7 +13,8 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okio.Path
-import recly.core.drive.DriveApi
+import recly.core.storage.CloudFiles
+import recly.core.storage.CloudStorage
 import recly.core.drive.DriveUploadRunner
 import recly.core.drive.string
 import recly.core.job.StepContext
@@ -43,7 +44,7 @@ import recly.core.recording.MetaWriter
  * running comes back and polls the same job instead of paying to transcribe the audio twice.
  */
 class TranscribeRunner(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val deps: CoreDeps,
     private val providers: (String) -> SttProvider? = SttProviders::create,
 ) : StepRunner {
@@ -331,7 +332,7 @@ class TranscribeRunner(
 
         fun textFileName(base: String): String = "$base.transcript.txt"
 
-        fun create(deps: CoreDeps): TranscribeRunner = TranscribeRunner(DriveApi(deps), deps)
+        fun create(deps: CoreDeps): TranscribeRunner = TranscribeRunner(CloudStorage.of(deps), deps)
 
         internal const val JSON_MIME = "application/json"
         internal const val TEXT_MIME = "text/plain"

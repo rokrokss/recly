@@ -33,7 +33,10 @@ public struct CoreBridge {
         transport: (any ReclyCore.Transport)? = nil,
         /// docs/08: the remux a `transcribe` step needs. The same one on the Mac and the phone.
         audio: any ReclyCore.AudioTools = AppleAudioTools(),
-        transcriptionPolicy: TranscriptionPolicy? = nil
+        transcriptionPolicy: TranscriptionPolicy? = nil,
+        /// docs/03 "저장 위치": the app's iCloud folder, on the iPhone and the Mac in a build signed
+        /// with the iCloud entitlement. Nil everywhere else, and iCloud is then not offered.
+        ubiquity: (any ReclyCore.UbiquityContainer)? = CoreBridge.defaultUbiquity
     ) async throws -> CoreBridge {
         try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
         try relocateLegacyDatabase(named: databaseName, into: dataDirectory, logger: logger)
@@ -61,7 +64,8 @@ public struct CoreBridge {
             transcriptionPolicy: transcriptionPolicy ?? TranscriptionPolicy(
                 region: platform == .ios ? AppleStorefrontRegion() : nil
             ),
-            localTranscription: LocalSpeechEngine.make()
+            localTranscription: LocalSpeechEngine.make(),
+            ubiquity: ubiquity
         )
 
         let core = try AppleRuntime.shared.openCore(deps: deps, name: databaseName, basePath: dataDirectory.path)
@@ -226,6 +230,16 @@ public extension CoreBridge {
     static var defaultDataDirectory: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return base.appendingPathComponent(appName, isDirectory: true)
+    }
+
+    /// docs/03 "저장 위치": the iCloud container this build is signed for, if any. The watch never
+    /// has one — it hands its recordings to the phone (ADR-002).
+    static var defaultUbiquity: (any ReclyCore.UbiquityContainer)? {
+        #if os(iOS) || os(macOS)
+        ICloudContainer.configured.map { ICloudContainer(identifier: $0) }
+        #else
+        nil
+        #endif
     }
 
     /// What every `meta.json` this install writes says produced it (docs/01 `DeviceInfo`).

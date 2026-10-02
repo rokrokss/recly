@@ -32,9 +32,14 @@ class CoreDeps(
     val requireTransferConsent: Boolean = false,
     val transcriptionPolicy: TranscriptionPolicy = TranscriptionPolicy(),
     val localTranscription: recly.core.transcribe.LocalTranscriptionEngine = recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
+    /**
+     * docs/03 "저장 위치": the app's iCloud Drive container. Only the iPhone and Mac shells have one
+     * (ADR-024); everywhere else this is null and iCloud is not offered.
+     */
+    val ubiquity: recly.core.storage.UbiquityContainer? = null,
 ) {
     internal fun withTransport(transport: Transport): CoreDeps = CoreDeps(
         clock, logger, secureStore, tokenProvider, transport, fileSystem, audio, dataDir,
-        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription,
+        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription, ubiquity,
     )
 }

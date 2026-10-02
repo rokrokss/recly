@@ -19,6 +19,7 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.longOrNull
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveUploadRunner
+import recly.core.drive.uploadsToDrive
 import recly.core.ids.Ulid
 import recly.core.message.CoreMessage
 import recly.core.model.Step
@@ -26,6 +27,7 @@ import recly.core.model.Workflow
 import recly.core.model.isoUtc
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
+import recly.core.storage.StorageKind
 
 /**
  * Durable job queue. Every public call runs on [CoreDeps.io] under one mutex: SQLDelight drivers
@@ -79,7 +81,7 @@ class JobStore(
                 now.isoUtc(),
                 null,
             )
-            if (workflow.steps.any { it is Step.DriveUpload }) {
+            if (workflow.steps.any { it.uploadsToDrive }) {
                 queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()?.let {
                     queries.bindJobDriveAccount(it, jobId)
                 }
@@ -123,7 +125,7 @@ class JobStore(
             var resumed = 0
             queries.selectJobs().executeAsList().forEach { row ->
                 if (row.status == JobStatus.DONE.name || row.status == JobStatus.SKIPPED_SHORT.name) return@forEach
-                if (row.workflowOrNull()?.steps?.none { it is Step.DriveUpload } == true) return@forEach
+                if (row.workflowOrNull()?.steps?.none { it.uploadsToDrive } == true) return@forEach
                 // An unbound job disconnected by an older installation cannot be attributed by
                 // guessing. Keep it parked until its existing Drive folder proves ownership.
                 val legacyFolder = queries.selectRecordingById(row.recording_id).executeAsOneOrNull()?.drive_folder_id
@@ -159,8 +161,10 @@ class JobStore(
     internal suspend fun unboundDriveJobs(): List<Pair<String, String>> = locked {
         queries.selectJobs().executeAsList()
             .filter { it.drive_account_id == null && it.status != JobStatus.DONE.name }
+            .filter { row -> row.workflowOrNull()?.steps?.any { it.uploadsToDrive } == true }
             .mapNotNull { row ->
                 queries.selectRecordingById(row.recording_id).executeAsOneOrNull()?.drive_folder_id
+                    ?.takeIf { StorageKind.ofId(it) == StorageKind.DRIVE }
                     ?.let { row.id to it }
             }
     }
@@ -432,20 +436,32 @@ class JobStore(
         }
     }
 
-    /** Disconnect preserves unfinished steps and their resume state; only completed jobs go. */
+    /**
+     * Disconnect preserves unfinished steps and their resume state; only completed jobs go — but not
+     * iCloud's. A completed iCloud job's upload output holds the file ids its playback fetches by
+     * once the local audio is swept, and disconnecting Drive says nothing about iCloud (docs/03
+     * "저장 위치").
+     */
     internal suspend fun disconnectDrive(): Unit = locked {
         db.transaction {
             queries.kvSet(DRIVE_CONNECTED, "false")
             val account = queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()
             queries.selectJobs().executeAsList().forEach { row ->
-                if (row.workflowOrNull()?.steps?.none { it is Step.DriveUpload } == true) return@forEach
+                val steps = row.workflowOrNull()?.steps
+                if (row.status == JobStatus.DONE.name) {
+                    // Everything but an iCloud job is cleared as before, a snapshot this build cannot read included.
+                    if (steps?.any { it is Step.DriveUpload && it.store == StorageKind.ICLOUD } != true) {
+                        queries.deleteStepRunsByJob(row.id)
+                        queries.deleteJobById(row.id)
+                    }
+                    return@forEach
+                }
+                if (steps?.none { it.uploadsToDrive } == true) return@forEach
                 if (account != null && row.drive_account_id == null && row.disconnected_status == null) {
                     queries.bindJobDriveAccount(account, row.id)
                 }
                 queries.pauseJobForDisconnect(row.id)
             }
-            queries.deleteCompletedStepRuns()
-            queries.deleteCompletedJobs()
             queries.kvDelete(DRIVE_ACCOUNT)
         }
     }

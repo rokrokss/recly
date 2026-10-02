@@ -84,6 +84,9 @@
     <string name="core_needs_auth">连接Google Drive以继续上传</string>
     <string name="core_drive_reauth">需要重新授权访问Google Drive</string>
     <string name="core_drive_storage_full">Google Drive空间不足，请释放空间后重试</string>
+    <string name="core_icloud_unavailable">无法使用iCloud Drive。请在“设置”的iCloud中确认iCloud Drive和Recly已打开。</string>
+    <string name="core_icloud_storage_full">iCloud空间不足，请释放空间后重试</string>
+    <string name="core_icloud_uploading">正在上传至iCloud</string>
     <string name="core_drive_consent_required">访问Drive需要您的同意</string>
     <string name="core_sign_in_cancelled">登录已取消</string>
     <string name="core_missing_secret">此设备上没有机密凭据“%1$s”的值</string>

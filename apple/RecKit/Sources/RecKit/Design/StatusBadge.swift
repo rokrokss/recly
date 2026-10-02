@@ -76,7 +76,10 @@ public struct LedgerStatus: Equatable, Sendable {
         case "Sign-in needed": return LedgerStatus(code: "NEEDS_AUTH", tone: .neutral)
         // docs/10 "Drive 용량 초과": a state of its own and not a failure — a retry is not what
         // clears it, and the row says so.
-        case "No space in Drive": return LedgerStatus(code: "NO_SPACE", tone: .warning)
+        case "No space in Drive", "No space in iCloud": return LedgerStatus(code: "NO_SPACE", tone: .warning)
+        // docs/03 "저장 위치": iCloud is uploading on its own schedule — in flight, like a running upload.
+        case "Uploading to iCloud": return LedgerStatus(code: "UPLOADING", tone: .accent)
+        case "Waiting for iCloud": return LedgerStatus(code: "WAITING", tone: .warning)
         case "Too short": return LedgerStatus(code: "SKIPPED", tone: .neutral)
         default: return LedgerStatus(code: "UNKNOWN", tone: .neutral)
         }

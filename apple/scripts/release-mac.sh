@@ -44,6 +44,14 @@ sign_flags=(CODE_SIGN_IDENTITY="$identity")
 if [[ "$identity" == Developer\ ID\ Application:* ]]; then
   sign_flags+=(OTHER_CODE_SIGN_FLAGS="--timestamp")
 fi
+# docs/03 "저장 위치": an iCloud build (Local.xcconfig, RECLY_MAC_ENTITLEMENTS) signs with a Developer ID
+# provisioning profile, and a manual profile is looked up under the team that issued it.
+local_config="$repo_root/apple/Config/Local.xcconfig"
+if [[ -f "$local_config" ]] && grep -q '^RECLY_MAC_ENTITLEMENTS.*iCloud' "$local_config"; then
+  team="${RECLY_TEAM_ID:-$(sed -n 's/^RECLY_DEVELOPMENT_TEAM *= *\([A-Z0-9]*\).*/\1/p' "$local_config" | head -1)}"
+  : "${team:?release-mac: an iCloud build needs RECLY_DEVELOPMENT_TEAM in Local.xcconfig or RECLY_TEAM_ID}"
+  sign_flags+=(DEVELOPMENT_TEAM="$team")
+fi
 
 # The distribution directory also contains iOS archives and exports; keep those and prior DMGs.
 rm -rf "$derived"
@@ -89,6 +97,17 @@ for key in com.apple.security.device.audio-input; do
     exit 1
   fi
 done
+# docs/03 "저장 위치": iCloud is a restricted entitlement — a Mac app that carries one without the
+# provisioning profile that grants it is killed at launch — so a build that has it ships the profile.
+if printf '%s' "$entitlements" | grep -q com.apple.developer.icloud-container-identifiers; then
+  if [[ ! -f "$app/Contents/embedded.provisionprofile" ]]; then
+    echo "release-mac: iCloud entitlements without an embedded provisioning profile — see Config/Local.xcconfig.example" >&2
+    exit 1
+  fi
+  echo "release-mac: iCloud on"
+else
+  echo "release-mac: iCloud off (RECLY_MAC_ENTITLEMENTS is not the iCloud set)"
+fi
 # The `build` action injects get-task-allow (a debugger attach right) unless told not to above; the
 # notary service rejects any Developer ID signature that carries it.
 if printf '%s' "$entitlements" | grep -q com.apple.security.get-task-allow; then

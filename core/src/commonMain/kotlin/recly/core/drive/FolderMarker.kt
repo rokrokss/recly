@@ -7,6 +7,7 @@ import kotlin.time.ExperimentalTime
 import recly.core.model.isoUtc
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
+import recly.core.storage.CloudFiles
 
 /**
  * docs/03 "다른 기기의 녹음": the device that runs the workflow tells the others what is still to come.
@@ -29,9 +30,12 @@ interface FolderMarker {
     }
 }
 
-/** [FolderMarker] against the recording's `{base}/` folder (ADR-014), through `files.update`. */
+/**
+ * [FolderMarker] against the recording's `{base}/` folder (ADR-014): its `appProperties` on Drive,
+ * its property file in iCloud (docs/03 "저장 위치") — whichever the folder id belongs to.
+ */
 class DriveFolderMarker(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val deps: CoreDeps,
 ) : FolderMarker {
     override suspend fun mark(folderId: String, pending: List<String>) {

@@ -42,6 +42,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// and resolved by [status], as the Mac's own slot is. It outranks the note while it stands.
     @Published private(set) var statusMessage: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
+    /// docs/03 "저장 위치": Google Drive or the app's iCloud folder, for the settings' storage block.
+    @Published private(set) var storage: StorageChoice?
     /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the Record tab's first-run card.
     @Published private(set) var modelDownload: ModelDownload?
@@ -302,6 +304,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 Task { await download.refresh() }
             }
             self.processing = processing
+            let storage = StorageChoice(core: bridge.core)
+            storage.onChanged = { [weak processing] in await processing?.storageChanged() }
+            self.storage = storage
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
@@ -984,6 +989,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         case .driveStorage:
             openDriveStorage()
 
+        // docs/03 "저장 위치": the iCloud uploads parked for space, asked again once there is some.
+        case .retryUploads:
+            for item in recents where item.alert == alert.reason { retry(item) }
+
         // docs/08 "오류": the key is the thing to look at, and it is entered in the recording
         // processing settings.
         case .secrets, .editor:
@@ -1022,7 +1031,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 title: item.titleLabel,
                 unuploaded: unuploaded,
                 remote: item.remote,
-                hasDriveFolder: item.link != nil
+                hasDriveFolder: item.hasCloudFolder,
+                icloud: item.storage == .icloud
             )
         }
     }
@@ -1060,7 +1070,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             case .deleted(let driveError):
                 if let driveError {
                     self.message = .key(
-                        "Deleted here, but Drive refused: %@",
+                        request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
                         args: [.verbatim(driveError)]
                     )
                 }
@@ -1164,7 +1174,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // does nothing at all below it, so this is the only thing that brings the job back if
             // the user leaves the app before the upload has a background task of its own.
             self.background.schedule()
-            self.background.uploadNow(recordingId: item.id, title: item.titleLabel)
+            self.background.uploadNow(recordingId: item.id, title: item.titleLabel, icloud: item.storage == .icloud)
             return true
         }
     }

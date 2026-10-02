@@ -125,6 +125,13 @@ public final class ProcessingSettingsModel: ObservableObject {
         _ = try? await core.deps.transcriptionPolicy.refresh()
         providers = WorkflowParser.shared.STT_PROVIDERS.filter { core.deps.transcriptionPolicy.providerAvailable(provider: $0) }
     }
+    /// docs/03 "저장 위치": the storage was switched from the storage section, which saved a new
+    /// revision under this form. The draft never carries the storage — saving keeps the stored one —
+    /// so it stays as typed and is saved on top of the new revision.
+    public func storageChanged() async {
+        if let state = try? await core.initializeProcessing() { stored = state }
+    }
+
     /// Export writes the stored document, so only offer it when that is exactly what the screen shows.
     public var canExport: Bool { stored != nil && !dirty }
     public var languages: [Language] { draft?.mode == .local ? localLanguages : draft?.languages ?? [] }

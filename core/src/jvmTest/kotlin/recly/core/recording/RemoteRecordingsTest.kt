@@ -491,7 +491,7 @@ class RemoteRecordingsTest {
         h.upload(mine)
         h.recordings.delete(mine.recordingId, deleteDrive = false)
 
-        h.recordings.clearIgnored()
+        h.recordings.clearIgnored(recly.core.storage.StorageKind.DRIVE)
         assertEquals(PullSummary(1, 0), h.remote.pull())
 
         assertTrue(h.recordings.get(mine.recordingId)!!.remote)

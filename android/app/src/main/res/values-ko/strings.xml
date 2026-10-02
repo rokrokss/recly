@@ -98,6 +98,9 @@
     <string name="core_needs_auth">업로드를 계속하려면 Google Drive를 연결하세요</string>
     <string name="core_drive_reauth">Google Drive 권한 재동의가 필요합니다</string>
     <string name="core_drive_storage_full">Google Drive에 공간이 없습니다 — 정리한 뒤 다시 시도하세요</string>
+    <string name="core_icloud_unavailable">iCloud Drive를 쓸 수 없습니다. 설정의 iCloud에서 iCloud Drive와 Recly가 켜져 있는지 확인하세요.</string>
+    <string name="core_icloud_storage_full">iCloud에 공간이 없습니다 — 정리한 뒤 다시 시도하세요</string>
+    <string name="core_icloud_uploading">iCloud에 올리는 중</string>
     <string name="core_drive_consent_required">Drive 권한 동의가 필요합니다</string>
     <string name="core_sign_in_cancelled">로그인이 취소되었습니다</string>
     <string name="core_missing_secret">이 기기에 시크릿 ‘%1$s’ 값이 없습니다</string>

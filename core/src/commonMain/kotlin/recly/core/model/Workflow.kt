@@ -43,6 +43,11 @@ sealed class Step {
         override val retry: Retry = Retry(),
         val folder: String = "recly/{{yyyy}}/{{yyyy}}-{{MM}}",
         val includeMeta: Boolean = true,
+        /**
+         * docs/03 "저장 위치": which storage the files go to — the type keeps its `drive.upload` wire
+         * name for both, and a snapshot written before this field reads as Drive.
+         */
+        val store: recly.core.storage.StorageKind = recly.core.storage.StorageKind.DRIVE,
     ) : Step()
 
     /**

@@ -1,7 +1,6 @@
 package recly.core.transcribe
 
 import kotlinx.serialization.json.*
-import recly.core.drive.DriveApi
 import recly.core.drive.DriveUploadRunner
 import recly.core.drive.string
 import recly.core.job.*
@@ -9,13 +8,25 @@ import recly.core.message.CoreMessage
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
 import recly.core.recording.MetaWriter
+import recly.core.storage.CloudStorage
+import recly.core.storage.StorageUnavailableException
 
-/** Network publication only. The durable transcript remains readable when Drive is unavailable. */
+/**
+ * Network publication only. The durable transcript remains readable when Drive is unavailable. An
+ * iCloud folder that cannot be reached from this device right now is waited for, not failed
+ * (docs/03 "저장 위치").
+ */
 class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
     override val type = "transcript.publish"
-    private val files = ResultFiles(DriveApi(deps), deps)
+    private val files = ResultFiles(CloudStorage.of(deps), deps)
 
-    override suspend fun run(ctx: StepContext): StepOutcome {
+    override suspend fun run(ctx: StepContext): StepOutcome = try {
+        publish(ctx)
+    } catch (e: StorageUnavailableException) {
+        StepOutcome.Waiting(DriveUploadRunner.UNAVAILABLE_WAIT_SEC, ctx.state ?: JsonObject(emptyMap()), CoreMessage.ICLOUD_UNAVAILABLE.code())
+    }
+
+    private suspend fun publish(ctx: StepContext): StepOutcome {
         val folder = ctx.priorOutput(DriveUploadRunner.TYPE)?.string("folderId")
             ?: throw StepFailure(false, CoreMessage.STEP_FAILED.code("missing upload destination"))
         val base = MetaWriter.baseName(ctx.recording.meta)

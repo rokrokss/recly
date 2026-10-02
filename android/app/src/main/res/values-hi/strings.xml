@@ -84,6 +84,9 @@
     <string name="core_needs_auth">अपलोड जारी रखने के लिए Google Drive कनेक्ट करें</string>
     <string name="core_drive_reauth">Google Drive एक्सेस की अनुमति फिर देनी होगी</string>
     <string name="core_drive_storage_full">Google Drive में जगह नहीं है। जगह खाली करके फिर कोशिश करें</string>
+    <string name="core_icloud_unavailable">iCloud Drive उपलब्ध नहीं है। सेटिंग में iCloud के अंदर जाँचें कि iCloud Drive और Recly चालू हैं।</string>
+    <string name="core_icloud_storage_full">iCloud में जगह नहीं है। जगह खाली करके फिर कोशिश करें</string>
+    <string name="core_icloud_uploading">iCloud पर अपलोड जारी</string>
     <string name="core_drive_consent_required">Drive एक्सेस के लिए आपकी सहमति चाहिए</string>
     <string name="core_sign_in_cancelled">साइन इन रद्द हुआ</string>
     <string name="core_missing_secret">इस डिवाइस पर सीक्रेट ‘%1$s’ का मान नहीं है</string>

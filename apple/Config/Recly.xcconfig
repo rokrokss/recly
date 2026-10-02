@@ -9,6 +9,20 @@ RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
 RECLY_MAC_GID_CLIENT_ID = GIDClientID.apps.googleusercontent.com
 RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
 
+// docs/03 "저장 위치" (ADR-024): iCloud is off in a checkout. Its entitlement needs the container
+// iCloud.app.recly registered for your team and enabled on the app.recly and app.recly.mac App IDs,
+// and a Mac app that carries it needs a provisioning profile, so Local.xcconfig turns it on
+// (Local.xcconfig.example). With the container empty the apps do not offer iCloud.
+// RECLY_MAC_PROFILE names that profile: the Mac target reads it, as it reads RECLY_MAC_ENTITLEMENTS,
+// because the target's own setting would hide a PROVISIONING_PROFILE_SPECIFIER set here.
+RECLY_ICLOUD_CONTAINER =
+RECLY_PHONE_ENTITLEMENTS =
+RECLY_MAC_ENTITLEMENTS = RecMac/RecMac.entitlements
+RECLY_MAC_PROFILE =
+// The Mac's Debug build signs with the local certificate and no profile, so it never has iCloud.
+RECLY_MAC_ICLOUD_CONTAINER = $(RECLY_ICLOUD_CONTAINER)
+RECLY_MAC_ICLOUD_CONTAINER[config=Debug] =
+
 // Your own ids, if you have them: copy `Local.xcconfig.example` to `Local.xcconfig` and fill it
 // in. The include is last on purpose — a later assignment wins — and optional (`#include?`), so
 // a checkout without the file builds with the placeholders above.

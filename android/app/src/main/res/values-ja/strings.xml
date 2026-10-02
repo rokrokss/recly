@@ -84,6 +84,9 @@
     <string name="core_needs_auth">アップロードを続けるにはGoogle Driveに接続してください</string>
     <string name="core_drive_reauth">Google Driveへのアクセスを再度許可してください</string>
     <string name="core_drive_storage_full">Google Driveの容量が不足しています。空きを作って再試行してください</string>
+    <string name="core_icloud_unavailable">iCloud Driveを利用できません。設定のiCloudで、iCloud DriveとReclyがオンになっているか確認してください。</string>
+    <string name="core_icloud_storage_full">iCloudの容量が不足しています。空きを作って再試行してください</string>
+    <string name="core_icloud_uploading">iCloudにアップロード中</string>
     <string name="core_drive_consent_required">Driveへのアクセスに同意が必要です</string>
     <string name="core_sign_in_cancelled">ログインがキャンセルされました</string>
     <string name="core_missing_secret">このデバイスにはシークレット「%1$s」の値がありません</string>

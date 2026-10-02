@@ -42,6 +42,12 @@ data class ProcessingSettings(
 data class ProcessingStorage(
     val folder: String = "recly/memo/{{yyyy}}-{{MM}}",
     val minDurationSec: Int = 0,
+    /**
+     * docs/03 "저장 위치": Google Drive or the app's iCloud folder (iPhone and Mac only, ADR-024).
+     * Changed only by [ProcessingSettingsRepository.setStorage] — the settings form and an import
+     * keep the one this device has, since the choice is about this device's accounts.
+     */
+    val provider: recly.core.storage.StorageKind = recly.core.storage.StorageKind.DRIVE,
 )
 
 @Serializable

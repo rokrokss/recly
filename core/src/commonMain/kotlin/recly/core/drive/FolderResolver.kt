@@ -5,24 +5,34 @@ package recly.core.drive
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.ExperimentalTime
 import recly.core.platform.CoreDeps
+import recly.core.storage.CloudFiles
+import recly.core.storage.StorageKind
 
 /**
- * Turns a rendered `folder` template (`recly/2026/2026-08`) into a Drive folder id, one segment at a
- * time from `root`. With `drive.file` scope the app only ever sees folders it made itself, so a
- * cached id is almost always still good — but the user can move or trash one, hence the daily
- * re-verify and the 404 → recreate path.
+ * Turns a rendered `folder` template (`recly/2026/2026-08`) into a folder id, one segment at a time
+ * from the storage's root. With `drive.file` scope the app only ever sees the Drive folders it made
+ * itself, so a cached id is almost always still good — but the user can move or trash one, hence the
+ * daily re-verify and the 404 → recreate path.
+ *
+ * An iCloud folder's id is its path (docs/03 "저장 위치"), so there is nothing to cache: each segment
+ * is looked at on the device and made when it is missing.
  */
 class FolderResolver(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val store: DriveStore,
     private val deps: CoreDeps,
 ) {
-    suspend fun resolve(path: String): String {
-        var parent = ROOT
+    suspend fun resolve(path: String, files: CloudFiles = api): String {
+        val cached = StorageKind.ofId(files.rootId) == StorageKind.DRIVE
+        var parent = files.rootId
         var walked = ""
         for (segment in segments(path)) {
             walked = if (walked.isEmpty()) segment else "$walked/$segment"
-            parent = resolveSegment(walked, segment, parent)
+            parent = if (cached) {
+                resolveSegment(walked, segment, parent, files)
+            } else {
+                (files.findChild(parent, segment, DriveApi.FOLDER_MIME) ?: files.createFolder(segment, parent)).id
+            }
         }
         return parent
     }
@@ -42,26 +52,24 @@ class FolderResolver(
     private fun segments(path: String): List<String> =
         path.split('/').map { it.trim() }.filter { it.isNotEmpty() }
 
-    private suspend fun resolveSegment(path: String, name: String, parent: String): String {
+    private suspend fun resolveSegment(path: String, name: String, parent: String, files: CloudFiles): String {
         val now = deps.clock.now()
         val cached = store.folder(path)
         if (cached != null) {
             if (now - cached.checkedAt < REVERIFY_AFTER) return cached.folderId
-            if (api.getFile(cached.folderId, "id") != null) {
+            if (files.getFile(cached.folderId, "id") != null) {
                 store.putFolder(path, cached.folderId, now)
                 return cached.folderId
             }
             store.forgetFolder(path)
         }
-        val found = api.findChild(parent, name, DriveApi.FOLDER_MIME)
-            ?: api.createFolder(name, parent)
+        val found = files.findChild(parent, name, DriveApi.FOLDER_MIME)
+            ?: files.createFolder(name, parent)
         store.putFolder(path, found.id, now)
         return found.id
     }
 
     private companion object {
-        /** Drive's alias for My Drive; it works both in `q` and as a `parents` entry. */
-        const val ROOT = "root"
         val REVERIFY_AFTER = 24.hours
     }
 }

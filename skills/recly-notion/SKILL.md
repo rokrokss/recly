@@ -75,6 +75,6 @@ Reads need no confirmation.
 - "The meeting with S2 / with Kim": filter on the participants property or search the text.
 - "What did we decide about X": search, then fetch the matching pages and answer with the page
   title and date as the citation.
-- To go back to the source: the page's `recordingId` names the Drive folder (`{base}` starts
+- To go back to the source: the page's `recordingId` names the recording folder (`{base}` starts
   with the start time and ends with the first 8 characters of the id). The `recly-notes` skill
   can re-read the transcript when the notes are not enough.

@@ -43,7 +43,9 @@ public struct DeleteDialog: View {
             // there are not two answers to give — only the one thing the deletion reaches.
             if request.remote {
                 BlueprintDialogText(
-                    loc("Recorded on another device. Deleting removes it from Drive and from every device.")
+                    loc(request.icloud
+                        ? "Recorded on another device. Deleting removes it from iCloud and from every device."
+                        : "Recorded on another device. Deleting removes it from Drive and from every device.")
                 )
                 .accessibilityIdentifier("delete-remote")
             } else {
@@ -58,7 +60,10 @@ public struct DeleteDialog: View {
     @ViewBuilder
     private var choices: some View {
         if request.unuploaded > 0 {
-            BlueprintDialogText(loc("Audio not yet in Drive is deleted with it."), tone: .danger)
+            BlueprintDialogText(
+                loc(request.icloud ? "Audio not yet in iCloud is deleted with it." : "Audio not yet in Drive is deleted with it."),
+                tone: .danger
+            )
             .accessibilityIdentifier("delete-unuploaded")
         }
         // Nothing ever reached Drive, so there is no second answer to choose between.
@@ -67,7 +72,10 @@ public struct DeleteDialog: View {
                 deleteDrive = false
             }
             .accessibilityIdentifier("delete-local-only")
-            BlueprintRadioRow(loc("Also delete the Drive folder"), selected: deleteDrive) {
+            BlueprintRadioRow(
+                loc(request.icloud ? "Also delete the iCloud folder" : "Also delete the Drive folder"),
+                selected: deleteDrive
+            ) {
                 deleteDrive = true
             }
             .accessibilityIdentifier("delete-with-drive")

@@ -38,12 +38,17 @@ data class DriveFileMeta(
     }
 }
 
-/** What we keep of a Drive file: [md5] is the upload's success condition (docs/03). */
+/**
+ * What we keep of a file in the user's storage: [md5] is the upload's success condition (docs/03).
+ * [size] is filled where the reader needs it — an iCloud folder is complete once every part the
+ * meta names is there at its size (docs/03 "저장 위치").
+ */
 data class DriveFile(
     val id: String,
     val name: String,
     val md5: String?,
     val webViewLink: String?,
+    val size: Long? = null,
 ) {
     internal companion object {
         /** Returns null when the payload carries no `id` — a session-start response, or an error. */
@@ -54,6 +59,7 @@ data class DriveFile(
                 name = json["name"]?.jsonPrimitive?.contentOrNull.orEmpty(),
                 md5 = json["md5Checksum"]?.jsonPrimitive?.contentOrNull,
                 webViewLink = json["webViewLink"]?.jsonPrimitive?.contentOrNull,
+                size = json["size"]?.jsonPrimitive?.contentOrNull?.toLongOrNull(),
             )
         }
     }

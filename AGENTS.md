@@ -5,9 +5,10 @@ Instructions for coding agents working in this repository. Read this before touc
 ## Overview
 
 Recly is a multi-platform audio recorder with **no server**. Six clients — Galaxy Watch, Android
-phone, Apple Watch, iPhone, macOS, Windows — record, upload to the *user's own* Google Drive, and
-run a fixed recording flow (Drive upload · transcription · result upload).
-Device settings and keys stay on the device; recordings and results go to Drive. There are no
+phone, Apple Watch, iPhone, macOS, Windows — record, upload to the *user's own* Google Drive (iPhone
+and Mac can choose the user's own iCloud instead, `docs/recly.md` §3 "저장 위치"), and run a fixed
+recording flow (upload · transcription · result upload).
+Device settings and keys stay on the device; recordings and results go to Drive or iCloud. There are no
 user-editable workflows and no webhooks, and no compatibility layer for older workflow documents or
 settings. There is no backend to change, and no telemetry.
 

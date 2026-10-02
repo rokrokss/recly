@@ -46,6 +46,29 @@
 	</array>
 
 	<!--
+	  docs/03 "저장 위치" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
+	  folder is the "Recly" folder the Files app and Finder show. ReclyICloudContainer is empty unless
+	  Local.xcconfig turns iCloud on (RECLY_ICLOUD_CONTAINER) — a build signed without the iCloud
+	  entitlement does not offer iCloud, and on the Mac that is every Debug build
+	  (RECLY_MAC_ICLOUD_CONTAINER). Raise CFBundleVersion whenever NSUbiquitousContainers
+	  changes: the system reads it again only for a new build.
+	-->
+	<key>ReclyICloudContainer</key>
+	<string>$(RECLY_MAC_ICLOUD_CONTAINER)</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.app.recly</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Recly</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+
+	<!--
 	  Export compliance: the only encryption is HTTPS to Google and the user's own providers
 	  (docs/15), which is exempt, so App Store Connect stops asking on every build.
 	-->

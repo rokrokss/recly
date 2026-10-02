@@ -25,6 +25,8 @@ import recly.core.platform.CoreDeps
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
 import recly.core.platform.HttpResult
+import recly.core.storage.CloudFiles
+import recly.core.storage.StorageKind
 
 /**
  * The slice of Drive v3 this app needs, expressed as [HttpPlan]s handed to [CoreDeps.transport].
@@ -34,9 +36,20 @@ import recly.core.platform.HttpResult
 class DriveApi(
     private val deps: CoreDeps,
     private val random: Random = Random.Default,
-) {
+) : CloudFiles {
     /** Bigger than this and a single request is a bad bet on a phone connection (docs/10). */
-    val multipartLimit: Long get() = MULTIPART_LIMIT
+    override val multipartLimit: Long get() = MULTIPART_LIMIT
+
+    /** `meta.json` goes up last and Drive lists what it holds, so a folder with one is complete. */
+    override val orderedUploads: Boolean = true
+
+    /** Drive's alias for My Drive; it works both in `q` and as a `parents` entry. */
+    override val rootId: String = "root"
+
+    override fun forKind(kind: StorageKind): CloudFiles? = if (kind == StorageKind.DRIVE) this else null
+
+    /** Drive answers an upload only once it holds the bytes. */
+    override suspend fun settled(fileIds: List<String>): Boolean = true
 
     /** Opaque Drive owner identifier. No email, name, profile scope or Recly account is needed. */
     suspend fun accountId(): String {
@@ -52,11 +65,11 @@ class DriveApi(
             ?: throw StepFailure(true, CoreMessage.STEP_FAILED.code("Drive account identifier missing"))
     }
 
-    suspend fun createFolder(
+    override suspend fun createFolder(
         name: String,
         parentId: String,
-        description: String? = null,
-        appProperties: Map<String, String> = emptyMap(),
+        description: String?,
+        appProperties: Map<String, String>,
     ): DriveFile {
         val meta = DriveFileMeta(name, listOf(parentId), FOLDER_MIME, appProperties, description)
         val result = send("drive.createFolder") { token ->
@@ -75,7 +88,7 @@ class DriveApi(
      * list and not a single file: only the caller knows which of them (by md5) is the one it
      * meant to upload.
      */
-    suspend fun findChildren(parentId: String, name: String, mimeType: String? = null): List<DriveFile> {
+    override suspend fun findChildren(parentId: String, name: String, mimeType: String?): List<DriveFile> {
         val q = buildString {
             append("'").append(escapeQuery(parentId)).append("' in parents")
             append(" and name = '").append(escapeQuery(name)).append("'")
@@ -84,10 +97,6 @@ class DriveApi(
         }
         return list(q, spaces = "drive", fields = CHILD_FIELDS).mapNotNull { DriveFile.from(it) }
     }
-
-    /** For the callers where any match will do — a folder, which we never create twice. */
-    suspend fun findChild(parentId: String, name: String, mimeType: String? = null): DriveFile? =
-        findChildren(parentId, name, mimeType).firstOrNull()
 
     /**
      * Every recording folder this app made, from any device (docs/03 "다른 기기의 녹음"): the
@@ -99,14 +108,14 @@ class DriveApi(
      * see (under `drive.file` that is only what it made: the path folders and these) and the
      * recording ones are picked out here by the property they carry.
      */
-    suspend fun recordingFolders(): List<JsonObject> = list(
+    override suspend fun recordingFolders(): List<JsonObject> = list(
         q = "mimeType = '$FOLDER_MIME' and trashed = false",
         spaces = "drive",
         fields = RECORDING_FOLDER_FIELDS,
     ).filter { it["appProperties"]?.jsonObject?.get("recordingId") != null }
 
     /** Every non-trashed file in a folder, by id and name. */
-    suspend fun children(parentId: String): List<DriveFile> = list(
+    override suspend fun children(parentId: String): List<DriveFile> = list(
         q = "'${escapeQuery(parentId)}' in parents and trashed = false",
         spaces = "drive",
         fields = CHILD_FIELDS,
@@ -137,7 +146,7 @@ class DriveApi(
     }
 
     /** Null when Drive says the file is gone — a cached folder id that no longer resolves. */
-    suspend fun getFile(id: String, fields: String): JsonObject? {
+    override suspend fun getFile(id: String, fields: String): JsonObject? {
         val result = send("drive.get", allow404 = true) { token ->
             HttpPlan(
                 method = "GET",
@@ -149,7 +158,7 @@ class DriveApi(
         return result.json()
     }
 
-    suspend fun download(id: String): ByteArray =
+    override suspend fun download(id: String): ByteArray =
         send("drive.download") { token ->
             HttpPlan(
                 method = "GET",
@@ -158,7 +167,7 @@ class DriveApi(
             )
         }.body
 
-    suspend fun delete(id: String) {
+    override suspend fun delete(id: String) {
         send("drive.delete", allow404 = true) { token ->
             HttpPlan(
                 method = "DELETE",
@@ -169,7 +178,7 @@ class DriveApi(
     }
 
     /** One request, metadata and media together — worth it only for the small files (docs/10). */
-    suspend fun multipartUpload(meta: DriveFileMeta, bytes: ByteArray): DriveFile {
+    override suspend fun multipartUpload(meta: DriveFileMeta, bytes: ByteArray): DriveFile {
         val boundary = "rec_${random.nextLong().toULong().toString(16)}"
         val body = Buffer()
             .writeUtf8("--$boundary\r\nContent-Type: ${ResumableUploadPlanner.JSON_TYPE}\r\n\r\n")
@@ -191,7 +200,7 @@ class DriveApi(
     }
 
     /** The folder's `description` — where a recording's title lives on Drive (ADR-014). */
-    suspend fun updateDescription(fileId: String, description: String) {
+    override suspend fun updateDescription(fileId: String, description: String) {
         val body = buildJsonObject { put("description", description) }.toString().encodeToByteArray()
         send("drive.updateDescription") { token ->
             HttpPlan(
@@ -208,7 +217,7 @@ class DriveApi(
      * 녹음" is written with. Drive merges rather than replaces, so the `recordingId`/`workflowId` the
      * folder was stamped with when it was created survive every call of this.
      */
-    suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) {
+    override suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) {
         val body = buildJsonObject {
             putJsonObject("appProperties") { appProperties.forEach { (key, value) -> put(key, value) } }
         }.toString().encodeToByteArray()
@@ -223,7 +232,7 @@ class DriveApi(
     }
 
     /** Replaces an existing file's content, leaving its id and parents alone. */
-    suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile {
+    override suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile {
         val result = send("drive.updateMedia") { token ->
             HttpPlan(
                 method = "PATCH",
@@ -241,7 +250,7 @@ class DriveApi(
      * chunk, so a kill costs one chunk; a 5xx saves the offset and fails retryably instead of
      * spinning here, which lets the executor's backoff (and the job queue) own the waiting.
      */
-    suspend fun uploadResumable(
+    override suspend fun uploadResumable(
         meta: DriveFileMeta,
         path: Path,
         total: Long,

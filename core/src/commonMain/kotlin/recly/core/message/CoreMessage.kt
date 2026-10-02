@@ -43,6 +43,22 @@ enum class CoreMessage {
      */
     DRIVE_STORAGE_FULL,
 
+    /**
+     * docs/03 "저장 위치": iCloud Drive cannot be used from this device right now — no iCloud account,
+     * iCloud Drive turned off for Recly, or a build without the iCloud entitlement. The upload waits
+     * and looks again; nothing in the app can change it, so the sentence says where to.
+     */
+    ICLOUD_UNAVAILABLE,
+
+    /** The same as [DRIVE_STORAGE_FULL] for iCloud: the system would not upload for lack of space. */
+    ICLOUD_STORAGE_FULL,
+
+    /**
+     * The recording is in the iCloud folder and the system is still uploading it. A wait, not a
+     * failure: iCloud uploads in the background on its own schedule (docs/03 "저장 위치").
+     */
+    ICLOUD_UPLOADING,
+
     /** The user backed out of the consent screen. */
     SIGN_IN_CANCELLED,
 

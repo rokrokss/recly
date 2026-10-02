@@ -12,7 +12,6 @@ import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.jsonObject
-import recly.core.drive.DriveApi
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveNotFound
 import recly.core.drive.string
@@ -30,6 +29,11 @@ import recly.core.model.wire
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
+import recly.core.message.CoreMessage
+import recly.core.storage.CloudFiles
+import recly.core.storage.StorageKind
+import recly.core.storage.StorageUnavailableException
+import kotlinx.serialization.json.JsonObject
 
 /** What one [RemoteRecordings.pull] did. [skipped] is a pull that did not run — see the reasons. */
 data class PullSummary(
@@ -78,11 +82,19 @@ data class PullSummary(
  * (`ReclyCore.runDueJobs`), and the desktop passes come every few minutes. While another device is
  * in the middle of something the wait is [FAST_INTERVAL] instead — a list that is showing progress
  * has to move.
+ *
+ * **Two storages** (docs/03 "저장 위치"): Drive is listed whenever this device is signed in to it, and
+ * the app's iCloud folder while iCloud is the chosen storage ([icloudChosen]) — reaching for the
+ * container otherwise would make a "Recly" folder appear in the iCloud Drive of someone who never
+ * asked for one. A storage that could not be listed this time drops nothing of its own: only what a
+ * complete listing no longer has is gone. An iCloud folder arrives file by file in no order, so it is
+ * complete when every part its meta names is there at its size, not merely when the meta is.
  */
 class RemoteRecordings(
-    private val api: DriveApi,
+    private val api: CloudFiles,
     private val recordings: RecordingRepository,
     private val deps: CoreDeps,
+    private val icloudChosen: suspend () -> Boolean = { false },
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
@@ -159,6 +171,9 @@ class RemoteRecordings(
                 recordings.titlePushed(recordingId, title)
             } catch (e: AuthRequiredException) {
                 return
+            } catch (e: StorageUnavailableException) {
+                // iCloud is not usable from here right now; the rename waits for the next pass.
+                continue
             } catch (e: Throwable) {
                 deps.logger.log(Logger.Level.WARN, "remote.title.push.failed", mapOf("recordingId" to recordingId), e)
                 return
@@ -166,10 +181,44 @@ class RemoteRecordings(
         }
     }
 
+    /**
+     * Every storage that can be listed now, each with its recording folders. Throws only when none
+     * could be: the first storage's reason — no account is `AuthRequiredException`, as before there
+     * were two.
+     */
+    private suspend fun listings(): Map<StorageKind, List<JsonObject>> {
+        val listed = mutableMapOf<StorageKind, List<JsonObject>>()
+        val failures = mutableListOf<Pair<StorageKind, Throwable>>()
+        for (kind in StorageKind.entries) {
+            val files = api.forKind(kind) ?: continue
+            if (kind == StorageKind.ICLOUD && !icloudChosen()) continue
+            try {
+                listed[kind] = files.recordingFolders()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: StorageUnavailableException) {
+                failures += kind to AuthRequiredException(CoreMessage.ICLOUD_UNAVAILABLE.code())
+            } catch (e: Throwable) {
+                failures += kind to e
+            }
+        }
+        // With nothing listed the pull itself reports it, as it did with one storage; with the other
+        // one listed, what failed is said here and the pull goes on.
+        if (listed.isEmpty()) throw failures.firstOrNull()?.second ?: AuthRequiredException(CoreMessage.NEEDS_AUTH.code())
+        for ((kind, e) in failures) {
+            if (e is AuthRequiredException) continue
+            deps.logger.log(Logger.Level.WARN, "remote.pull.failed", mapOf("storage" to kind.name), e)
+        }
+        return listed
+    }
+
     private suspend fun sync(): PullSummary {
         val now = deps.clock.now()
+        val listings = listings()
+        // A row whose folder is in a storage that was not listed this time is left as it is.
+        fun covered(folderId: String): Boolean = StorageKind.ofId(folderId) in listings.keys
         // Newest folder first, so a re-run's folder is the one an id resolves to.
-        val folders = api.recordingFolders()
+        val folders = listings.values.flatten()
             .mapNotNull { json ->
                 val properties = json["appProperties"]?.jsonObject
                 val id = properties?.string("recordingId") ?: return@mapNotNull null
@@ -194,17 +243,18 @@ class RemoteRecordings(
         // recording whose id is still there under another folder is taken up again from that one.
         var dropped = 0
         for ((recordingId, folderId) in recordings.adopted()) {
-            if (folderId in listed) continue
+            if (folderId in listed || !covered(folderId)) continue
             if (recordings.drop(recordingId, folderId)) dropped++
         }
 
         // A "로컬만 삭제" is kept for as long as the folder it kept is listed.
         val ignored = recordings.ignored()
         for ((recordingId, folderId) in ignored) {
-            if (folderId !in listed) recordings.unignore(recordingId)
+            if (folderId !in listed && covered(folderId)) recordings.unignore(recordingId)
         }
 
         for ((recordingId, folderId) in recordings.synced()) {
+            if (!covered(folderId)) continue
             if (folderId !in listed) recordings.forgetDriveCopy(recordingId)
             else recordings.setRemotePending(recordingId, pendingOf(byFolderId[folderId], now))
         }
@@ -298,6 +348,7 @@ class RemoteRecordings(
         // What the device running the workflow says is still to come (docs/03): read off the same
         // listing, for every remote row. This device's own rows never get one — their job is here.
         for ((recordingId, folderId) in recordings.adopted()) {
+            if (!covered(folderId)) continue
             recordings.setRemotePending(recordingId, pendingOf(byFolderId[folderId], now))
         }
 
@@ -357,6 +408,12 @@ class RemoteRecordings(
                 mapOf("recordingId" to recordingId, "folderId" to folder.id, "metaId" to meta.recordingId),
             )
             return Read.Refused
+        }
+        // An iCloud folder can have its meta before its parts (docs/03 "저장 위치"): until every part
+        // the meta names is there at its size, the other device is still uploading.
+        if (api.forKind(StorageKind.ofId(folder.id))?.orderedUploads == false) {
+            val sizes = children.associate { it.name to it.size }
+            if (meta.parts.any { sizes[it.file] != it.bytes }) return Read.Uploading
         }
         val byName = children.associate { it.name to it.id }
         val fileIds = meta.parts.mapNotNull { part -> byName[part.file]?.let { (part.part to part.track) to it } }.toMap()

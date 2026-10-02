@@ -12,6 +12,7 @@ import recly.core.message.CoreMessage
 import recly.core.model.Step
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
+import recly.core.storage.StorageKind
 
 /** Account binding for durable workflow progress. Called under the executor's gate. */
 internal class DriveJobAccess(private val deps: CoreDeps, private val store: JobStore) {
@@ -34,7 +35,7 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
         if (!store.driveConnected()) return
         if (store.list().none {
             it.status != JobStatus.DONE && it.status != JobStatus.SKIPPED_SHORT &&
-                it.workflow?.steps?.any { step -> step is Step.DriveUpload } == true
+                it.workflow?.steps?.any { step -> step.uploadsToDrive } == true
         }) return
         try {
             refresh()
@@ -74,8 +75,13 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
         return resumed
     }
 
+    /**
+     * Only work bound for Google Drive is checked here. An iCloud upload has no grant to verify — the
+     * device's iCloud account is the account — and waits on its own when iCloud cannot be used
+     * (docs/03 "저장 위치"), so a job that has nothing for Drive needs no Drive at all.
+     */
     suspend fun requireAccess(job: Job) {
-        if (job.workflow?.steps?.none { it is Step.DriveUpload } == true) return
+        if (job.workflow?.steps?.none { it.uploadsToDrive } == true) return
         if (!store.driveConnected()) throw AuthRequiredException(CoreMessage.DRIVE_REAUTH)
         if (account == null || token != deps.tokenProvider.accessToken()) refresh()
         if (!store.driveAccountMatches(job.id, checkNotNull(account))) {
@@ -83,3 +89,7 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
         }
     }
 }
+
+/** A `drive.upload` step bound for Google Drive rather than iCloud (docs/03 "저장 위치"). */
+internal val Step.uploadsToDrive: Boolean
+    get() = this is Step.DriveUpload && store == StorageKind.DRIVE

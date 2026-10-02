@@ -43,7 +43,8 @@
 
 ### 한 줄 정의
 
-녹음 원본과 전사 결과를 **사용자 자신의 Google Drive**에 남기는 레코더. 녹음·원본 업로드·전사·결과 업로드
+녹음 원본과 전사 결과를 **사용자 자신의 Google Drive**에 남기는 레코더. iPhone·Mac은 Drive 대신 사용자 자신의
+iCloud를 고를 수 있다(ADR-024). 녹음·원본 업로드·전사·결과 업로드
 순서로 처리한다. 워치는 녹음과 폰 전송을, 폰·데스크톱은 후처리를 담당한다.
 
 ### 원칙
@@ -90,7 +91,8 @@
 | ADR-020 | Drive 기본 폴더 최상단은 **`recly/`**다 — `drive.upload`의 `folder` 기본값 `recly/{{yyyy}}/{{yyyy}}-{{MM}}`, "메모" 기본 워크플로우 `recly/memo/{{yyyy}}-{{MM}}` |
 | ADR-021 | `transcribe`(STT + 화자분리)는 **잡을 실행하는 기기가 사용자의 키로 provider API를 직접 호출**한다. 중간 서버·릴레이·콜백 URL은 없다 |
 | ADR-022 | **텔레메트리가 없다.** 분석·사용 통계·크래시 리포팅·원격 로그 수집·원격 설정·A/B·광고 식별자를 넣지 않는다. 어떤 셸에도 Firebase/Crashlytics/Sentry/AppCenter 계열 의존성이 없다. 로그는 기기 로컬 플랫폼 로그에만 남고 사용자가 직접 내보낼 때만 기기를 떠난다 |
-| ADR-023 | **녹음 목록은 Drive가 정본이다**(2026-09-04). 같은 계정의 다른 기기가 올린 녹음은 이 기기의 목록에도 나타난다 — 별도 색인 파일이나 서버 없이, 앱이 `recordingId`를 찍어 둔 `{base}/` 폴더(ADR-014)를 Drive에서 나열해 `meta.json`을 읽어 온다(§3 "다른 기기의 녹음"). 그 행은 이 기기에 Job도 원본도 없고 재생 시 Drive에서 받아 캐시한다. `meta.json`이 아직 없는 폴더도 목록에 나온다 — "다른 기기가 업로드 중"인 잠정 행으로. Drive에서 사라지면 행도 사라진다. 이 기기가 직접 만든 행은 Drive가 뭐라 하든 건드리지 않는다 |
+| ADR-023 | **녹음 목록은 Drive가 정본이다**(2026-09-04). 같은 계정의 다른 기기가 올린 녹음은 이 기기의 목록에도 나타난다 — 별도 색인 파일이나 서버 없이, 앱이 `recordingId`를 찍어 둔 `{base}/` 폴더(ADR-014)를 Drive에서 나열해 `meta.json`을 읽어 온다(§3 "다른 기기의 녹음"). 그 행은 이 기기에 Job도 원본도 없고 재생 시 Drive에서 받아 캐시한다. `meta.json`이 아직 없는 폴더도 목록에 나온다 — "다른 기기가 업로드 중"인 잠정 행으로. Drive에서 사라지면 행도 사라진다. 이 기기가 직접 만든 행은 Drive가 뭐라 하든 건드리지 않는다. iCloud를 고른 기기는 iCloud 폴더도 같은 규칙으로 나열한다(ADR-024) |
+| ADR-024 | **저장소는 기기마다 고른다**(2026-10-02). 기본은 Google Drive이고 iPhone·Mac은 설정에서 iCloud(앱의 iCloud Drive 폴더)로 바꿀 수 있다. Android 폰·갤럭시 워치·Windows는 Drive만 쓴다. 녹음은 시작할 때 고정한 저장소로 올라가고, 올라간 녹음은 옮기지 않는다. iCloud는 Drive와 같은 배치에 폴더 속성 파일 하나를 더하고, 업로드는 iCloud가 받았다고 할 때 끝난다(§3 "저장 위치") |
 
 이 규칙들을 뒤집으려면 이 문서를 고치는 것으로 끝나지 않는다. 특히 ADR-022를 뒤집으면
 `docs/policy/privacy-policy.md`와 Play "데이터 안전" 양식·App Store 개인정보 라벨을 함께 고쳐야 한다.
@@ -118,6 +120,7 @@
                  │                                           │
                  ▼                                           ▼
    Google Drive  {folder}/{base}/ parts + meta.json      STT provider (외부 API 전사일 때)
+   또는 iCloud(iPhone·Mac, ADR-024) — 같은 배치
 ```
 
 ### 구성 요소
@@ -202,6 +205,7 @@ Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:wi
 - `TokenProvider` — 유효한 access token 반환(만료 시 갱신은 셸 책임)
 - `FileSystem` — okio `FileSystem` + 앱 데이터 디렉터리
 - `Transport` — 기본 Ktor. Apple은 배경 URLSession 구현으로 교체 가능(ADR-015)
+- `UbiquityContainer` — 앱의 iCloud 컨테이너(선택). iCloud 권한으로 서명한 iPhone·Mac 빌드만 준다(§3 "저장 위치")
 - `AudioTools` — `concat`(파트 무손실 remux, §8)
 - `Clock`, `Logger`, `DeviceInfo{deviceId, platform, name}`, `io` 디스패처
 
@@ -488,7 +492,7 @@ meta  = {base}.meta.json
 | `gaps` | 세그먼트 재시작·인터럽션·tap 재생성 등으로 오디오가 빠진 구간 |
 | `silenced` | Android `isClientSilenced`, Apple 인터럽션 등 마이크를 뺏긴 구간. **알려진 한계**: Android에서 정지가 지연되면(등록 못 한 파트가 남아 복구에 맡길 때) 이 구간은 로그에만 남고 메타에는 들어가지 않는다 |
 | `context` | 선택. `app`은 감지된 회의 앱의 번들 id로 데스크톱 전용. `participants`(정수, 본인 포함 인원)는 정지 후 다이얼로그 선택으로 채운다 — `transcribe`의 화자 수 힌트(§8). **`context.calendar`는 없다** — 캘린더 읽기는 제품 전체에서 제거됐다 |
-| `drive` | 선택. 이 녹음의 Drive 폴더 `folderId`·`folderUrl`(`webViewLink`). `drive.upload`가 폴더를 만들거나 찾은 직후, 메타를 올리기 **전에** 행과 로컬 `meta.json`에 적으므로(`RecordingRepository.setDriveFolder`) Drive의 사본과 그것을 입양한 기기도 같은 값을 갖는다. 에이전트 스킬이 Notion 페이지의 "Recording" 링크로 쓴다(2026-09-05). 업로드 전이거나 링크를 못 받은 폴더면 없다 |
+| `drive` | 선택. 이 녹음의 Drive 폴더 `folderId`·`folderUrl`(`webViewLink`). `drive.upload`가 폴더를 만들거나 찾은 직후, 메타를 올리기 **전에** 행과 로컬 `meta.json`에 적으므로(`RecordingRepository.setDriveFolder`) Drive의 사본과 그것을 입양한 기기도 같은 값을 갖는다. 에이전트 스킬이 Notion 페이지의 "Recording" 링크로 쓴다(2026-09-05). 업로드 전이거나 링크를 못 받은 폴더면 없다. iCloud 녹음에는 없다 — 웹 링크가 없다(§3 "저장 위치") |
 | `status` | `recording` → `finalized` → (워치) `transferred` |
 
 인원 선택지는 `2 · 3 · 4 · 5 · 6+ · 모름`이고 기본은 "모름"(unknown)이다 — 고르지 않으면 필드를 생략한다.
@@ -555,6 +559,8 @@ mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retent
   전부 공유하는 상위 폴더이고, 한 녹음을 지우면서 그것을 지우면 안 된다. 실패하면 로컬 삭제는 그대로 진행하고
   "Drive에서 지우지 못했습니다"를 남긴다 — 로컬을 지우고 나면 다시 시도할 근거가 없으므로 사용자에게 Drive 링크를
   함께 보여준다.
+- **iCloud 녹음**(§3 "저장 위치")은 같은 다이얼로그가 Drive 대신 iCloud를 말하고(`iCloud 폴더도 함께 삭제`), 폴더는
+  코디네이션된 삭제로 모든 기기에서 지운다. 실패 문구도 `이 기기에서는 지웠지만 iCloud에서 지우지 못했습니다`다.
 - **삭제가 다른 기기에 닿는 길은 Drive뿐이다.** "Drive 폴더도 삭제"로 지운 녹음은 그 폴더를 **입양**했던 다른
   기기(아래 "다른 기기의 녹음")의 목록에서 다음 조회 때 사라진다. 그 녹음을 **직접 만든** 기기의 행은 남는다 —
   그 기기의 원본·Job 기록이고 Drive가 지울 권한이 없다. "로컬만 삭제"는 어느 기기에도 닿지 않는다.
@@ -576,7 +582,7 @@ mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retent
 
 #### 계정에서 떼기 — "로그아웃" vs "연결 해제"
 
-Google Drive 설정은 **“연결 해제” 버튼 하나**만 제공한다. 연결된 계정과 버튼을 주변 설정과 같은
+Google Drive 이야기다 — iCloud에는 앱 안의 연결 해제가 없다(§3 "저장 위치"). Google Drive 설정은 **“연결 해제” 버튼 하나**만 제공한다. 연결된 계정과 버튼을 주변 설정과 같은
 행·글자 크기로 표시한다. 버튼을 누르면 확인창 하나를 열고, 확인 시 **Google grant 철회와 이 기기의 로컬 정리**를
 함께 수행한다. “이 기기만 연결 해제” 선택과 범위 선택 메뉴는 두지 않는다.
 확인창은 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제되고, 대기 작업은 같은 계정에 재연결하면 이어지고 녹음·설정은 유지됨을
@@ -812,6 +818,83 @@ My Drive/
 `findChild`로 찾아 재사용하므로, 아니라면 기기마다 같은 이름의 폴더가 중복 생성됐을 것이다. 공식 문서는 단위를
 명시하지 않으니 **실계정에서 확인한다**: Drive에 같은 달 폴더가 하나뿐이면 성립. 보이지 않는다면 이 조회는 빈
 목록을 돌려줄 뿐 아무것도 깨뜨리지 않고, 대안은 전체 `drive` 스코프뿐이라 ADR-009와 충돌한다.
+
+### 저장 위치 (ADR-024)
+
+**2026-10-02 사용자 결정**: 녹음과 결과가 올라가는 곳은 기본이 Google Drive이고, iPhone·Mac은 설정에서 **iCloud**로
+바꿀 수 있다. Android 폰·갤럭시 워치·Windows는 Drive만 쓴다 — iCloud에는 Android·Windows용 공식 API가 없고, 이 차이는
+받아들인다. Apple Watch는 그대로 녹음을 iPhone에 넘기고(ADR-002) iPhone이 자기 저장소로 올린다. 첫 실행은 이전과 같다.
+
+- **고르는 곳**: iCloud를 줄 수 있는 빌드에서는 설정 맨 위 칸이 `저장 위치`(en `Storage`)가 되고 칩 둘 `Google Drive` ·
+  `iCloud`가 있다(제품명이라 번역하지 않는다). 누르는 즉시 저장한다(`ProcessingSettingsRepository.setStorage`, §5).
+  칩 아래에는 고른 저장소의 행 하나만 같은 모양으로 나온다 — Google Drive는 `Drive 연결됨`·`연결 해제` 또는
+  `Drive 연결 안 됨`·`Drive 연결`, iCloud는 `iCloud 연결됨` 또는 `iCloud 연결 안 됨`과 켜는 곳(시스템 설정의 메뉴 이름
+  그대로 — iPhone: `설정 → [이름] → iCloud → Drive`의 `이 iPhone 동기화`와 `iCloud에 저장됨 → 모두 보기`의 Recly, Mac:
+  `시스템 설정 → … → Drive`의 `이 Mac 동기화`와 `iCloud Drive에 동기화되는 앱`의 Recly). 앱이 iCloud에 로그인시키거나
+  iCloud Drive를 켤 방법은 없으므로 iCloud 행에는 연결 버튼이 없다. Mac에는 연결 안 됨일 때 `iCloud 설정 열기`(시스템 설정의
+  Apple 계정 → iCloud)가 붙고, iPhone에는 iCloud 화면을 여는 공개 링크가 없어 경로만 적는다(비공개 `App-Prefs:` 링크는
+  심사 2.5.1 위반). 상태는 설정 화면이 나타날 때, 앱이 다시 활성화될 때, `NSUbiquityIdentityDidChange`를 받을 때 다시
+  확인한다 — 설정에서 켜고 돌아오면 바로 바뀐다. 쓸 수 있게 되면 저장 폴더의 첫 단계(`recly`)를 바로 만들어, 첫 녹음
+  전부터 파일 앱·Finder에 Recly 폴더가, 시스템의 iCloud 앱 목록에 Recly가 보이게 한다. 목록·알림은 계속
+  `ICLOUD_UNAVAILABLE`의 짧은 문장을 쓴다. iCloud로 바꿔도 Drive 연결은 끊지 않는다 — Drive에 있는 이전 녹음을 다시 받고
+  지우는 데 필요하다. 그 연결 해제는 Google Drive 칩 아래 Drive 행에 있다. iCloud 권한이 없는 빌드의 칸은 예전처럼
+  `Google Drive`다.
+- **녹음마다 고정**: 저장소는 녹음 처리 설정의 `storage.provider`이고 녹음이 시작할 때 설정째 고정된다(§5). 이미 시작한
+  녹음과 올리는 중인 녹음은 원래 저장소로 간다. 올라간 녹음은 옮기지 않는다(마이그레이션 없음). 사용자가 누른 재시도는
+  지금 설정으로 남은 일을 하므로(§5), 실패한 업로드를 저장소를 바꾼 뒤 다시 시도하면 새 저장소로 간다.
+- **iCloud 쪽 자리**: 컨테이너 `iCloud.app.recly`의 `Documents`(파일 앱·Finder의 "Recly" 폴더) 아래에 Drive와 같은
+  배치 — `{folder 템플릿}/{base}/` 안에 파트, `{base}.meta.json`, 결과 파일. Drive가 폴더 자체에 두는 것(제목
+  `description`, `appProperties`의 `recordingId`·`workflowId`·`pending`·`pendingAt`)은 폴더 안 `{base}.folder.json`에 두고,
+  목록이 그 파일을 읽으므로 `createdTime`도 거기 적는다. 폴더가 이미 있으면 그 파일을 덮지 않는다(Drive가 폴더를 만들 때만
+  쓰는 것과 같다). 파일·폴더 id는 `icloud:` + `Documents` 아래 경로라(`StorageKind.ofId`) 행과 단계 출력에 남은 id는
+  설정이 바뀌어도 자기 저장소를 찾아간다.
+- **올리기와 완료**: 업로드 단계(`drive.upload`, `store: icloud`)는 파일을 컨테이너에 **복사**하고(코디네이션된 쓰기),
+  시스템이 그것을 올린다. 단계는 iCloud가 모든 파일을 받았다고 할 때 끝난다(`ubiquitousItemIsUploaded`). 그 전에는
+  30초마다 다시 보는 `WAITING`이고 시도 횟수를 쓰지 않는다(`ICLOUD_UPLOADING`). 목록에서는 Drive 업로드와 같이 보인다 —
+  배지 `UPLOADING`, 행 아래 사유 줄 없음, 상단 상태 `UPLOADING`, 대기 수에 넣지 않음. `iCloud 대기 중`(`ICLOUD_UNAVAILABLE`)의
+  사유 줄은 실패의 빨간색이 아니라 대기의 경고색이다. 원본의 7일
+  창(ADR-017)은 그 뒤에 시작한다(원칙 3) — 옮기지 않고 복사하는 이유는, 업로드 전에 iCloud에서 로그아웃하면서 "사본
+  유지"를 고르지 않으면 컨테이너 안의 파일이 기기에서 지워지기 때문이다. 전사 결과는 같은 폴더에 쓰고 업로드를 기다리지
+  않는다.
+- **쓸 수 없을 때**: iCloud에 로그인하지 않았거나 Recly의 iCloud Drive가 꺼졌거나 권한 없는 빌드면, 업로드와 결과 게시는
+  5분마다 다시 보는 `WAITING`이다(`ICLOUD_UNAVAILABLE`, 목록 `iCloud 대기 중`, `다시 시도` 가능). `NEEDS_AUTH`가 아닌
+  이유: 앱 안에서 할 수 있는 일이 없고, 돌아오면 저절로 이어진다.
+- **용량**: 시스템이 계정 공간 부족(`NSCocoaErrorDomain` 4354)으로 올리지 못하면 Drive와 같은 `NEEDS_SPACE`다
+  (`ICLOUD_STORAGE_FULL`, 목록 `iCloud에 공간 없음`). 배너 버튼은 `다시 시도`다 — 설정의 iCloud 저장 공간 화면을 여는
+  공개 링크가 없다.
+- **목록(ADR-023)**: 조회는 Drive(로그인돼 있으면)와 iCloud(지금 고른 저장소가 iCloud이면)를 함께 나열해 합친다.
+  iCloud를 고르지 않은 기기는 컨테이너에 손대지 않는다 — 그러지 않으면 요청한 적 없는 사람의 iCloud Drive에 "Recly"
+  폴더가 생긴다. 이번에 나열하지 못한 저장소의 행은 지우거나 바꾸지 않는다(입양 행 drop, "로컬만 삭제" 기록, 복원 사본,
+  진행 표식 모두). iCloud는 파일을 순서 없이 하나씩 동기화하므로 `meta.json`이 있어도 **메타가 이름 댄 파트가 모두 그
+  크기로 나열돼야** 완료다. 아니면 "다른 기기가 업로드 중"인 잠정 행이고, 24시간 규칙은 `{base}.folder.json`의
+  `createdTime`으로 잰다. 목록은 같은 저장소를 쓰는 기기끼리만 합쳐진다 — iPhone과 Mac이 둘 다 iCloud면 같고, 한쪽이
+  Drive면 서로의 새 녹음은 보이지 않는다.
+- **제목**: 정본은 `{base}.folder.json`의 `description`이고, 이름 바꾸기는 그 파일과 `meta.json`을 함께 고친다(§3
+  "제목"과 같은 규칙). 두 기기가 같은 파일을 동시에 고치면 iCloud가 한 버전을 현재로 정하고, 셸이 읽을 때 나머지 버전을
+  지운다(`NSFileVersion` — 나중에 쓴 쪽이 남는다).
+- **진행 표식**: `{base}.folder.json`의 `appProperties.pending`/`pendingAt`. 업로드 확인을 기다리며 30초마다 다시 도는
+  단계는 표식을 다시 쓰지 않는다 — 쓸 때마다 모든 기기가 그 파일을 다시 읽는다.
+- **재생·삭제**: 보관 스윕이 지운 파트는 컨테이너에서 받아(내려받기를 요청하고 최대 2분 기다림) sha256을 확인한다.
+  "iCloud 폴더도 함께 삭제"는 코디네이션된 삭제로 모든 기기에서 지운다. 사용자가 파일 앱에서 지운 것은 iCloud Drive의
+  "최근 삭제된 항목"에 30일 남지만(Apple), 앱이 지운 것도 그런지는 확인하지 않았다 — 다이얼로그의 기본값은 Drive처럼
+  지우지 않는 쪽이다.
+- **웹 링크 없음**: iCloud 폴더에는 고정된 웹 주소가 없어 `meta.drive`와 `Drive에서 열기`가 없다. Mac은 `Finder에서
+  보기`가 있고, iPhone에는 그 자리 동작이 없다.
+- **계정에 묶지 않는다(알려진 한계)**: Drive 작업은 Drive 계정에 묶여 다른 계정이면 멈추지만(§3 "계정에서
+  떼기"), iCloud 작업은 묶지 않는다. 기기가 다른 Apple ID로 로그인하면 남은 업로드는 새 계정으로 간다. 앱 안의 연결
+  해제도 없다 — iCloud를 쓸지는 시스템 설정(iPhone: 설정 › [이름] › iCloud, Mac: 시스템 설정 › [이름] › iCloud)에서
+  사용자가 정한다.
+- **빌드**: iCloud는 체크아웃 상태에서 꺼져 있다. 컨테이너 등록과 App ID 기능(`app.recly`, `app.recly.mac`), Mac
+  Release용 Developer ID 프로비저닝 프로필이 있어야 하고(§12), `apple/Config/Local.xcconfig`가 켠다
+  (`RECLY_ICLOUD_CONTAINER`, `RECLY_PHONE_ENTITLEMENTS`, `RECLY_MAC_ENTITLEMENTS`). 켜지 않은 빌드는 Info.plist의
+  `ReclyICloudContainer`가 비어 iCloud를 제안하지 않는다.
+- **에이전트**: Claude·ChatGPT·Gemini 어디에도 iCloud 커넥터가 없다(2026-10-02 확인). iCloud 녹음은 Mac의 로컬 폴더
+  (`~/Library/Mobile Documents/iCloud~app~recly/Documents/recly/`)로 읽는다(`skills/recly-notes`).
+- **검증**: 코어 JVM 테스트(`ICloudFilesTest`·`ICloudUploadTest`·`ICloudJobTest`·`ICloudRemoteRecordingsTest`·
+  `StorageSettingTest`)와 RecKit `ICloudStorageTests`까지다. 같은 Apple ID의 실기 두 대에서 실제 동기화는 확인하지
+  않았다(§20). 특히 두 기기가 같은 월 폴더(`recly/memo/2026-10`)를 동기화 전에 각자 만들 때 iCloud가 하나로 합치는지
+  `2026-10 2`처럼 나누는지는 모른다 — 목록은 경로를 걷지 않고 폴더 속성 파일을 찾으므로 나뉘어도 목록은 맞고, 파일 앱에서
+  폴더가 둘로 보일 뿐이다.
 
 ### 워치 → 폰 전송 계약
 
@@ -1086,6 +1169,10 @@ Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` �
   단계는 이전 제출 상태(`state_json`)도 버린다 — 새 계획에 없는 단계는 이미 끝난 게 아니면 지우고, 새로 생긴
   단계는 추가한다. 녹음의 고정 설정(`processing/recording/{id}`)도 그 설정으로 바꾼다. 키를 바꾸거나 CLOVA 주소를
   고친 뒤 실패한 녹음을 다시 시도하면 새 키·주소로 돈다.
+- **저장소**(2026-10-02, §3 "저장 위치"): 설정의 `storage.provider`(`drive` 기본 · `icloud`). 바꾸는 입구는
+  `setStorage` 하나이고 즉시 다음 revision으로 저장한다. iCloud는 셸이 컨테이너를 준 기기에서만 받는다(아니면 `Invalid`).
+  폼의 저장과 가져오기는 이 기기가 가진 저장소를 유지한다 — 계정에 관한 선택이라 기기마다 정한다. 폼이 열려 있는 동안
+  저장소가 바뀌면 폼은 새 revision을 받아 초안을 그대로 둔다(`storageChanged`).
 - 화자 분리와 최소/최대 화자 수는 UI에 노출하지 않는다. 새 계획은 지원하는 provider/모델에서 화자 분리를 자동 요청하고
   화자 수는 기본 범위로 추론한다. 저장된 과거 `diarize=false`나 화자 수 힌트는 새 계획을 제한하지 않는다.
   Groq 및 명시적으로 선택한 비화자 OpenAI 모델은 일반 전사를 사용한다. OpenAI 모델을 비워두면 기존 어댑터의
@@ -1219,6 +1306,8 @@ Windows에서는 절대 선택되지 않는다.
 ---
 
 ## 6. 인증 (구 docs/06)
+
+이 절은 Google Drive의 인증이다. iCloud(§3 "저장 위치")에는 앱의 인증이 없다 — 기기의 iCloud 계정을 시스템이 쓴다.
 
 ### GCP 프로젝트
 
@@ -1462,7 +1551,8 @@ interface TokenProvider {
 - **서버리스** — 모든 호출은 기기 → 사용자 계정 API(Drive, STT). 중간 릴레이·콜백 URL 없음. 따라서 STT
   provider는 **폴링 가능한 비동기 API 또는 동기 API**만 쓴다(콜백 전용 모드는 쓰지 않는다).
 - **BYO 키** — 키는 기존 시크릿 저장소(§5)의 `secretRef`다. 없으면 `MISSING_SECRET`.
-- **Drive가 버스** — 결과 파일은 녹음 폴더 `{folder}/{base}/`에 놓인다. 다른 기기·에이전트·사용자는 그 파일만
+- **Drive가 버스** — 결과 파일은 녹음 폴더 `{folder}/{base}/`에 놓인다(iCloud를 고른 녹음은 iCloud의 같은 폴더,
+  §3 "저장 위치"). 다른 기기·에이전트·사용자는 그 파일만
   보면 된다. 기기 간 별도 통신은 없다.
 - **한 트랙, 한 파일** — 트랙 하나(`mono` 또는 `mix`)를 파트 remux로 이어 붙인 파일 하나를 올린다. 파트별 전사는
   파트마다 화자 라벨이 달라져 쓰지 않는다.
@@ -1967,6 +2057,7 @@ recly.core
   recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5)
   job/          JobService · Executor · StepRunner · Backoff · JobStore
   drive/        DriveApi · ResumableUploadPlanner · FolderResolver · AppData
+  storage/      CloudFiles · CloudStorage(아이디로 저장소를 고름) · ICloudFiles · UbiquityContainer · StorageKind
   webhook/      Signer · PayloadBuilder · WebhookRunner   — 폐기(2026-09-24)
   transcribe/   SttProvider 어댑터 · TranscribeRunner
   sync/         WorkflowSync (pull/push/merge)
@@ -2135,6 +2226,8 @@ minDurationSec 미만 ──► SKIPPED_SHORT (수동 실행 시 PENDING)
   없습니다 — 정리한 뒤 다시 시도하세요"(free some up) + Drive 저장용량 페이지
   링크(<https://drive.google.com/settings/storage>).
 - **이 판정은 `transcribe`의 Drive 쓰기에도 같이 적용된다**(결과 파일도 Drive에 쓴다).
+- **iCloud**(§3 "저장 위치"): 시스템이 계정 공간 부족(4354)으로 업로드를 거부한 파일이 있으면 같은 파킹이다
+  (`CoreMessage.ICLOUD_STORAGE_FULL`). 셸 문구는 "iCloud에 공간이 없습니다 — 정리한 뒤 다시 시도하세요"이고 링크는 없다.
 
 ### 삭제 · 연결 해제 API
 
@@ -2387,6 +2480,7 @@ apple/
       Transfer/                 #if os(iOS)||os(watchOS): WatchTransferQueue (WCSession)
       Auth/                     #if os(iOS)||os(macOS): GoogleAuth (AppAuth, Drive-only) → TokenProvider
       Transport/                #if os(iOS)||os(macOS): BackgroundTransport (URLSession background)
+      Storage/                  #if os(iOS)||os(macOS): ICloudContainer (코어 UbiquityContainer — §3 "저장 위치")
       Workflow/                 CoreWorkflowDocuments, WorkflowInspector (두 셸 공용 편집기 — 폐기 2026-09-24)
       CoreBridge/               ReclyCore(XCFramework) 조립, SecureStore(Keychain), FileSystem, Logger, Crypto
   RecMac/                       메뉴바 앱, SwiftUI
@@ -2568,6 +2662,8 @@ apple/
   iOS 18 Control은 `OpenIntent`로 앱을 열어 시작한다(위젯 확장에서 장시간 오디오 세션 시작은 불안정하다).
 - **인증**: AppAuth로 `drive.file`만 요청하며 `TokenProvider`가 토큰 갱신·만료·401을 처리한다. RecKit `GoogleAuth`·`AppleTokenProvider`를 macOS와 공유하고, iPhone은
   `signIn(presenting: UIViewController)`.
+- **저장 위치**(§3 "저장 위치"): 설정 맨 위 칸에서 Google Drive · iCloud를 고른다. iCloud 업로드는 시스템이 올리므로
+  `BackgroundTransport`·배경 URLSession은 Drive 청크와 외부 전사 업로드에만 쓰인다.
 - **실행기**(the executor): 포그라운드는 RecKit `JobRunner`(잡 생성 직후 · 5분 타이머 · 네트워크 복귀 · `nextRunAt`
   후속 + 폰만의 다섯째 방아쇠인 앱 활성화). 앱이 화면에 없을 때는 아래 표대로 나뉜다.
 - **UI**: 녹음, 목록, 설정(녹음 처리 설정 포함). SwiftUI. (워크플로우 편집은 2026-09-24 폐기)
@@ -2733,7 +2829,8 @@ finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdo
 
 ### 한 줄 요약
 
-Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive(§1, Google OAuth 포함), (2) 사용자가 녹음
+Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive(§1, Google OAuth 포함) — iPhone·Mac에서 iCloud를
+골랐으면 사용자의 iCloud(§1b), (2) 사용자가 녹음
 처리 설정에서 **외부 API 전사를 골랐을 때만** 그 STT provider(§3), (3) **사용자가 짝 지은 자신의 다른 기기**(워치 ↔ 폰,
 §4) — 앞의 둘은 사용자의 계정·사용자의 키로 가고, 셋째는 사용자 자신의 기기 두 대 사이에 머문다. 그 외에 App
 Store 배포본은 아래 StoreKit 국가 조회를, 로컬 전사는 사용자가 요청한 모델 다운로드(Apple 시스템 자산, Android·Windows는
@@ -2839,6 +2936,16 @@ OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다. Apple의 직접 
 | Windows | 받지 않는다(프로필 스코프 없음) | 저장하지 않는다 | — |
 
 어느 쪽도 Recly로 전송되지 않는다(받을 서버가 없다). 계정을 다시 고르기 위한 로컬 값이다.
+
+### §1b iCloud — 사용자 자신의 iCloud (iPhone·Mac, ADR-024)
+
+| 항목 | 내용 |
+|---|---|
+| 언제 | 설정의 저장 위치에서 iCloud를 고른 iPhone·Mac의 녹음만(§3 "저장 위치"). Android·Windows·워치는 해당 없음 |
+| 올라가는 것 | Drive와 같다 — 앱의 iCloud Drive 폴더(파일 앱·Finder의 "Recly") 안 `{folder 템플릿}/{base}/`의 파트 `.m4a`, `{base}.meta.json`, 전사를 켰다면 `{base}.transcript.json/.txt`, 그리고 폴더 속성 파일 `{base}.folder.json`(제목·녹음 id·진행 표식) |
+| 누가 보내나 | **앱은 네트워크 요청을 하지 않는다.** 앱은 파일을 기기의 iCloud 컨테이너에 쓰고, 올리는 것은 Apple의 시스템 서비스다. 사용자의 iCloud 계정과 Apple의 약관·정책이 적용되고, 고급 데이터 보호를 켠 계정에서는 iCloud Drive가 종단간 암호화된다(Apple) |
+| 누가 보는가 | 사용자와, 같은 Apple ID로 로그인한 사용자의 기기. **Recly는 접근할 수 없다** — 서버도, 이 데이터에 대한 권한도 없다 |
+| 통제 | 앱의 저장 위치를 Drive로 되돌리기(이후 녹음만), 시스템 설정에서 Recly의 iCloud 사용 끄기, 파일 앱·Finder에서 폴더 지우기, iCloud 저장 공간 관리에서 Recly 데이터 지우기 |
 
 ### §2 웹훅 — 사용자가 적어 넣은 주소
 
@@ -2984,6 +3091,7 @@ Drive·provider 어느 것과도 무관하게 일어난다.
 | 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
 | 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본·파형 피크(`waveform.v1`)는 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
 | Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·완료 Job·Drive 폴더 캐시는 지워지고, 미완료 Job은 같은 계정 재연결까지 보존·일시 중지된다. 녹음 처리 설정·API 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
+| iCloud의 녹음 지우기 | 목록의 "삭제" → `iCloud 폴더도 함께 삭제`(기본값은 남기기), 또는 파일 앱·Finder의 "Recly" 폴더, 또는 iCloud 저장 공간 관리 | 앱을 지워도 iCloud의 데이터는 남는다(Apple). 앱 안에 iCloud 연결 해제는 없다 — 시스템 설정에서 Recly의 iCloud 사용을 끈다 |
 | 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
 | provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |
 
@@ -3156,6 +3264,7 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | Android·Windows 로컬 전사의 실기기 발열·배터리·장문(30~120분)·정확도, 녹음부터 게시까지의 실기 흐름 | 실험용 Android 폰과 Windows PC가 없다. 에뮬레이터와 macOS 호스트의 속도는 실기기 성능이 아니고, 스모크 클립은 합성 음성이다 |
 | M7 실키 인수(전사 시나리오 1·2·4) | STT 실제 키가 필요하다. 가짜 키로 `AUTH_REJECTED` → "키를 확인하세요" → 편집기 진입까지는 확인 |
 | iPhone·macOS 실기 로그인 | 이 문서에 확인 기록이 없다. 스토어 등록·서명은 해소됐다(2026-10-01 App Store·Google Play 출시, TestFlight는 건너뜀) |
+| iCloud 저장소의 실기 동기화(§3 "저장 위치") | iCloud 컨테이너 등록·App ID 기능·Mac Developer ID 프로필이 아직 없다(사람의 일). 코어 JVM 테스트와 RecKit 단위 테스트로 업로드 대기·완료·공간 부족·목록·제목만 확인했다. 같은 Apple ID의 iPhone·Mac에서 올리기 → 다른 기기 목록 → 이름 바꾸기 → 삭제를 실기로 확인해야 한다 |
 
 ---
 
@@ -3220,4 +3329,5 @@ Android `WorkflowsViewModel`에 `Step`→라벨과 `StepEdit`→라벨이 따로
 | **관할별 동의 문구의 법률 검토** | §12의 관할 표는 웹 요약이고 법률 자문이 아니다. 스토어 제출 전에 최소한 한국·미국(주별 목록의 현행성)·EU 항목을 확인하거나, 안내문을 "관할을 직접 확인하라"는 수준으로만 유지한다 |
 | **개인정보처리방침 게시** | 구현 전제 조건은 전부 충족됐다. 남은 것은 ① §15 §3 표의 provider별 보관 정책 URL 확정(확정 전까지 앱 고지에도 링크를 걸지 않는다), ② 공개 연락처 이메일, ③ 위 법률 검토. 셋 다 사람의 일이다 |
 | **워치 슬라이스 크기 기준** | 원래 기준은 "watchOS 슬라이스 < 20 MB"였는데 SKIE 적용 후 스트립 전 정적 슬라이스가 20.1~21.8 MB로 그 선을 넘는다. 링크·스트립 후 실제 앱은 13 MB라 75 MB 예산에는 여유가 있다. 기준을 "링크된 워치 앱 크기"로 다시 쓸지, 워치 소스셋을 줄여 슬라이스를 되돌릴지 결정이 필요하다 |
+| **iCloud 출시 준비** | 코드는 들어갔다(2026-10-02, §3 "저장 위치"). 남은 것은 사람의 일 — Apple Developer에서 `iCloud.app.recly` 컨테이너 등록, `app.recly`·`app.recly.mac` App ID에 iCloud(Documents) 기능 켜기, Mac용 Developer ID 프로비저닝 프로필, `Local.xcconfig`에서 켜기, 같은 Apple ID 실기 두 대로 인수 |
 | **macOS 에코(AEC)** | 내장 스피커를 쓰면 상대 목소리가 mic 트랙에 섞인다. 지금은 시작 시 경고 한 줄뿐이고, `setVoiceProcessingEnabled` 실험 결과에 따라 옵션화할지 결정한다 |

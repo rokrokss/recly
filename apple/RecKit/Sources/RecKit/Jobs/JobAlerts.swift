@@ -17,6 +17,8 @@ public enum AlertReason: String, CaseIterable, Sendable {
     case needsAuth
     case needsConsent
     case needsSpace
+    /// docs/03 "저장 위치": the iCloud account is out of space — the same park as a full Drive.
+    case icloudSpace
     case missingSecret
     case authRejected
     case quota
@@ -43,6 +45,8 @@ public enum AlertReason: String, CaseIterable, Sendable {
         case .needsConsent: return "NEEDS_CONSENT"
         case .needsAuth: return "NEEDS_AUTH"
         case .needsSpace: return "NEEDS_SPACE"
+        // The core's own word for it: the job's status is the same `NEEDS_SPACE` as a full Drive's.
+        case .icloudSpace: return "ICLOUD_STORAGE_FULL"
         case .missingSecret: return "MISSING_SECRET"
         case .authRejected: return "AUTH_REJECTED"
         case .quota: return "QUOTA"
@@ -53,7 +57,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
     /// are drawn in the warning tone its badge wears, never in the red that means failure.
     public var isWait: Bool {
         switch self {
-        case .needsConsent, .needsAuth, .needsSpace, .localModel: return true
+        case .needsConsent, .needsAuth, .needsSpace, .icloudSpace, .localModel: return true
         case .localUnavailable, .localDiarization, .missingSecret, .authRejected, .quota: return false
         }
     }
@@ -63,6 +67,8 @@ public enum AlertReason: String, CaseIterable, Sendable {
         case .needsConsent: return .privacy
         case .needsAuth: return .signIn
         case .needsSpace: return .driveStorage
+        // No page in Settings can be linked to: the user frees the space, then asks again.
+        case .icloudSpace: return .retryUploads
         case .missingSecret, .authRejected: return .secrets
         case .localModel: return .modelDownload
         case .quota, .localUnavailable, .localDiarization: return .editor
@@ -82,6 +88,8 @@ public enum FixSurface: CaseIterable, Sendable {
     /// docs/05 "고정 처리 설정 도입": the one fix that is an action rather than a screen — the
     /// recordings are waiting for the speech model, so the button downloads it where it stands.
     case modelDownload
+    /// docs/03 "저장 위치": the iCloud uploads parked for space, asked again — after the user made room.
+    case retryUploads
 
     /// docs/07 rule 3: the key, resolved where the banner draws its button.
     ///
@@ -97,6 +105,7 @@ public enum FixSurface: CaseIterable, Sendable {
         case .secrets: return "Check the key"
         case .editor: return "Recording processing"
         case .modelDownload: return "Download model"
+        case .retryUploads: return "Retry"
         }
     }
 
@@ -185,7 +194,9 @@ public enum JobAlerts {
         // docs/10: a wait for the on-device model, parked like consent rather than failed.
         case .needsModel: return .localModel
         case .needsAuth: return .needsAuth
-        case .needsSpace: return .needsSpace
+        case .needsSpace:
+            let message = lastError.flatMap { CoreMessageRef.companion.parse(code: $0)?.message }
+            return message == .icloudStorageFull ? .icloudSpace : .needsSpace
         // Only a job the queue has given up on. A step that is still inside its retry budget is
         // `WAITING`, and docs/10 says plainly that those are not worth a notification.
         case .failed: return terminalReason(lastError)

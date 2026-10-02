@@ -13,6 +13,7 @@ import kotlinx.coroutines.withContext
 import recly.core.db.RecDatabase
 import recly.core.model.isoUtc
 import recly.core.platform.CoreDeps
+import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.transcribe.installed
 
@@ -58,7 +59,10 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
         }
     }
 
-    /** A checked revision protects two windows and import-versus-edit races. */
+    /**
+     * A checked revision protects two windows and import-versus-edit races. The storage provider is
+     * not the form's to change: what is saved keeps the one this device has ([setStorage]).
+     */
     @Throws(Throwable::class)
     suspend fun save(settings: ProcessingSettings, expectedRevision: Int): ProcessingSaveResult = locked {
         db.transactionWithResult {
@@ -68,8 +72,39 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
             if (expectedRevision == Int.MAX_VALUE) {
                 return@transactionWithResult ProcessingSaveResult.Invalid(listOf("revision limit reached"))
             }
-            saveValidated(stamp(settings, expectedRevision + 1))
+            val provider = current.document.settings.storage.provider
+            saveValidated(stamp(settings.copy(storage = settings.storage.copy(provider = provider)), expectedRevision + 1))
         }
+    }
+
+    /**
+     * docs/03 "저장 위치": where new recordings go — Google Drive, or the app's iCloud folder on the
+     * devices that have one ([CoreDeps.ubiquity], ADR-024). Saved at once, as the next revision; a
+     * recording already started keeps the storage it froze ([capture]), and nothing already uploaded
+     * moves.
+     */
+    @Throws(Throwable::class)
+    suspend fun setStorage(provider: StorageKind): ProcessingSaveResult = locked {
+        db.transactionWithResult {
+            val current = readStored() as? ProcessingSettingsState.Ready
+                ?: return@transactionWithResult ProcessingSaveResult.Unavailable
+            if (provider == StorageKind.ICLOUD && deps.ubiquity == null) {
+                return@transactionWithResult ProcessingSaveResult.Invalid(listOf("iCloud is not available on this device"))
+            }
+            val document = current.document
+            if (document.settings.storage.provider == provider) return@transactionWithResult ProcessingSaveResult.Saved(document)
+            if (document.revision == Int.MAX_VALUE) {
+                return@transactionWithResult ProcessingSaveResult.Invalid(listOf("revision limit reached"))
+            }
+            val settings = document.settings.copy(storage = document.settings.storage.copy(provider = provider))
+            saveValidated(stamp(settings, document.revision + 1))
+        }
+    }
+
+    /** The storage new recordings go to; Drive before the settings exist. */
+    @Throws(Throwable::class)
+    suspend fun storage(): StorageKind = locked {
+        (readStored() as? ProcessingSettingsState.Ready)?.document?.settings?.storage?.provider ?: StorageKind.DRIVE
     }
 
     /** Call only after the import preview has been accepted; the source revision is not adopted. */

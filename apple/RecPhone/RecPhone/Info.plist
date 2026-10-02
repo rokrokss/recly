@@ -76,6 +76,28 @@
 	</array>
 
 	<!--
+	  docs/03 "저장 위치" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
+	  folder is the "Recly" folder the Files app and Finder show. ReclyICloudContainer is empty unless
+	  Local.xcconfig turns iCloud on (RECLY_ICLOUD_CONTAINER) — a build signed without the iCloud
+	  entitlement does not offer iCloud. Raise CFBundleVersion whenever NSUbiquitousContainers
+	  changes: the system reads it again only for a new build.
+	-->
+	<key>ReclyICloudContainer</key>
+	<string>$(RECLY_ICLOUD_CONTAINER)</string>
+	<key>NSUbiquitousContainers</key>
+	<dict>
+		<key>iCloud.app.recly</key>
+		<dict>
+			<key>NSUbiquitousContainerIsDocumentScopePublic</key>
+			<true/>
+			<key>NSUbiquitousContainerName</key>
+			<string>Recly</string>
+			<key>NSUbiquitousContainerSupportedFolderLevels</key>
+			<string>Any</string>
+		</dict>
+	</dict>
+
+	<!--
 	  docs/13 "표시"·M5-L2 deliverable 3: without this the Live Activity request is refused, and a
 	  recording with nothing on the Lock Screen is also App Review 2.5.14's problem.
 	-->

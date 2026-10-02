@@ -14,13 +14,16 @@ public struct DriveConnectionSection: View {
     private let disconnect: () -> Void
     private let permissions: () -> Void
     private let debtSettled: () -> Void
+    /// Off under the storage choice, which has a header of its own (docs/03 "저장 위치").
+    private let showsHeader: Bool
     @Environment(\.locale) private var locale
 
     public init(account: String?, connected: Bool, configured: Bool, pending: Bool, disconnecting: Bool,
                 revokeDebt: Bool, blocker: String?, signInState: ProcessingState,
                 signIn: @escaping () -> Void,
                 disconnect: @escaping () -> Void,
-                permissions: @escaping () -> Void, debtSettled: @escaping () -> Void) {
+                permissions: @escaping () -> Void, debtSettled: @escaping () -> Void,
+                showsHeader: Bool = true) {
         self.account = account
         self.connected = connected
         self.configured = configured
@@ -33,10 +36,13 @@ public struct DriveConnectionSection: View {
         self.disconnect = disconnect
         self.permissions = permissions
         self.debtSettled = debtSettled
+        self.showsHeader = showsHeader
     }
 
     public var body: some View {
-        SectionHeader(loc("Google Drive")).padding(.horizontal, Space.m)
+        if showsHeader {
+            SectionHeader(loc("Google Drive")).padding(.horizontal, Space.m)
+        }
         if connected || pending || disconnecting {
             SectionRow(title: account ?? loc(disconnecting ? "Google Drive" : connected ? "Drive connected" : "Drive connection needs attention")) {
                 BlueprintButton(loc(disconnecting ? "Disconnecting…" : "Disconnect Drive"),

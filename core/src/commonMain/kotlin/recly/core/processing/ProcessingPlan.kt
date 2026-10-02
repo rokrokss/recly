@@ -13,7 +13,7 @@ object ProcessingPlan {
             id = ID, name = "Recording", updatedAt = document.updatedAt,
             minDurationSec = settings.storage.minDurationSec,
             steps = buildList {
-                add(Step.DriveUpload("upload", folder = settings.storage.folder))
+                add(Step.DriveUpload("upload", folder = settings.storage.folder, store = settings.storage.provider))
                 val transcription = settings.transcription
                 when (transcription.mode) {
                     TranscriptionMode.LOCAL -> {

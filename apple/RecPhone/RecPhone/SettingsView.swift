@@ -65,16 +65,30 @@ struct SettingsView: View {
 
     // MARK: - Account (docs/06)
 
-    @ViewBuilder
-    private var account: some View {
+    private func drive(_ showsHeader: Bool) -> DriveConnectionSection {
         DriveConnectionSection(
             account: model.account, connected: model.hasGoogleCredential,
             configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
             revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
             signInState: model.signInState,
             signIn: model.signIn, disconnect: model.askToDisconnect,
-            permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
+            permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled,
+            showsHeader: showsHeader
         )
+    }
+
+    @ViewBuilder
+    private var account: some View {
+        // docs/03 "저장 위치": the storage choice on top of the Drive rows, where this build can offer
+        // iCloud; the Drive block as it always was where it cannot.
+        if let storage = model.storage {
+            StorageSection(
+                choice: storage,
+                drive: drive
+            )
+        } else {
+            drive(true)
+        }
         if let note = model.authNote {
             hint(note, tone: .danger)
         }

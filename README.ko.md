@@ -36,8 +36,9 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
   넘기고, 나머지는 폰이 합니다. 여섯 클라이언트(Galaxy Watch, Android, Apple Watch, iPhone, macOS,
   Windows)가 같은 방식으로 녹음하고 같은 처리 흐름을 사용하며, 데스크톱은 내 마이크와
   Zoom·Teams·Meet 상대방 소리를 트랙을 나눠 담습니다.
-- **저장소는 내 Drive뿐.** 녹음은 내 Google Drive의 `recly/2026/2026-09/` 같은 폴더로 갑니다. Google이
-  제공하는 가장 좁은 권한(`drive.file`)만 쓰고, 업로드가 확인되기 전에는 원본을 지우지 않습니다. Recly는
+- **저장소는 내 것뿐.** 녹음은 내 Google Drive의 `recly/2026/2026-09/` 같은 폴더로 갑니다. Google이
+  제공하는 가장 좁은 권한(`drive.file`)만 쓰고, 업로드가 확인되기 전에는 원본을 지우지 않습니다. iPhone과
+  Mac에서는 대신 내 iCloud를 고를 수 있습니다(Android와 Windows는 Google Drive). Recly는
   내 파일을 볼 수 없습니다. 볼 서버 자체가 없으니까요.
 - **파일이 인터페이스.** 내 에이전트가 Drive에서 전사 결과를 읽어 후속 작업을 합니다. 설정에서 로컬 전사,
   외부 API, 전사 안 함을 선택합니다. 외부 전사는 provider(AssemblyAI, 클로바, Deepgram, OpenAI, Azure
@@ -145,8 +146,8 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 
 ## 프라이버시
 
-Recly에는 서버가 없습니다. 데이터가 갈 수 있는 곳은 내 Google Drive, 내가 고른 녹취 provider,
-그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를
+Recly에는 서버가 없습니다. 데이터가 갈 수 있는 곳은 내 Google Drive(iPhone·Mac에서 고르면 내 iCloud),
+내가 고른 녹취 provider, 그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를
 전부 나열하고, [docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15)가 그 뒤의 엔지니어링
 계약입니다. 네트워크 호출을 추가하는 변경은 그 절을 먼저 고쳐야 합니다.
 

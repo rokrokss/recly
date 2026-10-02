@@ -1,6 +1,7 @@
-# What Recly leaves in Google Drive
+# What Recly leaves in Google Drive or iCloud
 
-Contents: folder layout · names · `meta.json` · the transcript files · folder states · local copies.
+Contents: folder layout · names · `meta.json` · the transcript files · folder states · local copies
+· iCloud.
 
 ## Folder layout
 
@@ -42,7 +43,7 @@ base = {yyyyMMdd}T{HHmmss}Z_{source}_{first 8 chars of recordingId}
 | `source` / `platform` / `deviceName` | where it was recorded |
 | `context.participants` | optional head count including the user (2–6, 6 means "6 or more") |
 | `context.app` | optional bundle id of the meeting app (desktop only), e.g. `us.zoom.xos` |
-| `drive.folderId`, `drive.folderUrl` | the recording's own Drive folder, written once the upload knew it; absent on recordings uploaded before this field existed |
+| `drive.folderId`, `drive.folderUrl` | the recording's own Drive folder, written once the upload knew it; absent on recordings uploaded before this field existed and on iCloud recordings |
 | `gaps`, `silenced` | intervals with no audio (mic taken by another app, segment restart) — explains holes in the transcript |
 | `status` | `recording` → `finalized` |
 
@@ -76,8 +77,9 @@ Timestamps are on the recording's own time axis (seconds since `startedAt`).
 | `meta.json` but no transcript, no `pending` | transcription is off, failed, or not yet published | say no transcript is available; do not infer why |
 | transcript present | ready | read it |
 
-The `pending` marker is a Drive folder property (`appProperties.pending`). If your Drive tool
-cannot show it, treat "meta present, transcript absent" as "not transcribed (yet)" and say so.
+The `pending` marker is a Drive folder property (`appProperties.pending`); in iCloud it is
+`appProperties.pending` in `{base}.folder.json`. If your Drive tool cannot show it, treat "meta
+present, transcript absent" as "not transcribed (yet)" and say so.
 
 ## Local copies on this device
 
@@ -91,6 +93,35 @@ Two kinds of folder live there:
 | Folder | What it holds |
 |---|---|
 | `{base}/` | a recording this device made and transcribed: `meta.json`, `{base}.transcript.json` and `.txt` |
-| `{recordingId}/` (26-character ULID) | a recording from another device that the app has opened: `meta.json` and `{base}.transcript.json` only, fetched from Drive and swept after 7 days |
+| `{recordingId}/` (26-character ULID) | a recording from another device that the app has opened: `meta.json` and `{base}.transcript.json` only, fetched from Drive or iCloud and swept after 7 days |
 
-A recording from another device the app has not opened yet is in Drive only.
+A recording from another device the app has not opened yet is in Drive (or iCloud) only.
+
+## iCloud (iPhone and Mac)
+
+On iPhone and Mac the user can store new recordings in iCloud instead of Drive (Settings →
+Storage); Android and Windows always use Drive. An iCloud recording is in the app's iCloud Drive
+folder, which Finder and the Files app show as **Recly**, in the same layout as Drive:
+
+```
+~/Library/Mobile Documents/iCloud~app~recly/Documents/   on a Mac; Finder: iCloud Drive → Recly
+  recly/memo/2026-08/
+    20260826T010000Z_desktop_01J9ABCD/
+      ...                                                the same files as in Drive
+      20260826T010000Z_desktop_01J9ABCD.folder.json      what Drive keeps on the folder itself
+```
+
+- `{base}.folder.json` holds what a Drive folder carries as its own properties: `description`
+  (the title; as on Drive, it wins over `meta.json` `title` if the two differ), `appProperties`
+  (`recordingId`, `workflowId`, the `pending` / `pendingAt` marker) and `createdTime`.
+- `meta.json` has no `drive` field, so there is no folder link.
+- iCloud syncs file by file and in any order, so a `meta.json` there does not prove the other files
+  have arrived. Read the folder states above the same way, and trust a transcript once it is there.
+- Find transcripts by searching the whole `recly/` tree for `*.transcript.txt` rather than building
+  the month path: a month folder two devices made before they synced may show up twice
+  (`2026-10 2`).
+- Recordings are never moved, so a user who switched storage has recordings in both. When looking
+  for the latest, check both if you can.
+- Only a Mac can read the folder directly, from the path above. No AI assistant has an iCloud
+  connector (Claude, ChatGPT and Gemini, checked 2026-10-02). On iPhone the user can attach a
+  transcript from the Files app.

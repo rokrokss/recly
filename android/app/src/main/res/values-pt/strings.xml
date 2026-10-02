@@ -84,6 +84,9 @@
     <string name="core_needs_auth">Conecte o Google Drive para continuar os envios</string>
     <string name="core_drive_reauth">É preciso autorizar o acesso ao Google Drive novamente</string>
     <string name="core_drive_storage_full">O Google Drive está sem espaço. Libere espaço e tente novamente</string>
+    <string name="core_icloud_unavailable">O iCloud Drive não está disponível. Nos Ajustes, em iCloud, verifique se o iCloud Drive e o Recly estão ativados.</string>
+    <string name="core_icloud_storage_full">O iCloud está sem espaço. Libere espaço e tente novamente</string>
+    <string name="core_icloud_uploading">Enviando ao iCloud</string>
     <string name="core_drive_consent_required">O acesso ao Drive exige seu consentimento</string>
     <string name="core_sign_in_cancelled">O login foi cancelado</string>
     <string name="core_missing_secret">Este dispositivo não tem valor para o segredo “%1$s”</string>

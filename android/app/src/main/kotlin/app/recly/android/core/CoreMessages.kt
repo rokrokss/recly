@@ -26,6 +26,9 @@ object CoreMessages {
         CoreMessage.DRIVE_REAUTH -> R.string.core_drive_reauth
         CoreMessage.DRIVE_CONSENT_REQUIRED -> R.string.core_drive_consent_required
         CoreMessage.DRIVE_STORAGE_FULL -> R.string.core_drive_storage_full
+        CoreMessage.ICLOUD_UNAVAILABLE -> R.string.core_icloud_unavailable
+        CoreMessage.ICLOUD_STORAGE_FULL -> R.string.core_icloud_storage_full
+        CoreMessage.ICLOUD_UPLOADING -> R.string.core_icloud_uploading
         CoreMessage.SIGN_IN_CANCELLED -> R.string.core_sign_in_cancelled
         CoreMessage.MISSING_SECRET -> R.string.core_missing_secret
         CoreMessage.FOLDER_TEMPLATE -> R.string.core_folder_template
@@ -56,6 +59,9 @@ object CoreMessages {
         CoreMessage.DRIVE_REAUTH,
         CoreMessage.DRIVE_CONSENT_REQUIRED,
         CoreMessage.DRIVE_STORAGE_FULL,
+        CoreMessage.ICLOUD_UNAVAILABLE,
+        CoreMessage.ICLOUD_STORAGE_FULL,
+        CoreMessage.ICLOUD_UPLOADING,
         CoreMessage.SIGN_IN_CANCELLED,
         CoreMessage.STALE,
         // docs/08 "오류": what to do about it is the whole sentence, and the provider's own line

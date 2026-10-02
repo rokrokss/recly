@@ -57,6 +57,14 @@ public struct RecentItem: Identifiable, Sendable {
     /// The recording's Drive folder: the `drive.upload` step's link, or the folder the row knows
     /// on its own — an adopted recording was read out of that folder (docs/03).
     public let link: URL?
+    /// docs/03 "저장 위치": the storage the recording's folder is in, nil until it has one.
+    public let storage: StorageKind?
+    /// The recording's folder in the app's iCloud folder on this Mac, for "Show in Finder" — the
+    /// iCloud counterpart of [link]. Nil on the phone and for a recording on Drive.
+    public let cloudFolder: URL?
+
+    /// Whether there is a folder in the user's storage to delete along with the recording.
+    public var hasCloudFolder: Bool { link != nil || storage == .icloud }
     /// docs/08 "폴링 · 상태": how long the transcription has been in flight, when it is. Nil for
     /// every other state, which has a word of its own.
     public let waitingMinutes: Int?
@@ -82,8 +90,11 @@ public struct RecentItem: Identifiable, Sendable {
     }
 
     /// The same thing as words, read where it is drawn — so a list already on screen follows a
-    /// language change (docs/07 rule 3).
-    public var reason: CoreMessages.Text? { lastError.map(CoreMessages.text) }
+    /// language change (docs/07 rule 3). The system uploading to iCloud is progress, as a running
+    /// Drive upload is: the badge says it, and there is nothing to explain under it (docs/03 "저장 위치").
+    public var reason: CoreMessages.Text? {
+        state == "Uploading to iCloud" ? nil : lastError.map(CoreMessages.text)
+    }
 
     /// docs/08 "오류": whether the thing to do about this failure is to look at the key, which is
     /// what decides whether "check the key" is worth offering.
@@ -105,7 +116,7 @@ public struct RecentItem: Identifiable, Sendable {
     }
 
     private static let retryable: Set<String> =
-        ["Failed", "Sign-in needed", "No space in Drive", "Retry pending"]
+        ["Failed", "Sign-in needed", "No space in Drive", "No space in iCloud", "Waiting for iCloud", "Retry pending"]
 
     /// docs/09 화면 원칙 2: whether "delete" is a thing to offer. A recording being written to right
     /// now is not one to delete — the core refuses it anyway, and offering the button would be
@@ -138,8 +149,10 @@ public struct RecentItem: Identifiable, Sendable {
     public var waitingForModel: Bool { state == "Waiting for speech model" }
 
     /// The tone [reason] is drawn in: red for a failure, and the warning tone of the badge for a job
-    /// that is only waiting (consent, sign-in, Drive space, the speech model).
-    public var reasonTone: BadgeTone { alert?.isWait == true ? .warning : .danger }
+    /// that is only waiting (consent, sign-in, Drive space, the speech model, iCloud).
+    public var reasonTone: BadgeTone {
+        alert?.isWait == true || state == "Waiting for iCloud" ? .warning : .danger
+    }
 
     public init(
         id: String,
@@ -148,6 +161,8 @@ public struct RecentItem: Identifiable, Sendable {
         startedAt: String,
         state: String,
         link: URL?,
+        storage: StorageKind? = nil,
+        cloudFolder: URL? = nil,
         lastError: String?,
         waitingMinutes: Int? = nil,
         nextRunAt: Date? = nil,
@@ -162,6 +177,8 @@ public struct RecentItem: Identifiable, Sendable {
         self.startedAt = startedAt
         self.state = state
         self.link = link
+        self.storage = storage
+        self.cloudFolder = cloudFolder
         self.lastError = lastError
         self.waitingMinutes = waitingMinutes
         self.nextRunAt = nextRunAt
@@ -208,8 +225,12 @@ public enum Recents {
                     jobId: job?.id,
                     title: record.meta.title ?? "",
                     startedAt: record.meta.startedAt,
-                    state: localPending ? localState(running: localRunning, core: core) : stateLabel(record: record, job: job),
+                    state: localPending
+                        ? localState(running: localRunning, core: core)
+                        : stateLabel(record: record, job: job, lastError: error),
                     link: driveLink(steps) ?? record.driveFolderUrl.flatMap(URL.init(string:)),
+                    storage: record.storage,
+                    cloudFolder: await cloudFolder(record: record, core: core),
                     lastError: error,
                     waitingMinutes: waiting,
                     nextRunAt: job?.nextRunAt.map {
@@ -232,7 +253,18 @@ public enum Recents {
         return core.localTranscription.coolingDown ? "Waiting for the device to cool down" : "Transcription pending"
     }
 
-    static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?) -> String {
+    /// docs/03 "저장 위치": the recording's folder in the iCloud folder on this Mac. The phone has no
+    /// Finder to show it in.
+    static func cloudFolder(record: RecordingRecord, core: ReclyCore_) async -> URL? {
+        #if os(macOS)
+        guard let path = record.icloudFolderPath, let container = core.deps.ubiquity as? ICloudContainer else { return nil }
+        return await container.folderURL(path)
+        #else
+        return nil
+        #endif
+    }
+
+    static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?, lastError: String? = nil) -> String {
         // docs/03 "워치 → 폰 전송 계약": the placeholder row this phone opened for a transfer that is
         // still arriving. It carries the recording's own `RECORDING` status, so it has to be asked
         // about before that — otherwise the row reads as this phone recording, which it is not.
@@ -256,9 +288,14 @@ public enum Recents {
         }
         // A finalized recording stays done when disconnect clears its local job history.
         guard let job else { return "Done" }
+        // docs/03 "저장 위치": an iCloud upload waits on the system, not on a retry timer — while it
+        // uploads, and while iCloud cannot be used from here.
+        let message = lastError.flatMap { CoreMessageRef.companion.parse(code: $0)?.message }
         switch job.status {
         case .pending: return "Waiting"
         case .running: return "Uploading"
+        case .waiting where message == .icloudUploading: return "Uploading to iCloud"
+        case .waiting where message == .icloudUnavailable: return "Waiting for iCloud"
         case .waiting: return "Retry pending"
         case .done: return "Done"
         case .failed: return "Failed"
@@ -270,7 +307,7 @@ public enum Recents {
         // docs/10 "Drive 용량 초과": parked rather than failed, and nothing retries it on its own —
         // the row's own state, so the list can offer the storage page instead of a retry that
         // would come back with the same 403.
-        case .needsSpace: return "No space in Drive"
+        case .needsSpace: return message == .icloudStorageFull ? "No space in iCloud" : "No space in Drive"
         case .skippedShort: return "Too short"
         }
     }
@@ -301,18 +338,21 @@ public enum Recents {
         "Transcribing on this device", "Transcription pending", "Waiting for the device to cool down",
         "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",
         "Receiving from the watch", "Uploading on another device", "Sign-in needed",
+        "Waiting for iCloud",
     ]
 
     private static let failing: Set<String> =
-        ["Failed", "No space in Drive", "Too short"]
+        ["Failed", "No space in Drive", "No space in iCloud", "Too short"]
 
-    /// Whether a job is running right now, off the same `"Uploading"` key the ledger badge reads.
+    /// Whether a job is running right now, off the same `"Uploading"` key the ledger badge reads —
+    /// and an iCloud upload the system is still doing counts as one, as its badge does (docs/03
+    /// "저장 위치").
     ///
     /// The ledger is the newest five recordings, so a job still running on one older than those is
     /// not seen here — the same scope the ledger itself has, and the dashboard says no more than
     /// the rows under it do.
     public static func uploading(_ items: [RecentItem]) -> Bool {
-        items.contains { $0.state == "Uploading" }
+        items.contains { $0.state == "Uploading" || $0.state == "Uploading to iCloud" }
     }
 
     /// docs/03 "워치 → 폰 전송 계약" · docs/09 화면 원칙 1: whether this phone is taking a recording off

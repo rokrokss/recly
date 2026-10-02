@@ -130,6 +130,26 @@ settings, so nothing you fill in shows up in the tracked tree. The consent scree
 exactly one scope:
 `drive.file` ([recly.md §6](recly.md#6-인증-구-docs06)).
 
+### iCloud 켜기
+
+체크아웃에서는 iCloud가 꺼져 있다. `apple/Config/Recly.xcconfig`의 `RECLY_ICLOUD_CONTAINER`가 비어 있으면 앱은 저장 위치로 iCloud를 제안하지 않는다([recly.md §3 "저장 위치"](recly.md#저장-위치-adr-024)). 켜는 순서는 다음과 같다.
+
+1. Apple Developer의 Certificates, Identifiers & Profiles → Identifiers → iCloud Containers에서 `iCloud.app.recly`를 팀에 등록한다.
+2. App ID `app.recly`와 `app.recly.mac`에 iCloud 기능을 켜고, 호환성은 **Include CloudKit support**를 고른 뒤 Edit에서 그 컨테이너를 지정한다. "Compatible with Xcode 5"로 켜면 프로필에 `팀ID.*` 형태의 옛 컨테이너만 들어가고 `iCloud.app.recly`는 빠진다(2026-10-02 실제 프로필로 확인). Mac 앱은 지금까지 Developer ID 서명만 해서 `app.recly.mac` App ID가 없을 수 있다. 없으면 Identifiers → App IDs에서 먼저 등록한다.
+3. Profiles → Distribution → **Developer ID**로 `app.recly.mac`의 프로필을 만들고 설치한다. 프로필의 Entitlements에 `com.apple.developer.icloud-container-identifiers`가 `iCloud.app.recly`로 들어 있어야 한다(`security cms -D -i <파일>`로 확인).
+4. `apple/Config/Local.xcconfig`에 아래 값을 넣는다. `Local.xcconfig.example` 끝의 주석 줄과 같다.
+
+```
+RECLY_ICLOUD_CONTAINER = iCloud.app.recly
+RECLY_PHONE_ENTITLEMENTS = RecPhone/RecPhone-iCloud.entitlements
+RECLY_MAC_ENTITLEMENTS[config=Release] = RecMac/RecMac-iCloud.entitlements
+RECLY_MAC_PROFILE[config=Release] = Recly Mac Developer ID
+```
+
+iPhone 아카이브(`make ios-archive`, 자동 서명)는 `RECLY_PHONE_ENTITLEMENTS`에서 엔타이틀먼트를 가져온다. Mac Release 빌드에는 그 컨테이너를 포함한 `app.recly.mac`용 **Developer ID 프로비저닝 프로필**이 필요하다. 마지막 줄의 `Recly Mac Developer ID`가 그 프로필 이름이며, 이름이 다르면 그 줄을 고친다. iCloud는 제한된 엔타이틀먼트라 프로필 없이 이를 가진 Mac 앱은 실행하자마자 종료된다. 그래서 `apple/scripts/release-mac.sh`(`make mac-release`)는 프로필이 들어 있지 않은 iCloud 빌드를 거부하고, iCloud 빌드에는 팀(`Local.xcconfig`의 `RECLY_DEVELOPMENT_TEAM` 또는 `RECLY_TEAM_ID`)도 요구한다. Debug Mac 빌드(로컬 "Recly Local Development" 인증서)에는 iCloud가 들어가지 않고, 설정에도 iCloud가 나오지 않는다(`RECLY_MAC_ICLOUD_CONTAINER`).
+
+`Info.plist`의 `NSUbiquitousContainers`를 바꾸면 `CFBundleVersion`을 올린다. 시스템은 새 빌드에서만 그 값을 다시 읽는다. 동기화 확인에는 같은 Apple ID로 로그인한 실기기 두 대가 필요하다. 2026-10-02 현재 실기기에서는 확인하지 않았다.
+
 ### iOS 심사 빌드의 Google 로그인 검사
 
 `make ios-archive`는 현재 코어를 다시 빌드한 뒤, 컴파일된 아카이브의 `GIDClientID`와 Google 콜백 URL 스킴을 검사한다. 미설정·플레이스홀더·스킴 불일치면 export/upload 전에 중단한다. `make ios-release-test`는 실제 계정 없이 아카이브 fixture로 이 검사를 검증한다. 이 정적 검사는 OAuth 콘솔의 게시 상태·번들 ID 등록·실제 기기의 로그인 성공까지 보장하지 않는다.

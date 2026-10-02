@@ -84,6 +84,9 @@
     <string name="core_needs_auth">اربط Google Drive لمتابعة الرفع</string>
     <string name="core_drive_reauth">يجب السماح بالوصول إلى Google Drive مجددًا</string>
     <string name="core_drive_storage_full">مساحة Google Drive ممتلئة. أفرغ بعض المساحة وأعد المحاولة</string>
+    <string name="core_icloud_unavailable">‏iCloud Drive غير متاح. في الإعدادات، ضمن iCloud، تحقّق من تفعيل iCloud Drive وRecly.</string>
+    <string name="core_icloud_storage_full">مساحة iCloud ممتلئة. أفرغ بعض المساحة وأعد المحاولة</string>
+    <string name="core_icloud_uploading">جارٍ الرفع إلى iCloud</string>
     <string name="core_drive_consent_required">يتطلب الوصول إلى Drive موافقتك</string>
     <string name="core_sign_in_cancelled">أُلغي تسجيل الدخول</string>
     <string name="core_missing_secret">لا توجد قيمة للسر «%1$s» على هذا الجهاز</string>

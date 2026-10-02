@@ -24,7 +24,11 @@
               "pattern": "^(?![\\s\\S]*\\{\\{\\s*(workflowName|title)\\s*\\}\\})[\\s\\S]*$",
               "default": "recly/memo/{{yyyy}}-{{MM}}"
             },
-            "minDurationSec": { "type": "integer", "minimum": 0, "maximum": 2147483647, "default": 0 }
+            "minDurationSec": { "type": "integer", "minimum": 0, "maximum": 2147483647, "default": 0 },
+            "provider": {
+              "enum": ["drive", "icloud"], "default": "drive",
+              "description": "Where new recordings are uploaded: the user's Google Drive, or the app's iCloud Drive folder (iPhone and Mac only). Changed from the storage setting, not by saving or importing this document. See docs/recly.md section 3 \"저장 위치\"."
+            }
           }
         },
         "transcription": {

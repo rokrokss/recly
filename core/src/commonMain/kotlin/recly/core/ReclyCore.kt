@@ -16,7 +16,6 @@ import recly.core.transcribe.missingTranscriptAvailability
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.message.CoreMessage
 import recly.core.db.RecDatabase
-import recly.core.drive.DriveApi
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveStore
 import recly.core.job.EnqueueResult
@@ -48,6 +47,8 @@ import recly.core.transcribe.RecordingResult
 import recly.core.transcribe.RecordingResults
 import recly.core.transfer.TransferReceiver
 import recly.core.processing.ProcessingPlan
+import recly.core.storage.CloudStorage
+import recly.core.storage.StorageKind
 import recly.core.model.Source
 import recly.core.model.RecordingStatus
 import kotlinx.coroutines.NonCancellable
@@ -77,7 +78,10 @@ class ReclyCore(
 ) {
     private val db: RecDatabase = RecDatabase(driverFactory.create())
 
-    val recordings: RecordingRepository = RecordingRepository(db, deps)
+    /** Google Drive, and the app's iCloud folder where the shell has one (docs/03 "저장 위치"). */
+    private val storage: CloudStorage = CloudStorage.of(deps)
+
+    val recordings: RecordingRepository = RecordingRepository(db, deps, storage)
 
     /** docs/05: this device's processing preferences, which every recording's plan is compiled from. */
     val processingSettings = recly.core.processing.ProcessingSettingsRepository(db, deps)
@@ -171,7 +175,7 @@ class ReclyCore(
                 jobStore,
                 recordings,
                 defaultRunners(db, deps, localTranscription),
-                marker = DriveFolderMarker(DriveApi(deps), deps),
+                marker = DriveFolderMarker(storage, deps),
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
                 requireAccess = { driveJobAccess.requireAccess(it) },
@@ -181,11 +185,16 @@ class ReclyCore(
 
     private val driveStore: DriveStore = DriveStore(db, deps)
 
-    private val results: RecordingResults = RecordingResults(DriveApi(deps), deps)
+    private val results: RecordingResults = RecordingResults(storage, deps)
 
-    private val audio: AudioParts = AudioParts(DriveApi(deps), recordings, deps)
+    private val audio: AudioParts = AudioParts(storage, recordings, deps)
 
-    private val remote: RemoteRecordings = RemoteRecordings(DriveApi(deps), recordings, deps)
+    private val remote: RemoteRecordings = RemoteRecordings(
+        storage,
+        recordings,
+        deps,
+        icloudChosen = { processingSettings.storage() == StorageKind.ICLOUD },
+    )
 
     /**
      * docs/03 "다른 기기의 녹음": reads the recordings other devices uploaded into this device's list,
@@ -405,11 +414,14 @@ class ReclyCore(
             driveJobAccess.clear()
             deps.tokenProvider.invalidate()
             deps.secureStore.clear(SecureStore.TOKENS)
-            recordings.synced().keys.forEach { recordings.forgetDriveCopy(it) }
+            // Drive's copies only: a recording in the iCloud folder is not this account's to forget
+            // (docs/03 "저장 위치").
+            recordings.synced().filterValues { StorageKind.ofId(it) == StorageKind.DRIVE }.keys
+                .forEach { recordings.forgetDriveCopy(it) }
             driveStore.forgetAllFolders()
             // The "로컬만 삭제" memory (docs/03 "다른 기기의 녹음") is about this account's folders, and
             // a device that starts over with an account starts over with its list.
-            recordings.clearIgnored()
+            recordings.clearIgnored(StorageKind.DRIVE)
             deps.logger.log(
                 Logger.Level.INFO,
                 "auth.disconnect",

@@ -84,6 +84,9 @@
     <string name="core_needs_auth">Подключите Google Drive, чтобы продолжить загрузку</string>
     <string name="core_drive_reauth">Нужно снова разрешить доступ к Google Drive</string>
     <string name="core_drive_storage_full">В Google Drive закончилось место. Освободите его и повторите попытку</string>
+    <string name="core_icloud_unavailable">iCloud Drive недоступен. В Настройках в разделе iCloud проверьте, что iCloud Drive и Recly включены.</string>
+    <string name="core_icloud_storage_full">В iCloud закончилось место. Освободите его и повторите попытку</string>
+    <string name="core_icloud_uploading">Загрузка в iCloud</string>
     <string name="core_drive_consent_required">Для доступа к Drive нужно ваше согласие</string>
     <string name="core_sign_in_cancelled">Вход отменён</string>
     <string name="core_missing_secret">На этом устройстве нет значения секрета «%1$s»</string>

@@ -18,7 +18,6 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import okio.Path
 import recly.core.db.RecDatabase
-import recly.core.drive.DriveApi
 import recly.core.drive.DriveUploadState
 import recly.core.job.JobStatus
 import recly.core.model.Context
@@ -34,6 +33,9 @@ import recly.core.model.recJson
 import recly.core.model.wire
 import recly.core.platform.CoreDeps
 import recly.core.platform.Logger
+import recly.core.storage.CloudFiles
+import recly.core.storage.CloudStorage
+import recly.core.storage.StorageKind
 
 /**
  * A recording row plus the directory its parts and `meta.json` live in.
@@ -63,6 +65,20 @@ data class RecordingRecord(
     val driveSynced: Boolean = false,
 ) {
     /**
+     * docs/03 "저장 위치": where the recording's folder is — Google Drive or iCloud — read off its
+     * id; null until one is known.
+     */
+    val storage: StorageKind? get() = driveFolderId?.let(StorageKind::ofId)
+
+    /**
+     * The folder's path under the app's iCloud folder, for a shell that shows it in Finder; null for
+     * a recording on Drive or not uploaded yet. Not while another device is still uploading into it.
+     */
+    val icloudFolderPath: String?
+        get() = driveFolderId?.takeIf { !remoteUploading && StorageKind.ofId(it) == StorageKind.ICLOUD }
+            ?.removePrefix(StorageKind.ICLOUD_PREFIX)
+
+    /**
      * A watch transfer in flight (docs/03 "워치 → 폰 전송 계약"): the phone opens the row when the
      * first part arrives and replaces it wholesale when `meta.json` lands. A phone never *records*
      * with source `watch` — it only ever receives one — so a local row of this shape can only be
@@ -85,7 +101,7 @@ data class RecordingRecord(
      * in-flight rows offer no actions.
      */
     val driveFolderUrl: String?
-        get() = if (remoteUploading) null
+        get() = if (remoteUploading || storage == StorageKind.ICLOUD) null
         else meta.drive?.folderUrl ?: driveFolderId?.let { "https://drive.google.com/drive/folders/$it" }
 }
 
@@ -115,8 +131,11 @@ sealed interface DeleteResult {
 class RecordingRepository(
     private val db: RecDatabase,
     private val deps: CoreDeps,
-    /** Only [delete] with `deleteDrive` uses it, and only for `files.delete`. */
-    private val drive: DriveApi = DriveApi(deps),
+    /**
+     * Only [delete] with `deleteDrive` uses it, and only to delete the folder — on Drive or in iCloud,
+     * wherever its id says it is (docs/03 "저장 위치").
+     */
+    private val drive: CloudFiles = CloudStorage.of(deps),
 ) {
     private val queries get() = db.recQueries
     private val mutex = Mutex()
@@ -368,8 +387,15 @@ class RecordingRepository(
     /** The folder is gone from Drive, so there is nothing left to keep out. */
     suspend fun unignore(recordingId: String): Unit = locked { queries.kvDelete(IGNORED_PREFIX + recordingId) }
 
-    /** "연결 해제": a device wiped of its recordings starts over with what Drive has. */
-    suspend fun clearIgnored(): Unit = locked { queries.kvDeletePrefix(IGNORED_PREFIX) }
+    /**
+     * "연결 해제": a device wiped of its recordings starts over with what Drive has. Only the folders of
+     * [kind] are forgotten — disconnecting Drive says nothing about the iCloud folder (docs/03 "저장 위치").
+     */
+    suspend fun clearIgnored(kind: StorageKind): Unit = locked {
+        queries.kvSelectPrefix(IGNORED_PREFIX).executeAsList()
+            .filter { StorageKind.ofId(it.value_) == kind }
+            .forEach { queries.kvDelete(it.key) }
+    }
 
     /**
      * The detail screen's rename (docs/03 "제목"): any finalized recording, this device's own or an

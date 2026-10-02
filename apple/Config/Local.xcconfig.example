@@ -7,3 +7,12 @@ RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-xxxxx
 
 RECLY_MAC_GID_CLIENT_ID = 1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy.apps.googleusercontent.com
 RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.1234567890-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy
+
+// docs/03 "저장 위치": iCloud, once iCloud.app.recly is registered for your team (Certificates,
+// Identifiers & Profiles → Identifiers → iCloud Containers) and the iCloud capability with that
+// container is enabled on the app.recly and app.recly.mac App IDs. The Mac's Release build also
+// needs a Developer ID provisioning profile for app.recly.mac that includes it — named here.
+// RECLY_ICLOUD_CONTAINER = iCloud.app.recly
+// RECLY_PHONE_ENTITLEMENTS = RecPhone/RecPhone-iCloud.entitlements
+// RECLY_MAC_ENTITLEMENTS[config=Release] = RecMac/RecMac-iCloud.entitlements
+// RECLY_MAC_PROFILE[config=Release] = Recly Mac Developer ID

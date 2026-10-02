@@ -82,6 +82,8 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
     /// Whether a Drive folder exists to delete at all — the row's [RecentItem.link]. Without one
     /// there is no second answer to choose between.
     public let hasDriveFolder: Bool
+    /// docs/03 "저장 위치": the folder is in iCloud, and the dialog says so instead of Drive.
+    public let icloud: Bool
 
     public var id: String { recordingId }
 
@@ -90,13 +92,15 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
         title: String,
         unuploaded: Int,
         remote: Bool = false,
-        hasDriveFolder: Bool
+        hasDriveFolder: Bool,
+        icloud: Bool = false
     ) {
         self.recordingId = recordingId
         self.title = title
         self.unuploaded = unuploaded
         self.remote = remote
         self.hasDriveFolder = hasDriveFolder
+        self.icloud = icloud
     }
 }
 

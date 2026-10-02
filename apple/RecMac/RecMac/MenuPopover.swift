@@ -347,6 +347,11 @@ struct MenuPopover: View {
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
+                // docs/03 "저장 위치": an iCloud recording has no web page; its folder is in Finder.
+                if item.cloudFolder != nil {
+                    BlueprintButton(loc("Show in Finder")) { model.showInFinder(item) }
+                        .accessibilityIdentifier("show-in-finder")
+                }
                 // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
                 // comes back on its own `next_run_at`, and there is nothing to ask for.
                 if item.canRetry {
@@ -399,16 +404,30 @@ struct SettingsPane: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
+    private func drive(_ showsHeader: Bool) -> DriveConnectionSection {
+        DriveConnectionSection(
+            account: model.account, connected: model.hasGoogleCredential,
+            configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
+            revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
+            signInState: model.signInState,
+            signIn: model.signIn, disconnect: { model.askToDisconnect(from: surface) },
+            permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled,
+            showsHeader: showsHeader
+        )
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            DriveConnectionSection(
-                account: model.account, connected: model.hasGoogleCredential,
-                configured: model.canSignIn, pending: model.disconnectPhase.owed, disconnecting: model.disconnecting,
-                revokeDebt: model.revokeDebt, blocker: model.signInBlocker?.text,
-                signInState: model.signInState,
-                signIn: model.signIn, disconnect: { model.askToDisconnect(from: surface) },
-                permissions: model.openAccountPermissions, debtSettled: model.revokeDebtSettled
-            )
+            // docs/03 "저장 위치": the storage choice on top of the Drive rows, where this build can
+            // offer iCloud; the Drive block as it always was where it cannot.
+            if let storage = model.storage {
+                StorageSection(
+                    choice: storage,
+                    drive: drive
+                )
+            } else {
+                drive(true)
+            }
 
             // docs/07 rule 2·3: the same block the phone's settings tab draws, so it is drawn
             // once (RecKit).

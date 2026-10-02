@@ -84,6 +84,9 @@
     <string name="core_needs_auth">Google Drive verbinden, um Uploads fortzusetzen</string>
     <string name="core_drive_reauth">Google-Drive-Zugriff muss erneut erlaubt werden</string>
     <string name="core_drive_storage_full">Google Drive ist voll. Speicherplatz freigeben und erneut versuchen</string>
+    <string name="core_icloud_unavailable">iCloud Drive ist nicht verfügbar. In den Einstellungen unter iCloud prüfen, ob iCloud Drive und Recly aktiviert sind.</string>
+    <string name="core_icloud_storage_full">iCloud ist voll. Speicherplatz freigeben und erneut versuchen</string>
+    <string name="core_icloud_uploading">Upload zu iCloud</string>
     <string name="core_drive_consent_required">Drive-Zugriff benötigt Ihre Einwilligung</string>
     <string name="core_sign_in_cancelled">Die Anmeldung wurde abgebrochen</string>
     <string name="core_missing_secret">Auf diesem Gerät fehlt der Wert für „%1$s“</string>

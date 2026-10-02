@@ -93,13 +93,13 @@ public final class BackgroundJobs {
     /// docs/13 deliverable 4: an upload the user asked for by hand — a retry — on iOS 26, which
     /// keeps the pass running with progress UI after they leave the app. Older systems have
     /// [schedule] and the foreground pass, which is what the button does there.
-    public func uploadNow(recordingId: String, title: String) {
+    public func uploadNow(recordingId: String, title: String, icloud: Bool = false) {
         guard #available(iOS 26.0, *) else { return }
         let request = BGContinuedProcessingTaskRequest(
             identifier: "\(Self.uploadNowPrefix).\(recordingId)",
             title: title,
             // The system draws this one, so it is looked up in the app's language explicitly.
-            subtitle: RecKitStrings.localized("Uploading to Drive")
+            subtitle: RecKitStrings.localized(icloud ? "Uploading to iCloud" : "Uploading to Drive")
         )
         // Queued rather than refused when the system is busy — the user asked for this one.
         request.strategy = .queue

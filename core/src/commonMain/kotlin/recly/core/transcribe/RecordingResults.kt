@@ -7,7 +7,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import okio.Path
-import recly.core.drive.DriveApi
+import recly.core.storage.CloudFiles
 import recly.core.drive.string
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
@@ -37,7 +37,7 @@ data class RecordingResult(
  * step ran on another device, or whose files were restored without it. A download is kept as the
  * local copy, so the trip is made once.
  */
-class RecordingResults(private val api: DriveApi, private val deps: CoreDeps) {
+class RecordingResults(private val api: CloudFiles, private val deps: CoreDeps) {
 
     /**
      * @param outputs the `StepOutput`s of the recording's job, newest last — where the Drive file

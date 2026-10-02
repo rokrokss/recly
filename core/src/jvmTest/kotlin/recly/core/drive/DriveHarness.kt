@@ -35,6 +35,9 @@ import recly.core.testing.DEVICE_NAME
 import recly.core.testing.FakeClock
 import recly.core.testing.FakeDrive
 import recly.core.testing.FakeLogger
+import recly.core.testing.FakeUbiquityContainer
+import recly.core.storage.CloudStorage
+import recly.core.storage.ICloudFiles
 import recly.core.testing.MapSecureStore
 import recly.core.testing.START
 import recly.core.testing.STEP_RUN_ID
@@ -85,12 +88,15 @@ class DriveHarness(
     /** The workflow the upload runs inside. Only the steps *after* the upload matter to it — they
      * are what the folder's `pending` marker names (docs/03 "다른 기기의 녹음"). */
     val steps: List<Step> = listOf(Step.DriveUpload(id = "up")),
+    /** docs/03 "저장 위치": give the device an iCloud container, as the iPhone and Mac shells do. */
+    icloud: Boolean = false,
 ) {
     val drive = FakeDrive()
     val clock = FakeClock()
 
     /** Dated by the same clock as the queue: the retention sweep reads the parts' mtimes. */
     val fs = FakeFileSystem(clock)
+    val container: FakeUbiquityContainer? = if (icloud) FakeUbiquityContainer(fs, clock) else null
     val secrets = MapSecureStore()
     val logger = FakeLogger()
     val db: RecDatabase = inMemoryDatabase()
@@ -103,12 +109,16 @@ class DriveHarness(
         tokenProvider = tokens,
         transport = mockTransport(drive, fs),
         platform = platform,
+        ubiquity = container,
     )
 
     val recordings = RecordingRepository(db, deps)
     val store = DriveStore(db, deps)
     val api = DriveApi(deps)
-    val runner = DriveUploadRunner(api, FolderResolver(api, store, deps), store, recordings, deps)
+
+    /** Drive, and iCloud when the device has a container: what the shells hand the runner. */
+    val storage = CloudStorage(api, container?.let { ICloudFiles(it, deps) })
+    val runner = DriveUploadRunner(storage, FolderResolver(storage, store, deps), store, recordings, deps)
 
     val recordingId = "01J9ABCDEF0123456789ABCDEF"
     val base: String
@@ -161,7 +171,11 @@ class DriveHarness(
         recordings.create(meta, dir)
     }
 
-    suspend fun run(step: Step.DriveUpload = workflow.steps.first() as Step.DriveUpload): StepOutput {
+    suspend fun run(step: Step.DriveUpload = workflow.steps.first() as Step.DriveUpload): StepOutput =
+        (outcome(step) as StepOutcome.Done).output
+
+    /** The step's outcome as it is — an iCloud upload waits for the system's own upload. */
+    suspend fun outcome(step: Step.DriveUpload = workflow.steps.first() as Step.DriveUpload): StepOutcome {
         saves.clear()
         // The step under test in place of the workflow's first, so a test that hands in its own
         // `Step.DriveUpload` still runs inside whatever the harness put after the upload.
@@ -194,8 +208,7 @@ class DriveHarness(
         )
     }
 
-    /** `drive.upload` never polls, so every outcome it can return is a [StepOutcome.Done]. */
-    private suspend fun done(ctx: StepContext): StepOutput = (runner.run(ctx) as StepOutcome.Done).output
+    private suspend fun done(ctx: StepContext): StepOutcome = runner.run(ctx)
 
     /** True if some state this run saved had that file with nothing to delete and nothing uploaded. */
     fun savedCleanSlateFor(key: String): Boolean = saves.any {

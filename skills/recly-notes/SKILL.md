@@ -6,19 +6,21 @@ description: Turn a Recly recording's transcript into minutes, a decision log, i
 # recly-notes — notes from a Recly recording
 
 Recly records on a watch, phone, or desktop and uploads the recording to the **user's own Google
-Drive**. When transcription is enabled in Processing Settings, a transcript lands next to the audio.
+Drive** — or, on iPhone and Mac, to their iCloud if they chose it. When transcription is enabled in
+Processing Settings, a transcript lands next to the audio.
 Speaker identification depends on the selected engine.
 Summarizing is deliberately not part of that pipeline — it is your job. This skill finds one
 recording, reads its transcript, and writes the notes the user asked for.
 
 Two rules frame everything below:
 
-- **Drive is read-only for you.** It holds what the app recorded. Never write into the recording
-  folder. The notes go in your reply and, when the user wants them kept, into Notion through the
-  `recly-notion` skill.
+- **Drive and the iCloud folder are read-only for you.** They hold what the app recorded. Never
+  write into a recording folder (on a Mac the iCloud folder is writable, and anything put there
+  syncs to every device). The notes go in your reply and, when the user wants them kept, into Notion
+  through the `recly-notion` skill.
 - **"Recording" means the transcript.** Unless the user explicitly asks for audio, "get the
   recording" means read `{base}.transcript.txt`. You cannot listen to audio; if asked for it, give
-  the file names or the Drive folder and stop.
+  the file names or the recording's folder and stop.
 
 ## Find the recording
 
@@ -30,13 +32,18 @@ start time, source device).
    `%LOCALAPPDATA%\Recly\recordings\`. One folder per recording. Recordings this device
    transcribed have both transcript files; recordings from other devices that the app has opened
    are cached under a folder named by the full `recordingId` with only `{base}.transcript.json`.
-2. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
+2. **The Recly iCloud folder on a Mac**, for users who store recordings in iCloud (an iPhone and
+   Mac option): `~/Library/Mobile Documents/iCloud~app~recly/Documents/recly/`, shown in Finder as
+   iCloud Drive → Recly. Same layout as Drive. No assistant has an iCloud connector, so this local
+   folder is the only way to read it directly.
+3. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
    `.transcript.txt` — the Drive query is `name contains '.transcript.txt'` — or browse the
    `recly/` folder tree. Read the transcript and the `{base}.meta.json` beside it.
-3. **A Google Drive desktop sync folder**, if this machine has one:
+4. **A Google Drive desktop sync folder**, if this machine has one:
    `~/Library/CloudStorage/GoogleDrive-*/My Drive/recly/` or `G:\My Drive\recly`.
-4. **None of the above:** ask the user to attach or paste the transcript, and tell them in one
-   line how to connect Google Drive to this assistant so it works next time.
+5. **None of the above:** ask the user to attach or paste the transcript (on iPhone, an iCloud
+   recording's transcript can be attached from the Files app, in the Recly folder). If they use
+   Google Drive, tell them in one line how to connect it to this assistant so it works next time.
 
 Folder and file names, `meta.json` fields, and what an incomplete folder looks like are in
 `references/drive-layout.md`.
@@ -47,9 +54,10 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
   time in UTC (`20260826T010000Z_desktop_01J9ABCD`), so sorting names in descending order is
   chronological. You do not need to open `meta.json` to rank them.
 - **A newer folder without a transcript is not "no recording".** A folder with no `meta.json` is
-  still uploading; a folder whose Drive marker `pending` contains `transcribe` is still being
-  transcribed. Use the newest folder that *has* a transcript, and tell the user a newer recording
-  exists and is still uploading or transcribing. Never fall back silently.
+  still uploading; a folder whose marker `pending` contains `transcribe` (a Drive folder property,
+  or in iCloud `{base}.folder.json`) is still being transcribed. Use the newest folder that *has*
+  a transcript, and tell the user a newer recording exists and is still uploading or
+  transcribing. Never fall back silently.
 - A recording made with transcription off has no transcript. Say so; do not
   guess at the audio.
 - "Yesterday's 3 pm meeting" resolves through `meta.json` `startedAt` in the recording's own
@@ -67,7 +75,8 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
   `source` (`watch`/`phone`/`desktop`), `deviceName`, `context.participants` (head count,
   optional), `context.app` (the meeting app on desktop, optional) and `drive.folderUrl` (the
-  recording's Drive folder, optional).
+  recording's Drive folder, optional; an iCloud recording has no `drive` field). In iCloud the
+  title can also be in `{base}.folder.json` — see `references/drive-layout.md`.
 - The transcript is speech-to-text output: names and technical terms may be misheard. Do not
   correct them silently — keep the spelling and, where it matters, flag it.
 
