@@ -15,7 +15,6 @@ import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.NoCredentialException
 import com.google.android.gms.auth.api.identity.Identity
 import com.google.android.gms.auth.api.identity.RevokeAccessRequest
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlin.time.ExperimentalTime
@@ -27,8 +26,8 @@ import recly.core.platform.SecureStore
 /**
  * The interactive half of docs/06 Android, in two independent steps:
  *
- * 1. [signIn] — Credential Manager `GetSignInWithGoogleOption`. This only identifies the account; the ID
- *    token is not a Drive credential and is not kept.
+ * 1. [signIn] — Credential Manager `GetSignInWithGoogleOption`. This only identifies the account;
+ *    the ID token is not a Drive credential and is not kept.
  * 2. [authorizeDrive] — `AuthorizationClient` for the two ADR-009 scopes. Silent for an account
  *    that already consented, otherwise a consent screen through [AuthResolver]. The grant is
  *    handed straight to [AndroidTokenProvider], which is what the core actually reads.
@@ -53,16 +52,17 @@ class GoogleAuth(
     suspend fun driveGranted(): Boolean = tokens.held()
 
     /**
-     * A deliberate Connect Drive tap uses Google's button flow directly (docs/06 Android).
-     * Starting with a bottom sheet can leave the request waiting on a system credential selector
-     * that never draws, preventing the button flow from being reached at all.
+     * The Connect Drive tap, and only that: Google's "Sign in with Google" button flow, which is
+     * the option Google pairs with a button the user pressed (docs/06 Android). The bottom sheet is
+     * the automatic prompt, and the app never prompts on its own.
      *
-     * A closed picker is the user's answer; no other picker is opened after cancellation. When the
-     * button flow has no credential either, the UI offers the system add-account screen once.
+     * A closed picker is the user's answer ([SignInResult.Cancelled]). No credential at all means
+     * no Google account on the device — [SignInResult.NoAccount], and the UI offers the system
+     * add-account screen once.
      */
     suspend fun signIn(activity: Activity): SignInResult {
         val email = try {
-            credentials.requestEmail(activity, SignInMode.BUTTON)
+            credentials.requestEmail(activity)
         } catch (e: NoCredentialException) {
             logger.log(Logger.Level.INFO, "auth.signIn.fallback=addAccount")
             return SignInResult.NoAccount
@@ -170,30 +170,15 @@ sealed interface SignInResult {
 }
 
 /**
- * Credential Manager's bottom-sheet and button options. A deliberate [GoogleAuth.signIn] uses
- * [SignInMode.BUTTON] rather than starting with an automatic bottom-sheet request.
- */
-enum class SignInMode(internal val label: String) {
-    /** Bottom sheet, previously authorized accounts only: a returning user gets no picker at all. */
-    AUTHORIZED("authorized"),
-
-    /** Bottom sheet, every Google account on the device — the documented retry for a first sign-in. */
-    ALL_ACCOUNTS("allAccounts"),
-
-    /** The "Sign in with Google" button flow, which is also the one that offers "add an account". */
-    BUTTON("button"),
-}
-
-/**
- * The Credential Manager round trip, behind an interface so [GoogleAuth.signIn]'s flow selection
- * is testable: both the options and the credential parsing need Play Services.
+ * The Credential Manager round trip, behind an interface so [GoogleAuth.signIn]'s handling of each
+ * outcome is testable: both the option and the credential parsing need Play Services.
  */
 interface CredentialRequester {
     /**
-     * The chosen account's email address. Throws `NoCredentialException` when Credential Manager
-     * has nothing to offer for [mode].
+     * The account chosen in the "Sign in with Google" button flow. Throws `NoCredentialException`
+     * when Credential Manager has no account to offer.
      */
-    suspend fun requestEmail(activity: Activity, mode: SignInMode): String
+    suspend fun requestEmail(activity: Activity): String
 }
 
 internal class CredentialManagerRequester(
@@ -201,24 +186,10 @@ internal class CredentialManagerRequester(
     private val serverClientId: String,
 ) : CredentialRequester {
 
-    override suspend fun requestEmail(activity: Activity, mode: SignInMode): String {
-        // No nonce anywhere: the ID token is never sent to a server here (docs/06 — it identifies
-        // the account and is thrown away), so there is no replay for a nonce to bind against.
-        val option = when (mode) {
-            SignInMode.AUTHORIZED -> GetGoogleIdOption.Builder()
-                .setServerClientId(serverClientId)
-                .setFilterByAuthorizedAccounts(true)
-                // Exactly one already-authorized account: sign the returning user straight in.
-                .setAutoSelectEnabled(true)
-                .build()
-
-            SignInMode.ALL_ACCOUNTS -> GetGoogleIdOption.Builder()
-                .setServerClientId(serverClientId)
-                .setFilterByAuthorizedAccounts(false)
-                .build()
-
-            SignInMode.BUTTON -> GetSignInWithGoogleOption.Builder(serverClientId).build()
-        }
+    override suspend fun requestEmail(activity: Activity): String {
+        // No nonce: the ID token is never sent to a server here (docs/06 — it identifies the
+        // account and is thrown away), so there is no replay for a nonce to bind against.
+        val option = GetSignInWithGoogleOption.Builder(serverClientId).build()
         val response = CredentialManager.create(context)
             .getCredential(activity, GetCredentialRequest.Builder().addCredentialOption(option).build())
         val credential = response.credential

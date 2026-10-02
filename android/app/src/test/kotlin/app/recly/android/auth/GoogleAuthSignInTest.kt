@@ -17,55 +17,51 @@ import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 
 /**
- * The docs/06 explicit connection flow. Play Services is behind [CredentialRequester], so a
- * stalled system account sheet can be reproduced without a real Google account.
+ * The docs/06 Connect Drive sign-in. The Play Services round trip is behind [CredentialRequester],
+ * so what is under test here is what each outcome of the button flow tells the UI.
  */
 class GoogleAuthSignInTest {
 
     @Test
-    fun aConnectTapSignsInWithoutWaitingForTheSystemAccountSheet() = runTest {
-        val requester = object : CredentialRequester {
-            override suspend fun requestEmail(activity: Activity, mode: SignInMode): String =
-                if (mode == SignInMode.BUTTON) "a@example.com" else kotlinx.coroutines.awaitCancellation()
-        }
+    fun aConnectTapSignsInWithTheButtonFlow() = runTest {
+        val requester = FakeRequester(Answer.Email("a@example.com"))
         val store = FakeSecureStore()
 
-        val result = kotlinx.coroutines.withTimeoutOrNull(1_000) {
-            auth(requester, store).signIn(activity)
-        }
+        assertEquals(SignInResult.SignedIn("a@example.com"), auth(requester, store).signIn(activity))
 
-        assertEquals(SignInResult.SignedIn("a@example.com"), result)
+        assertEquals(1, requester.asked)
         assertEquals("a@example.com", store.get("account", "email")?.decodeToString())
+        assertEquals(emptyList(), logger.events)
     }
 
     @Test
     fun aDeviceWithNoGoogleAccountAsksForOne() = runTest {
-        val requester = FakeRequester(SignInMode.BUTTON to Answer.NoCredential)
+        val requester = FakeRequester(Answer.NoCredential)
         val store = FakeSecureStore()
 
         assertEquals(SignInResult.NoAccount, auth(requester, store).signIn(activity))
-        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertEquals(1, requester.asked)
         assertEquals(listOf("auth.signIn.fallback=addAccount"), logger.events)
         assertNull(store.get("account", "email"))
     }
 
     @Test
     fun aDismissedPickerDoesNotOpenAnother() = runTest {
-        val requester = FakeRequester(SignInMode.BUTTON to Answer.Cancelled)
+        val requester = FakeRequester(Answer.Cancelled)
         val store = FakeSecureStore()
 
         assertEquals(SignInResult.Cancelled, auth(requester, store).signIn(activity))
-        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertEquals(1, requester.asked)
         assertNull(store.get("account", "email"))
     }
 
     @Test
     fun aPlayServicesFailureIsAFailureWithItsReason() = runTest {
-        val requester = FakeRequester(SignInMode.BUTTON to Answer.Broken("Play Services is out of date"))
+        val requester = FakeRequester(Answer.Broken("Play Services is out of date"))
         val store = FakeSecureStore()
 
         assertEquals(SignInResult.Failed("Play Services is out of date"), auth(requester, store).signIn(activity))
-        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertEquals(1, requester.asked)
         assertNull(store.get("account", "email"))
     }
 
@@ -95,14 +91,13 @@ class GoogleAuthSignInTest {
         data class Broken(val message: String) : Answer
     }
 
-    /** Answers only the requested flow; an unexpected system account sheet must fail the test. */
-    private class FakeRequester(vararg answers: Pair<SignInMode, Answer>) : CredentialRequester {
-        private val answers = answers.toMap()
-        val asked = mutableListOf<SignInMode>()
+    /** Gives one answer, and counts how often it was asked: a tap opens one picker, never two. */
+    private class FakeRequester(private val answer: Answer) : CredentialRequester {
+        var asked = 0
 
-        override suspend fun requestEmail(activity: Activity, mode: SignInMode): String {
-            asked += mode
-            return when (val answer = answers[mode] ?: error("unexpected request for $mode")) {
+        override suspend fun requestEmail(activity: Activity): String {
+            asked++
+            return when (answer) {
                 is Answer.Email -> answer.value
                 Answer.NoCredential -> throw NoCredentialException("No credentials available")
                 Answer.Cancelled -> throw GetCredentialCancellationException("cancelled")

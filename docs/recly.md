@@ -1333,18 +1333,19 @@ Windows에서는 절대 선택되지 않는다.
 
 ### Android
 
-- 로그인: Credential Manager. 설정의 **Drive 연결**은 사용자가 누른 명시적 버튼이므로
-  `GetSignInWithGoogleOption(serverClientId)` 버튼 흐름을 바로 호출한다. 먼저
-  `GetGoogleIdOption`의 자동 로그인·모든 계정 바텀시트를 호출하지 않는다. Android 17 기기에서
-  시스템 `CredentialSelectorActivity`가 표시되지 않은 채 대기해 버튼 흐름까지 도달하지 못하는
-  사례를 확인했다(2026-10-02). 앱을 다시 열 때의 기존 계정·Drive 권한 복원은 그대로다.
+- 로그인: Credential Manager `GetSignInWithGoogleOption(serverClientId)` — "Sign in with Google" 버튼 흐름
+  하나만 쓴다. 로그인은 설정의 **Drive 연결**을 눌렀을 때만 일어난다. 구글은 바텀시트(`GetGoogleIdOption`)를
+  앱이 스스로 띄우는 자동 프롬프트로, 버튼 흐름을 사용자가 누른 버튼의 짝으로 나누고(Firebase quickstart와
+  Flutter `google_sign_in`도 같은 구분), 이 앱은 로그인을 스스로 띄우지 않으므로 바텀시트를 쓰지 않는다.
+  예전의 "허용한 계정 → 모든 계정 바텀시트 → 버튼" 사다리는 Android 17 기기에서 시스템
+  `CredentialSelectorActivity`가 그려지지 않은 채 대기해 버튼까지 가지 못했다(2026-10-02). 앱을 다시 열 때의
+  계정·Drive 권한 복원은 이 로그인을 거치지 않는다.
 - 버튼 흐름이 `NoCredentialException`이면 `SignInResult.NoAccount`. UI가
   `Intent(Settings.ACTION_ADD_ACCOUNT, EXTRA_ACCOUNT_TYPES=["com.google"])`로 시스템 계정 추가 화면을 열고,
   돌아오면 로그인을 **한 번만** 재시도한다(루프 방지).
 - 취소(`GetCredentialCancellationException`)나 Play Services 실패 뒤에는 다른 계정 선택 화면을 열지 않는다.
 - nonce는 쓰지 않는다. ID 토큰은 계정 식별용으로만 쓰고 서버로 보내지 않으므로 재생 공격을 묶을 대상이 없다.
-- 계정 추가 분기는 `auth.signIn.fallback=addAccount`로 로그에 남는다. 기존
-  `auth.signIn.fallback=allAccounts|button` 식별자는 변경하지 않지만 버튼 앞의 바텀시트 분기는 더 이상 실행하지 않는다.
+- 계정 추가 분기는 `auth.signIn.fallback=addAccount`로 로그에 남는다.
 - 인가: `Identity.getAuthorizationClient(activity).authorize(AuthorizationRequest{scopes: drive.file})` →
   `accessToken`(1시간). 이미 허용된 계정이면 무음.
 - 갱신: refresh token을 직접 갖지 않는다. `TokenProvider`가 만료 60초 전이면 `authorize()`를 다시 부른다.
