@@ -1333,19 +1333,18 @@ Windows에서는 절대 선택되지 않는다.
 
 ### Android
 
-- 로그인: Credential Manager. 구글이 문서화한 순서를 그대로 사다리로 내려간다 — 각 단계는 앞 단계가
-  `NoCredentialException`(자격 증명 없음)일 때만 시도한다.
-  1. `GetGoogleIdOption(filterByAuthorizedAccounts=true, autoSelectEnabled=true)` — 재방문 사용자는 화면 없이 바로.
-  2. `GetGoogleIdOption(filterByAuthorizedAccounts=false)` — 첫 로그인. 기기의 모든 구글 계정을 바텀시트로.
-  3. `GetSignInWithGoogleOption(serverClientId)` — "Sign in with Google" 버튼 흐름. 문서상 *계정이 하나도 없을 때
-     계정 추가를 제공하는 유일한 흐름*이다.
-  4. 여기까지 전부 `NoCredentialException`이면 기기에 구글 계정이 아예 없는 것 → `SignInResult.NoAccount`. UI가
-     `Intent(Settings.ACTION_ADD_ACCOUNT, EXTRA_ACCOUNT_TYPES=["com.google"])`로 시스템 계정 추가 화면을 열고,
-     돌아오면 로그인을 **한 번만** 재시도한다(루프 방지).
-- 사다리를 내려가는 조건은 `NoCredentialException`뿐이다. 취소(`GetCredentialCancellationException`)나 Play
-  Services 실패는 그 단계가 성립했다는 뜻이므로 다음 단계로 내려가지 않는다.
+- 로그인: Credential Manager. 설정의 **Drive 연결**은 사용자가 누른 명시적 버튼이므로
+  `GetSignInWithGoogleOption(serverClientId)` 버튼 흐름을 바로 호출한다. 먼저
+  `GetGoogleIdOption`의 자동 로그인·모든 계정 바텀시트를 호출하지 않는다. Android 17 기기에서
+  시스템 `CredentialSelectorActivity`가 표시되지 않은 채 대기해 버튼 흐름까지 도달하지 못하는
+  사례를 확인했다(2026-10-02). 앱을 다시 열 때의 기존 계정·Drive 권한 복원은 그대로다.
+- 버튼 흐름이 `NoCredentialException`이면 `SignInResult.NoAccount`. UI가
+  `Intent(Settings.ACTION_ADD_ACCOUNT, EXTRA_ACCOUNT_TYPES=["com.google"])`로 시스템 계정 추가 화면을 열고,
+  돌아오면 로그인을 **한 번만** 재시도한다(루프 방지).
+- 취소(`GetCredentialCancellationException`)나 Play Services 실패 뒤에는 다른 계정 선택 화면을 열지 않는다.
 - nonce는 쓰지 않는다. ID 토큰은 계정 식별용으로만 쓰고 서버로 보내지 않으므로 재생 공격을 묶을 대상이 없다.
-- 분기는 `auth.signIn.fallback=allAccounts|button|addAccount`로 로그에 남는다.
+- 계정 추가 분기는 `auth.signIn.fallback=addAccount`로 로그에 남는다. 기존
+  `auth.signIn.fallback=allAccounts|button` 식별자는 변경하지 않지만 버튼 앞의 바텀시트 분기는 더 이상 실행하지 않는다.
 - 인가: `Identity.getAuthorizationClient(activity).authorize(AuthorizationRequest{scopes: drive.file})` →
   `accessToken`(1시간). 이미 허용된 계정이면 무음.
 - 갱신: refresh token을 직접 갖지 않는다. `TokenProvider`가 만료 60초 전이면 `authorize()`를 다시 부른다.

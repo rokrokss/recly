@@ -17,102 +17,56 @@ import recly.core.platform.Logger
 import recly.core.platform.SecureStore
 
 /**
- * The docs/06 Credential Manager ladder. The Play Services round trip is behind
- * [CredentialRequester], so what is under test here is exactly the part that decides how far down
- * the ladder to go and what the UI is told.
+ * The docs/06 explicit connection flow. Play Services is behind [CredentialRequester], so a
+ * stalled system account sheet can be reproduced without a real Google account.
  */
 class GoogleAuthSignInTest {
 
     @Test
-    fun theFirstAuthorizedAccountSignsInWithoutFallingBack() = runTest {
-        val requester = FakeRequester(SignInMode.AUTHORIZED to Answer.Email("a@example.com"))
+    fun aConnectTapSignsInWithoutWaitingForTheSystemAccountSheet() = runTest {
+        val requester = object : CredentialRequester {
+            override suspend fun requestEmail(activity: Activity, mode: SignInMode): String =
+                if (mode == SignInMode.BUTTON) "a@example.com" else kotlinx.coroutines.awaitCancellation()
+        }
         val store = FakeSecureStore()
 
-        assertEquals(SignInResult.SignedIn("a@example.com"), auth(requester, store).signIn(activity))
+        val result = kotlinx.coroutines.withTimeoutOrNull(1_000) {
+            auth(requester, store).signIn(activity)
+        }
 
-        assertEquals(listOf(SignInMode.AUTHORIZED), requester.asked)
+        assertEquals(SignInResult.SignedIn("a@example.com"), result)
         assertEquals("a@example.com", store.get("account", "email")?.decodeToString())
-        assertEquals(emptyList(), logger.events, "nothing fell back")
-    }
-
-    @Test
-    fun aFirstSignInFallsThroughToTheAccountsSheet() = runTest {
-        val requester = FakeRequester(
-            SignInMode.AUTHORIZED to Answer.NoCredential,
-            SignInMode.ALL_ACCOUNTS to Answer.Email("b@example.com"),
-        )
-
-        assertEquals(SignInResult.SignedIn("b@example.com"), auth(requester).signIn(activity))
-
-        assertEquals(listOf(SignInMode.AUTHORIZED, SignInMode.ALL_ACCOUNTS), requester.asked)
-        assertEquals(listOf("auth.signIn.fallback=allAccounts"), logger.events)
-    }
-
-    @Test
-    fun noAccountSheetFallsThroughToTheSignInWithGoogleButton() = runTest {
-        val requester = FakeRequester(
-            SignInMode.AUTHORIZED to Answer.NoCredential,
-            SignInMode.ALL_ACCOUNTS to Answer.NoCredential,
-            SignInMode.BUTTON to Answer.Email("c@example.com"),
-        )
-
-        assertEquals(SignInResult.SignedIn("c@example.com"), auth(requester).signIn(activity))
-
-        assertEquals(SignInMode.entries.toList(), requester.asked)
-        assertEquals(
-            listOf("auth.signIn.fallback=allAccounts", "auth.signIn.fallback=button"),
-            logger.events,
-        )
     }
 
     @Test
     fun aDeviceWithNoGoogleAccountAsksForOne() = runTest {
-        val requester = FakeRequester(
-            SignInMode.AUTHORIZED to Answer.NoCredential,
-            SignInMode.ALL_ACCOUNTS to Answer.NoCredential,
-            SignInMode.BUTTON to Answer.NoCredential,
-        )
+        val requester = FakeRequester(SignInMode.BUTTON to Answer.NoCredential)
         val store = FakeSecureStore()
 
-        // The whole point: "No credentials available" is not the end of the road.
         assertEquals(SignInResult.NoAccount, auth(requester, store).signIn(activity))
-
-        assertEquals(SignInMode.entries.toList(), requester.asked, "every rung is tried first")
-        assertEquals(
-            listOf(
-                "auth.signIn.fallback=allAccounts",
-                "auth.signIn.fallback=button",
-                "auth.signIn.fallback=addAccount",
-            ),
-            logger.events,
-        )
-        assertNull(store.get("account", "email"), "nothing is signed in")
+        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertEquals(listOf("auth.signIn.fallback=addAccount"), logger.events)
+        assertNull(store.get("account", "email"))
     }
 
     @Test
     fun aDismissedPickerDoesNotOpenAnother() = runTest {
-        val requester = FakeRequester(
-            SignInMode.AUTHORIZED to Answer.NoCredential,
-            SignInMode.ALL_ACCOUNTS to Answer.Cancelled,
-        )
+        val requester = FakeRequester(SignInMode.BUTTON to Answer.Cancelled)
+        val store = FakeSecureStore()
 
-        assertEquals(
-            SignInResult.Cancelled,
-            auth(requester).signIn(activity),
-            "a cancellation is the user's answer, not a reason to descend — and not a failure",
-        )
-        assertEquals(listOf(SignInMode.AUTHORIZED, SignInMode.ALL_ACCOUNTS), requester.asked)
+        assertEquals(SignInResult.Cancelled, auth(requester, store).signIn(activity))
+        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertNull(store.get("account", "email"))
     }
 
     @Test
     fun aPlayServicesFailureIsAFailureWithItsReason() = runTest {
-        val requester = FakeRequester(SignInMode.AUTHORIZED to Answer.Broken("Play Services is out of date"))
+        val requester = FakeRequester(SignInMode.BUTTON to Answer.Broken("Play Services is out of date"))
         val store = FakeSecureStore()
 
         assertEquals(SignInResult.Failed("Play Services is out of date"), auth(requester, store).signIn(activity))
-
-        assertEquals(listOf(SignInMode.AUTHORIZED), requester.asked, "a failure does not descend either")
-        assertNull(store.get("account", "email"), "nothing is signed in")
+        assertEquals(listOf(SignInMode.BUTTON), requester.asked)
+        assertNull(store.get("account", "email"))
     }
 
     private val logger = RecordingLogger()
@@ -141,7 +95,7 @@ class GoogleAuthSignInTest {
         data class Broken(val message: String) : Answer
     }
 
-    /** Answers each rung of the ladder once; being asked anything else is the test failing. */
+    /** Answers only the requested flow; an unexpected system account sheet must fail the test. */
     private class FakeRequester(vararg answers: Pair<SignInMode, Answer>) : CredentialRequester {
         private val answers = answers.toMap()
         val asked = mutableListOf<SignInMode>()

@@ -27,7 +27,7 @@ import recly.core.platform.SecureStore
 /**
  * The interactive half of docs/06 Android, in two independent steps:
  *
- * 1. [signIn] — Credential Manager `GetGoogleIdOption`. This only identifies the account; the ID
+ * 1. [signIn] — Credential Manager `GetSignInWithGoogleOption`. This only identifies the account; the ID
  *    token is not a Drive credential and is not kept.
  * 2. [authorizeDrive] — `AuthorizationClient` for the two ADR-009 scopes. Silent for an account
  *    that already consented, otherwise a consent screen through [AuthResolver]. The grant is
@@ -53,33 +53,26 @@ class GoogleAuth(
     suspend fun driveGranted(): Boolean = tokens.held()
 
     /**
-     * The [SignInMode] ladder of docs/06 Android: each rung is Google's documented answer to the
-     * one before it finding no credential at all. Past the last rung there is no Google account on
-     * the device, which only the system add-account screen can fix — [SignInResult.NoAccount], and
-     * the UI opens that screen.
+     * A deliberate Connect Drive tap uses Google's button flow directly (docs/06 Android).
+     * Starting with a bottom sheet can leave the request waiting on a system credential selector
+     * that never draws, preventing the button flow from being reached at all.
      *
-     * `NoCredentialException` is the only exception worth descending on: a cancellation or a Play
-     * Services failure means this rung *could* have worked, and retrying it lower would only put a
-     * second picker in front of a user who just dismissed one. The cancellation is its own answer
-     * ([SignInResult.Cancelled]): the user closed the picker, and nothing failed.
+     * A closed picker is the user's answer; no other picker is opened after cancellation. When the
+     * button flow has no credential either, the UI offers the system add-account screen once.
      */
     suspend fun signIn(activity: Activity): SignInResult {
-        SignInMode.entries.forEachIndexed { index, mode ->
-            if (index > 0) logger.log(Logger.Level.INFO, "auth.signIn.fallback=${mode.label}")
-            val email = try {
-                credentials.requestEmail(activity, mode)
-            } catch (e: NoCredentialException) {
-                return@forEachIndexed
-            } catch (e: GetCredentialCancellationException) {
-                return SignInResult.Cancelled
-            } catch (e: Exception) {
-                return SignInResult.Failed(e.message ?: e::class.java.simpleName)
-            }
-            secureStore.put(NS_ACCOUNT, KEY_EMAIL, email.encodeToByteArray())
-            return SignInResult.SignedIn(email)
+        val email = try {
+            credentials.requestEmail(activity, SignInMode.BUTTON)
+        } catch (e: NoCredentialException) {
+            logger.log(Logger.Level.INFO, "auth.signIn.fallback=addAccount")
+            return SignInResult.NoAccount
+        } catch (e: GetCredentialCancellationException) {
+            return SignInResult.Cancelled
+        } catch (e: Exception) {
+            return SignInResult.Failed(e.message ?: e::class.java.simpleName)
         }
-        logger.log(Logger.Level.INFO, "auth.signIn.fallback=addAccount")
-        return SignInResult.NoAccount
+        secureStore.put(NS_ACCOUNT, KEY_EMAIL, email.encodeToByteArray())
+        return SignInResult.SignedIn(email)
     }
 
     /**
@@ -177,9 +170,8 @@ sealed interface SignInResult {
 }
 
 /**
- * Which Credential Manager option [GoogleAuth.signIn] is asking with, in the order Google's guide
- * puts them (developer.android.com/identity/sign-in/credential-manager-siwg-implementation).
- * [label] is what the fallback log line says on the way down.
+ * Credential Manager's bottom-sheet and button options. A deliberate [GoogleAuth.signIn] uses
+ * [SignInMode.BUTTON] rather than starting with an automatic bottom-sheet request.
  */
 enum class SignInMode(internal val label: String) {
     /** Bottom sheet, previously authorized accounts only: a returning user gets no picker at all. */
@@ -193,7 +185,7 @@ enum class SignInMode(internal val label: String) {
 }
 
 /**
- * The Credential Manager round trip, behind an interface so [GoogleAuth.signIn]'s fallback ladder
+ * The Credential Manager round trip, behind an interface so [GoogleAuth.signIn]'s flow selection
  * is testable: both the options and the credential parsing need Play Services.
  */
 interface CredentialRequester {
