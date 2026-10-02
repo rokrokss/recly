@@ -3329,5 +3329,5 @@ Android `WorkflowsViewModel`에 `Step`→라벨과 `StepEdit`→라벨이 따로
 | **관할별 동의 문구의 법률 검토** | §12의 관할 표는 웹 요약이고 법률 자문이 아니다. 스토어 제출 전에 최소한 한국·미국(주별 목록의 현행성)·EU 항목을 확인하거나, 안내문을 "관할을 직접 확인하라"는 수준으로만 유지한다 |
 | **개인정보처리방침 게시** | 구현 전제 조건은 전부 충족됐다. 남은 것은 ① §15 §3 표의 provider별 보관 정책 URL 확정(확정 전까지 앱 고지에도 링크를 걸지 않는다), ② 공개 연락처 이메일, ③ 위 법률 검토. 셋 다 사람의 일이다 |
 | **워치 슬라이스 크기 기준** | 원래 기준은 "watchOS 슬라이스 < 20 MB"였는데 SKIE 적용 후 스트립 전 정적 슬라이스가 20.1~21.8 MB로 그 선을 넘는다. 링크·스트립 후 실제 앱은 13 MB라 75 MB 예산에는 여유가 있다. 기준을 "링크된 워치 앱 크기"로 다시 쓸지, 워치 소스셋을 줄여 슬라이스를 되돌릴지 결정이 필요하다 |
-| **iCloud 출시 준비** | 코드는 들어갔다(2026-10-02, §3 "저장 위치"). 남은 것은 사람의 일 — Apple Developer에서 `iCloud.app.recly` 컨테이너 등록, `app.recly`·`app.recly.mac` App ID에 iCloud(Documents) 기능 켜기, Mac용 Developer ID 프로비저닝 프로필, `Local.xcconfig`에서 켜기, 같은 Apple ID 실기 두 대로 인수 |
+| **iCloud 실기 인수** | 0.1.2(빌드 32, 2026-10-02)부터 iCloud가 켜진 빌드로 나간다(§3 "저장 위치"; 컨테이너·App ID·Mac Developer ID 프로필·`Local.xcconfig`는 갖춰졌다). 남은 것은 같은 Apple ID의 iPhone·Mac 실기로 업로드·완료·다른 기기 목록·재생·삭제를 확인하는 일과, App Store 제출 문서(`app-review.md`·`app-store-metadata.en.txt`·`app-store-copy.ko.md`)의 Drive만 쓴다는 서술을 고치는 일 |
 | **macOS 에코(AEC)** | 내장 스피커를 쓰면 상대 목소리가 mic 트랙에 섞인다. 지금은 시작 시 경고 한 줄뿐이고, `setVoiceProcessingEnabled` 실험 결과에 따라 옵션화할지 결정한다 |

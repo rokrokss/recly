@@ -103,9 +103,9 @@ Windows MSI는 Windows 호스트의 `make windows-msi` 또는
 `REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
 누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
 
-현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.1`이다. Apple 앱·내장 Watch·위젯의 빌드는 `31`,
-Android는 `36`, Wear OS는 `1,000,036`이다. Windows MSI의 설치 버전은 표시 버전과 따로 세 번째 필드를
-계속 올려 `0.1.30`이다 — `0.1.0` 동안 `0.1.29`까지 올렸으므로, 그보다 작은 `0.1.1`로는 업그레이드가 되지 않는다.
+현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.2`이다. Apple 앱·내장 Watch·위젯의 빌드는 `32`,
+Android는 `37`, Wear OS는 `1,000,037`이다. Windows MSI의 설치 버전은 표시 버전과 따로 세 번째 필드를
+계속 올려 `0.1.31`이다 — `0.1.0` 동안 `0.1.29`까지 올렸으므로, 그보다 작은 `0.1.2`로는 업그레이드가 되지 않는다.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.
