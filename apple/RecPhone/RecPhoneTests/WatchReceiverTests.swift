@@ -3,7 +3,7 @@ import ReclyCore
 import RecKit
 import XCTest
 
-/// docs/13 I6 · docs/03 "워치 → 폰 전송 계약", the receiving half (docs/lanes M5-L4 deliverable 6):
+/// docs/13 I6 · docs/03 "Watch → phone transfer contract", the receiving half (docs/lanes M5-L4 deliverable 6):
 /// the file is moved inside the callback, the sha check is the core's answer and not a guess, and
 /// the meta's ok ack goes out *after* the recording is registered and queued.
 final class WatchReceiverTests: XCTestCase {
@@ -32,7 +32,7 @@ final class WatchReceiverTests: XCTestCase {
         try? FileManager.default.removeItem(at: directory)
     }
 
-    /// docs/13 "주의", and the reason [WatchReceiver.received] is synchronous down to the move:
+    /// docs/13 "Caveats", and the reason [WatchReceiver.received] is synchronous down to the move:
     /// `WCSession` deletes what it handed over the moment the callback returns. This is that delete,
     /// done by hand right after the call — and the bytes are still there afterwards.
     func testTheFileIsMovedBeforeTheCallbackReturns() async throws {

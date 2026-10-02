@@ -1,10 +1,10 @@
 -- `drive_folder_id` is the recording's `{base}/` folder on Drive (ADR-014): written by the upload
 -- step when it makes or finds the folder, and by a pull when it adopts one — so it outlives the
--- queue rows "연결 해제" clears. `remote` marks a row adopted from Drive (docs/03 "다른 기기의 녹음"):
+-- queue rows "연결 해제" clears. `remote` marks a row adopted from Drive (docs/03 "Recordings from other devices"):
 -- another device recorded it, this one has no job for it and no original.
 --
 -- `remote_pending` is what the device that *is* running the workflow says it still has to do, read
--- off the folder's `pending` marker (docs/03 "다른 기기의 녹음" — 진행 표시): the comma-joined step
+-- off the folder's `pending` marker (docs/03 "Recordings from other devices" — 진행 표시): the comma-joined step
 -- types after the upload, or NULL when there are none, the marker is stale, or the row is this
 -- device's own (its own job rows are the truth about it).
 CREATE TABLE recording (
@@ -86,7 +86,7 @@ resumeAuthStepRuns:
 UPDATE step_run SET status = 'PENDING', last_error = NULL
 WHERE job_id = ? AND status = 'NEEDS_AUTH';
 
--- "연결 해제" (docs/03) takes completed jobs one at a time, leaving iCloud's (docs/03 "저장 위치").
+-- "연결 해제" (docs/03) takes completed jobs one at a time, leaving iCloud's (docs/03 "Storage location").
 deleteStepRunsByJob:
 DELETE FROM step_run WHERE job_id = ?;
 
@@ -113,7 +113,7 @@ upsertRecording:
 INSERT OR REPLACE INTO recording(id, source, platform, workflow_id, title, started_at, ended_at, duration_sec, timezone, dir, meta_json, status, drive_folder_id, remote)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT drive_folder_id FROM recording WHERE id = ?), 0);
 
--- docs/03 "다른 기기의 녹음": a row adopted from Drive. Its parts are written by `insertAdoptedPart`
+-- docs/03 "Recordings from other devices": a row adopted from Drive. Its parts are written by `insertAdoptedPart`
 -- as already-purged, so nothing here ever enqueues a job for it and playback fetches by file id.
 --
 -- `OR REPLACE` for the one row it may land on: the provisional row an earlier pull opened for a
@@ -143,7 +143,7 @@ SELECT id FROM recording;
 selectAdoptedRecordings:
 SELECT id, drive_folder_id FROM recording WHERE remote = 1;
 
--- docs/03 "다른 기기의 녹음": the provisional rows — a remote row still carrying the placeholder meta
+-- docs/03 "Recordings from other devices": the provisional rows — a remote row still carrying the placeholder meta
 -- a folder without `meta.json` gave it, which is to say another device's upload still in flight.
 selectProvisionalRecordings:
 SELECT id, drive_folder_id FROM recording WHERE remote = 1 AND status = 'recording';
@@ -266,7 +266,7 @@ UPDATE step_run SET output_json = ? WHERE id = ?;
 updateStepState:
 UPDATE step_run SET state_json = ? WHERE id = ?;
 
--- A manual rerun re-plans what is left from the current processing settings (docs/10 "재시도").
+-- A manual rerun re-plans what is left from the current processing settings (docs/10 "Retry").
 updateJobWorkflow:
 UPDATE job SET workflow_json = ?, updated_at = ? WHERE id = ?;
 
@@ -297,7 +297,7 @@ WHERE job_id = ? AND status = 'NEEDS_MODEL';
 recoverRunningStepRuns:
 UPDATE step_run SET status = 'PENDING' WHERE status = 'RUNNING';
 
--- docs/10 "Drive 용량 초과": the resume point is dropped with the park, not kept.
+-- docs/10 "Drive out of space": the resume point is dropped with the park, not kept.
 clearStepState:
 UPDATE step_run SET state_json = NULL WHERE id = ?;
 

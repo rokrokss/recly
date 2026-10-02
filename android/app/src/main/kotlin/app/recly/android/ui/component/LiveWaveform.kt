@@ -20,7 +20,7 @@ import kotlin.math.sqrt
 import kotlinx.coroutines.delay
 
 /**
- * docs/09 화면 원칙 6: the strip that runs under the timer while a recording is going — one bar per
+ * docs/09 screen principle 6: the strip that runs under the timer while a recording is going — one bar per
  * tenth of a second of the track being written, newest at the right edge, so the whole thing walks
  * leftwards and a microphone that has stopped hearing anything is visible as a flat end. The
  * iPhone's `LiveWaveformView` and the Windows tray's strip are the same drawing.
@@ -29,7 +29,7 @@ import kotlinx.coroutines.delay
  * second, which is the rate the recorder finishes a window at. A `Canvas` and not a row of boxes:
  * three hundred bars are three hundred layouts, ten times a second.
  *
- * docs/09 "모션": nothing here is animated. Each tick is a fresh drawing of a new reading — a state
+ * docs/09 "Motion": nothing here is animated. Each tick is a fresh drawing of a new reading — a state
  * change, not a transition — so reduce motion has nothing to turn off.
  */
 @Composable
@@ -76,7 +76,7 @@ fun LiveWaveform(peaks: () -> List<Float>, modifier: Modifier = Modifier) {
  */
 fun barHeight(peak: Float): Float = sqrt(peak.coerceIn(0f, 1f))
 
-/** docs/09 "간격": a 2dp bar on a 3dp step, the rhythm the detail screen's waveform is drawn on. */
+/** docs/09 "Spacing": a 2dp bar on a 3dp step, the rhythm the detail screen's waveform is drawn on. */
 private val BAR = 2.dp
 private val STEP = 3.dp
 

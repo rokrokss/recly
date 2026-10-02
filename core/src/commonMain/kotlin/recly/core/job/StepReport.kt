@@ -10,7 +10,7 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 
 /**
- * What a shell has to know about a `step_run` to say something useful about it (docs/08 "오류",
+ * What a shell has to know about a `step_run` to say something useful about it (docs/08 "Errors",
  * "폴링 · 상태"). The wording is each shell's own, in its own resources; which of the sentences to
  * show is decided by [CoreMessageRef.parse] (docs/07 §5), and what is left here is the two things
  * a `last_error` alone does not answer.
@@ -30,7 +30,7 @@ object StepReport {
 
     /**
      * Whether the thing to do about [lastError] is to look at the key: this device holds no value
-     * for the secret, or the provider refused the one it holds (docs/08 "오류"). Every other
+     * for the secret, or the provider refused the one it holds (docs/08 "Errors"). Every other
      * failure — and a message older than the keys — has nothing to check.
      */
     fun needsKey(lastError: String?): Boolean {

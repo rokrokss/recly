@@ -3,7 +3,7 @@ package recly.core.platform
 import okio.Path
 
 /**
- * The one audio operation the core needs and cannot do itself (docs/08 "오디오 준비"): joining the
+ * The one audio operation the core needs and cannot do itself (docs/08 "Audio preparation"): joining the
  * parts of one track back into a single file for the STT provider.
  *
  * Every shell has a native muxer for it — `MediaMuxer`, `AVMutableComposition`, bundled ffmpeg —

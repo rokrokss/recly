@@ -94,7 +94,7 @@ class TransferReceiverTest {
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": the row a transfer opens is what the list shows for as long as the
+     * docs/03 "Recordings from other devices": the row a transfer opens is what the list shows for as long as the
      * transfer takes, and a 20-minute recording handed over at its end must not sit at the top of
      * the list as if it had just started. The watch's id carries the millisecond it began.
      */

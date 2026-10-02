@@ -1,6 +1,6 @@
 # `windows/capture-helper` — the Recly capture helper (Rust)
 
-docs/14 "캡처"·"감지" · the docs/03 audio/segment rules · ADR-005 · ADR-006 · ADR-019.
+docs/14 "Capture"·"Detection" · the docs/03 audio/segment rules · ADR-005 · ADR-006 · ADR-019.
 `windows/app` (Compose Desktop) spawns this binary and talks to it over the docs/14 JSON line
 protocol. All of the audio is captured, resampled, mixed, split into segments and encoded here, and
 the app takes `part_done` and writes it into the meta.
@@ -25,7 +25,7 @@ per line.
 | Helper → app | `{"event":"part_done","part":1,"track":"mic","file":…,"bytes":…,"sha256":…,"startOffsetSec":0.0,"durationSec":900.0}` |
 | Helper → app | `{"event":"mic_in_use","app":"Zoom.exe","inUse":true}` · `{"event":"error","message":…,"fatal":true}` |
 
-- File names are built from the `base` the app gave (docs/03 "이름 규칙"). The helper does not name
+- File names are built from the `base` the app gave (docs/03 "Naming rules"). The helper does not name
   anything.
 - There is no `recordingId` in `part_done` — because `start` does not give one. One helper process
   handles one recording, so the app already knows which recording it is.
@@ -122,6 +122,6 @@ the layout (float32 · int16 · int24 packed · int32 · 24-in-32) from
 `wFormatTag`/`SubFormat`/`wValidBitsPerSample` to decode it directly (`src/capture/format.rs` —
 pure functions, so it is tested on macOS).
 
-What is left once there is real hardware (docs/20 "Windows 보류 항목"): the real loopback track
+What is left once there is real hardware (docs/20 "Windows pending items"): the real loopback track
 separation for Teams and browser Meet, one hour in four parts, mic-in-use detection on real
 hardware.

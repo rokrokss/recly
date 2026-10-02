@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import RecKit
 
-/// docs/09 화면 원칙 2: the arithmetic under the detail's waveform. The decode itself needs a file
+/// docs/09 screen principle 2: the arithmetic under the detail's waveform. The decode itself needs a file
 /// and a decoder; this is the half that turns whatever it found into the bars actually drawn, and
 /// it is the half that has to be right at every width the row can be.
 final class RecordingWaveformTests: XCTestCase {

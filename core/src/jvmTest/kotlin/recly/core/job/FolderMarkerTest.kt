@@ -15,7 +15,7 @@ import recly.core.testing.driveStep
 import recly.core.testing.transcribeStep
 
 /**
- * docs/03 "다른 기기의 녹음": Drive holds the audio but says nothing about the transcribe that is
+ * docs/03 "Recordings from other devices": Drive holds the audio but says nothing about the transcribe that is
  * still four minutes away, so the device running the job writes what is left onto the recording's
  * folder. These are the executor's half of that — the upload runner writes the first one
  * ([recly.core.drive.DriveUploadRunnerTest]), and every step after it moves the marker on.
@@ -82,7 +82,7 @@ class FolderMarkerTest {
     }
 
     /**
-     * The editor allows one upload, the parser allows more (docs/09 원칙 3): a second upload that
+     * The editor allows one upload, the parser allows more (docs/09 principle 3): a second upload that
      * fails for good must not leave *its* folder promising a transcribe while the first one is
      * cleared — every upload row's folder is taken down when the job ends.
      */

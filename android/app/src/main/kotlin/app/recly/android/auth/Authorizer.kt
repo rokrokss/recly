@@ -72,7 +72,7 @@ internal fun AuthorizationResult.toAuthorizeResult(now: Instant): AuthorizeResul
     return AuthorizeResult.Granted(token, now + ACCESS_TOKEN_TTL)
 }
 
-/** Application-context authorization: silent or nothing (docs/06 "액티비티가 없는 WorkManager 컨텍스트"). */
+/** Application-context authorization: silent or nothing (docs/06 "a WorkManager context with no activity"). */
 class PlayAuthorizer(
     private val context: Context,
     private val clock: Clock,

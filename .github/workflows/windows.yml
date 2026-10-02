@@ -1,10 +1,10 @@
-# docs/lanes/M6-L2 "Windows 검증은 CI로": the development machine is macOS and there is no Windows PC,
+# docs/lanes/M6-L2 "Windows is verified in CI": the development machine is macOS and there is no Windows PC,
 # so the parts of docs/20 S8 a machine can answer without a microphone are answered here.
 #
 # What this proves that macOS cannot: the helper links against the real WASAPI, Media Foundation and
 # audio-session imports (a `cargo check --target x86_64-pc-windows-msvc` on the development host
 # never links), and `--self-test` says whether Media Foundation's AAC encoder will take ADR-006's
-# format — the evidence behind ADR-019. What it still cannot prove is in docs/20 "Windows 보류 항목".
+# format — the evidence behind ADR-019. What it still cannot prove is in docs/20 "Windows pending items".
 name: windows
 
 # Windows runners are the expensive kind, so this runs on release tags (next to `windows-release.yml`)

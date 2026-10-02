@@ -10,7 +10,7 @@ import kotlinx.serialization.json.contentOrNull
 import recly.core.model.Workflow
 
 /**
- * docs/10 "잡 상태 머신". [NEEDS_AUTH] and [NEEDS_SPACE] are the two terminal-until-a-person-acts
+ * docs/10 "Job state machine". [NEEDS_AUTH] and [NEEDS_SPACE] are the two terminal-until-a-person-acts
  * states: the scheduler never picks them up again and only `JobService.retry` moves them on.
  * [NEEDS_MODEL] waits the same way for the on-device speech model: downloading it resumes the job
  * (`ReclyCore.prepareLocalEngine`) — it is a wait, not a failure.
@@ -24,7 +24,7 @@ enum class StepStatus { PENDING, RUNNING, SUCCEEDED, FAILED, SKIPPED, NEEDS_AUTH
  * definition on another device never changes what a queued job does.
  *
  * [workflow] is null exactly when [snapshotError] is set: the stored snapshot names something this
- * build cannot decode — a step type a newer app wrote (docs/10 "잡 스냅샷"). Such a job reads as
+ * build cannot decode — a step type a newer app wrote (docs/10 "job snapshot"). Such a job reads as
  * [JobStatus.FAILED] whatever the row says, and nothing overwrites the snapshot, so an updated app
  * decodes it and runs it as it was written.
  */

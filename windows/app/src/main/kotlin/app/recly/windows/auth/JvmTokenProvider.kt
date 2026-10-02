@@ -74,7 +74,7 @@ class JvmTokenProvider(
 
     /**
      * The refresh token itself, for the one caller that needs the value rather than its effect:
-     * docs/03's "연결 해제" hands it to Google's revocation endpoint ([TokenEndpoint.revoke]). Null
+     * docs/03's "Disconnect" hands it to Google's revocation endpoint ([TokenEndpoint.revoke]). Null
      * once this device has none, which is what makes a second disconnect skip the revoke.
      */
     suspend fun refreshToken(): String? = store.get(SecureStore.TOKENS, KEY_REFRESH)?.decodeToString()

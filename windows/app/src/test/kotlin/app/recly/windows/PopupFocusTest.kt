@@ -5,7 +5,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 6, the rule the Mac's popover was given in e9838fb: the tray popup goes away on a
+ * docs/09 screen principle 6, the rule the Mac's popover was given in e9838fb: the tray popup goes away on a
  * click in another application, and stays where it is on a click in one of this app's own windows —
  * Details, Settings, or a dialog it raised itself. Before it, the first click in the window
  * the popup had just opened took the popup with it.

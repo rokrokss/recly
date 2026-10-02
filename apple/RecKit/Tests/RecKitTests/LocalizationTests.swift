@@ -126,7 +126,7 @@ final class LocalizationCatalogTests: XCTestCase {
         }
         // The families that are built rather than written, and so cannot be scanned for.
         keys.formUnion(AppLanguage.Choice.choices.map { "language." + $0.rawValue })
-        // The three answers the theme section's chips carry (docs/09 "접근성").
+        // The three answers the theme section's chips carry (docs/09 "Accessibility").
         keys.formUnion(AppTheme.Choice.allCases.map(\.labelKey))
         // The label the alert banner's button carries — the surface the fix opens, named.
         keys.formUnion(FixSurface.allCases.map(\.labelKey))

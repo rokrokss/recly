@@ -38,7 +38,7 @@ import recly.core.testing.testDeps
 import recly.core.testing.testMeta
 
 /**
- * docs/03 "저장 위치": the shared list out of the app's iCloud folder. A recording another device
+ * docs/03 "Storage location": the shared list out of the app's iCloud folder. A recording another device
  * uploaded there becomes a row like a Drive one; because iCloud brings files in no order, a meta
  * whose parts are not all there yet is still an upload in flight; and a storage that was not listed
  * drops nothing of its own.

@@ -43,12 +43,12 @@ func rgb(_ hex: UInt32, _ alpha: CGFloat = 1) -> CGColor {
 }
 
 extension Palette {
-    /// docs/09 "토큰", light.
+    /// docs/09 "Tokens", light.
     static let light = Palette(
         ground: rgb(0xF7F7F5), surface: rgb(0xFFFFFF), ink: rgb(0x111111),
         record: rgb(0xDA1E28), grid: rgb(0x888884, 0.28)
     )
-    /// docs/09 "토큰", dark. The grid takes the dark secondary at the master's own 28%.
+    /// docs/09 "Tokens", dark. The grid takes the dark secondary at the master's own 28%.
     static let dark = Palette(
         ground: rgb(0x0E0F12), surface: rgb(0x16181D), ink: rgb(0xF2F2F0),
         record: rgb(0xFA4D56), grid: rgb(0x9A9CA3, 0.28)
@@ -67,7 +67,7 @@ extension Palette {
         ground: nil, surface: nil, ink: rgb(0x000000), record: rgb(0x000000), grid: nil
     )
     /// The recording template, which keeps its red and so cannot be a template image — one per
-    /// appearance instead (docs/09 "앱 아이콘").
+    /// appearance instead (docs/09 "App icon").
     static let recordingLight = Palette(
         ground: nil, surface: nil, ink: rgb(0x111111), record: rgb(0xDA1E28), grid: nil
     )

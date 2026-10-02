@@ -27,7 +27,7 @@ data class SettingsUiState(
     val wifiOnly: Boolean = false,
     /** docs/12 M8: the recording-consent reminder, on until the user says not to ask again. */
     val consentReminder: Boolean = true,
-    /** docs/09 "접근성": the system's dark mode until this device says otherwise. */
+    /** docs/09 "Accessibility": the system's dark mode until this device says otherwise. */
     val theme: AppTheme = AppTheme.SYSTEM,
 )
 
@@ -60,7 +60,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     /**
-     * docs/09 "접근성": nothing to recreate — the theme is read in the composition, so the store
+     * docs/09 "Accessibility": nothing to recreate — the theme is read in the composition, so the store
      * emitting the new value is the whole of the change (the language's activity recreation is
      * `setLanguage`'s, and only its).
      */

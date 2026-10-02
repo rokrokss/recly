@@ -29,7 +29,7 @@ import recly.core.model.Source
 import recly.core.model.Track
 
 /**
- * docs/09 화면 원칙 2 / docs/12 "메뉴바": the ledger is [Recents.PAGE] rows a page, and the row that
+ * docs/09 screen principle 2 / docs/12 "Menu bar": the ledger is [Recents.PAGE] rows a page, and the row that
  * comes into view at the bottom asks for the next one ([ShellModel.loadMoreRecents]).
  *
  * The two things a page-at-a-time list can get wrong are both here: the window has to *grow* rather

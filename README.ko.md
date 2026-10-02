@@ -148,7 +148,7 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 
 Recly에는 서버가 없습니다. 데이터가 갈 수 있는 곳은 내 Google Drive(iPhone·Mac에서 고르면 내 iCloud),
 내가 고른 녹취 provider, 그리고 짝 지은 내 워치·폰뿐입니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를
-전부 나열하고, [docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15)가 그 뒤의 엔지니어링
+전부 나열하고, [docs/recly.md §15](docs/recly.md#15-privacy--data-flows-formerly-docs15)가 그 뒤의 엔지니어링
 계약입니다. 네트워크 호출을 추가하는 변경은 그 절을 먼저 고쳐야 합니다.
 
 ## 기여 · 보안 · 라이선스
@@ -164,4 +164,4 @@ Recly에는 서버가 없습니다. 데이터가 갈 수 있는 곳은 내 Googl
 ## 개발자를 위해
 
 저장소 구조, 빌드·테스트, 릴리스 절차, 설계 문서 목록은 영어 [README.md](README.md#for-developers)와
-[docs/development.md](docs/development.md)에 있습니다. 설계 문서 [docs/recly.md](docs/recly.md)는 한국어입니다.
+[docs/development.md](docs/development.md)에 있습니다. 설계 문서 [docs/recly.md](docs/recly.md)도 영어입니다.

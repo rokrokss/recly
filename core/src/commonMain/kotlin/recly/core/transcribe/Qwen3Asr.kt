@@ -4,7 +4,7 @@ import recly.core.model.Language
 import recly.core.model.wire
 
 /**
- * docs/05 "고정 처리 설정 도입": what the Android and Windows engines run — Qwen3-ASR 0.6B INT8 (Apache-2.0) as
+ * docs/05 "Fixed processing settings": what the Android and Windows engines run — Qwen3-ASR 0.6B INT8 (Apache-2.0) as
  * exported for sherpa-onnx, and the Silero VAD (MIT) that cuts a recording into the pieces it reads.
  * Every file is pinned to a commit and a hash; docs/15 lists the two hosts they come from.
  */

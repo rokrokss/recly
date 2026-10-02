@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 8: an empty list says so in the middle of the space the list would fill — a line
+/// docs/09 screen principle 8: an empty list says so in the middle of the space the list would fill — a line
 /// in the text colour, a muted line under it, and, where the screen has no other way to the action,
 /// the one button a clear step below, centred. The phones leave the button out: their tab bar puts
 /// Record right under it.

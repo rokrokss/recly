@@ -45,7 +45,7 @@ class Executor(
     private val runners: Map<String, StepRunner>,
     private val random: Random = Random.Default,
     /**
-     * docs/03 "다른 기기의 녹음": what this device still has to do, written on the recording's Drive
+     * docs/03 "Recordings from other devices": what this device still has to do, written on the recording's Drive
      * folder so the other devices' lists can say so. Advisory — the default writes nothing.
      */
     private val marker: FolderMarker = FolderMarker.NONE,
@@ -64,7 +64,7 @@ class Executor(
      * not write the same value again for its DONE. Reset per job; runs are serialized by [mutex]. */
     private var lastMark: Pair<String, List<String>>? = null
 
-    /** One job at a time, oldest first (docs/10 "동시성"). Re-entrant calls return immediately —
+    /** One job at a time, oldest first (docs/10 "Concurrency"). Re-entrant calls return immediately —
      * a scheduler that fires while a run is in flight must not double-run a step. */
     suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary = runFiltered(now, false)
 
@@ -117,7 +117,7 @@ class Executor(
     private suspend fun runJob(job: Job, now: Instant, localOnly: Boolean) {
         // Before the claim, so a job [JobStore.selectDue] would never have handed over is left as
         // it is rather than parked in RUNNING: a snapshot this build cannot decode has nothing to
-        // run against, and the list already shows it as failed (docs/10 "잡 스냅샷").
+        // run against, and the list already shows it as failed (docs/10 "job snapshot").
         val workflow = job.workflow ?: return
         // The claim before the work, and transactional: "녹음 삭제" refuses a recording whose job is
         // RUNNING in a transaction of its own, so between the two of them a run and a deletion of
@@ -204,7 +204,7 @@ class Executor(
     }
 
     /**
-     * The folder marker of docs/03 "다른 기기의 녹음": the types of the steps that come after [after],
+     * The folder marker of docs/03 "Recordings from other devices": the types of the steps that come after [after],
      * or none at all when the job is over one way or the other. The folder is the one the
      * `drive.upload` step left in its output — a job that has not uploaded yet has no folder to
      * write on, and a workflow without an upload has nothing to say to anybody.
@@ -382,7 +382,7 @@ class Executor(
         )
         if (retryable && attempts < step.retry.maxAttempts) {
             // A server that says when to come back knows better than our backoff curve — but only
-            // within the step's own ceiling (docs/04 "429의 Retry-After … maxDelaySec 상한").
+            // within the step's own ceiling (docs/04 "a 429's Retry-After … capped at maxDelaySec").
             val delay = retryAfterSec?.coerceIn(1L, step.retry.maxDelaySec.toLong())
                 ?: Backoff.delaySec(attempts, step.retry, random)
             val next = now + delay.seconds
@@ -424,7 +424,7 @@ class Executor(
     }
 
     /**
-     * docs/10 "Drive 용량 초과": no attempt is spent either, because retrying a full Drive only
+     * docs/10 "Drive out of space": no attempt is spent either, because retrying a full Drive only
      * produces the same 403 — the user has to clear space and press "다시 시도". The resumable
      * session in `state_json` goes with it: Drive keeps one for a week, and by the time somebody
      * has made room a fresh session is the surer bet.

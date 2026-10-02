@@ -39,7 +39,7 @@ private val poisonedJson: String =
     readableJson.replace("\"type\":\"drive.upload\"", "\"type\":\"$FUTURE_TYPE\"")
 
 /**
- * docs/10 "잡 스냅샷의 미지 스텝": a job queued on a newer app names a step type this build's
+ * docs/10 "Unknown steps in a job snapshot": a job queued on a newer app names a step type this build's
  * serializer has never heard of. It has to stay *one* job — the list, the queue and "녹음 삭제" all
  * go on working — and its `workflow_json` has to survive untouched, because the same row is what an
  * updated build will run.
@@ -124,7 +124,7 @@ class JobSnapshotTest {
         assertEquals(JobStatus.PENDING.name, f.rawStatus(), "and its row was not written either")
     }
 
-    /** docs/03 "녹음 삭제": the dialog must not be held up by a job nothing here can read. */
+    /** docs/03 "Delete recording": the dialog must not be held up by a job nothing here can read. */
     @Test
     fun `the recording of a poisoned job can still be deleted`() = runBlocking {
         val f = Fixture(listOf(ScriptedRunner("drive.upload") { ctx, _ -> uploadOutput(ctx) }))
@@ -167,7 +167,7 @@ class JobSnapshotTest {
         }
 
     /**
-     * docs/03 "로컬 저장": the parts are the only copy of the audio, and a snapshot nothing here can
+     * docs/03 "Local storage": the parts are the only copy of the audio, and a snapshot nothing here can
      * read is a job this build cannot say is finished — whatever its row claims. A sibling that
      * uploaded everything is evidence about itself and nothing else.
      */

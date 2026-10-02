@@ -31,7 +31,7 @@ final class TranscriptionRegionTests: XCTestCase {
         XCTAssertTrue(model.providers.contains("groq"))
         region.code = "USA"
         await model.refreshProviders()
-        // docs/15 "iPhone 제공 업체": the providers that keep the audio out of training.
+        // docs/15 "iPhone providers": the providers that keep the audio out of training.
         XCTAssertEqual(Set(model.providers), ["openai", "groq", "azure", "rtzr", "deepgram", "clova", "elevenlabs", "assemblyai"])
         region.code = "CHN"
         await model.refreshProviders()

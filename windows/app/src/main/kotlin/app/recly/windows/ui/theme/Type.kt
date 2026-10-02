@@ -7,7 +7,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
 /**
- * docs/09 "타이포": the UI is the platform sans and *data* is monospace.
+ * docs/09 "Typography": the UI is the platform sans and *data* is monospace.
  *
  * No font is bundled (docs/09 forbids it — Korean has to keep its glyphs), so both families are the
  * ones the OS hands over: [FontFamily.Default] is Segoe UI on Windows and SF on the macOS
@@ -23,7 +23,7 @@ object Type {
 }
 
 /**
- * docs/09 "유동 타이포": a continuous ramp interpolated by the window width rather than snapped at a
+ * docs/09 "Fluid typography": a continuous ramp interpolated by the window width rather than snapped at a
  * breakpoint — 1.0 at [NARROW_DP] and below, [WIDE_FACTOR] at [WIDE_DP] and above, straight-line in
  * between. The clamp is the desktop's own (a tray popup is narrow, an editor window is not); the
  * factor is the phone's, so the two products read at the same weight.

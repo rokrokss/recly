@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 "간격": multiples of four, with 8 / 16 / 24 as the rhythm.
+/// docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm.
 public enum Space {
     public static let xs: CGFloat = 4
     public static let s: CGFloat = 8
@@ -9,18 +9,18 @@ public enum Space {
     public static let xl: CGFloat = 32
 }
 
-/// docs/09 "형태": 4 for a node, 8 for a card, 0 for a table row. Badges take half a node.
+/// docs/09 "Shape": 4 for a node, 8 for a card, 0 for a table row. Badges take half a node.
 public enum Radius {
     public static let node: CGFloat = 4
     public static let card: CGFloat = 8
     public static let badge: CGFloat = 2
 }
 
-/// docs/09 "접근성": whatever it draws, nothing you can tap is smaller than this. A small glyph —
+/// docs/09 "Accessibility": whatever it draws, nothing you can tap is smaller than this. A small glyph —
 /// the connector's `+`, a square switch — keeps its size and grows a target around itself.
 public let minTouch: CGFloat = 44
 
-/// docs/09 "타이포": the scale is 12 / 14 / 16 / 20 / 28 / 44. Dynamic Type carries the user's own
+/// docs/09 "Typography": the scale is 12 / 14 / 16 / 20 / 28 / 44. Dynamic Type carries the user's own
 /// size on top of it (see [BlueprintFonts.scale]).
 public enum TypeSize {
     public static let small: CGFloat = 12
@@ -31,7 +31,7 @@ public enum TypeSize {
     public static let timer: CGFloat = 44
 }
 
-/// docs/09 "타이포": the UI is the platform sans (SF Pro — no font is bundled, so Korean keeps its
+/// docs/09 "Typography": the UI is the platform sans (SF Pro — no font is bundled, so Korean keeps its
 /// glyphs) and *data* is monospace (SF Mono, through `design: .monospaced`).
 ///
 /// [scale] is Dynamic Type, measured once at the root with `@ScaledMetric` and handed down: a
@@ -66,7 +66,7 @@ public struct BlueprintFonts: Equatable, Sendable {
     public var headline: Font { sans(TypeSize.headline) }
 }
 
-/// docs/09 "모션": motion is a state signal, never decoration. One easing, one duration for a normal
+/// docs/09 "Motion": motion is a state signal, never decoration. One easing, one duration for a normal
 /// transition, a shorter one for a badge, and a deliberate window for the rare high-risk action —
 /// start/stop, upload, sign-in, save — so the user sees that something happened.
 public enum Motion {

@@ -79,7 +79,7 @@ pub struct Stream {
 
 impl Stream {
     /// Opens the default endpoint of [flow] and negotiates its format, without starting it — see
-    /// [`Self::start`]. [loopback] captures what the endpoint is rendering (docs/14 "시스템"), and
+    /// [`Self::start`]. [loopback] captures what the endpoint is rendering (docs/14 "System"), and
     /// turns the event callback off with it: a render endpoint that is playing nothing signals no
     /// event, so the caller polls and fills the silence itself.
     pub fn open(flow: EDataFlow, loopback: bool, buffer_hns: i64) -> io::Result<Self> {

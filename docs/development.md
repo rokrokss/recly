@@ -91,21 +91,25 @@ release bundles are unsigned and Play refuses them. After the first upload, Play
 App signing shows the *app signing key's* SHA-1: register an Android OAuth client with it in the
 GCP project, next to the debug one, or sign-in fails in every Play-installed build.
 
-`make android-release-apk`는 같은 업로드 키로 서명한 휴대전화·Wear OS 설치용 APK를
-`android/*/build/outputs/apk/release/`에 만든다. Play 설치본의 앱 서명 키와는 다를 수 있다.
+`make android-release-apk` builds installable phone and Wear OS APKs signed with the same upload
+key into `android/*/build/outputs/apk/release/`. They may differ from the app signing key of
+Play-installed builds.
 
-배포 파일은 macOS의 경우 `make mac-release`로 Developer ID 서명·공증한
-`apple/build/dist/Recly-<version>-<build>.dmg`를 만든다. 기존 iOS 아카이브와 DMG는 보존한다.
-Windows MSI는 Windows 호스트의 `make windows-msi` 또는
-`.github/workflows/windows-release.yml`로 만든다. 수동 실행은 기본적으로 MSI와 두 skill ZIP을
-30일 보관하는 Actions artifact만 생성한다. `v*` 태그 push 또는 `publish_release=true`를
-명시한 수동 실행만 GitHub 릴리스에 공개한다. Windows OAuth 설정은 저장소 Actions secrets의
-`REC_GOOGLE_DESKTOP_CLIENT_ID`와 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`에서 받으며,
-누락되면 패키징을 중단한다. 자세한 내용은 [`windows/README.md`](../windows/README.md)를 참고한다.
+For macOS, `make mac-release` builds the distribution file
+`apple/build/dist/Recly-<version>-<build>.dmg`, signed with Developer ID and notarized. Existing
+iOS archives and DMGs are kept. The Windows MSI is built with `make windows-msi` on a Windows host
+or with `.github/workflows/windows-release.yml`. A manual run by default only produces an Actions
+artifact that keeps the MSI and the two skill ZIPs for 30 days. Only a `v*` tag push or a manual
+run with `publish_release=true` set explicitly publishes to a GitHub release. The Windows OAuth
+settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
+`REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. See
+[`windows/README.md`](../windows/README.md) for details.
 
-현재 배포의 표시 버전은 모든 플랫폼에서 `0.1.3`이다. Apple 앱·내장 Watch·위젯의 빌드는 `33`,
-Android는 `38`, Wear OS는 `1,000,038`이다. Windows MSI의 설치 버전은 표시 버전과 따로 세 번째 필드를
-계속 올려 `0.1.32`이다 — `0.1.0` 동안 `0.1.29`까지 올렸으므로, 그보다 작은 `0.1.3`으로는 업그레이드가 되지 않는다.
+The display version of the current release is `0.1.3` on every platform. The build is `33` for the
+Apple apps, the embedded Watch app and the widgets, `38` for Android and `1,000,038` for Wear OS.
+The Windows MSI install version is separate from the display version and keeps raising the third
+field: it is `0.1.32` — it was raised up to `0.1.29` during `0.1.0`, so the lower `0.1.3` would not
+upgrade.
 
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.
@@ -128,16 +132,16 @@ the four values — each app's issued ID and its **reversed client ID**
 (`com.googleusercontent.apps.{number}-{hash}`). Both `Info.plist` files read them as build
 settings, so nothing you fill in shows up in the tracked tree. The consent screen must carry
 exactly one scope:
-`drive.file` ([recly.md §6](recly.md#6-인증-구-docs06)).
+`drive.file` ([recly.md §6](recly.md#6-authentication-formerly-docs06)).
 
-### iCloud 켜기
+### Turning on iCloud
 
-체크아웃에서는 iCloud가 꺼져 있다. `apple/Config/Recly.xcconfig`의 `RECLY_ICLOUD_CONTAINER`가 비어 있으면 앱은 저장 위치로 iCloud를 제안하지 않는다([recly.md §3 "저장 위치"](recly.md#저장-위치-adr-024)). 켜는 순서는 다음과 같다.
+iCloud is off in a checkout. While `RECLY_ICLOUD_CONTAINER` in `apple/Config/Recly.xcconfig` is empty, the app does not offer iCloud as a storage location ([recly.md §3 "Storage location"](recly.md#storage-location-adr-024)). To turn it on:
 
-1. Apple Developer의 Certificates, Identifiers & Profiles → Identifiers → iCloud Containers에서 `iCloud.app.recly`를 팀에 등록한다.
-2. App ID `app.recly`와 `app.recly.mac`에 iCloud 기능을 켜고, 호환성은 **Include CloudKit support**를 고른 뒤 Edit에서 그 컨테이너를 지정한다. "Compatible with Xcode 5"로 켜면 프로필에 `팀ID.*` 형태의 옛 컨테이너만 들어가고 `iCloud.app.recly`는 빠진다(2026-10-02 실제 프로필로 확인). Mac 앱은 지금까지 Developer ID 서명만 해서 `app.recly.mac` App ID가 없을 수 있다. 없으면 Identifiers → App IDs에서 먼저 등록한다.
-3. Profiles → Distribution → **Developer ID**로 `app.recly.mac`의 프로필을 만들고 설치한다. 프로필의 Entitlements에 `com.apple.developer.icloud-container-identifiers`가 `iCloud.app.recly`로 들어 있어야 한다(`security cms -D -i <파일>`로 확인).
-4. `apple/Config/Local.xcconfig`에 아래 값을 넣는다. `Local.xcconfig.example` 끝의 주석 줄과 같다.
+1. In Apple Developer, Certificates, Identifiers & Profiles → Identifiers → iCloud Containers, register `iCloud.app.recly` for the team.
+2. Turn on the iCloud capability for the App IDs `app.recly` and `app.recly.mac`, choose **Include CloudKit support** for compatibility, then assign that container under Edit. Turning it on with "Compatible with Xcode 5" puts only the old `TeamID.*`-style container in the profile and leaves out `iCloud.app.recly` (confirmed with an actual profile on 2026-10-02). The Mac app has so far only been signed with Developer ID, so the `app.recly.mac` App ID may not exist. If it does not, register it first under Identifiers → App IDs.
+3. Under Profiles → Distribution → **Developer ID**, create a profile for `app.recly.mac` and install it. The profile's Entitlements must contain `com.apple.developer.icloud-container-identifiers` set to `iCloud.app.recly` (check with `security cms -D -i <file>`).
+4. Put the values below in `apple/Config/Local.xcconfig`. They are the same as the comment lines at the end of `Local.xcconfig.example`.
 
 ```
 RECLY_ICLOUD_CONTAINER = iCloud.app.recly
@@ -146,25 +150,27 @@ RECLY_MAC_ENTITLEMENTS[config=Release] = RecMac/RecMac-iCloud.entitlements
 RECLY_MAC_PROFILE[config=Release] = Recly Mac Developer ID
 ```
 
-iPhone 아카이브(`make ios-archive`, 자동 서명)는 `RECLY_PHONE_ENTITLEMENTS`에서 엔타이틀먼트를 가져온다. Mac Release 빌드에는 그 컨테이너를 포함한 `app.recly.mac`용 **Developer ID 프로비저닝 프로필**이 필요하다. 마지막 줄의 `Recly Mac Developer ID`가 그 프로필 이름이며, 이름이 다르면 그 줄을 고친다. iCloud는 제한된 엔타이틀먼트라 프로필 없이 이를 가진 Mac 앱은 실행하자마자 종료된다. 그래서 `apple/scripts/release-mac.sh`(`make mac-release`)는 프로필이 들어 있지 않은 iCloud 빌드를 거부하고, iCloud 빌드에는 팀(`Local.xcconfig`의 `RECLY_DEVELOPMENT_TEAM` 또는 `RECLY_TEAM_ID`)도 요구한다. Debug Mac 빌드(로컬 "Recly Local Development" 인증서)에는 iCloud가 들어가지 않고, 설정에도 iCloud가 나오지 않는다(`RECLY_MAC_ICLOUD_CONTAINER`).
+The iPhone archive (`make ios-archive`, automatic signing) takes its entitlements from `RECLY_PHONE_ENTITLEMENTS`. A Mac Release build needs a **Developer ID provisioning profile** for `app.recly.mac` that includes that container. `Recly Mac Developer ID` on the last line is that profile's name; if your name differs, change that line. iCloud is a restricted entitlement, so a Mac app that has it without a profile quits as soon as it launches. That is why `apple/scripts/release-mac.sh` (`make mac-release`) refuses an iCloud build that does not contain the profile, and also requires a team for an iCloud build (`RECLY_DEVELOPMENT_TEAM` or `RECLY_TEAM_ID` in `Local.xcconfig`). A Debug Mac build (the local "Recly Local Development" certificate) does not include iCloud, and iCloud does not appear in its settings either (`RECLY_MAC_ICLOUD_CONTAINER`).
 
-`Info.plist`의 `NSUbiquitousContainers`를 바꾸면 `CFBundleVersion`을 올린다. 시스템은 새 빌드에서만 그 값을 다시 읽는다. 동기화 확인에는 같은 Apple ID로 로그인한 실기기 두 대가 필요하다. 2026-10-02 현재 실기기에서는 확인하지 않았다.
+When you change `NSUbiquitousContainers` in `Info.plist`, raise `CFBundleVersion`. The system rereads that value only for a new build. Checking sync needs two physical devices signed in with the same Apple ID. As of 2026-10-02 it has not been checked on physical devices.
 
-### iOS 심사 빌드의 Google 로그인 검사
+### Google sign-in check for iOS review builds
 
-`make ios-archive`는 현재 코어를 다시 빌드한 뒤, 컴파일된 아카이브의 `GIDClientID`와 Google 콜백 URL 스킴을 검사한다. 미설정·플레이스홀더·스킴 불일치면 export/upload 전에 중단한다. `make ios-release-test`는 실제 계정 없이 아카이브 fixture로 이 검사를 검증한다. 이 정적 검사는 OAuth 콘솔의 게시 상태·번들 ID 등록·실제 기기의 로그인 성공까지 보장하지 않는다.
+`make ios-archive` rebuilds the current core, then checks the `GIDClientID` and the Google callback URL scheme in the compiled archive. If either is unset or a placeholder, or the scheme does not match, it stops before export/upload. `make ios-release-test` verifies this check against an archive fixture, without a real account. This static check does not guarantee the OAuth console's publishing status, the bundle ID registration or a successful sign-in on a physical device.
 
-### Apple 정적 코어 패키징과 dSYM
+### Apple static core packaging and dSYMs
 
-`ReclyCore`는 정적 XCFramework이며 자체 리소스를 포함하지 않는다. iPhone·Watch·Mac 프로젝트의
-`PACKAGE_SKIP_AUTO_EMBEDDING_STATIC_BINARY_FRAMEWORKS = YES`는 Swift Package가 이를 앱에
-별도 프레임워크로 복사하지 않도록 한다. 이 설정이 없으면 Xcode가 빈 동적 바이너리를 만들고,
-업로드 시 해당 UUID의 dSYM 누락 경고가 발생한다. 실제 코어 심볼은 각 앱의 dSYM에 들어간다.
-설정 동작은 [Apple의 Swift Build 구현](https://github.com/swiftlang/swift-build/blob/main/Sources/SWBTaskConstruction/TaskProducers/BuildPhaseTaskProducers/SwiftPackageCopyFilesTaskProducer.swift)을 따른다.
+`ReclyCore` is a static XCFramework and contains no resources of its own.
+`PACKAGE_SKIP_AUTO_EMBEDDING_STATIC_BINARY_FRAMEWORKS = YES` in the iPhone, Watch and Mac projects
+keeps the Swift Package from copying it into the app as a separate framework. Without this setting,
+Xcode creates an empty dynamic binary, and the upload warns that the dSYM for its UUID is missing.
+The actual core symbols go into each app's dSYM. The setting behaves as in
+[Apple's Swift Build implementation](https://github.com/swiftlang/swift-build/blob/main/Sources/SWBTaskConstruction/TaskProducers/BuildPhaseTaskProducers/SwiftPackageCopyFilesTaskProducer.swift).
 
-`make ios-archive`·`make ios-upload`·`make mac-release`는 `validate-apple-package.py`로
-불필요한 `ReclyCore.framework`가 없는지, 각 앱의 개인정보 매니페스트가 유지되는지,
-실행 파일의 모든 아키텍처 UUID에 맞는 dSYM과 공유 코어 함수 심볼이 있는지를 검사한다.
-실패하면 export/upload 또는 DMG 생성 전에 중단한다. 이 검사는 크래시의 정확한 소스 행이나
-실제 기기 동작까지 보장하지 않는다. `make ios-release-test`는 패키징 검사 fixture도 실행한다.
-향후 정적 바이너리 의존성에 리소스를 추가하면 별도 번들로 보존하거나 임베딩 정책을 재검토해야 한다.
+`make ios-archive`, `make ios-upload` and `make mac-release` use `validate-apple-package.py` to check
+that there is no unneeded `ReclyCore.framework`, that each app's privacy manifest is kept, and that
+there are dSYMs matching every architecture UUID of the executable along with the shared core
+function symbols. On failure they stop before export/upload or DMG creation. This check does not
+guarantee exact source lines for crashes or the behavior on a physical device. `make ios-release-test`
+also runs the packaging check fixtures. If resources are added to a static binary dependency in the
+future, they must be kept in a separate bundle or the embedding policy must be revisited.

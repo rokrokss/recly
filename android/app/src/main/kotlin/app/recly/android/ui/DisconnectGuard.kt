@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import recly.core.DisconnectResult
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": the warning is not a yes/no, it is a few facts and a separate
+ * docs/03 "Sign out vs Disconnect": the warning is not a yes/no, it is a few facts and a separate
  * question. [unuploaded] is one of them — how many recordings have never reached Drive and
  * would be left on this phone (principle 3: an original is not deleted by a decision about an
  * account). [recording] is what the dialog cannot let past, see [canConfirm].
@@ -47,7 +47,7 @@ data class DisconnectPrompt(
 }
 
 /**
- * docs/03 "연결 해제" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
+ * docs/03 "Disconnect" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
  * not the moment [DisconnectPrompt] was built. A dialog is on screen for as long as the user leaves
  * it there, and a retry may be a whole launch later — so the two things that could make a
  * disconnect do the wrong thing are decided here and asked again by the ViewModel that is about to
@@ -254,7 +254,7 @@ object DisconnectGuard {
 }
 
 /**
- * docs/03 "연결 해제" · docs/06: how far the last disconnect got. It is persisted because the retry
+ * docs/03 "Disconnect" · docs/06: how far the last disconnect got. It is persisted because the retry
  * may be a whole launch later — the account is already cleared by then, so this is the only thing
  * that keeps the Disconnect row on screen and keeps a second account out of the slot until the
  * disconnect has finished both of its halves.

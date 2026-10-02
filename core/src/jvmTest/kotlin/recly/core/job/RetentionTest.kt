@@ -91,7 +91,7 @@ class RetentionTest {
         recording.meta.parts.forEach { assertFalse(f.fs.exists(recording.dir / it.file)) }
     }
 
-    /** docs/03 "로컬 저장": a FAILED job's parts are what `retry()` has left to work with. */
+    /** docs/03 "Local storage": a FAILED job's parts are what `retry()` has left to work with. */
     @Test
     fun `a failed job keeps its parts however old they are`() = runBlocking {
         val failing = ScriptedRunner("drive.upload") { _, _ ->

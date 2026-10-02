@@ -14,7 +14,7 @@ import recly.core.storage.StorageUnavailableException
 /**
  * Network publication only. The durable transcript remains readable when Drive is unavailable. An
  * iCloud folder that cannot be reached from this device right now is waited for, not failed
- * (docs/03 "저장 위치").
+ * (docs/03 "Storage location").
  */
 class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
     override val type = "transcript.publish"

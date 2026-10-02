@@ -13,7 +13,7 @@
 
 use serde::{Deserialize, Serialize};
 
-/// docs/03 "트랙". `mono` is the mobile shape; a desktop recording is `mic`/`sys`/`mix`.
+/// docs/03 "Tracks". `mono` is the mobile shape; a desktop recording is `mic`/`sys`/`mix`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Track {
@@ -45,13 +45,13 @@ impl Track {
 pub enum Command {
     Start {
         dir: String,
-        /// docs/03 "이름 규칙". The app owns the names; the helper writes what it was told.
+        /// docs/03 "Naming rules". The app owns the names; the helper writes what it was told.
         base: String,
         segment_sec: u32,
         tracks: Vec<Track>,
     },
     Stop,
-    /// docs/14 "감지": mic-in-use monitoring, on or off.
+    /// docs/14 "Detection": mic-in-use monitoring, on or off.
     Detect { on: bool },
 }
 
@@ -73,7 +73,7 @@ pub enum Event {
         app: String,
         in_use: bool,
     },
-    /// docs/09 화면 원칙 6: the peak of every tenth of a second the write path finished since the
+    /// docs/09 screen principle 6: the peak of every tenth of a second the write path finished since the
     /// last one, oldest first — what the app's strip draws while a recording runs. A line ten times
     /// a second, so it carries nothing but the numbers and they are rounded ([`Event::level`]).
     Level {

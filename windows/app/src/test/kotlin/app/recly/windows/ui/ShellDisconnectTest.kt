@@ -13,7 +13,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/03 "연결 해제" · docs/06, the two shell rules a disconnect keeps outside the guard itself: the
+ * docs/03 "Disconnect" · docs/06, the two shell rules a disconnect keeps outside the guard itself: the
  * account slot belongs to it until it has finished, and a store that would not take a write is said
  * rather than dropped. The phone's `MainViewModel` and the Mac's `MenuModel` keep both.
  *

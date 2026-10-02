@@ -1,5 +1,4 @@
-//! The system stream put on the microphone's timeline — the Windows half of docs/12 "캡처
-//! 파이프라인", ported frame for frame from `apple/RecKit/Sources/RecKit/MacCapture/DriftCompensator.swift`.
+//! The system stream put on the microphone's timeline — the Windows half of docs/12 "Capture pipeline", ported frame for frame from `apple/RecKit/Sources/RecKit/MacCapture/DriftCompensator.swift`.
 //!
 //! The microphone is the clock. It has to be: the recording's length, its segment boundaries and
 //! its part offsets are all counted in microphone frames, and a second stream that decided any of
@@ -12,7 +11,7 @@ use super::SAMPLE_RATE_HZ;
 
 /// The rate estimate, as arithmetic: no audio, no resampler, no device. Both streams say how many
 /// frames they have produced *on the 16 kHz timeline*, the monotonic clock says how long that took,
-/// and the ratio between the two rates is the drift (docs/12 "누적 프레임 수 vs 벽시계").
+/// and the ratio between the two rates is the drift (docs/12 "cumulative frame count vs wall clock").
 ///
 /// It is a separate type from [`DriftCompensator`] so the lane's claim — an hour of a synthetic
 /// rate difference ends under 20 ms apart — can be checked as a calculation rather than as a
@@ -242,7 +241,7 @@ impl DriftCompensator {
         self.estimator.observe(mic_frames, self.produced_frames, at_sec);
     }
 
-    /// The loopback stream was away for [outage_sec] and is back (docs/12 "tap 재생성"). The frames
+    /// The loopback stream was away for [outage_sec] and is back (docs/12 "Tap re-creation"). The frames
     /// it did not deliver are missing, not slow.
     pub fn reanchor(&mut self, mic_frames: f64, at_sec: f64, outage_sec: f64) {
         self.estimator

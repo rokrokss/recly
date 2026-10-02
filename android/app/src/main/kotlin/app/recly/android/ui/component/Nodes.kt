@@ -32,7 +32,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 
-/** One node of the recording dashboard: a label and the value under it (docs/09 화면 원칙 1). */
+/** One node of the recording dashboard: a label and the value under it (docs/09 screen principle 1). */
 data class NodeSpec(
     val label: String,
     val value: String,
@@ -42,7 +42,7 @@ data class NodeSpec(
     val active: Boolean = true,
     /** Work is running behind the value, and the node turns a loader beside it to say so. */
     val busy: Boolean = false,
-    /** Set only on the one node that takes a tap — the transcription node (docs/09 화면 원칙 1). */
+    /** Set only on the one node that takes a tap — the transcription node (docs/09 screen principle 1). */
     val onClick: (() -> Unit)? = null,
     /** What tapping it does, said in words, because the node itself is a label and a value. */
     val onClickLabel: String? = null,
@@ -61,7 +61,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             )
             .background(palette.surface, RoundedCornerShape(Radius.node))
             .then(
-                // docs/09 화면 원칙 1: only the node that is a choice takes a tap. The other two are
+                // docs/09 screen principle 1: only the node that is a choice takes a tap. The other two are
                 // readouts, and a readout with a click on it is a control a screen reader announces
                 // and a user cannot use.
                 if (spec.onClick != null) {
@@ -74,7 +74,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
                     Modifier
                 },
             )
-            // docs/09 "간격": the same 8dp as the vertical, which is what a 320dp phone has to
+            // docs/09 "Spacing": the same 8dp as the vertical, which is what a 320dp phone has to
             // spare — a third of that row is nine characters of `UPLOADING` and little else.
             .padding(Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.xs),
@@ -94,7 +94,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             val value = mono.bodySmall
             // RecKit's `minimumScaleFactor(0.7)`, which is what a node this narrow needs: a third of
             // a 360dp row, less the loader, is not nine characters of `UPLOADING` at full size, and
-            // a state code truncated to `UPLOAD…` is the one thing docs/09 화면 원칙 1 keeps when it
+            // a state code truncated to `UPLOAD…` is the one thing docs/09 screen principle 1 keeps when it
             // takes everything else away. Smaller, then, rather than shorter.
             BasicText(
                 spec.value,
@@ -135,7 +135,7 @@ fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
     }
 }
 
-/** docs/09 "타이포": the timer is the one piece of data big enough to be the screen. */
+/** docs/09 "Typography": the timer is the one piece of data big enough to be the screen. */
 @Composable
 fun MonoTimer(text: String, modifier: Modifier = Modifier, color: Color? = null) {
     Text(

@@ -8,7 +8,7 @@ import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
 
 /**
- * docs/09 "타이포": the UI is the platform sans (Roboto here — no font is bundled, so Korean keeps
+ * docs/09 "Typography": the UI is the platform sans (Roboto here — no font is bundled, so Korean keeps
  * its glyphs), and *data* is monospace. The scale is 12 / 14 / 16 / 20 / 28 / 44, interpolated with
  * the window width rather than snapped at a breakpoint; `sp` keeps the user's own font size on top
  * of that.
@@ -23,7 +23,7 @@ object Type {
 }
 
 /**
- * docs/09 "유동 타이포". A continuous ramp from the narrowest phone to a tablet-width window: 1.0 at
+ * docs/09 "Fluid typography". A continuous ramp from the narrowest phone to a tablet-width window: 1.0 at
  * 360dp and below, 1.15 at 600dp and above, straight-line in between. Pure so the ramp can be
  * checked without a window.
  */
@@ -38,7 +38,7 @@ private const val WIDE_FACTOR = 1.15f
 
 /**
  * The monospace styles, which Material has no slot for: timers, part numbers, byte counts, hashes,
- * status codes and device ids all come from here (docs/09 "Raw 미학").
+ * status codes and device ids all come from here (docs/09 "Raw aesthetics").
  */
 data class MonoType(
     val small: TextStyle,

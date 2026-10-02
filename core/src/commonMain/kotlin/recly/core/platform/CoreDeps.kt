@@ -6,7 +6,7 @@ import okio.Path
 import recly.core.drive.KtorTransport
 import recly.core.transcribe.TranscriptionPolicy
 
-/** Everything the shell owns and the core needs (docs/01 "코어 ↔ 셸 경계"). */
+/** Everything the shell owns and the core needs (docs/01 "core ↔ shell boundary"). */
 class CoreDeps(
     val clock: Clock,
     val logger: Logger,
@@ -33,7 +33,7 @@ class CoreDeps(
     val transcriptionPolicy: TranscriptionPolicy = TranscriptionPolicy(),
     val localTranscription: recly.core.transcribe.LocalTranscriptionEngine = recly.core.transcribe.UnavailableLocalTranscriptionEngine(),
     /**
-     * docs/03 "저장 위치": the app's iCloud Drive container. Only the iPhone and Mac shells have one
+     * docs/03 "Storage location": the app's iCloud Drive container. Only the iPhone and Mac shells have one
      * (ADR-024); everywhere else this is null and iCloud is not offered.
      */
     val ubiquity: recly.core.storage.UbiquityContainer? = null,

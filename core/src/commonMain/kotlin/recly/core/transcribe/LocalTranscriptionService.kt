@@ -46,7 +46,7 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
 
     /**
      * Whether the engine last said it is holding back for heat (`WAITING`) — the one wait a user
-     * cannot guess, so the rows say it instead of a bare "pending" (docs/05 "고정 처리 설정 도입").
+     * cannot guess, so the rows say it instead of a bare "pending" (docs/05 "Fixed processing settings").
      * Every reading of the engine sets it, so it clears on the next pass once the device has cooled.
      */
     @Volatile

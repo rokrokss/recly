@@ -19,7 +19,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import recly.core.platform.Logger
 
-/** What [GoogleAuth.revokeAccess] managed — docs/03's "연결 해제", minus the core's own clean-up. */
+/** What [GoogleAuth.revokeAccess] managed — docs/03's "Disconnect", minus the core's own clean-up. */
 sealed interface RevokeResult {
     data object Revoked : RevokeResult
 
@@ -121,7 +121,7 @@ class GoogleAuth(
     }
 
     /**
-     * docs/03 "연결 해제" · docs/06: the half of a disconnect that is Google's — the grant this
+     * docs/03 "Disconnect" · docs/06: the half of a disconnect that is Google's — the grant this
      * project holds goes back, which is exactly what [signOut] deliberately does not do and what
      * the warning dialog told the user would happen to their other devices as well.
      *

@@ -1,4 +1,4 @@
-//! docs/14 "캡처 · 마이크": WASAPI shared-mode, event-driven capture of the default capture
+//! docs/14 "Capture · microphone": WASAPI shared-mode, event-driven capture of the default capture
 //! endpoint.
 //!
 //! The microphone is the recording's clock (docs/12), so this thread does the least it can: wait for

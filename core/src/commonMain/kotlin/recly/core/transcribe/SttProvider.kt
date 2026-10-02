@@ -26,27 +26,27 @@ internal val providerJson = Json {
  * calls: [TranscribeRunner] knows about remuxing, polling and Drive, and nothing about vendors.
  *
  * v1 only uses APIs that either poll or answer synchronously — there is no server to receive a
- * callback (docs/08 "원칙").
+ * callback (docs/08 "Principles").
  */
 interface SttProvider {
     val name: String
 
     /**
      * True when [submit] waits on one long request for the transcript itself, which a phone's
-     * background budget may not cover (docs/08 "폴링 · 상태"); the editors warn on that.
+     * background budget may not cover (docs/08 "Polling · status"); the editors warn on that.
      */
     val synchronous: Boolean get() = false
 
     /**
      * How long a submission may stay unfinished before the runner drops the ref and re-submits
-     * (docs/08 "폴링 · 상태"). Two hours covers a provider that answers in minutes; one that
+     * (docs/08 "Polling · status"). Two hours covers a provider that answers in minutes; one that
      * documents a longer turnaround says so here, because giving up early pays for the same audio
      * twice.
      */
     val resultTimeout: Duration get() = 2.hours
 
     /**
-     * What this provider refuses outright, checked before the upload (docs/08 "길이·크기 한도").
+     * What this provider refuses outright, checked before the upload (docs/08 "Length · size limits").
      */
     val limits: SttLimits get() = SttLimits()
 
@@ -108,7 +108,7 @@ sealed interface PollResult {
     /**
      * The provider says this submission is finished and useless — its own `error`/`failed` state.
      * Reported as data rather than thrown because the ref is now worthless: only the runner knows
-     * that it has to be dropped so the retry submits the audio again (docs/08 "폴링 · 상태").
+     * that it has to be dropped so the retry submits the audio again (docs/08 "Polling · status").
      * A transport-level problem is *not* this: those are thrown, and keep the ref to poll again.
      */
     data class Failed(val reason: String) : PollResult
@@ -238,7 +238,7 @@ internal fun <P> resolveProvider(providers: (String) -> P?, name: String): P =
 
 /**
  * The key [secretRef] names, trimmed — a pasted key often carries a trailing newline. A ref this
- * device holds no value for is terminal: retrying cannot conjure it (docs/05 "시크릿").
+ * device holds no value for is terminal: retrying cannot conjure it (docs/05 "Secrets").
  */
 internal suspend fun apiKey(deps: CoreDeps, secretRef: String): String =
     deps.secureStore.get(SecureStore.SECRETS, secretRef)?.decodeToString()?.trim()

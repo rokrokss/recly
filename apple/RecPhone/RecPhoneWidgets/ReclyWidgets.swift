@@ -3,7 +3,7 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// docs/13 "표시"·I7: what Recly puts outside the app — the Live Activity a recording shows on the
+/// docs/13 "Display"·I7: what Recly puts outside the app — the Live Activity a recording shows on the
 /// Lock Screen and in the Dynamic Island, and the iOS 18 Control that starts one.
 ///
 /// The extension links no core and opens no audio session (docs/13: a widget extension may not
@@ -31,7 +31,7 @@ struct RecordingLiveActivityWidget: Widget {
                     Text("Recording")
                         .font(.system(.subheadline, weight: .semibold))
                 } icon: {
-                    // docs/09 "형태": a filled square, not a circle — the same mark the recording
+                    // docs/09 "Shape": a filled square, not a circle — the same mark the recording
                     // node on the phone's dashboard wears.
                     RoundedRectangle(cornerRadius: WidgetTokens.Radius.badge)
                         .fill(WidgetTokens.danger)
@@ -43,7 +43,7 @@ struct RecordingLiveActivityWidget: Widget {
                 stopButton
             }
             .padding()
-            // docs/09 "토큰": the palette's own page black rather than a translucent system one.
+            // docs/09 "Tokens": the palette's own page black rather than a translucent system one.
             .activityBackgroundTint(WidgetTokens.background.opacity(0.6))
             .environment(\.locale, context.state.appLocale)
             .environment(\.layoutDirection, context.state.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
@@ -79,7 +79,7 @@ struct RecordingLiveActivityWidget: Widget {
         }
     }
 
-    /// docs/09 "형태": the recording mark is a square, everywhere it appears.
+    /// docs/09 "Shape": the recording mark is a square, everywhere it appears.
     private var recordMark: some View {
         RoundedRectangle(cornerRadius: WidgetTokens.Radius.badge)
             .fill(WidgetTokens.danger)
@@ -92,7 +92,7 @@ struct RecordingLiveActivityWidget: Widget {
         Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
     }
 
-    /// docs/09 "형태": square and bordered, never a pill — the same button the phone draws.
+    /// docs/09 "Shape": square and bordered, never a pill — the same button the phone draws.
     private var stopButton: some View {
         Button(intent: StopRecordingIntent()) {
             Text("Stop")
@@ -104,7 +104,7 @@ struct RecordingLiveActivityWidget: Widget {
                     RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
                         .stroke(WidgetTokens.danger, lineWidth: 1)
                 }
-                // docs/09 "접근성": the label is small, what you tap is not. The border keeps its
+                // docs/09 "Accessibility": the label is small, what you tap is not. The border keeps its
                 // size and grows a 44×44 target around itself — this button is only drawn on the
                 // Lock Screen and in the expanded island, where there is room for one; the compact
                 // regions draw the mark and the timer and nothing tappable.
@@ -122,7 +122,7 @@ struct StartRecordingControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "app.recly.control.record") {
             ControlWidgetButton(action: StartRecordingIntent()) {
-                // docs/09 "형태": the recording mark is a square, everywhere it appears — a
+                // docs/09 "Shape": the recording mark is a square, everywhere it appears — a
                 // circle is the one shape this design does not draw.
                 Label("Start recording", systemImage: "smallcircle.filled.square")
             }

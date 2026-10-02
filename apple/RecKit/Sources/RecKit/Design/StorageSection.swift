@@ -7,7 +7,7 @@ import AppKit
 import UIKit
 #endif
 
-/// docs/03 "저장 위치" (ADR-024): where new recordings go — Google Drive, or the app's iCloud folder
+/// docs/03 "Storage location" (ADR-024): where new recordings go — Google Drive, or the app's iCloud folder
 /// on the iPhone and the Mac — and, when it is iCloud, whether this device can reach it.
 ///
 /// The choice is saved the moment it is made, as the theme is. A recording already started keeps the
@@ -109,7 +109,7 @@ public struct StorageSection: View {
                 }
                 if choice.selected == .icloud {
                     // Drive's row in shape, without a sign-in of its own: the system's Settings is
-                    // where iCloud is turned on, so the row says exactly where (docs/03 "저장 위치").
+                    // where iCloud is turned on, so the row says exactly where (docs/03 "Storage location").
                     if choice.icloud == .available {
                         SectionRow(title: loc("iCloud connected")) { EmptyView() }
                             .accessibilityIdentifier("icloud-status")

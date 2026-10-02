@@ -89,18 +89,18 @@ import app.recly.windows.ui.theme.mono
 import recly.core.transcribe.TranscriptAvailability
 
 /**
- * docs/08 "결과 파일": the recordings the popup lists, and what the `transcribe` step wrote for the
+ * docs/08 "Result files": the recordings the popup lists, and what the `transcribe` step wrote for the
  * one that is picked. Reading it is [ShellModel]'s — the local copy, or Drive when this PC did not
  * run the step.
  *
- * The shape is the editor's (docs/09 화면 원칙 4): a list down the side, the thing itself beside it.
+ * The shape is the editor's (docs/09 screen principle 4): a list down the side, the thing itself beside it.
  */
 @Composable
 fun RecordingsWindow(model: ShellModel, strings: Strings) {
     // One player for the window rather than for the detail: the pane keeps a single bar and the
     // model behind it is swapped per pick, and picking another row has to stop what is playing.
     val player = remember { RecordingPlayer(logger = { model.logger }) }
-    // docs/03 "다른 기기의 녹음": the list this window opened on is asked to catch up with the other
+    // docs/03 "Recordings from other devices": the list this window opened on is asked to catch up with the other
     // devices now rather than at the next job pass ([ShellModel.pullRemote]).
     LaunchedEffect(Unit) { model.pullRemote() }
     // Another recording picked, and — when the window closes — nothing left to look at: neither is
@@ -147,7 +147,7 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/12 "메뉴바": the same ledger the tray's popup draws, and the same paging —
+ * docs/12 "Menu bar": the same ledger the tray's popup draws, and the same paging —
  * [app.recly.windows.jobs.Recents.PAGE] rows a page, with the next one read when the last loaded row
  * is scrolled onto. Lazy for that reason: a scrolling `Column` composes every row whether or not it
  * was ever on screen, and the last one would ask for the next page the moment it arrived.
@@ -168,7 +168,7 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
         }
         if (model.recents.isEmpty()) {
             item {
-                // docs/09 화면 원칙 8: an empty list says so in the middle of the space the list would
+                // docs/09 screen principle 8: an empty list says so in the middle of the space the list would
                 // fill — a line, a muted line under it, and the one action a clear step below, centred.
                 Column(
                     Modifier.fillParentMaxSize().padding(Space.l),
@@ -208,7 +208,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         title = item.title.text(strings),
         selected = selected,
         onOpen = { model.openDetail(item) },
-        // docs/03 "앱에서 지우기": deleting a recording is not one of the things opening it should
+        // docs/03 "Deleting in the app": deleting a recording is not one of the things opening it should
         // be able to do by accident, which is why the button is out here. And never over one that
         // is being written to or uploaded ([RecentItem.deletable]).
         controls = {
@@ -237,7 +237,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             )
             StatusBadge(item.state.ledgerStatus(strings))
         }
-        // docs/08 "오류": what to do about it, and — for a key — where to do it. The popup's
+        // docs/08 "Errors": what to do about it, and — for a key — where to do it. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
         FailureReason(item, strings) { model.settingsOpen = true }
     }
@@ -265,7 +265,7 @@ private fun Detail(
     strings: Strings,
 ) {
     ScreenHeader(
-        // The title alone: the recording's id is not something the user reads (docs/09 화면 원칙 2).
+        // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
         title = detail.title.text(strings),
         // Not while the take is still being written to: the core refuses to rename a recording that
         // is still running, so offering it here would be offering nothing.
@@ -310,7 +310,7 @@ private fun Detail(
 }
 
 /**
- * docs/08 "결과 파일" · docs/09 화면 원칙 2: the recording itself, where this PC still has it. Its
+ * docs/08 "Result files" · docs/09 screen principle 2: the recording itself, where this PC still has it. Its
  * shape on top, with the playhead moving across it and a drag on it to move where the playhead is,
  * and the button and the recording's own clock under that. RecKit's
  * `RecordingDetailView.playerBar`, in the same words.
@@ -461,7 +461,7 @@ private fun PlayerBar(
 }
 
 /**
- * docs/09 "모션": the waveform row while the recording comes back from Drive, or while its parts are
+ * docs/09 "Motion": the waveform row while the recording comes back from Drive, or while its parts are
  * decoded into a shape, with no words — short ghost ticks where the bars will be, and a hard-edged
  * band of ten that steps across them left to right, one bar a frame at 30 fps. It does not rise and
  * fall or flow the way a playing or recording waveform does, and it leaves nothing filled behind it
@@ -553,12 +553,12 @@ private const val GROW_DECODED_MS = 300
 private const val GROW_SPREAD = 0.6f
 
 /**
- * docs/09 화면 원칙 2: the recording as a shape, and the one place on this page a second of it can
+ * docs/09 screen principle 2: the recording as a shape, and the one place on this page a second of it can
  * be pointed at. The whole row takes the pointer, so a click anywhere in it is a seek as much as a
  * drag across it is — and playback is not interrupted by either, because what a scrub is for is
  * hearing another part of the same take.
  *
- * docs/09 접근성: and the one place on it a second can be pointed at without a pointer. The row is
+ * docs/09 Accessibility: and the one place on it a second can be pointed at without a pointer. The row is
  * a focus stop that reports itself as the recording's position — the reading a screen reader gives
  * is the stamp the clock beside it shows, because that is what the playhead is — and the arrow keys
  * move it by [WaveformStepSec], which is the adjustable action RecKit's own bar has.
@@ -642,7 +642,7 @@ private fun Waveform(
         val step = WaveformStep.toPx()
         val line = hair.toPx()
         val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
-        // docs/09 "선": straight bars of one width on one gap, no caps and no gradient. Behind the
+        // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
         // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
         // 접근성 asks 3:1 of a graphic, and the muted token faded out to hint at "not played yet" is
         // under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
@@ -678,7 +678,7 @@ private fun Waveform(
 }
 
 /**
- * docs/09 화면 원칙 2 · "간격": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
+ * docs/09 screen principle 2 · "Spacing": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
  * bars there are is however many 3dp columns the row is wide — the shape is the recording's, and
  * the number of bars is the window's.
  */
@@ -688,7 +688,7 @@ private val WaveformStep: Dp = 3.dp
 /** A bin with no sound in it, so that silence is still part of the timeline. */
 private val WaveformMinBar: Dp = 1.dp
 
-/** docs/09 접근성: what one arrow key moves the playhead, for a scrub with no pointer. */
+/** docs/09 Accessibility: what one arrow key moves the playhead, for a scrub with no pointer. */
 private const val WaveformStepSec: Double = 5.0
 
 /**
@@ -710,7 +710,7 @@ internal fun TranscriptAvailability.message(): Str = when (this) {
 }
 
 /**
- * docs/09 "모션": the waveform row is the loader while the parts on show have no shape yet and none
+ * docs/09 "Motion": the waveform row is the loader while the parts on show have no shape yet and none
  * failed to decode — never a flat line, which reads as a silent recording. A decode that failed
  * leaves the baseline, which is then the truth: there is no shape to wait for.
  */

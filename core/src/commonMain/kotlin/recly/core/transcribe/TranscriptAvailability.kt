@@ -8,7 +8,7 @@ import recly.core.model.RecordingStatus
 import recly.core.model.Step
 import recly.core.recording.RecordingRecord
 
-/** docs/08 "결과 파일": absence has a reason even when there is no transcript to render. */
+/** docs/08 "Result files": absence has a reason even when there is no transcript to render. */
 internal fun missingTranscriptAvailability(
     record: RecordingRecord,
     jobs: List<Job>,

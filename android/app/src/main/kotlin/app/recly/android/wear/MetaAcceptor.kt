@@ -39,7 +39,7 @@ fun interface AckSender {
 }
 
 /**
- * docs/03 "워치 → 폰 전송 계약", the part of it that is a protocol rather than a file transfer: the
+ * docs/03 "Watch → phone transfer contract", the part of it that is a protocol rather than a file transfer: the
  * meta ends the transfer and starts the work, and `ack-meta ok:true` is the watch's licence to
  * delete its only copy of the audio. Two rules follow, and this class exists to keep both testable
  * off a device.

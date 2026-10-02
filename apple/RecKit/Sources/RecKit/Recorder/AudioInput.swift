@@ -111,7 +111,7 @@ final class MicrophoneInput: AudioInput {
     /// uncatchable `NSException` when the two disagree. Seen with AirPods, whose rate moves between
     /// 24 and 48 kHz as they leave and enter the call profile.
     private var engine = AVAudioEngine()
-    /// docs/12 "에코": off by default and only ever turned on by an explicit flag. Apple's voice
+    /// docs/12 "Echo": off by default and only ever turned on by an explicit flag. Apple's voice
     /// processing is tuned for telephony — it narrows the band and gates hard — so paying that for
     /// echo the user can avoid with headphones is the wrong default (M4-L3 deliverable 4).
     private let voiceProcessing: Bool
@@ -245,7 +245,7 @@ final class MicrophoneInput: AudioInput {
         #endif
     }
 
-    /// docs/12 "권한": `NSMicrophoneUsageDescription` is what makes the prompt possible; a refusal
+    /// docs/12 "Permissions": `NSMicrophoneUsageDescription` is what makes the prompt possible; a refusal
     /// is not an error the app can retry its way out of, so it comes back as its own kind and the
     /// shell answers it with the System Settings deep link.
     static func requireMicrophone() async throws {

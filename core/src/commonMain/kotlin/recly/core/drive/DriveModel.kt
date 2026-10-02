@@ -41,7 +41,7 @@ data class DriveFileMeta(
 /**
  * What we keep of a file in the user's storage: [md5] is the upload's success condition (docs/03).
  * [size] is filled where the reader needs it — an iCloud folder is complete once every part the
- * meta names is there at its size (docs/03 "저장 위치").
+ * meta names is there at its size (docs/03 "Storage location").
  */
 data class DriveFile(
     val id: String,

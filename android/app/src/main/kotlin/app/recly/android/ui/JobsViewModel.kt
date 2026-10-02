@@ -54,7 +54,7 @@ data class JobItem(
     val durationSec: Double?,
     val state: ItemState,
     /**
-     * docs/03 "다른 기기의 녹음": another device recorded this and uploaded it, and this one adopted
+     * docs/03 "Recordings from other devices": another device recorded this and uploaded it, and this one adopted
      * the folder from Drive. The row says nothing of it — it is a finished recording like any other
      * — but the delete dialog does: there is no local half to keep.
      */
@@ -62,7 +62,7 @@ data class JobItem(
     /** `step_run.last_error` of whatever step is holding the job up — a `CoreMessage` code. */
     val error: String?,
     /**
-     * How long the transcription has been in flight (docs/08 "폴링 · 상태"). Non-null only while a
+     * How long the transcription has been in flight (docs/08 "Polling · status"). Non-null only while a
      * `transcribe` step is waiting on a provider — a plain retry backoff has no submission behind
      * it and says something else.
      */
@@ -75,7 +75,7 @@ data class JobItem(
     val nextRunAt: Instant?,
     val localPending: Boolean = false,
     val localRunning: Boolean = false,
-    /** Held back for heat rather than queued (docs/05 "고정 처리 설정 도입"). */
+    /** Held back for heat rather than queued (docs/05 "Fixed processing settings"). */
     val localCooling: Boolean = false,
     /** The waiting local step's language while the job waits for the speech model — what its download is for. */
     val modelLanguage: String? = null,
@@ -85,13 +85,13 @@ enum class ItemState {
     /** The row is still open — the recorder is writing into it. */
     RECORDING,
 
-    /** docs/03 "워치 → 폰 전송 계약": the watch is handing this recording over to this phone now. */
+    /** docs/03 "Watch → phone transfer contract": the watch is handing this recording over to this phone now. */
     RECEIVING,
 
-    /** docs/03 "다른 기기의 녹음": another device is still uploading it — a pull's provisional row. */
+    /** docs/03 "Recordings from other devices": another device is still uploading it — a pull's provisional row. */
     REMOTE_UPLOADING,
 
-    /** docs/03 "다른 기기의 녹음": another device uploaded it and is transcribing it (the marker). */
+    /** docs/03 "Recordings from other devices": another device uploaded it and is transcribing it (the marker). */
     REMOTE_TRANSCRIBING,
 
     /** Finalized but nothing queued it: neither its own pick nor this device's default resolved. */
@@ -103,7 +103,7 @@ enum class ItemState {
     FAILED,
     NEEDS_AUTH,
 
-    /** docs/10 "Drive 용량 초과": parked, not retried, until the user frees space and asks again. */
+    /** docs/10 "Drive out of space": parked, not retried, until the user frees space and asks again. */
     NEEDS_SPACE,
     NEEDS_CONSENT,
 
@@ -113,7 +113,7 @@ enum class ItemState {
 }
 
 /**
- * docs/03 "앱에서 지우기": what the delete dialog has to know before it can ask. [unuploaded] is
+ * docs/03 "Deleting in the app": what the delete dialog has to know before it can ask. [unuploaded] is
  * how many parts are still only on this phone, which the dialog says first. [remote] is a recording
  * this device only adopted from Drive: there is no local half to keep, so there is no choice to
  * make either — it is carried here rather than read again in the dialog.
@@ -134,7 +134,7 @@ data class JobsUiState(
     val alerts: List<JobAlert> = emptyList(),
     /** Non-null while the docs/03 delete dialog is up. */
     val confirmDelete: DeleteRequest? = null,
-    /** docs/08 "결과 파일": the transcript of one recording, while it is being read. */
+    /** docs/08 "Result files": the transcript of one recording, while it is being read. */
     val detail: DetailState? = null,
     /** Where the row action the user last asked for is (docs/09), for the button that asked. */
     val action: ProcessingState = ProcessingState.IDLE,
@@ -157,10 +157,10 @@ data class DetailState(
     val loading: Boolean = true,
     val transcript: Transcript? = null,
     val availability: TranscriptAvailability = TranscriptAvailability.PENDING,
-    /** docs/08 "결과 파일": the audio beside the transcript, where this phone still has it. */
+    /** docs/08 "Result files": the audio beside the transcript, where this phone still has it. */
     val audio: RecordingPlaylist.Selection = RecordingPlaylist.Selection.EMPTY,
     /**
-     * docs/09 화면 원칙 2: the recording as a shape, one peak per
+     * docs/09 screen principle 2: the recording as a shape, one peak per
      * [recly.core.recording.WaveformPeaks.WINDOW_SEC] window of `meta.json`'s own timeline — empty
      * until the kept peaks are read or the decode is through, and empty for good if it could not be.
      */
@@ -218,7 +218,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch {
             val core = core()
-            // docs/03 "다른 기기의 녹음": a pull adopts and drops rows without touching a job, and
+            // docs/03 "Recordings from other devices": a pull adopts and drops rows without touching a job, and
             // `jobs.observe()` never fires for one of those — the recordings themselves have to be
             // watched as well.
             combine(
@@ -254,7 +254,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun cancelDownload() = ModelDownload.get(getApplication()).cancel()
 
     /**
-     * docs/03 "다른 기기의 녹음": the ledger is back on screen, so what the other devices have
+     * docs/03 "Recordings from other devices": the ledger is back on screen, so what the other devices have
      * uploaded since is asked for again — the job pass asks too, but on a throttle of its own.
      */
     fun refresh() = pullRemote()
@@ -370,7 +370,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * docs/08 "결과 파일": the local copy if the step ran here, and Drive's if it ran on another
+     * docs/08 "Result files": the local copy if the step ran here, and Drive's if it ran on another
      * device — the core decides which, and keeps what it downloads.
      */
     fun openDetail(item: JobItem) {
@@ -423,7 +423,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     /**
-     * docs/09 화면 원칙 2: the picture, last and inside the load rather than beside it. Last because
+     * docs/09 screen principle 2: the picture, last and inside the load rather than beside it. Last because
      * the trip to Drive is what settles which parts there are, and a decode of the local prefix
      * would be a picture of a different recording than the one that plays. Inside because this is
      * the job [closeDetail] and the next [openDetail] cancel: reading a whole recording for a bar
@@ -550,7 +550,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     /**
-     * docs/03 "제목": the detail screen's rename. Blank is not a title — it clears the name back to
+     * docs/03 "Titles": the detail screen's rename. Blank is not a title — it clears the name back to
      * the timestamp one, which is what the core reads a null as.
      *
      * The ledger row behind the page follows on its own (`recordings.observe()`); the open page's
@@ -594,7 +594,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             val job = byRecording[record.id]?.maxByOrNull { it.createdAt }
             val steps = job?.let { core.jobs.steps(it.id) }.orEmpty()
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
-            // it left behind say nothing about it (docs/10 "잡 스냅샷").
+            // it left behind say nothing about it (docs/10 "job snapshot").
             val error = job?.snapshotError ?: blockingError(steps)
             JobItem(
                 recordingId = record.id,
@@ -652,12 +652,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 }
 
 /**
- * docs/09 화면 원칙 2: which row state one recording is in. Outside the ViewModel because it is a
+ * docs/09 screen principle 2: which row state one recording is in. Outside the ViewModel because it is a
  * decision about a record and a job and nothing else — the same shape the other three shells make
  * it in, and one a JVM test can ask directly.
  */
 internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
-    // docs/03 "다른 기기의 녹음": the three things happening somewhere else come first. None of them
+    // docs/03 "Recordings from other devices": the three things happening somewhere else come first. None of them
     // is a job of this device's, and each would otherwise be read as one of this device's own
     // states — a recording coming in from the watch, and one another device is uploading, are both
     // `status = recording` and would show as `REC`.
@@ -669,7 +669,7 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
     record.meta.status == RecordingStatus.RECORDING -> ItemState.RECORDING
     // Before the job question, because a row adopted from Drive has no job here by definition —
     // "no workflow" would be a thing for the user to fix, and there is nothing to fix: another
-    // device already did the work, so this is a finished recording (docs/03 "다른 기기의 녹음").
+    // device already did the work, so this is a finished recording (docs/03 "Recordings from other devices").
     record.remote || (job == null && record.driveSynced) -> ItemState.DONE
     // Disconnect removes job history without changing the finalized recording.
     job == null -> ItemState.DONE

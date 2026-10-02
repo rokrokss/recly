@@ -2,7 +2,7 @@ import Foundation
 import os
 import UserNotifications
 
-/// docs/10 "사용자가 고칠 수 있는 실패와 그 알림" on Apple. Three rules, and they are the whole of it:
+/// docs/10 "Failures the user can fix, and their notices" on Apple. Three rules, and they are the whole of it:
 ///
 /// 1. **One notification per reason.** Five jobs blocked on the same thing are one notification
 ///    whose body counts them, not five notifications.

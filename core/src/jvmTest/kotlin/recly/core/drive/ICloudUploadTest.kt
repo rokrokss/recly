@@ -20,7 +20,7 @@ import recly.core.model.Step
 import recly.core.storage.StorageKind
 
 /**
- * docs/03 "저장 위치": `drive.upload` into the app's iCloud folder. The files are copied in and the
+ * docs/03 "Storage location": `drive.upload` into the app's iCloud folder. The files are copied in and the
  * step waits — spending nothing — until iCloud says it holds every one; an account out of space
  * parks it like a full Drive, and a device where iCloud cannot be used waits instead of failing.
  */

@@ -27,7 +27,7 @@ import okio.Path.Companion.toPath
  * A start that **throws** rather than one that is refused. The row and the directory are written
  * before the helper is asked for anything (`WindowsRecorder.start`), so a disk or database failure
  * there comes out of the coroutine `begin` launched — and everything that start raised before it
- * (docs/09 화면 원칙 1's `STARTING`, and ADR-006's playback gate) has to come back down anyway.
+ * (docs/09 screen principle 1's `STARTING`, and ADR-006's playback gate) has to come back down anyway.
  *
  * A shell that leaked either of them would spend the rest of the process saying it was opening a
  * capture that is not running, with the recordings window refusing to play anything.

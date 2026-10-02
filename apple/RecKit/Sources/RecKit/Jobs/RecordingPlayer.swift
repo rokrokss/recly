@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 import ReclyCore
 
-/// docs/08 "결과 파일": which of the files beside `meta.json` the detail plays back, and in what
+/// docs/08 "Result files": which of the files beside `meta.json` the detail plays back, and in what
 /// order. A pure choice over `meta`, so it can be checked without a disk or a player — the shell
 /// only hands it the recording's directory and a way to ask whether a file is there.
 public enum RecordingPlaylist {
@@ -181,7 +181,7 @@ public final class RecordingPlayer: ObservableObject {
         failed = false
     }
 
-    /// docs/09 화면 원칙 2: a drag on the waveform, or a step of the adjustable action behind it.
+    /// docs/09 screen principle 2: a drag on the waveform, or a step of the adjustable action behind it.
     /// The second is the *recording's*, so the first thing it is turned into is a part and an
     /// offset into it ([target]).
     ///
@@ -302,7 +302,7 @@ private final class Queue {
         observeFailures(items)
         // A frame's worth: the clock beside the bar only counts whole seconds, but the playhead on
         // the waveform is drawn at this position, and at four steps a second it jumps rather than
-        // moves (docs/09 "모션": what moves, moves).
+        // moves (docs/09 "Motion": what moves, moves).
         ticker = player.addPeriodicTimeObserver(
             forInterval: CMTime(seconds: RecordingPlayer.tickSec, preferredTimescale: 600),
             queue: .main

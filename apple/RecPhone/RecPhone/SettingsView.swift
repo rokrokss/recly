@@ -1,9 +1,9 @@
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 4: settings are a section table — account / language / theme / capture /
+/// docs/09 screen principle 4: settings are a section table — account / language / theme / capture /
 /// uploads / recording processing / privacy, and at the bottom the honest system block in monospace
-/// (docs/09 트렌드 6: version, build, device id, open-source notices). The phone has no
+/// (docs/09 trend 6: version, build, device id, open-source notices). The phone has no
 /// launch-at-login to offer (docs/12's `SMAppService` is a Mac's) and no automatic recording
 /// (ADR-011).
 struct SettingsView: View {
@@ -24,7 +24,7 @@ struct SettingsView: View {
                     // docs/07 rule 2·3: the same block the Mac's settings pane draws, so it is
                     // drawn once (RecKit).
                     LanguageSection(language: language)
-                    // docs/09 "접근성": the one override of the system's light/dark, and the same
+                    // docs/09 "Accessibility": the one override of the system's light/dark, and the same
                     // block the Mac's settings pane draws (RecKit).
                     ThemeSection(theme: theme)
                     microphone
@@ -52,7 +52,7 @@ struct SettingsView: View {
                 }
             }
         }
-        // docs/03 "로그아웃 vs 연결 해제": the four things that are true of a disconnect and are not
+        // docs/03 "Sign out vs Disconnect": the four things that are true of a disconnect and are not
         // true of a sign-out, before it happens rather than after.
         .blueprintDialog(item: $model.disconnectPrompt) { prompt in
             DisconnectDialog(
@@ -79,7 +79,7 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var account: some View {
-        // docs/03 "저장 위치": the storage choice on top of the Drive rows, where this build can offer
+        // docs/03 "Storage location": the storage choice on top of the Drive rows, where this build can offer
         // iCloud; the Drive block as it always was where it cannot.
         if let storage = model.storage {
             StorageSection(
@@ -166,7 +166,7 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - About (docs/09 트렌드 6)
+    // MARK: - About (docs/09 trend 6)
 
     /// No mascot and no "handmade" line: what the bottom of a settings screen owes the user is what
     /// this build actually is, in monospace, so it can be read out over a support thread.

@@ -1,7 +1,7 @@
 import XCTest
 @testable import RecKit
 
-/// docs/09 화면 원칙 6: the strip is a reading of the audio that is being written, so what it is
+/// docs/09 screen principle 6: the strip is a reading of the audio that is being written, so what it is
 /// made of has to be exactly that — one window per tenth of a second, the loudest sample in it, and
 /// nothing on screen that has not been recorded yet.
 final class LiveWaveformTests: XCTestCase {

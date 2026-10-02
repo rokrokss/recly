@@ -149,7 +149,7 @@ final class AlertRouterTests: XCTestCase {
         XCTAssertEqual(routed, [])
     }
 
-    /// docs/12 "미팅 감지": the same buffer, for the Mac's other notification. The regression:
+    /// docs/12 "Meeting detection": the same buffer, for the Mac's other notification. The regression:
     /// `MenuModel` wired `MeetingNotifier.onAction` in `load()`, so "Start recording" taken on an
     /// offer that woke the app reached a nil closure and was dropped — exactly the cold launch the
     /// offer is most likely to be opened from. It is wired in `init` now and waits here for the

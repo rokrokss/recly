@@ -50,7 +50,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
 /**
- * docs/09 "형태": one of a set of choices that is expected to grow — the app language, the provider,
+ * docs/09 "Shape": one of a set of choices that is expected to grow — the app language, the provider,
  * the spoken language. A row of chips says every option out loud, which is right for two or three
  * and wrong for twenty; this says the chosen one and keeps the rest one tap away, so the setting
  * stays one row however long the list gets. The PC's and the Apple shells' `BlueprintDropdown` are
@@ -62,7 +62,7 @@ import app.recly.android.ui.theme.blueprint
  *
  * Material's `ExposedDropdownMenuBox` is not used for the reasons [BlueprintDialog] is not an
  * `AlertDialog`: a border of a fixed 1dp that high contrast cannot thicken, and a menu that scales and
- * fades itself in — decorative motion docs/09 "모션" bans.
+ * fades itself in — decorative motion docs/09 "Motion" bans.
  *
  * @param label what the value is of — the row's own name, which is what a screen reader says first.
  * @param title the words for a value. The selected value is shown through it too, so a value the
@@ -84,7 +84,7 @@ fun <T> BlueprintDropdown(
     Box(modifier) {
         Row(
             modifier = Modifier
-                // docs/09 "접근성": the label is small, the target is not — in both directions.
+                // docs/09 "Accessibility": the label is small, the target is not — in both directions.
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
                 .border(palette.line, palette.grid, shape)
                 .clickable(role = Role.Button) { expanded = true }
@@ -127,7 +127,7 @@ fun <T> BlueprintDropdown(
 }
 
 /**
- * docs/09 "형태" · "모션": the open list, as a square bordered card on the grid — a plain [Popup] with
+ * docs/09 "Shape" · "Motion": the open list, as a square bordered card on the grid — a plain [Popup] with
  * the same edge and radius as every other node, and no entrance animation. It opens under the box and
  * end-aligned with it (the box sits at the end of its row), or above it when there is no room below;
  * a list taller than [MENU_MAX_HEIGHT] scrolls instead of running off the screen.
@@ -180,7 +180,7 @@ private fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // docs/09 "모든 상태는 색 + 텍스트": the chosen one is a mark as well as the accent, not a
+        // docs/09 "Every state is color + text": the chosen one is a mark as well as the accent, not a
         // colour a monochrome reader loses. Every line draws the mark, unseen where it is not chosen,
         // so the labels keep one left edge at any font size; the semantics already say which one.
         Text(
@@ -222,7 +222,7 @@ internal class MenuPosition(private val gap: Int, private val margin: Int = 0) :
 
 /**
  * The glyph on the closed dropdown. A character rather than an icon, so it sits in the value's own
- * line of text and grows with it (docs/09 "유동 타이포"), as it does on the PC and the Apple shells.
+ * line of text and grows with it (docs/09 "Fluid typography"), as it does on the PC and the Apple shells.
  */
 const val DROPDOWN_MARK: String = "▾"
 

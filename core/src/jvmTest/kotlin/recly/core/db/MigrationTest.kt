@@ -13,7 +13,7 @@ import kotlin.test.assertTrue
 import recly.core.platform.JvmRuntime
 
 /**
- * docs/10 "스키마 마이그레이션". The emulator found this the hard way: a database created before
+ * docs/10 "Schema migrations". The emulator found this the hard way: a database created before
  * `secret_sync` existed crashed at launch on `no such table`, because the schema had grown without
  * a version to hang a migration off.
  *
@@ -74,7 +74,7 @@ class MigrationTest {
 
     /**
      * The upgrade this release is: `recording.remote_pending`, what another device says it still
-     * has to do (docs/03 "다른 기기의 녹음"). Every row already here reads back with no marker, which
+     * has to do (docs/03 "Recordings from other devices"). Every row already here reads back with no marker, which
      * is what "nothing is pending" is — including the adopted one, whose column the next pull fills.
      */
     @Test
@@ -111,7 +111,7 @@ class MigrationTest {
     }
 
     /**
-     * The upgrade before it: the two Drive-id columns of docs/03 "다른 기기의 녹음". A row that
+     * The upgrade before it: the two Drive-id columns of docs/03 "Recordings from other devices". A row that
      * was already here — a recording this device made — has neither, and reads back as its own.
      */
     @Test

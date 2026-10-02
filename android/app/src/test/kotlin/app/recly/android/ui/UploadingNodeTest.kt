@@ -10,7 +10,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 /**
- * docs/09 화면 원칙 1: the recording screen's state node says `UPLOADING` while the recorder is idle
+ * docs/09 screen principle 1: the recording screen's state node says `UPLOADING` while the recorder is idle
  * and the ledger is running something. "Running" is the ledger's own `RUNNING` — a pass in flight —
  * and nothing else: a job that is merely waiting its turn is not work the user can see happening.
  *
@@ -50,7 +50,7 @@ class UploadingNodeTest {
     }
 
     /**
-     * docs/03 "워치 → 폰 전송 계약": a recording coming in from the watch is the other thing this
+     * docs/03 "Watch → phone transfer contract": a recording coming in from the watch is the other thing this
      * screen can be told is happening while the recorder is idle — and only a *local* transfer is.
      * What another device is doing is not this phone's node to show.
      */

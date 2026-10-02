@@ -9,7 +9,7 @@ import recly.core.job.Job
 import recly.core.job.JobStatus
 
 /**
- * When the queue has to be looked at again (docs/14 "실행기", the phone's `NextRun` and the Mac's
+ * When the queue has to be looked at again (docs/14 "Runner", the phone's `NextRun` and the Mac's
  * `NextRun` word for word). Pure on purpose: it is the one piece of the executor wiring with
  * arithmetic in it, and the one piece a test can pin down exactly.
  *

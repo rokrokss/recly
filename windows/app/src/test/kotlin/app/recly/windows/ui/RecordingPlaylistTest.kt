@@ -25,7 +25,7 @@ import recly.core.model.Part
 import recly.core.model.Track
 
 /**
- * docs/08 "결과 파일": what the detail plays back, chosen out of `meta.json` alone — the track a
+ * docs/08 "Result files": what the detail plays back, chosen out of `meta.json` alone — the track a
  * person means, its parts in order, and only the files this PC still has. The same rules RecKit's
  * `RecordingPlaylistTests` pins, so the two shells play the same thing.
  */
@@ -294,7 +294,7 @@ class RecordingPlaylistTest {
         )
     }
 
-    // --- Scrubbing (docs/09 화면 원칙 2) ------------------------------------------------------------
+    // --- Scrubbing (docs/09 screen principle 2) ------------------------------------------------------------
 
     /**
      * The inverse of the clock: a drag on the waveform gives a second of the *recording*, and what
@@ -535,7 +535,7 @@ class RecordingPlaylistTest {
     }
 
     /**
-     * The contract deleting a recording rests on (docs/03 "앱에서 지우기"): when [RecordingPlayer.stop]
+     * The contract deleting a recording rests on (docs/03 "Deleting in the app"): when [RecordingPlayer.stop]
      * returns, the decoder is not merely told to go but gone — no process, no thread, and the line
      * closed. Windows will not remove a file ffmpeg still has open, and the core deletes the rows
      * before the directory, so a stop that only asked would leave the audio behind a row that is
@@ -620,7 +620,7 @@ class RecordingPlaylistTest {
     }
 
     /**
-     * docs/03 "앱에서 지우기": a decoder that will not go inside the bound is not a stop, and the
+     * docs/03 "Deleting in the app": a decoder that will not go inside the bound is not a stop, and the
      * caller is told so rather than left to delete the rows out from under a live handle.
      */
     @Test
@@ -660,10 +660,10 @@ class RecordingPlaylistTest {
         return List(callers) { results.get(it) }
     }
 
-    // --- Scrubbing, on the player itself (docs/09 화면 원칙 2) --------------------------------------
+    // --- Scrubbing, on the player itself (docs/09 screen principle 2) --------------------------------------
 
     /**
-     * docs/09 화면 원칙 2: a scrub before anything has been played is where the next press starts,
+     * docs/09 screen principle 2: a scrub before anything has been played is where the next press starts,
      * rather than something to start playing on its own — so the decoder it eventually spawns is
      * the part the finger landed in, seeked to the offset inside it.
      */

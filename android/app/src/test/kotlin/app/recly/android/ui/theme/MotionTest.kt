@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "모션": the numbers behind `ProcessingButton`. The button itself is a shape; these two
+ * docs/09 "Motion": the numbers behind `ProcessingButton`. The button itself is a shape; these two
  * functions are the promise — a processing state nobody can miss, and a completion badge that does
  * not outstay the window.
  */
@@ -41,7 +41,7 @@ class MotionTest {
     }
 
     /**
-     * docs/09 "모션": `reduce motion` 시 "즉시 전환 + 텍스트 상태만" — the transition goes, the text
+     * docs/09 "Motion": `reduce motion` 시 "즉시 전환 + 텍스트 상태만" — the transition goes, the text
      * state stays. Both windows used to collapse to zero, which took away the only thing a user
      * with animations off had left to tell them the tap was heard.
      */
@@ -60,7 +60,7 @@ class MotionTest {
         assertFalse(systemReduceMotion(10f))
     }
 
-    /** docs/09 "유동 타이포": a continuous ramp, clamped at both ends. */
+    /** docs/09 "Fluid typography": a continuous ramp, clamped at both ends. */
     @Test
     fun `the type scale is fluid between 360dp and 600dp`() {
         assertEquals(1f, fluidScale(320f))

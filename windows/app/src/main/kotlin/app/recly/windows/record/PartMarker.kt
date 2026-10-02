@@ -6,7 +6,7 @@ import okio.Path
 import recly.core.model.Part
 
 /**
- * docs/03 "크래시 시 마지막 경계까지는 복구 가능": a part whose audio is on disk but whose row is
+ * docs/03 "after a crash, everything up to the last boundary is recoverable": a part whose audio is on disk but whose row is
  * not. The phone writes an empty `<file>.pending` beside the segment for the same reason; here the
  * marker carries the whole `part_done` the helper sent, because this shell cannot read an `.m4a`
  * back to work out what the marker would otherwise have to omit (duration, hash, offset).

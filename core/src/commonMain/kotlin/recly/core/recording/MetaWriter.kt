@@ -15,7 +15,7 @@ import recly.core.model.Track
 import recly.core.model.recJson
 import recly.core.model.wire
 
-/** File names and the on-disk `meta.json` (docs/03 "이름 규칙"). */
+/** File names and the on-disk `meta.json` (docs/03 "Naming rules"). */
 object MetaWriter {
     /** `{yyyyMMdd}T{HHmmss}Z_{source}_{first 8 of recordingId}` — always UTC, never a user string. */
     fun baseName(meta: RecordingMeta): String {

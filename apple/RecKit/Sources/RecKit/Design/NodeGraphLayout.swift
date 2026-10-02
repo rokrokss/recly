@@ -8,7 +8,7 @@ public struct NodeBox: Equatable, Sendable {
     public var end: CGFloat { start + extent }
 }
 
-/// The run after a node: a straight line with a square `+` on it (docs/09 화면 원칙 3 — "단계 추가는
+/// The run after a node: a straight line with a square `+` on it (docs/09 screen principle 3 — "단계 추가는
 /// 커넥터 위 +"). The two legs are `start..<plusStart` and `plusEnd..<end`.
 ///
 /// The `+` is drawn [plusSize] wide but is *touched* over [touchSize], centred on the same point:
@@ -36,7 +36,7 @@ public struct GraphLayout: Equatable, Sendable {
     public let extent: CGFloat
 }
 
-/// docs/09 화면 원칙 3: square nodes in one line, straight connectors, and an end terminal. Pure —
+/// docs/09 screen principle 3: square nodes in one line, straight connectors, and an end terminal. Pure —
 /// the SwiftUI `Layout` measures its subviews and hands the extents here, so the arithmetic can be
 /// checked without a window and the lines and the nodes are positioned by one source.
 ///

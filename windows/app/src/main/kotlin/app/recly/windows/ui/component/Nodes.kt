@@ -27,7 +27,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
-/** One node of the dashboard: a label and the value under it (docs/09 화면 원칙 1). */
+/** One node of the dashboard: a label and the value under it (docs/09 screen principle 1). */
 data class NodeSpec(
     val label: String,
     val value: String,
@@ -45,7 +45,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
     val palette = blueprint
     Column(
         modifier = modifier
-            // docs/09 "접근성": a label and its value are one fact, so a screen reader hears
+            // docs/09 "Accessibility": a label and its value are one fact, so a screen reader hears
             // "Workflow, 회의" rather than two unconnected runs of text.
             .semantics(mergeDescendants = true) {}
             .border(
@@ -100,12 +100,12 @@ fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
     }
 }
 
-/** docs/09 "타이포": the timer is the one piece of data big enough to be a screen of its own. */
+/** docs/09 "Typography": the timer is the one piece of data big enough to be a screen of its own. */
 @Composable
 fun MonoTimer(text: String, modifier: Modifier = Modifier, color: Color? = null) {
     Text(
         text = text,
-        // docs/09 "접근성": it changes every second while a recording runs, and a reader that is not
+        // docs/09 "Accessibility": it changes every second while a recording runs, and a reader that is not
         // told so hears the length the recording had when the window opened, for ever.
         modifier = modifier.semantics { liveRegion = LiveRegionMode.Polite },
         style = mono.timer,

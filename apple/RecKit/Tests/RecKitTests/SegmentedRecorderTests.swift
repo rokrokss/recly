@@ -422,7 +422,7 @@ final class SegmentedRecorderTests: XCTestCase {
 
     // MARK: - The live strip
 
-    /// docs/09 화면 원칙 6: the strip the shells draw while a recording runs is read off the frames
+    /// docs/09 screen principle 6: the strip the shells draw while a recording runs is read off the frames
     /// the writer took, so it says "this is being captured" about the file and not about a second
     /// tap on the microphone. And it belongs to the session: once the recording is filed there is
     /// nothing to draw, which is what lets a shell make "while recording" the whole condition.

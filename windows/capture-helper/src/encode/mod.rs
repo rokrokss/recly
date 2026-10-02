@@ -38,7 +38,7 @@ pub enum Kind {
     #[cfg(windows)]
     MediaFoundation,
     /// Raw little-endian 16-bit PCM under the `.m4a` name the app chose. Development and tests only
-    /// — the name is the app's (docs/03 "이름 규칙") and the helper does not get to change it.
+    /// — the name is the app's (docs/03 "Naming rules") and the helper does not get to change it.
     Pcm,
 }
 

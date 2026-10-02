@@ -45,7 +45,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
 /**
- * docs/09 화면 원칙 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
+ * docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
  * square-cornered node on the grid, not Material's tonal card. `AlertDialog` is a container with
  * its own shape, its own elevation tint and its own 28dp corners, and none of those are in docs/09
  * — so this is `Dialog` plus the same surface, 1dp border and 4dp radius as [StateNode].
@@ -205,7 +205,7 @@ fun BlueprintDialogText(text: String, modifier: Modifier = Modifier, tone: Dialo
 /**
  * One of several answers, as one accessibility node: the row is `selectable`, so what a screen
  * reader focuses is "<label>, radio button, selected" and not an unnamed mark beside a label
- * (docs/09 "접근성"). The row is [MinTouch] tall whatever the label does.
+ * (docs/09 "Accessibility"). The row is [MinTouch] tall whatever the label does.
  */
 @Composable
 fun BlueprintRadioRow(
@@ -249,7 +249,7 @@ private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () ->
 }
 
 /**
- * docs/09 "형태": no circles and no pills, so both marks are squares on the badge radius. A radio
+ * docs/09 "Shape": no circles and no pills, so both marks are squares on the badge radius. A radio
  * holds a smaller square inside its outline; a checkbox fills, because "on" is a state and "this
  * one of the two" is a position.
  *
@@ -282,8 +282,7 @@ fun selectionInk(palette: BlueprintColors, selected: Boolean): Color =
 
 /**
  * A link inside a dialog — the Drive permissions page, the consent guidance. Accent and underlined,
- * because a link that is only a colour is invisible to a colour-blind reader (docs/09 "모든 상태는
- * 색 + 텍스트"), and [MinTouch] tall because it is something you tap.
+ * because a link that is only a colour is invisible to a colour-blind reader (docs/09 "Every state is color + text"), and [MinTouch] tall because it is something you tap.
  */
 @Composable
 fun BlueprintDialogLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier) {

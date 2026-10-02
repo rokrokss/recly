@@ -1,6 +1,6 @@
 import Foundation
 
-/// docs/10 "탭하면 고칠 수 있는 화면으로 간다": a notification's tap, held until there is something to
+/// docs/10 "A tap goes to the screen that can fix it": a notification's tap, held until there is something to
 /// take it to.
 ///
 /// A notification is most often opened from a *cold* launch — the device was asleep, the offer is on

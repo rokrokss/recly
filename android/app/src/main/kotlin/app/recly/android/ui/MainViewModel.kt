@@ -190,7 +190,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
     }
 
     /**
-     * docs/10 "잡 상태 머신": `NEEDS_AUTH ──sign in──► PENDING`. A job parked for want of a token is
+     * docs/10 "Job state machine": `NEEDS_AUTH ──sign in──► PENDING`. A job parked for want of a token is
      * the one thing signing in is supposed to fix, and nothing else in the app would ever unpark it.
      */
     private suspend fun unparkNeedsAuth(graph: AppGraph) {
@@ -261,7 +261,7 @@ class MainViewModel(application: Application, savedState: SavedStateHandle) : An
     }
 
     /**
-     * docs/03 "연결 해제", both halves and in this order: the Google grant, which is what makes the
+     * docs/03 "Disconnect", both halves and in this order: the Google grant, which is what makes the
      * other devices lose access too, and then the core's local clean-up (tokens, the queue, the
      * folder cache). A revoke that failed does not cancel the local
      * half — the user asked for this device to be done with the account — but it is what the

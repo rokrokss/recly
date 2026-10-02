@@ -78,7 +78,7 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
     /**
      * Only work bound for Google Drive is checked here. An iCloud upload has no grant to verify — the
      * device's iCloud account is the account — and waits on its own when iCloud cannot be used
-     * (docs/03 "저장 위치"), so a job that has nothing for Drive needs no Drive at all.
+     * (docs/03 "Storage location"), so a job that has nothing for Drive needs no Drive at all.
      */
     suspend fun requireAccess(job: Job) {
         if (job.workflow?.steps?.none { it.uploadsToDrive } == true) return
@@ -90,6 +90,6 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
     }
 }
 
-/** A `drive.upload` step bound for Google Drive rather than iCloud (docs/03 "저장 위치"). */
+/** A `drive.upload` step bound for Google Drive rather than iCloud (docs/03 "Storage location"). */
 internal val Step.uploadsToDrive: Boolean
     get() = this is Step.DriveUpload && store == StorageKind.DRIVE

@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /**
- * docs/09 화면 원칙 1: the line under the record button says something only when there is news —
+ * docs/09 screen principle 1: the line under the record button says something only when there is news —
  * what the last start or stop had to say. What the recorder is doing is the State node's.
  */
 class RecorderStatusLineTest {

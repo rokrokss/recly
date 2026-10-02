@@ -169,7 +169,7 @@ class MeetingDetectorTest {
     }
 
     /**
-     * docs/14 "감지": sixty seconds idle → "End the recording?", and it is an offer — the recording
+     * docs/14 "Detection": sixty seconds idle → "End the recording?", and it is an offer — the recording
      * is still running until the user says otherwise.
      */
     @Test

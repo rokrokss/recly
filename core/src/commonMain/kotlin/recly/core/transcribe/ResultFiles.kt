@@ -16,7 +16,7 @@ import recly.core.platform.Logger
 internal val resultFileMutex = Mutex()
 
 /**
- * Where a `transcribe` result goes (docs/08 "결과 파일"): the recording directory, so the app and
+ * Where a `transcribe` result goes (docs/08 "Result files"): the recording directory, so the app and
  * the next step can read it without a round trip, and the Drive folder the preceding
  * `drive.upload` made, so every other device can.
  *

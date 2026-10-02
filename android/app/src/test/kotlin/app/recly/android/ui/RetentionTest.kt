@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/03 "보관 · 삭제": what the delete dialog and the disconnect warning count before they ask.
+ * docs/03 "Retention · deletion": what the delete dialog and the disconnect warning count before they ask.
  * ADR-017's seven-day window outlives the upload, so the count follows the core's answer rather
  * than the files that happen to still be on this phone.
  */

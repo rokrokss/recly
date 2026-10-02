@@ -6,7 +6,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 /**
- * docs/14 "감지": which process a microphone gets attributed to. The Mac's rule in Windows' terms
+ * docs/14 "Detection": which process a microphone gets attributed to. The Mac's rule in Windows' terms
  * (`MeetingAppMonitor`), and the browser half is the half worth a test — a browser is always
  * running, so "Chrome is open" must never be a meeting.
  */

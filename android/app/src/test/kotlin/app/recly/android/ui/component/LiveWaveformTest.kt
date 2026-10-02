@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 6: the live strip's one piece of arithmetic. A room that is being recorded has
+ * docs/09 screen principle 6: the live strip's one piece of arithmetic. A room that is being recorded has
  * to look like one, and linear amplitude does not — which is what the curve is for.
  */
 class LiveWaveformTest {

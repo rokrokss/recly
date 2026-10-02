@@ -18,7 +18,7 @@ import okio.Path
 import recly.core.recording.WaveformPeaks
 
 /**
- * docs/09 화면 원칙 2: the shape of the recording under the player bar's clock — what the detail
+ * docs/09 screen principle 2: the shape of the recording under the player bar's clock — what the detail
  * draws a playhead across, and what a drag on it seeks through. RecKit's `RecordingWaveform` and
  * the Windows shell's, in the same two halves, so the three draw the same picture.
  *

@@ -82,8 +82,8 @@ class SegmentedRecorder(
 
     /**
      * The loudest sample since this was last asked, 0..1 — `MediaRecorder` counts the peak for us,
-     * so asking every 0.1 s *is* the tenth-of-a-second window the live strip draws (docs/09 화면
-     * 원칙 6). Null when there is nothing recording, and when the platform recorder refuses to
+     * so asking every 0.1 s *is* the tenth-of-a-second window the live strip draws (docs/09 screen
+     * principle 6). Null when there is nothing recording, and when the platform recorder refuses to
      * answer — it throws while it is between segments or on its way down, and a window nobody can
      * read is not a silent one.
      *
@@ -324,7 +324,7 @@ class SegmentedRecorder(
 
     /**
      * A part that cannot reach the database is not a lost part: the audio is on disk and a sidecar
-     * says so, so the next start files it (docs/03 "크래시 시 마지막 경계까지는 복구 가능").
+     * says so, so the next start files it (docs/03 "after a crash, everything up to the last boundary is recoverable").
      */
     private suspend fun registerPart(open: Session, part: Part) {
         try {

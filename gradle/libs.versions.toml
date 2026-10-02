@@ -60,7 +60,7 @@ ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 
-# The on-device engine of the phone and Windows (docs/05 "고정 처리 설정 도입"): the AAR carries the Kotlin API and
+# The on-device engine of the phone and Windows (docs/05 "Fixed processing settings"): the AAR carries the Kotlin API and
 # its .so files; the JVM jar needs the host's native jar next to it (windows/app/build.gradle.kts).
 sherpa-onnx-android = { module = "com.github.k2-fsa.sherpa-onnx:sherpa-onnx", version.ref = "sherpaOnnx" }
 sherpa-onnx-jvm = { module = "com.github.k2-fsa.sherpa-onnx:sherpa-onnx-jvm", version.ref = "sherpaOnnx" }

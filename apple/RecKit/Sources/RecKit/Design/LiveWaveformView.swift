@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 6: the strip that runs beside the clock while a recording is going — one bar
+/// docs/09 screen principle 6: the strip that runs beside the clock while a recording is going — one bar
 /// per tenth of a second of the track being written, newest at the right edge, so the whole thing
 /// walks leftwards and a microphone that has stopped hearing anything is visible as a flat end.
 ///
@@ -8,7 +8,7 @@ import SwiftUI
 /// asks ten times a second, which is the rate the recorder finishes a window at. A `Canvas` and not
 /// a stack of shapes: three hundred bars are three hundred views to lay out, ten times a second.
 ///
-/// docs/09 "모션": nothing here is animated. Each tick is a fresh drawing of a new reading — a state
+/// docs/09 "Motion": nothing here is animated. Each tick is a fresh drawing of a new reading — a state
 /// change, not a transition — so reduce motion has nothing to turn off.
 public struct LiveWaveformView: View {
     @Environment(\.blueprint) private var blueprint
@@ -21,7 +21,7 @@ public struct LiveWaveformView: View {
         self.peaks = peaks
     }
 
-    /// docs/09 "간격": a 2pt bar on a 3pt step, the rhythm the detail screen's waveform is drawn on.
+    /// docs/09 "Spacing": a 2pt bar on a 3pt step, the rhythm the detail screen's waveform is drawn on.
     private static let bar: CGFloat = 2
     private static let step: CGFloat = 3
     /// A window with nothing in it is still a window that was recorded.

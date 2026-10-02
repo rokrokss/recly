@@ -15,7 +15,7 @@ import recly.core.testing.inMemoryDatabase
 import recly.core.testing.testDeps
 
 /**
- * docs/03 "저장 위치": a fresh install uploads to Drive as before; the storage changes only through
+ * docs/03 "Storage location": a fresh install uploads to Drive as before; the storage changes only through
  * [ProcessingSettingsRepository.setStorage] — iCloud only where the shell has a container — and a
  * recording keeps the storage it froze when it started.
  */

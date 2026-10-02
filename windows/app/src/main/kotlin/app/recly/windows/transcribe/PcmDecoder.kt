@@ -8,7 +8,7 @@ import java.nio.ByteOrder
 const val SAMPLE_RATE = 16_000
 
 /**
- * docs/05 "고정 처리 설정 도입": a recording decoded from [startSec] to the 16 kHz mono float PCM the speech model
+ * docs/05 "Fixed processing settings": a recording decoded from [startSec] to the 16 kHz mono float PCM the speech model
  * reads, by the bundled ffmpeg (ADR-019) as a separate process, one chunk at a time so an hour never
  * sits in memory. Closing it stops ffmpeg.
  */

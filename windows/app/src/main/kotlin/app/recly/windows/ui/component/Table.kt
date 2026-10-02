@@ -57,7 +57,7 @@ fun ScreenHeader(
 }
 
 /**
- * docs/09 화면 원칙 4: a settings window is a table, and a table has section headings. Only the
+ * docs/09 screen principle 4: a settings window is a table, and a table has section headings. Only the
  * vertical rhythm is baked in — the caller owns the horizontal inset, because an inspector already
  * has one and a full-bleed table does not.
  */
@@ -117,7 +117,7 @@ fun SectionFootnote(text: String, modifier: Modifier = Modifier) {
 /**
  * A [TableRow] that *is* its switch: `toggleable` sits on the whole row, so what a screen reader
  * focuses is one merged node with a name — "<title>, switch, on" — and not an unnamed track next to
- * a title it cannot see (docs/09 "접근성"). The row is taller than [MinTouch], so the target only
+ * a title it cannot see (docs/09 "Accessibility"). The row is taller than [MinTouch], so the target only
  * grows.
  */
 @Composable
@@ -143,7 +143,7 @@ fun SwitchRow(
 }
 
 /**
- * docs/09 "형태": no rounded pills, so the switch is a square track with a square thumb. The track
+ * docs/09 "Shape": no rounded pills, so the switch is a square track with a square thumb. The track
  * is 40x22, drawn inside a [MinTouch] box so that whoever makes it toggleable — [SwitchRow], or the
  * editor's own inspector row — never ends up with a target smaller than the rule.
  */
@@ -160,7 +160,7 @@ fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = 
             modifier = Modifier
                 .width(40.dp)
                 .height(22.dp)
-                // docs/09 "선": the hairline token, so high contrast thickens this the way it
+                // docs/09 "Lines": the hairline token, so high contrast thickens this the way it
                 // thickens every other border rather than leaving the switch at a fixed 1.5dp.
                 .border(palette.line, ink, RoundedCornerShape(Radius.badge))
                 .padding(2.dp),

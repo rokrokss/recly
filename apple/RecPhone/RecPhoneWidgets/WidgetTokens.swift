@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 "토큰", for the two extensions that cannot import RecKit.
+/// docs/09 "Tokens", for the two extensions that cannot import RecKit.
 ///
 /// A widget extension links no core (docs/13: it would carry the whole database with it for the
 /// sake of one status line, and the watch has a 75 MB budget to keep), and RecKit is where the
@@ -16,13 +16,13 @@ enum WidgetTokens {
     /// `BlueprintPalette.dark.background` — the ground a Lock Screen activity is tinted with.
     static let background = Color(widgetHex: 0x0E0F12)
 
-    /// docs/09 "형태": 4 for a node, 2 for a badge.
+    /// docs/09 "Shape": 4 for a node, 2 for a badge.
     enum Radius {
         static let node: CGFloat = 4
         static let badge: CGFloat = 2
     }
 
-    /// docs/09 "접근성": whatever it draws, nothing you can tap is smaller than this.
+    /// docs/09 "Accessibility": whatever it draws, nothing you can tap is smaller than this.
     static let minTouch: CGFloat = 44
 }
 

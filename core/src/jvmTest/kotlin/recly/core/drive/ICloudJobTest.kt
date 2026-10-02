@@ -21,7 +21,7 @@ import recly.core.testing.START
 import recly.core.testing.testWorkflow
 
 /**
- * docs/03 "저장 위치", end to end: a job bound for iCloud runs with no Google account at all, waits
+ * docs/03 "Storage location", end to end: a job bound for iCloud runs with no Google account at all, waits
  * — spending no attempt — while the system uploads, and is done once iCloud holds the recording.
  */
 class ICloudJobTest {

@@ -4,7 +4,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/05 "고정 처리 설정 도입" · docs/10: a recording whose on-device speech model is missing waits
+/// docs/05 "Fixed processing settings" · docs/10: a recording whose on-device speech model is missing waits
 /// for it (`NEEDS_MODEL`) instead of failing — its row, its badge, the banner and the runner all
 /// read it as a wait, and the fix is the download.
 final class ModelWaitTests: XCTestCase {
@@ -190,7 +190,7 @@ final class ModelWaitTests: XCTestCase {
     }
 }
 
-/// docs/05 "고정 처리 설정 도입": the first-run card, and the words every download surface shares.
+/// docs/05 "Fixed processing settings": the first-run card, and the words every download surface shares.
 final class ModelPromptTests: XCTestCase {
 
     override func tearDown() {
@@ -334,7 +334,7 @@ final class ModelDownloadTests: XCTestCase {
     }
 }
 
-/// docs/09 "모든 상태는 색 + 텍스트": red means failed. A job that is only waiting — consent, sign-in,
+/// docs/09 "Every state is color + text": red means failed. A job that is only waiting — consent, sign-in,
 /// Drive space, the speech model — says so in its badge's warning tone, in the banner and in its row.
 final class WaitToneTests: XCTestCase {
 

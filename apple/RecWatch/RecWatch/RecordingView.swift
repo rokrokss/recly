@@ -1,7 +1,7 @@
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 7 · docs/13 "Apple Watch": a monospace timer, a square start/stop, one line of
+/// docs/09 screen principle 7 · docs/13 "Apple Watch": a monospace timer, a square start/stop, one line of
 /// status and the number of recordings the phone still owes an ack for. Nothing else fits, and
 /// nothing else is needed.
 struct RecordingView: View {
@@ -51,7 +51,7 @@ struct RecordingView: View {
         .background(blueprint.palette.background)
     }
 
-    /// docs/09 "형태": a square node with a thick border, filled while recording — the watch's
+    /// docs/09 "Shape": a square node with a thick border, filled while recording — the watch's
     /// version of the phone's 72pt record node.
     private var button: some View {
         Button {
@@ -76,7 +76,7 @@ struct RecordingView: View {
     }
 }
 
-/// docs/13 진입점: Double Tap stops. `handGestureShortcut` is watchOS 11 API and RecKit's floor is
+/// docs/13 Entry points: Double Tap stops. `handGestureShortcut` is watchOS 11 API and RecKit's floor is
 /// 10, so on watchOS 10 the button is only a button — and the gesture is armed only while there is
 /// something to stop, so a double tap on the idle screen does not start a recording by surprise.
 private struct DoubleTapStop: ViewModifier {

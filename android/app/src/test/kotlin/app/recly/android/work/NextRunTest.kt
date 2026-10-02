@@ -84,7 +84,7 @@ class NextRunTest {
 
     @Test
     fun `a waiting job with no instant is treated as due rather than stranded`() {
-        // A lost paired write (docs/10 "짝 전이") must not cost the job its scheduler.
+        // A lost paired write (docs/10 "paired transitions") must not cost the job its scheduler.
         val jobs = listOf(job("halfWritten", JobStatus.WAITING, nextRunAt = null))
         assertEquals(Duration.ZERO, NextRun.delay(jobs, now))
     }

@@ -5,7 +5,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
- * docs/09 트렌드 2: the window every button that reports its own outcome shares — PROCESSING while
+ * docs/09 trend 2: the window every button that reports its own outcome shares — PROCESSING while
  * the work runs, then DONE if it did what the user asked and FAILED otherwise, including when it
  * throws. The `finally` is the point: a button left saying "…" is a screen the user cannot use.
  *

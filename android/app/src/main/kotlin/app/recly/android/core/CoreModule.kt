@@ -27,7 +27,7 @@ import recly.core.platform.AndroidRuntime
 import recly.core.platform.CoreDeps
 import recly.core.platform.DeviceInfo
 
-/** What the shell holds for the life of the process (docs/01 "코어 ↔ 셸 경계"). */
+/** What the shell holds for the life of the process (docs/01 "core ↔ shell boundary"). */
 class AppGraph internal constructor(
     val core: ReclyCore,
     val auth: GoogleAuth,

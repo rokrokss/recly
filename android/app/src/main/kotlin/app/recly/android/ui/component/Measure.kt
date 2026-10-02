@@ -10,7 +10,7 @@ import androidx.compose.ui.unit.dp
 
 /**
  * How wide a column of monospace data has to be for [samples] to fit — measured at the size the
- * user actually reads them, which is the fluid scale of docs/09 "유동 타이포" *and* whatever the
+ * user actually reads them, which is the fluid scale of docs/09 "Fluid typography" *and* whatever the
  * system font size adds on top of it.
  *
  * A fixed dp is what this replaces. `NEEDS_AUTH` in a 76dp column lost its last letters at a font

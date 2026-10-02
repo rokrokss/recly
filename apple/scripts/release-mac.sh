@@ -44,7 +44,7 @@ sign_flags=(CODE_SIGN_IDENTITY="$identity")
 if [[ "$identity" == Developer\ ID\ Application:* ]]; then
   sign_flags+=(OTHER_CODE_SIGN_FLAGS="--timestamp")
 fi
-# docs/03 "저장 위치": an iCloud build (Local.xcconfig, RECLY_MAC_ENTITLEMENTS) signs with a Developer ID
+# docs/03 "Storage location": an iCloud build (Local.xcconfig, RECLY_MAC_ENTITLEMENTS) signs with a Developer ID
 # provisioning profile, and a manual profile is looked up under the team that issued it.
 local_config="$repo_root/apple/Config/Local.xcconfig"
 if [[ -f "$local_config" ]] && grep -q '^RECLY_MAC_ENTITLEMENTS.*iCloud' "$local_config"; then
@@ -97,7 +97,7 @@ for key in com.apple.security.device.audio-input; do
     exit 1
   fi
 done
-# docs/03 "저장 위치": iCloud is a restricted entitlement — a Mac app that carries one without the
+# docs/03 "Storage location": iCloud is a restricted entitlement — a Mac app that carries one without the
 # provisioning profile that grants it is killed at launch — so a build that has it ships the profile.
 if printf '%s' "$entitlements" | grep -q com.apple.developer.icloud-container-identifiers; then
   if [[ ! -f "$app/Contents/embedded.provisionprofile" ]]; then

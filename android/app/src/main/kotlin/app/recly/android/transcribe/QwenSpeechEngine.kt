@@ -32,7 +32,7 @@ import recly.core.transcribe.SttSegment
 import recly.core.transcribe.UnavailableLocalTranscriptionEngine
 
 /**
- * docs/05 "고정 처리 설정 도입" on the phone: sherpa-onnx runs Qwen3-ASR on two CPU threads. Silero VAD cuts the
+ * docs/05 "Fixed processing settings" on the phone: sherpa-onnx runs Qwen3-ASR on two CPU threads. Silero VAD cuts the
  * recording into speech; each piece is decoded and checkpointed, which is also where a thermal or
  * Battery Saver pause, a cancel and the resume position take effect. It is not validated for heat
  * on a real device yet (docs/20).
@@ -133,7 +133,7 @@ class QwenSpeechEngine private constructor(
     }
 
     /**
-     * docs/05 "고정 처리 설정 도입": transcribe unless the device is really hot. `SEVERE` is where Android
+     * docs/05 "Fixed processing settings": transcribe unless the device is really hot. `SEVERE` is where Android
      * defines a large impact on the user and JobScheduler stops every job; `LIGHT` and `MODERATE` are
      * routine while charging. Battery Saver does not hold it back.
      */

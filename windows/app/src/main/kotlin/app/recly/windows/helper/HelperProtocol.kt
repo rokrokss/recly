@@ -8,13 +8,13 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 import recly.core.model.Track
 
 /**
- * docs/14 "구조": one JSON object per line each way, the app on stdin and the helper on stdout.
+ * docs/14 "Structure": one JSON object per line each way, the app on stdin and the helper on stdout.
  *
  * The wire names are the discriminator values docs/14 lists (`start`/`stop`/`detect` ↔ `part_done`/
  * `mic_in_use`/`error`), so this file *is* the contract the Rust helper (M6-L2) is written against.
  *
  * [Start.base] is the one field docs/14's sketch does not name. It has to be here: the file names
- * are docs/03's ("이름 규칙", `{base}_p001_mic.m4a`) and the base is derived from the recording's
+ * are docs/03's ("Naming rules", `{base}_p001_mic.m4a`) and the base is derived from the recording's
  * own meta, which only the app has. A helper that invented names would put the naming rule in two
  * places and the second one in Rust.
  */
@@ -36,7 +36,7 @@ sealed class HelperCommand {
     @SerialName("stop")
     data object Stop : HelperCommand()
 
-    /** docs/14 "감지": mic-in-use monitoring, on or off. The events arrive as [HelperEvent.MicInUse]. */
+    /** docs/14 "Detection": mic-in-use monitoring, on or off. The events arrive as [HelperEvent.MicInUse]. */
     @Serializable
     @SerialName("detect")
     data class Detect(val on: Boolean) : HelperCommand()
@@ -64,7 +64,7 @@ sealed class HelperEvent {
     ) : HelperEvent()
 
     /**
-     * docs/14 "감지". [inUse] is the transition: true when [app] took the microphone, false when it
+     * docs/14 "Detection". [inUse] is the transition: true when [app] took the microphone, false when it
      * gave it back — the microphone going quiet is what docs/14's sixty-second idle offer is read off, and
      * it defaults to true only so an older helper that reports the taking alone still parses.
      */
@@ -73,7 +73,7 @@ sealed class HelperEvent {
     data class MicInUse(val app: String, val inUse: Boolean = true) : HelperEvent()
 
     /**
-     * docs/09 화면 원칙 6: the peak of every tenth of a second the helper finished writing since the
+     * docs/09 screen principle 6: the peak of every tenth of a second the helper finished writing since the
      * last line, oldest first — the track the user hears (the mix in a meeting, the microphone when
      * that is the only track). It is what the popup's strip draws while a recording runs, and it is
      * the recorder's own write path rather than a second tap on the microphone, so a strip that

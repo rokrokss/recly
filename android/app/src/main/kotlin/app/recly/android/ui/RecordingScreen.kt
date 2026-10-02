@@ -81,7 +81,7 @@ import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.delay
 import recly.core.model.Source
 
-/** docs/09 화면 원칙 1: the recording screen is a dashboard — three state nodes, a monospace timer
+/** docs/09 screen principle 1: the recording screen is a dashboard — three state nodes, a monospace timer
  * and one square node that starts and stops it. Everything slower than a tap — the service, the
  * core, the disk — is behind [RecordingViewModel]. */
 @Composable
@@ -126,7 +126,7 @@ fun RecordingSection(
 
     val elapsed = elapsedSeconds(recorder)
     val recording = recorder is RecorderState.Recording
-    // docs/09 화면 원칙 1: what the ledger has to say, but only while the recorder has nothing of
+    // docs/09 screen principle 1: what the ledger has to say, but only while the recorder has nothing of
     // its own — `REC` and the rest are about the recorder, so they win.
     val borrowed = if (recorder is RecorderState.Idle) ledger else null
     val busy = rememberBusyHold(recorder is RecorderState.Starting || recorder is RecorderState.Stopping)
@@ -142,7 +142,7 @@ fun RecordingSection(
         )
         prompt()
         Box(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-            // docs/09 화면 원칙 1: the transcription node is the only one on this screen that takes
+            // docs/09 screen principle 1: the transcription node is the only one on this screen that takes
             // a tap — it opens the processing settings. The device and the state are readouts.
             val canPick = recorder is RecorderState.Idle
             val pickLabel = stringResource(R.string.processing_title)
@@ -163,7 +163,7 @@ fun RecordingSection(
                     ),
                     NodeSpec(
                         label = stringResource(R.string.node_state),
-                        // docs/09 화면 원칙 1: with nothing to record, the node borrows the ledger's
+                        // docs/09 screen principle 1: with nothing to record, the node borrows the ledger's
                         // own `UPLOADING` — or its `RECEIVING`, a recording coming in from the
                         // watch (docs/03) — because that is the only thing happening and this
                         // screen is where the user is ([ledgerCode]).
@@ -188,7 +188,7 @@ fun RecordingSection(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             MonoTimer(hms(elapsed))
-            // docs/09 화면 원칙 6: while it records, the track being written, so the microphone is
+            // docs/09 screen principle 6: while it records, the track being written, so the microphone is
             // something the screen shows rather than something it claims. Nothing while idle —
             // an empty strip would be a recording with no sound in it.
             if (recording) {
@@ -304,7 +304,7 @@ private fun ConsentDialog(onAnswer: (Boolean, Boolean) -> Unit) {
 private const val CONSENT_GUIDANCE_URL = "https://en.wikipedia.org/wiki/Telephone_call_recording_laws"
 
 /**
- * docs/09 "형태": the round record button is replaced by a square node with a thick border — 72dp,
+ * docs/09 "Shape": the round record button is replaced by a square node with a thick border — 72dp,
  * outlined while idle and filled while recording, with the stop square in the page colour.
  *
  * [busy] is [rememberBusyHold]'s, which is where the reason it outlasts the recorder lives.
@@ -347,7 +347,7 @@ private fun RecordNode(recorder: RecorderState, busy: Boolean, onStart: () -> Un
 }
 
 /**
- * docs/09 트렌드 2 · "모션": start and stop are two of the rare high-risk actions, so what the screen
+ * docs/09 trend 2 · "Motion": start and stop are two of the rare high-risk actions, so what the screen
  * shows while [working] stays up for [processingHoldMs] after the recorder has already moved on. A
  * start the service answered in 40ms would otherwise flash a state nobody can read, and the tap
  * would look like it did nothing at all.
@@ -374,7 +374,7 @@ private fun rememberBusyHold(working: Boolean): Boolean {
 }
 
 /**
- * docs/09 화면 원칙 1: the ledger's own `UPLOADING` — a job that is running right now. The rows are
+ * docs/09 screen principle 1: the ledger's own `UPLOADING` — a job that is running right now. The rows are
  * already live through `jobs.observe()`, so the node follows a pass that starts and ends while the
  * recording screen is the one on top, without asking the core anything of its own.
  *
@@ -383,11 +383,11 @@ private fun rememberBusyHold(working: Boolean): Boolean {
  */
 fun uploading(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RUNNING && !it.localPending }
 
-/** docs/03 "워치 → 폰 전송 계약": the watch is handing a recording over to this phone right now. */
+/** docs/03 "Watch → phone transfer contract": the watch is handing a recording over to this phone right now. */
 fun receiving(items: List<JobItem>): Boolean = items.any { it.state == ItemState.RECEIVING }
 
 /**
- * docs/09 화면 원칙 1: the code the state node borrows from the ledger while nothing is recording,
+ * docs/09 screen principle 1: the code the state node borrows from the ledger while nothing is recording,
  * or null when the ledger has nothing to say and the node is the recorder's own code. A pass of
  * this phone's own wins: it is the one thing on this device the user could be waiting for.
  */
@@ -412,7 +412,7 @@ private fun RecorderState.actionLabel(): Int = when (this) {
 }
 
 /**
- * docs/09 화면 원칙 1: the line under the record button says something only when there is news —
+ * docs/09 screen principle 1: the line under the record button says something only when there is news —
  * what the last start or stop had to say, while the recorder is idle. What the recorder is doing
  * is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
  * (2026-09-29). The line keeps its height either way, so the button never moves.

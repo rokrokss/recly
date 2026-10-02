@@ -1,5 +1,5 @@
 //! The live strip's arithmetic: the loudest sample of each tenth of a second of the track a person
-//! hears (docs/09 화면 원칙 6), so the app can draw that the capture is working.
+//! hears (docs/09 screen principle 6), so the app can draw that the capture is working.
 //!
 //! Ported from `apple/RecKit/Sources/RecKit/Recorder/LiveWaveform.swift`, and here for the same
 //! reason it is in the recorder there: the only place the recorded audio exists is the write path,
@@ -94,7 +94,7 @@ mod tests {
         assert_eq!(vec![0.8], out);
     }
 
-    /// docs/12 "합산 −6 dB 헤드룸" leaves the mix inside full scale, but an endpoint that hands over
+    /// docs/12 "summed with −6 dB headroom" leaves the mix inside full scale, but an endpoint that hands over
     /// more is not a taller bar — the row is the whole of the level.
     #[test]
     fn a_sample_past_full_scale_is_clamped_to_the_row() {

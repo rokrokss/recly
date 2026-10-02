@@ -18,7 +18,7 @@ import recly.core.platform.Logger
  *
  * **The channel closing is the helper's death.** There is no "the helper exited" event, because a
  * helper that is killed does not get to send one — so the one signal the app acts on is the one it
- * cannot miss: stdout reaching EOF. docs/14 "헬퍼가 죽으면 앱이 마지막 파트까지를 finalize한다" is
+ * cannot miss: stdout reaching EOF. docs/14 "if the helper dies, the app finalizes up to the last part" is
  * therefore implemented by whoever is consuming [events] running off the end of the loop.
  */
 class HelperClient(

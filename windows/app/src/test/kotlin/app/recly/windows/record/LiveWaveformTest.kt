@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 6: the ring the popup's strip is drawn from. The helper sends the windows it
+ * docs/09 screen principle 6: the ring the popup's strip is drawn from. The helper sends the windows it
  * finished and forgets them, so this is the only place thirty seconds of a recording exist.
  */
 class LiveWaveformTest {

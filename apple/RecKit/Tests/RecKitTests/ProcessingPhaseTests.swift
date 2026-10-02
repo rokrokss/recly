@@ -1,7 +1,7 @@
 import XCTest
 @testable import RecKit
 
-/// docs/09 트렌드 2: the button says what the operation did, not what the clock did. The phase is
+/// docs/09 trend 2: the button says what the operation did, not what the clock did. The phase is
 /// driven by the caller's real outcome — so a save that came back with validation errors never
 /// wears a ✓, and work that is still running never stops looking like it.
 final class ProcessingPhaseTests: XCTestCase {
@@ -21,7 +21,7 @@ final class ProcessingPhaseTests: XCTestCase {
         XCTAssertEqual(Processing.hold(workSec: 5), 0)
     }
 
-    /// docs/09 "모션": at least 400 ms of processing, and the whole window closes at 800 ms.
+    /// docs/09 "Motion": at least 400 ms of processing, and the whole window closes at 800 ms.
     func testTheWholeWindowIsAtMostTheMaximum() {
         for work in [0.0, 0.05, 0.2, 0.399, 0.4] {
             let shown = work + Processing.hold(workSec: work)
@@ -35,7 +35,7 @@ final class ProcessingPhaseTests: XCTestCase {
         XCTAssertEqual(Processing.doneBadge(workSec: 5), Motion.badgeFade)
     }
 
-    /// docs/09 "모션" asks for "즉시 전환 + 텍스트 상태만" — instant transitions *and* the text
+    /// docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" — instant transitions *and* the text
     /// state. Reduce motion takes the fade and leaves the labels, so the two windows are the same
     /// length as they are for everybody else: a user who has turned animations off is the one with
     /// nothing else to tell them the tap was heard.
@@ -73,7 +73,7 @@ final class ProcessingPhaseTests: XCTestCase {
         XCTAssertEqual(phase(true, work: 5, elapsed: 5.15), .idle)
     }
 
-    /// docs/09 "접근성": what reduce motion switches off is the animation, and the three labels are
+    /// docs/09 "Accessibility": what reduce motion switches off is the animation, and the three labels are
     /// not one — the tap still shows "…" and a success still shows its ✓ for as long as it would
     /// have. Only the transition between them becomes instant.
     func testReduceMotionKeepsTheTextStates() {
@@ -85,7 +85,7 @@ final class ProcessingPhaseTests: XCTestCase {
     }
 }
 
-/// docs/09 화면 원칙 2: every row state has a code and a tone, the code is the word the core and the
+/// docs/09 screen principle 2: every row state has a code and a tone, the code is the word the core and the
 /// logs already use, and no two states look the same to someone who cannot tell the tones apart.
 final class LedgerStatusTests: XCTestCase {
 
@@ -123,7 +123,7 @@ final class LedgerStatusTests: XCTestCase {
         // Something the user has to act on, but nothing is lost yet.
         XCTAssertEqual(LedgerStatus.forRecent(state: "Sign-in needed").tone, .neutral)
         XCTAssertEqual(LedgerStatus.forRecent(state: "Retry pending").tone, .warning)
-        // docs/10 "Drive 용량 초과": parked rather than failed, and the code says which.
+        // docs/10 "Drive out of space": parked rather than failed, and the code says which.
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in Drive").code, "NO_SPACE")
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in Drive").tone, .warning)
         // Nothing is wrong and nothing is happening.

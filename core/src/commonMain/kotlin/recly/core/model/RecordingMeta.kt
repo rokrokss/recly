@@ -23,7 +23,7 @@ data class RecordingMeta(
     val gaps: List<Range> = emptyList(),
     val silenced: List<Range> = emptyList(),
     val context: Context? = null,
-    /** Where the recording went in the user's Drive; written by `drive.upload` once the folder is known (docs/03 "메타데이터"). */
+    /** Where the recording went in the user's Drive; written by `drive.upload` once the folder is known (docs/03 "Metadata"). */
     val drive: DriveLocation? = null,
     val status: RecordingStatus,
 )

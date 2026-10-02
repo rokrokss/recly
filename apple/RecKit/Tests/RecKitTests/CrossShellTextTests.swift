@@ -75,7 +75,7 @@ final class ProviderDisclosureTests: XCTestCase {
         }
     }
 
-    /// docs/15 §3 "작성 규칙": no "kept for N days". Recly does not know the number and would be
+    /// docs/15 §3 "Writing rule": no "kept for N days". Recly does not know the number and would be
     /// making a promise on somebody else's behalf.
     func testTheDisclosureMakesNoRetentionClaim() throws {
         let catalog = try ShellCatalogs.catalog("apple/RecKit/Sources/RecKit/Resources/Localizable.xcstrings")
@@ -154,7 +154,7 @@ final class ConsentTextTests: XCTestCase {
     }
 }
 
-/// docs/09 화면 원칙 2 (2026-09-04) · the cross-shell dictionary: the three states a ledger row shows
+/// docs/09 screen principle 2 (2026-09-04) · the cross-shell dictionary: the three states a ledger row shows
 /// for work that is in flight on *another* device. Every shell grew them at once and every shell has
 /// to say the same thing, so the wording is written out here rather than read off a neighbour —
 /// Android's `CrossShellDictionaryTest` is what compares the four shells, and it reads this catalog.
@@ -182,7 +182,7 @@ final class LedgerStateTextTests: XCTestCase {
         }
     }
 
-    /// The badge is the state as a code (docs/09 화면 원칙 2), and the two are minted from the same
+    /// The badge is the state as a code (docs/09 screen principle 2), and the two are minted from the same
     /// key — a rewording that missed [LedgerStatus.forRecent] would show as `UNKNOWN`.
     func testEachOfThemMintsItsOwnAccentBadge() {
         for state in Self.states {

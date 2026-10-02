@@ -1,7 +1,7 @@
 package app.recly.windows.detect
 
 /**
- * Which meeting app to attribute a microphone to (docs/14 "감지": `Zoom.exe`, `ms-teams.exe`,
+ * Which meeting app to attribute a microphone to (docs/14 "Detection": `Zoom.exe`, `ms-teams.exe`,
  * `slack.exe`, `Discord.exe`, browser window titles).
  *
  * The Mac reads bundle ids; Windows names processes, so this is the same rule spelled in executable
@@ -10,11 +10,11 @@ package app.recly.windows.detect
  *
  * A native meeting app counts because it is running. A browser does not — a browser is always
  * running — so it counts only while one of its windows is named like a meeting, which is the same
- * line the Mac draws (docs/12 "브라우저 Meet은 창 제목까지만").
+ * line the Mac draws (docs/12 "browser Meet goes only as far as the window title").
  */
 object MeetingApps {
 
-    /** docs/14 "감지". Lowercased; [attribute] answers with the name it was given. */
+    /** docs/14 "Detection". Lowercased; [attribute] answers with the name it was given. */
     val PROCESSES: Set<String> = setOf("zoom.exe", "ms-teams.exe", "slack.exe", "discord.exe")
 
     /** Being in this set is not a signal by itself — see [attribute]. */

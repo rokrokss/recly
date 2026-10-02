@@ -53,7 +53,7 @@ class RecordingRecovery internal constructor(
     private suspend fun recover(record: RecordingRecord): Boolean {
         // A watch recording still arriving is the transfer receiver's row, not one this process
         // died in: it closes when the watch's meta lands, or goes with the receiver's 24-hour
-        // orphan purge (docs/03 "워치 → 폰 전송 계약").
+        // orphan purge (docs/03 "Watch → phone transfer contract").
         if (core.transfer.receiving(record.id)) return false
         val reconciled = reconciler.reconcile(record.id) ?: return false
 
@@ -122,7 +122,7 @@ class RecordingRecovery internal constructor(
     /**
      * Nothing is enqueued here, on either device. A recovered recording is finalized and nobody is
      * going to be asked to name it, so it goes to the shell as ready — which on the phone means a
-     * job and on the watch means the transfer queue (docs/11 W4, "주의": the watch runs no workflow
+     * job and on the watch means the transfer queue (docs/11 W4, "Caveats": the watch runs no workflow
      * and a job minted there would sit `PENDING` for the life of the install).
      */
     private suspend fun ready(recordingId: String) = host.onRecordingReady(recordingId, enqueue = true)

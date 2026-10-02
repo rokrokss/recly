@@ -26,7 +26,7 @@ import recly.core.platform.JvmRuntime
 import kotlin.time.Clock as TimeClock
 import recly.core.platform.Clock as CoreClock
 
-/** What the shell holds for the life of the process (docs/01 "코어 ↔ 셸 경계"). */
+/** What the shell holds for the life of the process (docs/01 "core ↔ shell boundary"). */
 class AppGraph(
     val core: ReclyCore,
     val auth: GoogleAuth,
@@ -111,7 +111,7 @@ object AppModule {
 /**
  * The JDBC driver creates no schema and tracks no version the way the Android and native ones do,
  * so both live in [JvmRuntime] — a new file gets the whole schema, an existing one gets whatever
- * migrations it is behind by (docs/10 "스키마 마이그레이션").
+ * migrations it is behind by (docs/10 "Schema migrations").
  */
 class JvmDriverFactory(private val path: Path) : DriverFactory {
     override fun create(): SqlDriver = JvmRuntime.openDriver(path.toString())

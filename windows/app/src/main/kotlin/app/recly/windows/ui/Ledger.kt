@@ -26,7 +26,7 @@ import java.util.Locale
 import recly.core.job.StepReport
 
 /**
- * docs/09 화면 원칙 2: every row state is a code *and* a tone, so a reader who cannot tell the hues
+ * docs/09 screen principle 2: every row state is a code *and* a tone, so a reader who cannot tell the hues
  * apart still gets the answer from the letters. The codes are the ones the core and the logs already
  * use, and they are the phone's (`android/.../JobsScreen.badge`) — one product, one vocabulary.
  *
@@ -38,12 +38,12 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATUS_WAITING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
     Str.STATE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
     Str.STATE_RETRY_WAIT to LedgerStatus("RETRY", BadgeTone.WARNING),
-    // docs/08 "폴링 · 상태": a job parked while a provider transcribes is waiting on someone else,
+    // docs/08 "Polling · status": a job parked while a provider transcribes is waiting on someone else,
     // not on a retry timer, so it is its own code.
     Str.STATE_WAITING_TRANSCRIPTION to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
     Str.PROCESSING_LOCAL_RUNNING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
     Str.PROCESSING_LOCAL_PENDING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
-    // docs/03 "다른 기기의 녹음" (2026-09-04): work in flight somewhere else — the watch sending, or
+    // docs/03 "Recordings from other devices" (2026-09-04): work in flight somewhere else — the watch sending, or
     // another device uploading or transcribing. The accent of every "something is happening", and the
     // same codes the local states wear: to a reader the news is the news, and *where* it is happening
     // is what the row's sentence says (`STATE_REMOTE_*`).
@@ -53,7 +53,7 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATE_DONE to LedgerStatus("DONE", BadgeTone.SUCCESS),
     Str.STATE_FAILED to LedgerStatus("FAILED", BadgeTone.DANGER),
     Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL),
-    // docs/10 "Drive 용량 초과": a job parked because Drive is full — nothing is lost and nothing
+    // docs/10 "Drive out of space": a job parked because Drive is full — nothing is lost and nothing
     // retries, and the banner beside it is what offers the storage page.
     Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING),
     Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING),
@@ -63,7 +63,7 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
 )
 
 /**
- * docs/09 화면 원칙 2: every label a ledger badge can wear — each state's code, `NEEDS_AUTH` as the
+ * docs/09 screen principle 2: every label a ledger badge can wear — each state's code, `NEEDS_AUTH` as the
  * words it is drawn in, and `UNKNOWN` — which is what the status column is measured against, so none
  * of them is ever cut to fit.
  */
@@ -80,7 +80,7 @@ fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
 private const val UNKNOWN_STATE = "UNKNOWN"
 
 /**
- * docs/07 §5 · docs/08 "오류": what the core last said about this row — the sentence translated, the
+ * docs/07 §5 · docs/08 "Errors": what the core last said about this row — the sentence translated, the
  * diagnostic that came with it never, on its own line in monospace under it. [CheckKeyButton] under
  * it with an `onCheckKey`, for a surface with no actions line of its own to put it in.
  *
@@ -108,7 +108,7 @@ fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? 
 }
 
 /**
- * docs/09 "모든 상태는 색 + 텍스트": red says failure and nothing else. A job the queue gave up on
+ * docs/09 "Every state is color + text": red says failure and nothing else. A job the queue gave up on
  * ([JobStatus.FAILED]) says why in the failure colour; one that is waiting — for consent, a sign-in,
  * space, the model, or its next attempt — says it in the warning tone its badge wears.
  */
@@ -116,7 +116,7 @@ fun reasonTone(status: recly.core.job.JobStatus?): BadgeTone =
     if (status == recly.core.job.JobStatus.FAILED) BadgeTone.DANGER else BadgeTone.WARNING
 
 /**
- * docs/09 화면 원칙 2 lists `키를 확인하세요` among a row's actions, in the one line the others are in —
+ * docs/09 screen principle 2 lists `키를 확인하세요` among a row's actions, in the one line the others are in —
  * so a surface that has such a line draws it there itself (the popup's expanded row, and the Mac's
  * `MenuPopover.actions` in the same order). The recordings window's sidebar has no actions line, and
  * for it the button stays under the reason, which is what [FailureReason] does with an `onCheckKey`.
@@ -161,7 +161,7 @@ object LedgerFormat {
     }
 
     /**
-     * docs/09 화면 원칙 2: the ledger's 길이 column — `42:10`, or `1:02:33` past the hour, which is
+     * docs/09 screen principle 2: the ledger's 길이 column — `42:10`, or `1:02:33` past the hour, which is
      * what the phone and the Mac write in the same column (`LedgerFormat.length`, `duration`).
      *
      * A recording that has not been finalized has no length yet, and [NO_LENGTH] is what says so: a

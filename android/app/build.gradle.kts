@@ -71,7 +71,7 @@ android {
 
     packaging {
         jniLibs {
-            // sherpa-onnx (docs/05 "고정 처리 설정 도입"): its JNI library needs only onnxruntime; the C and C++
+            // sherpa-onnx (docs/05 "Fixed processing settings"): its JNI library needs only onnxruntime; the C and C++
             // API libraries are for other bindings. The engine runs only in a 64-bit process
             // (`QwenSpeechEngine.make`), so the 32-bit ABIs carry none of it — about 90 MB off the APK.
             excludes += listOf(
@@ -114,14 +114,14 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.androidx.glance.material3)
 
-    // docs/08 "결과 파일": the detail screen plays the recording's parts back to back, which is
+    // docs/08 "Result files": the detail screen plays the recording's parts back to back, which is
     // what an ExoPlayer playlist is — `MediaPlayer` would need the gaps stitched by hand.
     implementation(libs.androidx.media3.exoplayer)
 
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
 
-    // docs/05 "고정 처리 설정 도입": on-device transcription. The model itself is downloaded from settings.
+    // docs/05 "Fixed processing settings": on-device transcription. The model itself is downloaded from settings.
     implementation(libs.sherpa.onnx.android)
 
     implementation(libs.androidx.credentials)

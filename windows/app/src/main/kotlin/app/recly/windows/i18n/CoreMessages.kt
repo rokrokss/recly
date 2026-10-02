@@ -65,7 +65,7 @@ object CoreMessages {
         CoreMessage.ICLOUD_UPLOADING,
         CoreMessage.SIGN_IN_CANCELLED,
         CoreMessage.STALE,
-        // docs/08 "오류": what to do about it is the whole sentence, and the provider's own line is
+        // docs/08 "Errors": what to do about it is the whole sentence, and the provider's own line is
         // the code's detail — shown under it, never inside it.
         CoreMessage.AUTH_REJECTED,
         CoreMessage.QUOTA,

@@ -6,7 +6,7 @@ import com.sun.jna.platform.win32.WinDef.HWND
 import recly.core.platform.Logger
 
 /**
- * The half of docs/14 "감지" that is not the microphone: what is running, and what its windows are
+ * The half of docs/14 "Detection" that is not the microphone: what is running, and what its windows are
  * called. Read on demand rather than watched — the browser half of the answer is a window *title*,
  * which no notification would report anyway, and [MeetingDetector] is already ticking.
  */

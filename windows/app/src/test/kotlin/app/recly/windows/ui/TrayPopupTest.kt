@@ -29,7 +29,7 @@ class TrayPopupTest {
     }
 
     /**
-     * docs/09 화면 원칙 2 (2026-09-04): a `RETRY` row is a job waiting out its own `next_run_at` after
+     * docs/09 screen principle 2 (2026-09-04): a `RETRY` row is a job waiting out its own `next_run_at` after
      * a failed attempt, and the user need not wait the timer out — it offers the same retry the
      * failures do. A wait on a provider transcribing is somebody else's work, and offers nothing.
      */

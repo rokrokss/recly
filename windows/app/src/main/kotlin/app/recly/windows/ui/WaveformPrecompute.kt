@@ -10,7 +10,7 @@ import recly.core.platform.Logger
 import recly.core.recording.RecordingRecord
 
 /**
- * docs/09 화면 원칙 2: a recording made on this PC gets its waveform worked out once it is finalized,
+ * docs/09 screen principle 2: a recording made on this PC gets its waveform worked out once it is finalized,
  * in the background, so even its first open in the detail draws at once rather than decoding every
  * part while the user waits. A recording from another device gets its own the first time its audio
  * is fetched and opened (the detail keeps what it decodes).

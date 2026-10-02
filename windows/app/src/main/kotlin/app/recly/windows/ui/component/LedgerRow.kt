@@ -32,7 +32,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
-/** docs/09 화면 원칙 2: the ledger's four columns — `시각 · 제목 · 길이 · 상태`, as on the Mac. */
+/** docs/09 screen principle 2: the ledger's four columns — `시각 · 제목 · 길이 · 상태`, as on the Mac. */
 private val TIME_COLUMN = 68.dp
 
 /**
@@ -124,7 +124,7 @@ private fun Heading(text: String, modifier: Modifier = Modifier, align: TextAlig
 
 /**
  * One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
- * (docs/09 화면 원칙 2). The whole row is one accessibility node — four separate announcements of
+ * (docs/09 screen principle 2). The whole row is one accessibility node — four separate announcements of
  * `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
  * sentence, with the state in words rather than as a code.
  */
@@ -192,7 +192,7 @@ fun LedgerRow(
                 maxLines = 1,
             )
             Box(Modifier.width(statusWidth).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-                // docs/09 "모션": a state badge that swaps in place is the one transition this row
+                // docs/09 "Motion": a state badge that swaps in place is the one transition this row
                 // has, and it is the short one — [Motion.BADGE_FADE_MS] on the standard easing.
                 Crossfade(
                     targetState = status,

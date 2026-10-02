@@ -40,11 +40,11 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
 /**
- * docs/09 "형태" · "접근성": a field, as a label over a bordered box. Material's `OutlinedTextField`
+ * docs/09 "Shape" · "Accessibility": a field, as a label over a bordered box. Material's `OutlinedTextField`
  * is the component this replaces, for two reasons and not one:
  *
  * 1. Its label *floats* — an animation of a size and a position, which is the decorative motion
- *    docs/09 "모션" bans. A label written above the box never moves.
+ *    docs/09 "Motion" bans. A label written above the box never moves.
  * 2. Its unfocused border is a fixed 1dp of `outline`, so high contrast — which is 2dp everywhere
  *    else in this design — left every field a hairline thinner than the rest of the window.
  *
@@ -115,7 +115,7 @@ fun BlueprintTextField(
 internal data class FieldSemantics(val description: String, val state: String?)
 
 /**
- * docs/09 "접근성": a field names itself, because the label above it cannot name it for it.
+ * docs/09 "Accessibility": a field names itself, because the label above it cannot name it for it.
  *
  * The label is a `Text` node of its own, and Compose Desktop has no `labelledBy` to tie the two
  * together — Material's `OutlinedTextField` carried the label inside its own node and this design
@@ -131,7 +131,7 @@ internal fun fieldSemantics(label: String, hint: String?): FieldSemantics =
     FieldSemantics(description = label, state = hint?.takeIf { it.isNotBlank() })
 
 /**
- * docs/09 "형태" · "모션": a menu, as a square bordered card on the grid. Material's `DropdownMenu`
+ * docs/09 "Shape" · "Motion": a menu, as a square bordered card on the grid. Material's `DropdownMenu`
  * scales and fades itself in — decorative motion docs/09 bans — and its surface carries an
  * elevation tint this palette has no room for, so this is a plain [Popup] with the same border and
  * radius as every other node.
@@ -194,7 +194,7 @@ fun BlueprintMenuItem(
 }
 
 /**
- * docs/09 "형태": one of a set of choices that is expected to grow — the language, and whatever
+ * docs/09 "Shape": one of a set of choices that is expected to grow — the language, and whatever
  * enum setting comes after it. A row of chips says every option out loud, which is right for two or
  * three and wrong for ten; this says the chosen one and keeps the rest in a [BlueprintMenu] one
  * click away, so the setting stays one line however long the list gets.
@@ -210,7 +210,7 @@ fun <T> BlueprintDropdown(
     selected: T,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
-    /** Monospace for a value that is data — a provider id (docs/09 "타이포"), not a word. */
+    /** Monospace for a value that is data — a provider id (docs/09 "Typography"), not a word. */
     monospace: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -219,7 +219,7 @@ fun <T> BlueprintDropdown(
         BlueprintButton(
             label = "$current $DROPDOWN_MARK",
             onClick = { expanded = true },
-            // docs/09 "접근성": the button says the value, and the row above it says what the value
+            // docs/09 "Accessibility": the button says the value, and the row above it says what the value
             // is of — a reader given only the value would hear "한국어, button" and no question.
             modifier = Modifier.semantics {
                 contentDescription = label
@@ -231,7 +231,7 @@ fun <T> BlueprintDropdown(
         BlueprintMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             options.forEach { (value, text) ->
                 BlueprintMenuItem(
-                    // docs/09 "모든 상태는 색 + 텍스트": which one is chosen is a mark in the label,
+                    // docs/09 "Every state is color + text": which one is chosen is a mark in the label,
                     // the same one a chip wears, and not a colour a monochrome reader loses.
                     label = if (value == selected) "$SELECTION_MARK $text" else text,
                     onClick = {
@@ -246,7 +246,7 @@ fun <T> BlueprintDropdown(
 
 /**
  * The glyph on the closed dropdown. A character rather than an icon, so it sits in the label's own
- * line of text and grows with it (docs/09 "유동 타이포"), like [SELECTION_MARK].
+ * line of text and grows with it (docs/09 "Fluid typography"), like [SELECTION_MARK].
  */
 const val DROPDOWN_MARK: String = "▾"
 

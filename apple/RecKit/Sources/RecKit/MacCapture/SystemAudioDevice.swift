@@ -7,7 +7,7 @@ import Foundation
 /// whether it is the built-in speaker — which is the whole of the echo policy's question.
 public struct SystemAudioDevice: Sendable {
     public let name: String
-    /// docs/12 "에코": headphones and the problem does not exist; the built-in speaker and the
+    /// docs/12 "Echo": headphones and the problem does not exist; the built-in speaker and the
     /// microphone records the other side of the call back into the `mic` track.
     public let isBuiltInSpeaker: Bool
 

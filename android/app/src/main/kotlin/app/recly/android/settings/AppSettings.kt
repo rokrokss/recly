@@ -35,14 +35,14 @@ class AppSettings(private val context: Context) {
         context.store.data.map { (it[CONSENT_REMINDER] ?: true) && (it[CONSENT_ASKED] != true) }
 
     /**
-     * docs/09 "접근성": the system's dark mode, or this device's own override of it. Nothing written
+     * docs/09 "Accessibility": the system's dark mode, or this device's own override of it. Nothing written
      * yet is [AppTheme.SYSTEM] — the OS decides until the user says otherwise. It is not synced, for
      * the same reason the language is not (docs/07 rule 2): it is a fact about one device.
      */
     val theme: Flow<AppTheme> = context.store.data.map { AppTheme.of(it[THEME]) }
 
     /**
-     * docs/03 "연결 해제" · docs/06: how far the last disconnect got (see [DisconnectPhase]). It is
+     * docs/03 "Disconnect" · docs/06: how far the last disconnect got (see [DisconnectPhase]). It is
      * the one source of truth for a disconnect that is still owed, and it survives the process
      * because the retry may be a whole launch later — the account is already cleared by then, so
      * nothing else would keep the Disconnect row on screen or a second account out of the slot.

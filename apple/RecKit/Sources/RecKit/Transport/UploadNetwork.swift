@@ -5,7 +5,7 @@ import Foundation
 /// (`work/WorkScheduler.networkType`); iOS has no scheduler to say it to, so it is said to the
 /// upload session and to the task itself.
 ///
-/// `UserDefaults` and not the core: docs/05 "동기화하지 않는 것" — it is a fact about *this* phone's
+/// `UserDefaults` and not the core: docs/05 "What is not synchronized" — it is a fact about *this* phone's
 /// data plan and not about the account, so it is never synced.
 ///
 /// **The request and never the session.** A session's `allowsCellularAccess` is a *cap*, not a

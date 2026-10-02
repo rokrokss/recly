@@ -27,7 +27,7 @@ class LiveWaveformTest {
     }
 
     /**
-     * docs/09 화면 원칙 6: `sqrt` and not the peak itself. A room at 0.05 is a quarter of the row
+     * docs/09 screen principle 6: `sqrt` and not the peak itself. A room at 0.05 is a quarter of the row
      * rather than a twentieth of it — the difference between "quiet" and "this is not recording",
      * which is the one thing the strip must not get wrong.
      */

@@ -43,7 +43,7 @@ final class PartReconciler {
     ///
     /// A meeting recording leaves three files per part, and they are walked as one part: they were
     /// handed the same frames, so they share a `startOffsetSec`, and the offset advances by the
-    /// longest of them (docs/03 "같은 시간 구간이면 같은 번호"). Taking the longest rather than any
+    /// longest of them (docs/03 "the same time span gets the same number"). Taking the longest rather than any
     /// one track's is what keeps the timeline intact when a single track's tail is unreadable —
     /// that file is quarantined, the other two are filed, and everything after them still lines up.
     func reconcile(recordingId: String) async throws -> Reconciled? {
@@ -80,7 +80,7 @@ final class PartReconciler {
                 }
 
                 // The container is the only thing that knows how long a segment is, and it says one
-                // of three things (docs/03 "메타데이터").
+                // of three things (docs/03 "Metadata").
                 let durationSec: Double
                 switch bytes > 0 ? Self.segmentAudio(of: url) : SegmentAudio.empty {
                 case .empty:
@@ -165,7 +165,7 @@ final class PartReconciler {
                 return .notRecording
             }
             if reconciled.pending > 0 {
-                // Known limitation, the same one M4 accepted for `gaps` (docs/03 "알려진 한계"):
+                // Known limitation, the same one M4 accepted for `gaps` (docs/03 "Known limitation"):
                 // neither list survives a deferred stop, because the recovery pass that finalizes
                 // later never saw them. Persisting them in a sidecar the recovery reads is a
                 // follow-up for both platforms, not this lane's.
@@ -229,7 +229,7 @@ final class PartReconciler {
     }
 
     /// The directory's segment files, in part order and grouped by part. `_pNNN_` comes before the
-    /// track name in every file name (docs/03 "이름 규칙"), so sorting by name is already part-major
+    /// track name in every file name (docs/03 "Naming rules"), so sorting by name is already part-major
     /// and the grouping only has to notice where one number ends.
     private func segmentGroups(in directory: URL) -> [Group] {
         let segments = contents(of: directory)
@@ -340,7 +340,7 @@ final class PartReconciler {
         segment(of: file)?.part
     }
 
-    /// The part number and the track a segment file's name carries (docs/03 "이름 규칙"). It is the
+    /// The part number and the track a segment file's name carries (docs/03 "Naming rules"). It is the
     /// only place either of them exists once a process has died: the row may never have been
     /// written, but the name on disk always says which slice of which track this is.
     static func segment(of file: String) -> (part: Int, track: Track)? {

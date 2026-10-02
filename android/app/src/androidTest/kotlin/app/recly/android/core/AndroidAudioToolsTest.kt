@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
  *
  * Two AAC-LC parts are encoded here rather than checked in, so what is joined was written by one
  * encoder with one set of settings — which is the assumption `AndroidAudioTools` makes about the
- * parts of one recording (docs/03). What is asserted is docs/08 "오디오 준비": one AAC track, a
+ * parts of one recording (docs/03). What is asserted is docs/08 "Audio preparation": one AAC track, a
  * duration that is the sum of the parts' to within a frame, and a file that decodes end to end.
  */
 @RunWith(AndroidJUnit4::class)

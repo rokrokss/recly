@@ -1,28 +1,28 @@
-# iOS 신규 제출 심사 준비
+# Preparing the iOS new-submission review
 
-2026-10-01: 0.1.0이 심사를 통과해 App Store에 출시됐다. 다음 제출부터는 업데이트 심사다.
+2026-10-01: 0.1.0 passed review and was released on the App Store. From the next submission on, the review is an update review.
 
-현재 코드에 맞춘 재제출 준비 문서. 실제 제출 버전·빌드 번호는 아카이브와 App Store Connect에서 확인해 아래 빈칸에 넣는다. 아래 실기기 확인과 빈칸을 완료한 뒤 같은 내용을 App Store Connect의 심사 답변과 App Review Information → Notes에 넣는다. 영상이나 실기기 검증을 완료했다고 미리 적지 않는다.
+A resubmission preparation document matched to the current code. Check the actual submitted version and build number in the archive and App Store Connect and fill them into the blanks below. After completing the physical-device checks and the blanks below, put the same content into the review reply in App Store Connect and into App Review Information → Notes. Do not write in advance that the video or the physical-device verification is complete.
 
-공개 이름·부제·설명·키워드는 [스토어 문구 수정 안내](app-store-copy.ko.md)와 [영어 문안](app-store-metadata.en.txt)을 사용한다. 심사용 계정·키는 공개 문안에 넣지 않는다.
+For the public name, subtitle, description and keywords, use the [store copy guide](app-store-copy.md) and the [English copy](app-store-metadata.en.txt). Do not put review accounts or keys in the public copy.
 
-## 제출 전에 완료할 것
+## Complete before submission
 
-- 변경한 개인정보 처리방침을 공개 URL에 반영하고, 앱 설정의 영어(`https://recly.dev/policy/privacy-policy`)·한국어(`https://recly.dev/policy/privacy-policy.ko`) 링크에서 실제로 열리는지 확인한다. App Store Connect의 개인정보 처리방침 URL에는 영어 정본 주소를 등록한다.
-- iPhone·내장 Watch·위젯의 빌드 번호를 App Store Connect에서 아직 사용하지 않은 동일한 번호로 맞춘 뒤 `make ios-archive`로 새 빌드를 만든다. 현재 프로젝트 기본 `CURRENT_PROJECT_VERSION`은 `33`이며 출시 스크립트가 자동으로 올리지 않는다. 현재 코어를 빌드하고, 아카이브 안의 Google 클라이언트 ID와 콜백 스킴을 검사한다. 이 검사는 Google 콘솔의 iOS 번들 ID·OAuth 게시 상태·테스트 사용자 제한을 확인하는 실기기 로그인을 대신하지 않는다.
-- 최신 정식 iOS의 실제 iPhone에서 제출할 빌드를 검증한다. 잠금 중 녹음 → 정지·이름 입력 → 목록 → 재생 → Drive 업로드·열기 → 선택 전사 → 결과 확인까지 수행한다.
-- 설정 → 녹음 처리 → 외부 API 저장 시 새 대상의 확인 창 “녹음을 {업체}에 보낼까요?”(허용 안 함이면 저장 안 됨, 허용하고 저장이면 저장), 동일 대상 재저장 시 추가 확인 없음, 설정 가져오기 후 저장 시 같은 확인, 허용 철회 후 작업 대기, 설정에서 다시 허용 후 이전 업로드를 반복하지 않는 동작을 확인한다.
-- Google Drive 연결·연결 해제, 녹음의 로컬/Drive 삭제 선택, 녹음 처리 설정의 API 키 개별 삭제를 확인한다. Recly 자체 계정 생성은 없으며, Google 계정 삭제 기능을 제공하는 것도 아니다.
-- Apple Watch를 제출에 포함한다면 실제 Watch의 녹음·iPhone 전송과 허용 대기/재개도 검증한다. 지원 기기·OS·앱 버전·빌드 번호와 결과를 기록한다.
-- 화면 녹화는 홈 화면에서 앱 실행으로 시작한다. 실제 기본 흐름과 설정된 선택 기능을 보여주고, 비밀번호·API 키·개인 녹음은 노출하지 않는다. 영상 URL은 심사자가 별도 권한 요청 없이 열 수 있는지 확인한다.
-- 기본 녹음은 API 키 없이 사용할 수 있다. 전사 심사용으로 업체 계정/API 접근이 필요하면 전용 테스트 자격 증명과 정확한 설정 방법을 App Review Information의 비공개 필드에 제공한다. 키를 이 저장소·설정 내보내기 파일·영상에 넣지 않는다.
-- App Privacy 답변을 Google·선택 전사 업체의 실제 데이터 처리 및 보관 조건과 대조한다. “개발자 서버가 없음”만으로 Apple의 “수집 안 함”을 확정하지 않는다.
+- Publish the changed privacy policy at the public URL, and confirm that the English (`https://recly.dev/policy/privacy-policy`) and Korean (`https://recly.dev/policy/privacy-policy.ko`) links in the app's settings actually open. Register the canonical English address as the privacy policy URL in App Store Connect.
+- Set the build numbers of the iPhone app, the embedded Watch app and the widgets to the same number not yet used in App Store Connect, then make a new build with `make ios-archive`. The project's current default `CURRENT_PROJECT_VERSION` is `33`, and the release script does not raise it automatically. The command builds the current core and checks the Google client ID and the callback scheme inside the archive. This check does not replace a sign-in on a physical device, which confirms the iOS bundle ID, the OAuth publishing status and the test-user restriction in the Google console.
+- Verify the build to be submitted on a real iPhone running the latest official iOS. Go through recording while locked → stop and enter a name → list → playback → Drive upload and open → optional transcription → checking the result.
+- Check this behavior: when saving Settings → Recording processing → External API, the confirmation screen for a new target, “Send recordings to {provider}?” (Don't allow means nothing is saved, Allow & save means it is saved); no further confirmation when saving the same target again; the same confirmation when saving after importing settings; jobs waiting after permission is withdrawn; and earlier uploads not repeated after permission is granted again in Settings.
+- Check connecting and disconnecting Google Drive, the choice between local and Drive deletion of a recording, and deleting API keys individually in the recording processing settings. There is no Recly account creation of its own, and the app does not provide a Google account deletion feature either.
+- If the submission includes Apple Watch, also verify recording on a real Watch, transfer to the iPhone, and waiting for permission and resuming. Record the supported devices, OS, app version, build number and results.
+- Start the screen recording by launching the app from the home screen. Show the actual main flow and the configured optional features, and do not expose passwords, API keys or personal recordings. Confirm that the reviewer can open the video URL without a separate access request.
+- Basic recording works without an API key. If reviewing transcription needs a provider account or API access, provide dedicated test credentials and exact setup steps in the private fields of App Review Information. Do not put keys in this repository, a settings export file or the video.
+- Compare the App Privacy answers with the actual data processing and retention terms of Google and the optional transcription providers. Do not settle on Apple's “Data Not Collected” on the basis of “there is no developer server” alone.
 
-- 중국 본토(`CHN`)·미국(`USA`)·지역 조회 실패 상태를 검증한다. OpenAI 목록·편집·가져오기·기존 잡 실행 차단, 다른 전사 업체 유지, 이미 완료된 Drive 업로드를 반복하지 않는 대기를 확인한다. StoreKit 실계정/샌드박스 확인은 주입된 지역을 이용한 단위 테스트와 구분해 기록한다.
+- Verify the mainland China (`CHN`), United States (`USA`) and region-lookup-failure states. Check that OpenAI is blocked in the list, editing, import and running existing jobs, that the other transcription providers remain, and that the waiting does not repeat Drive uploads that already completed. Record StoreKit real-account/sandbox checks separately from unit tests that use an injected region.
 
-## 심사 답변 초안
+## Review reply drafts
 
-아래 대괄호 항목을 실제 검증 결과로 채우고, 해당 빌드에서 검증하지 않은 기능을 시연했다고 쓰지 않는다.
+Fill the bracketed items below with actual verification results, and do not write that features not verified on that build were demonstrated.
 
 1. **Physical-device demonstration**
 
@@ -50,16 +50,16 @@
 
    Recly is a general-purpose recording utility and does not itself provide medical, financial or other regulated professional services. Recordings are supplied by the user. Open-source dependency notices are included with the app. [Attach any additional authorization documents if the submitted app or store metadata contains protected third-party material requiring them.]
 
-## 근거
+## Basis
 
-- [Apple 심사 가이드라인의 개인정보 보호 조항](https://developer.apple.com/app-store/review/guidelines/#privacy): 앱 안에서 접근 가능한 개인정보 처리방침과 제3자·AI 서비스 공유 전 명시적 허용 요구.
-- [Apple App Privacy 세부 설명](https://developer.apple.com/app-store/app-privacy-details/): 앱과 제3자의 실제 데이터 처리에 따른 수집 항목 검토.
-- 코드·제품 계약: [설계 §15](recly.md), [개인정보 처리방침](policy/privacy-policy.ko.md), [개발·빌드 명령](development.md).
+- [Privacy section of Apple's App Review Guidelines](https://developer.apple.com/app-store/review/guidelines/#privacy): requires a privacy policy accessible within the app and explicit permission before sharing with third parties and AI services.
+- [Apple App Privacy details](https://developer.apple.com/app-store/app-privacy-details/): reviewing the collected data types according to the actual data processing of the app and third parties.
+- Code and product contract: [design §15](recly.md), [privacy policy](policy/privacy-policy.ko.md), [development and build commands](development.md).
 
 
-## 2026-09-18 · Guideline 4.8 재검토 답변
+## 2026-09-18 · Guideline 4.8 reconsideration reply
 
-실제로 제출할 빌드에서 Google 미연결 녹음·저장·재생을 실제 iPhone으로 확인한 뒤 아래 문안을 보낸다. `[submitted version/build]`를 실제 번호로 바꾸고, 로그인하지 않은 상태에서 촬영한 시연을 첨부한다. 영상과 실기기 검증을 완료했다고 미리 주장하지 않는다. iPhone·Mac은 Google 로그인 SDK를 제거하고 `drive.file`만 요청하는 OAuth로 변경했다. 계정 식별 권한(`openid`·`email`·`profile`)은 요청하지 않고, Drive 권한·토큰 저장이 확인된 뒤에만 연결 완료로 처리한다. 이 변경은 앱 계정 로그인과 Drive 권한 승인을 구분하기 위한 것이며 승인 보장이 아니다.
+Send the text below after confirming recording, saving and playback without Google connected on a real iPhone with the build actually being submitted. Replace `[submitted version/build]` with the actual number, and attach a demonstration filmed while not signed in. Do not claim in advance that the video and the physical-device verification are complete. The iPhone and Mac apps removed the Google Sign-In SDK and switched to OAuth that requests only `drive.file`. They do not request account identification permissions (`openid`, `email`, `profile`), and treat the connection as complete only after the Drive permission and the token storage are confirmed. This change is meant to separate signing in to an app account from approving Drive permission; it does not guarantee approval.
 
 > Hello App Review Team,
 >
@@ -73,18 +73,18 @@
 >
 > We respectfully request reconsideration of Guideline 4.8 because Google authentication authorizes access to the user’s own Drive content and does not establish or authenticate a primary account with Recly.
 
-시연 자료: [실제로 검증한 제출 빌드·기기·OS와 접근 가능한 영상 URL을 기입].
+Demonstration material: [enter the submitted build, device and OS actually verified, and an accessible video URL].
 
 
-## 2026-09-26 · Guideline 5.1.1(i)·5.1.2(i) 답변 (제3자 AI 서비스 전송)
+## 2026-09-26 · Guideline 5.1.1(i)·5.1.2(i) reply (sending to third-party AI services)
 
-지적: 제3자 AI 서비스로 개인정보(녹음)를 보내기 전에 앱이 무엇을·누구에게 보내는지 밝히고 허락을 받지 않는다. 방침도 수집·사용·공유와 제3자의 동등한 보호를 밝혀야 한다.
+Finding: before sending personal data (recordings) to a third-party AI service, the app does not disclose what it sends and to whom, and does not obtain permission. The policy must also disclose collection, use and sharing, and the third parties' equal protection.
 
-원인: 심사 빌드(17·18)는 워크플로우 편집기 안에서만 “허용하고 저장”을 물었고, 2026-09-25 고정 처리 계획 전환에서 그 확인이 빠졌다(녹음 뒤 대기 작업에서만 허용). 2026-09-26 설정 저장 시점의 확인 창을 복원·강화했다(§15).
+Cause: the review builds (17, 18) asked “Allow & save” only inside the workflow editor, and the switch to the fixed processing plan on 2026-09-25 dropped that confirmation (permission was asked only in the job waiting after a recording). On 2026-09-26 the confirmation screen at the time settings are saved was restored and strengthened (§15).
 
-보내기 전에 새 빌드로 실제 iPhone에서 확인 창을 촬영하고 `[ ]`를 채운다. API 키 없이도 확인 창까지 볼 수 있다.
+Before sending, film the confirmation screen on a real iPhone with the new build and fill in the `[ ]`. The confirmation screen can be reached without an API key.
 
-제3자의 “동등한 보호”(2026-09-26 사용자 결정: 14개 업체 유지, 방침에 업체별 차이 공개): 업체별 API 약관을 공식 문서로 확인한 결과 기본값으로 서비스 제공에만 쓰고 학습하지 않는 곳은 OpenAI·Groq·Azure·RTZR이고, Deepgram은 앱이 모든 요청에 `mip_opt_out=true`를 보내 같은 쪽이 된다. 방침 §3(2)는 전 업체의 동등한 보호를 주장하지 않고 업체별 보관·학습 조건과 방침 링크를 밝힌다. 이 때문에 5.1.1(i)로 다시 반려될 수 있다.
+The third parties' “equal protection” (2026-09-26 user decision: keep the 14 providers and disclose the per-provider differences in the policy): checking each provider's API terms against official documents, the ones that by default use the data only to provide the service and do not train on it are OpenAI, Groq, Azure and RTZR; Deepgram joins them because the app sends `mip_opt_out=true` with every request. Policy §3(2) does not claim equal protection by every provider; it discloses each provider's retention and training terms and links to its policy. Because of this, the app may be rejected again under 5.1.1(i).
 
 > Hello App Review Team,
 >
@@ -102,26 +102,26 @@
 >
 > To see the permission screen: Settings → Recording processing → External API → choose a provider → Save. No API key is needed to reach it. [Screenshot or video URL]
 
-App Review Information → Notes에도 같은 요지(외부 API 선택 시에만 제3자 AI 전송, 저장 시 허락, 확인 경로)를 넣는다.
+Put the same gist in App Review Information → Notes as well (third-party AI transmission only when External API is chosen, permission at saving, the path to check it).
 
 
 
-## 2026-09-29 · Guideline 5.1.1(i)·5.1.2(i) 재반려 답변
+## 2026-09-29 · Guideline 5.1.1(i)·5.1.2(i) reply to the repeated rejection
 
-지적: 빌드 26(0.1.0)에 같은 문구로 “The issues we previously identified still need your attention.” 어느 요구사항이 남았는지는 적혀 있지 않다.
+Finding: build 26 (0.1.0) got the same wording, with “The issues we previously identified still need your attention.” It does not say which requirement remains.
 
-진단: 빌드 26에는 저장 시 확인 창(48e0fff)과 업체별 약관 공개(c09bbb3)가 들어 있었다. 요구사항 넷 가운데 문자 그대로 어긋난 것은 방침이었다. 5.1.1(i)은 제3자가 “same or equal protection”을 제공한다고 **확인**하라고 요구하는데, 방침 §3(2)는 업체들이 모두 같은 수준으로 보호하지는 않는다고 적었다. 빌드 26 제출 때 Resolution Center 답변은 보내지 않았고 Notes만 적었다.
+Diagnosis: build 26 contained the confirmation screen at saving (48e0fff) and the per-provider terms disclosure (c09bbb3). Of the four requirements, the one literally not met was the policy. 5.1.1(i) requires **confirming** that third parties provide “same or equal protection”, but policy §3(2) said that the providers do not all protect data at the same level. When build 26 was submitted, no Resolution Center reply was sent; only the Notes were written.
 
-대응(2026-09-29 사용자 결정):
-- iPhone은 녹음을 학습에 쓰지 않는 여덟 곳만 제공한다(recly.md §15 “iPhone 제공 업체”). 방침 §3(2) “Providers offered on iPhone”이 동등 보호를 확인한다.
-- AssemblyAI는 모든 플랫폼에서 EU 리전으로 보낸다.
-- ElevenLabs는 학습을 껐다는 확인란을 체크해야 허용할 수 있다.
-- 이번에는 Resolution Center 답변과 Notes를 **둘 다** 보낸다.
+Response (2026-09-29 user decision):
+- The iPhone app offers only the eight providers that do not use recordings for training (recly.md §15 “iPhone providers”). Policy §3(2) “Providers offered on iPhone” confirms equal protection.
+- On every platform, requests to AssemblyAI go to its EU region.
+- ElevenLabs can be allowed only after the user checks the box confirming that training is turned off.
+- This time, send **both** the Resolution Center reply and the Notes.
 
-보내기 전에:
-- AssemblyAI EU 실호출 확인이 통과해야 한다. 한국어 요청이 `universal-2`로 가는지, 화자 분리가 되는지 확인한다.
-- 새 빌드로 실제 iPhone(또는 시뮬레이터)에서 ElevenLabs 확인 창을 촬영하고 `[ ]`를 채운다.
-- 방침이 recly.dev에 반영됐는지 확인한다.
+Before sending:
+- The AssemblyAI EU live-call check must pass. Check that Korean requests go to `universal-2` and that speaker diarization works.
+- Film the ElevenLabs confirmation screen on a real iPhone (or the simulator) with the new build and fill in the `[ ]`.
+- Check that the policy is published on recly.dev.
 
 > Hello App Review Team,
 >
@@ -148,6 +148,6 @@ App Review Information → Notes에도 같은 요지(외부 API 선택 시에만
 >
 > **To see the permission screen:** Settings → Recording processing → External API → choose a provider (for example ElevenLabs) → Save. No API key is needed. Screenshots: [URL]
 
-App Review Information → Notes (요지):
+App Review Information → Notes (gist):
 
 > Third-party AI: Recly sends audio to a speech-to-text provider only when the user selects External API in Settings → Recording processing, using their own API key; the default is on-device transcription. Before saving a provider, the app shows “Send recordings to [Provider]?” (recipient, data sent, purpose, provider privacy link, withdrawal) with “Don’t allow” / “Allow & save”; ElevenLabs additionally requires confirming that model training is off in the ElevenLabs account. The iPhone app offers only providers that do not train on recordings; see privacy policy §3(2) “Providers offered on iPhone”. Path: Settings → Recording processing → External API → pick a provider → Save (no key needed).

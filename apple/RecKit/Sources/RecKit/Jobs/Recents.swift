@@ -11,7 +11,7 @@ public struct RecentItem: Identifiable, Sendable {
     public let startedAt: String
     /// A docs/07 key for what the list says about it; [stateLabel] is the word.
     public let state: String
-    /// docs/09 화면 원칙 2: the ledger's length column. Nil while the recording is still running —
+    /// docs/09 screen principle 2: the ledger's length column. Nil while the recording is still running —
     /// the meta only learns its length when it is finalized.
     public let durationSec: Double?
 
@@ -19,7 +19,7 @@ public struct RecentItem: Identifiable, Sendable {
     /// so [nextRunAt] is counted down from the moment the row is drawn rather than from the moment
     /// the list was loaded.
     ///
-    /// docs/08 "폴링 · 상태": while a provider is transcribing there is no "when" to give, only how
+    /// docs/08 "Polling · status": while a provider is transcribing there is no "when" to give, only how
     /// long it has been — and "재시도 대기" would be a different thing to say. A job waiting out a
     /// backoff *does* have a when, and says it: "재시도 대기" on its own reads like "stuck".
     public var stateLabel: String {
@@ -57,7 +57,7 @@ public struct RecentItem: Identifiable, Sendable {
     /// The recording's Drive folder: the `drive.upload` step's link, or the folder the row knows
     /// on its own — an adopted recording was read out of that folder (docs/03).
     public let link: URL?
-    /// docs/03 "저장 위치": the storage the recording's folder is in, nil until it has one.
+    /// docs/03 "Storage location": the storage the recording's folder is in, nil until it has one.
     public let storage: StorageKind?
     /// The recording's folder in the app's iCloud folder on this Mac, for "Show in Finder" — the
     /// iCloud counterpart of [link]. Nil on the phone and for a recording on Drive.
@@ -65,7 +65,7 @@ public struct RecentItem: Identifiable, Sendable {
 
     /// Whether there is a folder in the user's storage to delete along with the recording.
     public var hasCloudFolder: Bool { link != nil || storage == .icloud }
-    /// docs/08 "폴링 · 상태": how long the transcription has been in flight, when it is. Nil for
+    /// docs/08 "Polling · status": how long the transcription has been in flight, when it is. Nil for
     /// every other state, which has a word of its own.
     public let waitingMinutes: Int?
 
@@ -79,7 +79,7 @@ public struct RecentItem: Identifiable, Sendable {
     /// nothing to explain.
     public let lastError: String?
 
-    /// docs/09 화면 원칙 2: the ledger's badge. docs/08 "폴링 · 상태": a job parked while a provider
+    /// docs/09 screen principle 2: the ledger's badge. docs/08 "Polling · status": a job parked while a provider
     /// transcribes is waiting on someone else, not on a retry timer, so it is its own code rather
     /// than the `RETRY` its `WAITING` status would give it — the code the desktop already shows
     /// (`windows/.../Ledger.LedgerStates`).
@@ -91,17 +91,17 @@ public struct RecentItem: Identifiable, Sendable {
 
     /// The same thing as words, read where it is drawn — so a list already on screen follows a
     /// language change (docs/07 rule 3). The system uploading to iCloud is progress, as a running
-    /// Drive upload is: the badge says it, and there is nothing to explain under it (docs/03 "저장 위치").
+    /// Drive upload is: the badge says it, and there is nothing to explain under it (docs/03 "Storage location").
     public var reason: CoreMessages.Text? {
         state == "Uploading to iCloud" ? nil : lastError.map(CoreMessages.text)
     }
 
-    /// docs/08 "오류": whether the thing to do about this failure is to look at the key, which is
+    /// docs/08 "Errors": whether the thing to do about this failure is to look at the key, which is
     /// what decides whether "check the key" is worth offering.
     public var needsKey: Bool { StepReport.shared.needsKey(lastError: lastError) }
 
     /// Whether a retry is a thing to offer at all: a job that has stopped — `FAILED`, `NEEDS_AUTH`,
-    /// `NEEDS_SPACE` — and, since docs/09 화면 원칙 2 (2026-09-04), a `WAITING` one too. That job does
+    /// `NEEDS_SPACE` — and, since docs/09 screen principle 2 (2026-09-04), a `WAITING` one too. That job does
     /// come back on its own `next_run_at`, but a user looking at `RETRY` is looking at it *because*
     /// they are not waiting any longer, and asking now is the only thing the row could offer.
     ///
@@ -118,11 +118,11 @@ public struct RecentItem: Identifiable, Sendable {
     private static let retryable: Set<String> =
         ["Failed", "Sign-in needed", "No space in Drive", "No space in iCloud", "Waiting for iCloud", "Retry pending"]
 
-    /// docs/09 화면 원칙 2: whether "delete" is a thing to offer. A recording being written to right
+    /// docs/09 screen principle 2: whether "delete" is a thing to offer. A recording being written to right
     /// now is not one to delete — the core refuses it anyway, and offering the button would be
     /// offering a refusal — and neither is one still arriving from the watch. A recording another
     /// device is uploading is not this device's to delete at all: the folder would go out from
-    /// under that upload (docs/03 "다른 기기의 녹음").
+    /// under that upload (docs/03 "Recordings from other devices").
     public var canDelete: Bool { !Self.undeletable.contains(state) }
 
     private static let undeletable: Set<String> = [
@@ -141,7 +141,7 @@ public struct RecentItem: Identifiable, Sendable {
     /// because a state *label* cannot tell `NEEDS_SPACE` from any other parked job.
     public let alert: AlertReason?
 
-    /// docs/05 "고정 처리 설정 도입": the language of the on-device step a `NEEDS_MODEL` job is
+    /// docs/05 "Fixed processing settings": the language of the on-device step a `NEEDS_MODEL` job is
     /// waiting on — the model its "Download model" fetches. Nil for every other job.
     public let localLanguage: String?
 
@@ -193,7 +193,7 @@ public struct RecentItem: Identifiable, Sendable {
 /// the Drive link is in a third. Both Apple shells draw the same rows, so they read them the same
 /// way.
 public enum Recents {
-    /// docs/12 "메뉴바": what one reading of the desktop ledger adds. The ledger starts with a page
+    /// docs/12 "Menu bar": what one reading of the desktop ledger adds. The ledger starts with a page
     /// and asks for another each time the last row it has is scrolled into view.
     public static let page: Int32 = 20
 
@@ -208,13 +208,13 @@ public enum Recents {
                 .max { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }
             var steps: [StepRun] = []
             if let job { steps = (try? await core.jobs.steps(jobId: job.id)) ?? [] }
-            // docs/08 "폴링 · 상태": while a provider is transcribing there is no "when" to give,
+            // docs/08 "Polling · status": while a provider is transcribing there is no "when" to give,
             // only how long it has been — and "재시도 대기" would be a different thing to say.
             let waiting = job?.status == .waiting
                 ? StepReport.shared.waitingMinutes(steps: steps, now: now)?.intValue
                 : nil
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
-            // it left behind say nothing about it (docs/10 "잡 스냅샷").
+            // it left behind say nothing about it (docs/10 "job snapshot").
             let error = job?.snapshotError ?? lastError(steps)
             let localPending = (job?.status == .waiting || job?.status == .running || job?.status == .pending)
                 && StepReport.shared.localPending(workflow: job?.workflow, steps: steps)
@@ -247,13 +247,13 @@ public enum Recents {
     }
 
     /// A local transcription that is not running is either queued or held back for heat — the one
-    /// wait a user cannot guess, so it is said (docs/05 "고정 처리 설정 도입").
+    /// wait a user cannot guess, so it is said (docs/05 "Fixed processing settings").
     static func localState(running: Bool, core: ReclyCore_) -> String {
         if running { return "Transcribing on this device" }
         return core.localTranscription.coolingDown ? "Waiting for the device to cool down" : "Transcription pending"
     }
 
-    /// docs/03 "저장 위치": the recording's folder in the iCloud folder on this Mac. The phone has no
+    /// docs/03 "Storage location": the recording's folder in the iCloud folder on this Mac. The phone has no
     /// Finder to show it in.
     static func cloudFolder(record: RecordingRecord, core: ReclyCore_) async -> URL? {
         #if os(macOS)
@@ -265,11 +265,11 @@ public enum Recents {
     }
 
     static func stateLabel(record: RecordingRecord, job: ReclyCore.Job?, lastError: String? = nil) -> String {
-        // docs/03 "워치 → 폰 전송 계약": the placeholder row this phone opened for a transfer that is
+        // docs/03 "Watch → phone transfer contract": the placeholder row this phone opened for a transfer that is
         // still arriving. It carries the recording's own `RECORDING` status, so it has to be asked
         // about before that — otherwise the row reads as this phone recording, which it is not.
         if record.receiving { return "Receiving from the watch" }
-        // docs/03 "다른 기기의 녹음": the folder is on Drive with no `meta.json` in it yet, so the
+        // docs/03 "Recordings from other devices": the folder is on Drive with no `meta.json` in it yet, so the
         // other device is still uploading. `RECORDING` again, and again not this device's.
         if record.remoteUploading { return "Uploading on another device" }
         if record.meta.status == .recording { return "Recording" }
@@ -288,7 +288,7 @@ public enum Recents {
         }
         // A finalized recording stays done when disconnect clears its local job history.
         guard let job else { return "Done" }
-        // docs/03 "저장 위치": an iCloud upload waits on the system, not on a retry timer — while it
+        // docs/03 "Storage location": an iCloud upload waits on the system, not on a retry timer — while it
         // uploads, and while iCloud cannot be used from here.
         let message = lastError.flatMap { CoreMessageRef.companion.parse(code: $0)?.message }
         switch job.status {
@@ -300,11 +300,11 @@ public enum Recents {
         case .done: return "Done"
         case .failed: return "Failed"
         case .needsConsent: return "Transfer permission needed"
-        // docs/05 "고정 처리 설정 도입": a wait for the on-device model, not a failure — the download
+        // docs/05 "Fixed processing settings": a wait for the on-device model, not a failure — the download
         // brings it back, and a retry would only park it again.
         case .needsModel: return "Waiting for speech model"
         case .needsAuth: return "Sign-in needed"
-        // docs/10 "Drive 용량 초과": parked rather than failed, and nothing retries it on its own —
+        // docs/10 "Drive out of space": parked rather than failed, and nothing retries it on its own —
         // the row's own state, so the list can offer the storage page instead of a retry that
         // would come back with the same 403.
         case .needsSpace: return message == .icloudStorageFull ? "No space in iCloud" : "No space in Drive"
@@ -312,7 +312,7 @@ public enum Recents {
         }
     }
 
-    /// docs/09 화면 원칙 2: what the ledger's header says about the list under it — "14 · 2 waiting ·
+    /// docs/09 screen principle 2: what the ledger's header says about the list under it — "14 · 2 waiting ·
     /// 1 failed" is one glance, where the count on its own is a number nobody has a use for.
     ///
     /// The Android ledger's counting rule (`JobsScreen.waiting` · `JobsScreen.failing`): a
@@ -329,7 +329,7 @@ public enum Recents {
         ).text
     }
 
-    /// docs/09 화면 원칙 2 (2026-09-04): a recording still arriving from the watch, and one another
+    /// docs/09 screen principle 2 (2026-09-04): a recording still arriving from the watch, and one another
     /// device is still uploading, are both work the user is waiting on — the header counts them the
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings. `Sign-in needed` is a wait too: its badge
@@ -355,7 +355,7 @@ public enum Recents {
         items.contains { $0.state == "Uploading" || $0.state == "Uploading to iCloud" }
     }
 
-    /// docs/03 "워치 → 폰 전송 계약" · docs/09 화면 원칙 1: whether this phone is taking a recording off
+    /// docs/03 "Watch → phone transfer contract" · docs/09 screen principle 1: whether this phone is taking a recording off
     /// its watch right now, read off the ledger the way [uploading] reads a running job — the row
     /// is the only place the transfer is visible, and the State node above the list would otherwise
     /// say `IDLE` while the phone is busy.

@@ -5,7 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/09 화면 원칙 2: the status column used to be a flat 76dp, and `NEEDS_AUTH` — the code that
+ * docs/09 screen principle 2: the status column used to be a flat 76dp, and `NEEDS_AUTH` — the code that
  * matters most, because it is the one the user has to act on — did not fit in it. The width the
  * screen measures is the widest code plus what the badge draws around it; this is that arithmetic.
  */

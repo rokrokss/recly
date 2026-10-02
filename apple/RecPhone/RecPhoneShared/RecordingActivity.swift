@@ -1,7 +1,7 @@
 import ActivityKit
 import Foundation
 
-/// docs/13 "표시": the Live Activity a running recording shows on the Lock Screen, in the Dynamic
+/// docs/13 "Display": the Live Activity a running recording shows on the Lock Screen, in the Dynamic
 /// Island and in the watch's Smart Stack — the elapsed time and a stop button. It is also what
 /// App Review 2.5.14 asks for: a recording the user can see is running.
 ///

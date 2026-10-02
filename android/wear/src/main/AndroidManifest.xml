@@ -16,7 +16,7 @@
         android:supportsRtl="true"
         android:theme="@android:style/Theme.DeviceDefault">
 
-        <!-- docs/11 "골격": false — the watch has no auth and no network of its own (ADR-002), so
+        <!-- docs/11 "skeleton": false — the watch has no auth and no network of its own (ADR-002), so
              it is useless without the phone app and Play must install the pair together. -->
         <meta-data
             android:name="com.google.android.wearable.standalone"

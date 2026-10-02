@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/03 "앱에서 지우기": one recording, two answers about Drive, and the default is the one that
+/// docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one that
 /// can be undone — the files in Drive are the user's own and something downstream may already have
 /// read the folder. What is still only on this device is said first, because that is the part of the
 /// deletion nothing anywhere else can give back.
@@ -95,7 +95,7 @@ public struct DeleteDialog: View {
 /// belongs to the moment the recording ended and not to a rename, so this asks only the one.
 ///
 /// One dialog for both shells, as [DeleteDialog] is: nothing about the question is the phone's or
-/// the Mac's. docs/09 화면 원칙 5 — the title, the field with its one line under it, two answers.
+/// the Mac's. docs/09 screen principle 5 — the title, the field with its one line under it, two answers.
 public struct RenameDialog: View {
     private let rename: (String) -> Void
     private let cancel: () -> Void
@@ -131,7 +131,7 @@ public struct RenameDialog: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this device's
+/// docs/03 "Sign out vs Disconnect": revocation can affect other devices and clears this device's
 /// upload queue. Recordings, workflows and keys stay; deleting audio is a separate list action.
 ///
 /// One dialog for both shells, as [DeleteDialog] is, and for the same reason: these lines name the

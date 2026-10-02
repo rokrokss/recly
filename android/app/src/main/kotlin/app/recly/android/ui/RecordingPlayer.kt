@@ -107,7 +107,7 @@ class RecordingPlayer(context: Context) {
     }
 
     /**
-     * docs/09 화면 원칙 2: the second the finger let go of on the waveform, wherever in the
+     * docs/09 screen principle 2: the second the finger let go of on the waveform, wherever in the
      * recording it falls. One `seekTo` even when it is in another part, because the playlist is one
      * thing to the player — [RecordingPlaylist.position] and [target] are the same arithmetic read
      * the two ways round.
@@ -185,7 +185,7 @@ class RecordingPlayer(context: Context) {
          * How often the playhead is moved while playing: 30 steps a second, so the bar slides rather
          * than steps — the clock beside it only counts whole seconds, but the playhead on the
          * waveform is drawn at this position, and at four steps a second it jumps rather than moves
-         * (docs/09 "모션"). Finer would be redraws no screen this runs on can show.
+         * (docs/09 "Motion"). Finer would be redraws no screen this runs on can show.
          */
         const val TICK_MS: Long = 33
 

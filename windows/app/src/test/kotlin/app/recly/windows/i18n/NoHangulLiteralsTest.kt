@@ -27,7 +27,7 @@ class NoHangulLiteralsTest {
 
     /**
      * Every string literal in [source] that contains Hangul. Comments are skipped, so a
-     * `docs/03 "이름 규칙"` citation is not an offence, and neither is a Korean sentence in a `//`
+     * `docs/03 "Naming rules"` citation is not an offence, and neither is a Korean sentence in a `//`
      * line.
      */
     private fun hangulLiterals(source: String): List<String> {

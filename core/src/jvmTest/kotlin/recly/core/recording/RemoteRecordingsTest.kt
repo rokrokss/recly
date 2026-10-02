@@ -49,7 +49,7 @@ import recly.core.testing.testMeta
 import recly.core.testing.testWorkflow
 
 /**
- * docs/03 "다른 기기의 녹음": Drive is the shared list. A folder another device uploaded — stamped
+ * docs/03 "Recordings from other devices": Drive is the shared list. A folder another device uploaded — stamped
  * with its `recordingId`, `meta.json` last — becomes a row here with no job and no audio; one that
  * disappears from Drive takes its row with it; nothing this device made is touched.
  */
@@ -586,7 +586,7 @@ class RemoteRecordingsTest {
         assertNull(h.recordings.get(mine.recordingId))
     }
 
-    // The pending marker (docs/03 "다른 기기의 녹음"): what the device running the job says is left.
+    // The pending marker (docs/03 "Recordings from other devices"): what the device running the job says is left.
 
     @Test
     fun `the folder's marker says what the other device still has to do`() = runBlocking {
@@ -645,7 +645,7 @@ class RemoteRecordingsTest {
         assertEquals(emptySet(), h.recordings.get(mine.recordingId)!!.remotePending)
     }
 
-    // How often a pull runs (docs/03 "다른 기기의 녹음").
+    // How often a pull runs (docs/03 "Recordings from other devices").
 
     @Test
     fun `a pull waits half a minute rather than two while another device is working`() = runBlocking {
@@ -701,7 +701,7 @@ class RemoteRecordingsTest {
         watcher.cancel()
     }
 
-    // Titles (docs/03 "제목").
+    // Titles (docs/03 "Titles").
 
     @Test
     fun `a rename here reaches the folder's description and its meta on Drive`() = runBlocking {
@@ -916,7 +916,7 @@ class RemoteRecordingsTest {
         /** The month folder every recording of the fake account shares (ADR-020). */
         private val month = drive.put("2026-08", "root", ByteArray(0), FakeDrive.FOLDER_MIME)
 
-        /** What the device running the workflow leaves on the folder (docs/03 "다른 기기의 녹음"):
+        /** What the device running the workflow leaves on the folder (docs/03 "Recordings from other devices"):
          * the types still to come, stamped with the moment it last said so. */
         fun mark(folderId: String, pending: String) {
             drive.files.getValue(folderId).appProperties +=

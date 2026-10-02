@@ -70,7 +70,7 @@ public enum TransferMetadata: Equatable {
 }
 
 /// One part file on the wire. [file] is the name the watch wrote the part under —
-/// `{base}_pNNN_{track}.m4a` (docs/03 "이름 규칙") — where `{base}` comes from `startedAt` and so is
+/// `{base}_pNNN_{track}.m4a` (docs/03 "Naming rules") — where `{base}` comes from `startedAt` and so is
 /// not knowable on the receiving side until the meta arrives, last. It travels with the part
 /// precisely so the phone never has to rename: `acceptPart` files it under that name, which is the
 /// one the meta will ask for.

@@ -34,7 +34,7 @@ import recly.core.testing.testDeps
 import recly.core.testing.testMeta
 
 /**
- * What the detail screen plays (docs/03 "로컬 저장"): the local parts when they are here, and the
+ * What the detail screen plays (docs/03 "Local storage"): the local parts when they are here, and the
  * ones the retention sweep has taken fetched back from Drive — verified against the row before
  * anything is written under a part's name.
  */

@@ -3,7 +3,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/08 "오디오 준비": the parts of one track joined into a single `m4a`, as long as the parts
+/// docs/08 "Audio preparation": the parts of one track joined into a single `m4a`, as long as the parts
 /// put together and still decodable AAC.
 ///
 /// The fixtures are written through `SegmentedRecorder.openSegmentFile` rather than checked in, so

@@ -5,7 +5,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/03 "앱에서 지우기": the delete dialog leads with how many parts are only on this phone, and
+ * docs/03 "Deleting in the app": the delete dialog leads with how many parts are only on this phone, and
  * that count is a trip to the core. So the question the user sees is put up *after* an await, and
  * two taps in a row are two reads in flight — the Mac's `MenuModel.deleteAsked` is this counter, and
  * these are the two ways a late one used to lie.

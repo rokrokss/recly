@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  RecMac.entitlements plus iCloud Documents (docs/03 "저장 위치", ADR-024). Used only when
+  RecMac.entitlements plus iCloud Documents (docs/03 "Storage location", ADR-024). Used only when
   Local.xcconfig sets RECLY_MAC_ENTITLEMENTS to this file for Release, together with a Developer ID
   provisioning profile that grants iCloud.app.recly: iCloud is a restricted entitlement, and a Mac
   app that carries one without a profile is killed at launch. Debug builds keep RecMac.entitlements.

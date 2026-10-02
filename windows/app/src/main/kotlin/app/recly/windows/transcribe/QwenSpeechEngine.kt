@@ -29,7 +29,7 @@ import recly.core.transcribe.SttSegment
 import recly.core.transcribe.UnavailableLocalTranscriptionEngine
 
 /**
- * docs/05 "고정 처리 설정 도입" on Windows: sherpa-onnx runs Qwen3-ASR on two CPU threads, in this process — the
+ * docs/05 "Fixed processing settings" on Windows: sherpa-onnx runs Qwen3-ASR on two CPU threads, in this process — the
  * core stops it when a capture starts (`LocalTranscriptionService.captureStarted`), and the capture
  * itself is the helper's. Silero VAD cuts the recording into speech; each piece is decoded and
  * checkpointed, which is also where a cancel and the resume position take effect. Windows has no

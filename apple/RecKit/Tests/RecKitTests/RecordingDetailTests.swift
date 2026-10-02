@@ -5,7 +5,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/08 "결과 파일": the model behind the detail. `loading` is what the screen shows a spinner
+/// docs/08 "Result files": the model behind the detail. `loading` is what the screen shows a spinner
 /// for, and the bug this covers was a screen that never came out of it — the Mac keeps one detail
 /// view in its split pane and hands it a new model per pick, so every model after the first has to
 /// be loaded by a `.task` that notices the swap. This is the half of that a test can hold: a load
@@ -260,7 +260,7 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertFalse(model.loading)
     }
 
-    /// docs/03 "제목": the rename the detail offers. What the core wrote is what the header says
+    /// docs/03 "Titles": the rename the detail offers. What the core wrote is what the header says
     /// straight away — the ledger behind the page catches up on its own — and an empty answer takes
     /// the recording back to having no name of its own rather than storing a blank one.
     @MainActor

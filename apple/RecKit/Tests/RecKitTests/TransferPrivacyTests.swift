@@ -100,7 +100,7 @@ final class TransferPrivacyTests: XCTestCase {
         }
     }
 
-    /// docs/15 "iPhone 제공 업체": only ElevenLabs, which trains unless the account turns it off,
+    /// docs/15 "iPhone providers": only ElevenLabs, which trains unless the account turns it off,
     /// waits for the user to say the account has.
     func testOnlyElevenLabsAsksWhetherTrainingIsOff() {
         XCTAssertTrue(TrainingOptOut.required(transcribeTargets(["groq", "elevenlabs"])))

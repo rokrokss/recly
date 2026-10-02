@@ -72,7 +72,7 @@ fun BlueprintButton(
 
     Row(
         modifier = modifier
-            // docs/09 "접근성": the label is small, the button is not — in both directions. A height
+            // docs/09 "Accessibility": the label is small, the button is not — in both directions. A height
             // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
             .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
@@ -100,7 +100,7 @@ fun BlueprintButton(
 }
 
 /**
- * docs/09 "형태": a choice, as a square bordered box rather than Material's pill. `FilterChip` is
+ * docs/09 "Shape": a choice, as a square bordered box rather than Material's pill. `FilterChip` is
  * what this replaces — a selected one is a *filled container*, and this palette's container is the
  * surface, so a selected chip on a surface had no edge at all and the choice was invisible. The
  * Windows app's `BlueprintChip` and the Mac's are the same shape.
@@ -129,8 +129,8 @@ fun BlueprintChip(
     }
     Row(
         modifier = modifier
-            // docs/09 "접근성": the label is small, the target is not — in both directions. A height
-            // alone left a two- or three-letter chip a target barely half that wide; docs/09 "형태"
+            // docs/09 "Accessibility": the label is small, the target is not — in both directions. A height
+            // alone left a two- or three-letter chip a target barely half that wide; docs/09 "Shape"
             // wants a chip square anyway, so the box grows to the target rather than hiding behind
             // an invisible one.
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
@@ -139,7 +139,7 @@ fun BlueprintChip(
                 color = ink,
                 shape = RoundedCornerShape(Radius.node),
             )
-            // docs/09 "접근성": the border is the only thing that says this one is chosen, and a
+            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
             // border is not something a screen reader can read. `selectable` puts the same fact in
             // the semantics — one node, in place of the plain click, so it is announced as a choice
             // rather than as a button whose state nobody mentioned.
@@ -162,13 +162,13 @@ fun BlueprintChip(
 enum class ProcessingState { IDLE, PROCESSING, DONE, FAILED }
 
 /**
- * docs/09 트렌드 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
+ * docs/09 trend 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
  * What happened is the caller's to say: [state] comes from the operation itself, and the button only
  * owns the *window* around it — "…" for at least
  * [app.recly.android.ui.theme.Motion.PROCESSING_MIN_MS] however fast the result was, a check that
  * fills out the 800ms on success, and nothing at all on failure, which the screen reports.
  *
- * Reduce motion changes nothing here: docs/09 "모션" turns off the *transitions*, and the label is
+ * Reduce motion changes nothing here: docs/09 "Motion" turns off the *transitions*, and the label is
  * the state, not a transition. There is no fade between the three labels to switch off either — the
  * button swaps text, which is already instant.
  */

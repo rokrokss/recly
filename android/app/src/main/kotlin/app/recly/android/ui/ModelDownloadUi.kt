@@ -124,7 +124,7 @@ fun ModelDownloadLines(download: ModelDownloadState, info: LocalEngineInfo?) {
 
 /**
  * The first-run card: what on-device transcription needs, once, and the two answers — end-aligned,
- * the committing one last (docs/09 화면 원칙 8). While the download runs it is the progress and a
+ * the committing one last (docs/09 screen principle 8). While the download runs it is the progress and a
  * quiet "Cancel download"; it goes away with the model's arrival (see [modelPromptVisible]).
  */
 @Composable

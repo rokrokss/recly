@@ -11,7 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 2: every row state has a code and a tone, the code is the word the core and the
+ * docs/09 screen principle 2: every row state has a code and a tone, the code is the word the core and the
  * logs already use, and no two states look the same to someone who cannot tell the tones apart.
  */
 class LedgerStatusTest {
@@ -26,7 +26,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": a code says what is happening, not where — an upload another device
+     * docs/03 "Recordings from other devices": a code says what is happening, not where — an upload another device
      * is running is the same word as one of this phone's own. A finalized recording with no job
      * history also shares the completed state. Other states must remain distinct.
      */
@@ -56,7 +56,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 화면 원칙 2: a recording something is doing to it right now offers nothing — deleting
+     * docs/09 screen principle 2: a recording something is doing to it right now offers nothing — deleting
      * one would pull the file out from under a recorder, a transfer or another device's upload.
      * A recording another device is transcribing has arrived and is a finished row like any other.
      */
@@ -119,7 +119,7 @@ class LedgerStatusTest {
         ItemState.entries.forEach { assertTrue(it.badge().code in BADGE_CODES, "$it") }
     }
 
-    /** docs/10 "Drive 용량 초과": its own code, not a FAILED it would be mistaken for. */
+    /** docs/10 "Drive out of space": its own code, not a FAILED it would be mistaken for. */
     @Test
     fun `out of Drive space is its own row state`() {
         assertEquals("NO_SPACE", ItemState.NEEDS_SPACE.badge().code)
@@ -151,7 +151,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/05 "고정 처리 설정 도입": a transcription on this device is waited for whatever the job's
+     * docs/05 "Fixed processing settings": a transcription on this device is waited for whatever the job's
      * status says while it runs — and it is not an upload, so it neither holds back Delete nor
      * lends the Record screen `UPLOADING` (the iPhone's `RecentItem.canDelete`, `Recents.uploading`).
      */
@@ -168,7 +168,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": a recording still on its way here is one the list is waiting for,
+     * docs/03 "Recordings from other devices": a recording still on its way here is one the list is waiting for,
      * whichever device is bringing it. One another device is transcribing has already arrived.
      */
     @Test

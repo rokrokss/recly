@@ -24,7 +24,7 @@ class MeetingDetectionRule {
         /** "Are you in a meeting? Start recording" */
         START,
 
-        /** "End the recording?" — an offer, never a stop (docs/14 "감지": never an automatic stop). */
+        /** "End the recording?" — an offer, never a stop (docs/14 "Detection": never an automatic stop). */
         STOP,
     }
 
@@ -88,7 +88,7 @@ class MeetingDetectionRule {
          */
         val COOLDOWN: Duration = 600.seconds
 
-        /** docs/12 "종료 감지" · docs/14 "감지": sixty unbroken seconds of an unused microphone. */
+        /** docs/12 "End detection" · docs/14 "Detection": sixty unbroken seconds of an unused microphone. */
         val MIC_IDLE: Duration = 60.seconds
     }
 }

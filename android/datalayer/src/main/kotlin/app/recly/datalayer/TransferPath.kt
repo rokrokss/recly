@@ -28,8 +28,7 @@ sealed interface TransferPath {
     fun serialize(): String
 
     /**
-     * [file] is the name the watch wrote the part under — `{base}_pNNN_{track}.m4a` (docs/03 "이름
-     * 규칙"), where `{base}` comes from `startedAt` and so is not knowable on this side until the
+     * [file] is the name the watch wrote the part under — `{base}_pNNN_{track}.m4a` (docs/03 "Naming rules"), where `{base}` comes from `startedAt` and so is not knowable on this side until the
      * meta arrives, last. It rides in the path precisely so this side never has to rename: the part
      * is received under that name and `acceptPart` files it under that name, which is the one the
      * meta will ask for.

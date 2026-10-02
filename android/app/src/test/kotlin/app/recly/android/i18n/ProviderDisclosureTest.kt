@@ -11,7 +11,7 @@ import org.w3c.dom.Element
  * Lane P1 deliverable 6 · docs/15 §3: the editor tells the user what leaves the phone when a
  * `transcribe` step runs, and whose policy decides what happens to it next.
  *
- * The rule this test exists for is docs/15 §3's "작성 규칙": the app must not state a retention it
+ * The rule this test exists for is docs/15 §3's "Writing rule": the app must not state a retention it
  * cannot see. "Kept for 30 days" is a claim about somebody else's product that goes stale without
  * anybody here noticing, so no number followed by a day is allowed in either language.
  */

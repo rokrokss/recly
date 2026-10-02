@@ -19,7 +19,7 @@ import recly.core.platform.Logger
 import recly.core.recording.WaveformPeaks
 
 /**
- * docs/08 "결과 파일": which of the files beside `meta.json` the detail plays back, and in what
+ * docs/08 "Result files": which of the files beside `meta.json` the detail plays back, and in what
  * order. A pure choice over `meta`, so it can be checked without a disk or a player — the shell
  * only hands it the recording's parts, their directory, and a way to ask whether a file is there.
  *
@@ -188,7 +188,7 @@ class PlaybackGate {
 }
 
 /**
- * docs/09 화면 원칙 2: the shape of the recording under the player bar's clock — what the detail
+ * docs/09 screen principle 2: the shape of the recording under the player bar's clock — what the detail
  * draws a playhead across, and what a drag on it seeks through. RecKit's `RecordingWaveform`, in
  * the same two halves, so the two shells draw the same picture.
  *
@@ -358,7 +358,7 @@ object RecordingWaveform {
  * What a caller has of it is "playing or not", how far in it is, and — since a second of the
  * recording is a second of one particular part — a [seek] that may have to start another decoder.
  *
- * **Why ffmpeg and not `javax.sound`**: the parts are AAC in an MP4 container (docs/08 "오디오"),
+ * **Why ffmpeg and not `javax.sound`**: the parts are AAC in an MP4 container (docs/08 "Audio"),
  * which the JDK's own audio system cannot decode at all. The bundled ffmpeg (ADR-019) is already
  * here for `audio.concat` ([app.recly.windows.core.FfmpegAudioTools]) and is resolved the same way,
  * so one part at a time is decoded to raw 16 kHz mono PCM on its stdout and fed straight into a
@@ -394,7 +394,7 @@ class RecordingPlayer(
         private set
 
     /**
-     * docs/09 화면 원칙 2: the recording as a shape, one peak per [WaveformPeaks.WINDOW_SEC]
+     * docs/09 screen principle 2: the recording as a shape, one peak per [WaveformPeaks.WINDOW_SEC]
      * window of `meta.json`'s own timeline — empty until [prepare]'s decode is through, and empty
      * for good if it could not be.
      */
@@ -574,7 +574,7 @@ class RecordingPlayer(
     }
 
     /**
-     * docs/09 화면 원칙 2: a drag or a tap on the waveform. The second is the *recording's*, so the
+     * docs/09 screen principle 2: a drag or a tap on the waveform. The second is the *recording's*, so the
      * first thing it is turned into is a part and an offset into it ([target]).
      *
      * Two cases, and the difference is only whether there is a decoder to move. What is running for

@@ -42,12 +42,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// and resolved by [status], as the Mac's own slot is. It outranks the note while it stands.
     @Published private(set) var statusMessage: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
-    /// docs/03 "저장 위치": Google Drive or the app's iCloud folder, for the settings' storage block.
+    /// docs/03 "Storage location": Google Drive or the app's iCloud folder, for the settings' storage block.
     @Published private(set) var storage: StorageChoice?
-    /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
+    /// docs/05 "Fixed processing settings": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the Record tab's first-run card.
     @Published private(set) var modelDownload: ModelDownload?
-    /// docs/09 화면 원칙 2: the waveform of a recording this phone finalized or received from the
+    /// docs/09 screen principle 2: the waveform of a recording this phone finalized or received from the
     /// watch, decoded in the background and kept, so its detail opens with the bars already there.
     private var waveforms: WaveformPrecompute?
     /// "Not now" on the first-run card, remembered on this phone so the card does not come back.
@@ -77,20 +77,20 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/07 rule 3: what became of the last sign-in attempt, kept as the failure rather than as
     /// words — [authNote] makes the sentence where the settings tab draws it.
     @Published private(set) var authError: Error?
-    /// docs/09 화면 원칙 5: where the settings tab's Connect is, which its button shows in place —
+    /// docs/09 screen principle 5: where the settings tab's Connect is, which its button shows in place —
     /// "…" while the sign-in runs, ✓ when Drive is connected, and back to itself when it was not.
     @Published private(set) var signInState: ProcessingState = .idle
     @Published private(set) var transferPrivacy: TransferPrivacyModel?
     @Published var privacyPresented = false
-    /// docs/09 트렌드 2: where the one operation a ledger row can start — an upload now, a retry —
+    /// docs/09 trend 2: where the one operation a ledger row can start — an upload now, a retry —
     /// actually is. `ProcessingButton` owns the *window* around it and this owns the truth, so a
     /// retry that took two seconds looks like two seconds and one that was refused wears no ✓.
     @Published private(set) var action: ProcessingState = .idle
-    /// docs/09 화면 원칙 1·4: this install, for the dashboard's header and the About block. Empty
+    /// docs/09 screen principle 1·4: this install, for the dashboard's header and the About block. Empty
     /// until the core is open, which is the only thing that knows it.
     @Published private(set) var deviceId = ""
     /// Which of the tabs is on screen, so an action taken on one can land on another —
-    /// docs/08 "오류": "check the key" is on the list and the settings it means are a tab away.
+    /// docs/08 "Errors": "check the key" is on the list and the settings it means are a tab away.
     @Published var tab: PhoneTab = .record {
         // The line under the record button is news from the last start or stop; it does not wait
         // on the tab for the user to come back to it.
@@ -141,7 +141,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private let logger = Logger(subsystem: CoreBridge.appName, category: "shell")
     private let dataDirectory: URL
     /// ADR-006: the wall-clock length the recorder cuts a segment at. Nothing on screen says it —
-    /// docs/09 화면 원칙 1 keeps segment boundaries out of the UI.
+    /// docs/09 screen principle 1 keeps segment boundaries out of the UI.
     private let segmentSec: Int
     private var bridge: CoreBridge?
     private var recorder: SegmentedRecorder?
@@ -162,7 +162,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         _ = try? await withTaskCancellationHandler { try await core.runLocalJobs() }
             onCancel: { core.deps.localTranscription.cancel() }
     })
-    /// docs/03 "연결 해제" · docs/06: the whole of a disconnect, which is RecKit's and not this
+    /// docs/03 "Disconnect" · docs/06: the whole of a disconnect, which is RecKit's and not this
     /// model's — the Mac runs the same one. Lazy because every one of its closures reads `self`.
     private lazy var disconnectFlow = DisconnectFlow(
         device: .phone,
@@ -336,7 +336,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // started first would stage and start chunks *after* that snapshot was taken, and the
             // sweep would delete the file out from under a task that is uploading it.
             await transport.sweep()
-            // docs/12 "실행기" (b)·(c) and a pass now: a job the last run left parked is due.
+            // docs/12 "Runner" (b)·(c) and a pass now: a job the last run left parked is due.
             runner.start()
             Task { [weak self] in
                 for await _ in bridge.core.transferConsents.observe() {
@@ -413,7 +413,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// docs/09 화면 원칙 1: the line under the record button says something only when there is news —
+    /// docs/09 screen principle 1: the line under the record button says something only when there is news —
     /// what the last start or stop had to say, while the recorder is idle. What the recorder is doing
     /// is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
     /// (2026-09-29).
@@ -577,7 +577,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         await refreshRecents()
     }
 
-    /// docs/08 결과 파일: the detail screen of one recent recording.
+    /// docs/08 Result files: the detail screen of one recent recording.
     func detail(for item: RecentItem) -> RecordingDetailModel? {
         guard let core = bridge?.core else { return nil }
         return RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
@@ -594,7 +594,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         do {
             _ = try await bridge?.core.enqueue(recordingId: recordingId)
             logger.info("shell.recording.enqueued id=\(recordingId, privacy: .public)")
-            // docs/12 "실행기" (a): the job exists now, so a pass runs immediately rather than
+            // docs/12 "Runner" (a): the job exists now, so a pass runs immediately rather than
             // waiting for the five-minute timer …
             runner?.jobsDue()
             // … and docs/13 deliverable 4: right after the stop — the user is about to put the
@@ -690,11 +690,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func tick() {
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
         elapsed = LedgerFormat.clock(total)
-        // docs/13 "8시간 상한이면 갱신", checked here rather than from a timer of its own.
+        // docs/13 "renewed at the 8-hour limit", checked here rather than from a timer of its own.
         Task { await activity.refreshIfNeeded() }
     }
 
-    /// docs/09 화면 원칙 6: the levels behind the live strip under the timer, asked for ten times a
+    /// docs/09 screen principle 6: the levels behind the live strip under the timer, asked for ten times a
     /// second by the view that draws it — not published, because a `@Published` array at that rate
     /// would redraw the whole screen for a picture. It takes the recorder's own lock and nothing of
     /// the model's, and it answers with an empty array when there is no recording.
@@ -989,28 +989,28 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         case .driveStorage:
             openDriveStorage()
 
-        // docs/03 "저장 위치": the iCloud uploads parked for space, asked again once there is some.
+        // docs/03 "Storage location": the iCloud uploads parked for space, asked again once there is some.
         case .retryUploads:
             for item in recents where item.alert == alert.reason { retry(item) }
 
-        // docs/08 "오류": the key is the thing to look at, and it is entered in the recording
+        // docs/08 "Errors": the key is the thing to look at, and it is entered in the recording
         // processing settings.
         case .secrets, .editor:
             tab = .settings
 
-        // docs/05 "고정 처리 설정 도입": downloaded where the banner stands, not in the settings.
+        // docs/05 "Fixed processing settings": downloaded where the banner stands, not in the settings.
         case .modelDownload:
             modelDownload?.start()
         }
     }
 
-    /// docs/10 "Drive 용량 초과": the one fix that leaves the app, because the space is Google's to
+    /// docs/10 "Drive out of space": the one fix that leaves the app, because the space is Google's to
     /// give back. Offered on the ledger row as well as on the banner.
     func openDriveStorage() {
         UIApplication.shared.open(driveStorageURL)
     }
 
-    // MARK: - Deleting a recording (docs/03 "앱에서 지우기")
+    // MARK: - Deleting a recording (docs/03 "Deleting in the app")
 
     /// The dialog is asked every time, because the Drive half of it is a separate question whose
     /// answer is never remembered. The part count is read here rather than carried on every row —
@@ -1082,7 +1082,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    // MARK: - Disconnecting (docs/03 "로그아웃 vs 연결 해제" · docs/06)
+    // MARK: - Disconnecting (docs/03 "Sign out vs Disconnect" · docs/06)
 
     /// Opens the docs/03 warning. The count is read first because the dialog has to state it: a
     /// user about to lose the queue deserves to know what is still only on this phone.
@@ -1105,7 +1105,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         disconnectPrompt = nil
     }
 
-    /// docs/03 "연결 해제" · docs/06, all of it in [DisconnectFlow]: the phone and the Mac were running
+    /// docs/03 "Disconnect" · docs/06, all of it in [DisconnectFlow]: the phone and the Mac were running
     /// the same two hundred lines side by side, and what they differ by is what [disconnectFlow]
     /// is built with.
     func disconnect(alsoDeleteRecordings: Bool) {
@@ -1179,7 +1179,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         }
     }
 
-    /// A row button's window (docs/09 트렌드 2): the action reports its own outcome, so a retry that
+    /// A row button's window (docs/09 trend 2): the action reports its own outcome, so a retry that
     /// could not be made due shows no ✓. [action] is moved *before* the `Task`, not inside it: the
     /// button reads it the moment it is tapped, and a hop to the next main-actor turn would let the
     /// previous operation's `.done` be the state a fresh tap sees.
@@ -1235,7 +1235,7 @@ private enum Defaults {
     /// anything else, so it asks once — the setting *and* the answer together.
     static var askConsent: Bool { consentReminder && !consentAsked }
 
-    /// docs/05 "고정 처리 설정 도입": "Not now" on the first-run model card.
+    /// docs/05 "Fixed processing settings": "Not now" on the first-run model card.
     static var modelPromptDismissed: Bool {
         get { UserDefaults.standard.bool(forKey: modelPromptDismissedKey) }
         set { UserDefaults.standard.set(newValue, forKey: modelPromptDismissedKey) }

@@ -9,7 +9,7 @@ RECLY_PHONE_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
 RECLY_MAC_GID_CLIENT_ID = GIDClientID.apps.googleusercontent.com
 RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
 
-// docs/03 "저장 위치" (ADR-024): iCloud is off in a checkout. Its entitlement needs the container
+// docs/03 "Storage location" (ADR-024): iCloud is off in a checkout. Its entitlement needs the container
 // iCloud.app.recly registered for your team and enabled on the app.recly and app.recly.mac App IDs,
 // and a Mac app that carries it needs a provisioning profile, so Local.xcconfig turns it on
 // (Local.xcconfig.example). With the container empty the apps do not offer iCloud.

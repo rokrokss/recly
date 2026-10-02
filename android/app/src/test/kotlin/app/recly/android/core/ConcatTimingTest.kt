@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * The pts bookkeeping `AndroidAudioTools` joins parts with (docs/08 "오디오 준비"). `MediaMuxer`
+ * The pts bookkeeping `AndroidAudioTools` joins parts with (docs/08 "Audio preparation"). `MediaMuxer`
  * itself is Android framework code with no unit-test double, so what is checked off-device is the
  * arithmetic — which is the part that can be wrong in a way nobody notices until a transcript's
  * timestamps are off.

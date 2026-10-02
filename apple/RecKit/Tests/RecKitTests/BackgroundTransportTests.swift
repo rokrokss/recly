@@ -82,7 +82,7 @@ final class BackgroundTransportTests: XCTestCase {
         XCTAssertEqual(done.status, 200)
     }
 
-    /// docs/06 "배경 URLSession … 401이면 해당 청크를 재계획": the transport hands the 401 back rather
+    /// docs/06 "Background URLSession … a 401 replans that chunk": the transport hands the 401 back rather
     /// than throwing, because `DriveApi` answers it by invalidating the token and re-planning the
     /// very same chunk — which arrives here as a second task with the fresh bearer.
     func testA401IsHandedBackSoTheChunkIsReplannedWithAFreshToken() async throws {

@@ -126,7 +126,7 @@ class RecordingRecoveryTest {
         recovery.reconcile()
         assertEquals(1, core.recordings.jobStatuses(meta.recordingId).size)
         // The recovery never enqueues itself: it says the recording is ready and the shell decides
-        // (docs/11 "주의" — on the watch the same call means a transfer, not a job).
+        // (docs/11 "Caveats" — on the watch the same call means a transfer, not a job).
         assertEquals(listOf(meta.recordingId to true), host.ready)
 
         // Nothing left to do: the row is finalized and it already has its job.

@@ -220,7 +220,7 @@ class TranscribeRunnerTest {
 
     /**
      * `rev` documents up to six hours of turnaround, so the default two would drop a live job and
-     * pay for the same audio a second time (docs/08 "폴링 · 상태").
+     * pay for the same audio a second time (docs/08 "Polling · status").
      */
     @Test
     fun `a provider that declares a longer timeout is still waited on past the default two hours`() = runBlocking {

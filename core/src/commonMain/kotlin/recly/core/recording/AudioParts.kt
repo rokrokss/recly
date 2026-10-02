@@ -37,7 +37,7 @@ fun interface AudioFetchProgress {
 }
 
 /**
- * Reads a recording's audio back for playback (docs/03 "로컬 저장"), the way
+ * Reads a recording's audio back for playback (docs/03 "Local storage"), the way
  * [recly.core.transcribe.RecordingResults] reads the transcript: the local file is the fast path
  * and the offline one, and Drive is the fallback for a part the retention sweep has already taken.
  *

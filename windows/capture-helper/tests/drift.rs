@@ -99,7 +99,7 @@ fn an_interval_with_a_hole_in_it_is_refused() {
     assert!((estimator.ratio() - 1.0002).abs() < 1e-9, "{}", estimator.ratio());
 }
 
-/// docs/12 "tap 재생성": an outage that straddles an observation has already moved the ratio by the
+/// docs/12 "Tap re-creation": an outage that straddles an observation has already moved the ratio by the
 /// time anyone knows about it, so the re-anchor puts it back.
 #[test]
 fn a_reanchor_reverts_a_correction_the_outage_caused() {

@@ -19,7 +19,7 @@ enum class CoreMessage {
     /** docs/15: a transcription integration is unavailable in this App Store region. */
     PROVIDER_REGION_RESTRICTED,
 
-    /** docs/15 "iPhone 제공 업체": the App Store shell does not offer this transcription provider. */
+    /** docs/15 "iPhone providers": the App Store shell does not offer this transcription provider. */
     PROVIDER_NOT_OFFERED,
 
     /** StoreKit has not supplied a region; wait without sending audio or spending retries. */
@@ -38,13 +38,13 @@ enum class CoreMessage {
     DRIVE_CONSENT_REQUIRED,
 
     /**
-     * docs/10 "Drive 용량 초과": Drive answered 403 `storageQuotaExceeded`, so no retry helps until
+     * docs/10 "Drive out of space": Drive answered 403 `storageQuotaExceeded`, so no retry helps until
      * the user frees space or buys some. No argument; the detail is what Drive said.
      */
     DRIVE_STORAGE_FULL,
 
     /**
-     * docs/03 "저장 위치": iCloud Drive cannot be used from this device right now — no iCloud account,
+     * docs/03 "Storage location": iCloud Drive cannot be used from this device right now — no iCloud account,
      * iCloud Drive turned off for Recly, or a build without the iCloud entitlement. The upload waits
      * and looks again; nothing in the app can change it, so the sentence says where to.
      */
@@ -55,14 +55,14 @@ enum class CoreMessage {
 
     /**
      * The recording is in the iCloud folder and the system is still uploading it. A wait, not a
-     * failure: iCloud uploads in the background on its own schedule (docs/03 "저장 위치").
+     * failure: iCloud uploads in the background on its own schedule (docs/03 "Storage location").
      */
     ICLOUD_UPLOADING,
 
     /** The user backed out of the consent screen. */
     SIGN_IN_CANCELLED,
 
-    /** Argument: the `secretRef` this device holds no value for (docs/05 "시크릿"). */
+    /** Argument: the `secretRef` this device holds no value for (docs/05 "Secrets"). */
     MISSING_SECRET,
 
     /** Argument: what the folder template says wrong. */
@@ -79,7 +79,7 @@ enum class CoreMessage {
 
     /**
      * Argument: the step `type` in a job's stored workflow snapshot that this build cannot decode —
-     * a job a newer app queued (docs/10 "잡 스냅샷"). The snapshot itself is left untouched, so the
+     * a job a newer app queued (docs/10 "job snapshot"). The snapshot itself is left untouched, so the
      * job runs as it was written once this device is updated.
      */
     UNSUPPORTED_STEP,
@@ -88,29 +88,29 @@ enum class CoreMessage {
     STEP_FAILED,
 
     /**
-     * docs/08 "오류": the transcription provider refused the key (401/403). Not
+     * docs/08 "Errors": the transcription provider refused the key (401/403). Not
      * retried — the key is what has to change, so the shell offers to check it.
      * Detail: which call, and the status it answered with.
      */
     AUTH_REJECTED,
 
-    /** docs/08 "오류": the provider is out of quota or rate-limiting (429, 402). Detail: the call. */
+    /** docs/08 "Errors": the provider is out of quota or rate-limiting (429, 402). Detail: the call. */
     QUOTA,
 
     /**
-     * docs/08 "오류": trouble at the provider's end — 5xx, a dropped connection, a body that will
+     * docs/08 "Errors": trouble at the provider's end — 5xx, a dropped connection, a body that will
      * not parse, a submission it declared failed. Retried. Detail: what it said.
      */
     PROVIDER_ERROR,
 
-    /** docs/08 "오류": a 4xx that rejected the audio itself. Detail: the call and the status. */
+    /** docs/08 "Errors": a 4xx that rejected the audio itself. Detail: the call and the status. */
     UNSUPPORTED_AUDIO,
 
-    /** docs/08 "오류": the recording has no mono or mix track to transcribe. Detail: what it has. */
+    /** docs/08 "Errors": the recording has no mono or mix track to transcribe. Detail: what it has. */
     NO_INPUT_TRACK,
 
     /**
-     * docs/08 "오류": `resultTimeoutSec` passed with the submission still unfinished, so the next
+     * docs/08 "Errors": `resultTimeoutSec` passed with the submission still unfinished, so the next
      * attempt submits the audio again. Detail: the reference that was being polled.
      */
     RESULT_TIMEOUT,

@@ -20,7 +20,7 @@ import recly.core.platform.Transport
 data class OAuthEndpoints(
     val authorize: String = "https://accounts.google.com/o/oauth2/v2/auth",
     val token: String = "https://oauth2.googleapis.com/token",
-    /** docs/03 "연결 해제": where the grant this PC holds is handed back (docs/06 Windows). */
+    /** docs/03 "Disconnect": where the grant this PC holds is handed back (docs/06 Windows). */
     val revoke: String = "https://oauth2.googleapis.com/revoke",
     val clientId: String = OAuthConfig.CLIENT_ID,
     /** Not a secret for a Desktop-type client — Google's own documentation says so (docs/06). */
@@ -83,7 +83,7 @@ class TokenEndpoint(
     )
 
     /**
-     * docs/03 "연결 해제": Google's revocation endpoint, which takes the token as a form field and
+     * docs/03 "Disconnect": Google's revocation endpoint, which takes the token as a form field and
      * answers with an empty 200. Either token of the pair works and revoking one revokes the grant,
      * so the refresh token is what goes — it is the durable half, and the access token may already
      * have expired.

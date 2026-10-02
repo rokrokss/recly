@@ -16,7 +16,7 @@ internal class SegmentLedger(
     private val base: String,
     private val track: Track = Track.MONO,
 ) {
-    /** 1-based; the same number across tracks of one time slice (docs/03 "이름 규칙"). */
+    /** 1-based; the same number across tracks of one time slice (docs/03 "Naming rules"). */
     var openPart: Int = 1
         private set
 

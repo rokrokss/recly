@@ -8,7 +8,7 @@ import recly.core.drive.UploadState
 
 /**
  * The file operations the steps and the shared list need from the user's cloud storage
- * (docs/03 "저장 위치"). Shaped after Drive v3 because Drive came first: a folder has a
+ * (docs/03 "Storage location"). Shaped after Drive v3 because Drive came first: a folder has a
  * `description` (the recording's title) and `appProperties` (its id and the pending marker), and a
  * file has an md5. [ICloudFiles] keeps the same shapes in a file of its own.
  *

@@ -8,7 +8,7 @@ import recly.core.model.Part
 import recly.core.model.Track
 
 /**
- * docs/08 "결과 파일": what the detail plays, in what order, and what its clock counts in. The same
+ * docs/08 "Result files": what the detail plays, in what order, and what its clock counts in. The same
  * rules RecKit's `RecordingPlaylistTests` holds for the Apple shells — the two are meant to answer
  * a recording the same way.
  */

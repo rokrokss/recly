@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 import recly.core.model.Track
 
 /**
- * docs/14 "캡처": the three things the recording mode decides, held still. Every one of them is a
+ * docs/14 "Capture": the three things the recording mode decides, held still. Every one of them is a
  * branch the Mac takes too (`RecorderTypes.RecordingMode`, `MenuModel.start(mode:)`), and the two
  * desktops must not answer them differently — a Windows user who has used the Mac would find a
  * microphone-only memo with the whole room in it, or a memo asking about participants there are none of.
@@ -21,7 +21,7 @@ class RecordingModeTest {
         assertEquals(listOf(Track.MIC, Track.SYS, Track.MIX), RecordingMode.MEETING.tracks)
     }
 
-    /** docs/12 "종료 감지": a memo's own idle microphone is not a meeting that has ended. */
+    /** docs/12 "End detection": a memo's own idle microphone is not a meeting that has ended. */
     @Test
     fun `only a meeting has an end worth detecting`() {
         assertFalse(RecordingMode.MICROPHONE.detectsEnd)

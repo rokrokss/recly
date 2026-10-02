@@ -9,7 +9,7 @@ import kotlinx.serialization.json.JsonClassDiscriminator
 
 /**
  * What a job runs: the fixed processing plan ([recly.core.processing.ProcessingPlan]) compiled from
- * the recording's frozen settings, stored with the job as its snapshot (docs/10 "잡 스냅샷").
+ * the recording's frozen settings, stored with the job as its snapshot (docs/10 "job snapshot").
  */
 @Serializable
 data class Workflow(
@@ -44,7 +44,7 @@ sealed class Step {
         val folder: String = "recly/{{yyyy}}/{{yyyy}}-{{MM}}",
         val includeMeta: Boolean = true,
         /**
-         * docs/03 "저장 위치": which storage the files go to — the type keeps its `drive.upload` wire
+         * docs/03 "Storage location": which storage the files go to — the type keeps its `drive.upload` wire
          * name for both, and a snapshot written before this field reads as Drive.
          */
         val store: recly.core.storage.StorageKind = recly.core.storage.StorageKind.DRIVE,

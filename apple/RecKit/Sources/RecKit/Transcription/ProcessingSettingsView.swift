@@ -125,7 +125,7 @@ public final class ProcessingSettingsModel: ObservableObject {
         _ = try? await core.deps.transcriptionPolicy.refresh()
         providers = WorkflowParser.shared.STT_PROVIDERS.filter { core.deps.transcriptionPolicy.providerAvailable(provider: $0) }
     }
-    /// docs/03 "저장 위치": the storage was switched from the storage section, which saved a new
+    /// docs/03 "Storage location": the storage was switched from the storage section, which saved a new
     /// revision under this form. The draft never carries the storage — saving keeps the stored one —
     /// so it stays as typed and is saved on top of the new revision.
     public func storageChanged() async {
@@ -213,7 +213,7 @@ public struct ProcessingSettingsView: View {
                     SectionFootnote(loc("On-device transcription does not separate speakers."))
                 }
                 if draft.mode == .external {
-                    // docs/09 원칙 4: a settings row, "Provider … ElevenLabs", like Language below.
+                    // docs/09 principle 4: a settings row, "Provider … ElevenLabs", like Language below.
                     SectionRow(title: loc("Provider")) {
                         #if os(macOS)
                         BlueprintDropdown(loc("Provider"), options: model.providers.map(ProviderOption.init),
@@ -248,7 +248,7 @@ public struct ProcessingSettingsView: View {
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
                 }
                 if let message = model.message { SectionFootnote(message.text) }
-                // docs/09 화면 원칙 8: Cancel · Save only appear when there is something to save.
+                // docs/09 screen principle 8: Cancel · Save only appear when there is something to save.
                 if model.dirty {
                     FlowLayout(alignment: .trailing) {
                         BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { Task { await model.reload() } }.disabled(model.busy)
@@ -356,8 +356,8 @@ private struct SpeechLanguageOption: Hashable, Identifiable {
     var id: String { language.name }
 }
 
-/// docs/05 "시크릿": the value is never read back. A saved key is a row that says so — the chip's
-/// ✓ in the success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with
+/// docs/05 "Secrets": the value is never read back. A saved key is a row that says so — the chip's
+/// ✓ in the success colour, colour and text together (docs/09 "Every state is color + text") — with
 /// Replace and Delete; the empty field only comes back to take a new value.
 private struct ProcessingKeyField: View {
     @Environment(\.blueprint) private var blueprint

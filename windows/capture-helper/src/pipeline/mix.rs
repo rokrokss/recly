@@ -1,5 +1,5 @@
 //! The `mix` track: the file the user's own AI is meant to eat, where the separate tracks are for
-//! speaker separation (docs/12 "합산 −6 dB 헤드룸", the same arithmetic as
+//! speaker separation (docs/12 "summed with −6 dB headroom", the same arithmetic as
 //! `SegmentedRecorder.mix` on macOS).
 
 /// Appends `(mic + sys) × 0.5` to [out]. The two slices are the same length by construction — the

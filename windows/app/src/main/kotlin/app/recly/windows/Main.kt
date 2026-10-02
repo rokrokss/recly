@@ -80,8 +80,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
- * docs/14 N1 · deliverable 1: a tray app with no main window. The tray is the way in; docs/09 화면
- * 원칙 6 makes what it opens a Compose popup window rather than an AWT menu, because the state nodes
+ * docs/14 N1 · deliverable 1: a tray app with no main window. The tray is the way in; docs/09 screen
+ * principle 6 makes what it opens a Compose popup window rather than an AWT menu, because the state nodes
  * and the ledger are shapes and an AWT menu item is one run of system text.
  *
  * The language table is collected here and handed down (docs/07 rule 3): a new one recomposes the
@@ -158,7 +158,7 @@ fun main(args: Array<String>) {
             }
         }
 
-        // docs/08 "결과 파일": what the transcribe step wrote, for the recordings the popup lists.
+        // docs/08 "Result files": what the transcribe step wrote, for the recordings the popup lists.
         if (model.recordingsOpen) {
             Window(
                 onCloseRequest = { model.recordingsOpen = false },
@@ -180,7 +180,7 @@ fun main(args: Array<String>) {
             ConsentPrompt(model, strings, themed)
         }
 
-        // docs/03 "앱에서 지우기" · "연결 해제": both are questions with a destructive answer, and both
+        // docs/03 "Deleting in the app" · "Disconnect": both are questions with a destructive answer, and both
         // are asked from here rather than from a window — the popup that opened one may be gone by
         // the time it is answered.
         model.deleteRequest?.let { request ->
@@ -401,7 +401,7 @@ private const val PARTICIPANTS_MANY = 6
 
 /**
  * docs/12 M8 · ADR-011: the question every desktop recording is asked once, in the Mac's own words
- * ([Consent]). docs/09 화면 원칙 5 caps a dialog at two buttons, so the guidance is a link inside the
+ * ([Consent]). docs/09 screen principle 5 caps a dialog at two buttons, so the guidance is a link inside the
  * body rather than a third — and "do not ask again" is an option, not an answer.
  */
 @Composable
@@ -428,7 +428,7 @@ private fun ConsentPrompt(
         },
     ) {
         // The jurisdictions are prose about the law, not a table of data: sans, like every other
-        // sentence this app says (docs/09 "타이포").
+        // sentence this app says (docs/09 "Typography").
         BlueprintDialogText(strings[Consent.BODY])
         BlueprintDialogLink(strings[Consent.LINK_TEXT], model::openConsentGuidance)
         BlueprintCheckRow(
@@ -442,7 +442,7 @@ private fun ConsentPrompt(
 /**
  * The tray icon, drawn rather than bundled: the app mark's monochrome template (docs/09
  * "앱 아이콘", docs/design/icon.svg) — an outer node with an inner square that turns red while
- * recording (docs/12 "상태 아이콘", the same rule on both desktops). A vector needs no asset
+ * recording (docs/12 "Status icon", the same rule on both desktops). A vector needs no asset
  * pipeline; the .ico the installer carries is the same mark, exported by scripts/render-icons.swift.
  *
  * Windows does not template-tint a tray icon, so the ink has to be chosen for the taskbar it sits
@@ -477,7 +477,7 @@ private class StatusIcon(
             size = Size(6f * unit, 6f * unit),
             cornerRadius = CornerRadius(1f * unit),
         )
-        // docs/09 "모든 상태는 색 + 텍스트" as far as 22 pixels allow: a second square, in the warning
+        // docs/09 "Every state is color + text" as far as 22 pixels allow: a second square, in the warning
         // token and in the corner, so "something is waiting for you" is a *shape* that appears and
         // not only a hue. The same badge RecMac puts on its menu bar item.
         if (blocked) {

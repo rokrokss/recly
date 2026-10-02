@@ -26,7 +26,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 
 /**
- * docs/09 화면 원칙 4: the width of the list down the left of a master-detail window. Both of this
+ * docs/09 screen principle 4: the width of the list down the left of a master-detail window. Both of this
  * app's windows are that shape, and a list that was a different width in each would read as two
  * different apps.
  */

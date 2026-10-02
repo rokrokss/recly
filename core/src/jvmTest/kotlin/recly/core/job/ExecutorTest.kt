@@ -111,7 +111,7 @@ internal class Fixture(
     /** The disk is dated by the same clock as the queue: the retention sweep reads part mtimes. */
     val clock: FakeClock = FakeClock(),
     val fs: FakeFileSystem = FakeFileSystem(clock),
-    /** docs/03 "다른 기기의 녹음": what the other devices are told; the default tells them nothing. */
+    /** docs/03 "Recordings from other devices": what the other devices are told; the default tells them nothing. */
     val marker: FolderMarker = FolderMarker.NONE,
     requireTransferConsent: Boolean = false,
     transport: recly.core.platform.Transport = recly.core.testing.UnusedTransport,
@@ -443,7 +443,7 @@ class ExecutorTest {
     }
 
     /**
-     * docs/03 "연결 해제" runs inside [JobService.quiesced], which is the gate [runDueJobs] holds
+     * docs/03 "Disconnect" runs inside [JobService.quiesced], which is the gate [runDueJobs] holds
      * while it runs: the step in flight is allowed to finish, the rest of the job is not started —
      * nothing external is called over an account that is being emptied — and only then does the
      * disconnect get the gate and the secrets, tokens and queue rows it is about to clear.
@@ -648,7 +648,7 @@ class ExecutorTest {
         assertEquals(JobStatus.FAILED, f.store.get(failedJob)!!.status)
         assertEquals(JobStatus.DONE, f.store.get(doneJob)!!.status)
         // A FAILED sibling holds the parts even though this job uploaded them: retry() has to
-        // have something left to work with (docs/03 "로컬 저장").
+        // have something left to work with (docs/03 "Local storage").
         recording.meta.parts.forEach {
             assertTrue(fs.exists(recording.dir / it.file), "${it.file} was purged while a sibling was FAILED")
         }

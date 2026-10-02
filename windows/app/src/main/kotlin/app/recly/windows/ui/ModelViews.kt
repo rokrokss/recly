@@ -34,7 +34,7 @@ import java.util.Locale
  * The download's own lines and buttons, as settings and the first-run card both draw them: while it
  * runs, the percentage and the bytes with a quiet Cancel; partly here, the bytes and "Resume
  * download"; and why the last one stopped, when it failed. [quiet] is the card's "Not now", drawn
- * before the start button so the commit is last (docs/09 화면 원칙 8).
+ * before the start button so the commit is last (docs/09 screen principle 8).
  */
 @Composable
 fun ModelDownloadControls(
@@ -139,7 +139,7 @@ fun ModelDownloadChip(model: ShellModel, strings: Strings, language: String?) {
  * the bytes — and the button stops it; "isn't downloaded yet" is never said over a download.
  *
  * The code wears the job's status in the warning tone of a wait, and the sentence stays in the body
- * colour: red is for failures (docs/09 "모든 상태는 색 + 텍스트").
+ * colour: red is for failures (docs/09 "Every state is color + text").
  */
 @Composable
 fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {

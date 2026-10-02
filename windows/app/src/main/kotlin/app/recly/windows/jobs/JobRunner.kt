@@ -36,7 +36,7 @@ interface JobQueue {
     suspend fun jobs(): List<Job>
 }
 
-/** The real one. Every core call is hopped onto `CoreDeps.io` (docs/10 "동시성 · 스레딩"). */
+/** The real one. Every core call is hopped onto `CoreDeps.io` (docs/10 "Concurrency · threading"). */
 class CoreJobQueue(private val core: ReclyCore) : JobQueue {
     override fun now(): Instant = core.deps.clock.now()
 
@@ -46,7 +46,7 @@ class CoreJobQueue(private val core: ReclyCore) : JobQueue {
 }
 
 /**
- * docs/14 "실행기": the app process is the only thing that runs the queue on Windows, and it calls
+ * docs/14 "Runner": the app process is the only thing that runs the queue on Windows, and it calls
  * `runDueJobs()` on four triggers — a job just enqueued, the five-minute timer, the network coming
  * back, and the successor armed from the queue itself.
  *
@@ -193,7 +193,7 @@ class JobRunner(
     }
 
     /**
-     * docs/14 "실행기" (c). There is no `NWPathMonitor` on the JVM, so it is polled: an interface
+     * docs/14 "Runner" (c). There is no `NWPathMonitor` on the JVM, so it is polled: an interface
      * that is up, not loopback and has an address is as much as `java.net` can say about whether
      * this machine is on a network. A false positive costs one pass that fails and retries.
      */
@@ -206,7 +206,7 @@ class JobRunner(
     }
 
     companion object {
-        /** docs/14 "실행기": (b), the standing five-minute timer. */
+        /** docs/14 "Runner": (b), the standing five-minute timer. */
         val INTERVAL: Duration = 5.minutes
 
         /**

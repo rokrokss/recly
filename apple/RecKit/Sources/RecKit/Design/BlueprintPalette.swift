@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 "토큰": a neutral palette with one accent, and nothing else. Every colour the four Apple
+/// docs/09 "Tokens": a neutral palette with one accent, and nothing else. Every colour the four Apple
 /// apps draw comes from here.
 ///
 /// The tokens are kept as sRGB hexes rather than as `Color`s because two things need them: the
@@ -57,16 +57,16 @@ public struct BlueprintPalette: Equatable, Sendable {
     public var warning: Color { color(.warning) }
     public var warningInk: Color { color(.warningInk) }
 
-    /// docs/09 "선": 1pt, and 2pt in high contrast. Connectors, dividers, node borders.
+    /// docs/09 "Lines": 1pt, and 2pt in high contrast. Connectors, dividers, node borders.
     public var line: CGFloat { highContrast ? 2 : 1 }
 
     /// The border of the one that is chosen — a chip, a graph node. Always heavier than [line]
     /// rather than a flat 2pt: high contrast makes the plain hairline 2pt too, and a selection
     /// drawn at the same weight as everything around it is a selection said in colour alone
-    /// (docs/09 "고대비 모드"). The Android palette's `selectedLine` is the same number.
+    /// (docs/09 "High-contrast mode"). The Android palette's `selectedLine` is the same number.
     public var selectedLine: CGFloat { line + 1 }
 
-    /// docs/09 "고대비 모드": the grid lines and the secondary text are promoted to the body colour,
+    /// docs/09 "High-contrast mode": the grid lines and the secondary text are promoted to the body colour,
     /// the accent keeps its saturation, and borders become 2pt (see [line]). The dot grid is
     /// switched off by the same flag.
     func promotedToHighContrast() -> BlueprintPalette {
@@ -76,7 +76,7 @@ public struct BlueprintPalette: Equatable, Sendable {
         return BlueprintPalette(dark: dark, highContrast: true, hexes: promoted)
     }
 
-    /// docs/09 팔레트 — Light.
+    /// docs/09 Palette — Light.
     public static let light = BlueprintPalette(
         dark: false,
         highContrast: false,
@@ -96,7 +96,7 @@ public struct BlueprintPalette: Equatable, Sendable {
         ]
     )
 
-    /// docs/09 팔레트 — Dark.
+    /// docs/09 Palette — Dark.
     public static let dark = BlueprintPalette(
         dark: true,
         highContrast: false,
@@ -137,7 +137,7 @@ extension Color {
     }
 }
 
-/// docs/09 "접근성": WCAG AA — 4.5:1 for text, 3:1 for a graphic. The arithmetic is here rather than
+/// docs/09 "Accessibility": WCAG AA — 4.5:1 for text, 3:1 for a graphic. The arithmetic is here rather than
 /// in the test so that the rule the design claims to follow is written down where the colours are.
 public enum WCAG {
     public static func relativeLuminance(_ hex: UInt32) -> Double {

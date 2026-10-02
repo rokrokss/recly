@@ -23,7 +23,7 @@ import recly.core.ReclyCore
 import recly.core.platform.Logger
 
 /**
- * The phone half of docs/03 "워치 → 폰 전송 계약" (docs/11 A8). One file per channel, parts first
+ * The phone half of docs/03 "Watch → phone transfer contract" (docs/11 A8). One file per channel, parts first
  * and `meta.json` last; every file is verified against the sha256 in its own path and acked, and
  * only a meta whose parts are all present turns into a Job.
  *

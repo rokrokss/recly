@@ -86,9 +86,9 @@ class DriveHarness(
     val title: String? = "주간 회의",
     val tokens: ScriptedTokenProvider = ScriptedTokenProvider(),
     /** The workflow the upload runs inside. Only the steps *after* the upload matter to it — they
-     * are what the folder's `pending` marker names (docs/03 "다른 기기의 녹음"). */
+     * are what the folder's `pending` marker names (docs/03 "Recordings from other devices"). */
     val steps: List<Step> = listOf(Step.DriveUpload(id = "up")),
-    /** docs/03 "저장 위치": give the device an iCloud container, as the iPhone and Mac shells do. */
+    /** docs/03 "Storage location": give the device an iCloud container, as the iPhone and Mac shells do. */
     icloud: Boolean = false,
 ) {
     val drive = FakeDrive()

@@ -29,7 +29,7 @@ import recly.core.platform.HttpResult
  * The transcript records `speech_model_used`, the one that actually ran. The step's `model` field
  * does not apply here.
  *
- * Every call goes to the EU region (docs/15 "provider 보관 정책", 2026-09-29): AssemblyAI's
+ * Every call goes to the EU region (docs/15 "Provider retention policies", 2026-09-29): AssemblyAI's
  * documentation says files submitted to its European servers are not used for model training,
  * without naming a plan. The same API key works there; nothing else in the request changes.
  */

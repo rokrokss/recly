@@ -37,7 +37,7 @@ struct RecWatchShortcuts: AppShortcutsProvider {
             // docs/07: English here and translated in `AppShortcuts.xcstrings`.
             phrases: ["Start recording with \(.applicationName)"],
             shortTitle: "Start recording",
-            // docs/09 "형태": a square, as the record node and the mark are everywhere else.
+            // docs/09 "Shape": a square, as the record node and the mark are everywhere else.
             systemImageName: "smallcircle.filled.square"
         )
         AppShortcut(

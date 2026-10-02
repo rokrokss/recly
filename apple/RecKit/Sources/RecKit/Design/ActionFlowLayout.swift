@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 2: an expanded ledger row's buttons, across the row's whole width and onto more
+/// docs/09 screen principle 2: an expanded ledger row's buttons, across the row's whole width and onto more
 /// lines when they do not fit, with the last one — the row's Delete, when [trailingLast] — at the end
 /// of the last line. It used to stand apart under the status badge, and whatever it took from the
 /// row the other buttons lost (2026-09-29). The Android shell's `ActionFlow` is the same rule.

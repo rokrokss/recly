@@ -2,8 +2,7 @@
 //!
 //! One process serves one recording. `stop` — or the app closing stdin, which is what
 //! `HelperClient.close` does — closes the last segment, reports it and exits; the app's rule for a
-//! helper that dies before that is its own (docs/14 "헬퍼가 죽으면 앱이 마지막 파트까지를
-//! finalize한다"), and this side helps it by never announcing a part it has not finished writing.
+//! helper that dies before that is its own (docs/14 "if the helper dies, the app finalizes up to the last part"), and this side helps it by never announcing a part it has not finished writing.
 
 use std::io::{BufRead, Write};
 use std::path::PathBuf;
@@ -226,7 +225,7 @@ fn run(options: Options) -> i32 {
                     return 9;
                 }
             }
-            // Nothing to record yet: `detect on` alone is a legitimate state (docs/14 "감지").
+            // Nothing to record yet: `detect on` alone is a legitimate state (docs/14 "Detection").
             None => std::thread::sleep(Duration::from_millis(PUMP_MS)),
         }
     }
@@ -246,7 +245,7 @@ fn finish(session: Option<Session>) -> i32 {
 /// recording. Returns the exit code.
 fn report(written: Written) -> i32 {
     // The strip first, in one line for the whole pump: it is what the app is drawing right now, and
-    // a `part_done` behind it is a file the user is not looking at (docs/09 화면 원칙 6).
+    // a `part_done` behind it is a file the user is not looking at (docs/09 screen principle 6).
     if !written.levels.is_empty() {
         emit(&Event::level(&written.levels));
     }
@@ -402,7 +401,7 @@ impl Session {
                     self.started.elapsed().as_secs_f64(),
                     seconds,
                 ),
-                // docs/03 "트랙": the system track is the one that may have holes in it. A
+                // docs/03 "Tracks": the system track is the one that may have holes in it. A
                 // recording does not end because the render endpoint went away.
                 Ok(Delivery::Failed(error)) => {
                     eprintln!("recly-capture-helper: system audio stopped: {error}");

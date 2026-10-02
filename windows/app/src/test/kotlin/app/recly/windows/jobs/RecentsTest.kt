@@ -40,7 +40,7 @@ import recly.core.model.Step
 import recly.core.model.Track
 import recly.core.recording.RecordingRecord
 
-/** Deliverable 7: what the tray's recents list says about a recording (docs/14 "앱"). */
+/** Deliverable 7: what the tray's recents list says about a recording (docs/14 "App"). */
 class RecentsTest {
 
     @Test
@@ -120,13 +120,13 @@ class RecentsTest {
         assertEquals("DONE", item.state.ledgerStatus().code)
         assertTrue(item.remote)
         assertNull(item.jobStatus)
-        // docs/09 화면 원칙 2: Details and Delete are offered exactly as for any finished row.
+        // docs/09 screen principle 2: Details and Delete are offered exactly as for any finished row.
         assertTrue(item.deletable)
         assertFalse(Recents.uploading(listOf(item)))
     }
 
     /**
-     * docs/03 "다른 기기의 녹음" (2026-09-04): a watch transfer still coming in. It cannot happen on
+     * docs/03 "Recordings from other devices" (2026-09-04): a watch transfer still coming in. It cannot happen on
      * this shell — a PC has no watch to receive from — but the mapping is one product's, so the rule
      * is held here too: `RECEIVING` before the plain `REC` the row's `status = recording` would
      * otherwise get, and none of the actions a row that is being written to would refuse.
@@ -146,7 +146,7 @@ class RecentsTest {
         assertFalse(item.deletable)
         assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
         assertNull(item.link)
-        // docs/09 화면 원칙 2: nothing is finalized yet, so the 길이 column says "not in yet".
+        // docs/09 screen principle 2: nothing is finalized yet, so the 길이 column says "not in yet".
         assertNull(item.durationSec)
     }
 
@@ -171,7 +171,7 @@ class RecentsTest {
         assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
         assertNull(item.link)
         assertNull(item.durationSec)
-        // docs/09 화면 원칙 1: the State node is what *this* PC is doing, and it is doing nothing.
+        // docs/09 screen principle 1: the State node is what *this* PC is doing, and it is doing nothing.
         assertFalse(Recents.uploading(listOf(item)))
     }
 
@@ -214,7 +214,7 @@ class RecentsTest {
     }
 
     /**
-     * docs/08 "폴링 · 상태": a job parked while a provider transcribes is waiting on someone else,
+     * docs/08 "Polling · status": a job parked while a provider transcribes is waiting on someone else,
      * not on a retry timer, so it says how long it has been rather than "waiting to retry" — and it
      * gets its own ledger badge instead of the RETRY one.
      */
@@ -245,7 +245,7 @@ class RecentsTest {
         assertEquals(Str.STATE_RETRY_WAIT.message(), item.state)
     }
 
-    /** docs/08 "오류": the step that is holding the job up names the reason the window acts on. */
+    /** docs/08 "Errors": the step that is holding the job up names the reason the window acts on. */
     @Test
     fun `the reason comes from the step that is holding the job up`() {
         val rejected = CoreMessage.AUTH_REJECTED.code(detail = "rtzr.transcribe HTTP 401")
@@ -295,7 +295,7 @@ class RecentsTest {
     }
 
     /**
-     * docs/09 화면 원칙 1: the State node reads `UPLOADING` off the ledger it sits above, so what it
+     * docs/09 screen principle 1: the State node reads `UPLOADING` off the ledger it sits above, so what it
      * folds is the rows' own state and not a second reading of the queue.
      */
     @Test
@@ -338,7 +338,7 @@ class RecentsTest {
     }
 
     /**
-     * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": the two rows that do not offer a Delete, in both
+     * docs/09 screen principle 2 "Delete (except while recording or uploading)": the two rows that do not offer a Delete, in both
      * of the surfaces that draw them. The core refuses the delete anyway, and a button that only
      * ever produces a refusal is not one to draw.
      */
@@ -350,7 +350,7 @@ class RecentsTest {
         assertTrue(Recents.item(record(), job("failed", JobStatus.FAILED), emptyList()).deletable)
     }
 
-    /** docs/09 화면 원칙 2: the 길이 column, off `meta.json` — and empty until it is finalized. */
+    /** docs/09 screen principle 2: the 길이 column, off `meta.json` — and empty until it is finalized. */
     @Test
     fun `the length is the meta's, and there is none until the recording is finalized`() {
         assertEquals(90.0, Recents.item(record(durationSec = 90.0), null, emptyList()).durationSec)

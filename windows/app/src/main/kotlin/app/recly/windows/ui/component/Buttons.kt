@@ -56,7 +56,7 @@ fun BlueprintButton(
     tone: ButtonTone = ButtonTone.ACCENT,
     enabled: Boolean = true,
     leading: String? = null,
-    /** Monospace for a button whose label is data — a secret name, a step id (docs/09 "타이포"). */
+    /** Monospace for a button whose label is data — a secret name, a step id (docs/09 "Typography"). */
     monospace: Boolean = false,
 ) {
     val palette = blueprint
@@ -77,10 +77,10 @@ fun BlueprintButton(
 
     Row(
         modifier = modifier
-            // docs/09 "접근성": the label is small, the button is not.
+            // docs/09 "Accessibility": the label is small, the button is not.
             .defaultMinSize(minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
-            // docs/09 "고대비 모드" promotes `grid` and `textMuted` to the body colour, which left a
+            // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
             // disabled button drawn in exactly the ink and the border weight of a live QUIET one.
             // A dash is the cue that survives that, because it is a shape rather than a colour.
             .then(
@@ -138,7 +138,7 @@ private val DASH: Dp = 3.dp
 private val DASH_GAP: Dp = 3.dp
 
 /**
- * docs/09 트렌드 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
+ * docs/09 trend 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
  * What happened is the caller's to say: [state] comes from the operation itself
  * ([app.recly.windows.ui.ShellModel.action]), and the
  * button only owns the *window* around it — "…" for at least
@@ -220,12 +220,12 @@ fun ProcessingButton(
 }
 
 /**
- * docs/09 "형태": a choice, as a square bordered box rather than Material's pill. `FilterChip` is
+ * docs/09 "Shape": a choice, as a square bordered box rather than Material's pill. `FilterChip` is
  * the component this replaces — a selected one is a *filled container*, and this palette's container
  * is the surface, so a selected chip on a surface has no edge at all and the choice becomes
  * invisible. The Mac's `BlueprintChip` is the same shape.
  *
- * docs/09 "모든 상태는 색 + 텍스트": what says "this one" is three things and not one — the accent,
+ * docs/09 "Every state is color + text": what says "this one" is three things and not one — the accent,
  * a border on [app.recly.windows.ui.theme.BlueprintColors.selectedLine] (heavier than the hairline
  * *even in high contrast*, where the hairline is itself 2dp), and [SELECTION_MARK] in front of the
  * label, which is the only one of the three a monochrome reader gets. The Mac writes it the same way.
@@ -257,7 +257,7 @@ fun BlueprintChip(
                 color = ink,
                 shape = RoundedCornerShape(Radius.node),
             )
-            // docs/09 "접근성": the border is the only thing that says this one is chosen, and a
+            // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
             // border is not something a screen reader can read. `selectable` puts the same fact in
             // the semantics — one node, in place of the plain click, so it is announced as a choice
             // rather than as a button whose state nobody mentioned.
@@ -278,6 +278,6 @@ fun BlueprintChip(
 
 /**
  * The glyph a chosen chip or node wears. Not an icon: it sits in the label's own line of text, at
- * the label's own size, and grows with it (docs/09 "유동 타이포").
+ * the label's own size, and grows with it (docs/09 "Fluid typography").
  */
 const val SELECTION_MARK: String = "✓"

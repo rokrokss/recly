@@ -26,7 +26,7 @@ object WearJson {
     private val json = Json
 
     /**
-     * docs/03 "워치 → 폰 전송 계약": `{recordingId, part, track, ok}` is what the watch waits for
+     * docs/03 "Watch → phone transfer contract": `{recordingId, part, track, ok}` is what the watch waits for
      * before it deletes its copy. `reason` is added when it is not ok, so a resend can be told
      * apart from a path the phone will never accept.
      */

@@ -11,7 +11,7 @@ import okio.Path
 import recly.core.platform.AudioTools
 
 /**
- * docs/08 "오디오 준비" on Android: `MediaExtractor` reads the AAC frames of each part and
+ * docs/08 "Audio preparation" on Android: `MediaExtractor` reads the AAC frames of each part and
  * `MediaMuxer` writes them into one `m4a`. Nothing is decoded — the segment boundaries are
  * frame-aligned (docs/03), so the copy is lossless and the timestamps stay meaningful.
  *

@@ -4,7 +4,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/08 "결과 파일": what the detail plays back, chosen out of `meta.json` alone — the track a
+/// docs/08 "Result files": what the detail plays back, chosen out of `meta.json` alone — the track a
 /// person means, its parts in order, and only the files this device still has.
 final class RecordingPlaylistTests: XCTestCase {
     private let dir = URL(fileURLWithPath: "/recordings/01J9REC", isDirectory: true)
@@ -221,7 +221,7 @@ final class RecordingPlaylistTests: XCTestCase {
         XCTAssertEqual(RecordingPlayer.position(durations: [300], finished: 0, itemSec: .nan), 0)
     }
 
-    // MARK: - Scrubbing (docs/09 화면 원칙 2)
+    // MARK: - Scrubbing (docs/09 screen principle 2)
 
     /// The inverse of the clock: a drag on the waveform gives a second of the *recording*, and what
     /// the player needs is a part and an offset into it.

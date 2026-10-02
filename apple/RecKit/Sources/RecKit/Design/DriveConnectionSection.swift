@@ -14,7 +14,7 @@ public struct DriveConnectionSection: View {
     private let disconnect: () -> Void
     private let permissions: () -> Void
     private let debtSettled: () -> Void
-    /// Off under the storage choice, which has a header of its own (docs/03 "저장 위치").
+    /// Off under the storage choice, which has a header of its own (docs/03 "Storage location").
     private let showsHeader: Bool
     @Environment(\.locale) private var locale
 
@@ -53,7 +53,7 @@ public struct DriveConnectionSection: View {
         } else {
             SectionRow(title: loc("Drive not connected"),
                        subtitle: loc("Record locally. Connect Drive to upload.")) {
-                // docs/09 화면 원칙 5: the sign-in's progress is the button's own, in its place.
+                // docs/09 screen principle 5: the sign-in's progress is the button's own, in its place.
                 ProcessingButton(loc("Connect Drive"), state: signInState, action: signIn)
                     .disabled(!configured || blocker != nil)
                     .accessibilityIdentifier("signIn")

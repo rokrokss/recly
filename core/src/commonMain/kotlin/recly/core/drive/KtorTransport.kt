@@ -117,7 +117,7 @@ class KtorTransport(
 /**
  * Writes a `multipart/form-data` body, streaming the parts that are files: the STT providers are
  * handed a whole recording, and a 40 MB `m4a` read into a byte array is an out-of-memory on a
- * phone (docs/08 "오디오 준비").
+ * phone (docs/08 "Audio preparation").
  *
  * `Content-Length` is spelled out rather than left to chunked encoding — a file part's length is
  * known before a byte is written, and an API gateway that refuses `Transfer-Encoding: chunked` is

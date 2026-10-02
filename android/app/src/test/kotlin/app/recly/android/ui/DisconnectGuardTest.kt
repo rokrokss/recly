@@ -17,7 +17,7 @@ import kotlinx.coroutines.yield
 import recly.core.DisconnectResult
 
 /**
- * docs/03 "연결 해제" · docs/06: the three decisions a disconnect makes without a screen, and the
+ * docs/03 "Disconnect" · docs/06: the three decisions a disconnect makes without a screen, and the
  * two regressions they exist for — confirming over a live recorder, and a retry revoking a grant
  * this disconnect was never about.
  */

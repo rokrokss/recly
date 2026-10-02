@@ -92,7 +92,7 @@ enum class Str {
     /** docs/12: a quit under a running capture finalizes it first, and the label says so. */
     TRAY_QUIT_SAVING,
 
-    // The tray popup (docs/09 화면 원칙 6): three state nodes, a ledger, a footer.
+    // The tray popup (docs/09 screen principle 6): three state nodes, a ledger, a footer.
     NODE_DEVICE,
     NODE_STATE,
     /** ADR-016: nothing is chosen on this PC yet, so a start would run nothing. */
@@ -139,8 +139,8 @@ enum class Str {
     SETTINGS_LAUNCH_UNSUPPORTED,
     SETTINGS_CONSENT_REMINDER,
     SETTINGS_RECORDING,
-    // docs/14 "캡처": the microphone alone or the whole meeting, in the Mac's own two labels.
-    /** docs/14 "권한": the Windows page that turns the microphone back on for desktop apps. */
+    // docs/14 "Capture": the microphone alone or the whole meeting, in the Mac's own two labels.
+    /** docs/14 "Permissions": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
     SETTINGS_HELPER_MISSING,
     SETTINGS_HELPER_VERSION,
@@ -165,7 +165,7 @@ enum class Str {
 
     LANGUAGE_EN,
 
-    // docs/09 화면 원칙 4: the theme the user chooses, and the honest system block.
+    // docs/09 screen principle 4: the theme the user chooses, and the honest system block.
     SETTINGS_THEME,
     THEME_SYSTEM,
     THEME_LIGHT,
@@ -192,13 +192,13 @@ enum class Str {
     STATE_DONE,
     STATE_FAILED,
     STATE_TOO_SHORT,
-    /** docs/10 "Drive 용량 초과": parked because Drive is full, and no retry gets past that. */
+    /** docs/10 "Drive out of space": parked because Drive is full, and no retry gets past that. */
     STATE_CONSENT_REQUIRED,
     STATE_NO_SPACE,
-    /** docs/08 "폴링 · 상태": a provider is transcribing and the only news is how long it has been. */
+    /** docs/08 "Polling · status": a provider is transcribing and the only news is how long it has been. */
     STATE_WAITING_TRANSCRIPTION,
     /**
-     * docs/03 "다른 기기의 녹음": the three things that are happening somewhere other than here. Their
+     * docs/03 "Recordings from other devices": the three things that are happening somewhere other than here. Their
      * own keys rather than the local states' ([STATE_UPLOADING]) — the badge is the same word, but
      * the sentence has to say *where*, and the State node reads the key to tell this PC's own upload
      * from another device's ([app.recly.windows.jobs.Recents.uploading]).
@@ -215,7 +215,7 @@ enum class Str {
      */
     UNTITLED,
 
-    // docs/08 "결과 파일" · "오류": the transcripts and summaries window.
+    // docs/08 "Result files" · "Errors": the transcripts and summaries window.
     WINDOW_RECORDINGS,
     DETAIL_PICK,
     DETAIL_LOADING,
@@ -224,7 +224,7 @@ enum class Str {
     DETAIL_RENAME,
     REASON_CHECK_KEY,
 
-    // docs/08 "결과 파일": the recording itself, under the transcript's header. One button and the
+    // docs/08 "Result files": the recording itself, under the transcript's header. One button and the
     // recording's own clock; docs/03 ADR-017 is what the other three lines are about.
     PLAYER_PLAY,
     PLAYER_PAUSE,
@@ -233,7 +233,7 @@ enum class Str {
     PLAYER_FETCH_FAILED,
     /** docs/03: a delete refused because the speaker would not let go of the part it was reading. */
     PLAYER_STOP_FAILED,
-    /** docs/09 접근성: what the waveform row is, for a reader that cannot see the shape. */
+    /** docs/09 Accessibility: what the waveform row is, for a reader that cannot see the shape. */
     PLAYER_POSITION,
 
     SECRET_NAME_INVALID,
@@ -254,7 +254,7 @@ enum class Str {
     AUTH_STATE_MISMATCH,
     AUTH_NO_CODE,
 
-    // docs/03 "앱에서 지우기": one recording, and Drive is a separate answer whose default is
+    // docs/03 "Deleting in the app": one recording, and Drive is a separate answer whose default is
     // "leave it" — the irreversible half is never the default one.
     DELETE_TITLE,
     DELETE_LOCAL_ONLY,
@@ -269,7 +269,7 @@ enum class Str {
     DELETE_DRIVE_FAILED,
     DELETE_DONE,
 
-    // docs/03 "로그아웃 vs 연결 해제" · docs/06: signing out is this PC, disconnecting is the grant.
+    // docs/03 "Sign out vs Disconnect" · docs/06: signing out is this PC, disconnecting is the grant.
     SETTINGS_DISCONNECT,
     SETTINGS_DISCONNECT_HINT,
     DISCONNECT_TITLE,
@@ -290,7 +290,7 @@ enum class Str {
     DISCONNECT_REMOVED,
     DISCONNECT_SAVE_FAILED,
 
-    // docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the seven reasons a person has to do something
+    // docs/10 "Failures the user can fix, and their notices": the seven reasons a person has to do something
     // about, folded one balloon and one banner line per reason.
     JOBS_OPEN_STORAGE,
     ALERT_NEEDS_AUTH,
@@ -324,7 +324,7 @@ enum class Str {
     CORE_UNSUPPORTED_STEP,
     CORE_STEP_FAILED,
 
-    // docs/08 "오류": the transcribe table, in the words of someone who has to decide what to do
+    // docs/08 "Errors": the transcribe table, in the words of someone who has to decide what to do
     // next. The provider's own line rides along as the code's detail.
     CORE_AUTH_REJECTED,
     CORE_QUOTA,

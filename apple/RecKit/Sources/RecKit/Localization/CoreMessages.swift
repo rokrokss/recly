@@ -56,7 +56,7 @@ public enum CoreMessages {
         case .stepMissing: return "This job’s workflow has no step ‘%@’"
         case .unsupportedStep: return "This job needs a newer version of the app: it uses a ‘%@’ step"
         case .stepFailed: return "Failed: %@"
-        // docs/08 "오류": what to do about it is the whole sentence, and the provider's own line is
+        // docs/08 "Errors": what to do about it is the whole sentence, and the provider's own line is
         // the code's detail — shown under it, never inside it.
         case .authRejected: return "The provider rejected the key."
         case .quota: return "The provider is out of quota or is rate-limiting."

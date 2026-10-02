@@ -12,7 +12,7 @@ public struct PartRef: Equatable {
     }
 }
 
-/// What the phone sends back through `transferUserInfo` (docs/03 "워치 → 폰 전송 계약"), the Apple
+/// What the phone sends back through `transferUserInfo` (docs/03 "Watch → phone transfer contract"), the Apple
 /// half of Android's `WearJson.partAck`/`metaAck` and `AckJson`. `transferUserInfo` rather than
 /// `sendMessage` for the reason the contract turns on: it is queued and delivered even with the app
 /// asleep or the watch out of range, and the ack is the watch's licence to delete its only copy of
@@ -96,7 +96,7 @@ public enum TransferAck: Equatable {
     }
 }
 
-/// The nack reasons both halves of the transfer name (docs/03 "워치 → 폰 전송 계약"), kept together
+/// The nack reasons both halves of the transfer name (docs/03 "Watch → phone transfer contract"), kept together
 /// because every one of them is a decision about whether audio may be deleted. The strings are the
 /// Android ones — `recly.core.transfer.TransferReceiver.SHA_MISMATCH` and the constants of
 /// `TransferSender`/`MetaAcceptor` — so a phone and a watch of either platform read the same wire.

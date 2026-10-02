@@ -5,7 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/09 화면 원칙 2: the ledger measures its length and status columns so no code is ever clipped,
+ * docs/09 screen principle 2: the ledger measures its length and status columns so no code is ever clipped,
  * and on a wide screen that is free. On a narrow one it is not — the columns take their width out of
  * the title, and at 320dp and a font scale of 1.3 the title was left some 34dp. This is the rule
  * that decides, without a screen, whether four columns still fit or the row becomes two lines.

@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 트렌드 2: the button says what the operation did, not what the clock did. The phase is
+ * docs/09 trend 2: the button says what the operation did, not what the clock did. The phase is
  * driven by the caller's real outcome — so a save that came back with validation errors never
  * wears a ✓, and work that is still running never stops looking like it.
  */
@@ -49,7 +49,7 @@ class ProcessingButtonStateTest {
     }
 
     /**
-     * docs/09 "모션" asks for "즉시 전환 + 텍스트 상태만" with reduce motion on, so the phases do not
+     * docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" with reduce motion on, so the phases do not
      * depend on it at all: the button swaps its label, which is already an instant transition, and
      * the label is the state a user with animations off is left with. Nothing here takes a
      * reduce-motion flag any more — this is the test that says so.

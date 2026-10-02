@@ -4,7 +4,7 @@ import ReclyCore
 import AVFoundation
 #endif
 
-/// docs/08 "오디오 준비" on Apple: the parts of one track joined into a single `m4a` for the STT
+/// docs/08 "Audio preparation" on Apple: the parts of one track joined into a single `m4a` for the STT
 /// provider. The AAC frames are **copied**, never decoded — the segment boundaries are
 /// frame-aligned (docs/03), which is what makes the timestamps in `transcript.json` mean anything.
 ///

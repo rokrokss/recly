@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 3: the node column's rhythm — leg, `+`, leg, then the end terminal.
+/// docs/09 screen principle 3: the node column's rhythm — leg, `+`, leg, then the end terminal.
 private enum Rhythm {
     static let leg: CGFloat = 14
     static let plus: CGFloat = 18
@@ -11,7 +11,7 @@ private enum Rhythm {
 /// `+` on every connector — the closing one included, so a step can be appended after the last —
 /// and a filled square at the end. [insert] is given the position the new node would take.
 ///
-/// Vertical on the phone and horizontal in the Mac's window (docs/09 화면 원칙 3), which is the whole
+/// Vertical on the phone and horizontal in the Mac's window (docs/09 screen principle 3), which is the whole
 /// of the difference between them: the placement is [nodeGraphLayout]'s either way.
 public struct NodeGraph<Node: View>: View {
     @Environment(\.blueprint) private var blueprint
@@ -218,7 +218,7 @@ public struct GraphNode: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: Space.xs) {
                 HStack(spacing: Space.xs) {
-                    // docs/09 "모든 상태는 색 + 텍스트": the accent border says which node the
+                    // docs/09 "Every state is color + text": the accent border says which node the
                     // inspector is showing, and this says it again in letters — the only one of the
                     // two a monochrome or colour-blind reader gets. Decoration to VoiceOver, which
                     // hears the same fact as a trait.
@@ -274,7 +274,7 @@ public struct GraphNode: View {
         Int((2 * blueprint.fonts.scale).rounded(.up))
     }
 
-    /// docs/09 화면 원칙 3 draws the node 232pt wide, which is a width measured for the design's own
+    /// docs/09 screen principle 3 draws the node 232pt wide, which is a width measured for the design's own
     /// 12/14pt type. Dynamic Type makes those letters the user's, so the box follows them — capped,
     /// because a node wider than the phone is not a node.
     static func width(scale: CGFloat) -> CGFloat {

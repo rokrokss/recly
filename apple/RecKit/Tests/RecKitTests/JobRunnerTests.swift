@@ -1,7 +1,7 @@
 import XCTest
 @testable import RecKit
 
-/// docs/12 "실행기" deliverable 2, in the two halves the phone splits it into (docs/11 A5): the
+/// docs/12 "Runner" deliverable 2, in the two halves the phone splits it into (docs/11 A5): the
 /// arithmetic behind the successor, and what a pass does with it.
 final class NextRunTests: XCTestCase {
     private let now = FakeJobQueue.now
@@ -42,7 +42,7 @@ final class NextRunTests: XCTestCase {
         XCTAssertEqual(NextRun.delay(jobs, now: now), 0)
     }
 
-    /// A lost paired write (docs/10 "짝 전이") must not cost the job its scheduler.
+    /// A lost paired write (docs/10 "paired transitions") must not cost the job its scheduler.
     func testAWaitingJobWithNoInstantIsTreatedAsDue() {
         XCTAssertEqual(NextRun.delay([job(.waiting)], now: now), 0)
     }

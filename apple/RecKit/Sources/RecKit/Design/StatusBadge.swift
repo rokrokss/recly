@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 2: state is never colour alone. The tone picks the colour, the code is the
+/// docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the code is the
 /// text, and a reader who sees neither hue gets the same answer from the letters.
 public enum BadgeTone: Sendable {
     case neutral
@@ -49,14 +49,14 @@ public struct LedgerStatus: Equatable, Sendable {
         "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN",
     ]
 
-    /// docs/09 화면 원칙 2: the badge is the state as a code, and the code is the same word the core
+    /// docs/09 screen principle 2: the badge is the state as a code, and the code is the same word the core
     /// and the logs use. What it *means* is [RecentItem.stateLabel], which is what VoiceOver hears.
     ///
     /// Keyed on the docs/07 key `Recents.stateLabel` produced, so the two cannot drift: a state the
     /// core grows without a code here shows as `UNKNOWN` rather than as nothing.
     public static func forRecent(state: String) -> LedgerStatus {
         switch state {
-        // docs/03 "다른 기기의 녹음" · "워치 → 폰 전송 계약": three states that are not this device's
+        // docs/03 "Recordings from other devices" · "Watch → phone transfer contract": three states that are not this device's
         // job and not this device's recording either — something is in flight elsewhere, which is
         // the accent's whole meaning here. They come first because two of them are `RECORDING` rows
         // and would otherwise read as `REC` (see [Recents.stateLabel], which orders them the same).
@@ -74,10 +74,10 @@ public struct LedgerStatus: Equatable, Sendable {
         case "Transfer permission needed": return LedgerStatus(code: "NEEDS_CONSENT", tone: .warning)
         case "Waiting for speech model": return LedgerStatus(code: "NEEDS_MODEL", tone: .warning)
         case "Sign-in needed": return LedgerStatus(code: "NEEDS_AUTH", tone: .neutral)
-        // docs/10 "Drive 용량 초과": a state of its own and not a failure — a retry is not what
+        // docs/10 "Drive out of space": a state of its own and not a failure — a retry is not what
         // clears it, and the row says so.
         case "No space in Drive", "No space in iCloud": return LedgerStatus(code: "NO_SPACE", tone: .warning)
-        // docs/03 "저장 위치": iCloud is uploading on its own schedule — in flight, like a running upload.
+        // docs/03 "Storage location": iCloud is uploading on its own schedule — in flight, like a running upload.
         case "Uploading to iCloud": return LedgerStatus(code: "UPLOADING", tone: .accent)
         case "Waiting for iCloud": return LedgerStatus(code: "WAITING", tone: .warning)
         case "Too short": return LedgerStatus(code: "SKIPPED", tone: .neutral)

@@ -15,7 +15,7 @@ public enum PrivacyLinks {
     }
 
     // Each provider's official privacy or API data page, checked 2026-09-26 (AssemblyAI 2026-09-29) — the
-    // same links as the privacy policy's provider table (docs/15 "provider 보관 정책"). The account's service agreement may also apply.
+    // same links as the privacy policy's provider table (docs/15 "Provider retention policies"). The account's service agreement may also apply.
     private static let policies: [String: String] = [
         "assemblyai": "https://www.assemblyai.com/docs/data-retention-and-model-training",
         "openai": "https://developers.openai.com/api/docs/guides/your-data",
@@ -34,7 +34,7 @@ public enum PrivacyLinks {
     ]
 }
 
-/// docs/15 "iPhone 제공 업체" (App Review 5.1.1(i)): ElevenLabs trains on audio unless the account
+/// docs/15 "iPhone providers" (App Review 5.1.1(i)): ElevenLabs trains on audio unless the account
 /// has turned that off, and Recly cannot see the account — so the user says it has, before allowing.
 public enum TrainingOptOut {
     static let provider = "elevenlabs"
@@ -243,7 +243,7 @@ public struct TransferPrivacyView: View {
                         if let url = PrivacyLinks.provider(target.provider) {
                             Link(loc("Provider privacy information"), destination: url)
                         }
-                        // docs/09 화면 원칙 8: the destination spans several lines, so its action sits under it, at the end.
+                        // docs/09 screen principle 8: the destination spans several lines, so its action sits under it, at the end.
                         BlueprintButton(loc("Withdraw permission"), tone: .quiet) {
                             Task { await model.revoke(target) }
                         }

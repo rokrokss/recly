@@ -216,7 +216,7 @@ class JobStore(
         db.transactionWithResult {
             val jobs = queries.selectJobsByRecording(recordingId).executeAsList()
             val parts = queries.selectPartsByRecording(recordingId).executeAsList()
-            // An adopted recording (docs/03 "다른 기기의 녹음") has no job and needs none: Drive held
+            // An adopted recording (docs/03 "Recordings from other devices") has no job and needs none: Drive held
             // every part before the row existed, and what is on disk is a fetched cache. Only the
             // file clock ages it.
             val adopted = queries.selectRecordingById(recordingId).executeAsOneOrNull()?.remote == 1L
@@ -232,7 +232,7 @@ class JobStore(
     }
 
     /**
-     * "Does Drive hold every part of this recording?" (docs/03 "보관 · 삭제") — what the delete
+     * "Does Drive hold every part of this recording?" (docs/03 "Retention · deletion") — what the delete
      * dialog and the disconnect warning lead with, because audio that exists only here is the part
      * of a deletion nothing anywhere else can give back. Reading it off "is a part file still on
      * disk" was right until the parts became a cache with a window on it ([Retention]), and is not
@@ -255,7 +255,7 @@ class JobStore(
     }
 
     /** The same answer for every recording at once: a list screen asks once, not once per row. An
-     * adopted recording (docs/03 "다른 기기의 녹음") is in Drive by definition — that is where it came
+     * adopted recording (docs/03 "Recordings from other devices") is in Drive by definition — that is where it came
      * from. */
     suspend fun uploadedRecordings(): Set<String> = locked {
         db.transactionWithResult {
@@ -279,7 +279,7 @@ class JobStore(
      */
     private fun retainReason(jobs: List<recly.core.db.Job>, parts: List<recly.core.db.Part>): PurgeClaim? = when {
         jobs.isEmpty() || jobs.any { it.status != JobStatus.DONE.name } -> PurgeClaim.OTHER_JOBS_PENDING
-        // docs/10 "잡 스냅샷": a snapshot nothing here can decode says nothing about what its job
+        // docs/10 "job snapshot": a snapshot nothing here can decode says nothing about what its job
         // still has to do — an updated build reads the same row and runs it, and `DONE` in that
         // row is a claim this build cannot check. A sibling that did upload everything is no
         // evidence about *this* job, and the parts are the only copy of the audio.
@@ -329,7 +329,7 @@ class JobStore(
     }
 
     /**
-     * The [park] of docs/10 "Drive 용량 초과", plus the one thing that park does not do: `state_json`
+     * The [park] of docs/10 "Drive out of space", plus the one thing that park does not do: `state_json`
      * is dropped in the same transaction, so a job that comes back cannot resume a resumable
      * session that has since expired.
      */
@@ -359,7 +359,7 @@ class JobStore(
     suspend fun resetForRerun(jobId: String, now: Instant): Unit = locked { resetRows(jobId, now) }
 
     /**
-     * docs/10 "재시도": a manual rerun runs what is left with the processing settings as they are now.
+     * docs/10 "Retry": a manual rerun runs what is left with the processing settings as they are now.
      * A step that already succeeded keeps its run and the definition it ran with (an upload is not
      * repeated); every other step takes [plan]'s definition, starts over, and loses its provider
      * state when that definition changed (the submission belonged to the old one). Steps [plan] no
@@ -535,7 +535,7 @@ class JobStore(
     private fun job(jobId: String): Job? = queries.selectJobById(jobId).executeAsOneOrNull()?.toJob()
 
     /**
-     * Per-job isolation (docs/10 "잡 스냅샷"): a snapshot a newer app wrote can name a step type
+     * Per-job isolation (docs/10 "job snapshot"): a snapshot a newer app wrote can name a step type
      * this build's serializer has never heard of, and letting that throw would take `observeJobs`
      * — the whole list — down with it. So the one job reads as [JobStatus.FAILED] with a reason,
      * every other job loads normally, and `workflow_json` is left exactly as it is: the row still

@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 6: the strip draws the last thirty seconds of windows, newest last. What this
+ * docs/09 screen principle 6: the strip draws the last thirty seconds of windows, newest last. What this
  * holds is the ring's end of that bargain — the order it hands them back in, and what falls off.
  */
 class LiveWaveformTest {

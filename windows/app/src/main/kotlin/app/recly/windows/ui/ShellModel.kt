@@ -73,12 +73,12 @@ import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
 
 /**
- * docs/09 화면 원칙 1: the two state codes that are a move rather than a state — the Mac's
+ * docs/09 screen principle 1: the two state codes that are a move rather than a state — the Mac's
  * `RecorderState.starting` and `.stopping`, which is where its node reads them from.
  */
 enum class Transition { STARTING, STOPPING }
 
-/** What the detail window shows for one recording (docs/08 "결과 파일"). */
+/** What the detail window shows for one recording (docs/08 "Result files"). */
 data class RecordingDetail(
     val recordingId: String,
     /** A name rather than a sentence: the window is open while the language can change under it. */
@@ -86,7 +86,7 @@ data class RecordingDetail(
     val loading: Boolean = true,
     val transcript: Transcript? = null,
     val availability: TranscriptAvailability = TranscriptAvailability.PENDING,
-    /** docs/08 "결과 파일": the audio beside the transcript, when this PC still has it. */
+    /** docs/08 "Result files": the audio beside the transcript, when this PC still has it. */
     val audio: RecordingPlaylist.Selection = RecordingPlaylist.Selection.EMPTY,
     /** A take still being written to has nothing whole to play yet, so the detail offers nothing. */
     val writing: Boolean = false,
@@ -119,7 +119,7 @@ enum class DriveFetch {
 data class RenameRequest(val recordingId: String, val title: String)
 
 /**
- * Everything the tray shows and everything its items do — the Mac's `MenuModel` (docs/12 "메뉴바"),
+ * Everything the tray shows and everything its items do — the Mac's `MenuModel` (docs/12 "Menu bar"),
  * in Kotlin. One per process: it owns the core, the recorder and the executor, and `⌘Q` and the
  * menu's quit item have to be talking to the same recorder.
  *
@@ -156,11 +156,11 @@ class ShellModel(
         private set
 
     /**
-     * docs/09 화면 원칙 1: the two codes between `IDLE` and `REC` — a capture whose helper is coming
+     * docs/09 screen principle 1: the two codes between `IDLE` and `REC` — a capture whose helper is coming
      * up, and one whose last segment is being closed. Null the rest of the time, when the state the
      * node says is a state rather than a move between two of them.
      *
-     * Its own field and not [action]: that one is the *button's* window (docs/09 트렌드 2) and every
+     * Its own field and not [action]: that one is the *button's* window (docs/09 trend 2) and every
      * high-risk action on this shell shares it, so a sign-in would have the node saying `STARTING`.
      * The Mac has no such field because its `RecorderState` carries all four codes itself.
      */
@@ -176,7 +176,7 @@ class ShellModel(
         private set
 
     /**
-     * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the whole queue's blocked jobs, folded one entry
+     * docs/10 "Failures the user can fix, and their notices": the whole queue's blocked jobs, folded one entry
      * per reason. The popup's banner draws it, the tray icon wears it, and [JobAlertBalloons] turns
      * a *change* in it into a balloon — never a reading that said the same thing as the last one.
      */
@@ -189,7 +189,7 @@ class ShellModel(
     var recents: List<RecentItem> by mutableStateOf(emptyList())
         private set
     /**
-     * docs/09 화면 원칙 2: how far down the recordings the ledger has been read — one [Recents.PAGE]
+     * docs/09 screen principle 2: how far down the recordings the ledger has been read — one [Recents.PAGE]
      * to begin with, and another one every time the user scrolls onto the last row
      * ([loadMoreRecents]). Every refresh reads this much, so a job or a pull moving a row does not
      * fold the list back up under a user who had scrolled down it.
@@ -207,13 +207,13 @@ class ShellModel(
     val titlePrompt: RecordingOutcome? get() = titles.pending
 
     /**
-     * docs/09 화면 원칙 6: the tray's own window. The AWT menu can only carry words, so everything
+     * docs/09 screen principle 6: the tray's own window. The AWT menu can only carry words, so everything
      * with a shape — the state nodes, the ledger — lives in a Compose popup and this is whether it
      * is up.
      */
     var popupOpen: Boolean by mutableStateOf(false)
 
-    /** docs/08 결과 파일: the window that shows what the transcribe step wrote. */
+    /** docs/08 Result files: the window that shows what the transcribe step wrote. */
     var recordingsOpen: Boolean by mutableStateOf(false)
 
     /** The recording that window is showing, once one has been picked. */
@@ -237,7 +237,7 @@ class ShellModel(
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
-    /** docs/03 "앱에서 지우기": the recording the delete dialog is asking about, while it is up. */
+    /** docs/03 "Deleting in the app": the recording the delete dialog is asking about, while it is up. */
     var deleteRequest: DeleteRequest? by mutableStateOf(null)
         private set
 
@@ -245,7 +245,7 @@ class ShellModel(
     var renameRequest: RenameRequest? by mutableStateOf(null)
         private set
 
-    /** docs/03 "연결 해제": the warning dialog, and the counts it has to name, while it is up. */
+    /** docs/03 "Disconnect": the warning dialog, and the counts it has to name, while it is up. */
     var disconnectPrompt: DisconnectPrompt? by mutableStateOf(null)
         private set
 
@@ -273,7 +273,7 @@ class ShellModel(
         private set
 
     /**
-     * docs/09 트렌드 2: where the last high-risk action the user asked for is — a sign-in, an upload,
+     * docs/09 trend 2: where the last high-risk action the user asked for is — a sign-in, an upload,
      * an export. Only what the button draws depends on it (`ProcessingButton`); nothing about what
      * any of those actions *do* does. The Mac's `MenuModel.action` is the same field.
      */
@@ -281,7 +281,7 @@ class ShellModel(
         private set
 
     /**
-     * Puts [state] up and takes it down again once the button has had its window (docs/09 "모션").
+     * Puts [state] up and takes it down again once the button has had its window (docs/09 "Motion").
      *
      * A terminal state left standing is a trap for the *next* press: a button whose operation
      * returns early — refused, nothing to do — never sets `PROCESSING`, so it would read the `DONE`
@@ -304,13 +304,13 @@ class ShellModel(
         private set
 
     /**
-     * docs/09 화면 원칙 6: the levels of the recording that is running, for the popup's strip —
+     * docs/09 screen principle 6: the levels of the recording that is running, for the popup's strip —
      * empty when there is none. A function rather than state: the recorder's ring changes ten times
      * a second on the helper's reader, and the strip is the one thing that wants to know.
      */
     fun livePeaks(): List<Float> = recorder?.livePeaks() ?: emptyList()
 
-    // --- detection (docs/14 "감지", ADR-011) -----------------------------------------------------
+    // --- detection (docs/14 "Detection", ADR-011) -----------------------------------------------------
 
     /** docs/12 M8: asked once before the first meeting recording. On until the user turns it off. */
     var consentReminder: Boolean by mutableStateOf(true)
@@ -336,7 +336,7 @@ class ShellModel(
     /** Which offer that is. The tray item carries it back so a stale click does nothing. */
     private var meetingOfferToken: Long = MeetingDetector.NO_OFFER
 
-    /** docs/14 "권한": desktop apps and the microphone. [MicAccess.DENIED] is a recording of silence. */
+    /** docs/14 "Permissions": desktop apps and the microphone. [MicAccess.DENIED] is a recording of silence. */
     var micAccess: MicAccess by mutableStateOf(MicAccess.UNKNOWN)
         private set
 
@@ -424,7 +424,7 @@ class ShellModel(
     }
 
     /**
-     * docs/09 화면 원칙 2: the waveform the core kept for [recordingId] ([WaveformPeaks.FILE]), when it
+     * docs/09 screen principle 2: the waveform the core kept for [recordingId] ([WaveformPeaks.FILE]), when it
      * still stands for [selection] — as many windows as the detail's decode would make of those parts.
      * Null when there is none or it does not match, and the detail decodes.
      */
@@ -445,7 +445,7 @@ class ShellModel(
         }
     }
 
-    /** docs/09 화면 원칙 2: a recording finalized here has its waveform worked out in the background. */
+    /** docs/09 screen principle 2: a recording finalized here has its waveform worked out in the background. */
     private var waveforms: WaveformPrecompute? = null
 
     private var runner: JobRunner? = null
@@ -467,7 +467,7 @@ class ShellModel(
     var dataDir: String by mutableStateOf("")
         private set
 
-    /** docs/09 트렌드 6: the settings window's about block says what this install actually is. */
+    /** docs/09 trend 6: the settings window's about block says what this install actually is. */
     var deviceId: String by mutableStateOf("")
         private set
     val launchAtLoginSupported: Boolean get() = ::launcher.isInitialized && launcher.supported
@@ -509,7 +509,7 @@ class ShellModel(
         // deliverable 3: the path check above only says a file is there; this is the one that says
         // it runs, and what it is.
         helperVersion = command?.let { withContext(graph.core.deps.io) { CaptureHelper.version(it) } }
-        // docs/14 "감지": before the recorder, because the recorder hands detection back and forth
+        // docs/14 "Detection": before the recorder, because the recorder hands detection back and forth
         // with it (`Detection`) and there must never be two helpers alive at once.
         val detector = if (command == null) {
             null
@@ -592,7 +592,7 @@ class ShellModel(
         modelDownload = models
         processing = ProcessingViewModel(graph.core, scope, models, ::saveSettingsFile, ::openSettingsFile) { runner?.jobsDue() }
 
-        // docs/03 "복구", before the tray can start anything: a recording the last run left open is
+        // docs/03 "recoverable", before the tray can start anything: a recording the last run left open is
         // finished here, and one whose job never got made is queued — both before the first pass.
         val recovered = runCatching { RecordingRecovery(graph.core).reconcile() }
             .onFailure { logger.log(Logger.Level.ERROR, "rec.recovery.failed", error = it) }
@@ -726,7 +726,7 @@ class ShellModel(
         // be going up over a capture that had already begun. It stays up until that capture ends.
         val capture = PlaybackGate.Reason.CAPTURE
         playbackGate.raise(capture)
-        // docs/09 화면 원칙 1: `STARTING` for as long as the helper is coming up — from here, where
+        // docs/09 screen principle 1: `STARTING` for as long as the helper is coming up — from here, where
         // the start was asked for, to the recorder's own `onState` or the refusal below.
         transition = Transition.STARTING
         scope.launch {
@@ -778,7 +778,7 @@ class ShellModel(
 
     fun stop() {
         val recorder = recorder ?: return
-        // docs/09 화면 원칙 1: `STOPPING` until the last segment is closed and the parts are filed —
+        // docs/09 screen principle 1: `STOPPING` until the last segment is closed and the parts are filed —
         // the recorder publishes `onState(false)` at the top of that, and the wait is the rest of it.
         transition = Transition.STOPPING
         scope.launch {
@@ -854,13 +854,13 @@ class ShellModel(
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.enqueue.failed", error = it) }
         // Kept, so its shape is worked out now, and the first open draws it at once.
         waveforms?.enqueue(outcome.recordingId)
-        // docs/12/14 "실행기" (a): the job exists now, so a pass runs immediately rather than
+        // docs/12/14 "Runner" (a): the job exists now, so a pass runs immediately rather than
         // waiting for the five-minute timer.
         runner?.jobsDue()
         status = Str.STATUS_WAITING.message()
     }
 
-    // --- executor (docs/14 "실행기") --------------------------------------------------------------
+    // --- executor (docs/14 "Runner") --------------------------------------------------------------
 
     private fun adopt(jobs: List<Job>) {
         needsAuth = jobs.any { it.status == JobStatus.NEEDS_AUTH }
@@ -920,7 +920,7 @@ class ShellModel(
     }
 
     /**
-     * docs/09 화면 원칙 2 / docs/12 "메뉴바": the last loaded row has been scrolled onto, so the
+     * docs/09 screen principle 2 / docs/12 "Menu bar": the last loaded row has been scrolled onto, so the
      * ledger reads the next [Recents.PAGE].
      *
      * A reading that came back short of what it asked for is the end of the recordings, and there is
@@ -941,7 +941,7 @@ class ShellModel(
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": what other devices have uploaded since, for a list that has just
+     * docs/03 "Recordings from other devices": what other devices have uploaded since, for a list that has just
      * come on screen — the job pass does this too, but on a throttle a user who opened the window to
      * look for something should not have to wait out.
      *
@@ -971,7 +971,7 @@ class ShellModel(
     }
 
     /**
-     * docs/08 "결과 파일": the local copy if the step ran on this PC, and Drive's if it ran
+     * docs/08 "Result files": the local copy if the step ran on this PC, and Drive's if it ran
      * elsewhere — the core decides which, and keeps what it downloads. The audio beside it is read
      * the same way: what is on this PC first, and Drive for what the sweep took ([fetchFromDrive]).
      */
@@ -1129,7 +1129,7 @@ class ShellModel(
         }
     }
 
-    // --- deleting a recording (docs/03 "앱에서 지우기") -------------------------------------------
+    // --- deleting a recording (docs/03 "Deleting in the app") -------------------------------------------
 
     /**
      * Opens the confirmation. The count is read first because the dialog has to state it: what is
@@ -1202,7 +1202,7 @@ class ShellModel(
         }
     }
 
-    // --- disconnecting (docs/03 "로그아웃 vs 연결 해제" · docs/06) ---------------------------------
+    // --- disconnecting (docs/03 "Sign out vs Disconnect" · docs/06) ---------------------------------
 
     /**
      * Opens the docs/03 warning. The count is read first because the dialog has to state it: a user
@@ -1224,7 +1224,7 @@ class ShellModel(
     }
 
     /**
-     * docs/03 "연결 해제", both halves and in this order: the Google grant, which is what makes the
+     * docs/03 "Disconnect", both halves and in this order: the Google grant, which is what makes the
      * other devices lose access too, and then the core's local clean-up (tokens, the queue, the
      * folder cache). A revoke that failed does not cancel the local half — the
      * user asked for this PC to be done with the account — but it is what the message talks about,
@@ -1417,7 +1417,7 @@ class ShellModel(
     fun openAccountPermissions() = open(GOOGLE_PERMISSIONS_URL)
 
     /**
-     * docs/14 "권한": there is no prompt to answer, so a microphone that is switched off for desktop
+     * docs/14 "Permissions": there is no prompt to answer, so a microphone that is switched off for desktop
      * apps is only ever undone in Windows Settings — and this is the page rather than a description
      * of where it is. The Mac deep-links its own pane for exactly the same reason
      * (`MenuModel.presentMicrophoneDenied`); on the development host the scheme is nobody's and the
@@ -1642,7 +1642,7 @@ class ShellModel(
 
         /**
          * Whether a **meeting** is in flight, which is what the rule's `Signals.isRecording` is
-         * about: docs/12 "종료 감지" is about this recording, and a microphone-only memo's own idle
+         * about: docs/12 "End detection" is about this recording, and a microphone-only memo's own idle
          * microphone is not a meeting that has ended (the Mac's `recordingChanged(mode == .meeting)`).
          */
         override fun isRecording(): Boolean = recording && captureMode.detectsEnd
@@ -1668,7 +1668,7 @@ class ShellModel(
         /** docs/03: Google's own page, which is the only place a failed revoke can be finished. */
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
-        /** docs/14 "권한": 설정 → 개인정보 → 마이크, the page and not directions to it. */
+        /** docs/14 "Permissions": 설정 → 개인정보 → 마이크, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"
 
         /** Windows' own settings scheme — a deep link, not a path (see `open`). */

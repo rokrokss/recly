@@ -88,11 +88,11 @@ import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
 
 /**
- * docs/08 "결과 파일", deliverable 3: what the transcribe step wrote, as the speaker turns it is made
+ * docs/08 "Result files", deliverable 3: what the transcribe step wrote, as the speaker turns it is made
  * of. Reading it is [JobsViewModel]'s: this draws what came back and knows nothing about where it
  * came from.
  *
- * It is a page behind a ledger row rather than a tab of its own (docs/09 화면 원칙 2), so the header
+ * It is a page behind a ledger row rather than a tab of its own (docs/09 screen principle 2), so the header
  * carries the way back.
  */
 @Composable
@@ -108,7 +108,7 @@ fun RecordingDetailScreen(
     val context = LocalContext.current
     val player = remember(detail.recordingId) { RecordingPlayer(context) }
     DisposableEffect(player) { onDispose { player.release() } }
-    // The clock is wound from here, and only while something is playing (docs/09 "모션": nothing
+    // The clock is wound from here, and only while something is playing (docs/09 "Motion": nothing
     // moves that is not saying something).
     LaunchedEffect(player, player.isPlaying) {
         while (player.isPlaying) {
@@ -123,7 +123,7 @@ fun RecordingDetailScreen(
         if (detail.deviceRecording) player.stop()
     }
 
-    // docs/03 "제목": whether the dialog that renames this recording is up. Keyed on the recording,
+    // docs/03 "Titles": whether the dialog that renames this recording is up. Keyed on the recording,
     // so a page that becomes another one is not left asking about the title of the one before it.
     var renaming by remember(detail.recordingId) { mutableStateOf(false) }
     if (renaming) {
@@ -173,7 +173,7 @@ fun RecordingDetailScreen(
         )
         HairLine()
 
-        // docs/09 화면 원칙 2: only the transcript scrolls; playback stays above the tab bar.
+        // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             when {
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
@@ -202,11 +202,11 @@ fun RecordingDetailScreen(
 }
 
 /**
- * docs/03 "제목": the recording's name, asked again. The same question the end of a recording asks
+ * docs/03 "Titles": the recording's name, asked again. The same question the end of a recording asks
  * (`RecordingScreen`'s `TitleDialog`) without the second half of it — how many people were in the
  * room is a hint the transcribe step has long since used by the time this page exists.
  *
- * Empty is an answer: it clears the title back to the timestamp name (docs/09 화면 원칙 5 — title,
+ * Empty is an answer: it clears the title back to the timestamp name (docs/09 screen principle 5 — title,
  * one line under it, two buttons).
  */
 @Composable
@@ -241,7 +241,7 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
 }
 
 /**
- * docs/08 "결과 파일" · docs/09 화면 원칙 2: the recording itself, where this phone still has it. Its
+ * docs/08 "Result files" · docs/09 screen principle 2: the recording itself, where this phone still has it. Its
  * shape on top, with the playhead moving across it and a drag on it to move where the playhead is,
  * and the recording's own clock and play button under that. The bar stays at the bottom of the
  * detail, with the primary action on the right, within reach while reading the transcript.
@@ -292,7 +292,7 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
 }
 
 /**
- * docs/09 화면 원칙 2: the recording as a shape, and the one place on this page a second of it can
+ * docs/09 screen principle 2: the recording as a shape, and the one place on this page a second of it can
  * be pointed at. The drag is on the whole row, so a tap anywhere in it is a seek — and playback is
  * not interrupted by either, because what a scrub is for is hearing another part of the same take.
  *
@@ -324,7 +324,7 @@ internal fun Waveform(
     // so it calls whatever the caller passed last — a seek refused since then stays refused.
     val scrub by rememberUpdatedState(onScrub)
     val seek by rememberUpdatedState(onSeek)
-    // docs/09 접근성: the row reports itself as the recording's position, and a reader that cannot
+    // docs/09 Accessibility: the row reports itself as the recording's position, and a reader that cannot
     // see the shape moves the playhead by setting it — and hears where it is as the clock beside
     // it says it, because that is what the playhead is.
     val label = stringResource(R.string.player_position)
@@ -381,7 +381,7 @@ internal fun Waveform(
         val step = WaveformStep.toPx()
         val line = hair.toPx()
         val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
-        // docs/09 "선": straight bars of one width on one gap, no caps and no gradient. Behind the
+        // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
         // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
         // 접근성 asks 3:1 of a graphic, and the muted token faded out to hint at "not played yet" is
         // under 2:1 on the surface.
@@ -436,7 +436,7 @@ internal fun waveformSlot(detail: DetailState): WaveformSlot = when {
 }
 
 /**
- * docs/09 "모션": the waveform row while the recording comes back from Drive, or while its peaks are
+ * docs/09 "Motion": the waveform row while the recording comes back from Drive, or while its peaks are
  * read or decoded — short ghost ticks where the bars will be, and a hard-edged band of ten that
  * steps across them left to right, one bar a frame at 30 fps. It does not rise and fall or flow the
  * way a playing or recording waveform does, and it leaves nothing filled behind it the way a
@@ -486,7 +486,7 @@ private fun FetchProgress(fraction: Float) {
     val shape = RoundedCornerShape(Radius.node)
     val label = stringResource(R.string.player_fetching)
     val shown by animateFloatAsState(fraction, if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard))
-    // docs/09 "타이포": a count of bytes is data, so it is a monospace stamp — the same `n%` in every
+    // docs/09 "Typography": a count of bytes is data, so it is a monospace stamp — the same `n%` in every
     // language, as the iPhone writes it.
     val percent = "${floor(fraction * 100.0).toInt()}%"
     val percentStyle = mono.bodySmall
@@ -538,7 +538,7 @@ private const val GROW_MS = 750
 private const val GROW_SPREAD = 0.6f
 
 /**
- * docs/09 화면 원칙 2 · "간격": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
+ * docs/09 screen principle 2 · "Spacing": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many
  * bars there are is however many 3dp columns the row is wide — the shape is the recording's, and
  * the number of bars is the screen's.
  */
@@ -553,7 +553,7 @@ private fun second(x: Float, width: Int, totalSec: Double): Double =
     if (width <= 0) 0.0 else (x / width).toDouble().coerceIn(0.0, 1.0) * totalSec
 
 /**
- * docs/08 "결과 파일": one button and the recording's own clock, or the one sentence there is to say
+ * docs/08 "Result files": one button and the recording's own clock, or the one sentence there is to say
  * instead of them.
  */
 @Composable

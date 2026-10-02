@@ -64,7 +64,7 @@ object WorkflowParser {
 
     const val INVOKE_URL_PLACEHOLDER = "InvokeUrlPlaceholder"
 
-    /** Validation error token the UI branches on (docs/02 "검증 규칙"). */
+    /** Validation error token the UI branches on (docs/02 "Validation rules"). */
     const val UNKNOWN_PROVIDER = "UnknownProvider"
 
     private const val MAX_STEPS = 10

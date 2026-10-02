@@ -17,7 +17,7 @@ object AppleRuntime {
     /**
      * What a shell hands to `ReclyCore(deps, driverFactory)`. Handed the schema, the native driver
      * keeps `user_version` itself: `create` on a new file, `migrate` on one left by an older build
-     * (docs/10 "스키마 마이그레이션").
+     * (docs/10 "Schema migrations").
      */
     fun driverFactory(name: String): DriverFactory = object : DriverFactory {
         override fun create(): SqlDriver = NativeSqliteDriver(RecDatabase.Schema, name)

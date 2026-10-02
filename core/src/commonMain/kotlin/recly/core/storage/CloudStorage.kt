@@ -11,7 +11,7 @@ import recly.core.platform.CoreDeps
 /**
  * Both storages behind one [CloudFiles]: a call that names a file or a folder goes to the storage
  * the id belongs to ([StorageKind.ofId]), so a folder id kept on a row reaches the right one even
- * after the setting changed (docs/03 "저장 위치"). The calls that name nothing — a listing, the
+ * after the setting changed (docs/03 "Storage location"). The calls that name nothing — a listing, the
  * root, the upload sizes — are Drive's; a caller that wants iCloud's asks [forKind] for it.
  *
  * [icloud] is null where there is no iCloud container: Android, Windows, the watches, and an Apple

@@ -78,7 +78,7 @@ final class RecordingSmokeTests: XCTestCase {
         app.buttons["saveTitle"].tap()
 
         // Settled means the record node offers a start again; the line under it stays empty when
-        // the stop went as asked (docs/09 화면 원칙 1).
+        // the stop went as asked (docs/09 screen principle 1).
         XCTAssertTrue(app.buttons["start"].waitForExistence(timeout: 30), "the app did not settle after the stop")
         add(screenshot(named: "after the stop"))
     }

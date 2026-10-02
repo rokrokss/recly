@@ -63,7 +63,7 @@ extension ScreenHeader where Trailing == EmptyView {
     }
 }
 
-/// docs/09 화면 원칙 4: a settings screen is a table, and a table has section headings. Only the
+/// docs/09 screen principle 4: a settings screen is a table, and a table has section headings. Only the
 /// vertical rhythm is baked in — the caller owns the horizontal inset, because an inspector already
 /// has one and a full-bleed table does not.
 ///
@@ -182,7 +182,7 @@ public struct SectionBlock<Content: View>: View {
             VStack(alignment: .leading, spacing: Space.s) {
                 content
             }
-            // docs/09 화면 원칙 8: one left edge and one right edge in the block — this inset is
+            // docs/09 screen principle 8: one left edge and one right edge in the block — this inset is
             // the rows' and footnotes' too, so they do not add their own.
             .environment(\.insideSectionBlock, true)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,7 +208,7 @@ extension EnvironmentValues {
 
 /// A [SectionRow] that *is* its switch. The row is one `Toggle` with the Blueprint style, so what
 /// VoiceOver focuses is a single element with a name — "<title>, switch, on" — and not an unnamed
-/// track next to a title it cannot see (docs/09 "접근성").
+/// track next to a title it cannot see (docs/09 "Accessibility").
 public struct SwitchRow: View {
     @Environment(\.blueprint) private var blueprint
     private let title: String
@@ -245,7 +245,7 @@ public struct SwitchRow: View {
     }
 }
 
-/// docs/09 "형태": no rounded pills, so the switch is a square track with a square thumb. The whole
+/// docs/09 "Shape": no rounded pills, so the switch is a square track with a square thumb. The whole
 /// row is the control — one hit target, one accessibility element, and `accessibilityRepresentation`
 /// makes sure it is announced as the switch it is rather than as the button it is drawn with.
 public struct BlueprintSwitchStyle: ToggleStyle {
@@ -290,7 +290,7 @@ public struct SwitchTrack: View {
         .padding(2)
         .frame(width: 40, height: 22)
         .overlay {
-            // docs/09 "선"/"고대비 모드": the track's edge is a line like every other, so it
+            // docs/09 "Lines"/"High-contrast mode": the track's edge is a line like every other, so it
             // thickens with them rather than staying at a number of its own.
             RoundedRectangle(cornerRadius: Radius.badge)
                 .strokeBorder(ink, lineWidth: blueprint.line)
@@ -389,7 +389,7 @@ public struct BlueprintField: View {
 /// One of a small set of choices — a source, a track, what to do on failure. Square, bordered, and
 /// selected in the accent rather than by a fill nobody can name.
 ///
-/// docs/09 "모든 상태는 색 + 텍스트": what says "this one" is three things and not one — the accent,
+/// docs/09 "Every state is color + text": what says "this one" is three things and not one — the accent,
 /// a border on [BlueprintPalette.selectedLine] (heavier than the hairline *even in high contrast*,
 /// where the hairline is itself 2pt), and the [selectionMark] in front of the label, which is the
 /// only one of the three a monochrome or colour-blind reader gets. The Android chip is the same
@@ -422,7 +422,7 @@ public struct BlueprintChip: View {
                 .lineLimit(1)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                // docs/09 "접근성": in *both* directions. A height alone left a two-letter chip —
+                // docs/09 "Accessibility": in *both* directions. A height alone left a two-letter chip —
                 // "ko", "2" — a target barely half as wide as it is tall.
                 .frame(
                     minWidth: minTouch,
@@ -446,10 +446,10 @@ public struct BlueprintChip: View {
     }
 }
 
-/// docs/09 "아이콘": thin geometric line work — the platform's own symbols at `.light`, with no
+/// docs/09 "icon": thin geometric line work — the platform's own symbols at `.light`, with no
 /// filled variant a tab bar might substitute in.
 public enum BlueprintGlyph: String, Sendable {
-    /// A square with a dot in it — the record node of docs/09 "형태", not a circle.
+    /// A square with a dot in it — the record node of docs/09 "Shape", not a circle.
     case record = "dot.square"
     case list = "list.bullet.rectangle"
     case settings = "slider.horizontal.3"

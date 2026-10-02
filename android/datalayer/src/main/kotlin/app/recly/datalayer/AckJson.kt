@@ -12,8 +12,7 @@ import recly.core.model.Track
 data class PartRef(val part: Int, val track: Track)
 
 /**
- * What the phone sends back on [WearJson.ACK_PART] and [WearJson.ACK_META] (docs/03 "워치 → 폰 전송
- * 계약"). The watch acts on nothing else: an ack is its licence to delete its only copy of the
+ * What the phone sends back on [WearJson.ACK_PART] and [WearJson.ACK_META] (docs/03 "Watch → phone transfer contract"). The watch acts on nothing else: an ack is its licence to delete its only copy of the
  * audio, so every field it decides on is read from here and none of it is inferred.
  */
 sealed interface AckMessage {

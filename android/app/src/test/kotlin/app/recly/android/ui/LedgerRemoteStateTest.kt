@@ -19,7 +19,7 @@ import recly.core.model.Track
 import recly.core.recording.RecordingRecord
 
 /**
- * docs/03 "다른 기기의 녹음", docs/09 화면 원칙 2: the three things the ledger can be told are
+ * docs/03 "Recordings from other devices", docs/09 screen principle 2: the three things the ledger can be told are
  * happening somewhere else. Each of them is a row with no job on this device, so each of them is
  * decided before the job status is looked at — and two of the three are `status = recording`, which
  * is exactly what a `REC` row is.

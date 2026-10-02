@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// docs/10 "사용자가 고칠 수 있는 실패와 그 알림": one notice per reason above the recordings.
+/// docs/10 "Failures the user can fix, and their notices": one notice per reason above the recordings.
 /// Drive connection uses a neutral upload count and one action, without repeating the reason.
 public struct AlertBanner: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     private let alerts: [JobAlert]
-    /// The shell's model download (docs/05 "고정 처리 설정 도입"). While it runs, the line of the
+    /// The shell's model download (docs/05 "Fixed processing settings"). While it runs, the line of the
     /// recordings waiting for the model is its progress and its button cancels it.
     private let download: ModelDownload?
     private let fix: (JobAlert) -> Void
@@ -101,12 +101,12 @@ private struct AlertLine<Action: View>: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            // docs/09 "접근성": one node with a sentence in it, not a reason, a count and
+            // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and
             // a code read out as three separate things (the same rule as `LedgerRow`).
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(Text(verbatim: "\(line) \(alert.waiting)"))
             .accessibilityAddTraits(.isButton)
-            // docs/10: "탭하면 고칠 수 있는 화면으로 간다". The row goes there when it is
+            // docs/10: "A tap goes to the screen that can fix it". The row goes there when it is
             // pressed, but only the button says *where* — a line that is tappable
             // without saying what the tap opens is a fix the user has to guess at, and
             // the Windows banner has named its surface all along.

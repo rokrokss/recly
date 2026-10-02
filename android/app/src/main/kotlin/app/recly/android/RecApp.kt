@@ -56,7 +56,7 @@ class RecApp : Application(), RecorderHost {
             runCatching { core.transfer.purgeOrphans(core.deps.clock.now()) }
                 .onFailure { core.deps.logger.log(Logger.Level.ERROR, "transfer.purge.failed", emptyMap(), it) }
         }
-        // docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the queue is the only thing that knows a
+        // docs/10 "Failures the user can fix, and their notices": the queue is the only thing that knows a
         // reason has been fixed, so the notifications live off it rather than off the failures.
         scope.launch { JobAlertNotifier(this@RecApp).run(core()) }
         scope.launch { publishRecorderState() }

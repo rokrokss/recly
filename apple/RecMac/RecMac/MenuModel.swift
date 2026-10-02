@@ -38,12 +38,12 @@ final class MenuModel: ObservableObject {
     /// a menu that was not told would go on showing the note it replaced.
     @Published private(set) var message: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
-    /// docs/03 "저장 위치": Google Drive or the app's iCloud folder, for the settings' storage block.
+    /// docs/03 "Storage location": Google Drive or the app's iCloud folder, for the settings' storage block.
     @Published private(set) var storage: StorageChoice?
-    /// docs/05 "고정 처리 설정 도입": the one speech-model download, shared by the settings row, the
+    /// docs/05 "Fixed processing settings": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the popover's first-run card.
     @Published private(set) var modelDownload: ModelDownload?
-    /// docs/09 화면 원칙 2: the waveform of a recording this Mac finalized, decoded in the background
+    /// docs/09 screen principle 2: the waveform of a recording this Mac finalized, decoded in the background
     /// and kept, so the Details window opens it with the bars already there.
     private var waveforms: WaveformPrecompute?
     /// "Not now" on the first-run card, remembered on this Mac so the card does not come back.
@@ -64,7 +64,7 @@ final class MenuModel: ObservableObject {
     @Published private(set) var capturedInputDevice: String?
     @Published private(set) var microphoneRecovering = false
     @Published private(set) var captureHealth: CaptureHealth = .healthy
-    /// docs/12 "메뉴바": the newest recordings, refreshed after every executor pass — a page of
+    /// docs/12 "Menu bar": the newest recordings, refreshed after every executor pass — a page of
     /// [Recents.page] to begin with, and a page more each time the ledger is scrolled to its last
     /// row ([loadMoreRecents]).
     @Published private(set) var recents: [RecentItem] = []
@@ -95,12 +95,12 @@ final class MenuModel: ObservableObject {
     @Published private(set) var revokeDebt = DisconnectDefaults.revokeDebt
     /// The signed-in Google account, or nil.
     @Published private(set) var account: String?
-    /// docs/09 화면 원칙 5: where the settings' Connect is, which its button shows in place — "…"
+    /// docs/09 screen principle 5: where the settings' Connect is, which its button shows in place — "…"
     /// while the sign-in runs, ✓ when Drive is connected, and back to itself when it was not.
     @Published private(set) var signInState: ProcessingState = .idle
-    /// docs/08 결과 파일: the recording the transcript window is showing, once one is picked.
+    /// docs/08 Result files: the recording the transcript window is showing, once one is picked.
     @Published private(set) var detail: RecordingDetailModel?
-    /// docs/12 "실행기": `SMAppService`. Written from the system's own answer, never from the
+    /// docs/12 "Runner": `SMAppService`. Written from the system's own answer, never from the
     /// request — a registration the system refused must not leave a checked menu item behind.
     @Published private(set) var launchAtLogin = SMAppService.mainApp.status == .enabled
     /// docs/12 M8: the consent question, once before the first meeting recording, and switchable
@@ -108,10 +108,10 @@ final class MenuModel: ObservableObject {
     @Published var consentReminder: Bool = Defaults.consentReminder {
         didSet { Defaults.consentReminder = consentReminder }
     }
-    /// docs/09 트렌드 2: where the one operation a popover row can start — an upload now, a retry —
+    /// docs/09 trend 2: where the one operation a popover row can start — an upload now, a retry —
     /// actually is. `ProcessingButton` owns the window around it; this owns the truth.
     @Published private(set) var action: ProcessingState = .idle
-    /// docs/09 화면 원칙 1·4: this install, for the popover's header. Empty until the core is open,
+    /// docs/09 screen principle 1·4: this install, for the popover's header. Empty until the core is open,
     /// which is the only thing that knows it.
     @Published private(set) var deviceId = ""
 
@@ -142,7 +142,7 @@ final class MenuModel: ObservableObject {
     /// the one thing on the Lock Screen that is most likely to be opened from a cold launch, and
     /// [act(on:)] needs a recorder that only [load] makes.
     private let meetingRouter = AlertRouter<MeetingNotifier.Action>()
-    /// docs/03 "연결 해제" · docs/06: the whole of a disconnect, which is RecKit's and not this
+    /// docs/03 "Disconnect" · docs/06: the whole of a disconnect, which is RecKit's and not this
     /// model's — the phone runs the same one. Lazy because every one of its closures reads `self`.
     private lazy var disconnectFlow = DisconnectFlow(
         device: .mac,
@@ -161,7 +161,7 @@ final class MenuModel: ObservableObject {
         accountRevoked: { [weak self] in self?.account = nil },
         refresh: { [weak self] in await self?.refreshRecents() }
     )
-    /// docs/12 "미팅 감지". Built lazily because it closes over `self`.
+    /// docs/12 "Meeting detection". Built lazily because it closes over `self`.
     private lazy var detector = MeetingDetector { [weak self] prompt in
         // The detector documents this callback as the main queue, which is where the notification
         // and the recording both have to happen anyway.
@@ -209,7 +209,7 @@ final class MenuModel: ObservableObject {
             self.bridge = bridge
             let recorder = SegmentedRecorder(
                 core: bridge.core,
-                // docs/12 "에코": Apple's voice processing is telephony-tuned and narrows the band,
+                // docs/12 "Echo": Apple's voice processing is telephony-tuned and narrows the band,
                 // so it is a flag and nothing else — off unless someone has deliberately set it.
                 voiceProcessing: Defaults.voiceProcessing
             ) { [weak self] error in
@@ -273,13 +273,13 @@ final class MenuModel: ObservableObject {
                 onPass: { [weak self] _ in self?.passFinished() }
             )
             self.runner = runner
-            // docs/12 "실행기" (b)·(c), plus a pass now: a job left parked by the last run is due.
+            // docs/12 "Runner" (b)·(c), plus a pass now: a job left parked by the last run is due.
             runner.start()
             detector.start()
             deviceId = bridge.deps.device.deviceId
             isReady = true
             note = "Waiting"
-            // docs/12 "미팅 감지": only once there is something to record with — and only once
+            // docs/12 "Meeting detection": only once there is something to record with — and only once
             // [isReady], because `start` refuses before it (Sol P1-apple r3). The notification's
             // button starts a recording, and a button that cannot is worse than no notification —
             // so a tap that arrived before now was kept, and is served here.
@@ -351,17 +351,16 @@ final class MenuModel: ObservableObject {
         RecorderStatusLine.text(state: state, note: note, message: message)
     }
 
-    /// The menu bar icon: the app mark's 22-point monochrome template (docs/09 "앱 아이콘"), so the
+    /// The menu bar icon: the app mark's 22-point monochrome template (docs/09 "App icon"), so the
     /// status item is the same shape as the launcher icon. The idle one is a template image and
-    /// AppKit paints it in the menu bar's own colour; the recording one is red (docs/12 "상태
-    /// 아이콘") and a template would lose that, so it is an ordinary image with a light and a dark
+    /// AppKit paints it in the menu bar's own colour; the recording one is red (docs/12 "Status icon") and a template would lose that, so it is an ordinary image with a light and a dark
     /// variant in the catalog instead — the appearance is what the menu bar hands it.
     /// docs/10 "macOS": 메뉴바 아이콘 오류 상태. A job the user has to do something about puts a mark
     /// on the icon — the same square badge the ledger draws, in the corner the recording tint does
     /// not use. Recording wins: a recording in progress is the more urgent thing to be told, and
     /// the queue's news is one click away in the popover either way.
     ///
-    /// docs/09 "모든 상태는 색 + 텍스트": the mark is a *shape* added to the icon rather than a tint
+    /// docs/09 "Every state is color + text": the mark is a *shape* added to the icon rather than a tint
     /// of it, and the accessibility description says which state it is in — an icon that only
     /// changed colour would say nothing at all to VoiceOver or in a monochrome menu bar. The marked
     /// icon stays a template for the same reason the plain one is: the menu bar paints it in its
@@ -437,7 +436,7 @@ final class MenuModel: ObservableObject {
                 // The state it published already says so; there is nothing to tell the user.
                 guard let recordingId = started else { return }
                 logger.info("shell.recording.start id=\(recordingId, privacy: .public)")
-                // docs/12 "종료 감지" is about *this* recording, and only a meeting has one: a
+                // docs/12 "End detection" is about *this* recording, and only a meeting has one: a
                 // microphone-only memo's own idle microphone is not a meeting that has ended.
                 detector.recordingChanged(mode == .meeting)
                 // After the recording is running, not before: the warning is about how the audio
@@ -527,7 +526,7 @@ final class MenuModel: ObservableObject {
             // and the menu said "Waiting" over it.
             do {
                 _ = try await bridge?.core.enqueue(recordingId: outcome.recordingId)
-                // docs/12 "실행기" (a): the job exists now, so a pass runs immediately rather than
+                // docs/12 "Runner" (a): the job exists now, so a pass runs immediately rather than
                 // waiting for the five-minute timer.
                 runner?.jobsDue()
                 waveforms?.enqueue(recordingId: outcome.recordingId)
@@ -582,7 +581,7 @@ final class MenuModel: ObservableObject {
         if error.fatal { stop() }
     }
 
-    // MARK: - Meeting detection (docs/12 "미팅 감지", ADR-011)
+    // MARK: - Meeting detection (docs/12 "Meeting detection", ADR-011)
 
     /// The detector has decided something is worth saying. ADR-011: detect → confirm → record, so
     /// both prompts are a notification and nothing else — a recording never starts on its own.
@@ -594,7 +593,7 @@ final class MenuModel: ObservableObject {
             notifier.post(.start)
 
         case .stop:
-            // Never a stop of its own (docs/12 "종료 감지": never an automatic stop).
+            // Never a stop of its own (docs/12 "End detection": never an automatic stop).
             guard isRecording else { return }
             logger.info("detect.meeting.idle")
             notifier.post(.stop)
@@ -700,7 +699,7 @@ final class MenuModel: ObservableObject {
         runner?.jobsDue()
     }
 
-    // MARK: - Recent recordings (docs/12 "메뉴바")
+    // MARK: - Recent recordings (docs/12 "Menu bar")
 
     /// A pass has finished: the ledger is redrawn from the queue it left behind, and the banner,
     /// the menu bar icon and the notifications are folded out of the same reading ([publishAlerts]).
@@ -721,7 +720,7 @@ final class MenuModel: ObservableObject {
         await publishAlerts()
     }
 
-    /// docs/12 "메뉴바": the ledger's end was scrolled into view. A reading that filled its window
+    /// docs/12 "Menu bar": the ledger's end was scrolled into view. A reading that filled its window
     /// may have older rows behind it, so the window grows by a page and is read again; one that
     /// came back short already had everything, and nothing is asked.
     func loadMoreRecents() async {
@@ -777,22 +776,22 @@ final class MenuModel: ObservableObject {
         case .driveStorage:
             openDriveStorage()
 
-        // docs/03 "저장 위치": the iCloud uploads parked for space, asked again once there is some.
+        // docs/03 "Storage location": the iCloud uploads parked for space, asked again once there is some.
         case .retryUploads:
             for item in recents where item.alert == alert.reason { retry(item) }
 
-        // docs/08 "오류": the key is the thing to look at, and it is entered in the recording
+        // docs/08 "Errors": the key is the thing to look at, and it is entered in the recording
         // processing settings.
         case .secrets, .editor:
             openEditor?()
 
-        // docs/05 "고정 처리 설정 도입": downloaded where the banner stands, not in the settings.
+        // docs/05 "Fixed processing settings": downloaded where the banner stands, not in the settings.
         case .modelDownload:
             modelDownload?.start()
         }
     }
 
-    /// docs/10 "Drive 용량 초과": the one fix that leaves the app, because the space is Google's to
+    /// docs/10 "Drive out of space": the one fix that leaves the app, because the space is Google's to
     /// give back. Offered on the ledger row as well as on the banner.
     func openDriveStorage() {
         NSWorkspace.shared.open(driveStorageURL)
@@ -802,7 +801,7 @@ final class MenuModel: ObservableObject {
     /// has one, so the scene hands its own down (`MenuPopover`).
     var openEditor: (() -> Void)?
 
-    // MARK: - Deleting a recording (docs/03 "앱에서 지우기")
+    // MARK: - Deleting a recording (docs/03 "Deleting in the app")
 
     /// The dialog is asked every time, because the Drive half of it is a separate question whose
     /// answer is never remembered. The part count is read here rather than carried on every row.
@@ -881,7 +880,7 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    // MARK: - Disconnecting (docs/03 "로그아웃 vs 연결 해제" · docs/06)
+    // MARK: - Disconnecting (docs/03 "Sign out vs Disconnect" · docs/06)
 
     /// Opens the docs/03 warning. The count is read first because the dialog has to state it: a
     /// user about to lose the queue deserves to know what is still only on this Mac.
@@ -906,7 +905,7 @@ final class MenuModel: ObservableObject {
         disconnectPrompt = nil
     }
 
-    /// docs/03 "연결 해제" · docs/06, all of it in [DisconnectFlow]: the Mac and the phone were running
+    /// docs/03 "Disconnect" · docs/06, all of it in [DisconnectFlow]: the Mac and the phone were running
     /// the same two hundred lines side by side, and what they differ by is what [disconnectFlow]
     /// is built with.
     func disconnect(alsoDeleteRecordings: Bool) {
@@ -970,20 +969,20 @@ final class MenuModel: ObservableObject {
         NSWorkspace.shared.open(link)
     }
 
-    /// docs/03 "저장 위치": an iCloud recording's folder, in the iCloud Drive folder Finder shows.
+    /// docs/03 "Storage location": an iCloud recording's folder, in the iCloud Drive folder Finder shows.
     func showInFinder(_ item: RecentItem) {
         guard let folder = item.cloudFolder else { return }
         NSWorkspace.shared.activateFileViewerSelecting([folder])
     }
 
-    /// docs/08 "결과 파일": the local copies if the steps ran on this Mac, and Drive's if they ran
+    /// docs/08 "Result files": the local copies if the steps ran on this Mac, and Drive's if they ran
     /// elsewhere — `core.results` decides which, and keeps what it downloads.
     func showDetail(_ item: RecentItem) {
         guard let core = bridge?.core else { return }
         detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
     }
 
-    /// A popover button's window (docs/09 트렌드 2): the action reports its own outcome, so a retry
+    /// A popover button's window (docs/09 trend 2): the action reports its own outcome, so a retry
     /// that could not be made due shows no ✓. [action] is moved *before* the `Task`, not inside it:
     /// the button reads it the moment it is clicked, and a hop to the next main-actor turn would
     /// let the previous operation's `.done` be the state a fresh click sees.
@@ -995,7 +994,7 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    // MARK: - Launch at login (docs/12 "실행기")
+    // MARK: - Launch at login (docs/12 "Runner")
 
     func setLaunchAtLogin(_ enabled: Bool) {
         do {
@@ -1034,7 +1033,7 @@ final class MenuModel: ObservableObject {
 
     private func tick() {
         // Read here rather than once at the start: the tap re-creates itself onto whatever the
-        // default output device has become (docs/12 "tap 재생성"), and a menu still naming the
+        // default output device has become (docs/12 "Tap re-creation"), and a menu still naming the
         // headphones that were unplugged ten minutes ago is worse than naming nothing. `nil` in
         // microphone mode, where no tap was ever opened.
         capturedOutputDevice = recorder?.capturedOutputDevice
@@ -1045,7 +1044,7 @@ final class MenuModel: ObservableObject {
         elapsed = LedgerFormat.clock(total)
     }
 
-    /// docs/09 화면 원칙 6: the levels behind the live strip, asked for ten times a second by the
+    /// docs/09 screen principle 6: the levels behind the live strip, asked for ten times a second by the
     /// view that draws it — not published, because a `@Published` array at that rate would redraw
     /// the whole popover for a picture. It takes the recorder's own lock and nothing of the menu's,
     /// and it answers with an empty array when there is no recording.
@@ -1119,7 +1118,7 @@ final class MenuModel: ObservableObject {
         return field
     }
 
-    /// docs/12 "에코": with headphones the problem does not exist, and with the built-in speaker the
+    /// docs/12 "Echo": with headphones the problem does not exist, and with the built-in speaker the
     /// microphone records the other side of the call back into the `mic` track. v1 has no AEC, so
     /// the honest thing is to say so — once, and only while it is true.
     private func warnAboutTheSpeakerIfNeeded(mode: RecordingMode) {
@@ -1148,7 +1147,7 @@ final class MenuModel: ObservableObject {
         alert.informativeText = AppStrings.localized(
             "Turn Recly on in System Settings > Privacy & Security > Screen & System Audio Recording."
         )
-        // docs/09 화면 원칙 5: two answers, not three. The third — "record the microphone only" —
+        // docs/09 screen principle 5: two answers, not three. The third — "record the microphone only" —
         // was a *second* thing to decide inside a panel about a permission, and the popover's mode
         // chips are where that choice already lives; a cancel that starts a different recording
         // than the one asked for is not a cancel.
@@ -1193,7 +1192,7 @@ final class MenuModel: ObservableObject {
         alert.runModal()
     }
 
-    /// docs/12 "권한": a refusal is not something the app can retry its way out of, so the answer
+    /// docs/12 "Permissions": a refusal is not something the app can retry its way out of, so the answer
     /// is the deep link to the pane that can undo it.
     private func presentMicrophoneDenied() {
         let alert = NSAlert()
@@ -1211,7 +1210,7 @@ final class MenuModel: ObservableObject {
     }
 }
 
-/// docs/03 "앱에서 지우기": the delete question that is up, and the surface it was asked from.
+/// docs/03 "Deleting in the app": the delete question that is up, and the surface it was asked from.
 ///
 /// One value rather than a request with a flag beside it, because the two are one fact and are only
 /// true together. The count the dialog states is a read off the core, so the request is not ready
@@ -1274,7 +1273,7 @@ private enum Defaults {
         UserDefaults.standard.bool(forKey: voiceProcessingKey)
     }
 
-    /// docs/05 "고정 처리 설정 도입": "Not now" on the first-run model card.
+    /// docs/05 "Fixed processing settings": "Not now" on the first-run model card.
     static var modelPromptDismissed: Bool {
         get { UserDefaults.standard.bool(forKey: modelPromptDismissedKey) }
         set { UserDefaults.standard.set(newValue, forKey: modelPromptDismissedKey) }

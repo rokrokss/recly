@@ -290,7 +290,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         publishStatus()
     }
 
-    /// docs/13 진입점: the complication is drawn from a file in the app group, so every state change
+    /// docs/13 Entry points: the complication is drawn from a file in the app group, so every state change
     /// writes it and asks WidgetKit to redraw.
     private func publishStatus() {
         WatchStatusStore.save(
@@ -341,7 +341,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 }
 
 /// The queue's one call into the core: row, parts and the whole directory, once the phone has said
-/// it has them (docs/03 "워치는 폰 ack 즉시 삭제").
+/// it has them (docs/03 "The watch deletes as soon as the phone acks").
 private final class CoreWatchRecordings: WatchRecordings {
     private let core: ReclyCore_
 

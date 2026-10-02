@@ -35,7 +35,7 @@ class JobService(
     private val recordings: RecordingRepository,
     private val executor: Executor,
     /**
-     * docs/10 "재시도": the fixed plan compiled from the current processing settings, for a manual
+     * docs/10 "Retry": the fixed plan compiled from the current processing settings, for a manual
      * rerun of [recordingId]'s job. Null leaves reruns on the job's own snapshot.
      */
     private val planForRerun: (suspend (recordingId: String) -> Workflow?)? = null,
@@ -46,7 +46,7 @@ class JobService(
     suspend fun enqueue(recordingId: String, workflow: Workflow?): EnqueueResult {
         val record = recordings.get(recordingId)
             ?: throw IllegalArgumentException("unknown recording '$recordingId'")
-        // docs/03 "다른 기기의 녹음": Drive already holds it and this device has no original to send.
+        // docs/03 "Recordings from other devices": Drive already holds it and this device has no original to send.
         // The answer a purged recording gets, for the same reason: nothing for a job to do.
         if (record.remote) return EnqueueResult.PartsPurged
         if (record.driveSynced) return EnqueueResult.AlreadySynced
@@ -71,7 +71,7 @@ class JobService(
      * rather than reaching the caller.
      *
      * Every pass ends with the [Retention] sweep — the only thing that deletes local audio now, so
-     * it has to be somewhere every shell already calls on a schedule (docs/11 A5, docs/12 "실행기").
+     * it has to be somewhere every shell already calls on a schedule (docs/11 A5, docs/12 "Runner").
      */
     @Throws(Throwable::class)
     suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary {
@@ -125,7 +125,7 @@ class JobService(
 
     /**
      * The queue as it stands, once. Every shell has to re-read it after a pass to arm the next run
-     * (docs/11 A5, docs/12 "실행기"); Android takes the first emission of [observe], and a shell whose
+     * (docs/11 A5, docs/12 "Runner"); Android takes the first emission of [observe], and a shell whose
      * Obj-C bridge does not carry `Flow` — the Apple one — has no way to do that.
      */
     suspend fun list(): List<Job> = store.list()

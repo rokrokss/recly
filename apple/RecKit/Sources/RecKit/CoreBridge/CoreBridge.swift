@@ -34,7 +34,7 @@ public struct CoreBridge {
         /// docs/08: the remux a `transcribe` step needs. The same one on the Mac and the phone.
         audio: any ReclyCore.AudioTools = AppleAudioTools(),
         transcriptionPolicy: TranscriptionPolicy? = nil,
-        /// docs/03 "저장 위치": the app's iCloud folder, on the iPhone and the Mac in a build signed
+        /// docs/03 "Storage location": the app's iCloud folder, on the iPhone and the Mac in a build signed
         /// with the iCloud entitlement. Nil everywhere else, and iCloud is then not offered.
         ubiquity: (any ReclyCore.UbiquityContainer)? = CoreBridge.defaultUbiquity
     ) async throws -> CoreBridge {
@@ -232,7 +232,7 @@ public extension CoreBridge {
         return base.appendingPathComponent(appName, isDirectory: true)
     }
 
-    /// docs/03 "저장 위치": the iCloud container this build is signed for, if any. The watch never
+    /// docs/03 "Storage location": the iCloud container this build is signed for, if any. The watch never
     /// has one — it hands its recordings to the phone (ADR-002).
     static var defaultUbiquity: (any ReclyCore.UbiquityContainer)? {
         #if os(iOS) || os(macOS)
@@ -266,7 +266,7 @@ public extension CoreBridge {
     static var deviceLanguage: String { AppLanguage.current.code ?? Locale.preferredLanguages.first ?? "en" }
 
     /// What this build is, for the About block at the bottom of every settings screen
-    /// (docs/09 트렌드 6). The three models each carried a copy of it.
+    /// (docs/09 trend 6). The three models each carried a copy of it.
     static var appVersion: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0.0.0"
     }

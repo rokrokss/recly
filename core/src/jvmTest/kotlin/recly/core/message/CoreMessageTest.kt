@@ -31,7 +31,7 @@ class CoreMessageTest {
     }
 
     /**
-     * docs/08 "오류": a transcribe failure names the reason and hands the provider's own words over
+     * docs/08 "Errors": a transcribe failure names the reason and hands the provider's own words over
      * as the detail, which is what the shell shows under the sentence.
      */
     @Test

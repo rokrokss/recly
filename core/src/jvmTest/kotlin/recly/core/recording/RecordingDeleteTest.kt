@@ -23,7 +23,7 @@ import recly.core.job.defaultRunners
 import recly.core.testing.START
 
 /**
- * docs/03 "앱에서 지우기": what one recording leaves behind, and what the Drive half of the dialog
+ * docs/03 "Deleting in the app": what one recording leaves behind, and what the Drive half of the dialog
  * does — including the case where Drive says no and the local half has already happened.
  */
 class RecordingDeleteTest {
@@ -132,7 +132,7 @@ class RecordingDeleteTest {
     }
 
     /**
-     * docs/10 "동시성": the executor's claim and this deletion are each one transaction, and SQLite
+     * docs/10 "Concurrency": the executor's claim and this deletion are each one transaction, and SQLite
      * has one writer — so one of them commits first and the other sees it. Both orders here, and
      * neither of them ends with a run over files that are gone.
      */

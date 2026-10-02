@@ -41,14 +41,14 @@ data class PullSummary(
      * folder still being uploaded into (docs/03), which counts again when its meta lands. */
     val adopted: Int = 0,
     val dropped: Int = 0,
-    /** Rows whose title changed to what Drive says (docs/03 "제목"). */
+    /** Rows whose title changed to what Drive says (docs/03 "Titles"). */
     val retitled: Int = 0,
     /** Why nothing was pulled: `throttled`, `busy`, `auth` (no account), or the error's message. */
     val skipped: String? = null,
 )
 
 /**
- * docs/03 "다른 기기의 녹음": Drive is the shared list. Every device uploads to a `{base}/` folder
+ * docs/03 "Recordings from other devices": Drive is the shared list. Every device uploads to a `{base}/` folder
  * stamped with the recording's id (ADR-014), so one listing of those folders is every recording
  * the account has, whichever device made it. What this device does not have a row for is read
  * back — the folder's `meta.json`, and the id of each part file — and adopted as a row of its own
@@ -76,14 +76,14 @@ data class PullSummary(
  *
  * The same listing carries every folder's `description`, which is the recording's title on Drive:
  * a title renamed on another device is applied here from it, and one renamed here is pushed there
- * ([pushTitles], docs/03 "제목").
+ * ([pushTitles], docs/03 "Titles").
  *
  * One pull at a time, and no more often than [MIN_INTERVAL] unless forced: every job pass calls it
  * (`ReclyCore.runDueJobs`), and the desktop passes come every few minutes. While another device is
  * in the middle of something the wait is [FAST_INTERVAL] instead — a list that is showing progress
  * has to move.
  *
- * **Two storages** (docs/03 "저장 위치"): Drive is listed whenever this device is signed in to it, and
+ * **Two storages** (docs/03 "Storage location"): Drive is listed whenever this device is signed in to it, and
  * the app's iCloud folder while iCloud is the chosen storage ([icloudChosen]) — reaching for the
  * container otherwise would make a "Recly" folder appear in the iCloud Drive of someone who never
  * asked for one. A storage that could not be listed this time drops nothing of its own: only what a
@@ -409,7 +409,7 @@ class RemoteRecordings(
             )
             return Read.Refused
         }
-        // An iCloud folder can have its meta before its parts (docs/03 "저장 위치"): until every part
+        // An iCloud folder can have its meta before its parts (docs/03 "Storage location"): until every part
         // the meta names is there at its size, the other device is still uploading.
         if (api.forKind(StorageKind.ofId(folder.id))?.orderedUploads == false) {
             val sizes = children.associate { it.name to it.size }
@@ -423,7 +423,7 @@ class RemoteRecordings(
     /**
      * The meta of a recording that has not written one yet, out of what the listing already said:
      * the id stamped on the folder, the folder's name (`{yyyyMMddTHHmmssZ}_{source}_{ulid8}`,
-     * docs/03 "이름 규칙") and its `description`. The start time is the id's own — a ULID carries the
+     * docs/03 "Naming rules") and its `description`. The start time is the id's own — a ULID carries the
      * millisecond it was made — so the row sits where it belongs in the list from the first pull.
      *
      * Null when the id is not a ULID: it names the directory this device is about to create, and is
@@ -472,7 +472,7 @@ class RemoteRecordings(
     /**
      * The meta names paths this device will create and delete (`recordings/{recordingId}/`, the
      * part files), so what it says is held to the schema before any of that: the id is a ULID and
-     * each part file is the name the rules give it (docs/03 "이름 규칙") — nothing with a separator
+     * each part file is the name the rules give it (docs/03 "Naming rules") — nothing with a separator
      * in it, nothing that is not this recording's.
      */
     private fun wellFormed(meta: RecordingMeta, recordingId: String): Boolean {
@@ -487,7 +487,7 @@ class RemoteRecordings(
     private class Folder(
         val recordingId: String,
         val id: String,
-        /** `{yyyyMMddTHHmmssZ}_{source}_{ulid8}` (docs/03 "이름 규칙") — where a placeholder's source
+        /** `{yyyyMMddTHHmmssZ}_{source}_{ulid8}` (docs/03 "Naming rules") — where a placeholder's source
          * comes from, since nothing else in the listing says what recorded it. */
         val name: String,
         val createdTime: String,

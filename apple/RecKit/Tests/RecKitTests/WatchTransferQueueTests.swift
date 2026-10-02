@@ -3,7 +3,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/03 "워치 → 폰 전송 계약" as the watch has to obey it (docs/lanes M5-L4 deliverable 6): what
+/// docs/03 "Watch → phone transfer contract" as the watch has to obey it (docs/lanes M5-L4 deliverable 6): what
 /// may be sent when, and — the rule the user's only copy of a recording rests on — what may be
 /// deleted and when.
 ///

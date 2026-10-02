@@ -6,13 +6,13 @@ Instructions for coding agents working in this repository. Read this before touc
 
 Recly is a multi-platform audio recorder with **no server**. Six clients — Galaxy Watch, Android
 phone, Apple Watch, iPhone, macOS, Windows — record, upload to the *user's own* Google Drive (iPhone
-and Mac can choose the user's own iCloud instead, `docs/recly.md` §3 "저장 위치"), and run a fixed
+and Mac can choose the user's own iCloud instead, `docs/recly.md` §3 "Storage location"), and run a fixed
 recording flow (upload · transcription · result upload).
 Device settings and keys stay on the device; recordings and results go to Drive or iCloud. There are no
 user-editable workflows and no webhooks, and no compatibility layer for older workflow documents or
 settings. There is no backend to change, and no telemetry.
 
-The design source of truth is [`docs/recly.md`](docs/recly.md) (Korean). The machine-readable
+The design source of truth is [`docs/recly.md`](docs/recly.md). The machine-readable
 contract is [`spec/*.json`](spec/). Conventions are in [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
 ## Repository map
@@ -68,7 +68,9 @@ check on the Mac takes `make core-mac`; iOS/watch simulator builds refuse to run
 Breaking one of these breaks something outside the file you are editing.
 
 - **The code base is English.** Identifiers, comments, doc comments, commit messages, test names,
-  log event names and messages, module READMEs. `docs/` design documents are Korean.
+  log event names and messages, module READMEs, and every document under `docs/`. The only Korean
+  documents are user-facing translations of English originals (`README.ko.md`,
+  `docs/policy/privacy-policy.ko.md` and the `docs/ko/` site).
 - **User-facing text is localized through resources** (§7). Never hardcode a UI string in code.
   English is the base language, Korean the translation.
 - **`docs/recly.md` section numbers are a contract.** Code comments cite rules as

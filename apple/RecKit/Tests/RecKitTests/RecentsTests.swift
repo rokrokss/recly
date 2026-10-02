@@ -107,7 +107,7 @@ final class RecentsTests: XCTestCase {
     }
 }
 
-/// docs/03 "다른 기기의 녹음": a recording another device made and uploaded, adopted from the folder
+/// docs/03 "Recordings from other devices": a recording another device made and uploaded, adopted from the folder
 /// it left in Drive. There is no job here and no local audio, so the row cannot be read the way one
 /// this device recorded is — and the ledger says whose it is rather than what this device failed to
 /// do.
@@ -223,7 +223,7 @@ final class RecentsUploadingTests: XCTestCase {
     }
 }
 
-/// docs/08 "폴링 · 상태": a job waiting out a backoff says *when* it comes back — "재시도 대기" on
+/// docs/08 "Polling · status": a job waiting out a backoff says *when* it comes back — "재시도 대기" on
 /// its own reads like "stuck". The rule is Android's (`JobsScreen.remaining`) down to its
 /// truncation, because the two ledgers are one ledger seen on two devices.
 final class RecentItemStateLabelTests: XCTestCase {
@@ -288,7 +288,7 @@ final class RecentItemStateLabelTests: XCTestCase {
         XCTAssertEqual(item(state: "Retry pending").stateLabel, "Retry pending")
     }
 
-    /// docs/08 "폴링 · 상태": a transcription in flight is parked on someone else rather than on a
+    /// docs/08 "Polling · status": a transcription in flight is parked on someone else rather than on a
     /// timer, so the elapsed sentence wins over the countdown even where the job has both.
     func testATranscriptionInFlightStillSaysHowLongItHasBeen() {
         let label = item(
@@ -328,7 +328,7 @@ final class RecentItemStateLabelTests: XCTestCase {
     }
 }
 
-/// docs/09 화면 원칙 2: the ledger's header counts what is under it — the Android ledger's own rule
+/// docs/09 screen principle 2: the ledger's header counts what is under it — the Android ledger's own rule
 /// (`JobsScreen.waiting` · `JobsScreen.failing`), so a user with both devices reads the same line.
 final class RecentsSummaryTests: XCTestCase {
 
@@ -391,13 +391,13 @@ final class RecentItemActionsTests: XCTestCase {
         }
     }
 
-    /// docs/09 화면 원칙 2 (2026-09-04): a `WAITING` job comes back on its own `next_run_at`, but a
+    /// docs/09 screen principle 2 (2026-09-04): a `WAITING` job comes back on its own `next_run_at`, but a
     /// user reading `RETRY` is reading it because they have stopped waiting — so the row asks now.
     func testAJobWaitingOutABackoffOffersARetryToo() {
         XCTAssertTrue(item(state: "Retry pending").canRetry)
     }
 
-    /// docs/08 "폴링 · 상태": the one wait that is not the queue's own. Nothing this device could
+    /// docs/08 "Polling · status": the one wait that is not the queue's own. Nothing this device could
     /// ask for again would make the provider's result arrive any sooner.
     func testARowWaitingOnAProviderOffersNoRetry() {
         XCTAssertFalse(item(state: "Retry pending", waitingMinutes: 6).canRetry)
@@ -434,7 +434,7 @@ final class RecentItemActionsTests: XCTestCase {
     }
 }
 
-/// docs/03 "다른 기기의 녹음" · "워치 → 폰 전송 계약" (docs/09 화면 원칙 2, 2026-09-04): the three
+/// docs/03 "Recordings from other devices" · "Watch → phone transfer contract" (docs/09 screen principle 2, 2026-09-04): the three
 /// answers a ledger row cannot get from the job queue, because none of them is this device's job —
 /// a watch transfer still arriving, an upload another device is still running, and a transcription
 /// that device has still to do after it.
@@ -518,7 +518,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(badge(finished), LedgerStatus(code: "DONE", tone: .success))
     }
 
-    /// docs/09 화면 원칙 2: a row nothing can be done to. The delete would pull the folder out from
+    /// docs/09 screen principle 2: a row nothing can be done to. The delete would pull the folder out from
     /// under the transfer or the other device's upload, and there is no job of this device's to
     /// retry or link to Drive.
     func testAReceivingOrRemotelyUploadingRowOffersNothing() {
@@ -527,7 +527,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             XCTAssertFalse(item.canDelete, "\(state) offers a delete")
             XCTAssertFalse(item.canRetry, "\(state) offers a retry")
             XCTAssertNil(item.link, "\(state) has no job and so no upload step to link")
-            // docs/09 화면 원칙 2: no length yet, and the ledger says so with its own placeholder
+            // docs/09 screen principle 2: no length yet, and the ledger says so with its own placeholder
             // rather than by inventing a zero.
             XCTAssertEqual(LedgerFormat.length(item.durationSec), LedgerFormat.length(nil))
         }
@@ -542,7 +542,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(transcribing.canRetry, item(state: "Done").canRetry)
     }
 
-    /// docs/09 화면 원칙 2: the header counts what the user is still waiting for. The recording
+    /// docs/09 screen principle 2: the header counts what the user is still waiting for. The recording
     /// itself is what is in flight for the first two; the third is already here.
     func testTheHeaderCountsTheArrivingRowsAsWaitingAndTheTranscribingOneAsNeither() {
         let items = [
@@ -553,7 +553,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(Recents.summary(items), "4 · 2 waiting · 0 failed")
     }
 
-    /// docs/09 화면 원칙 1: what the iPhone's State node reads off the ledger. A job of this phone's
+    /// docs/09 screen principle 1: what the iPhone's State node reads off the ledger. A job of this phone's
     /// own still wins — the view asks [Recents.uploading] first — so a ledger with both says both.
     func testAReceivingRowIsWhatTheStateNodeReads() {
         XCTAssertTrue(Recents.receiving([item(state: "Done"), item(state: "Receiving from the watch")]))

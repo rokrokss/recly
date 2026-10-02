@@ -27,7 +27,7 @@ enum class OpenAiAvailability { ALLOWED, RESTRICTED, UNKNOWN }
 class StorefrontUnavailableException : Exception()
 
 /**
- * docs/15 "중국 본토 App Store" and "iPhone 제공 업체": only the App Store shell opts in.
+ * docs/15 "China mainland App Store" and "iPhone providers": only the App Store shell opts in.
  * Definitions remain portable; every execution, including an old job snapshot, must independently
  * pass this policy.
  */
@@ -106,7 +106,7 @@ class TranscriptionPolicy(private val region: AppStoreRegion? = null) {
 
     companion object {
         /**
-         * docs/15 "iPhone 제공 업체" (App Review 5.1.1(i)): providers whose terms keep the audio out
+         * docs/15 "iPhone providers" (App Review 5.1.1(i)): providers whose terms keep the audio out
          * of model training — by default, through what Recly's request carries (Deepgram's opt-out,
          * AssemblyAI's EU region), under terms that need the account's consent (CLOVA), or once the
          * account has turned training off, which the iPhone asks the user to confirm (ElevenLabs).

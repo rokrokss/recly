@@ -10,7 +10,7 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the failures a person has to do something about,
+ * docs/10 "Failures the user can fix, and their notices": the failures a person has to do something about,
  * and the screen that lets them do it. Everything else — 5xx, the network, a 429 the runner is
  * still waiting out — is a retry the app does not call anybody about.
  *
@@ -37,7 +37,7 @@ enum class AlertReason(
     ;
 
     /**
-     * docs/09 화면 원칙 2: the banner row's badge is the state as a code. A wait on the model is the
+     * docs/09 screen principle 2: the banner row's badge is the state as a code. A wait on the model is the
      * job's own status, as on the iPhone — the long message code squeezed the line.
      */
     val code: String get() = if (this == LOCAL_MODEL_REQUIRED) "NEEDS_MODEL" else name
@@ -62,7 +62,7 @@ enum class FixSurface(@param:StringRes val label: Int) {
 /** One reason and how many jobs are stuck on it — the banner line, and the notification body. */
 data class JobAlert(val reason: AlertReason, val count: Int)
 
-/** docs/10 "Drive 용량 초과": where "free some up" actually happens. */
+/** docs/10 "Drive out of space": where "free some up" actually happens. */
 const val DRIVE_STORAGE_URL: String = "https://drive.google.com/settings/storage"
 
 /**

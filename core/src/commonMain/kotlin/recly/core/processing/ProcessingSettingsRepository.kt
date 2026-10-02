@@ -78,7 +78,7 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
     }
 
     /**
-     * docs/03 "저장 위치": where new recordings go — Google Drive, or the app's iCloud folder on the
+     * docs/03 "Storage location": where new recordings go — Google Drive, or the app's iCloud folder on the
      * devices that have one ([CoreDeps.ubiquity], ADR-024). Saved at once, as the next revision; a
      * recording already started keeps the storage it froze ([capture]), and nothing already uploaded
      * moves.
@@ -138,7 +138,7 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
         }
     }
 
-    /** A manual rerun re-freezes the recording on the settings it now runs with (docs/10 "재시도"). */
+    /** A manual rerun re-freezes the recording on the settings it now runs with (docs/10 "Retry"). */
     @Throws(Throwable::class)
     suspend fun refreeze(recordingId: String): ProcessingSettingsDocument {
         val document = initialize().document

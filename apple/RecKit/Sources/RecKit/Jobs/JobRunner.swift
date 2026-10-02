@@ -2,7 +2,7 @@ import Foundation
 import Network
 import os
 
-/// docs/10 "잡 상태 머신", as much of it as the executor wiring has an opinion about.
+/// docs/10 "Job state machine", as much of it as the executor wiring has an opinion about.
 public enum JobRunStatus: Sendable {
     case pending
     case running
@@ -10,7 +10,7 @@ public enum JobRunStatus: Sendable {
     case done
     case failed
     case needsAuth
-    /// docs/10 "Drive 용량 초과": parked until the user frees space and asks again. Like every other
+    /// docs/10 "Drive out of space": parked until the user frees space and asks again. Like every other
     /// parked state it is not something [NextRun] comes back for — the core does not poll Drive.
     case needsSpace
     case needsConsent
@@ -53,7 +53,7 @@ public protocol JobQueue: AnyObject, Sendable {
     func jobs() async throws -> [JobRunSnapshot]
 }
 
-/// When the queue has to be looked at again (docs/11 A5 deliverable 3, docs/12 "실행기"). Pure on
+/// When the queue has to be looked at again (docs/11 A5 deliverable 3, docs/12 "Runner"). Pure on
 /// purpose: it is the one piece of the executor wiring with arithmetic in it.
 public enum NextRun {
     /// The earliest moment a job could next make progress: a `PENDING` job is due immediately, a
@@ -82,7 +82,7 @@ public enum NextRun {
     }
 }
 
-/// docs/12 "실행기": the app process is the only thing that runs the queue on a Mac, and it calls
+/// docs/12 "Runner": the app process is the only thing that runs the queue on a Mac, and it calls
 /// `runDueJobs()` on four triggers — a job just enqueued, the five-minute timer, the network coming
 /// back, and the successor armed from the queue itself. The phone shares it (docs/13 I3) and adds
 /// a fifth of its own — the app becoming active — through [jobsDue]'s sibling [run].
@@ -98,7 +98,7 @@ public enum NextRun {
 ///    guarantees is that *someone* comes back — shortly after the pass in flight should be done.
 @MainActor
 public final class JobRunner {
-    /// docs/12 "실행기": (b), the standing five-minute timer.
+    /// docs/12 "Runner": (b), the standing five-minute timer.
     public static let interval: TimeInterval = 5 * 60
     /// How long after a pass that found the core already busy to come back. Long enough that the
     /// pass in flight has usually finished and armed its own successor (which replaces this one),

@@ -20,7 +20,7 @@ import kotlinx.coroutines.asExecutor
 import recly.core.platform.Logger
 
 /**
- * docs/11 W4 · "주의": the transfer runs in WorkManager, not in the screen and not in a `dataSync`
+ * docs/11 W4 · "Caveats": the transfer runs in WorkManager, not in the screen and not in a `dataSync`
  * foreground service. A three-hour recording is handed over long after the app was swiped away, and
  * Samsung's sleeping-apps policy will delay this — which is why the UI says "n waiting" honestly
  * rather than pretending the transfer is immediate.

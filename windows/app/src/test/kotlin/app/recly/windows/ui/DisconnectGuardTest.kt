@@ -17,7 +17,7 @@ import kotlinx.coroutines.yield
 import recly.core.DisconnectResult
 
 /**
- * docs/03 "연결 해제" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
+ * docs/03 "Disconnect" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
  * not the moment the dialog was opened. The phone's `DisconnectGuardTest` runs the same cases.
  */
 class DisconnectGuardTest {

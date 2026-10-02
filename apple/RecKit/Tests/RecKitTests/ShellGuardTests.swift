@@ -3,7 +3,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/03 "보관 · 삭제" · ADR-017: what "still on this device only" counts, now that the local parts
+/// docs/03 "Retention · deletion" · ADR-017: what "still on this device only" counts, now that the local parts
 /// are a seven-day cache rather than the proof they used to be.
 ///
 /// The regression this is about: the delete dialog and the disconnect warning both counted the part
@@ -34,7 +34,7 @@ final class RetentionCountTests: XCTestCase {
     }
 }
 
-/// docs/03 "연결 해제": the one thing the disconnect dialog has to refuse.
+/// docs/03 "Disconnect": the one thing the disconnect dialog has to refuse.
 final class DisconnectPromptTests: XCTestCase {
 
     override func tearDown() {
@@ -93,7 +93,7 @@ final class DisconnectPromptTests: XCTestCase {
         XCTAssertNil(fresh)
     }
 
-    /// docs/12 "종료 감지": never an automatic stop. The dialog says what is in the way and the user
+    /// docs/12 "End detection": never an automatic stop. The dialog says what is in the way and the user
     /// stops the recording themselves — so the line has to be readable in both languages.
     func testTheBlockerSaysWhatIsInTheWayInBothLanguages() {
         let prompt = DisconnectPrompt(unuploaded: 0, recording: true)
@@ -110,7 +110,7 @@ final class DisconnectPromptTests: XCTestCase {
 
 }
 
-/// docs/03 "연결 해제" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
+/// docs/03 "Disconnect" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
 /// not the moment its warning was built.
 final class DisconnectGuardTests: XCTestCase {
 

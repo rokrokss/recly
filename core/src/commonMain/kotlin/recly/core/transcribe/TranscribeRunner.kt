@@ -282,7 +282,7 @@ class TranscribeRunner(
 
     /**
      * The ceilings the provider publishes, checked on the joined file before a byte leaves the
-     * device (docs/08 "길이·크기 한도"). The provider would answer the same 4xx — but only after
+     * device (docs/08 "Length · size limits"). The provider would answer the same 4xx — but only after
      * the upload, and on a phone that upload is the expensive part. A limit the provider does not
      * declare is still learned the old way, from its own rejection.
      */

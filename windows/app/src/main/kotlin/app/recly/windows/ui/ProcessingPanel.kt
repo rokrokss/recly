@@ -25,7 +25,7 @@ import recly.core.workflow.*
 @Composable
 fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAllowed: Boolean = true) {
     val draft = model.draft ?: return
-    // docs/05 "고정 처리 설정 도입": on this device that means Qwen3-ASR, which has its own language list.
+    // docs/05 "Fixed processing settings": on this device that means Qwen3-ASR, which has its own language list.
     val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
     val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
     var deletingKey by remember { mutableStateOf<String?>(null) }
@@ -123,8 +123,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
 }
 @Composable
 /**
- * docs/05 "시크릿": the value is never read back. A saved key is a row that says so — [SELECTION_MARK]
- * in the success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with
+ * docs/05 "Secrets": the value is never read back. A saved key is a row that says so — [SELECTION_MARK]
+ * in the success colour, colour and text together (docs/09 "Every state is color + text") — with
  * Replace and Delete; the empty field only comes back to take a new value.
  */
 private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Strings, delete: () -> Unit) {

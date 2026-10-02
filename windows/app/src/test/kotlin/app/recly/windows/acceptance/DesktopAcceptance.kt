@@ -45,7 +45,7 @@ import recly.core.processing.ProcessingTranscription
 import recly.core.processing.TranscriptionMode
 
 /**
- * docs/20 "인수 시나리오 · M6 Windows 1", run on the macOS development host with only the audio
+ * docs/20 "Acceptance scenarios · M6 Windows 1", run on the macOS development host with only the audio
  * faked: a real Google sign-in and a real Drive upload. Everything between the consent screen and
  * Drive is the app's own — `AppModule`, `WindowsRecorder`, `completeRecording`,
  * `ReclyCore.runDueJobs`.
@@ -154,7 +154,7 @@ class DesktopAcceptance {
                 "jobId=$jobId",
             )
 
-            // (5) the executor, until the job settles (docs/10 "잡 상태 머신") ---------------------------
+            // (5) the executor, until the job settles (docs/10 "Job state machine") ---------------------------
             var job: Job = requireJob(core, jobId)
             var passes = 0
             val deadline = System.nanoTime() + JOB_TIMEOUT_MS * 1_000_000

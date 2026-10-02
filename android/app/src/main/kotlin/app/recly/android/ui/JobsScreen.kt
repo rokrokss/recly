@@ -78,7 +78,7 @@ import kotlin.time.ExperimentalTime
 import recly.core.job.StepReport
 
 /**
- * docs/11 A4, drawn as docs/09 화면 원칙 2 asks: a ledger. One row per recording — when, what, how
+ * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
  * long, and the state as a code — and the detail is behind the row rather than in front of it.
  */
 @Composable
@@ -133,7 +133,7 @@ fun JobsScreen(
 
         // What the last delete or retry had to say, above the ledger and whatever is in it — an
         // empty list included, since the delete that emptied it is what it is about. A warning and
-        // not red (docs/09 "접근성": red is a failed state or a delete), and a tap puts it away.
+        // not red (docs/09 "Accessibility": red is a failed state or a delete), and a tap puts it away.
         state.message?.let { message ->
             MessageBanner(
                 text = message.text(),
@@ -160,7 +160,7 @@ fun JobsScreen(
                             if (state.loading) {
                                 Text(stringResource(R.string.list_loading), color = palette.textMuted)
                             } else {
-                                // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
+                                // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
                                 Text(
                                     stringResource(R.string.jobs_empty),
                                     style = MaterialTheme.typography.bodyMedium,
@@ -182,7 +182,7 @@ fun JobsScreen(
             return@Column
         }
 
-        // docs/09 화면 원칙 2: every length and every code the ledger can show, measured — so
+        // docs/09 screen principle 2: every length and every code the ledger can show, measured — so
         // `NEEDS_AUTH` and `00:09` both fit at a font scale of 1.3, and neither column moves from
         // row to row as the list is scrolled. The headings are measured with them, in the wider of
         // the two styles, because a heading that no longer fits is the same bug.
@@ -262,7 +262,7 @@ fun JobsScreen(
 }
 
 /**
- * docs/09 화면 원칙 2: what the row has to say about itself — why it is where it is — and the two or
+ * docs/09 screen principle 2: what the row has to say about itself — why it is where it is — and the two or
  * three things the user can do about it.
  */
 @Composable
@@ -289,7 +289,7 @@ private fun ExpandedRow(
             .padding(start = LedgerTitleInset, end = Space.m, top = Space.s, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it has been
+        // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
         // waiting — the badge's RETRY would otherwise read as "stuck".
         item.waitingMinutes?.let { minutes ->
             Text(
@@ -301,7 +301,7 @@ private fun ExpandedRow(
 
         // docs/07 §5: `last_error` is a core message key, not a sentence — and a row an older build
         // wrote is prose, which `coreMessage` shows as it stands. Whatever diagnostic rode along
-        // with the key is not translated and goes under it, in monospace: for a docs/08 "오류" that
+        // with the key is not translated and goes under it, in monospace: for a docs/08 "Errors" that
         // is the provider's own words, which are what a support question quotes.
         // A recording waiting for the model says nothing of it while the download runs: the banner
         // carries the progress, and "not downloaded yet" would be wrong a minute later.
@@ -319,7 +319,7 @@ private fun ExpandedRow(
             }
         }
 
-        // docs/09 화면 원칙 2: Delete ends the last line; a recording in flight has none to offer.
+        // docs/09 screen principle 2: Delete ends the last line; a recording in flight has none to offer.
         ActionFlow(
             modifier = Modifier.fillMaxWidth(),
             trailing = if (item.inFlight()) {
@@ -359,7 +359,7 @@ private fun ExpandedRow(
                     BlueprintButton(stringResource(R.string.action_retry), onClick = onFixAuth)
                 }
 
-                // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing
+                // docs/10 "Drive out of space": nothing here retries on its own, and the only thing
                 // that changes the answer is on Google's storage page.
                 ItemState.NEEDS_SPACE -> {
                     BlueprintButton(
@@ -384,7 +384,7 @@ private fun ExpandedRow(
 
                 // A `PENDING` job is due already. A recording with no job, and one too short to
                 // have earned one, offer no upload. The three that are happening elsewhere
-                // (docs/03 "다른 기기의 녹음") have nothing here to retry either — the work is not
+                // (docs/03 "Recordings from other devices") have nothing here to retry either — the work is not
                 // this device's to make due.
                 // A recording waiting for the model has its download first in the row, above.
                 ItemState.NEEDS_CONSENT, ItemState.NEEDS_MODEL, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
@@ -400,7 +400,7 @@ private fun ExpandedRow(
                     modifier = Modifier.testTag("check-key"),
                 )
             }
-            // docs/09 화면 원칙 2: the row opens the recording's detail — parts, and the transcript
+            // docs/09 screen principle 2: the row opens the recording's detail — parts, and the transcript
             // when there is one — on every shell alike, so it is offered on every row. A recording
             // still being written to is a thing to look at as well, and the detail says so itself
             // rather than being hidden for it (`DetailState.writing`).
@@ -415,7 +415,7 @@ private fun ExpandedRow(
 }
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the same lines the notifications carry, at the top
+ * docs/10 "Failures the user can fix, and their notices": the same lines the notifications carry, at the top
  * of the list where the recordings they are about are. One row per reason, however many jobs are
  * behind it, and the row is the way to the screen that fixes it.
  */
@@ -484,7 +484,7 @@ private fun AlertBanner(
             val waiting = pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count)
             AlertLine(
                 code = alert.reason.code,
-                // docs/09 "접근성": one node with a sentence in it, not a reason, a count and a code
+                // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and a code
                 // read out as three separate things (the same rule as [LedgerRow]).
                 description = "$reason $waiting",
                 onClick = { onFix(alert) },
@@ -494,7 +494,7 @@ private fun AlertBanner(
                     Text(waiting, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
                 },
             ) {
-                // docs/10: "탭하면 고칠 수 있는 화면으로 간다". The row goes there when it is pressed,
+                // docs/10: "A tap goes to the screen that can fix it". The row goes there when it is pressed,
                 // but only the button says *where* — a line that is tappable without saying what
                 // the tap opens is a fix the user has to guess at.
                 BlueprintButton(
@@ -583,7 +583,7 @@ private fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifie
 
 /**
  * docs/03: a pull is the user asking for everything — this phone's list and what the other devices
- * have put in Drive. docs/09 "모션": the platform's own pull indicator, the one place the system's
+ * have put in Drive. docs/09 "Motion": the platform's own pull indicator, the one place the system's
  * spinner is allowed (2026-09-29): it follows the finger and settles back without a word, so a pull
  * that Drive answers at once does not flash a line of text on and off.
  */
@@ -598,7 +598,7 @@ private fun Refreshable(
 }
 
 /**
- * docs/03 "앱에서 지우기": one recording, two answers about Drive, and the default is the one that
+ * docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one that
  * can be undone — the files in Drive are the user's own and something downstream may already have
  * read the folder. What is still only on this phone is said first, because that is the part of the
  * deletion nothing anywhere else can give back.
@@ -637,7 +637,7 @@ private fun DeleteDialog(
         },
     ) {
         if (request.remote) {
-            // What happens, said plainly: the red is the Delete button's (docs/09 "접근성").
+            // What happens, said plainly: the red is the Delete button's (docs/09 "Accessibility").
             BlueprintDialogText(
                 stringResource(R.string.delete_remote_body),
                 modifier = Modifier.testTag("delete-remote"),
@@ -645,7 +645,7 @@ private fun DeleteDialog(
             return@BlueprintDialog
         }
         // That some of it is only here, not how many parts — a count of files is not the user's
-        // to read (docs/09 화면 원칙 2).
+        // to read (docs/09 screen principle 2).
         if (request.unuploaded > 0) {
             BlueprintDialogText(
                 stringResource(R.string.delete_unuploaded),
@@ -671,12 +671,12 @@ private fun DeleteDialog(
 }
 
 /**
- * docs/09 화면 원칙 2: the badge is the state as a code, and the code is the same word the core and
+ * docs/09 screen principle 2: the badge is the state as a code, and the code is the same word the core and
  * the logs use. What it *means* is the translated [label], which is what a screen reader hears.
  */
 fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.RECORDING -> LedgerStatus("REC", BadgeTone.DANGER)
-    // docs/03 "다른 기기의 녹음": a code says what is happening, not where — an upload on another
+    // docs/03 "Recordings from other devices": a code says what is happening, not where — an upload on another
     // device is the same word as one of this phone's own.
     ItemState.RECEIVING -> LedgerStatus("RECEIVING", BadgeTone.ACCENT)
     ItemState.REMOTE_UPLOADING -> LedgerStatus("UPLOADING", BadgeTone.ACCENT)
@@ -695,7 +695,7 @@ fun ItemState.badge(): LedgerStatus = when (this) {
 }
 
 /**
- * docs/08 "폴링 · 상태": a job parked while a provider transcribes is waiting on someone else, not on
+ * docs/08 "Polling · status": a job parked while a provider transcribes is waiting on someone else, not on
  * a retry timer, so it is its own code rather than the `RETRY` its `WAITING` status would give it —
  * the same code the desktop's ledger shows (`windows/.../Ledger.LedgerStates`).
  */
@@ -729,7 +729,7 @@ internal val BADGE_CODES: List<String> =
 /**
  * The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. A recording on
  * its way here — from the watch, or from another device's upload — is one the list is waiting for
- * (docs/03 "다른 기기의 녹음"); one another device is transcribing has already arrived. A job parked
+ * (docs/03 "Recordings from other devices"); one another device is transcribing has already arrived. A job parked
  * until the user allows a transfer or downloads the speech model is waiting too, not failed — the
  * iPhone's `Recents.summary` counts the same states.
  */
@@ -746,9 +746,9 @@ fun ItemState.waiting(): Boolean =
 fun JobItem.waiting(): Boolean = localPending || state.waiting()
 
 /**
- * docs/09 화면 원칙 2: a recording something is doing to it right now, so there is nothing on the
+ * docs/09 screen principle 2: a recording something is doing to it right now, so there is nothing on the
  * row to offer. Deleting one would be pulling the file out from under a recorder, a transfer or
- * another device's upload (docs/03 "다른 기기의 녹음").
+ * another device's upload (docs/03 "Recordings from other devices").
  */
 fun ItemState.inFlight(): Boolean =
     this == ItemState.RECORDING || this == ItemState.RUNNING ||
@@ -767,7 +767,7 @@ fun ItemState.failing(): Boolean =
 
 /**
  * A `WAITING` job says when, because "waiting" on its own reads like "stuck" — and while a provider
- * is transcribing there is no "when" to give, only how long it has been (docs/08 "폴링 · 상태").
+ * is transcribing there is no "when" to give, only how long it has been (docs/08 "Polling · status").
  */
 @Composable
 private fun label(item: JobItem): String = if (item.localPending) stringResource(
@@ -820,7 +820,7 @@ private fun startedAt(isoUtc: String, pattern: Int): String {
 }
 
 /**
- * docs/09 화면 원칙 2: the ledger's time column is a fixed-width pattern, so it is the same two lines
+ * docs/09 screen principle 2: the ledger's time column is a fixed-width pattern, so it is the same two lines
  * in every language — a locale that says the day first would not line up under the heading. The
  * spoken date the row announces is the locale's own words, and that one stays [startedAt].
  */

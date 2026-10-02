@@ -47,7 +47,7 @@ class AckJsonTest {
 
     /**
      * `Incomplete`: the phone names the parts it does not have, and those names are what the watch
-     * looks for on its own disk (docs/03 알려진 한계).
+     * looks for on its own disk (docs/03 Known limitation).
      */
     @Test
     fun `a meta ack names the parts the phone is missing`() {

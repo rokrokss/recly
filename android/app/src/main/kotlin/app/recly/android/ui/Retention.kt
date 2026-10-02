@@ -4,7 +4,7 @@ import recly.core.ReclyCore
 import recly.core.recording.RecordingRecord
 
 /**
- * docs/03 "보관 · 삭제": what the delete dialog and the disconnect warning have to say *first* — how
+ * docs/03 "Retention · deletion": what the delete dialog and the disconnect warning have to say *first* — how
  * much audio exists only on this phone.
  *
  * ADR-017's seven-day window is why the disk cannot answer this on its own any more: a part stays

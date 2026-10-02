@@ -21,7 +21,7 @@ public struct BlueprintButton: View {
     private let minWidth: CGFloat?
     private let action: () -> Void
 
-    /// docs/09 "형태": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
+    /// docs/09 "Shape": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
     /// label — `열기`, `Open` — no longer makes the narrowest thing on the screen, and short buttons
     /// side by side come out one width. Close, Delete and Cancel keep their own width (they pass
     /// [minTouch]), as do buttons whose label is data. Not on the Mac: its menu is too narrow a
@@ -71,7 +71,7 @@ public struct BlueprintButton: View {
             .multilineTextAlignment(.center)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            // docs/09 "접근성": the label is small, the button is not.
+            // docs/09 "Accessibility": the label is small, the button is not.
             .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
@@ -112,14 +112,14 @@ private struct ButtonFillsWidthKey: EnvironmentKey {
 }
 
 extension EnvironmentValues {
-    /// docs/09 화면 원칙 8: a dialog's answers that no longer fit on one row stack full width.
+    /// docs/09 screen principle 8: a dialog's answers that no longer fit on one row stack full width.
     var blueprintButtonFillsWidth: Bool {
         get { self[ButtonFillsWidthKey.self] }
         set { self[ButtonFillsWidthKey.self] = newValue }
     }
 }
 
-/// docs/09 "형태": one of a set of choices that is expected to grow — the language, and whatever
+/// docs/09 "Shape": one of a set of choices that is expected to grow — the language, and whatever
 /// enum setting comes after it. A row of chips says every option out loud, which is right for two or
 /// three and wrong for ten; this says the chosen one and keeps the rest one click away, so the
 /// setting stays one row however long the list gets.
@@ -127,7 +127,7 @@ extension EnvironmentValues {
 /// A `Menu` and not a menu-styled `Picker`: that picker *is* an `NSPopUpButton`, and its bezel, its
 /// radius and its chevron are the system's — there is no way to give them this design's square edge.
 /// A `Menu` draws its own label, which is the box below, and pops the same platform menu; a pop-up
-/// menu is chrome the platform owns (docs/09 트렌드 7), so it is left as the platform draws it.
+/// menu is chrome the platform owns (docs/09 trend 7), so it is left as the platform draws it.
 ///
 /// Not on the watch: it has no settings screen of its own (docs/07 §7 매핑 — the watch follows the
 /// system language), and a menu is not a control a screen that size offers.
@@ -166,7 +166,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
                 Button {
                     selection = option
                 } label: {
-                    // docs/09 "모든 상태는 색 + 텍스트": which one is chosen is a mark in the label,
+                    // docs/09 "Every state is color + text": which one is chosen is a mark in the label,
                     // the same one a chip wears, and not a colour a monochrome reader loses.
                     Text(verbatim: option == selection
                         ? "\(BlueprintChip.selectionMark) \(title(option))"
@@ -188,7 +188,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         // Flattening drops the menu-button role with the children, so the trait puts an
         // actionable role back on the one element that is left.
         .accessibilityAddTraits(.isButton)
-        // docs/09 "접근성": the element says the value, and the row it sits in says what the value
+        // docs/09 "Accessibility": the element says the value, and the row it sits in says what the value
         // is of — a reader given only the value would hear "한국어" and no question.
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityValue(Text(verbatim: title(selection)))
@@ -234,13 +234,13 @@ public enum ProcessingPhase: Sendable, Equatable {
     case done
 }
 
-/// docs/09 트렌드 2, as arithmetic: the windows a high-risk action is shown inside. Pure, so the
+/// docs/09 trend 2, as arithmetic: the windows a high-risk action is shown inside. Pure, so the
 /// rule can be checked without a screen (`ProcessingPhaseTests`).
 public enum Processing {
     /// How much longer the "…" has to stay after the work finished in [workSec]. Instant work is
     /// padded up to [Motion.processingMin]; work that already took that long is not padded at all.
     ///
-    /// Reduce motion does not shorten this. docs/09 "모션" asks for "즉시 전환 + 텍스트 상태만" —
+    /// Reduce motion does not shorten this. docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" —
     /// instant transitions *and* the text state, not no state at all — and a user who has turned
     /// animations off is the one with nothing else to tell them the tap was heard. What reduce
     /// motion switches off is the fade between the labels (`Motion.badgeAnimation`), which is the
@@ -273,13 +273,13 @@ public enum Processing {
     }
 }
 
-/// docs/09 트렌드 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
+/// docs/09 trend 2: the rare high-risk action — sign-in, a save, an upload — shows that it happened.
 /// What happened is the caller's to say: [state] comes from the operation itself, and the button
 /// only owns the *window* around it — "…" for at least [Motion.processingMin] however fast the
 /// result was, a ✓ that fills out the 800 ms on success, and nothing at all on failure, which the
 /// screen reports.
 ///
-/// Reduce motion keeps all three labels and drops only the fade between them (docs/09 "모션":
+/// Reduce motion keeps all three labels and drops only the fade between them (docs/09 "Motion":
 /// "즉시 전환 + 텍스트 상태만"). A window of zero would leave a user who has turned animations off
 /// with no sign at all that the tap was heard.
 public struct ProcessingButton: View {
@@ -343,7 +343,7 @@ public struct ProcessingButton: View {
     private func follow() async {
         guard let start = startedAt else { return }
         let reduceMotion = blueprint.reduceMotion
-        // docs/09 "모션": a badge fades in and out; with reduce motion on the label simply changes.
+        // docs/09 "Motion": a badge fades in and out; with reduce motion on the label simply changes.
         let fade = Motion.badgeAnimation(reduceMotion: reduceMotion)
         switch state {
         // The window stays open for as long as the work does.

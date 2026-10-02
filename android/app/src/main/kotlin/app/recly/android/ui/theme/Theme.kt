@@ -45,7 +45,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.recly.android.settings.AppTheme
 
-/** docs/09 "간격": multiples of four, with 8 / 16 / 24 as the rhythm. */
+/** docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm. */
 object Space {
     val xs: Dp = 4.dp
     val s: Dp = 8.dp
@@ -55,20 +55,20 @@ object Space {
 }
 
 /**
- * docs/09 "접근성": whatever it draws, nothing you can tap is smaller than this. A small glyph — the
+ * docs/09 "Accessibility": whatever it draws, nothing you can tap is smaller than this. A small glyph — the
  * connector's `+`, a square switch — keeps its size and grows a target around itself.
  */
 val MinTouch: Dp = 48.dp
 
 /**
- * docs/09 "형태": the narrowest a worded button is (2026-09-29). A two-letter label — `열기`, `Open` —
+ * docs/09 "Shape": the narrowest a worded button is (2026-09-29). A two-letter label — `열기`, `Open` —
  * no longer makes the narrowest thing on the screen, and short buttons side by side come out one
  * width. Close, Delete and Cancel keep their own width ([MinTouch]), as do buttons whose label is
  * data (monospace): the user's call, and none of them needs to be found.
  */
 val ButtonMinWidth: Dp = 88.dp
 
-/** docs/09 "형태": 4 for a node, 8 for a card, 0 for a table row. Badges and chips take half a node. */
+/** docs/09 "Shape": 4 for a node, 8 for a card, 0 for a table row. Badges and chips take half a node. */
 object Radius {
     val node: Dp = 4.dp
     val card: Dp = 8.dp
@@ -111,7 +111,7 @@ val mono: MonoType
  * so nothing arrives in Material's default purple or its pill corners.
  *
  * Everything the theme varies on is read from the system: dark mode, the font scale (`sp` carries
- * it) and reduce motion (docs/09 "접근성"). Dark is the one of them the user may say otherwise
+ * it) and reduce motion (docs/09 "Accessibility"). Dark is the one of them the user may say otherwise
  * about — [theme] is the setting's override, and [AppTheme.SYSTEM] is the system's own answer.
  */
 @Composable
@@ -185,7 +185,7 @@ private fun animatorScale(resolver: ContentResolver): Float =
 fun systemReduceMotion(scale: Float): Boolean = scale == 0f
 
 /**
- * docs/09 "간격": an 8dp dot grid at 6% behind the content — the visible grid the nodes sit on.
+ * docs/09 "Spacing": an 8dp dot grid at 6% behind the content — the visible grid the nodes sit on.
  */
 fun Modifier.dotGrid(palette: BlueprintColors): Modifier = if (palette.highContrast) background(palette.background) else this
     .background(palette.background)

@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * docs/03 "저장 위치" (ADR-024): where a recording's files go — the user's Google Drive, or the app's
+ * docs/03 "Storage location" (ADR-024): where a recording's files go — the user's Google Drive, or the app's
  * folder in the user's iCloud Drive (iPhone and Mac only).
  *
  * Every file and folder id carries its storage ([ofId]): a Drive id is Drive's own, an iCloud id is

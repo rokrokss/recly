@@ -1,7 +1,7 @@
 import RecKit
 import XCTest
 
-/// docs/13 "표시": what is on the Lock Screen, decided from what the recorder is doing. The pill is
+/// docs/13 "Display": what is on the Lock Screen, decided from what the recorder is doing. The pill is
 /// the only thing that tells a user with a locked phone that Recly is still recording (and App
 /// Review 2.5.14 asks for it), so the mapping is checked rather than trusted to the screen.
 final class RecordingActivityPlanTests: XCTestCase {
@@ -36,7 +36,7 @@ final class RecordingActivityPlanTests: XCTestCase {
         )
     }
 
-    /// docs/13 "8시간 상한이면 갱신": ActivityKit takes the activity away eight hours after it was
+    /// docs/13 "renewed at the 8-hour limit": ActivityKit takes the activity away eight hours after it was
     /// requested, so a new one is asked for before that — and not a moment sooner, because every
     /// hand-over is a flicker on the Lock Screen.
     func testTheActivityIsRefreshedBeforeTheEightHourCap() {

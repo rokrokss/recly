@@ -45,7 +45,7 @@ public struct WatchTransferPart: Equatable {
     }
 }
 
-/// docs/03 "워치 → 폰 전송 계약", the sending half on `WCSession` (docs/13 "Apple Watch" 전송,
+/// docs/03 "Watch → phone transfer contract", the sending half on `WCSession` (docs/13 "Apple Watch" 전송,
 /// M5-L4 deliverable 2): per recording, every part in `meta.parts` order, then `meta.json` last.
 /// **`ack-meta ok:true` is the only thing that deletes audio from this watch.** A part ack is
 /// recorded — it is what stops the part being sent again — but it does not license a delete: until

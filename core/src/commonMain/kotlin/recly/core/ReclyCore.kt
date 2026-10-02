@@ -59,14 +59,14 @@ import kotlinx.coroutines.withContext
  * platform ships (`NativeSqliteDriver` on Apple, `AndroidSqliteDriver` on Android). Bringing the
  * schema up to date is the factory's job too — creating it on a fresh file, migrating one an older
  * build left behind. The Android and native drivers do both once handed `RecDatabase.Schema`; the
- * JDBC one does neither, which is what `JvmRuntime` is for (docs/10 "스키마 마이그레이션").
+ * JDBC one does neither, which is what `JvmRuntime` is for (docs/10 "Schema migrations").
  */
 interface DriverFactory {
     fun create(): SqlDriver
 }
 
 /**
- * Everything docs/01 "코어가 셸에 주는 것" lists, assembled. A shell holds one of these for the
+ * Everything docs/01 "What the core gives the shells" lists, assembled. A shell holds one of these for the
  * lifetime of the process and never builds the pieces itself.
  *
  * Deliberately concrete: this surface is what Swift sees, so no generics and no Kotlin-only types
@@ -78,7 +78,7 @@ class ReclyCore(
 ) {
     private val db: RecDatabase = RecDatabase(driverFactory.create())
 
-    /** Google Drive, and the app's iCloud folder where the shell has one (docs/03 "저장 위치"). */
+    /** Google Drive, and the app's iCloud folder where the shell has one (docs/03 "Storage location"). */
     private val storage: CloudStorage = CloudStorage.of(deps)
 
     val recordings: RecordingRepository = RecordingRepository(db, deps, storage)
@@ -139,7 +139,7 @@ class ReclyCore(
     suspend fun initializeProcessing(): recly.core.processing.ProcessingSettingsState.Ready = processingSettings.initialize()
 
     /**
-     * docs/05 "시크릿": the device's secret values. **Every shell writes secrets through this**, not
+     * docs/05 "Secrets": the device's secret values. **Every shell writes secrets through this**, not
      * through [SecureStore] directly.
      */
     val secrets: SecretsRepository = SecretsRepository(deps)
@@ -197,7 +197,7 @@ class ReclyCore(
     )
 
     /**
-     * docs/03 "다른 기기의 녹음": reads the recordings other devices uploaded into this device's list,
+     * docs/03 "Recordings from other devices": reads the recordings other devices uploaded into this device's list,
      * and drops the ones they have since deleted. Every job pass does this too ([runDueJobs]); a
      * ledger that has just come on screen calls it itself, with [force] to skip the pass throttle.
      * Never throws — a device without an account gets a summary that says so.
@@ -209,7 +209,7 @@ class ReclyCore(
     suspend fun reconnectDrive(): Int = jobs.quiesced { driveJobAccess.reconnect() }
 
     /**
-     * docs/03 "제목": the detail screen's rename. Written locally at once — the list shows it on
+     * docs/03 "Titles": the detail screen's rename. Written locally at once — the list shows it on
      * `recordings.observe()` — and pushed to Drive (the folder's `description` and `meta.json`)
      * right away when the account and the network allow, otherwise by the next job pass. Returns
      * false when there is nothing to rename. Never throws: a push that fails is a pending write,
@@ -222,7 +222,7 @@ class ReclyCore(
     }
 
     /**
-     * docs/08 "결과 파일": the transcript of one recording, for the detail screen — the local copy
+     * docs/08 "Result files": the transcript of one recording, for the detail screen — the local copy
      * the step left, or Drive's when this device did not run it.
      */
     @Throws(Throwable::class)
@@ -276,7 +276,7 @@ class ReclyCore(
     }
 
     /**
-     * Whether Drive holds every part of this recording (docs/03 "보관 · 삭제"): true once some job's
+     * Whether Drive holds every part of this recording (docs/03 "Retention · deletion"): true once some job's
      * `drive.upload` steps have all succeeded. What the delete dialog and the disconnect warning
      * lead with is the audio that exists only here, and since the local parts became a cache with a
      * window on it ([recly.core.job.Retention]) "the file is still on disk" no longer answers that
@@ -315,7 +315,7 @@ class ReclyCore(
 
     /**
      * What the platform scheduler calls. The pull rides on it because every shell already runs a
-     * pass on a schedule and refreshes its ledger when one ends (docs/11 A5, docs/12 "실행기"): a
+     * pass on a schedule and refreshes its ledger when one ends (docs/11 A5, docs/12 "Runner"): a
      * recording another device finished shows up here by the next pass.
      */
     @Throws(Throwable::class)
@@ -364,7 +364,7 @@ class ReclyCore(
     }
 
     /**
-     * "연결 해제" (docs/03 "로그아웃 vs 연결 해제"), the local half of it: the `tokens` namespace of
+     * "연결 해제" (docs/03 "Sign out vs Disconnect"), the local half of it: the `tokens` namespace of
      * [SecureStore], completed job records and the Drive folder cache. Unfinished jobs keep their steps and
      * resume state, parked until the same Drive owner is verified on reconnection. Nothing in Drive is
      * touched — those files are the user's own (docs/03), and this never calls `files.delete`.
@@ -415,11 +415,11 @@ class ReclyCore(
             deps.tokenProvider.invalidate()
             deps.secureStore.clear(SecureStore.TOKENS)
             // Drive's copies only: a recording in the iCloud folder is not this account's to forget
-            // (docs/03 "저장 위치").
+            // (docs/03 "Storage location").
             recordings.synced().filterValues { StorageKind.ofId(it) == StorageKind.DRIVE }.keys
                 .forEach { recordings.forgetDriveCopy(it) }
             driveStore.forgetAllFolders()
-            // The "로컬만 삭제" memory (docs/03 "다른 기기의 녹음") is about this account's folders, and
+            // The "로컬만 삭제" memory (docs/03 "Recordings from other devices") is about this account's folders, and
             // a device that starts over with an account starts over with its list.
             recordings.clearIgnored(StorageKind.DRIVE)
             deps.logger.log(

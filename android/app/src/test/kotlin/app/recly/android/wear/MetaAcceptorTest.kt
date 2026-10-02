@@ -19,7 +19,7 @@ private const val SHA = "0123456789abcdef0123456789abcdef0123456789abcdef0123456
 
 /**
  * The order of the meta handshake, on the JVM. `ack-meta ok:true` is the watch's licence to delete
- * the only copy of the audio (docs/03 "워치 → 폰 전송 계약"), so what is under test is that nothing
+ * the only copy of the audio (docs/03 "Watch → phone transfer contract"), so what is under test is that nothing
  * acks before the recording is filed, queued and the executor woken — and that a body that names a
  * different recording never reaches the core at all.
  */

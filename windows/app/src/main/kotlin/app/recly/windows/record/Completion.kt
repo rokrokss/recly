@@ -4,7 +4,7 @@ import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 
 /**
- * docs/03 · docs/14 "감지": the title is asked for *after* the recording has ended, and the job is
+ * docs/03 · docs/14 "Detection": the title is asked for *after* the recording has ended, and the job is
  * only queued once the answer is in — the same order the Mac's `MenuModel.finish` and the phone's
  * stop dialog use. `updateTitle` refuses a recording whose job has already read the meta, so
  * enqueuing first would be a title the upload never carries.

@@ -27,7 +27,7 @@ object Ulid {
     fun isValid(s: String): Boolean = PATTERN.matches(s)
 
     /**
-     * When the id was made, read back out of it (docs/01 "식별자·시간"): [generate] writes the
+     * When the id was made, read back out of it (docs/01 "Identifiers · time"): [generate] writes the
      * millisecond clock into the first [TIME_CHARS] characters, most significant first, so an id is
      * its own timestamp. What a recording that has not sent its `meta.json` yet is dated by — the
      * watch transfer in flight and the folder another device is still uploading into (docs/03).

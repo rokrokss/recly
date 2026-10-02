@@ -7,7 +7,7 @@ import android.media.MediaFormat
 import java.nio.ByteOrder
 
 /**
- * docs/05 "고정 처리 설정 도입": a recording decoded from [startSec] to the 16 kHz mono float PCM the speech model
+ * docs/05 "Fixed processing settings": a recording decoded from [startSec] to the 16 kHz mono float PCM the speech model
  * reads, one chunk at a time so an hour never sits in memory. Recordings are 16 kHz already
  * (docs/03); the 44.1 kHz fallback goes through [Resampler].
  */

@@ -52,7 +52,7 @@ class BlueprintDialogTest {
     }
 
     /**
-     * docs/09 "모든 상태는 색 + 텍스트": the mark is filled with the accent when it is chosen and
+     * docs/09 "Every state is color + text": the mark is filled with the accent when it is chosen and
      * drawn in the quiet border colour when it is not — in both palettes.
      */
     @Test

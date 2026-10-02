@@ -20,7 +20,7 @@
 		<string>ko</string>
 	</array>
 
-	<!-- docs/13 "권한"·M5-L1 deliverable 1: no prompt without it, and no recording without a prompt. -->
+	<!-- docs/13 "Permissions"·M5-L1 deliverable 1: no prompt without it, and no recording without a prompt. -->
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Recly records meetings and memos so they can be transcribed.</string>
 
@@ -76,7 +76,7 @@
 	</array>
 
 	<!--
-	  docs/03 "저장 위치" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
+	  docs/03 "Storage location" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
 	  folder is the "Recly" folder the Files app and Finder show. ReclyICloudContainer is empty unless
 	  Local.xcconfig turns iCloud on (RECLY_ICLOUD_CONTAINER) — a build signed without the iCloud
 	  entitlement does not offer iCloud. Raise CFBundleVersion whenever NSUbiquitousContainers
@@ -98,7 +98,7 @@
 	</dict>
 
 	<!--
-	  docs/13 "표시"·M5-L2 deliverable 3: without this the Live Activity request is refused, and a
+	  docs/13 "Display"·M5-L2 deliverable 3: without this the Live Activity request is refused, and a
 	  recording with nothing on the Lock Screen is also App Review 2.5.14's problem.
 	-->
 	<key>NSSupportsLiveActivities</key>

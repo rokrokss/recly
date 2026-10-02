@@ -28,7 +28,7 @@ import recly.core.model.isoUtc
 import recly.core.platform.CoreDeps
 
 /**
- * docs/03 "저장 위치" — iCloud (ADR-024): the app's iCloud Drive folder, held to the same shapes as
+ * docs/03 "Storage location" — iCloud (ADR-024): the app's iCloud Drive folder, held to the same shapes as
  * Drive so the upload step, the shared list and the titles run unchanged on top of it.
  *
  * - An id is [StorageKind.ICLOUD_PREFIX] plus the path under the container's `Documents`, so a folder
@@ -347,7 +347,7 @@ class ICloudFiles(
     }
 
     companion object {
-        /** `{folder}.folder.json`: what Drive keeps on the folder itself (docs/03 "저장 위치"). */
+        /** `{folder}.folder.json`: what Drive keeps on the folder itself (docs/03 "Storage location"). */
         const val PROPERTIES_SUFFIX: String = ".folder.json"
 
         private const val DESCRIPTION = "description"
@@ -359,7 +359,7 @@ class ICloudFiles(
         /** A property file is a few hundred bytes; a listing waits this long for one to arrive. */
         private const val PROPERTIES_WAIT_SEC = 10
 
-        /** A part is 3.6 MB; playback waits this long for one to come down (docs/03 "로컬 저장"). */
+        /** A part is 3.6 MB; playback waits this long for one to come down (docs/03 "Local storage"). */
         private const val DOWNLOAD_WAIT_SEC = 120
 
         private val LISTING_TTL = 3.seconds

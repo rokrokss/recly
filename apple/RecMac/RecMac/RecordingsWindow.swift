@@ -2,7 +2,7 @@ import RecKit
 import ReclyCore
 import SwiftUI
 
-/// docs/08 "결과 파일", deliverable 3: the recent recordings and what the `transcribe` step wrote for
+/// docs/08 "Result files", deliverable 3: the recent recordings and what the `transcribe` step wrote for
 /// the one that is picked. A window of its own for the same reason the editor is one — `LSUIElement`
 /// means the popover is the only other surface, and a transcript does not fit in a popover.
 struct RecordingsWindow: View {
@@ -35,7 +35,7 @@ struct RecordingsWindow: View {
                         ForEach(menu.recents) { item in
                             row(item)
                         }
-                        // docs/12 "메뉴바": the same paging as the popover's ledger — the next page
+                        // docs/12 "Menu bar": the same paging as the popover's ledger — the next page
                         // when the end comes into view, keyed on the count so a page that did not
                         // push it out of view asks again.
                         if !menu.recents.isEmpty {
@@ -68,7 +68,7 @@ struct RecordingsWindow: View {
         // since it last looked. The rows it adopts arrive on the model's recordings observation, so
         // nothing here waits for it.
         .task { await menu.pullRemoteRecordings() }
-        // docs/03 "앱에서 지우기": this window has one, so the dialog is the platform's own sheet here
+        // docs/03 "Deleting in the app": this window has one, so the dialog is the platform's own sheet here
         // rather than the popover's in-place overlay — and only for the deletes its own rows asked.
         // A question started in the popover is answered there, not on a window behind it.
         .blueprintDialog(
@@ -86,7 +86,7 @@ struct RecordingsWindow: View {
         }
     }
 
-    /// docs/09 화면 원칙 2: the same ledger row the popover and the phone draw — one accessibility
+    /// docs/09 screen principle 2: the same ledger row the popover and the phone draw — one accessibility
     /// element with the whole sentence in it, and a real button rather than a tap gesture, so it is
     /// announced as something you can press and can be reached from the keyboard.
     ///
@@ -122,7 +122,7 @@ struct RecordingsWindow: View {
             }
         }
         .accessibilityIdentifier("open-detail")
-        // docs/08 "오류": what to do about it, and — for a key — where to do it. docs/07 §5:
+        // docs/08 "Errors": what to do about it, and — for a key — where to do it. docs/07 §5:
         // `lastError` is a core message key, and a row an older build wrote is prose that
         // `CoreMessages` shows as it stands.
         let fixes = item.needsKey || item.alert == .needsSpace || item.waitingForModel
@@ -132,7 +132,7 @@ struct RecordingsWindow: View {
                 RowReason(item: item, download: menu.modelDownload, showsDetail: false)
                 if fixes {
                     FlowLayout {
-                        // docs/05 "고정 처리 설정 도입": the model this recording waits for, first.
+                        // docs/05 "Fixed processing settings": the model this recording waits for, first.
                         if item.waitingForModel, let download = menu.modelDownload {
                             ModelDownloadButton(download: download, language: item.localLanguage)
                                 .accessibilityIdentifier("download-model")

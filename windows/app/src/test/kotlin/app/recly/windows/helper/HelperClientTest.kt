@@ -26,7 +26,7 @@ class HelperClientTest {
 
             val parts = withTimeout(TIMEOUT_MS) { client.events.receiveParts(2 * TRACKS.size) }
 
-            // docs/03 "이름 규칙": the app owns the names, the helper writes what it was told.
+            // docs/03 "Naming rules": the app owns the names, the helper writes what it was told.
             assertEquals(
                 listOf(
                     "20260827T100000Z_desktop_01H_p001_mic.m4a",
@@ -106,7 +106,7 @@ class HelperClientTest {
 
     /**
      * The next [count] `part_done`s. The real helper also sends a `level` line for every pump that
-     * finished a tenth of a second (docs/09 화면 원칙 6), and they arrive between the parts; the
+     * finished a tenth of a second (docs/09 screen principle 6), and they arrive between the parts; the
      * fake sends none. What these tests are about is the parts either way.
      */
     private suspend fun ReceiveChannel<HelperEvent>.receiveParts(count: Int): List<HelperEvent.PartDone> =

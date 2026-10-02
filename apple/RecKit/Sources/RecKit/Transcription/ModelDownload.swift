@@ -2,7 +2,7 @@ import Foundation
 import ReclyCore
 import SwiftUI
 
-/// docs/05 "고정 처리 설정 도입": the one download of the on-device speech model a shell runs. The
+/// docs/05 "Fixed processing settings": the one download of the on-device speech model a shell runs. The
 /// settings row, the banner, a waiting recording's row and the first-run card all read this and
 /// start or cancel through it, so two of them can never be two downloads.
 ///
@@ -140,7 +140,7 @@ protocol ModelDownloadCancelling: AnyObject {
     func cancelDownload()
 }
 
-/// docs/05 "고정 처리 설정 도입": the first-run card is for a device that would transcribe here and
+/// docs/05 "Fixed processing settings": the first-run card is for a device that would transcribe here and
 /// cannot yet — never for one that already has the model, or is recording, and never beside the
 /// banner of recordings already waiting for it, which says the same thing with a count.
 public enum ModelPrompt {
@@ -178,7 +178,7 @@ public struct ModelDownloadButton: View {
 }
 
 #if os(iOS) || os(macOS)
-/// docs/05 "고정 처리 설정 도입": once, above the recording screen, for a device set to transcribe
+/// docs/05 "Fixed processing settings": once, above the recording screen, for a device set to transcribe
 /// here that has no model yet. "Not now" is remembered by the shell and the card does not come back.
 public struct ModelPromptCard: View {
     @Environment(\.blueprint) private var blueprint
@@ -223,7 +223,7 @@ public struct ModelPromptCard: View {
                             .font(blueprint.fonts.sans(TypeSize.small))
                             .foregroundStyle(blueprint.palette.danger)
                     }
-                    // docs/09 화면 원칙 8: the answers end-aligned, the quiet one first.
+                    // docs/09 screen principle 8: the answers end-aligned, the quiet one first.
                     FlowLayout(alignment: .trailing) {
                         BlueprintButton(loc("Not now"), tone: .quiet, action: dismiss)
                         BlueprintButton(loc("Download model"), tone: .primary) { download.start() }

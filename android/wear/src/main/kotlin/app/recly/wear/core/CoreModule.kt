@@ -60,7 +60,7 @@ object CoreModule {
             dataDir = dataDir,
             device = DeviceInfo(
                 deviceId = deviceId(secureStore),
-                // What makes the recording a `_watch_` one (docs/03 이름 규칙): `RecorderService`
+                // What makes the recording a `_watch_` one (docs/03 Naming rules): `RecorderService`
                 // reads the source off this.
                 platform = Platform.WEAROS,
                 name = Build.MODEL,

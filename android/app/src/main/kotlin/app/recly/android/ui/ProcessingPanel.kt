@@ -75,7 +75,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             // Settings that could not be read: the reason, where the settings would have been.
             state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
         } else {
-            // docs/05 "고정 처리 설정 도입": on this device that means Qwen3-ASR, which has its own language list.
+            // docs/05 "Fixed processing settings": on this device that means Qwen3-ASR, which has its own language list.
             val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
             val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
             if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
@@ -107,7 +107,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                         }
                         ModelDownloadLines(download, reading)
                         // A footnote like the iPhone's: the button under it is the way on, and red is
-                        // kept for a failed recording (docs/09 "빨강의 뜻은 둘뿐이다").
+                        // kept for a failed recording (docs/09 "Red means only two things").
                         download.error?.let { error ->
                             Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                         }
@@ -128,7 +128,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 }
             }
             if (draft.mode == TranscriptionMode.EXTERNAL) {
-                // docs/09 원칙 4: a settings row, "Provider … ElevenLabs ▾", like the app language row.
+                // docs/09 principle 4: a settings row, "Provider … ElevenLabs ▾", like the app language row.
                 ProcessingRow(stringResource(R.string.editor_provider)) {
                     BlueprintDropdown(
                         label = stringResource(R.string.editor_provider),
@@ -175,7 +175,7 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             val others = state.secretNames.filter { it != draft.secretRef }
             if (draft.mode == TranscriptionMode.EXTERNAL && others.isNotEmpty()) {
                 SectionHeader(stringResource(R.string.processing_other_keys))
-                // docs/09 화면 원칙 8: an action that belongs to one item sits at the end of its row.
+                // docs/09 screen principle 8: an action that belongs to one item sits at the end of its row.
                 others.forEach { name ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(SttProviders.displayName(name), style = MaterialTheme.typography.bodyMedium, color = blueprint.text, modifier = Modifier.weight(1f))
@@ -211,7 +211,7 @@ private fun ProcessingRow(title: String, trailing: @Composable () -> Unit) {
     }
 }
 
-/** docs/09 화면 원칙 8: a button group in a settings block is end-aligned, the committing action last. */
+/** docs/09 screen principle 8: a button group in a settings block is end-aligned, the committing action last. */
 @Composable
 private fun EndButtons(content: @Composable FlowRowScope.() -> Unit) {
     FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End), content = content)
@@ -219,7 +219,7 @@ private fun EndButtons(content: @Composable FlowRowScope.() -> Unit) {
 
 /**
  * @param monospace for a value that is data — a number, an address, a model id — as the iPhone's
- * field draws it (docs/09 "타이포").
+ * field draws it (docs/09 "Typography").
  */
 @Composable
 private fun ProcessingField(
@@ -255,12 +255,12 @@ private val KEY_KEYBOARD = KeyboardOptions(
 
 @Composable
 /**
- * docs/05 "시크릿": the value is never read back. A saved key is a row that says so — ✓ in the
- * success colour, colour and text together (docs/09 "모든 상태는 색 + 텍스트") — with Replace and
+ * docs/05 "Secrets": the value is never read back. A saved key is a row that says so — ✓ in the
+ * success colour, colour and text together (docs/09 "Every state is color + text") — with Replace and
  * Delete; the empty field only comes back to take a new value.
  *
  * What was typed and not saved belongs to the provider it was typed for: another provider, or
- * Cancel while replacing, drops it without a question — as on every shell (docs/09 화면 원칙 3).
+ * Cancel while replacing, drops it without a question — as on every shell (docs/09 screen principle 3).
  */
 private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save: (String, String, () -> Unit) -> Any, delete: () -> Unit) {
     var value by remember(name) { mutableStateOf("") }

@@ -1,7 +1,7 @@
 import XCTest
 @testable import RecKit
 
-/// docs/09 화면 원칙 3: where the nodes, the connectors and their `+` land.
+/// docs/09 screen principle 3: where the nodes, the connectors and their `+` land.
 final class NodeGraphLayoutTests: XCTestCase {
 
     /// The mockup's rhythm, in points: 14 + 18 + 14 after every node, 10 to close.
@@ -57,7 +57,7 @@ final class NodeGraphLayoutTests: XCTestCase {
         XCTAssertEqual(first.plusStart - first.start, first.end - first.plusEnd, "the two legs differ")
     }
 
-    /// docs/09 "접근성": the glyph stays 18pt, what takes the tap does not — and it stays in its run.
+    /// docs/09 "Accessibility": the glyph stays 18pt, what takes the tap does not — and it stays in its run.
     func testThePlusIsTappedOverAtLeast44CentredOnTheGlyph() {
         for connector in layout([60, 80]).connectors {
             XCTAssertEqual(connector.touchSize, touch)

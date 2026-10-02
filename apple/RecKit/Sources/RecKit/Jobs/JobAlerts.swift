@@ -1,7 +1,7 @@
 import Foundation
 import ReclyCore
 
-/// docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the failures a person has to do something about,
+/// docs/10 "Failures the user can fix, and their notices": the failures a person has to do something about,
 /// and the screen that lets them do it. Everything else — 5xx, the network, a 429 the runner is
 /// still waiting out — is a retry the app does not call anybody about.
 ///
@@ -17,7 +17,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
     case needsAuth
     case needsConsent
     case needsSpace
-    /// docs/03 "저장 위치": the iCloud account is out of space — the same park as a full Drive.
+    /// docs/03 "Storage location": the iCloud account is out of space — the same park as a full Drive.
     case icloudSpace
     case missingSecret
     case authRejected
@@ -34,7 +34,7 @@ public enum AlertReason: String, CaseIterable, Sendable {
 
     public var label: String { RecKitStrings.localized(labelKey) }
 
-    /// docs/09 화면 원칙 2: the badge on the banner row is the state as a code, the same word the
+    /// docs/09 screen principle 2: the badge on the banner row is the state as a code, the same word the
     /// core and the logs use.
     public var code: String {
         switch self {
@@ -85,10 +85,10 @@ public enum FixSurface: CaseIterable, Sendable {
     case driveStorage
     case secrets
     case editor
-    /// docs/05 "고정 처리 설정 도입": the one fix that is an action rather than a screen — the
+    /// docs/05 "Fixed processing settings": the one fix that is an action rather than a screen — the
     /// recordings are waiting for the speech model, so the button downloads it where it stands.
     case modelDownload
-    /// docs/03 "저장 위치": the iCloud uploads parked for space, asked again — after the user made room.
+    /// docs/03 "Storage location": the iCloud uploads parked for space, asked again — after the user made room.
     case retryUploads
 
     /// docs/07 rule 3: the key, resolved where the banner draws its button.
@@ -112,7 +112,7 @@ public enum FixSurface: CaseIterable, Sendable {
     public var label: String { RecKitStrings.localized(labelKey) }
 }
 
-/// docs/10 "Drive 용량 초과": where "free some up" actually happens.
+/// docs/10 "Drive out of space": where "free some up" actually happens.
 public let driveStorageURL = URL(string: "https://drive.google.com/settings/storage")!
 
 /// One reason and how many jobs are stuck on it — the banner line, and the notification body.

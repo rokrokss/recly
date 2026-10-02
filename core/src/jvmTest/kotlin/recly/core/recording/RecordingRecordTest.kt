@@ -8,7 +8,7 @@ import recly.core.model.DriveLocation
 import recly.core.model.RecordingStatus
 import recly.core.testing.testMeta
 
-/** docs/03 "다른 기기의 녹음": the Drive folder a ledger row can open, off what the row knows. */
+/** docs/03 "Recordings from other devices": the Drive folder a ledger row can open, off what the row knows. */
 class RecordingRecordTest {
     private fun record(
         status: RecordingStatus = RecordingStatus.FINALIZED,
@@ -42,7 +42,7 @@ class RecordingRecordTest {
         assertNull(record().driveFolderUrl)
     }
 
-    /** docs/09 화면 원칙 2: the placeholder for another device's upload offers no actions. */
+    /** docs/09 screen principle 2: the placeholder for another device's upload offers no actions. */
     @Test
     fun `a folder another device is still uploading into is not offered`() {
         assertNull(record(status = RecordingStatus.RECORDING, remote = true, driveFolderId = "1FolderId").driveFolderUrl)

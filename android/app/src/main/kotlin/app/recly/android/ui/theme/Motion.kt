@@ -4,7 +4,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 
 /**
- * docs/09 "모션": motion is a state signal, never decoration. One easing, one duration for a normal
+ * docs/09 "Motion": motion is a state signal, never decoration. One easing, one duration for a normal
  * transition, a shorter one for a badge, and a deliberate window for the rare high-risk action —
  * start/stop, upload, sign-in, save — so the user sees that something happened.
  */
@@ -28,7 +28,7 @@ object Motion {
  * How much longer the "…" has to stay after the work finished in [workMs]. Instant work is padded
  * up to [Motion.PROCESSING_MIN_MS]; work that already took that long is not padded at all.
  *
- * Reduce motion does not shorten this. docs/09 "모션" asks for "즉시 전환 + 텍스트 상태만" — instant
+ * Reduce motion does not shorten this. docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" — instant
  * transitions *and* the text state, not no state at all — and a user who has turned animations off
  * is the one with nothing else to tell them the stop was heard.
  */

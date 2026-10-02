@@ -46,7 +46,7 @@ enum class TransferOutcome {
 }
 
 /**
- * docs/03 "워치 → 폰 전송 계약", the sending half: per recording, every part in `meta.parts` order,
+ * docs/03 "Watch → phone transfer contract", the sending half: per recording, every part in `meta.parts` order,
  * then `meta.json` last. **`ack-meta ok:true` is the only thing that deletes audio from this
  * watch.** A part ack is recorded in the row — it is what stops the part being sent again — but it
  * does not license a delete: until the phone has filed the meta it has loose parts and a purge
@@ -95,7 +95,7 @@ class TransferSender(
         val waiting = store.all().filter { it.waiting }
         if (waiting.isEmpty()) return TransferOutcome.IDLE
         val channel = link.open() ?: return TransferOutcome.NO_PHONE
-        // docs/09 원칙 7 · docs/11 W2: the badge says "sending" from here, not from the top of the
+        // docs/09 principle 7 · docs/11 W2: the badge says "sending" from here, not from the top of the
         // pass — a phone was found and bytes are going out. Everything above this is a watch with
         // recordings and no phone to give them to, which is what "waiting" means.
         _sending.value = true

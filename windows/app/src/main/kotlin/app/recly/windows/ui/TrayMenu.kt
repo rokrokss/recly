@@ -22,7 +22,7 @@ sealed interface TrayEntry {
  * given language produce can be looked at without a tray — which is how `TrayMenuTest` proves that
  * choosing English rebuilds it (docs/07 rule 3).
  *
- * **It is the fallback now, not the UI.** docs/09 화면 원칙 6 puts the state nodes and the ledger in
+ * **It is the fallback now, not the UI.** docs/09 screen principle 6 puts the state nodes and the ledger in
  * a window ([TrayPopup]), because an AWT menu item is one run of system text and cannot draw any of
  * them. What stays here is what has to work even if that window will not open on
  * some machine: what the app is doing, the way in to the window, start/stop, and quit.
@@ -53,7 +53,7 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
         // second one.
         val startable = model.ready && !model.helperMissing && model.titlePrompt == null
         add(TrayEntry.Item(strings[Str.TRAY_START], enabled = startable, onClick = model::start))
-        // docs/14 "감지": an AWT balloon has no buttons, so clicking the balloon is the whole of its
+        // docs/14 "Detection": an AWT balloon has no buttons, so clicking the balloon is the whole of its
         // interaction and **the reliable way to take an offer is this item** ([MeetingNotifier]).
         // It comes and goes with the offer, which is what keeps a stale one off the menu.
         if (model.meetingOffer == MeetingDetectionRule.Prompt.START) {

@@ -3,7 +3,7 @@ import Foundation
 import os
 import RecKit
 
-/// The app's half of docs/13 "표시": one Live Activity for one recording, started when the
+/// The app's half of docs/13 "Display": one Live Activity for one recording, started when the
 /// recording starts, ended when it stops, and asked for again before ActivityKit's eight-hour cap
 /// takes it away underneath a meeting that is still going.
 ///
@@ -48,7 +48,7 @@ final class RecordingLiveActivity {
         }
     }
 
-    /// docs/13 "8시간 상한이면 갱신". Called from the model's own tick, so no timer of its own.
+    /// docs/13 "renewed at the 8-hour limit". Called from the model's own tick, so no timer of its own.
     func refreshIfNeeded(now: Date = Date()) async {
         guard let activity, let requestedAt,
               RecordingActivityPlan.needsRefresh(requestedAt: requestedAt, now: now)

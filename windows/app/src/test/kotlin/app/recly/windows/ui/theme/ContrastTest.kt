@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "접근성": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair this shell actually
+ * docs/09 "Accessibility": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair this shell actually
  * draws, in all four palettes (light, dark, and each of them in high contrast).
  *
  * What is *not* in here is the grid colour against its background. A hairline divider carries no
@@ -44,7 +44,7 @@ class ContrastTest {
         assertTrue(contrastRatio(Color(0xFF777777), Color(0xFF777777)) == 1.0)
     }
 
-    /** docs/09 "고대비 모드": the quiet colours are promoted and the borders double. */
+    /** docs/09 "High-contrast mode": the quiet colours are promoted and the borders double. */
     @Test
     fun `high contrast promotes the grid and the muted text, and thickens the lines`() {
         listOf(false, true).forEach { dark ->
@@ -64,7 +64,7 @@ class ContrastTest {
     }
 
     /**
-     * docs/09 "접근성" on Windows: the high-contrast setting *is* readable (AWT's
+     * docs/09 "Accessibility" on Windows: the high-contrast setting *is* readable (AWT's
      * `win.highContrast.on`), and the system is the whole of the answer.
      */
     @Test

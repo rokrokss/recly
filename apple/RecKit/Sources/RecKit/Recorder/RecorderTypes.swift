@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the recording captures, picked in the menu before it starts (docs/12 M4-L3 "메뉴바").
+/// What the recording captures, picked in the menu before it starts (docs/12 M4-L3 "Menu bar").
 ///
 /// It decides the track set, and the track set is written into the meta at `start`, so it cannot
 /// change once a recording is running: a `sys` track that begins at part 4 has no honest
@@ -45,7 +45,7 @@ public struct RecorderError: Error, CustomStringConvertible {
         case microphoneDenied
 
         /// The process tap could not be built: TCC refused it, or Core Audio would not give up an
-        /// aggregate device. There is no API to ask before trying (docs/12 "권한"), so this is the
+        /// aggregate device. There is no API to ask before trying (docs/12 "Permissions"), so this is the
         /// answer — and the shell's answer to it is the deep link plus the offer to record the
         /// microphone alone (M4-L3 deliverable 1).
         case systemAudioUnavailable

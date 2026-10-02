@@ -249,7 +249,7 @@ class GoogleAuthTest {
 
     @Test
     fun `a revoked grant asks for a sign-in instead of retrying forever`() = runBlocking {
-        // `invalid_grant` is the grant itself being gone (docs/06 "refresh token 한도").
+        // `invalid_grant` is the grant itself being gone (docs/06 "Refresh token limits").
         val endpoint = FakeTokenEndpoint(refreshError = "invalid_grant")
         val store = MemorySecureStore()
         val tokens = JvmTokenProvider(store, FixedClock(), endpoint.client(), SilentLogger)
@@ -262,7 +262,7 @@ class GoogleAuthTest {
     }
 
     /**
-     * docs/03 "연결 해제": the half of a disconnect that is Google's. It is the *refresh* token that
+     * docs/03 "Disconnect": the half of a disconnect that is Google's. It is the *refresh* token that
      * goes — the durable half, and the one the endpoint is documented to take.
      */
     @Test
@@ -357,7 +357,7 @@ private class FakeTokenEndpoint(
     private val refreshError: String? = null,
     /** Google sends one with a new grant only; a second pass on the same grant answers without. */
     private val withRefreshToken: Boolean = true,
-    /** docs/03 "연결 해제": what `/revoke` answers, when it is not the documented empty 200. */
+    /** docs/03 "Disconnect": what `/revoke` answers, when it is not the documented empty 200. */
     private val revokeStatus: Int = 200,
 ) : Transport {
 

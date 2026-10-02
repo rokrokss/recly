@@ -16,7 +16,7 @@ import kotlin.test.assertTrue
  *
  * There is no tray here — [trayMenu] is the seam, and `Main.kt` does nothing with its answer but
  * turn each entry into a menu item. What the tray would show is therefore exactly this list. Since
- * docs/09 화면 원칙 6 the list is the fallback rather than the UI: the sign-in, the way in to the
+ * docs/09 screen principle 6 the list is the fallback rather than the UI: the sign-in, the way in to the
  * popup window, start/stop, and quit.
  */
 class TrayMenuTest {

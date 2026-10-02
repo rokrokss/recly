@@ -14,7 +14,7 @@ import recly.core.storage.StorageKind
  * itself, so a cached id is almost always still good — but the user can move or trash one, hence the
  * daily re-verify and the 404 → recreate path.
  *
- * An iCloud folder's id is its path (docs/03 "저장 위치"), so there is nothing to cache: each segment
+ * An iCloud folder's id is its path (docs/03 "Storage location"), so there is nothing to cache: each segment
  * is looked at on the device and made when it is missing.
  */
 class FolderResolver(

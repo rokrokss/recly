@@ -4,7 +4,7 @@ import SwiftUI
 /// translated, and the diagnostic under it never. Red for a failure; the badge's warning tone for a
 /// job that is only waiting ([RecentItem.reasonTone]). For a recording waiting for the speech model
 /// it says nothing while the one download runs: the banner carries the progress then, and "not
-/// downloaded yet" beside it would contradict it (docs/05 "고정 처리 설정 도입").
+/// downloaded yet" beside it would contradict it (docs/05 "Fixed processing settings").
 public struct RowReason: View {
     private let item: RecentItem
     private let download: ModelDownload?

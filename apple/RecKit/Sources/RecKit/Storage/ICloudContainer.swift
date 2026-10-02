@@ -3,7 +3,7 @@ import CryptoKit
 import Foundation
 import ReclyCore
 
-/// docs/03 "저장 위치" (ADR-024): the app's iCloud Drive folder — `Documents` of the container
+/// docs/03 "Storage location" (ADR-024): the app's iCloud Drive folder — `Documents` of the container
 /// [identifier], which the Files app and Finder show as "Recly" — as the core's `UbiquityContainer`.
 ///
 /// Everything the system asks of an app that writes there is here and nowhere else: every read and
@@ -60,7 +60,7 @@ public final class ICloudContainer: NSObject, ReclyCore.UbiquityContainer, @unch
     public func __files() async throws -> [UbiquityFile] {
         let root = try await work { try self.requireDocuments() }
         // A partial listing would read as files deleted elsewhere, and the shared list drops what it
-        // does not see (docs/03 "다른 기기의 녹음") — so it is a failure, not an answer.
+        // does not see (docs/03 "Recordings from other devices") — so it is a failure, not an answer.
         guard let items = await listing.snapshot(of: root) else { throw Failure.listingIncomplete }
         return items.compactMap { Self.file($0, under: root) }
     }
@@ -276,7 +276,7 @@ public final class ICloudContainer: NSObject, ReclyCore.UbiquityContainer, @unch
     }
 
     /// Two devices changed the same file: iCloud has made one version current already, and that is
-    /// the one kept — the last write wins, as on Drive (docs/03 "제목"). The others would otherwise go
+    /// the one kept — the last write wins, as on Drive (docs/03 "Titles"). The others would otherwise go
     /// on syncing, and counting against the user's storage.
     private static func settleConflicts(at url: URL) {
         guard let conflicts = NSFileVersion.unresolvedConflictVersionsOfItem(at: url), !conflicts.isEmpty else { return }

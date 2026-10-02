@@ -2,7 +2,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/03 "저장 위치": what the two Apple shells say about a recording bound for iCloud — the wait
+/// docs/03 "Storage location": what the two Apple shells say about a recording bound for iCloud — the wait
 /// while the system uploads, the wait while iCloud cannot be used, and an account out of space —
 /// and that a build without the iCloud entitlement does not offer iCloud at all.
 final class ICloudStorageTests: XCTestCase {

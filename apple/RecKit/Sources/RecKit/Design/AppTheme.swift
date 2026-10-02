@@ -4,7 +4,7 @@ import AppKit
 import Foundation
 import SwiftUI
 
-/// docs/09 "접근성": light, dark, or whatever the OS says. The accessibility rule is that the system's
+/// docs/09 "Accessibility": light, dark, or whatever the OS says. The accessibility rule is that the system's
 /// `prefers-color-scheme` is followed without being asked about, and this is the override over it —
 /// nothing else about the palette is a setting.
 ///
@@ -71,7 +71,7 @@ public final class AppTheme: ObservableObject {
 
     private init() {}
 
-    /// docs/12 "메뉴바": the Mac's popover is an `NSPanel` and its editor and details windows are
+    /// docs/12 "Menu bar": the Mac's popover is an `NSPanel` and its editor and details windows are
     /// SwiftUI inside AppKit windows, so there is no one SwiftUI root to hang a
     /// `.preferredColorScheme` on. The application's own appearance is what all of them inherit, so
     /// that is what the setting writes — at launch and again on every change.

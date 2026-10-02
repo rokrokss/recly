@@ -60,12 +60,12 @@ import recly.core.job.JobStatus
 import recly.core.model.Source
 
 /**
- * docs/09 화면 원칙 6: the tray's window — three state nodes, the recordings as a ledger a page at a
- * time (docs/12 "메뉴바"), and the actions. The AWT menu that used to carry all of this can only put
+ * docs/09 screen principle 6: the tray's window — three state nodes, the recordings as a ledger a page at a
+ * time (docs/12 "Menu bar"), and the actions. The AWT menu that used to carry all of this can only put
  * one run of system text on a line (`trayMenu`), which is why everything with a shape is here
  * instead.
  *
- * docs/09 트렌드 7 keeps glass for chrome the platform owns, and Compose Desktop has none to borrow —
+ * docs/09 trend 7 keeps glass for chrome the platform owns, and Compose Desktop has none to borrow —
  * so the header and the footer are simply the surface and the ledger between them sits on the dotted
  * page, which is the separation the Mac's popover draws with `.ultraThinMaterial`.
  */
@@ -73,7 +73,7 @@ import recly.core.model.Source
 fun TrayPopup(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     val palette = blueprint
     var expanded by remember { mutableStateOf<String?>(null) }
-    // docs/03 "다른 기기의 녹음": the ledger has just come on screen, so what the other devices have
+    // docs/03 "Recordings from other devices": the ledger has just come on screen, so what the other devices have
     // uploaded since is asked for now rather than at the next job pass ([ShellModel.pullRemote]).
     LaunchedEffect(Unit) { model.pullRemote() }
 
@@ -113,9 +113,9 @@ private fun Header(model: ShellModel, strings: Strings) {
             ),
             modifier = Modifier.padding(horizontal = Space.m),
         )
-        // docs/09 화면 원칙 1: while it is running, the timer *is* the dashboard.
+        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard.
         model.recordingSince?.let { Elapsed(it) }
-        // docs/09 화면 원칙 6: and under it the track being written, so the capture is visible as
+        // docs/09 screen principle 6: and under it the track being written, so the capture is visible as
         // well as counted. The levels are the helper's own write path (`HelperEvent.Level`).
         if (model.recording) {
             LiveWaveform(
@@ -135,7 +135,7 @@ private fun Header(model: ShellModel, strings: Strings) {
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             if (model.recording) {
-                // docs/09 트렌드 2: starting and stopping a recording are the high-risk actions this
+                // docs/09 trend 2: starting and stopping a recording are the high-risk actions this
                 // window has, and both go through the helper — so both show that they happened.
                 ProcessingButton(
                     label = strings[Str.TRAY_STOP],
@@ -153,7 +153,7 @@ private fun Header(model: ShellModel, strings: Strings) {
                     tone = ButtonTone.PRIMARY,
                     enabled = model.ready && !model.helperMissing && model.titlePrompt == null,
                 )
-                // docs/14 "감지": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
+                // docs/14 "Detection": an AWT balloon has no buttons (`TrayNotifier`), so the offer it
                 // made stands here for as long as it stands at all.
                 if (model.meetingOffer == MeetingDetectionRule.Prompt.START) {
                     BlueprintButton(strings[Str.TRAY_START_DETECTED], model::startDetected)
@@ -168,7 +168,7 @@ private fun Header(model: ShellModel, strings: Strings) {
     }
 }
 
-/** docs/09 "타이포": `00:12:34`, counted from the moment the recorder said it had started. */
+/** docs/09 "Typography": `00:12:34`, counted from the moment the recorder said it had started. */
 @Composable
 private fun Elapsed(since: Long) {
     var now by remember(since) { mutableStateOf(System.currentTimeMillis()) }
@@ -207,10 +207,10 @@ private fun Footer(model: ShellModel, strings: Strings, onQuit: () -> Unit) {
     }
 }
 
-// --- the ledger (docs/09 화면 원칙 2) ---------------------------------------------------------------
+// --- the ledger (docs/09 screen principle 2) ---------------------------------------------------------------
 
 /**
- * docs/12 "메뉴바": [Recents.PAGE] rows a page, and scrolling onto the last one reads the next page.
+ * docs/12 "Menu bar": [Recents.PAGE] rows a page, and scrolling onto the last one reads the next page.
  * Lazy rather than a scrolling `Column` for exactly that reason — a `Column` composes every row it
  * has whether or not anybody has scrolled to it, so the last row would ask for the next page the
  * moment it was loaded and the ledger would read itself to the end of the recordings.
@@ -224,7 +224,7 @@ private fun Ledger(
     onExpand: (String) -> Unit,
 ) {
     val palette = blueprint
-    // docs/09 화면 원칙 2: the status column is as wide as the widest badge this ledger can wear.
+    // docs/09 screen principle 2: the status column is as wide as the widest badge this ledger can wear.
     val statusWidth = maxOf(
         statusColumnWidth(ledgerBadgeLabels(strings)),
         textColumnWidth(listOf(strings[Str.LEDGER_STATUS]), MaterialTheme.typography.labelSmall),
@@ -281,7 +281,7 @@ private fun Ledger(
 }
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": one line per reason, with the count of the jobs on it
+ * docs/10 "Failures the user can fix, and their notices": one line per reason, with the count of the jobs on it
  * and the way to fix it — the sign-in, Drive's storage page, or the processing settings where the
  * key and the transcription are set. Never "open the app".
  *
@@ -329,7 +329,7 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
                 }
             }
             // The sign-in is the one fix that happens here rather than on another screen, so it is
-            // the one that has a result to show (docs/09 트렌드 2).
+            // the one that has a result to show (docs/09 trend 2).
             if (alert.reason.fix == FixSurface.SIGN_IN) {
                 ProcessingButton(
                     label = strings[alert.reason.fix.label],
@@ -382,7 +382,7 @@ private fun RecentRow(
                 .padding(vertical = 10.dp),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
-            // docs/08 "오류": why this row is stuck and what to do about it, in the window the user
+            // docs/08 "Errors": why this row is stuck and what to do about it, in the window the user
             // is already in — the same block the recordings window's sidebar draws.
             FailureReason(item, strings)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Top) {
@@ -409,9 +409,9 @@ private fun RecentRow(
                     }
                     // docs/08 AUTH_REJECTED: the key is in the processing settings, so that is where
                     // "check the key" lands — and it belongs in this line rather than under the reason
-                    // above it (docs/09 화면 원칙 2, the Mac's `MenuPopover.actions`).
+                    // above it (docs/09 screen principle 2, the Mac's `MenuPopover.actions`).
                     CheckKeyButton(item, strings) { model.settingsOpen = true }
-                    // docs/08 "결과 파일": the transcript, wherever it was written.
+                    // docs/08 "Result files": the transcript, wherever it was written.
                     BlueprintButton(
                         label = strings[Str.RECENT_DETAILS],
                         onClick = {
@@ -420,7 +420,7 @@ private fun RecentRow(
                         },
                     )
                 }
-                // docs/03 "앱에서 지우기": the dialog asks about Drive; this only opens it. Never
+                // docs/03 "Deleting in the app": the dialog asks about Drive; this only opens it. Never
                 // over a recording that is being written to or uploaded ([RecentItem.deletable]).
                 if (item.deletable) {
                     LedgerAction(statusWidth) {
@@ -439,7 +439,7 @@ private fun RecentRow(
 /**
  * docs/09: state is a code, in monospace, and never colour alone.
  *
- * docs/09 화면 원칙 1 names four — `IDLE`·`STARTING`·`REC`·`STOPPING` — and the transitions come
+ * docs/09 screen principle 1 names four — `IDLE`·`STARTING`·`REC`·`STOPPING` — and the transitions come
  * first, because a capture that is coming up or closing is doing something the state it is between
  * does not say ([ShellModel.transition]). `OPENING`, `NO_HELPER` and `NAMING` are this shell's own,
  * for the states a Windows tray has and a Mac's menu bar does not.
@@ -455,7 +455,7 @@ internal fun ShellModel.stateCode(): String = when {
 }
 
 /**
- * docs/09 화면 원칙 1: the State node. The recorder has the say — `REC` while it runs, and the codes
+ * docs/09 screen principle 1: the State node. The recorder has the say — `REC` while it runs, and the codes
  * for a shell that cannot record are what the node is for — and only when the recorder is idle does
  * the executor get to speak: a pass running on one of the ledger's rows is `UPLOADING` in the accent
  * colour, with the loader turning beside it (`NodeSpec.busy`).
@@ -490,7 +490,7 @@ private val EXPANSION_INSET = 84.dp
  * space and then asks for it again, which is what the button is for; `NEEDS_AUTH` is the same after a
  * sign-in.
  *
- * docs/09 화면 원칙 2 (2026-09-04): `WAITING` joined them. A job parked on its own `next_run_at` after
+ * docs/09 screen principle 2 (2026-09-04): `WAITING` joined them. A job parked on its own `next_run_at` after
  * a failed attempt is a `RETRY` row, and asking for it now rather than waiting the timer out is a
  * thing to be able to do — the same core `retry()` the failures call. Except when the wait is a
  * provider transcribing ([transcribing], the row's waiting-minutes reading): that one is not this

@@ -202,7 +202,7 @@ class ReclyCoreTest {
         }
 
     /**
-     * docs/03 "로그아웃 vs 연결 해제": disconnect clears credentials and completed jobs while preserving
+     * docs/03 "Sign out vs Disconnect": disconnect clears credentials and completed jobs while preserving
      * unfinished workflow progress. The recordings are the user's own — an original that never got
      * uploaded is not deleted by a decision about an account (principle 3) — and neither are the
      * files in Drive, the processing settings or the secrets: those are this device's own
@@ -533,7 +533,7 @@ class ReclyCoreTest {
         return jobId
     }
 
-    /** docs/05 "시크릿": the values are this device's, they go in and out through `core.secrets`,
+    /** docs/05 "Secrets": the values are this device's, they go in and out through `core.secrets`,
      * and nothing about them ever reaches Drive. */
     @Test
     fun `secrets are read and written on the device and nowhere else`() = runBlocking<Unit> {

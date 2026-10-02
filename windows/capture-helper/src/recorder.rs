@@ -4,7 +4,7 @@
 //!
 //! The three tracks are deliberately dumb about each other: the boundary lives in a single
 //! [`SegmentSplitter`], which is what makes the part numbers, the offsets and the durations
-//! identical across them (docs/03 "같은 시간 구간이면 같은 번호"). A track that decided for itself
+//! identical across them (docs/03 "the same time span gets the same number"). A track that decided for itself
 //! when its segment was full would drift out of step with its siblings within the hour.
 
 use std::fs;
@@ -30,7 +30,7 @@ use crate::protocol::{Event, Track};
 #[derive(Default)]
 pub struct Written {
     pub parts: Vec<Event>,
-    /// docs/09 화면 원칙 6: the tenths of a second that finished during this call, oldest first —
+    /// docs/09 screen principle 6: the tenths of a second that finished during this call, oldest first —
     /// the levels of the track the user hears, for the app's live strip. Not a part and not a
     /// failure: they are a picture of what was written, and losing one costs a bar.
     pub levels: Vec<f32>,
@@ -112,7 +112,7 @@ impl Recorder {
                 }
             }
             // After the writers, and only for what they took: the strip is the app's answer to "is
-            // this being captured", so it may never run ahead of the file (docs/09 화면 원칙 6).
+            // this being captured", so it may never run ahead of the file (docs/09 screen principle 6).
             let heard: &[f32] = if mixing { &self.mixed } else { mic };
             self.level.push(&heard[range.clone()], &mut written.levels);
             if chunk.closes_segment {
@@ -126,7 +126,7 @@ impl Recorder {
                 if let Err(error) = self.open_next() {
                     // The part just closed is already in `written.parts` and goes out with the
                     // error. It is a whole segment on disk; the app files it and finalizes through
-                    // it (docs/14 "헬퍼가 죽으면 앱이 마지막 파트까지를 finalize한다").
+                    // it (docs/14 "if the helper dies, the app finalizes up to the last part").
                     written.failure = Some(error);
                     return written;
                 }
@@ -150,8 +150,7 @@ impl Recorder {
     }
 
     /// Leaves the open segment unfiled and unwritten. Only `--parts` in development reaches this:
-    /// the app's rule for a helper that stops mid-segment is its own (docs/14 "헬퍼가 죽으면 앱이
-    /// 마지막 파트까지를 finalize한다"), and it does not want a tail nobody announced.
+    /// the app's rule for a helper that stops mid-segment is its own (docs/14 "if the helper dies, the app finalizes up to the last part"), and it does not want a tail nobody announced.
     pub fn discard(mut self) {
         self.discard_open_segments();
     }
@@ -169,8 +168,7 @@ impl Recorder {
     /// then be a playable file nobody hashed or announced (the [`Written`] rule again).
     ///
     /// The ledger advances for every track whatever happened, so a failed track does not leave its
-    /// part numbers one behind its siblings' for the rest of the recording (docs/03 "같은 시간
-    /// 구간이면 같은 번호").
+    /// part numbers one behind its siblings' for the rest of the recording (docs/03 "the same time span gets the same number").
     fn close_open_segments(&mut self, duration_sec: f64, into: &mut Written) {
         for writer in self.writers.iter_mut() {
             // Finishing is what writes the container's trailer; until it returns the file is not one
@@ -299,7 +297,7 @@ mod tests {
         let _ = fs::remove_dir_all(&dir);
     }
 
-    /// docs/09 화면 원칙 6: the strip is of the track the user hears, which in a meeting is the mix.
+    /// docs/09 screen principle 6: the strip is of the track the user hears, which in a meeting is the mix.
     /// One bar per tenth of a second of what was written, and nothing for the tenth still open.
     #[test]
     fn a_push_reports_the_level_of_the_track_the_user_hears() {
@@ -309,7 +307,7 @@ mod tests {
             .expect("open");
 
         // A second of a full-scale microphone over a silent render endpoint: the mix is half of it
-        // (docs/12 "합산 −6 dB 헤드룸"), and half is what the strip has to draw.
+        // (docs/12 "summed with −6 dB headroom"), and half is what the strip has to draw.
         let written = recorder.push(&vec![1.0; 16_000], &vec![0.0; 16_000]);
 
         assert_eq!(vec![0.5; 10], written.levels, "ten tenths of a second");

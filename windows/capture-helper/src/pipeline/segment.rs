@@ -1,6 +1,6 @@
 //! Segment bookkeeping: where the 900-second boundary falls inside a buffer, and what the file on
 //! either side of it is called. Ported from `apple/RecKit/Sources/RecKit/Recorder/SegmentLedger.swift`
-//! so the two desktops name and number parts identically (docs/03 "이름 규칙").
+//! so the two desktops name and number parts identically (docs/03 "Naming rules").
 //!
 //! No audio, no files, no encoder — this is the part of the rules a macOS host can check.
 
@@ -101,7 +101,7 @@ impl SegmentLedger {
         }
     }
 
-    /// 1-based; the same number across the tracks of one time slice (docs/03 "이름 규칙").
+    /// 1-based; the same number across the tracks of one time slice (docs/03 "Naming rules").
     pub fn open_part(&self) -> u32 {
         self.open_part
     }
@@ -160,7 +160,7 @@ mod tests {
         assert_eq!(5, splitter.frames_in_segment());
     }
 
-    /// Deliverable 6: part numbers and names. docs/03 "이름 규칙" — `{base}_p{NNN}_{track}.m4a`,
+    /// Deliverable 6: part numbers and names. docs/03 "Naming rules" — `{base}_p{NNN}_{track}.m4a`,
     /// numbered from 1, and offsets that accumulate what was actually written.
     #[test]
     fn parts_are_named_and_offset_as_the_spec_says() {

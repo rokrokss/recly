@@ -3,7 +3,7 @@ import os
 import RecKit
 import UserNotifications
 
-/// The two notifications the meeting detector is allowed to raise (docs/12 "미팅 감지", ADR-011:
+/// The two notifications the meeting detector is allowed to raise (docs/12 "Meeting detection", ADR-011:
 /// detect → confirm → record). Both are offers with a button on them — the app never starts or
 /// stops a recording because it thinks it should.
 ///

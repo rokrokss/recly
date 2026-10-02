@@ -7,7 +7,7 @@
   is the only place the answer shows.
 
   Without this key the Core Audio process tap has no TCC purpose string, so the system-audio
-  recording prompt is never raised and the tap delivers silence with no error (docs/12 "권한").
+  recording prompt is never raised and the tap delivers silence with no error (docs/12 "Permissions").
 -->
 <plist version="1.0">
 <dict>
@@ -46,7 +46,7 @@
 	</array>
 
 	<!--
-	  docs/03 "저장 위치" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
+	  docs/03 "Storage location" (ADR-024): the iCloud container the iPhone and Mac apps share. Its Documents
 	  folder is the "Recly" folder the Files app and Finder show. ReclyICloudContainer is empty unless
 	  Local.xcconfig turns iCloud on (RECLY_ICLOUD_CONTAINER) — a build signed without the iCloud
 	  entitlement does not offer iCloud, and on the Mac that is every Debug build

@@ -19,7 +19,7 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
 /**
- * docs/09 화면 원칙 2: state is never colour alone. The tone picks the colour, the code is the text,
+ * docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the code is the text,
  * and a reader who sees neither hue gets the same answer from the letters.
  */
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }

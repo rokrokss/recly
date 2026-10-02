@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The adaptive icon's background: the paper ground and its dot grid (docs/09 "앱 아이콘",
+<!-- The adaptive icon's background: the paper ground and its dot grid (docs/09 "App icon",
      docs/design/icon.svg). The grid is coarser than the master's 64-on-1024 pitch because the
      master's would be under a pixel at the 48dp a launcher draws this at. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

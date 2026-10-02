@@ -6,7 +6,7 @@ import com.sun.jna.platform.win32.WinReg
 import recly.core.platform.Logger
 
 /**
- * docs/14 "앱": launch at login. The Mac's equivalent is `SMAppService` (docs/12 "실행기"), and it
+ * docs/14 "App": launch at login. The Mac's equivalent is `SMAppService` (docs/12 "Runner"), and it
  * has the rule this follows — the checkbox is drawn from what the system says afterwards, never
  * from what was asked, so a registration that did not take does not leave a ticked box behind.
  */

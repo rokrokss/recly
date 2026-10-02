@@ -12,7 +12,7 @@ object AndroidRuntime {
     /**
      * What a shell hands to `ReclyCore(deps, driverFactory)`. Handed the schema, the Android driver
      * keeps `user_version` itself: `create` on a new file, `migrate` on one left by an older build
-     * (docs/10 "스키마 마이그레이션").
+     * (docs/10 "Schema migrations").
      */
     fun driverFactory(context: Context, name: String): DriverFactory = object : DriverFactory {
         override fun create(): SqlDriver = AndroidSqliteDriver(RecDatabase.Schema, context, name)

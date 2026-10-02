@@ -30,7 +30,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 
-/** docs/09 화면 원칙 2: the ledger's date column, in the width the mockup sets. */
+/** docs/09 screen principle 2: the ledger's date column, in the width the mockup sets. */
 private val TIME_COLUMN = 62.dp
 
 /** The gap between two columns of the ledger. */
@@ -164,13 +164,13 @@ private fun Heading(text: String, modifier: Modifier = Modifier, align: TextAlig
 
 /**
  * One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
- * (docs/09 화면 원칙 2). The whole row is one accessibility node — four separate announcements of
+ * (docs/09 screen principle 2). The whole row is one accessibility node — four separate announcements of
  * `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
  * sentence, with the state in words rather than as a code.
  *
  * The row also opens a block under itself, and that is a fact a screen reader can otherwise only
  * find out by tapping: [expanded] becomes the row's `expand`/`collapse` action, labelled by
- * [toggleLabel] (docs/09 "접근성").
+ * [toggleLabel] (docs/09 "Accessibility").
  */
 @Composable
 fun LedgerRow(

@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
  */
 class HelperProtocolTest {
 
-    /** docs/09 화면 원칙 6: the strip's line — the finished tenths of a second, oldest first. */
+    /** docs/09 screen principle 6: the strip's line — the finished tenths of a second, oldest first. */
     @Test
     fun `a level line is the peaks the strip draws`() {
         val event = decode("""{"event":"level","peaks":[0.1,0.5,1.0]}""")

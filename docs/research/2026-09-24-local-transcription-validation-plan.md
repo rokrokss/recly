@@ -1,378 +1,378 @@
-# 전사 워크플로우의 로컬 옵션: 검증·구현 계획
+# A local option for transcription workflows: validation and implementation plan
 
-기준일: **2026-09-24**. 상태: **계획 완료, 제품 구현 전**.
+As of: **2026-09-24**. Status: **plan complete, before product implementation**.
 
-**후속 결정:** 사용자 대면 워크플로우를 제거하는
-[고정 녹음 처리 흐름 계획](2026-09-24-fixed-recording-flow-plan.md)이 이 문서의 제품 설정·실행 연결·이관 계획을 대체한다.
-아래의 워크플로우 유지 전제는 이전 결정의 기록이다. 저발열 제어, 로컬 분할 원칙, 엔진 후보와 실기기 검증은 계속 적용한다.
+**Follow-up decision:** the [fixed recording flow plan](2026-09-24-fixed-recording-flow-plan.md), which removes user-facing workflows,
+supersedes this document's plans for product settings, execution wiring and migration.
+The premise below that workflows stay is a record of the earlier decision. Low-heat control, the local splitting principles, the engine candidates and real-device validation still apply.
 
-이 문서는 9월 23일 아키텍처 계획의 실행 정책·모델 선정 순서·검증 순서를 대체한다.
-사용자 정정 반영: 로컬은 새 전사 단계의 기본 선택 옵션이다. 워크플로우 밖의 자동 전사 설정은 도입하지 않는다.
-현재 제품 계약인 `docs/recly.md`와 `spec/`는 아직 변경하지 않았다.
-이번 작업은 문서·소스·기존 로그 읽기와 계획 작성에 한정한다. 사용자가 중단시킨 노트북의
-모델 추론·다운로드·부하 시험을 재개하지 않는다. 장시간 시험은 별도의 시험 기기 확보 후 진행한다.
+This document supersedes the execution policy, model selection order and validation order of the September 23 architecture plan.
+Reflects the user's correction: local is the default choice for a new transcription step. No automatic transcription setting outside workflows is introduced.
+The current product contracts, `docs/recly.md` and `spec/`, have not been changed yet.
+This work is limited to reading documents, sources and existing logs, and writing the plan. The model inference, downloads and load tests on the laptop,
+which the user stopped, are not resumed. Long tests happen after a separate test device is obtained.
 
-## 1. 목표와 확정할 구조
+## 1. Goal and the structure to settle
 
-**전사 워크플로우를 만들거나 전사 단계를 추가할 때 로컬을 기본 선택한다. 기존 외부 API도 계속
-선택·설정할 수 있다. 로컬 엔진은 체감 발열과 녹음 안정성의 제약을 통과한 구성 중 정확도가
-가장 높은 것을 선택한다. 구현 난이도는 선정 기준에서 제외한다.**
+**When a transcription workflow is created or a transcription step is added, local is the default choice. Existing external APIs can still be
+chosen and configured. The local engine is the most accurate configuration among those that pass the constraints on perceived heat and recording stability.
+Implementation difficulty is excluded from the selection criteria.**
 
-- 대상: 짧은 음성 메모, 한국어·한영 혼용 대화, 30~120분 회의 파일.
-- 실행은 기존처럼 녹음 종료 후 선택한 워크플로우의 단계 순서를 따른다. 실시간 자막과 녹음 중
-  선행 추론은 이번 범위에 넣지 않는다. 전사 단계가 없는 녹음에는 전사 작업을 만들지 않는다.
-- 다른 녹음이 시작되면 진행 중인 로컬 추론도 양보한다. Watch는 녹음·전송하고 폰이 전사한다.
-- 기본값은 새 전사 단계의 처리 방식에만 적용한다. 별도의 앱 전체 자동 전사 ON/OFF는 만들지 않는다.
-  로컬 단계는 열·OS 실행 기회·모델 준비로 기다릴 수 있다. 자동으로 재개되는 일시 대기는
-  일반적인 ‘전사 대기 중’으로 표시하고 원인은 노출하지 않는다.
-  사용자 조치가 필요한 경우에만 이유와 필요한 행동을 표시한다. 계속 대기만 하는 구성도 성공으로 보지 않는다.
-- 로컬 추론의 내부 처리와 결과 게시는 분리하되, 기존 워크플로우의 실행 조건과 순서는 유지한다.
-  외부 API를 선택한 단계는 해당 API만 실행한다. 로컬로 자동 변경하거나 두 경로를 중복 실행하지 않는다.
-- 전사 1회를 기본으로 한다. 다른 ASR로 전체 파일을 다시 전사하는 다중 패스는 기본값에서 제외한다.
-- 요약은 기존처럼 사용자 워크플로우/에이전트의 역할이며 앱 내 LLM을 새로 넣지 않는다.
+- Targets: short voice memos, Korean and mixed Korean-English conversations, 30–120 minute meeting files.
+- As before, execution follows the step order of the selected workflow after the recording ends. Live captions and
+  inference ahead of time during recording are not in this scope. A recording with no transcription step gets no transcription job.
+- When another recording starts, local inference in progress also yields. The watch records and transfers; the phone transcribes.
+- The default applies only to the processing method of a new transcription step. No separate app-wide automatic transcription ON/OFF is made.
+  A local step can wait for heat, OS execution opportunities or model preparation. A temporary wait that resumes automatically
+  is shown as the general "Transcription pending", and the cause is not exposed.
+  The reason and the action needed are shown only when the user must act. A configuration that only ever waits is not counted as success either.
+- Local inference's internal processing and publishing its results are separated, but the existing workflow's execution conditions and order are kept.
+  A step that chose an external API runs only that API. It is not switched to local automatically, and the two paths are not run twice.
+- One transcription pass is the default. Multi-pass, which transcribes the whole file again with a different ASR, is excluded from the default.
+- Summaries remain the role of the user's workflow/agent as before, and no in-app LLM is added.
 
-선정 순서: **원본·취소·재개 안정성 → 체감 발열/자원 예산 → 정확도 → 에너지·완료 시간**.
-빠르지만 뜨거운 구성과 시원하지만 실용적인 시간 안에 끝나지 않는 구성을 모두 걸러낸다.
+Selection order: **original, cancel and resume stability → perceived heat/resource budget → accuracy → energy and completion time**.
+This filters out both configurations that are fast but hot and configurations that are cool but do not finish in a practical time.
 
-### 사용자 확인을 반영한 제품 동작
+### Product behavior reflecting the user's confirmation
 
-새 단계의 기본 선택과 저장된 워크플로우의 실행을 구분한다. 기존 사용자의 워크플로우를 바꾸지 않는다.
+The default choice for a new step is kept apart from running a saved workflow. Existing users' workflows are not changed.
 
-| 생성·실행 조건 | 동작 |
+| Creation or execution condition | Behavior |
 |---|---|
-| 새 전사 워크플로우 생성 / `transcribe` 단계 추가 | 처리 방식의 초기 선택은 로컬. 외부 API로 변경·설정 가능 |
-| 저장된 로컬 `transcribe` 단계 실행 | 해당 단계에 연결된 로컬 작업을 실행. 단계 재시도는 진행 상태/결과를 재사용 |
-| 저장된 외부 API `transcribe` 단계 실행 | 선택한 provider와 설정으로 기존 외부 API 경로만 실행 |
-| 워크플로우 선택 없음 / 선택한 워크플로우에 전사 단계 없음 | 전사하지 않음 |
-| 기존 외부 API 워크플로우 편집·가져오기·업데이트 | 기존 선택, 모델, API key 참조와 지원되는 endpoint 설정 유지 |
-| 다른 기기의 녹음을 Drive에서 목록에 가져옴 | 자동 재전사하지 않음 |
+| Creating a new transcription workflow / adding a `transcribe` step | The initial choice of processing method is local. Can be changed to and configured as an external API |
+| Running a saved local `transcribe` step | Runs the local job linked to that step. A step retry reuses its progress/results |
+| Running a saved external API `transcribe` step | Runs only the existing external API path with the selected provider and settings |
+| No workflow selected / the selected workflow has no transcription step | Not transcribed |
+| Editing, importing or updating an existing external API workflow | Keeps the existing choice, model, API key reference and supported endpoint settings |
+| A recording from another device is brought into the list from Drive | Not automatically retranscribed |
 
-기존 기본 워크플로우 선택과 자동 실행 규칙을 유지한다. 과거 라이브러리를 일괄 처리하지 않는다.
-기본 선택은 새 단계의 UI 초기값이며, 기존 JSON의 누락·오류를 로컬 선택으로 조용히 보정하지 않는다.
-처리 방식·조건·언어·화자 분리 요구는 기존 workflow job/step snapshot에 연결한다. 뒤늦은 편집이
-이미 실행 중인 작업을 다른 엔진으로 바꾸지 않게 한다. 워치 녹음도 검증된 수신 후 기존 실행 규칙을 따른다.
-로컬 요청은 workflow job/step + 원본 revision에 묶어 중복 재개를 방지한다. 사용자가 별도로 정의한
-전사 단계들은 유지하며, 전역 자동 전사나 별도 암묵적 요청과 합치는 구조는 만들지 않는다.
+The existing default workflow selection and automatic execution rules are kept. The past library is not processed in bulk.
+The default choice is the UI's initial value for a new step; a missing or invalid field in existing JSON is not silently corrected to local.
+The processing method, conditions, language and speaker diarization requirement are linked to the existing workflow job/step snapshot. A late edit
+does not switch a job that is already running to a different engine. Watch recordings also follow the existing execution rules after a verified receipt.
+A local request is bound to the workflow job/step + source revision to prevent duplicate resumes. Transcription steps the user defined separately
+are kept, and no structure is built that merges them with global automatic transcription or a separate implicit request.
 
-## 2. 지금 확인된 것과 아직 확인하지 못한 것
+## 2. What is confirmed now and what is not yet confirmed
 
-### 기존 시험의 유효 범위
+### Valid scope of the existing tests
 
-- 환경: M4 Pro 24 GB, macOS 26.6.2. 스마트폰·Windows 실기기 결과가 아니다.
-- 입력은 한국어 FLEURS 150개 + HiKE 150개 + 무음 대조군 2개, 합계 약 49분이다.
-  **49분 연속 회의 한 개를 처리한 시험이 아니다.**
-- 기존 JSONL을 읽어 확인: Apple Speech, Qwen 1.7B, Qwen 0.6B 각각 302개 결과, 기록된 오류 0개,
-  프로세스 exit 0. 프로세스 시간은 각각 26.21초, 129.74초, 68.03초다.
-- 전력·표면 온도 측정이 없고 준비 작업과 다른 앱의 부하도 있었다. 위 시간으로 저발열 순위,
-  스마트폰 배터리, 긴 회의 완료 시간을 결론 내리지 않는다. Whisper Turbo 이후 비교는 미완료다.
-- 사용자 발열 보고로 시험을 중단했다. 기존 출력은 보존하고, 미완료 실행을 완주한 비교표에 섞지 않는다.
+- Environment: M4 Pro 24 GB, macOS 26.6.2. Not results from a smartphone or a real Windows device.
+- The input is 150 Korean FLEURS items + 150 HiKE items + 2 silence controls, about 49 minutes in total.
+  **It is not a test that processed one continuous 49-minute meeting.**
+- Confirmed by reading the existing JSONL: Apple Speech, Qwen 1.7B and Qwen 0.6B each have 302 results, 0 recorded errors,
+  and process exit 0. The process times are 26.21 s, 129.74 s and 68.03 s respectively.
+- There are no power or surface temperature measurements, and preparation work and load from other apps were present. The times above do not settle a low-heat ranking,
+  smartphone battery or completion time for long meetings. Comparisons from Whisper Turbo onward are incomplete.
+- The test was stopped after the user reported heat. Existing output is preserved, and unfinished runs are not mixed into the table of completed comparisons.
 
-### 재사용할 참고와 적용 한계
+### References to reuse and the limits of applying them
 
-| 근거 | 이번 계획에서 쓰는 범위 |
+| Source | Scope used in this plan |
 |---|---|
-| [Whisper 내부 30초 창](https://github.com/openai/whisper#python-usage) | 긴 파일 입력과 모델 내부 구간 처리는 양립함 |
-| [WhisperKit 파일 API](https://github.com/argmaxinc/argmax-oss-swift/blob/main/Sources/WhisperKit/Core/WhisperKit.swift) | 점진적 파일 로딩과 제한된 버퍼. 이것만으로 발열이 제어되지는 않음 |
-| [Argmax 배터리 모드](https://app.argmaxinc.com/docs/examples/real-time-transcription) | 실시간 모드의 참고 정책. 파일 전사에 이미 적용된 저발열 기능으로 취급하지 않음 |
-| [murmur·Edge-Veda·Tapeback·bestASR 조사](2026-09-23-low-heat-transcription-references.md) | 열 제어·대기·시작 시 모델 선택의 부분 구현. 그대로 도입하는 완성품은 아님 |
+| [Whisper's internal 30-second window](https://github.com/openai/whisper#python-usage) | Long file input and the model's internal segment processing are compatible |
+| [WhisperKit file API](https://github.com/argmaxinc/argmax-oss-swift/blob/main/Sources/WhisperKit/Core/WhisperKit.swift) | Progressive file loading and a bounded buffer. These alone do not control heat |
+| [Argmax battery mode](https://app.argmaxinc.com/docs/examples/real-time-transcription) | A reference policy for real-time mode. Not treated as a low-heat feature already applied to file transcription |
+| [Survey of murmur, Edge-Veda, Tapeback and bestASR](2026-09-23-low-heat-transcription-references.md) | Partial implementations of heat control, waiting and model selection at startup. Not finished products to adopt as is |
 
-## 3. 외부 API의 파일 제출과 로컬 엔진의 문맥·중단 방식
+## 3. File submission for external APIs, and context and interruption for local engines
 
-### 외부 API — 기존 파일 제출 유지
+### External APIs — keep the existing file submission
 
-외부 API는 기존처럼 선택한 트랙의 저장 파트를 필요한 경우 합쳐 **파일 하나로 제출**한다.
-로컬 엔진의 입력 창·문맥·재개를 위한 분할이나 열 제어를 외부 API 요청에 적용하지 않는다.
-기존 provider별 길이·크기 제한 검증과 오류 처리는 유지하고, 초과 시 자동 분할을 새로 도입하지 않는다.
-현재 경로: `core/src/commonMain/kotlin/recly/core/transcribe/TranscribeRunner.kt:83`에서 합친 파일을 준비하고,
-`core/src/commonMain/kotlin/recly/core/transcribe/TranscribeRunner.kt:282`에서 한도를 검증한다.
+As before, external APIs **submit one file**, joining the selected track's stored parts when needed.
+Splitting or heat control for the local engine's input window, context or resume is not applied to external API requests.
+The existing per-provider length and size limit checks and error handling are kept, and no automatic splitting on overflow is newly introduced.
+Current path: `core/src/commonMain/kotlin/recly/core/transcribe/TranscribeRunner.kt:83` prepares the joined file, and
+`core/src/commonMain/kotlin/recly/core/transcribe/TranscribeRunner.kt:282` checks the limits.
 
-### 로컬 엔진 — 장문 파일 처리를 우선
+### Local engines — long-file processing first
 
-원본 파일과 사용자가 보는 전사 작업은 각각 하나로 유지한다. 녹음 저장 파트, 오디오 로딩 버퍼,
-모델 입력 창, 재개를 위한 처리 구간을 별개로 다룬다.
+The source file and the transcription job the user sees each stay single. The recording's stored parts, the audio loading buffer,
+the model input window and the processing segments for resume are handled as separate things.
 
-1. 짧은 메모는 엔진의 파일 전사 API에 그대로 전달한다.
-2. 긴 파일은 **엔진의 장문 처리와 문맥 유지 기능을 우선**한다. 모든 모델에 고정 10~30초 분할을 강제하지 않는다.
-3. 엔진 입력 한도나 제어/재개 API의 한계 때문에 앱 분할이 필요할 때만 적용한다. 발화 경계·문맥 길이·
-   타임스탬프를 이용하고 필요한 겹침만 둔다. 경계 누락·중복·용어 일관성을 별도로 평가한다.
-4. 엔진의 확정 결과와 원본 sample 범위를 저장한다. 결과의 구간 타임스탬프만으로 내부 상태까지 복원할 수
-   있다고 가정하지 않는다. 지원하지 않는 엔진은 안전한 경계부터 제한된 오디오를 다시 처리한다.
-5. 처리 결과는 원본 시간축에 놓는다. 파트별 AAC padding, 녹음 gap, mic/system 트랙 동기화를 유지한다.
-6. 화자 분리 요청은 녹음 전체의 화자 일관성을 검증한다. 조각마다 `S1`을 새 사람처럼 붙이지 않는다.
+1. A short memo is passed as is to the engine's file transcription API.
+2. For a long file, **the engine's long-form processing and context retention come first**. A fixed 10–30 second split is not forced on every model.
+3. App-side splitting is applied only when needed because of the engine's input limit or limits of its control/resume API. It uses utterance boundaries, context length and
+   timestamps, with only the overlap needed. Dropped boundaries, duplicates and term consistency are evaluated separately.
+4. The engine's finalized results and the source sample range are saved. It is not assumed that internal state can be restored from
+   a result's segment timestamps alone. For engines that do not support it, a bounded amount of audio is reprocessed from a safe boundary.
+5. Processing results are placed on the source timeline. Per-part AAC padding, recording gaps and mic/system track synchronization are kept.
+6. A speaker diarization request validates speaker consistency across the whole recording. `S1` is not attached to each piece as if a new person.
 
-앱 분할은 품질 향상의 전제가 아니다. 전체 파일 API와 앱 분할 방식의 차이는 같은 엔진·파일로 측정한다.
-겹침·VAD를 추가해 생기는 재연산도 전력에 포함한다. **분할만 하고 계속 실행하면 발열 제한이 되지 않는다.**
+App-side splitting is not a prerequisite for better quality. The difference between the whole-file API and app-side splitting is measured with the same engine and file.
+Recomputation caused by adding overlap and VAD is included in power. **Splitting while still running continuously does not limit heat.**
 
-## 4. 저발열 실행 제어
+## 4. Low-heat execution control
 
-### 기본 정책
+### Default policy
 
-- 한 기기에서 무거운 로컬 추론은 한 작업만 실행한다. ASR·화자 분리·정렬도 같은 계산 슬롯을 사용한다.
-- 시작 전에 녹음 여부, OS 실행 권한, 열 신호, 저전력 모드, 메모리와 모델 준비를 확인한다.
-- 처음부터 검증된 보수적 실행 프로필로 시작한다. 뜨거워진 뒤에만 제한하는 방식을 기본으로 하지 않는다.
-- 엔진이 지원하는 효율 설정과 순차 실행을 우선한다. 짧게 최대 부하로 돌리고 고정 시간 쉬는 방식이
-  최선이라고 가정하지 않는다. 효율 실행과 구간 대기의 에너지·온도·완료 시간을 함께 비교한다.
-- 처리 중 열 상승이나 새 녹음을 감지하면 새 추론을 중지하고 안전하게 대기한다. 중지할 수 없는 엔진은
-  자동 실행 후보에서 제외하거나, 제어 가능한 구간 입력이 품질 검증을 통과한 경우에만 사용한다.
-- 정상 회복을 일정 시간 확인한 뒤 한 단계씩 재개한다. 중지·재개가 빈번한 경우 실행 프로필을 낮춘다.
-- CPU 우선순위를 낮췄다는 사실을 GPU/NPU 소비전력 제한으로 해석하지 않는다. GPU가 뜨거우면 CPU로
-  바꾸어 계속 돌리는 자동 전환도 기본 정책으로 두지 않는다.
-- 매 구간마다 모델을 내려서 다시 올리지 않는다. 짧은 대기와 긴 대기의 메모리 유지 정책을 구분하고 측정한다.
-- 충전 중이라는 이유만으로 제한을 해제하지 않는다. 열 신호가 없는 기기는 검증된 시간·연산 예산을 쓰며,
-  검증된 프로필도 없으면 자동 고부하 실행을 보류한다. `unknown`을 `normal`로 바꾸지 않는다.
+- On one device, only one heavy local inference job runs. ASR, speaker diarization and alignment use the same compute slot too.
+- Before starting, check whether recording is in progress, OS execution permission, thermal signals, low power mode, memory and model readiness.
+- Start with a conservative execution profile validated from the beginning. Throttling only after the device gets hot is not the default.
+- Prefer the efficiency settings the engine supports and sequential execution. Do not assume that running briefly at full load and resting for a fixed time is
+  best. Compare the energy, temperature and completion time of efficient execution and per-segment waiting together.
+- When a heat rise or a new recording is detected during processing, stop new inference and wait safely. An engine that cannot be stopped is
+  excluded from automatic execution candidates, or used only when controllable segmented input has passed quality validation.
+- Resume one step at a time after confirming normal recovery for a set period. When stops and resumes are frequent, lower the execution profile.
+- Lowering CPU priority is not interpreted as limiting GPU/NPU power draw. Automatic switching to the CPU to keep running when the GPU is hot
+  is not the default policy either.
+- Do not unload and reload the model for every segment. Distinguish and measure memory retention policies for short and long waits.
+- Being on charge alone does not lift the limits. A device with no thermal signal uses a validated time and compute budget,
+  and if there is no validated profile either, automatic heavy execution is withheld. `unknown` is not turned into `normal`.
 
-### 플랫폼별 제어 지점
+### Control points by platform
 
-| 플랫폼 | 우선 검증할 제어 | 한계·확인 항목 |
+| Platform | Controls to validate first | Limits and checks |
 |---|---|---|
-| iPhone/Mac | SpeechAnalyzer 작업 우선순위, 열 상태 알림, 취소 API, Core ML/ANE 경로 | 우선순위는 전력 상한이 아님. 시스템 서비스까지 계측. OS 26/27을 별도 검증 |
-| Android | Thermal API, 기기별 검증된 NPU/CPU 실행 프로필, 네트워크 불필요 계산 Worker | 열 여유 API 미지원/NaN 처리, OEM 작업 제한, 실제 NPU 배치와 CPU fallback 확인 |
-| Windows | 별도 추론 프로세스, CPU EcoQoS, 지원 NPU EP의 효율 힌트, 실행 시간 예산 | 범용 표면 온도 API를 가정하지 않음. 드라이버/EP별 효과 확인 |
+| iPhone/Mac | SpeechAnalyzer task priority, thermal state notifications, cancel API, Core ML/ANE path | Priority is not a power cap. Instrument down to system services. Validate OS 26/27 separately |
+| Android | Thermal API, NPU/CPU execution profiles validated per device, network-free compute Worker | Handle thermal headroom API unsupported/NaN, OEM task limits, confirm actual NPU placement and CPU fallback |
+| Windows | Separate inference process, CPU EcoQoS, efficiency hints of supported NPU EPs, execution time budget | Do not assume a general surface temperature API. Confirm the effect per driver/EP |
 
-Apple `SpeechAnalyzer.Options.priority`는 OS 26부터 있고 대부분의 처리 우선순위에 영향을 준다.
-호출 Task도 같은 의도를 사용한다. `ignoresResourceLimits`는 **OS 27부터**인 별도 속성이며,
-사용할 수 있는 환경에서도 저발열 경로에서 시스템 제한을 무시하도록 설정하지 않는다.
+Apple's `SpeechAnalyzer.Options.priority` exists from OS 26 and affects the priority of most processing.
+The calling Task also uses the same intent. `ignoresResourceLimits` is a separate property **from OS 27**, and
+even where it is available, the low-heat path is not set to ignore system limits.
 [priority](https://developer.apple.com/documentation/speech/speechanalyzer/options/priority)
 · [resource limits](https://developer.apple.com/documentation/speech/speechanalyzer/options/ignoresresourcelimits)
 
-Android의 열 여유 조회는 공식 권장 빈도를 지킨다. 모든 제조사가 동일하게 보고한다고 가정하지 않는다.
+Android's thermal headroom query keeps to the officially recommended frequency. It is not assumed that every manufacturer reports the same way.
 [Thermal API](https://developer.android.com/games/optimize/adpf/thermal)
 
-Windows는 CPU EcoQoS와 NPU 세션의 `ep.dynamic.workload_type=Efficient`를 구분하고 성공 반환값과 실제
-효과를 확인한다. 자동으로 모든 GPU/NPU 전력을 제한하는 옵션으로 취급하지 않는다.
-[Windows ML 효율 가이드](https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/efficiency-tips)
+On Windows, CPU EcoQoS is kept apart from `ep.dynamic.workload_type=Efficient` on an NPU session, and both the success return value and the actual
+effect are checked. Neither is treated as an option that automatically limits all GPU/NPU power.
+[Windows ML efficiency guide](https://learn.microsoft.com/en-us/windows/ai/new-windows-ml/efficiency-tips)
 
-## 5. 검증 계획: 제어기부터, 긴 파일은 마지막
+## 5. Validation plan: the controller first, long files last
 
-### 시험 순서와 통과 조건
+### Test order and pass conditions
 
-| 단계 | 시험 | 다음 단계 진입 조건 |
+| Stage | Test | Condition to enter the next stage |
 |---|---|---|
-| V0 — 추론 없는 제어 시험 | 가짜 엔진·시계·열 신호로 대기/재개/취소/삭제/OS 만료/모델 없음 재현 | 대기 중 새 추론 0회, 재시도 예산 소모 없음, 결과 중복·삭제 후 부활 없음 |
-| V1 — 단일 짧은 파일 | 시험 기기에서 후보 1개씩 10~30초 음성. 초기 실행 전체 상한 60초 | 정상 출력, 오프라인 실행, 취소 후 실제 연산 정지, 측정 가능한 자원 프로필 |
-| V2 — 작은 정확도 세트 | 한국어·혼용·고유명사·숫자·작은 목소리·무음의 고정 소규모 세트 | 오류 유형을 확인하고 열 예산 안에서 경쟁 가능한 후보만 남김 |
-| V3 — 파일 처리 방식 비교 | 5분 연속 파일로 엔진 기본 방식 대 필요한 경우의 앱 분할 비교 | 경계 누락/중복 없음, 품질 저하 한도 통과, 중지 후 제한된 재처리 |
-| V4 — 긴 파일 처리 | 별도 시험 기기에서 30~120분 길이의 실제 녹음 파일 중 대표 길이를 선정하고, 앞선 시험 통과 후 확대 | 체감/표면 온도·소비 에너지·완료 시간·완료율·화자 일관성 통과 |
-| V5 — 제품 통합 | 모델 설치부터 녹음 종료·전사·Drive 게시·웹훅·삭제까지 | 네트워크 단절/화면 잠금/프로세스 종료/재부팅에서도 정합성 유지 |
+| V0 — control test without inference | Reproduce wait/resume/cancel/delete/OS expiry/no model with a fake engine, clock and thermal signal | 0 new inferences while waiting, no retry budget consumed, no duplicate results or resurrection after deletion |
+| V1 — single short file | On a test device, 10–30 seconds of audio, one candidate at a time. Overall cap of 60 seconds for the initial run | Correct output, offline execution, actual compute stops after cancel, a measurable resource profile |
+| V2 — small accuracy set | A fixed small set of Korean, mixed language, proper nouns, numbers, quiet voices and silence | Check the error types and keep only candidates that can compete within the heat budget |
+| V3 — comparison of file processing methods | Compare the engine's default method with app-side splitting where needed, on a 5-minute continuous file | No dropped or duplicated boundaries, passes the quality degradation limit, bounded reprocessing after a stop |
+| V4 — long-file processing | On a separate test device, pick a representative length among real recording files 30–120 minutes long, and expand after the earlier tests pass | Passes on perceived/surface temperature, energy consumed, completion time, completion rate and speaker consistency |
+| V5 — product integration | From model installation through recording end, transcription, Drive publishing, webhook and deletion | Consistency holds through network loss, screen lock, process termination and reboot |
 
-**이 노트북에서는 V1~V4를 재개하지 않는다.** V0 코드 작성과 실제 시험 실행은 다음 구현 작업이다.
-30~120분은 입력 녹음 파일의 길이이며 실제 추론 실행 시간이나 앱 분할 길이가 아니다.
-모든 중간 길이를 반드시 시험하는 것은 아니다. 로컬 장문 시험과 외부 API 회귀를 구분한다.
-기기·센서가 없어서 측정하지 못한 항목은 `미측정`으로 남기고 다음 단계 합격으로 처리하지 않는다.
-장시간 파일을 처리하더라도 기기가 뜨거워지도록 의도적으로 계속 돌리는 스트레스 시험은 하지 않는다.
-중지 조건을 처음 만족하면 종료하고 그 실행을 미통과로 기록한다.
+**V1–V4 are not resumed on this laptop.** Writing the V0 code and actually running the tests are the next implementation work.
+30–120 minutes is the length of the input recording file, not the actual inference run time or the app-side split length.
+Not every intermediate length is necessarily tested. Local long-form tests are kept apart from external API regressions.
+Items not measured for lack of a device or sensor stay `not measured` and are not treated as passing for the next stage.
+Even when long files are processed, no stress test that deliberately keeps running to make the device hot is done.
+The first time a stop condition is met, the run ends and is recorded as not passing.
 
-### 측정 설계
+### Measurement design
 
-- 같은 기기에서 유휴/일상 사용 기준선, 녹음만, 전사, 녹음+전사 요청 대기의 조건을 분리한다.
-  실시간 자막은 비교 대상에 넣지 않는다. 다른 앱 부하를 기록하고 정상 사용자 앱을 강제 종료하지 않는다.
-- 실내 온도, 케이스, 화면 밝기/잠금, 전원 연결, 배터리 범위, OS, 드라이버, 엔진·모델 hash를 고정/기록한다.
-- 표면 온도는 고정 위치 외부 센서로 측정한다. OS thermal state는 보조 신호이고 피부가 느끼는 온도가 아니다.
-  휴대폰 배터리 온도를 표면 온도라고 보고하지 않는다.
-- 전력은 계측 도구/시험 장비로 측정하고 가능하면 기준선 차이도 함께 기록한다. 충전 중 소비전력을
-  배터리 방전량으로 환산하지 않는다. 총 에너지는 작업 시작부터 대기·재로딩·완료 후 정리까지 포함한다.
-- 시간은 대기 시간과 실제 처리 시간으로 나눈다. 빠르기만 한 처리 시간을 전체 사용자 대기 시간으로 쓰지 않는다.
-- Apple 시스템 STT 서비스와 네이티브 helper의 자원도 포함한다. 앱 RSS 하나로 엔진 메모리를 비교하지 않는다.
-- 후보 순서를 바꾸고 기준선으로 회복한 다음 반복한다. 모델 설치/컴파일과 정상 전사를 분리해 측정하고,
-  최초 설치·콜드 스타트의 부담도 별도 보고한다. 준비 작업을 다른 엔진 시험과 겹치지 않는다.
-- 정확도는 고정 정답과 동일 정규화로 CER, 한국어/영어 혼용 오류, 숫자·고유명사 오류를 본다. 무음 환각은
-  따로 집계한다. 실패·취소·누락은 0% 오류율로 처리하지 않는다.
-- FLEURS/HiKE는 짧은 발화 선별용이다. 장문 평가에는 자연스러운 연속 회의와 실제 경계 사례가 필요하다.
-  짧은 파일을 이어 붙인 자료는 내구성 시험으로만 쓰고 자연 회의 정확도라고 보고하지 않는다.
-- 장문은 회의 단위로 분리해 튜닝/평가 데이터 중복을 막는다. 같은 문장/화자 반복을 독립 표본처럼 세지 않는다.
-  HiKE의 기존 자체 지표는 공식 평가 점수와 구분하고, 한국어/영문 표기 손실을 각각 기록한다.
+- On the same device, separate the conditions: idle/everyday-use baseline, recording only, transcription, and recording + a waiting transcription request.
+  Live captions are not in the comparison. Load from other apps is recorded, and normal user apps are not force-quit.
+- Fix or record room temperature, case, screen brightness/lock, power connection, battery range, OS, drivers, and engine and model hashes.
+- Surface temperature is measured with an external sensor at a fixed position. The OS thermal state is an auxiliary signal, not the temperature skin feels.
+  The phone's battery temperature is not reported as surface temperature.
+- Power is measured with instrumentation/test equipment, recording the difference from baseline where possible. Power draw while charging is not
+  converted into battery drain. Total energy covers everything from job start through waiting, reloading and cleanup after completion.
+- Time is split into waiting time and actual processing time. A processing time that is merely fast is not used as the user's total wait.
+- Resources of the Apple system STT service and native helpers are included too. Engine memory is not compared by the app's RSS alone.
+- Change the candidate order and repeat after recovering to baseline. Measure model installation/compilation separately from normal transcription,
+  and report the cost of first installation and cold start separately. Preparation work does not overlap with tests of other engines.
+- Accuracy looks at CER, Korean/English mixing errors, and number and proper noun errors with fixed references and the same normalization. Hallucination on silence is
+  counted separately. Failures, cancellations and drops are not treated as a 0% error rate.
+- FLEURS/HiKE are for screening short utterances. Long-form evaluation needs natural continuous meetings and real boundary cases.
+  Material made by concatenating short files is used only for endurance tests and is not reported as natural meeting accuracy.
+- Long-form data is split per meeting to avoid overlap between tuning and evaluation data. Repeats of the same sentence/speaker are not counted as independent samples.
+  HiKE's existing in-house metric is kept apart from the official evaluation score, and losses in Korean and English spelling are each recorded.
 
-### 수치 기준 초안 — 검증된 성능 수치가 아님
+### Draft numeric criteria — not validated performance figures
 
-체감 발열을 검증 가능하게 하기 위한 **초기 제품 목표**다. 결과가 나쁘다고 사후에 기준을 느슨하게
-바꾸지 않는다. 기기별 측정 불확실성과 사용자가 느끼는 온도를 함께 확인한 뒤 출시 기준으로 확정한다.
+These are **initial product targets** that make perceived heat verifiable. The criteria are not loosened after the fact because results are bad.
+They are settled as release criteria after checking both per-device measurement uncertainty and the temperature users feel.
 
-| 항목 | 초기 판정 기준 |
+| Item | Initial pass criterion |
 |---|---|
-| 표면 온도 | 통제된 실내 조건에서 같은 사용 기준선 대비 최대 상승 2°C 이내를 목표. 사용자가 뜨겁다고 느끼면 수치와 관계없이 미통과 |
-| 시험 중 열 신호 | Apple `fair` 이상 또는 Android 열 압박 초기 신호에서 추가 추론 보류를 검증. 재개 기준은 더 보수적으로 설정 |
-| 팬/사용감 | 전사 때문에 지속적인 팬 소음이나 UI 끊김이 새로 나타나면 미통과 |
-| 취소/새 녹음 | 새 추론 요청은 즉시 차단. 실제 연산 종료 목표 2초, 초기 허용 상한 5초. 시스템 서비스까지 확인; 못 지키는 엔진은 자동 실행 후보 제외 |
-| 분할로 인한 정확도 변화 | 같은 엔진 기본 파일 처리 대비 CER 악화 0.5%p 이내를 초기 비열등성 한도로 사용. 신뢰구간이 넓으면 결론 보류. 단어 누락/중복 사례는 별도 해결 |
-| 완료 지연 | 실행 기회가 연속으로 주어진 조건에서 총 완료 시간/오디오 길이 ≤1을 1차 실용성 목표로 둠. OS가 실행을 허용하지 않은 시간은 별도 표시하되 실제 사용자 지연에도 포함 |
-| 배터리·전력 | J/음성 분, 지속 평균·최대 전력, 기준선 대비 방전량을 모두 기록. 측정 없이 일률적인 W 또는 % 보장은 하지 않음 |
+| Surface temperature | Target a maximum rise within 2°C over the same usage baseline under controlled indoor conditions. If the user feels it is hot, it fails regardless of the number |
+| Thermal signal during the test | Validate that further inference is withheld at Apple `fair` or higher, or at Android's early thermal pressure signal. Set the resume criterion more conservatively |
+| Fan / feel | Fails if sustained fan noise or UI stutter newly appears because of transcription |
+| Cancel / new recording | New inference requests are blocked immediately. Target 2 seconds for actual compute to end, initial allowed cap 5 seconds. Check down to system services; engines that cannot meet this are excluded from automatic execution candidates |
+| Accuracy change from splitting | Use a CER worsening within 0.5 percentage points over the same engine's default file processing as the initial non-inferiority limit. Withhold a conclusion if the confidence interval is wide. Cases of dropped/duplicated words are resolved separately |
+| Completion delay | Under conditions where execution opportunities are given continuously, set total completion time / audio length ≤1 as the first practicality target. Time the OS did not allow execution is shown separately but also counted in the actual user delay |
+| Battery and power | Record J per minute of audio, sustained average and peak power, and drain compared with baseline. No blanket W or % guarantee is made without measurement |
 
-2°C나 5초는 OS 보장값/기존 측정값이 아니다. 시험의 목표와 중단 조건이다. 기기가 이미 따뜻하거나
-고부하이면 정상 시작 조건이 성립하지 않는다. 상한을 넘어도 끝까지 실행해서 평균을 좋게 만드는 시험은 금지한다.
+2°C and 5 seconds are not OS-guaranteed values or existing measurements. They are the test's targets and stop conditions. If the device is already warm or
+under heavy load, the conditions for a normal start do not hold. A test that keeps running past the cap to make the average look better is forbidden.
 
-### 플랫폼별 후보와 시험 기기
+### Candidates and test devices by platform
 
-| 플랫폼 | 첫 비교 후보 | 확장 조건 |
+| Platform | First comparison candidates | Expansion conditions |
 |---|---|---|
-| iPhone/Mac | 지원되는 SpeechTranscriber 파일 전사, WhisperKit/Core ML의 한국어 지원 모델 | 둘이 요구 정확도를 못 채우면 Qwen 계열의 가속 경로 추가. MLX/GPU를 기본 우승자로 두지 않음 |
-| Android | 한국어 지원 Whisper 계열의 검증 가능한 NPU 경로, Qwen 0.6B 양자화의 지원 런타임 | CPU/NPU 실제 실행을 구분. 1.7B 등 큰 모델은 작은 후보의 품질이 부족하고 열 예산을 통과할 여지가 있을 때 추가 |
-| Windows | 호환되는 한국어 모델의 Windows ML/ONNX Runtime NPU 경로, 효율 설정을 적용한 CPU 경로 | NPU에서 지원하지 않는 모델을 억지로 지원한다고 표시하지 않음. GPU 후보도 같은 열 기준을 통과해야 함 |
-| Watch | 폰 수신 후 전사 | 워치 ASR은 이번 범위 아님 |
+| iPhone/Mac | Supported SpeechTranscriber file transcription, WhisperKit/Core ML models that support Korean | If the two cannot meet the required accuracy, add an accelerated path for the Qwen family. Do not treat MLX/GPU as the default winner |
+| Android | A verifiable NPU path for Whisper-family models that support Korean, a supported runtime for quantized Qwen 0.6B | Distinguish actual CPU/NPU execution. Add larger models such as 1.7B when the smaller candidates' quality is insufficient and there is room to pass the heat budget |
+| Windows | Windows ML/ONNX Runtime NPU path for compatible Korean models, a CPU path with efficiency settings applied | Do not claim support for a model the NPU does not support by forcing it. GPU candidates must pass the same heat criteria too |
+| Watch | Transcription after the phone receives it | Watch ASR is not in this scope |
 
-각 플랫폼에서 한 번에 1~2개 후보로 시작한다. NPU라고 반드시 저발열인 것은 아니다.
-Android는 Snapdragon·Exynos·MediaTek/Tensor 중 지원을 주장할 SoC, 주력·중급 RAM 계층을 나눠 검증한다.
-Apple은 지원 최저 등급 iPhone, 주력 iPhone, 팬 없는 Mac과 팬 있는 Mac을 구분한다.
-Windows는 NPU 없는 CPU 노트북, 지원 NPU 기기, GPU 기기를 구분한다. 제품이 지원할 OS 버전과
-업데이트 전후를 포함하고 시뮬레이터 결과로 실기기 전력 검증을 대신하지 않는다.
-검증되지 않은 기기는 설치된 작은 모델을 무조건 실행하지 않고 기능 준비/지원 상태를 표시한다.
+Each platform starts with 1–2 candidates at a time. An NPU is not necessarily low-heat.
+On Android, validate separately across the SoCs among Snapdragon, Exynos and MediaTek/Tensor for which support will be claimed, and across flagship and mid-range RAM tiers.
+On Apple, distinguish the lowest supported iPhone tier, flagship iPhones, fanless Macs and Macs with fans.
+On Windows, distinguish CPU laptops without an NPU, supported NPU devices and GPU devices. Include the OS versions the product will support and
+before and after updates, and do not replace real-device power validation with simulator results.
+On unvalidated devices, an installed small model is not run unconditionally; the feature's preparation/support state is shown instead.
 
-## 6. 구현할 구성
+## 6. Components to implement
 
 ```mermaid
 flowchart TD
-    A[녹음 종료 또는 워치 수신 완료] --> B[기존 규칙에 따른 워크플로우 실행]
-    B --> D[Drive 업로드 등 선행 단계]
-    D --> J{전사 단계의 저장된 선택}
-    J -->|로컬| C[단계에 연결된 로컬 전사 요청]
-    J -->|외부 API| K[기존 방식으로 파일 하나 제출]
-    J -->|전사 단계 없음| L[기존 후속 단계 또는 종료]
-    C --> E{기기 상태와 실행 기회}
-    E -->|대기| C
-    E -->|실행 가능| F[엔진의 파일 전사]
-    F --> G[확정 결과와 진행 위치 저장]
-    G --> H[로컬 최종 결과]
-    H --> I[전사 결과 게시 후 후속 단계]
+    A[Recording ended or watch receipt complete] --> B[Workflow runs under the existing rules]
+    B --> D[Preceding steps such as Drive upload]
+    D --> J{Saved choice of the transcription step}
+    J -->|Local| C[Local transcription request linked to the step]
+    J -->|External API| K[Submit one file the existing way]
+    J -->|No transcription step| L[Existing later steps or end]
+    C --> E{Device state and execution opportunity}
+    E -->|Wait| C
+    E -->|Can run| F[Engine file transcription]
+    F --> G[Save finalized results and progress position]
+    G --> H[Local final result]
+    H --> I[Publish transcription result, then later steps]
     K --> I
 ```
 
-워크플로우를 선택하지 않은 녹음에는 이 전사 경로가 생기지 않는다.
-대기 화살표는 polling busy loop가 아니라 OS/기기 상태 이벤트와 지연 재예약이다.
+A recording with no workflow selected does not get this transcription path.
+The wait arrow is not a polling busy loop but OS/device state events and delayed rescheduling.
 
-### 공통 코어와 네이티브 엔진
+### Common core and native engines
 
-- `LocalTranscriptionEngine`(신설 제안): 지원 언어, 장문 입력, 확정 결과, 취소 한도, 재개 방식,
-  모델/런타임 revision, 실제 가속기 경로를 선언한다. 공통 코어에 PCM 프레임을 계속 복사하지 않는다.
-- `LocalTranscriptionService`(신설): 실행 가능한 로컬 `transcribe` 단계가 요청한 작업을 유지한다.
-  workflow job/step, 원본 revision, 요구 설정을 연결하며 녹음 종료 이벤트에서 독립 작업을 만들지 않는다.
-  추론은 DB dispatcher/전역 작업 lock 밖에서 실행한다. 결과 반영은 짧은 트랜잭션으로 한다.
-- `ComputeAdmission`(신설): OS 실행 권한과 기기 자원 프로필로 실행/대기를 결정한다.
-  기존 `TranscriptionPolicy`는 클라우드 지역 정책이므로 다른 책임을 섞지 않는다.
-- `ModelStore`(신설): 모델 준비·checksum·원자적 설치·오류 복구를 담당한다. 모델 설치와 추론을
-  동시에 경쟁시키지 않는다. 시스템 모델은 해당 플랫폼의 asset 관리 API를 사용한다.
-- `TranscriptRepository`(신설): 확정 구간, 최종 revision, 원본 시간축, 결과 provenance를 관리한다.
-  로컬 READY는 Drive 로그인/게시 여부와 독립적으로 조회할 수 있어야 한다.
+- `LocalTranscriptionEngine` (proposed new): declares supported languages, long-form input, finalized results, cancel limits, resume method,
+  model/runtime revision and the actual accelerator path. PCM frames are not continuously copied into the common core.
+- `LocalTranscriptionService` (new): keeps the jobs requested by runnable local `transcribe` steps.
+  It links the workflow job/step, source revision and required settings, and does not create independent jobs from the recording-ended event.
+  Inference runs outside the DB dispatcher/global job lock. Results are applied in short transactions.
+- `ComputeAdmission` (new): decides run/wait from OS execution permission and the device resource profile.
+  The existing `TranscriptionPolicy` is a cloud region policy, so a different responsibility is not mixed into it.
+- `ModelStore` (new): handles model preparation, checksums, atomic installation and error recovery. Model installation and inference
+  do not compete at the same time. System models use that platform's asset management API.
+- `TranscriptRepository` (new): manages finalized segments, the final revision, the source timeline and result provenance.
+  Local READY must be queryable independently of Drive sign-in/publishing state.
 
-DB에는 request, resume position, result revision, publication 상태를 분리한다. 큰 PCM/텐서는
-`step_run.state_json`에 넣지 않는다. 재개 상태에는 source/model/options hash와 완료 범위를 포함한다.
+The DB keeps request, resume position, result revision and publication state separate. Large PCM/tensors are not put into
+`step_run.state_json`. The resume state includes the source/model/options hash and the completed range.
 
-작업 상태는 `QUEUED → RUNNING → READY`, 또는 이유가 있는 `WAITING`, `FAILED`, `CANCELLED`로 구분한다.
-WAITING의 이유는 model/thermal/recording/OS/power 등이며 실패 재시도 횟수를 소비하지 않는다.
-프로세스 종료로 남은 RUNNING은 lease를 회수해 재개 가능한 상태로 돌린다. 늦게 도착한 결과는 실행
-generation과 원본 revision이 일치할 때만 저장한다. 부분 결과를 최종 결과로 게시하지 않는다.
+Job states are `QUEUED → RUNNING → READY`, or `WAITING` with a reason, `FAILED`, `CANCELLED`.
+WAITING reasons include model/thermal/recording/OS/power, and do not consume failure retry counts.
+A RUNNING left behind by process termination has its lease reclaimed and goes back to a resumable state. A late-arriving result is saved only when
+the execution generation and source revision match. Partial results are not published as the final result.
 
-### 대기 상태의 사용자 표시
+### User-facing display of waiting states
 
-- 열 상태·OS 실행 기회·다른 녹음 때문에 자동 재개를 기다리는 동안에는 ‘전사 대기 중’만 표시한다.
-  세부 원인, 경고, 토스트, 푸시 알림을 추가하지 않는다. 조건이 회복되면 사용자 조작 없이 재개한다.
-- 대기 원인은 내부 스케줄링·복구·진단용 상태로 보존한다. 내부 상태 변화마다 화면 문구를 바꾸지 않는다.
-- 모델 설치 동의, 권한 설정, 공간 확보 등 사용자 조치가 필요한 경우에만 원인과 해결 행동을 표시한다.
-  자동으로 해결될 일시 대기와 실제 실패·지원 불가를 구분하고, 후자를 일반 대기로 숨기지 않는다.
+- While waiting to resume automatically because of thermal state, OS execution opportunities or another recording, show only "Transcription pending".
+  Do not add detailed causes, warnings, toasts or push notifications. When conditions recover, resume without user action.
+- The wait cause is kept as a state for internal scheduling, recovery and diagnostics. The on-screen text does not change with every internal state change.
+- Show the cause and the fix only when the user must act, such as consent to install a model, permission settings or freeing space.
+  Distinguish temporary waits that resolve on their own from actual failures and unsupported states, and do not hide the latter as a general wait.
 
-### 업로드·기존 워크플로우와의 호환
+### Compatibility with uploads and existing workflows
 
-- 로컬 전사도 기존 `transcribe` 단계의 처리 방식으로 실행한다. 기존 Drive-only/webhook 워크플로우에
-  전사를 추가하지 않는다. 로컬 처리 결과는 기기에 먼저 저장하고 게시 재시도에 재추론하지 않는다.
-- 워크플로우 schema 4에 `transcribe`의 local/cloud 분기를 명시하는 방안을 구현한다.
-  로컬 분기는 API key/secretRef를 요구하지 않는다. 외부 API 분기는 기존 provider·모델·비밀 참조·
-  지원되는 endpoint 설정과 검증을 유지한다. 기존 cloud JSON은 의미를 보존해 읽는다.
-- **로컬 transcribe 단계도 기존과 같이 Drive 단계 뒤에서 실행한다.** 녹음 종료 시 별도 선행 계산을
-  예약하지 않으며, 기존 실행 순서와 조건을 유지한다. 새 workflow DAG나 전역 자동 실행 정책을 만들지 않는다.
-- 로컬 추론 자체는 네트워크가 필요하지 않다. 실행 가능한 로컬 단계의 내부 계산·재개와 결과 게시는 분리해
-  불필요한 네트워크 제약을 피한다. 다만 선행 Drive 업로드가 미완료인 워크플로우가 오프라인에서도
-  전사까지 실행된다고 보장하지 않는다. `runDueJobs`의 원격 동기화와 플랫폼별 네트워크 제약은 이 범위에서 분리한다.
-- 해당 로컬 단계 뒤의 webhook은 게시 성공한 최종 revision만 참조한다. 결과 게시가 실패해도 로컬
-  결과는 읽을 수 있고, 재시도 때 ASR을 다시 실행하지 않는다. 게시 대상 Drive 계정도 고정/검증한다.
-- schema 1~3 로컬 저장/가져오기, 진행 중 cloud 작업 snapshot, 옛 클라이언트의 새 schema 거부를 시험한다.
+- Local transcription also runs as a processing method of the existing `transcribe` step. Transcription is not added to existing Drive-only/webhook workflows.
+  Local processing results are first saved on the device, and publishing retries do not re-run inference.
+- Implement the approach of stating the local/cloud branch of `transcribe` explicitly in workflow schema 4.
+  The local branch does not require an API key/secretRef. The external API branch keeps the existing provider, model, secret reference,
+  supported endpoint settings and validation. Existing cloud JSON is read with its meaning preserved.
+- **The local transcribe step also runs after the Drive step, as before.** No separate computation ahead of time is scheduled at recording end,
+  and the existing execution order and conditions are kept. No new workflow DAG or global automatic execution policy is created.
+- Local inference itself needs no network. The internal computation and resume of a runnable local step are separated from publishing results to
+  avoid unnecessary network constraints. However, it is not guaranteed that a workflow whose preceding Drive upload is incomplete runs as far as
+  transcription while offline. Remote sync in `runDueJobs` and per-platform network constraints are kept out of this scope.
+- A webhook after that local step references only the final revision that was published successfully. Even if publishing the result fails, the local
+  result is readable, and a retry does not run ASR again. The Drive account to publish to is also pinned/verified.
+- Test schema 1–3 local storage/import, in-progress cloud job snapshots, and old clients rejecting the new schema.
 
-### 원본 보존·삭제·결과 계약
+### Original preservation, deletion and the result contract
 
-- 로컬 계산·대기·결과 게시는 해당 workflow step이 미완료인 동안 수행한다. 기존의
-  ‘모든 workflow DONE + 업로드 성공 + 7일’ 보관 판정과 연결해 원본 보호를 유지한다.
-  네이티브 계산이 진행 중인데 단계만 DONE이 되는 상태를 금지하고, 취소·삭제와 원본 사용을 원자적으로 조정한다.
-- 사용자 삭제는 원본 보관 대기보다 우선한다. 먼저 작업을 취소·무효화하고 늦은 결과를 차단한 뒤 지운다.
-  Drive 연결 해제만으로 로컬 녹음/결과를 지우지 않으며 기존 ‘녹음도 삭제’ 선택의 의미를 보존한다.
-- 불완전한 워치 수신, 손상된 파트, 모델 미설치, 공간 부족에서 원본을 보존한다. 자동 대기 때문에
-  쌓인 용량은 표시하고 임의 삭제/클라우드 전송으로 해결하지 않는다.
-- 현재 transcript schema 1은 모든 segment의 `speaker`와 최소 한 명의 화자를 요구한다. 화자 분리
-  미실행을 실제 단일 화자 판정처럼 포장하지 않도록 schema 2에서 ‘화자 미확인’ 표현을 정한다.
-  타임스탬프 정밀도/출처도 명시하고, 구간 시간만 있는 엔진에 가짜 단어 시간을 만들지 않는다.
-- 화자 분리를 요구한 작업은 ASR만 끝났다고 완료로 처리하지 않는다. 로컬 단계 실행 중에는
-  텍스트를 먼저 제공할 수 있지만 화자 처리 상태를 별도로 표시한다. 모든 부가 처리도 같은 열 예산을 쓴다.
-- reader는 transcript v1/v2를 읽고, webhook의 파일 참조·스킬 소비자까지 호환을 확인한다.
-- 새 모델 배포 경로·SDK 네트워크 동작은 `docs/recly.md` §15에 반영한다. 원격 telemetry는 추가하지 않는다.
-  모델을 받은 뒤 네트워크를 차단해 전사 경로를 검증하고 외부 업로드로 자동 전환하지 않는다.
+- Local computation, waiting and result publishing happen while that workflow step is incomplete. They tie into the existing
+  ‘all workflows DONE + upload succeeded + 7 days’ retention decision to keep the original protected.
+  A state where the step becomes DONE while native computation is still running is forbidden, and cancel/delete are coordinated atomically with use of the original.
+- User deletion takes priority over waiting for original retention. The job is first cancelled and invalidated and late results are blocked, then it is deleted.
+  Disconnecting Drive alone does not delete local recordings/results, and the meaning of the existing "Also delete the recordings" option is preserved.
+- The original is preserved on incomplete watch receipts, damaged parts, a missing model and low space. Space that
+  builds up because of automatic waiting is shown and not resolved by arbitrary deletion or cloud transfer.
+- The current transcript schema 1 requires `speaker` on every segment and at least one speaker. So that not running speaker diarization
+  is not dressed up as an actual single-speaker judgment, schema 2 defines a representation for ‘speaker unknown’.
+  Timestamp precision/source is also stated, and fake word times are not made up for engines that only have segment times.
+- A job that requires speaker diarization is not treated as complete just because ASR finished. While the local step runs,
+  text can be provided first, but the speaker processing state is shown separately. All additional processing uses the same heat budget.
+- The reader reads transcript v1/v2, and compatibility is checked through to the webhook's file references and skill consumers.
+- New model distribution paths and SDK network behavior are reflected in `docs/recly.md` §15. No remote telemetry is added.
+  After the model is downloaded, the transcription path is validated with the network blocked, and it does not switch to an external upload automatically.
 
-## 7. 변경 지점과 구현 순서
+## 7. Change points and implementation order
 
-아래 줄 번호는 2026-09-24 읽기 시점 기준이다. 단계마다 완성된 동작과 검증 결과를 보고한다.
+The line numbers below are as of reading on 2026-09-24. Each stage reports the finished behavior and the verification results.
 
-| 순서 | 변경 지점 | 완료 조건 |
+| Order | Change points | Done condition |
 |---|---|---|
-| P0. 기존 벤치 보강 | `scripts/stt-benchmark/run_suite.py:12`, `score.py:65`, `apple_speech.swift:44` | 프로세스 트리 취소, 샘플/실행 상한, 열/시간 watchdog, 중단 결과 보존, 누락 점수를 N/A로 표시. 가짜 엔진으로 먼저 검증 |
-| P1. 정책·계약 | `docs/recly.md:65`, `:80`, `:85`, `:1261`; `spec/workflow.schema.json:100`, `spec/transcript.schema.json:26`; `model/Workflow.kt:42`, `workflow/WorkflowParser.kt:306` | 새 전사 단계의 로컬 기본 선택, 외부 API 설정 보존, schema 이행, 미확인 화자, 기존 실행 순서 유지 |
-| P2. 로컬 계산 기반 | `platform/CoreDeps.kt:10`, `ReclyCore.kt:228`, `recording/RecordingRepository.kt:163`, `:599`, SQLDelight DB/새 migration | 실행 가능한 로컬 단계에서 가짜 엔진 요청→대기→재개→결과. 전사 단계 없는 녹음의 요청 0개, 재등록·프로세스 종료·원본 변경에서 중복 없음 |
-| P3. 보존·게시 분리 | `job/JobStore.kt:208`, `job/Retention.kt:33`, `RecordingRepository.kt:467`; `transcribe/TranscribeRunner.kt:163`, `RecordingResults.kt:54`, `ReclyCore.kt:175` | pending 원본 보존, 삭제 후 결과 부활 없음, Drive 실패에도 로컬 결과 표시, 게시 재시도에 재추론 없음 |
-| P4. Apple 어댑터 | `apple/RecKit/Sources/RecKit/CoreBridge/CoreBridge.swift:42`, `Jobs/BackgroundJobs.swift:67`, `Jobs/JobRunner.swift:175`와 신설 native 엔진 | SpeechTranscriber 파일 경로부터 기능 완성. 별도 시험 기기 V1~V3, WhisperKit과 열 제약 내 품질 비교. Mac 결과를 iPhone으로 일반화하지 않음 |
-| P5. Android·Windows 어댑터 | `android/app/src/main/kotlin/app/recly/android/core/CoreModule.kt:61`, `work/WorkScheduler.kt:64`, `work/WorkflowWorker.kt:45`; `windows/app/src/main/kotlin/app/recly/windows/core/AppGraph.kt:60`, `jobs/JobRunner.kt:63` | 계산용 스케줄러, 실제 가속기 검증, 네이티브 취소/재개. 지원하지 않는 조합의 대기/지원 상태 표시 |
-| P6. UI·장문 검증·출시 | 각 셸 워크플로우 편집/상세/리소스, spec examples, `skills/recly-notes/`, `skills/recly-notion/` | 새 전사 단계는 로컬 기본 선택, 외부 API 선택·설정 유지. 준비/대기/진행/완료/실패 표시. 자동 재개 대기의 원인은 숨기고 사용자 조치가 필요할 때만 안내. V4~V5 통과 조합만 기본 프로필에 포함 |
+| P0. Strengthen the existing bench | `scripts/stt-benchmark/run_suite.py:12`, `score.py:65`, `apple_speech.swift:44` | Process-tree cancel, sample/run caps, thermal/time watchdog, preserve interrupted results, show missing scores as N/A. Validate with a fake engine first |
+| P1. Policy and contracts | `docs/recly.md:65`, `:80`, `:85`, `:1261`; `spec/workflow.schema.json:100`, `spec/transcript.schema.json:26`; `model/Workflow.kt:42`, `workflow/WorkflowParser.kt:306` | Local default choice for new transcription steps, external API settings preserved, schema transition, unknown speaker, existing execution order kept |
+| P2. Local compute foundation | `platform/CoreDeps.kt:10`, `ReclyCore.kt:228`, `recording/RecordingRepository.kt:163`, `:599`, SQLDelight DB/new migration | Fake engine request→wait→resume→result in a runnable local step. 0 requests for recordings with no transcription step, no duplicates on re-registration, process termination or source change |
+| P3. Separate retention and publishing | `job/JobStore.kt:208`, `job/Retention.kt:33`, `RecordingRepository.kt:467`; `transcribe/TranscribeRunner.kt:163`, `RecordingResults.kt:54`, `ReclyCore.kt:175` | Pending originals preserved, no result resurrection after deletion, local results shown despite Drive failure, no re-inference on publishing retry |
+| P4. Apple adapter | `apple/RecKit/Sources/RecKit/CoreBridge/CoreBridge.swift:42`, `Jobs/BackgroundJobs.swift:67`, `Jobs/JobRunner.swift:175` and a new native engine | Feature-complete starting from the SpeechTranscriber file path. V1–V3 on a separate test device, quality comparison with WhisperKit within the heat constraints. Mac results are not generalized to iPhone |
+| P5. Android and Windows adapters | `android/app/src/main/kotlin/app/recly/android/core/CoreModule.kt:61`, `work/WorkScheduler.kt:64`, `work/WorkflowWorker.kt:45`; `windows/app/src/main/kotlin/app/recly/windows/core/AppGraph.kt:60`, `jobs/JobRunner.kt:63` | Compute scheduler, actual accelerator validation, native cancel/resume. Wait/support state shown for unsupported combinations |
+| P6. UI, long-form validation, release | Each shell's workflow editing/detail/resources, spec examples, `skills/recly-notes/`, `skills/recly-notion/` | New transcription steps default to local, external API choice and settings kept. Preparing/waiting/in-progress/done/failed shown. The cause of automatic-resume waits is hidden, with guidance only when the user must act. Only combinations that pass V4–V5 go into the default profile |
 
-P2까지가 첫 동작 가능한 구현의 체크포인트다. 실제 모델 없이 작업·결과 경계를 확인한다.
-P4 이후의 기본 엔진은 검증 결과로 결정한다. SpeechTranscriber는 첫 검증 후보이며 이미 최종 선정된 것은 아니다.
-각 기기의 프로필은 앱과 함께 버전 관리한다. 원격 설정이나 사용자 기기에서 몰래 실행하는 자동 벤치마크는 넣지 않는다.
+Up to P2 is the checkpoint for the first working implementation. The job and result boundaries are checked without a real model.
+The default engine from P4 on is decided by validation results. SpeechTranscriber is the first validation candidate, not an already final choice.
+Each device's profile is versioned with the app. No remote configuration or automatic benchmark that runs secretly on users' devices is added.
 
-### OS별 백그라운드 통합
+### Background integration per OS
 
-- iOS: 기존 `requiresNetworkConnectivity = true` 요청과 실행 가능한 로컬 단계의 계산용 요청을 분리한다.
-  로컬 단계의 요청은 OS가 허용하는 실행 기회를 사용한다. continued processing은 명시적 사용자 시작 조건과
-  지원 리소스를 확인한다. 워치 자동 수신만으로 즉시 장시간 백그라운드 추론을 보장하지 않는다.
-  expiration 시 취소/저장하며 녹음 종료 후 가짜 오디오 세션으로 실행 시간을 확보하지 않는다.
+- iOS: separate the existing `requiresNetworkConnectivity = true` request from the compute request for a runnable local step.
+  The local step's request uses the execution opportunities the OS allows. Continued processing checks the explicit user-start condition and
+  supported resources. Automatic watch receipt alone does not guarantee immediate long background inference.
+  On expiration it cancels/saves, and after recording ends it does not secure execution time with a fake audio session.
   [Apple WWDC](https://developer.apple.com/videos/play/wwdc2025/227/)
-- Android: 네트워크 없는 계산 Worker를 분리하고, OS/OEM 중지 후 재예약한다. 장시간 Worker의
-  Android 16 quota와 적합한 foreground service 유형을 확인한다. microphone 서비스로 파일 추론을 유지하지 않는다.
-  [공식 장시간 작업 가이드](https://developer.android.com/develop/background-work/background-tasks/persistent/how-to/long-running)
-- Mac/Windows: 앱 lifecycle과 계산 executor를 분리한다. 절전·앱 종료 후 재개를 지원하되 절전 방지로
-  노트북을 계속 깨워 두지 않는다. Windows helper의 실패가 녹음 프로세스를 종료시키지 않도록 한다.
+- Android: separate a network-free compute Worker and reschedule after OS/OEM stops. Check the long-running Worker's
+  Android 16 quota and the appropriate foreground service type. File inference is not kept alive with a microphone service.
+  [Official long-running work guide](https://developer.android.com/develop/background-work/background-tasks/persistent/how-to/long-running)
+- Mac/Windows: separate the app lifecycle from the compute executor. Support resume after sleep and app exit, but do not keep the laptop
+  awake with sleep prevention. A Windows helper failure must not terminate the recording process.
 
-## 8. 필수 회귀와 출시 판단
+## 8. Required regressions and the release decision
 
-| 시나리오 | 확인할 결과 |
+| Scenario | Result to check |
 |---|---|
-| 비행기 모드 / Drive 연결 상태 변경 | 이미 실행 가능한 로컬 단계의 계산·재개는 네트워크 없이 가능; 선행 업로드와 결과 게시의 인증·순서 제약 유지 |
-| 새 전사 단계 / 기존 외부 API 단계 편집·가져오기 | 새 단계만 로컬 기본 선택; 기존 provider·모델·비밀 참조·endpoint 값과 외부 API 선택·설정 기능 보존 |
-| 워크플로우 없음 / 전사 단계 없음 / 외부 API 선택 | 암묵적 로컬 요청 0개; 선택한 워크플로우와 처리 방식만 실행 |
-| 외부 API 긴 파일 / 크기·길이 한도 초과 | 기존 단일 파일 제출과 한도 검증 유지; 로컬용 분할·VAD·겹침·열 대기를 API 요청에 적용하지 않음 |
-| 모델 없음/설치 중 취소/손상 | 준비 상태가 정확하고 녹음 보존; 부분 모델 실행/무한 재시도 없음 |
-| 전사 중 새 녹음 | 원본 저장 우선, 추론 양보, 녹음 drop/지연 증가 없음 |
-| 열 상승→회복, 열 센서 미지원 | 추가 추론 차단·보수적 재개·unknown 처리; 대기를 실패로 세지 않음 |
-| 자동 재개 대기와 사용자 조치 필요 상태 | 열·OS 일시 대기는 원인/경고 알림 없이 일반 대기로 표시하고 자동 재개; 설치 동의·권한·공간 문제는 필요한 행동 안내 |
-| 화면 잠금/OS 만료/프로세스 종료/재부팅 | 완료 범위 유지, 원본 하나, 결과 중복 없음, 허용 범위만 재처리 |
-| 전사 대기 중 7일 보관 스윕 | 전사에 필요한 파트가 삭제되지 않음 |
-| 삭제/작업 취소와 완료 콜백 경합 | 삭제된 결과가 돌아오지 않음; 취소한 단계의 늦은 결과가 게시되지 않음 |
-| 로컬 완료 후 업로드 실패/계정 변경 | 재전사 없이 올바른 계정/동의 조건에서 게시; 이전 계정 자료의 오게시 없음 |
-| 기존 cloud workflow·옛 schema 가져오기 | 기존 선택과 비밀 참조·동의·에러 코드 보존; 이중 전사 없음 |
-| 화자 미확인/2명 이상/겹친 발화/트랙 gap | 화자·시간 정합성, 미확인을 실제 사람으로 단정하지 않음 |
+| Airplane mode / Drive connection state change | Computation and resume of an already runnable local step work without a network; the authentication and ordering constraints of the preceding upload and result publishing are kept |
+| New transcription step / editing or importing an existing external API step | Only new steps default to local; existing provider, model, secret reference and endpoint values and the external API choice and settings are preserved |
+| No workflow / no transcription step / external API chosen | 0 implicit local requests; only the selected workflow and processing method run |
+| Long file on an external API / size or length limit exceeded | Existing single-file submission and limit checks kept; local splitting, VAD, overlap and heat waits are not applied to API requests |
+| No model / cancel during install / corrupted | Preparation state is accurate and recordings are preserved; no partial model execution or endless retries |
+| New recording during transcription | Saving the original comes first, inference yields, no recording drops or added latency |
+| Heat rise → recovery, no thermal sensor support | Further inference blocked, conservative resume, unknown handled; waiting is not counted as failure |
+| Automatic-resume waits and states that need user action | Thermal and OS temporary waits are shown as a general wait without cause/warning notifications and resume automatically; install consent, permission and space problems show the action needed |
+| Screen lock / OS expiry / process termination / reboot | Completed range kept, one original, no duplicate results, only the allowed range reprocessed |
+| 7-day retention sweep while waiting for transcription | Parts needed for transcription are not deleted |
+| Deletion/job cancel racing with the completion callback | Deleted results do not come back; late results of a cancelled step are not published |
+| Upload failure / account change after local completion | Published under the correct account/consent conditions without retranscription; no mispublishing of the previous account's data |
+| Importing existing cloud workflows and old schemas | Existing choice, secret references, consent and error codes preserved; no double transcription |
+| Speaker unknown / 2 or more people / overlapping speech / track gaps | Speaker and time consistency; unknown is not asserted to be an actual person |
 
-구현 후 저장소 규칙에 따라 `make test`, spec 변경 시 `make spec`, core/Apple 변경 시
-`make core` 후 `make mac-test`, capture-helper 변경 시 `make helper-test`를 수행한다.
-시뮬레이터 빌드는 `make ios`/`make watch`를 사용한다. 이들은 기능 회귀이며 발열 실기기 시험을 대체하지 않는다.
+After implementation, following the repository rules, run `make test`, `make spec` on spec changes,
+`make core` then `make mac-test` on core/Apple changes, and `make helper-test` on capture-helper changes.
+Simulator builds use `make ios`/`make watch`. These are functional regressions and do not replace real-device heat tests.
 
-출시 보고서는 기기/OS/모델/가속기별 **정확도, 표면 온도 변화, 에너지, 처리·대기 시간, 재개 비용**을
-함께 제시한다. 미측정 조합을 기본 지원이라고 표시하지 않는다. 품질이나 열 기준을 만족하는 후보가 없으면
-해당 기기의 로컬 옵션은 지원 불가 상태를 정확히 표시하고 원본을 보존한다. 기존 외부 API 선택·설정은
-유지하지만, 실행 중인 로컬 단계를 사용자 선택 없이 외부 API로 전환하지 않는다.
+The release report presents **accuracy, surface temperature change, energy, processing and waiting time, and resume cost** per device/OS/model/accelerator
+together. Unmeasured combinations are not shown as supported by default. If no candidate meets the quality or heat criteria,
+the local option on that device accurately shows an unsupported state and preserves the original. The existing external API choice and settings
+are kept, but a running local step is not switched to an external API without the user's choice.
 
-## 9. 이번 계획 작성의 검증 기록
+## 9. Verification log for writing this plan
 
-- `git status --short`: 기존 조사 문서와 `scripts/stt-benchmark/`가 untracked 상태. 제품 코드 변경 없음.
-- `rg`와 줄 번호를 붙인 소스 읽기로 네트워크 제약, Drive 종속, 보관 스윕, schema를 확인했다.
-  초기 추정 경로 중 존재하지 않는 것은 `rg --files`로 실제 경로를 찾아 위 표에 정정했다.
-- 기존 `main-processes.json`/JSONL 읽기 결과: `apple/qwen17/qwen06` 모두 `samples 302 errors 0 exit 0`.
-  재추론하거나 전체 점수를 재계산한 결과가 아니다.
-- Apple 공식 Markdown에서 `priority`/`ModelRetention`은 OS 26, `ignoresResourceLimits`는 OS 27임을 확인했다.
-  Android 장시간 작업 문서는 2026-09-16, Windows 효율 가이드는 2026-08-17 갱신본을 확인했다.
-- `python3` 정적 검사로 두 문서의 후행 공백·코드 펜스·로컬 링크와 소스 참조 27개의 경로/줄 범위를 확인했다.
-  실제 출력: `whitespace/fences/local links PASS`(두 문서), `Validated 27 source references.`
-- 사용자 정정 후 전역 자동 전사 가정의 제거도 확인했다.
-  실제 출력: `PASS: superseded global auto-transcription requirements removed`.
-- 이번에는 계획 문서만 변경했다. 사용자 요청으로 중단한 이 노트북의 빌드·모델 다운로드·추론·부하 시험을
-  재개하지 않았으며, 제품 구현이나 실기기 합격을 보고하지 않는다.
+- `git status --short`: the existing survey documents and `scripts/stt-benchmark/` are untracked. No product code changes.
+- Network constraints, Drive dependence, the retention sweep and schemas were checked with `rg` and source reads with line numbers.
+  Initially guessed paths that did not exist were located with `rg --files` and corrected in the table above.
+- Result of reading the existing `main-processes.json`/JSONL: `apple/qwen17/qwen06` all `samples 302 errors 0 exit 0`.
+  This is not a result of re-running inference or recomputing the full scores.
+- Confirmed in Apple's official Markdown that `priority`/`ModelRetention` are OS 26 and `ignoresResourceLimits` is OS 27.
+  The Android long-running work document checked was the 2026-09-16 revision, and the Windows efficiency guide the 2026-08-17 revision.
+- A `python3` static check confirmed trailing whitespace, code fences and local links in the two documents, and the paths/line ranges of 27 source references.
+  Actual output: `whitespace/fences/local links PASS` (both documents), `Validated 27 source references.`
+- The removal of the global automatic transcription assumption after the user's correction was also confirmed.
+  Actual output: `PASS: superseded global auto-transcription requirements removed`.
+- Only the plan document was changed this time. The builds, model downloads, inference and load tests on this laptop, which were stopped at the user's request,
+  were not resumed, and no product implementation or real-device pass is reported.

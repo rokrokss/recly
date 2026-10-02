@@ -10,7 +10,7 @@ import recly.core.platform.Logger
 import recly.core.storage.CloudFiles
 
 /**
- * docs/03 "다른 기기의 녹음": the device that runs the workflow tells the others what is still to come.
+ * docs/03 "Recordings from other devices": the device that runs the workflow tells the others what is still to come.
  * Drive holds the recording's audio but says nothing about the `transcribe` that is going to take
  * another four minutes, so the folder itself carries it — [DriveFolderMarker.PENDING], the
  * comma-joined types of the steps still ahead, and [DriveFolderMarker.PENDING_AT], when that was
@@ -32,7 +32,7 @@ interface FolderMarker {
 
 /**
  * [FolderMarker] against the recording's `{base}/` folder (ADR-014): its `appProperties` on Drive,
- * its property file in iCloud (docs/03 "저장 위치") — whichever the folder id belongs to.
+ * its property file in iCloud (docs/03 "Storage location") — whichever the folder id belongs to.
  */
 class DriveFolderMarker(
     private val api: CloudFiles,

@@ -5,7 +5,7 @@
 //! either. Left alone that would leave the `sys` track shorter than the recording by however long
 //! nobody was talking, and every later frame of it would sit that much early against the microphone.
 //! So the poller fills the gap itself, at the endpoint's own rate, from the monotonic clock
-//! (docs/14 "무음 시 콜백이 없으므로 타이머로 무음 프레임 삽입").
+//! (docs/14 "with no callbacks during silence, a timer inserts silent frames").
 //!
 //! Two clocks meet here and the difference matters. Filled frames are counted as delivered, exactly
 //! as a real silent packet would be: the endpoint really did render that silence, WASAPI just

@@ -3,7 +3,7 @@
 # Tags publish release assets. Manual runs only save workflow artifacts unless publishing is
 # explicitly selected. The two skill ZIPs are built alongside the MSI (skills/README.md).
 #
-# What it cannot verify is unchanged — SmartScreen, and installing it: docs/20 "Windows 보류 항목".
+# What it cannot verify is unchanged — SmartScreen, and installing it: docs/20 "Windows pending items".
 name: windows-release
 
 on:

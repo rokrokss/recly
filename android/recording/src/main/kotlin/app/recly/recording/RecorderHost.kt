@@ -27,7 +27,7 @@ interface RecorderHost {
     /**
      * A recording is finalized on disk and nothing else in this module will touch it. What that is
      * worth is entirely the shell's business: the phone queues a job and wakes WorkManager, the
-     * watch hands it to its transfer queue and never enqueues anything (docs/11 "주의" — it runs no
+     * watch hands it to its transfer queue and never enqueues anything (docs/11 "Caveats" — it runs no
      * workflow and never touches Drive). This module therefore does not call `ReclyCore.enqueue` at
      * all; it says the recording is ready and lets the device decide what ready means.
      *

@@ -31,7 +31,7 @@ import recly.core.model.Track
 import recly.core.recording.RecordingRecord
 
 /**
- * docs/09 화면 원칙 2: every row state has a code and a tone, the code is the word the core and the
+ * docs/09 screen principle 2: every row state has a code and a tone, the code is the word the core and the
  * logs already use, and no two states look the same to someone who cannot tell the tones apart.
  */
 class LedgerStatusTest {
@@ -90,7 +90,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 화면 원칙 2: the status column is measured against every label a badge can wear, so
+     * docs/09 screen principle 2: the status column is measured against every label a badge can wear, so
      * `NEEDS_MODEL` — cut to "NEEDS_MODE" at the old fixed width — and the rest always fit whole.
      */
     @Test
@@ -134,7 +134,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 화면 원칙 2: `HH:mm`, twenty-four hour — a twelve-hour clock is five wide too, and without
+     * docs/09 screen principle 2: `HH:mm`, twenty-four hour — a twelve-hour clock is five wide too, and without
      * the day period it writes 15:05 as `03:05`, the same text as 03:05.
      */
     @Test
@@ -161,7 +161,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 화면 원칙 2: the 길이 column, in the shape the phone and the Mac write it — and the
+     * docs/09 screen principle 2: the 길이 column, in the shape the phone and the Mac write it — and the
      * placeholder all three use for a recording that has no length yet, which is a cell that says
      * "not in yet" rather than one that lost its value.
      */
@@ -178,7 +178,7 @@ class LedgerStatusTest {
     private fun statesRecentsCanReport(): List<Pair<String, UiMessage>> =
         listOf("RECORDING" to Recents.stateLabel(record(RecordingStatus.RECORDING), null)) +
             listOf("no job" to Recents.stateLabel(record(), null)) +
-            // docs/03 "다른 기기의 녹음": the three another device's work puts on this list.
+            // docs/03 "Recordings from other devices": the three another device's work puts on this list.
             listOf(
                 "receiving" to Recents.stateLabel(
                     record(RecordingStatus.RECORDING, source = Source.WATCH),

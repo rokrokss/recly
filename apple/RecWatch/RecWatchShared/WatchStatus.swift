@@ -54,7 +54,7 @@ extension WatchStatus {
 
     /// A recording being made outranks recordings waiting to go: it is the one the tap acts on.
     ///
-    /// docs/09 "형태": squares, never circles — the recording mark on every other surface of this
+    /// docs/09 "Shape": squares, never circles — the recording mark on every other surface of this
     /// product is a filled square, and a complication is not the place it becomes a dot.
     var symbol: String {
         if isRecording { return "square.fill" }

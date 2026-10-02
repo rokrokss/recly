@@ -147,7 +147,7 @@ class GoogleAuth(
     }
 }
 
-/** What [GoogleAuth.revokeAccess] managed — docs/03's "연결 해제", minus the core's own clean-up. */
+/** What [GoogleAuth.revokeAccess] managed — docs/03's "Disconnect", minus the core's own clean-up. */
 sealed interface RevokeResult {
     data object Revoked : RevokeResult
 

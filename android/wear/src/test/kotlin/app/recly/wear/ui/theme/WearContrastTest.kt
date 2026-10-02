@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "접근성" on the watch. The watch has one palette and no toggles — a Wear screen follows the
+ * docs/09 "Accessibility" on the watch. The watch has one palette and no toggles — a Wear screen follows the
  * system, and there is no settings screen to put a switch on (docs/07: the watch takes the system
  * language too) — so what is checked is that the one palette clears WCAG AA.
  */

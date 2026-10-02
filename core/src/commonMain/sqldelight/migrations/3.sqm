@@ -1,10 +1,10 @@
--- 3 → 4: recordings other devices uploaded appear in this device's list (docs/03 "다른 기기의 녹음").
+-- 3 → 4: recordings other devices uploaded appear in this device's list (docs/03 "Recordings from other devices").
 --
 -- The whole schema lives in `Rec.sq`; a migration is only the difference from the version it is
 -- named after. The two have to agree, and `MigrationTest` — which builds an old database by hand
 -- and upgrades it — is what says they do.
 --
--- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "Schema migrations").
 --
 -- Every row already here is this device's own (`remote = 0`), and none of them knows its Drive
 -- folder yet: `drive_folder_id` is filled by the next upload that touches the folder, and until

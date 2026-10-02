@@ -26,7 +26,7 @@ class UlidTest {
     }
 
     /**
-     * docs/01 "식별자·시간": the first ten characters are the millisecond clock, so an id is its own
+     * docs/01 "Identifiers · time": the first ten characters are the millisecond clock, so an id is its own
      * timestamp — what the row of a watch transfer in flight and of another device's upload are
      * dated by (docs/03), neither of which has a `meta.json` to read a start time out of yet.
      */

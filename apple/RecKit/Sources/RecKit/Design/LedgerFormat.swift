@@ -1,6 +1,6 @@
 import Foundation
 
-/// docs/09 화면 원칙 2: what the ledger's monospace columns say. Numbers and clock faces, never
+/// docs/09 screen principle 2: what the ledger's monospace columns say. Numbers and clock faces, never
 /// prose — fixed-width patterns that read the same in every language. Only the sentence a row says
 /// ([startedAt]) goes through the locale's own formatter, which is what docs/07 rule 7 is about.
 public enum LedgerFormat {
@@ -10,7 +10,7 @@ public enum LedgerFormat {
 
     /// `08-29`, month first in every language.
     ///
-    /// docs/09 화면 원칙 2: this column is a fixed-width pattern, not prose — a locale that writes
+    /// docs/09 screen principle 2: this column is a fixed-width pattern, not prose — a locale that writes
     /// the day first (Korean gave `02/09`) would make the same two numbers mean two different
     /// things on two devices, and the desktop already writes `MM-dd`. The date in *words* — the row
     /// announcement's [startedAt] — is still the locale's own, which is what docs/07 rule 7 is
@@ -28,7 +28,7 @@ public enum LedgerFormat {
 
     /// `15:04`, twenty-four hour in every language.
     ///
-    /// docs/09 화면 원칙 2: the same fixed-width pattern as [date]. A twelve-hour locale's clock
+    /// docs/09 screen principle 2: the same fixed-width pattern as [date]. A twelve-hour locale's clock
     /// does not fit it — without the day period `03:05` is either end of the day, and with it the
     /// column is no longer five wide. The spoken [startedAt] keeps the locale's own clock.
     public static func time(_ iso: String) -> String {
@@ -56,7 +56,7 @@ public enum LedgerFormat {
         return elapsed(Int(seconds.rounded(.down)))
     }
 
-    /// docs/09 "타이포": `00:12:34` — the record timer, the detail's playback clock and a transcript
+    /// docs/09 "Typography": `00:12:34` — the record timer, the detail's playback clock and a transcript
     /// turn's stamp. Fixed width, because a timer that reflows is a distraction; the hours are not
     /// wrapped at 24, because a recording is not a clock.
     public static func clock(_ seconds: Int) -> String {
@@ -72,7 +72,7 @@ public enum LedgerFormat {
             : String(format: "%02d:%02d", seconds / 60, seconds % 60)
     }
 
-    /// docs/09 화면 원칙 2: the row is one accessibility element, and this is the sentence it says —
+    /// docs/09 screen principle 2: the row is one accessibility element, and this is the sentence it says —
     /// the state in words rather than as the code the badge draws.
     public static func announce(title: String, at: String, length: String, state: String) -> String {
         UiMessage.key(

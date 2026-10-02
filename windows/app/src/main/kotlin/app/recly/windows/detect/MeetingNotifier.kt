@@ -9,7 +9,7 @@ import java.awt.TrayIcon
 import recly.core.platform.Logger
 
 /**
- * The two notifications the meeting detector is allowed to raise (docs/14 "감지", ADR-011: detect,
+ * The two notifications the meeting detector is allowed to raise (docs/14 "Detection", ADR-011: detect,
  * then ask, then record). Both are offers — the app never starts or stops a recording because it
  * thinks it should.
  *

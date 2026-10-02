@@ -1,7 +1,7 @@
 package app.recly.android.ui
 
 /**
- * docs/09 "타이포": `00:12:34` — fixed width, because a timer that reflows is a distraction. The
+ * docs/09 "Typography": `00:12:34` — fixed width, because a timer that reflows is a distraction. The
  * hours are not wrapped at 24; a recording is not a clock.
  */
 internal fun hms(seconds: Long): String {

@@ -16,7 +16,7 @@ import recly.core.recording.AudioParts
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
 
-/** What a recording's detail screen shows (docs/08 "결과 파일"). It is absent until a `transcribe`
+/** What a recording's detail screen shows (docs/08 "Result files"). It is absent until a `transcribe`
  * step has run. [PARKED] is a transcription that has not failed but will not run until the user
  * does something the list offers — connect Drive, free space, allow the transfer, get the model. */
 enum class TranscriptAvailability { PENDING, NOT_REQUESTED, FAILED, UNAVAILABLE, READY, EMPTY, PARKED }
@@ -31,7 +31,7 @@ data class RecordingResult(
 )
 
 /**
- * Reads back what the step wrote (docs/08 "결과 파일"), for the app's own detail screen.
+ * Reads back what the step wrote (docs/08 "Result files"), for the app's own detail screen.
  *
  * The local copy is the fast path and the offline one; Drive is the fallback for a recording whose
  * step ran on another device, or whose files were restored without it. A download is kept as the
@@ -122,7 +122,7 @@ class RecordingResults(private val api: CloudFiles, private val deps: CoreDeps) 
         outputs.mapNotNull { it[group]?.jsonObject?.string(field) }.lastOrNull()
 
     /**
-     * An adopted recording (docs/03 "다른 기기의 녹음") has no step output here: the transcript, if the
+     * An adopted recording (docs/03 "Recordings from other devices") has no step output here: the transcript, if the
      * other device made one, is a file in its Drive folder under the name the step gives it. Looked
      * up at each opening until a copy is here — a transcript that lands later is found later — and
      * skipped when a valid copy is already local, including during an explicit repair.

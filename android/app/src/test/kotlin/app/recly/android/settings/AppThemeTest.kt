@@ -6,7 +6,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "접근성": the store keeps a key and the theme decides one thing from it. `AppSettings`
+ * docs/09 "Accessibility": the store keeps a key and the theme decides one thing from it. `AppSettings`
  * itself is DataStore over a `Context` and not something the JVM can drive (the same reason
  * `LanguageSettingTest` tests the setting rather than the platform), so what is tested here is the
  * round trip through the key the store writes.

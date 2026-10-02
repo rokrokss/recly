@@ -1,242 +1,253 @@
 # Recly
 
-**어느 기기에서 녹음하든, 녹음이 끝나면 고정 처리(원본 업로드 · 전사 · 결과 업로드)가 돈다.**
+**Whichever device records, a fixed process (original upload · transcription · result upload) runs when the recording ends.**
 
-이 문서 하나가 Recly의 현재 모습이다. 역사도 레인 기록도 아니고, 지금 코드가 지키는 계약과 규칙을 있는 그대로 적는다.
-기계가 읽는 정본은 `spec/*.json`(녹음 처리 설정·메타·transcript 스키마)이고, 이 문서는 그 스키마의 의미와
-스키마에 담기지 않는 규칙을 정한다.
+This one document is Recly as it is now. It is neither a history nor a lane log; it states, as they are, the contracts and
+rules the current code keeps. The machine-readable source of truth is `spec/*.json` (the recording processing settings,
+meta and transcript schemas); this document defines what those schemas mean and the rules the schemas do not hold.
 
-**절 번호는 계약이다.** 코드 주석의 `docs/NN "소제목"` 인용은 이 문서의 §NN과 그 소제목을 가리킨다. 절 번호와
-소제목은 이유 없이 바꾸지 않는다.
+**Section numbers are a contract.** A `docs/NN "subsection"` citation in a code comment points to §NN of this document and
+that subsection heading. Section numbers and subsection headings do not change without a reason.
 
-| 절 | 내용 |
+| Section | Contents |
 |---|---|
-| [0](#0-제품-정의--규칙-구-docs00) | 제품 정의 · 원칙 · 규칙(구 ADR) |
-| [1](#1-아키텍처-구-docs01) | 아키텍처 |
-| [2](#2-워크플로우-계약-구-docs02) | 워크플로우 계약 — 내부 단계 모델만(사용자 문서는 폐기, 2026-09-24) |
-| [3](#3-녹음저장-구-docs03) | 녹음 · 저장 · 보관 · 삭제 |
-| [4](#4-웹훅-구-docs04) | 웹훅 — 폐기(2026-09-24) |
-| [5](#5-워크플로우-보관시크릿-구-docs05) | 녹음 처리 설정 · 시크릿(워크플로우 보관·내보내기/가져오기는 폐기, 2026-09-24) |
-| [6](#6-인증-구-docs06) | Google 인증 |
-| [7](#7-i18n-구-docs07) | 다국어 |
-| [8](#8-전사-구-docs08) | `transcribe` |
-| [9](#9-디자인-시스템-blueprint-구-docs09) | 디자인 시스템 "Blueprint" |
-| [10](#10-코어-kmp-구-docs10) | 공유 코어(KMP) |
-| [11](#11-androidwear-구-docs11) | Android 폰 · Galaxy Watch |
-| [12](#12-macos-구-docs12) | macOS |
-| [13](#13-ioswatchos-구-docs13) | iPhone · Apple Watch |
-| [14](#14-windows-구-docs14) | Windows |
-| [15](#15-프라이버시데이터-흐름-구-docs15) | 프라이버시 · 데이터 흐름 |
-| [16](#16-페르소나가격-구-docs16--제안-미결정) | 페르소나 · 가격(제안, 미결정) |
-| [20](#20-검증-상태-구-docs20) | 검증 상태 |
-| [21](#21-컨벤션-구-docs21) | 컨벤션 — 일부러 남긴 것 |
-| [열린 결정](#열린-결정) | 남은 사용자 결정 |
+| [0](#0-product-definition--rules-formerly-docs00) | Product definition · principles · rules (formerly ADRs) |
+| [1](#1-architecture-formerly-docs01) | Architecture |
+| [2](#2-workflow-contract-formerly-docs02) | Workflow contract — the internal step model only (the user document was retired, 2026-09-24) |
+| [3](#3-recording--storage-formerly-docs03) | Recording · storage · retention · deletion |
+| [4](#4-webhooks-formerly-docs04) | Webhooks — retired (2026-09-24) |
+| [5](#5-workflow-storage--secrets-formerly-docs05) | Recording processing settings · secrets (workflow storage and export/import were retired, 2026-09-24) |
+| [6](#6-authentication-formerly-docs06) | Google authentication |
+| [7](#7-i18n-formerly-docs07) | Localization |
+| [8](#8-transcription-formerly-docs08) | `transcribe` |
+| [9](#9-design-system-blueprint-formerly-docs09) | Design system "Blueprint" |
+| [10](#10-core-kmp-formerly-docs10) | Shared core (KMP) |
+| [11](#11-android--wear-formerly-docs11) | Android phone · Galaxy Watch |
+| [12](#12-macos-formerly-docs12) | macOS |
+| [13](#13-ios--watchos-formerly-docs13) | iPhone · Apple Watch |
+| [14](#14-windows-formerly-docs14) | Windows |
+| [15](#15-privacy--data-flows-formerly-docs15) | Privacy · data flows |
+| [16](#16-personas--pricing-formerly-docs16--proposal-undecided) | Personas · pricing (proposal, undecided) |
+| [20](#20-verification-status-formerly-docs20) | Verification status |
+| [21](#21-conventions-formerly-docs21) | Conventions — what was left on purpose |
+| [Open decisions](#open-decisions) | Remaining user decisions |
 
 ---
 
-## 0. 제품 정의 · 규칙 (구 docs/00)
+## 0. Product definition · rules (formerly docs/00)
 
-**2026-09-24 적용:** 녹음은 고정 처리 계획(§5 "고정 처리 설정 도입")만 실행한다 — `drive.upload` →
-`transcribe` 또는 `local.transcribe` → `transcript.publish`. 사용자 편집형 워크플로우(문서·편집기·피커·기기 기본
-포인터·내보내기/가져오기·schema 1/2 마이그레이션·워치 워크플로우 목록)와 웹훅은 **폐기**됐고, 이전 설정을 읽는
-호환 계층도 없다. 아래 규칙 표에서 그 결정으로 무효가 된 항목은 "폐기"로 표시한다. 폰 화면은 녹음·목록·설정 3탭이다.
+**Applied 2026-09-24:** A recording runs only the fixed processing plan (§5 "Fixed processing settings") — `drive.upload` →
+`transcribe` or `local.transcribe` → `transcript.publish`. User-editable workflows (the document, the editor, the picker, the
+per-device default pointer, export/import, schema 1/2 migration, the watch workflow list) and webhooks are **retired**, and
+there is no compatibility layer that reads earlier settings. In the rules table below, entries that decision invalidated are
+marked "retired". The phone screen has three tabs: Record, List, Settings.
 
-### 한 줄 정의
+### One-line definition
 
-녹음 원본과 전사 결과를 **사용자 자신의 Google Drive**에 남기는 레코더. iPhone·Mac은 Drive 대신 사용자 자신의
-iCloud를 고를 수 있다(ADR-024). 녹음·원본 업로드·전사·결과 업로드
-순서로 처리한다. 워치는 녹음과 폰 전송을, 폰·데스크톱은 후처리를 담당한다.
+A recorder that leaves the original recordings and the transcription results in **the user's own Google Drive**. iPhone and
+Mac can choose the user's own iCloud instead of Drive (ADR-024). Processing runs in the order recording, original upload,
+transcription, result upload. The watch handles recording and transfer to the phone; the phone and desktop handle
+post-processing.
 
-### 원칙
+### Principles
 
-1. **녹음한 기기가 실행한다.** 워치는 폰에 넘긴다. **Recly의 서버는 존재하지 않는다.**
-2. **설정은 기기의 것이다.** 녹음 처리 설정·전사 키와 보존된 이전 정의는 전부 기기 로컬에 있고 동기화하지 않는다.
-   기기 사이의 이동은 설정의 내보내기/가져오기(§5)다. Drive에는 녹음과 결과 파일만 올라간다 — 그리고 그것이
-   곧 기기들이 공유하는 **녹음 목록**이다(ADR-023, §3 "다른 기기의 녹음"). 재시도·업로드
-   세션 같은 런타임
-   상태는 각 기기 로컬에만 있다.
-3. **ack 전까지 원본을 지우지 않는다.**
-4. **Drive의 파일이 인터페이스다.** 전사는 로컬·외부 API·OFF 중 선택하고, 요약부터는 사용자의 에이전트 몫이다(§16,
-   `skills/recly-notes/`). 기본은 "내 Drive + 내 자동화". Drive는 앱이 쓰는 원본 보관소라 에이전트는 읽기만
-   한다. 저장소의 두 스킬은 **예시**다 — 회의록을 쓰고 그 노트와 뒤의 수정을 사용자의 Notion에 두는 한 가지
-   방법(`skills/recly-notion/`)이고, 사용자가 자기 양식·노트 앱에 맞게 고치거나 직접 만들어 쓰는 것을 전제로
-   한다(2026-10-01).
-5. **은밀 모드는 없다.** 녹음 중에는 항상 표시하고, 데스크톱은 감지 → 확인 → 녹음이다.
+1. **The device that recorded runs it.** The watch hands off to the phone. **There is no Recly server.**
+2. **Settings belong to the device.** The recording processing settings, transcription keys and preserved earlier
+   definitions are all device-local and are not synchronized. Moving them between devices is the settings export/import
+   (§5). Only recordings and result files go up to Drive — and those are the **recording list** the devices share
+   (ADR-023, §3 "Recordings from other devices"). Runtime state such as retries and upload sessions lives only locally on
+   each device.
+3. **The original is not deleted before the ack.**
+4. **The files in Drive are the interface.** Transcription is a choice of local, external API or OFF; from summarization on,
+   the work belongs to the user's agent (§16, `skills/recly-notes/`). The default is "my Drive + my automation". Drive is the
+   source archive the app writes, so agents only read it. The repository's two skills are **examples** — one way to write
+   minutes and keep those notes and later edits in the user's Notion (`skills/recly-notion/`) — and they assume the user
+   adapts them to their own format and note app or builds their own (2026-10-01).
+5. **There is no stealth mode.** Recording is always indicated while it runs, and on desktop the order is detect → confirm →
+   record.
 
-### 규칙 (구 ADR)
+### Rules (formerly ADRs)
 
-코드 주석이 `ADR-0NN`으로 인용하는 결정들이다. 번호는 안정 계약이므로 유지하고, 내용은 현재 규칙만 적는다.
+These are the decisions code comments cite as `ADR-0NN`. The numbers are a stable contract and stay; the content states only
+the current rule.
 
-| 번호 | 규칙 |
+| Number | Rule |
 |---|---|
-| ADR-001 | 기기는 녹음하고 원본은 사용자의 Drive로 간다. 전사·전달은 사용자가 **자기 워크플로우에 직접 넣는 선택 단계**이지 고정된 후처리가 아니다. 요약은 파이프라인에 없다 — 구독형 에이전트가 못 하는 일(STT)만 파이프라인이 대신하고, 할 수 있는 일(텍스트 요약)은 에이전트 스킬(`skills/recly-notes/`)로 한다. (2026-09-24 개정: 사용자 워크플로우·웹훅 폐기 — 전사는 녹음 처리 설정의 로컬·외부 API·OFF 선택이다, §5) |
-| ADR-002 | 워크플로우를 실행하는 것은 Android 폰·iPhone·macOS·Windows다. Galaxy Watch는 Data Layer로, Apple Watch는 WatchConnectivity로 파일을 폰에 넘긴다. **워치에는 인증·네트워크 코드가 없다.** 셀룰러 워치 단독 업로드는 범위 밖 |
-| ADR-003 | 폰과 워치가 동시에 녹음하면 파일도 둘이고 서로 연결하지 않는다. `recordingId`는 기기별 독립 ULID이고 세션 연결(session id)은 없다 |
-| ADR-004 | 워크플로우 엔진·Drive 클라이언트·웹훅·동기화·잡 큐는 Kotlin Multiplatform `core/` 하나에 있다. 워크플로우 로직을 두 번 짜지 않는다. (웹훅은 2026-09-24 폐기) |
-| ADR-005 | 셸: Android/Wear는 Kotlin + Compose, iOS·watchOS·macOS는 SwiftUI + KMP XCFramework, Windows는 Compose Desktop(JVM) + Rust 캡처 헬퍼 |
-| ADR-006 | 오디오는 AAC-LC `.m4a`, 16 kHz 모노 32 kbps, 명목 900초 세그먼트. 모바일·워치는 `mono` 한 트랙, 데스크톱은 `mic`·`sys`·`mix` 세 트랙 |
-| ADR-007 | 워크플로우 정의는 **기기 로컬 문서** 하나이고 백엔드도 동기화도 없다. 기기 간 이동은 설정의 내보내기/가져오기(§5) — 파일 포맷은 문서 직렬화 그대로다 (폐기 2026-09-24) |
-| ADR-008 | 워크플로우 JSON에는 시크릿 **이름**(`secretRef`)만 들어가고 값은 기기별 보안 저장소에 있다. 값이 없는 기기에서 그 단계는 `MISSING_SECRET`으로 실패한다. 값은 동기화되지 않으며 내보내기 파일에도 절대 들어가지 않는다 — 키는 기기마다 입력한다. (2026-09-24: 워크플로우 JSON 폐기 — 같은 규칙이 녹음 처리 설정의 `secretRef`에 적용된다) |
-| ADR-009 | OAuth 스코프는 `drive.file` 하나이고 동의 화면은 Production이다. 전체 `drive` 스코프를 요청하지 않는다 |
-| ADR-010 | 웹훅 서명은 Standard Webhooks 그대로다 (폐기 2026-09-24) |
-| ADR-011 | **회의에 봇을 넣지 않는다.** 마이크 사용·회의 앱으로 감지하고 사용자가 한 번 눌러 녹음한다. 자동 녹음은 없다. 참가자별 스트림은 없고 "나 vs 상대" 두 트랙이 상한이다 |
-| ADR-012 | 단계 타입은 `drive.upload` · `webhook` · `transcribe` 셋이다(`schema: 3`). `deliver.*`(Notion·Telegram)는 없다. (2026-09-24: `webhook` 폐기. 사용자가 고르는 단계는 없고 고정 계획이 `drive.upload`·`transcribe` 또는 `local.transcribe`·`transcript.publish`를 만든다) |
-| ADR-013 | 단계별 조건식(`if`)은 없다. 워크플로우 수준의 `minDurationSec` 하나뿐이다 |
-| ADR-014 | Drive 배치는 녹음당 폴더 하나 — `{folder}/{base}/` 아래 파트 파일들과 `meta.json` |
-| ADR-015 | resumable 업로드는 **프로토콜(코어의 순수 함수)과 전송(플랫폼)이 분리**되어 있다. Apple은 배경 `URLSession`으로 전송을 교체한다 |
-| ADR-016 | 기기마다 **사용 중인 워크플로우 하나**를 고른다 — 로컬에만 있고 동기화되지 않는 포인터이고, 이 기기의 모든 녹음(수동·회의 감지·워치)이 그것을 실행한다. 피커에서 고르는 행위가 곧 이 포인터를 바꾸는 것이며 녹음 단위의 임시 선택은 없다(2026-09-02: 이전의 "기본 (이름)" 항목과 "기본" 어휘를 폐기 — 같은 워크플로우가 두 항목으로 보였다). 공유 문서에는 `enabled`·`isDefault`·`trigger.sources`가 없고, 소스 필터도 `updatedAt` 최신 폴백도 없다. 선택이 없거나 가리키는 워크플로우가 사라졌으면 아무것도 실행하지 않고 셸이 "워크플로우를 선택하세요"라고 묻는다. 사용 중인 워크플로우는 먼저 다른 워크플로우를 선택해야 삭제할 수 있다 (폐기 2026-09-24) |
-| ADR-017 | 로컬 원본은 **업로드가 성공했을 때만** 지운다. 웹훅만 있는 워크플로우나 `continue`로 지나간 실패 업로드는 원본을 보관한다. **2026-09-03 개정**: 업로드 성공 후에도 **7일**은 남긴다(고정값, 설정 UI 없음) — 로컬 파트는 기간이 있는 캐시다. 매 잡 패스의 보관 스윕이 "모든 잡 DONE + 업로드 전부 성공 + 파일 mtime과 마지막 DONE 시각 둘 다 7일 경과"인 녹음의 파트를 지운다. 상세 화면이 재생할 때 로컬에 없는 파트는 업로드 출력의 `fileId`로 Drive에서 다시 받아 같은 이름으로 두고(sha256 검증), 그 파트는 다시 7일을 받는다. 업로드된 적 없는 파트는 영원히 보관 |
-| ADR-018 | 제품명은 **Recly**(식별자 `recly`). Android `app.recly`·Kotlin 패키지 `recly.core`, Apple 번들 `app.recly`/`app.recly.watch`/`app.recly.mac`, XCFramework `ReclyCore`. 사용자에게 보이지 않는 계약(파일명 `{base}`, 웹훅 `user-agent: rec/…`, 로그 이벤트 `rec.*`, 기기 저장 경로 `files/rec`·`rec.db`, Data Layer 경로 `/rec/…`)은 `rec` 그대로다 |
-| ADR-019 | Windows 인코딩은 **번들 ffmpeg**(LGPL 동적 링크, 무수정, 별도 프로세스)다. Media Foundation AAC MFT는 입력 44.1/48 kHz·출력 96 kbps 이상만 받아 ADR-006의 16 kHz·32 kbps를 낼 수 없다. MF 경로는 `--encoder mf`로 남아 있고 기본값이 아니다 |
-| ADR-020 | Drive 기본 폴더 최상단은 **`recly/`**다 — `drive.upload`의 `folder` 기본값 `recly/{{yyyy}}/{{yyyy}}-{{MM}}`, "메모" 기본 워크플로우 `recly/memo/{{yyyy}}-{{MM}}` |
-| ADR-021 | `transcribe`(STT + 화자분리)는 **잡을 실행하는 기기가 사용자의 키로 provider API를 직접 호출**한다. 중간 서버·릴레이·콜백 URL은 없다 |
-| ADR-022 | **텔레메트리가 없다.** 분석·사용 통계·크래시 리포팅·원격 로그 수집·원격 설정·A/B·광고 식별자를 넣지 않는다. 어떤 셸에도 Firebase/Crashlytics/Sentry/AppCenter 계열 의존성이 없다. 로그는 기기 로컬 플랫폼 로그에만 남고 사용자가 직접 내보낼 때만 기기를 떠난다 |
-| ADR-023 | **녹음 목록은 Drive가 정본이다**(2026-09-04). 같은 계정의 다른 기기가 올린 녹음은 이 기기의 목록에도 나타난다 — 별도 색인 파일이나 서버 없이, 앱이 `recordingId`를 찍어 둔 `{base}/` 폴더(ADR-014)를 Drive에서 나열해 `meta.json`을 읽어 온다(§3 "다른 기기의 녹음"). 그 행은 이 기기에 Job도 원본도 없고 재생 시 Drive에서 받아 캐시한다. `meta.json`이 아직 없는 폴더도 목록에 나온다 — "다른 기기가 업로드 중"인 잠정 행으로. Drive에서 사라지면 행도 사라진다. 이 기기가 직접 만든 행은 Drive가 뭐라 하든 건드리지 않는다. iCloud를 고른 기기는 iCloud 폴더도 같은 규칙으로 나열한다(ADR-024) |
-| ADR-024 | **저장소는 기기마다 고른다**(2026-10-02). 기본은 Google Drive이고 iPhone·Mac은 설정에서 iCloud(앱의 iCloud Drive 폴더)로 바꿀 수 있다. Android 폰·갤럭시 워치·Windows는 Drive만 쓴다. 녹음은 시작할 때 고정한 저장소로 올라가고, 올라간 녹음은 옮기지 않는다. iCloud는 Drive와 같은 배치에 폴더 속성 파일 하나를 더하고, 업로드는 iCloud가 받았다고 할 때 끝난다(§3 "저장 위치") |
+| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) |
+| ADR-002 | The Android phone, iPhone, macOS and Windows run workflows. Galaxy Watch hands files to the phone over the Data Layer, Apple Watch over WatchConnectivity. **The watches have no authentication or network code.** Standalone upload from a cellular watch is out of scope |
+| ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
+| ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
+| ADR-005 | Shells: Android/Wear are Kotlin + Compose, iOS · watchOS · macOS are SwiftUI + KMP XCFramework, Windows is Compose Desktop (JVM) + a Rust capture helper |
+| ADR-006 | Audio is AAC-LC `.m4a`, 16 kHz mono 32 kbps, nominal 900-second segments. Mobile and watch have one track, `mono`; desktop has three tracks, `mic` · `sys` · `mix` |
+| ADR-007 | Workflow definitions are a single **device-local document**, with no backend and no sync. Moving them between devices is the settings export/import (§5) — the file format is the document serialization as is (retired 2026-09-24) |
+| ADR-008 | Workflow JSON carries only the secret's **name** (`secretRef`); the value is in each device's secure storage. On a device without the value, that step fails with `MISSING_SECRET`. Values are not synchronized and never go into an export file — keys are entered on each device. (2026-09-24: workflow JSON retired — the same rule applies to `secretRef` in the recording processing settings) |
+| ADR-009 | The only OAuth scope is `drive.file`, and the consent screen is in Production. The full `drive` scope is never requested |
+| ADR-010 | Webhook signatures follow Standard Webhooks as is (retired 2026-09-24) |
+| ADR-011 | **No bot joins the meeting.** Detection uses microphone use and meeting apps, and the user records with one tap. There is no automatic recording. There are no per-participant streams; two tracks, "me vs. the other side", are the limit |
+| ADR-012 | There are three step types: `drive.upload` · `webhook` · `transcribe` (`schema: 3`). There is no `deliver.*` (Notion · Telegram). (2026-09-24: `webhook` retired. The user picks no steps; the fixed plan builds `drive.upload` · `transcribe` or `local.transcribe` · `transcript.publish`) |
+| ADR-013 | There are no per-step conditions (`if`). There is only the one workflow-level `minDurationSec` |
+| ADR-014 | The Drive layout is one folder per recording — the part files and `meta.json` under `{folder}/{base}/` |
+| ADR-015 | Resumable upload **separates the protocol (pure functions in the core) from the transport (the platform)**. Apple replaces the transport with a background `URLSession` |
+| ADR-016 | Each device picks **one workflow in use** — a pointer that exists only locally and is not synchronized, and every recording on this device (manual, meeting detection, watch) runs it. Picking in the picker is what changes this pointer; there is no temporary per-recording choice (2026-09-02: the earlier "Default (name)" entry and the "default" wording were retired — the same workflow showed up as two entries). The shared document has no `enabled` · `isDefault` · `trigger.sources`, and there is neither a source filter nor a latest-`updatedAt` fallback. If there is no selection, or the workflow it points to is gone, nothing runs and the shell asks "Choose a workflow". The workflow in use can be deleted only after another workflow is selected first (retired 2026-09-24) |
+| ADR-017 | The local original is deleted **only when the upload succeeded**. A webhook-only workflow, or a failed upload passed over with `continue`, keeps the original. **Revised 2026-09-03**: even after a successful upload it stays for **7 days** (fixed value, no settings UI) — local parts are a cache with an expiry. The retention sweep on every job pass deletes the parts of a recording that meets "all jobs DONE + every upload succeeded + 7 days past both the file mtime and the last DONE time". When the detail screen plays a part that is not local, it downloads the part again from Drive by the upload output's `fileId` and stores it under the same name (sha256 verified), and that part gets another 7 days. A part that was never uploaded is kept forever |
+| ADR-018 | The product name is **Recly** (identifier `recly`). Android `app.recly` · Kotlin package `recly.core`, Apple bundles `app.recly`/`app.recly.watch`/`app.recly.mac`, XCFramework `ReclyCore`. Contracts the user does not see (file name `{base}`, webhook `user-agent: rec/…`, log events `rec.*`, device storage paths `files/rec` · `rec.db`, Data Layer paths `/rec/…`) stay `rec` |
+| ADR-019 | Windows encoding uses the **bundled ffmpeg** (LGPL dynamic linking, unmodified, separate process). The Media Foundation AAC MFT accepts only 44.1/48 kHz input and 96 kbps or higher output, so it cannot produce ADR-006's 16 kHz · 32 kbps. The MF path remains as `--encoder mf` and is not the default |
+| ADR-020 | The top of the default Drive folder is **`recly/`** — the `drive.upload` `folder` default `recly/{{yyyy}}/{{yyyy}}-{{MM}}`, and `recly/memo/{{yyyy}}-{{MM}}` for the "Memo" default workflow |
+| ADR-021 | In `transcribe` (STT + speaker diarization), **the device running the job calls the provider API directly with the user's key**. There is no intermediate server, relay or callback URL |
+| ADR-022 | **There is no telemetry.** No analytics, usage statistics, crash reporting, remote log collection, remote config, A/B testing or advertising identifiers. No shell has a Firebase/Crashlytics/Sentry/AppCenter-family dependency. Logs stay only in the device-local platform log and leave the device only when the user exports them |
+| ADR-023 | **Drive is the source of truth for the recording list** (2026-09-04). Recordings uploaded by another device on the same account also appear in this device's list — with no separate index file or server, the app lists in Drive the `{base}/` folders (ADR-014) it stamped with a `recordingId` and reads their `meta.json` (§3 "Recordings from other devices"). Such a row has no Job and no original on this device; playback downloads from Drive and caches. A folder that has no `meta.json` yet also appears in the list — as a provisional "Uploading on another device" row. When it disappears from Drive, the row disappears too. Rows this device created itself are left alone whatever Drive says. A device that chose iCloud lists the iCloud folder by the same rules (ADR-024) |
+| ADR-024 | **Each device picks its storage** (2026-10-02). The default is Google Drive; iPhone and Mac can switch to iCloud (the app's iCloud Drive folder) in Settings. The Android phone, Galaxy Watch and Windows use Drive only. A recording uploads to the storage fixed when it started, and an uploaded recording is not moved. iCloud adds one folder-properties file to the same layout as Drive, and an upload ends when iCloud says it has received it (§3 "Storage location") |
 
-이 규칙들을 뒤집으려면 이 문서를 고치는 것으로 끝나지 않는다. 특히 ADR-022를 뒤집으면
-`docs/policy/privacy-policy.md`와 Play "데이터 안전" 양식·App Store 개인정보 라벨을 함께 고쳐야 한다.
+Reversing these rules does not end with editing this document. Reversing ADR-022 in particular means also changing
+`docs/policy/privacy-policy.md`, the Play "Data safety" form and the App Store privacy labels.
 
 ---
 
-## 1. 아키텍처 (구 docs/01)
+## 1. Architecture (formerly docs/01)
 
-### 시스템 그림
+### System picture
 
 ```
  ┌─ Capture ─────────────────────────────────────────────────────────────────┐
- │ Galaxy Watch   Android 폰   Apple Watch   iPhone   macOS         Windows   │
+ │ Galaxy Watch   Android phone Apple Watch   iPhone   macOS         Windows │
  │ MediaRecorder  MediaRecorder AVAudioEngine AVAudioEngine  CoreAudio tap  WASAPI │
  └──────┬─────────────┬───────────┬────────────┬──────────┬────────────┬─────┘
         │ Data Layer  │           │ WCSession  │          │            │
         │ ChannelClient           │ transferFile          │            │
         ▼             │           ▼            │          │            │
-   (폰이 수신·ack)    │      (폰이 수신·ack)    │          │            │
+ (phone receives·ack) │   (phone receives·ack) │          │            │
                       ▼                        ▼          ▼            ▼
- ┌─ Executor (기기 로컬) ─────────────────────────────────────────────────────┐
- │  Job(recording × workflow) → step 1 → step 2 → … ; 상태는 로컬 SQLite     │
+ ┌─ Executor (device-local) ──────────────────────────────────────────────────┐
+ │  Job(recording × workflow) → step 1 → step 2 → … ; state in local SQLite   │
  │  KMP core: workflow · job · drive · transcribe · sync · storage            │
  └───────────────┬───────────────────────────────────────────┬────────────────┘
                  │                                           │
                  ▼                                           ▼
-   Google Drive  {folder}/{base}/ parts + meta.json      STT provider (외부 API 전사일 때)
-   또는 iCloud(iPhone·Mac, ADR-024) — 같은 배치
+   Google Drive  {folder}/{base}/ parts + meta.json      STT provider (for external API transcription)
+   or iCloud (iPhone·Mac, ADR-024) — same layout
 ```
 
-### 구성 요소
+### Components
 
-| 구성 요소 | 위치 | 책임 |
+| Component | Location | Responsibility |
 |---|---|---|
-| Recorder | 플랫폼별 | 마이크 캡처(시스템 오디오는 데스크톱 회의 모드만), 세그먼트 파일 작성, 무음화 감지, `meta.json` 작성 |
-| Transfer | Wear/watchOS ↔ 폰 | 파트·메타 전송, sha256 검증, ack, ack 후 워치 측 삭제 |
-| Core | `core/` KMP | 녹음 처리 설정·고정 계획 컴파일, 잡 큐, 단계 실행, Drive resumable, 전사 provider 어댑터, 설정 내보내기/가져오기 |
-| Scheduler 어댑터 | 플랫폼별 | 코어의 `runDueJobs()`를 WorkManager / 배경 URLSession + BGTask / 트레이·메뉴바 타이머에서 호출 |
-| Auth 어댑터 | 폰·데스크톱 | Google OAuth, access token 공급(`TokenProvider`) |
-| UI | 플랫폼별 | 녹음 시작·정지, 녹음 처리 설정(폰·데스크톱), 녹음 목록·상태 |
+| Recorder | Per platform | Microphone capture (system audio only in desktop meeting mode), writing segment files, detecting silenced input, writing `meta.json` |
+| Transfer | Wear/watchOS ↔ phone | Transferring parts and meta, sha256 verification, ack, deletion on the watch side after the ack |
+| Core | `core/` KMP | Recording processing settings and compiling the fixed plan, job queue, step execution, Drive resumable, transcription provider adapters, settings export/import |
+| Scheduler adapter | Per platform | Calls the core's `runDueJobs()` from WorkManager / background URLSession + BGTask / a tray or menu bar timer |
+| Auth adapter | Phone · desktop | Google OAuth, supplying the access token (`TokenProvider`) |
+| UI | Per platform | Recording start/stop, recording processing settings (phone · desktop), recording list and status |
 
-### 녹음 생명주기
+### Recording lifecycle
 
 ```
- start ──► Recording{id, source, workflowId, startedAt}   (로컬 DB, status=recording)
-   │        parts 작성: p001, p002 … (세그먼트마다 sha256, bytes 기록)
-   │        meta.json 갱신 (세그먼트 경계마다)
+ start ──► Recording{id, source, workflowId, startedAt}   (local DB, status=recording)
+   │        parts written: p001, p002 … (sha256 and bytes recorded per segment)
+   │        meta.json updated (at every segment boundary)
  stop ───► finalize: endedAt, durationSec, status=finalized
    │
-   ├─ 폰·데스크톱 ─► Job 생성 {recordingId, workflowId, steps[] 상태=PENDING}
-   │                 Scheduler 어댑터가 runDueJobs() 호출
-   │                 step 순서대로 실행 · 각 step 상태 영속 · 실패 시 backoff 후 재시도
-   │                 모든 step 종료 → Job DONE
-   │                 → 보관 규칙(ADR-017): 이 녹음의 모든 Job이 DONE이고 그중 하나가
-   │                   drive.upload를 전부 SUCCEEDED시킨 뒤 **7일이 지나면** 매 패스의 보관 스윕이
-   │                   로컬 파트를 지운다(아니면 보관 + 목록에 "업로드 안 됨"; meta.json·DB 행은 항상
-   │                   보관). 지워진 파트는 상세의 재생이 Drive에서 다시 받아 7일간 캐시한다
+   ├─ phone·desktop ─► Job created {recordingId, workflowId, steps[] state=PENDING}
+   │                   Scheduler adapter calls runDueJobs()
+   │                   steps run in order · each step's state persisted · on failure, retry after backoff
+   │                   all steps finished → Job DONE
+   │                   → retention rule (ADR-017): once all of this recording's Jobs are DONE and one of them
+   │                     has SUCCEEDED every drive.upload, **after 7 days** the retention sweep on each pass
+   │                     deletes the local parts (otherwise kept + "Not uploaded" in the list; meta.json and
+   │                     the DB row are always kept). Playback in the detail screen downloads a deleted part
+   │                     again from Drive and caches it for 7 days
    │
-   └─ 워치 ───────► Transfer 큐 {recordingId, parts[]}
-                    폰 연결 시 파트별 전송 → 폰이 sha256 검증 후 ack
-                    전부 ack → 워치 삭제, 폰이 Job 생성(위와 동일)
+   └─ watch ──────► Transfer queue {recordingId, parts[]}
+                    when the phone connects, transfer per part → the phone verifies sha256, then acks
+                    all acked → the watch deletes, the phone creates the Job (same as above)
 ```
 
-불변 조건:
+Invariants:
 
-- 파트 파일은 같은 녹음의 모든 Job이 DONE이고 그중 하나가 `drive.upload` 단계를 전부 성공시키기 전까지 삭제되지
-  않는다(ADR-017, §3 보관 · 삭제).
-- 워치 파트는 폰 ack 전까지 삭제되지 않는다.
-- `Job`은 `(recordingId, workflowId)`로 유일하다. 같은 녹음에 워크플로우를 다시 돌리면 새 Job이 아니라 기존 Job의
-  실패 단계부터 재개한다.
+- Part files are not deleted until every Job of the same recording is DONE and one of them has succeeded in all of its
+  `drive.upload` steps (ADR-017, §3 Retention · deletion).
+- Watch parts are not deleted before the phone's ack.
+- A `Job` is unique by `(recordingId, workflowId)`. Running a workflow again on the same recording does not create a new
+  Job; it resumes the existing Job from its failed step.
 
-### 식별자·시간
+### Identifiers · time
 
-- `recordingId` · `workflowId` · `jobId` · `stepRunId`: ULID(26자, Crockford base32). 코어에서 생성.
-- `deviceId`: 설치 시 생성한 UUID v4, 보안 저장소(macOS만 `{dataDir}/device.id`)에 보관. 재설치 시 새 값.
-- 모든 시각은 UTC ISO-8601(`2026-08-26T01:00:00.000Z`). 표시용 타임존은 메타의 `timezone`.
-- 파일명의 시각은 UTC 컴팩트(`20260826T010000Z`).
+- `recordingId` · `workflowId` · `jobId` · `stepRunId`: ULID (26 characters, Crockford base32). Generated in the core.
+- `deviceId`: a UUID v4 generated at install, kept in secure storage (`{dataDir}/device.id` on macOS only). A reinstall
+  gets a new value.
+- All times are UTC ISO-8601 (`2026-08-26T01:00:00.000Z`). The time zone for display is the meta's `timezone`.
+- Times in file names are compact UTC (`20260826T010000Z`).
 
-### 저장소 레이아웃
+### Repository layout
 
 ```
 rec/
-  core/                       KMP 모듈 (:core) — §10
+  core/                       KMP module (:core) — §10
   android/
-    app/                      폰 앱
-    wear/                     Galaxy Watch 앱
-    recording/                MediaRecorder 기반 SegmentedRecorder + RecorderService (폰·워치 공용)
-    datalayer/                폰↔워치 Data Layer 경로·JSON 계약 (양쪽이 함께 쓴다)
+    app/                      phone app
+    wear/                     Galaxy Watch app
+    recording/                MediaRecorder-based SegmentedRecorder + RecorderService (shared by phone and watch)
+    datalayer/                phone↔watch Data Layer paths and JSON contract (used by both sides)
   apple/
     Rec.xcworkspace
-    RecKit/                   Swift 패키지: Recorder, MacCapture, Detect, Transfer, Auth, Transport, Workflow, CoreBridge
+    RecKit/                   Swift package: Recorder, MacCapture, Detect, Transfer, Auth, Transport, Workflow, CoreBridge
     RecMac/ RecPhone/ RecWatch/
   windows/
     app/                      Compose Desktop
-    capture-helper/           Rust (wasapi) — 캡처·감지, JSON lines로 상태 보고
-  spec/                       JSON Schema + 예제 (계약)
-  scripts/                    아이콘 렌더링
-  docs/                       이 문서 + 개인정보처리방침 + 아이콘 마스터
+    capture-helper/           Rust (wasapi) — capture and detection, reports status as JSON lines
+  spec/                       JSON Schema + examples (the contract)
+  scripts/                    icon rendering
+  docs/                       this document + privacy policy + icon master
 ```
 
-빌드 도구: Gradle 래퍼(`core`·`android:*`·`windows/app`), Xcode(`apple`), Cargo(`windows/capture-helper`),
-Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:windows:app`를 포함하고,
-`apple`은 `:core:assembleXCFramework` 산출물을 SwiftPM binary target으로 참조한다.
+Build tools: the Gradle wrapper (`core` · `android:*` · `windows/app`), Xcode (`apple`), Cargo (`windows/capture-helper`),
+Node (`spec` validation). The root `settings.gradle.kts` includes `:core`, `:android:*` and `:windows:app`, and `apple`
+references the `:core:assembleXCFramework` output as a SwiftPM binary target.
 
-### 코어 ↔ 셸 경계 (the core ↔ shell boundary)
+### The core ↔ shell boundary
 
-**셸이 코어에 주는 것**(`CoreDeps`):
+**What the shells give the core** (`CoreDeps`):
 
-- `SecureStore` — 토큰·시크릿 읽기/쓰기(네임스페이스별)
-- `TokenProvider` — 유효한 access token 반환(만료 시 갱신은 셸 책임)
-- `FileSystem` — okio `FileSystem` + 앱 데이터 디렉터리
-- `Transport` — 기본 Ktor. Apple은 배경 URLSession 구현으로 교체 가능(ADR-015)
-- `UbiquityContainer` — 앱의 iCloud 컨테이너(선택). iCloud 권한으로 서명한 iPhone·Mac 빌드만 준다(§3 "저장 위치")
-- `AudioTools` — `concat`(파트 무손실 remux, §8)
-- `Clock`, `Logger`, `DeviceInfo{deviceId, platform, name}`, `io` 디스패처
+- `SecureStore` — reading/writing tokens and secrets (per namespace)
+- `TokenProvider` — returns a valid access token (refreshing on expiry is the shell's job)
+- `FileSystem` — okio `FileSystem` + the app data directory
+- `Transport` — Ktor by default. Apple can replace it with a background URLSession implementation (ADR-015)
+- `UbiquityContainer` — the app's iCloud container (optional). Only iPhone and Mac builds signed with the iCloud
+  entitlement provide it (§3 "Storage location")
+- `AudioTools` — `concat` (lossless remux of parts, §8)
+- `Clock`, `Logger`, `DeviceInfo{deviceId, platform, name}`, the `io` dispatcher
 
-**코어가 셸에 주는 것**(`ReclyCore(deps, driverFactory)` — 셸이 SQLDelight 드라이버를 열어 넘긴다):
+**What the core gives the shells** (`ReclyCore(deps, driverFactory)` — the shell opens the SQLDelight driver and passes it
+in):
 
-- `recordings` — 녹음 등록, 파트 추가, finalize, 목록, `delete`
-- `processingSettings` — 녹음 처리 설정 읽기·저장·가져오기(§5 "고정 처리 설정 도입"). 옛 `workflows`(문서·선택 규칙)는 폐기(2026-09-24)
-- `jobs` — `enqueue(recordingId, chosenWorkflowId?)`, `runDueJobs(now)`, `retry(jobId)`, 상태 관찰
-- `secrets` — `SecretsRepository.put/delete/get/names`(값 쓰기의 **유일한** 입구, §5)
+- `recordings` — registering a recording, adding parts, finalize, list, `delete`
+- `processingSettings` — reading, saving and importing the recording processing settings (§5 "Fixed processing settings").
+  The old `workflows` (document · selection rules) was retired (2026-09-24)
+- `jobs` — `enqueue(recordingId, chosenWorkflowId?)`, `runDueJobs(now)`, `retry(jobId)`, observing status
+- `secrets` — `SecretsRepository.put/delete/get/names` (the **only** entry point for writing values, §5)
 - `secretSync` — `setup`/`disable`/`status`
-- `transfer` — 워치→폰 수신 측 검증·ack 도우미(송신은 플랫폼 API라 셸)
-- `disconnect(alsoDeleteRecordings)` — 연결 해제의 로컬 정리 절반
+- `transfer` — helpers for watch→phone receiver-side verification and ack (sending is a platform API, so it is in the
+  shell)
+- `disconnect(alsoDeleteRecordings)` — the local-cleanup half of disconnecting
 
-셸은 오디오 캡처·전송 API·스케줄러·UI만 갖는다. **워크플로우 의미론은 절대 셸에 두지 않는다.**
+The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
-셸로 나가는 모든 `suspend` 진입점에는 `@Throws(Throwable::class)`가 붙는다 — Kotlin/Native는 선언되지 않은
-예외가 export된 suspend 함수를 벗어나면 프로세스를 죽인다.
+Every `suspend` entry point exposed to the shells carries `@Throws(Throwable::class)` — Kotlin/Native kills the process when
+an undeclared exception escapes an exported suspend function.
 
 ---
 
-## 2. 워크플로우 계약 (구 docs/02)
+## 2. Workflow contract (formerly docs/02)
 
-> **폐기(2026-09-24)**: 사용자 편집형 워크플로우 문서(로컬 문서, 내보내기 파일 `recly-workflows.json`, schema 1..3)와
-> 그 스키마·예제(`spec/workflow.schema.json`, `spec/examples/workflows.json`)는 제거됐다. 녹음은 고정 처리
-> 계획(§5 "고정 처리 설정 도입")만 실행한다. `Workflow`/`Step` 모델은 그 계획과 잡 스냅샷(`job.workflow_json`)의
-> **내부 표현**으로만 남고, 사용자 문서도 공개 스키마도 아니다. 단계 공통 필드·`drive.upload`·`transcribe`의
-> 의미와 템플릿 변수는 그 내부 계획에 그대로 적용된다. 문서·선택·웹훅에 관한 소절은 기록이다.
+> **Retired (2026-09-24)**: The user-editable workflow document (the local document, the export file `recly-workflows.json`,
+> schema 1..3) and its schema and example (`spec/workflow.schema.json`, `spec/examples/workflows.json`) were removed. A
+> recording runs only the fixed processing plan (§5 "Fixed processing settings"). The `Workflow`/`Step` model remains only as
+> the **internal representation** of that plan and of the job snapshot (`job.workflow_json`); it is neither a user document
+> nor a public schema. The common step fields, the meaning of `drive.upload` and `transcribe`, and the template variables
+> apply to that internal plan unchanged. The subsections on the document, selection and webhooks are a record.
 
-### 문서 구조
+### Document structure
 
-> **폐기(2026-09-24)**: 사용자 문서가 없다(§2 머리말). 아래는 기록이다.
+> **Retired (2026-09-24)**: There is no user document (§2 preamble). What follows is a record.
 
 ```json
 {
@@ -248,50 +259,51 @@ Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:wi
 }
 ```
 
-| 필드 | 의미 |
+| Field | Meaning |
 |---|---|
-| `schema` | 현재 **3**. 앱이 지원하는 값보다 **큰** 문서를 만나면 파서가 `Invalid(UnsupportedSchema)`를 돌려주고 가져오기는 아무것도 쓰지 않는다. UI는 "앱을 업데이트하세요"(update the app)를 보인다. `MIN_SCHEMA`(=1)..2의 옛 문서(로컬 저장분·가져온 파일)는 현재 규칙으로 읽어 현재 schema로 저장한다(§5 스키마) |
-| `revision` | 쓸 때마다 +1. 병합 판단은 워크플로우별 `updatedAt`으로 하고 `revision`은 진단용 |
-| `updatedBy` | 마지막으로 쓴 기기의 `deviceId` |
+| `schema` | Currently **3**. When the parser meets a document **higher** than the app supports, it returns `Invalid(UnsupportedSchema)` and the import writes nothing. The UI shows "update the app". Old documents at `MIN_SCHEMA` (=1)..2 (stored locally or imported files) are read under the current rules and saved at the current schema (§5 Schema) |
+| `revision` | +1 on every write. Merge decisions use each workflow's `updatedAt`; `revision` is for diagnostics |
+| `updatedBy` | The `deviceId` of the device that wrote last |
 
-### 워크플로우
+### Workflows
 
-> **2026-09-24**: 사용자가 만드는 워크플로우는 없다. 고정 계획의 `Workflow`는 고정 id(`ProcessingPlan.ID`)·`name`·
-> `minDurationSec`(녹음 처리 설정의 `storage.minDurationSec`)·`steps`를 가진 내부 값이다. 아래의 기기 포인터(ADR-016)
-> 서술은 폐기.
+> **2026-09-24**: There are no user-made workflows. The fixed plan's `Workflow` is an internal value with a fixed id
+> (`ProcessingPlan.ID`), `name`, `minDurationSec` (`storage.minDurationSec` in the recording processing settings) and
+> `steps`. The description of the device pointer (ADR-016) below is retired.
 
 ```json
 {
   "id": "01J9ABCDEF0123456789ABCDEF",
-  "name": "회의",
+  "name": "Meeting",
   "updatedAt": "2026-08-26T01:00:00.000Z",
   "minDurationSec": 30,
   "steps": [ …step ]
 }
 ```
 
-| 필드 | 의미 |
+| Field | Meaning |
 |---|---|
-| `name` | 1~40자. UI에서 프로필 이름으로 쓰이고 워치 버튼에 그대로 표시된다 |
-| `minDurationSec` | 이보다 짧은 녹음은 Job을 만들지 않고 `SKIPPED_SHORT`로 끝낸다(파일은 로컬 보관. 2026-09-02: 목록의 "지금 올리기"가 사라져 수동 업로드 경로는 없다 — 올리고 싶은 길이면 이 값을 낮춘다). 기본 0 |
-| `steps` | 1~10개, 순서대로 실행 |
+| `name` | 1–40 characters. Used in the UI as the profile name and shown as is on the watch button |
+| `minDurationSec` | A recording shorter than this creates no Job and ends as `SKIPPED_SHORT` (the files are kept locally. 2026-09-02: the list's "Upload now" is gone, so there is no manual upload path — if a length should be uploaded, lower this value). Default 0 |
+| `steps` | 1–10, run in order |
 
-문서에는 **정의만** 있다. 어떤 워크플로우를 이 기기가 기본으로 쓰는지는 기기 로컬 포인터이고 동기화되지 않는다
-(ADR-016, 원칙 2 "정의는 하나, 상태는 기기별"). `enabled`·`isDefault`·`trigger`(=`sources`)는 schema 3에서
-사라졌다 — 옛 문서의 그 필드들은 읽을 때 폐기되고 `trigger.minDurationSec`만 위로 올라온다(§5 스키마).
+The document holds **only definitions**. Which workflow this device uses by default is a device-local pointer and is not
+synchronized (ADR-016, principle 2 "one definition, per-device state"). `enabled` · `isDefault` · `trigger` (=`sources`)
+disappeared in schema 3 — those fields in old documents are discarded on read, and only `trigger.minDurationSec` moves up
+(§5 Schema).
 
-### 단계 (step)
+### Steps
 
-공통 필드:
+Common fields:
 
-| 필드 | 기본 | 의미 |
+| Field | Default | Meaning |
 |---|---|---|
-| `id` | 필수 | `^[a-z][a-z0-9_]{0,31}$`, 워크플로우 안에서 유일 |
-| `type` | 필수 | `drive.upload` \| `transcribe` \| `local.transcribe` \| `transcript.publish` (`webhook`은 2026-09-24 폐기) |
-| `onError` | `abort` | `abort`: 이후 단계 실행 안 함, Job FAILED. `continue`: 이 단계만 FAILED로 두고 다음 단계 진행 |
-| `retry.maxAttempts` | 8 | 1~20 |
-| `retry.initialDelaySec` | 30 | 지수 백오프 시작값 |
-| `retry.maxDelaySec` | 3600 | 백오프 상한. 지터 ±20% |
+| `id` | required | `^[a-z][a-z0-9_]{0,31}$`, unique within the workflow |
+| `type` | required | `drive.upload` \| `transcribe` \| `local.transcribe` \| `transcript.publish` (`webhook` retired 2026-09-24) |
+| `onError` | `abort` | `abort`: later steps do not run, Job FAILED. `continue`: only this step is left FAILED and the next step proceeds |
+| `retry.maxAttempts` | 8 | 1–20 |
+| `retry.initialDelaySec` | 30 | Starting value of the exponential backoff |
+| `retry.maxDelaySec` | 3600 | Backoff cap. Jitter ±20% |
 
 #### `drive.upload`
 
@@ -301,16 +313,18 @@ Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:wi
   "includeMeta": true }
 ```
 
-- `folder` — My Drive 루트 기준 경로 템플릿. 없는 폴더는 만든다. 기본 `recly/{{yyyy}}/{{yyyy}}-{{MM}}`(ADR-020).
-- 실제 배치는 `{folder}/{base}/` 아래(ADR-014, §3 Drive 배치).
-- 녹음에 있는 트랙은 전부 올린다. 고르는 옵션은 없다.
-- `includeMeta` — `meta.json` 업로드 여부. 기본 true.
-- 성공 조건: 모든 파트 + 메타가 Drive에 있고 `md5Checksum`이 로컬과 일치.
-- 멱등: 같은 `{base}` 폴더가 이미 있으면 재사용하고, 같은 이름·같은 md5 파일은 건너뛴다.
+- `folder` — a path template relative to the My Drive root. Missing folders are created. Default
+  `recly/{{yyyy}}/{{yyyy}}-{{MM}}` (ADR-020).
+- The actual layout is under `{folder}/{base}/` (ADR-014, §3 Drive layout).
+- Every track in the recording is uploaded. There is no option to choose.
+- `includeMeta` — whether to upload `meta.json`. Default true.
+- Success condition: every part + the meta is in Drive and `md5Checksum` matches the local copy.
+- Idempotent: if the same `{base}` folder already exists it is reused, and a file with the same name and the same md5 is
+  skipped.
 
 #### `webhook`
 
-> **폐기(2026-09-24)**: 웹훅 단계는 제거됐다(§4). 이전 빌드가 큐에 넣은 잡의 `webhook` 단계도 실행하지 않는다. 아래는 기록이다.
+> **Retired (2026-09-24)**: The webhook step was removed (§4). A `webhook` step in a job an earlier build queued does not run either. What follows is a record.
 
 ```json
 { "id": "hook", "type": "webhook",
@@ -318,11 +332,12 @@ Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:wi
   "secretRef": "hook_main" }
 ```
 
-- `url` — `https://` 필수. 예외로 `http://127.0.0.1`, `http://localhost`는 허용(로컬 n8n 등).
-- `secretRef` — 서명 키 이름. 없으면 서명 헤더 없이 보낸다.
-- payload·서명·재시도 규칙은 §4.
-- 이 단계 앞에 `drive.upload`가 있으면 payload의 `files[].drive`가 채워진다. 없으면 `drive`는 null. 앞선
-  `transcribe`가 성공했으면 결과 파일도 `files[]`에 들어간다.
+- `url` — `https://` required. As an exception, `http://127.0.0.1` and `http://localhost` are allowed (local n8n and the
+  like).
+- `secretRef` — the signing key name. Without it, the request is sent without signature headers.
+- Payload, signature and retry rules are in §4.
+- If a `drive.upload` precedes this step, the payload's `files[].drive` is filled in; otherwise `drive` is null. If an
+  earlier `transcribe` succeeded, its result files also go into `files[]`.
 
 #### `transcribe`
 
@@ -331,103 +346,107 @@ Node(`spec` 검증). 루트 `settings.gradle.kts`가 `:core`, `:android:*`, `:wi
   "language": "ko", "diarize": true, "speakers": { "min": 2, "max": 6 } }
 ```
 
-필드·provider·결과 파일·폴링 규칙은 §8. 순서 제약: `transcribe`는 앞에 `drive.upload`가 있어야 한다(검증 오류
-`TranscribeNeedsUpload`).
+Fields, providers, result files and polling rules are in §8. Ordering constraint: `transcribe` needs a `drive.upload` before
+it (validation error `TranscribeNeedsUpload`).
 
-### 템플릿 변수
+### Template variables
 
-> **2026-09-24**: 녹음 처리 설정의 폴더(`storage.folder`)는 `title`·`workflowName`을 쓸 수 없다(§5 "고정 처리 설정 도입").
+> **2026-09-24**: The folder in the recording processing settings (`storage.folder`) cannot use `title` or `workflowName` (§5 "Fixed processing settings").
 
-`{{ }}` 안에 아래 이름만 허용한다. 알 수 없는 변수는 검증 오류다.
+Only the names below are allowed inside `{{ }}`. An unknown variable is a validation error.
 
-| 변수 | 값 |
+| Variable | Value |
 |---|---|
-| `yyyy` `MM` `dd` `HH` `mm` | 녹음 `startedAt`을 메타의 `timezone`으로 변환한 값 |
-| `title` | 메타 `title`, 없으면 워크플로우 `name` |
+| `yyyy` `MM` `dd` `HH` `mm` | The recording's `startedAt` converted to the meta's `timezone` |
+| `title` | The meta `title`, or the workflow `name` if there is none |
 | `source` | `watch` / `phone` / `desktop` |
-| `recordingId` | 전체 ULID |
-| `workflowName` | 워크플로우 `name` |
-| `device` | 메타 `deviceName` |
+| `recordingId` | The full ULID |
+| `workflowName` | The workflow `name` |
+| `device` | The meta `deviceName` |
 
-경로에 쓰일 때 `/`, `\`, 제어문자는 `_`로 치환하고 앞뒤 공백을 제거한다.
+When used in a path, `/`, `\` and control characters are replaced with `_`, and leading and trailing whitespace is trimmed.
 
-### 선택 규칙 (ADR-016)
+### Selection rules (ADR-016)
 
-> **폐기(2026-09-24)**: 선택할 워크플로우가 없다. 모든 녹음은 고정 계획을 실행하며 기기 포인터·시딩 추측·워크플로우
-> 목록 UI 규칙은 없어졌다. 아래는 기록이다.
+> **Retired (2026-09-24)**: There is no workflow to select. Every recording runs the fixed plan, and the device pointer, the
+> seeding guess and the workflow list UI rules are gone. What follows is a record.
 
-1. 녹음 시작(또는 정지) 시 호출자가 넘긴 `workflowId`가 문서에서 **해석되면** 그것. 셸은 이 자리를 **비워
-   보낸다**(2026-09-02: 녹음 단위 임시 선택은 UI에서 사라졌다) — 코어 규칙으로는 남겨 두어 테스트·하네스가 특정
-   워크플로우를 지정해 돌릴 수 있다.
-2. 없거나 해석되지 않으면 **이 기기에서 사용 중인 워크플로우**(기기 포인터)가 해석될 때 그것.
-3. 둘 다 아니면 Job을 만들지 않고 녹음은 `NO_WORKFLOW` 상태로 목록에 남는다.
+1. The `workflowId` the caller passes at recording start (or stop), if it **resolves** in the document. The shells **send
+   this slot empty** (2026-09-02: the temporary per-recording choice is gone from the UI) — it stays as a core rule so tests
+   and harnesses can run a specific workflow.
+2. If it is absent or does not resolve, **the workflow in use on this device** (the device pointer), if it resolves.
+3. If neither, no Job is created and the recording stays in the list in the `NO_WORKFLOW` state.
 
-소스 필터도, `updatedAt` 최신 폴백도 없다. 기기 포인터와 정의는 모두 로컬이다. **사용 중인 워크플로우의
-삭제 버튼은 비활성화**하며, 별도 안내 문구를 행에 붙이지 않는다. 삭제 처리에서도
-최신 기기 포인터를 확인한다. 하나뿐이면 새 워크플로우를 만든 뒤 선택해야 기존 것을 삭제할 수 있다.
-가져오기로 문서를 교체해 선택한 정의가 사라지면 포인터를 비우고 목록·녹음 화면에 "워크플로우를 선택하세요"를 띄운다.
+There is neither a source filter nor a latest-`updatedAt` fallback. The device pointer and the definitions are both local.
+**The delete button of the workflow in use is disabled**, and no separate explanatory text is attached to the row. Deletion
+processing also checks the latest device pointer. If there is only one workflow, a new one has to be created and selected
+before the existing one can be deleted. When an import replaces the document and the selected definition disappears, the
+pointer is cleared and the list and recording screens show "Choose a workflow".
 
-워크플로우 목록 상단에는 개수 숫자를 표시하지 않는다. 생성 버튼은 `+ 새 워크플로우`이며, 기호와 문구를
-하나의 터치 대상으로 제공한다. 공용 시크릿 목록에는 이름 조회·삭제만 두고, 추가는 워크플로우 내부의 전사·웹훅
-단계에서만 제공한다. 모바일 행의 삭제 버튼과 폼 작업은 오른쪽에 배치한다. 데스크톱도 같은 생성 경로와 삭제
-제한을 적용한다.
+The top of the workflow list shows no count. The create button is `+ New workflow`, offering the symbol and the label as one
+touch target. The shared secrets list offers only viewing names and deleting; adding is offered only in the transcription
+and webhook steps inside a workflow. On mobile, a row's delete button and form actions are placed on the right. Desktop
+applies the same creation path and deletion restriction.
 
-시딩 기기의 초기 포인터는 **되돌릴 수 있는 추측**이다: 셸이 `seed(선호 스타터)`를 부르면 즉시 적용되지만(첫
-기기는 오프라인에서도 동작해야 한다) 추측으로 기록되고, 첫 결정적 동기화가 판정한다 — 원격 문서를 **입양**하면
-추측을 회수하고(사용자가 이미 바꾼 포인터는 건드리지 않는다), 이 기기의 push/게시가 확정한다. 입양은
-`seededHere`도 지우므로 입양 뒤의 `seed()`는 아예 추측하지 않는다. 기본이 정해지기 **전에** 큐에 들어간
-녹음(복구·입양 직후 등)은 `NO_WORKFLOW`로 파킹되고 기존 수동 실행 경로를 따른다 — 재큐잉은 없다.
+The seeding device's initial pointer is a **revocable guess**: when the shell calls `seed(preferred starter)` it takes effect
+immediately (the first device has to work offline too) but is recorded as a guess, and the first decisive sync settles it —
+**adopting** the remote document withdraws the guess (a pointer the user already changed is left alone), and this device's
+push/publish confirms it. Adoption also clears `seededHere`, so a `seed()` after adoption makes no guess at all. A recording
+queued **before** the default is settled (right after recovery or adoption, for example) is parked as `NO_WORKFLOW` and
+follows the existing manual-run path — there is no re-queuing.
 
-### 검증 규칙 (validation rules)
+### Validation rules
 
-> **2026-09-24**: 사용자 문서가 없으므로 문서 수준 규칙(로컬 캐시 보호, 미지 필드, 마이그레이션·`MigrationBlocked`)과
-> `webhook.url` 스킴 규칙은 폐기. 녹음 처리 설정의 검증은 §5 "고정 처리 설정 도입"과
-> `spec/recording-settings.schema.json`이 정한다.
+> **2026-09-24**: With no user document, the document-level rules (local cache protection, unknown fields, migration ·
+> `MigrationBlocked`) and the `webhook.url` scheme rule are retired. Validation of the recording processing settings is
+> defined by §5 "Fixed processing settings" and `spec/recording-settings.schema.json`.
 
-- 스키마 통과 + 워크플로우 `id`가 ULID + `name` 1~40자 + `minDurationSec >= 0` + 단계 `id` 유일 +
-  템플릿 변수 유효 + `webhook.url` 스킴 규칙 + `transcribe` 순서 제약 +
-  `transcribe.provider`가 아는 값(`UnknownProvider`) + `clova`에만 `invokeUrl`.
-- 검증 실패한 문서는 **로컬 캐시를 덮어쓰지 않고** UI에 오류를 보인다(동기화로 깨진 정의가 퍼지는 것을 막는다).
-- 알 수 없는 필드는 무시하되 다시 쓸 때 보존하지 않는다(forward-compat은 `schema` 버전으로만). 그래서 옛 문서에
-  타입 모델이 버릴 필드가 있으면 마이그레이션하지 않고 거부한다(§5 스키마의 `MigrationBlocked`). 예외는
-  **폐기된 것을 아는** 필드다 — schema 1..2의 `enabled`·`isDefault`·`trigger`는 이름을 아는 채로 버리므로
-  거부 사유가 아니다(§5 스키마).
+- Passes the schema + workflow `id` is a ULID + `name` 1–40 characters + `minDurationSec >= 0` + step `id`s unique +
+  template variables valid + the `webhook.url` scheme rule + the `transcribe` ordering constraint +
+  `transcribe.provider` is a known value (`UnknownProvider`) + `invokeUrl` only on `clova`.
+- A document that fails validation **does not overwrite the local cache**; the UI shows an error (this keeps sync from
+  spreading a broken definition).
+- Unknown fields are ignored but not preserved on rewrite (forward compatibility comes only through the `schema` version).
+  So if an old document has fields the typed model would drop, it is rejected instead of migrated (`MigrationBlocked` in
+  §5 Schema). The exception is fields **known to be retired** — schema 1..2's `enabled` · `isDefault` · `trigger` are
+  dropped by a name the code knows, so they are not a reason to reject (§5 Schema).
 
-### 예제
+### Example
 
-> **폐기(2026-09-24)**: `spec/examples/workflows.json`은 삭제됐다. 설정 예제는 `spec/examples/recording-settings*.json`이다.
+> **Retired (2026-09-24)**: `spec/examples/workflows.json` was deleted. The settings examples are `spec/examples/recording-settings*.json`.
 
-`spec/examples/workflows.json` — "회의"(Drive + 웹훅), "메모"(Drive만), "회의록"(Drive + `transcribe`) 세 개.
+`spec/examples/workflows.json` — three workflows: "Meeting" (Drive + webhook), "Memo" (Drive only), "Minutes" (Drive +
+`transcribe`).
 
 ---
 
-## 3. 녹음·저장 (구 docs/03)
+## 3. Recording · storage (formerly docs/03)
 
-스키마: [`spec/recording.meta.schema.json`](../spec/recording.meta.schema.json).
+Schema: [`spec/recording.meta.schema.json`](../spec/recording.meta.schema.json).
 
-### 오디오 설정
+### Audio settings
 
-| 항목 | 값 |
+| Item | Value |
 |---|---|
-| 코덱 / 컨테이너 | AAC-LC / `.m4a` (MPEG-4) |
-| 샘플레이트 | 16,000 Hz (기기가 미지원이면 44,100 Hz로 폴백하고 메타에 기록) |
-| 채널 | 모노 |
-| 비트레이트 | 32 kbps |
-| 세그먼트 | 명목 900초. 경계는 무손실 — Android는 `setMaxFileSize(900 s × 비트레이트 × 1.07)` + `setNextOutputFile`(`setMaxDuration`은 파일을 넘기지 않고 녹음을 **멈추므로** 쓰지 않는다; 따라서 실제 길이는 바이트 기준으로 ±수 %), Apple은 `AVAudioFile` 교체, Windows는 헬퍼가 PCM을 잘라 ffmpeg에 넘긴다. 파트별 `durationSec`이 정본이고 `audio.segmentSec`은 명목값. 불가피한 공백은 메타 `gaps`에 기록 |
-| **트랙** | 모바일·워치: `mono`. 데스크톱: `mic`, `sys`, `mix` — 각각 위 설정, **같은 시작 시각·세그먼트 경계**를 공유한다 |
+| Codec / container | AAC-LC / `.m4a` (MPEG-4) |
+| Sample rate | 16,000 Hz (if the device does not support it, fall back to 44,100 Hz and record that in the meta) |
+| Channels | Mono |
+| Bitrate | 32 kbps |
+| Segment | Nominally 900 seconds. Boundaries are lossless — Android uses `setMaxFileSize(900 s × bitrate × 1.07)` + `setNextOutputFile` (`setMaxDuration` is not used because it **stops** the recording instead of rolling over to the next file; the actual length is therefore ± a few % by bytes), Apple swaps the `AVAudioFile`, and on Windows the helper cuts the PCM and hands it to ffmpeg. Each part's `durationSec` is canonical; `audio.segmentSec` is the nominal value. Unavoidable gaps are recorded in the meta's `gaps` |
+| **Tracks** | Mobile · watch: `mono`. Desktop: `mic`, `sys`, `mix` — each with the settings above, and they share **the same start time and segment boundaries** |
 
-용량: 트랙당 시간당 14.4 MB, 세그먼트당 3.6 MB. 데스크톱 3트랙 시간당 43 MB. 세그먼트 하나가 3.6 MB이므로
-OpenAI 계열의 25 MB 업로드 제한도 통과한다.
+Size: 14.4 MB per track per hour, 3.6 MB per segment. Desktop with 3 tracks: 43 MB per hour. Because one segment is 3.6 MB,
+it also passes the 25 MB upload limit of the OpenAI family.
 
-### 이름 규칙
+### Naming rules
 
 ```
-base  = {yyyyMMdd}T{HHmmss}Z_{source}_{recordingId 앞 8자}
+base  = {yyyyMMdd}T{HHmmss}Z_{source}_{first 8 chars of recordingId}
 part  = {base}_p{NNN}_{track}.m4a
 meta  = {base}.meta.json
 ```
 
-예:
+Examples:
 
 ```
 20260826T010000Z_watch_01J9ABCD_p001_mono.m4a
@@ -435,19 +454,19 @@ meta  = {base}.meta.json
 20260826T010000Z_desktop_01J9ZZ12.meta.json
 ```
 
-- 시각은 `startedAt` UTC. `NNN`은 1부터이고, 트랙마다 독립 번호가 아니라 **같은 시간 구간이면 같은 번호**다.
-- 파일명에는 제목·기기명 같은 사용자 문자열을 넣지 않는다(경로 안전·기계 파싱용). 제목은 메타와 Drive 폴더
-  `description`에 들어간다.
-- 워치 녹음은 `_watch_`이고 메타의 `"source": "watch"`와 일치한다.
+- The time is `startedAt` in UTC. `NNN` starts at 1 and is not numbered independently per track — **the same time span gets the same number**.
+- File names contain no user strings such as the title or the device name (for path safety and machine parsing). The title goes into the meta and into the Drive folder's
+  `description`.
+- Watch recordings use `_watch_`, matching `"source": "watch"` in the meta.
 
-### 메타데이터
+### Metadata
 
-녹음당 `meta.json` 하나. 녹음 중에는 세그먼트 경계마다 다시 쓴다 — **크래시 시 마지막 경계까지는 복구 가능**하고,
-정지 전에 죽은 마지막 세그먼트는 컨테이너가 닫히지 않아 읽을 수 없으므로 복구가 `{file}.corrupt`로 격리하고
-등록하지 않는다. 읽을 수 있는 파트가 하나도 없는 녹음(격리 파일만 남았거나 아무것도 없는 경우)은 앱에서 할 수 있는
-일이 없으므로 행과 디렉터리를 격리 파일째 삭제한다(2026-09-04 사용자 결정; 그 전까지는 수동 복구 여지로 보존했으나
-사용자가 손댈 수 없는 `recording` 행만 남았다).
-`stop` 후 `status: finalized`.
+One `meta.json` per recording. During recording it is rewritten at every segment boundary — **after a crash, everything up to the last boundary is recoverable**,
+and the last segment, if the process died before stop, cannot be read because its container was never closed, so recovery quarantines it as `{file}.corrupt` and
+does not register it. A recording with no readable part at all (only quarantined files left, or nothing at all) leaves nothing the app can
+do, so its row and its directory are deleted, quarantined files included (2026-09-04 user decision; before that it was kept as room for manual recovery, but
+all that remained was a `recording` row the user could not touch).
+After `stop`, `status: finalized`.
 
 ```json
 {
@@ -458,7 +477,7 @@ meta  = {base}.meta.json
   "deviceId": "7c1e4b2a-0d3f-4a7e-9b1c-2f5e8d6a4c10",
   "deviceName": "MacBook Pro",
   "workflowId": "01J9ABCDEF0123456789ABCDEF",
-  "title": "주간 회의",
+  "title": "Weekly meeting",
   "startedAt": "2026-08-26T01:00:00.000Z",
   "endedAt": "2026-08-26T02:00:12.400Z",
   "durationSec": 3612.4,
@@ -483,473 +502,471 @@ meta  = {base}.meta.json
 }
 ```
 
-| 필드 | 비고 |
+| Field | Notes |
 |---|---|
-| `source` | `watch` · `phone` · `desktop` — 워크플로우 트리거와 일치 |
+| `source` | `watch` · `phone` · `desktop` — matches the workflow trigger |
 | `platform` | `wearos` · `android` · `watchos` · `ios` · `macos` · `windows` |
-| `title` | 선택. 폰·데스크톱 셸에서 사용자가 정지 후 입력하거나 없음(워치는 입력 UI가 없어 항상 없다 — 폰에서 나중에 붙일 수 있다). 상세 화면에서 언제든 바꿀 수 있고 Drive 폴더 `description`을 거쳐 모든 기기에 퍼진다(§3 "다른 기기의 녹음" — 제목) |
-| `parts` | 파트 목록. `parts[].sha256`은 세그먼트 확정 직후 계산하고 전송·업로드 검증에 쓴다. `startOffsetSec`이 녹음 시간축의 기준이다 |
-| `gaps` | 세그먼트 재시작·인터럽션·tap 재생성 등으로 오디오가 빠진 구간 |
-| `silenced` | Android `isClientSilenced`, Apple 인터럽션 등 마이크를 뺏긴 구간. **알려진 한계**: Android에서 정지가 지연되면(등록 못 한 파트가 남아 복구에 맡길 때) 이 구간은 로그에만 남고 메타에는 들어가지 않는다 |
-| `context` | 선택. `app`은 감지된 회의 앱의 번들 id로 데스크톱 전용. `participants`(정수, 본인 포함 인원)는 정지 후 다이얼로그 선택으로 채운다 — `transcribe`의 화자 수 힌트(§8). **`context.calendar`는 없다** — 캘린더 읽기는 제품 전체에서 제거됐다 |
-| `drive` | 선택. 이 녹음의 Drive 폴더 `folderId`·`folderUrl`(`webViewLink`). `drive.upload`가 폴더를 만들거나 찾은 직후, 메타를 올리기 **전에** 행과 로컬 `meta.json`에 적으므로(`RecordingRepository.setDriveFolder`) Drive의 사본과 그것을 입양한 기기도 같은 값을 갖는다. 에이전트 스킬이 Notion 페이지의 "Recording" 링크로 쓴다(2026-09-05). 업로드 전이거나 링크를 못 받은 폴더면 없다. iCloud 녹음에는 없다 — 웹 링크가 없다(§3 "저장 위치") |
-| `status` | `recording` → `finalized` → (워치) `transferred` |
+| `title` | Optional. Entered by the user after stop in the phone and desktop shells, or absent (on the watch it is always absent because there is no input UI — it can be added later on the phone). It can be changed at any time on the detail screen and spreads to every device through the Drive folder's `description` (§3 "Recordings from other devices" — Titles) |
+| `parts` | The part list. `parts[].sha256` is computed right after a segment is finalized and is used to verify transfer and upload. `startOffsetSec` is the reference for the recording's timeline |
+| `gaps` | Spans where audio is missing because of a segment restart, an interruption, tap re-creation and so on |
+| `silenced` | Spans where the microphone was taken away, such as Android `isClientSilenced` or an Apple interruption. **Known limitation**: on Android, if stop is delayed (when unregistered parts are left over and handed to recovery), this span stays only in the log and does not go into the meta |
+| `context` | Optional. `app` is the bundle id of the detected meeting app, desktop only. `participants` (integer, head count including the user) is filled from the selection in the dialog after stop — the speaker-count hint for `transcribe` (§8). **There is no `context.calendar`** — calendar reading was removed from the whole product |
+| `drive` | Optional. This recording's Drive folder `folderId` · `folderUrl` (`webViewLink`). Right after `drive.upload` creates or finds the folder, and **before** it uploads the meta, it writes them to the row and to the local `meta.json` (`RecordingRepository.setDriveFolder`), so the copy in Drive and the devices that adopted it have the same values. Agent skills use it as the "Recording" link on the Notion page (2026-09-05). Absent before upload, or for a folder whose link was not received. Absent for iCloud recordings — there is no web link (§3 "Storage location") |
+| `status` | `recording` → `finalized` → (watch) `transferred` |
 
-인원 선택지는 `2 · 3 · 4 · 5 · 6+ · 모름`이고 기본은 "모름"(unknown)이다 — 고르지 않으면 필드를 생략한다.
-값이 없는 것(nil)이 곧 "unknown"이며 워크플로우의 `speakers` 기본값이 적용된다. `6+`는 §8이 화자 힌트를 10명으로
-묶는 것과 짝이다.
+The participant options are `2 · 3 · 4 · 5 · 6+ · Unknown`, and the default is "Unknown" (unknown) — if the user picks nothing, the field is omitted.
+No value (nil) is what "unknown" means, and the workflow's `speakers` default applies. `6+` pairs with §8 capping the speaker hint at
+10.
 
-### 로컬 저장
+### Local storage
 
-| 플랫폼 | 경로 |
+| Platform | Path |
 |---|---|
 | Android / Wear | `context.filesDir/recordings/{base}/` |
-| iOS / watchOS / macOS | `Application Support/app.recly.mac/recordings/{base}/` (앱 id 디렉터리; iOS는 `isExcludedFromBackup = true`) |
+| iOS / watchOS / macOS | `Application Support/app.recly.mac/recordings/{base}/` (app id directory; on iOS `isExcludedFromBackup = true`) |
 | Windows | `%LOCALAPPDATA%\Recly\recordings\{base}\` |
 
-워치에서 **수신**한 녹음은 메타가 마지막에 도착해 `{base}`를 미리 알 수 없으므로 폰은 `recordings/{recordingId}/`에
-둔다(디렉터리명은 DB 행에 저장; Drive 배치는 여전히 `{base}`). 수신의 `upsertRecording`은 행을 통째로 바꾸되
-`drive_folder_id`는 남긴다 — 폰이 이미 올린 뒤 워치가 재전송해도 폴더를 잊지 않는다.
+For a recording **received** from the watch, the meta arrives last, so `{base}` cannot be known in advance, and the phone puts it in `recordings/{recordingId}/`
+(the directory name is stored in the DB row; the Drive layout is still `{base}`). On receipt, `upsertRecording` replaces the whole row but
+keeps `drive_folder_id` — even if the watch resends after the phone has already uploaded, the folder is not forgotten.
 
-녹음 디렉터리는 DB에 현재 앱 데이터 루트 기준 `recordings/{디렉터리명}`으로 저장한다. iOS·watchOS 업데이트로
-앱 컨테이너 UUID가 바뀌어도 조회·전사·재생·이름 변경·삭제는 현재 루트에서 처리한다. 이전 버전이 남긴 절대
-경로는 같은 앱의 `Containers/Data/Application/{UUID}/Library/Application Support/{앱 id}/recordings/` 아래에
-있는 경우에만 현재 컨테이너로 해석한다. 기존 파일을 이동하거나 삭제하지 않으며 외부 경로는 그대로 둔다.
+The recording directory is stored in the DB as `recordings/{directory name}`, relative to the current app data root. Even when an iOS · watchOS update
+changes the app container UUID, lookup · transcription · playback · renaming · deletion are handled from the current root. An absolute
+path left by a previous version is resolved to the current container only when it lies under the same app's
+`Containers/Data/Application/{UUID}/Library/Application Support/{app id}/recordings/`. Existing files are not moved or deleted, and external paths are left as they are.
 
-### 보관 · 삭제
+### Retention · deletion
 
-#### 자동 보관 (ADR-017)
+#### Automatic retention (ADR-017)
 
-파트 파일은 다음이 **모두** 참일 때만 삭제한다 — ① Job이 DONE, ② 그 워크플로우에 `drive.upload` 단계가 1개 이상
-있고 전부 SUCCEEDED(`continue`로 건너뛴 실패 업로드는 보관), ③ 같은 녹음의 **모든** Job이
-DONE(FAILED·SKIPPED_SHORT·NEEDS_AUTH·NEEDS_SPACE도 삭제를 막는다 — `retry()`에 파트가 필요하므로), ④ 파일
-mtime과 마지막 DONE 시각 둘 다 **7일** 경과(매 잡 패스의 `Retention.sweep`이 재평가한다). 그 외에는 보관하고 목록에 "업로드 안 됨"을 표시한다.
-**워치는 폰 ack 즉시 삭제**한다.
+Part files are deleted only when **all** of the following are true — ① the Job is DONE, ② the workflow has at least one `drive.upload` step
+and all of them SUCCEEDED (a failed upload skipped with `continue` is retained), ③ **every** Job of the same recording is
+DONE (FAILED · SKIPPED_SHORT · NEEDS_AUTH · NEEDS_SPACE also block deletion — `retry()` needs the parts), ④ **7 days** have passed since both the file's
+mtime and the last DONE time (`Retention.sweep` in every job pass re-evaluates this). Otherwise the files are retained and the list shows "Not uploaded".
+**The watch deletes as soon as the phone acks**.
 
-**지우지 않는 것**: `meta.json`, DB 행(`recording`·`part`(`deleted=1` 표시)·`job`·`step_run`), 그리고
-`transcribe`가 만든 로컬 사본(`{base}.transcript.json/.txt` — 상세 화면의 입력이라 파트 보관 규칙과 무관하게
-남긴다, §8). 그래서 파트가 지워진 뒤에도 목록·상세에 필요한 것은
-전부 로컬에 있다. 이 자동 삭제에는 **업로드 성공 뒤 7일**의 창이 있다(2026-09-03, 고정값·설정 없음): 시간만
-지났다고 지우는 규칙은 여전히 없고, "업로드가 끝났고 7일이 지났다"일 때만 매 잡 패스의 보관 스윕이 지운다. 그
-사이에는 상세의 재생이 로컬 파트를 그대로 쓰고, 지워진 뒤에는 Drive에서 받아 다시 7일을 둔다. 사용자가 지우는
-것은 언제나 즉시다.
+**What is not deleted**: `meta.json`, the DB rows (`recording` · `part` (marked `deleted=1`) · `job` · `step_run`), and
+the local copies made by `transcribe` (`{base}.transcript.json/.txt` — they are the detail screen's input, so they stay regardless of the
+part retention rule, §8). So even after the parts are deleted, everything the list and the detail need is
+still local. This automatic deletion has a window of **7 days after a successful upload** (2026-09-03, fixed value, no setting): there is still
+no rule that deletes just because time has passed; the retention sweep in every job pass deletes only when "the upload is done and 7 days have passed". In
+between, playback in the detail uses the local parts as they are; after they are deleted, it downloads them from Drive and keeps them another 7 days. Deletion by the user
+is always immediate.
 
-#### 앱에서 지우기 — "녹음 삭제"
+#### Deleting in the app — "Delete recording"
 
-목록 행의 삭제. **한 번에 하나의 녹음**이고, 누를 때마다 Drive를 어떻게 할지 묻는다.
+The delete action on a list row. **One recording at a time**, and every time it asks what to do about Drive.
 
-| 대상 | 동작 |
+| Target | Action |
 |---|---|
-| 로컬 파트·`meta.json`·결과 파일(transcript)·녹음 디렉터리 | 항상 삭제 |
-| DB 행 (`recording`, `part`, `job`, `step_run`) | 항상 삭제 |
-| Drive의 `{base}/` 폴더와 그 안의 파일 | **사용자가 고른다. 기본값은 "Drive에 남기기"** |
+| Local parts · `meta.json` · result files (transcript) · the recording directory | Always deleted |
+| DB rows (`recording`, `part`, `job`, `step_run`) | Always deleted |
+| The `{base}/` folder in Drive and the files in it | **The user chooses. The default is "Keep in Drive"** |
 
-- 확인 다이얼로그는 두 갈래를 한 화면에 보여준다: `로컬만 삭제`(기본값) / `Drive 폴더도 삭제`. 기본값이 "남기기"인
-  이유는 Drive의 파일이 이미 **사용자의 것**이고 다운스트림 자동화가 그 폴더를 이미 소비했을 수 있기 때문이다.
-  **되돌릴 수 없는 쪽을 기본값으로 두지 않는다.** 행에 Drive 링크가 없는 녹음(Drive에 닿은 적이 없다)은 고를
-  것이 없으므로 두 갈래를 보여주지 않는다(Android·Apple 2026-09-29).
-- 아직 업로드되지 않은 오디오가 있으면(보관 규칙이 보관 중) 다이얼로그가 그 사실을 먼저 말한다 — "아직 Drive에
-  올라가지 않은 오디오도 함께 지워집니다"(en `Audio not yet in Drive is deleted with it.`). 몇 파트인지는 말하지 않는다
-  (2026-09-29: 파트 수는 사용자에게 보이지 않는 데이터다).
-- 실행 중(`RUNNING`)인 Job이 있으면 삭제하지 않고 "실행이 끝난 뒤 다시 시도하세요"로 거절한다.
-  `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED`는 Job을 함께 지우므로 삭제해도 된다.
-- **"Drive에서도 삭제"**는 `files.delete`다. **폴더 id는 그 녹음의 `drive.upload` 단계가 남긴 것에서만
-  읽는다** — `output_json.folderId`(끝났거나 파킹된 경우), 없으면 재개 상태 `state_json.folderId`.
-  **`drive_folder_cache`는 쓰지 않는다**: 그 캐시의 키는 렌더된 *경로*(`recly/2026/2026-08`)라 그 달의 다른 녹음이
-  전부 공유하는 상위 폴더이고, 한 녹음을 지우면서 그것을 지우면 안 된다. 실패하면 로컬 삭제는 그대로 진행하고
-  "Drive에서 지우지 못했습니다"를 남긴다 — 로컬을 지우고 나면 다시 시도할 근거가 없으므로 사용자에게 Drive 링크를
-  함께 보여준다.
-- **iCloud 녹음**(§3 "저장 위치")은 같은 다이얼로그가 Drive 대신 iCloud를 말하고(`iCloud 폴더도 함께 삭제`), 폴더는
-  코디네이션된 삭제로 모든 기기에서 지운다. 실패 문구도 `이 기기에서는 지웠지만 iCloud에서 지우지 못했습니다`다.
-- **삭제가 다른 기기에 닿는 길은 Drive뿐이다.** "Drive 폴더도 삭제"로 지운 녹음은 그 폴더를 **입양**했던 다른
-  기기(아래 "다른 기기의 녹음")의 목록에서 다음 조회 때 사라진다. 그 녹음을 **직접 만든** 기기의 행은 남는다 —
-  그 기기의 원본·Job 기록이고 Drive가 지울 권한이 없다. "로컬만 삭제"는 어느 기기에도 닿지 않는다.
-- **입양한 행의 삭제**는 Drive 삭제뿐이다. 이 기기에는 캐시밖에 없어 "로컬만 삭제"는 다음 조회에서 되살아나는
-  일이라 다이얼로그가 그 선택지를 주지 않고, "다른 기기에서 녹음한 것입니다. 지우면 Drive와 모든 기기에서
-  사라집니다"를 말한 뒤 `delete(id, deleteDrive = true)`를 부른다. 폴더 id는 `recording.drive_folder_id`다.
+- The confirmation dialog shows both branches on one screen: `Delete local only` (the default) / `Also delete the Drive folder`. The default is "keep"
+  because the files in Drive already **belong to the user**, and downstream automation may already have consumed that folder.
+  **The irreversible option is never the default.** A recording whose row has no Drive link (it never reached Drive) has nothing to
+  choose, so the two branches are not shown (Android · Apple 2026-09-29).
+- If there is audio that has not been uploaded yet (the retention rule is keeping it), the dialog says so first — `Audio not yet in Drive is deleted with it.` It does not say how many parts
+  (2026-09-29: the part count is data the user does not see).
+- If there is a running (`RUNNING`) Job, deletion does not happen and is refused with "Try again after the run finishes".
+  `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED` may be deleted, because the Job is deleted along with the recording.
+- **"Also delete from Drive"** is `files.delete`. **The folder id is read only from what the recording's `drive.upload` step left
+  behind** — `output_json.folderId` (when the step finished or is parked), otherwise the resume state `state_json.folderId`.
+  **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/2026/2026-08`), so the folder is a parent shared by
+  every other recording of that month, and deleting one recording must not delete it. If the call fails, the local deletion still goes ahead and
+  leaves "Could not delete from Drive" — once the local copy is gone there is nothing left to retry from, so the user is also shown the Drive
+  link.
+- For an **iCloud recording** (§3 "Storage location"), the same dialog speaks of iCloud instead of Drive (`Also delete the iCloud folder`), and the folder is
+  deleted on every device through a coordinated delete. The failure message is likewise `Deleted here, but iCloud refused`.
+- **Drive is the only path by which a deletion reaches other devices.** A recording deleted with "Also delete the Drive folder" disappears, at the next fetch, from the list of
+  every other device that **adopted** that folder ("Recordings from other devices" below). The row on the device that **made** the recording stays —
+  it is that device's original and Job record, and Drive has no authority to delete it. "Delete local only" reaches no device.
+- **Deleting an adopted row** is a Drive deletion only. This device holds nothing but a cache, so "Delete local only" would be undone by the next
+  fetch; the dialog does not offer that option, says "Recorded on another device. Deleting removes it from Drive and from every device.",
+  and then calls `delete(id, deleteDrive = true)`. The folder id is `recording.drive_folder_id`.
 
-**코어 규칙** — `RecordingRepository.delete(recordingId, deleteDrive): DeleteResult`:
+**Core rule** — `RecordingRepository.delete(recordingId, deleteDrive): DeleteResult`:
 
-- 결과는 셋뿐이다. `Deleted(driveDeleted, driveError)` / `Busy`(`RUNNING` Job이 있어 **아무것도 건드리지 않음**) /
+- There are only three results. `Deleted(driveDeleted, driveError)` / `Busy` (there is a `RUNNING` Job, so **nothing is touched**) /
   `NotFound`.
-- **행 찾기·`RUNNING` 검사·폴더 id 읽기·네 테이블(`step_run`·`job`·`part`·`recording`) 삭제가 한 트랜잭션**이다.
-  스키마에 FK도 CASCADE도 없으므로 테이블을 하나씩 이름으로 지운다(`step_run`이 먼저인 것은 그 쿼리가 아직 남아
-  있는 `job` 행을 타고 들어가기 때문이다). 디렉터리 삭제는 같은 잠금 구간 안에서 커밋 직후에 한다 — 커밋과 파일
-  삭제 사이에 취소가 끼어 행이 가리키지 않는 디렉터리가 남는 일을 막는다.
-- 이 트랜잭션과 `JobStore.claimRunning`은 SQLite 단일 라이터가 갈라 준다: 둘 중 하나가 먼저 커밋하므로 **"Job이
-  `RUNNING`이어서 `Busy`" 아니면 "행이 이미 없어서 클레임할 것이 없음"** 둘 중 하나이고, 둘 다인 경우는 없다.
-- Drive `files.delete`는 커밋 뒤에 부른다. 실패는 `Deleted.driveError`로 보고할 뿐 로컬 삭제를 되돌리지 않는다.
+- **Finding the row · the `RUNNING` check · reading the folder id · deleting from the four tables (`step_run` · `job` · `part` · `recording`) are one transaction.**
+  The schema has neither FKs nor CASCADE, so the tables are deleted one at a time by name (`step_run` goes first because its query reaches
+  in through the `job` rows that still exist). The directory is deleted right after the commit, inside the same lock section — this keeps a cancellation from
+  slipping in between the commit and the file deletion and leaving a directory that no row points to.
+- SQLite's single writer separates this transaction from `JobStore.claimRunning`: one of the two commits first, so the outcome is either **"`Busy` because the Job
+  is `RUNNING`" or "nothing to claim because the row is already gone"**, never both.
+- Drive `files.delete` is called after the commit. A failure is only reported as `Deleted.driveError`; it does not undo the local deletion.
 
-#### 계정에서 떼기 — "로그아웃" vs "연결 해제"
+#### Detaching from the account — Sign out vs Disconnect
 
-Google Drive 이야기다 — iCloud에는 앱 안의 연결 해제가 없다(§3 "저장 위치"). Google Drive 설정은 **“연결 해제” 버튼 하나**만 제공한다. 연결된 계정과 버튼을 주변 설정과 같은
-행·글자 크기로 표시한다. 버튼을 누르면 확인창 하나를 열고, 확인 시 **Google grant 철회와 이 기기의 로컬 정리**를
-함께 수행한다. “이 기기만 연결 해제” 선택과 범위 선택 메뉴는 두지 않는다.
-확인창은 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제되고, 대기 작업은 같은 계정에 재연결하면 이어지고 녹음·설정은 유지됨을
-한 단락으로 알린다. 녹음 삭제와 미업로드 건수는 이 확인창에서 표시하지 않는다. 녹음 삭제는 목록에서만 한다.
-미연결 행에는 “기기에 녹음하고, Drive 연결 시 업로드합니다.”를 작은 보조 문구로 둔다.
-Google 권한 관리 링크는 평상시 숨긴다. Google 권한 철회 실패 기록(`revokeDebt`)이 있을 때만
-오류 안내와 함께 표시하며, 로컬 정리만 미완료인 경우에는 기존 “연결 해제” 버튼으로 재시도한다.
-연결 해제가 실패하거나 앱 종료로 중단되어도 버튼 이름은 **“연결 해제”**로 유지한다. 처리 중에는 대기 안내,
-실패 시에는 설정에서 다시 시도하라는 오류만 표시한다. 재시도는 기존 처리 단계를 이어서 실행하며,
-사용자에게 별도의 “마무리” 동작이나 권한 철회·로컬 정리 단계를 선택하게 하지 않는다.
-확인을 누른 즉시 확인창을 닫고 버튼을 **“연결 해제 중…”**으로 바꾸며 비활성화한다. 이 진행 상태는
-Google 권한 철회부터 로컬 정리까지 유지한다. 중간에 인증 정보나 저장된 처리 단계가 바뀌어도
-완료 전에는 “Drive 연결” 버튼으로 바뀌지 않는다. 완료 시 미연결 화면, 실패 시 재시도 가능한 기존 버튼으로 전환한다.
-내부 `signOut`은 인증 복구 등에 사용하는 기기 내 자격 증명 정리 동작으로 남기되, 별도 사용자 동작으로 노출하지 않는다.
+This is about Google Drive — iCloud has no in-app disconnect (§3 "Storage location"). The Google Drive settings offer **a single “Disconnect” button**. The connected account and the button are shown in the same
+row and text size as the surrounding settings. Pressing the button opens one confirmation, and confirming performs **the Google grant revocation and the local cleanup on this device**
+together. There is no “Disconnect this device only” option and no scope-selection menu.
+The confirmation says, in one paragraph, that Recly's Drive access is revoked on every device connected with the same Google account, that pending work continues when the user reconnects to the same account, and that recordings and settings stay.
+Recording deletion and the count of items not yet uploaded are not shown in this confirmation. Recordings are deleted only from the list.
+The not-connected row carries “Record locally. Connect Drive to upload.” as small secondary text.
+The Google permissions management link is normally hidden. It is shown, with an error notice, only when there is a record of a failed Google revocation (`revokeDebt`);
+when only the local cleanup is unfinished, the existing “Disconnect” button retries.
+Even if the disconnect fails or is interrupted because the app quit, the button keeps the name **“Disconnect”**. While processing, only a waiting notice is shown;
+on failure, only an error telling the user to try again in settings. A retry continues the existing processing steps,
+and the user is never asked to pick a separate “finish” action or a revocation · local-cleanup step.
+As soon as confirm is pressed, the confirmation closes and the button changes to **“Disconnecting…”** and is disabled. This progress state lasts
+from the Google revocation through the local cleanup. Even if the credentials or the saved processing step change midway,
+it does not turn into the “Connect Drive” button before completion. On completion it switches to the not-connected screen; on failure, to the existing button, which can retry.
+The internal `signOut` remains as an on-device credential cleanup used for things like auth recovery, but it is not exposed as a separate user action.
 
-녹음 목록에는 로컬 저장 여부를 별도 문구로 표시하지 않는다. 재생에 필요한 트랙만 내려받는 녹음과 원본 트랙까지 보관한 녹음을 같은 목록 기준으로 보여준다. `NEEDS_AUTH`의 표시 문구는 회색 “업로드 대기”이며, 로컬 저장·재생과 별개다. 개별 녹음 행과 펼친 영역에는 Drive 연결 설명·버튼을 반복하지 않는다. 상태·로그·오류 코드 자체는 바꾸지 않는다.
+The recording list does not show with separate text whether a recording is stored locally. Recordings that download only the tracks needed for playback and recordings that keep the original tracks are shown by the same list criteria. The display text for `NEEDS_AUTH` is a gray “Upload waiting”, which is separate from local storage · playback. Individual recording rows and their expanded areas do not repeat the Drive connection explanation · button. The states, logs and error codes themselves are not changed.
 
-| | 로그아웃(이 기기) | 연결 해제 |
+| | Sign out (this device) | Disconnect |
 |---|---|---|
-| 목적 | 이 기기에서 그만 쓰기 | Recly가 내 Drive에 접근하지 못하게 하기 |
-| 토큰 | 이 기기의 access/refresh token 삭제 | 같음 + Google grant 취소(revoke) |
-| 다른 기기 | 영향 없음 | **같은 Google 계정의 Recly 연결이 함께 끊긴다** — revoke는 해당 계정의 **Cloud 프로젝트 단위** 승인을 철회하므로 폰에서 눌러도 같은 프로젝트의 Mac·PC 클라이언트가 받은 grant가 사라진다(§6) |
-| Drive의 녹음 파일 | 그대로 | **그대로** — 사용자의 파일이고 앱이 지울 이유가 없다 |
-| 녹음 처리 설정 | 그대로 | **그대로.** 계정에서 파생된 것이 아니라 이 기기의 설정이고(§5), 지우면 어디에서도 되찾을 수 없다 |
-| 로컬 시크릿(STT 키) | 남는다 | **남는다** — 같은 이유다. 계정을 떼는 결정이 사용자가 입력한 키를 지울 이유가 되지 않는다 |
-| 로컬 Job·step_run | 남는다(재로그인하면 이어서 실행) | **미완료 작업 보존·일시 중지**, 같은 Drive 계정에 재연결하면 재개. 완료 작업 기록, `drive_folder_cache`, "로컬만 삭제" 기록 `remote/ignored/*`은 비움. |
-| 로컬 녹음 파일·`meta.json` | 남는다 | **남는다.** 아직 올라가지 않은 원본을 이 동작으로 지우지 않는다(원칙 3). 확인창은 녹음과 설정이 유지됨을 짧게 알린다. 녹음 삭제는 목록에서 별도로 한다 |
+| Purpose | Stop using it on this device | Keep Recly from accessing my Drive |
+| Tokens | Delete this device's access/refresh token | Same + cancel (revoke) the Google grant |
+| Other devices | No effect | **Recly's connection on the same Google account is cut as well** — revoke withdraws the account's approval **per Cloud project**, so even when pressed on the phone it removes the grants received by the Mac · PC clients of the same project (§6) |
+| Recording files in Drive | Unchanged | **Unchanged** — they are the user's files and the app has no reason to delete them |
+| Recording processing settings | Unchanged | **Unchanged.** They are this device's settings, not something derived from the account (§5), and once deleted they cannot be recovered from anywhere |
+| Local secrets (STT keys) | Kept | **Kept** — for the same reason. The decision to detach the account is no reason to delete keys the user entered |
+| Local Job · step_run | Kept (continue running after signing in again) | **Unfinished work is kept and paused**, and resumes when the user reconnects to the same Drive account. Finished work records, `drive_folder_cache`, and the "Delete local only" records `remote/ignored/*` are cleared. |
+| Local recording files · `meta.json` | Kept | **Kept.** This action does not delete originals that have not been uploaded yet (principle 3). The confirmation briefly says that recordings and settings stay. Recordings are deleted separately, from the list |
 
-- **연결 해제 다이얼로그는 같은 Google 계정으로 연결한 모든 기기에서 Recly의 Drive 접근 권한이 해제됨을 반드시 보여준다.** Google의 철회 반영에는 시간이 걸릴 수 있으므로 다른 기기의 화면이 즉시 미연결로 바뀐다고 안내하지 않는다. 권한 철회 실패는 기존 오류·복구 경로로 별도 안내한다.
-  **Google 권한 철회 실패 기록이 있을 때만 Google 계정 설정(<https://myaccount.google.com/permissions>)에서
-  직접 해제할 수 있는 링크를 Drive 설정에 표시한다.** 로컬 정리가 끝나 계정이 미연결로 표시되어도 실패 기록이 남아 있으면 링크는 유지한다.
-- 내부 로그아웃 경로에서는 revoke를 **부르지 않는다** — 그 이유와 인용은 §6(iOS·macOS `signOut` vs `disconnect`,
-  Windows revoke 절)에 있다.
+- **The disconnect dialog must show that Recly's Drive access is revoked on every device connected with the same Google account.** Google can take time to apply a revocation, so the dialog does not tell the user that other devices' screens switch to not connected immediately. A revocation failure is reported separately through the existing error · recovery path.
+  **Only when there is a record of a failed Google revocation does Drive settings show a link for removing the access directly in the Google account settings
+  (<https://myaccount.google.com/permissions>).** Even when the local cleanup has finished and the account shows as not connected, the link stays as long as the failure record remains.
+- The internal sign-out path does **not** call revoke — the reason and the citations are in §6 (iOS · macOS `signOut` vs `disconnect`,
+  the Windows revoke subsection).
 
-**연결 해제는 두 반쪽이다**: grant revoke(셸의 플랫폼 SDK 몫)와 로컬 정리(`ReclyCore.disconnect(alsoDeleteRecordings):
-DisconnectResult`, 코어 몫). 코어는 revoke를 부를 수단이 없으므로 셸이 둘을 **같이** 부른다.
+**Disconnect has two halves**: the grant revoke (the job of the shell's platform SDK) and the local cleanup (`ReclyCore.disconnect(alsoDeleteRecordings):
+DisconnectResult`, the core's job). The core has no means of calling revoke, so the shell calls both **together**.
 
-- **정지 상태에서 돈다.** 로컬 정리는 전부 `Executor.quiesced` 안이다 — 이미 실행 중인 Job은 지금 단계를 마치고
-  멈추고, 그 뒤에야 무언가가 지워진다. 캐시된 access token을 먼저 무효화한 다음(`tokenProvider.invalidate()`)
-  `tokens` 네임스페이스를 비운다 — 반대 순서면 셸이 메모리에 들고 있던 토큰이 다음 실행에 넘어간다.
-- **지우는 것은 넷뿐이다**: `tokens` 네임스페이스, 완료된 작업 기록(`job`·`step_run`), Drive 폴더 캐시, "로컬만 삭제" 기록(`kv` `remote/ignored/*`, §3 "다른 기기의 녹음"). 녹음 처리 설정·`secrets`
-  네임스페이스는 그대로 둔다(위 표).
-- **미완료 작업 재개(2026-09-21)**: Drive 단계를 포함한 작업에 적용한다. 단계 출력·업로드 세션·전사 요청 ID·재시도 횟수·대기 시각을 보존한다. `job.drive_account_id`에는 Drive `about.get(fields=user(permissionId))`로 확인한 식별자를 저장하고, 연결 해제 전 상태는 `disconnected_status`에 남긴다. 같은 계정이면 이전 상태를 복원하고 성공한 단계는 재실행하지 않는다. 다른 계정이면 이전 작업은 `NEEDS_AUTH`로 계속 대기하며 업로드·전사를 보내지 않는다. 계정을 확인하지 못하면 재개하지 않는다. 이전 버전의 계정 미확인 작업은 기존 Drive 폴더 소유자 식별자가 일치할 때만 복원하며, 소유자를 확인할 자료가 없으면 대기를 유지한다. 이전 빌드가 이미 지운 단계 기록은 복원할 수 없다.
-- **`DisconnectResult(deletedRecordings, busyRecordings)`.** 코어 API의 호환성을 위해 삭제 옵션은 유지하지만 네 셸의 권한 철회 UI는 항상 `alsoDeleteRecordings=false`로 호출한다. 내부 API가 삭제 옵션을 사용할 때 `RUNNING` Job 때문에
-  지우지 못한 녹음의 id가 `busyRecordings`에 담긴다. 그 녹음과 **그 Job 행은 남기고** 화면은 그 사실을 말한다 —
-  Job이 끝난 뒤 다시 누르면 그때 지워진다.
-- **`DisconnectPhase` — `NONE` → `REVOKE_PENDING` → `REVOKED_CLEANUP_OWED` → `NONE`.** 셸의 설정 저장소에
-  남긴다(재시도가 다음 실행일 수 있고, 그때는 토큰이 이미 없다). 순서가 요점이다: `REVOKE_PENDING`은 revoke를
-  **부르기 전에** 쓴다(revoke가 이 기기의 자격 증명을 지우므로, 뒤에 쓰면 그 자격 증명과 함께 잃는다).
-  `REVOKED_CLEANUP_OWED`는 revoke가 돌아온 뒤·**로컬 정리를 부르기 전에** 쓰고, 정리가 끝나고 `busyRecordings`가
-  비었을 때에만 `NONE`으로 지운다. 예외가 던져지면 단계는 그대로 남는다 — 그것이 정직한 상태다. 단계·빚이 저장소에
-  쓰이지 않으면 자격 증명을 건드리지 않는다.
-- **재시도가 남의 grant를 지우지 않는다.** `REVOKED_CLEANUP_OWED`에서의 재시도는 revoke를 **건너뛰고** 밀린 로컬
-  정리만 한다(그 grant는 이미 없다). `REVOKE_PENDING`에서의 재시도는 토큰 저장소에 물어본다 — refresh token이 남아
-  있으면 revoke가 일어나지 않은 것이므로 다시 부르고, 없으면 정리로 넘어간다. 단계가 밀려 있는 동안 **로그인·로그아웃을
-  보류한다**(빈 자리에 다른 계정이 들어오면 그 계정의 grant를 지우게 된다).
-- **revoke debt.** revoke가 실패하면 그 사실을 **토큰을 지우기 전에** 저장소에 기록한다(단계만으로는 못 잡는다:
-  실패 분기도 refresh token을 지우므로, 그 사이에 죽으면 단계는 `REVOKE_PENDING`인데 토큰이 없어 "revoke가 됐다"로
-  잘못 읽힌다). 빚이 서 있는 동안 화면은 "Google 계정에 아직 남아 있습니다"(Google still lists Recly) + 권한 페이지
-  링크를 말하고, **빚을 지우는 것은 사용자의 확인뿐이다** — 나중에 성공한 revoke도 그것을 지우지 않는다. 앱은 계정
-  신원을 갖고 있지 않아, 방금 지운 grant가 빚이 가리키는 그 계정의 것인지 알 수 없기 때문이다.
-- **`DisconnectGate` — 연결 해제 중에는 녹음 시작을 거절한다.** 다이얼로그를 열 때 본 "지금 녹음 중" 값은
-  revoke(네트워크 왕복)를 기다리는 사이에 낡는다. 그동안 타일·위젯·단축키·트레이 메뉴·회의 감지가 새 녹음을 시작할
-  수 있고, 그 녹음에는 아직 Job이 없어 코어의 `Busy` 검사에 걸리지 않는다 — 정리가 녹음기가 쓰고 있는 파일을 지우게
-  된다. 그래서 앱 전역 게이트를 두고, 연결 해제는 revoke 전부터 정리 후까지 그것을 잡는다. 시작은 **큐에 서지 않고
-  거절**되고("연결 해제 중입니다") 이유를 말한다(§12: 대신 멈춰 주지 않는다). 확인 버튼도 녹음 중이면 비활성이고,
-  확인 시점에 한 번 더 읽는다.
-- 게이트 판정과 실제 캡처 시작은 **같은 임계 구역**이어야 한다 — 판정 후 캡처가 열리기 전에 (워크플로우 목록 조회
-  등으로) 중단되면 그 사이에 연결 해제가 게이트를 가져갈 수 있다. Windows는 `DisconnectGate.ifOpen { start() }`,
-  Android는 양쪽 플래그 쓰기가 상대의 읽기보다 앞서고 사이에 중단 지점이 없는 구조로, Apple은 MainActor의
-  `tryLock`으로 성립시킨다. Apple에는 규칙 둘이 더 있다 — 복원 결과가 불확실하면(`GoogleRestoration.failed`) 단계를
-  유지하고 다시 시도하게 하며, `UserDefaults` flush가 실패하면 자격 증명을 건드리지 않는다.
+- **It runs while quiesced.** All of the local cleanup is inside `Executor.quiesced` — a Job that is already running finishes its current step and
+  stops, and only after that is anything deleted. The cached access token is invalidated first (`tokenProvider.invalidate()`), and then
+  the `tokens` namespace is cleared — in the reverse order, a token the shell held in memory would carry over into the next run.
+- **Only four things are deleted**: the `tokens` namespace, finished work records (`job` · `step_run`), the Drive folder cache, and the "Delete local only" records (`kv` `remote/ignored/*`, §3 "Recordings from other devices"). The recording processing settings and the `secrets`
+  namespace are left as they are (table above).
+- **Resuming unfinished work (2026-09-21)**: applies to work that includes a Drive step. Step outputs · upload sessions · transcription request IDs · retry counts · wait times are kept. `job.drive_account_id` stores the identifier confirmed through Drive `about.get(fields=user(permissionId))`, and the state before the disconnect is kept in `disconnected_status`. With the same account, the previous state is restored and steps that succeeded are not run again. With a different account, the previous work keeps waiting as `NEEDS_AUTH` and sends no upload · transcription. If the account cannot be confirmed, nothing resumes. Work from a previous version whose account was never confirmed is restored only when the identifier of the existing Drive folder's owner matches; if there is no data to confirm the owner, it keeps waiting. Step records that a previous build already deleted cannot be restored.
+- **`DisconnectResult(deletedRecordings, busyRecordings)`.** The delete option is kept for the core API's compatibility, but the revocation UI of all four shells always calls with `alsoDeleteRecordings=false`. When an internal API uses the delete option, the ids of recordings that could not be deleted because of a `RUNNING` Job
+  go into `busyRecordings`. Those recordings and **their Job rows are kept**, and the screen says so —
+  pressing again after the Job finishes deletes them then.
+- **`DisconnectPhase` — `NONE` → `REVOKE_PENDING` → `REVOKED_CLEANUP_OWED` → `NONE`.** It is kept in the shell's settings store
+  (the retry may happen in the next launch, and by then the token is already gone). The order is the point: `REVOKE_PENDING` is written **before
+  calling** revoke (revoke deletes this device's credentials, so if it were written afterwards, it would be lost along with those credentials).
+  `REVOKED_CLEANUP_OWED` is written after revoke returns and **before calling the local cleanup**, and it is cleared to `NONE` only when the cleanup finishes and `busyRecordings`
+  is empty. If an exception is thrown, the phase stays as it is — that is the honest state. If the phase · debt is not written
+  to the store, the credentials are not touched.
+- **A retry does not delete someone else's grant.** A retry from `REVOKED_CLEANUP_OWED` **skips** revoke and only does the overdue local
+  cleanup (that grant is already gone). A retry from `REVOKE_PENDING` asks the token store — if a refresh token is still
+  there, revoke did not happen, so it calls revoke again; if not, it moves on to the cleanup. While a phase is pending, **sign-in and sign-out are
+  held back** (if another account came into the empty slot, that account's grant would be deleted).
+- **revoke debt.** When revoke fails, that fact is recorded in the store **before the tokens are deleted** (the phase alone cannot catch it:
+  the failure branch also deletes the refresh token, so if the process dies in between, the phase is `REVOKE_PENDING` but there is no token, and that is
+  misread as "revoke happened"). While the debt stands, the screen says "Google still lists Recly" plus a link to the permissions
+  page, and **only the user's confirmation clears the debt** — not even a later successful revoke clears it. The app does not hold the account's
+  identity, so it cannot tell whether the grant it just deleted belongs to the account the debt points to.
+- **`DisconnectGate` — starting a recording is refused while a disconnect is in progress.** The "recording right now" value seen when the dialog opened
+  goes stale while waiting for revoke (a network round trip). Meanwhile a tile · widget · shortcut · tray menu · meeting detection can start a new recording,
+  and that recording has no Job yet, so it is not caught by the core's `Busy` check — the cleanup would end up deleting the files the recorder
+  is writing. So there is an app-wide gate, and the disconnect holds it from before revoke until after the cleanup. A start is **refused, not
+  queued** ("Disconnecting"), and it says why (§12: it does not stop anything on the user's behalf). The confirm button is also disabled while recording, and
+  the value is read once more at the moment of confirmation.
+- The gate decision and the actual capture start must be **the same critical section** — if execution suspends after the decision but before the capture opens (for
+  example for a workflow list lookup), the disconnect can take the gate in between. Windows achieves this with `DisconnectGate.ifOpen { start() }`,
+  Android with a structure in which each side writes its flag before reading the other's and there is no suspension point in between, and Apple with a MainActor
+  `tryLock`. Apple has two more rules — if the restoration result is uncertain (`GoogleRestoration.failed`), the phase
+  is kept and the user is asked to try again, and if the `UserDefaults` flush fails, the credentials are not touched.
 
-### Drive 배치 (ADR-014)
+### Drive layout (ADR-014)
 
 ```
 My Drive/
-  {folder 템플릿 결과}/               예: recly/2026/2026-08/
-    {base}/                           예: 20260826T010000Z_desktop_01J9ABCD/
+  {folder template result}/           e.g. recly/2026/2026-08/
+    {base}/                           e.g. 20260826T010000Z_desktop_01J9ABCD/
       {base}_p001_mic.m4a
       {base}_p001_sys.m4a
       {base}_p001_mix.m4a
       …
       {base}.meta.json
-      {base}.transcript.json / .txt   (transcribe 단계를 넣었을 때)
+      {base}.transcript.json / .txt   (when a transcribe step was added)
 ```
 
-- 폴더는 `drive.file` 스코프로 앱이 만든 것이라 앱이 다시 찾을 수 있다. 폴더 ID는 로컬 DB에 캐시한다.
-- `{base}` 폴더의 `description`에 `title`을, `appProperties`에 `recordingId`·`workflowId`를 기록한다. `description`은
-  이후 이름 바꾸기가 갱신하는 **제목의 정본**이다(아래 "다른 기기의 녹음" — 제목).
-- 업로드 완료 판정은 Drive 파일의 `md5Checksum`과 로컬 md5 비교(sha256은 전송 검증용, md5는 Drive가 주는 값).
-- 파트 업로드 순서: 트랙별 1번부터. `meta.json`은 마지막에 올려서 "meta가 있으면 완료"를 다운스트림 트리거 조건으로
-  쓸 수 있게 한다.
+- The folders are created by the app under the `drive.file` scope, so the app can find them again. Folder IDs are cached in the local DB.
+- The `{base}` folder records `title` in its `description` and `recordingId` · `workflowId` in its `appProperties`. `description` is
+  **the canonical title**, which later renames update ("Recordings from other devices" — Titles, below).
+- Upload completion is decided by comparing the Drive file's `md5Checksum` with the local md5 (sha256 is for transfer verification; md5 is the value Drive provides).
+- Part upload order: per track, starting from part 1. `meta.json` is uploaded last, so that "the meta exists → complete" can serve as a downstream trigger
+  condition.
 
-### 다른 기기의 녹음 (ADR-023)
+### Recordings from other devices (ADR-023)
 
-**작업 기록이 없는 완료 녹음의 표시(2026-09-21).** 녹음이 끝났고 이 기기에 Job이 없으면 목록과
-상세 상태를 `DONE`·“완료”로 표시한다. 연결 해제로 작업 기록이 지워진 녹음도 같다. `NO_JOB`을
-노출하거나 대기 개수에 포함하지 않는다. 이 표시는 Drive 업로드 성공을 새로 판정하거나 Job을
-생성하지 않는다. 실제 Job이 있으면 대기·진행·실패 상태를 그대로 유지하고, 수신·원격 업로드·전사
-진행 표식도 기존 규칙을 따른다.
+**Showing finished recordings that have no work record (2026-09-21).** When a recording has finished and there is no Job on this device, the list and the
+detail show its state as `DONE` · “Done”. The same goes for recordings whose work records were deleted by a disconnect. `NO_JOB` is
+not exposed and not counted among pending items. This display does not newly decide that a Drive upload succeeded and does not
+create a Job. If a real Job exists, its waiting · in-progress · failed state stays as it is, and the receiving · remote-upload · transcription
+progress markers also follow the existing rules.
 
-같은 계정으로 로그인한 폰·데스크톱은 **같은 녹음 목록**을 본다. 서버도 색인 파일도 없다 — Drive가 이미 그
-인덱스다: 위 배치가 녹음마다 `recordingId`를 `appProperties`에 찍은 `{base}/` 폴더 하나를 남기므로, 폴더 조회 한
-번(`mimeType = folder and trashed = false` — `drive.file`이라 앱이 만든 폴더만 나오고, 그중 `appProperties.recordingId`가
-있는 것이 녹음 폴더다; `appProperties has { key=… }`는 value 없이는 Drive가 400으로 거부한다, 2026-09-04 실계정 확인)이
-이 계정의 모든 녹음이다.
-워크플로우마다 폴더 템플릿이 달라도 경로를 걷지 않으니 상관없다. 코어 `RemoteRecordings.pull()`:
+Phones and desktops signed in to the same account see **the same recording list**. There is no server and no index file — Drive already is that
+index: the layout above leaves one `{base}/` folder per recording, stamped with `recordingId` in its `appProperties`, so a single folder
+query (`mimeType = folder and trashed = false` — under `drive.file` only folders the app created come back, and among them the ones that have
+`appProperties.recordingId` are recording folders; Drive rejects `appProperties has { key=… }` without a value with a 400, confirmed on a real account 2026-09-04) returns
+every recording of this account.
+It does not matter that the folder template differs per workflow, because no path is walked. Core `RemoteRecordings.pull()`:
 
-1. 폴더를 나열해 `recordingId`로 묶는다. 이미 입양한 완료 행은 건너뛰고, 아래 3의 잠정 행은 완성한다.
-   **이 기기에서 만든 완료 녹음에 Job이 없으면 Drive 사본을 검증해 복원한다.** 모든 파트의 번호·트랙·파일명·크기·
-   SHA-256이 로컬 메타와 같고 Drive 파일 ID가 모두 있을 때만 `drive_synced = 1`과 각 파트의 `drive_file_id`를
-   저장한다. 로컬 메타·파일·디렉터리·`remote = 0`은 보존한다. 작업 기록을 새로 만들거나 업로드·전사를
-   재실행하지 않는다. 진행 중이거나 실패한 기존 Job은 그 상태가 정본이므로 덮어쓰지 않는다.
-   복원된 녹음은 `DONE`으로 표시하고, 유효한 `transcribe` 진행 표식이 남아 있으면 전사 중으로 표시한다.
-   로컬 오디오가 없으면 재생 시 복원한 파일 ID로 Drive에서 받아온다. 불완전하거나 다른 내용의 사본은 완료로
-   처리하지 않는다. 이 계정의 전체 목록에 복원된 폴더가 없으면 Drive 검증 상태·파일 ID만 지우고 원본은 보존한다.
-   재연결 직후에는 주기 제한 없이 조회한다. 연결 해제는 진행 중 조회와 직렬화하고 검증 상태·파일 ID·조회 제한 시각을
-   초기화하므로, 다른 계정 연결에 이전 계정의 검증 결과를 쓰지 않는다. 시작 시 복구 스캔은 Drive 폴더를 알고 있는
-   Job 없는 녹음을 다시 큐에 넣지 않고 이 조회에 맡긴다.
-2. 모르는 id는 폴더의 자식을 한 번 나열해 `{base}.meta.json`을 받고(같은 id의 폴더가 둘이면 — 다른 경로로 재실행 —
-   최신 것 중 완료된 것), `recording` 행을 **입양**한다(`RecordingRepository.adopt`): `remote = 1`,
-   `drive_folder_id`에 폴더, `part` 행은 처음부터 `deleted = 1`에 `drive_file_id`. 디렉터리는 워치 수신과 같은
-   `recordings/{recordingId}/`이고 `meta.json`을 써 둔다. **메타는 경로를 만든다**(디렉터리명·파트 파일명)**므로
-   스키마대로만 받는다**: `recordingId`가 폴더의 것과 같고 ULID 형식이며, 모든 `parts[].file`이 이름 규칙이 주는
-   그 이름일 때만 — 아니면 `remote.meta.mismatch`로 거절.
-3. **`meta.json`이 없는 폴더는 "다른 기기가 업로드 중"이다**(2026-09-04). 메타는 마지막에 올라가므로(위 Drive 배치)
-   그 폴더는 지금 올라가는 중인 녹음이고, 다음 조회로 미루면 20분짜리 업로드가 끝날 때까지 사용자는 빈 목록을 본다.
-   그래서 나열이 준 것만으로 **잠정 행**을 연다: `remote = 1`, `drive_folder_id`에 그 폴더, `meta`는 폴더 이름
-   `{yyyyMMddTHHmmssZ}_{source}_{ulid8}`에서 읽은 `source`(모르면 `phone`)와 `recordingId`의 ULID 타임스탬프에서
-   읽은 `startedAt`, 제목은 폴더 `description`, `tracks`·`parts`는 비고 `status = recording`. `meta.json`은 입양과
-   같은 자리에 써 둔다. 셸이 보는 것은 `RecordingRecord.remoteUploading`이다. 폴더의 `recordingId`가 ULID가 아니면
-   열지 않는다 — 그 값이 곧 디렉터리 이름이다. **버려진 업로드**: `createdTime`이 24시간을 넘긴 메타 없는 폴더는
-   입양하지 않고, 이미 연 잠정 행도 그 나이가 되면 폴더가 사라졌을 때와 같은 길로 지운다(`drop`). 나중 조회가 그
-   폴더에서 `meta.json`을 찾으면 잠정 행을 **진짜 메타로 갈아 끼운다**(`finalized`·파트·`drive_file_id`) — 1의 예외가
-   이것이다.
-4. **폴더의 `pending` 표식**: 업로드 뒤에 아직 할 일이 남은 기기가 그것을 폴더에 적는다 — `appProperties.pending`은
-   업로드 다음 단계들의 `type`을 쉼표로 이은 것(`transcribe,transcript.publish`, `local.transcribe,transcript.publish`, 없으면 빈 문자열),
-   `appProperties.pendingAt`은 그렇게 적은 시각. 쓰는 쪽은 `drive.upload`가 폴더를 만들거나 찾은 직후(첫 바이트보다
-   먼저)와, 실행기가 단계 하나를 마칠 때마다(남은 것)와 잡이 `DONE`·터미널 `FAILED`가 될 때(빈 값)다. `files.update`의
-   `appProperties`는 병합이라 폴더의 `recordingId`는 그대로 남는다. 표식은 **참고용**이라 실패하면
-   `drive.marker.failed`로 남기고 넘어간다. 읽는 쪽은 이 조회다: 모든 **remote** 행의 `recording.remote_pending`을
-   그 폴더의 표식으로 채우고(`RecordingRecord.remotePending`), 표식이 없거나 비었거나 `pendingAt`이 **8시간**(§8의
-   가장 긴 provider 결과 타임아웃)보다 오래됐으면 NULL이다. `remote = 0`이라도 Job 없이 Drive 사본을 검증한 행은 받는다. Job이 있는 행은 자기 잡이 정본이다.
-5. 이전에 입양했는데 그 **폴더**가 이제 나열되지 않으면(다른 기기가 지웠거나, 사용자가 Drive에서 지웠거나, 재실행이
-   다른 폴더로 대체) 행과 캐시를 지운다(`drop` — 트랜잭션 안에서 `drive_folder_id`가 그 폴더인지 확인하고 지우므로
-   그 사이 워치 전송이 같은 id를 이 기기 것으로 만들었다면 건드리지 않는다). 지우는 것이 입양보다 먼저라 같은 id가
-   다른 폴더에 남아 있으면 그 폴더에서 다시 입양된다. 입양한 행의 폴더보다 **새 폴더가 나중에 완료되면**(재실행이
-   끝남) 그쪽으로 옮긴다 — 그 id의 폴더가 둘 이상일 때만 새 폴더의 자식을 한 번 더 본다. 나열이 끝까지 성공했을
-   때만 — 실패한 조회는 아무것도 지우지 않는다.
-6. **"로컬만 삭제"는 기억한다.** 이 기기가 올린 녹음을 Drive 폴더는 남기고 지우면 그 폴더는 계속 나열되므로, 아니면
-   다음 조회가 방금 지운 녹음을 "다른 기기"로 되살린다. 그래서 `delete(deleteDrive = false)`가 삭제 트랜잭션 안에서
-   `kv`에 `remote/ignored/{recordingId}` → 폴더 id를 남기고, 조회는 그 폴더가 나열되는 동안 그 id를 입양하지 않는다
-   (`adopt` 자체도 트랜잭션 안에서 이 기록을 확인하므로 조회 도중에 끼어든 삭제도 되살아나지 않는다). 폴더가
-   Drive에서 사라지면 기록도 지운다. "연결 해제"는 이 기록을 전부 비운다 — 계정을 다시 붙이면 새 기기처럼 Drive에
-   있는 것을 다 본다. 이 기기가 올린 녹음의 폴더 id는 `drive.upload`가 폴더를 만들거나 찾는 순간 **행의
-   `drive_folder_id`에도** 적는다 — 연결 해제가 큐(step 출력)를 비운 뒤에도 "로컬만 삭제"가 어느 폴더를 남겼는지
-   알아야 하기 때문이다(그 전에 올린 녹음은 step 출력에서 읽고, 없으면 기록 없이 지워진다 — 다음 조회에 다시 보인다).
+1. List the folders and group them by `recordingId`. Finished rows already adopted are skipped, and the provisional rows of step 3 below are completed.
+   **If a finished recording made on this device has no Job, the Drive copy is verified and restored.** Only when every part's number · track · file name · size ·
+   SHA-256 matches the local meta and every Drive file ID is present are `drive_synced = 1` and each part's `drive_file_id`
+   stored. The local meta · files · directory · `remote = 0` are kept. No new work record is created, and upload · transcription are not
+   run again. An existing Job that is in progress or has failed is not overwritten, because its state is canonical.
+   A restored recording shows as `DONE`, and if a valid `transcribe` progress marker remains, it shows as transcribing.
+   If there is no local audio, playback downloads it from Drive with the restored file IDs. A copy that is incomplete or has different content is not treated
+   as complete. If a restored folder is missing from this account's full list, only the Drive verification state · file IDs are cleared and the original is kept.
+   Right after a reconnect, the fetch runs without the rate limit. A disconnect is serialized with any fetch in progress and resets the verification state · file IDs · fetch-throttle
+   time, so verification results from the previous account are not used for a connection to another account. The startup recovery scan does not re-queue
+   Job-less recordings whose Drive folder is known; it leaves them to this fetch.
+2. For an unknown id, list the folder's children once and download `{base}.meta.json` (if there are two folders with the same id — a re-run to a different path —
+   the newest one that is complete), and **adopt** the `recording` row (`RecordingRepository.adopt`): `remote = 1`,
+   the folder in `drive_folder_id`, and `part` rows that are `deleted = 1` from the start, with `drive_file_id`. The directory is `recordings/{recordingId}/`,
+   as for watch receipt, and `meta.json` is written there. **The meta builds paths** (the directory name · part file names), **so it is
+   accepted only if it follows the schema**: only when `recordingId` equals the folder's, is in ULID format, and every `parts[].file` is exactly the name the naming rules
+   give — otherwise it is rejected with `remote.meta.mismatch`.
+3. **A folder without `meta.json` means "another device is uploading"** (2026-09-04). The meta is uploaded last (Drive layout above), so
+   that folder is a recording being uploaded right now, and if it were put off to the next fetch, the user would see an empty list until a 20-minute upload finished.
+   So a **provisional row** is opened from what the listing gave alone: `remote = 1`, that folder in `drive_folder_id`, and a `meta` with `source` read from the folder name
+   `{yyyyMMddTHHmmssZ}_{source}_{ulid8}` (`phone` if unknown) and `startedAt` read from the ULID timestamp of `recordingId`,
+   the title from the folder's `description`, empty `tracks` · `parts`, and `status = recording`. `meta.json` is written in the same place as for
+   adoption. What the shell sees is `RecordingRecord.remoteUploading`. If the folder's `recordingId` is not a ULID, no row is
+   opened — that value is the directory name. **Abandoned uploads**: a folder without a meta whose `createdTime` is more than 24 hours old is
+   not adopted, and a provisional row already opened is deleted, once it reaches that age, the same way as when its folder disappears (`drop`). When a later fetch finds
+   `meta.json` in that folder, it **swaps the provisional row for the real meta** (`finalized` · parts · `drive_file_id`) — this is the exception
+   in step 1.
+4. **The folder's `pending` marker**: a device that still has work left after the upload writes that onto the folder — `appProperties.pending` is
+   the `type`s of the steps after the upload, joined with commas (`transcribe,transcript.publish`, `local.transcribe,transcript.publish`, or an empty string if there are none),
+   and `appProperties.pendingAt` is the time it was written. It is written right after `drive.upload` creates or finds the folder (before the first
+   byte), every time the runner finishes a step (what remains), and when the job becomes `DONE` · terminal `FAILED` (an empty value). The `appProperties` of `files.update`
+   is a merge, so the folder's `recordingId` stays. The marker is **advisory**, so a failure is logged as
+   `drive.marker.failed` and skipped. The reader is this fetch: it fills `recording.remote_pending` of every **remote** row with
+   its folder's marker (`RecordingRecord.remotePending`), and the value is NULL if the marker is missing or empty or `pendingAt` is older than **8 hours** (the
+   longest provider result timeout in §8). A row with `remote = 0` also receives it if its Drive copy was verified without a Job. For a row with a Job, its own job is canonical.
+5. If the **folder** of a previously adopted row is no longer listed (another device deleted it, the user deleted it in Drive, or a re-run
+   replaced it with another folder), the row and its cache are deleted (`drop` — inside the transaction it checks that `drive_folder_id` is that folder before deleting, so
+   if a watch transfer has made the same id this device's own in the meantime, the row is not touched). Deletion comes before adoption, so if the same id
+   remains in another folder, it is adopted again from that folder. If a **newer folder completes later** than the adopted row's folder (a re-run
+   finished), the row moves there — the new folder's children are looked at once more only when there are two or more folders for that id. All of this happens only when the listing succeeded
+   to the end — a failed fetch deletes nothing.
+6. **"Delete local only" is remembered.** If a recording this device uploaded is deleted while its Drive folder is kept, the folder keeps being listed, so otherwise
+   the next fetch would revive the recording just deleted as one from "another device". So `delete(deleteDrive = false)` leaves, inside the delete transaction,
+   `remote/ignored/{recordingId}` → folder id in `kv`, and the fetch does not adopt that id while that folder is listed
+   (`adopt` itself also checks this record inside its transaction, so a deletion that slips in during a fetch is not revived either). When the folder
+   disappears from Drive, the record is deleted too. "Disconnect" clears all of these records — when the account is attached again, the device sees everything in
+   Drive, like a new device. The folder id of a recording this device uploaded is also written **to the row's
+   `drive_folder_id`** the moment `drive.upload` creates or finds the folder — because "Delete local only" must know which folder it kept
+   even after a disconnect has cleared the queue (the step outputs) (for recordings uploaded before that, it is read from the step output; if there is none, the recording is deleted without a record — and shows up again at the next fetch).
 
-입양한 행의 성질:
+Properties of an adopted row:
 
-- **Job이 없고 생기지 않는다.** `enqueue`는 `PartsPurged`를 돌려준다(Drive가 이미 갖고 있고 이 기기엔 보낼 원본이
-  없다). 복구 스캔이 "Job 없는 finalized 행"으로 보고 enqueue를 불러도 같은 답이다. 목록의 상태는 `NO_JOB`이 아니라
-  **`DONE`**이다 — 끝난 녹음과 똑같이 보이고(2026-09-04 사용자 결정: 영구 상태 "다른 기기"는 무의미), 세부·삭제·
-  Drive 열기 외의 동작(재시도·올리기)은 없다. 다른 기기의 것임은 삭제 다이얼로그만 안다(`remote` 플래그).
-- **Drive 링크는 있다**(2026-09-05 사용자 결정). 그 폴더에서 읽어온 행이니 폴더는 정의상 안다 — 셸의 `link`는
-  업로드 스텝 출력의 `folderWebViewLink`, 없으면 `RecordingRecord.driveFolderUrl`(메타의 `drive.folderUrl`, 그것도
-  없으면 폴더 id로 만든 정규 URL `https://drive.google.com/drive/folders/{id}`). 이 기기가 올린 녹음도 같은
-  폴백을 타므로 폴더가 생긴 순간부터 열 수 있다. 다른 기기가 아직 올리는 중인 자리표시자 행은 예외다(§9 원칙 2:
-  진행 중인 두 행은 동작이 없다).
-- **`uploaded()`는 참.** Drive에서 온 것이니 정의상 올라가 있다. 삭제 경고의 "안 올라간 파트"는 0이다.
-- **재생·전사는 Drive에서.** `AudioParts`는 업로드 출력 대신 `part.drive_file_id`로 받고, `RecordingResults`는
-  폴더에서 `{base}.transcript.json`을 이름으로 찾는다(다른 기기가 나중에 전사해도 다음 열 때 보인다). 받은 파트는
-  여느 캐시처럼 7일 뒤 보관 스윕이 지운다 — Job이 없으므로 파일 mtime만으로 익힌다(`claimPurge`의 입양 분기).
-- **제목은 Drive 폴더의 `description`이 정본이다**(아래 "제목").
-- **잠정 행도 같은 성질을 그대로 쓴다.** `remote = 1`이라 Job이 없고 `uploaded()`는 참이며 삭제·`enqueue`도 입양한
-  행과 같다. 다른 것은 아직 파트가 없다는 것뿐이고(재생할 것이 없다), 제목 바꾸기는 `status = recording`이라
-  거절된다 — 메타가 도착하면 그때부터 된다.
+- **It has no Job, and none is ever created.** `enqueue` returns `PartsPurged` (Drive already has it, and this device has no original to
+  send). Even if the recovery scan sees it as a "finalized row without a Job" and calls enqueue, the answer is the same. Its state in the list is **`DONE`**, not `NO_JOB`
+  — it looks exactly like a finished recording (2026-09-04 user decision: a permanent "another device" state is meaningless), and there are no actions other than details · delete ·
+  open in Drive (no retry · upload). Only the delete dialog knows that it belongs to another device (the `remote` flag).
+- **It has a Drive link** (2026-09-05 user decision). It is a row read from that folder, so the folder is known by definition — the shell's `link` is
+  the upload step output's `folderWebViewLink`, otherwise `RecordingRecord.driveFolderUrl` (the meta's `drive.folderUrl`, and if that is also
+  missing, the canonical URL built from the folder id, `https://drive.google.com/drive/folders/{id}`). Recordings this device uploaded take the same
+  fallback, so they can be opened from the moment the folder exists. The exception is a placeholder row that another device is still uploading (§9 principle 2:
+  the two in-progress rows have no actions).
+- **`uploaded()` is true.** It came from Drive, so by definition it is uploaded. The "parts not uploaded" in the delete warning is 0.
+- **Playback and transcripts come from Drive.** `AudioParts` downloads by `part.drive_file_id` instead of the upload output, and `RecordingResults`
+  finds `{base}.transcript.json` in the folder by name (if another device transcribes later, it shows up the next time the recording is opened). Downloaded parts are
+  deleted by the retention sweep after 7 days like any cache — there is no Job, so they age by the file mtime alone (the adoption branch of `claimPurge`).
+- **The title's canonical source is the Drive folder's `description`** ("Titles" below).
+- **A provisional row has the same properties.** It is `remote = 1`, so it has no Job, `uploaded()` is true, and delete · `enqueue` behave as for an adopted
+  row. The only difference is that it has no parts yet (there is nothing to play), and renaming is refused because of `status = recording`
+  — it works from the moment the meta arrives.
 
-셸이 "지금 무슨 일이 벌어지고 있나"를 그리는 데 쓰는 것은 `RecordingRecord`의 세 값이다. 셋 다 이 기기의 Job이
-아니므로 큐에서는 읽을 수 없다.
+What the shell uses to draw "what is happening right now" is three values of `RecordingRecord`. None of the three is a Job on this device,
+so they cannot be read from the queue.
 
-| 값 | 뜻 |
+| Value | Meaning |
 |---|---|
-| `receiving` | 워치 전송이 오는 중(`remote = 0` · `source = watch` · `status = recording`) — 폰은 `source = watch`로 녹음하지 않으므로 이 모양은 전송뿐이다. 행의 `startedAt`은 **워치가 만든 `recordingId`의 ULID 타임스탬프**다(§1 "식별자·시간"): 20분짜리를 끝나고 넘겨받아도 목록에서 제자리에 앉는다 |
-| `remoteUploading` | 다른 기기가 업로드 중(`remote = 1` · `status = recording`) — 위 3의 잠정 행 |
-| `remotePending` | 다른 기기가 업로드 뒤에 아직 할 일(`transcribe` 등) — 위 4의 표식 |
+| `receiving` | A watch transfer is coming in (`remote = 0` · `source = watch` · `status = recording`) — the phone never records with `source = watch`, so this shape can only be a transfer. The row's `startedAt` is **the ULID timestamp of the `recordingId` the watch created** (§1 "Identifiers · time"): even when a 20-minute recording is handed over after it ends, it sits in its proper place in the list |
+| `remoteUploading` | Another device is uploading (`remote = 1` · `status = recording`) — the provisional row of step 3 above |
+| `remotePending` | What another device still has to do after the upload (`transcribe` and so on) — the marker of step 4 above |
 
-#### 제목
+#### Titles
 
-정지 직후 제목 팝업은 4셸 모두 하단 우측에 넓은 `저장` 버튼(최소 폭 120pt/dp), 바로 왼쪽에 `취소` 버튼을 둔다.
-`취소`(뒤로가기·팝업 닫기 포함)는 **방금 끝난 녹음을 버리는 동작**이다. 제목만 건너뛰는 동작이 아니다. 대기 중인
-녹음 ID 하나의 로컬 파일·메타·DB 행을 삭제하며 Job을 만들거나 워크플로우를 깨우지 않는다. 저장·취소 중 한 번만
-그 녹음을 가져갈 수 있어 취소 뒤 늦게 도착한 저장 동작이 업로드를 시작하지 않는다. 다른 녹음과 Drive는 건드리지
-않으며, 삭제 거절·실패는 오류로 표시한다. 제목 입력란의 placeholder는 기존 번역 `제목 없음`(en `Untitled`)이다.
-입력값은 빈 상태로 시작하며 placeholder를 실제 제목으로 저장하지 않는다. 빈 입력에 대한 별도 안내 문구는 표시하지
-않는다. 빈 제목으로 `저장`하면 날짜·시간 이름을 유지하고, 선택한 인원수는 함께 반영한다.
+Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a `Cancel` button just to its left.
+`Cancel` (including back navigation and closing the popup) is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
+of the one pending recording ID, and does not create a Job or wake the workflow. Only one of save · cancel can take
+that recording, so a save action that arrives late after a cancel does not start an upload. Other recordings and Drive are not
+touched, and a refused · failed deletion is shown as an error. The placeholder of the title field is the existing translation `Untitled`.
+The input starts empty, and the placeholder is never saved as the actual title. No separate hint is shown for an empty
+input. Pressing `Save` with an empty title keeps the date · time name, and the selected head count is applied as well.
 
-정지 직후의 제목 입력(`updateTitle`, Job이 돌기 전까지만)과 별개로, **상세 화면에서 언제든 이름을 바꿀 수 있다**
-(`ReclyCore.rename(recordingId, title)`; 이 기기의 녹음이든 입양한 녹음이든, 빈 문자열은 "제목 없음" = 타임스탬프
-이름). 한 번 올라간 제목이 기기마다 달라지지 않게 하는 규칙:
+Separately from the title entry right after stop (`updateTitle`, only until the Job runs), **the name can be changed at any time on the detail screen**
+(`ReclyCore.rename(recordingId, title)`; for this device's recordings and adopted ones alike; an empty string means "Untitled" = the timestamp
+name). The rules that keep a title, once uploaded, from differing between devices:
 
-- **로컬은 즉시.** 행·`meta.json`을 바로 쓰고 `kv`에 `title/pending/{recordingId}` → 제목을 남긴다. 목록은
-  `recordings.observe()`로 곧 갱신된다.
-- **Drive로 밀기**(`RemoteRecordings.pushTitles`): 폴더 `description`을 `files.update`로 바꾸고, 폴더 안
-  `{base}.meta.json`을 로컬 메타로 덮어쓴다(`updateMedia`). **둘 다** 됐을 때만 pending을 지운다 — 그 사이 또 바꿨으면
-  값이 달라 남는다(`kvDeleteIfValue`). push는 한 번에 하나만 돈다(뮤텍스; 연속 두 번의 이름 바꾸기가 뒤바뀐 순서로
-  Drive에 닿지 않도록). `rename` 직후 한 번, 그리고 매 조회(잡 패스) 끝에 다시 시도한다. 폴더를 아직 모르는
-  녹음(업로드 전)은 기다리고, 폴더는 알지만 `meta.json`이 아직 없는 녹음(업로드 진행 중)도 기다린다 — 진행 중인
-  업로드가 옛 제목의 meta를 올릴 수 있어 그 뒤의 패스가 고쳐야 한다. 폴더가 404면 다른 기기가 지운 것이라 pending을
-  접는다. 녹음을 지우면(어느 삭제든) 그 pending도 같이 지운다 — 나중에 같은 폴더를 다시 입양했을 때 낡은 제목을
-  밀어 넣지 않도록.
-- **Drive에서 받기.** 조회가 받는 폴더 목록의 `description`이 곧 제목이다(추가 요청 없음; Drive는 `fields`에
-  적은 것만 주므로 `RECORDING_FOLDER_FIELDS`에 `description`이 들어 있다). 행의 제목과 다르면 바꾼다
-  (`applyTitle`; 입양 행이든 이 기기 것이든). 단 그 녹음에 pending push가 있으면 **이 기기의 변경이 이긴다**. 행이
-  자기 폴더를 알면 그 폴더의 것을, 모르면(이 버전 전 업로드) 최신 폴더의 것을 읽고 **그 폴더를 행에 기억해 둔다**
-  (`rememberFolder`; 알던 폴더는 덮지 않는다) — 그래야 그 녹음의 이름 바꾸기가 갈 곳이 생긴다. `description`이 비어
-  있으면 아무것도 하지 않는다 — 제목을 지우는 것은 기기 간에 전파되지 않는다(이름 바꾸기만 전파된다).
-- 두 기기가 동시에 바꾸면 나중에 Drive에 쓴 쪽이 남는다. 이상은 없다.
+- **Local is immediate.** The row · `meta.json` are written right away, and `title/pending/{recordingId}` → title is left in `kv`. The list
+  updates shortly through `recordings.observe()`.
+- **Pushing to Drive** (`RemoteRecordings.pushTitles`): the folder `description` is changed with `files.update`, and `{base}.meta.json` in the folder
+  is overwritten with the local meta (`updateMedia`). The pending entry is deleted only when **both** succeeded — if the title was changed again in the meantime,
+  the value differs and the entry stays (`kvDeleteIfValue`). Only one push runs at a time (a mutex, so that two renames in a row do not reach Drive in
+  reversed order). It is tried once right after `rename`, and again at the end of every fetch (job pass). A recording whose folder is not
+  known yet (before upload) waits, and so does a recording whose folder is known but that has no `meta.json` yet (upload in progress) — the
+  upload in progress may upload a meta with the old title, and a later pass has to fix that. If the folder returns 404, another device deleted it, so the pending entry is
+  dropped. When a recording is deleted (by any deletion), its pending entry is deleted too — so that a stale title is not pushed
+  if the same folder is adopted again later.
+- **Pulling from Drive.** The `description` in the folder list the fetch receives is the title (no extra request; Drive returns only what is listed in `fields`,
+  so `RECORDING_FOLDER_FIELDS` includes `description`). If it differs from the row's title, the row is changed
+  (`applyTitle`; for adopted rows and this device's own alike). But if that recording has a pending push, **this device's change wins**. If the row
+  knows its own folder, it reads that folder's value; if not (uploaded before this version), it reads the newest folder's and **remembers that folder on the row**
+  (`rememberFolder`; a folder it already knew is not overwritten) — that gives the recording's renames somewhere to go. If `description` is
+  empty, nothing happens — clearing a title does not propagate between devices (only renames propagate).
+- If two devices change it at the same time, the one that wrote to Drive later remains. Nothing beyond that.
 
-언제 조회하나: **모든 잡 패스**(`ReclyCore.runDueJobs` 끝, 2분 스로틀)와 **목록이 화면에 올 때**(셸이
-`pullRemoteRecordings(force = true)`, 화면을 막지 않고 뒤에서; 폰은 목록 탭을 열 때마다). 폰(Android·iPhone)은 목록을
-**아래로 당겨도** 같은 조회를 하고, 그때는 조회가 끝날 때까지 기다린다 — 두 폰 모두 플랫폼의 당겨서 새로고침 표시를
-그대로 쓴다. 시스템 스피너 금지(§9 화면 원칙 1)의 유일한 예외다(2026-09-29 사용자 결정): 조회가 금방 끝나면 사각
-로더와 `불러오는 중…`은 켜졌다 꺼지며 깜빡이지만, 플랫폼 표시는 손가락을 따라 내려왔다 말없이 들어간다. 스로틀은 **다른 기기가 뭔가 하고 있는 동안에는
-30초**다 — `remoteUploading`이거나 `remotePending`이 있는 행이 하나라도 있으면(조회 시점에 DB에 묻는다; 새 상태를
-두지 않는다) 진행 중이라고 말한 목록이 곧 말을 바꿀 수 있어야 한다. 셸의 목록은 `jobs.observe()` 외에
-`recordings.observe()`(recording 테이블 변경)도 구독해 입양·잠정 행·완성·표식 변경·삭제가 곧바로 반영된다.
-로그인이 없으면 조회는 조용히 건너뛴다(`skipped = "auth"`).
+When to fetch: **every job pass** (the end of `ReclyCore.runDueJobs`, 2-minute throttle) and **when the list comes on screen** (the shell calls
+`pullRemoteRecordings(force = true)`, in the background without blocking the screen; on phones, every time the list tab is opened). Phones (Android · iPhone) also run the same fetch
+when the list is **pulled down**, and then wait until the fetch finishes — both phones use the platform's pull-to-refresh indicator
+as it is. This is the only exception to the ban on system spinners (§9 "Screen principles" 1) (2026-09-29 user decision): when the fetch finishes quickly, the square
+loader and `Loading…` flash on and off, whereas the platform indicator follows the finger down and slips back up silently. The throttle is **30 seconds while another device
+is doing something** — if at least one row is `remoteUploading` or has `remotePending` (asked of the DB at fetch time; no new state is
+added), a list that said something is in progress must be able to change its answer soon. Besides `jobs.observe()`, the shell's list also
+subscribes to `recordings.observe()` (changes to the recording table), so adoption · provisional rows · completion · marker changes · deletion show up immediately.
+With no sign-in, the fetch is silently skipped (`skipped = "auth"`).
 
-**전제**: `drive.file` 스코프에서 다른 클라이언트 ID(폰의 Android 클라이언트, Mac의 iOS 클라이언트…)가 만든 파일이
-같은 Cloud 프로젝트 안에서 서로 보여야 한다. 코드는 그 전에도 이것을 전제했다 — 월 폴더 `recly/2026/2026-09`를
-`findChild`로 찾아 재사용하므로, 아니라면 기기마다 같은 이름의 폴더가 중복 생성됐을 것이다. 공식 문서는 단위를
-명시하지 않으니 **실계정에서 확인한다**: Drive에 같은 달 폴더가 하나뿐이면 성립. 보이지 않는다면 이 조회는 빈
-목록을 돌려줄 뿐 아무것도 깨뜨리지 않고, 대안은 전체 `drive` 스코프뿐이라 ADR-009와 충돌한다.
+**Premise**: under the `drive.file` scope, files created by different client IDs (the phone's Android client, the Mac's iOS client…) must be
+visible to each other within the same Cloud project. The code assumed this even before — it finds the month folder `recly/2026/2026-09` with
+`findChild` and reuses it, so otherwise a folder with the same name would have been created again on every device. The official documentation does not state the unit,
+so **this is confirmed on a real account**: it holds if Drive has only one folder for the same month. If the files are not visible, this fetch just returns an empty
+list and breaks nothing, and the only alternative is the full `drive` scope, which conflicts with ADR-009.
 
-### 저장 위치 (ADR-024)
+### Storage location (ADR-024)
 
-**2026-10-02 사용자 결정**: 녹음과 결과가 올라가는 곳은 기본이 Google Drive이고, iPhone·Mac은 설정에서 **iCloud**로
-바꿀 수 있다. Android 폰·갤럭시 워치·Windows는 Drive만 쓴다 — iCloud에는 Android·Windows용 공식 API가 없고, 이 차이는
-받아들인다. Apple Watch는 그대로 녹음을 iPhone에 넘기고(ADR-002) iPhone이 자기 저장소로 올린다. 첫 실행은 이전과 같다.
+**2026-10-02 user decision**: by default, recordings and results go to Google Drive, and iPhone · Mac can switch to **iCloud**
+in settings. Android phones · Galaxy Watch · Windows use Drive only — iCloud has no official API for Android · Windows, and this difference
+is accepted. Apple Watch still hands its recordings to the iPhone (ADR-002), and the iPhone uploads them to its own storage. First run is the same as before.
 
-- **고르는 곳**: iCloud를 줄 수 있는 빌드에서는 설정 맨 위 칸이 `저장 위치`(en `Storage`)가 되고 칩 둘 `Google Drive` ·
-  `iCloud`가 있다(제품명이라 번역하지 않는다). 누르는 즉시 저장한다(`ProcessingSettingsRepository.setStorage`, §5).
-  칩 아래에는 고른 저장소의 행 하나만 같은 모양으로 나온다 — Google Drive는 `Drive 연결됨`·`연결 해제` 또는
-  `Drive 연결 안 됨`·`Drive 연결`, iCloud는 `iCloud 연결됨` 또는 `iCloud 연결 안 됨`과 켜는 곳(시스템 설정의 메뉴 이름
-  그대로 — iPhone: `설정 → [이름] → iCloud → Drive`의 `이 iPhone 동기화`와 `iCloud에 저장됨 → 모두 보기`의 Recly, Mac:
-  `시스템 설정 → … → Drive`의 `이 Mac 동기화`와 `iCloud Drive에 동기화되는 앱`의 Recly). 앱이 iCloud에 로그인시키거나
-  iCloud Drive를 켤 방법은 없으므로 iCloud 행에는 연결 버튼이 없다. Mac에는 연결 안 됨일 때 `iCloud 설정 열기`(시스템 설정의
-  Apple 계정 → iCloud)가 붙고, iPhone에는 iCloud 화면을 여는 공개 링크가 없어 경로만 적는다(비공개 `App-Prefs:` 링크는
-  심사 2.5.1 위반). 상태는 설정 화면이 나타날 때, 앱이 다시 활성화될 때, `NSUbiquityIdentityDidChange`를 받을 때 다시
-  확인한다 — 설정에서 켜고 돌아오면 바로 바뀐다. 쓸 수 있게 되면 저장 폴더의 첫 단계(`recly`)를 바로 만들어, 첫 녹음
-  전부터 파일 앱·Finder에 Recly 폴더가, 시스템의 iCloud 앱 목록에 Recly가 보이게 한다. 목록·알림은 계속
-  `ICLOUD_UNAVAILABLE`의 짧은 문장을 쓴다. iCloud로 바꿔도 Drive 연결은 끊지 않는다 — Drive에 있는 이전 녹음을 다시 받고
-  지우는 데 필요하다. 그 연결 해제는 Google Drive 칩 아래 Drive 행에 있다. iCloud 권한이 없는 빌드의 칸은 예전처럼
-  `Google Drive`다.
-- **녹음마다 고정**: 저장소는 녹음 처리 설정의 `storage.provider`이고 녹음이 시작할 때 설정째 고정된다(§5). 이미 시작한
-  녹음과 올리는 중인 녹음은 원래 저장소로 간다. 올라간 녹음은 옮기지 않는다(마이그레이션 없음). 사용자가 누른 재시도는
-  지금 설정으로 남은 일을 하므로(§5), 실패한 업로드를 저장소를 바꾼 뒤 다시 시도하면 새 저장소로 간다.
-- **iCloud 쪽 자리**: 컨테이너 `iCloud.app.recly`의 `Documents`(파일 앱·Finder의 "Recly" 폴더) 아래에 Drive와 같은
-  배치 — `{folder 템플릿}/{base}/` 안에 파트, `{base}.meta.json`, 결과 파일. Drive가 폴더 자체에 두는 것(제목
-  `description`, `appProperties`의 `recordingId`·`workflowId`·`pending`·`pendingAt`)은 폴더 안 `{base}.folder.json`에 두고,
-  목록이 그 파일을 읽으므로 `createdTime`도 거기 적는다. 폴더가 이미 있으면 그 파일을 덮지 않는다(Drive가 폴더를 만들 때만
-  쓰는 것과 같다). 파일·폴더 id는 `icloud:` + `Documents` 아래 경로라(`StorageKind.ofId`) 행과 단계 출력에 남은 id는
-  설정이 바뀌어도 자기 저장소를 찾아간다.
-- **올리기와 완료**: 업로드 단계(`drive.upload`, `store: icloud`)는 파일을 컨테이너에 **복사**하고(코디네이션된 쓰기),
-  시스템이 그것을 올린다. 단계는 iCloud가 모든 파일을 받았다고 할 때 끝난다(`ubiquitousItemIsUploaded`). 그 전에는
-  30초마다 다시 보는 `WAITING`이고 시도 횟수를 쓰지 않는다(`ICLOUD_UPLOADING`). 목록에서는 Drive 업로드와 같이 보인다 —
-  배지 `UPLOADING`, 행 아래 사유 줄 없음, 상단 상태 `UPLOADING`, 대기 수에 넣지 않음. `iCloud 대기 중`(`ICLOUD_UNAVAILABLE`)의
-  사유 줄은 실패의 빨간색이 아니라 대기의 경고색이다. 원본의 7일
-  창(ADR-017)은 그 뒤에 시작한다(원칙 3) — 옮기지 않고 복사하는 이유는, 업로드 전에 iCloud에서 로그아웃하면서 "사본
-  유지"를 고르지 않으면 컨테이너 안의 파일이 기기에서 지워지기 때문이다. 전사 결과는 같은 폴더에 쓰고 업로드를 기다리지
-  않는다.
-- **쓸 수 없을 때**: iCloud에 로그인하지 않았거나 Recly의 iCloud Drive가 꺼졌거나 권한 없는 빌드면, 업로드와 결과 게시는
-  5분마다 다시 보는 `WAITING`이다(`ICLOUD_UNAVAILABLE`, 목록 `iCloud 대기 중`, `다시 시도` 가능). `NEEDS_AUTH`가 아닌
-  이유: 앱 안에서 할 수 있는 일이 없고, 돌아오면 저절로 이어진다.
-- **용량**: 시스템이 계정 공간 부족(`NSCocoaErrorDomain` 4354)으로 올리지 못하면 Drive와 같은 `NEEDS_SPACE`다
-  (`ICLOUD_STORAGE_FULL`, 목록 `iCloud에 공간 없음`). 배너 버튼은 `다시 시도`다 — 설정의 iCloud 저장 공간 화면을 여는
-  공개 링크가 없다.
-- **목록(ADR-023)**: 조회는 Drive(로그인돼 있으면)와 iCloud(지금 고른 저장소가 iCloud이면)를 함께 나열해 합친다.
-  iCloud를 고르지 않은 기기는 컨테이너에 손대지 않는다 — 그러지 않으면 요청한 적 없는 사람의 iCloud Drive에 "Recly"
-  폴더가 생긴다. 이번에 나열하지 못한 저장소의 행은 지우거나 바꾸지 않는다(입양 행 drop, "로컬만 삭제" 기록, 복원 사본,
-  진행 표식 모두). iCloud는 파일을 순서 없이 하나씩 동기화하므로 `meta.json`이 있어도 **메타가 이름 댄 파트가 모두 그
-  크기로 나열돼야** 완료다. 아니면 "다른 기기가 업로드 중"인 잠정 행이고, 24시간 규칙은 `{base}.folder.json`의
-  `createdTime`으로 잰다. 목록은 같은 저장소를 쓰는 기기끼리만 합쳐진다 — iPhone과 Mac이 둘 다 iCloud면 같고, 한쪽이
-  Drive면 서로의 새 녹음은 보이지 않는다.
-- **제목**: 정본은 `{base}.folder.json`의 `description`이고, 이름 바꾸기는 그 파일과 `meta.json`을 함께 고친다(§3
-  "제목"과 같은 규칙). 두 기기가 같은 파일을 동시에 고치면 iCloud가 한 버전을 현재로 정하고, 셸이 읽을 때 나머지 버전을
-  지운다(`NSFileVersion` — 나중에 쓴 쪽이 남는다).
-- **진행 표식**: `{base}.folder.json`의 `appProperties.pending`/`pendingAt`. 업로드 확인을 기다리며 30초마다 다시 도는
-  단계는 표식을 다시 쓰지 않는다 — 쓸 때마다 모든 기기가 그 파일을 다시 읽는다.
-- **재생·삭제**: 보관 스윕이 지운 파트는 컨테이너에서 받아(내려받기를 요청하고 최대 2분 기다림) sha256을 확인한다.
-  "iCloud 폴더도 함께 삭제"는 코디네이션된 삭제로 모든 기기에서 지운다. 사용자가 파일 앱에서 지운 것은 iCloud Drive의
-  "최근 삭제된 항목"에 30일 남지만(Apple), 앱이 지운 것도 그런지는 확인하지 않았다 — 다이얼로그의 기본값은 Drive처럼
-  지우지 않는 쪽이다.
-- **웹 링크 없음**: iCloud 폴더에는 고정된 웹 주소가 없어 `meta.drive`와 `Drive에서 열기`가 없다. Mac은 `Finder에서
-  보기`가 있고, iPhone에는 그 자리 동작이 없다.
-- **계정에 묶지 않는다(알려진 한계)**: Drive 작업은 Drive 계정에 묶여 다른 계정이면 멈추지만(§3 "계정에서
-  떼기"), iCloud 작업은 묶지 않는다. 기기가 다른 Apple ID로 로그인하면 남은 업로드는 새 계정으로 간다. 앱 안의 연결
-  해제도 없다 — iCloud를 쓸지는 시스템 설정(iPhone: 설정 › [이름] › iCloud, Mac: 시스템 설정 › [이름] › iCloud)에서
-  사용자가 정한다.
-- **빌드**: iCloud는 체크아웃 상태에서 꺼져 있다. 컨테이너 등록과 App ID 기능(`app.recly`, `app.recly.mac`), Mac
-  Release용 Developer ID 프로비저닝 프로필이 있어야 하고(§12), `apple/Config/Local.xcconfig`가 켠다
-  (`RECLY_ICLOUD_CONTAINER`, `RECLY_PHONE_ENTITLEMENTS`, `RECLY_MAC_ENTITLEMENTS`). 켜지 않은 빌드는 Info.plist의
-  `ReclyICloudContainer`가 비어 iCloud를 제안하지 않는다.
-- **에이전트**: Claude·ChatGPT·Gemini 어디에도 iCloud 커넥터가 없다(2026-10-02 확인). iCloud 녹음은 Mac의 로컬 폴더
-  (`~/Library/Mobile Documents/iCloud~app~recly/Documents/recly/`)로 읽는다(`skills/recly-notes`).
-- **검증**: 코어 JVM 테스트(`ICloudFilesTest`·`ICloudUploadTest`·`ICloudJobTest`·`ICloudRemoteRecordingsTest`·
-  `StorageSettingTest`)와 RecKit `ICloudStorageTests`까지다. 같은 Apple ID의 실기 두 대에서 실제 동기화는 확인하지
-  않았다(§20). 특히 두 기기가 같은 월 폴더(`recly/memo/2026-10`)를 동기화 전에 각자 만들 때 iCloud가 하나로 합치는지
-  `2026-10 2`처럼 나누는지는 모른다 — 목록은 경로를 걷지 않고 폴더 속성 파일을 찾으므로 나뉘어도 목록은 맞고, 파일 앱에서
-  폴더가 둘로 보일 뿐이다.
+- **Where to choose**: in builds that can offer iCloud, the top section of settings becomes `Storage` and has two chips, `Google Drive` ·
+  `iCloud` (product names, so they are not translated). A tap saves immediately (`ProcessingSettingsRepository.setStorage`, §5).
+  Below the chips, only the row for the chosen storage appears, in the same shape — for Google Drive, `Drive connected` · `Disconnect` or
+  `Drive not connected` · `Connect Drive`; for iCloud, `iCloud connected` or `iCloud not connected` plus where to turn it on (the menu names of system settings
+  as they are — iPhone: `Sync this iPhone` in `Settings → [your name] → iCloud → Drive` and Recly under `Saved to iCloud → See All`; Mac:
+  `Sync this Mac` in `System Settings → … → Drive` and Recly under `Apps Syncing to iCloud Drive`). The app has no way to sign the user in to iCloud
+  or to turn on iCloud Drive, so the iCloud row has no connect button. On the Mac, when not connected, `Open iCloud Settings` (System Settings'
+  Apple Account → iCloud) is added; on the iPhone there is no public link that opens the iCloud screen, so only the path is written (a private `App-Prefs:` link
+  violates review guideline 2.5.1). The status is checked again when the settings screen appears, when the app becomes active again, and when `NSUbiquityIdentityDidChange` is received
+  — turning it on in settings and coming back changes it right away. Once it becomes usable, the first level of the storage folder (`recly`) is created right away, so that even before the first
+  recording a Recly folder shows in the Files app · Finder and Recly shows in the system's list of iCloud apps. The list · notifications keep
+  using the short sentence of `ICLOUD_UNAVAILABLE`. Switching to iCloud does not disconnect Drive — Drive is still needed to download and
+  delete earlier recordings that are in Drive. That disconnect is in the Drive row under the Google Drive chip. In builds without the iCloud entitlement, the section is
+  `Google Drive` as before.
+- **Fixed per recording**: the storage is `storage.provider` of the recording processing settings, and it is fixed along with the settings when the recording starts (§5). Recordings already
+  started and recordings being uploaded go to their original storage. Uploaded recordings are not moved (no migration). A retry the user presses
+  does the remaining work with the current settings (§5), so a failed upload retried after switching storage goes to the new storage.
+- **The place on the iCloud side**: under `Documents` of the container `iCloud.app.recly` (the "Recly" folder in the Files app · Finder), the same
+  layout as Drive — parts, `{base}.meta.json` and result files inside `{folder template}/{base}/`. What Drive keeps on the folder itself (the title in
+  `description`; `recordingId` · `workflowId` · `pending` · `pendingAt` in `appProperties`) is kept in `{base}.folder.json` inside the folder, and
+  because the list reads that file, `createdTime` is written there too. If the folder already exists, that file is not overwritten (just as Drive writes these only when it creates
+  the folder). File · folder ids are `icloud:` + the path under `Documents` (`StorageKind.ofId`), so ids left in rows and step outputs
+  find their own storage even when the setting changes.
+- **Upload and completion**: the upload step (`drive.upload`, `store: icloud`) **copies** the files into the container (coordinated writes),
+  and the system uploads them. The step ends when iCloud says it has received every file (`ubiquitousItemIsUploaded`). Until then it is
+  `WAITING`, rechecked every 30 seconds, and it does not use up attempts (`ICLOUD_UPLOADING`). In the list it looks the same as a Drive upload —
+  badge `UPLOADING`, no reason line under the row, top status `UPLOADING`, not counted among pending items. The reason line of `Waiting for iCloud` (`ICLOUD_UNAVAILABLE`)
+  is in the warning color of waiting, not the red of failure. The originals' 7-day
+  window (ADR-017) starts after that (principle 3) — the reason for copying instead of moving is that if the user signs out of iCloud before the upload without choosing "Keep a
+  Copy", the files in the container are removed from the device. Transcription results are written to the same folder and do not wait for the
+  upload.
+- **When it cannot be used**: if the user is not signed in to iCloud, Recly's iCloud Drive is turned off, or the build has no entitlement, upload and result publishing
+  are `WAITING`, rechecked every 5 minutes (`ICLOUD_UNAVAILABLE`, list `Waiting for iCloud`, `Retry` available). Why not `NEEDS_AUTH`:
+  there is nothing the user can do inside the app, and when iCloud comes back the work continues on its own.
+- **Space**: if the system cannot upload because the account is out of space (`NSCocoaErrorDomain` 4354), it is `NEEDS_SPACE`, the same as Drive
+  (`ICLOUD_STORAGE_FULL`, list `No space in iCloud`). The banner button is `Retry` — there is no public link that opens the iCloud storage screen
+  in settings.
+- **List (ADR-023)**: the fetch lists Drive (if signed in) and iCloud (if the currently chosen storage is iCloud) together and merges them.
+  A device that has not chosen iCloud does not touch the container — otherwise a "Recly" folder would appear in the iCloud Drive of someone who never asked for it.
+  Rows of a storage that could not be listed this time are not deleted or changed (adopted-row drop, "Delete local only" records, restored copies,
+  progress markers — all of them). iCloud syncs files one at a time in no particular order, so even with `meta.json` present, a recording is complete only when **every part the meta names
+  is listed at its size**. Otherwise it is a provisional "another device is uploading" row, and the 24-hour rule is measured by the
+  `createdTime` in `{base}.folder.json`. Lists are merged only between devices that use the same storage — if iPhone and Mac both use iCloud, they see the same list; if one of them
+  uses Drive, neither sees the other's new recordings.
+- **Titles**: the canonical source is `description` in `{base}.folder.json`, and a rename fixes that file and `meta.json` together (the same rule as §3
+  "Titles"). If two devices change the same file at the same time, iCloud picks one version as current, and the shell deletes the other versions
+  when it reads (`NSFileVersion` — the one written later remains).
+- **Progress marker**: `appProperties.pending`/`pendingAt` in `{base}.folder.json`. A step that runs again every 30 seconds while waiting for upload confirmation
+  does not rewrite the marker — every write makes every device read that file again.
+- **Playback · deletion**: parts deleted by the retention sweep are fetched from the container (a download is requested and waited for up to 2 minutes) and their sha256 is checked.
+  "Also delete the iCloud folder" deletes the folder on every device through a coordinated delete. What the user deletes in the Files app stays in iCloud Drive's
+  "Recently Deleted" for 30 days (Apple), but whether the same holds for what the app deletes has not been checked — the dialog's default is, as with Drive,
+  the option that does not delete.
+- **No web link**: an iCloud folder has no fixed web address, so there is no `meta.drive` and no `Open in Drive`. The Mac has `Show in
+  Finder`; the iPhone has no action in that place.
+- **Not tied to an account (Known limitation)**: Drive work is tied to the Drive account and stops under a different account (§3 "Detaching from
+  the account"), but iCloud work is not tied. If the device signs in with a different Apple ID, the remaining uploads go to the new account. There is no in-app
+  disconnect either — whether to use iCloud is decided by the user in system settings (iPhone: Settings › [your name] › iCloud, Mac: System Settings › [your name] › iCloud).
+- **Build**: iCloud is off in a fresh checkout. It needs the container registration and the App ID capability (`app.recly`, `app.recly.mac`) and a Developer ID provisioning profile
+  for Mac Release (§12), and `apple/Config/Local.xcconfig` turns it on
+  (`RECLY_ICLOUD_CONTAINER`, `RECLY_PHONE_ENTITLEMENTS`, `RECLY_MAC_ENTITLEMENTS`). In a build that does not turn it on, `ReclyICloudContainer` in Info.plist
+  is empty and iCloud is not offered.
+- **Agents**: none of Claude · ChatGPT · Gemini has an iCloud connector (checked 2026-10-02). iCloud recordings are read through the Mac's local folder
+  (`~/Library/Mobile Documents/iCloud~app~recly/Documents/recly/`) (`skills/recly-notes`).
+- **Verification**: it goes as far as the core JVM tests (`ICloudFilesTest` · `ICloudUploadTest` · `ICloudJobTest` · `ICloudRemoteRecordingsTest` ·
+  `StorageSettingTest`) and RecKit `ICloudStorageTests`. Actual sync between two real devices on the same Apple ID has not been
+  checked (§20). In particular, when two devices each create the same month folder (`recly/memo/2026-10`) before syncing, it is unknown whether iCloud merges them into one
+  or splits them like `2026-10 2` — the list does not walk paths but looks for the folder property files, so even if they split, the list is correct; the Files app
+  just shows two folders.
 
-### 워치 → 폰 전송 계약
+### Watch → phone transfer contract
 
-- 단위: 파트 파일 하나 + 마지막에 `meta.json`. Android Data Layer 경로:
-  `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/meta/{recordingId}` — 파일명을 경로에 싣는 이유는
-  메타(=`{base}`)가 마지막에 도착하기 때문이다. Apple은 같은 값들을 `WCSession.transferFile`의 `metadata`
-  딕셔너리에 싣는다.
-- **채널은 `onOutputClosed` 뒤에 닫는다**(2026-09-04, Watch7 실기에서 발견). `ChannelClient.sendFile`의 Task는
-  전송 완료가 아니라 **요청 수락** 시점에 끝나고, 공식 문서는 "그 직후 채널을 닫지 말고 `onOutputClosed`로 완료를
-  알라"고 한다. 바로 닫으면 CLOSE가 데이터 뒤에 줄을 서고 폰은 `onInputClosed(CLOSE_REASON_REMOTE_CLOSE)`를 받아
-  파일을 버리고 ack하지 않았다(3.8 MB 파트가 오후 내 6번 전송, ack 0). 워치는 콜백을 첫 바이트 전에 등록하고
-  `CLOSE_REASON_NORMAL`을 기다린 뒤 닫는다(다른 사유는 링크 실패 = `STALLED`). 폰은 `NORMAL`·`REMOTE_CLOSE` 둘 다
-  "전부 도착"으로 받아들이고 sha256이 최종 판정이다 — 끊김·타임아웃·로컬 close는 잘린 파일이라 버린다.
-- **폰의 리스너 서비스는 이벤트마다 새 인스턴스다**(2026-09-04, Z Fold7 실기에서 발견). Play Services는
-  `onChannelOpened`·`onInputClosed`·`onChannelClosed`를 각각 새로 만든 `WearableListenerService` 인스턴스에 전달하고
-  1.5초 뒤 파괴한다. 그래서 `onChannelOpened`에서 인스턴스 필드에 적어 둔 "받는 중인 채널" 목록은 `onInputClosed`
-  때 비어 있었고, 캐시에 다 받아 둔 파일을 아무 로그 없이 무시했다(폰 ack 0건의 두 번째 원인). 스테이징 파일 경로는
-  채널 경로만의 함수(`cache/rec-transfer/{recordingId}/{file}`)이고 `onInputClosed`는 그것을 다시 계산한다 — 두
-  콜백 사이에 메모리 상태를 두지 않는다.
-- 각 파트마다 폰이 sha256을 검증하고 `{recordingId, part, track, ok}` ack를 보낸다.
-- 워치는 파트 ack를 **기록만** 하고 파일은 유지한다; `ack-meta ok:true`를 받은 뒤에야 파트·메타·디렉터리·로컬 행을
-  삭제한다(뒤 파트나 메타가 치명 nack면 앞서 ack된 파트까지 남아 있어야 재전송·복구가 가능하다).
-  `SHA256_MISMATCH` nack는 그 파트를 1회 재전송하고, 두 번째면 치명이다.
-- 폰은 메타를 받은 시점에 `recordings`에 등록하고 Job을 만든다. 메타 본문의 `recordingId`는 경로의 것과 일치해야
-  하며(불일치 → `RECORDING_ID_MISMATCH` nack, 코어 호출 없음), **`ack-meta ok:true`는 enqueue와 실행기 깨우기까지
-  끝난 뒤에만** 보낸다 — 그 전에 실패하면 ack하지 않고 워치의 재전송에 맡긴다(`acceptMeta`·`enqueue`는 멱등).
-  메타 없이 파트만 온 상태로 24시간이 지나면 고아 파트를 삭제한다.
-- 메타 전의 임시 행은 **수신기의 것**이다: 폰의 `RecordingRecovery`는 `TransferReceiver.receiving(recordingId)`가
-  참인(수신기가 첫 파트에 남긴 `transfer.pending.*` 표시가 있는) `recording` 행을 건너뛰고, 그 행은 메타 도착 또는
-  24시간 고아 정리로만 닫힌다. 임시 행은 `tracks`가 비고 파트 길이가 0이라, 크래시 복구처럼 finalize하면 그 빈 값이
-  메타에 굳어 Job이 `NO_INPUT_TRACK`으로 실패한다(2026-10-01, 파트와 메타 사이에 재시작된 iPhone 실기에서 발견).
-  `RecordingRecord.receiving`(행 모양 판별)으로 대신하지 않는 것은 워치도 같은 복구로 **자기** `source = watch`
-  녹음을 되살리기 때문이다.
-- **알려진 한계**: `ack-meta ok:true`가 유실되면 워치는 메타를 재전송하고, 폰이 이미 업로드·정리해
-  `Incomplete(전 파트)`를 돌려주더라도 워치는 파트를 아직 갖고 있으므로(ok 전 삭제 금지) 파트·메타를 다시 보내
-  수렴한다(폰의 `acceptPart`는 덮어쓰기, `enqueue`는 `AlreadyDone`). `ack-meta ok:false`에서 워치가 완료 처리하는
-  경우는 없다; 요구된 파트가 로컬에 없으면(외부 삭제) `PART_MISSING_LOCALLY`로 실패 표시하고 나머지는 보존한다.
-- 전송 중 녹음 시작 시각·`recordingId`는 워치가 만든 값을 그대로 쓴다(폰이 재생성하지 않는다). 메타가 오기 전의
-  임시 행(`TransferReceiver.placeholder`)도 마찬가지로 시작 시각을 **`recordingId`의 ULID 타임스탬프**에서 읽는다
-  — 도착 시각을 쓰면 20분짜리를 끝나고 받은 폰의 목록에서 그 녹음만 맨 위로 튀어 오른다. 셸이 이 행을 알아보는
-  것은 `RecordingRecord.receiving`이다(§3 "다른 기기의 녹음" 끝의 표).
+- Unit: one part file at a time + `meta.json` last. Android Data Layer paths:
+  `/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`, `/rec/meta/{recordingId}` — the file name is carried in the path because
+  the meta (= `{base}`) arrives last. Apple carries the same values in the `metadata`
+  dictionary of `WCSession.transferFile`.
+- **The channel is closed after `onOutputClosed`** (2026-09-04, found on a real Watch7). The Task of `ChannelClient.sendFile` ends when the
+  **request is accepted**, not when the transfer completes, and the official documentation says not to close the channel right after that and to learn of completion through `onOutputClosed`.
+  Closing right away put the CLOSE in line behind the data, and the phone received `onInputClosed(CLOSE_REASON_REMOTE_CLOSE)`,
+  discarded the file and did not ack (a 3.8 MB part was sent 6 times over an afternoon, 0 acks). The watch registers the callback before the first byte and
+  waits for `CLOSE_REASON_NORMAL` before closing (any other reason is a link failure = `STALLED`). The phone accepts both `NORMAL` · `REMOTE_CLOSE`
+  as "everything arrived", and sha256 is the final judge — a disconnect · timeout · local close means a truncated file, which is discarded.
+- **The phone's listener service is a new instance for every event** (2026-09-04, found on a real Z Fold7). Play Services delivers
+  `onChannelOpened` · `onInputClosed` · `onChannelClosed` each to a newly created `WearableListenerService` instance and
+  destroys it 1.5 seconds later. So the list of "channels being received" written to an instance field in `onChannelOpened` was empty at `onInputClosed`,
+  and files fully received into the cache were ignored without any log (the second cause of the 0 phone acks). The staging file path is
+  a function of the channel path alone (`cache/rec-transfer/{recordingId}/{file}`), and `onInputClosed` computes it again — no in-memory state
+  is kept between the two callbacks.
+- For each part, the phone verifies the sha256 and sends an ack `{recordingId, part, track, ok}`.
+- The watch only **records** part acks and keeps the files; only after receiving `ack-meta ok:true` does it delete the parts · meta · directory · local row
+  (if a later part or the meta gets a fatal nack, the parts acked earlier must still be there for resending · recovery to be possible).
+  A `SHA256_MISMATCH` nack resends that part once; the second time it is fatal.
+- The phone registers the recording in `recordings` and creates the Job when it receives the meta. The `recordingId` in the meta body must match the one in the path
+  (mismatch → `RECORDING_ID_MISMATCH` nack, no core call), and **`ack-meta ok:true` is sent only after enqueue and waking the runner
+  have finished** — if something fails before that, it does not ack and leaves it to the watch's resend (`acceptMeta` · `enqueue` are idempotent).
+  If 24 hours pass with only parts and no meta, the orphan parts are deleted.
+- The temporary row before the meta **belongs to the receiver**: the phone's `RecordingRecovery` skips `recording` rows for which `TransferReceiver.receiving(recordingId)`
+  is true (rows with the `transfer.pending.*` mark the receiver left on the first part), and such a row is closed only by the meta arriving or by the
+  24-hour orphan cleanup. A temporary row has empty `tracks` and zero-length parts, so finalizing it the way crash recovery does would freeze those empty values into the
+  meta, and the Job would fail with `NO_INPUT_TRACK` (2026-10-01, found on a real iPhone that restarted between the parts and the meta).
+  `RecordingRecord.receiving` (judging by the row's shape) is not used instead because the watch also revives its **own** `source = watch`
+  recordings through the same recovery.
+- **Known limitation**: if `ack-meta ok:true` is lost, the watch resends the meta, and even if the phone has already uploaded and cleaned up and
+  returns `Incomplete(all parts)`, the watch still has the parts (no deletion before ok), so it resends the parts · meta and the two
+  converge (the phone's `acceptPart` overwrites, `enqueue` returns `AlreadyDone`). There is no case in which the watch treats `ack-meta ok:false` as
+  completion; if a requested part is missing locally (deleted externally), it is marked failed with `PART_MISSING_LOCALLY` and the rest is kept.
+- During the transfer, the recording start time · `recordingId` are the values the watch created, used as they are (the phone does not regenerate them). The temporary row
+  before the meta arrives (`TransferReceiver.placeholder`) likewise reads its start time from **the ULID timestamp of `recordingId`**
+  — using the arrival time would make just that recording jump to the top of the list on a phone that received a 20-minute recording after it ended. What the shell uses to recognize this row
+  is `RecordingRecord.receiving` (the table at the end of §3 "Recordings from other devices").
 
 ---
 
-## 4. 웹훅 (구 docs/04)
+## 4. Webhooks (formerly docs/04)
 
-> **폐기(2026-09-24)**: 웹훅은 제품에서 제거됐다 — `webhook` 단계, 완료 웹훅 설정, payload·서명(Standard Webhooks),
-> `spec/webhook.payload.schema.json`, 로컬 수신기 스크립트가 모두 없다. 이전 빌드가 큐에 넣은 잡의 웹훅도 보내지
-> 않는다. 이 절은 기록이다. **예외**: "응답 처리"의 백오프 식과 "429의 `Retry-After` … `maxDelaySec` 상한" 규칙은
-> 모든 단계의 재시도 규칙으로 계속 유효하다(`Executor`가 인용한다). 결과 파일 항목의 모양(`files[]`,
-> `track: "transcript"`)도 단계 출력으로 남는다(§8 "결과 파일").
+> **Retired (2026-09-24)**: webhooks were removed from the product — the `webhook` step, the completion webhook setting, the payload and signature (Standard Webhooks),
+> `spec/webhook.payload.schema.json` and the local receiver script are all gone. Webhooks of jobs queued by earlier builds are not sent
+> either. This section is a record. **Exception**: the backoff formula in "Response handling" and the "a 429's Retry-After … capped at maxDelaySec" rule
+> remain valid as the retry rules of every step (`Executor` cites them). The shape of a result file entry (`files[]`,
+> `track: "transcript"`) also remains as step output (§8 "Result files").
 
-### 요청
+### Request
 
-> **폐기(2026-09-24)** — §4 머리말.
+> **Retired (2026-09-24)** — §4 preamble.
 
 ```
 POST {url}
@@ -960,17 +977,17 @@ webhook-timestamp: {unix seconds}
 webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timestamp}.{body}"))}
 ```
 
-- 서명은 [Standard Webhooks](https://www.standardwebhooks.com/) 그대로(ADR-010). `secretRef`가 없으면
-  `webhook-signature` 헤더를 생략한다.
-- 시크릿은 보안 저장소의 원문 바이트. UI에서 생성 버튼으로 32바이트 랜덤을 만들어 `whsec_` + base64로 보여준다
-  (Standard Webhooks 관례). 서명에는 `whsec_` 접두를 뗀 뒤 base64 디코드한 바이트를 쓴다. 생성된 값은 **그때 한
-  번만 보인다**.
-- 재시도할 때 `webhook-id`는 같고 `webhook-timestamp`와 서명은 새로 만든다. 수신 측은 `webhook-id`로 dedupe한다.
-- 타임아웃 30초. 리다이렉트는 따르지 않는다.
+- The signature is [Standard Webhooks](https://www.standardwebhooks.com/) as is (ADR-010). Without a `secretRef`, the
+  `webhook-signature` header is omitted.
+- The secret is the raw bytes in secure storage. In the UI, a generate button creates 32 random bytes and shows them as `whsec_` + base64
+  (the Standard Webhooks convention). Signing uses the bytes left after stripping the `whsec_` prefix and base64-decoding. A generated value is **shown only
+  once, at that moment**.
+- On a retry, `webhook-id` stays the same and `webhook-timestamp` and the signature are made anew. The receiver dedupes by `webhook-id`.
+- Timeout 30 seconds. Redirects are not followed.
 
-### payload
+### Payload
 
-> **폐기(2026-09-24)** — §4 머리말.
+> **Retired (2026-09-24)** — §4 preamble.
 
 ```json
 {
@@ -981,7 +998,7 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
     "recording": {
       "recordingId": "01J9ABCDEF0123456789ABCDEF",
       "source": "desktop", "platform": "macos",
-      "title": "주간 회의",
+      "title": "Weekly meeting",
       "startedAt": "2026-08-26T01:00:00.000Z", "endedAt": "2026-08-26T02:00:12.400Z",
       "durationSec": 3612.4, "timezone": "Asia/Seoul",
       "tracks": ["mic", "sys", "mix"],
@@ -996,38 +1013,38 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
     ],
     "folder": { "path": "recly/2026/2026-08/20260826T010000Z_desktop_01J9ABCD",
                 "drive": { "folderId": "1XyZ…", "webViewLink": "https://drive.google.com/drive/folders/1XyZ…" } },
-    "workflow": { "id": "01J9ABCDEF0123456789ABCDEF", "name": "회의" },
+    "workflow": { "id": "01J9ABCDEF0123456789ABCDEF", "name": "Meeting" },
     "device": { "id": "7c1e4b2a-…", "platform": "macos", "name": "MacBook Pro" }
   }
 }
 ```
 
-- `files[].drive`와 `folder.drive`는 이 단계 **앞에** 성공한 `drive.upload`가 있을 때만 채워진다. **없으면 null.**
-  `files`는 그 업로드 단계가 올린 파일만 담는다.
-- `files[]`에 메타 파일은 `track: "meta"`로 포함한다.
-- 앞선 `transcribe` 단계가 성공했으면 결과 파일을 `track: "transcript"`(`{base}.transcript.json`,
-  `{base}.transcript.txt` 두 항목)로 추가한다(§8). 실패했거나 단계가 없으면 항목이 없다. `data.transcript` 같은
-  별도 객체는 두지 않는다 — 수신자는 `files[]`와 Drive만 보면 된다.
-- `type`은 `recording.completed` 하나. 이후 `recording.failed` 등을 추가할 때 수신 측이 `type`으로 분기하도록
-  처음부터 넣었다.
+- `files[].drive` and `folder.drive` are filled only when a successful `drive.upload` exists **before** this step. **Otherwise null.**
+  `files` holds only the files that upload step uploaded.
+- The meta file is included in `files[]` as `track: "meta"`.
+- If a preceding `transcribe` step succeeded, its result files are added as `track: "transcript"` (two entries, `{base}.transcript.json` and
+  `{base}.transcript.txt`) (§8). If it failed or there is no such step, there are no entries. There is no separate object such as
+  `data.transcript` — the receiver only needs to look at `files[]` and Drive.
+- `type` is only `recording.completed`. It was there from the start so that receivers branch on `type` when `recording.failed` and others are
+  added later.
 
-### 응답 처리
+### Response handling
 
-> **폐기(2026-09-24)**: 아래 표는 웹훅 전용이라 기록이다. 표 아래의 백오프 식과 표의 "429의 `Retry-After` …
-> `maxDelaySec` 상한"은 모든 단계에 계속 유효하다(§4 머리말).
+> **Retired (2026-09-24)**: the table below is webhook-only, so it is a record. The backoff formula below the table and the table's
+> "a 429's Retry-After … capped at maxDelaySec" remain valid for every step (§4 preamble).
 
-| 응답 | 처리 |
+| Response | Handling |
 |---|---|
-| 2xx | 성공. 본문 무시 |
-| 408 · 425 · 429 · 5xx · 네트워크 오류 · 타임아웃 | 재시도(`retry` 규칙). **429의 `Retry-After`가 있으면 그 값을 우선하되 `maxDelaySec` 상한** |
-| 그 외 4xx | 즉시 단계 FAILED(터미널), `onError` 적용. 코어 메시지는 `WEBHOOK_HTTP:{status}` |
+| 2xx | Success. Body ignored |
+| 408 · 425 · 429 · 5xx · network error · timeout | Retry (the `retry` rules). **If a 429 has `Retry-After`, that value takes precedence, capped at `maxDelaySec`** |
+| Other 4xx | The step is FAILED immediately (terminal), `onError` applies. The core message is `WEBHOOK_HTTP:{status}` |
 
-백오프: `min(initialDelaySec × 2^(attempt-1), maxDelaySec)` ± 20% 지터. 기본값이면 30s, 60s, 120s, … 3600s 상한,
-8회.
+Backoff: `min(initialDelaySec × 2^(attempt-1), maxDelaySec)` ± 20% jitter. With the defaults: 30s, 60s, 120s, … capped at 3600s,
+8 attempts.
 
-### 수신 측 검증
+### Receiver-side verification
 
-> **폐기(2026-09-24)** — §4 머리말.
+> **Retired (2026-09-24)** — §4 preamble.
 
 ```js
 import { Webhook } from "standardwebhooks";
@@ -1039,525 +1056,525 @@ const payload = wh.verify(rawBody, {
 });
 ```
 
-n8n Webhook 노드는 서명 검증이 없으므로 Code 노드에서 위 라이브러리로 검증하거나, 로컬 n8n이면
-`http://127.0.0.1` 예외를 쓰고 서명 없이 둔다.
+The n8n Webhook node has no signature verification, so either verify with the library above in a Code node or, for a local n8n,
+use the `http://127.0.0.1` exception and leave it unsigned.
 
-저장소의 로컬 수신기 `scripts/webhook-receiver.mjs`는 2026-09-24 삭제됐다(§20 "웹훅 로컬 수신기").
+The repository's local receiver `scripts/webhook-receiver.mjs` was deleted on 2026-09-24 (§20 "Local webhook receiver").
 
 ---
 
-## 5. 워크플로우 보관·시크릿 (구 docs/05)
+## 5. Workflow storage · secrets (formerly docs/05)
 
-> **2026-09-24**: 워크플로우 보관(로컬 문서·기기 기본 포인터·스키마 마이그레이션·내보내기/가져오기·저장/편집·첫
-> 실행 시드)은 **폐기**됐다. 이 절에서 현재 유효한 것은 "동기화하지 않는다", "고정 처리 설정 도입", "시크릿",
-> "토큰"이다.
+> **2026-09-24**: workflow storage (the local document · device default pointer · schema migration · export/import · save/edit · first-run
+> seed) was **retired**. What remains valid in this section is "Not synchronized", "Fixed processing settings", "Secrets"
+> and "Tokens".
 
-### 동기화하지 않는다
+### Not synchronized
 
-**녹음 처리 설정도 시크릿 값도 기기별이다.** 두 기기가 같은 계정을 쓰더라도 서로의 설정을 보지 않고,
-한쪽에서 고친 것이 다른 쪽에 저절로 나타나지 않는다. Drive `appDataFolder`에는 아무것도 두지 않는다 —
-설정 파일도 `secrets.enc`도 없고, 따라서 pull/push도 병합도 동결도 `dirty` 표시도 없다(ADR-007 대체).
-Recly가 Drive에 쓰는 것은 녹음 파일뿐이고, 그것은 `drive.file` 스코프의 사용자 폴더다(§3).
+**Both the recording processing settings and secret values are per device.** Even when two devices use the same account, they do not see each other's settings,
+and a change made on one does not appear on the other by itself. Nothing is kept in Drive `appDataFolder` —
+no settings file and no `secrets.enc`, and so no pull/push, merge, freeze or `dirty` marker (replaces ADR-007).
+The only thing Recly writes to Drive is recording files, and those go to the user folder under the `drive.file` scope (§3).
 
-기기 사이로 설정을 옮기는 방법은 녹음 처리 설정의 **내보내기/가져오기** 하나다(아래 "고정 처리 설정 도입").
-시크릿 값은 어느 파일로도 나가지 않는다 — 새 기기에는 `secretRef`의 값이 없고 UI가 "이 기기에 키 없음"으로
-표시한다.
+The one way to move settings between devices is **export/import** of the recording processing settings (see "Fixed processing settings" below).
+Secret values never leave in any file — a new device has no value for the `secretRef`, and the UI shows "No key on this
+device".
 
-동기화하지 않는 것은 그 밖에도 같다: Job 상태, 토큰, 앱 설정(언어·Wi-Fi 전용)(Wi-Fi 전용은 폰
-셸에만 있다: Android WorkManager UNMETERED, iOS allowsCellularAccess; 2026-09-03)(ADR-008). **녹음 목록은
-예외다** — 동기화가 아니라 Drive의 녹음 폴더가 곧 목록이라서 그렇다(ADR-023, §3 "다른 기기의 녹음").
+What is not synchronized likewise includes: Job state, tokens, app settings (language · Wi-Fi only) (Wi-Fi only exists only in the phone
+shells: Android WorkManager UNMETERED, iOS allowsCellularAccess; 2026-09-03) (ADR-008). **The recording list is the
+exception** — not because it is synchronized, but because the recording folders in Drive are the list (ADR-023, §3 "Recordings from other devices").
 
-### 로컬 상태 (`sync_state`)
+### Local state (`sync_state`)
 
-> **폐기(2026-09-24)**: 아래 두 행(`localDoc`·`deviceDefaultWorkflowId`)은 쓰지 않는다. 현재 `sync_state`에서 쓰는 키는
-> 녹음 처리 설정 `processing/settings`다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
+> **Retired (2026-09-24)**: the two rows below (`localDoc` · `deviceDefaultWorkflowId`) are not used. The key currently used in `sync_state` is
+> the recording processing settings `processing/settings` (see "Fixed processing settings" below). What follows is a record.
 
-키/값 테이블 하나에 두 줄뿐이고, 둘 다 이 기기의 것이다.
+One key/value table with just two rows, both belonging to this device.
 
-| 키 | 값 |
+| Key | Value |
 |---|---|
-| `localDoc` | 이 기기의 워크플로우 문서. 실행도 편집도 표시도 전부 이것 하나를 읽는다(`WorkflowStore`) |
-| `deviceDefaultWorkflowId` | 이 기기의 기본 워크플로우 id(ADR-016). 문서 안에 들어가지 않으므로 내보낸 파일이 남의 기기 선택을 옮기지 않는다 |
+| `localDoc` | This device's workflow document. Running, editing and display all read this one document (`WorkflowStore`) |
+| `deviceDefaultWorkflowId` | This device's default workflow id (ADR-016). It is not inside the document, so an exported file does not carry over another device's choice |
 
-문서를 읽을 수 없을 때(뒤 버전이 쓴 `schema`, 이 빌드가 모르는 단계 타입)에도 **행은 건드리지 않는다**: 읽지
-못하는 것과 없는 것은 다르고, 그 위에 기본 워크플로우를 심으면 사용자의 바이트가 사라진다. 그런 기기는 기본
-워크플로우 2개로 동작하고 행은 그대로 남는다.
+Even when the document cannot be read (a `schema` written by a later version, a step type this build does not know), **the row is left untouched**: being
+unable to read something is not the same as it not existing, and seeding the default workflows over it would erase the user's bytes. Such a device runs with the 2 default
+workflows and the row stays as is.
 
-### 스키마
+### Schema
 
-> **폐기(2026-09-24)**: 워크플로우 문서의 schema 판정과 1·2 마이그레이션은 제거됐다. 녹음 처리 설정의 형식은
-> `spec/recording-settings.schema.json` v1이다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
+> **Retired (2026-09-24)**: the schema verdicts for the workflow document and the 1·2 migrations were removed. The format of the recording processing settings is
+> `spec/recording-settings.schema.json` v1 (see "Fixed processing settings" below). What follows is a record.
 
-지원 schema는 **3**이다(§2). 파서가 내리는 판정은 로컬 문서에도 가져온 파일에도 똑같이 적용된다.
+The supported schema is **3** (§2). The verdict the parser reaches applies equally to the local document and to an imported file.
 
-| `schema` | 이름 | 동작 |
+| `schema` | Name | Behavior |
 |---|---|---|
-| `> 3` | **Newer** | `ParseResult.UnsupportedSchema` → 읽지 않는다. 가져오기라면 "앱을 업데이트하세요"에 해당하는 오류이고, 로컬 문서라면 위처럼 행을 남긴 채 기본값으로 동작한다 |
-| `1..2` | **Outdated** | 현재 규칙으로 읽어 현재 schema로 올린다(`ParseResult.Ok.migratedFrom`). 다음 저장이 현재 schema로 되돌려 쓴다 |
-| `1..2` + 폐기된 필드 | **필드 폐기 마이그레이션** | ADR-016으로 사라진 `workflows[i].enabled`·`.isDefault`·`.trigger`는 **이름을 아는 채로 버린다**. `trigger.minDurationSec`은 워크플로우 최상단으로 올라가고 `trigger.sources`는 버려진다 |
-| `1..2` + 미지 필드 | **MigrationBlocked** | 타입 모델이 버릴 필드(`ParseResult.MigrationBlocked.fields`)가 있으면 마이그레이션하지 않고 거부한다 — 되돌려 쓰는 순간 남의 데이터가 사라지기 때문이다 |
+| `> 3` | **Newer** | `ParseResult.UnsupportedSchema` → not read. For an import this is the error corresponding to "Update the app"; for the local document, it runs on the defaults and leaves the row, as above |
+| `1..2` | **Outdated** | Read with the current rules and raised to the current schema (`ParseResult.Ok.migratedFrom`). The next save writes it back in the current schema |
+| `1..2` + retired fields | **Field-retirement migration** | `workflows[i].enabled` · `.isDefault` · `.trigger`, which ADR-016 removed, are **dropped knowingly, by name**. `trigger.minDurationSec` moves up to the top level of the workflow and `trigger.sources` is dropped |
+| `1..2` + unknown fields | **MigrationBlocked** | If there are fields the typed model would drop (`ParseResult.MigrationBlocked.fields`), it does not migrate and rejects the document — the moment it is written back, someone else's data would disappear |
 | `< 1` | — | `Invalid` |
 
-읽을 수 있는 가장 낮은 값은 `WorkflowParser.MIN_SCHEMA`(=1). schema 1은 `transcribe`가 없는 schema 2, schema 2는
-폐기된 세 필드가 더 있는 schema 3이므로 현재 파서로 읽는 것이 곧 제 규칙으로 읽는 것이다.
+The lowest readable value is `WorkflowParser.MIN_SCHEMA` (=1). Schema 1 is schema 2 without `transcribe`, and schema 2 is
+schema 3 with three more retired fields, so reading with the current parser is the same as reading with each schema's own rules.
 
-### 내보내기 · 가져오기
+### Export · import
 
-> **폐기(2026-09-24)**: 워크플로우 내보내기/가져오기(`recly-workflows.json`)는 제거됐다. 현재의 내보내기/가져오기는
-> 녹음 처리 설정 하나다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
+> **Retired (2026-09-24)**: workflow export/import (`recly-workflows.json`) was removed. Today's export/import covers
+> only the recording processing settings (see "Fixed processing settings" below). What follows is a record.
 
-설정 화면의 두 항목이고, 코어 쪽은 `WorkflowRepository.exportJson()` / `importJson(json)` 둘뿐이다. 파일을
-고르고 쓰는 것은 셸의 몫이다(Android SAF, iPhone 공유 시트, Mac 저장 패널, Windows 파일 선택).
+These are two items in the settings screen, and on the core side there are only `WorkflowRepository.exportJson()` / `importJson(json)`. Picking and
+writing the file is the shell's job (Android SAF, iPhone share sheet, Mac save panel, Windows file chooser).
 
-- **내보내기**: 저장된 문서를 **직렬화한 그대로** 쓴다. 형식이 따로 있는 것이 아니라 문서 자체가 형식이다
-  (`spec/workflow.schema.json`). 기본 파일명은 `recly-workflows.json`. **기기 기본 워크플로우 포인터는 들어가지
-  않고, 시크릿 값도 들어가지 않는다** — 파일에 있는 것은 `secretRef` 이름뿐이다(ADR-008).
-- **가져오기**: 파일을 파싱·검증(§2)한 뒤 **문서 전체를 교체한다.** 병합은 없다 — 두 기기의 문서는 서로의 사본이
-  아니므로 병합할 기준이 없다. 그래서 확인 대화상자가 "N개 워크플로우로 교체합니다"라고 먼저 묻는다.
-  옛 schema로 쓰인 파일은 로컬 문서와 **똑같이** 마이그레이션되고, 파싱·검증에 실패한 파일은 아무것도 쓰지 않은 채
-  파서의 오류 목록을 그대로 돌려준다(편집기 검증과 같은 표시).
-- 가져오기가 이 기기의 기본 워크플로우를 없애 버려도 포인터는 그대로 둔다. 가리킬 것이 없는 포인터는 오류가 아니라
-  `WorkflowSelector`가 아무것도 고르지 않는 상태이고, 셸이 새로 고르라고 안내한다(ADR-016).
+- **Export**: writes the saved document **exactly as serialized**. There is no separate format; the document itself is the format
+  (`spec/workflow.schema.json`). The default file name is `recly-workflows.json`. **The device default workflow pointer is not included,
+  and neither are secret values** — the file holds only `secretRef` names (ADR-008).
+- **Import**: parses and validates the file (§2), then **replaces the whole document.** There is no merge — the two devices' documents are not
+  copies of each other, so there is no base to merge against. That is why a confirmation dialog first asks "Replace with N workflows".
+  A file written in an old schema is migrated **exactly like** the local document, and a file that fails parsing or validation writes nothing and
+  returns the parser's error list as is (the same display as editor validation).
+- Even if an import removes this device's default workflow, the pointer is left as is. A pointer with nothing to point to is not an error but
+  the state in which `WorkflowSelector` picks nothing, and the shell asks the user to pick again (ADR-016).
 
-### 저장 · 편집
+### Saving · editing
 
-> **폐기(2026-09-24)**: 워크플로우 편집기와 그 저장 규칙은 제거됐다. 설정 저장의 동시 편집 규칙은 아래
-> "고정 처리 설정 도입"의 revision 비교다. 아래는 기록이다.
+> **Retired (2026-09-24)**: the workflow editor and its save rules were removed. The concurrent-edit rule for saving settings is the
+> revision comparison in "Fixed processing settings" below. What follows is a record.
 
-- 저장은 `WorkflowRepository.save`가 검증(§2 파서 왕복) → `localDoc` 교체 순서로 한 번에 한다. 실패는 저장 실패이고,
-  실패한 저장은 아무것도 쓰지 않는다.
-- 저장이 문서 봉투(`revision += 1`, `updatedAt = now`, `updatedBy = deviceId`)를 찍는다. 내보낸 파일이 언제 어느
-  기기에서 나왔는지 말할 수 있어야 하기 때문이다.
-- 한 기기에서도 편집기 두 개(데스크톱 두 창, 가져오기와 편집기)가 같은 워크플로우를 만질 수 있다. `WorkflowMutator`가
-  뮤텍스 안에서 문서를 다시 읽고, 편집기가 열었을 때의 `updatedAt`이 그대로가 아니면 `MutationResult.Stale`로
-  거절한다 — 3-way 병합이 없으므로 다시 열게 하는 것이 정직하다.
+- A save happens in one go in `WorkflowRepository.save`, in the order validate (§2 parser round trip) → replace `localDoc`. A failure is a save failure,
+  and a failed save writes nothing.
+- A save stamps the document envelope (`revision += 1`, `updatedAt = now`, `updatedBy = deviceId`), because an exported file must be able to tell
+  when and from which device it came.
+- Even on one device, two editors (two desktop windows, an import and an editor) can touch the same workflow. `WorkflowMutator`
+  rereads the document inside a mutex and rejects with `MutationResult.Stale` if the `updatedAt` from when the editor opened has changed
+  — there is no 3-way merge, so making the user reopen is the honest choice.
 
-### 첫 실행
+### First run
 
-> **폐기(2026-09-24)**: 기본 워크플로우("메모") 시드와 기기 포인터 찍기는 없다. 첫 실행은 녹음 처리 설정의
-> `initialize()`다(아래 "고정 처리 설정 도입"). 아래는 기록이다.
+> **Retired (2026-09-24)**: there is no seeding of the default workflow ("Memo") and no stamping of the device pointer. First run is the recording processing settings'
+> `initialize()` (see "Fixed processing settings" below). What follows is a record.
 
-- 기본 워크플로우는 "메모"(Drive, `recly/memo/{{yyyy}}-{{MM}}`, mono) 하나뿐이다(2026-09-04 사용자 결정; "회의"
-  스타터는 제거). 고정 ULID(`00000000000000000000RECMEM`)와 `updatedAt = 1970-01-01T00:00:00.000Z`로 심는다 — 아직
-  아무도 편집하지 않았다는 뜻이고, 첫 편집이 실제 시각을 찍는다. 이름은 최초 시드 시점의 앱 언어로 만든다(en: "Memo",
-  §7 규칙 6).
-- `WorkflowRepository.seed(preferredDefaultId)`는 문서가 없으면 심고, **포인터가 비어 있을 때에만** 셸이 고른
-  기본값(모든 기기에서 "메모")을 찍는다. 사용자가 이미 고른 선택은 절대 옮기지 않고, 한 번 찍힌 것은
-  되돌리지 않는다 — 되돌릴 근거였던 원격 문서가 이제 없다.
-- 어느 경로가 먼저 문서를 심었는지는 상관없다(백그라운드 enqueue의 `current()`가 셸의 `seed()`보다 먼저 돌 수 있다).
-  조건은 "포인터가 비어 있는가" 하나다.
+- There is only one default workflow, "Memo" (Drive, `recly/memo/{{yyyy}}-{{MM}}`, mono) (user decision of 2026-09-04; the "Meeting"
+  starter was removed). It is seeded with a fixed ULID (`00000000000000000000RECMEM`) and `updatedAt = 1970-01-01T00:00:00.000Z` — meaning
+  nobody has edited it yet; the first edit stamps a real time. The name is created in the app language at the time of the first seed (en: "Memo",
+  §7 rule 6).
+- `WorkflowRepository.seed(preferredDefaultId)` seeds the document if there is none, and stamps the default the shell picked
+  ("Memo" on every device) **only when the pointer is empty**. It never moves a choice the user already made, and once stamped, it is never
+  reverted — the remote document that would have justified a revert no longer exists.
+- Which path seeded the document first does not matter (a background enqueue's `current()` can run before the shell's `seed()`).
+  The only condition is "is the pointer empty".
 
-### 고정 처리 설정 도입
+### Fixed processing settings
 
-2026-09-24: 녹음은 **녹음 → 원본 업로드 → 전사 → 전사 결과 업로드**로 고정한다(`ProcessingPlan`:
-`drive.upload` → `transcribe` 또는 `local.transcribe` → `transcript.publish`, 전사 OFF면 `drive.upload`만).
-폰은 녹음·목록·설정 세 탭, 데스크톱은 기존 메뉴/트레이와 처리 설정, 워치는 녹음·전송만 제공한다.
-사용자 편집형 워크플로우와 웹훅은 없고, 이전 워크플로우 문서·설정을 읽거나 이관하는 호환 계층도 없다.
-전체 방향과 실기기 출시 조건은 [고정 처리 흐름 계획](research/2026-09-24-fixed-recording-flow-plan.md)에 따른다.
+2026-09-24: recording is fixed to **record → upload the original → transcribe → upload the transcript** (`ProcessingPlan`:
+`drive.upload` → `transcribe` or `local.transcribe` → `transcript.publish`; with transcription OFF, only `drive.upload`).
+The phone offers three tabs (Record, List, Settings), the desktop its existing menu/tray plus processing settings, and the watch only recording and transfer.
+There are no user-editable workflows and no webhooks, and no compatibility layer that reads or migrates earlier workflow documents or settings.
+The overall direction and the conditions for a real-device release follow the [fixed processing flow plan](research/2026-09-24-fixed-recording-flow-plan.md).
 
-- `ReclyCore.processingSettings`는 `sync_state`의 별도 키 `processing/settings`를 사용한다. 새 테이블이나 DB 버전 변경은 없다.
-- 형식은 [`spec/recording-settings.schema.json`](../spec/recording-settings.schema.json) v1이다. 저장 위치·최소 길이,
-  `local`/`external`/`off`, 언어, 외부 provider/키 참조/endpoint/모델을 설정한다.
-  전역 단계 배열이나 사용자 워크플로우 선택은 없다. 키 **값**은 읽거나 저장·내보내지 않는다.
-- 완료 후 연동(웹훅)은 없다. 설정 형식(`spec/recording-settings.schema.json`)에 `webhook` 필드가 없다.
-- 내보내기는 현재 녹음 설정만 제공한다. 이전 설정 내보내기와 복구용 내부 백업은 없다.
-- Siri/단축어 시작(`StartRecordingIntent`, 파라미터 없음)도 고정 설정을 사용한다.
-- **녹음은 시작할 때의 설정을 고정하고, 사용자가 누른 재시도는 지금의 설정으로 남은 일을 한다**(2026-09-25).
-  자동 실행과 자동 재시도는 잡 스냅샷대로다 — 설정을 저장하는 것만으로 대기 중인 녹음이 다른 업체로 보내지지
-  않는다. 수동 재시도(`JobService.retry`, 실패·대기 상태)는 현재 설정으로 계획을 다시 만들어 합친다: 성공한 단계는
-  그 행과 그때의 정의를 그대로 두고(업로드를 반복하지 않는다), 나머지 단계는 새 정의로 처음부터 — 정의가 바뀐
-  단계는 이전 제출 상태(`state_json`)도 버린다 — 새 계획에 없는 단계는 이미 끝난 게 아니면 지우고, 새로 생긴
-  단계는 추가한다. 녹음의 고정 설정(`processing/recording/{id}`)도 그 설정으로 바꾼다. 키를 바꾸거나 CLOVA 주소를
-  고친 뒤 실패한 녹음을 다시 시도하면 새 키·주소로 돈다.
-- **저장소**(2026-10-02, §3 "저장 위치"): 설정의 `storage.provider`(`drive` 기본 · `icloud`). 바꾸는 입구는
-  `setStorage` 하나이고 즉시 다음 revision으로 저장한다. iCloud는 셸이 컨테이너를 준 기기에서만 받는다(아니면 `Invalid`).
-  폼의 저장과 가져오기는 이 기기가 가진 저장소를 유지한다 — 계정에 관한 선택이라 기기마다 정한다. 폼이 열려 있는 동안
-  저장소가 바뀌면 폼은 새 revision을 받아 초안을 그대로 둔다(`storageChanged`).
-- 화자 분리와 최소/최대 화자 수는 UI에 노출하지 않는다. 새 계획은 지원하는 provider/모델에서 화자 분리를 자동 요청하고
-  화자 수는 기본 범위로 추론한다. 저장된 과거 `diarize=false`나 화자 수 힌트는 새 계획을 제한하지 않는다.
-  Groq 및 명시적으로 선택한 비화자 OpenAI 모델은 일반 전사를 사용한다. OpenAI 모델을 비워두면 기존 어댑터의
-  화자 지원 기본 모델을 쓴다. 명시한 모델·업체·키는 자동 교체하지 않는다.
-  로컬은 실행 시 `supportsDiarization`을 확인해 실제 요청에 반영하며, 미지원인 Apple SpeechTranscriber도 전사를 계속한다.
-- `initialize()`는 저장된 설정이 없으면 기본값(로컬 전사, 메모 폴더 `recly/memo/{{yyyy}}-{{MM}}`)으로 **Ready**
-  상태를 만든다. 옛 워크플로우 문서나 기기 포인터는 조사하지 않는다 — 이관·검토(`NeedsReview`) 상태는 없다.
-  셸이 로컬 엔진을 넘기지 않은 빌드·기기(`LocalTranscriptionEngine.installed == false`: OS 26 미만 Apple, 메모리
-  6 GiB 미만 Android·Windows, 32비트 프로세스의 Android, sherpa-onnx 네이티브 라이브러리가 없는 데스크톱)는 로컬 대신 OFF로 준비한다 — 항상 실패하는 방식을 기본으로 두지 않는다. 셸은 이때 로컬 선택지를 숨기고,
-  이미 로컬이 저장돼 있으면 사용할 수 없다는 안내와 함께만 보여 준다.
-- 폴더 템플릿에는 `{{workflowName}}`과 `{{title}}`을 허용하지 않는다(워크플로우 이름이 없다).
-- endpoint HTTPS·모델 길이 등 제약에 어긋나는 설정은 저장·가져오기에서 거부한다. 입력을 잘라내거나 조용히
-  보정하지 않는다.
-- 저장·가져오기는 현재 revision을 비교해 동시 편집 덮어쓰기를 막는다. 가져온 revision/device는 채택하지 않고
-  이 기기의 새 revision으로 저장한다. 미래 버전·미지 필드·명시적 null·손상 문서는 기본값으로 대체하지 않는다.
-- OFF/로컬로 바꿔도 유효한 기존 외부 설정은 보존한다. 미완성 입력 초안은 셸에서 관리하며, 저장된 설정에는
-  비활성 필드를 포함해 검증을 통과한 값만 둔다. 동작 방식 변경으로 키 값을 지우지 않는다.
-- 업체별 `invokeUrl`·`model`도 키처럼 업체마다 기억한다(`transcription.providerDetails`, 2026-09-28). 다른 업체를
-  골랐다가 돌아오면 편집 중이든 저장한 뒤든 되살린다. 한 업체의 값을 다른 업체로 넘기지는 않는다. 저장할 수 없는 값
-  (자리표시자가 남은 주소 등)은 기억하지 않는다. `invokeUrl` 입력란은 비워 두고 주소 형식
-  (`https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}` 등)은 자리표시 문구로만 보인다.
-- `read()`/`observe()`는 초기화 부작용이 없다. 셸은 시작할 때 `initialize()`를 부른다. Watch에서는 이 초기화를
-  실행하지 않는다.
+- `ReclyCore.processingSettings` uses a separate key `processing/settings` in `sync_state`. There is no new table and no DB version change.
+- The format is [`spec/recording-settings.schema.json`](../spec/recording-settings.schema.json) v1. It sets the storage location · minimum length,
+  `local`/`external`/`off`, the language, and the external provider/key reference/endpoint/model.
+  There is no global step array and no user workflow selection. Key **values** are never read, saved or exported.
+- There is no post-completion integration (webhook). The settings format (`spec/recording-settings.schema.json`) has no `webhook` field.
+- Export offers only the current recording settings. There is no export of earlier settings and no internal backup for recovery.
+- Starting from Siri/Shortcuts (`StartRecordingIntent`, no parameters) also uses the fixed settings.
+- **A recording pins the settings in force when it starts, and a retry the user presses does the remaining work with the current settings** (2026-09-25).
+  Automatic runs and automatic retries follow the job snapshot — saving settings alone never sends a waiting recording to a different provider.
+  A manual retry (`JobService.retry`, failed or waiting state) rebuilds the plan with the current settings and merges it: succeeded steps keep
+  their row and their definition from that time (the upload is not repeated), and the remaining steps start over with the new definition — a step whose definition
+  changed also drops its earlier submission state (`state_json`) — steps missing from the new plan are deleted unless already finished, and newly added
+  steps are added. The recording's pinned settings (`processing/recording/{id}`) are also changed to those settings. Retrying a failed recording after changing the key or
+  fixing the CLOVA address runs with the new key and address.
+- **Storage** (2026-10-02, §3 "Storage location"): the settings' `storage.provider` (`drive` by default · `icloud`). The single entry point for changing it is
+  `setStorage`, which saves it immediately as the next revision. iCloud is accepted only on a device where the shell provided a container (otherwise `Invalid`).
+  Saving the form and importing keep the storage this device has — it is a choice about the account, so each device decides it. If the
+  storage changes while the form is open, the form takes the new revision and keeps its draft as is (`storageChanged`).
+- Speaker diarization and the minimum/maximum speaker count are not exposed in the UI. A new plan requests diarization automatically on providers/models that support it
+  and infers the speaker count with the default range. A stored past `diarize=false` or speaker-count hint does not constrain a new plan.
+  Groq and explicitly chosen non-diarizing OpenAI models use plain transcription. If the OpenAI model is left empty, the existing adapter's
+  diarization-capable default model is used. An explicitly set model, provider or key is never replaced automatically.
+  Local checks `supportsDiarization` at run time and reflects it in the actual request, and Apple SpeechTranscriber, which does not support it, still transcribes.
+- If no settings are stored, `initialize()` creates the **Ready** state with the defaults (local transcription, memo folder `recly/memo/{{yyyy}}-{{MM}}`).
+  It does not inspect old workflow documents or device pointers — there is no migration or review (`NeedsReview`) state.
+  On builds and devices where the shell did not pass a local engine (`LocalTranscriptionEngine.installed == false`: Apple below OS 26, Android · Windows with less than
+  6 GiB of memory, Android in a 32-bit process, desktops without the sherpa-onnx native library), it prepares OFF instead of local — a method that always fails is never the default. The shell then hides the local option,
+  and if local is already stored, shows it only together with a notice that it cannot be used.
+- Folder templates do not allow `{{workflowName}}` or `{{title}}` (there are no workflow names).
+- Settings that break constraints such as endpoint HTTPS or model length are rejected on save and import. Input is never truncated or silently
+  corrected.
+- Save and import compare the current revision to prevent concurrent-edit overwrites. An imported revision/device is not adopted;
+  the settings are saved as a new revision of this device. Future versions, unknown fields, explicit nulls and corrupt documents are not replaced with defaults.
+- Switching to OFF/local preserves valid existing external settings. Incomplete input drafts are managed in the shell, and the stored settings hold
+  only values that passed validation, including inactive fields. Changing the method does not erase key values.
+- Per-provider `invokeUrl` · `model` are also remembered per provider, like keys (`transcription.providerDetails`, 2026-09-28). Choosing another provider
+  and coming back restores them, whether mid-edit or after saving. One provider's values are never carried to another provider. Values that cannot be saved
+  (an address with a placeholder left in it, and so on) are not remembered. The `invokeUrl` field is left empty, and the address format
+  (`https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}` and so on) appears only as placeholder text.
+- `read()`/`observe()` have no initialization side effects. The shell calls `initialize()` at startup. The watch does not run this
+  initialization.
 
-- 새 녹음은 시작 시 `processing/recording/<id>`에 설정 revision을 고정한다. 워치 녹음은 수신 검증 후 폰의 설정을
-  고정한다. 설정 변경은 기존 녹음·진행 중 잡을 바꾸지 않는다.
-- 실행기는 내부 고정 ID(`ProcessingPlan.ID`)와 `local.transcribe`/`transcript.publish` 단계로 기존 영속 큐를 사용한다.
-  완료 결과를 먼저 원자적으로 로컬 저장하므로 결과 업로드 실패에서 API/모델을 다시 돌리지 않는다.
-- 로컬 실행은 `이 기기에서 전사 중`, 자동 재개 대기는 `전사 대기 중`으로 표시하고 강제 재시도 버튼을 제공하지 않는다.
-  실패한 뒤 재시도 간격을 기다리는 로컬 전사(`last_error`가 남은 대기)는 자동 재개 대기가 아니다. 다른 단계처럼
-  `재시도 대기`·오류·`다시 시도`를 보인다(2026-09-27).
-  설정의 API 키 목록에서 저장된 키를 개별 삭제할 수 있으며 삭제 전 확인한다.
-- 로컬 설정은 4셸이 같은 모양이다(2026-09-26): `음성 인식 모델` 행에 모델 이름(Apple `Apple Speech`, Android·Windows
-  `Qwen3-ASR 0.6B` — 제품명이라 번역하지 않는다), 모델이 없으면 `이 기기에서 전사하려면 이 모델(약 1GB)을 한 번 다운로드해야
-  합니다.`(Apple은 크기를 알 수 없어 뺀다)와 `모델 다운로드` 버튼, 받는 동안에는 §9 사각 로더와 `모델 다운로드 중…`,
-  그리고 `기기 내 전사에서는 화자를 구분하지 않습니다.` 받고 나면 안내와 버튼이 사라지고 이름 행만 남는다.
-  녹음 시작·진행·종료 중에는 `모델 다운로드`를 누를 수 없다. Android는 종량제 연결(모바일 데이터)이면 먼저 묻고
-  (`모바일 데이터로 다운로드할까요?` — 취소 · `Wi-Fi에서 다운로드` · 다운로드), Windows는 캡처 헬퍼의 `--network-cost`가
-  종량제라고 답하면 묻는다(`데이터 요금이 부과되는 연결로 다운로드할까요?`; 모르면 묻지 않는다).
-- 전사 방식을 `기기에서`로 바꿀 때 녹음 언어가 `자동`·`한국어와 영어`면 앱 언어로 바꾸고, 모델에 그 언어가 없으면
-  영어로 바꾼다 — 로컬 목록은 명시 언어뿐이라 그대로 두면 `저장`을 누를 수 없다. 사용자가 고른 명시 언어는 모델에
-  없어도 그대로 두고 지원하지 않는다는 줄을 보인다(Apple·Android, 2026-09-29).
-- **모델 대기와 다운로드(2026-09-26).** 모델이 없어 로컬 전사를 못 하는 녹음은 실패가 아니라 `NEEDS_MODEL` 대기다(§10).
-  목록 행은 `음성 모델 대기`(배지 `NEEDS_MODEL`, 경고 톤)와 `모델 다운로드` 칩, 배너는 같은 사유와 다운로드 동작을
-  보인다 — 설정으로 보내지 않고 그 자리에서 받는다. 로컬 모드이고 엔진이 있는데 모델이 없고 아직 기다리는 녹음이 없으면
-  녹음 화면(Mac 팝오버, Windows 트레이) 위에 한 번 `이 기기에서 전사하기` 카드를 띄운다(`나중에` · `모델 다운로드`;
-  `나중에`는 기기에 기억하고 다시 띄우지 않는다). 본문은 무엇을 받는지만 말한다 — Android·Windows `기기 내 전사에는
-  오픈소스 음성 인식 모델 Qwen3-ASR(988 MB)이 필요합니다.`, Apple `기기 내 전사에는 Apple 음성 인식 모델이 필요합니다.`
-  (2026-09-27). 전사 방식은 사용자가 고르므로, 받으면 외부로 보내지 않는다는 식의 결과는 약속하지 않는다. 기다리는 녹음이 생기면 카드는 숨고 배너(건수 포함)가 유일한 안내다.
-  설정·배너·행·카드는 셸마다 하나의 다운로드 상태를 함께 보고, 진행률을 `모델 다운로드 중… N%`로 보인다(Android·Windows는
-  `988 MB 중 412 MB`처럼 바이트도; Apple은 크기를 알 수 없어 %만). 받는 동안 배너는 진행률과 `다운로드 취소`를 보이고,
-  기다리는 행은 칩을 숨긴다(진행률은 배너 한 곳). 멈춰 있을 때 펼친 행의 첫 동작은 강조한 `모델 다운로드`다. 일부만 받은
-  상태면 `이어서 다운로드`, 취소(`다운로드 취소` — 폼의 `취소`와 구분)해도 받은 부분은 남는다. Android는 WorkManager 포그라운드 작업(알림에 진행률·취소)이라
-  앱을 떠나도 계속 받고, `Wi-Fi에서 다운로드`를 고르면 비종량제 연결을 기다린다(`Wi-Fi 연결을 기다리는 중`).
-- Apple의 로컬 엔진은 iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`이며, 언어 자산 다운로드는 설정에서 사용자가 요청한다.
-  이미 OS에 전달된 공유 자산 설치의 완료·재시도 시점은 OS가 관리한다.
-  모델 다운로드가 끝나면 같은 언어의 `NEEDS_MODEL` 대기만 자동 재개하며,
-  완료된 업로드·저장한 전사 진행률·다른 실패·연결 해제 상태는 유지한다. 다운로드는 열·전력 상태와 상관없이 시스템에 요청한다
-  (열·전력 제한은 전사에만 둔다, 2026-09-27). 요청이 끝났는데도 모델이 없으면(취소 제외) `모델 다운로드가 끝나지 않았습니다. 다시
-  시도해 주세요.`를 보인다 — 버튼만 되돌아오면 누른 것이 아무 일도 안 한 것처럼 보인다.
-  파일 하나를 한 분석기에 공급하고 PCM은 제한된 버퍼로 읽는다. 여러 녹음 파트는 무손실 결합하며 임시 파일은 성공·실패·취소 시 정리한다.
-  열 상태가 `serious` 이상이면 대기/중단한다(2026-09-27 완화 — `fair`는 충전 중에도 흔하고, 멈춘 이유를 사용자가 짐작할 수 없다).
-  저전력 모드로는 멈추지 않는다. 확정 구간을 저장해 식으면 다음 실행 기회에 자동으로 재개한다.
-- 로컬 계산은 기기당 하나, 새 녹음 시작 시 양보한다. 플랫폼 실행 만료/취소도 native 분석기를 취소한다.
-  로컬 전용 패스는 Drive 인증·네트워크 요청·결과 게시를 실행하지 않는다. 네트워크 업로드의 Wi-Fi 제약은 그대로다.
-- Android·Windows의 로컬 엔진은 sherpa-onnx 1.13.8 위의 Qwen3-ASR 0.6B INT8(`Qwen3Asr`)이다(2026-09-26).
-  모델(약 1 GB, 7개 파일)은 앱에 넣지 않고 사용자의 다운로드 동작(설정, 대기 중인 녹음·배너, 첫 실행 카드)으로만 받는다 — 커밋·크기·SHA-256으로 고정하고, 8 MB 범위
-  요청으로 받아 끊겨도 이어 받으며, 해시가 맞은 파일만 제자리로 옮긴다(`LocalModelStore`, 경로는 §15). 폴더는 Android
-  `noBackupFilesDir/models/`, Windows `{dataDir}/models/`이고 모델 revision마다 따로다. 한 번 받으면 다시 받지 않는다 —
-  런타임만 바뀌는 업데이트도 같은 폴더를 쓰고, 새 모델이 다 받아지면 이전 revision 폴더는 지운다.
-  Silero VAD가 녹음을 발화 구간으로 자르고, 구간은 20초 이하 조각으로 나눠 디코드한다 — 모델 문맥을 넘긴 입력에
-  sherpa-onnx는 오류 대신 빈 텍스트를 돌려준다. 조각마다 확정 구간을 저장하므로 취소·재개·대기는 조각 경계에서 걸린다.
-  타이밍은 구간 단위이고 화자 분리는 없다. CPU 2스레드로 돈다. Android는 열 상태가 `SEVERE` 이상이면 대기하고(절전
-  모드로는 멈추지 않는다, 2026-09-27), Windows는 기다릴 열 신호가 없다. 언어는 이 모델이 아는 것만 고른다(우크라이나어 제외, 프롬프트에는 영어
-  이름으로 넘긴다). Windows는 네이티브 라이브러리를 jar에서 `{dataDir}/native/{revision}/`로 풀어 쓴다 — sherpa-onnx 기본
-  로더는 실행마다 새 임시 폴더에 풀고, 로드된 DLL은 지울 수 없다. 그 폴더는 사용자가 쓸 수 있으므로 로드할 때마다
-  앱 안의 사본과 SHA-256을 대조해 다르면 다시 쓰고, 이전 revision 폴더는 지운다(`Natives`). Android APK는 64비트
-  ABI(`arm64-v8a`·`x86_64`)에만 sherpa-onnx를 넣고 JNI가 쓰지 않는 C·C++ API 라이브러리는 뺀다 — 32비트 프로세스에서는
-  로컬 엔진을 만들지 않는다. 추론은 앱 프로세스 안에서 돌고 캡처가 시작되면 멈춘다.
-  **실기기 발열·장문·정확도는 검증하지 않았다**(§20). 무거운 CPU 추론이나 외부 API로 자동 대체하지 않는다.
-- 로컬 전사 v2는 `speakerIdentification`과 `timing`을 명시한다. 화자 분리 미지원이면 `speakers=[]`, `speaker=""`이며
-  단일 화자를 식별했다고 표현하지 않는다. v1 외부 API 결과와 기존 파일 읽기는 유지한다.
+- A new recording pins the settings revision in `processing/recording/<id>` when it starts. A watch recording pins the phone's settings after the receipt is validated.
+  A settings change does not alter existing recordings or in-progress jobs.
+- The runner uses the existing persistent queue with an internal fixed ID (`ProcessingPlan.ID`) and the `local.transcribe`/`transcript.publish` steps.
+  It first saves the completed result locally and atomically, so a failed result upload does not rerun the API/model.
+- A local run shows `Transcribing on this device`, a wait for automatic resume shows `Transcription pending`, and no forced-retry button is offered.
+  A local transcription waiting out its retry interval after a failure (a wait with `last_error` left) is not a wait for automatic resume. Like other steps, it
+  shows `Retry pending`, the error and `Retry` (2026-09-27).
+  In the settings' API key list, stored keys can be deleted one by one, with a confirmation before deletion.
+- The local settings have the same shape in all 4 shells (2026-09-26): a `Speech recognition model` row with the model name (Apple `Apple Speech`, Android · Windows
+  `Qwen3-ASR 0.6B` — product names, so not translated); if the model is missing, `To transcribe on this device, download this model once (about 1GB).`
+  (Apple leaves out the size because it cannot know it) and a `Download model` button; while downloading, the §9 square loader and `Downloading model…`;
+  and `On-device transcription does not separate speakers.` Once downloaded, the notice and the button disappear and only the name row remains.
+  `Download model` cannot be pressed while a recording is starting, in progress or ending. On a metered connection (mobile data), Android asks first
+  (`Download over mobile data?` — Cancel · `Download on Wi-Fi` · Download), and Windows asks when the capture helper's `--network-cost`
+  answers metered (`Download over a metered connection?`; if unknown, it does not ask).
+- When the transcription method is switched to `On device` and the recording language is `Automatic` or `Korean and English`, the language changes to the app language, or to
+  English if the model lacks that language — the local list has only explicit languages, so leaving it as is would make `Save` impossible to press. An explicit language the
+  user chose is kept even if the model lacks it, with a line saying it is not supported (Apple · Android, 2026-09-29).
+- **Waiting for and downloading the model (2026-09-26).** A recording that cannot be transcribed locally because the model is missing is not a failure but a `NEEDS_MODEL` wait (§10).
+  The list row shows `Waiting for speech model` (badge `NEEDS_MODEL`, warning tone) and a `Download model` chip, and the banner shows the same reason and the download
+  action — the download happens right there instead of sending the user to settings. In local mode, when the engine exists, the model does not, and no recording is waiting yet,
+  a `Transcribe on this device` card appears once above the recording screen (Mac popover, Windows tray) (`Not now` · `Download model`;
+  `Not now` is remembered on the device and the card does not appear again). The body says only what gets downloaded — Android · Windows `On-device transcription needs Qwen3-ASR (988 MB), an open-source speech recognition model.`,
+  Apple `On-device transcription needs Apple’s speech recognition model.`
+  (2026-09-27). The user chooses the transcription method, so the card promises no outcome such as nothing being sent out once the model is downloaded. Once a recording is waiting, the card hides and the banner (with the count) is the only notice.
+  Settings, banner, row and card share one download state per shell and show progress as `Downloading model… N%` (Android · Windows also show
+  bytes, like `412 MB of 988 MB`; Apple shows only % because it cannot know the size). While downloading, the banner shows the progress and `Cancel download`,
+  and waiting rows hide the chip (progress appears in the banner alone). When stopped, the first action of an expanded row is the emphasized `Download model`. With a partial
+  download it is `Resume download`, and cancelling (`Cancel download` — distinct from the form's `Cancel`) keeps the downloaded part. On Android it is a WorkManager foreground job (progress and cancel in the notification), so
+  the download continues after leaving the app, and choosing `Download on Wi-Fi` waits for an unmetered connection (`Waiting for Wi-Fi`).
+- Apple's local engine is the iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`, and the user requests the language asset download in settings.
+  For a shared asset installation already handed to the OS, the OS manages when it completes and when it is retried.
+  When a model download finishes, only `NEEDS_MODEL` waits for the same language resume automatically;
+  completed uploads, saved transcription progress, other failures and the disconnected state are kept. The download is requested from the system regardless of thermal and power state
+  (thermal and power limits apply only to transcription, 2026-09-27). If the request ends and the model is still missing (except on cancel), `The model didn’t finish downloading. Try again.`
+  is shown — if only the button came back, pressing it would look as if it did nothing.
+  One file is fed to one analyzer, and PCM is read through a bounded buffer. Multiple recording parts are joined losslessly, and temporary files are cleaned up on success, failure or cancellation.
+  At thermal state `serious` or above it waits/stops (relaxed 2026-09-27 — `fair` is common even while charging, and the user cannot guess why it stopped).
+  Low Power Mode does not stop it. Confirmed segments are saved, so once the device cools, it resumes automatically at the next chance to run.
+- Local computation runs one at a time per device and yields when a new recording starts. A platform run expiry/cancellation also cancels the native analyzer.
+  The local-only pass does not run Drive authentication, network requests or result publishing. The Wi-Fi constraint on network uploads stays as is.
+- The local engine on Android · Windows is Qwen3-ASR 0.6B INT8 (`Qwen3Asr`) on sherpa-onnx 1.13.8 (2026-09-26).
+  The model (about 1 GB, 7 files) is not bundled in the app and is downloaded only through the user's download action (settings, a waiting recording or the banner, the first-run card) — it is pinned by commit, size and SHA-256, downloaded in 8 MB range
+  requests that resume after an interruption, and only files whose hash matches are moved into place (`LocalModelStore`; paths in §15). The folder is Android
+  `noBackupFilesDir/models/` and Windows `{dataDir}/models/`, a separate one per model revision. Once downloaded, it is never downloaded again —
+  an update that changes only the runtime uses the same folder, and when a new model has been fully downloaded, the previous revision's folder is deleted.
+  Silero VAD cuts the recording into speech segments, and segments are split into pieces of 20 seconds or less for decoding — for input beyond the model's context,
+  sherpa-onnx returns empty text instead of an error. Confirmed segments are saved per piece, so cancel, resume and waiting take effect at piece boundaries.
+  Timing is per segment and there is no diarization. It runs on 2 CPU threads. Android waits at thermal state `SEVERE` or above (battery saver
+  does not stop it, 2026-09-27); Windows has no thermal signal to wait on. Languages are chosen only from those this model knows (Ukrainian excluded; they are passed to the prompt by their English
+  names). Windows extracts the native libraries from the jar into `{dataDir}/native/{revision}/` and uses them from there — the sherpa-onnx default
+  loader extracts into a new temporary folder on every run, and a loaded DLL cannot be deleted. That folder is user-writable, so on every load
+  it compares SHA-256 against the copy inside the app, rewrites it on a mismatch, and deletes previous revision folders (`Natives`). The Android APK includes sherpa-onnx only for the 64-bit
+  ABIs (`arm64-v8a` · `x86_64`) and leaves out the C · C++ API libraries that JNI does not use — in a 32-bit process
+  the local engine is not created. Inference runs inside the app process and stops when capture starts.
+  **Real-device heat, long recordings and accuracy have not been verified** (§20). There is no automatic fallback to heavy CPU inference or an external API.
+- Local transcription v2 states `speakerIdentification` and `timing` explicitly. Without diarization support it writes `speakers=[]`, `speaker=""`, and
+  it does not present the result as having identified a single speaker. Reading v1 external API results and existing files is kept.
 
-### 시크릿
+### Secrets
 
-- 이름: `^[a-z][a-z0-9_]{0,31}$`. 녹음 처리 설정에는 이름(`secretRef`)만 들어간다(ADR-008). 이름은 **제공자 id 그대로**다(`elevenlabs`, `clova` …, 2026-09-25) — 제공자마다 키가 따로 남아 제공자를 바꿔도 다른 업체의 키가 전송되지 않고, 설정 화면에는 이름 입력칸이 없다. 설정 화면과 녹음 화면의 전사 노드는 제공자를 `SttProviders.displayName`(ElevenLabs, CLOVA Speech …, 번역하지 않는 고유명사)으로 보여 주고, 전사 파일·로그·설정 문서에는 id를 그대로 쓴다.
-- 저장:
+- Name: `^[a-z][a-z0-9_]{0,31}$`. The recording processing settings hold only the name (`secretRef`) (ADR-008). The name is **the provider id as is** (`elevenlabs`, `clova` …, 2026-09-25) — each provider keeps its own key, so switching providers never sends another provider's key, and the settings screen has no name field. The settings screen and the transcription node on the recording screen show the provider by `SttProviders.displayName` (ElevenLabs, CLOVA Speech …, proper nouns that are not translated), while transcript files, logs and settings documents use the id as is.
+- Storage:
 
-| 플랫폼 | 구현 | 세부 |
+| Platform | Implementation | Details |
 |---|---|---|
-| Android 폰 · 갤럭시 워치 | `androidx.security:security-crypto` 1.1.0 `EncryptedSharedPreferences` | 마스터 키는 `MasterKey`(`AES256_GCM`, Android Keystore가 감쌈), 키 이름 `AES256_SIV`·값 `AES256_GCM`, 파일 `rec_secure`, 항목 이름은 `{ns}/{key}`. 워치가 담는 것은 설치의 device UUID뿐(ADR-002) |
-| iPhone · Apple Watch · macOS | Keychain generic password | `(ns, key)`당 항목 하나, service는 앱 이름 접두 + ns, 접근성 `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` |
-| Windows | Credential Manager | JNA로 `CredReadW`/`CredWriteW`/`CredDeleteW`/`CredEnumerateW`, `CRED_TYPE_GENERIC`, `CRED_PERSIST_LOCAL_MACHINE`(로밍 프로필에 올리지 않음) |
+| Android phone · Galaxy Watch | `androidx.security:security-crypto` 1.1.0 `EncryptedSharedPreferences` | The master key is `MasterKey` (`AES256_GCM`, wrapped by Android Keystore), key names `AES256_SIV` · values `AES256_GCM`, file `rec_secure`, entry names `{ns}/{key}`. The only thing the watch holds is the installation's device UUID (ADR-002) |
+| iPhone · Apple Watch · macOS | Keychain generic password | One item per `(ns, key)`, service is the app-name prefix + ns, accessibility `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` |
+| Windows | Credential Manager | `CredReadW`/`CredWriteW`/`CredDeleteW`/`CredEnumerateW` via JNA, `CRED_TYPE_GENERIC`, `CRED_PERSIST_LOCAL_MACHINE` (not uploaded to roaming profiles) |
 
-`EncryptedSharedPreferences`·`MasterKey`는 상위 라이브러리에서 deprecated지만 **그대로 쓴다**(코드는
-`@Suppress("DEPRECATION")`으로 그 사실을 남긴다). DataStore + Keystore 직접 구현은 (a) 봉인·해제 코드와 키
-로테이션을 우리가 지게 되고, (b) 마이그레이션 대상 사용자가 0이며, (c) `EncryptedSharedPreferences`가 키 이름까지
-복호화해 주기 때문에 별도 이름 색인 없이 `names(ns)`가 성립한다(색인을 따로 두면 복원·크래시로 실제 저장소와
-어긋난다). 라이브러리가 실제로 제거되면 그때 옮긴다.
+`EncryptedSharedPreferences` · `MasterKey` are deprecated upstream, but **we keep using them** (the code records that fact with
+`@Suppress("DEPRECATION")`). With a direct DataStore + Keystore implementation, (a) the seal/unseal code and key
+rotation would fall on us, (b) there are zero users to migrate, and (c) `EncryptedSharedPreferences` decrypts even the key names, so
+`names(ns)` works without a separate name index (a separate index drifts from the real store through restores and crashes). If the library is
+actually removed, we move then.
 
-Windows 개발 호스트(macOS)에서는 `DevFileSecureStore`(평문 base64 JSON)가 대신 쓰인다 — **개발 전용**이고
-Windows에서는 절대 선택되지 않는다.
+On the Windows development host (macOS), `DevFileSecureStore` (plaintext base64 JSON) is used instead — it is **development only** and
+is never selected on Windows.
 
-- 값 입구는 **`ReclyCore.secrets`**(`SecretsRepository.put/delete/get/names`)다. 코어가 소유한 네임스페이스는
-  하나이고 입구도 하나여야 하므로, 셸은 `SecureStore`에 직접 쓰지 않는다.
-- **값은 기기 밖으로 나가지 않는다.** 파일로도, 내보내기로도, 워치로도 가지 않는다. 새 기기는 사용자가 다시
-  입력한다 — 그 대신 어느 기기의 키가 새어도 다른 기기가 함께 새지 않는다.
-- 실행 시 값이 없으면 그 단계는 즉시 `MISSING_SECRET`으로 FAILED(재시도 없음), `onError` 적용.
-- UI: 공용 시크릿(API 키) 목록은 이름 조회·삭제만 제공하고, 외부 전사를 골랐을 때만 그 항목 안에 보인다(2026-09-25; 방식을 바꿔도 키는 지우지 않는다).
-  고른 제공자의 키가 저장돼 있으면 입력칸 대신 **"API 키 … ✓ 이 기기에 저장됨"** 행과 `키 바꾸기`·`삭제`를 보인다 —
-  ✓는 칩의 선택 표시와 같은 글자이고 성공 색이다(§9 "모든 상태는 색 + 텍스트"). 입력칸에 가짜 가림값(`••••`)을
-  채우거나 안내 문구로 쓰지 않는다: 안내 문구는 입력 시작과 함께 사라지고 낭독기가 제대로 읽지 않으며(W3C WAI·NN/g),
-  Compose M3는 라벨이 있는 칸의 안내 문구를 포커스 전까지 투명하게 둔다. `키 바꾸기`를 누르면 빈 입력칸과 `취소`가
-  나온다. 아래 목록(`다른 업체의 키`)은 나머지 제공자의 키만 보인다. 새 키의 값은 녹음 처리 설정의 외부 전사 항목에서
-  입력받는다. 웹훅 서명 키 생성 동작(en `Generate a webhook signing key`)은 폐기됐다(2026-09-24).
-- **읽히지 않는 보안 저장소는 실패로 닫는다(fail closed).** 셸의 Keychain/Keystore/Credential Manager가 목록 조회
-  자체를 거부하면(`errSecMissingEntitlement`, 잠긴 기기의 `errSecInteractionNotAllowed`, ACL 거부) 그 예외는 코어를
-  그대로 통과한다 — "없음"으로 읽으면 `secretRef`가 있는 단계에 "이 기기에 키 없음"이 잘못 붙고,
-  `ReclyCore.disconnect`의 `tokens` 정리가 토큰이 그대로 남은 네임스페이스를 비웠다고 보고한다. 그래서 `disconnect`는
-  던져서 셸이 정리를 계속 빚진 상태(`REVOKED_CLEANUP_OWED`)로 두고 재시도를 띄우게 한다.
-- **키 삭제는 확인 후 실행한다**(2026-09-10). 키 이름을 먼저 보여준다.
-  취소하면 키가 유지된다. 확인 화면에는 키 값을 표시하지 않는다. Android·iPhone·macOS·Windows 공통이다.
-- **"연결 해제"는 시크릿을 지우지 않는다**(§3). 값은 계정에서 파생된 것이 아니라 이 기기의 설정이고, 지우면 어디에서도
-  되찾을 수 없다.
+- The entry point for values is **`ReclyCore.secrets`** (`SecretsRepository.put/delete/get/names`). The core owns a single namespace,
+  and it must have a single entry point, so shells do not write to `SecureStore` directly.
+- **Values never leave the device.** Not in files, not in exports, not to the watch. On a new device the user enters them
+  again — in exchange, a key leaking from one device does not leak the other devices along with it.
+- If the value is missing at run time, that step is FAILED immediately with `MISSING_SECRET` (no retry), and `onError` applies.
+- UI: the shared secret (API key) list offers only name lookup and deletion, and appears inside the external transcription item only when external transcription is chosen (2026-09-25; changing the method does not delete keys).
+  If the chosen provider's key is stored, an **"API key … ✓ Saved on this device"** row with `Replace key` · `Delete` is shown instead of the input field —
+  the ✓ is the same character as the chips' selection mark, in the success color (§9 "Every state is color + text"). The input field is not filled with a fake mask (`••••`),
+  and the mask is not used as placeholder text: placeholder text disappears as soon as typing starts and screen readers do not read it properly (W3C WAI · NN/g),
+  and Compose M3 keeps the placeholder of a labeled field transparent until focus. Pressing `Replace key` brings up an empty input field and `Cancel`.
+  The list below (`Other providers’ keys`) shows only the other providers' keys. The value of a new key is entered in the external transcription item of the recording
+  processing settings. The webhook signing key generation action (en `Generate a webhook signing key`) was retired (2026-09-24).
+- **An unreadable secure store fails closed.** If the shell's Keychain/Keystore/Credential Manager refuses the list query
+  itself (`errSecMissingEntitlement`, `errSecInteractionNotAllowed` on a locked device, an ACL denial), that exception passes through the core
+  unchanged — reading it as "none" would wrongly put "No key on this device" on steps that have a `secretRef`, and
+  the `tokens` cleanup of `ReclyCore.disconnect` would report a namespace that still holds tokens as emptied. So `disconnect`
+  throws, which leaves the shell still owing the cleanup (`REVOKED_CLEANUP_OWED`) and lets it show a retry.
+- **Deleting a key runs only after confirmation** (2026-09-10). The key name is shown first.
+  Cancelling keeps the key. The confirmation screen does not show the key value. This is common to Android · iPhone · macOS · Windows.
+- **"Disconnect" does not delete secrets** (§3). The values are not derived from the account but are this device's settings, and once deleted they cannot be
+  recovered from anywhere.
 
-### 토큰
+### Tokens
 
-- Google access/refresh token은 시크릿과 같은 저장소, 다른 네임스페이스(`tokens`)에 있다. 동기화하지 않는다.
-- 코어는 `TokenProvider.accessToken()`만 호출한다. 갱신·재로그인 유도는 셸의 몫이다(§6).
+- The Google access/refresh token lives in the same store as secrets, in a different namespace (`tokens`). It is not synchronized.
+- The core calls only `TokenProvider.accessToken()`. Refreshing and prompting the user to sign in again are the shell's job (§6).
 
 ---
 
-## 6. 인증 (구 docs/06)
+## 6. Authentication (formerly docs/06)
 
-이 절은 Google Drive의 인증이다. iCloud(§3 "저장 위치")에는 앱의 인증이 없다 — 기기의 iCloud 계정을 시스템이 쓴다.
+This section is about Google Drive authentication. iCloud (§3 "Storage location") has no app authentication — the system uses the device's iCloud account.
 
-### GCP 프로젝트
+### GCP project
 
-1. 프로젝트 생성, Drive API 활성화.
-2. OAuth 동의 화면: 외부, **Production으로 게시**(Testing이면 refresh token이 7일 만에 만료된다). 앱 이름·로고·개인정보
-   URL이 필요하고, 게시 후 non-sensitive 스코프만이면 검증 없이 통과한다.
-3. 스코프: `https://www.googleapis.com/auth/drive.file` **하나뿐이다.** non-sensitive이고, 앱이 만든 파일만
-   보인다. appdata에는 이제 아무것도 두지 않으므로 `drive.appdata`는 요청하지 않는다(§5). **다른 스코프를
-   추가하지 않는다**(캘린더 등은 sensitive → 검증 절차 발생).
-4. 클라이언트 ID(플랫폼마다 하나, Google 정책):
+1. Create the project and enable the Drive API.
+2. OAuth consent screen: External, **published to Production** (under Testing, the refresh token expires after 7 days). The app name, logo and privacy
+   URL are required, and after publishing, an app with only non-sensitive scopes passes without verification.
+3. Scope: `https://www.googleapis.com/auth/drive.file` **only.** It is non-sensitive and sees only the files the app created.
+   Nothing is kept in appdata any more, so `drive.appdata` is not requested (§5). **Do not add
+   other scopes** (calendar and the like are sensitive → they trigger the verification process).
+4. Client IDs (one per platform, Google policy):
 
-| 클라이언트 | 유형 | 식별자 |
+| Client | Type | Identifier |
 |---|---|---|
-| Android | Android | 패키지명 + 서명 SHA-1 (debug·release 각각) |
-| iOS | iOS | 번들 ID `app.recly` |
-| macOS | iOS 유형(기존 클라이언트·콜백 스킴 유지) | 번들 ID `app.recly.mac` |
-| Windows / JVM | Desktop app | loopback 리다이렉트 `http://127.0.0.1:{port}` |
-| Wear OS · watchOS | 없음 | 폰이 대행 |
+| Android | Android | Package name + signing SHA-1 (for debug and release each) |
+| iOS | iOS | Bundle ID `app.recly` |
+| macOS | iOS type (keeps the existing client and callback scheme) | Bundle ID `app.recly.mac` |
+| Windows / JVM | Desktop app | loopback redirect `http://127.0.0.1:{port}` |
+| Wear OS · watchOS | None | The phone acts on its behalf |
 
-클라이언트 파일(`google-services.json`, `GoogleService-Info.plist`, `client_secret*.json`)은 `.gitignore`에 있고
-빌드 시 로컬에서 주입한다. Apple 두 앱의 `Info.plist` `GIDClientID`가 자리표시자면 로그인 버튼이 비활성이고 정지한
-녹음의 Job은 `NEEDS_AUTH`로 파킹된다.
+The client files (`google-services.json`, `GoogleService-Info.plist`, `client_secret*.json`) are in `.gitignore` and
+are injected locally at build time. If `GIDClientID` in the `Info.plist` of the two Apple apps is a placeholder, the sign-in button is disabled and the Job of a stopped
+recording is parked at `NEEDS_AUTH`.
 
 ### Android
 
-- 로그인: Credential Manager `GetSignInWithGoogleOption(serverClientId)` — "Sign in with Google" 버튼 흐름
-  하나만 쓴다. 로그인은 설정의 **Drive 연결**을 눌렀을 때만 일어난다. 구글은 바텀시트(`GetGoogleIdOption`)를
-  앱이 스스로 띄우는 자동 프롬프트로, 버튼 흐름을 사용자가 누른 버튼의 짝으로 나누고(Firebase quickstart와
-  Flutter `google_sign_in`도 같은 구분), 이 앱은 로그인을 스스로 띄우지 않으므로 바텀시트를 쓰지 않는다.
-  예전의 "허용한 계정 → 모든 계정 바텀시트 → 버튼" 사다리는 Android 17 기기에서 시스템
-  `CredentialSelectorActivity`가 그려지지 않은 채 대기해 버튼까지 가지 못했다(2026-10-02). 앱을 다시 열 때의
-  계정·Drive 권한 복원은 이 로그인을 거치지 않는다.
-- 버튼 흐름이 `NoCredentialException`이면 `SignInResult.NoAccount`. UI가
-  `Intent(Settings.ACTION_ADD_ACCOUNT, EXTRA_ACCOUNT_TYPES=["com.google"])`로 시스템 계정 추가 화면을 열고,
-  돌아오면 로그인을 **한 번만** 재시도한다(루프 방지).
-- 취소(`GetCredentialCancellationException`)나 Play Services 실패 뒤에는 다른 계정 선택 화면을 열지 않는다.
-- nonce는 쓰지 않는다. ID 토큰은 계정 식별용으로만 쓰고 서버로 보내지 않으므로 재생 공격을 묶을 대상이 없다.
-- 계정 추가 분기는 `auth.signIn.fallback=addAccount`로 로그에 남는다.
-- 인가: `Identity.getAuthorizationClient(activity).authorize(AuthorizationRequest{scopes: drive.file})` →
-  `accessToken`(1시간). 이미 허용된 계정이면 무음.
-- 갱신: refresh token을 직접 갖지 않는다. `TokenProvider`가 만료 60초 전이면 `authorize()`를 다시 부른다.
-  **액티비티가 없는 WorkManager 컨텍스트**에서 `hasResolution() == true`(재동의 필요)가 나오면 Job을 `NEEDS_AUTH`로
-  두고 알림으로 앱을 열게 한다. **앱이 포그라운드로 올 때**(`MainActivity.onStart`) 로그인돼 있고 `NEEDS_AUTH` Job이
-  있으면 사용자가 아무것도 누르지 않아도 액티비티에서 `authorize()`를 다시 부른다(2026-09-04) — 이미 허용된 계정이면
-  무음으로 통과해 Job이 `PENDING`으로 돌아가고, 정말 동의가 필요하면 동의 화면이 그 자리에서 뜬다. 취소하면 배너가
-  남고 다음 시작이 다시 묻는다. 배너·행의 버튼도 같은 호출이다(로그아웃 상태면 설정의 로그인으로).
-- 설정의 Drive 행은 **계정과 Drive 권한이 둘 다 있어야** 연결됨(계정 이메일 + `Drive 연결 해제`)이다(2026-09-29).
-  로그인 뒤 동의 화면을 닫아 권한 없이 이메일만 저장된 상태는 iPhone처럼 `Drive 연결 안 됨` + `Drive 연결` 행이고,
-  그 버튼으로 다시 시도한다(계정 선택부터; 별도 "다시 허용" 행은 없다). 권한 = 보안 저장소에 access token이 있음
-  (`AndroidTokenProvider.held`). 연결 해제를 빚진 동안(`disconnectPhase.owed`)은 권한과 상관없이 해제 행이다.
-- 계정 선택·동의 화면을 **닫으면 아무 말도 하지 않는다**(`SignInResult.Cancelled`·`AuthorizeResult.Cancelled`).
-  실패는 행 아래에 위험색 `Drive에 연결하지 못했습니다`(en `Could not connect Drive`, iPhone과 같은 문장)만 보이고,
-  Play Services의 사유는 화면에 두지 않고 로그(`auth.signIn.failed`·`auth.authorize.failed`, `reason`)에 남긴다.
-  기기에 구글 계정이 없으면 같은 자리에 `Google 계정을 추가한 뒤 다시 Drive에 연결하세요`. 성공은 문장 없이 행이
-  계정으로 바뀌는 것으로 말한다(iPhone과 같음).
-- 저장: access token + 만료 시각, 그리고 다시 같은 계정을 고르기 위한 계정 이메일(`account/email`)만 보안 저장소에.
-  로그아웃이 둘 다 지운다.
+- Sign-in: Credential Manager `GetSignInWithGoogleOption(serverClientId)` — only the "Sign in with Google" button flow
+  is used. Sign-in happens only when the user presses **Connect Drive** in Settings. Google classifies the bottom sheet (`GetGoogleIdOption`) as
+  an automatic prompt the app raises on its own and the button flow as the counterpart of a button the user pressed (the Firebase quickstart and
+  Flutter `google_sign_in` draw the same line); this app never raises sign-in on its own, so it does not use the bottom sheet.
+  The old "allowed accounts → all-accounts bottom sheet → button" ladder never reached the button on Android 17 devices, because the system
+  `CredentialSelectorActivity` waited without ever being drawn (2026-10-02). Restoring the account and the Drive permission when the app is
+  reopened does not go through this sign-in.
+- If the button flow fails with `NoCredentialException`, the result is `SignInResult.NoAccount`. The UI opens the system add-account screen with
+  `Intent(Settings.ACTION_ADD_ACCOUNT, EXTRA_ACCOUNT_TYPES=["com.google"])`,
+  and on return retries sign-in **only once** (to prevent a loop).
+- After a cancellation (`GetCredentialCancellationException`) or a Play Services failure, no other account-picker screen is opened.
+- No nonce is used. The ID token is used only to identify the account and is never sent to a server, so there is nothing to bind a replay attack to.
+- The add-account branch is logged as `auth.signIn.fallback=addAccount`.
+- Authorization: `Identity.getAuthorizationClient(activity).authorize(AuthorizationRequest{scopes: drive.file})` →
+  `accessToken` (1 hour). Silent for an account that has already allowed it.
+- Refresh: the app does not hold a refresh token itself. `TokenProvider` calls `authorize()` again when the token is within 60 seconds of expiry.
+  If `hasResolution() == true` (re-consent needed) comes back in **a WorkManager context with no activity**, the Job is set to `NEEDS_AUTH`
+  and a notification asks the user to open the app. **When the app comes to the foreground** (`MainActivity.onStart`), if the user is signed in and there is a `NEEDS_AUTH` Job,
+  the activity calls `authorize()` again without the user pressing anything (2026-09-04) — for an account that has already allowed it,
+  this passes silently and the Job returns to `PENDING`; if consent is really needed, the consent screen appears right there. If the user cancels, the banner
+  stays and the next start asks again. The buttons on the banner and the row make the same call (when signed out, they lead to sign-in in Settings).
+- The Drive row in Settings shows connected (account email + `Disconnect Drive`) only when **both the account and the Drive permission are present** (2026-09-29).
+  The state where the consent screen was closed after sign-in, leaving only the email saved and no permission, shows, as on iPhone, `Drive not connected` + a `Connect Drive` row,
+  and that button tries again (starting from account selection; there is no separate "Allow again" row). Permission = an access token is in secure storage
+  (`AndroidTokenProvider.held`). While a disconnect is owed (`disconnectPhase.owed`), it is the disconnect row regardless of the permission.
+- **Closing** the account picker or the consent screen **says nothing** (`SignInResult.Cancelled` · `AuthorizeResult.Cancelled`).
+  A failure shows only `Could not connect Drive` in the danger color under the row (the same sentence as on iPhone), and
+  the Play Services reason is not put on screen but logged (`auth.signIn.failed` · `auth.authorize.failed`, `reason`).
+  If the device has no Google account, the same spot shows `Add a Google account, then connect Drive again`. Success is told with no sentence, by the row
+  changing to the account (the same as on iPhone).
+- Storage: only the access token + its expiry time, plus the account email for picking the same account again (`account/email`), in secure storage.
+  Signing out deletes both.
 
 ### iOS · macOS
 
-- AppAuth로 **`drive.file` 하나만 요청하는 OAuth Authorization Code + PKCE(S256)** 를 사용한다.
-  `openid`·`email`·`profile`은 요청하지 않는다. `Drive 연결` → Google 계정 선택·Drive 권한 허용 → 앱 복귀이며,
-  이름·이메일 제공 동의를 별도로 요구하지 않는다. Google의 단일 비로그인 스코프 동의 형식을 따른다.
-- 시스템 인증 세션(`ASWebAuthenticationSession`)에서 인증한다. 기존 앱 창을 표시 기준으로 쓰고
-  “브라우저에서 로그인을 계속하세요” 같은 자체 안내 창은 띄우지 않는다. Google 인증 화면·운영체제 확인은 유지한다.
-- 기존 iOS 유형 클라이언트 ID와 역순 클라이언트 ID 스킴의 `/oauth2callback`을 유지한다.
-  `Info.plist`의 `GIDClientID` 키는 기존 설정·릴리즈 검사와의 호환을 위한 이름이다.
-- AppAuth가 난수 `state`·PKCE 검증, 코드 교환, 토큰 갱신을 처리한다. `access_type=offline`을 요청하며,
-  응답의 실제 Drive 권한·클라이언트 ID·refresh token을 검증하고 키체인 저장에 성공해야 연결 완료로 표시한다.
-  권한 거절·취소는 미연결 상태로 돌아가고, 저장 실패를 연결 성공으로 표시하지 않는다.
-- 인증정보는 `app.recly.drive.oauth` 키체인 항목의 AppAuth 상태로 보관한다. Mac은 기존과 같은 로그인 키체인을,
-  iPhone은 기기 잠금 해제 후 접근 가능한 이 기기 전용 키체인을 사용한다. 토큰 회전 결과는 반환 전에 저장한다.
-  유효기간 60초 이내 토큰은 갱신하며, 401은 캐시를 비우고 강제 갱신 후 코어의 재시도 규칙을 따른다.
-- 기존 GoogleSignIn의 `auth` 키체인 항목은 GTMAppAuth로 읽어 Drive 권한이 있는 인증정보만 이관한다.
-  새 항목 저장 후에만 옛 항목과 이메일 로그인 힌트를 지운다. 프로필·ID 토큰은 새 항목에 복사하지 않는다.
-  이관은 Google 권한을 철회하거나 새 동의를 요청하지 않는다. 따라서 기존에 허용된 프로필 권한 자체는
-  Google에서 자동으로 철회되지 않으며, 사용자가 연결 해제 후 다시 연결하면 Drive 전용 요청을 사용한다.
-- 새 연결은 계정 이메일을 요청·저장·표시하지 않고 설정에 `Drive 연결됨`을 표시한다.
-- 키체인 없음과 읽기 실패를 구분한다. 읽기 실패를 미연결로 간주해 권한 철회를 건너뛰지 않는다.
-  연결 해제 중 늦게 도착한 인증·갱신 결과는 저장하지 않는다.
-- 연결 해제는 `https://oauth2.googleapis.com/revoke`에 refresh token을 POST한 뒤 키체인과 로컬 작업을 정리한다.
-  리다이렉트에는 토큰을 전달하지 않는다. 기존 연결 해제 단계·실패 복구·권한 철회 실패 기록을 유지하며,
-  키체인 삭제 실패는 로컬 정리 실패로 남겨 재시도한다. 권한 철회는 Google Cloud 프로젝트 단위다.
-- **배경 URLSession** 청크 전송 전 토큰을 갱신하고, **401이면 해당 청크를 재계획**한다(ADR-015).
-- App Review 4.8: Recly 자체 계정 생성·인증은 없고 Google 인증은 사용자의 Drive 접근에 사용한다.
-  녹음·기기에 저장된 녹음 재생은 Google 연결 없이 가능하다. 전사는 현 계약상 Drive 업로드가 선행된다.
-  심사 노트에는 실제 빌드의 미연결 녹음·저장·재생 경로를 제시한다.
+- Uses AppAuth for **OAuth Authorization Code + PKCE (S256) requesting only `drive.file`**.
+  `openid` · `email` · `profile` are not requested. The flow is `Connect Drive` → choose a Google account and allow the Drive permission → back to the app,
+  with no separate consent to sharing name and email. It follows Google's consent format for a single non-sign-in scope.
+- Authentication happens in the system authentication session (`ASWebAuthenticationSession`). The existing app window is used as the presentation anchor, and
+  the app shows no notice window of its own such as “Continue signing in in your browser”. Google's authentication screen and the operating system's confirmation remain.
+- The existing iOS-type client ID and the `/oauth2callback` of the reversed client ID scheme are kept.
+  The `GIDClientID` key in `Info.plist` is a name kept for compatibility with the existing settings and release checks.
+- AppAuth handles the random `state` and PKCE verification, the code exchange and token refresh. It requests `access_type=offline`, and
+  the connection is shown as complete only after the response's actual Drive permission, client ID and refresh token are verified and saving to the keychain succeeds.
+  A denied permission or a cancellation returns to the unconnected state, and a save failure is never shown as a successful connection.
+- Credentials are kept as AppAuth state in the `app.recly.drive.oauth` keychain item. The Mac uses the same login keychain as before,
+  and the iPhone uses a this-device-only keychain that is accessible after the device is unlocked. A token rotation result is saved before it is returned.
+  A token within 60 seconds of expiry is refreshed, and a 401 clears the cache, forces a refresh and then follows the core's retry rules.
+- The old GoogleSignIn `auth` keychain item is read with GTMAppAuth, and only credentials that have the Drive permission are migrated.
+  The old item and the email sign-in hint are deleted only after the new item is saved. The profile and ID token are not copied into the new item.
+  The migration neither revokes Google permissions nor requests new consent. So a previously granted profile permission itself
+  is not revoked automatically at Google; when the user disconnects and connects again, the Drive-only request is used.
+- A new connection does not request, store or show the account email, and Settings shows `Drive connected`.
+- A missing keychain item and a read failure are told apart. A read failure is never treated as unconnected in a way that skips revoking the permission.
+  Authentication or refresh results that arrive late during a disconnect are not saved.
+- Disconnecting POSTs the refresh token to `https://oauth2.googleapis.com/revoke` and then cleans up the keychain and local work.
+  No token is passed in a redirect. The existing disconnect phases, failure recovery and record of revocation failures are kept,
+  and a keychain deletion failure is left as a local cleanup failure to retry. Revocation applies per Google Cloud project.
+- **Background URLSession**: the token is refreshed before each chunk transfer, and **a 401 replans that chunk** (ADR-015).
+- App Review 4.8: Recly has no account creation or authentication of its own; Google authentication is used for access to the user's Drive.
+  Recording, and playing back recordings stored on the device, work without a Google connection. Under the current contract, transcription is preceded by a Drive upload.
+  The review notes present the actual build's unconnected record · save · play path.
 
 ### Windows (JVM)
 
-- 코어에 넣지 않고 `windows/app`에 Kotlin으로: 127.0.0.1 임시 포트 Ktor 서버 → 시스템 브라우저로
-  `https://accounts.google.com/o/oauth2/v2/auth`(PKCE S256, `access_type=offline`) → code 수신 →
-  `https://oauth2.googleapis.com/token` 교환. refresh token은 Windows Credential Manager, 갱신은
-  `JvmTokenProvider`(만료 60초 전).
-- 리다이렉트는 `http://127.0.0.1:{OS가 고른 포트}`다. `localhost`가 아니다 — RFC 8252 §8.3 "the use of `localhost`
+- Not in the core but in Kotlin in `windows/app`: a Ktor server on a temporary 127.0.0.1 port → the system browser opens
+  `https://accounts.google.com/o/oauth2/v2/auth` (PKCE S256, `access_type=offline`) → the code is received →
+  exchanged at `https://oauth2.googleapis.com/token`. The refresh token lives in Windows Credential Manager, and refresh is
+  `JvmTokenProvider` (60 seconds before expiry).
+- The redirect is `http://127.0.0.1:{port chosen by the OS}`. Not `localhost` — RFC 8252 §8.3 "the use of `localhost`
   is NOT RECOMMENDED … avoids inadvertently listening on network interfaces other than the loopback interface".
-  포트는 등록하지 않는다(§7.3 "MUST allow any port to be specified at the time of the request"; Desktop 유형
-  클라이언트는 리다이렉트 URI를 아예 받지 않는다). 서버는 로그인이 시작될 때만 열고 응답이 오면 닫는다.
-- `state`는 128비트 난수, 불일치는 거절(§8.9). 리다이렉트는 **한 번만** 받는다 — 그 포트는 이 기기의 아무
-  프로그램이나 두드릴 수 있다. 두 번째 요청은 "이미 처리되었습니다" 페이지만 받는다.
-- `prompt`는 **첫 로그인에 붙이지 않는다**("the user will be prompted only the first time your project requests
-  access", "include `prompt=consent` only when necessary"). 이미 refresh token을 가진 기기에서 다시 로그인하는 것은
-  계정을 바꾸겠다는 뜻이므로 그때만 `prompt=select_account`.
-- `include_granted_scopes`는 쓰지 않는다("Incremental authorization is not supported for installed apps or
-  devices"). `login_hint`도 없다 — 프로필 스코프를 요청하지 않으므로(ADR-009) 채워 넣을 주소를 애초에 모른다.
-  **Windows는 계정 이메일을 저장하지 않는다.**
-- 내부 로그아웃은 **로컬만**이고 `https://oauth2.googleapis.com/revoke`를 부르지 않는다: "Revocation removes all OAuth
+  The port is not registered (§7.3 "MUST allow any port to be specified at the time of the request"; Desktop-type
+  clients do not take redirect URIs at all). The server opens only when sign-in starts and closes when the response arrives.
+- `state` is a 128-bit random value, and a mismatch is rejected (§8.9). The redirect is accepted **only once** — any program on this
+  device can knock on that port. A second request gets only the "This sign-in has already been handled" page.
+- `prompt` is **not attached on the first sign-in** ("the user will be prompted only the first time your project requests
+  access", "include `prompt=consent` only when necessary"). Signing in again on a device that already has a refresh token
+  means switching accounts, so only then is it `prompt=select_account`.
+- `include_granted_scopes` is not used ("Incremental authorization is not supported for installed apps or
+  devices"). There is no `login_hint` either — no profile scope is requested (ADR-009), so the app never knows an address to fill in.
+  **Windows does not store the account email.**
+- Internal sign-out is **local only** and does not call `https://oauth2.googleapis.com/revoke`: "Revocation removes all OAuth
   2.0 scopes previously granted to a **project**, invalidating any issued access or refresh tokens for all clients
-  registered under that project." 남는 grant는 6개월 미사용으로 만료된다. 앱의 "연결 해제"만이 `/revoke`를 부른다.
-- 갱신 중의 `invalid_grant`는 grant가 죽은 것 → 저장분을 버리고 재로그인(`AuthRequiredException`). 같은 코드가 교환
-  단계에서는 PKCE 불일치를 뜻하므로 어느 호출이 실패했는지로 구분한다.
-- Desktop 유형의 `client_secret`은 비밀이 아니다("Installed apps … cannot keep secrets"). 그래도 개발자마다
-  다르므로 커밋하지 않는다.
-- 브라우저 열기 30초, 동의 대기 5분. `Desktop.browse`는 블로킹이라 별도 스코프에서 열고 **기다리는 쪽**만
-  포기한다. 성공 페이지는 인라인 HTML 하나뿐이다 — 외부 리소스를 하나라도 받으면 code가 들어 있는 이 URL이
-  `Referer`로 새어 나간다.
+  registered under that project." The remaining grant expires after 6 months without use. Only the app's "Disconnect" calls `/revoke`.
+- `invalid_grant` during refresh means the grant is dead → discard what is stored and sign in again (`AuthRequiredException`). The same code at the exchange
+  step means a PKCE mismatch, so the two are told apart by which call failed.
+- A Desktop-type `client_secret` is not a secret ("Installed apps … cannot keep secrets"). Still, it differs per developer,
+  so it is not committed.
+- Opening the browser has 30 seconds, waiting for consent 5 minutes. `Desktop.browse` blocks, so it is opened in a separate scope and only the **waiting side**
+  gives up. The success page is a single inline HTML page — if it loaded even one external resource, this URL, which contains the code,
+  would leak out as the `Referer`.
 
 ### Wear OS · watchOS
 
-인증 없음. 워치는 Drive에 접근하지 않는다(ADR-002). (워크플로우 요약 전송은 2026-09-24 폐기)
+No authentication. The watch does not access Drive (ADR-002). (Sending the workflow summary was retired on 2026-09-24.)
 
-### 코어 인터페이스 (the core interface)
+### The core interface
 
 ```kotlin
 interface TokenProvider {
-    /** 유효한 access token. 갱신 실패·재동의 필요 시 AuthRequired 예외. */
+    /** A valid access token. Throws AuthRequired when refresh fails or re-consent is needed. */
     suspend fun accessToken(): String
-    /** 401을 받은 뒤 셸이 강제 갱신하도록 */
+    /** Lets the shell force a refresh after a 401 */
     suspend fun invalidate()
 }
 ```
 
-코어는 401을 받으면 `invalidate()` 후 한 번 재시도하고, 다시 401이면 단계를 `NEEDS_AUTH`로 둔다(재시도 카운트 소모
-없음, 사용자가 로그인하면 재개).
+When the core gets a 401, it calls `invalidate()` and retries once; on another 401 it sets the step to `NEEDS_AUTH` (no retry count is
+used up; it resumes when the user signs in).
 
-### refresh token 한도
+### Refresh token limits
 
-클라이언트 ID당 계정별 100개. 기기 6대 × 재설치 몇 번이면 여유가 있다. 6개월 미사용 시 만료 — 폰·데스크톱은
-문제없고, 오래 안 쓴 기기는 재로그인한다.
+100 per account per client ID. 6 devices × a few reinstalls leave plenty of room. A token expires after 6 months without use — phones and desktops
+are fine, and a device that has not been used for a long time signs in again.
 
 ---
 
-## 7. i18n (구 docs/07)
+## 7. i18n (formerly docs/07)
 
-화면은 **12개 언어**를 지원한다: 영어(en), 한국어(ko), 일본어(ja), 중국어 간체(zh-Hans)·번체(zh-Hant),
-스페인어(es), 프랑스어(fr), 독일어(de), 포르투갈어(pt), 아랍어(ar), 힌디어(hi), 러시아어(ru).
-기본 언어는 시스템 언어를 따르며 앱 안에서 바꿀 수 있다(설정 이름 **앱 언어**, en "App language"). 전사 언어는 화면 언어와
-별도 설정이다(§8). 설정 이름은 **녹음 언어**(en "Spoken language")다 — 녹음에서 말하는 언어이고, 번역 대상이 아니다.
+The UI supports **12 languages**: English (en), Korean (ko), Japanese (ja), Simplified Chinese (zh-Hans) · Traditional Chinese (zh-Hant),
+Spanish (es), French (fr), German (de), Portuguese (pt), Arabic (ar), Hindi (hi), Russian (ru).
+The default language follows the system language and can be changed inside the app (setting name **App language**). The transcription language is a
+separate setting from the UI language (§8). Its setting name is **Spoken language** — the language spoken in the recording, not a translation target.
 
-### 규칙
+### Rules
 
-1. **기준 언어는 영어**(리소스 키의 기본값). 지역 태그는 지원하는 언어로 정규화하고 미지원 언어만 영어로 대체한다.
-   중국어는 명시한 Hans/Hant 표기체를 우선하고, 없으면 TW/HK/MO는 번체, 나머지는 간체로 구분한다. 아랍어는 RTL 배치를 적용한다.
-2. **언어 설정값**: `system`(기본)과 위 12개 언어 태그. **기기별 설정이고 동기화하지 않는다**(녹음 처리 설정에 넣지
-   않는다). 저장 위치는 플랫폼 관례(Android `LocaleManager.applicationLocales` + DataStore, Apple `UserDefaults`,
-   Windows `java.util.prefs`). **설정 UI는 지금 언어를 값으로 보여주는 한 행**이고, 목록은 4셸 모두 행 끝의
-   드롭다운(값 + `▾`, §9 원칙 4)으로 연다(2026-09-29, 폰은 다이얼로그였다) — 언어는 늘어나도 행은 한 줄이다. 목록에
-   `시스템 기본` 항목은 **없다**: 각 언어의 자기 이름(`English`, `한국어`, `日本語`, `العربية` 등)뿐이고, 아직 아무것도 고르지 않았으면
-   시스템 언어를 따르며 **그 언어가 선택된 것으로 보인다**(행에도 그 이름이 뜬다) — 대신 명시적으로 고른 뒤 다시
-   OS 추종으로 되돌리는 항목은 없다는 것을 받아들인다. 이름은 어느 언어에서도 번역하지 않는다. 고른 즉시
-   적용되고(규칙 3) 국기는 쓰지 않는다.
-3. **런타임 전환**: 설정을 바꾸면 재시작 없이 화면이 바뀐다(Android `setApplicationLocales`가 액티비티를 재생성,
-   SwiftUI는 `\.locale` 환경값, Compose는 로케일 상태로 리컴포지션). AppKit/UIKit 알림(NSAlert,
-   UNNotification)·트레이 메뉴·Live Activity·컴플리케이션 텍스트는 현재 앱 언어로 명시
-   조회(`String(localized:bundle:locale:)`, Android `createConfigurationContext`)한다.
-4. **사용자에게 보이는 문자열은 전부 리소스**: UI 텍스트, 알림, 다이얼로그, 오류 안내, 접근성 라벨,
-   위젯/컴플리케이션, 트레이. **리소스로 만들지 않는 것**: 로그 이벤트·필드(`rec.*`, `shell.*`), 파일명·폴더 규칙,
-   녹음 처리 설정 JSON, 코드 식별자. 숫자는 숫자다 — 인원 수 같은 값은 문장이 아니라 수로 쓰고, 문장이
-   되는 것은 `모름`(unknown)과 `6+`뿐이다.
-5. **코어가 만드는 사용자 문자열**: 코어는 자연어 대신 **메시지 키**(`CoreMessage` enum: `NEEDS_AUTH`,
-   `DRIVE_REAUTH`, `MISSING_SECRET`, `FROZEN`, `STALE`, `DRIVE_STORAGE_FULL`, `AUTH_REJECTED`, …)를
-   `StepRun.lastError`·예외에 담고, 각 플랫폼이 키를 번역한다. 인자는 `NAME:{arg}`, provider가 한 말은
-   `NAME|{detail}`로 붙이고 `|` 뒤는 번역하지 않고 문장 아래에 고정폭으로 그대로 보여준다. 셸은
-   `CoreMessageRef.parse`로 읽는다. DB에 이미 저장된 옛 문장은 그대로 표시한다(호환).
-6. **폐기(2026-09-24)** — **기본 워크플로우 이름**("메모")은 최초 시드 시점의 앱 언어로 생성한다(en: "Memo"). 이후 언어를
-   바꿔도 이름은 사용자 데이터이므로 바뀌지 않는다. 시드 ID는 고정이다(§5).
-7. **날짜·시간·숫자는 플랫폼 로케일 포맷터**를 쓴다 — 패턴 자체가 리소스라서 한국어 기기는 "8월 28일 15:04",
-   영어 기기는 "Aug 28, 3:04 PM"으로 읽힌다. 파일명 타임스탬프(ISO)는 불변이다.
-8. **관할별 동의 안내문**(§12)은 언어별 리소스로 두되 링크·법역 목록은 공통이다.
-9. **완전성 테스트**: 각 플랫폼에 "모든 키가 지원하는 12개 언어에 존재"하는 테스트와 "UI 소스에 한글 리터럴이 남아 있지
-   않다"는 검사(허용 목록: 로그·테스트·주석)를 둔다. RecKit은 여기에 더해 "뷰가 그리는 키가 전부 카탈로그에
-   있다"를 스캔으로 확인한다(곱슬 아포스트로피처럼 철자가 어긋난 키를 쓰는 날 바로 실패한다).
-10. **기기 이름 치환 규칙**: 한 문장이 이 기기를 가리킬 때 쓰는 말은 셸마다 정해져 있다 — Android·iPhone은
-    **폰**(en: `phone`), macOS는 **Mac**, Windows는 **PC**, 그리고 어느 기기인지 특정하지 않는 문장(코어의
-    `CoreMessage`, 여러 셸이 공유하는 RecKit 문장)은 **이 기기**(en: `this device`)다. 같은 뜻의 문장이 셸마다
-    이 한 단어만 다르고 나머지는 글자 그대로 같아야 한다 — "이 폰의 시크릿" / "이 Mac의 시크릿" / "이 PC의
-    시크릿", "Delete on this phone only" / "…this Mac only" / "…this PC only". 워치는 자기 문장을 갖지 않고
-    폰의 것을 따른다.
-11. **교차 셸 사전**: 두 개 이상의 셸에 나오는 문장은 그 셸들에서 **글자 그대로 같다**(§9 화면 원칙 1의 노드
-    표기 정책, 상태 배지의 단어, 편집기 필드 라벨, 시크릿 화면의 안내문 등). `CrossShellDictionaryTest`(Android
-    jvm 테스트)가 Windows `.properties`와 RecKit·RecMac·RecPhone 카탈로그를 직접 읽어 en·ko를 대조한다. 형식
-    인자는 표기가 플랫폼마다 다르므로(`%1$s` ↔ `%@`) 비교 전에 정규화한다. **아직 한 셸만 말하는 사전 문장**은 그
-    셸의 자기 테스트가 잠그고(한 셸짜리 줄은 이 테스트가 거절한다), 나머지 셸이 그 키를 가지면 여기로 옮긴다 —
-    2026-09-04의 `워치에서 받는 중`·`다른 기기에서 업로드 중`·`다른 기기에서 전사 중`(§9 화면 원칙 2)은 세 셸이
-    같은 날 갖췄으므로 바로 이 사전에 있다.
+1. **The base language is English** (the default value of the resource keys). Region tags are normalized to a supported language, and only an unsupported language falls back to English.
+   For Chinese, an explicit Hans/Hant script takes precedence; without one, TW/HK/MO map to Traditional and everything else to Simplified. Arabic gets an RTL layout.
+2. **Language setting values**: `system` (default) and the 12 language tags above. **It is a per-device setting and is not synchronized** (it does not go into
+   the recording processing settings). It is stored by platform convention (Android `LocaleManager.applicationLocales` + DataStore, Apple `UserDefaults`,
+   Windows `java.util.prefs`). **The settings UI is one row that shows the current language as its value**, and on all 4 shells the list opens from the
+   dropdown at the end of the row (value + `▾`, §9 principle 4) (2026-09-29; the phone used a dialog) — however many languages are added, the row stays one line. The list
+   has **no** `System default` item: only each language's own name (`English`, `한국어`, `日本語`, `العربية`, etc.); while nothing has been chosen yet,
+   the app follows the system language and **that language appears selected** (the row shows its name too) — in exchange, we accept that there is no item that
+   returns to following the OS after an explicit choice. The names are not translated in any language. A choice takes
+   effect immediately (rule 3), and flags are not used.
+3. **Runtime switching**: changing the setting changes the UI without a restart (Android `setApplicationLocales` recreates the activity,
+   SwiftUI uses the `\.locale` environment value, Compose recomposes from the locale state). AppKit/UIKit notices (NSAlert,
+   UNNotification), the tray menu, Live Activity and complication text are looked up explicitly in the current app language
+   (`String(localized:bundle:locale:)`, Android `createConfigurationContext`).
+4. **Every user-visible string is a resource**: UI text, notifications, dialogs, error guidance, accessibility labels,
+   widgets/complications, the tray. **Not made into resources**: log events and fields (`rec.*`, `shell.*`), file and folder naming rules,
+   the recording processing settings JSON, code identifiers. Numbers are numbers — a value such as a participant count is written as a number, not as a sentence, and
+   the only values that become sentences are `Unknown` and `6+`.
+5. **User strings the core produces**: instead of natural language, the core puts a **message key** (`CoreMessage` enum: `NEEDS_AUTH`,
+   `DRIVE_REAUTH`, `MISSING_SECRET`, `FROZEN`, `STALE`, `DRIVE_STORAGE_FULL`, `AUTH_REJECTED`, …) into
+   `StepRun.lastError` and exceptions, and each platform translates the key. An argument is attached as `NAME:{arg}` and what the provider said as
+   `NAME|{detail}`; the part after `|` is not translated and is shown as is, in monospace, under the sentence. The shells
+   read it with `CoreMessageRef.parse`. Old sentences already stored in the DB are shown as they are (compatibility).
+6. **Retired (2026-09-24)** — The **default workflow name** is created in the app language at the time of the first seed (en: "Memo"). Changing the language
+   later does not change the name, because it is user data. The seed ID is fixed (§5).
+7. **Dates, times and numbers use the platform locale formatters** — the pattern itself is a resource, so a Korean device reads "8월 28일 15:04"
+   and an English device reads "Aug 28, 3:04 PM". File name timestamps (ISO) do not change.
+8. **Jurisdiction-specific consent notices** (§12) are per-language resources, but the links and the list of jurisdictions are shared.
+9. **Completeness tests**: each platform has a test that "every key exists in all 12 supported languages" and a check that "no Hangul literal remains
+   in UI source" (allow list: logs, tests, comments). RecKit additionally confirms by scanning that "every key a view draws is in the
+   catalog" (it fails the day a key with a mismatched spelling, such as a curly apostrophe, is used).
+10. **Device name substitution rule**: the word a sentence uses when it refers to this device is fixed per shell — Android and iPhone use
+    `phone`, macOS **Mac**, Windows **PC**, and a sentence that does not specify which device it is (the core's
+    `CoreMessage`, RecKit sentences shared by several shells) uses `this device`. Sentences with the same meaning must differ across shells
+    only in this one word and be otherwise identical letter for letter — "This phone's secrets" / "This Mac's secrets" / "This PC's
+    secrets", "Delete on this phone only" / "…this Mac only" / "…this PC only". The watch has no sentences of its own and
+    follows the phone's.
+11. **Cross-shell dictionary**: a sentence that appears in two or more shells is **identical letter for letter** in those shells (the node
+    notation policy of §9 screen principle 1, the words of the status badges, editor field labels, the guidance on the secrets screen, etc.). `CrossShellDictionaryTest` (Android
+    jvm test) reads the Windows `.properties` and the RecKit · RecMac · RecPhone catalogs directly and compares en and ko. Format
+    arguments are written differently per platform (`%1$s` ↔ `%@`), so they are normalized before comparison. **A dictionary sentence that only one shell says so far** is
+    locked by that shell's own test (this test rejects a one-shell line), and it moves here once the other shells have the key —
+    `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` from 2026-09-04 (§9 screen principle 2) were added by three shells
+    on the same day, so they are in this dictionary from the start.
 
-영어·한국어의 기존 리소스는 유지한다. 추가 언어의 공통 사전은 `localization/translations/`에 두며
-`scripts/localize.py`가 Apple String Catalog, Android XML, Windows properties로 생성한다.
-`python3 scripts/localize.py --check`는 메시지 누락·서식 인자·생성 결과의 일치를 검사한다.
-기술 식별자와 언어 자기 이름만 `localization/unchanged.json`에 명시적으로 예외 처리한다.
-수량 문장은 수에 따라 문법이 깨지지 않는 형태로 쓰며 Android는 `other` 복수 리소스를 사용한다.
+The existing English and Korean resources are kept. The shared dictionary for the additional languages lives in `localization/translations/`, and
+`scripts/localize.py` generates the Apple String Catalog, Android XML and Windows properties from it.
+`python3 scripts/localize.py --check` checks for missing messages, format arguments and that the generated output matches.
+Only technical identifiers and the languages' own names are explicitly exempted in `localization/unchanged.json`.
+Quantity sentences are written in a form whose grammar does not break with the number, and Android uses the `other` plural resource.
 
-### 플랫폼 매핑
+### Platform mapping
 
-| 플랫폼 | 리소스 | 언어 설정 UI | 전환 |
+| Platform | Resources | Language setting UI | Switching |
 |---|---|---|---|
-| Android 폰 | `values/strings.xml`(en) + 언어별 `values-*/`, `android:localeConfig` | 설정 → 언어 행 → 드롭다운 | 플랫폼 `LocaleManager.applicationLocales`(API 33+; 앱은 순수 ComponentActivity라 AppCompat 경로는 no-op) |
-| 갤럭시 워치 | 같은 방식, 시스템 언어만(설정 UI 없음) | — | 시스템 |
-| iPhone·Apple Watch·macOS | String Catalog(`Localizable.xcstrings`) — RecKit이 공용 카탈로그를 갖고 각 앱이 자기 것을 갖는다 | 설정 → 언어 행 → 드롭다운 | SwiftUI `\.locale`; AppKit/UIKit 문자열은 명시 로케일 조회; `AppleLanguages`는 건드리지 않음 |
-| Windows 데스크톱 | `strings_{언어}.properties` + `Str` enum 키 | 설정 창 → 언어 행 → 드롭다운 | 로케일 `StateFlow` → 리컴포지션, 트레이 메뉴 재구성 |
-| 코어 | `CoreMessage` 키 | — | — |
+| Android phone | `values/strings.xml` (en) + per-language `values-*/`, `android:localeConfig` | Settings → language row → dropdown | Platform `LocaleManager.applicationLocales` (API 33+; the app is a plain ComponentActivity, so the AppCompat path is a no-op) |
+| Galaxy Watch | Same approach, system language only (no settings UI) | — | System |
+| iPhone · Apple Watch · macOS | String Catalog (`Localizable.xcstrings`) — RecKit has the shared catalog and each app has its own | Settings → language row → dropdown | SwiftUI `\.locale`; AppKit/UIKit strings use an explicit locale lookup; `AppleLanguages` is not touched |
+| Windows desktop | `strings_{language}.properties` + `Str` enum keys | Settings window → language row → dropdown | Locale `StateFlow` → recomposition, tray menu rebuilt |
+| Core | `CoreMessage` keys | — | — |
 
-### Windows 데스크톱 설계 메모
+### Windows desktop design notes
 
-- **리소스 형식은 `.properties` + `Str` enum이다.** 트레이 앱이 말하는 문장의 상당수가 컴포지션 밖에서 만들어진다 —
-  `TrayIcon.displayMessage` 풍선, Ktor가 서빙하는 로그인 리디렉트 페이지, `Recents.stateLabel`, 헬퍼
-  `--self-test` 보고. 어느 스레드에서든 즉시 읽히는 평범한 표가 유일하게 맞는 모양이다. UTF-8로 직접
-  읽는다(`Properties.load(InputStream)`는 ISO-8859-1이다).
-- **키 타입 세이프:** `Str` enum이 곧 키 목록이고, 프로퍼티 키는 enum 이름을 소문자·점으로 바꾼
-  것(`STATUS_WAITING` → `status.waiting`)이다. 표에 없는 문자열은 애초에 컴파일되지 않고, `StringTableTest`가 en·ko
-  두 표와 enum을 서로 대조한다.
-- **인자 포맷:** `String.format(locale, …)`의 위치 인자(`%1$s`, `%1$d`) — 안드로이드 쪽과 같은 표기라 번역문을
-  그대로 옮길 수 있고 번역이 순서를 바꿀 수 있다.
-- **중첩·verbatim:** `UiMessage`는 `Res(키, 인자)` / `Text(그대로)` 두 가지고, 인자 하나가 다시 `UiMessage`일 수
-  있다. 그리는 순간에 함께 풀리므로 언어를 바꾸면 통째로 다시 그려진다.
-- **전환:** `Localization`이 `StateFlow<Strings>` 하나를 들고, 컴포지션은 `collectAsState()`로 읽어 파라미터로
-  내려보낸다. 컴포지션 밖은 `localization.current`를 그 자리에서 읽는다. 트레이 메뉴는 `trayMenu()`가 만드는 순수한
-  목록이고 `Main.kt`가 AWT 항목으로 옮기기만 한다.
-- **저장:** `java.util.prefs`의 `app/recly/windows` 노드에 `language` 키 하나.
+- **The resource format is `.properties` + a `Str` enum.** Many of the sentences the tray app says are built outside composition —
+  `TrayIcon.displayMessage` balloons, the sign-in redirect page Ktor serves, `Recents.stateLabel`, the helper's
+  `--self-test` report. A plain table that can be read immediately from any thread is the only shape that fits. It is read directly as UTF-8
+  (`Properties.load(InputStream)` is ISO-8859-1).
+- **Type-safe keys:** the `Str` enum is the key list, and a property key is the enum name lowercased with dots
+  (`STATUS_WAITING` → `status.waiting`). A string that is not in the table does not compile in the first place, and `StringTableTest` cross-checks the en and ko
+  tables against the enum.
+- **Argument format:** positional arguments of `String.format(locale, …)` (`%1$s`, `%1$d`) — the same notation as the Android side, so translations
+  carry over as is and a translation can change the order.
+- **Nesting · verbatim:** `UiMessage` has two cases, `Res(key, args)` / `Text(verbatim)`, and an argument can itself be a `UiMessage`.
+  They are resolved together at draw time, so changing the language redraws the whole thing.
+- **Switching:** `Localization` holds a single `StateFlow<Strings>`, and composition reads it with `collectAsState()` and passes it down as a
+  parameter. Outside composition, code reads `localization.current` on the spot. The tray menu is a pure list built by
+  `trayMenu()`, and `Main.kt` only carries it over to AWT items.
+- **Storage:** a single `language` key in the `app/recly/windows` node of `java.util.prefs`.
 
 ---
 
-## 8. 전사 (구 docs/08)
+## 8. Transcription (formerly docs/08)
 
-`transcribe`(STT + 화자분리)는 녹음 처리 설정에서 전사 방식을 외부 API로 고르면 고정 계획에 들어가는 단계다(§5
-"고정 처리 설정 도입"; 로컬이면 `local.transcribe`). 실행 위치는 다른 단계와 같은 **잡을 실행하는
-기기**(폰·Mac·Windows)이고 서버는 없다. 기기가 사용자의 키로 STT API를 직접 부르고 결과를 Drive 녹음 폴더에 쓴다.
+`transcribe` (STT + speaker diarization) is the step that goes into the fixed plan when the recording processing settings choose an external API as the transcription method (§5
+"Fixed processing settings"; when local, it is `local.transcribe`). It runs where the other steps run, on **the device that runs the
+job** (phone · Mac · Windows), and there is no server. The device calls the STT API directly with the user's key and writes the result to the Drive recording folder.
 
-### 원칙
+### Principles
 
-- **서버리스** — 모든 호출은 기기 → 사용자 계정 API(Drive, STT). 중간 릴레이·콜백 URL 없음. 따라서 STT
-  provider는 **폴링 가능한 비동기 API 또는 동기 API**만 쓴다(콜백 전용 모드는 쓰지 않는다).
-- **BYO 키** — 키는 기존 시크릿 저장소(§5)의 `secretRef`다. 없으면 `MISSING_SECRET`.
-- **Drive가 버스** — 결과 파일은 녹음 폴더 `{folder}/{base}/`에 놓인다(iCloud를 고른 녹음은 iCloud의 같은 폴더,
-  §3 "저장 위치"). 다른 기기·에이전트·사용자는 그 파일만
-  보면 된다. 기기 간 별도 통신은 없다.
-- **한 트랙, 한 파일** — 트랙 하나(`mono` 또는 `mix`)를 파트 remux로 이어 붙인 파일 하나를 올린다. 파트별 전사는
-  파트마다 화자 라벨이 달라져 쓰지 않는다.
+- **Serverless** — every call goes device → an API on the user's account (Drive, STT). No intermediate relay, no callback URL. So STT
+  providers are used only through a **pollable asynchronous API or a synchronous API** (callback-only modes are not used).
+- **BYO key** — the key is a `secretRef` in the existing secret store (§5). If it is missing, `MISSING_SECRET`.
+- **Drive is the bus** — result files are placed in the recording folder `{folder}/{base}/` (for a recording that chose iCloud, the same folder in iCloud,
+  §3 "Storage location"). Other devices, agents and the user only need to
+  look at those files. There is no separate device-to-device communication.
+- **One track, one file** — one file, joined from the parts of one track (`mono` or `mix`) by remux, is uploaded. Per-part transcription
+  is not used, because the speaker labels would differ from part to part.
 
-### 단계 정의
+### Step definition
 
 #### `transcribe`
 
@@ -1571,155 +1588,154 @@ interface TokenProvider {
   "speakers": { "min": 2, "max": 6 } }
 ```
 
-| 필드 | 기본 | 의미 |
+| Field | Default | Meaning |
 |---|---|---|
-| `provider` | 필수 | `assemblyai` \| `clova` \| `rtzr` \| `openai` \| `groq` \| `together` \| `mistral` \| `elevenlabs` \| `deepgram` \| `azure` \| `daglo` \| `speechmatics` \| `rev` \| `gladia`. 클라이언트가 모르는 값이면 검증 오류(`UnknownProvider`) |
-| `secretRef` | 필수 | provider 키. 값 형식은 provider 표 참조 |
-| `invokeUrl` | — | provider마다 뜻이 다르다(`WorkflowParser.invokeUrlUse`). **필수**: `clova`(앱별 호출 URL)·`azure`(리소스 엔드포인트). **선택**: `openai`·`groq`·`together`·`mistral`·`speechmatics` — 비우면 provider 기본 엔드포인트, 넣으면 그 자리를 대신한다(자체 호스팅·리전). **나머지**: 넣으면 검증 오류. 끝의 `/`는 잘라낸다. 필수 provider는 템플릿(`WorkflowParser.invokeUrlTemplate`: `clova` → `https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}`, `azure` → `https://{resourceName}.cognitiveservices.azure.com`)이 있어 설정 화면이 빈 필드에 채워 넣고, `{…}`가 남은 URL은 검증 오류(`InvokeUrlPlaceholder`) |
-| `language` | `ko` | `ko` \| `en` \| `ko-en` \| `auto`. provider가 못 받는 값은 어댑터가 가장 가까운 값으로 매핑 |
-| `diarize` | `true` | 화자분리 요청 여부 |
-| `speakers.min` / `speakers.max` | 1 / 10 | 화자 수 힌트. 메타 `context.participants`가 있으면 `min = max = participants`로 **덮어쓴다**(녹음 시점 정보가 워크플로우 기본값보다 정확하다). 상한은 10명이라 `6+`는 그 위쪽 전부를 뜻한다 |
-| `model` | provider 기본 | provider별 모델 이름. 자유 문자열, 검증은 provider가 한다. 모델을 고정했거나 고를 모델이 없는 `clova`·`assemblyai`·`azure`·`rev`는 이 값을 읽지 않으므로(`SttProviders.acceptsModel`) 고정 처리 계획은 보내지 않고 설정 화면은 입력란을 숨긴다. 설정 화면에서 제공자를 바꾸면 모델과 `invokeUrl`을 그 제공자에 기억된 값으로 채운다(없으면 빈칸, 필수 제공자의 주소 형식은 자리표시 문구) — 다른 제공자의 이름·주소가 넘어가지 않게(§5 `providerDetails`) |
+| `provider` | required | `assemblyai` \| `clova` \| `rtzr` \| `openai` \| `groq` \| `together` \| `mistral` \| `elevenlabs` \| `deepgram` \| `azure` \| `daglo` \| `speechmatics` \| `rev` \| `gladia`. A value the client does not know is a validation error (`UnknownProvider`) |
+| `secretRef` | required | The provider key. See the provider table for the value format |
+| `invokeUrl` | — | Its meaning differs per provider (`WorkflowParser.invokeUrlUse`). **Required**: `clova` (per-app invoke URL) · `azure` (resource endpoint). **Optional**: `openai` · `groq` · `together` · `mistral` · `speechmatics` — empty means the provider's default endpoint; a value takes its place (self-hosting · region). **Others**: a value is a validation error. A trailing `/` is trimmed. The required providers have a template (`WorkflowParser.invokeUrlTemplate`: `clova` → `https://clovaspeech-gw.ncloud.com/external/v1/{appId}/{invokeKey}`, `azure` → `https://{resourceName}.cognitiveservices.azure.com`) that the settings screen fills into an empty field, and a URL with a `{…}` left in it is a validation error (`InvokeUrlPlaceholder`) |
+| `language` | `ko` | `ko` \| `en` \| `ko-en` \| `auto`. A value the provider cannot accept is mapped by the adapter to the closest value |
+| `diarize` | `true` | Whether to request speaker diarization |
+| `speakers.min` / `speakers.max` | 1 / 10 | Speaker count hint. If the meta `context.participants` is present, it **overrides** them with `min = max = participants` (information from the time of recording is more accurate than the workflow default). The upper bound is 10 people, so `6+` means the whole range above it |
+| `model` | provider default | Provider-specific model name. A free string; the provider does the validation. `clova` · `assemblyai` · `azure` · `rev`, which have a fixed model or no model to choose, do not read this value (`SttProviders.acceptsModel`), so the fixed processing plan does not send it and the settings screen hides the input field. When the provider is changed on the settings screen, the model and `invokeUrl` are filled with the values remembered for that provider (empty if there are none; placeholder text for the address format of a required provider) — so that another provider's name or address does not carry over (§5 `providerDetails`) |
 
-입력 트랙: 녹음 `tracks`에 `mono`가 있으면 `mono`, 아니면 `mix`. 둘 다 없으면 단계
-`FAILED(NO_INPUT_TRACK)`(비재시도).
+Input track: `mono` if the recording's `tracks` has `mono`, otherwise `mix`. If neither exists, the step is
+`FAILED(NO_INPUT_TRACK)` (non-retryable).
 
-전제 조건: 이 단계 **앞에** `drive.upload`가 있어야 한다(`TranscribeNeedsUpload`) — 결과 파일을 놓을 폴더가 그
-단계의 output이기 때문이다.
+Precondition: `drive.upload` must come **before** this step (`TranscribeNeedsUpload`) — because the folder the result files go into is that
+step's output.
 
-출력: `{ transcript: { jsonFileId, txtFileId, language, speakerCount, durationSec, provider, model }, files: [ … ] }`
-— `files[]`는 결과 파일(json·txt)의 `name/bytes/sha256/drive{fileId,webViewLink}`다(웹훅 payload가
-읽던 모양이다; 웹훅은 2026-09-24 폐기).
+Output: `{ transcript: { jsonFileId, txtFileId, language, speakerCount, durationSec, provider, model }, files: [ … ] }`
+— `files[]` is the `name/bytes/sha256/drive{fileId,webViewLink}` of the result files (json · txt) (the shape the webhook payload
+read; webhooks were retired on 2026-09-24).
 
-### Provider
+### Providers
 
-새 외부 전사 설정의 목록과 기본 선택은 **ElevenLabs → CLOVA → AssemblyAI → RTZR → OpenAI → Groq →
-Together → Mistral → Deepgram → Azure → Daglo → Speechmatics → Rev → Gladia** 순이다. 저장된 제공자는 바꾸지 않는다.
-iPhone(App Store)은 §15 "iPhone 제공 업체"의 여덟 곳만 같은 순서로 보인다(2026-09-29).
+The list for a new external transcription setting, and its default choice, follow the order **ElevenLabs → CLOVA → AssemblyAI → RTZR → OpenAI → Groq →
+Together → Mistral → Deepgram → Azure → Daglo → Speechmatics → Rev → Gladia**. A saved provider is not changed.
+iPhone (App Store) shows only the eight in §15 "iPhone providers", in the same order (2026-09-29).
 
-전사 언어는 `ko`, `en`, `ja`, `zh-cn`, `zh-tw`, `es`, `fr`, `de`, `pt`, `ar`, `hi`, `ru`, `it`, `id`, `tr`,
-`vi`, `th`, `nl`, `pl`, `uk` 20개 선택값에 기존 `ko-en`·`auto`를 더한다. 새 설정의 초기 언어는 기기 언어에서 정한다.
-제공자·모델이 지원하는 선택값만 표시한다. CLOVA는 한·영·혼용·일·중국어 간체/번체, Daglo는 검증된 한·영·혼용을
-유지한다. Mistral은 13개 언어, RTZR sommers는 한·일, 영어 전용 Groq 모델과 Deepgram 특수 모델은 영어로 제한한다.
-Apple 로컬은 `SpeechTranscriber.supportedLocale(equivalentTo:)`를 실제 기기에서 조회하며 모델 설치 여부는 별도로 표시한다.
-API가 ISO 언어 코드만 받으면 중국어 두 선택값은 `zh`, Speechmatics·Rev는 `cmn`으로 보낸다. 중국어 표기체의 강제 변환은 하지 않는다.
-근거와 구현 범위는 [글로벌 언어 설정 기록](research/2026-09-24-global-language-settings.md)을 따른다.
+The transcription languages are the 20 choices `ko`, `en`, `ja`, `zh-cn`, `zh-tw`, `es`, `fr`, `de`, `pt`, `ar`, `hi`, `ru`, `it`, `id`, `tr`,
+`vi`, `th`, `nl`, `pl`, `uk`, plus the existing `ko-en` · `auto`. The initial language of a new setting is decided from the device language.
+Only the choices the provider and model support are shown. CLOVA keeps Korean · English · mixed · Japanese · Simplified/Traditional Chinese, and Daglo keeps the verified
+Korean · English · mixed. Mistral is limited to 13 languages, RTZR sommers to Korean · Japanese, and English-only Groq models and special Deepgram models to English.
+Apple local queries `SpeechTranscriber.supportedLocale(equivalentTo:)` on the actual device, and whether the model is installed is shown separately.
+If an API accepts only ISO language codes, the two Chinese choices are sent as `zh`, and as `cmn` for Speechmatics · Rev. The Chinese script is not force-converted.
+The rationale and implementation scope follow the [global language settings record](research/2026-09-24-global-language-settings.md).
 
-| provider | 인증(`secretRef` 값 형식) | 제출 | 폴링 | 화자분리·힌트 | 언어 매핑 | 기본 모델 |
+| provider | Auth (`secretRef` value format) | Submit | Polling | Diarization · hints | Language mapping | Default model |
 |---|---|---|---|---|---|---|
-| `elevenlabs` (Scribe) | 헤더 `xi-api-key`; 값 = 키 | `POST https://api.elevenlabs.io/v1/speech-to-text` multipart(`file`, `model_id`, `language_code`, `diarize`, `num_speakers`, `timestamps_granularity=word`, `tag_audio_events=false`), 동기 | 없음(동기) | `diarize`, `num_speakers`(단일 값을 알 때만) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략 | `scribe_v2` |
-| `clova` (Naver CLOVA Speech 장문) | 헤더 `X-CLOVASPEECH-API-KEY`; 값 = 키 문자열. `invokeUrl`은 단계 필드 | `POST {invokeUrl}/recognizer/upload` multipart(`media`, `params` JSON), `completion: "sync"`(≤2 h; 결과가 응답 본문) | 없음(동기). HTTP 타임아웃 15분 | `diarization.enable`, `speakerCountMin/Max`(≤10) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`enko`, `auto`→`ko-KR` | — |
-| `assemblyai` | 헤더 `authorization`; 값 = 키 | 기본 주소 `https://api.eu.assemblyai.com/v2`(EU 리전 — 학습 제외, §15 "provider 보관 정책", 2026-09-29). `POST /v2/upload`(바이트) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-3-5-pro","universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected`(min=max일 때) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-3-5-pro` → `universal-2`(문서의 기본 라우팅, 2026-09-25 — 한국어처럼 앞 모델이 못 하는 언어는 뒤 모델로 넘어간다. 전사 파일의 `model`은 응답의 `speech_model_used`) |
-| `rtzr` (리턴제로) | 값 = `{clientId}:{clientSecret}`. `POST /v1/authenticate` → JWT(6 h) 캐시(단계 state) | `POST /v1/transcribe` multipart(`file`, `config` JSON) → `id` | `GET /v1/transcribe/{id}` → `transcribing`/`completed`/`failed`. `Waiting(30s)` | `use_diarization`, `diarization.spk_count`(min=max일 때만 전달) | `sommers`는 `ko`/`ja`만 → `ko`→`sommers`; `en`·`ko-en`·`auto`는 `model_name: "whisper"` + `language: "en"`/`"multi"`/`"detect"` | `sommers` |
-| `openai` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart(`file`, `model`, `language`), 동기(응답 본문이 결과). base 기본 `https://api.openai.com/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | 모델 이름이 정한다 — 이름에 `diarize`가 있으면 `response_format=diarized_json` + `chunking_strategy=auto`, `whisper`로 시작하면 `verbose_json` + `timestamp_granularities[]=segment`, 그 밖은 `json`. 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→생략(자동 감지) | `diarize`면 `gpt-4o-transcribe-diarize`, 아니면 `whisper-1` |
-| `groq` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.groq.com/openai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | **없다** — Groq에 화자분리가 없으므로 `diarize`는 무시하고 화자는 `null`. `verbose_json` 고정 | 위와 같음 | `whisper-large-v3-turbo` |
-| `together` | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.together.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `response_format=verbose_json` + `timestamp_granularities=segment`, 그리고 `min_speakers`/`max_speakers`(범위) | 위와 같되 `auto`→`language=auto`(이 API는 `language`가 없으면 `en`이다 — API reference, 2026-09-25) | `openai/whisper-large-v3` |
-| `mistral` (Voxtral) | 헤더 `Authorization: Bearer {키}` | `POST {base}/audio/transcriptions` multipart, 동기. base 기본 `https://api.mistral.ai/v1`, `invokeUrl`로 대체 가능 | 없음(동기) | `diarize=true` + `timestamp_granularities=segment`. 화자 수 힌트 없음 | 위와 같음 | `voxtral-mini-latest` |
-| `deepgram` | 헤더 `Authorization: Token {키}` | `POST https://api.deepgram.com/v1/listen?…` 쿼리(`model`, `smart_format=true`, `punctuate=true`, `utterances=true`, 모델 개선 제외 `mip_opt_out=true`), 본문은 파일 바이트 그대로, 동기 | 없음(동기) | `diarize_model=latest`만 보낸다(옛 `diarize` 플래그를 같이 보내면 거부된다). 화자 수 힌트 없음 | `ko`→`language=ko`, `en`→`language=en`, `ko-en`→`language=ko`, `auto`→`detect_language=true` | `nova-3` |
-| `azure` (Fast transcription) | 헤더 `Ocp-Apim-Subscription-Key`; 값 = 키. `invokeUrl`은 리소스 엔드포인트(단계 필드, **필수**) | `POST {invokeUrl}/speechtotext/transcriptions:transcribe?api-version=2025-10-15` multipart(`audio`, `definition` JSON), 동기 | 없음(동기) | `diarization.enabled` + `maxSpeakers`(API가 받는 2..35로 클램프). `diarize: false`면 `diarization`을 아예 빼고 보낸다 | `ko`→`["ko-KR"]`, `en`→`["en-US"]`, `ko-en`→`[]`(여러 locale은 파일 전체를 한 언어로 처리하므로, 섞인 말은 locale 없이 다국어 모델에 맡긴다 — fast transcription 가이드 권장, 2026-09-25), `auto`→`[]`. `profanityFilterMode: "None"`(기본값 `Masked`는 욕설을 가린다) | — |
-| `daglo` (다글로) | 헤더 `Authorization: Bearer {키}` | `POST https://apis.daglo.ai/stt/v1/async/transcripts` multipart(`file`, `sttConfig` JSON) → `rid` | `GET https://apis.daglo.ai/stt/v1/async/transcripts/{rid}` → `transcribed`(완료) / `input_error`·`transcript_error`·`file_error`(종료 실패) / 그 밖은 진행 중 | `speakerDiarization.enable`, `speakerCountHint`(단일 값을 알고 2 이상일 때) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`mixed`, `auto`→`ko-KR` | `general` |
-| `speechmatics` | 헤더 `Authorization: Bearer {키}`. base 기본 `https://eu1.asr.api.speechmatics.com/v2`, `invokeUrl`로 대체 가능(예: `us1` 호스트) | `POST {base}/jobs` multipart(`data_file`, `config` JSON) → `id` | `GET {base}/jobs/{id}` → `running`(진행) / `rejected`·`deleted`·`expired`(종료 실패, 재제출) / `done`. `done`이면 같은 폴링에서 `GET {base}/jobs/{id}/transcript?format=json-v2` | `diarization: "speaker"`(아니면 `"none"`). 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`auto`(언어 식별; 감지된 언어는 토큰의 `alternatives[].language`에서 읽는다. 작업 설정에 `language_identification_config.low_confidence_action: "allow"` — 기본값은 확신이 없으면 거절이다), `zh-tw`→`cmn` + `output_locale: "cmn-Hant"`(기본 출력은 간체) | `enhanced`(`operating_point`) |
-| `rev` (Rev AI) | 헤더 `Authorization: Bearer {키}` | `POST https://api.rev.ai/speechtotext/v1/jobs` multipart(`media`, `options` JSON) → `id` | `GET …/jobs/{id}` → `in_progress`/`failed`/`transcribed`. `transcribed`이면 같은 폴링에서 `GET …/jobs/{id}/transcript`(`Accept: application/vnd.rev.transcript.v1.0+json`). **결과 대기 상한 8시간**(비영어 작업 처리 시간이 최대 6시간이라 기본 2시간으로는 모자란다) | `skip_diarization`(= `diarize`의 반대). 화자 수 힌트 없음 | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`ko`(필드를 빼면 감지가 아니라 영어 기본이라 항상 보낸다) | — (`transcriber: "machine"`) |
-| `gladia` | 헤더 `x-gladia-key`; 값 = 키 | `POST https://api.gladia.io/v2/upload` multipart(`audio`) → `audio_url`; 이어서 `POST https://api.gladia.io/v2/pre-recorded` JSON → `id` | `GET https://api.gladia.io/v2/pre-recorded/{id}` → `queued`·`processing`/`error`/`done` | `diarization`, `diarization_config.number_of_speakers`(단일 값을 알 때) 또는 `min_speakers`/`max_speakers` | `ko`→`["ko"]`, `en`→`["en"]`, `ko-en`→`["ko","en"]` + `code_switching: true`, `auto`→`language_config` 생략 | — (`model`은 지정했을 때만 보낸다) |
+| `elevenlabs` (Scribe) | Header `xi-api-key`; value = key | `POST https://api.elevenlabs.io/v1/speech-to-text` multipart(`file`, `model_id`, `language_code`, `diarize`, `num_speakers`, `timestamps_granularity=word`, `tag_audio_events=false`), synchronous | None (synchronous) | `diarize`, `num_speakers` (only when a single value is known) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→omitted | `scribe_v2` |
+| `clova` (Naver CLOVA Speech long-form) | Header `X-CLOVASPEECH-API-KEY`; value = key string. `invokeUrl` is a step field | `POST {invokeUrl}/recognizer/upload` multipart(`media`, `params` JSON), `completion: "sync"` (≤2 h; the result is the response body) | None (synchronous). HTTP timeout 15 minutes | `diarization.enable`, `speakerCountMin/Max` (≤10) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`enko`, `auto`→`ko-KR` | — |
+| `assemblyai` | Header `authorization`; value = key | Default base URL `https://api.eu.assemblyai.com/v2` (EU region — excluded from training, §15 "Provider retention policies", 2026-09-29). `POST /v2/upload` (bytes) → `upload_url`; `POST /v2/transcript` `{audio_url, speech_models:["universal-3-5-pro","universal-2"], language_code, speaker_labels, speakers_expected?}` | `GET /v2/transcript/{id}` → `queued`/`processing`/`completed`/`error`. `Waiting(30s)` | `speaker_labels`, `speakers_expected` (when min=max) | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`language_detection: true` | `universal-3-5-pro` → `universal-2` (the documented default routing, 2026-09-25 — a language the first model cannot handle, such as Korean, falls through to the second model. The transcript file's `model` is the response's `speech_model_used`) |
+| `rtzr` (Return Zero) | Value = `{clientId}:{clientSecret}`. `POST /v1/authenticate` → JWT (6 h), cached (step state) | `POST /v1/transcribe` multipart(`file`, `config` JSON) → `id` | `GET /v1/transcribe/{id}` → `transcribing`/`completed`/`failed`. `Waiting(30s)` | `use_diarization`, `diarization.spk_count` (passed only when min=max) | `sommers` supports only `ko`/`ja` → `ko`→`sommers`; `en` · `ko-en` · `auto` use `model_name: "whisper"` + `language: "en"`/`"multi"`/`"detect"` | `sommers` |
+| `openai` | Header `Authorization: Bearer {key}` | `POST {base}/audio/transcriptions` multipart(`file`, `model`, `language`), synchronous (the response body is the result). base defaults to `https://api.openai.com/v1`, replaceable with `invokeUrl` | None (synchronous) | Decided by the model name — if the name contains `diarize`, `response_format=diarized_json` + `chunking_strategy=auto`; if it starts with `whisper`, `verbose_json` + `timestamp_granularities[]=segment`; otherwise `json`. No speaker count hint | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→omitted (automatic detection) | `gpt-4o-transcribe-diarize` with `diarize`, otherwise `whisper-1` |
+| `groq` | Header `Authorization: Bearer {key}` | `POST {base}/audio/transcriptions` multipart, synchronous. base defaults to `https://api.groq.com/openai/v1`, replaceable with `invokeUrl` | None (synchronous) | **None** — Groq has no speaker diarization, so `diarize` is ignored and speakers are `null`. `verbose_json` fixed | Same as above | `whisper-large-v3-turbo` |
+| `together` | Header `Authorization: Bearer {key}` | `POST {base}/audio/transcriptions` multipart, synchronous. base defaults to `https://api.together.ai/v1`, replaceable with `invokeUrl` | None (synchronous) | `diarize=true` + `response_format=verbose_json` + `timestamp_granularities=segment`, plus `min_speakers`/`max_speakers` (range) | Same as above, but `auto`→`language=auto` (without `language` this API uses `en` — API reference, 2026-09-25) | `openai/whisper-large-v3` |
+| `mistral` (Voxtral) | Header `Authorization: Bearer {key}` | `POST {base}/audio/transcriptions` multipart, synchronous. base defaults to `https://api.mistral.ai/v1`, replaceable with `invokeUrl` | None (synchronous) | `diarize=true` + `timestamp_granularities=segment`. No speaker count hint | Same as above | `voxtral-mini-latest` |
+| `deepgram` | Header `Authorization: Token {key}` | `POST https://api.deepgram.com/v1/listen?…` query (`model`, `smart_format=true`, `punctuate=true`, `utterances=true`, model-improvement opt-out `mip_opt_out=true`), the body is the raw file bytes, synchronous | None (synchronous) | Sends only `diarize_model=latest` (sending the old `diarize` flag along with it is rejected). No speaker count hint | `ko`→`language=ko`, `en`→`language=en`, `ko-en`→`language=ko`, `auto`→`detect_language=true` | `nova-3` |
+| `azure` (Fast transcription) | Header `Ocp-Apim-Subscription-Key`; value = key. `invokeUrl` is the resource endpoint (step field, **required**) | `POST {invokeUrl}/speechtotext/transcriptions:transcribe?api-version=2025-10-15` multipart(`audio`, `definition` JSON), synchronous | None (synchronous) | `diarization.enabled` + `maxSpeakers` (clamped to the 2..35 the API accepts). With `diarize: false`, `diarization` is left out entirely | `ko`→`["ko-KR"]`, `en`→`["en-US"]`, `ko-en`→`[]` (multiple locales make the whole file be processed as one language, so mixed speech is left to the multilingual model with no locale — recommended by the fast transcription guide, 2026-09-25), `auto`→`[]`. `profanityFilterMode: "None"` (the default `Masked` masks profanity) | — |
+| `daglo` (Daglo) | Header `Authorization: Bearer {key}` | `POST https://apis.daglo.ai/stt/v1/async/transcripts` multipart(`file`, `sttConfig` JSON) → `rid` | `GET https://apis.daglo.ai/stt/v1/async/transcripts/{rid}` → `transcribed` (done) / `input_error` · `transcript_error` · `file_error` (terminal failure) / anything else is in progress | `speakerDiarization.enable`, `speakerCountHint` (when a single value is known and is 2 or more) | `ko`→`ko-KR`, `en`→`en-US`, `ko-en`→`mixed`, `auto`→`ko-KR` | `general` |
+| `speechmatics` | Header `Authorization: Bearer {key}`. base defaults to `https://eu1.asr.api.speechmatics.com/v2`, replaceable with `invokeUrl` (e.g. a `us1` host) | `POST {base}/jobs` multipart(`data_file`, `config` JSON) → `id` | `GET {base}/jobs/{id}` → `running` (in progress) / `rejected` · `deleted` · `expired` (terminal failure, resubmit) / `done`. On `done`, `GET {base}/jobs/{id}/transcript?format=json-v2` in the same poll | `diarization: "speaker"` (otherwise `"none"`). No speaker count hint | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`auto` (language identification; the detected language is read from the tokens' `alternatives[].language`. The job config has `language_identification_config.low_confidence_action: "allow"` — the default rejects when it is not confident), `zh-tw`→`cmn` + `output_locale: "cmn-Hant"` (the default output is Simplified) | `enhanced` (`operating_point`) |
+| `rev` (Rev AI) | Header `Authorization: Bearer {key}` | `POST https://api.rev.ai/speechtotext/v1/jobs` multipart(`media`, `options` JSON) → `id` | `GET …/jobs/{id}` → `in_progress`/`failed`/`transcribed`. On `transcribed`, `GET …/jobs/{id}/transcript` (`Accept: application/vnd.rev.transcript.v1.0+json`) in the same poll. **Result wait limit of 8 hours** (non-English jobs take up to 6 hours to process, so the default 2 hours is not enough) | `skip_diarization` (= the inverse of `diarize`). No speaker count hint | `ko`→`ko`, `en`→`en`, `ko-en`→`ko`, `auto`→`ko` (leaving the field out means English by default, not detection, so it is always sent) | — (`transcriber: "machine"`) |
+| `gladia` | Header `x-gladia-key`; value = key | `POST https://api.gladia.io/v2/upload` multipart(`audio`) → `audio_url`; then `POST https://api.gladia.io/v2/pre-recorded` JSON → `id` | `GET https://api.gladia.io/v2/pre-recorded/{id}` → `queued` · `processing`/`error`/`done` | `diarization`, `diarization_config.number_of_speakers` (when a single value is known) or `min_speakers`/`max_speakers` | `ko`→`["ko"]`, `en`→`["en"]`, `ko-en`→`["ko","en"]` + `code_switching: true`, `auto`→`language_config` omitted | — (`model` is sent only when specified) |
 
-어댑터는 `core/commonMain`의 `transcribe/` 패키지에 `interface SttProvider { submit(ctx, file): Submitted;
-poll(ctx, ref): PollResult }`로 있고, `TranscribeRunner`는 provider와 무관하게 remux → submit → poll → 정규화 →
-Drive 쓰기만 안다.
+The adapters live in the `transcribe/` package of `core/commonMain` as `interface SttProvider { submit(ctx, file): Submitted;
+poll(ctx, ref): PollResult }`, and `TranscribeRunner` knows only remux → submit → poll → normalize →
+Drive write, regardless of the provider.
 
-기본 모델 이름은 각 provider의 현행 GA 모델로 갱신한다. 사용자가
-`model`을 바꿀 수 있으므로 **코어는 이름을 검증하지 않는다.**
+The default model names are updated to each provider's current GA model. Since the user can
+change `model`, **the core does not validate the name.**
 
-#### 길이·크기 한도
+#### Length · size limits
 
-한 시간짜리 회의는 32 kbps AAC로 대략 14 MB다. 그래도 provider마다 상한이 있고, 넘으면 4xx로 거부당한다
-(`UNSUPPORTED_AUDIO`, 재시도하지 않음).
+A one-hour meeting is roughly 14 MB at 32 kbps AAC. Still, every provider has a cap, and going over it gets a 4xx rejection
+(`UNSUPPORTED_AUDIO`, not retried).
 
-**32 kbps 녹음이 현실적으로 닿을 수 있는 한도만** provider가 `SttProvider.limits`(`SttLimits(maxBytes,
-maxDurationSec)`)로 선언한다. 러너는 파트를 이어 붙인 직후·업로드 직전에 그 한도를 확인하고, 넘으면 바이트를
-보내기 전에 `UNSUPPORTED_AUDIO`로 실패한다(재시도하지 않음). detail은 `30 MB exceeds openai's 25 MB` /
-`2h 15m exceeds clova's 2h`처럼 실제 값과 한도를 함께 적는다 — 셸은 `UNSUPPORTED_AUDIO` 문장 아래에 그대로
-보여준다. **등급·플랜마다 달라지는 한도는 선언하지 않는다** — 상위 플랜이 받아 줄 녹음을 우리가 먼저 거절하게
-되기 때문이다. 그런 한도와 32 kbps로는 닿지 않는 한도는 예전대로 provider의 4xx로만 알게 된다.
+**Only the limits a 32 kbps recording can realistically reach** are declared by the provider in `SttProvider.limits` (`SttLimits(maxBytes,
+maxDurationSec)`). The runner checks those limits right after joining the parts and just before uploading, and if they are exceeded it fails with `UNSUPPORTED_AUDIO` before
+sending any bytes (not retried). The detail states the actual value together with the limit, like `30 MB exceeds openai's 25 MB` /
+`2h 15m exceeds clova's 2h` — the shell shows it as is under the `UNSUPPORTED_AUDIO` sentence. **Limits that vary by tier or plan are not declared** — we would then
+reject first a recording that a higher plan would accept. Such limits, and the limits 32 kbps cannot reach, are still learned only from the provider's 4xx, as before.
 
-| provider | 한도 | 업로드 전 확인 |
+| provider | Limit | Checked before upload |
 |---|---|---|
-| `openai` | 파일 25 MB(32 kbps 기준 대략 1시간 44분). `gpt-4o-transcribe-diarize`는 그와 별개로 약 25분까지만 받는다고 알려져 있다(비공식) | 25 MB는 확인한다. diarize 모델의 25분은 비공식이라 확인하지 않는다 |
-| `groq` | 무료 등급 파일 25 MB | 아니오 — 등급마다 다르다 |
-| `together` | 오디오 4시간(파일 80 MB) | 4시간만 확인한다. 80 MB는 32 kbps로 닿지 않는다 |
-| `gladia` | 오디오 135분(표준 플랜 기준. Enterprise는 4시간 15분) | 아니오 — 플랜마다 다르다 |
-| `clova` | 동기 호출 2시간 | 예 |
-| `azure` | Fast transcription 오디오 5시간 | 예 |
-| `daglo` | 오디오 4시간 | 예 |
-| `rtzr` | 파일 4시간(2 GB) — 파일 STT 문서, 2026-09-25 | 예 |
+| `openai` | File 25 MB (roughly 1 hour 44 minutes at 32 kbps). `gpt-4o-transcribe-diarize` is reported to accept only up to about 25 minutes, separately from that (unofficial) | 25 MB is checked. The diarize model's 25 minutes is unofficial, so it is not checked |
+| `groq` | Free tier file 25 MB | No — it varies by tier |
+| `together` | Audio 4 hours (file 80 MB) | Only the 4 hours is checked. 80 MB cannot be reached at 32 kbps |
+| `gladia` | Audio 135 minutes (standard plan. Enterprise is 4 hours 15 minutes) | No — it varies by plan |
+| `clova` | Synchronous call 2 hours | Yes |
+| `azure` | Fast transcription audio 5 hours | Yes |
+| `daglo` | Audio 4 hours | Yes |
+| `rtzr` | File 4 hours (2 GB) — file STT documentation, 2026-09-25 | Yes |
 
-### 오디오 준비 (remux)
+### Audio preparation (remux)
 
-`CoreDeps.audio.concat(parts: List<File>, out: File)` — 셸이 구현한다. 같은 트랙의 파트를 파트 번호 순으로
-**무손실로** 이어 붙인다(세그먼트 경계가 무손실이므로 AAC 프레임을 그대로 복사한다. 재인코딩 금지).
+`CoreDeps.audio.concat(parts: List<File>, out: File)` — the shell implements it. It joins the parts of the same track in part-number order
+**losslessly** (segment boundaries are lossless, so the AAC frames are copied as is. No re-encoding).
 
-| 플랫폼 | 구현 |
+| Platform | Implementation |
 |---|---|
-| Android | `MediaExtractor` + `MediaMuxer`(AAC 트랙 복사, 파트 간 pts 이어 붙임) |
-| Apple | `AVAssetReader` → `AVAssetWriter`(`outputSettings: nil`, 패스스루). `AVMutableComposition` + `AVAssetExportSession(presetPassthrough)`는 파트마다 포맷 디스크립션이 달라 `AVErrorOperationNotSupportedForAsset`으로 실패한다 |
-| Windows / JVM 데스크톱 | 번들 ffmpeg(ADR-019) `-f concat -safe 0 -c copy`. ffmpeg는 파트가 없어도 exit 0으로 잘린 출력을 내므로 파트 존재는 Kotlin에서 먼저 확인한다 |
+| Android | `MediaExtractor` + `MediaMuxer` (AAC track copy, pts continued across parts) |
+| Apple | `AVAssetReader` → `AVAssetWriter` (`outputSettings: nil`, passthrough). `AVMutableComposition` + `AVAssetExportSession(presetPassthrough)` fails with `AVErrorOperationNotSupportedForAsset` because each part has a different format description |
+| Windows / JVM desktop | Bundled ffmpeg (ADR-019) `-f concat -safe 0 -c copy`. ffmpeg exits 0 with truncated output even when a part is missing, so the existence of the parts is checked first in Kotlin |
 
-인코더 패딩(각 파트가 표시 길이보다 ~0.18초 긴 프레임을 가짐)은 절반 이상이 표시 길이 안에 드는 프레임만 남겨
-잘라낸다 — 안 그러면 뒤 파트의 타임스탬프가 파트마다 밀린다. `gaps`(메타)는 무시한다 — 이어 붙인 파일의 시간축은
-"오디오가 있는 시간"이고, 결과 타임스탬프는 `parts[].startOffsetSec`으로 녹음 시간축에 되돌려 놓는다
-(`transcript.json`의 `start/end`는 녹음 기준이다). 산출물은 임시 파일이며 단계 종료 시 삭제한다(파트 보관 규칙과
-무관하다).
+Encoder padding (each part has frames ~0.18 s longer than its presented duration) is trimmed by keeping only the frames of which at least half falls within the presented duration
+— otherwise the timestamps of the later parts shift further with every part. `gaps` (meta) is ignored — the timeline of the joined file is
+"the time where there is audio", and the result timestamps are mapped back to the recording timeline with `parts[].startOffsetSec`
+(`start/end` in `transcript.json` are relative to the recording). The output is a temporary file and is deleted when the step ends (unrelated to the part
+retention rules).
 
-### 폴링 · 상태
+### Polling · status
 
-`StepRunner.run`의 결과에 **`StepOutcome.Waiting(retryAfterSec, state)`**가 있다(§10).
+The result of `StepRunner.run` includes **`StepOutcome.Waiting(retryAfterSec, state)`** (§10).
 
-- `Waiting`은 `attempts`를 **소모하지 않는다.** Job은 `WAITING(next_run_at = now + retryAfterSec)`, 단계는
-  `PENDING` 유지, `state`(제출 ref·토큰·제출 시각)는 저장. 그래서 **전사가 진행 중인 동안에는 "언제" 다시
-  시도한다는 예산 개념이 없다** — 다음 폴링 시각만 있다.
-- 제출 후 경과가 **provider가 선언한 결과 대기 상한**(`SttProvider.resultTimeout`, 기본 2시간; `rev`만 8시간 —
-  비영어 작업 처리 시간이 최대 6시간이라 2시간에 포기하면 살아 있는 작업을 버리고 같은 오디오를 다시
-  결제한다)을 넘거나 provider가 **종료 상태로 실패**(`failed`/`error`)를
-  돌려주면 러너는 **state를 비운 뒤** `FAILED(RESULT_TIMEOUT | PROVIDER_ERROR)`(재시도 가능)를 던진다 — Executor는
-  실패 시 state를 지우지 않으므로 비워야 **재시도는 새로 제출**한다. 폴링 중 일시 오류(네트워크·5xx·429)는 state를
-  유지해 같은 ref를 계속 폴링한다.
-- 셸의 스케줄러 어댑터는 `next_run_at`에 맞춰 다시 깨운다(Android WorkManager `OneTimeWorkRequest` 지연, iOS
-  `BGProcessingTaskRequest.earliestBeginDate`, 데스크톱 타이머). iOS는 정확한 시각을 보장하지 않으므로 앱 포그라운드
-  진입 시에도 `runDueJobs`를 부른다.
-- 동기 provider(`clova sync`)는 HTTP 응답을 기다리는 동안 협력적 취소를 받으면 요청을 끊고 `Waiting`이 아니라
-  **재제출**한다(결과 ref가 없다). 동기 호출은 데스크톱에서 무해하지만 모바일 백그라운드에선 실행 시간 예산을 넘길
-  수 있다 — 모바일 기본 provider 권장은 `assemblyai`/`rtzr`(비동기)다.
+- `Waiting` does **not consume** `attempts`. The Job goes to `WAITING(next_run_at = now + retryAfterSec)`, the step stays
+  `PENDING`, and `state` (submission ref · token · submission time) is saved. So **while transcription is in progress there is no budget notion of "when"
+  to retry** — there is only the next polling time.
+- If the time since submission exceeds **the result wait limit the provider declared** (`SttProvider.resultTimeout`, default 2 hours; only `rev` has 8 hours —
+  non-English jobs take up to 6 hours to process, so giving up at 2 hours would abandon a live job and pay for the same audio
+  again) or the provider returns a **terminal failure state** (`failed`/`error`), the runner **clears the state** and then
+  throws `FAILED(RESULT_TIMEOUT | PROVIDER_ERROR)` (retryable) — the Executor
+  does not clear state on failure, so it has to be cleared for **the retry to submit anew**. Transient errors during polling (network · 5xx · 429) keep the state
+  and keep polling the same ref.
+- The shell's scheduler adapter wakes up again at `next_run_at` (Android WorkManager `OneTimeWorkRequest` delay, iOS
+  `BGProcessingTaskRequest.earliestBeginDate`, desktop timer). iOS does not guarantee the exact time, so `runDueJobs` is also called when the app
+  enters the foreground.
+- A synchronous provider (`clova sync`) that receives cooperative cancellation while waiting for the HTTP response drops the request and, instead of `Waiting`,
+  **resubmits** (there is no result ref). Synchronous calls are harmless on desktop but can exceed the execution time budget in the mobile background
+  — the recommended default provider on mobile is `assemblyai`/`rtzr` (asynchronous).
 
-### 오류
+### Errors
 
-| reason | 재시도 | 조건 |
+| reason | Retry | Condition |
 |---|---|---|
-| `MISSING_SECRET` | 아니오 | 이 기기에 그 이름의 키가 없음 |
-| `AUTH_REJECTED` | 아니오 | 401/403. UI는 **"키를 확인하세요"**(check the key) + 설정 진입 |
-| `QUOTA` | 예(잔액·사용 한도 소진은 아니오) | 429(`Retry-After` 우선), 402. 업체가 잔액·사용 한도가 다 됐다고 말하면(Rev `insufficient_balance`·`invoicing_limit_exceeded`, RTZR 429 `A0001`) 재시도해도 같으므로 멈춘다 — 알림은 "한도와 결제를 확인하세요" (2026-09-25) |
-| `PROVIDER_ERROR` | 예 | 5xx, 네트워크, 타임아웃, Deepgram 422(업로드 중단·지연), provider `failed`/`error` 상태(메시지 보존) |
-| `UNSUPPORTED_AUDIO` | 아니오 | 4xx로 파일 거부, 제출 전 한도 초과(provider가 선언, detail에 한도), 또는 업체가 오디오 때문에 실패했다고 말한 작업(Gladia `error_code` 4xx, Rev `invalid_media`·`empty_media`·`duration_*`, CLOVA `ERROR_AUDIO_*`) — 같은 파일을 다시 보내도 같으므로 재제출하지 않는다 (2026-09-25) |
-| `NO_INPUT_TRACK` | 아니오 | 입력 트랙 없음 |
-| `RESULT_TIMEOUT` | 예 | 제출 후 provider의 결과 대기 상한 초과(기본 2시간, `rev` 8시간) |
+| `MISSING_SECRET` | No | This device has no key with that name |
+| `AUTH_REJECTED` | No | 401/403. The UI shows **"Check the key"** + a way into the settings |
+| `QUOTA` | Yes (No when the balance or usage limit is exhausted) | 429 (`Retry-After` first), 402. When the provider says the balance or usage limit has run out (Rev `insufficient_balance` · `invoicing_limit_exceeded`, RTZR 429 `A0001`), a retry gets the same answer, so it stops — the notice says "check its limits and billing" (2026-09-25) |
+| `PROVIDER_ERROR` | Yes | 5xx, network, timeout, Deepgram 422 (upload interrupted · delayed), provider `failed`/`error` status (message preserved) |
+| `UNSUPPORTED_AUDIO` | No | File rejected with a 4xx, a limit exceeded before submission (declared by the provider, the limit in the detail), or a job the provider says failed because of the audio (Gladia `error_code` 4xx, Rev `invalid_media` · `empty_media` · `duration_*`, CLOVA `ERROR_AUDIO_*`) — sending the same file again gets the same answer, so it is not resubmitted (2026-09-25) |
+| `NO_INPUT_TRACK` | No | No input track |
+| `RESULT_TIMEOUT` | Yes | The provider's result wait limit exceeded after submission (default 2 hours, `rev` 8 hours) |
 
-reason은 `step_run.last_error`에 **`CoreMessage` 코드**로 적힌다(§7 규칙 5). 여섯 개는 `NAME|provider가 한 말` —
-셸이 `NAME`을 자기 언어 문장으로 옮기고 `|` 뒤는 번역 없이 문장 아래에 그대로 보여준다. `MISSING_SECRET`만 인자를
-쓴다(`MISSING_SECRET:{secretRef}`). `MISSING_SECRET`·`AUTH_REJECTED`일 때 `StepReport.needsKey`가 "키를 확인하세요"
-동작을 켠다. **키는 녹음 처리 설정에서 고치므로 그 화면으로 간다.**
+The reason is written to `step_run.last_error` as a **`CoreMessage` code** (§7 rule 5). Six of them are `NAME|what the provider said` —
+the shell renders `NAME` as a sentence in its own language and shows the part after `|` untranslated, as is, under the sentence. Only `MISSING_SECRET` takes an argument
+(`MISSING_SECRET:{secretRef}`). For `MISSING_SECRET` · `AUTH_REJECTED`, `StepReport.needsKey` turns on the "Check the key"
+action. **The key is fixed in the recording processing settings, so it goes to that screen.**
 
-### 결과 파일
+### Result files
 
-녹음 폴더 `{folder}/{base}/`에 다음 이름으로 쓴다. 로컬 녹음 디렉터리에도 같은 이름으로 사본을 둔다(앱 상세
-화면용; 파트 삭제 규칙과 무관하게 보관).
+They are written to the recording folder `{folder}/{base}/` under the following names. A copy under the same names is also kept in the local recording directory (for the app's detail
+screen; kept regardless of the part deletion rules).
 
-| 파일 | 내용 |
+| File | Contents |
 |---|---|
-| `{base}.transcript.json` | 아래 스키마. 기계용 정본 |
-| `{base}.transcript.txt` | 사람·에이전트용. 한 줄 = `[HH:MM:SS] S1: 텍스트`. 화자가 바뀌거나 세그먼트가 60초를 넘을 때 줄바꿈 |
+| `{base}.transcript.json` | The schema below. The canonical copy for machines |
+| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text`. A line break when the speaker changes or a segment passes 60 seconds |
 
-Drive 쓰기는 `drive.upload`와 같은 멱등 규칙(같은 이름 + 같은 md5면 건너뜀, 다르면 **덮어씀** — 다시 돌리면 최신
-결과가 정본).
+Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
+result is canonical).
 
-`transcript.json` 스키마: `spec/transcript.schema.json`.
+`transcript.json` schema: `spec/transcript.schema.json`.
 
 ```json
 {
@@ -1738,357 +1754,356 @@ Drive 쓰기는 `drive.upload`와 같은 멱등 규칙(같은 이름 + 같은 md
 }
 ```
 
-- 화자 id는 provider 라벨을 등장 순으로 `S1, S2, …`로 정규화한다. `name`은 항상 `null`(사용자 라벨링은 후속).
-- `words`는 provider가 주면 넣고 아니면 생략한다. `start/end`는 초(소수), **녹음 시간축**이다.
-- `diarize: false`면 `speakers`는 `[{"id":"S1"}]` 하나, 모든 세그먼트가 `S1`이다.
+- Speaker ids are normalized from the provider labels to `S1, S2, …` in order of appearance. `name` is always `null` (user labeling comes later).
+- `words` is included when the provider gives it and omitted otherwise. `start/end` are seconds (decimal), on the **recording timeline**.
+- With `diarize: false`, `speakers` is the single `[{"id":"S1"}]`, and every segment is `S1`.
 
-### 메타 힌트 `context.participants`
+### Meta hint `context.participants`
 
-§3. 정수, 선택. 채우는 곳:
+§3. Integer, optional. Where it is filled in:
 
-- 데스크톱·폰: 정지 후 제목 다이얼로그에서 인원 선택(2·3·4·5·6+·모름). 기본 "모름" = 생략.
-- 워치: 없다(폰이 전송받아 바로 enqueue). 처리 계획의 `speakers` 기본값이 적용된다.
+- Desktop · phone: the participant count is chosen in the title dialog after stopping (2·3·4·5·6+·Unknown). The default "Unknown" = omitted.
+- Watch: none (the phone receives the transfer and enqueues it right away). The processing plan's `speakers` default applies.
 
-### 웹훅
+### Webhooks
 
-> **폐기(2026-09-24)**: 웹훅이 없다(§4). 결과 파일 항목의 모양(`track: "transcript"`)은 단계 출력 `files[]`로 남는다.
+> **Retired (2026-09-24)**: there are no webhooks (§4). The shape of the result file entries (`track: "transcript"`) remains in the step output `files[]`.
 
-§4의 `files[]`에 결과 파일을 추가한다: `track: "transcript"`(json·txt 두 항목). 앞선 `transcribe` 단계가
-성공했을 때만이다.
+The result files are added to the `files[]` of §4: `track: "transcript"` (two entries, json · txt). Only when the preceding `transcribe` step
+succeeded.
 
-### 없는 것
+### What is not included
 
-로컬 화자 분리, mic/sys 분리 전사로 "나" 식별, 화자 이름 편집·저장, 워치에서
-인원 수 입력. Gemini 어댑터도 없다 — 화자분리가 프롬프트로만 되고 타임스탬프를 믿을 수 없어 `transcript.json`의
-`start/end` 계약을 못 지킨다. 어댑터 인터페이스는 같으므로 provider를 더하는 것은 어댑터 하나를 더하는 일이다.
+Local speaker diarization, identifying "me" by transcribing mic/sys separately, editing and saving speaker names, entering the participant count
+on the watch. There is no Gemini adapter either — its speaker diarization works only through the prompt and its timestamps cannot be trusted, so it cannot keep the
+`start/end` contract of `transcript.json`. The adapter interface is the same, so adding a provider means adding one adapter.
 
 ---
 
-## 9. 디자인 시스템 "Blueprint" (구 docs/09)
+## 9. Design system "Blueprint" (formerly docs/09)
 
-원칙 한 줄: **장식이 아니라 의도**.
+The principle in one line: **intent, not decoration**.
 
-### 트렌드 → 적용
+### Trends → application
 
-| # | 트렌드 | Recly 적용 |
+| # | Trend | Recly application |
 |---|---|---|
-| 1 | AI 협업(보조 레이어, 강요 없음) | 전사는 **설정에서 로컬·외부 API·OFF 중 선택**한다. 새 설치는 로컬(로컬 엔진이 없는 빌드는 OFF)이며 외부 API는 사용자의 키로 실행한다. UI 규칙은 "보조 레이어": 원본(파트·타이머·상태)이 언제나 본문이고 녹취는 그 옆·아래의 별도 레이어이며, 결과가 원본 표시를 덮거나 대신하지 않는다. 결과가 있는 녹음에만 목록 행에 진입점이 생기고 상세 화면의 녹취 탭에서 펼친다. 자동 제안·자동 실행·"AI로 개선" 같은 권유 UI는 없다 |
-| 2 | **목적 있는 모션**(상태 신호, 의도적 마이크로 딜레이) | 녹음 시작/정지·업로드·로그인 같은 **드문 고위험 동작**에 0.3–0.8초의 가시적 처리 상태(버튼이 "저장 중…"으로 변하고 끝나면 "✓"). 장식 애니메이션 금지. 모든 모션은 `reduce motion`을 존중한다 |
-| 3 | **Raw 미학**(모노스페이스·그리드·와이어프레임) | **Recly의 시각 언어의 중심.** 타이머·파트 번호·파일명·크기·sha·상태 코드는 모노스페이스. 화면은 보이는 그리드 위의 사각 노드; 녹음 화면은 기기·전사·상태 노드를 표시하고 처리 설정은 기존 섹션 표로 제공한다. 필러 일러스트·그라디언트 오버레이 없음 |
-| 4 | 포용적 시각(제어권) | **모션 줄이기·고대비는 시스템 설정을 그대로 따른다** — 앱 안에 같은 토글을 다시 두지 않는다(중복 제어는 제어권이 아니다). WCAG AA(텍스트 4.5:1, 그래픽 3:1). 스와이프 힌트엔 정적 대안 |
-| 5 | **유동 타이포** | 브레이크포인트 대신 연속 스케일: Compose `sp` + 창 크기 기반 보간, SwiftUI Dynamic Type + `ScaledMetric`, Windows 창 너비에 따른 clamp 보간. 사용자 글꼴 크기 설정을 존중한다 |
-| 6 | 저작(Crafted, not prompted) | **아이콘 마스코트 없음.** 대신 **정직한 시스템 표시**: 버전·빌드·기기 ID·오픈소스 고지를 설정 하단에 모노스페이스로. "Handmade" 마케팅 문구는 넣지 않는다(제품 정직성) |
-| 7 | Anti-Liquid Glass | 글래스는 **크롬(탭 바·툴바·메뉴바 팝오버)에만**, 콘텐츠 위엔 금지. 블러 + 그라디언트 조명만, 굴절 왜곡 없음. 시스템 탭 바는 시스템 기본을 따르되 텍스트 대비를 확인하고 필요하면 배경을 채운다 |
+| 1 | AI collaboration (a supporting layer, never forced) | Transcription is **chosen in settings: local, external API, or OFF**. New installs use local (OFF in builds without a local engine), and the external API runs with the user's key. The UI rule is "supporting layer": the original (parts · timer · status) is always the main content, the transcript is a separate layer beside or below it, and the result never covers or replaces the display of the original. Only recordings with a result get an entry point in their list row, and it opens in the transcript tab of the detail screen. There is no persuasion UI such as automatic suggestions, automatic runs or "Improve with AI" |
+| 2 | **Purposeful motion** (status signals, deliberate micro-delays) | For **rare, high-stakes actions** such as starting/stopping a recording, uploading and signing in, a visible processing state of 0.3–0.8 seconds (the button changes to "Saving…" and shows "✓" when done). No decorative animation. All motion respects `reduce motion` |
+| 3 | **Raw aesthetics** (monospace · grid · wireframe) | **The center of Recly's visual language.** Timers, part numbers, file names, sizes, sha and status codes are monospace. Screens are square nodes on a visible grid; the recording screen shows the device, transcription and status nodes, and the processing settings are offered as the existing sectioned table. No filler illustrations, no gradient overlays |
+| 4 | Inclusive visuals (control) | **Reduce motion and high contrast follow the system settings as they are** — the app does not repeat the same toggles inside itself (duplicate controls are not control). WCAG AA (text 4.5:1, graphics 3:1). Swipe hints have a static alternative |
+| 5 | **Fluid typography** | A continuous scale instead of breakpoints: Compose `sp` + interpolation based on window size, SwiftUI Dynamic Type + `ScaledMetric`, clamp interpolation by window width on Windows. The user's font size setting is respected |
+| 6 | Authorship (Crafted, not prompted) | **No icon mascot.** Instead, **honest system indicators**: version · build · device ID · open-source notices in monospace at the bottom of settings. No "Handmade" marketing copy (product honesty) |
+| 7 | Anti-Liquid Glass | Glass **only on chrome (tab bar · toolbar · menu bar popover)**, never over content. Blur + gradient lighting only, no refraction distortion. The system tab bar follows the system default, but its text contrast is checked and its background is filled when needed |
 
-### 토큰
+### Tokens
 
-- **팔레트**(중립 + 단일 액센트):
-  - Light: 배경 `#F7F7F5`(종이), 표면 `#FFFFFF`, 그리드선 `#E6E6E2`, 본문 `#111111`, 보조 `#5E5E5A`,
-    액센트 **`#0F62FE`**(블루프린트 블루), 녹음/위험 `#DA1E28`, 성공 `#198038`, 경고 `#B28600`.
-  - Dark: 배경 `#0E0F12`, 표면 `#16181D`, 그리드선 `#23262D`, 본문 `#F2F2F0`, 보조 `#9A9CA3`, 액센트 `#4589FF`,
-    녹음 `#FA4D56`, 성공 `#42BE65`, 경고 `#F1C21B`.
-  - **고대비 모드**(시스템이 그 설정을 알려주는 셸에서만 — Apple `colorSchemeContrast`, Windows `win.highContrast.on`, Android API 34+ `UiModeManager.contrast`·API 36+ 고대비 텍스트 상태):
-    그리드선·보조 텍스트를 본문 색으로 승격, 액센트 채도 유지, 테두리 2dp.
-  - **입력칸 경계**는 장식용 그리드와 분리한 `inputBorder`(보조 텍스트 색)다. 밝음·어두움에서 3:1 이상이며,
-    포커스에는 강조 색과 더 굵은 테두리를 쓴다.
-- **타이포**: UI 본문 = 플랫폼 시스템 산세리프(Roboto / SF Pro / Segoe UI — 로컬 폰트 번들 금지, 한국어 글리프
-  보장). **데이터 = 모노스페이스**(Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
-  Cascadia/Consolas): 타이머 `00:12:34`, 파트 `p001`, 파일명, 바이트, 상태 코드 `NEEDS_AUTH`, 기기 ID. 스케일:
-  12 / 14 / 16(본문) / 20 / 28 / 44(타이머) — 유동 보간.
-- **형태**: 모서리 반경 4(노드) / 8(카드) / 0(테이블 행) / **2(배지)** — 상태 배지·체크박스·라디오·스위치 손잡이처럼
-  노드보다 작은 사각형은 노드의 절반을 쓴다(`Radius.badge`). 원형 녹음 버튼은 **사각 노드 + 두꺼운 테두리**다
-  (72×72, 녹음 중엔 채움 + 모노 타이머). 폰(Android·iPhone)의 **문구 버튼은 폭이 최소 88**(dp/pt, 2026-09-29):
-  `열기` 같은 두 글자 버튼이 화면에서 가장 좁은 것이 되지 않고, 나란한 짧은 버튼들이 한 폭으로 맞는다. `닫기`·`삭제`·
-  `취소`와 고정폭 글꼴의 데이터 버튼(발화 시각)은 제 폭 그대로다(사용자 결정). 360dp·375pt, 한국어·영어에서
-  줄바꿈이 새로 생기는 곳이 없게 맞췄다 — 목록 행은 아래 화면 원칙 2의 흐름으로 바꿨고, 모바일 데이터 확인 창(세 버튼)은
-  언제나 세로로 쌓는다. 데스크톱은 그대로다.
-- **간격**: 4의 배수, 기본 리듬 8/16/24. 보이는 그리드: 8dp 점선 배경(불투명도 6%, 고대비에선 끔).
-- **선**: 커넥터·구분선 1dp(고대비 2dp), 직선·직각만.
-- **모션**: 표준 이징 `ease-in-out 200ms`, 상태 전환 배지 `fade 150ms`, 처리 상태 최소 표시 400ms(실제가 더 빨라도
-  유지, 최대 800ms). **`reduce motion` 시 "즉시 전환 + 텍스트 상태만"** — 끄는 것은 *전환*이고 "…"과 "✓" 같은 텍스트
-  상태 자체는 남는다.
-- **아이콘**: 기하학적 얇은 선(1.5dp), 플랫폼 시스템 아이콘 우선(Material Symbols Outlined / SF Symbols light).
+- **Palette** (neutral + a single accent):
+  - Light: background `#F7F7F5` (paper), surface `#FFFFFF`, grid lines `#E6E6E2`, body `#111111`, secondary `#5E5E5A`,
+    accent **`#0F62FE`** (blueprint blue), recording/danger `#DA1E28`, success `#198038`, warning `#B28600`.
+  - Dark: background `#0E0F12`, surface `#16181D`, grid lines `#23262D`, body `#F2F2F0`, secondary `#9A9CA3`, accent `#4589FF`,
+    recording `#FA4D56`, success `#42BE65`, warning `#F1C21B`.
+  - **High-contrast mode** (only in shells where the system reports that setting — Apple `colorSchemeContrast`, Windows `win.highContrast.on`, Android API 34+ `UiModeManager.contrast` · API 36+ high-contrast text state):
+    grid lines and secondary text are promoted to the body color, accent saturation is kept, borders are 2dp.
+  - The **input field border** is `inputBorder` (the secondary text color), separate from the decorative grid. It is at least 3:1 in light and dark,
+    and focus uses the accent color and a thicker border.
+- **Typography**: UI body = the platform system sans-serif (Roboto / SF Pro / Segoe UI — no bundled local fonts; Korean glyphs
+  are guaranteed). **Data = monospace** (Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
+  Cascadia/Consolas): timer `00:12:34`, part `p001`, file names, bytes, status code `NEEDS_AUTH`, device ID. Scale:
+  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation.
+- **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
+  use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
+  (72×72; while recording, filled + mono timer). On phones (Android · iPhone), **text buttons are at least 88 wide** (dp/pt, 2026-09-29):
+  a two-character button such as `Open` (`열기` in Korean) does not become the narrowest thing on the screen, and short buttons side by side line up at one width. `Close` · `Delete` ·
+  `Cancel` and data buttons in the fixed-width font (utterance times) keep their own width (user decision). At 360dp · 375pt, in Korean and English,
+  this was tuned so that no new line breaks appear — list rows were changed to the flow of screen principle 2 below, and the mobile data confirmation dialog (three buttons)
+  always stacks vertically. Desktop is unchanged.
+- **Spacing**: multiples of 4, base rhythm 8/16/24. Visible grid: 8dp dotted background (6% opacity, off in high contrast).
+- **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.
+- **Motion**: standard easing `ease-in-out 200ms`, status-transition badges `fade 150ms`, processing state shown for at least 400ms (kept even when the real work is faster,
+  at most 800ms). **With `reduce motion`, "instant transition + text status only"** — what is turned off is the *transition*; the text
+  status itself, such as "…" and "✓", stays.
+- **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light).
 
-### 앱 아이콘
+### App icon
 
-마스터는 **`docs/design/icon.svg`** 하나("A · Record node", 1024×1024 아트보드): 점 격자 바탕(64 피치, r=5,
-`#888884` 28%) 위에 노드 사각형(560, 반경 40, 테두리 28)과 그 안의 녹음 사각형(240, 반경 24). 색은 토큰 그대로다.
+The master is the single **`docs/design/icon.svg`** ("A · Record node", 1024×1024 artboard): on a dot-grid background (64 pitch, r=5,
+`#888884` 28%), a node square (560, radius 40, border 28) with a record square inside it (240, radius 24). The colors are the tokens as they are.
 
-1. **마스터는 하나** — 플랫폼별로 다시 그리지 않고 **익스포트만** 한다.
-2. **모노크롬 템플릿**(22×22 그리드: 바깥 사각형 x3 y3 w16 h16 반경2 테두리1.5, 안쪽 x8 y8 w6 h6 반경1)은
-   메뉴바·트레이·Android `monochrome` 레이어가 쓴다. 64px 미만 래스터도 마스터 대신 이 비율로 그린다 — 마스터의
-   테두리는 1픽셀 아래로 내려가 사라진다.
-3. **녹음 변형**은 메뉴바·트레이에만 있다. 안쪽 사각형만 빨강(Light `#DA1E28` / Dark `#FA4D56`)이고 바깥은 본문 색
-   그대로다.
+1. **One master** — nothing is redrawn per platform; it is **only exported**.
+2. The **monochrome template** (22×22 grid: outer square x3 y3 w16 h16 radius 2 border 1.5, inner x8 y8 w6 h6 radius 1) is
+   used by the menu bar, the tray and the Android `monochrome` layer. Rasters under 64px are also drawn in these proportions instead of from the master — the master's
+   border drops below one pixel and disappears.
+3. The **recording variant** exists only in the menu bar and tray. Only the inner square is red (Light `#DA1E28` / Dark `#FA4D56`); the outer one keeps the body
+   color.
 
-플랫폼별 산출물: Android 폰·워치는 벡터 어댑티브 아이콘(`res/mipmap-anydpi-v26/ic_launcher*.xml` +
-`res/drawable/ic_launcher_{background,foreground,monochrome}.xml`, 108dp 캔버스의 66dp 안전 영역 안), Apple은 각
-앱의 `Assets.xcassets/AppIcon.appiconset`(iOS는 light/dark/tinted, macOS는 16~512 @1x/@2x에 10% 여백 + 스퀘어클),
-macOS 메뉴바는 `MenuBarIcon`/`MenuBarIconRecording` 이미지셋, Windows/jpackage는
+Platform outputs: Android phone and watch use vector adaptive icons (`res/mipmap-anydpi-v26/ic_launcher*.xml` +
+`res/drawable/ic_launcher_{background,foreground,monochrome}.xml`, inside the 66dp safe zone of a 108dp canvas), Apple uses each
+app's `Assets.xcassets/AppIcon.appiconset` (iOS light/dark/tinted; macOS 16~512 @1x/@2x with a 10% margin + squircle),
+the macOS menu bar uses the `MenuBarIcon`/`MenuBarIconRecording` image sets, and Windows/jpackage uses
 `windows/app/src/main/icons/recly.{ico,icns,png}`.
 
-래스터는 전부 커밋되어 있어 빌드는 스크립트를 돌리지 않는다. 다시 뽑을 때(macOS 전용):
+All rasters are committed, so the build does not run the scripts. To regenerate them (macOS only):
 
 ```
 swift scripts/render-icons.swift
 python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
 ```
 
-### 화면 원칙
+### Screen principles
 
-1. **녹음 화면 = 계기판**: 상단에 기기·워크플로우·상태 노드 3개(직선으로 연결), 중앙 모노 타이머, 하단 사각 녹음
-   노드. 녹음 중엔 경과 시간만 모노 타이머로 (2026-09-03: 파트 번호·세그먼트 경계·트랙 메트릭은 제거 —
-   사용자에게 보이지 않는 데이터다). 이 셋이 화면의 경계(boundary)를 만든다.
-   - **녹음 노드 아래 줄**(폰, 2026-09-29)은 할 말이 있을 때만 쓴다: 유휴 상태에서 방금의 시작·정지가 남긴
-     말(녹음 실패, 저장 마무리 실패, 너무 짧아 올리지 않음 등)뿐이다. `대기`·`여는 중`·`녹음 중`·`저장 중`은 상태
-     노드와 타이머가 이미 말하므로 쓰지 않는다. 줄 높이는 비어 있어도 유지해 노드가 움직이지 않고, 다른 탭에 갔다
-     오면 지워진다 — 그 순간의 소식이지 탭에 남겨 둘 말이 아니다. 두 폰에만 적용한 결정이고, 데스크톱 메뉴와 워치의
-     줄은 그대로다.
-   - **기기 노드 값**은 소스 코드 그대로(`phone` / `desktop`) — 번역하지 않는다. 트랙(`mono`)과 같은 취급이고,
-     헤더 meta도 4셸 모두 `<source> · <기기 ID 앞 8자>`다.
-   - **사용 중인 워크플로우 표시**(ADR-016) — **폐기(2026-09-24)**: 선택할 워크플로우가 없어 피커와
-     `워크플로우를 선택하세요` 안내가 사라졌다. 아래는 기록이다. 워크플로우 노드는 4셸 모두 **그 이름만** 적는다. 피커는 워크플로우
-     이름들만 나열하고 선택된 하나가 채워진 칩(✓)이다 — "선택됨"을 말로 쓰지 않는다. 단일 선택 컨트롤은 선택
-     상태를 스스로 보여주고, 말로 붙이면 길어질 뿐이다. 피커에서 고르면 그 자리에서 이 기기의 포인터가 바뀐다.
-     워크플로우 목록에서는 사용 중인 행에 배지 `사용 중`(en `In use`)을 붙이고, 다른 행의 동작은 `사용`(en
-     `Use`)이다. **선택이 없거나 포인터가 가리키던 워크플로우가 사라졌으면** 노드와 피커 모두 4셸에서
-     `워크플로우를 선택하세요`(en `Choose a workflow`) 한 줄이다 — 그냥 시작하면 아무것도 실행되지 않는다는 사실과
-     그것을 고치는 방법을 같은 자리에서 말한다.
-   - **상태 노드**는 녹음기 상태 코드(`IDLE`·`STARTING`·`REC`·`STOPPING`)다. 유휴 상태에서 잡이 돌고
-     있으면(원장이 `UPLOADING`인 행이 있으면) `UPLOADING`(액센트)과 그 왼쪽에 회전하는 8pt 사각 로더(진행률 없이 도는 일의 문구 옆에 쓰는
-     로더 — `모델 다운로드 중…`도 같은 것이다. 시스템 스피너는 쓰지 않는다 — 목록의 당겨서 새로고침만 예외로 허용한다(§3 "다른
-     기기의 녹음", 2026-09-29). 로더는 이것과, 파형 자리에서만 쓰는 **파형 로더**
-     (화면 원칙 2의 상세) 둘뿐이다. 파형 로더는 재생·녹음 파형처럼 오르내리거나 흐르지 않고, 지나간 자리를 채워 두지 않는다 —
-     흐르는 물결·튀는 막대·숨쉬기·왼쪽부터 채우기는 플랫폼마다 재생·녹음 표시라서 쓰지 않는다(2026-09-26 조사)) — `reduce
-     motion`이면 코드만. 녹음 중이면 `REC`가 우선한다. 원장은 코어의 잡 행 관찰(`jobs.observe()`)로 패스 도중에도
-     갱신된다(Apple·Android·Windows 2026-09-03; Windows는 reduce motion 신호가 없어 로더가 항상 돈다).
-     Windows는 셸 상태 `OPENING`(헬퍼 기동 전)·`NO_HELPER`·`NAMING`(제목 입력 중)을 더 쓴다.
-     **폰(Android·iPhone)은 하나 더 빌린다**: 유휴이고 워치에서 받는 중인 행이 있으면 `RECEIVING`(액센트, 같은
-     로더)이다(2026-09-04). 이 기기의 잡이 돌고 있으면 `UPLOADING`이 이기고, 녹음 중이면 `REC`가 둘 다 이긴다.
-     데스크톱은 받을 것이 없으므로 그대로다.
-2. **목록 = 원장(ledger)**: 행 = `시각(모노) · 제목 · 길이 · 상태 코드 · 진행`. 시각 열은 4셸 모두 언어와 무관하게
-   **`MM-dd` 위에 `HH:mm`**(월이 먼저; 고정 폭 패턴이지 로케일 서식이 아니다 — 읽어주는 문장만 로케일 서식).
-   상태는 텍스트 배지(색 + 문자 둘 다), 실패 사유는 메시지 키 번역.
-   **다른 곳에서 벌어지는 일 셋**(2026-09-04, §3 "다른 기기의 녹음")은 잡 상태 매핑보다 **먼저** 읽는다 — 셋 다 이
-   기기의 잡이 아니라 큐에서는 읽을 수 없다: `RECEIVING`(워치에서 받는 중 = `receiving`; `status = recording`이라
-   그냥 두면 `REC`로 보인다) · `UPLOADING`(다른 기기가 업로드 중 = `remoteUploading`; 이 기기의 업로드와 **같은
-   단어**다 — 배지는 어디서가 아니라 무엇을 말한다) · `TRANSCRIBING`(다른 기기가 전사 중 = `remotePending`에
-   `transcribe`). 셋 다 액센트다. 앞의 둘은 **녹음 중인 행과 같이 동작이 없다**
-   (삭제·다시 시도·Drive 링크 없음 — 삭제는 남의 업로드 밑에서 폴더를 빼는 일이다), `TRANSCRIBING`은 입양한 `DONE`
-   행과 같다(상세·삭제). 길이 열은 `durationSec`이 없을 때의 자리표시자 그대로이고(`0:00`을 지어내지 않는다),
-   배지 열 너비를 재는 셸은 이 코드들도 함께 잰다. 헤더 수에서 앞의 둘은 `대기`로 세고 `TRANSCRIBING`은 세지 않는다. Drive 연결을 기다리는 `NEEDS_AUTH`(배지 `업로드 대기`)도 `대기`로 센다 — 연결하면 저절로 이어지는 일이지 실패가 아니다(2026-09-29, 두 폰).
-   말로 하는 상태는 `워치에서 받는 중`(en `Receiving from the watch`) · `다른 기기에서 업로드 중`(en `Uploading on
-   another device`) · `다른 기기에서 전사 중`(en `Transcribing on another device`)이다(§7).
-   행 확장에 **동작 — 가로로 한 줄, 넘치면 다음 줄로 접는다(세로 나열 금지)**: `Drive 열기`(링크가 있을 때) ·
-   `다시 시도`(**실패 상태 `FAILED`·`NEEDS_AUTH`·`NEEDS_SPACE`, 그리고 실패 뒤 백오프를 기다리는 `RETRY`**(4셸 모두, 2026-09-04; provider가 전사 중인 `TRANSCRIBING`은 제외 — 남의 시계다) **에서만**) · `키를 확인하세요`(`AUTH_REJECTED`) ·
-   `상세`(en `Details`; 상세 화면 — 데스크톱은 같은 이름의 창 — 을 연다) · `삭제`(녹음·업로드 중 제외). 폰에서는 이
-   버튼들이 행의 제목 칸부터 오른쪽 끝까지 한 흐름으로 놓이고, `삭제`는 마지막 줄 오른쪽 끝에 선다 — 들어갈 자리가
-   없으면 다음 줄 오른쪽 끝이다(2026-09-29, Android `ActionFlow`·Apple `ActionFlowLayout`). 전에는 `삭제`가 상태 배지
-   아래 제 칸에 따로 서서, 그 폭만큼 다른 버튼이 접혔다. 펼친 행은 그 화면에 있는 동안만 펼쳐져 있다: 폰에서 목록
-   탭을 다시 누르거나 다른 탭에 갔다 오면 모든 행이 접힌 처음 목록이다(2026-10-01, 두 폰). 상세가 열려 있을 때 목록
-   탭을 누르면 먼저 상세가 닫힌다(Android; iPhone 상세는 탭 바를 덮는 시트다). 상세는 원본이 본문이다: **로컬 파트 재생**(재생/일시정지 + `경과 / 총 길이` 모노 시계; 파형(파트를 디코드해 0.25초 창의 피크; 재생된 구간은 액센트) 위에 플레이헤드가 움직이고, 파형을 드래그·탭하면 그 시각으로 이동한다 — Apple·Android·Windows 2026-09-03; 트랙은 `mix`가 있으면 `mix`, 아니면 `mono`; 파일이 이 기기에 없으면 `이 기기에 오디오가 없습니다`(en `No audio on this device`)) 위에 녹취가 놓인다. 4셸 모두(2026-09-03; Apple은 RecKit 공용 뷰 + AVQueuePlayer, Android는 media3 ExoPlayer, Windows는 번들 ffmpeg가 PCM으로 풀어 `SourceDataLine`으로 냄 — JVM은 AAC를 못 푼다). 로컬에 없는 파트는 업로드된 녹음이면 `core.audio()`로 Drive에서 받아온다(`Drive에서 받는 중…`/`Drive에서 받지 못했습니다`). **받는 동안에는 글자가 없다**(2026-09-26, 4셸): 파형 자리에
-**파형 로더**(§9 "모션" — 그리드 색의 짧은 고스트 눈금 위를 보조 텍스트 색의 10칸 띠가 왼쪽에서 오른쪽으로 한 칸씩
-지나간다)를 두고, 재생 버튼 자리에는 **버튼 모양의 진행률**(버튼과 같은 크기의 액센트 테두리가 받은 바이트 비율만큼
-액센트로 차오르고, 다 차면 그 자리가 재생 버튼이 된다)을 둔다. 진행률은 파트 단위로 오른다(코어
-`audio(recordingId, progress)`가 보낼 파트들의 바이트 합 대비 받은 바이트를 알린다). Drive에서 받아 온 녹음은 피크가
-나오면 막대가 가운데 선에서 왼쪽부터 한 번 솟아오른다(0.75초; 모션 줄이기면 바로). 모션 줄이기(Android·Apple)에서는 띠를
-멈추고 `Drive에서 받는 중…`을 다시 쓴다 — Windows는 그 신호를 모르므로 늘 띠가 돈다. 스크린리더는 진행률 칸을
-`Drive에서 받는 중…`과 백분율로 읽는다. 받는 판단이 끝나기 전엔 재생 버튼을 보이지 않고, 일부만 받아지면 이어지는 앞부분만 재생한다.
-**파형은 한 번만 디코드한다**(2026-09-27, 4셸): 셸이 디코드한 피크를 코어 `WaveformPeaks`(`waveform.v1` — `RWF1`, 창 수,
-창마다 16비트)로 녹음 폴더의 파트 옆에 두고(`core.recordings.saveWaveform`), 상세를 열면 먼저 그것을 읽는다
-(`core.recordings.waveform`; 창 수가 이번에 디코드할 선택과 다르면 다시 디코드한다). 이 기기에서 녹음을 마치면(폰은 워치 녹음을
-다 받으면) 백그라운드에서 미리 계산해 둔다. 없어서 디코드하는 동안은 평평한 선(무음처럼 읽힌다) 대신 파형 자리에 **파형 로더**를
-두고(모션 줄이기면 고스트 눈금만, 스크린리더 `파형 불러오는 중…`), 재생 버튼은 그대로다. 이 파일은 올리지 않고, 7일 로컬 오디오
-정리(파트만 지운다) 뒤에도 남아 Drive에서 다시 받기 전부터 파형을 그리며, 녹음과 함께 지워진다. 이 기기에서 녹음 중이면 재생을 제공하지 않는다. "지금 올리기"는 없다(2026-09-02:
-   잡 없는 녹음은 올릴 필요가 없고, 대기 중인 잡은 제 시각에 돈다). 메뉴바·트레이 팝오버와 데스크톱 상세 창도 같은 원장을
-   쓴다 — **20행씩 읽고, 마지막 행이 보이면 다음 20행을 더한다**(무한 스크롤; 2026-09-04, 이전에는 팝오버·상세 창이 최근 5행).
-   **Android·iPhone 상세의 재생 영역은 본문 아래에 고정한다**(2026-09-10). 녹취 본문만 스크롤하고, 파형 아래에
-   경과/총 길이를 왼쪽, 재생/일시정지 버튼을 오른쪽 끝에 둔다. 두 상태 모두 버튼의 최소 폭은 iPhone 120pt·Android
-   120dp이며, Android의 버튼 높이는 최소 48dp다. 재생 영역은 본문을 덮지 않는다. 오디오 다운로드 실패 안내는
-   모바일 재생 동작 아래에 표시해 버튼의 우측 정렬을 유지한다.
-   **macOS·Windows는 기존 상단 재생 영역과 데스크톱 창·분할 배치를 유지한다.**
-   4셸 모두 전사 본문 선택·전체 복사·발화 시각 이동을 제공한다. 전사 검색 버튼과 입력창은 표시하지 않는다.
-   전체 복사는 상세 헤더 우측의 `이름 바꾸기` 바로 왼쪽에 텍스트 없는 복사 아이콘으로 둔다. 접근성 이름은
-   `전체 복사`이며, 복사 뒤 체크 표시와 `복사됨` 접근성 이름으로 완료를 알린다. 원문 전체와 시각을 복사한다.
-   시각 이동은 녹음 중·오디오 확인/다운로드 중에는 비활성이며, 실제 보유한 오디오 범위 밖의 시각도 비활성이다. 복사는 오디오 유무와 관계없이 제공한다.
-   발화 묶음은 결과가 바뀔 때 캐시하며, 동일 화자의 긴 발화도 60초 또는 1,200자 기준으로 다음 세그먼트부터
-   나누고 지연 목록으로 표시한다(제공자가 반환한 단일 세그먼트 자체는 분할하지 않는다). 재생 시계마다 전체
-   문자열을 다시 이어 붙이지 않는다. Android·Windows 파형에는 보이는 키보드 포커스와 좌우 5초 이동이 있다.
-   4셸 모두 열린 상세에서 잡·단계·녹음 변경을 관찰해 전사 결과를 갱신한다.
-   전사·제목만 바뀌면 재생·읽기 위치를 초기화하지 않는다. 녹음 상태와 오디오 파트는 전사와 별도로 관찰해,
-   상세를 연 채 녹음이 종료되거나 파트가 추가돼도 화면을 다시 열지 않고 재생 영역을 갱신한다.
-   iPhone·macOS는 녹음 시작 준비 단계에서 기존 재생을 먼저 중지한 뒤 캡처를 시작한다. 캡처 종료 완료까지
-   재생·탐색을 차단하고, 녹음 시작 실패 시에도 차단을 해제한다. Android는 이 기기에서 녹음이 시작되면 재생을
-   멈추고, 녹음 중에는 재생·탐색(파형·발화 시각)을 차단한다. 다른 녹음의 시작·종료도 열린 상세에 반영한다.
-   전사 대기 / 전사 단계 없음 / 작업 실패 / 읽기 실패 / 빈 전사 / 본문을 구분한다. 읽기 실패에는 결과 다시
-   읽기를 제공한다. 명시적인 다시 시도에서 로컬 전사가 손상돼 있으면 기존 Drive 경로로 원격본을 받아 검증한 뒤
-   교체한다. 다운로드 중 더 최신의 유효한 로컬 결과가 생기면 이를 유지한다. 일반 조회는 로컬 우선이며 정상
-   파일은 다시 내려받지 않는다. 빈 전사에는 녹음 재생 안내를 제공한다. 재생 준비·버퍼링 중에는 별도 안내 문구를
-   추가하지 않아 플레이어 높이와 주변 콘텐츠 위치가 바뀌지 않게 한다. 실제 재생 실패는 화면에 표시하고 다음
-   재생 요청으로 다시 시도한다. Windows는 ffmpeg의 비정상 종료·종료 대기 초과도 실패로 표시하며 사용자의
-   중지·탐색으로 종료된 경우는 제외한다. 상세 헤더에는 제목만 두고 내부 ID는 보이지 않는다(2026-09-29 — 사용자가
-   읽을 정보가 아니다).
-   목록 첫 읽기에는 로딩 안내를, 실제 빈 목록에는 녹음이 쌓일 곳이라는 안내를 둔다(데스크톱 창은 녹음 시작 버튼도, §9 화면 원칙 8).
-   녹음 목록의 삭제는 동작 영역 오른쪽에 고정하고, 우측 테두리는 위 상태 열의 `DONE` 배지 우측 테두리와
-   맞춘다. 열기·다시 시도·상세 등 나머지 동작은 왼쪽 공간에서 줄바꿈한다. 모바일 목록과 데스크톱 메뉴·트레이의
-   펼친 목록에도 같은 규칙을 적용한다.
-   (2026-09-03: 행의 파트 표는 제거 — 파트 번호·트랙·바이트·sha는 사용자에게 보이지 않는다)
-3. **워크플로우 편집기 = 노드 그래프** — **폐기(2026-09-24)**: 사용자 워크플로우 편집기와 목록이 제거됐다. 편집기·
-   목록에 관한 문장은 기록이고, 끝의 일반 배치 규칙("iPhone은 세로·좌우 가로 방향을 지원하며"부터)과 미저장 키
-   입력 규칙은 유효하다. 기록: 트리거(기기) → 단계 노드들 → 끝. 노드는 사각, 커넥터는 직선, 선택 노드에
-   액센트 테두리. 단계 추가는 커넥터 위 `+`. 이미 `drive.upload`가 있으면 추가 메뉴의 `Drive 업로드`는 비활성이다
-   (2026-09-04: 두 번째 업로드는 같은 폴더면 아무것도 안 하고, 다른 폴더면 뒤 단계가 모르는 사본이 된다 — 웹훅·전사는
-   마지막 업로드만 읽는다; 편집기 규칙이고 파서는 막지 않는다). 웹훅은 엔드포인트마다 하나이므로 여러 개가 자연스럽다.
-   모바일 저장·취소는 입력 영역 아래에 두고 키보드와 안전 영역을 반영한다. 입력 중 그래프는 접고 입력 영역을
-   스크롤한다. 전송 동의 안내는 입력 중에도 확인할 수 있다. 오류는 스크롤 영역에서 설명하고 관련 입력 영역으로
-   이동한다. 큰 글씨에서는 버튼을 줄바꿈하며 Android의 작은 높이·큰 글씨 녹음 화면은 스크롤할 수 있다.
-   워크플로우 목록 상단의 `새 워크플로우` 옆에 테두리 없는 정보 아이콘을 둔다. 접근성 이름과 데스크톱
-   툴팁은 `전사 설정 방법`(en `How to set up transcription`)이다. 모바일은 바텀 시트, 데스크톱은 아이콘에
-   붙은 팝오버로 Drive 연결 → 전사 단계 → 제공자 키 → 워크플로우 선택을 설명한다. 안내를 열어도 목록은
-   재배치하지 않으며 좁은 화면에서도 도움말과 생성 버튼을 같은 우측 동작 영역에 둔다. 첫 실행을 가로막지 않는다.
-   안내의 우측 상단에 X 닫기 버튼을 두는 Apple 화면은 제목과 버튼을 같은 행에서 세로 가운데 정렬한다.
-   4셸의 워크플로우 목록은 각 항목의 `수정`(en `Edit`) 버튼으로 편집에 들어간다. 이름·설명 영역은 클릭
-   동작이 없는 정보이며, `사용`·삭제는 독립 동작이다. `수정`·`사용`은 파란색
-   액센트 버튼으로 표시한다. 모바일 목록의 `수정`은 삭제 바로 왼쪽에서 함께 우측 정렬하고, 최소 폭은 iPhone
-   96pt·Android 96dp로 둔다. `사용`은 왼쪽에 두며, 큰 글씨로 동작이 줄바꿈되면 수정·삭제 영역의 우측 정렬을 유지한다.
-   사용 중인 항목은 삭제를 비활성으로 두며, 목록에 다른 워크플로우를 먼저 선택하라는
-   안내 문구는 붙이지 않는다. 수정은 기존 미저장 변경 보호 절차를 따른다.
-   iPhone은 세로·좌우 가로 방향을 지원하며, 낮은 높이와 접근성 글씨에서는 녹음 화면을 스크롤한다.
-   Android의 좁은 헤더·큰 글씨는 제목과 동작 행을 분리하고, 탭 이름은 두 줄까지 표시하며 상태 노드를 세로로 배치한다.
-   낮은 가로 화면에서는 탭 아이콘의 행을 생략하고 파형과 재생 시계를 옆으로 배치한다. 키보드가 열리면 탭 바와
-   중복되는 편집 헤더를 접어 저장 영역을 확보한다. Apple의 긴 버튼 문구는 화면 폭 안에서 최대 세 줄로 재배치한다.
-   Apple Watch는 주 화면을 스크롤하고 상태 문구를 줄바꿈하며, Wear의 긴 워크플로우명·전송 상태도 여러 줄을 허용한다.
-   미저장 워크플로우 입력의 폐기 확인은 편집기와 함께 폐기됐다(기록). 남은 미저장 입력은 녹음 처리 설정의 API 키
-   입력칸이고, 4셸 모두 **확인 없이** 버린다(2026-09-29 코드 확인): `키 바꾸기` 중의 `취소`와 다른 제공자 선택(입력칸이
-   그 제공자의 것으로 바뀐다)이 입력한 값을 지우고, 같은 제공자로 돌아와도 되살리지 않는다. 설정 초안의 `취소`는 저장된
-   설정으로 되돌릴 뿐이라 제공자가 그대로면 키 입력칸도 그대로다.
-   모바일의 탭 전환은 초안을 보존하고, Android의 뒤로가기는 현재 탭에만 적용한다.
-4. **설정 = 섹션형 표**: 계정 / 언어 / 테마 / 캡처(플랫폼별) / 업로드(폰) / 녹음 처리 / 개인정보 보호(폰) /
-   정보(버전·빌드·기기 ID·오픈소스 고지, 모노) — 이 순서이고, 그 셸에 없는 섹션은 건너뛴다(2026-09-29). **테마**(en
-   `Theme`)는 4셸 공통의 칩 3개 `시스템 기본`·`밝게`·`어둡게`(en `System default`·`Light`·`Dark`)이고, 언어처럼 이
-   기기의 로컬 설정이다 — 미설정은 시스템의 `prefers-color-scheme`을 따른다(Windows 2026-09-01, 나머지 셋 2026-09-04).
-   설정에 기술 수치(세그먼트 길이 등)는 두지 않는다 — 사용자가 바꿀 수 없는 값은 표시하지 않는다(2026-09-04).
-   행 아래 보조 설명은 작은 산세리프(`12sp`, 사용자 글꼴 크기에 따라 확대)·보조색·좌우 16/상하 8 간격을 쓴다.
-   늘어나는 목록에서 하나를 고르는 설정 — `앱 언어`, 녹음 처리의 `제공자`·`녹음 언어` — 은 4셸 모두 행 끝의
-   **드롭다운**이다(2026-09-29): 조용한 버튼 모양의 상자에 지금 값과 `▾`, 누르면 목록이 열리고(Android·Windows는 같은
-   테두리·반경의 사각 팝업, 모션 없음; Apple은 플랫폼 메뉴) 고른 항목에 칩과 같은 `✓`를 붙인다. 접근성으로는 한
-   요소다 — 이름은 행 제목, 값은 지금 값, 역할은 버튼. 고를 것이 없는 값(`음성 인식 모델 … Qwen3-ASR 0.6B`)은 상자
-   없이 보조색 글자만 둬서 선택과 다르게 보인다. 셋뿐인 선택(테마, 전사 방식)은 칩 그대로다. 폰(Android·iPhone)에서는
-   이 칩 줄이 한 줄을 **채운다**(2026-09-29): 다른 조작 요소가 모두 오른쪽 끝에 붙는 화면에서 칩만 왼쪽에 뜨지 않게.
-   칩이 모두 같은 폭에 들어가면 똑같이 나누고, 긴 이름(`System default`) 때문에 안 들어가면 각 칩의 제 폭에 남는
-   공간을 똑같이 더한다 — 어떤 칩도 제 폭보다 좁아지지 않는다. 한 줄에 안 들어가면 접고, 줄마다 채운다(Android
-   `FillRow`, Apple `FillLayout`). 데스크톱 창에서는 세 단어가 패널 끝까지 늘어나므로 왼쪽 정렬 그대로다.
-   Drive 연결 상태도 공통 설정 행을 쓴다. 오른쪽에 위험색 “연결 해제” 버튼 하나를 두고 확인창 한 번으로 끝낸다.
-   늘 그 자리에 있는 바깥 바로가기(`마이크` → `시스템 설정 열기`, `개인정보 처리방침` → `열기`)는 조용한(회색)
-   버튼이다 — 주의를 끌 일이 아니다. 권한이 거부되면 녹음 화면이 강조색 `설정 열기`를 따로 띄운다(2026-09-29, 폰).
-   글자는 주변 행·버튼·링크와 같은 `14sp` 토큰을 쓰고, 최소 클릭 영역(Apple·Windows 44, Android 48)과 사용자 글꼴 확대를 유지한다.
-5. **알림·다이얼로그**: **제목 + 한 줄 설명 + 최대 2개 버튼.** 처리 상태는 인라인(버튼이 "저장 중…"으로 변함), 완료
-   시 배지. 두 갈래 질문에 셋째 선택지를 만들지 않는다.
-6. **macOS 메뉴바**: 팝오버(글래스 허용)에 상태 노드 3개 + 최근 원장(20행씩 무한 스크롤) + 동작. Windows 트레이도 동일 구조(Compose
-   팝업 창). 녹음 중에는 동작 줄의 빈 자리에 기록 중인 트랙의 실시간 파형(0.1초 창 피크, 녹음 색)이 흐른다 — iPhone
-   녹음 화면은 타이머 아래 같은 띠(Apple 2026-09-03). Windows 트레이 팝업은 타이머 아래 같은 띠 — 헬퍼가
-   `level {peaks[]}` 이벤트로 0.1초 창 피크를 보낸다(2026-09-03). Android 녹음 화면은 타이머 아래 같은 띠 —
-   `MediaRecorder.getMaxAmplitude()`를 0.1초마다 읽는다(2026-09-03).
-7. **워치**: 모노 타이머 + 사각 시작/정지, **상태 한 줄**, 전송 대기 수 — 전송 패스가 폰을 찾아 파일을 넘기는
-   중이면 같은 수를 `전송 중 %1$d개`(en `Sending %1$d`)로 말한다(2026-09-04; 타일·컴플리케이션도 같은 규칙).
-   대기와 전송 중은 사용자가 같은 수에 대해 묻는 두 질문이고, 어느 쪽인지는 전송 패스만 안다.
-8. **버튼 배치**(2026-09-25, 모바일·데스크톱 공통, 방향은 시작/끝 기준이라 RTL에서 뒤집힌다):
-   - 폼·설정 블록 안의 버튼 묶음은 **끝(오른쪽) 정렬**이다. 확정 동작이 맨 끝이고 `취소`는 그 바로 앞이다. 녹음 처리
-     설정의 `취소`·`저장`은 **바꾼 내용이 있을 때만** 나타난다 — 비활성 버튼 두 개가 늘 자리를 차지하지 않고, 나타나는
-     것 자체가 저장할 게 있다는 신호다.
-   - 한 항목에 붙은 동작은 그 행의 끝에 둔다(Drive 연결 해제, 다른 업체의 키 삭제). 항목이 여러 줄이면 그 아래에
-     끝 정렬한다. 입력칸·값·안내 바로 아래의 버튼(`키 저장`, `키 바꾸기`·`삭제`, `모델 다운로드`, 권한 철회 안내의 확인)도
-     그 아래에 끝 정렬한다. 성격이 다른 묶음은 제목으로 나눈다(녹음 처리의 `설정 파일`: 내보내기·가져오기).
-   - 가운데 정렬된 안내(빈 목록, 전사 불러오기 실패, 마이크 거부) 아래의 단독 복구 버튼은 가운데다.
-   - 빈 목록(2026-09-26)은 목록이 차지할 자리의 세로 가운데에 본문색 한 줄(`아직 녹음이 없습니다`)과 그 아래 흐린 한 줄
-     (`녹음하면 여기에 표시됩니다.`)을 두고, 버튼은 한 단계(24) 떨어뜨린다. 폰은 바로 아래 탭 바에 `녹음`이 있어 버튼을
-     두지 않고, 데스크톱 창(Mac 상세, Windows 녹음 창)만 `녹음 시작`을 둔다. 팝오버·트레이의 짧은 원장은 한 줄만 둔다.
-   - 메뉴바 팝오버·트레이의 명령 줄은 주 동작(시작/정지·설정)이 시작, 보조·종료가 끝이다.
-   - 대화상자 버튼이 한 줄에 들어가지 않으면 전체 폭으로 쌓고 순서를 유지한다(주 동작이 마지막).
-   - 예외: 원장 행의 확장 동작은 원칙 2대로 삭제만 끝에 고정하고 나머지는 시작에서 줄바꿈한다.
+1. **Recording screen = instrument panel**: at the top, three nodes — device, workflow, status (connected by straight lines); in the middle, a mono timer; at the bottom, the square record
+   node. While recording, only the elapsed time, as a mono timer (2026-09-03: part numbers, segment boundaries and track metrics were removed —
+   they are data that is not shown to the user). These three form the screen's boundary.
+   - The **line below the record node** (phone, 2026-09-29) is used only when there is something to say: in the idle state, only the message left by the start or stop just
+     made (recording failed, finishing the save failed, too short so not uploaded, and so on). `Waiting` · `Opening` · `Recording` · `Saving` are not written there, because the status
+     node and the timer already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
+     comes back — it is news of that moment, not a message to leave on the tab. This decision applies only to the two phones; the desktop menu's and the watch's
+     lines are unchanged.
+   - The **device node value** is the source code as is (`phone` / `desktop`) — it is not translated. It is treated like the track (`mono`), and
+     the header meta in all four shells is also `<source> · <first 8 characters of the device ID>`.
+   - **Display of the workflow in use** (ADR-016) — **retired (2026-09-24)**: there is no workflow to choose, so the picker and the
+     `Choose a workflow` prompt are gone. What follows is a record. The workflow node in all four shells shows **only its name**. The picker lists only workflow
+     names, and the selected one is a filled chip (✓) — "selected" is not written out. A single-selection control shows its selection
+     state by itself; adding words only makes it longer. Choosing in the picker changes this device's pointer on the spot.
+     In the workflow list, the row in use gets the badge `In use`, and the action on the other rows is
+     `Use`. **When there is no selection, or the workflow the pointer pointed to is gone**, both the node and the picker show, in all four shells, the single line
+     `Choose a workflow` — in the same place, it says that just starting runs nothing and
+     how to fix that.
+   - The **status node** is the recorder status code (`IDLE` · `STARTING` · `REC` · `STOPPING`). When a job is running in the idle state
+     (when the ledger has a row in `UPLOADING`), it shows `UPLOADING` (accent) with a rotating 8pt square loader to its left (the loader used next to the text of work that runs without
+     progress — `Downloading model…` uses the same one. No system spinner is used — only the list's pull-to-refresh is allowed as an exception (§3 "Recordings from other devices",
+     2026-09-29). There are only two loaders: this one, and the **waveform loader**, used only in the waveform's place
+     (the detail screen in screen principle 2). The waveform loader does not rise and fall or flow like playback and recording waveforms, and does not leave the places it has passed filled —
+     flowing waves, bouncing bars, breathing and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research)) — with `reduce
+     motion`, the code only. While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
+     (Apple · Android · Windows 2026-09-03; Windows has no reduce motion signal, so its loader always spins).
+     Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered).
+     **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
+     loader) (2026-09-04). If a job on this device is running, `UPLOADING` wins, and while recording, `REC` beats both.
+     Desktop has nothing to receive, so it is unchanged.
+2. **List = ledger**: row = `time (mono) · title · length · status code · progress`. In all four shells, regardless of language, the time column is
+   **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
+   The status is a text badge (both color and text), and the failure reason is a translated message key.
+   **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
+   device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
+   left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
+   word** as this device's upload — the badge says what, not where) · `TRANSCRIBING` (another device is transcribing = `remotePending` with
+   `transcribe`). All three are accent. The first two have **no actions, like a row being recorded**
+   (no delete, retry or Drive link — deleting would pull the folder out from under someone else's upload), and `TRANSCRIBING` is like an adopted `DONE`
+   row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
+   and shells that measure the badge column width measure these codes too. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Upload waiting`) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
+   The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
+   Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
+   `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
+   `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording or uploading). On phones these
+   buttons are laid out in one flow from the row's title cell to the right edge, and `Delete` stands at the right end of the last line — if there is no room
+   for it, at the right end of the next line (2026-09-29, Android `ActionFlow` · Apple `ActionFlowLayout`). Previously `Delete` stood apart in its own cell under the status badge,
+   and the other buttons wrapped by its width. An expanded row stays expanded only while the user stays on that screen: on phones, tapping the list
+   tab again or going to another tab and back shows the initial list with every row collapsed (2026-10-01, both phones). Tapping the list
+   tab while the detail is open closes the detail first (Android; the iPhone detail is a sheet that covers the tab bar). In the detail, the original is the main content: the transcript is layered on top of **local part playback** (play/pause + an `elapsed / total length` mono clock; a playhead moves over the waveform (the parts decoded into peaks of 0.25-second windows; the played section is accent), and dragging or tapping the waveform seeks to that time — Apple · Android · Windows 2026-09-03; the track is `mix` if there is one, otherwise `mono`; if the file is not on this device, `No audio on this device`). All four shells (2026-09-03; Apple uses a RecKit shared view + AVQueuePlayer, Android uses media3 ExoPlayer, Windows has the bundled ffmpeg decode to PCM and plays it through `SourceDataLine` — the JVM cannot decode AAC). For an uploaded recording, parts that are not local are fetched from Drive with `core.audio()` (`Fetching from Drive…`/`Could not fetch from Drive`). **There is no text while fetching** (2026-09-26, four shells): the waveform's place holds the
+**waveform loader** (§9 "Motion" — a 10-cell band in the secondary text color passes one cell at a time from left to right over short ghost ticks in the grid
+color), and the play button's place holds **button-shaped progress** (an accent border the same size as the button fills with accent in proportion to the bytes received,
+and when it is full, that spot becomes the play button). Progress rises part by part (the core's
+`audio(recordingId, progress)` reports the bytes received against the total bytes of the parts to be sent). For a recording fetched from Drive, once the peaks
+are ready, the bars rise once from the center line, starting from the left (0.75 seconds; immediately with reduce motion). With reduce motion (Android · Apple), the band
+stops and `Fetching from Drive…` is written again — Windows does not know that signal, so its band always runs. Screen readers read the progress cell as
+`Fetching from Drive…` and a percentage. Until the fetch decision is made, the play button is not shown; if only part of the audio was fetched, only the contiguous leading part plays.
+**The waveform is decoded only once** (2026-09-27, four shells): the shell stores the peaks it decoded as the core's `WaveformPeaks` (`waveform.v1` — `RWF1`, the window count,
+16 bits per window) next to the parts in the recording folder (`core.recordings.saveWaveform`), and opening the detail reads that first
+(`core.recordings.waveform`; if the window count differs from the selection being decoded this time, it decodes again). When a recording finishes on this device (on a phone, when the watch recording
+has been fully received), it is precomputed in the background. While decoding because there is none, the waveform's place holds the **waveform loader** instead of a flat line (which reads as silence)
+(ghost ticks only with reduce motion; screen reader `Loading waveform…`), and the play button stays as it is. This file is not uploaded; it survives the 7-day local audio
+cleanup (which deletes only the parts), so the waveform is drawn even before the audio is fetched from Drive again, and it is deleted together with the recording. While recording on this device, playback is not offered. There is no "Upload now" (2026-09-02:
+   a recording without jobs does not need uploading, and waiting jobs run at their time). The menu bar and tray popovers and the desktop detail window use the same ledger
+   — **they read 20 rows at a time and add the next 20 rows when the last row becomes visible** (infinite scroll; 2026-09-04, previously the popover and detail window showed the 5 most recent rows).
+   **On Android and iPhone, the detail's playback area is fixed below the body** (2026-09-10). Only the transcript body scrolls; below the waveform,
+   elapsed/total length is on the left and the play/pause button at the right edge. In both states the button's minimum width is 120pt on iPhone and
+   120dp on Android, and on Android the button is at least 48dp tall. The playback area does not cover the body. The audio download failure notice is
+   shown below the mobile playback controls, which keeps the button right-aligned.
+   **macOS and Windows keep the existing top playback area and the desktop window and split layouts.**
+   All four shells offer transcript text selection, copy all and seeking by utterance time. The transcript search button and input field are not shown.
+   Copy all is a text-less copy icon on the right of the detail header, immediately left of `Rename`. Its accessibility name is
+   `Copy all`, and after copying, a check mark and the accessibility name `Copied` signal completion. It copies the whole original text with the times.
+   Seeking by time is disabled while recording and while audio is being checked or downloaded, and times outside the range of audio actually held are disabled too. Copy is offered whether or not there is audio.
+   Utterance groups are cached when the result changes, and long utterances from the same speaker are also split, starting at the next segment, at a 60-second or 1,200-character
+   threshold and shown in a lazy list (a single segment returned by the provider is itself never split). The whole
+   string is not re-joined on every playback clock tick. Android and Windows waveforms have visible keyboard focus and 5-second left/right seeking.
+   All four shells observe job, step and recording changes in an open detail and refresh the transcription result.
+   When only the transcript or the title changes, the playback and reading positions are not reset. Recording state and audio parts are observed separately from the transcript,
+   so when a recording ends or parts are added while the detail is open, the playback area updates without reopening the screen.
+   iPhone and macOS stop existing playback first, in the recording start preparation step, and then start capture. Until capture has fully stopped,
+   playback and seeking are blocked, and the block is also released when starting the recording fails. Android stops playback when a recording starts on this device,
+   and blocks playback and seeking (waveform · utterance times) while recording. The start and end of other recordings are also reflected in an open detail.
+   It distinguishes waiting for transcription / no transcription step / job failed / read failed / empty transcript / body. A read failure offers reading the result
+   again. On an explicit retry, if the local transcript is corrupted, the remote copy is fetched through the existing Drive path, verified, and then
+   swapped in. If a newer valid local result appears during the download, that result is kept. Normal lookups are local-first, and healthy
+   files are not downloaded again. An empty transcript offers a notice to play the recording. While playback is preparing or buffering, no separate notice text
+   is added, so the player height and the position of the surrounding content do not change. Real playback failures are shown on screen and retried on the next
+   playback request. Windows also shows ffmpeg's abnormal exit and exit-wait timeout as failures, excluding exits caused by the user's
+   stop or seek. The detail header has only the title, and internal IDs are not shown (2026-09-29 — they are not information for the user
+   to read).
+   The list's first read shows a loading notice, and a truly empty list shows a notice that this is where recordings collect (desktop windows also show a start recording button, §9 screen principle 8).
+   Delete in the recordings list is fixed at the right of the action area, and its right border lines up with the right border of the `DONE` badge in the status column
+   above. The remaining actions, such as open, retry and details, wrap in the space on the left. The same rule applies to the mobile list and to the expanded list
+   in the desktop menu and tray.
+   (2026-09-03: the parts table in rows was removed — part numbers, tracks, bytes and sha are not shown to the user)
+3. **Workflow editor = node graph** — **retired (2026-09-24)**: the user workflow editor and list were removed. The sentences about the editor and
+   list are a record; the general layout rules at the end (from "iPhone supports portrait and left/right landscape") and the unsaved key
+   input rule remain valid. Record: trigger (device) → step nodes → end. Nodes are square, connectors straight, and the selected node has an
+   accent border. Steps are added with `+` on a connector. If there is already a `drive.upload`, `Drive upload` in the add menu is disabled
+   (2026-09-04: a second upload does nothing if it targets the same folder, and if it targets a different folder it becomes a copy that later steps do not know about — webhooks and transcription
+   read only the last upload; this is an editor rule and the parser does not block it). Webhooks are one per endpoint, so several of them are natural.
+   On mobile, Save and Cancel sit below the input area and account for the keyboard and the safe area. While typing, the graph collapses and the input area
+   scrolls. The transfer consent notice can be checked even while typing. Errors are explained in the scroll area and take the user to the related input area.
+   With large text, buttons wrap, and the Android recording screen at small heights and with large text can scroll.
+   Next to `New workflow` at the top of the workflow list is a borderless info icon. Its accessibility name and desktop
+   tooltip are `How to set up transcription`. On mobile a bottom sheet, and on desktop a popover attached to the
+   icon, explains Drive connection → transcription step → provider key → workflow selection. Opening the guide does not
+   rearrange the list, and even on narrow screens the help and create buttons stay in the same right-hand action area. It does not block the first run.
+   Apple screens that place an X close button at the top right of the guide center the title and the button vertically in the same row.
+   In all four shells, the workflow list enters editing through each item's `Edit` button. The name and description area is
+   information with no click action, and `Use` and delete are independent actions. `Edit` and `Use` are shown as blue
+   accent buttons. In the mobile list, `Edit` is right-aligned together with delete, immediately to its left, with a minimum width of 96pt on iPhone
+   and 96dp on Android. `Use` is on the left, and when the actions wrap with large text, the edit · delete area stays right-aligned.
+   The item in use has delete disabled, and the list does not add a notice telling the user to choose another workflow
+   first. Edit follows the existing unsaved-changes protection procedure.
+   iPhone supports portrait and left/right landscape, and at low heights and with accessibility text sizes the recording screen scrolls.
+   On Android, narrow headers and large text separate the title from the action row, tab names show up to two lines, and the status nodes are laid out vertically.
+   On short landscape screens, the tab icon row is omitted and the waveform and the playback clock are placed side by side. When the keyboard opens, the editing header that
+   duplicates the tab bar collapses to make room for the save area. Long Apple button labels reflow to at most three lines within the screen width.
+   Apple Watch scrolls its main screen and wraps status text, and Wear also allows multiple lines for long workflow names and transfer status.
+   The discard confirmation for unsaved workflow input was retired together with the editor (record). The remaining unsaved input is the API key
+   field of the recording processing settings, and all four shells discard it **without confirmation** (code checked 2026-09-29): `Cancel` during `Replace key` and choosing another provider (the field
+   switches to that provider's) clear the entered value, and coming back to the same provider does not restore it. `Cancel` on the settings draft only reverts to the saved
+   settings, so if the provider is unchanged the key field is unchanged too.
+   On mobile, switching tabs preserves drafts, and Android's back applies only to the current tab.
+4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Privacy (phone) /
+   About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29). **Theme**
+   is three chips common to all four shells, `System default` · `Light` · `Dark`, and like language it is a local setting of this
+   device — when unset, it follows the system's `prefers-color-scheme` (Windows 2026-09-01, the other three 2026-09-04).
+   Settings hold no technical values (segment length and the like) — values the user cannot change are not shown (2026-09-04).
+   The secondary description under a row uses small sans-serif (`12sp`, scaling with the user's font size), the secondary color, and 16 left/right / 8 top/bottom spacing.
+   Settings that pick one item from a growing list — `App language`, and recording processing's `Provider` · `Spoken language` — are a **dropdown** at the row end
+   in all four shells (2026-09-29): a box shaped like a quiet button with the current value and `▾`; tapping it opens the list (on Android and Windows a square popup with the same
+   border and radius, no motion; on Apple the platform menu), and the chosen item gets the same `✓` as chips. For accessibility it is one
+   element — the name is the row title, the value is the current value, the role is button. A value with nothing to choose (`Speech recognition model … Qwen3-ASR 0.6B`) has no
+   box, only secondary-color text, so it looks different from a choice. A choice among only three (theme, transcription method) stays as chips. On phones (Android · iPhone),
+   this chip row **fills** its line (2026-09-29): so that the chips alone do not float on the left of a screen where every other control sits at the right edge.
+   If all chips fit at the same width, they share the line evenly; if a long name (`System default`) keeps them from fitting, the remaining
+   space is added equally to each chip's own width — no chip gets narrower than its own width. If they do not fit on one line, they wrap, and each line is filled (Android
+   `FillRow`, Apple `FillLayout`). In desktop windows the three words would stretch to the panel edge, so they stay left-aligned.
+   The Drive connection status also uses the common settings row. On the right is a single danger-colored “Disconnect” button, and one confirmation dialog completes it.
+   The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
+   buttons — they are nothing to draw attention to. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
+   Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
+5. **Notifications · dialogs**: **title + one-line description + at most 2 buttons.** The processing state is inline (the button changes to "Saving…"), and on completion
+   a badge. A two-way question does not get a third option.
+6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
+   popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
+   recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
+   sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
+   it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
+7. **Watch**: mono timer + square start/stop, **one-line status**, the transfer waiting count — while the transfer pass is finding the phone and handing over files,
+   the same count is spoken as `Sending %1$d` (2026-09-04; tiles and complications follow the same rule).
+   Waiting and sending are two questions the user asks about the same number, and only the transfer pass knows which one applies.
+8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
+   - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
+     settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing
+     is itself the signal that there is something to save.
+   - Actions attached to one item go at the end of that item's row (Drive disconnect, deleting another provider's key). If the item spans several lines, they are end-aligned
+     below it. Buttons right below an input field, value or notice (`Save key`, `Replace key` · `Delete`, `Download model`, the confirmation in the permission revocation notice) are also
+     end-aligned below it. Groups of a different nature are separated by a heading (recording processing's `Settings file`: export · import).
+   - A single recovery button below a centered notice (empty list, transcript load failure, microphone denied) is centered.
+   - An empty list (2026-09-26) shows, in the vertical center of the space the list would take, one line in the body color (`No recordings yet`) and below it one dimmed line
+     (`Recordings you make appear here.`), and a button is placed one step (24) away. Phones have `Record` in the tab bar right below, so they show no button;
+     only desktop windows (Mac detail, Windows recording window) show `Start recording`. The short ledger in popovers and the tray shows only one line.
+   - In the command row of the menu bar popover and the tray, the primary actions (start/stop · settings) are at the start, and secondary actions and quit at the end.
+   - When dialog buttons do not fit on one line, they stack at full width and keep their order (primary action last).
+   - Exception: the expanded actions of a ledger row pin only delete to the end, as in principle 2, and the rest wrap from the start.
 
-### 접근성
+### Accessibility
 
-시스템 `reduce motion`·`prefers-color-scheme`·대비·글꼴 크기를 자동 반영한다 — **앱 설정에는 접근성 섹션이 없고,
-기본 모션·명암이 유일한 동작이다.** 유일한 예외가 §9 원칙 4의 `테마`다: 밝기 구성만은 사용자가 시스템과 다르게 고를 수
-있고(접근성 토글이 아니라 취향이다), 고대비·모션은 여전히 시스템만 결정한다. **모든 상태는 색 + 텍스트**다 — 색만으로 무엇을 말하는 표시는 없다.
-**빨강의 뜻은 둘뿐이다(2026-09-26)**: 상태에서는 실패(`FAILED`와 그 사유)만, 동작에서는 되돌릴 수 없는 삭제(녹음·API 키 `삭제`, 삭제
-확인 창의 확정 버튼)만. 대기(`NEEDS_MODEL`·`NEEDS_CONSENT`·`NEEDS_AUTH`·`NEEDS_SPACE`)는 배너 문구와 펼친 행의 사유까지 배지와 같은
-경고 톤이나 흐린 색이며 빨강을 쓰지 않는다. **한국어는 단어 안에서 줄을 바꾸지 않는다**: Android는 앱 Typography의
-`LineBreak`에 `WordBreak.Phrase`를 둔다(Compose 기본값이 Android 15+의 한국어 구 단위 줄바꿈을 끈다), Windows(Compose Desktop)는
-UI 언어가 한국어일 때 문자열 표가 한 단어 안의 한글 음절 사이에 U+2060을 넣어 준다(사용자 텍스트는 그대로), Apple은 기본값이 단어 단위다.
-**크기 표기**는 모든 셸이 십진 단위로 1,000 MB 미만은 정수 MB(`988 MB`), 그 이상은 소수 한 자리 GB(`1.2 GB`)다. 탭 순서와
-스크린리더 라벨은 리소스이고(§7), 행처럼 눌러서 화면을 여는 요소는 그 역할을 라벨에 적는다(예: 목록 행 =
+The system's `reduce motion` · `prefers-color-scheme` · contrast · font size are applied automatically — **the app settings have no accessibility section,
+and the default motion and light/dark behavior is the only behavior.** The only exception is `Theme` in §9 principle 4: the light/dark scheme alone can be chosen differently from the system by
+the user (it is a preference, not an accessibility toggle), and high contrast and motion are still decided only by the system. **Every state is color + text** — nothing says anything by color alone.
+**Red means only two things (2026-09-26)**: in states, only failure (`FAILED` and its reason), and in actions, only irreversible deletion (`Delete` for a recording or an API key, the confirm button of a delete
+confirmation dialog). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
+warning tone as the badge or a dimmed color, and never red. **Korean does not break lines inside a word**: Android sets `WordBreak.Phrase` in the `LineBreak` of the app Typography
+(the Compose default turns off Android 15+'s phrase-based line breaking for Korean), Windows (Compose Desktop)
+has the string table insert U+2060 between Hangul syllables inside a word when the UI language is Korean (user text is left as is), and on Apple the default is already word-based.
+**Size notation** in every shell uses decimal units: whole MB below 1,000 MB (`988 MB`), and GB with one decimal place from there up (`1.2 GB`). Tab order and
+screen reader labels are resources (§7), and an element that opens a screen when pressed, like a row, states that role in its label (e.g. list row =
 `row, button`).
 
 ---
 
-## 10. 코어 (KMP) (구 docs/10)
+## 10. Core (KMP) (formerly docs/10)
 
-**iPhone의 전송 허용 대기:** `job.status`와 `step_run.status`의 `NEEDS_CONSENT`, `TRANSFER_CONSENT_REQUIRED` 메시지는 §15의 외부 전송 허용이 필요한 상태다. 일반 재시도로 우회할 수 없고 허용 후 완료된 단계를 유지하며 재개한다.
+**Waiting for transfer permission on iPhone:** `NEEDS_CONSENT` in `job.status` and `step_run.status`, together with the `TRANSFER_CONSENT_REQUIRED` message, is the state that needs the external transfer permission of §15. An ordinary retry cannot get around it; once permission is given, the job resumes and keeps the steps it already completed.
 
-**로컬 모델 대기(2026-09-26):** 엔진은 있지만 모델이 없으면 `local.transcribe`가 `StepFailure(needsModel)`을 던지고 잡과 단계는 `NEEDS_MODEL`(`last_error` = `LOCAL_MODEL_REQUIRED`)로 대기한다. 실패가 아니므로 시도 횟수를 쓰지 않고 다른 기기에 실패를 알리지 않는다. `ReclyCore.prepareLocalEngine(language)`가 모델을 받으면 같은 언어의 `NEEDS_MODEL` 잡을 완료된 단계·체크포인트를 유지한 채 `PENDING`으로 되돌린다. `다시 시도`(`JobService.retry`)도 받는다 — 현재 설정으로 다시 계획하므로 외부 API로 바꾼 뒤의 탈출구다. `LocalEngineInfo`는 `modelBytes`·`progress`·`downloading`으로 다운로드 크기·진행률·진행 여부를 알린다.
+**Waiting for a local model (2026-09-26):** When the engine is present but the model is not, `local.transcribe` throws `StepFailure(needsModel)`, and the job and the step wait in `NEEDS_MODEL` (`last_error` = `LOCAL_MODEL_REQUIRED`). It is not a failure, so it uses no attempts and does not report a failure to other devices. When `ReclyCore.prepareLocalEngine(language)` downloads the model, it returns the `NEEDS_MODEL` jobs for the same language to `PENDING`, keeping their completed steps and checkpoints. `Retry` (`JobService.retry`) is accepted too — it replans with the current settings, so it is the way out after switching to an external API. `LocalEngineInfo` reports the download size, the progress and whether a download is running through `modelBytes`·`progress`·`downloading`.
 
-### 타깃 · 의존성
+### Targets · dependencies
 
-| 항목 | 값 |
+| Item | Value |
 |---|---|
 | Kotlin | 2.2.x, K2 |
-| 타깃 | `androidTarget`, `jvm`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`, `watchosArm64`, `watchosDeviceArm64`, `watchosSimulatorArm64` |
+| Targets | `androidTarget`, `jvm`, `iosArm64`, `iosSimulatorArm64`, `macosArm64`, `watchosArm64`, `watchosDeviceArm64`, `watchosSimulatorArm64` |
 | HTTP | Ktor 3.x client — Android/JVM `OkHttp`, Apple `Darwin` |
-| 직렬화 | kotlinx-serialization-json |
+| Serialization | kotlinx-serialization-json |
 | DB | SQLDelight 2.x — Android/JVM `sqlite-driver`, Apple `native-driver` |
-| 파일 | okio (`FileSystem`, `HashingSink` for sha256/md5) |
-| 설정 | multiplatform-settings (보안 저장은 셸이 `SecureStore`로 제공) |
-| 시간 | kotlinx-datetime |
-| 로깅 | 코어 자체 `Logger` 인터페이스 |
-| Swift 노출 | SKIE + `assembleXCFramework` |
+| Files | okio (`FileSystem`, `HashingSink` for sha256/md5) |
+| Settings | multiplatform-settings (the shell provides secure storage as `SecureStore`) |
+| Time | kotlinx-datetime |
+| Logging | the core's own `Logger` interface |
+| Swift exposure | SKIE + `assembleXCFramework` |
 
-시뮬레이터 슬라이스는 **arm64만** 있다(Apple Silicon 전용). Apple 앱 타깃은 정적 XCFramework가 링커 옵션을 내보내지
-않으므로 **Other Linker Flags에 `-lsqlite3`**가 필요하다.
+Simulator slices exist for **arm64 only** (Apple Silicon only). A static XCFramework does not export linker options, so
+the Apple app targets need **`-lsqlite3` in Other Linker Flags**.
 
-### 패키지
+### Packages
 
 ```
 recly.core
-  model/        Workflow, Step, Trigger, RecordingMeta, Part, Job, StepRun, DeviceInfo   — spec과 1:1
+  model/        Workflow, Step, Trigger, RecordingMeta, Part, Job, StepRun, DeviceInfo   — 1:1 with spec
   ids/          Ulid
   workflow/     WorkflowParser · WorkflowValidator · Template · WorkflowSelector · WorkflowMutator
   recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5)
   job/          JobService · Executor · StepRunner · Backoff · JobStore
   drive/        DriveApi · ResumableUploadPlanner · FolderResolver · AppData
-  storage/      CloudFiles · CloudStorage(아이디로 저장소를 고름) · ICloudFiles · UbiquityContainer · StorageKind
-  webhook/      Signer · PayloadBuilder · WebhookRunner   — 폐기(2026-09-24)
-  transcribe/   SttProvider 어댑터 · TranscribeRunner
+  storage/      CloudFiles · CloudStorage (picks the storage by id) · ICloudFiles · UbiquityContainer · StorageKind
+  webhook/      Signer · PayloadBuilder · WebhookRunner   — retired (2026-09-24)
+  transcribe/   SttProvider adapters · TranscribeRunner
   sync/         WorkflowSync (pull/push/merge)
   secrets/      SecretsRepository · SecretSync · SecretSyncStore
-  transfer/     TransferReceiver (수신 측 검증·ack 도우미)
+  transfer/     TransferReceiver (receiver-side verification · ack helpers)
   platform/     SecureStore · TokenProvider · Transport · Crypto · AudioTools · Clock · Logger · DeviceInfo
-  ReclyCore     조립 루트
+  ReclyCore     composition root
 ```
 
-### DB 스키마 (SQLDelight)
+### DB schema (SQLDelight)
 
 ```sql
 CREATE TABLE recording (
   id TEXT PRIMARY KEY, source TEXT NOT NULL, platform TEXT NOT NULL,
   workflow_id TEXT, title TEXT, started_at TEXT NOT NULL, ended_at TEXT, duration_sec REAL,
   timezone TEXT NOT NULL, dir TEXT NOT NULL, meta_json TEXT NOT NULL, status TEXT NOT NULL,
-  drive_folder_id TEXT,                   -- 이 녹음의 `{base}/` 폴더 (ADR-014)
-  remote INTEGER NOT NULL DEFAULT 0,      -- Drive에서 입양한 행 (§3 "다른 기기의 녹음")
-  remote_pending TEXT,                    -- 그 기기가 아직 할 일 (같은 절, 폴더의 `pending` 표식)
-  drive_synced INTEGER NOT NULL DEFAULT 0  -- Job 없이 검증·복원한 이 기기 녹음의 Drive 사본
+  drive_folder_id TEXT,                   -- this recording's `{base}/` folder (ADR-014)
+  remote INTEGER NOT NULL DEFAULT 0,      -- a row adopted from Drive (§3 "Recordings from other devices")
+  remote_pending TEXT,                    -- work that device still has to do (same section, the folder's `pending` marker)
+  drive_synced INTEGER NOT NULL DEFAULT 0  -- Drive copy of this device's recording, verified and restored without a Job
 );
 CREATE TABLE part (
   recording_id TEXT NOT NULL, part INTEGER NOT NULL, track TEXT NOT NULL,
   file TEXT NOT NULL, bytes INTEGER NOT NULL, sha256 TEXT NOT NULL, md5 TEXT,
   deleted INTEGER NOT NULL DEFAULT 0,
-  drive_file_id TEXT,                     -- 입양한 파트를 받아 올 Drive 파일 (§3)
+  drive_file_id TEXT,                     -- the Drive file to fetch an adopted part from (§3)
   PRIMARY KEY (recording_id, part, track)
 );
 CREATE TABLE job (
   id TEXT PRIMARY KEY, recording_id TEXT NOT NULL, workflow_id TEXT NOT NULL,
-  workflow_json TEXT NOT NULL,            -- 실행 시점의 정의 스냅샷
+  workflow_json TEXT NOT NULL,            -- snapshot of the definition at run time
   status TEXT NOT NULL,                   -- PENDING RUNNING WAITING DONE FAILED NEEDS_AUTH NEEDS_SPACE SKIPPED_SHORT
   created_at TEXT NOT NULL, updated_at TEXT NOT NULL, next_run_at TEXT,
   UNIQUE (recording_id, workflow_id)
@@ -2097,14 +2112,14 @@ CREATE TABLE step_run (
   id TEXT PRIMARY KEY, job_id TEXT NOT NULL, step_id TEXT NOT NULL, ordinal INTEGER NOT NULL,
   status TEXT NOT NULL,                   -- PENDING RUNNING SUCCEEDED FAILED SKIPPED NEEDS_AUTH NEEDS_SPACE
   attempts INTEGER NOT NULL DEFAULT 0, next_attempt_at TEXT, last_error TEXT,
-  state_json TEXT,                        -- 단계별 재개 상태
-  output_json TEXT,                       -- 다음 단계가 읽는 출력 (drive: folderId, files[])
+  state_json TEXT,                        -- per-step resume state
+  output_json TEXT,                       -- output the next step reads (drive: folderId, files[])
   UNIQUE (job_id, step_id)
 );
 CREATE TABLE drive_folder_cache (path TEXT PRIMARY KEY, folder_id TEXT NOT NULL, checked_at TEXT NOT NULL);
 CREATE TABLE sync_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
-CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- deviceId 등 비밀 아닌 설정
--- secret_sync 테이블은 시크릿 동기화 폐기와 함께 삭제됐다(migrations/2.sqm)
+CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- non-secret settings such as deviceId
+-- the secret_sync table was dropped together with the retirement of secret sync (migrations/2.sqm)
   name TEXT PRIMARY KEY, updated_at TEXT NOT NULL,
   deleted INTEGER NOT NULL DEFAULT 0, dirty INTEGER NOT NULL DEFAULT 0
 );
@@ -2117,127 +2132,140 @@ CREATE TABLE kv (key TEXT PRIMARY KEY, value TEXT NOT NULL);   -- deviceId 등 �
                               "p001_sys": { "fileId": "1AbC…" } } }
 ```
 
-세션 URI와 오프셋을 저장하므로 프로세스가 죽어도 청크 단위로 이어간다.
+Because the session URI and the offset are saved, the upload continues chunk by chunk even if the process dies.
 
-#### 스키마 마이그레이션
+#### Schema migrations
 
-`Rec.sq`는 **언제나 전체 스키마**이고, 설치된 DB를 따라오게 하는 것은
-`core/src/commonMain/sqldelight/migrations/<n>.sqm`이다(`n`은 "이 버전에서 올린다"는 뜻이라 `1.sqm`이 1 → 2).
-`Schema.version`은 마이그레이션 파일에서 자동으로 나온다(현재 **7**; `3.sqm`이 `recording.drive_folder_id`·
-`recording.remote`·`part.drive_file_id`를, `4.sqm`이 `recording.remote_pending`을, `5.sqm`이
-`recording.drive_synced`를, `6.sqm`이 `job.drive_account_id`·`job.disconnected_status`를 더한다, §3).
+`Rec.sq` is **always the full schema**, and what brings an installed DB up to date is
+`core/src/commonMain/sqldelight/migrations/<n>.sqm` (`n` means "upgrade from this version", so `1.sqm` goes 1 → 2).
+`Schema.version` comes from the migration files automatically (currently **7**; `3.sqm` adds `recording.drive_folder_id`·
+`recording.remote`·`part.drive_file_id`, `4.sqm` adds `recording.remote_pending`, `5.sqm` adds
+`recording.drive_synced`, and `6.sqm` adds `job.drive_account_id`·`job.disconnected_status`, §3).
 
-- **스키마를 바꿀 때마다** `Rec.sq`를 고치고 **같은 커밋에서** 다음 번호의 `.sqm`을 추가한다. 둘 중 하나만 하면 새
-  설치와 기존 설치의 스키마가 갈라진다.
-- **이미 나간 `.sqm`은 절대 고치지 않는다.** 그 파일은 남의 기기에서 이미 실행됐다 — 고쳐야 할 것이 있으면 다음
-  번호를 추가한다.
-- 드라이버별로: Android(`AndroidSqliteDriver`)와 Apple(`NativeSqliteDriver`)은 `RecDatabase.Schema`를 받아
-  `user_version`으로 create/migrate를 스스로 처리한다. **JDBC(Windows·테스트)는 아무것도 하지 않으므로**
-  `JvmRuntime.openDriver`가 대신 한다: 테이블이 없으면 `create` 후 버전 스탬프, 뒤처졌으면 `migrate`, 최신이면 그대로.
-  `user_version`이 0인데 테이블이 있으면 **버전 1**로 본다(데스크톱이 버전을 안 찍던 시절의 파일).
-- 검증은 `MigrationTest`다: 버전 1 DDL로 손수 만든 DB를 올려 기존 행이 남아 있는지와 새 테이블이 쓰이는지를 본다.
-- **내려가는 길은 없다.** v2로 올라간 DB에 v1 빌드를 설치하면 `Can't downgrade database`로 프로세스가 죽는다(같은
-  기기에 여러 브랜치를 설치할 때만 생긴다; 앱 데이터를 지우면 풀린다).
+- **Every time you change the schema**, edit `Rec.sq` and add the next-numbered `.sqm` **in the same commit**. Doing
+  only one of the two makes the schemas of new installs and existing installs diverge.
+- **Never edit a `.sqm` that has already shipped.** That file has already run on other people's devices — if something
+  needs fixing, add the next number.
+- Per driver: Android (`AndroidSqliteDriver`) and Apple (`NativeSqliteDriver`) take `RecDatabase.Schema` and handle
+  create/migrate themselves through `user_version`. **JDBC (Windows, tests) does nothing**, so
+  `JvmRuntime.openDriver` does it instead: if there are no tables, `create` and then stamp the version; if behind,
+  `migrate`; if current, leave it as is. If `user_version` is 0 but tables exist, it is treated as **version 1** (a file
+  from the time when the desktop did not stamp a version).
+- Verification is `MigrationTest`: it upgrades a DB built by hand with the version 1 DDL and checks that the existing
+  rows remain and that the new tables are used.
+- **There is no way down.** Installing a v1 build over a DB upgraded to v2 kills the process with `Can't downgrade
+  database` (this happens only when installing several branches on the same device; clearing the app data fixes it).
 
-### 잡 상태 머신
+### Job state machine
 
 ```
-enqueue ──► PENDING ──runDueJobs──► RUNNING ──모든 step 종료──► DONE
-                                       │ step 실패(재시도 남음) → WAITING(next_run_at)
-                                       │ step 실패(abort)      → FAILED
-                                       │ 401 재현              → NEEDS_AUTH  ──로그인──► PENDING
-                                       │ 403 storageQuotaExceeded → NEEDS_SPACE ──"다시 시도"──► PENDING
-minDurationSec 미만 ──► SKIPPED_SHORT (수동 실행 시 PENDING)
+enqueue ──► PENDING ──runDueJobs──► RUNNING ──all steps finished──► DONE
+                                       │ step failed (retries left) → WAITING(next_run_at)
+                                       │ step failed (abort)        → FAILED
+                                       │ repeated 401               → NEEDS_AUTH  ──sign-in──► PENDING
+                                       │ 403 storageQuotaExceeded → NEEDS_SPACE ──"Retry"──► PENDING
+below minDurationSec ──► SKIPPED_SHORT (PENDING when run manually)
 ```
 
-`NEEDS_AUTH`와 `NEEDS_SPACE`는 **사용자가 무언가를 하기 전까지 터미널**인 두 상태다. 스케줄러가 다시 깨워도 고르지
-않고(`runDueJobs`의 대상은 `PENDING`·`WAITING`뿐), 재시도 예산도 쓰지 않는다.
+`NEEDS_AUTH` and `NEEDS_SPACE` are the two states that are **terminal until the user does something**. The scheduler
+does not pick them even when it wakes again (`runDueJobs` targets only `PENDING`·`WAITING`), and they use no retry
+budget.
 
-- `runDueJobs(now)`: `status IN (PENDING, WAITING) AND (next_run_at IS NULL OR next_run_at <= now)`인 Job을
-  `created_at` 순으로 하나씩. 동시에 하나만 실행(모바일 네트워크·배터리). 데스크톱은 셸이 `maxConcurrent`를 2로 올릴
-  수 있다.
-- 단계 실행은 `ordinal` 순. `SUCCEEDED`/`SKIPPED`인 단계는 건너뛰고 `PENDING`/`FAILED`(재시도 가능)부터.
-- 단계가 `FAILED`로 확정(attempts ≥ maxAttempts 또는 비재시도 오류)되면 `onError`: `abort` → Job FAILED;
-  `continue` → 다음 단계.
-- `runDueJobs`는 협력적 취소를 지원한다(WorkManager 중단, 앱 종료). 청크 단위로 상태를 저장하므로 중단 지점부터
-  재개한다.
-- 보관 규칙(§3, ADR-017 7일 창)은 잡 DONE 시가 아니라 **매 `runDueJobs` 패스 끝의 `Retention.sweep(now)`**가
-  평가한다: `JobStore.claimPurge`가 **한 트랜잭션** 안에서 자격(전부 DONE·업로드 성공)과 나이(파일 mtime과 마지막
-  DONE `updated_at` 둘 다 7일 경과)를 보고 `part.deleted=1`로 클레임한 뒤에만 `RecordingRepository.purgeParts`가
-  파일을 지운다(메타·DB 유지). `ReclyCore.audio(recordingId)`는 재생 트랙(`mix`>`mono`)의 없는 파트를 Drive에서
-  받아(`fileId`는 업로드 출력, sha256 검증) 같은 이름으로 쓰고 `deleted=0`으로 되돌린다 — 그 파트는 새 mtime으로
-  다시 7일을 산다. `enqueue`는 같은 트랜잭션
-  규율로 파트가 전부 클레임된 녹음을 거부한다(`PartsPurged`). 만족하지 않으면 `rec.retained` 로그.
-- 영속된 `FAILED` 단계는 터미널이다: 다음 패스에서 러너를 다시 부르지 않는다(`continue`로 지나간 것이거나,
-  `retry()`가 PENDING으로 되돌린 뒤에만 다시 실행).
-- `JobService.retry(jobId)`: NEEDS_AUTH/NEEDS_SPACE/FAILED/SKIPPED_SHORT → PENDING(실패 단계 초기화).
-  **WAITING → PENDING now** — `next_run_at`과 단계 `next_attempt_at`을 비우되 `attempts`는 유지한다(예산 리셋이
-  아니라 "지금"이다; 코어 규칙으로 남아 있지만 2026-09-02부터 UI의 "지금 올리기" 버튼은 없고, 셸의 "다시 시도"는
-  실패 상태에서만 이 호출을 한다).
-- step_run과 job의 **짝 전이**(WAITING·NEEDS_AUTH·NEEDS_SPACE·FAILED)는 한 트랜잭션에 쓴다. 방어적으로, PENDING
-  단계의 `next_attempt_at`이 미래면 실행하지 않고 job을 그 시각의 WAITING으로 둔다.
+- `runDueJobs(now)`: Jobs with `status IN (PENDING, WAITING) AND (next_run_at IS NULL OR next_run_at <= now)`, one at a
+  time in `created_at` order. Only one runs at a time (mobile network, battery). On desktop the shell can raise
+  `maxConcurrent` to 2.
+- Steps run in `ordinal` order. Steps that are `SUCCEEDED`/`SKIPPED` are skipped; execution starts from the first
+  `PENDING`/`FAILED` (retryable) step.
+- When a step is settled as `FAILED` (attempts ≥ maxAttempts or a non-retryable error), `onError` applies: `abort` → Job
+  FAILED; `continue` → next step.
+- `runDueJobs` supports cooperative cancellation (WorkManager stop, app exit). State is saved chunk by chunk, so it
+  resumes from the point where it was interrupted.
+- The retention rule (§3, ADR-017 7-day window) is evaluated not when a job reaches DONE but by **`Retention.sweep(now)`
+  at the end of every `runDueJobs` pass**: `JobStore.claimPurge` checks eligibility (all DONE, upload succeeded) and age
+  (both the file mtime and the last DONE `updated_at` are 7 days old) inside **one transaction** and claims the parts
+  with `part.deleted=1`, and only then does `RecordingRepository.purgeParts` delete the files (meta and DB are kept).
+  `ReclyCore.audio(recordingId)` downloads the missing parts of the playback track (`mix`>`mono`) from Drive (`fileId`
+  is from the upload output, sha256 verified), writes them under the same name and sets `deleted=0` again — that part
+  lives another 7 days from its new mtime. `enqueue`, under the same transaction discipline, rejects a recording whose
+  parts are all claimed (`PartsPurged`). When the conditions are not met, it logs `rec.retained`.
+- A persisted `FAILED` step is terminal: the next pass does not call its runner again (it is either one that `continue`
+  moved past, or it runs again only after `retry()` returns it to PENDING).
+- `JobService.retry(jobId)`: NEEDS_AUTH/NEEDS_SPACE/FAILED/SKIPPED_SHORT → PENDING (failed steps reset).
+  **WAITING → PENDING now** — clears `next_run_at` and the steps' `next_attempt_at` but keeps `attempts` (it means
+  "now", not a budget reset; it remains a core rule, but since 2026-09-02 the UI has no "Upload now" button, and the
+  shells' "Retry" makes this call only in failed states).
+- The **paired transitions** of step_run and job (WAITING·NEEDS_AUTH·NEEDS_SPACE·FAILED) are written in one
+  transaction. Defensively, if a PENDING step's `next_attempt_at` is in the future, it is not run, and the job is put in
+  WAITING for that time.
 
-### 잡 스냅샷의 미지 스텝
+### Unknown steps in a job snapshot
 
-**잡 스냅샷**은 enqueue 시점의 워크플로우다(`job.workflow_json`). 더 새로운 스키마를 아는 앱이 만든 잡을 옛 빌드가
-읽으면 그 스냅샷에 모르는 스텝 `type`이 들어 있을 수 있다(같은 기기를 두 빌드가 번갈아 쓰거나 백업을 되돌린 경우).
-디코드 예외가 `JobStore.toJob`을 타고 `observeJobs`로 올라가면 **목록 전체**가 죽으므로, 격리 단위는 잡 하나다
-(동기화의 동결(§5)과 같은 성질의 방어다).
+The **job snapshot** is the workflow at enqueue time (`job.workflow_json`). When an older build reads a job created by
+an app that knows a newer schema, that snapshot may contain a step `type` the build does not know (when two builds take
+turns on the same device, or when a backup is restored). If the decode exception travels through `JobStore.toJob` up to
+`observeJobs`, the **whole list** dies, so the unit of isolation is a single job (the same kind of defense as the sync
+freeze (§5)).
 
-- `toJob`은 스냅샷 디코드 실패에 예외를 내지 않는다. 그 잡만 `Job.workflow = null`, 상태는 행에 무엇이 적혀 있든
-  **`FAILED`**, `Job.snapshotError`에 셸이 그릴 코드를 담아 돌려준다. 다른 잡과 녹음은 정상적으로 읽힌다.
-- 코드는 `steps[]`를 하나씩 디코드해 **처음 실패한 스텝의 `type`**을 인자로 하는 `CoreMessage.UNSUPPORTED_STEP`이다.
-  어떤 스텝도 지목할 수 없으면 `STEP_FAILED`로 내려간다.
-- `selectDue`는 그런 잡을 절대 넘기지 않고, `claimPurge`는 "업로드가 다 끝났다"의 증거로 삼지 않는다 — 읽을 수 없는
-  스냅샷은 아무것도 증명하지 못하고 파트는 원본 오디오의 유일한 사본이다.
-- **`workflow_json`은 다시 쓰지 않는다.** 행은 더 새로운 앱이 넣은 그대로 남고 `retry()`는 행을 `PENDING`으로
-  되돌리기만 하므로, 앱을 업데이트하면 같은 행이 그대로 디코드되어 원래 의도대로 실행된다.
-- **폐기(2026-09-24)** — 사용자 문서가 없어 잡은 스냅샷(고정 계획)대로 실행되고, 설정 변경은 진행 중 잡을 바꾸지
-  않는다(§5 "고정 처리 설정 도입"). 기록: **단계 정의는 실행 시점의 문서가 이긴다**(2026-09-04). 스냅샷은 잡이 *무엇인지*(어느 워크플로우, 어떤 단계들),
-  문서는 사용자가 *지금 뜻하는 것*이다. 실패 뒤 URL·키·플랜을 고친 사용자는 다음 시도가 그 수정을 쓰길 기대한다
-  (Z Fold7 실기: 대기 중인 전사가 스냅샷의 Free Clova 도메인만 30분간 계속 불렀다). 그래서 `Executor`는 잡을 돌릴 때
-  현재 문서에서 같은 `workflowId`의 워크플로우를 찾아, **같은 `id`·같은 `type`**의 단계는 문서의 정의로 바꿔 끼운다.
-  워크플로우가 지워졌거나, 단계가 빠졌거나 타입이 바뀌었거나, 문서를 읽을 수 없으면 그 단계는 스냅샷 그대로다.
-  단계 순서·존재 여부는 여전히 스냅샷의 것이다(`step_run` 행이 그것이다).
-- 녹음 삭제는 스냅샷을 읽지 않으므로 그대로 된다(§3 녹음 삭제).
-- 셸은 그 잡의 오류 문구로 단계의 `last_error` 대신 `snapshotError`를 쓴다.
+- `toJob` does not throw on a snapshot decode failure. It returns that job alone with `Job.workflow = null`, status
+  **`FAILED`** whatever the row says, and the code for the shell to render in `Job.snapshotError`. Other jobs and
+  recordings read normally.
+- The code is `CoreMessage.UNSUPPORTED_STEP`, found by decoding `steps[]` one by one, with **the `type` of the first
+  step that fails** as its argument. If no step can be singled out, it falls back to `STEP_FAILED`.
+- `selectDue` never hands out such a job, and `claimPurge` does not take it as evidence that "the upload is all done" —
+  an unreadable snapshot proves nothing, and the parts are the only copy of the original audio.
+- **`workflow_json` is never rewritten.** The row stays exactly as the newer app wrote it, and `retry()` only returns
+  the row to `PENDING`, so once the app is updated the same row decodes as is and runs as originally intended.
+- **Retired (2026-09-24)** — With no user document, a job runs according to its snapshot (a fixed plan), and changing
+  settings does not change jobs in progress (§5 "Fixed processing settings"). For the record: **the step definition in
+  the document at run time wins** (2026-09-04). The snapshot is *what* the job is (which workflow, which steps); the
+  document is what the user *means now*. A user who fixed a URL, key or plan after a failure expects the next attempt to
+  use that fix (Z Fold7 device test: a waiting transcription kept calling only the snapshot's Free Clova domain for 30
+  minutes). So when `Executor` runs a job, it looks up the workflow with the same `workflowId` in the current document
+  and swaps in the document's definition for steps with **the same `id` and the same `type`**. If the workflow was
+  deleted, the step is missing or its type changed, or the document cannot be read, that step stays as in the snapshot.
+  The order and presence of steps are still the snapshot's (the `step_run` rows are exactly that).
+- Deleting a recording does not read the snapshot, so it works as usual (§3 Delete recording).
+- The shell uses `snapshotError` instead of the step's `last_error` as the error text for that job.
 
-### Drive 용량 초과 — `NEEDS_SPACE`
+### Drive out of space — `NEEDS_SPACE`
 
-사용자의 Drive가 꽉 차면 업로드는 **재시도로 해결되지 않는다.** 사람이 자리를 비우거나 요금제를 올릴 때까지 몇 번을
-다시 보내도 같은 403이 오고, 백오프 8회를 태우고 나면 Job은 `FAILED`가 되어 "왜 실패했는지"가 재시도 예산 소진
-메시지 뒤에 묻힌다. 그래서 `NEEDS_AUTH` 옆에 같은 성격의 상태를 하나 더 둔다.
+When the user's Drive is full, uploading is **not solved by retrying.** Until a person frees up space or upgrades the
+plan, every resend gets the same 403, and once the 8 backoff attempts are burned the Job becomes `FAILED`, burying "why
+it failed" behind a retry-budget-exhausted message. So next to `NEEDS_AUTH` there is one more state of the same nature.
 
-- **판정**: Drive가 403에 `errors[].reason == "storageQuotaExceeded"`(또는 `message`가 그와 같은 뜻)를 담아 답한
-  경우. 다른 403(권한·스코프 문제)은 `DRIVE_REAUTH`/`STEP_FAILED` 경로다. 판정은 `DriveApi.send`가 **`check`보다
-  먼저** 한다 — resumable 계열은 308·404·5xx를 스스로 읽으려고 `check`를 건너뛰므로 뒤에 두면 꽉 찬 Drive가 평범한
-  비재시도 실패로 내려간다. 그래서 resumable 세션 시작·청크 PUT·multipart·`meta.json` 어느 요청에서 와도 같다.
-- **동작**: 단계는 `NEEDS_SPACE`, Job도 `NEEDS_SPACE`. `attempts`를 **올리지 않고** `next_run_at`도 두지 않는다.
-  `state_json`의 resumable 세션 URI·오프셋은 **지운다** — 세션은 1주면 만료되고, 사용자가 자리를 비운 뒤 다시
-  시작하는 편이 확실하다.
-- **재시도**: `JobService.retry(jobId)`만이 `PENDING`으로 되돌린다. 로그인처럼 자동으로 풀리는 신호가 없으므로(코어는
-  Drive 용량을 폴링하지 않는다) 사용자가 **"다시 시도"**를 눌러야 한다.
-- **알림은 한 번**: 잡 하나가 `NEEDS_SPACE`로 들어갈 때 셸이 알림 1건. 같은 상태의 잡이 이미 있으면 새 알림을 내지
-  않고 기존 알림의 개수만 갱신한다. `NEEDS_AUTH`도 같은 규칙을 쓴다.
-- **원본은 남는다**: `NEEDS_SPACE`는 DONE이 아니므로 보관 규칙(ADR-017)이 파트를 지우지 않는다. 자리가 생기면 그대로
-  이어 올린다. 지워진 것은 재개 상태뿐이고, "Drive에서도 삭제"가 쓰는 `output_json.folderId`는 파킹을 넘겨
-  살아남는다.
-- 코어 메시지: `CoreMessage.DRIVE_STORAGE_FULL`(인자 없음, detail에 Drive가 한 말). 셸 문구는 "Google Drive에 공간이
-  없습니다 — 정리한 뒤 다시 시도하세요"(free some up) + Drive 저장용량 페이지
-  링크(<https://drive.google.com/settings/storage>).
-- **이 판정은 `transcribe`의 Drive 쓰기에도 같이 적용된다**(결과 파일도 Drive에 쓴다).
-- **iCloud**(§3 "저장 위치"): 시스템이 계정 공간 부족(4354)으로 업로드를 거부한 파일이 있으면 같은 파킹이다
-  (`CoreMessage.ICLOUD_STORAGE_FULL`). 셸 문구는 "iCloud에 공간이 없습니다 — 정리한 뒤 다시 시도하세요"이고 링크는 없다.
+- **Detection**: Drive answers 403 with `errors[].reason == "storageQuotaExceeded"` (or a `message` that means the
+  same). Other 403s (permission or scope problems) take the `DRIVE_REAUTH`/`STEP_FAILED` path. `DriveApi.send` does the
+  detection **before `check`** — the resumable family skips `check` to read 308·404·5xx itself, so placing the
+  detection after it would let a full Drive fall through as an ordinary non-retryable failure. That is why it is the
+  same whether it comes from starting a resumable session, a chunk PUT, a multipart request or `meta.json`.
+- **Behavior**: the step goes to `NEEDS_SPACE`, and so does the Job. `attempts` is **not incremented** and no
+  `next_run_at` is set. The resumable session URI and offset in `state_json` are **cleared** — a session expires after 1
+  week, and starting over once the user has freed up space is more reliable.
+- **Retry**: only `JobService.retry(jobId)` returns the job to `PENDING`. There is no signal that clears it on its own,
+  as sign-in does (the core does not poll Drive capacity), so the user has to press **"Retry"**.
+- **One notification**: when a job enters `NEEDS_SPACE`, the shell posts 1 notification. If a job in the same state
+  already exists, it posts no new notification and only updates the count on the existing one. `NEEDS_AUTH` uses the
+  same rule.
+- **The originals stay**: `NEEDS_SPACE` is not DONE, so the retention rule (ADR-017) does not delete the parts. Once
+  there is space, the upload continues where it left off. Only the resume state is cleared; the `output_json.folderId`
+  that "Also delete from Drive" uses survives the parking.
+- Core message: `CoreMessage.DRIVE_STORAGE_FULL` (no arguments; detail holds what Drive said). The shell text is
+  "Google Drive is out of space — free some up and try again" + a link to the Drive storage
+  page (<https://drive.google.com/settings/storage>).
+- **This detection also applies to the Drive writes of `transcribe`** (result files are written to Drive too).
+- **iCloud** (§3 "Storage location"): if the system refused to upload any file because the account is out of space
+  (4354), it is the same parking (`CoreMessage.ICLOUD_STORAGE_FULL`). The shell text is "iCloud is out of space — free
+  some up and try again", with no link.
 
-### 삭제 · 연결 해제 API
+### Delete · disconnect API
 
-정본 규칙은 §3 보관 · 삭제다. 코어가 여는 것은 둘이다.
+The canonical rules are §3 Retention · deletion. The core exposes two calls.
 
 ```kotlin
 suspend fun RecordingRepository.delete(recordingId: String, deleteDrive: Boolean): DeleteResult
 sealed interface DeleteResult {
     data class Deleted(val driveDeleted: Boolean, val driveError: String? = null) : DeleteResult
-    data object Busy : DeleteResult      // 이 녹음의 Job이 RUNNING — 아무것도 지우지 않았다
+    data object Busy : DeleteResult      // a Job for this recording is RUNNING — nothing was deleted
     data object NotFound : DeleteResult
 }
 
@@ -2245,53 +2273,56 @@ suspend fun ReclyCore.disconnect(alsoDeleteRecordings: Boolean): DisconnectResul
 data class DisconnectResult(val deletedRecordings: Int, val busyRecordings: List<String>)
 ```
 
-`disconnect`의 순서: 녹음 삭제(옵션, 한 건씩 `delete`로) → `tokenProvider.invalidate()` →
-`tokens` 비움 → `job`·`step_run` 삭제(`busyRecordings`의
-것은 남김) → `sync_state` 비움 → `drive_folder_cache` 비움. 전부 `Executor.quiesced` 안이다. 녹음 파일과
-`recording`/`part` 행은 옵션이 없으면 남고 **Drive는 절대 건드리지 않는다**. **grant revoke는 코어가 하지
-않는다** — 플랫폼 SDK 호출이라 셸의 몫이고, 셸이 지켜야 하는 `DisconnectPhase`·revoke debt·`DisconnectGate`는
-§3에 있다.
+Order of `disconnect`: delete recordings (optional, one by one with `delete`) → `tokenProvider.invalidate()` →
+clear `tokens` → delete `job`·`step_run` (keeping those of
+`busyRecordings`) → clear `sync_state` → clear `drive_folder_cache`. All of it runs inside `Executor.quiesced`.
+Without the option, recording files and `recording`/`part` rows remain, and **Drive is never touched**. **The core
+does not revoke the grant** — it is a platform SDK call and therefore the shell's job; the `DisconnectPhase`, revoke
+debt and `DisconnectGate` the shell must honor are in §3.
 
-### 사용자가 고칠 수 있는 실패와 그 알림
+### Failures the user can fix, and their notices
 
-"기다리면 낫는 실패"(5xx·네트워크·429)는 조용히 재시도한다. 아래는 **사람이 무언가를 해야만 풀리는** 실패이고, 앱은
-이 목록에 대해서만 사용자를 부른다. 문구는 전부 리소스이고 코어는 `CoreMessage` 키만 준다(§7 규칙 5).
+"Failures that heal if you wait" (5xx, network, 429) are retried quietly. The ones below are failures that **clear only
+when a person does something**, and the app calls on the user only for this list. All text lives in resources, and the
+core gives only `CoreMessage` keys (§7 rule 5).
 
-| 상태 · 코드 | 언제 | 앱이 하는 말 | 사용자가 누르는 것 |
+| State · code | When | What the app says | What the user taps |
 |---|---|---|---|
-| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | 401 재현, Drive grant 소멸, 동의 화면이 필요한데 띄울 화면이 없음 | 목록 배너는 회색 “업로드 대기 N건” + “Drive 연결” 버튼 한 줄. 시스템 알림은 연결 필요 사유와 대기 건수 | 로그인 / Drive 권한 다시 허용 → 성공 시 자동 재개. Android는 앱을 여는 것만으로 다시 허용을 시도한다(§6 Android) |
-| Job `NEEDS_SPACE` (`DRIVE_STORAGE_FULL`) | Drive 403 `storageQuotaExceeded` | "Google Drive에 공간이 없습니다 — 녹음 N건이 기다리는 중" | Drive 저장용량 열기 / 다시 시도 |
-| 단계 `FAILED` (`MISSING_SECRET:{name}`) | 이 기기에 그 이름의 키가 없음 | "이 기기에 `{name}` 키가 없습니다" | 키 입력(설정의 API 키 입력으로 바로 진입) |
-| **폐기(2026-09-24)** 단계 `FAILED` (`INVALID_SECRET:{name}`) — 웹훅 서명 키 전용 | 저장된 값이 서명 키로 못 씀 | "`{name}` 키 값이 올바르지 않습니다" | 키 다시 입력 |
-| 단계 `FAILED` (`AUTH_REJECTED`) | STT provider가 키를 거절(401/403) | "키를 확인하세요" + provider가 한 말 그대로 | 키 다시 입력 |
-| 단계 재시도 중 / `RETRY_BUDGET_SPENT:QUOTA` (`QUOTA`) | provider 할당량·요금(429·402). 429는 `Retry-After`로 조용히 기다리지만, 예산을 다 쓰면 사용자 문제다 | "provider 할당량이 찼습니다 — 결제·한도를 확인하세요" | provider 콘솔 열기 / 다시 시도 |
-| **폐기(2026-09-24)** 단계 `FAILED` (`WEBHOOK_HTTP:{status}`) | 웹훅이 4xx(408·425·429 제외) | "웹훅이 {status}로 거절했습니다 — URL과 서명 시크릿을 확인하세요" | 워크플로우 편집 열기 / 다시 시도 |
+| Job `NEEDS_AUTH` (`NEEDS_AUTH`·`DRIVE_REAUTH`·`DRIVE_CONSENT_REQUIRED`) | a repeated 401, the Drive grant is gone, a consent screen is needed but there is no screen to show it on | The list banner is one gray line: “Uploads waiting: N” + a “Connect Drive” button. The system notification gives the reason a connection is needed and the number of waiting items | Sign in / allow Drive permission again → resumes automatically on success. On Android, just opening the app attempts to allow it again (§6 Android) |
+| Job `NEEDS_SPACE` (`DRIVE_STORAGE_FULL`) | Drive 403 `storageQuotaExceeded` | "Google Drive is out of space — N recordings are waiting" | Open Drive storage / Retry |
+| Step `FAILED` (`MISSING_SECRET:{name}`) | this device has no key with that name | "This device has no `{name}` key" | Enter the key (goes straight to the API key entry in settings) |
+| **Retired (2026-09-24)** Step `FAILED` (`INVALID_SECRET:{name}`) — webhook signing keys only | the stored value cannot be used as a signing key | "The value of the `{name}` key is invalid" | Enter the key again |
+| Step `FAILED` (`AUTH_REJECTED`) | the STT provider rejected the key (401/403) | "Check your key" + exactly what the provider said | Enter the key again |
+| Step retrying / `RETRY_BUDGET_SPENT:QUOTA` (`QUOTA`) | provider quota or billing (429·402). A 429 waits quietly according to `Retry-After`, but once the budget is spent it is the user's problem | "The provider is out of quota — check its limits and billing" | Open the provider console / Retry |
+| **Retired (2026-09-24)** Step `FAILED` (`WEBHOOK_HTTP:{status}`) | the webhook returned 4xx (except 408·425·429) | "The webhook rejected it with {status} — check the URL and the signing secret" | Open the workflow editor / Retry |
 
-규칙:
+Rules:
 
-1. **알림은 상태당 하나로 접는다.** 잡 5건이 같은 이유로 막혀도 알림은 1건이고 본문의 개수만 오른다. 같은 이유의
-   알림을 다시 내는 것은 상태가 풀렸다가 다시 막혔을 때뿐이다.
-2. **탭하면 고칠 수 있는 화면으로 간다** — 로그인 화면, 설정의 API 키 입력. "앱 열기"로 끝내지 않는다.
-   모든 사유에는 갈 곳이 있다.
-3. **상태가 풀리면 알림을 내린다.** 그 이유가 큐에서 사라지면 알림도 내려간다.
-4. **재시도로 낫는 실패는 알리지 않는다.** 목록 행의 상태 배지로만 보인다.
-5. **Drive 연결 안내는 목록 상단 한 곳에서 제공한다.** 연결 설명·상태 배지를 중복하지 않고 기존 보조 글꼴·색상을 사용한다. 대기 작업이 없으면 목록의 연결 안내를 숨기고 설정에서 연결한다. 저장 공간 부족·키 오류 등 실제 실패는 기존 사유·해결 동작을 유지한다.
+1. **Notifications collapse to one per state.** Even if 5 jobs are blocked for the same reason, there is 1
+   notification and only the count in its body goes up. A notification for the same reason is posted again only when
+   the state cleared and then got blocked again.
+2. **A tap goes to the screen that can fix it** — the sign-in screen, the API key entry in settings. It does not end at
+   "Open app". Every reason has a place to go.
+3. **When the state clears, the notification is removed.** When that reason disappears from the queue, the notification
+   goes away too.
+4. **Failures that retrying heals are not notified.** They show only as the status badge on the list row.
+5. **Drive connection guidance is offered in one place, at the top of the list.** It does not duplicate the connection explanation or status badges, and it uses the existing secondary font and colors. When there is no waiting work, the list hides the connection guidance and the user connects in settings. Real failures such as running out of storage or key errors keep their existing reasons and fix actions.
 
-| 플랫폼 | 표면 |
+| Platform | Surface |
 |---|---|
-| Android 폰 | 알림 채널 `jobs`(녹음 FGS 채널과 별개, **무음 · 우선순위 기본**). 탭 → 해당 화면. 목록 상단 배너도 같은 사유(Drive 연결은 위의 간결한 형식) |
-| 갤럭시 워치 | 없음 — 워치는 Job을 만들지 않는다(ADR-002). 전송 실패만 워치 화면 한 줄 |
-| **iPhone** | `UNUserNotificationCenter` 로컬 알림 + 목록 상단 배너. 권한이 없으면 **배너만** |
-| Apple Watch | 없음(iPhone과 같은 이유) |
-| **macOS** | 메뉴바 아이콘 오류 상태 + 팝오버 상단 배너 + `UNUserNotificationCenter` 알림(미팅 감지와 같은 경로) |
-| Windows | 트레이 아이콘 오류 상태 + `TrayIcon.displayMessage` 풍선 + 트레이 팝업 상단 배너 |
+| Android phone | notification channel `jobs` (separate from the recording FGS channel, **silent · default priority**). Tap → the matching screen. The banner at the top of the list shows the same reasons (Drive connection in the compact form above) |
+| Galaxy Watch | none — the watch does not create Jobs (ADR-002). Only transfer failures, as one line on the watch screen |
+| **iPhone** | `UNUserNotificationCenter` local notifications + a banner at the top of the list. Without permission, **banner only** |
+| Apple Watch | none (same reason as iPhone) |
+| **macOS** | menu bar icon error state + a banner at the top of the popover + `UNUserNotificationCenter` notifications (the same path as meeting detection) |
+| Windows | tray icon error state + a `TrayIcon.displayMessage` balloon + a banner at the top of the tray popup |
 
 ### StepRunner
 
 ```kotlin
 interface StepRunner {
     val type: String
-    /** 성공하면 output, 실패하면 StepFailure(retryable, reason). state 저장은 ctx.saveState()로 수시로. */
+    /** Output on success, StepFailure(retryable, reason) on failure. Save state often with ctx.saveState(). */
     suspend fun run(ctx: StepContext): StepOutput
 }
 class StepContext(val job: Job, val step: Step, val recording: RecordingMeta, val prior: Map<String, StepOutput>,
@@ -2300,21 +2331,22 @@ class StepContext(val job: Job, val step: Step, val recording: RecordingMeta, va
 sealed interface StepOutcome { data class Done(val output: StepOutput); data class Waiting(val retryAfterSec: Int, val state: JsonObject) }
 ```
 
-실패는 `StepFailure`를 던진다.
+A failure throws `StepFailure`.
 
-- `DriveUploadRunner`: 폴더 해석(캐시 → `files.list` → 생성) → 파트별 resumable 세션(≤5 MB면 multipart 단일 요청) →
-  md5 검증 → `meta.json` 마지막 → output `{folderId, webViewLink, files[]}`.
-- `WebhookRunner` — **폐기(2026-09-24)**. 기록: `prior`에서 가장 최근 `drive.upload` output을 찾아 payload 구성 → 서명 → POST → 응답 규칙(§4).
-- `TranscribeRunner`: `deps.audio.concat`로 입력 트랙 remux → `SttProvider.submit` → `Waiting(30)` 반복 → `poll`
-  완료 시 `transcript.json/.txt`로 정규화 → 로컬 사본 + Drive 쓰기(`prior`의 `drive.upload` 폴더).
-- **`StepOutcome.Waiting(retryAfterSec, state)`** — `run`이 이것을 돌려주면 Executor는 `attempts`를 올리지 않고
-  단계를 `PENDING`으로 둔 채 Job을 `WAITING(next_run_at = now + retryAfterSec)`으로 옮기고 `state`를 저장한다.
+- `DriveUploadRunner`: resolve the folder (cache → `files.list` → create) → a resumable session per part (a single
+  multipart request if ≤5 MB) → md5 verification → `meta.json` last → output `{folderId, webViewLink, files[]}`.
+- `WebhookRunner` — **Retired (2026-09-24)**. For the record: find the most recent `drive.upload` output in `prior` and build the payload → sign → POST → response rules (§4).
+- `TranscribeRunner`: remux the input tracks with `deps.audio.concat` → `SttProvider.submit` → repeat `Waiting(30)` →
+  when `poll` completes, normalize to `transcript.json/.txt` → local copy + Drive write (the `drive.upload` folder from
+  `prior`).
+- **`StepOutcome.Waiting(retryAfterSec, state)`** — when `run` returns this, the Executor does not increment `attempts`,
+  leaves the step `PENDING`, moves the Job to `WAITING(next_run_at = now + retryAfterSec)` and saves `state`.
 
-"앞 단계의 마지막 X 출력"을 찾는 것은 `priorOutput` 하나이고 러너들이 그것을 쓴다.
+Finding "the last X output of an earlier step" is done by `priorOutput` alone, and the runners use it.
 
 ### ResumableUploadPlanner (ADR-015)
 
-순수 함수 집합. 네트워크를 모른다.
+A set of pure functions. It knows nothing about the network.
 
 ```kotlin
 object ResumableUploadPlanner {
@@ -2325,908 +2357,907 @@ object ResumableUploadPlanner {
 }
 ```
 
-`Transport`는 `HttpPlan`을 실행해 `(status, headers, body)`를 돌려준다. 기본 구현은 Ktor. Apple 셸은 청크 PUT을
-배경 `URLSession` 업로드 태스크로 보내는 구현을 제공한다(청크를 임시 파일로 잘라 `fromFile`).
+`Transport` executes an `HttpPlan` and returns `(status, headers, body)`. The default implementation is Ktor. The Apple
+shell provides an implementation that sends chunk PUTs as background `URLSession` upload tasks (it cuts each chunk into
+a temporary file and uses `fromFile`).
 
-청크 크기: 모바일 1 MiB(256 KiB 배수), 데스크톱 8 MiB. 5xx·네트워크 오류 → `queryRequest`로 오프셋 재확인 후
-이어감. 404 → 세션 재시작(기존 부분 업로드는 Drive가 버린다). 세션은 1주 유효 — `state_json`의 세션이 7일 지났으면
-재시작한다.
+Chunk size: 1 MiB on mobile (a multiple of 256 KiB), 8 MiB on desktop. 5xx or a network error → recheck the offset with
+`queryRequest` and continue. 404 → restart the session (Drive discards the earlier partial upload). A session is valid
+for 1 week — if the session in `state_json` is older than 7 days, restart.
 
-### 동시성 · 스레딩
+### Concurrency · threading
 
-- 코어는 `suspend` API만 노출한다. 디스패처는 셸이 주입한다(`CoreDeps.io`).
-- DB 접근은 저장소별 `Mutex`로 직렬화한다(셸이 멀티스레드 디스패처를 넘겨도 read-modify-write가 겹치지 않도록;
-  SQLDelight 드라이버가 스레드 안전하지 않은 플랫폼 대비).
-- `runDueJobs`는 재진입 금지 — `Mutex.tryLock`, 이미 실행 중이면 즉시 반환한다.
-- 값과 메타 행처럼 **서로 다른 저장소에 걸친 한 쌍의 전이는 하나의 락 안에서** 일어난다(§5 `SecretSyncStore`).
+- The core exposes only `suspend` APIs. The shell injects the dispatcher (`CoreDeps.io`).
+- DB access is serialized with a per-store `Mutex` (so that read-modify-write sequences do not overlap even if the
+  shell passes a multithreaded dispatcher; a guard for platforms where the SQLDelight driver is not thread-safe).
+- `runDueJobs` is not reentrant — `Mutex.tryLock`; if it is already running, it returns immediately.
+- **A pair of transitions that spans different stores happens inside one lock**, as with a value and its meta row
+  (§5 `SecretSyncStore`).
 
-### 테스트 (전부 JVM, 기기 없이)
+### Tests (all JVM, no device)
 
-| 영역 | 테스트 |
+| Area | Tests |
 |---|---|
-| 파서·검증 — **폐기(2026-09-24)** | `spec/examples/workflows.json` 통과; 잘못된 문서 픽스처(중복 step id, 미지 변수, http URL, 11개 step…) 각각 지정된 오류 |
-| 템플릿 | 변수 치환, 타임존 변환, 경로 안전 치환 |
-| 선택 규칙 — **폐기(2026-09-24)** | 4단계 규칙 표 기반 |
-| 백오프 | 8회 시퀀스 상한·지터 범위 |
-| ResumableUploadPlanner | 200/308/404/5xx/401 시나리오, 청크 경계, 오프셋 재확인 |
-| DriveUploadRunner | Ktor `MockEngine`으로 전체 흐름: 폴더 생성 → 3파트 업로드 중 2번째에서 5xx → 재개 → md5 불일치 시 재업로드 → meta 마지막 |
-| WebhookRunner — **폐기(2026-09-24)** | Standard Webhooks 공식 테스트 벡터로 서명 검증; 429 `Retry-After`; 4xx 즉시 실패; 앞 단계 output 반영 |
-| Executor | 프로세스 재시작 시뮬레이션(DB만 남기고 새 Executor) 후 중단 지점 재개; `abort`/`continue`; `NEEDS_AUTH` 전이; quiesce 순서 |
-| Sync | pull/push/merge 케이스: **원격만 변경**, 로컬만 변경, **양쪽 변경 → id별 LWW**, 삭제 휴리스틱, 깨진 원격, Outdated schema 마이그레이션 후 push |
-| SecretSync | PBKDF2·AES-GCM 실제 연산, AAD 위조, tombstone·삭제 워터마크, 여분 파일, fail-closed |
-| **스키마 마이그레이션** (`MigrationTest`) | 버전 1 DDL로 만든 DB → migrate 후 기존 행 보존 + 새 테이블 사용 |
-| 잡 스냅샷 (`JobSnapshotTest`) | 미지 스텝 타입이 그 잡만 FAILED로 격리, 목록·`selectDue`·`claimPurge` 영향 없음 |
-| TransferReceiver | sha256 불일치 → nack; 메타 없는 고아 파트 24h 삭제 |
-| Drive 용량 초과 (`DriveQuotaTest`) | 403 `storageQuotaExceeded` → `NEEDS_SPACE`(attempts 그대로, `next_run_at` null, `state_json` 비움), 이후 `runDueJobs`가 다시 고르지 않음, `retry()` 후 완주; 다른 403은 기존 경로 |
-| 삭제 (`RecordingDeleteTest`) | 네 테이블 삭제, `RUNNING` → `Busy`, `deleteDrive` 실패해도 로컬은 지워지고 `driveError`가 담김, 삭제 vs `claimRunning` 경쟁, 커밋 시점 취소 |
-| 다른 기기의 녹음 (`RemoteRecordingsTest`) | 폴더 나열 → 입양(파트 `deleted=1`+`drive_file_id`, `meta.json` 기록), 시작 시각순 정렬, 두 번째 조회는 요청 1번, meta 없는 폴더는 보류, 내 행은 덮지 않음, 폴더가 사라진 입양 행만 삭제, 같은 id 폴더 둘·재실행 폴더로 이동(옛 폴더 소멸·새 폴더 완료 둘 다), id 불일치·ULID 아님·파트 파일명 위조 거절, 계정 없음·스로틀·조회 실패, "로컬만 삭제"는 되살아나지 않음(+폴더 소멸 시 기록 정리, `clearIgnored` 후 재입양, 큐가 비워진 뒤에도 `drive_folder_id`로, `adopt`가 트랜잭션에서 거부), `uploaded` 참·`enqueue`=`PartsPurged`, 재생이 file id로 받음, 7일 뒤 스윕, Drive 삭제가 `drive_folder_id` 사용, 제목: rename→description+meta push, 입양 행도, 실패 시 pending 후 다음 조회, description→행 적용(pending이 이김), 빈 description 무시 |
-| 연결 해제 (`ReclyCoreTest`) | 지우는 순서, 녹음·`recording` 행 보존, `busyRecordings`, Drive `files.delete` 미호출 |
+| Parser · validation — **Retired (2026-09-24)** | `spec/examples/workflows.json` passes; each invalid-document fixture (duplicate step id, unknown variable, http URL, 11 steps…) gives its specified error |
+| Template | variable substitution, time zone conversion, path-safe substitution |
+| Selection rules — **Retired (2026-09-24)** | driven by the 4-step rule table |
+| Backoff | 8-attempt sequence cap, jitter range |
+| ResumableUploadPlanner | 200/308/404/5xx/401 scenarios, chunk boundaries, offset recheck |
+| DriveUploadRunner | full flow with Ktor `MockEngine`: create the folder → 5xx on the 2nd of 3 part uploads → resume → re-upload on md5 mismatch → meta last |
+| WebhookRunner — **Retired (2026-09-24)** | signature verification with the official Standard Webhooks test vectors; 429 `Retry-After`; immediate failure on 4xx; the earlier step's output is reflected |
+| Executor | resume from the interruption point after a simulated process restart (keep only the DB, new Executor); `abort`/`continue`; `NEEDS_AUTH` transition; quiesce order |
+| Sync | pull/push/merge cases: **remote-only change**, local-only change, **change on both sides → LWW per id**, deletion heuristics, broken remote, push after an Outdated schema migration |
+| SecretSync | real PBKDF2·AES-GCM operations, forged AAD, tombstones and the deletion watermark, extra files, fail-closed |
+| **Schema migrations** (`MigrationTest`) | DB built with the version 1 DDL → after migrate, existing rows preserved + new tables used |
+| Job snapshot (`JobSnapshotTest`) | an unknown step type isolates only that job as FAILED; no effect on the list, `selectDue` or `claimPurge` |
+| TransferReceiver | sha256 mismatch → nack; orphan parts without meta deleted after 24h |
+| Drive out of space (`DriveQuotaTest`) | 403 `storageQuotaExceeded` → `NEEDS_SPACE` (attempts unchanged, `next_run_at` null, `state_json` cleared), afterwards `runDueJobs` does not pick it again, completes after `retry()`; other 403s take the existing path |
+| Delete (`RecordingDeleteTest`) | the four tables deleted, `RUNNING` → `Busy`, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time |
+| Recordings from other devices (`RemoteRecordingsTest`) | list folders → adopt (parts `deleted=1`+`drive_file_id`, `meta.json` written), sorted by start time, the second fetch makes 1 request, folders without meta are held back, own rows are not overwritten, only adopted rows whose folder vanished are deleted, two folders with the same id · move to a rerun folder (both the old folder vanishing and the new folder completing), rejects id mismatch · non-ULID · forged part file names, no account · throttle · fetch failure, "Delete local only" does not come back (+ the record is cleaned up when the folder vanishes, re-adoption after `clearIgnored`, via `drive_folder_id` even after the queue is emptied, `adopt` rejects inside the transaction), `uploaded` true · `enqueue`=`PartsPurged`, playback fetches by file id, sweep after 7 days, Drive deletion uses `drive_folder_id`, titles: rename→description+meta push, adopted rows too, pending on failure then the next fetch, description→applied to the row (pending wins), empty description ignored |
+| Disconnect (`ReclyCoreTest`) | deletion order, recordings and `recording` rows kept, `busyRecordings`, Drive `files.delete` not called |
 
-`spec/` 스키마와 코어 직렬화 모델이 어긋나지 않도록, 테스트에서 예제 JSON을 파싱 → 직렬화 → 원본과 구조 비교한다.
+So that the `spec/` schemas and the core's serialization models do not drift apart, the tests parse the example JSON →
+serialize it → compare its structure with the original.
 
 ---
 
-## 11. Android·Wear (구 docs/11)
+## 11. Android · Wear (formerly docs/11)
 
-대상: Wear OS 6/7(API 36/37) 갤럭시 워치4 이상, Android 폰 API 34+. `minSdk 34`, `targetSdk 36`. 패키지명·서명키는
-폰·워치 동일(Play 요구).
+Targets: Wear OS 6/7 (API 36/37) on Galaxy Watch4 and later, Android phones on API 34+. `minSdk 34`, `targetSdk 36`. The package name and
+signing key are the same on phone and watch (a Play requirement).
 
-### 모듈
+### Modules
 
 ```
 android/
-  recording/   라이브러리. SegmentedRecorder(MediaRecorder), RecorderService(FGS microphone), SilenceMonitor,
-               AndroidSecureStore · deviceId · SystemClock (폰·워치 공용)
-  datalayer/   폰↔워치 경로·JSON 계약 한 벌
-  app/         폰 앱. Compose. 녹음 처리 설정, 녹음, 실행, 인증, Data Layer 수신
-  wear/        워치 앱. Wear Compose. 녹음, 전송, 타일, Ongoing Activity
+  recording/   Library. SegmentedRecorder(MediaRecorder), RecorderService(FGS microphone), SilenceMonitor,
+               AndroidSecureStore · deviceId · SystemClock (shared by phone and watch)
+  datalayer/   One copy of the phone↔watch paths and JSON contract
+  app/         Phone app. Compose. Recording processing settings, recording, running jobs, auth, Data Layer receiving
+  wear/        Watch app. Wear Compose. Recording, transfer, tile, Ongoing Activity
 ```
 
 ### `:android:recording`
 
-- 폰·Galaxy Watch는 **마이크만** 녹음한다. 시스템 오디오 캡처는 macOS·Windows의 회의 모드에만 있다.
+- The phone and the Galaxy Watch record **the microphone only**. System audio capture exists only in the meeting mode of macOS and Windows.
 - `SegmentedRecorder`
-  - `MediaRecorder`: `AudioSource.MIC`, `OutputFormat.MPEG_4`, `AudioEncoder.AAC`, 16 kHz(미지원 시 44.1 kHz 폴백 후
-    메타 기록), 모노, 32 kbps.
-  - 세그먼트: `setMaxFileSize(segmentSec × bitrate/8 × 1.07)` + 미리 `setNextOutputFile(nextFile)`;
-    `MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED`에서 이전 파트 확정(sha256 계산은 IO 스레드) →
-    `RecordingRepository.addPart`. `setMaxDuration`은 `MAX_DURATION_REACHED`에서 녹음을 **정지**시키고
-    `MAX_DURATION_APPROACHING`은 공개 SDK에 없으므로 쓰지 않는다.
-  - `setPrivacySensitive(true)`는 `setOutputFormat` **이전**에 호출해야 한다(이후 호출 시 API 36에서
-    `IllegalStateException`).
-- `MicrophoneRouting`: 유선·USB 입력 → Bluetooth HFP/BLE 헤드셋 → OS 기본 입력 순으로
-  `MediaRecorder.setPreferredDevice`를 요청한다. 같은 종류라면 실제 사용 중인 입력을 유지한다.
-  장치 연결·해제/라우팅 알림은 250 ms 단위로 합치고 녹음 중 1초마다 실제 `routedDevice`를 확인한다.
-  요청이 거절되거나 5초 안에 반영되지 않으면 OS 기본 입력으로 돌아가며, 거절된 장치는 재연결 시 다시 시도한다.
-  벤더 전용 입력은 OS 선택을 따른다. 입력 전환을 위해 `MediaRecorder`나 세그먼트 파일을 다시 만들지 않는다.
-  `setCommunicationDevice`·SCO 시작/종료·통화 모드·재생 캡처 API는 사용하지 않는다.
-  라우트 정보가 없는 것만으로 녹음을 종료하지 않고 진단 로그를 남긴다. 실제 녹음기 오류는 기존 저장·종료 경로로 처리한다.
-- `SilenceMonitor`: `AudioManager.registerAudioRecordingCallback` — `isClientSilenced` 전이를 `silenced` 구간으로
-  기록. 종료 뒤 도착한 이전 콜백은 무시한다.
-- `RecorderService`: `foregroundServiceType="microphone"`, 알림 + `OngoingActivity`(워치), 액션: 정지. 시작은 반드시
-  보이는 액티비티·타일·알림 액션에서(while-in-use 규칙). 정지 시 **즉시** `finalize`(제목 null) → 폰 UI는 그 뒤에 제목
-  다이얼로그(`updateTitle`) → `jobs.enqueue`; 알림의 정지 액션은 바로 enqueue. 워치면 `TransferQueue.add`. 중복
-  정지는 무시하고, finalize·enqueue는 서비스 수명과 무관한 스코프에서 끝까지 실행한다.
-- `RecordingRecovery.reconcile()`: 앱 시작과 새 녹음 시작 전에 `status = recording`인 행(워치에서 받는 중인 행은
-  제외, §3 "워치 → 폰 전송 계약")을 찾아 디스크의 미등록 파트를 등록·finalize하고, finalize됐지만 처리되지 않은
-  녹음을 `RecorderHost.onRecordingReady(recordingId, enqueue=true)`로 넘긴다(프로세스 사망·다이얼로그 중 종료 복구,
+  - `MediaRecorder`: `AudioSource.MIC`, `OutputFormat.MPEG_4`, `AudioEncoder.AAC`, 16 kHz (if unsupported, falls back to 44.1 kHz and
+    records that in the meta), mono, 32 kbps.
+  - Segments: `setMaxFileSize(segmentSec × bitrate/8 × 1.07)` + `setNextOutputFile(nextFile)` set in advance;
+    on `MEDIA_RECORDER_INFO_NEXT_OUTPUT_FILE_STARTED` the previous part is finalized (sha256 computed on the IO thread) →
+    `RecordingRepository.addPart`. `setMaxDuration` **stops** the recording at `MAX_DURATION_REACHED`, and
+    `MAX_DURATION_APPROACHING` is not in the public SDK, so it is not used.
+  - `setPrivacySensitive(true)` must be called **before** `setOutputFormat` (calling it afterwards throws
+    `IllegalStateException` on API 36).
+- `MicrophoneRouting`: requests `MediaRecorder.setPreferredDevice` in the order wired/USB input → Bluetooth HFP/BLE headset →
+  OS default input. Within the same kind, it keeps the input actually in use.
+  Device connect/disconnect and routing notifications are coalesced in 250 ms windows, and during recording the actual `routedDevice` is checked every second.
+  If the request is refused or not applied within 5 seconds, it goes back to the OS default input, and a refused device is tried again when it reconnects.
+  Vendor-specific inputs follow the OS choice. Switching inputs never re-creates the `MediaRecorder` or the segment file.
+  `setCommunicationDevice`, SCO start/stop, call mode and playback capture APIs are not used.
+  Missing route information alone does not end the recording; it leaves a diagnostic log. Real recorder errors go through the existing save and stop path.
+- `SilenceMonitor`: `AudioManager.registerAudioRecordingCallback` — records `isClientSilenced` transitions as `silenced`
+  ranges. Earlier callbacks that arrive after the recording ends are ignored.
+- `RecorderService`: `foregroundServiceType="microphone"`, notification + `OngoingActivity` (watch), action: stop. A start must always come
+  from a visible activity, tile or notification action (the while-in-use rule). On stop it calls `finalize` (title null) **immediately** → the phone UI then shows the title
+  dialog (`updateTitle`) → `jobs.enqueue`; the notification's stop action enqueues directly. On the watch, `TransferQueue.add`. A duplicate
+  stop is ignored, and finalize and enqueue run to completion in a scope independent of the service's lifetime.
+- `RecordingRecovery.reconcile()`: at app start and before a new recording starts, finds rows with `status = recording` (except rows still being
+  received from the watch, §3 "Watch → phone transfer contract"), registers and finalizes the unregistered parts on disk, and hands recordings that were finalized but not processed
+  to `RecorderHost.onRecordingReady(recordingId, enqueue=true)` (recovery from process death or from termination during the dialog,
   §3).
-- **enqueue 정책은 호스트가 정한다**: `RecorderService`와 `RecordingRecovery`는 `core.enqueue`를 직접 부르지 않고
-  finalize 뒤 `RecorderHost.onRecordingReady(recordingId, enqueue)`를 호출한다. 폰 호스트는 `enqueue`면
-  `core.enqueue` + `onJobsDue`, 아니면 제목 다이얼로그가 나중에 enqueue. 워치 호스트는 플래그와 무관하게
-  `TransferQueue.add` — 워치는 Job을 만들지 않는다(ADR-002).
+- **The host decides the enqueue policy**: `RecorderService` and `RecordingRecovery` do not call `core.enqueue` directly; after
+  finalize they call `RecorderHost.onRecordingReady(recordingId, enqueue)`. The phone host does
+  `core.enqueue` + `onJobsDue` when `enqueue` is set; otherwise the title dialog enqueues later. The watch host calls
+  `TransferQueue.add` regardless of the flag — the watch does not create Jobs (ADR-002).
 
-### 폰 `:android:app`
+### Phone `:android:app`
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| A1 | 프로젝트 골격, `:core` 의존, DI, DataStore, `ReclyCore` 조립 |
-| A2 | 인증: Credential Manager 로그인 + `AuthorizationClient`(drive.file), `TokenProvider`, 보안 저장 |
-| A3 | 녹음 화면 + `RecorderService` 연결, ~~워크플로우 선택 시트~~(폐기 2026-09-24), 정지 후 제목·인원 입력(선택) |
-| A4 | 녹음 목록: 상태(녹음 중/대기/업로드 중 n%/완료/실패/인증 필요/공간 없음), 수동 실행·삭제 |
-| A5 | `WorkflowWorker`: `OneTimeWorkRequest`(유니크 `rec-jobs`, `NetworkType.CONNECTED`), `runDueJobs()` 호출, 실패 시 `Result.retry`(주기 인스턴스는 상한 뒤 success — 6h 보험이 죽지 않게); **매 패스 후 후속 실행 재계산**: WAITING의 `nextRunAt`과 PENDING(즉시) 중 최소로 `rec-jobs-next`(REPLACE, 과거면 지연 0) 하나를 무장, `alreadyRunning`이면 타이머를 건드리지 않고 60초 뒤 후속; enqueue 시에도 `rec-jobs-next` 0초 무장; 옛 "지금 올리기"가 쓰던 core `retry`(WAITING 포함) + `setExpedited`는 "다시 시도"가 그대로 쓴다; 설정 "Wi-Fi에서만" 변경 시 `rec-jobs-next`·`rec-jobs-periodic`을 새 제약으로 재무장(`rec-jobs`는 KEEP — 실행 중 패스를 취소하면 재시도 예산이 소모된다; 이미 큐에 있던 패스 1회는 옛 제약으로 돌 수 있다) |
-| A6 | **폐기(2026-09-24)** — 워크플로우 편집 UI: 목록(행마다 "수정"·"사용"·삭제, 사용 중인 행은 배지), 이름/최소 길이, 단계 순서 편집(드래그), `drive.upload` 폴더 템플릿, `webhook` URL/시크릿, `transcribe` 폼과 provider 고지, 이 기기에 없는 시크릿 경고, 키 관리(값은 기기별, §5). 쓰기 규칙: 모든 문서 변경은 뮤텍스 안에서 `current()`를 다시 읽어 적용·저장(전체 문서 저장 경쟁 방지); 편집기는 연 시점의 `updatedAt`을 기억해 다른 창의 저장으로 바뀌었으면 저장을 거부하고 "다시 열기"; 시크릿 복사는 클립보드 민감 플래그 |
-| A7 | **폐기(2026-09-24)** — 설정의 워크플로우 내보내기/가져오기(§5): SAF `CREATE_DOCUMENT`(기본 이름 `recly-workflows.json`)·`OPEN_DOCUMENT`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
-| A8 | Data Layer 수신: `WearableListenerService`(`ChannelClient.onChannelOpened` → `receiveFile`, 경로 `/rec/part/…`·`/rec/meta/…`), sha256 검증, `MessageClient` ack `/rec/ack`·`/rec/ack-meta`, 메타 수신 시 등록 + enqueue + `onJobsDue`; ~~워크플로우 요약을 `DataClient` `/rec/workflows`(urgent)로 게시~~(폐기 2026-09-24); `rec_phone` capability 선언 |
-| A9 | 진입점: 빠른 설정 타일, 홈 위젯(시작/정지), 앱 단축. 타일·위젯에서 시작할 때 FGS 백그라운드 시작 예외를 **쓰거나 포기하거나** 둘 중 하나이지, 조용히 실패하지 않는다 |
-| A10 | 설정: Google Drive 연결 상태·해제 동작, 언어, Wi-Fi 전용, 동의 리마인더, **로그 내보내기** |
-| A11 | Play 등록: Wear OS 폼팩터 포함, 스크린샷, 데이터 안전 양식("수집 없음") |
+| A1 | Project skeleton, `:core` dependency, DI, DataStore, `ReclyCore` assembly |
+| A2 | Auth: Credential Manager sign-in + `AuthorizationClient` (drive.file), `TokenProvider`, secure storage |
+| A3 | Recording screen + `RecorderService` hookup, ~~workflow picker sheet~~ (retired 2026-09-24), title and participant count input after stop (optional) |
+| A4 | Recording list: state (recording/waiting/uploading n%/done/failed/sign-in needed/out of space), manual run and delete |
+| A5 | `WorkflowWorker`: `OneTimeWorkRequest` (unique `rec-jobs`, `NetworkType.CONNECTED`), calls `runDueJobs()`, `Result.retry` on failure (the periodic instance returns success after the cap — so the 6h safety net does not die); **after every pass, the follow-up run is recomputed**: the minimum of WAITING's `nextRunAt` and PENDING (immediate) arms a single `rec-jobs-next` (REPLACE, delay 0 if in the past); if `alreadyRunning`, the timer is left alone and a follow-up comes 60 seconds later; enqueue also arms `rec-jobs-next` at 0 seconds; the core `retry` (WAITING included) + `setExpedited` that the old "Upload now" used is used unchanged by "Retry"; changing the "Upload on Wi-Fi only" setting re-arms `rec-jobs-next` and `rec-jobs-periodic` with the new constraint (`rec-jobs` is KEEP — cancelling a running pass uses up retry budget; one pass already in the queue may run under the old constraint) |
+| A6 | **Retired (2026-09-24)** — workflow editing UI: list ("Edit" · "Use" · delete on each row, a badge on the row in use), name/minimum length, step order editing (drag), `drive.upload` folder template, `webhook` URL/secret, `transcribe` form and provider notice, a warning for secrets missing on this device, key management (values are per device, §5). Write rules: every document change re-reads `current()` inside the mutex, then applies and saves (prevents races between whole-document saves); the editor remembers the `updatedAt` from when it was opened, and if a save from another window changed it, it refuses to save and offers "Reopen"; copying a secret sets the clipboard sensitive flag |
+| A7 | **Retired (2026-09-24)** — workflow export/import in settings (§5): SAF `CREATE_DOCUMENT` (default name `recly-workflows.json`) · `OPEN_DOCUMENT`, import applies after a replace confirmation, a note that keys are not included in the file |
+| A8 | Data Layer receiving: `WearableListenerService` (`ChannelClient.onChannelOpened` → `receiveFile`, paths `/rec/part/…` · `/rec/meta/…`), sha256 verification, `MessageClient` ack `/rec/ack` · `/rec/ack-meta`, on meta receipt register + enqueue + `onJobsDue`; ~~publish the workflow summary on `DataClient` `/rec/workflows` (urgent)~~ (retired 2026-09-24); declares the `rec_phone` capability |
+| A9 | Entry points: Quick Settings tile, home widget (start/stop), app shortcuts. When starting from a tile or widget, the FGS background-start exception is either **used or given up** — it never fails silently |
+| A10 | Settings: Google Drive connection state and disconnect action, language, Wi-Fi only, consent reminder, **log export** |
+| A11 | Play listing: Wear OS form factor included, screenshots, Data safety form ("No data collected") |
 
-### 워치 `:android:wear`
+### Watch `:android:wear`
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| W1 | 골격: Wear Compose M3, `standalone=false`(폰 앱 필수), `RecorderService` 재사용 |
-| W2 | 메인 화면: 큰 시작/정지 버튼, ~~워크플로우 선택(`DataClient`로 받은 요약, 워치에서 고르지 않았으면 **"폰의 워크플로우"**(en `Phone's workflow`) — 두 워치 모두 같은 말이다)~~(폐기 2026-09-24), 경과 시간, 전송 대기 n개(폰을 찾아 넘기는 중이면 `전송 중 n개`(en `Sending n`) — 패스가 채널을 연 동안만이다, 2026-09-04). 화면은 둘뿐이고 내비게이션 라이브러리가 없다 — 워치에서의 여정은 "녹음"뿐이다 |
-| W3 | `OngoingActivity`(Wear OS 6) / Live Updates(7): 워치페이스 칩, 탭하면 앱 |
-| W4 | `TransferQueue`: `CapabilityClient`로 폰 노드 탐색, `ChannelClient.openChannel` → `sendFile` 파트별, ack 대기(타임아웃 5분), ack 시 삭제, 실패·미연결 시 큐 유지, 연결 이벤트에서 재시도. 판정 기준은 **"폰 꺼진 채 녹음 → 폰 켜면 자동 전송 완료"**이고, 그때까지 워치 화면은 "폰이 아직 갖고 있지 않다"를 정직하게 말한다 |
-| W5 | 진입점: 타일(`launchAction`), 컴플리케이션(상태), **두 번째 런처 항목 "Recly 녹음"**(`QuickStartActivity` — 삼성 "홈 키 두 번 누르기" 설정은 앱만 고를 수 있고 엑스트라를 못 넘기므로, 이 항목이 자동 시작 엑스트라를 붙여 MainActivity로 넘기고 사라진다), **설정 안내 화면**("홈 키 두 번 → 녹음"). **"타일 탭 → 즉시 녹음"**, **"홈 키 두 번 → 즉시 녹음"**이 기준이다 |
-| W6 | 햅틱: 시작 CLICK, 정지 DOUBLE_CLICK, 전송 완료 tick |
-| W7 | 배터리: 녹음 중 Wi-Fi 요청 없음, 화면 켜두기 없음; 전송은 충전 중 우선(옵션) |
+| W1 | Skeleton: Wear Compose M3, `standalone=false` (phone app required), reuses `RecorderService` |
+| W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, n waiting to transfer (`Sending n` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04). There are only two screens and no navigation library — the only journey on the watch is "record" |
+| W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
+| W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
+| W5 | Entry points: tile (`launchAction`), complication (state), **a second launcher item "Recly Record"** (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
+| W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, tick on transfer complete |
+| W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
 
-### 주의
+### Caveats
 
-- `dataSync` FGS는 쓰지 않는다(6h/24h 캡). 업로드는 WorkManager다.
-- 워치 앱에는 인증·네트워크·워크플로우 실행 코드가 없다. `:core`에서 `model`·`recording`·`transfer`(송신 측 큐
-  모델)만 쓰고 모듈에 HTTP 클라이언트가 아예 없다.
-- Galaxy Wearable 앱의 배터리 최적화가 켜져 있으면 BT 프록시가 끊긴다 — 설정 안내에 포함한다.
-- **삼성 sleeping apps는 WorkManager를 지연시킨다.** UI는 그것을 숨기지 않고 "n건 대기 중"으로 정직하게 표시한다
-  (2026-09-02: "지금 올리기" 버튼은 사라졌다 — 앱을 열면 포그라운드 패스가 돌고, 실패한 잡은 "다시 시도"가 즉시
-  돌린다).
-- **원형 화면**(2026-09-29, Play Wear 품질 "시계 모양" 반려): 스크롤 목록은 항목이 거의 다 화면을 벗어나야 줄이므로
-  문단 하나를 한 항목에 넣으면 가운데 위아래에서 곡선에 잘린다. 설정 안내 화면은 제목과 문장마다 항목을 따로 두고
-  (문장은 언어의 문장 경계로 나눠 번역은 문단 그대로다) 가운데 정렬하며, 스캐폴드의 좌우 5.2%에 화면 폭의 9.4%를
-  더해 원에 내접하는 정사각형 폭(한쪽 14.6%)에 맞추고, 첫 항목에서 열린다. 녹음 화면은 큰 원형 워치(227dp) 기준
-  크기를 더 작은 워치에서 폭 비율대로 줄인다(§9 "유동 타이포") — 192dp 워치에서 Help 버튼이 아래 곡선에 걸렸다.
-  확인은 원형 454·384px 에뮬레이터, 글자 크기 1.0·1.24에서 화면을 열 때·스크롤 중·끝의 스크린샷으로 한다.
+- The `dataSync` FGS is not used (6h/24h cap). Uploads go through WorkManager.
+- The watch app has no auth, network or workflow execution code. From `:core` it uses only `model`, `recording` and `transfer` (the sending-side
+  queue model), and the module has no HTTP client at all.
+- If battery optimization is on for the Galaxy Wearable app, the BT proxy drops — this is included in the setup guide.
+- **Samsung sleeping apps delay WorkManager.** The UI does not hide it and honestly shows "n waiting"
+  (2026-09-02: the "Upload now" button is gone — opening the app runs a foreground pass, and "Retry" runs a failed job
+  at once).
+- **Round screens** (2026-09-29, Play Wear quality rejection for "watch shape"): a scrolling list shrinks an item only once it has almost entirely left the screen,
+  so a whole paragraph in one item gets clipped by the curve above and below the center. The setup guide screen gives the title and each sentence its own item
+  (the split follows the language's sentence boundaries, so the translations stay whole paragraphs) and centers them; it adds 9.4% of the screen width to the scaffold's 5.2% on each side
+  to fit the width of the square inscribed in the circle (14.6% per side), and it opens at the first item. The recording screen takes sizes designed for a large round watch (227dp)
+  and scales them down by the width ratio on smaller watches (§9 "Fluid typography") — on a 192dp watch the Help button caught on the bottom curve.
+  Verification uses round 454 px and 384 px emulators at font scale 1.0 and 1.24, with screenshots when the screen opens, mid-scroll and at the end.
 
 ---
 
-## 12. macOS (구 docs/12)
+## 12. macOS (formerly docs/12)
 
-대상: macOS 14.4+ (Core Audio process tap TCC 안정 버전), Apple Silicon 우선. 메뉴바 앱(`LSUIElement`), 샌드박스
-없음(직접 배포).
+Target: macOS 14.4+ (the version where Core Audio process tap TCC is stable), Apple Silicon first. Menu bar app (`LSUIElement`), no
+sandbox (direct distribution).
 
-### 구조
+### Structure
 
 ```
 apple/
   Rec.xcworkspace
-  RecKit/                       Swift 패키지 (iOS·watchOS·macOS 공용 + 플랫폼 조건부)
+  RecKit/                       Swift package (shared by iOS · watchOS · macOS + platform conditionals)
     Sources/RecKit/
-      Recorder/                 SegmentedRecorder (AVAudioEngine 탭 → AVAudioFile AAC, 900초 교체) — 모든 Apple 타깃
+      Recorder/                 SegmentedRecorder (AVAudioEngine tap → AVAudioFile AAC, 900 s rotation) — all Apple targets
       MacCapture/               #if os(macOS): ProcessTapCapture, MicCapture, TrackWriter(mic/sys/mix), DriftCompensator
       Detect/                   #if os(macOS): MicInUseMonitor, MeetingAppMonitor, MeetingDetector
       Transfer/                 #if os(iOS)||os(watchOS): WatchTransferQueue (WCSession)
       Auth/                     #if os(iOS)||os(macOS): GoogleAuth (AppAuth, Drive-only) → TokenProvider
       Transport/                #if os(iOS)||os(macOS): BackgroundTransport (URLSession background)
-      Storage/                  #if os(iOS)||os(macOS): ICloudContainer (코어 UbiquityContainer — §3 "저장 위치")
-      Workflow/                 CoreWorkflowDocuments, WorkflowInspector (두 셸 공용 편집기 — 폐기 2026-09-24)
-      CoreBridge/               ReclyCore(XCFramework) 조립, SecureStore(Keychain), FileSystem, Logger, Crypto
-  RecMac/                       메뉴바 앱, SwiftUI
+      Storage/                  #if os(iOS)||os(macOS): ICloudContainer (core UbiquityContainer — §3 "Storage location")
+      Workflow/                 CoreWorkflowDocuments, WorkflowInspector (editor shared by both shells — retired 2026-09-24)
+      CoreBridge/               ReclyCore(XCFramework) assembly, SecureStore(Keychain), FileSystem, Logger, Crypto
+  RecMac/                       Menu bar app, SwiftUI
 ```
 
-`ReclyCore.xcframework`는 `./gradlew :core:assembleXCFramework` 산출물이고 `apple/scripts/build-core.sh`가
-`apple/RecKit/Frameworks/`로 스테이징한다. 정적 프레임워크라 **앱 타깃의 Other Linker Flags에 `-lsqlite3`**가 필요하다
-(빠뜨리면 `_sqlite3_*` 미해결 심볼).
+`ReclyCore.xcframework` is the output of `./gradlew :core:assembleXCFramework`, and `apple/scripts/build-core.sh` stages it
+into `apple/RecKit/Frameworks/`. It is a static framework, so **the app target needs `-lsqlite3` in Other Linker Flags**
+(without it: unresolved `_sqlite3_*` symbols).
 
-**폐기(2026-09-24)** — **워크플로우 편집 로직은 Swift로 두 번 짜지 않는다.** `CoreWorkflowDocuments`가 코어 `WorkflowDocuments`를 Swift에서
-구현하고(`__current`/`__save`/`__writeFrozen`), 편집 블록은 코어가 요구하는
-`suspend (WorkflowsDocument) -> WorkflowsDocument?`를 `DocumentMutation: KotlinSuspendFunction1`로 넘긴다 — 세 셸이
-같은 뮤텍스·같은 staleness 규칙을 쓴다.
+**Retired (2026-09-24)** — **Workflow editing logic is not written twice in Swift.** `CoreWorkflowDocuments` implements the core's `WorkflowDocuments` in Swift
+(`__current`/`__save`/`__writeFrozen`), and the edit block passes the
+`suspend (WorkflowsDocument) -> WorkflowsDocument?` the core requires as `DocumentMutation: KotlinSuspendFunction1` — all three shells
+use the same mutex and the same staleness rule.
 
-### 캡처 파이프라인
+### Capture pipeline
 
 ```
- 마이크 (AVAudioEngine inputNode, 16 kHz 모노 변환)  ─┐
-                                                    ├─► DriftCompensator ─► TrackWriter(mic) ─┐
- 시스템 (CATapDescription 전역 tap, 자기 프로세스 제외 ─┘                     TrackWriter(sys) ─┼─► mix (합산 −6 dB 헤드룸) ─► TrackWriter(mix)
-        → 물리 장치를 포함하지 않는 private aggregate → IOProc, 검증한 입력 레이트)
+ Microphone (AVAudioEngine inputNode, converted to 16 kHz mono)  ─┐
+                                                                  ├─► DriftCompensator ─► TrackWriter(mic) ─┐
+ System (CATapDescription global tap, own process excluded       ─┘                       TrackWriter(sys) ─┼─► mix (summed with −6 dB headroom) ─► TrackWriter(mix)
+        → private aggregate that contains no physical device → IOProc, verified input rate)
 ```
 
-- 세 `TrackWriter`는 같은 시작 시각·같은 세그먼트 경계(900초)를 공유한다. 파트 번호가 트랙 간 일치한다.
-- 마이크와 시스템 콜백은 버퍼와 첫 샘플의 host timestamp를 복사한 뒤 즉시 반환한다. 변환·AAC 쓰기는
-  별도 직렬 큐에서 처리하고, 대기 오디오는 큐별 2초로 제한한다. 마이크는 시스템 리샘플러의 지연을 흡수하도록
-  0.6초 늦게 처리하며, 정지 시 두 큐와 변환기의 꼬리를 모두 저장한다.
-- `DriftCompensator`: timestamp가 있는 스트림은 공통 host clock으로 정렬한다. 큰 시스템 버퍼를 마이크
-  콜백 크기에 맞춰 잘라 버리지 않는다. 매 콜백의 수집 시각으로 원점을 보정하여 작은 하드웨어 클록 차가
-  누적되지 않게 한다. timestamp가 없는 입력의 기존 경로는 누적 프레임 수 차를 **60초마다 추정**해
-  리샘플한다. 목표: 1시간 후 두 트랙 오프셋 < 20 ms.
-- **마이크 선택**: 항상 자동. 과거에 저장한 수동 UID는 사용하지 않는다. 확인된 회의 앱의 유일한 활성 입력 → macOS 기본 입력
-  순으로 선택한다. 브라우저는 해당 브라우저 소유의 회의 창 제목을 확인할 수 있을 때만 회의 입력으로 간주한다.
-  자동 선택한 입력은 회의 앱 음소거만으로 바꾸지 않는다. 정상 장치 전환은 1초 안정화, 연결 해제는 2초 유예 후
-  대체 입력을 선택하며, 선택 장치의 상태·전체 포맷을 1초마다 확인한다. 최초 시작의 일시적 오류도 짧게 재시도한다.
-  Recly의 AudioUnit만 바인딩하며 OS 기본 입력·출력이나 회의 앱의 장치/음소거 설정은 바꾸지 않는다.
-  AirPods 입력을 지원하며 통화 중 자동으로 내장 마이크를 강제하지 않는다. 사용자가 시작한 녹음은 회의 앱
-  음소거와 독립적으로 계속된다. 마이크 선택 UI는 노출하지 않으며 녹음 중 현재 입력 장치 이름만 상태로 표시한다. 마이크 권한 복구 안내는 유지한다.
-- **에코**: AEC 없이 두 트랙을 저장한다. 출력 장치가 내장 스피커면 시작 시 한 줄 경고("헤드폰을 쓰면 상대 목소리가
-  내 트랙에 섞이지 않습니다").
-- 녹음 규칙: 정지·입력 재시작 시 `AVAudioConverter`를 `.endOfStream`으로 드레인한 뒤 세그먼트를 닫는다(48 kHz
-  입력의 꼬리 프레임 보존); 닫힌 세그먼트를 읽어 되돌릴 수 없으면 등록하지 않고 `.pending`으로 남겨 finalize를
-  보류; 복구는 읽을 수 없는 꼬리를 `.corrupt`로 격리하고 읽을 수 있는 파트가 없는 녹음은 삭제한다(§3);
-  `applicationShouldTerminate`는 세션이 살아 있으면 `.terminateLater`로 정지·finalize·enqueue 뒤 종료; 기기 ID는
-  Keychain이 아니라 `{dataDir}/device.id`(임시 서명 재빌드 시 키체인 ACL 모달 회피).
-- **권한**: `NSMicrophoneUsageDescription`, `NSAudioCaptureUsageDescription`. tap 권한은 사전 확인 API가 없으므로 첫
-  IOProc 시작에서 프롬프트하고, 실패하면 시스템 설정 "화면 및 시스템 오디오 녹음" 딥링크를 안내한다.
-- **tap 재생성**: 출력 장치 변경(`kAudioHardwarePropertyDefaultOutputDevice`)·포맷 변경 시 tap을 다시 만들고 `gaps`에
-  기록한다. 캡처 포맷은 tap 생성 직후의 포맷이 아니라 **aggregate 입력 스트림의 virtual format**을 읽는다.
-  Bluetooth 통화 모드에서 레이트가 달라져도 실제 전달된 샘플과 일치해야 한다. 입력 스트림의 포맷 변경을 구독하고
-  2초 폴링으로도 재확인한다. 읽을 수 없거나 모노 Float32가 아닌 포맷은 추측해서 해석하지 않는다.
-  aggregate에는 실제 출력 subdevice를 넣지 않으며, 샘플레이트 설정은 이 가상 장치에만 적용한다.
-  tap 포맷 변경도 구독한다. 수집 timestamp와 프레임 수로 0.25초 이상인 두 구간의 전달 속도를 검증하고,
-  표시 레이트와 3% 넘게 다르면 해당 세대의 데이터를 더 쓰지 않고 시스템 tap만 재생성한다. 이는 음량/무음
-  검사가 아니며 상대방이 말하지 않는 상태를 오류로 판단하지 않는다. 마이크는 시스템 tap 복구 중에도 계속된다.
-  연속된 시스템 버퍼 부족도 복구를 요청한다. 반복 복구에는 최대 10초 재시도 간격을 적용하며 복구 중/실패를
-  상태 줄에 표시한다. 입력 자체가 끊기면 제한된 재연결 시도 후 오류를 알린다.
-  `rec.tap.format` 로그에 tap·입력 스트림 레이트를 남긴다. 상태 줄은 **캡처 중인 출력 장치명**을 보여 준다.
-  녹음 폴더의 `capture-diagnostics.json`에는 장치명·레이트·OS 버전·복구/버퍼 손실 이벤트를 최대 512개 저장한다.
-  이 진단 파일은 로컬에만 두고 Drive 업로드에 포함하지 않는다.
+- The three `TrackWriter`s share the same start time and the same segment boundaries (900 s). Part numbers match across tracks.
+- The microphone and system callbacks copy the buffer and the host timestamp of its first sample, then return immediately. Conversion and AAC writing
+  happen on separate serial queues, and pending audio is capped at 2 seconds per queue. The microphone is processed 0.6 seconds late to absorb
+  the system resampler's latency, and on stop the tails of both queues and the converters are all saved.
+- `DriftCompensator`: streams with timestamps are aligned on the common host clock. It does not cut large system buffers down to the microphone
+  callback size and throw the rest away. The origin is corrected with each callback's capture time so that small hardware clock differences do not
+  accumulate. The existing path for inputs without timestamps uses the cumulative frame count vs wall clock to **estimate the rate difference every 60 seconds** and
+  resamples. Target: offset between the two tracks < 20 ms after 1 hour.
+- **Microphone selection**: always automatic. A manual UID saved in the past is not used. It selects the only active input of a confirmed meeting app → the macOS default input,
+  in that order. A browser counts as a meeting input only when the title of a meeting window owned by that browser can be confirmed.
+  An automatically selected input is not changed by a meeting-app mute alone. A normal device switch settles for 1 second and a disconnect gets a 2-second grace period before
+  a replacement input is selected, and the selected device's state and full format are checked every second. Transient errors on the very first start are also retried briefly.
+  Only Recly's AudioUnit is bound; the OS default input and output and the meeting app's device and mute settings are not changed.
+  AirPods input is supported, and the built-in microphone is not forced automatically during a call. A recording the user started continues independently of the meeting app's
+  mute. No microphone picker UI is exposed; during recording only the current input device's name is shown as status. The guidance for restoring microphone permission stays.
+- **Echo**: both tracks are saved without AEC. If the output device is the built-in speaker, a one-line warning at start ("With headphones the other side
+  does not bleed into your own track.").
+- Recording rules: on stop or input restart, `AVAudioConverter` is drained with `.endOfStream` before the segment is closed (preserving the tail frames of 48 kHz
+  input); if a closed segment cannot be read back, it is not registered and stays `.pending`, holding back
+  finalize; recovery quarantines an unreadable tail as `.corrupt` and deletes a recording with no readable part (§3);
+  `applicationShouldTerminate` answers `.terminateLater` while a session is alive and quits after stop · finalize · enqueue; the device ID lives in
+  `{dataDir}/device.id`, not the Keychain (avoids the keychain ACL modal on ad-hoc-signed rebuilds).
+- **Permissions**: `NSMicrophoneUsageDescription`, `NSAudioCaptureUsageDescription`. There is no API to check tap permission in advance, so the prompt comes at the first
+  IOProc start, and if that fails, the app points to the System Settings "Screen & System Audio Recording" deep link.
+- **Tap re-creation**: when the output device changes (`kAudioHardwarePropertyDefaultOutputDevice`) or the format changes, the tap is re-created and recorded in `gaps`.
+  The capture format is read from **the aggregate input stream's virtual format**, not the format right after the tap is created.
+  It has to match the samples actually delivered even when the rate changes in Bluetooth call mode. It subscribes to format changes of the input stream and
+  also re-checks with 2-second polling. A format that cannot be read, or that is not mono Float32, is never interpreted by guesswork.
+  The aggregate does not include the real output subdevice, and the sample rate setting applies only to this virtual device.
+  It also subscribes to tap format changes. It verifies the delivery rate over two intervals of at least 0.25 seconds from the capture timestamps and frame counts, and
+  if that differs from the reported rate by more than 3%, it stops using that generation's data and re-creates only the system tap. This is not a volume or silence
+  check, and it does not treat the other side not speaking as an error. The microphone keeps going while the system tap is being recovered.
+  Consecutive system buffer shortfalls also request recovery. Repeated recovery uses a retry interval of at most 10 seconds, and recovering/failed is shown
+  in the status line. If the input itself drops, the app reports an error after a limited number of reconnect attempts.
+  The `rec.tap.format` log records the tap and input stream rates. The status line shows **the name of the output device being captured**.
+  `capture-diagnostics.json` in the recording folder stores the device name, rates, OS version and recovery/buffer-loss events, up to 512 of them.
+  This diagnostics file stays local only and is not part of the Drive upload.
 
-### 미팅 감지 · 컨텍스트
+### Meeting detection · context
 
-- `MicInUseMonitor`: 기본 입력 장치의 `kAudioDevicePropertyDeviceIsRunningSomewhere` 리스너 + 기본 입력 변경 리스너.
-- `MeetingAppMonitor`: 실행 중 앱 번들 ID 목록(`us.zoom.xos`, `com.microsoft.teams2`,
-  `com.tinyspeck.slackmacgap`, `com.hnc.Discord`, 브라우저) — 마이크 사용 중 && 회의 앱 활성이면 "회의 중인가요? 녹음
-  시작" 알림(클릭 한 번). 쿨다운 600초, 회의당 알림 1회. **브라우저 Meet은 창 제목까지만** 본다(AX 권한을 요구하지
-  않는다).
-- **캘린더 컨텍스트는 없다.** EventKit 읽기와 메타 필드 `context.calendar`(제목·시작·종료·참석자 이메일)는 제품
-  전체에서 제거됐다 — 캘린더 접근은 참석자 이메일을 웹훅까지 실어 보내는 유일한 경로였고, 그 값을 얻는 대가로
-  macOS만 권한 프롬프트를 하나 더 지고 있었다. 제목은 세 셸 모두 정지 후 입력한다.
-- **종료 감지**: 마이크 사용 중이 아님이 60초 지속되면 "녹음을 끝낼까요?" 알림을 낸다. **자동 정지가 아니다** —
-  앱은 대신 멈춰 주지 않는다.
+- `MicInUseMonitor`: a `kAudioDevicePropertyDeviceIsRunningSomewhere` listener on the default input device + a default-input change listener.
+- `MeetingAppMonitor`: the list of running app bundle IDs (`us.zoom.xos`, `com.microsoft.teams2`,
+  `com.tinyspeck.slackmacgap`, `com.hnc.Discord`, browsers) — when the microphone is in use && a meeting app is active, an "Are you in a meeting? Start
+  recording" notification (one click). Cooldown 600 s, one notification per meeting. **Browser Meet goes only as far as the window title, without asking for AX permission.**
+- **There is no calendar context.** EventKit reads and the meta field `context.calendar` (title · start · end · attendee emails) were removed from the
+  whole product — calendar access was the only path that carried attendee emails all the way to the webhook, and to get that value
+  only macOS carried one extra permission prompt. In all three shells the title is entered after stop.
+- **End detection**: when the microphone has not been in use for 60 seconds straight, the app raises an "End the recording?" notification. **It is not an automatic stop** —
+  the app does not stop the recording for the user.
 
-### 메뉴바 앱
+### Menu bar app
 
-- **상태 아이콘**: 대기 / 녹음 중(빨강) / 업로드 중 / 오류. 오류 상태는 접근성 설명으로도 말한다.
-- **메뉴바** 팝오버: 상태 노드 3개 + 최근 원장(20행씩 무한 스크롤; 상태, 펼치면 §9 원칙 2의 동작 — Drive 열기·다시 시도·상세·삭제 —
-  가로 한 줄) + 동작, 상단에 알림 배너.
-- **Mac 팝오버 크기**: 메뉴바와 Dock을 제외한 현재 화면 안에 들어오도록 높이를 제한한다. 설정·원장만 스크롤하고
-  하단의 설정/설정 접기·종료는 항상 표시한다. 설정이 열려 있을 때 버튼은 `설정 접기`(en `Hide settings`)로
-  표시한다. 설정을 접으면 원장 크기로 줄어들며, 화면 구성이 바뀌면 위치와 높이를 다시 맞춘다.
-- **팝오버가 이 항목들을 담는다**: 시작·정지, 최근 원장, 설정, 로그인(워크플로우 편집 창은 2026-09-24 폐기). Windows의 AWT 메뉴는
-  축약 폴백이다(macOS는 `.window` MenuBarExtra라 NSMenu가 없다).
-- **팝오버는 이 앱의 창이 포커스를 가져가도 열려 있다** — 상세·설정 창이나 삭제 다이얼로그를 팝오버에서
-  열고 그 안을 눌러도 닫히지 않는다. 닫히는 것은 다른 앱 클릭·상태 아이콘 클릭·Esc뿐이다(Mac은 `MenuBarPanel`의
-  AppKit `NSPanel` + 전역 마우스 모니터, 2026-09-03; Windows 트레이 팝업은 포커스가 이 JVM의 다른 창으로 간 경우를
-  구분한다, 2026-09-04).
-- **실행기**: 앱 프로세스가 `runDueJobs()`를 (a) Job 생성 직후 (b) 5분 타이머 (c) 네트워크 복귀(`NWPathMonitor`)
-  (d) `nextRunAt` 후속에 호출한다. `SMAppService`로 로그인 시 자동 실행.
-- **워크플로우 편집 창** — **폐기(2026-09-24)**. 기록: 폰과 같은 기능. SwiftUI 폼 + `WorkflowInspector`(RecKit 공용). 데스크톱이 편집의 주
-  무대다.
+- **Status icon**: idle / recording (red) / uploading / error. The error state is also spoken through the accessibility description.
+- **Menu bar** popover: 3 state nodes + the recent ledger (infinite scroll, 20 rows at a time; state, and when expanded, the actions of §9 principle 2 — Open in Drive · Retry · Details · Delete —
+  on one horizontal line) + actions, with a notice banner at the top.
+- **Mac popover size**: the height is limited so the popover fits inside the current screen minus the menu bar and the Dock. Only settings and the ledger scroll, and
+  Settings/Hide settings and Quit at the bottom are always shown. While settings are open, the button reads `Hide settings`.
+  Hiding settings shrinks it to the ledger's size, and when the screen layout changes, the position and height are fitted again.
+- **The popover holds these items**: start · stop, the recent ledger, settings, sign-in (the workflow editing window was retired 2026-09-24). The AWT menu on Windows is
+  a reduced fallback (macOS uses a `.window` MenuBarExtra, so there is no NSMenu).
+- **The popover stays open when this app's windows take focus** — opening a details or settings window or the delete dialog from the popover
+  and clicking inside it does not close it. Only a click in another app, a click on the status icon, or Esc closes it (on the Mac, `MenuBarPanel`'s
+  AppKit `NSPanel` + a global mouse monitor, 2026-09-03; the Windows tray popup tells apart the case where focus went to another window of this JVM,
+  2026-09-04).
+- **Runner**: the app process calls `runDueJobs()` (a) right after a Job is created (b) on a 5-minute timer (c) when the network returns (`NWPathMonitor`)
+  (d) as the `nextRunAt` follow-up. Launch at login via `SMAppService`.
+- **Workflow editing window** — **retired (2026-09-24)**. For the record: the same features as on the phone. A SwiftUI form + `WorkflowInspector` (shared in RecKit). The desktop is the main
+  stage for editing.
 
-### 태스크
+### Tasks
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| M1 | 워크스페이스, RecKit, XCFramework 연결, 메뉴바 골격 |
-| M2 | `MicCapture` + `TrackWriter` → mic 단일 트랙 세그먼트 녹음 |
-| M3 | `ProcessTapCapture`(전역 tap, 자기 제외) → sys 트랙; 권한 플로우·거부 UX |
-| M4 | `DriftCompensator` + mix 트랙 |
-| M5 | 인증(AppAuth macOS) + `BackgroundTransport` + 실행기 연결 |
-| M6 | 미팅 감지 + 알림 |
-| M7 | **폐기(2026-09-24)** — **워크플로우 편집 창** + 설정의 워크플로우 내보내기/가져오기(§5): `NSSavePanel`(기본 이름 `recly-workflows.json`)·`NSOpenPanel`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
-| M8 | 동의 리마인더(첫 녹음 시 1회, 설정에서 끔) + 관할별 안내문 + 스피커 경고. 리마인더는 *첫* 녹음 전에 묻고, "다시 묻지 않기"를 고르면 설정에서 다시 켤 수 있다 |
-| M9 | 배포: Developer ID 서명, hardened runtime, notarytool, DMG(`apple/scripts/release-mac.sh`). Sparkle 자동 업데이트는 없다 |
+| M1 | Workspace, RecKit, XCFramework hookup, menu bar skeleton |
+| M2 | `MicCapture` + `TrackWriter` → single mic track segment recording |
+| M3 | `ProcessTapCapture` (global tap, self excluded) → sys track; permission flow and denial UX |
+| M4 | `DriftCompensator` + mix track |
+| M5 | Auth (AppAuth macOS) + `BackgroundTransport` + runner hookup |
+| M6 | Meeting detection + notifications |
+| M7 | **Retired (2026-09-24)** — **workflow editing window** + workflow export/import in settings (§5): `NSSavePanel` (default name `recly-workflows.json`) · `NSOpenPanel`, import applies after a replace confirmation, a note that keys are not included in the file |
+| M8 | Consent reminder (once at the first recording, can be turned off in settings) + jurisdiction notices + speaker warning. The reminder asks before the *first* recording, and if "Do not ask again" is chosen, it can be turned back on in settings |
+| M9 | Distribution: Developer ID signing, hardened runtime, notarytool, DMG (`apple/scripts/release-mac.sh`). There is no Sparkle auto-update |
 
-### 동의 리마인더 · 관할별 안내문
+### Consent reminder · jurisdiction notices
 
-로컬 캡처는 상대에게 **아무 표시도 남기지 않는다**(Zoom 자체 녹화와 달리 참가자 쪽에 다이얼로그도 배지도 없다).
-그래서 고지 책임은 전적으로 사용자에게 있고, 앱이 할 수 있는 일은 그 사실을 한 번 분명히 말해 주는 것뿐이다(ADR-011).
+Local capture **leaves no sign at all** for the other side (unlike Zoom's own recording, there is no dialog and no badge on the participants' side).
+So the duty to notify lies entirely with the user, and all the app can do is say so clearly once (ADR-011).
 
-**앱이 보여주는 것**
+**What the app shows**
 
-1. **리마인더** — "참가자에게 녹음을 알렸습니까?" + [알렸습니다] [취소]. 확인하지 않으면 녹음을 시작하지 않는다.
-   설정에서 끌 수 있다(끄는 것도 사용자의 선택이고, 끈다고 책임이 옮겨 가지 않는다). 띄우는 시점은 기기마다 다르다 —
-   Mac·Windows는 새 녹음마다(감지 여부 무관, 회의 모드 고정), 폰(iPhone·Android)은 회의를 구분할 수단이 없어
-   **첫 녹음 전에 한 번만** 묻고 설정 문구에 그 차이를 적는다. **워치 둘에는 없다**(화면이 좁고 폰이 정본이며, 워치로
-   녹음할 때의 책임은 같다).
-2. **관할별 안내문** — "내 관할은?"을 누르면 아래 표를 요약한 화면. 언어별 리소스이고 법역 목록·링크는 공통이다.
-   문구는 네 셸이 글자 그대로 같고 대조 테스트로 묶여 있다.
-3. **상시 녹음 표시** — 은밀 모드는 만들지 않는다(App Store 2.5.14, Play 스토커웨어 정책). 메뉴바 빨간
-   아이콘·트레이 아이콘·Live Activity·Ongoing Activity·시스템 마이크 표시.
-4. Google 계정 연결 시의 OAuth 동의 화면(§6)은 **다른 동의**다 — Drive 접근에 대한 사용자 본인의 동의이지 회의
-   참가자의 녹음 동의가 아니다. 안내문에서 이 둘을 섞지 않는다.
+1. **Reminder** — "Did you tell the participants about the recording?" + [I told them] [Cancel]. Without confirmation, the recording does not start.
+   It can be turned off in settings (turning it off is also the user's choice, and turning it off does not shift the responsibility). When it appears differs by device —
+   Mac and Windows ask for every new recording (regardless of detection, meeting mode fixed), while phones (iPhone · Android) have no way to tell a meeting apart, so they
+   ask **only once, before the first recording**, and the settings wording states that difference. **The two watches have none** (the screen is small, the phone is the source of truth, and
+   the responsibility when recording with a watch is the same).
+2. **Jurisdiction notice** — tapping "What's my jurisdiction?" opens a screen that summarizes the table below. It is a per-language resource; the list of jurisdictions and the links are shared.
+   The wording is identical, letter for letter, across the four shells and is bound together by a comparison test.
+3. **Always-on recording indicator** — no covert mode is built (App Store 2.5.14, Play stalkerware policy). The red menu bar
+   icon · tray icon · Live Activity · Ongoing Activity · system microphone indicator.
+4. The OAuth consent screen when connecting a Google account (§6) is **a different consent** — the user's own consent to Drive access, not the meeting
+   participants' consent to being recorded. The notice does not mix the two.
 
-**관할 요약** (**법률 자문이 아니다** — 각자 확인해야 한다)
+**Jurisdiction summary** (**not legal advice** — everyone has to check for themselves)
 
-| 관할 | 요지 | 안내문이 말하는 것 |
+| Jurisdiction | Gist | What the notice says |
 |---|---|---|
-| 한국 | 통신비밀보호법상 **당사자 녹음은 합법** — 본인이 참여한 대화는 상대의 동의 없이 녹음해도 처벌 대상이 아니고 별도 고지 의무도 없다. 반대로 **자신이 참여하지 않은 타인 간 대화의 녹음·청취는 범죄**다. 합법적으로 녹음한 내용이라도 **공개·유포**는 별도 책임이 될 수 있다 | "내가 참여한 대화만 녹음하세요. 내가 없는 자리의 대화를 녹음하는 것은 형사처벌 대상입니다." |
-| 미국 (연방) | 연방 도청법은 one-party consent. 다만 **주법이 더 엄격하면 주법이 적용**된다 | "주마다 다릅니다. 아래 주가 관련되면 전원 동의를 받으세요." |
-| 미국 (전원 동의 주) | 흔히 꼽히는 곳: California, Delaware, Florida, Illinois, Maryland, Massachusetts, Montana, New Hampshire, Oregon, Pennsylvania, Washington. **목록은 출처마다 다르고**(Connecticut·Hawaii를 넣고 Delaware를 빼는 정리도 있다) 주별로 "대화"와 "전화 통화"의 범위가 다르다. 원격 회의는 참가자가 여러 주에 흩어져 있어 **가장 엄격한 주를 기준으로 잡는 것이 실무 기준**이다 | "이 주가 하나라도 걸리면 시작 전에 전원 동의를 받고, 동의를 기록으로 남기세요." |
-| EU / EEA (GDPR) | 회의 녹음은 개인정보 처리다. **적법 근거**가 필요하고, 참가자에게 **누가·왜·얼마나 보관하는지 고지**해야 하며, 열람·삭제 요청에 응할 수 있어야 한다. "순수 개인·가정 활동" 예외는 업무·상업적 녹음에 적용되지 않는다 | "업무 회의라면 시작 전에 고지하고 근거를 남기세요. 참가자가 삭제를 요구하면 Drive의 원본과 결과 파일을 지워야 합니다." |
-| 그 외 | 확인되지 않음 | "여기에 없는 나라는 직접 확인하세요." |
+| Korea | Under the Protection of Communications Secrets Act, **recording by a participant is legal** — a conversation you take part in may be recorded without the other side's consent and is not punishable, and there is no separate duty to notify. Conversely, **recording or listening in on a conversation between others that you are not part of is a crime**. Even lawfully recorded content can create separate liability if it is **disclosed or distributed** | "Record only conversations you take part in. Recording a conversation you are not present for is subject to criminal punishment." |
+| United States (federal) | The federal Wiretap Act is one-party consent. However, **where state law is stricter, state law applies** | "It varies by state. If any of the states below is involved, get everyone's consent." |
+| United States (all-party consent states) | Commonly cited: California, Delaware, Florida, Illinois, Maryland, Massachusetts, Montana, New Hampshire, Oregon, Pennsylvania, Washington. **The list differs by source** (some compilations include Connecticut · Hawaii and leave out Delaware), and the scope of "conversation" versus "telephone call" differs by state. In a remote meeting the participants are spread across several states, so **taking the strictest state as the baseline is the practical standard** | "If even one of these states is involved, get everyone's consent before you start, and keep a record of the consent." |
+| EU / EEA (GDPR) | Recording a meeting is processing personal data. It needs a **lawful basis**, participants must be **told who keeps it, why and for how long**, and access and erasure requests must be answerable. The "purely personal or household activity" exemption does not apply to work or commercial recordings | "If it is a work meeting, give notice before you start and keep a record of the basis. If a participant asks for deletion, you have to delete the original and the result files in Drive." |
+| Elsewhere | Not verified | "Check for yourself for countries not listed here." |
 
-**앱이 보장할 수 없는 것**(안내문에 같은 무게로 적는다)
+**What the app cannot guarantee** (stated in the notice with the same weight)
 
-- 참가자에게 **자동으로 알리지 않는다.** 회의 앱 채팅에 메시지를 넣는 기능은 미팅 앱 연동 없이는 불가능하므로,
-  대신 붙여넣을 수 있는 **문구 복사 버튼**만 둔다.
-- 관할을 **판별하지 않는다.** 기기 로케일로 나라를 추측해 안내문을 고르는 것까지가 전부이고, 참가자가 어디에 있는지는
-  앱이 알 수 없다.
-- 동의를 **기록하지 않는다.** "알렸습니다"를 누른 사실은 앱의 로컬 로그일 뿐 법적 증거가 아니다.
-- 표의 내용은 **법률 자문이 아니고** 시점 요약이다(§열린 결정 "법률 검토").
+- It **does not notify participants automatically.** Posting a message into the meeting app's chat is impossible without meeting app integration, so
+  there is only a **copy-text button** for wording the user can paste instead.
+- It **does not determine the jurisdiction.** Guessing the country from the device locale to pick a notice is as far as it goes; where the participants are
+  is something the app cannot know.
+- It **does not record consent.** Having pressed "I told them" is only a local log entry in the app, not legal evidence.
+- The table's content is **not legal advice**; it is a point-in-time summary (§Open decisions "legal review").
 
-이 절은 macOS 전용이 아니다 — Windows·Android·iPhone의 리마인더도 같은 문구 리소스를 쓴다.
+This section is not macOS-only — the reminders on Windows · Android · iPhone use the same wording resources.
 
-### 열린 문제
+### Open issues
 
-- App Store 샌드박스에서 tap이 되는지 미확인 → 직접 배포. 이후 검증되면 App Store 병행.
-- 내장 스피커 사용 시 에코. `setVoiceProcessingEnabled` 실험 결과에 따라 옵션화.
+- Unconfirmed whether the tap works in the App Store sandbox → direct distribution. If it is verified later, App Store in parallel.
+- Echo when the built-in speaker is used. Make it an option depending on the results of the `setVoiceProcessingEnabled` experiment.
 
 ---
 
-## 13. iOS·watchOS (구 docs/13)
+## 13. iOS · watchOS (formerly docs/13)
 
-대상: iOS 17+, watchOS 10+. Apple Watch는 iPhone 전용(Android 페어링 없음). `apple/` 워크스페이스의 `RecPhone`·
-`RecWatch` 타깃이고 RecKit 공용 모듈(`Recorder`, `Transfer`, `Auth`, `Transport`, `Workflow`, `CoreBridge`)을 macOS와
-함께 쓴다.
+Targets: iOS 17+, watchOS 10+. The Apple Watch is iPhone-only (no Android pairing). These are the `RecPhone` and
+`RecWatch` targets of the `apple/` workspace, and they share the RecKit modules (`Recorder`, `Transfer`, `Auth`, `Transport`, `Workflow`, `CoreBridge`) with
+macOS.
 
 ### iPhone
 
-- **녹음**: **마이크만** 캡처한다. RecKit `SegmentedRecorder`(AVAudioEngine → AAC `AVAudioFile`, 900초 교체).
-  `AVAudioSession`은 `.playAndRecord`/`.default`, 옵션 `.allowBluetoothHFP`.
-  유선·USB → Bluetooth HFP/BLE → 내장 입력 순으로 자동 선택하며 같은 종류면 현재 입력을 유지한다.
-  외부 입력 선택이 거절되면 OS 기본 입력을 사용하고, 장치 재연결이나 새 녹음 시작 시 다시 시도한다.
-  `UIBackgroundModes: audio`로 잠금 중 계속. 입력 UID·데이터 소스·실제 샘플레이트를 확인하고 장치 변경 시
-  새 엔진·변환기로 같은 녹음을 이어간다. 하드웨어 콜백은 버퍼·타임스탬프를 복사하고, 파일 쓰기는 별도 직렬 큐에서
-  처리한다(대기 오디오 상한 2초). 종료/재연결 전 대기 버퍼와 변환기 잔여 샘플을 먼저 저장한다.
-- **인터럽션**: 전화·Siri가 입력을 점유하면 기다렸다가 종료 알림 뒤 새 입력 포맷으로 재연결한다.
-  `silenced`는 실제 재시작 성공 뒤 닫고 `gaps`에 재연결 구간을 기록한다. 종료한 녹음의 지연 알림은 무시한다.
-  OS 오디오 서비스 유실·리셋은 기존 오디오를 저장하고 녹음을 종료한다. Apple 지침에 따라 다음 녹음은 사용자 동작으로 시작한다.
-- **재생**: 녹음 시작 전에 재생을 막고 기존 플레이어를 종료하며, 녹음 입력의 종료가 끝난 뒤에만 재생을 허용한다.
-  Play는 세션을 `.playback`/`.default`로 전환해 활성화한다. 녹음 종료 뒤에도 남는 `.playAndRecord` 카테고리를
-  녹음 진행 여부로 판단하지 않는다.
-- **표시**: Live Activity(경과 시간, 정지 버튼) — 잠금화면·Dynamic Island·워치 Smart Stack. **8시간 상한이면
-  갱신**한다.
-- **진입점**: App Intents `StartRecordingIntent`, `StopRecordingIntent` → Siri·Shortcuts·액션 버튼.
-  iOS 18 Control은 `OpenIntent`로 앱을 열어 시작한다(위젯 확장에서 장시간 오디오 세션 시작은 불안정하다).
-- **인증**: AppAuth로 `drive.file`만 요청하며 `TokenProvider`가 토큰 갱신·만료·401을 처리한다. RecKit `GoogleAuth`·`AppleTokenProvider`를 macOS와 공유하고, iPhone은
+- **Recording**: captures **the microphone only**. RecKit `SegmentedRecorder` (AVAudioEngine → AAC `AVAudioFile`, 900 s rotation).
+  `AVAudioSession` is `.playAndRecord`/`.default`, option `.allowBluetoothHFP`.
+  It selects automatically in the order wired/USB → Bluetooth HFP/BLE → built-in input, and keeps the current input within the same kind.
+  If selecting an external input is refused, it uses the OS default input and tries again when the device reconnects or a new recording starts.
+  `UIBackgroundModes: audio` keeps it going while locked. It checks the input UID, data source and actual sample rate, and on a device change
+  continues the same recording with a new engine and converter. The hardware callback copies the buffer and timestamp, and file writing happens on a separate serial queue
+  (pending audio capped at 2 seconds). Before stopping or reconnecting, the pending buffers and the converter's remaining samples are saved first.
+- **Interruptions**: when a phone call or Siri takes over the input, it waits and, after the end notification, reconnects with the new input format.
+  `silenced` is closed only after a real restart succeeds, and the reconnect interval is recorded in `gaps`. Late notifications for a recording that has ended are ignored.
+  Loss or reset of the OS audio service saves the audio so far and ends the recording. Following Apple's guidelines, the next recording starts with a user action.
+- **Playback**: before recording starts, playback is blocked and any existing player is stopped; playback is allowed only after the recording input has finished shutting down.
+  Play switches the session to `.playback`/`.default` and activates it. The `.playAndRecord` category that remains after recording ends is not
+  taken as a sign of whether a recording is in progress.
+- **Display**: Live Activity (elapsed time, stop button) — Lock Screen · Dynamic Island · watch Smart Stack. It is **renewed at the 8-hour limit**.
+- **Entry points**: App Intents `StartRecordingIntent`, `StopRecordingIntent` → Siri · Shortcuts · Action button.
+  An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
+- **Auth**: AppAuth requests only `drive.file`, and `TokenProvider` handles token refresh, expiry and 401. RecKit `GoogleAuth` and `AppleTokenProvider` are shared with macOS, and the iPhone uses
   `signIn(presenting: UIViewController)`.
-- **저장 위치**(§3 "저장 위치"): 설정 맨 위 칸에서 Google Drive · iCloud를 고른다. iCloud 업로드는 시스템이 올리므로
-  `BackgroundTransport`·배경 URLSession은 Drive 청크와 외부 전사 업로드에만 쓰인다.
-- **실행기**(the executor): 포그라운드는 RecKit `JobRunner`(잡 생성 직후 · 5분 타이머 · 네트워크 복귀 · `nextRunAt`
-  후속 + 폰만의 다섯째 방아쇠인 앱 활성화). 앱이 화면에 없을 때는 아래 표대로 나뉜다.
-- **UI**: 녹음, 목록, 설정(녹음 처리 설정 포함). SwiftUI. (워크플로우 편집은 2026-09-24 폐기)
-- **App Review**: 4.8 예외 근거 심사 노트, 2.5.14 녹음 표시(Live Activity + 시스템 마이크 표시).
+- **Storage location** (§3 "Storage location"): the top row of settings chooses Google Drive or iCloud. iCloud uploads are done by the system, so
+  `BackgroundTransport` and the background URLSession are used only for Drive chunks and uploads for external transcription.
+- **Runner** (the executor): in the foreground, RecKit `JobRunner` (right after a job is created · 5-minute timer · network return · `nextRunAt`
+  follow-up + a fifth trigger only the phone has, app activation). When the app is not on screen, the work splits as in the table below.
+- **UI**: recording, list, settings (including recording processing settings). SwiftUI. (Workflow editing was retired 2026-09-24)
+- **App Review**: a review note giving the grounds for the 4.8 exception, 2.5.14 recording indicator (Live Activity + system microphone indicator).
 
-#### 배경에서 실제로 되는 일
+#### What actually happens in the background
 
-| 단계 | 앱이 정지(suspended)된 동안 | 앱이 종료된 뒤 |
+| Step | While the app is suspended | After the app is terminated |
 |---|---|---|
-| Drive 청크 PUT | **된다** — `BackgroundTransport`가 청크를 임시 파일로 잘라 배경 `URLSession`(`app.recly.upload`) 업로드 태스크로 보낸다. 완료 이벤트가 플래너에 응답으로 들어가 다음 청크가 예약된다 | 전송은 끝나지만 결과를 기다리던 코루틴은 없다. iOS가 `handleEventsForBackgroundURLSession`으로 앱을 깨우고, 이벤트는 임시 파일만 정리한다. 오프셋은 `DriveApi`가 재개 시 Drive에 다시 물어보므로 유실이 아니다 |
-| resumable 세션 시작 · `meta.json` · Job 상태 기록 | 코어가 돌아야 하는 일이라 **안 된다** | 안 된다 |
+| Drive chunk PUT | **Works** — `BackgroundTransport` cuts the chunk into a temporary file and sends it as an upload task on the background `URLSession` (`app.recly.upload`). The completion event enters the planner as a response and the next chunk is scheduled | The transfer finishes, but no coroutine is waiting for the result. iOS wakes the app with `handleEventsForBackgroundURLSession`, and the event only cleans up the temporary file. The offset is not lost, because `DriveApi` asks Drive again on resume |
+| Starting the resumable session · `meta.json` · writing Job state | The core has to run for this, so it **does not work** | Does not work |
 
-즉 **배경에서 저절로 되는 것은 업로드 바이트뿐**이고, 나머지는 `BGProcessingTask`(`app.recly.jobs`)가 얻어 주는
-실행 시간에 `runDueJobs()`가 처리한다. 스케줄 시점은 (a) 녹음 정지 직후, (b) 업로드 이벤트로 깨어난 직후, (c)
-처리된 태스크마다 자기 후속 1개다. `Info.plist`에 `UIBackgroundModes: processing`과
-`BGTaskSchedulerPermittedIdentifiers: [app.recly.jobs, app.recly.uploadNow]`가 있어야 등록이 된다(청크 PUT 자체는
-배경 모드가 필요 없다). iOS 26이면 사용자가 행에서 시작한 패스(2026-09-02부터는 **"다시 시도"**; 식별자 이름은
-옛 "지금 올리기"의 `uploadNow`를 그대로 쓴다)가 `BGContinuedProcessingTask`로 진행 UI를 띄우며
-계속 돈다 — 등록은 와일드카드 `app.recly.uploadNow.*`, 제출은 `app.recly.uploadNow.{recordingId}`이고
-`Info.plist`에는 **접두사만**(`.*` 없이) 올린다. `#available`로 가려져 있어 iOS 26 아래에서는 포그라운드 패스 +
-`BGProcessingTask`가 전부다.
+So **the only thing that happens on its own in the background is the upload bytes**; the rest is handled by `runDueJobs()` in the
+execution time that a `BGProcessingTask` (`app.recly.jobs`) obtains. It is scheduled (a) right after a recording stops, (b) right after the app wakes for an upload event, and (c)
+as one follow-up of its own by each task that was processed. `Info.plist` must have `UIBackgroundModes: processing` and
+`BGTaskSchedulerPermittedIdentifiers: [app.recly.jobs, app.recly.uploadNow]` for registration to work (the chunk PUT itself
+needs no background mode). On iOS 26, a pass the user started from a row (since 2026-09-02 this is **"Retry"**; the identifier name
+still uses `uploadNow` from the old "Upload now") keeps running with progress UI as a `BGContinuedProcessingTask`
+— registration uses the wildcard `app.recly.uploadNow.*`, submission uses `app.recly.uploadNow.{recordingId}`, and
+`Info.plist` lists **only the prefix** (without `.*`). It is gated by `#available`, so below iOS 26 the foreground pass +
+`BGProcessingTask` is all there is.
 
-#### 워치 수신
+#### Receiving from the watch
 
-`WCSessionDelegate.session(_:didReceive:)`에서 **동기적으로** 파일 이동 → sha256 검증 →
-`transferUserInfo(["ack": …])`(도달 보장) → 메타 수신 시 등록·enqueue. `transferFile` 수신 측은 콜백 안에서 파일을
-옮기지 않으면 삭제된다. 워크플로우 요약을 `updateApplicationContext`로 워치에 보내던 것은 폐기됐다(2026-09-24).
+In `WCSessionDelegate.session(_:didReceive:)`, **synchronously**: move the file → verify sha256 →
+`transferUserInfo(["ack": …])` (guaranteed delivery) → on meta receipt, register and enqueue. On the receiving side of `transferFile`, a file
+that is not moved inside the callback is deleted. Sending the workflow summary to the watch with `updateApplicationContext` was retired (2026-09-24).
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| I1 | 타깃·RecKit·XCFramework |
-| I2 | 녹음 + 배경 오디오 + Live Activity |
-| I3 | 인증 + **목록** + 포그라운드 **실행기** |
+| I1 | Targets · RecKit · XCFramework |
+| I2 | Recording + background audio + Live Activity |
+| I3 | Auth + **list** + foreground **runner** |
 | I4 | `BackgroundTransport` + `BGProcessingTask` |
-| I5 | **폐기(2026-09-24)** — **워크플로우 편집** + 설정의 워크플로우 내보내기/가져오기(§5): SwiftUI `fileExporter`(기본 이름 `recly-workflows.json`)·`fileImporter`, 가져오기는 교체 확인 뒤 적용, 키는 파일에 들어가지 않는다는 안내 |
-| I6 | WC 수신·ack(§3 워치 → 폰 전송 계약의 받는 쪽) |
-| I7 | App Intents · 액션 버튼 · Control |
+| I5 | **Retired (2026-09-24)** — **workflow editing** + workflow export/import in settings (§5): SwiftUI `fileExporter` (default name `recly-workflows.json`) · `fileImporter`, import applies after a replace confirmation, a note that keys are not included in the file |
+| I6 | WC receiving · ack (the receiving side of §3 Watch → phone transfer contract) |
+| I7 | App Intents · Action button · Control |
 | I8 | TestFlight |
 
 ### Apple Watch
 
-- **녹음**: RecKit 공용 세그먼트 레코더. `UIBackgroundModes: audio`(WatchKit의 `WKBackgroundModes`가 아니다).
-  **마이크만** 녹음한다. 포그라운드에서 세션 시작 후 손목을 내려도 유지된다. 길이 제한 없음. 16 kHz AAC 32 kbps.
-  `.record`/`.default`, watchOS 11+는 `.allowBluetoothHFP`로 헤드셋 입력을 허용한다.
-  watchOS는 `setPreferredInput`을 지원하지 않으므로 실제 입력 선택은 OS가 담당한다(watchOS 10은 기본 녹음 세션).
-  입력 변경·인터럽션·버퍼 저장·오디오 서비스 리셋 처리는 iPhone과 공유한다.
-- **전송**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` 파트별 + 메타 마지막.
-  `didFinish` 콜백은 누락될 수 있으므로 **폰의 ack(`didReceiveUserInfo`)**를 완료 기준으로 삼는다. ack 받은 파트 삭제.
-  재시도: 앱 활성화 시 미ack 파트 재전송(중복은 폰이 sha256으로 무시).
-- **진입점**: 컴플리케이션(상태 + 탭 시작), App Shortcut → Watch Ultra 액션 버튼, Double
-  Tap(`handGestureShortcut(.primaryAction)`)은 정지에.
-- 인증·네트워크 없음. (워크플로우 요약 수신은 2026-09-24 폐기)
+- **Recording**: the shared RecKit segment recorder. `UIBackgroundModes: audio` (not WatchKit's `WKBackgroundModes`).
+  Records **the microphone only**. A session started in the foreground keeps going when the wrist is lowered. No length limit. 16 kHz AAC 32 kbps.
+  `.record`/`.default`; on watchOS 11+, `.allowBluetoothHFP` allows headset input.
+  watchOS does not support `setPreferredInput`, so the OS handles the actual input choice (watchOS 10 uses the default recording session).
+  Handling of input changes, interruptions, buffer saving and audio service resets is shared with the iPhone.
+- **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part + the meta last.
+  The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion. Acked parts are deleted.
+  Retry: unacked parts are resent when the app becomes active (the phone ignores duplicates by sha256).
+- **Entry points**: complication (state + tap to start), App Shortcut → Watch Ultra Action button, Double
+  Tap (`handGestureShortcut(.primaryAction)`) for stop.
+- No auth or network. (Receiving the workflow summary was retired 2026-09-24)
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| WA1 | 타깃·RecKit(watchOS 슬라이스) |
-| WA2 | 녹음 + 배경 오디오 |
-| WA3 | `transferFile` 큐 + ack |
-| WA4 | 컴플리케이션·App Shortcut·Double Tap |
-| WA5 | 햅틱(`WKInterfaceDevice.play(.start/.stop/.success)`) — 셋째 햅틱(전송 완료)은 "이제 내 손을 떠났다"를 뜻한다 |
-| WA6 | 인터럽션(전화·Siri) 처리 |
+| WA1 | Target · RecKit (watchOS slice) |
+| WA2 | Recording + background audio |
+| WA3 | `transferFile` queue + ack |
+| WA4 | Complication · App Shortcut · Double Tap |
+| WA5 | Haptics (`WKInterfaceDevice.play(.start/.stop/.success)`) — the third haptic (transfer complete) means "it has now left my hands" |
+| WA6 | Interruption (phone call · Siri) handling |
 
-### 주의
+### Caveats
 
-- watchOS 앱 75 MB 상한 — 링크된 `RecWatch.app`은 13 MB로 여유가 있다.
-- 모든 Apple 타깃에 **`-lsqlite3` 링크가 필요**하다(정적 XCFramework는 링커 옵션을 내보내지 않는다).
-- 시뮬레이터 빌드는 **`apple/scripts/build-sim.sh`**로 한다(`ARCHS=arm64`를 명령줄에 고정하는 래퍼):
-  `ReclyCore`에 x86_64 시뮬레이터 슬라이스가 없고, SwiftPM 패키지(RecKit)는 프로젝트 레벨
-  `ARCHS`/`EXCLUDED_ARCHS` 조건부도, arch를 명시한 `-destination`도 무시한다 — 셋 다 시도해 확인했고,
-  커맨드라인 빌드 설정만 도달한다. x86_64 코어 타깃 추가는 하지 않는다.
+- watchOS app 75 MB limit — the linked `RecWatch.app` is 13 MB, so there is room to spare.
+- Every Apple target **needs `-lsqlite3` linked** (a static XCFramework does not export linker options).
+- Simulator builds go through **`apple/scripts/build-sim.sh`** (a wrapper that pins `ARCHS=arm64` on the command line):
+  `ReclyCore` has no x86_64 simulator slice, and the SwiftPM package (RecKit) ignores project-level
+  `ARCHS`/`EXCLUDED_ARCHS` conditionals as well as a `-destination` that names the arch — all three were tried and confirmed;
+  only command-line build settings reach it. No x86_64 core target is added.
 
 ---
 
-## 14. Windows (구 docs/14)
+## 14. Windows (formerly docs/14)
 
-대상: Windows 11(프로세스별 loopback은 build 20348+; 그 이하는 엔드포인트 loopback 폴백).
+Target: Windows 11 (per-process loopback needs build 20348+; below that, endpoint loopback fallback).
 
-### 구조
+### Structure
 
 ```
 windows/
-  app/               Compose Desktop (JVM). 트레이, 녹음 처리 설정, 실행기, 인증(loopback PKCE), 헬퍼 관리
-  capture-helper/    Rust 바이너리. WASAPI 마이크 + loopback 캡처, 리샘플, 드리프트 보정, 세그먼트 파일 작성,
-                     마이크 사용 감지
+  app/               Compose Desktop (JVM). Tray, recording processing settings, runner, auth (loopback PKCE), helper management
+  capture-helper/    Rust binary. WASAPI microphone + loopback capture, resampling, drift correction, segment file writing,
+                     microphone-in-use detection
 ```
 
-JVM ↔ 헬퍼: 앱이 헬퍼를 spawn하고 stdin으로 명령(JSON line: `start {dir, base, segmentSec, tracks}`, `stop`,
-`detect on/off`), stdout으로 이벤트(`part_done {…sha256}`, `level {peaks[]}`, `mic_in_use {app}`, `error`)를
-받는다. 파일 이름은 앱이 준 `base`로 만든다 — 헬퍼가 이름을 짓지 않는다. **헬퍼가 죽으면 앱이 마지막 파트까지를
-finalize한다.** stdout이 닫히는 것이 앱이 기다리는 신호다. stdout은 프로토콜이고 stderr는 로그다.
+JVM ↔ helper: the app spawns the helper, sends commands on stdin (JSON lines: `start {dir, base, segmentSec, tracks}`, `stop`,
+`detect on/off`) and receives events on stdout (`part_done {…sha256}`, `level {peaks[]}`, `mic_in_use {app}`, `error`).
+File names are built from the `base` the app gives — the helper does not name files.
+**If the helper dies, the app finalizes up to the last part.** Stdout closing is the signal the app waits for. Stdout is the protocol and stderr is the log.
 
-### 캡처
+### Capture
 
-- 마이크: WASAPI 캡처(공유 모드, 이벤트 구동). `wasapi` crate.
-- 시스템: 기본 렌더 엔드포인트 loopback(`AUDCLNT_STREAMFLAGS_LOOPBACK`). 무음 시 콜백이 없으므로 타이머로 무음
-  프레임을 삽입한다. 프로세스별 loopback은 아직 없다 — 전역이다.
-- 인코딩: **번들 ffmpeg**(ADR-019)로 파이프. MF 경로는 `--encoder mf`로 남아 있고, CI의 `--self-test`가 두 포맷을
-  실제로 시도해 근거를 찍는다.
-- 트랙·세그먼트·메타 규칙은 macOS와 동일하다. 드리프트 보정도 같은 방식이고 목표도 같다(1시간 < 20 ms).
-  데스크톱의 새 녹음은 macOS·Windows 모두 **회의 모드(마이크 + 시스템 오디오)**로 고정한다(2026-09-24).
-  모드 선택 UI와 과거 선택값의 적용을 없앤다. 폰·워치와 기존 녹음 메타의 `mono` 지원은 유지한다.
-  Mac의 시스템 오디오 권한 안내와 Windows의 루프백 처리는 기존 플랫폼 경로를 따른다.
-- **권한**: 프롬프트가 없다. 설정 → 개인정보 → 마이크 → "데스크톱 앱 허용"이 꺼져 있으면 레지스트리
-  (`HKCU\…\ConsentStore\microphone`)로 감지해서 안내한다.
+- Microphone: WASAPI capture (shared mode, event-driven). `wasapi` crate.
+- System: default render endpoint loopback (`AUDCLNT_STREAMFLAGS_LOOPBACK`).
+  With no callbacks during silence, a timer inserts silent frames. Per-process loopback is not there yet — it is global.
+- Encoding: piped to **the bundled ffmpeg** (ADR-019). The MF path remains as `--encoder mf`, and the CI `--self-test` actually tries both formats
+  and logs the evidence.
+- Track, segment and meta rules are the same as on macOS. Drift correction works the same way with the same target (1 hour < 20 ms).
+  New desktop recordings on both macOS and Windows are fixed to **meeting mode (microphone + system audio)** (2026-09-24).
+  The mode picker UI and the applying of previously chosen values are removed. `mono` support for phones, watches and existing recording meta stays.
+  The Mac's system audio permission guidance and Windows' loopback handling follow the existing platform paths.
+- **Permissions**: there is no prompt. If Settings → Privacy → Microphone → "Let desktop apps access your microphone" is off, the app detects it through the registry
+  (`HKCU\…\ConsentStore\microphone`) and shows guidance.
 
-### 감지
+### Detection
 
-- 마이크 사용: `IAudioSessionManager2::GetSessionEnumerator`(캡처 엔드포인트)의 활성 세션 + 프로세스
-  이름(`Zoom.exe`, `ms-teams.exe`, `slack.exe`, `Discord.exe`, 브라우저) + 창 제목(`EnumWindows`).
-- 규칙은 순수 Kotlin이고 macOS와 **같은 상태 기계**다: 마이크 사용 × 회의 앱 × 쿨다운 600초, 회의당 알림 1회,
-  **60초 유휴 → "녹음을 끝낼까요?"**(End the recording?) — 자동 정지가 아니다. 자동 녹음도 없다(ADR-011).
-- 마이크 신호는 그때그때 헬퍼가 다르다. 녹음 중이 아니면 감지 전용 헬퍼가 `detect on`으로 보고하고, 녹음이 시작되면
-  **녹음 중인 헬퍼**의 `mic_in_use`를 쓴다 — 헬퍼는 자기 프로세스를 세션 목록에서 빼므로 그래야 조용한 회의와 Recly
-  자신이 연 마이크를 구별할 수 있다. 교대는 한 방향씩 기다리고, 소유권은 **녹음 세션마다 토큰**이다. 토큰이 맞지 않는
-  `resume`·`mic_in_use`·알림 액션은 버린다. 두 헬퍼가 동시에 살아 있는 구간은 없다.
-- 알림은 AWT 트레이 풍선이라 **버튼이 없다**(액션 버튼이 있는 토스트 라이브러리는 Windows 전용 런타임 의존성이다).
-  풍선 클릭이 곧 수락이고, 확실한 경로는 트레이 메뉴 항목이다.
-- **캘린더 컨텍스트는 없다**(§12와 같이 제품 전체에서 제거됐다). 제목은 정지 후 입력한다.
+- Microphone use: active sessions from `IAudioSessionManager2::GetSessionEnumerator` (capture endpoint) + process
+  names (`Zoom.exe`, `ms-teams.exe`, `slack.exe`, `Discord.exe`, browsers) + window titles (`EnumWindows`).
+- The rules are pure Kotlin and **the same state machine** as macOS: microphone in use × meeting app × 600 s cooldown, one notification per meeting,
+  **60 s idle → "End the recording?"** — not an automatic stop. There is no automatic recording either (ADR-011).
+- The microphone signal comes from a different helper depending on the moment. When not recording, a detection-only helper reports with `detect on`; once a recording starts,
+  the `mic_in_use` of **the recording helper** is used — a helper leaves its own process out of the session list, so only this way can a quiet meeting be told apart from the microphone Recly
+  itself opened. The handover waits one direction at a time, and ownership is **a token per recording session**. `resume`, `mic_in_use` and notification actions whose token does not match
+  are dropped. There is no interval in which both helpers are alive at once.
+- Notifications are AWT tray balloons, so **they have no buttons** (toast libraries with action buttons are a Windows-only runtime dependency).
+  Clicking the balloon is acceptance, and the reliable path is the tray menu item.
+- **There is no calendar context** (removed from the whole product, as in §12). The title is entered after stop.
 
-### 앱
+### App
 
-- 트레이: 상태 아이콘, 시작/정지, 최근(원장, 20행씩 무한 스크롤), 설정, 알림 배너(편집 창은 2026-09-24 폐기). 시작 시 자동 실행(launch at login)은
-  `HKCU\…\Run`이다(Mac의 `SMAppService`에 해당한다).
-- 인증: §6 Windows 절(Ktor CIO 127.0.0.1 서버 + 시스템 브라우저 + PKCE). refresh token은 Credential Manager(JNA).
-- **실행기**: Job 생성 직후 + 5분 타이머 + 네트워크 복귀 + `nextRunAt` 후속.
-- 패키징: `jpackage` MSI. 헬퍼와 ffmpeg(LGPL 공유 빌드)를 `app/resources/windows-x64/`에 넣고, 설치된 앱이
-  `compose.application.resources.dir`로 받아 헬퍼에 `--ffmpeg <경로>`로 넘긴다. ffmpeg LGPL 고지는
-  `THIRD-PARTY-ffmpeg.md`로 설치본에 함께 들어간다. MSI는 Windows에서만 만들 수 있어 릴리스 태그(`v*`)에서 CI(`windows-release.yml`)가 만들어 GitHub 릴리스에 첨부한다.
+- Tray: status icon, start/stop, recent (ledger, infinite scroll 20 rows at a time), settings, notice banner (the editing window was retired 2026-09-24). Launch at login is
+  `HKCU\…\Run` (the counterpart of the Mac's `SMAppService`).
+- Auth: the Windows part of §6 (Ktor CIO 127.0.0.1 server + system browser + PKCE). The refresh token is in Credential Manager (JNA).
+- **Runner**: right after a Job is created + 5-minute timer + network return + `nextRunAt` follow-up.
+- Packaging: `jpackage` MSI. The helper and ffmpeg (LGPL shared build) go into `app/resources/windows-x64/`, and the installed app
+  receives them through `compose.application.resources.dir` and passes `--ffmpeg <path>` to the helper. The ffmpeg LGPL notice
+  ships with the installation as `THIRD-PARTY-ffmpeg.md`. The MSI can only be built on Windows, so CI (`windows-release.yml`) builds it on release tags (`v*`) and attaches it to the GitHub release.
 
-### 개발 호스트(macOS) 대체
+### Development host (macOS) stand-ins
 
-개발 머신이 macOS이므로 Windows 전용 부분은 인터페이스 뒤에 있고 macOS에서는 스텁이 선택된다.
+The development machine is macOS, so the Windows-only parts sit behind interfaces and stubs are selected on macOS.
 
-| 기능 | Windows | macOS(개발 호스트) |
+| Feature | Windows | macOS (development host) |
 |---|---|---|
-| 시크릿·토큰 저장 | Credential Manager (`WindowsCredentialStore`, JNA) | `{dataDir}/dev-secure-store.json` — **암호화 없음, 개발 전용** |
-| 자동 실행 | `HKCU\…\Run` | no-op, 설정에서 비활성 표시 |
-| 데이터 디렉터리 | `%LOCALAPPDATA%\Recly` | `~/Library/Application Support/app.recly.windows` |
-| 캡처 헬퍼 | MSI 리소스의 `recly-capture-helper.exe` | 없음 → 트레이 "캡처 헬퍼 없음"(페이크 헬퍼로 대체) |
-| 실행 중인 앱·창 제목 | 프로세스 테이블 + `EnumWindows` | 항상 비어 있음 → `RECLY_DETECT_PROCESSES`로 대체 |
-| 마이크 "데스크톱 앱 허용" | 레지스트리 | 항상 `UNKNOWN`(안내 문구 안 뜸) |
-| 회의 알림 | 트레이 풍선 | 같은 API — macOS 알림 센터로 뜬다 |
+| Secret · token storage | Credential Manager (`WindowsCredentialStore`, JNA) | `{dataDir}/dev-secure-store.json` — **no encryption, development only** |
+| Launch at login | `HKCU\…\Run` | no-op, shown as disabled in settings |
+| Data directory | `%LOCALAPPDATA%\Recly` | `~/Library/Application Support/app.recly.windows` |
+| Capture helper | `recly-capture-helper.exe` from the MSI resources | none → tray "No capture helper" (stood in for by a fake helper) |
+| Running apps · window titles | process table + `EnumWindows` | always empty → stood in for by `RECLY_DETECT_PROCESSES` |
+| Microphone "Let desktop apps access your microphone" | registry | always `UNKNOWN` (no guidance text appears) |
+| Meeting notifications | tray balloon | same API — shows up in the macOS Notification Center |
 
-### 태스크
+### Tasks
 
-| # | 범위 |
+| # | Scope |
 |---|---|
-| N1 | Compose Desktop 골격, `:core` JVM 의존, 트레이 |
-| N2 | 헬퍼: 마이크 캡처 → PCM 세그먼트 → ffmpeg → m4a |
-| N3 | 헬퍼: loopback + 드리프트 보정 + mix |
-| N4 | 인증 + 실행기 |
-| N5 | **감지** + 알림 |
-| N6 | **폐기(2026-09-24)** — 편집 창 + 설정의 워크플로우 내보내기/가져오기(§5) |
-| N7 | MSI + 서명(SmartScreen 경고 없음) |
+| N1 | Compose Desktop skeleton, `:core` JVM dependency, tray |
+| N2 | Helper: microphone capture → PCM segments → ffmpeg → m4a |
+| N3 | Helper: loopback + drift correction + mix |
+| N4 | Auth + runner |
+| N5 | **Detection** + notifications |
+| N6 | **Retired (2026-09-24)** — editing window + workflow export/import in settings (§5) |
+| N7 | MSI + signing (no SmartScreen warning) |
 
 ---
 
-## 15. 프라이버시·데이터 흐름 (구 docs/15)
+## 15. Privacy · data flows (formerly docs/15)
 
-이 절은 **Recly가 설치된 기기에서 데이터가 밖으로 나가는 모든 경로**를 하나도 빼지 않고 적는 것이 목적이다.
-사용자에게 보여줄 문장은 [`docs/policy/privacy-policy.md`](policy/privacy-policy.md)이고, 이 절은 그 문장의
-근거이자 구현 계약이다. **새 네트워크 호출을 추가하는 변경은 이 절을 함께 고쳐야 한다.**
+The purpose of this section is to list **every path by which data leaves a device where Recly is installed**, without
+leaving a single one out. The text shown to users is [`docs/policy/privacy-policy.md`](policy/privacy-policy.md); this
+section is the basis for that text and the implementation contract. **A change that adds a new network call must amend
+this section in the same change.**
 
-### 한 줄 요약
+### One-line summary
 
-Recly는 **서버가 없다.** 데이터가 나가는 곳은 (1) 사용자의 Google Drive(§1, Google OAuth 포함) — iPhone·Mac에서 iCloud를
-골랐으면 사용자의 iCloud(§1b), (2) 사용자가 녹음
-처리 설정에서 **외부 API 전사를 골랐을 때만** 그 STT provider(§3), (3) **사용자가 짝 지은 자신의 다른 기기**(워치 ↔ 폰,
-§4) — 앞의 둘은 사용자의 계정·사용자의 키로 가고, 셋째는 사용자 자신의 기기 두 대 사이에 머문다. 그 외에 App
-Store 배포본은 아래 StoreKit 국가 조회를, 로컬 전사는 사용자가 요청한 모델 다운로드(Apple 시스템 자산, Android·Windows는
-Hugging Face·GitHub의 공개 파일)를 쓰고, 정책
-링크는 사용자가 누를 때만 브라우저로 연다(§3 끝). 웹훅(§2)은 2026-09-24 폐기돼 더 이상 경로가 아니다.
+Recly **has no server.** Data goes to (1) the user's Google Drive (§1, including Google OAuth) — or the user's iCloud
+(§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
+transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
+§4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
+devices. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
+the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
+links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path.
 
-### Apple 로컬 음성 모델 자산
+### Apple on-device speech model assets
 
-- 사용자가 모델 다운로드를 요청하면(설정, 대기 중인 녹음·배너, 첫 실행 카드) Apple Speech `AssetInventory` 시스템 서비스가 언어 모델을 다운로드한다.
-  Apple이 관리하는 시스템 자산 다운로드이며 앱이 별도 서버 주소를 설정하거나 API 키를 전달하지 않는다.
-- `SpeechTranscriber` 처리에는 기기의 오디오 파일/PCM과 확정 결과를 사용한다. 로컬 전사 선택 자체로 외부 STT에
-  오디오를 보내지 않으며, 기본 흐름의 원본·결과 Drive 업로드는 별도 단계로 유지한다.
-- 모델 없음·플랫폼 미지원·언어 미지원은 사용자 설정 동작이 필요한 상태다. OS 실행 시간 대기는 일반 대기로 표시한다.
-  발열 대기(Apple `serious` 이상, Android `SEVERE` 이상)는 행에 `기기가 식을 때까지 대기 중`으로 이유를 보이고 식으면
-  자동으로 재개한다(2026-09-27). 저전력·절전 모드로는 멈추지 않는다. 이 정책은 기기의 발열이 0임을 보증하지 않는다.
+- When the user requests a model download (Settings, a waiting recording · banner, the first-run card), the Apple Speech `AssetInventory` system service downloads the language model.
+  It is a system asset download managed by Apple; the app does not configure a separate server address or pass an API key.
+- `SpeechTranscriber` processing uses the device's audio file/PCM and finalized results. Choosing local transcription
+  does not by itself send audio to an external STT, and the default flow's Drive upload of the original and results stays a separate step.
+- No model · unsupported platform · unsupported language are states that need the user to act in settings. A wait for OS run time is shown as an ordinary wait.
+  A thermal wait (Apple `serious` or higher, Android `SEVERE` or higher) shows the reason on the row as `Waiting for the device to cool down` and
+  resumes automatically once the device cools (2026-09-27). Low power / battery saver mode does not stop it. This policy does not guarantee that the device produces zero heat.
 
-### Android·Windows 로컬 전사 모델
+### Android · Windows local transcription models
 
-- 사용자가 **모델 다운로드**를 누를 때만 받는다 — 설정, 대기 중인 녹음·배너, 첫 실행 카드(§5 "고정 처리 설정 도입").
-  Android는 알림이 붙은 WorkManager 포그라운드 작업으로 받는다. Windows가 종량제 여부를 묻는 캡처 헬퍼의
-  `--network-cost`는 OS의 연결 비용 정보를 읽을 뿐 네트워크 요청을 하지 않는다. 받는 곳은 두 곳이고 인증은 없다:
+- The model is downloaded only when the user taps **Download model** — in Settings, on a waiting recording · banner, or on the first-run card (§5 "Fixed processing settings").
+  Android downloads it as a WorkManager foreground job with a notification. On Windows, the app asks the capture helper's
+  `--network-cost` whether the connection is metered; it only reads the OS's connection cost information and makes no network request. There are two download sources, with no authentication:
   `https://huggingface.co/csukuangfj2/sherpa-onnx-qwen3-asr-0.6B-int8-2026-03-25/resolve/68818b2313fe77bd06f6a7c5068ff3ef59d02b8a/…`
-  (모델·토크나이저 6개 파일, 큰 파일은 `*.cdn.hf.co`로 리디렉션)와
-  `https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx`(VAD, `release-assets.githubusercontent.com`으로
-  리디렉션). 파일 목록·크기·해시는 코어 `Qwen3Asr.files`가 정본이다.
-- 요청은 `Range` 헤더를 붙인 GET뿐이다. 녹음·녹취·처리 설정·키·기기 식별자를 보내지 않는다. 호스트가 보는 것은 IP 주소,
-  HTTP 클라이언트의 User-Agent, 요청한 파일이다. 커밋·크기·SHA-256으로 고정돼 있어 호스트 쪽 파일이 바뀌면 설치하지 않는다.
-- 전사 자체는 기기 안에서 하며 오디오는 이 경로로 나가지 않는다. 원본·결과 Drive 업로드는 별도 단계로 유지한다.
-- Windows의 sherpa-onnx 네이티브 라이브러리는 앱에 들어 있고(jar), 받는 것이 아니다.
+  (six model · tokenizer files; large files redirect to `*.cdn.hf.co`) and
+  `https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/silero_vad.onnx` (VAD, redirects to
+  `release-assets.githubusercontent.com`). Core `Qwen3Asr.files` is the source of truth for the file list, sizes and hashes.
+- The requests are only GETs with a `Range` header. They send no recordings, transcripts, processing settings, keys or device identifiers. What the host sees is the IP address,
+  the HTTP client's User-Agent and the requested file. Files are pinned by commit, size and SHA-256, so if a file changes on the host side, it is not installed.
+- Transcription itself happens on the device, and audio does not leave through this path. The Drive upload of the original and results stays a separate step.
+- On Windows the sherpa-onnx native library ships inside the app (jar); it is not downloaded.
 
-### 중국 본토 App Store
+### China mainland App Store
 
-2026-09-14 심사 대응: iPhone/iPad는 StoreKit `Storefront.current.countryCode`의 `CHN`을 기준으로 OpenAI 전사를 비활성화한다. 기기 언어·지역 설정·GPS·IP 추정은 판별에 사용하지 않는다. Apple Watch 녹음의 전사는 iPhone에서 실행하므로 같은 정책을 따른다. Android·Windows·직접 배포 macOS에는 이 App Store 정책을 적용하지 않는다.
+Response to App Review on 2026-09-14: on iPhone/iPad, OpenAI transcription is disabled based on `CHN` from StoreKit `Storefront.current.countryCode`. Device language, region settings, GPS and IP estimates are not used to decide. Transcription of Apple Watch recordings runs on the iPhone, so it follows the same policy. This App Store policy does not apply to Android, Windows or directly distributed macOS.
 
-- `openai` 제공업체와 OpenAI/ChatGPT 도메인을 직접 지정한 전사 엔드포인트를 차단한다. `groq` 등 다른 제공업체 이름으로 OpenAI 주소를 지정해도 차단한다. 다른 업체가 제공하는 전사는 별도 서비스이며 이 정책에서 일괄 제거하지 않는다.
-- 설정의 제공업체 목록에서 해당 제공업체를 숨기고 저장·가져오기 확인 시 다시 검증한다. 저장된 설정·복원된 데이터베이스·이미 큐에 있는 잡에도 실행 직전과 매 전사 요청 직전에 동일 정책을 적용한다. 저장된 설정이나 키를 자동 삭제하지 않는다.
-- 지역 미확인·조회 실패는 허용으로 간주하지 않는다. 해당 전사는 `STOREFRONT_UNAVAILABLE`로 60초 대기하며 재시도 횟수를 소모하지 않는다. 중국 본토로 확인되면 `PROVIDER_REGION_RESTRICTED`로 실패한다. 다른 단계와 `onError` 계약은 유지한다.
-- 제한 또는 지역 미확인 상태에서는 전사 HTTP 리디렉션을 자동 추적하지 않는다. 전사 업체의 최종 엔드포인트를 사용해야 하며, 리디렉션으로 검사하지 않은 목적지에 오디오가 전달되는 것을 방지한다.
-- StoreKit의 현재 국가 정보는 사용 직전에 읽고 설정 화면은 `Storefront.updates`를 구독한다. 이전 국가를 디스크에 저장해 허용 근거로 재사용하지 않는다.
-- 추가 시스템 서비스 경로: Apple StoreKit에 App Store 국가 정보를 요청한다. Recly가 이 조회에 녹음·녹취록·처리 설정·외부 업체 API 키를 전달하지 않는다. Apple의 시스템 서비스가 계정/storefront 정보를 관리하며, 앱이 별도의 IP 위치 조회 서버를 호출하지 않는다.
+- The `openai` provider and transcription endpoints that directly specify an OpenAI/ChatGPT domain are blocked. An OpenAI address specified under another provider name such as `groq` is blocked too. Transcription offered by other companies is a separate service and is not removed wholesale by this policy.
+- That provider is hidden from the provider list in settings and validated again on save and on import confirmation. The same policy applies to saved settings, restored databases and jobs already in the queue, right before execution and right before every transcription request. Saved settings and keys are not deleted automatically.
+- An unconfirmed region or a failed lookup is not treated as allowed. That transcription waits 60 seconds with `STOREFRONT_UNAVAILABLE` and does not use up retries. If China mainland is confirmed, it fails with `PROVIDER_REGION_RESTRICTED`. Other steps and the `onError` contract stay as they are.
+- In the restricted or region-unconfirmed state, transcription HTTP redirects are not followed automatically. The transcription provider's final endpoint must be used; this prevents audio from being delivered through a redirect to a destination that was never checked.
+- StoreKit's current country information is read right before use, and the settings screen subscribes to `Storefront.updates`. A previous country is not stored on disk and reused as grounds for allowing.
+- Additional system service path: the app asks Apple StoreKit for App Store country information. Recly passes no recordings, transcripts, processing settings or external provider API keys to this lookup. Apple's system service manages the account/storefront information, and the app does not call a separate IP geolocation server.
 
-### iPhone 제공 업체
+### iPhone providers
 
-2026-09-29 심사 대응(App Review 5.1.1(i) — 방침이 제3자의 "same or equal protection"을 확인해야 한다): iPhone은 녹음을
-모델 학습에 쓰지 않는 업체만 제공한다. 방침 §3(2) "Providers offered on iPhone"이 이 목록으로 동등 보호를 확인한다.
-Android·Windows·직접 배포 macOS는 열넷을 그대로 두고 방침에 업체별 차이를 공개한다(사용자 결정).
+Response to App Review on 2026-09-29 (App Review 5.1.1(i) — the policy must confirm "same or equal protection" from
+third parties): iPhone offers only providers that do not use recordings for model training. Policy §3(2) "Providers
+offered on iPhone" confirms equal protection with this list.
+Android · Windows · directly distributed macOS keep all fourteen, and the policy discloses the differences between providers (user decision).
 
-| 업체 | 학습 제외 근거 |
+| Provider | Grounds for exclusion from training |
 |---|---|
-| OpenAI · Groq · Azure AI Speech · RTZR | 기본값 |
-| Deepgram | Recly가 모든 요청에 `mip_opt_out=true`를 보낸다 |
-| AssemblyAI | Recly가 모든 플랫폼에서 EU 리전(`api.eu.assemblyai.com`)으로 보낸다 — 문서상 유럽 서버로 보낸 파일은 학습 제외(요금제 조건 없음) |
-| CLOVA Speech | 약관상 고객 동의가 있을 때만 엔진 개선에 사용 |
-| ElevenLabs | 계정의 "Improve the models for everyone"을 끈 경우만. 앱이 확인할 수 없으므로 전송 허용 창이 사용자에게 확인받는다 |
+| OpenAI · Groq · Azure AI Speech · RTZR | Default |
+| Deepgram | Recly sends `mip_opt_out=true` on every request |
+| AssemblyAI | Recly sends to the EU region (`api.eu.assemblyai.com`) on every platform — per the documentation, files sent to European servers are excluded from training (no plan condition) |
+| CLOVA Speech | Per the terms, used for engine improvement only with customer consent |
+| ElevenLabs | Only when "Improve the models for everyone" is turned off in the account. The app cannot check this, so the transfer permission dialog asks the user to confirm it |
 
-- 코어 `TranscriptionPolicy.APP_STORE_PROVIDERS`가 정본이다. App Store 셸(`TranscriptionPolicy(region)`)에서만 켜진다.
-  설정의 제공자 목록에서 나머지를 숨기고, 저장·가져오기 확인과 실행 직전 검사(`requireAllowed`)는 `PROVIDER_NOT_OFFERED`로
-  막는다 — 이미 큐에 있는 잡도 요청 전에 실패한다. 저장된 설정이나 키를 자동 삭제하지 않는다.
-- ElevenLabs 전송 허용(설정 저장 창과 설정 → 개인정보 보호의 허용 버튼)은 "ElevenLabs 계정에서 모델 학습을 껐습니다"
-  확인란을 체크해야 켜진다. 창은 ElevenLabs가 끄지 않으면 녹음을 모델 개선에 쓴다는 사실과 ElevenLabs 안내 페이지
-  (<https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models>, 2026-09-29 확인)를
-  보인다. ElevenLabs의 EU 데이터 거주·무보관 모드는 Enterprise 전용이라 쓰지 않는다.
-- 제외(iPhone): Together AI, Mistral AI, Daglo, Speechmatics, Rev AI, Gladia.
+- Core `TranscriptionPolicy.APP_STORE_PROVIDERS` is the source of truth. It is on only in the App Store shell (`TranscriptionPolicy(region)`).
+  The rest are hidden from the provider list in settings, and save · import confirmation and the pre-run check (`requireAllowed`) block them with `PROVIDER_NOT_OFFERED`
+  — jobs already in the queue also fail before the request. Saved settings and keys are not deleted automatically.
+- ElevenLabs transfer permission (the settings save dialog and the allow button in Settings → Privacy) turns on only when the
+  "I turned off model training in my ElevenLabs account." checkbox is checked. The dialog shows that ElevenLabs uses recordings
+  for model improvement unless this is turned off, and the ElevenLabs help page
+  (<https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models>, checked 2026-09-29).
+  ElevenLabs's EU data residency and zero-retention mode are Enterprise-only, so they are not used.
+- Excluded (iPhone): Together AI, Mistral AI, Daglo, Speechmatics, Rev AI, Gladia.
 
-### §0 기기 안에만 있는 것
+### §0 What stays on the device
 
-| 데이터 | 어디에 | 나가는가 |
+| Data | Where | Does it leave? |
 |---|---|---|
-| 녹음 원본(`.m4a` 파트) | §3 로컬 저장 경로 | Drive 업로드 단계가 사용자의 Drive로 올린다(§1). 외부 API 전사를 골랐으면 이어 붙인 트랙 한 파일이 그 provider로 간다(§3). **워치에서 녹음한 것은 먼저 짝 지은 폰으로 넘어간다**(§4) |
-| `meta.json` | 같은 폴더 | 업로드 단계가 함께 올린다. 워치의 것은 파트와 함께 폰으로 넘어간다 |
-| 녹취 결과 파일 | 같은 폴더(로컬 사본) | Drive 녹음 폴더에 함께 쓴다 |
-| Job·단계 상태, 재시도 예산, 업로드 세션 오프셋 | 로컬 SQLite(`rec.db`) | **절대 나가지 않는다**(원칙 2) |
-| `deviceId`(설치마다 새 UUID v4) | 보안 저장소 / macOS는 `{dataDir}/device.id` | Drive에 올라가는 `meta.json`의 `deviceId`에 실린다(§1). 그 밖으로는 나가지 않는다 |
-| 로그(`rec.*`, `shell.*`, `detect.*`) | 플랫폼 로그(Android `Log`, Apple `os.Logger`, JVM stdout) | 사용자가 "로그 내보내기"로 직접 꺼낼 때만 |
-| 언어·Wi-Fi 전용 같은 앱 설정 | 플랫폼 설정 저장소 | 나가지 않는다(동기화 대상이 아니다) |
+| Original recording (`.m4a` parts) | §3 Local storage path | The Drive upload step uploads it to the user's Drive (§1). If external API transcription was chosen, one file of the concatenated track goes to that provider (§3). **Recordings made on the watch first move to the paired phone** (§4) |
+| `meta.json` | Same folder | The upload step uploads it alongside. The watch's moves to the phone together with the parts |
+| Transcription result files | Same folder (local copy) | Written alongside into the Drive recording folder |
+| Job · step state, retry budget, upload session offsets | Local SQLite (`rec.db`) | **Never leaves** (principle 2) |
+| `deviceId` (a new UUID v4 per install) | Secure storage / on macOS `{dataDir}/device.id` | Carried in `deviceId` of the `meta.json` uploaded to Drive (§1). Does not leave any other way |
+| Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
+| App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
 
-### §1 Google Drive — 사용자 자신의 Drive
+### §1 Google Drive — the user's own Drive
 
-| 항목 | 내용 |
+| Item | Details |
 |---|---|
-| 스코프 | `drive.file` 하나뿐(ADR-009). non-sensitive. **전체 `drive` 스코프를 요청하지 않는다** — 앱이 만들지 않은 사용자의 다른 파일은 읽을 수 없다 |
-| 올라가는 것 | 녹음 폴더 `{folder 템플릿}/{base}/`(기본 `recly/{yyyy}/{yyyy}-{MM}/`) 안의 파트 `.m4a`, `{base}.meta.json`, 그리고 전사를 켰다면(로컬·외부 API) `{base}.transcript.json/.txt` |
-| 폴더에 붙는 메타 | 폴더 `description`에 제목, `appProperties`에 `recordingId`·`workflowId` |
-| appDataFolder | **쓰지 않는다.** 녹음 처리 설정도 시크릿 값도 기기에만 있고(§5), 기기 사이로 옮기는 것은 사용자가 직접 하는 설정 내보내기/가져오기뿐이다 |
-| 받는 것 | 업로드 검증용 `md5Checksum`·파일 메타. 사용자의 다른 파일 목록은 요청하지 않는다 |
-| 누가 보는가 | 사용자와, 사용자가 그 폴더를 공유한 사람. **Recly는 이 파일들에 접근할 수 있는 서버가 없다** — OAuth 토큰은 기기 보안 저장소에만 있고 Google API 호출에만 쓰이며 Recly에는 전송되지 않는다 |
-| 통제 | Google 계정 설정(<https://myaccount.google.com/permissions>)에서 언제든 연결 해제. 앱 안의 "연결 해제"도 네 셸 모두에 있다(§3) — 하나의 동작으로 grant revoke(Android `AuthorizationClient.revokeAccess`, Apple·Windows `oauth2.googleapis.com/revoke`) + `ReclyCore.disconnect`의 로컬 정리를 함께 한다 |
+| Scope | Only `drive.file` (ADR-009). Non-sensitive. **The full `drive` scope is not requested** — the app cannot read the user's other files that it did not create |
+| What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, and, if transcription is on (local or external API), `{base}.transcript.json/.txt` |
+| Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` in `appProperties` |
+| appDataFolder | **Not used.** Recording processing settings and secret values both exist only on the device (§5), and the only way to move them between devices is a settings export/import that the user does by hand |
+| What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested |
+| Who sees it | The user, and people the user has shared the folder with. **Recly has no server that can access these files** — the OAuth token exists only in the device's secure storage, is used only for Google API calls, and is never sent to Recly |
+| Control | Disconnect at any time in Google account settings (<https://myaccount.google.com/permissions>). The in-app "Disconnect" is also in all four shells (§3) — one action does both the grant revoke (Android `AuthorizationClient.revokeAccess`, Apple · Windows `oauth2.googleapis.com/revoke`) and the local cleanup of `ReclyCore.disconnect` |
 
-Recly가 부르는 Google 엔드포인트는 Drive API(`www.googleapis.com`)와
-OAuth(`accounts.google.com`·`oauth2.googleapis.com`)뿐이다. Apple의 직접 OAuth 경로는
-`accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token`, `oauth2.googleapis.com/revoke`이며,
-프로필 조회 API를 호출하지 않는다. 재연결 계정 확인을 위해
-`GET https://www.googleapis.com/drive/v3/about?fields=user(permissionId)`를 호출한다.
-이름·이메일 대신 Drive의 불투명 식별자만 기기 DB에 저장하며, 미완료 작업의 식별자는 연결 해제 후에도 재개용으로 남는다.
-이전 작업의 계정 확인에는 기존 `files.get`의 `owners(permissionId)` 필드만 사용한다. 작업 기록을 삭제하면 해당 식별자도 삭제된다.
+The only Google endpoints Recly calls are the Drive API (`www.googleapis.com`) and
+OAuth (`accounts.google.com` · `oauth2.googleapis.com`). Apple's direct OAuth path is
+`accounts.google.com/o/oauth2/v2/auth`, `oauth2.googleapis.com/token` and `oauth2.googleapis.com/revoke`,
+and it calls no profile lookup API. To confirm the account on reconnect, it calls
+`GET https://www.googleapis.com/drive/v3/about?fields=user(permissionId)`.
+Only Drive's opaque identifier, not the name or email, is stored in the device DB, and the identifier of unfinished jobs stays after disconnecting so they can resume.
+Account confirmation for earlier jobs uses only the `owners(permissionId)` field of the existing `files.get`. Deleting the job records also deletes that identifier.
 
-**계정 이메일 처리**는 셸별로 다음과 같다:
+**Account email handling** per shell is as follows:
 
-| 셸 | 어디서 오나 | 어디에 남나 | 지워지는 때 |
+| Shell | Where it comes from | Where it stays | When it is cleared |
 |---|---|---|---|
-| Android 폰 | Credential Manager의 Google ID token(`GoogleIdTokenCredential.id`가 이메일 주소) | 보안 저장소 `account/email` | 로그아웃 |
-| iPhone · Mac | Drive 전용 OAuth이므로 이메일·프로필을 요청하지 않음 | 새 인증정보에는 저장하지 않음. 기존 프로필·ID 토큰·로그인 힌트는 인증정보 이관 시 제거 | 이관 또는 연결 해제 |
-| Windows | 받지 않는다(프로필 스코프 없음) | 저장하지 않는다 | — |
+| Android phone | The Google ID token from Credential Manager (`GoogleIdTokenCredential.id` is the email address) | Secure storage `account/email` | Sign out |
+| iPhone · Mac | Drive-only OAuth, so email · profile are not requested | Not stored in new credentials. An existing profile, ID token and login hint are removed when the credentials are migrated | Migration or disconnect |
+| Windows | Not received (no profile scope) | Not stored | — |
 
-어느 쪽도 Recly로 전송되지 않는다(받을 서버가 없다). 계정을 다시 고르기 위한 로컬 값이다.
+None of it is sent to Recly (there is no server to receive it). It is a local value for picking the account again.
 
-### §1b iCloud — 사용자 자신의 iCloud (iPhone·Mac, ADR-024)
+### §1b iCloud — the user's own iCloud (iPhone · Mac, ADR-024)
 
-| 항목 | 내용 |
+| Item | Details |
 |---|---|
-| 언제 | 설정의 저장 위치에서 iCloud를 고른 iPhone·Mac의 녹음만(§3 "저장 위치"). Android·Windows·워치는 해당 없음 |
-| 올라가는 것 | Drive와 같다 — 앱의 iCloud Drive 폴더(파일 앱·Finder의 "Recly") 안 `{folder 템플릿}/{base}/`의 파트 `.m4a`, `{base}.meta.json`, 전사를 켰다면 `{base}.transcript.json/.txt`, 그리고 폴더 속성 파일 `{base}.folder.json`(제목·녹음 id·진행 표식) |
-| 누가 보내나 | **앱은 네트워크 요청을 하지 않는다.** 앱은 파일을 기기의 iCloud 컨테이너에 쓰고, 올리는 것은 Apple의 시스템 서비스다. 사용자의 iCloud 계정과 Apple의 약관·정책이 적용되고, 고급 데이터 보호를 켠 계정에서는 iCloud Drive가 종단간 암호화된다(Apple) |
-| 누가 보는가 | 사용자와, 같은 Apple ID로 로그인한 사용자의 기기. **Recly는 접근할 수 없다** — 서버도, 이 데이터에 대한 권한도 없다 |
-| 통제 | 앱의 저장 위치를 Drive로 되돌리기(이후 녹음만), 시스템 설정에서 Recly의 iCloud 사용 끄기, 파일 앱·Finder에서 폴더 지우기, iCloud 저장 공간 관리에서 Recly 데이터 지우기 |
+| When | Only recordings on an iPhone · Mac where iCloud was chosen as the storage location in settings (§3 "Storage location"). Does not apply to Android · Windows · the watches |
+| What is uploaded | Same as Drive — inside `{folder template}/{base}/` in the app's iCloud Drive folder ("Recly" in the Files app · Finder): the part `.m4a` files, `{base}.meta.json`, `{base}.transcript.json/.txt` if transcription is on, and the folder attributes file `{base}.folder.json` (title · recording id · progress markers) |
+| Who sends it | **The app makes no network request.** The app writes files into the device's iCloud container, and Apple's system service uploads them. The user's iCloud account and Apple's terms and policies apply, and for accounts with Advanced Data Protection turned on, iCloud Drive is end-to-end encrypted (Apple) |
+| Who sees it | The user, and the user's devices signed in with the same Apple ID. **Recly cannot access it** — it has neither a server nor any permission to this data |
+| Control | Switch the app's storage location back to Drive (later recordings only), turn off Recly's iCloud use in system settings, delete the folder in the Files app · Finder, delete Recly's data in iCloud storage management |
 
-### §2 웹훅 — 사용자가 적어 넣은 주소
+### §2 Webhooks — an address the user entered
 
-> **폐기(2026-09-24)**: 웹훅은 제품에서 제거됐다(§4). 이 경로로는 아무것도 나가지 않는다 — 이전 빌드가 큐에 넣은 잡의
-> 웹훅도 보내지 않는다. 아래는 기록이다.
+> **Retired (2026-09-24)**: webhooks were removed from the product (§4). Nothing leaves through this path — webhooks of
+> jobs queued by earlier builds are not sent either. What follows is a record.
 
-`webhook` 단계가 있을 때만, 사용자가 그 단계에 적은 URL로 **POST 한 번**. 받는 쪽은 사용자의 n8n·Cloudflare
-Worker·자기 스크립트다(Recly가 운영하는 수신기는 없다).
+Only when there is a `webhook` step: **one POST** to the URL the user wrote in that step. The receiver is the user's n8n · Cloudflare
+Worker · own script (there is no receiver run by Recly).
 
-- **본문에 들어가는 것**(§4, `spec/webhook.payload.schema.json`): 녹음 메타(`recordingId`, `source`, `platform`,
-  제목, 시작·종료 시각, 길이, 타임존, 트랙 목록, `context`), 파일 목록(이름·바이트·sha256과 **Drive 파일
-  id·`webViewLink`**), 폴더 경로와 Drive 폴더 id, 워크플로우 id·이름, 기기 id·플랫폼·기기 이름.
-- **`context`에는 다른 사람의 식별자가 없다.** `meta.context`는 payload 빌더가 손대지 않고 그대로 싣지만, 그 안에
-  있는 것은 `app`(감지된 회의 앱의 번들 id, 데스크톱 전용)과 `participants`(인원 수 정수)뿐이다.
-  **`context.calendar`는 제거됐다** — 그전에는 macOS가 EventKit로 읽은 회의 제목·시각·**참석자 이메일 주소 목록**이
-  여기 실려 웹훅 수신기까지 갔다. 지금은 어떤 셸도 캘린더를 읽지 않으므로 그 경로 자체가 없다.
-- **본문에 들어가지 않는 것**: 오디오 바이트 자체, 녹취 **본문**(파일 항목만 실린다), 액세스 토큰, 시크릿 값.
-- `webViewLink`는 링크일 뿐 공개 URL이 아니다 — Drive 권한이 있는 사람만 연다. 그래도 **웹훅 수신자는 그 파일이
-  존재한다는 사실과 위치를 알게 된다.**
-- 서명: Standard Webhooks. 시크릿(`whsec_…`)은 기기 보안 저장소에 있고 본문에 실리지 않는다. `secretRef`를 비우면
-  서명 없이 나간다(그 선택도 사용자의 것이다).
-- 전송은 HTTPS만. 예외는 `127.0.0.1`·`localhost`(로컬 수신기). 리다이렉트를 따르지 않고, 타임아웃 30초, 실패 시
-  재시도한다.
+- **What goes in the body** (§4, `spec/webhook.payload.schema.json`): recording metadata (`recordingId`, `source`, `platform`,
+  title, start · end time, duration, time zone, track list, `context`), the file list (name · bytes · sha256 and **Drive file
+  id · `webViewLink`**), the folder path and Drive folder id, the workflow id · name, the device id · platform · device name.
+- **`context` holds no one else's identifiers.** The payload builder carries `meta.context` as is, without touching it, but
+  all it contains is `app` (the bundle id of the detected meeting app, desktop only) and `participants` (a head-count integer).
+  **`context.calendar` was removed** — before that, the meeting title · time · **list of attendee email addresses** that macOS read with EventKit
+  were carried here all the way to the webhook receiver. Now no shell reads the calendar, so that path does not exist at all.
+- **What does not go in the body**: the audio bytes themselves, the transcript **text** (only the file entries are included), access tokens, secret values.
+- `webViewLink` is just a link, not a public URL — only people with Drive permission can open it. Even so, **the webhook receiver learns
+  that the file exists and where it is.**
+- Signature: Standard Webhooks. The secret (`whsec_…`) is in the device's secure storage and is not carried in the body. If `secretRef` is left empty,
+  it goes out unsigned (that choice is the user's too).
+- Transport is HTTPS only. The exception is `127.0.0.1` · `localhost` (a local receiver). Redirects are not followed, the timeout is 30 seconds, and failures
+  are retried.
 
-### §3 STT provider — 사용자가 그 단계를 넣었을 때만
+### §3 STT providers — only when the user added that step
 
-외부 STT 전송은 사용자가 녹음 처리 설정에서 전사 방식을 **외부 API**로 고르고 자기 API 키를 넣었을 때만
-일어난다(§5 "고정 처리 설정 도입", §8). 로컬 전사나 OFF면 이 절 전체가 일어나지 않는다.
+External STT transfer happens only when the user chooses **external API** as the transcription method in the recording
+processing settings and enters their own API key (§5 "Fixed processing settings", §8). With local transcription or OFF, nothing in this section happens.
 
-| 무엇이 | 어디로 | 언제 |
+| What | Where to | When |
 |---|---|---|
-| **오디오 전체**(파트를 이어 붙인 `mono` 또는 `mix` 트랙 한 파일) | 사용자가 `provider`로 고른 STT 서비스 | `transcribe` 단계 실행 시 |
-| 화자 수 힌트, 언어 설정 | 같은 요청 | 같음 |
+| **The whole audio** (one file of the `mono` or `mix` track with the parts concatenated) | The STT service the user chose as `provider` | When the `transcribe` step runs |
+| Speaker count hint, language setting | The same request | Same |
 
-- 호출은 **기기에서 provider로 직접** 간다. 중간 서버·릴레이·콜백 URL이 없다. Recly는 이 요청의 내용을 볼 수 없다.
-- 인증은 **사용자의 키**다. 청구도 사용자의 계정으로 간다.
-- 그 다음 provider가 데이터를 얼마나 오래 갖고 있는지, 학습에 쓰는지는 **그 provider의 정책**이고 Recly가 통제하지
-  못한다.
-- **이 고지는 세 셸의 녹음 처리 설정에 있다.** 외부 전사의 **provider 선택 바로 아래**에 세 줄이 뜬다.
-  문구는 세 셸이 글자 그대로 같고(대조 테스트) en·ko 양쪽에 있다.
+- The call goes **directly from the device to the provider**. There is no intermediate server, relay or callback URL. Recly cannot see the contents of this request.
+- Authentication is **the user's key**. Billing also goes to the user's account.
+- How long the provider keeps the data after that, and whether it trains on it, is **that provider's policy**, which Recly does not
+  control.
+- **This notice is in the recording processing settings of three shells.** Three lines appear **right below the provider selection** for external transcription.
+  The wording is letter-for-letter the same in the three shells (a cross-check test) and exists in both en and ko.
 
-  `transcribe`(ko / en; `{업체}`는 고른 제공자의 표시 이름, 2026-09-25):
-
-  > 외부 전사는 녹음 오디오 전체를 {업체}에 보냅니다.
-  > 얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.
-  > 쓰기 전에 업체의 정책을 확인하세요.
+  `transcribe` (en; `{provider}` is the display name of the chosen provider, 2026-09-25):
 
   > External transcription sends the whole recording to {provider}.
   > How long they keep it, and whether they train on it, is that provider's own policy — Recly does not control it.
   > Read the provider's policy before you use it.
 
-- **링크**: 이 세 줄에는 링크를 걸지 않는다. iPhone의 전송 허용 창과 설정 → 개인정보 보호는 아래 표의 공식 방침
-  링크(`PrivacyLinks`)를 건다(2026-09-26 확인).
+- **Links**: these three lines carry no link. iPhone's transfer permission dialog and Settings → Privacy link to the official policies
+  in the table below (`PrivacyLinks`) (checked 2026-09-26).
 
-#### provider 보관 정책 — 2026-09-26 공식 문서 확인
+#### Provider retention policies — checked against official documents on 2026-09-26
 
-받는 것은 열넷 모두 같다 — **이어 붙인 오디오 트랙 한 파일**과 그 요청에 실린 **언어·화자분리 옵션**(§3 위 표).
-다른 것은 그 다음 그 업체가 무엇을 하느냐다. API 상품 기준 기본값이다.
+All fourteen receive the same thing — **one file of the concatenated audio track** and the **language · diarization options** carried in that request (the table above in §3).
+What differs is what that provider does next. These are the defaults for the API products.
 
-| provider | 학습·보관 기본값(요약) | 공식 링크 |
+| provider | Training · retention defaults (summary) | Official link |
 |---|---|---|
-| AssemblyAI | Recly는 EU 리전으로 보냄 — 문서상 유럽 서버로 보낸 파일은 학습 제외(요금제 조건 없음. 미국 리전 기본값은 학습, 유료만 거부 가능; 약관 §4.3에는 EU 예외가 없어 "문서에 따르면"으로 인용). 업로드 오디오 48시간 내 삭제, 녹취 30일 (2026-09-29) | <https://www.assemblyai.com/docs/data-retention-and-model-training> |
-| CLOVA Speech | 고객 동의 시에만 엔진 개선에 사용(약관 §4②), 인식 결과·실행 로그 분쟁 대응용 7일(§7①). 오디오 자체 보관 기간은 공개 안 됨 (2026-09-29 약관 <https://www.ncloud.com/policy/terms/clsph>) | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> |
-| RTZR | 학습에 쓰지 않음. 배치 오디오 인식 후 삭제, 녹취 최대 3일 | <https://developers.rtzr.ai/privacy> |
-| OpenAI | 옵트인 없으면 학습 안 함. 전사 엔드포인트는 악용 감시 보관도 없음 | <https://developers.openai.com/api/docs/guides/your-data> |
-| Groq | 학습 안 함, 기본 보관 없음(장애·악용 조사 로그 최대 30일) | <https://console.groq.com/docs/your-data> |
-| Together AI | 기본 저장·제품 개선 사용(학습은 옵트인), 계정에서 저장 끔 가능 | <https://www.together.ai/privacy> |
-| Mistral AI | 악용 감시 30일 보관. 무료 모드는 거부 전까지 학습, 유료 기본값 불명시 | <https://legal.mistral.ai/terms/privacy-policy/> |
-| ElevenLabs | Enterprise가 아니면 유료도 기본 학습. 계정 Data use의 "Improve the models for everyone"을 끄면 이후 데이터부터 제외(API 없음). 요청별 `enable_logging=false`는 Enterprise 전용. 요청 기록은 삭제할 때까지 (2026-09-29) | <https://elevenlabs.io/privacy-policy> |
-| Deepgram | 기본은 모델 개선용 보관이지만 **Recly는 모든 요청에 `mip_opt_out=true`를 보내** 처리 동안만 보관·학습 안 함 | <https://developers.deepgram.com/trust-security/your-data> |
-| Azure AI Speech | 학습 안 함, 빠른 전사 오디오 저장 안 함, 서비스 제공에만 처리 | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> |
-| Daglo | API 약관상 품질·성능 개선 사용 가능, 오디오 3개월, 거부 방법 불명시 | <https://developers.daglo.ai/privacy> |
-| Speechmatics | 옵트인 시에만 모델 개선(약관엔 녹취 사용권 조항), 배치 7일 후 삭제 | <https://www.speechmatics.com/legal/privacy-policy> |
-| Rev AI | 자체 음성 모델 학습에 사용 가능(생성형 제외), 최대 30일, API 거부 방법 못 찾음 | <https://www.rev.com/legal/privacy> |
-| Gladia | 최대 12개월 보관, 무료·Starter는 학습 가능(문서 간 불일치) | <https://www.gladia.io/privacy-notice> |
+| AssemblyAI | Recly sends to the EU region — per the documentation, files sent to European servers are excluded from training (no plan condition. The US region default is training, which only paid plans can refuse; the terms §4.3 have no EU exception, so it is cited as "according to the documentation"). Uploaded audio is deleted within 48 hours, transcripts after 30 days (2026-09-29) | <https://www.assemblyai.com/docs/data-retention-and-model-training> |
+| CLOVA Speech | Used for engine improvement only with customer consent (terms §4②); recognition results · execution logs kept 7 days for dispute handling (§7①). The retention period of the audio itself is not published (2026-09-29 terms <https://www.ncloud.com/policy/terms/clsph>) | <https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p> |
+| RTZR | Not used for training. Batch audio deleted after recognition, transcripts kept up to 3 days | <https://developers.rtzr.ai/privacy> |
+| OpenAI | No training without opt-in. The transcription endpoints have no abuse-monitoring retention either | <https://developers.openai.com/api/docs/guides/your-data> |
+| Groq | No training, no retention by default (logs for outage · abuse investigations up to 30 days) | <https://console.groq.com/docs/your-data> |
+| Together AI | Stored and used for product improvement by default (training is opt-in); storage can be turned off in the account | <https://www.together.ai/privacy> |
+| Mistral AI | Kept 30 days for abuse monitoring. Free mode trains until refused; paid default not stated | <https://legal.mistral.ai/terms/privacy-policy/> |
+| ElevenLabs | Unless on Enterprise, even paid plans train by default. Turning off "Improve the models for everyone" in the account's Data use excludes data from then on (no API). Per-request `enable_logging=false` is Enterprise-only. Request history kept until deleted (2026-09-29) | <https://elevenlabs.io/privacy-policy> |
+| Deepgram | The default is retention for model improvement, but **Recly sends `mip_opt_out=true` on every request**, so data is kept only during processing and not used for training | <https://developers.deepgram.com/trust-security/your-data> |
+| Azure AI Speech | No training, fast transcription audio not stored, processed only to provide the service | <https://learn.microsoft.com/en-us/azure/foundry/responsible-ai/speech-service/speech-to-text/data-privacy-security> |
+| Daglo | Per the API terms may be used for quality · performance improvement, audio kept 3 months, opt-out method not stated | <https://developers.daglo.ai/privacy> |
+| Speechmatics | Model improvement only on opt-in (the terms have a clause granting rights to use transcripts), batch data deleted after 7 days | <https://www.speechmatics.com/legal/privacy-policy> |
+| Rev AI | May be used to train its own speech models (generative excluded), up to 30 days, no API opt-out method found | <https://www.rev.com/legal/privacy> |
+| Gladia | Kept up to 12 months, Free · Starter may be used for training (documents disagree) | <https://www.gladia.io/privacy-notice> |
 
-**작성 규칙**: 업체 약관은 바뀐다. 방침·앱 문구로 옮길 때는 확인 날짜와 공식 링크를 함께 두고, 인용하기 전에 공식
-문서로 다시 확인한다. 확인되지 않은 보관 기간·학습 여부를 지어내지 않는다. 모든 업체가 같은 수준으로 보호한다고
-쓰지 않는다 — 동등 보호를 확인하는 것은 "iPhone 제공 업체"의 여덟 곳뿐이고, 그 근거는 그 절의 표다. 나머지는 방침에
-업체별 차이를 공개한다(2026-09-26 사용자 결정: 14곳 유지 → 2026-09-29 재반려 뒤 iPhone만 여덟 곳).
+**Writing rule**: provider terms change. When moving them into the policy or app wording, keep the check date and the official link with them, and re-check
+against the official documents before quoting. Do not invent unverified retention periods or training status. Do not write that all providers protect
+at the same level — equal protection is confirmed only for the eight in "iPhone providers", and the grounds are that section's table. For the rest, the policy
+discloses the differences between providers (2026-09-26 user decision: keep all 14 → after the repeat rejection on 2026-09-29, only eight on iPhone).
 
-**iPhone 전송 허용(2026-09-09).** iOS 코어는 `requireTransferConsent`를 켜고 전사 업체/설정 주소/데이터·목적 버전에 대한 명시적 허용을 실제 요청 직전에 검사한다. 폴링·재시도·다중 요청도 각각 검사하며, 철회 전에 출발한 요청은 끝날 수 있다. `NEEDS_CONSENT`는 실패가 아닌 대기 상태다. `onError: continue`로 건너뛸 수 없고 재시도 예산·전사 진행 상태·완료된 업로드를 보존한다. 허용 뒤 막힌 단계부터 재개한다. 대기 작업의 대상은 그 작업에 고정된 처리 계획으로 계산한다.
+**iPhone transfer permission (2026-09-09).** The iOS core turns on `requireTransferConsent` and checks, right before the actual request, for explicit permission for the transcription provider / configured address / data · purpose version. Polling, retries and multiple requests are each checked, and a request that left before a withdrawal may finish. `NEEDS_CONSENT` is a waiting state, not a failure. It cannot be skipped with `onError: continue`, and the retry budget, transcription progress and completed uploads are preserved. After permission is given, the job resumes from the blocked step. The destination for a waiting job is computed from the processing plan fixed to that job.
 
-녹음 처리 설정 저장은 아직 허용하지 않은 대상이면 확인 창 “녹음을 {업체}에 보낼까요?”를 띄운다. 받는 곳(업체 이름, “제3자 AI 음성 인식 서비스이며 Recly가 운영하지 않는다”, 주소), 보내는 데이터와 목적, 업체 방침 링크, 철회 방법을 보이고 “허용 안 함”·“허용하고 저장”으로 답한다(App Review 5.1.1(i)·5.1.2(i)). ElevenLabs는 학습을 껐다는 확인란을 체크해야 허용할 수 있다("iPhone 제공 업체"). 허용하지 않으면 저장하지 않는다. 묻는 곳은 이 설정 저장뿐이고 녹음 중에는 묻지 않는다. 가져오기는 편집 가능한 미리보기로 초안에 들어가므로 저장할 때 같은 확인을 거친다. 같은 대상이면 추가 확인 없이 일반 저장이다(2026-09-26 복원 — 2026-09-25 고정 처리 계획 전환에서 빠졌던 확인). API 키 저장은 허용이 아니다. 허용은 기기 로컬 `kv`에 저장하며 설정 내보내기에 포함하지 않는다. iPhone의 `privacy/transfer-device` 키체인 식별값(`AfterFirstUnlockThisDeviceOnly`)에 연결해 다른 기기로 DB를 복원해도 허용을 승계하지 않는다. 이 식별값은 API 인증 정보가 아니며 로컬 허용 기록 없이는 효력이 없다. API 키 변경·재시작·단순 안내 문구 수정은 재허용 사유가 아니다. 업체·설정 주소·전송 데이터/목적의 중요한 변경, 철회, 새 기기는 재허용이 필요하다. 다른 셸은 기존 정책을 유지하고 상태·메시지 계약만 공유한다.
+When the recording processing settings are saved and the destination has not been allowed yet, the confirmation dialog “Send recordings to {provider}?” appears. It shows the recipient (provider name, “A third-party AI speech recognition service. Recly does not operate it.”, address), the data sent and its purpose, a link to the provider's policy and how to withdraw, and is answered with “Don't allow” · “Allow & save” (App Review 5.1.1(i) · 5.1.2(i)). ElevenLabs can be allowed only after checking the box confirming that training is off ("iPhone providers"). If permission is not given, nothing is saved. This settings save is the only place that asks; nothing asks during recording. An import goes into the draft as an editable preview, so it goes through the same confirmation when saved. For the same destination it is an ordinary save without further confirmation (restored 2026-09-26 — the confirmation had been dropped in the 2026-09-25 switch to the fixed processing plan). Saving an API key is not permission. Permission is stored in the device-local `kv` and is not included in settings export. It is tied to iPhone's `privacy/transfer-device` keychain identifier (`AfterFirstUnlockThisDeviceOnly`), so restoring the DB onto another device does not carry the permission over. This identifier is not an API credential and has no effect without the local permission record. Changing the API key, restarting, or editing mere notice wording is not a reason to ask again. A significant change of provider · configured address · data sent/purpose, a withdrawal, or a new device requires permission again. Other shells keep their existing policy and share only the state · message contract.
 
-기존 작업과 Watch 수신 작업은 팝업 없이 허용 대기로 남고 목록에서 설정 → 개인정보 보호로 이동해 해결한다. 같은 화면에서 허용을 철회할 수 있다. 철회는 이미 보낸 데이터나 API 키를 삭제하지 않는다. Google Drive는 별도 Google OAuth를 사용한다. 참가자 녹음 동의 안내(§12·§13)와도 별개의 허용이다.
+Existing jobs and jobs received from the Watch stay waiting for permission without a popup, and are resolved by going from the list to Settings → Privacy. Permission can be withdrawn on the same screen. Withdrawal does not delete data already sent or API keys. Google Drive uses its own separate Google OAuth. This permission is also separate from the participant recording consent reminder (§12 · §13).
 
-**사용자가 여는 정책 페이지.** 설정과 위 안내는 Recly의 공개 개인정보 처리방침(영어 `https://recly.dev/policy/privacy-policy`, 한국어 `https://recly.dev/policy/privacy-policy.ko`) 및 선택 업체의 개인정보 처리방침을 외부 브라우저로 연다. `PrivacyLinks`가 URL 목록을 관리한다(recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android는 설정 → `개인정보 보호` → `개인정보 처리방침` → `열기`로 Recly 방침의 같은 두 주소만 연다(앱이 한국어면 한국어 쪽, `privacyPolicyUrl`; 2026-09-29) — 전송 허용이 없으므로 `허용한 전송 대상` 행은 iPhone에만 있다. 사용자가 링크를 누를 때만 해당 웹사이트에 접속한다. 녹음·작업 실행 경로의 자동 요청은 아니다.
+**Policy pages the user opens.** Settings and the notices above open Recly's public privacy policy (English `https://recly.dev/policy/privacy-policy`, Korean `https://recly.dev/policy/privacy-policy.ko`) and the chosen provider's privacy policy in an external browser. `PrivacyLinks` manages the URL list (recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android opens only the same two addresses of the Recly policy, via Settings → `Privacy` → `Privacy Policy` → `Open` (the Korean one when the app is in Korean, `privacyPolicyUrl`; 2026-09-29) — Android has no transfer permission, so the `Allowed destinations` row exists only on iPhone. The website is visited only when the user taps a link. It is not an automatic request in the recording · job execution path.
 
-### §4 짝 지은 기기 간 전송 — 워치 ↔ 폰
+### §4 Transfer between paired devices — watch ↔ phone
 
-워치는 Drive도 네트워크도 쓰지 않는다(ADR-002). 그래도 **데이터는 워치를 떠난다** — 짝 지은 폰으로. 이 경로는
-Drive·provider 어느 것과도 무관하게 일어난다.
+The watch uses neither Drive nor the network (ADR-002). Even so, **data leaves the watch** — to the paired phone. This path
+happens independently of both Drive and providers.
 
-| 방향 | 무엇이 | 어떻게 |
+| Direction | What | How |
 |---|---|---|
-| 갤럭시 워치 → Android 폰 | 녹음 파트 `.m4a` 파일, 그리고 전부 ack된 뒤 `meta.json` | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. 파일 메타는 별도 payload가 아니라 채널 경로에 실린다(`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}`·`/rec/meta/{recordingId}`). 폰은 `WearableListenerService.onChannelOpened` → `receiveFile`로 받고 `MessageClient`로 ack한다 |
-| Apple Watch → iPhone | 같음 | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId·part·track·sha256·파일명이 `metadata` 딕셔너리에 실린다. 폰은 `WCSessionDelegate.session(_:didReceive:)`로 받고 `transferUserInfo`로 ack한다 |
-| Android 폰 → 갤럭시 워치 | **폐기(2026-09-24)** — ~~워크플로우 요약: 워크플로우당 `id`·`name` 두 필드뿐~~. 워치에 워크플로우 목록이 없다 | ~~`DataClient.putDataItem` 경로 `/rec/workflows`~~ |
-| iPhone → Apple Watch | 앱 언어뿐(워크플로우 요약 `id`·`name`은 2026-09-24 폐기), 단계 내용 없음 | `WCSession.updateApplicationContext` |
+| Galaxy Watch → Android phone | Recording part `.m4a` files, and `meta.json` once everything is acked | Wear Data Layer `ChannelClient.openChannel` → `sendFile`. File metadata rides in the channel path, not in a separate payload (`/rec/part/{recordingId}/{part}/{track}/{sha256}/{file}` · `/rec/meta/{recordingId}`). The phone receives with `WearableListenerService.onChannelOpened` → `receiveFile` and acks with `MessageClient` |
+| Apple Watch → iPhone | Same | WatchConnectivity `WCSession.transferFile(_:metadata:)`. recordingId · part · track · sha256 · file name ride in the `metadata` dictionary. The phone receives with `WCSessionDelegate.session(_:didReceive:)` and acks with `transferUserInfo` |
+| Android phone → Galaxy Watch | **Retired (2026-09-24)** — ~~workflow summary: only two fields per workflow, `id` · `name`~~. The watch has no workflow list | ~~`DataClient.putDataItem` path `/rec/workflows`~~ |
+| iPhone → Apple Watch | Only the app language (the workflow summary `id` · `name` was retired 2026-09-24), no step contents | `WCSession.updateApplicationContext` |
 
-- **두 기기 모두 사용자 자신의 기기다.** 전송은 OS의 페어링 전송로를 타고 **Recly의 서버는 관여하지 않는다** —
-  받을 서버가 없다. 워치 모듈에는 HTTP 클라이언트조차 없다.
-- 녹음 파일 전송은 **가까이 있는 노드로만** 나간다 — Android는 `isNearby`가 아닌 노드를 걸러 Google 클라우드 릴레이
-  경유를 제외하고, Apple은 `WCSession`뿐이다. (필터가 없던 `/rec/workflows` DataClient 항목은 2026-09-24 폐기돼
-  더 이상 게시하지 않는다.)
-- 방향은 녹음에 대해 **한 방향**이다. 워치 → 폰만 있고, 녹취 본문이나 워크플로우 단계·시크릿·Job 결과가
-  폰 → 워치로 가는 경로는 없다.
-- 워치는 ack를 받으면 자기 사본을 지운다 — 워치에 녹음 이력이 남지 않는다.
-- 키·토큰은 이 경로로 가지 않는다. 워치의 보안 저장소에 담기는 것은 device UUID뿐이다.
+- **Both devices are the user's own.** The transfer rides the OS's pairing channel, and **Recly's server is not involved** —
+  there is no server to receive it. The watch module does not even have an HTTP client.
+- Recording file transfer goes **only to a nearby node** — Android filters out nodes that are not `isNearby`, which excludes relay through the Google cloud,
+  and Apple uses only `WCSession`. (The `/rec/workflows` DataClient item, which had no filter, was retired 2026-09-24 and
+  is no longer published.)
+- For recordings the direction is **one-way**. There is only watch → phone; there is no path by which transcript text or workflow steps · secrets · Job results
+  go phone → watch.
+- The watch deletes its own copy once it receives the ack — no recording history stays on the watch.
+- Keys and tokens do not go through this path. The only thing in the watch's secure storage is the device UUID.
 
-### §5 BYO 키와 토큰 — 기기 보안 저장소에만
+### §5 BYO keys and tokens — only in the device's secure storage
 
-키 값은 **녹음 처리 설정에 들어가지 않는다.** 설정에는 이름(`secretRef`)만 있고 값은 기기마다 따로 넣는다
-(ADR-008). 그래서 설정 내보내기 파일에도, Drive에도, 로그에도 키가 없다. 저장 기전은 §5의 시크릿 표와
-같다.
+Key values **are not part of the recording processing settings.** The settings hold only a name (`secretRef`), and the value is entered on each device separately
+(ADR-008). So there is no key in the settings export file, in Drive, or in logs. The storage mechanism is the same as the Secrets table in §5.
 
-- 여기 담기는 것: Google access/refresh token(`tokens` 네임스페이스), STT API
-  키(`secrets` 네임스페이스), `deviceId`.
-- **키가 나가는 유일한 경로는 provider 인증이다.** STT 키는 사용자가 외부 API 전사를 골랐을 때 요청 헤더로 provider에
-  그대로 실린다. 즉 "기기 밖으로 나가지 않는다"가 아니라 **"Recly로는 가지 않고, 사용자가 고른 provider에만
-  간다"**가 맞는 문장이다.
-- **기기 간 동기화는 없다.** 키는 입력한 기기에만 있고, 키가 없는 기기에서 그 단계는 `MISSING_SECRET`으로 즉시
-  실패한다. 내보낸 설정 파일에도 값은 들어가지 않는다 — 파일에 있는 것은 `secretRef` 이름뿐이다(§5).
-- 개발 호스트 예외: macOS에서 Windows 앱을 돌릴 때 쓰는 `DevFileSecureStore`는 평문 base64 JSON이다. **개발
-  전용**이고 Windows 빌드에서는 선택되지 않는다.
+- What is stored here: Google access/refresh tokens (`tokens` namespace), STT API
+  keys (`secrets` namespace), `deviceId`.
+- **The only path by which a key leaves is provider authentication.** When the user chooses external API transcription, the STT key is carried as is
+  to the provider in a request header. So the correct sentence is not "it does not leave the device" but **"it never goes to Recly, only to the provider the
+  user chose"**.
+- **There is no sync between devices.** A key exists only on the device it was entered on, and on a device without the key that step fails immediately with `MISSING_SECRET`.
+  The exported settings file holds no values either — all the file contains is the `secretRef` name (§5).
+- Development host exception: `DevFileSecureStore`, used when running the Windows app on macOS, is plaintext base64 JSON. It is **development
+  only** and is not selected in Windows builds.
 
-### §6 수집하지 않는 것
+### §6 What is not collected
 
-- 분석·사용 통계·이벤트 수집 없음.
-- 크래시 리포팅 없음(Firebase/Crashlytics/Sentry/AppCenter 계열 의존성이 네 셸 어디에도 없다).
-- 원격 설정·A/B·광고 식별자 없음.
-- Recly 쪽 **계정이 없다.** 회원가입도, 이메일 수집도, 사용자 식별자도 없다. 로그인은 사용자의 Google 계정에 대고
-  하는 것이고 그 결과 토큰은 기기에만 있다.
-- 업데이트 확인·라이선스 확인 같은 "우리 서버" 호출도 없다.
+- No analytics, usage statistics or event collection.
+- No crash reporting (no Firebase/Crashlytics/Sentry/AppCenter-family dependency in any of the four shells).
+- No remote config, A/B testing or advertising identifiers.
+- There is **no account** on Recly's side. No sign-up, no email collection, no user identifier. Signing in is done against the user's Google account,
+  and the resulting token exists only on the device.
+- No "our server" calls such as update checks or license checks either.
 
-### §7 데이터 삭제
+### §7 Data deletion
 
-정본 규칙은 §3 보관 · 삭제. 요약:
+The canonical rules are in §3 Retention · deletion. Summary:
 
-| 사용자가 원하는 것 | 방법 | 남는 것 |
+| What the user wants | How | What remains |
 |---|---|---|
-| 이 녹음을 없애기 | 목록에서 "삭제" → `로컬만`(기본값) 또는 `Drive 폴더도`. 네 셸 모두에 있다 | 기본값을 쓰면 Drive의 파일은 남는다(사용자의 파일이므로). `job`·`step_run` 행은 함께 지워진다 |
-| 자동 삭제 | 모든 Job이 DONE이고 오디오 전체가 Drive에 있으면, 마지막 Job 갱신과 최신 캐시 파일 시각 중 늦은 시점부터 7일 뒤 로컬 오디오가 정리 대상이 된다(ADR-017). 다시 받은 오디오는 기간이 새로 시작된다. `meta.json`·DB 행·녹취 사본·파형 피크(`waveform.v1`)는 남는다 | 미완료·실패·허용 대기 Job은 원본을 유지한다. Drive가 꽉 차 Job이 `NEEDS_SPACE`로 파킹되면 그 Job은 DONE이 아니므로 **로컬 원본은 지워지지 않고 그대로 기기에 남는다** |
-| Recly의 Drive 접근을 끊기 | 앱의 "연결 해제" 또는 Google 계정 설정 | Drive의 녹음 파일은 남는다 — 연결 해제는 `files.delete`를 **한 번도 부르지 않는다**. 이 기기의 Google 토큰·완료 Job·Drive 폴더 캐시는 지워지고, 미완료 Job은 같은 계정 재연결까지 보존·일시 중지된다. 녹음 처리 설정·API 키·전송 허용 기록은 남는다. **녹음 파일과 `recording`/`part` 행은 남는다. 녹음은 목록에서 별도로 삭제한다** |
-| iCloud의 녹음 지우기 | 목록의 "삭제" → `iCloud 폴더도 함께 삭제`(기본값은 남기기), 또는 파일 앱·Finder의 "Recly" 폴더, 또는 iCloud 저장 공간 관리 | 앱을 지워도 iCloud의 데이터는 남는다(Apple). 앱 안에 iCloud 연결 해제는 없다 — 시스템 설정에서 Recly의 iCloud 사용을 끈다 |
-| 전부 지우기 | 시크릿 목록에서 키별 삭제 + 연결 해제 + 앱 삭제 + Drive에서 `recly/` 폴더 삭제 | **앱 삭제로 전부 지워지는 것은 Android/Wear뿐이다.** macOS는 `~/Library/Application Support/app.recly.mac/`와 키체인 항목, Windows는 `%LOCALAPPDATA%\Recly\`와 자격 증명 관리자 항목이 남고, iOS·watchOS는 키체인 항목이 남을 수 있다(Apple이 삭제를 보장하지 않는다). 플랫폼별 정리 방법은 `docs/policy/privacy-policy.md` §7 |
-| provider가 가진 사본 | Recly가 대신 지울 수 없다 | 해당 provider의 콘솔·정책을 따라 사용자가 직접 |
+| Get rid of this recording | "Delete" in the list → `Delete local only` (default) or `Also delete the Drive folder`. All four shells have it | With the default, the files in Drive remain (they are the user's files). The `job` · `step_run` rows are deleted with it |
+| Automatic deletion | When every Job is DONE and the whole audio is in Drive, the local audio becomes eligible for cleanup 7 days after the later of the last Job update and the newest cache file time (ADR-017). Audio downloaded again starts a new period. `meta.json` · DB rows · transcript copy · waveform peaks (`waveform.v1`) remain | Unfinished · failed · permission-waiting Jobs keep the original. If Drive is full and a Job is parked at `NEEDS_SPACE`, that Job is not DONE, so **the local original is not deleted and stays on the device as is** |
+| Cut off Recly's Drive access | The app's "Disconnect" or Google account settings | The recording files in Drive remain — disconnect **never calls** `files.delete`. This device's Google token · finished Jobs · Drive folder cache are deleted, and unfinished Jobs are kept and paused until the same account reconnects. Recording processing settings · API keys · transfer permission records remain. **The recording files and the `recording`/`part` rows remain. Recordings are deleted separately from the list** |
+| Delete the recordings in iCloud | "Delete" in the list → `Also delete the iCloud folder` (the default keeps it), or the "Recly" folder in the Files app · Finder, or iCloud storage management | Deleting the app leaves the data in iCloud (Apple). There is no iCloud disconnect in the app — turn off Recly's iCloud use in system settings |
+| Delete everything | Delete each key in the secrets list + disconnect + delete the app + delete the `recly/` folder in Drive | **Deleting the app erases everything only on Android/Wear.** On macOS `~/Library/Application Support/app.recly.mac/` and keychain items remain, on Windows `%LOCALAPPDATA%\Recly\` and Credential Manager items remain, and on iOS · watchOS keychain items may remain (Apple does not guarantee their deletion). Per-platform cleanup is in `docs/policy/privacy-policy.md` §7 |
+| Copies held by a provider | Recly cannot delete them on the user's behalf | The user does it directly, following that provider's console · policy |
 
-**녹음 삭제가 지우는 것.** `RecordingRepository.delete`가 한 트랜잭션 안에서 `step_run` → `job` → `part` →
-`recording`을 지우고 같은 잠금 구간에서 디렉터리를 지운다. 그래서 그 녹음의 처리 계획 스냅샷
-전문(`job.workflow_json`), 실패 메시지 원문(`step_run.last_error`), 재개 상태(`state_json` — Drive resumable 세션
-URI·오프셋·`fileId`, STT provider job 식별자), 단계 출력(`output_json`)이 **UI에 보이지 않은 채 DB에 남는 일이
-없다.**
+**What deleting a recording deletes.** `RecordingRepository.delete` deletes `step_run` → `job` → `part` →
+`recording` in one transaction and deletes the directory within the same lock section. So the recording's full processing plan
+snapshot (`job.workflow_json`), the raw failure message (`step_run.last_error`), the resume state (`state_json` — Drive resumable session
+URI · offset · `fileId`, STT provider job identifiers) and the step outputs (`output_json`) **never stay behind in the DB without
+being visible in the UI.**
 
-**연결 해제가 남기는 것.** revoke가 실패했을 때 **grant는 Google 쪽에 그대로 서 있다** — 로컬 정리는 이미 끝났으므로
-Google 토큰·Job은 이 기기에서 사라졌지만 Google 계정의 앱 목록에는 Recly가 남아 있다. 앱은 그것을 revoke debt로
-기록하고 권한 페이지 링크와 함께 말한다. 로컬 정리가 실패하면 `DisconnectPhase`가 `REVOKED_CLEANUP_OWED`로 남아 다음
-실행에서 이어서 갚고, 그 사이 로그인은 막힌다. `RUNNING` Job 때문에 지우지 못한 녹음은 그 Job 행과 함께 남는다.
+**What disconnecting leaves behind.** When the revoke fails, **the grant still stands on Google's side** — the local cleanup has already finished, so
+the Google token and Jobs are gone from this device, but Recly stays in the Google account's app list. The app records that as a revoke debt
+and says so, with a link to the permissions page. If the local cleanup fails, `DisconnectPhase` stays at `REVOKED_CLEANUP_OWED` and is paid off
+on the next run, and sign-in is blocked in the meantime. A recording that could not be deleted because of a `RUNNING` Job remains together with that Job's rows.
 
-### §8 이 절을 고쳐야 하는 변경
+### §8 Changes that must amend this section
 
-새 네트워크 호출, 새 단계 타입, 새 스코프, 새 저장 위치, 텔레메트리 도입(= ADR-022 개정) 중 하나라도 있으면 이 절과
-`docs/policy/privacy-policy.md`, 그리고 Play "데이터 안전" 양식·App Store 개인정보 라벨을 함께 고친다.
+If there is even one of a new network call, a new step type, a new scope, a new storage location, or the introduction of telemetry (= amending ADR-022), amend this section,
+`docs/policy/privacy-policy.md`, and the Play "Data safety" form · App Store privacy labels together.
 
 ---
 
-## 16. 페르소나·가격 (구 docs/16) — 제안, 미결정
+## 16. Personas · pricing (formerly docs/16) — proposal, undecided
 
-**이 절은 규칙이 아니라 제안이다.** 가격·과금은 아직 결정되지 않았고(§열린 결정), 결정되면 §0의 규칙 표로 올라간다.
+**This section is a proposal, not a rule.** Pricing · billing are not decided yet (§Open decisions), and once decided they move up into the rules table in §0.
 
-### 이 제품이 서는 자리
+### Where this product stands
 
-> **2026-09-24**: 웹훅·사용자 워크플로우가 제거됐다. 아래 표의 "서명된 웹훅"·"같은 워크플로우"는 당시 제안의
-> 기록이고, 지금 자동화의 입력은 Drive 녹음 폴더뿐이다.
+> **2026-09-24**: webhooks · user workflows were removed. "Signed webhook" · "same workflow" in the table below are a record of the
+> proposal at the time; today the only input for automation is the Drive recording folder.
 
-**"봇 없이 캡처 → 내 Drive에 원본 저장 → 웹훅/내 자동화"를 하는 제품이 상용·오픈소스 어디에도 없다.**
-Granola·ChatGPT Record·Notion은 원본 오디오를 **지우고**, 로컬 보관을 하는 오픈소스들도 웹훅·자동화를 월 $10~15 유료
-티어에 가둔다. 그래서 페르소나의 공통 분모는 "AI 요약이 필요한 사람"이 아니라 **"원본과 자동화를 자기가 쥐고 싶은
-사람"**이다.
+**No product, commercial or open source, does "capture without a bot → keep the original in my Drive → webhook/my automation".**
+Granola · ChatGPT Record · Notion **delete** the original audio, and even the open-source tools that keep recordings locally lock webhooks · automation in a
+$10–15/month paid tier. So the common denominator of the personas is not "people who need AI summaries" but **"people who want to hold the
+originals and the automation themselves"**.
 
-| # | 누구 | JTBD | Recly가 파는 것 | 돈을 낼 이유 |
+| # | Who | JTBD | What Recly sells | Reason to pay |
 |---|---|---|---|---|
-| 1 | n8n을 돌리는 개인 파워유저 / 개발자. 회의보다 혼잣말 메모·통화·강의를 더 많이 녹음한다 | "녹음이 끝나는 순간, 내가 이미 만들어 둔 파이프라인의 입력이 되게 해 달라" | 서명된 웹훅 한 방과 Drive 폴더 하나. "폴더에 새 항목" 트리거 하나로 세그먼트·트랙·메타가 함께 도착한다. 앱이 파이프라인을 대신 만들어 주겠다고 나서지 않는 것이 셀링 포인트 | **거의 없다.** 이 페르소나는 매출원이 아니라 **신뢰의 근거**(정직한 레코더라는 평판, 버그 리포트, 워크플로우 예제) |
-| 2 | 회의가 많은 한국 지식 노동자. 한국어 회의록이 필요하고 회의 오디오를 외부 SaaS에 상주시키는 것이 부담이다 | "한국어 회의를 제대로 받아쓰되, 오디오와 결과가 **내 Drive**에 남게 해 달라" | 어디서 녹음해도 같은 워크플로우, `transcribe(clova\|rtzr)`로 녹취록이 원본 옆에 파일로, 회의록은 이미 쓰는 에이전트 + `skills/recly-notes/`로. 봇이 회의에 안 들어온다 | **있다.** 단 키 발급·과금 설정이 진입장벽이다(네이버 클라우드 콘솔에서 앱을 만들고 `invokeUrl`을 복사해 오는 일) |
-| 3 | macOS·Windows에서 하루 대부분을 Zoom·Teams·Meet 통화로 보내는 컨설턴트·리크루터·리서처 | "봇을 들여보내지 않고, 내 목소리와 상대 목소리를 나눠서, 원본을 지우지 않고 내 저장소에 쌓아 달라" | mic/sys/mix 3트랙, 감지 → 확인 → 녹음, 원본이 `recly/2026/2026-08/`에 그대로 | **있다.** 다만 경쟁이 가장 치열한 자리이고 이 사람들은 "요약 품질"로 제품을 비교한다. Recly의 차별점은 품질이 아니라 **소유권**이다 |
+| 1 | Individual power users / developers who run n8n. They record solo voice memos, calls and lectures more than meetings | "The moment a recording ends, make it the input of the pipeline I have already built" | One signed webhook and one Drive folder. With a single "new item in folder" trigger, segments · tracks · metadata arrive together. The selling point is that the app does not offer to build the pipeline for you | **Almost none.** This persona is not a revenue source but **the basis of trust** (a reputation as an honest recorder, bug reports, workflow examples) |
+| 2 | Korean knowledge workers with many meetings. They need Korean meeting minutes, and keeping meeting audio resident in an outside SaaS is a burden | "Transcribe Korean meetings properly, but keep the audio and results in **my Drive**" | The same workflow wherever they record, a transcript as a file next to the original with `transcribe(clova\|rtzr)`, minutes through the agent they already use + `skills/recly-notes/`. No bot joins the meeting | **Yes.** But key issuance · billing setup is a barrier to entry (creating an app in the NAVER Cloud console and copying the `invokeUrl` back) |
+| 3 | Consultants · recruiters · researchers who spend most of the day on Zoom · Teams · Meet calls on macOS · Windows | "Without letting a bot in, split my voice from the other side's, and pile the originals up in my storage without deleting them" | mic/sys/mix three tracks, detect → confirm → record, the original kept as is in `recly/2026/2026-08/` | **Yes.** But this is the most competitive spot, and these people compare products on "summary quality". Recly's differentiator is not quality but **ownership** |
 
-### 경쟁 가격
+### Competitor pricing
 
-| 제품 | 가격 | 모델 |
+| Product | Price | Model |
 |---|---|---|
-| Plaud (전용 하드웨어 + 앱) | 기기 $159~189 + 연 $99.99 | 하드웨어 + 구독. 원본은 자기 클라우드에 가둠 |
-| Otter / Fireflies | 사용자당 월 $10~25 | 봇/클라우드 SaaS 구독 |
-| 클로바노트 | 개인 무료 월 300분 | 무료 티어로 개인 시장 장악 |
-| Meetily | 무료 / BYO 키, Pro 월 $15 | 오픈소스 + 유료 편의 티어 |
-| **Recly (제안)** | **앱 무료 · 키는 사용자 것** | 서버 없음 |
+| Plaud (dedicated hardware + app) | Device $159–189 + $99.99/year | Hardware + subscription. Originals locked in its own cloud |
+| Otter / Fireflies | $10–25 per user per month | Bot/cloud SaaS subscription |
+| CLOVA Note | Free for individuals, 300 minutes/month | Dominates the individual market with a free tier |
+| Meetily | Free / BYO key, Pro $15/month | Open source + paid convenience tier |
+| **Recly (proposal)** | **App free · keys are the user's** | No server |
 
-읽는 법: 이 표에서 Recly가 이길 수 없는 칸은 "요약 품질"과 "설정의 편함"이고, 이길 수 있는 칸은 "원본 소유"와 "월
-고정비 0"이다. 클로바노트의 무료 300분이 있는 한 **한국 개인 사용자에게 월 구독을 받는 안은 성립하지 않는다.**
+How to read it: in this table, the cells Recly cannot win are "summary quality" and "ease of setup", and the cells it can win are "owning the originals" and "zero
+fixed monthly cost". As long as CLOVA Note's free 300 minutes exists, **a plan that charges Korean individual users a monthly subscription does not hold up.**
 
-### 제안
+### Proposal
 
-**A. 앱은 무료, 키는 사용자 것**(권고) — 전사는 사용자가 자기 키로, 요약은 자기 에이전트 구독으로 돌리므로
-사용량 비용이 개발자에게 오지 않는다. 서버가 없으므로 운영비가 사실상 0이고, 유료화는 그 구조적 장점을 스스로 깎는 방향이 되기 쉽다.
+**A. The app is free, the keys are the user's** (recommended) — transcription runs on the user's own key and summaries on the user's own agent subscription, so
+usage costs never reach the developer. With no server, operating costs are effectively zero, and charging money easily turns into a move that erodes that structural advantage.
 
-**B. 나중에, 선택적 유료 편의 티어**(열어 두되 지금은 없음) — 후보는 관리형 STT 크레딧이다. **다만 이것은 제품
-원칙을 건드린다**: 관리형 크레딧은 사용자의 오디오를 개발자 계정으로 보낸다는 뜻이고, 그러려면 **서버가 하나
-생긴다.** 그 순간 개인정보처리방침의 "Recly에는 서버가 없습니다"가 거짓이 되고 ADR-021·ADR-022를 함께 고쳐야 한다.
-서버를 만들지 않는 대안(부담이 낮은 순): ① 키 발급 가이드 강화(앱 안에서 콘솔 단계를 스크린샷과 함께 — 비용 0,
-원칙 훼손 0), ② 일회성 인앱 결제로 특정 기능(영수증 검증은 스토어가), ③ 기부·후원.
+**B. Later, an optional paid convenience tier** (left open, but none for now) — the candidate is managed STT credits. **But this touches a product
+principle**: managed credits mean sending the user's audio to the developer's account, and that means **a server comes into
+existence.** At that moment the privacy policy's "Recly has no servers" becomes false, and ADR-021 · ADR-022 must be amended together.
+Alternatives that build no server (lowest burden first): ① stronger key issuance guides (the console steps in the app with screenshots — zero cost,
+zero damage to principles), ② a one-time in-app purchase for a specific feature (the store does receipt verification), ③ donations · sponsorship.
 
-**C. 받지 않기로 한 것** — 사용자 수·녹음 시간 기반 구독, 광고, 데이터 활용(ADR-022가 이미 막고 있다).
+**C. Revenue we decided not to take** — subscriptions based on user count · recording time, ads, data use (ADR-022 already blocks it).
 
-### 이 결정이 덮어야 하는 비용
+### Costs this decision has to cover
 
-| 항목 | 금액 | 주기 |
+| Item | Amount | Frequency |
 |---|---|---|
-| Apple Developer Program | $99 | 매년 |
-| Google Play 개발자 등록 | $25 | 1회 |
-| Windows 코드 서명 | 미확인(연 단위 과금) | 매년 — SmartScreen 경고를 없애려면 필요 |
-| GitHub Actions(비공개 저장소, `windows-latest` 러너) | 사용량 과금 | 매월 |
-| 도메인·개인정보처리방침 호스팅 | 소액 | 매년 — OAuth Production 게시에 공개 URL이 필요 |
+| Apple Developer Program | $99 | Yearly |
+| Google Play developer registration | $25 | Once |
+| Windows code signing | Unconfirmed (billed yearly) | Yearly — needed to get rid of the SmartScreen warning |
+| GitHub Actions (private repository, `windows-latest` runner) | Usage-based billing | Monthly |
+| Domain · privacy policy hosting | Small amount | Yearly — publishing OAuth to Production needs a public URL |
 
-합계는 첫 해 $124, 이후 매년 $99 + 서명 + CI이므로 **"유료화하지 않으면 유지가 불가능한" 구조가 아니다.** 이것이
-제안 A의 근거다.
+The total is $124 in the first year and $99 + signing + CI every year after, so **it is not a structure that "cannot be sustained without charging money."** This is
+the basis of proposal A.
 
 ---
 
-## 20. 검증 상태 (구 docs/20)
+## 20. Verification status (formerly docs/20)
 
-### 계측
+### Instrumentation
 
-모든 클라이언트가 같은 로그 이벤트 이름을 쓴다: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
-`xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`. **이 이름들은 안정
-계약이다**(§21). 실기에서 무슨 일이 있었는지를 확인하는 경로는 설정의 **"로그 내보내기"**(파일 링 버퍼) 하나뿐이고,
-그 밖으로는 아무것도 나가지 않는다(ADR-022).
+All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
+`xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`. **These names are a stable
+contract** (§21). The only way to see what happened on a real device is **"Export logs"** in settings (a file ring buffer),
+and nothing leaves beyond that (ADR-022).
 
-### 웹훅 로컬 수신기
+### Local webhook receiver
 
-> **폐기(2026-09-24)**: 웹훅이 제거되면서 수신기(`scripts/webhook-receiver.mjs`·`.test.mjs`)도 삭제됐다. 아래는 기록이다.
+> **Retired (2026-09-24)**: with webhooks removed, the receiver (`scripts/webhook-receiver.mjs` · `.test.mjs`) was deleted too. What follows is a record.
 
-Drive·웹훅이 걸린 인수는 모두 이 수신기로 판정한다. §4의 Standard Webhooks 서명을 코어 `Signer`와 같은 식으로
-재계산해 검증하고, 본문을 `spec/webhook.payload.schema.json`으로 확인한다.
+Every acceptance check involving Drive · webhooks is judged with this receiver. It verifies the §4 Standard Webhooks signature by recomputing it the same way as the core `Signer`,
+and checks the body against `spec/webhook.payload.schema.json`.
 
 ```
-cd spec && npm ci          # 처음 한 번 (ajv를 이 수신기가 그대로 쓴다)
+cd spec && npm ci          # once, the first time (this receiver uses ajv as is)
 node scripts/webhook-receiver.mjs --port 8787 --secret whsec_… [--log ./hooklog] [--fail-first 1]
 ```
 
-워크플로우의 `webhook` 단계 `url`은 `http://127.0.0.1:8787/hook`, `secretRef`는 그 값을 담은 시크릿 이름이다. 앱과
-수신기가 **같은 `whsec_` 문자열**이면 된다(앱의 "웹훅 서명 키 생성" 값을 `--secret`에 주거나, 반대로 정한 값을 앱의
-시크릿 폼에 넣는다). Android 실기기·에뮬레이터는 `adb reverse tcp:8787 tcp:8787`, iOS 시뮬레이터와 데스크톱 앱은
-맥의 `127.0.0.1`을 그대로 쓴다.
+The workflow's `webhook` step `url` is `http://127.0.0.1:8787/hook`, and `secretRef` is the name of the secret holding that value. The app and
+the receiver only need **the same `whsec_` string** (pass the app's "Generate a webhook secret" value to `--secret`, or conversely put a value you chose into the app's
+secret form). Android devices · emulators use `adb reverse tcp:8787 tcp:8787`; the iOS simulator and desktop apps use
+the Mac's `127.0.0.1` directly.
 
-성공하면 전달 1건당 한 줄을 찍는다.
+On success it prints one line per delivery.
 
 ```
 ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=recording.completed drive.fileId=1AbC… attempt=1
 ```
 
-`drive.fileId`가 `-`면 앞에 성공한 `drive.upload`가 없다는 뜻이다(§4). 서명 불일치·타임스탬프 초과는 401, 스키마
-위반은 400을 찍는다. `--fail-first 1`은 같은 `webhook-id`의 첫 전달에 500을 답해 재시도 경로를 만든다.
-`node --test scripts/webhook-receiver.test.mjs`가 수신기 자체를 검증한다.
+If `drive.fileId` is `-`, there was no successful `drive.upload` before it (§4). A signature mismatch · timestamp out of range prints 401, a schema
+violation prints 400. `--fail-first 1` answers 500 to the first delivery of a given `webhook-id` to create the retry path.
+`node --test scripts/webhook-receiver.test.mjs` verifies the receiver itself.
 
-### 인수 시나리오
+### Acceptance scenarios
 
-| 대상 | 시나리오 |
+| Target | Scenario |
 |---|---|
-| **코어** | `./gradlew :core:jvmTest` 통과; 예제 JSON 왕복(파싱→직렬화) 구조 동일 |
-| **Android 폰** | 1 **폐기(2026-09-24)** ~~새 설치 → 기본 워크플로우 2개가 로컬에 생기고 이 폰에서 사용 중인 것은 메모~~ → 새 설치 → 녹음 처리 설정이 기본값으로 준비된다(§5 "고정 처리 설정 도입"). 2 1시간 녹음(화면 끔) → 정지 → 제목 입력 → 30초 안에 Drive `recly/2026/2026-08/{base}/`에 4파트 + meta~~, 웹훅 1회 수신(서명 검증 통과)~~(웹훅 부분 폐기 2026-09-24). 3 비행기 모드에서 녹음 → 해제 → 자동 업로드. 4 업로드 중 앱 강제 종료 → WorkManager가 이어서 완료(Drive에 중복 파일 없음). 5 **폐기(2026-09-24)** ~~웹훅 500 → 재시도 → 성공~~. 6 시크릿 없는 기기에서 `MISSING_SECRET`~~, `continue`면 다음 단계 진행~~(사용자 `onError`는 2026-09-24 폐기). 7 30초 미만 → `SKIPPED_SHORT`, 행에 다시 시도·올리기 버튼이 없다. 8 동의 화면 중 회전(액티비티 재생성) → 인가 완료 |
-| **Galaxy Watch** | 1 타일 탭 → 즉시 녹음, 워치페이스 칩 표시, 앱 닫아도 지속. 2 폰 없이 20분 녹음 2건 → 폰 연결 → 두 건 모두 전송·ack·워치에서 삭제·폰에서 Drive 업로드. 3 전송 중 BT 끊김 → 재연결 시 미ack 파트부터 재개, 폰에 중복 없음. 4 **폐기(2026-09-24)** ~~폰에서 워크플로우 이름 변경 → 워치 선택지에 반영~~ |
-| **macOS** | 1 **"Zoom 입장 시 알림 1회"** → 클릭 → 3트랙 녹음 → 정지 → Drive에 mic/sys/mix + meta~~, 웹훅~~(폐기 2026-09-24). 2 1시간 회의 후 클랩 오프셋 < 20 ms. 3 **폐기(2026-09-24)** ~~폰에서 만든 워크플로우가 mac 편집 창에 보이고 양방향 편집 충돌 없이 병합~~. 4 새 Mac에서 DMG 설치 → Gatekeeper 통과 → 권한 프롬프트 2종(마이크 → 시스템 오디오) |
-| **iPhone + Apple Watch** | 1 액션 버튼 → 녹음 → 잠금 3시간 → 정지 → 홈으로 나감 → 잠금 상태에서 업로드 완료(배경 URLSession). 2 워치 20분 녹음 × 2 → iPhone 자동 수신·ack·실행. 3 Double Tap으로 정지 |
-| **Windows** | **1 "Teams 입장 → 알림"** → 녹음 → Drive~~ + 웹훅~~(폐기 2026-09-24). 2 MSI 설치 시 SmartScreen 경고 없음 |
-| **전사** | 1 폰에서 ~~"회의록" 워크플로우로~~ 외부 API 전사 설정으로 3분 이상(2파트 이상) 녹음 → 인원 선택 → Drive 폴더에 파트·meta·`*.transcript.json/.txt`가 생기고 상세 화면에 화자별 녹취가 보임. transcript의 `start/end`가 두 번째 파트 구간을 900초 이후로 가리킴(remux + 오프셋 검증). 2 제출 직후 프로세스 종료 → 다음 `runDueJobs`가 새로 제출하지 않고 같은 `jobRef`로 폴링해 완료(`attempts` 안 오름). 3 키 없음 → `MISSING_SECRET`(즉시), 틀린 키 → `AUTH_REJECTED` + "키를 확인하세요". 4 데스크톱 3트랙 → `mix`가 입력으로 선택되고 ~~웹훅 `files[]`에 `transcript` 항목~~(폐기 2026-09-24) Drive 폴더에 `*.transcript.json/.txt` |
+| **Core** | `./gradlew :core:jvmTest` passes; example JSON round trip (parse → serialize) is structurally identical |
+| **Android phone** | 1 **Retired (2026-09-24)** ~~New install → two default workflows are created locally, and the one in use on this phone is Memo~~ → New install → the recording processing settings are ready with their defaults (§5 "Fixed processing settings"). 2 One-hour recording (screen off) → stop → enter title → within 30 seconds, 4 parts + meta in Drive `recly/2026/2026-08/{base}/`~~, one webhook received (signature verification passes)~~ (webhook part retired 2026-09-24). 3 Record in airplane mode → turn it off → automatic upload. 4 Force-quit the app during upload → WorkManager finishes it (no duplicate files in Drive). 5 **Retired (2026-09-24)** ~~webhook 500 → retry → success~~. 6 `MISSING_SECRET` on a device without the secret~~, and with `continue` the next step proceeds~~ (user `onError` retired 2026-09-24). 7 Under 30 seconds → `SKIPPED_SHORT`, and the row has no retry or upload button. 8 Rotate during the consent screen (activity re-creation) → authorization completes |
+| **Galaxy Watch** | 1 Tap the tile → recording starts immediately, the watch face chip shows, and it continues after the app is closed. 2 Two 20-minute recordings without the phone → connect the phone → both transferred · acked · deleted on the watch · uploaded to Drive from the phone. 3 BT drops during transfer → on reconnect, resumes from the un-acked parts, no duplicates on the phone. 4 **Retired (2026-09-24)** ~~Rename a workflow on the phone → reflected in the watch's choices~~ |
+| **macOS** | 1 **"One notice on joining Zoom"** → click → three-track recording → stop → mic/sys/mix + meta in Drive~~, webhook~~ (retired 2026-09-24). 2 Clap offset < 20 ms after a one-hour meeting. 3 **Retired (2026-09-24)** ~~A workflow made on the phone appears in the Mac editor and merges with two-way edits without conflicts~~. 4 Install the DMG on a new Mac → passes Gatekeeper → two permission prompts (microphone → system audio) |
+| **iPhone + Apple Watch** | 1 Action button → record → locked for 3 hours → stop → go to the home screen → upload completes while locked (background URLSession). 2 Watch 20-minute recordings × 2 → iPhone receives automatically · acks · runs. 3 Stop with Double Tap |
+| **Windows** | **1 "Join Teams → notice"** → record → Drive~~ + webhook~~ (retired 2026-09-24). 2 No SmartScreen warning when installing the MSI. |
+| **Transcription** | 1 On the phone, with ~~the "Minutes" workflow~~ the external API transcription settings, record 3 minutes or more (2 parts or more) → choose the head count → parts · meta · `*.transcript.json/.txt` appear in the Drive folder and the transcript by speaker shows on the detail screen. The transcript's `start/end` places the second part's span after 900 seconds (remux + offset verification). 2 Process killed right after submission → the next `runDueJobs` does not submit again but polls with the same `jobRef` until completion (`attempts` does not go up). 3 No key → `MISSING_SECRET` (immediately), wrong key → `AUTH_REJECTED` + "Check the key". 4 Desktop three tracks → `mix` is chosen as the input and ~~a `transcript` entry in the webhook `files[]`~~ (retired 2026-09-24) `*.transcript.json/.txt` in the Drive folder |
 
-### 지금까지 무엇이 실제로 확인됐나
+### What has actually been verified so far
 
-**자동 검증(기기 없이)** — 아래 스위트가 전부 녹색인 것이 모든 변경의 기본선이다.
+**Automated verification (no device)** — all of the suites below being green is the baseline for every change.
 
-| 스위트 | 케이스 수 |
+| Suite | Cases |
 |---|---|
 | `:core:jvmTest` | 391 |
 | `:android:app:testDebugUnitTest` | 262 |
@@ -3234,100 +3265,100 @@ ok id=01J9STEPR0N0123456789ABCDE recordingId=01J9ABCDEF0123456789ABCDEF event=re
 | `:android:recording:testDebugUnitTest` | 49 |
 | `:android:datalayer:testDebugUnitTest` | 23 |
 | `:windows:app:test` | 260 |
-| `cargo test`(capture-helper) | 32 |
+| `cargo test` (capture-helper) | 32 |
 | RecKitTests | 354 |
-| ReclyTests(iOS) | 28 |
+| ReclyTests (iOS) | 28 |
 | ReclyUITests | 7 |
 
-**실기 인수 통과**
+**Real-device acceptance passed**
 
-| 항목 | 무엇을 확인했나 |
+| Item | What was checked |
 |---|---|
-| 데스크톱(JVM 앱, macOS 호스트) | 실제 Google 계정 PKCE 로그인 → 3트랙 녹음(페이크 헬퍼) → Drive `recly/{yyyy}/{yyyy}-{MM}/{base}/`에 3파트 + meta → 로컬 수신기가 서명·스키마 검증 통과한 웹훅 1건 |
-| Android 폰(에뮬레이터, 실제 계정) | Credential Manager 사다리 로그인 + Drive 권한 허용 → `NEEDS_AUTH`로 파킹돼 있던 잡 3건이 자동 재개돼 업로드 완료 |
-| 스키마 v2 마이그레이션 | `user_version = 1`인 실기 DB에 새 빌드를 덮어써도 크래시 없이 1 → 2로 올라감 |
-| Android `concat` 런타임 | 계측 테스트가 AAC 파트 2개를 만들어 이어 붙인 뒤 디코드 — 길이 오차 0, 전 프레임 디코드 통과(§8 무손실 복사·pts 이어 붙임) |
-| 교차 셸 문구 통일(§7 규칙 10·11, §9 화면 원칙 1) | 네 셸의 사전을 하나로 맞춘 뒤 실제로 확인: Android 에뮬레이터와 iPhone 시뮬레이터의 녹음 화면이 같은 노드 값(`phone` · 사용 중인 워크플로우 이름만 · `IDLE`)과 같은 헤더 meta(`phone · <id8>`)를 보이고, 폰의 피커가 워크플로우 이름만(`회의` 선택됨·`메모`)을, 정지 뒤 제목 프롬프트가 `Recording title` + `Leave it empty to keep the timestamp name` + `People in the room`(모름·2·3·4·5·6+)을 보인다. RecMac 카탈로그에 없던 `People in the room`·`Unknown`·`6+`(한국어에서 영어로 새던 자리)까지 포함해 `CrossShellDictionaryTest`가 en·ko를 잠근다 |
-| Android·Windows 로컬 전사 엔진(2026-09-26) | opt-in 스모크 테스트(`LocalSpeechSmokeTest`, 셸마다 하나)를 macOS 호스트의 Windows 셸 JVM과 Android 에뮬레이터(arm64, 메모리 8 GB)에서 실행: 모델 약 1 GB 범위 다운로드·해시 확인(JVM 108초, 에뮬레이터 164초) → 17.9초 한국어 TTS 클립이 발화 3구간으로 전사(모델 로드 포함 JVM 3.7초, 에뮬레이터 5.1초) → 첫 구간 뒤에서 재개 → 첫 체크포인트에서 취소. 에뮬레이터 설정 화면에서 파일 하나를 지운 뒤 모델 다운로드 → 그 파일만 다시 받아 준비 완료 |
-| 워크플로우 내보내기/가져오기 — **폐기(2026-09-24)** | 설정에서 내보낸 `recly-workflows.json`을 다른 기기에서 가져오기 → 목록이 교체되고, 이 기기의 기본·시크릿 값은 그대로(파일에 없음). 구 스키마 파일 가져오기 → 마이그레이션되어 저장 |
+| Desktop (JVM app, macOS host) | Real Google account PKCE sign-in → three-track recording (fake helper) → 3 parts + meta in Drive `recly/{yyyy}/{yyyy}-{MM}/{base}/` → one webhook that passed signature · schema verification on the local receiver |
+| Android phone (emulator, real account) | Credential Manager ladder sign-in + Drive permission granted → three jobs parked at `NEEDS_AUTH` resumed automatically and finished uploading |
+| Schema v2 migration | Installing the new build over a real-device DB with `user_version = 1` upgrades it 1 → 2 without a crash |
+| Android `concat` runtime | An instrumented test makes two AAC parts, concatenates them, then decodes — zero duration error, every frame decodes (§8 lossless copy · pts concatenation) |
+| Cross-shell wording unification (§7 rules 10 · 11, §9 Screen principles 1) | Actually checked after aligning the four shells' dictionaries into one: the recording screens of the Android emulator and the iPhone simulator show the same node values (`phone` · only the name of the workflow in use · `IDLE`) and the same header meta (`phone · <id8>`), the phone's picker shows only workflow names (`Meeting` selected · `Memo`), and after stopping, the title prompt shows `Recording title` + `Leave it empty to keep the timestamp name` + `People in the room` (Unknown · 2 · 3 · 4 · 5 · 6+). `CrossShellDictionaryTest` locks en · ko, including `People in the room` · `Unknown` · `6+`, which were missing from the RecMac catalog (spots where English leaked into the Korean UI) |
+| Android · Windows local transcription engine (2026-09-26) | Ran the opt-in smoke test (`LocalSpeechSmokeTest`, one per shell) on the Windows shell JVM on a macOS host and on an Android emulator (arm64, 8 GB memory): range download and hash check of the roughly 1 GB model (JVM 108 seconds, emulator 164 seconds) → a 17.9-second Korean TTS clip transcribed into 3 speech segments (JVM 3.7 seconds, emulator 5.1 seconds, including model load) → resume after the first segment → cancel at the first checkpoint. On the emulator's settings screen, one file deleted and then Download model → only that file is downloaded again and the model is ready |
+| Workflow export/import — **Retired (2026-09-24)** | Importing `recly-workflows.json` exported from settings on another device → the list is replaced, and this device's defaults · secret values stay as they were (not in the file). Importing an old-schema file → migrated and saved |
 
-**보류 — 전부 하드웨어·계정 대기이지 코드 문제가 아니다**
+**Pending — all of it waits on hardware · accounts, not on a code problem**
 
-| 항목 | 왜 |
+| Item | Why |
 |---|---|
-| 갤럭시 워치 3시간 백그라운드 녹음, `sendFile` 30 MB 실측 | 실기기 갤럭시 워치가 없다. 에뮬레이터와 페이크로만 확인 |
-| Apple Watch 배경 녹음 2~3시간, `transferFile` 50 MB·ack 신뢰성 | 실기기 Apple Watch가 없다 |
-| macOS tap 권한 프롬프트 실물, Zoom/Meet/Teams 3앱 캡처, 클랩 오프셋 | 사람의 클릭이 필요하다(자동 조작이 막힘). 설계·경로와 드리프트 *추정기*는 합성 하네스로 검증됨 |
-| Windows 실캡처(loopback, `IAudioSessionManager2` 감지), MSI·SmartScreen, Credential Manager 비우기, `/revoke` 실호출, 시스템 고대비 감지 | **Windows PC가 없다.** 컴파일·단위 테스트는 CI(`windows-latest`)가, MSI 생성은 릴리스 태그의 CI(`windows-release.yml`)가, UI는 macOS 호스트의 패키지 실행이 대신한다 |
-| `NEEDS_SPACE` 기기 재현 | 실제로 꽉 찬 Google Drive를 만들지 못했다. 코어는 페이크 Transport로(`DriveQuotaTest`), 셸은 단위 테스트와 개발 플래그로 배너·배지만 확인 |
-| 연결 해제의 실제 실행 | 누르면 그 계정의 grant가 **모든 기기에서** 사라져(revoke는 Cloud 프로젝트 단위) 남은 실기 로그인 확인이 전부 막힌다. 다이얼로그·경고 문구·"녹음 중에는 확인 비활성"까지는 UI로 봤고, revoke → `core.disconnect` 경로는 코어·셸 단위 테스트로만 |
-| Android·Windows 로컬 전사의 실기기 발열·배터리·장문(30~120분)·정확도, 녹음부터 게시까지의 실기 흐름 | 실험용 Android 폰과 Windows PC가 없다. 에뮬레이터와 macOS 호스트의 속도는 실기기 성능이 아니고, 스모크 클립은 합성 음성이다 |
-| M7 실키 인수(전사 시나리오 1·2·4) | STT 실제 키가 필요하다. 가짜 키로 `AUTH_REJECTED` → "키를 확인하세요" → 편집기 진입까지는 확인 |
-| iPhone·macOS 실기 로그인 | 이 문서에 확인 기록이 없다. 스토어 등록·서명은 해소됐다(2026-10-01 App Store·Google Play 출시, TestFlight는 건너뜀) |
-| iCloud 저장소의 실기 동기화(§3 "저장 위치") | iCloud 컨테이너 등록·App ID 기능·Mac Developer ID 프로필이 아직 없다(사람의 일). 코어 JVM 테스트와 RecKit 단위 테스트로 업로드 대기·완료·공간 부족·목록·제목만 확인했다. 같은 Apple ID의 iPhone·Mac에서 올리기 → 다른 기기 목록 → 이름 바꾸기 → 삭제를 실기로 확인해야 한다 |
+| Galaxy Watch 3-hour background recording, measured `sendFile` of 30 MB | No real Galaxy Watch. Checked only with the emulator and fakes |
+| Apple Watch background recording of 2–3 hours, `transferFile` 50 MB · ack reliability | No real Apple Watch |
+| The real macOS tap permission prompt, capture from the three apps Zoom/Meet/Teams, clap offset | Needs a human's clicks (automation is blocked). The design · path and the drift *estimator* were verified with a synthetic harness |
+| Real capture (loopback, `IAudioSessionManager2` detection), MSI · SmartScreen, clearing Credential Manager, a real `/revoke` call, system high-contrast detection | **No Windows PC.** CI (`windows-latest`) stands in for compile · unit tests, the release-tag CI (`windows-release.yml`) for MSI creation, and running the package on a macOS host for the UI |
+| Reproducing `NEEDS_SPACE` on a device | Could not create a truly full Google Drive. The core is checked with a fake Transport (`DriveQuotaTest`), the shells only for the banner · badge with unit tests and a dev flag |
+| Actually running disconnect | Tapping it removes that account's grant **on every device** (revoke is per Cloud project), which blocks all remaining real-device sign-in checks. The dialog, the warning wording and "confirm disabled while recording" were seen in the UI; the revoke → `core.disconnect` path only with core · shell unit tests |
+| Real-device heat · battery · long recordings (30–120 minutes) · accuracy of Android · Windows local transcription, the real-device flow from recording to publishing | No test Android phone or Windows PC. Emulator and macOS host speed is not real-device performance, and the smoke clip is synthetic speech |
+| M7 real-key acceptance (transcription scenarios 1 · 2 · 4) | Needs real STT keys. Checked with a fake key up to `AUTH_REJECTED` → "Check the key" → entering the editor |
+| iPhone · macOS real-device sign-in | This document has no record of it being checked. Store listing · signing are resolved (released on the App Store · Google Play on 2026-10-01, TestFlight skipped) |
+| Real-device sync of iCloud storage (§3 "Storage location") | No iCloud container registration · App ID capability · Mac Developer ID profile yet (human work). Only upload waiting · completion · out of space · listing · titles were checked, with core JVM tests and RecKit unit tests. Uploading on an iPhone · Mac with the same Apple ID → listing on the other device → renaming → deleting must be checked on real devices |
 
 ---
 
-## 21. 컨벤션 (구 docs/21)
+## 21. Conventions (formerly docs/21)
 
-감사·클린업이 **보고 나서 남기기로 판정한** 것들이다. 다음 감사가 같은 것을 다시 꺼내 논쟁하지 않도록 근거만 짧게
-적는다. 판정을 뒤집으려면 여기에 이유를 덧붙이거나 지운다.
+These are things that audits · cleanups **looked at and decided to keep**. Only the reasons are written down, briefly, so that the next audit does not
+bring up and argue the same thing again. To reverse a decision, add a reason here or delete the entry.
 
-### 1. 로그 이벤트 이름은 안정 계약이다 — 개명 금지
+### 1. Log event names are a stable contract — never rename them
 
-`rec.start` · `rec.part` · `rec.stop` · `rec.finalize` · `xfer.*` · `job.step.start/ok/fail` · `sync.*` 같은 이벤트
-이름은 네 셸이 **같은 이름**을 쓰기로 한 계약이고(§20), 실측 기록과 인수 시나리오가 이 문자열에 걸려 있다. 코드
-안에서만 보인다고 해서 제품명이나 현재 클래스 이름에 맞춰 다듬지 않는다 — 사용자에게 보이지 않으므로 그대로 두는
-쪽이 계약이다. `CoreMessage` 코드도 같다: 저장된 `last_error`와 셸의 렌더가 코드 문자열을 그대로 쓴다.
+Event names such as `rec.start` · `rec.part` · `rec.stop` · `rec.finalize` · `xfer.*` · `job.step.start/ok/fail` · `sync.*`
+are a contract under which the four shells use **the same names** (§20), and measurement records and acceptance scenarios hang on these strings. Being
+visible only in code is no reason to polish them to match the product name or current class names — they are not shown to users, so leaving them
+as they are is the contract. `CoreMessage` codes are the same: the stored `last_error` and the shells' rendering use the code strings as is.
 
-### 2. `WorkflowSync.reconcile`은 밀도가 높지만 분해 대상이 아니다
+### 2. `WorkflowSync.reconcile` is dense but is not to be split up
 
-로컬·원격·삭제 워터마크·`dirty`를 **한 화면에서 같이 봐야** 규칙이 읽힌다. 헬퍼로 쪼개면 각 조각은 짧아져도 동기화
-규칙 전체를 따라가려면 파일을 오가야 하고, 이 함수는 규칙 그 자체가 본문이다.
+The rules only read when local · remote · deletion watermark · `dirty` are **seen together on one screen**. Splitting it into helpers would make each piece
+shorter, but following the whole sync rule would mean jumping between files; the body of this function is the rule itself.
 
-### 3. `ShellModel`·`MenuModel`의 잔여 길이는 그대로 둔다
+### 3. The remaining length of `ShellModel` and `MenuModel` stays
 
-Windows `ui/ShellModel.kt`와 Mac `MenuModel.swift`는 길지만 **뽑을 로직은 이미 다 나갔다** —
+Windows `ui/ShellModel.kt` and Mac `MenuModel.swift` are long, but **the logic worth extracting has already been moved out** —
 `DisconnectGuard`/`Phase`/`Gate`, `StatusLine`, `runTracked`/`persistFlushed`, `DisconnectFlow`,
-`WorkflowInspector`, `RecordingDialogs`, `RecorderStatusLine`. 남은 것은 상태 필드와 공용 구현으로의 얇은 위임이라,
-줄 수를 더 줄이는 분해는 계약을 옮기지 않고 churn만 만든다.
+`WorkflowInspector`, `RecordingDialogs`, `RecorderStatusLine`. What remains is state fields and thin delegation to the shared implementations, so
+a split that cuts more lines would only create churn without moving any contract.
 
-### 4. 테스트 더블은 공용 테스트 지원 위치에 1벌만 둔다
+### 4. Test doubles live once, in the shared test-support location
 
-같은 페이크를 테스트 파일 안에 두 번째로 적는 순간 드리프트가 시작된다(실패 변형만 다른 사본, 서로 다른 기기
-식별자). 두 번째 사용처가 생기면 그 모듈의 공용 테스트 지원 위치로 올리고, 특수한 동작은 사본이 아니라 **공용 더블을
-감싸는 델리게이트**로 만든다. 현재 자리: 코어 `core/src/jvmTest/.../testing/`(`TestSupport`, `FakeDrive`),
-Windows `windows/app/src/test/.../Fakes.kt`, Android는 모듈별 공용 테스트 파일.
+Drift starts the moment the same fake is written a second time inside a test file (copies that differ only in failure variants, different device
+identifiers). When a second user appears, move it up to that module's shared test-support location, and build special behavior as **a delegate
+wrapping the shared double**, not as a copy. Current locations: core `core/src/jvmTest/.../testing/` (`TestSupport`, `FakeDrive`),
+Windows `windows/app/src/test/.../Fakes.kt`, and on Android a shared test file per module.
 
-### 5. step→라벨 맵이 셋인 것은 의도한 것이다
+### 5. Three step→label maps are intentional
 
-> **2026-09-24**: 워크플로우 편집기(`WorkflowEditorScreen`·`StepEdit`)가 제거되면 이 판정의 대상 중 편집기 쪽 맵은
-> 사라진다. 남는 맵에는 같은 원칙(문구가 다르면 맵도 다르다)이 적용된다.
+> **2026-09-24**: once the workflow editor (`WorkflowEditorScreen` · `StepEdit`) is removed, the editor-side maps among the subjects of this decision
+> go away. The same principle (different wording, different maps) applies to the maps that remain.
 
-Android `WorkflowsViewModel`에 `Step`→라벨과 `StepEdit`→라벨이 따로 있고, `WorkflowEditorScreen`에 `StepKind`→라벨이
-하나 더 있다. **문구가 다르기 때문**이다 — 목록은 짧은 이름(`Drive`), 편집기와 단계 추가 다이얼로그는 동작을 말하는
-이름(`Drive 업로드`). 하나로 합치면 세 화면 중 두 곳의 문구가 무너진다. 합칠 것은 맵이 아니라, 같은 문구를 두 번
-적는 경우뿐이다.
+Android `WorkflowsViewModel` has separate `Step`→label and `StepEdit`→label maps, and `WorkflowEditorScreen` has one more, `StepKind`→label.
+**This is because the wording differs** — the list uses short names (`Drive`), and the editor and the add-step dialog use names that describe the action
+(`Drive upload`). Merging them into one would break the wording on two of the three screens. What should be merged is not the maps, only cases that
+write the same wording twice.
 
-### 6. 코드베이스의 언어는 영어다
+### 6. The codebase language is English
 
-식별자·주석·문서 주석·커밋 메시지·로그 이벤트 이름과 메시지·테스트 이름·모듈 README는 영어로 쓴다. **사용자에게
-보이는 문자열은 리소스로 지역화**하고(§7) 코드에 하드코딩하지 않는다. 이 문서를 비롯한 `docs/`의 설계 문서는
-한국어다.
+Identifiers, comments, doc comments, commit messages, log event names and messages, test names and module READMEs are written in English. **User-facing
+strings are localized through resources** (§7) and not hardcoded in code. The documents in `docs/`, including this one, are
+English.
 
 ---
 
-## 열린 결정
+## Open decisions
 
-코드가 아니라 사람이 정해야 남는 것들이다.
+These are what remain for people, not code, to decide.
 
-| 항목 | 상태 |
+| Item | Status |
 |---|---|
-| **상표** | 미국 USPTO에 동일 문자 **RECLY**가 제9류(모바일 앱)로 등록·유효(Reg. 7739986, 2025-03-25)하고 한국에는 동일 표장이 없다. 미국 출시·출원은 위험하다. 선택지: 한국 우선 출시(미국 제외) / 미국 변리사 의견 / 개명(표시 이름만). 공개 범위가 한국이면 유지, 글로벌이면 개명 권고 |
-| **라이선스·공개 여부** | **결정(2026-09-04)**: `AGPL-3.0-or-later`(`LICENSE` 원문 그대로) + §7 추가 허가 두 개(앱스토어 배포, 7(e) 상표 불허 — `LICENSE-EXCEPTIONS.md`) + `TRADEMARK.md`. **CLA 없음** — 기여는 같은 조건(추가 허가 포함)으로 받는다(`CONTRIBUTING.md`). 이름은 글로벌 공개에도 **Recly 유지**(미국 RECLY 상표 리스크는 감수). 저장소는 2026-09-05에 공개했고, 스토어 출시는 2026-10-01 — App Store(iPhone·Apple Watch)와 Google Play(Android 폰·Wear OS). macOS·Windows는 GitHub Releases로 직접 배포한다 |
-| **가격·과금** | §16의 제안(앱 무료 + 사용자 키, 유료 편의 티어는 후속)은 **결정 대기**. 결정되면 §0의 규칙으로 올린다. 함께 정할 것: 유료 편의 티어를 가능성으로 열어 둘 것인가, 아니면 "서버는 영원히 없다"를 제품 약속으로 못 박을 것인가 / Windows 코드 서명 비용을 확인하고 감당할 것인가 |
-| **관할별 동의 문구의 법률 검토** | §12의 관할 표는 웹 요약이고 법률 자문이 아니다. 스토어 제출 전에 최소한 한국·미국(주별 목록의 현행성)·EU 항목을 확인하거나, 안내문을 "관할을 직접 확인하라"는 수준으로만 유지한다 |
-| **개인정보처리방침 게시** | 구현 전제 조건은 전부 충족됐다. 남은 것은 ① §15 §3 표의 provider별 보관 정책 URL 확정(확정 전까지 앱 고지에도 링크를 걸지 않는다), ② 공개 연락처 이메일, ③ 위 법률 검토. 셋 다 사람의 일이다 |
-| **워치 슬라이스 크기 기준** | 원래 기준은 "watchOS 슬라이스 < 20 MB"였는데 SKIE 적용 후 스트립 전 정적 슬라이스가 20.1~21.8 MB로 그 선을 넘는다. 링크·스트립 후 실제 앱은 13 MB라 75 MB 예산에는 여유가 있다. 기준을 "링크된 워치 앱 크기"로 다시 쓸지, 워치 소스셋을 줄여 슬라이스를 되돌릴지 결정이 필요하다 |
-| **iCloud 실기 인수** | 0.1.2(빌드 32, 2026-10-02)부터 iCloud가 켜진 빌드로 나간다(§3 "저장 위치"; 컨테이너·App ID·Mac Developer ID 프로필·`Local.xcconfig`는 갖춰졌다). 남은 것은 같은 Apple ID의 iPhone·Mac 실기로 업로드·완료·다른 기기 목록·재생·삭제를 확인하는 일과, App Store 제출 문서(`app-review.md`·`app-store-metadata.en.txt`·`app-store-copy.ko.md`)의 Drive만 쓴다는 서술을 고치는 일 |
-| **macOS 에코(AEC)** | 내장 스피커를 쓰면 상대 목소리가 mic 트랙에 섞인다. 지금은 시작 시 경고 한 줄뿐이고, `setVoiceProcessingEnabled` 실험 결과에 따라 옵션화할지 결정한다 |
+| **Trademark** | At the US USPTO, the identical word mark **RECLY** is registered and live in Class 9 (mobile apps) (Reg. 7739986, 2025-03-25), and there is no identical mark in Korea. Launching · filing in the US is risky. Options: launch in Korea first (excluding the US) / a US trademark attorney's opinion / rename (display name only). Keep the name if the release scope is Korea; renaming is recommended if it is global |
+| **License · publication** | **Decided (2026-09-04)**: `AGPL-3.0-or-later` (`LICENSE` verbatim) + two §7 additional permissions (app store distribution, 7(e) trademark not granted — `LICENSE-EXCEPTIONS.md`) + `TRADEMARK.md`. **No CLA** — contributions are accepted under the same terms (including the additional permissions) (`CONTRIBUTING.md`). The name **stays Recly** even for a global release (the US RECLY trademark risk is accepted). The repository was made public on 2026-09-05, and the store launch was 2026-10-01 — App Store (iPhone · Apple Watch) and Google Play (Android phone · Wear OS). macOS · Windows are distributed directly through GitHub Releases |
+| **Pricing · billing** | The §16 proposal (free app + user keys, paid convenience tier later) is **awaiting a decision**. Once decided, it moves up into the §0 rules. To decide along with it: keep a paid convenience tier open as a possibility, or nail down "there will never be a server" as a product promise / confirm the cost of Windows code signing and take it on or not |
+| **Legal review of jurisdiction consent wording** | The jurisdiction table in §12 is a web summary, not legal advice. Before store submission, check at least the Korea · US (whether the state list is current) · EU entries, or keep the notice only at the level of "check your jurisdiction yourself" |
+| **Privacy policy publication** | All implementation prerequisites are met. What remains: ① finalizing the per-provider retention policy URLs in the §15 §3 table (until they are final, the app notice carries no link either), ② a public contact email, ③ the legal review above. All three are human work |
+| **Watch slice size criterion** | The original criterion was "watchOS slice < 20 MB", but after applying SKIE the pre-strip static slice is 20.1–21.8 MB, over that line. The actual app after linking · stripping is 13 MB, so there is room within the 75 MB budget. A decision is needed: rewrite the criterion as "linked watch app size", or shrink the watch source set to bring the slice back |
+| **iCloud real-device acceptance** | From 0.1.2 (build 32, 2026-10-02) the builds ship with iCloud on (§3 "Storage location"; the container · App ID · Mac Developer ID profile · `Local.xcconfig` are in place). What remains is checking upload · completion · other-device listing · playback · deletion on a real iPhone · Mac with the same Apple ID, and fixing the statement in the App Store submission documents (`app-review.md` · `app-store-metadata.en.txt` · `app-store-copy.md`) that only Drive is used |
+| **macOS echo (AEC)** | With the built-in speakers, the other side's voice mixes into the mic track. For now there is only a one-line warning at start; whether to make it an option is decided by the results of a `setVoiceProcessingEnabled` experiment |

@@ -17,7 +17,7 @@ import recly.core.job.JobStatus
 /**
  * docs/11 A5: the only thing that runs the queue on Android. `ReclyCore.runDueJobs()` does the work
  * and persists after every step, so a `stopWork` costs at most the chunk in flight — which is why
- * this can be a plain worker and not a `dataSync` foreground service (docs/11 "주의").
+ * this can be a plain worker and not a `dataSync` foreground service (docs/11 "Caveats").
  *
  * Two invariants, and they are the whole design:
  *

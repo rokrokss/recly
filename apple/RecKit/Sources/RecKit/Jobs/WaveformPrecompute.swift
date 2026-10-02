@@ -1,7 +1,7 @@
 import Foundation
 import ReclyCore
 
-/// docs/09 화면 원칙 2: a recording's waveform, worked out once it is finalized on this device (or,
+/// docs/09 screen principle 2: a recording's waveform, worked out once it is finalized on this device (or,
 /// on the phone, received whole from the watch) and kept beside its parts (`WaveformPeaks`), so even
 /// the first time the recording is opened the detail draws it at once instead of decoding every part.
 ///

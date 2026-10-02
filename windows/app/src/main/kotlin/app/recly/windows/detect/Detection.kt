@@ -1,7 +1,7 @@
 package app.recly.windows.detect
 
 /**
- * The handoff between the two things that can hold a capture helper (docs/14 "감지").
+ * The handoff between the two things that can hold a capture helper (docs/14 "Detection").
  *
  * There must never be two helpers alive at once. The helper leaves **its own** process out of the
  * capture sessions it enumerates (`detect.rs`), so a detect-only helper running beside a recording

@@ -53,7 +53,7 @@ data class TranscriptWord(val start: Double, val end: Double, val text: String)
  *
  * Two things happen here and nowhere else. The times a provider reports are on the *concatenated*
  * file's axis, which starts at zero and has no gaps; the recording's axis is what every other file
- * of the recording uses, so each part's `startOffsetSec` is put back (docs/08 "오디오 준비"). And
+ * of the recording uses, so each part's `startOffsetSec` is put back (docs/08 "Audio preparation"). And
  * the provider's speaker labels — `A`/`B`, `1`/`2`, whatever it happens to use — are renamed to
  * `S1, S2, …` in order of first appearance, so a reader never has to know which provider ran.
  */

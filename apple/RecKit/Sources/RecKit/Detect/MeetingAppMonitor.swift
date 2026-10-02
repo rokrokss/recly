@@ -3,7 +3,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-/// Which meeting app is running, if any (docs/12 "미팅 감지" 신호 3).
+/// Which meeting app is running, if any (docs/12 "Meeting detection" 신호 3).
 ///
 /// Read on demand rather than observed: `MeetingDetector` already ticks every two seconds for the
 /// microphone, and the browser half of the answer is a window *title*, which no launch notification
@@ -12,8 +12,7 @@ import Foundation
 /// A native meeting app counts because it is running. A browser does not — a browser is always
 /// running — so it counts only while one of its windows is named like a meeting. `CGWindowListCopyWindowInfo`
 /// is the whole of that check: the Accessibility tree would name the Zoom "Mute Audio" menu item as
-/// well, and an Accessibility prompt is a price this feature is not worth (docs/12 "브라우저 Meet은
-/// 창 제목까지만, AX 권한 요구 없음"). Window *names* are themselves behind the screen-recording
+/// well, and an Accessibility prompt is a price this feature is not worth (docs/12 "browser Meet goes only as far as the window title, without asking for AX permission"). Window *names* are themselves behind the screen-recording
 /// permission the system-audio tap already asks for; without it the browser case simply does not
 /// fire, and the native apps are unaffected.
 public enum MeetingAppMonitor {

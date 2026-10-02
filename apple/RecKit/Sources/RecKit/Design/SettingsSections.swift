@@ -74,13 +74,13 @@ public struct LanguageSection: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// docs/09 "접근성": the system's light/dark answer is followed without being asked about, and this is
+/// docs/09 "Accessibility": the system's light/dark answer is followed without being asked about, and this is
 /// the one override of it ([AppTheme]) — the same section, the same three words, that the Windows
 /// settings window draws.
 ///
 /// Chips and not a dropdown on either shell: there are three answers, they fit on a line, and a
-/// chosen chip says so itself the way the workflow picker's does (docs/09 화면 원칙 1). They wrap
-/// rather than squeeze, because docs/09 유동 타이포 makes the label size the user's.
+/// chosen chip says so itself the way the workflow picker's does (docs/09 screen principle 1). They wrap
+/// rather than squeeze, because docs/09 Fluid typography makes the label size the user's.
 ///
 /// The section is the question, so the chips sit in a block of their own rather than under a row
 /// that would say "Theme" a second time. The Mac's settings pane and the phone's settings tab draw

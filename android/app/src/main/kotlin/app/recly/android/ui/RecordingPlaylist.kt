@@ -5,7 +5,7 @@ import recly.core.model.Part
 import recly.core.model.Track
 
 /**
- * docs/08 "결과 파일": which of the files beside `meta.json` the detail plays back, and in what
+ * docs/08 "Result files": which of the files beside `meta.json` the detail plays back, and in what
  * order. A pure choice over `meta`, so it can be checked without a disk or a player — the caller
  * only hands it the recording's directory and a way to ask whether a file is there. RecKit's
  * `RecordingPlaylist` is the same object, and the two are meant to stay the same.

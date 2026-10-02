@@ -76,7 +76,7 @@ pwsh windows/scripts/sign-msi.ps1 -Msi windows\app\build\compose\binaries\main\m
 ## SmartScreen check procedure (docs/20 S8 · N7 — **on hold: no Windows PC**)
 
 Once there is a Windows PC, check in this order. Nobody has been able to do it so far, and
-docs/20 "Windows 보류 항목" says as much.
+docs/20 "Windows pending items" says as much.
 
 1. Check on a **new PC** (or a new user profile). A machine that has run it once earns reputation
    and the warning disappears, so checking on the machine that built it means nothing.

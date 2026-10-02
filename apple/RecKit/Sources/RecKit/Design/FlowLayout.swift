@@ -3,7 +3,7 @@ import SwiftUI
 /// A row of chips that turns into several rows when one is not enough — the same thing Compose's
 /// `FlowRow` does for the Android shell.
 ///
-/// docs/09 유동 타이포 makes the label size the user's, so a row of provider names, language tags or
+/// docs/09 Fluid typography makes the label size the user's, so a row of provider names, language tags or
 /// secret names is only a row at the size it was drawn for. An `HStack` answers that by squeezing
 /// its children below [minTouch] and then clipping their letters; this answers it by wrapping,
 /// which is the only arrangement that keeps every chip its own size.

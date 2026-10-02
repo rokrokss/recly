@@ -50,7 +50,7 @@ import java.util.Locale
 import kotlin.time.ExperimentalTime
 
 /**
- * docs/11 A10 as docs/09 화면 원칙 4 draws it: a section table — account, language, theme, capture,
+ * docs/11 A10 as docs/09 screen principle 4 draws it: a section table — account, language, theme, capture,
  * uploads, processing, privacy — closed by an honest block of what this build actually is.
  */
 @Composable
@@ -105,7 +105,7 @@ fun SettingsScreen(
                 BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
                     context.openUrl(GOOGLE_PERMISSIONS_URL)
                 }, modifier = Modifier.padding(horizontal = Space.m))
-                // docs/09 화면 원칙 8: the answer to the notice above it, end-aligned under it.
+                // docs/09 screen principle 8: the answer to the notice above it, end-aligned under it.
                 FlowRow(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
                     BlueprintButton(stringResource(R.string.disconnect_removed), onRevokeDebtSettled,
                         tone = ButtonTone.QUIET,
@@ -157,7 +157,7 @@ fun SettingsScreen(
                 },
             )
 
-            // docs/09 "접근성": the system's dark mode is the default and the only one the app has
+            // docs/09 "Accessibility": the system's dark mode is the default and the only one the app has
             // an opinion about — this is the user's override of it, on this device alone, exactly
             // as the PC's Settings window offers it.
             Section(stringResource(R.string.settings_theme))
@@ -214,7 +214,7 @@ fun SettingsScreen(
 
             ProcessingPanel()
 
-            // docs/15 "사용자가 여는 정책 페이지": Recly's own privacy policy, in the browser, right
+            // docs/15 "Policy pages the user opens": Recly's own privacy policy, in the browser, right
             // before About as on the iPhone. Only the policy: the iPhone's "Allowed destinations" is
             // its transfer permission (docs/15), which this shell does not ask for.
             Section(stringResource(R.string.settings_privacy))
@@ -232,7 +232,7 @@ fun SettingsScreen(
                 },
             )
 
-            // docs/09 트렌드 6: no mascot, no "handmade" line — the build, in monospace.
+            // docs/09 trend 6: no mascot, no "handmade" line — the build, in monospace.
             Section(stringResource(R.string.settings_about))
             Column(
                 modifier = Modifier
@@ -261,7 +261,7 @@ fun SettingsScreen(
 }
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this phone's
+ * docs/03 "Sign out vs Disconnect": revocation can affect other devices and clears this phone's
  * upload queue. Recordings, settings and keys stay; deleting audio is a separate list action.
  */
 @Composable
@@ -300,7 +300,7 @@ private fun DisconnectDialog(
 private const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
 /**
- * docs/15 "사용자가 여는 정책 페이지": the iPhone's `PrivacyLinks.recly` — the Korean page when the app
+ * docs/15 "Policy pages the user opens": the iPhone's `PrivacyLinks.recly` — the Korean page when the app
  * is in Korean, the English one in every other language.
  */
 internal fun privacyPolicyUrl(locale: Locale): String =
@@ -339,7 +339,7 @@ private fun AppLanguage.labelRes(): Int =
         AppLanguage.SYSTEM -> R.string.settings_language_en
     }
 
-/** docs/09 "접근성": the three answers the theme setting offers, the PC's own three. */
+/** docs/09 "Accessibility": the three answers the theme setting offers, the PC's own three. */
 private fun AppTheme.labelRes(): Int = when (this) {
     AppTheme.SYSTEM -> R.string.theme_system
     AppTheme.LIGHT -> R.string.theme_light

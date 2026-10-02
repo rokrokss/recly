@@ -89,11 +89,11 @@ dependencies {
     implementation(libs.sqldelight.sqlite.driver)
     // docs/06 Windows: the loopback redirect receiver.
     implementation(libs.ktor.server.cio)
-    // Credential Manager and the HKCU Run key (docs/14 "앱"). Windows-only at runtime; on macOS
+    // Credential Manager and the HKCU Run key (docs/14 "App"). Windows-only at runtime; on macOS
     // nothing reaches them (see `SecureStores`, `LaunchAtLogin`).
     implementation(libs.jna)
     implementation(libs.jna.platform)
-    // docs/05 "고정 처리 설정 도입": on-device transcription. The JVM API, and the native half for the host that
+    // docs/05 "Fixed processing settings": on-device transcription. The JVM API, and the native half for the host that
     // builds the app — the MSI is built on Windows x64, this development machine is a Mac.
     implementation(libs.sherpa.onnx.jvm)
     runtimeOnly("com.github.k2-fsa.sherpa-onnx:sherpa-onnx-native-lib-$sherpaNative:${libs.versions.sherpaOnnx.get()}")
@@ -131,7 +131,7 @@ compose.desktop {
 
         nativeDistributions {
             /**
-             * docs/14 "앱": the MSI carries the capture helper and — ADR-019 — an LGPL ffmpeg next
+             * docs/14 "App": the MSI carries the capture helper and — ADR-019 — an LGPL ffmpeg next
              * to it. jpackage copies the platform's subdirectory into the installed app and hands
              * the app its path in `compose.application.resources.dir`, which is where
              * `CaptureHelper.command()` looks. `.github/workflows/windows.yml` is what puts the two
@@ -155,7 +155,7 @@ compose.desktop {
             vendor = "Recly"
             description = "Recly — record and transcribe"
 
-            // docs/09 "앱 아이콘": one master, per-platform exports. jpackage wants a different
+            // docs/09 "App icon": one master, per-platform exports. jpackage wants a different
             // container per platform, and all three are written by `scripts/render-icons.swift`.
             val icons = project.layout.projectDirectory.dir("src/main/icons")
 
@@ -169,7 +169,7 @@ compose.desktop {
                 dirChooser = true
                 // `%LOCALAPPDATA%` is where the data lives (`Host.dataDir`) and HKCU is where the
                 // Run key does (`WindowsRunKey`): a per-user install needs no elevation and matches
-                // both. docs/14 "앱": launch at login stays the app's own setting — an MSI cannot
+                // both. docs/14 "App": launch at login stays the app's own setting — an MSI cannot
                 // write a Run key that the user can then turn off from the tray.
                 perUserInstall = true
                 // Stable across releases so an upgrade replaces the install rather than adding one.

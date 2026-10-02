@@ -2,7 +2,7 @@
 import CoreAudio
 import Foundation
 
-/// Is someone *else* listening to the default input device (docs/12 "미팅 감지")?
+/// Is someone *else* listening to the default input device (docs/12 "Meeting detection")?
 ///
 /// The signal the lane names is `kAudioDevicePropertyDeviceIsRunningSomewhere` on the default input,
 /// with a listener on the default input itself so the answer follows the device the user switches

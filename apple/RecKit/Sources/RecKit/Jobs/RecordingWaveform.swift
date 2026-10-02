@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 import ReclyCore
 
-/// docs/09 화면 원칙 2: the shape of the recording under the player bar's clock — what the detail
+/// docs/09 screen principle 2: the shape of the recording under the player bar's clock — what the detail
 /// draws a playhead across, and what a drag on it seeks through.
 ///
 /// Two halves, for the same reason `RecordingPlaylist` is split from the player: [bins] is the

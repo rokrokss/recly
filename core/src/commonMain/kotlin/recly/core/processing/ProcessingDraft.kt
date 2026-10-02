@@ -17,13 +17,13 @@ data class ProcessingDraft(
     var invokeUrl: String,
     var model: String,
     private val retainedExternal: ExternalTranscription?,
-    /** Every provider's entries as typed, this one's included once it is left (docs/05 "시크릿"). */
+    /** Every provider's entries as typed, this one's included once it is left (docs/05 "Secrets"). */
     private var details: Map<String, ProviderDetails> = emptyMap(),
 ) {
     fun snapshot(): ProcessingDraft = copy()
 
     /**
-     * docs/05 "시크릿": each provider's key is kept under the provider's own id, so switching provider
+     * docs/05 "Secrets": each provider's key is kept under the provider's own id, so switching provider
      * never sends one company's key to another and nobody has to name a secret.
      */
     val secretRef: String get() = provider
@@ -82,7 +82,7 @@ data class ProcessingDraft(
 }
 
 /**
- * docs/05 "고정 처리 설정 도입": on Android and Windows on-device is Qwen3-ASR, whose list has no "Automatic" and
+ * docs/05 "Fixed processing settings": on Android and Windows on-device is Qwen3-ASR, whose list has no "Automatic" and
  * no "Korean and English" — both are an external provider's. Switching to it from either takes the
  * language of [deviceLocale] when the model has it, and English when it does not, rather than
  * leaving a Save that cannot be pressed. iPhone's `selectAppleTranscriptionMode`, the same rule; a

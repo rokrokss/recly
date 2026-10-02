@@ -10,7 +10,7 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": the failures a person has to do something about, and
+ * docs/10 "Failures the user can fix, and their notices": the failures a person has to do something about, and
  * the screen that lets them do it. Everything else — 5xx, the network, a 429 the runner is still
  * waiting out — is a retry the app does not call anybody about.
  *
@@ -33,7 +33,7 @@ enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
     QUOTA(Str.ALERT_QUOTA, "QUOTA", FixSurface.EDITOR),
     ;
 
-    /** docs/09 화면 원칙 2: the banner row wears the state as a code, in the tone of what it is. */
+    /** docs/09 screen principle 2: the banner row wears the state as a code, in the tone of what it is. */
     fun badge(): LedgerStatus = LedgerStatus(code, BadgeTone.WARNING)
 }
 
@@ -52,7 +52,7 @@ enum class FixSurface(val label: Str) {
     MODEL_DOWNLOAD(Str.PROCESSING_PREPARE),
 }
 
-/** docs/10 "Drive 용량 초과": where "free some up" actually happens. */
+/** docs/10 "Drive out of space": where "free some up" actually happens. */
 const val DRIVE_STORAGE_URL: String = "https://drive.google.com/settings/storage"
 
 /**

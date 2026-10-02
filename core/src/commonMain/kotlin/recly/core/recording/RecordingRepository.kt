@@ -42,7 +42,7 @@ import recly.core.storage.StorageKind
  *
  * [driveFolderId] is the recording's `{base}/` folder on Drive once one is known — made by this
  * device's upload, or read by a pull. A [remote] recording is one another device uploaded and this
- * one adopted from Drive (docs/03 "다른 기기의 녹음"): it has no job here and never gets one — Drive
+ * one adopted from Drive (docs/03 "Recordings from other devices"): it has no job here and never gets one — Drive
  * already holds it — and its parts are fetched by file id when played.
  *
  * The three "still in flight elsewhere" answers a ledger needs are [receiving], [remoteUploading]
@@ -56,7 +56,7 @@ data class RecordingRecord(
     val driveFolderId: String? = null,
     val remote: Boolean = false,
     /**
-     * docs/03 "다른 기기의 녹음": the step types the device that is running the workflow still has to
+     * docs/03 "Recordings from other devices": the step types the device that is running the workflow still has to
      * run after its upload (`transcribe`), read off the folder's marker. Empty when that
      * device is done, when the marker is too old to believe, or when a local workflow job remains authoritative.
      */
@@ -65,7 +65,7 @@ data class RecordingRecord(
     val driveSynced: Boolean = false,
 ) {
     /**
-     * docs/03 "저장 위치": where the recording's folder is — Google Drive or iCloud — read off its
+     * docs/03 "Storage location": where the recording's folder is — Google Drive or iCloud — read off its
      * id; null until one is known.
      */
     val storage: StorageKind? get() = driveFolderId?.let(StorageKind::ofId)
@@ -79,7 +79,7 @@ data class RecordingRecord(
             ?.removePrefix(StorageKind.ICLOUD_PREFIX)
 
     /**
-     * A watch transfer in flight (docs/03 "워치 → 폰 전송 계약"): the phone opens the row when the
+     * A watch transfer in flight (docs/03 "Watch → phone transfer contract"): the phone opens the row when the
      * first part arrives and replaces it wholesale when `meta.json` lands. A phone never *records*
      * with source `watch` — it only ever receives one — so a local row of this shape can only be
      * that transfer, still coming in.
@@ -87,14 +87,14 @@ data class RecordingRecord(
     val receiving: Boolean get() = !remote && meta.source == Source.WATCH && meta.status == RecordingStatus.RECORDING
 
     /**
-     * Another device is still uploading (docs/03 "다른 기기의 녹음"): its folder is on Drive with no
+     * Another device is still uploading (docs/03 "Recordings from other devices"): its folder is on Drive with no
      * `meta.json` in it yet — the meta goes up last — so what this row carries is the placeholder a
      * pull built out of the folder's name.
      */
     val remoteUploading: Boolean get() = remote && meta.status == RecordingStatus.RECORDING
 
     /**
-     * The Drive folder a ledger row can open (docs/03 "다른 기기의 녹음", docs/09 화면 원칙 2): the
+     * The Drive folder a ledger row can open (docs/03 "Recordings from other devices", docs/09 screen principle 2): the
      * link `drive.upload` wrote into `meta.json`, or the folder's canonical URL when only its id is
      * known — an adopted row was read out of that very folder, and one uploaded before the meta
      * carried a link still names it. Not while another device is still uploading into it: the
@@ -133,7 +133,7 @@ class RecordingRepository(
     private val deps: CoreDeps,
     /**
      * Only [delete] with `deleteDrive` uses it, and only to delete the folder — on Drive or in iCloud,
-     * wherever its id says it is (docs/03 "저장 위치").
+     * wherever its id says it is (docs/03 "Storage location").
      */
     private val drive: CloudFiles = CloudStorage.of(deps),
 ) {
@@ -184,7 +184,7 @@ class RecordingRepository(
     }
 
     /**
-     * The watch→phone path (docs/03 "워치 → 폰 전송 계약"): parts arrive before `meta.json` does, so
+     * The watch→phone path (docs/03 "Watch → phone transfer contract"): parts arrive before `meta.json` does, so
      * the row is opened with a placeholder meta and replaced wholesale when the real one lands.
      *
      * Unlike [create] it writes no `meta.json`: the placeholder must never reach the disk, and the
@@ -212,7 +212,7 @@ class RecordingRepository(
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": a recording read back from Drive, where another device put it. The
+     * docs/03 "Recordings from other devices": a recording read back from Drive, where another device put it. The
      * row is what the list shows; the parts are written as already purged (`deleted = 1`) with the
      * Drive file id each was found under, so [recly.core.job.JobStore.enqueue] never opens a job
      * for it and `AudioParts` can fetch one back when it is played. `meta.json` is written like
@@ -326,7 +326,7 @@ class RecordingRepository(
     }
 
     /**
-     * The adopted rows that are still only a placeholder (docs/03 "다른 기기의 녹음"): another device's
+     * The adopted rows that are still only a placeholder (docs/03 "Recordings from other devices"): another device's
      * folder is on Drive but its `meta.json` is not, so all this row knows is what the folder's name
      * says. Kept apart from [adopted] because these are the two rows a pull may write over — the
      * meta landing completes one ([adopt]), and 24 hours without it abandons the other ([drop]).
@@ -350,7 +350,7 @@ class RecordingRepository(
     }
 
     /** Whether any other device is still uploading or still has steps to run — what [RemoteRecordings]
-     * asks to decide how often to look (docs/03 "다른 기기의 녹음"). */
+     * asks to decide how often to look (docs/03 "Recordings from other devices"). */
     suspend fun remoteInFlight(): Boolean = locked { queries.countRemoteInFlight().executeAsOne() > 0 }
 
     /**
@@ -376,7 +376,7 @@ class RecordingRepository(
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": the folders a pull must not adopt, by recording id. Written by
+     * docs/03 "Recordings from other devices": the folders a pull must not adopt, by recording id. Written by
      * [delete] when the user kept the Drive folder ("로컬만 삭제"): the row is gone but the folder is
      * still listed, and without this the next pull would put the recording straight back.
      */
@@ -389,7 +389,7 @@ class RecordingRepository(
 
     /**
      * "연결 해제": a device wiped of its recordings starts over with what Drive has. Only the folders of
-     * [kind] are forgotten — disconnecting Drive says nothing about the iCloud folder (docs/03 "저장 위치").
+     * [kind] are forgotten — disconnecting Drive says nothing about the iCloud folder (docs/03 "Storage location").
      */
     suspend fun clearIgnored(kind: StorageKind): Unit = locked {
         queries.kvSelectPrefix(IGNORED_PREFIX).executeAsList()
@@ -398,7 +398,7 @@ class RecordingRepository(
     }
 
     /**
-     * The detail screen's rename (docs/03 "제목"): any finalized recording, this device's own or an
+     * The detail screen's rename (docs/03 "Titles"): any finalized recording, this device's own or an
      * adopted one. Written here at once — the row, `meta.json`, and a pending push — and carried to
      * Drive by [RemoteRecordings.pushTitles], so every device reads the same title back.
      *
@@ -446,7 +446,7 @@ class RecordingRepository(
     }
 
     /**
-     * `drive.upload` found or made the recording's folder (docs/03 "메타데이터" — `drive`): the row and
+     * `drive.upload` found or made the recording's folder (docs/03 "Metadata" — `drive`): the row and
      * `meta.json` learn its id and link before the meta itself goes up, so the copy in Drive carries
      * them too. Idempotent — a re-run with the same folder writes nothing.
      *
@@ -518,8 +518,7 @@ class RecordingRepository(
      * A `RUNNING` job is reading the very files this would delete, so that is [DeleteResult.Busy]
      * and nothing is touched. Every other status is deleted along with the recording.
      *
-     * Keeping the Drive folder leaves a folder that a pull would list and adopt back (docs/03 "다른
-     * 기기의 녹음"), so that choice is remembered ([ignored]) in the same transaction.
+     * Keeping the Drive folder leaves a folder that a pull would list and adopt back (docs/03 "Recordings from other devices"), so that choice is remembered ([ignored]) in the same transaction.
      *
      * That check and every row deletion are one transaction, and `JobStore.claimRunning` is
      * another: SQLite has a single writer, so one of the two commits first and the other sees it.
@@ -728,7 +727,7 @@ class RecordingRepository(
 
     /**
      * Deletes the files of the parts a purge has claimed (`deleted = 1`, written by
-     * `JobStore.claimPurge`); `meta.json` and the rows stay (docs/03 "로컬 저장"). Idempotent, and
+     * `JobStore.claimPurge`); `meta.json` and the rows stay (docs/03 "Local storage"). Idempotent, and
      * a file that is already gone is not an error — this may run twice after a crash.
      */
     suspend fun purgeParts(recordingId: String): Unit = locked {
@@ -846,7 +845,7 @@ class RecordingRepository(
 
     companion object {
         /** Under [CoreDeps.dataDir]: where an adopted recording's directory goes, keyed by id like
-         * a watch's (docs/03 "로컬 저장"), since the shell's `{base}` layout is the shell's. */
+         * a watch's (docs/03 "Local storage"), since the shell's `{base}` layout is the shell's. */
         const val RECORDINGS: String = "recordings"
 
         /** `kv` rows: `remote/ignored/{recordingId}` → the Drive folder id a pull must skip. */

@@ -17,7 +17,7 @@ import recly.core.platform.Transport
 data class ModelFile(val name: String, val url: String, val bytes: Long, val sha256: String)
 
 /**
- * docs/05 "고정 처리 설정 도입": the model files an app-managed engine needs. Downloaded only from the settings
+ * docs/05 "Fixed processing settings": the model files an app-managed engine needs. Downloaded only from the settings
  * action, in ranged chunks so an interrupted download resumes where it stopped, and moved into
  * place only once its hash matches. Nothing from the recording goes out on this path.
  *

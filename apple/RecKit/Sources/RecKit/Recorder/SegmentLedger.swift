@@ -20,7 +20,7 @@ struct ClosedSegment {
 /// `startOffsetSec` accumulates the durations actually written rather than `part * segmentSec`, so
 /// a boundary that came in a little short does not shift every later part (docs/03 "parts").
 struct SegmentLedger {
-    /// 1-based; the same number across tracks of one time slice (docs/03 "이름 규칙").
+    /// 1-based; the same number across tracks of one time slice (docs/03 "Naming rules").
     private(set) var openPart: Int = 1
 
     /// Audio confirmed so far — the `durationSec` handed to `finalize` if the directory is empty.

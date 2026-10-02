@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  docs/03 "저장 위치" (ADR-024): iCloud Documents for the app's iCloud folder. Used only when
+  docs/03 "Storage location" (ADR-024): iCloud Documents for the app's iCloud folder. Used only when
   Local.xcconfig sets RECLY_PHONE_ENTITLEMENTS to this file — after iCloud.app.recly is registered
   for the team and enabled on the app.recly App ID; a build signed with it before that fails.
 -->

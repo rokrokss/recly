@@ -1,4 +1,4 @@
-//! docs/14 "감지": which app is holding the microphone, polled while `detect on` is in force.
+//! docs/14 "Detection": which app is holding the microphone, polled while `detect on` is in force.
 //!
 //! The signal is the capture endpoints' *active* audio sessions (`IAudioSessionManager2`), which is
 //! what the macOS side reads too (`kAudioDevicePropertyDeviceIsRunningSomewhere` plus the running

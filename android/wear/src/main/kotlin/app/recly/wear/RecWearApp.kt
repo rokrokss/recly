@@ -85,8 +85,7 @@ class RecWearApp : Application(), RecorderHost {
     suspend fun pendingCount(): Int = queue.all().count { it.waiting }
 
     /**
-     * A process that is starting may have been killed mid-recording (docs/03 "크래시 시 마지막
-     * 경계까지는 복구 가능"). Recovery first, so anything it finalizes exists before the queue looks;
+     * A process that is starting may have been killed mid-recording (docs/03 "after a crash, everything up to the last boundary is recoverable"). Recovery first, so anything it finalizes exists before the queue looks;
      * then the queue's own scan, which catches a recording that was finalized by a run that died
      * before it could hand it over.
      */
@@ -114,7 +113,7 @@ class RecWearApp : Application(), RecorderHost {
     }
 
     /**
-     * docs/11 "주의": nothing is ever enqueued on this device, so [enqueue] — the phone's question
+     * docs/11 "Caveats": nothing is ever enqueued on this device, so [enqueue] — the phone's question
      * about whether a title is still coming — is not one the watch has to answer. A finalized
      * recording here has exactly one thing left to happen to it, and that is reaching the phone.
      */

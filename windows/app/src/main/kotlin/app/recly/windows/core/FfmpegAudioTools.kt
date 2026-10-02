@@ -9,7 +9,7 @@ import okio.Path
 import recly.core.platform.AudioTools
 
 /**
- * docs/08 "오디오 준비" on the desktop: the bundled ffmpeg (ADR-019) joins the parts with the
+ * docs/08 "Audio preparation" on the desktop: the bundled ffmpeg (ADR-019) joins the parts with the
  * concat demuxer and `-c copy`, so the AAC frames are moved and never re-encoded.
  *
  * The binary is the same one the capture helper is handed — [CaptureHelper.ffmpeg] — which on a

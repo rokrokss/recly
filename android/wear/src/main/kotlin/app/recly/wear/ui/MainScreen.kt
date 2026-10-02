@@ -102,7 +102,7 @@ private fun RecordScreen(
                     maxLines = 1,
                 )
 
-                // docs/09 §7 "상태 한 줄": the state as a code and a colour, and — when a stop had
+                // docs/09 §7 "one-line status": the state as a code and a colour, and — when a stop had
                 // something to report — what it was, because on a watch there is nowhere else to put it.
                 Text(
                     text = state.message?.text() ?: stringResource(statusLabel(state)),
@@ -116,7 +116,7 @@ private fun RecordScreen(
                 RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
 
                 Spacer(Modifier.height(8.dp))
-                // docs/11 "주의": Samsung will delay the worker, so the badge says "n waiting" rather
+                // docs/11 "Caveats": Samsung will delay the worker, so the badge says "n waiting" rather
                 // than pretending the phone has it. A refusal is worse news than a wait and gets its
                 // own line — the audio is still on this watch and nothing will retry it.
                 // docs/11 W2: while a pass has a phone and is handing files over, the same count is
@@ -154,7 +154,7 @@ private fun RecordScreen(
 }
 
 /**
- * docs/09 "유동 타이포": the record screen is drawn for a large round watch, and a smaller one gets
+ * docs/09 "Fluid typography": the record screen is drawn for a large round watch, and a smaller one gets
  * the same screen scaled down to its width — at the drawn size the Help button sat under the curve
  * of a 192dp watch. Larger watches keep the drawn size.
  */
@@ -171,7 +171,7 @@ private fun FitToWatch(content: @Composable () -> Unit) {
 /** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
 private const val DRAWN_FOR_WIDTH_DP = 227f
 
-/** docs/09 "형태": the round button is a square node here too — filled while it is recording. */
+/** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */
 @Composable
 private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
     val label = stringResource(

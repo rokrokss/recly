@@ -31,7 +31,7 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** docs/09 "간격": multiples of four, with 8 / 16 / 24 as the rhythm. */
+/** docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm. */
 object Space {
     val xs: Dp = 4.dp
     val s: Dp = 8.dp
@@ -41,12 +41,12 @@ object Space {
 }
 
 /**
- * docs/09 "접근성": whatever it draws, nothing you can click is smaller than this. A small glyph —
+ * docs/09 "Accessibility": whatever it draws, nothing you can click is smaller than this. A small glyph —
  * the connector's `+`, a square switch — keeps its size and grows a target around itself.
  */
 val MinTouch: Dp = 44.dp
 
-/** docs/09 "형태": 4 for a node, 8 for a card, 0 for a table row. Badges take half a node. */
+/** docs/09 "Shape": 4 for a node, 8 for a card, 0 for a table row. Badges take half a node. */
 object Radius {
     val node: Dp = 4.dp
     val card: Dp = 8.dp
@@ -71,7 +71,7 @@ val LocalMonoType: ProvidableCompositionLocal<MonoType> =
     staticCompositionLocalOf { monoType(1f) }
 
 /**
- * docs/09 "고대비 모드": Windows publishes its high-contrast switch — AWT carries
+ * docs/09 "High-contrast mode": Windows publishes its high-contrast switch — AWT carries
  * `SPI_GETHIGHCONTRAST` as the `win.highContrast.on` desktop property — so the app follows the
  * system, which is the whole of the setting here.
  *
@@ -155,7 +155,7 @@ fun ReclyDesktopTheme(
 }
 
 /**
- * docs/09 "간격": an 8dp dot grid at 6% behind the content — the visible grid the nodes sit on. Off
+ * docs/09 "Spacing": an 8dp dot grid at 6% behind the content — the visible grid the nodes sit on. Off
  * in high contrast, where a texture is noise.
  */
 fun Modifier.dotGrid(palette: BlueprintColors): Modifier = this

@@ -19,7 +19,7 @@ public protocol ChunkUploads: AnyObject {
     func running() async -> [String]
 }
 
-/// docs/13 I4 · ADR-015 · docs/06 "배경 URLSession": Drive's resumable chunk PUTs, sent as
+/// docs/13 I4 · ADR-015 · docs/06 "Background URLSession": Drive's resumable chunk PUTs, sent as
 /// background `URLSession` upload tasks so they finish while the app is suspended or gone.
 ///
 /// **What is and is not background here.** Only the chunk PUTs are. The core's resumable loop

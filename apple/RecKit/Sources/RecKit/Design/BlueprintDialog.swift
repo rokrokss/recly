@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
+/// docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
 /// square-cornered node on the grid, not the platform's own alert. `alert` and `confirmationDialog`
 /// are containers with their own shape, their own material and their own corner radius, and none of
 /// those is in docs/09 — so this is the same surface, [Blueprint.line] border and [Radius.node]
@@ -8,7 +8,7 @@ import SwiftUI
 ///
 /// The Android shell's `BlueprintDialog` is the same component, and this mirrors it line for line:
 /// the body scrolls on its own so a long one (the disconnect warnings) never pushes the answers off
-/// the screen, and the answers stack when a row of them no longer fits (docs/09 유동 타이포).
+/// the screen, and the answers stack when a row of them no longer fits (docs/09 Fluid typography).
 ///
 /// There is no motion to reduce: nothing here animates.
 public struct BlueprintDialog<Actions: View, Content: View>: View {
@@ -32,7 +32,7 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
             Text(verbatim: title)
                 .font(blueprint.fonts.title)
                 .foregroundStyle(blueprint.palette.text)
-                // docs/09 유동 타이포: three lines is what the header may take. Every title here is
+                // docs/09 Fluid typography: three lines is what the header may take. Every title here is
                 // a short question; the one thing that can outgrow it is the user's own recording
                 // name inside "Delete ‘…’?", and cutting *that* in the middle is what keeps the
                 // question itself — its first words and its question mark — readable.
@@ -47,10 +47,10 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            // docs/09 "접근성" · 유동 타이포: the answers go across while they fit and downwards
+            // docs/09 "Accessibility" · 유동 타이포: the answers go across while they fit and downwards
             // when they do not — an answer clipped to a syllable makes the question unanswerable.
             // Stacked they go full width and keep their order, which puts the primary one at the
-            // bottom: last, as it is last on the right, and nearest the thumb (docs/09 화면 원칙 8).
+            // bottom: last, as it is last on the right, and nearest the thumb (docs/09 screen principle 8).
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Space.s) {
                     Spacer(minLength: 0)
@@ -127,7 +127,7 @@ extension View {
 /// The dark behind a dialog drawn inside a screen: it dims what the question is about without
 /// hiding it, and swallows the taps that would otherwise reach what is underneath.
 ///
-/// docs/09 트렌드 7 keeps material for chrome, so this is a flat wash of the page colour rather than
+/// docs/09 trend 7 keeps material for chrome, so this is a flat wash of the page colour rather than
 /// a blur — there is nothing here for glass to be the chrome of.
 public struct BlueprintDialogScrim<Content: View>: View {
     @Environment(\.blueprint) private var blueprint
@@ -218,7 +218,7 @@ public struct BlueprintDialogText: View {
 }
 
 /// One of several answers, as one accessibility element: what VoiceOver reads is
-/// "<label>, selected" and not an unnamed mark beside a label it cannot see (docs/09 "접근성"). The
+/// "<label>, selected" and not an unnamed mark beside a label it cannot see (docs/09 "Accessibility"). The
 /// row is [minTouch] tall whatever the label does.
 public struct BlueprintRadioRow: View {
     private let label: String
@@ -285,12 +285,12 @@ private struct OptionRow: View {
     }
 }
 
-/// docs/09 "형태": no circles and no pills, so both marks are squares on the badge radius. A radio
+/// docs/09 "Shape": no circles and no pills, so both marks are squares on the badge radius. A radio
 /// holds a smaller square inside its outline; a checkbox fills, because "on" is a state and "this
 /// one of the two" is a position.
 ///
 /// The outline is on [BlueprintPalette.line] — the token the hairline and every bordered node take
-/// — so high contrast thickens it here too (docs/09 "고대비 모드"). An unchecked box is nothing
+/// — so high contrast thickens it here too (docs/09 "High-contrast mode"). An unchecked box is nothing
 /// *but* its outline, which is what made it the one that needed it.
 private struct SelectionMark: View {
     @Environment(\.blueprint) private var blueprint

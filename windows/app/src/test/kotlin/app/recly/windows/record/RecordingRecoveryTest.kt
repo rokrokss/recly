@@ -31,7 +31,7 @@ import recly.core.recording.MetaWriter
 import recly.core.recording.WaveformPeaks
 
 /**
- * docs/03 "복구" as [RecordingRecovery] implements it for a shell that did not write the audio
+ * docs/03 "recoverable" as [RecordingRecovery] implements it for a shell that did not write the audio
  * itself. Every case starts from a directory and a row in the state a kill would leave them in.
  */
 class RecordingRecoveryTest {

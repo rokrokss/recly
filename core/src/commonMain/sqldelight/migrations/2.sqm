@@ -1,5 +1,5 @@
 -- 2 → 3: `secret_sync` goes. Secrets are per-device values in the SecureStore and nothing else now
--- (docs/05 "시크릿"): there is no `secrets.enc`, so there is nothing for an `updated_at`/`deleted`/
+-- (docs/05 "Secrets"): there is no `secrets.enc`, so there is nothing for an `updated_at`/`deleted`/
 -- `dirty` row to be the local half of. The values themselves are in the shell's keychain and are
 -- untouched by this.
 --
@@ -7,7 +7,7 @@
 -- named after. The two have to agree, and `MigrationTest` — which builds an old database by hand
 -- and upgrades it — is what says they do.
 --
--- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "Schema migrations").
 --
 -- `IF EXISTS` for the same reason `1.sqm` creates with `IF NOT EXISTS`: version 2 is reached both
 -- through that migration and by `Schema.create` on a fresh file, and a database that somehow lacks

@@ -27,7 +27,7 @@ import recly.core.testing.FakeUbiquityContainer
 import recly.core.testing.testDeps
 
 /**
- * docs/03 "저장 위치": the app's iCloud folder held to Drive's shapes — a folder's description and
+ * docs/03 "Storage location": the app's iCloud folder held to Drive's shapes — a folder's description and
  * properties in `{folder}.folder.json`, ids that are paths, and an upload that is done only once
  * iCloud says it holds the file.
  */

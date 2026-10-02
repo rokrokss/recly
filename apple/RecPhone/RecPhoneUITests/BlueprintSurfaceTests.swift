@@ -58,7 +58,7 @@ final class BlueprintSurfaceTests: XCTestCase {
         )
     }
 
-    /// docs/03 "앱에서 지우기": two answers about Drive, and the default is the one that can be undone.
+    /// docs/03 "Deleting in the app": two answers about Drive, and the default is the one that can be undone.
     func testTheDeleteDialogDefaultsToLeavingDriveAlone() throws {
         open(tab: "List")
         let delete = app.buttons["delete"].firstMatch
@@ -85,7 +85,7 @@ final class BlueprintSurfaceTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
-    /// docs/03 "로그아웃 vs 연결 해제": the single disconnect action revokes the Google grant,
+    /// docs/03 "Sign out vs Disconnect": the single disconnect action revokes the Google grant,
     /// so the warning names its effect on other devices.
     func testTheDisconnectWarningNamesTheOtherDevices() throws {
         open(tab: "Settings")
@@ -113,7 +113,7 @@ final class BlueprintSurfaceTests: XCTestCase {
         app.buttons["Cancel"].firstMatch.tap()
     }
 
-    /// docs/09 "형태": the language is one row that names the language the app is in, with every
+    /// docs/09 "Shape": the language is one row that names the language the app is in, with every
     /// choice in the dialog behind it — and the reminder is a switch that can put the dialog back
     /// after "Do not ask again".
     func testTheSettingsRowsAreARowWithADialogAndSwitches() {

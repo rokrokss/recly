@@ -41,7 +41,7 @@ class DriveUploadRunnerTest {
             mapOf(
                 "recordingId" to h.recordingId,
                 "workflowId" to h.workflow.id,
-                // docs/03 "다른 기기의 녹음": nothing comes after this step, so the other devices are
+                // docs/03 "Recordings from other devices": nothing comes after this step, so the other devices are
                 // told there is nothing to wait for.
                 "pending" to "",
                 "pendingAt" to "2026-08-26T01:00:00.000Z",
@@ -94,7 +94,7 @@ class DriveUploadRunnerTest {
     }
 
     /**
-     * docs/03 "다른 기기의 녹음": the folder is the only thing another device can see while this one
+     * docs/03 "Recordings from other devices": the folder is the only thing another device can see while this one
      * works, so what is still to come goes on it — before the first byte, and without disturbing the
      * `recordingId` the folder was stamped with (Drive merges `appProperties` rather than replacing).
      */

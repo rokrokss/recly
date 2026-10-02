@@ -17,7 +17,7 @@ import recly.core.job.StepStatus
 import recly.core.message.CoreMessage
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림": which failures call the user, which ones do not, and
+ * docs/10 "Failures the user can fix, and their notices": which failures call the user, which ones do not, and
  * what a queue full of them adds up to. Lane P1 acceptance 7 (one notification per reason, with the
  * count in it) and 8 (a retryable 5xx never notifies) are both decided here.
  */

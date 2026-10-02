@@ -1,6 +1,6 @@
 # `windows/app` — the Recly Windows shell (Compose Desktop)
 
-docs/14 "앱" · the Windows section of docs/06 · ADR-005. Tray, auth (loopback PKCE), runner,
+docs/14 "App" · the Windows section of docs/06 · ADR-005. Tray, auth (loopback PKCE), runner,
 settings, meeting detection & notification (M6-L3). This module does not
 capture audio — it spawns `windows/capture-helper` (Rust, M6-L2) and talks to it over the docs/14
 JSON line protocol. MSI packaging and signing are in `windows/README.md`.
@@ -23,7 +23,7 @@ is chosen instead.
 Credential Manager, the Run key and the MSI install cannot be verified by running them (compile
 only). Real-hardware Windows verification is on the user's PC.
 
-## Detection (docs/14 "감지", M6-L3)
+## Detection (docs/14 "Detection", M6-L3)
 
 The rules are pure Kotlin and the same state machine as macOS (`detect/MeetingDetectionRule.kt` ↔
 `apple/RecKit/…/MeetingDetector.swift`): mic in use × a meeting app × a 600-second cooldown, one

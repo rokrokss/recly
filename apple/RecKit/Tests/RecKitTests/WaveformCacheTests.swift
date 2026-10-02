@@ -6,7 +6,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/09 화면 원칙 2: a recording's waveform is decoded once and kept beside its parts
+/// docs/09 screen principle 2: a recording's waveform is decoded once and kept beside its parts
 /// (`WaveformPeaks`). The detail reads the kept peaks first and decodes only when they do not cover
 /// the audio it has; while it decodes it shows the loader, never a flat baseline; and a recording
 /// finalized on this device gets its peaks worked out in the background.

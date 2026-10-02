@@ -101,8 +101,7 @@ final class MeetingRecorderTests: XCTestCase {
         }
     }
 
-    /// Deliverable 7, the mix half: `mix` is the two tracks summed at half scale (docs/12 "−6 dB
-    /// 헤드룸"). Checked against the tracks as they came back off disk rather than against the tones
+    /// Deliverable 7, the mix half: `mix` is the two tracks summed at half scale (docs/12 "−6 dB headroom"). Checked against the tracks as they came back off disk rather than against the tones
     /// that were pushed in, because that is the claim — whatever `mic` and `sys` ended up holding,
     /// `mix` is their average — and it is the claim that survives the encoder's own error.
     func testTheMixIsTheTwoTracksSummedWithHeadroom() async throws {
@@ -220,7 +219,7 @@ final class MeetingRecorderTests: XCTestCase {
         XCTAssertEqual(rows.count, 0, "no row promising three tracks it never recorded")
     }
 
-    /// docs/12 "tap 재생성": the tap rebuilds itself when the output device changes, and the
+    /// docs/12 "Tap re-creation": the tap rebuilds itself when the output device changes, and the
     /// microphone must not notice — the recording's timeline is the microphone's, and stopping it
     /// would cost the user audio that was never in danger. What the meta gets is the hole.
     func testATapThatRebuiltItselfIsAGapAndNotARestart() async throws {
@@ -280,7 +279,7 @@ final class MeetingRecorderTests: XCTestCase {
         XCTAssertEqual(gap.endSec, 2, accuracy: 0.05, "it ends where the recording had got to")
     }
 
-    /// docs/12 "tap 재생성" has a mirror on the microphone's side: a device change stops the
+    /// docs/12 "Tap re-creation" has a mirror on the microphone's side: a device change stops the
     /// microphone for a moment and the tap keeps delivering, so the system frames that arrive
     /// meanwhile have no microphone frames under them. Measured across an interval they read as a
     /// system stream running fast, and a correction from that resamples the next minute of a track

@@ -1,4 +1,4 @@
-//! docs/14 "캡처 · 시스템": the default render endpoint captured with
+//! docs/14 "Capture · system": the default render endpoint captured with
 //! `AUDCLNT_STREAMFLAGS_LOOPBACK`, polled rather than event-driven because a silent endpoint signals
 //! no event.
 //!

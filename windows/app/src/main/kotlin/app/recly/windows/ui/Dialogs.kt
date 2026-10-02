@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * docs/03 "앱에서 지우기": one recording, two answers about Drive, and the default is the one that can
+ * docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one that can
  * be undone — the files in Drive are the user's own and something downstream may already have read
  * the folder. What is still only on this PC is said first, because that is the part of the deletion
  * nothing anywhere else can give back.
@@ -113,7 +113,7 @@ fun RenameDialog(
 }
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": revocation can affect other devices and clears this PC's
+ * docs/03 "Sign out vs Disconnect": revocation can affect other devices and clears this PC's
  * upload queue. Recordings and keys stay; deleting audio is a separate list action.
  */
 @Composable

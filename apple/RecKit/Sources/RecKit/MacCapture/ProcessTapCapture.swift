@@ -4,7 +4,7 @@ import CoreAudio
 import Foundation
 import os
 
-/// System audio as a Core Audio process tap (docs/12 "캡처 파이프라인", macOS 14.4+): a global tap
+/// System audio as a Core Audio process tap (docs/12 "Capture pipeline", macOS 14.4+): a global tap
 /// with this process left out of it, read through a private tap-only aggregate device and an IOProc.
 ///
 /// Global-and-excluded rather than per-app on purpose. The meeting apps worth capturing are a moving
@@ -18,7 +18,7 @@ import os
 /// through the recorder's restart machinery: this rebuilds on its own queue and reports the outage
 /// through [onOutage], which the recorder writes into the meta's `gaps`.
 ///
-/// There is no way to ask whether the tap is permitted (docs/12 "권한"): the prompt is raised by the
+/// There is no way to ask whether the tap is permitted (docs/12 "Permissions"): the prompt is raised by the
 /// attempt, `NSAudioCaptureUsageDescription` is what makes it possible, and a refusal shows up as an
 /// error from `AudioHardwareCreateProcessTap` — or, on a machine that has already refused, as an
 /// IOProc that runs and delivers silence. The first is [RecorderError.Kind.systemAudioUnavailable];
@@ -399,7 +399,7 @@ final class ProcessTapCapture: SystemAudioInput {
 
     // MARK: - Re-creation
 
-    /// On [control]. The three things that end a tap (docs/12 "tap 재생성"): the default output device changes,
+    /// On [control]. The three things that end a tap (docs/12 "Tap re-creation"): the default output device changes,
     /// its format changes, or the IOProc goes quiet. The input stream's format listener is installed
     /// by build and removed by teardown. Polling also covers missed notifications or a replaced
     /// stream, and detects output-device rate changes independently of the aggregate's format.

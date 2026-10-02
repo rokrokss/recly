@@ -23,7 +23,7 @@ object JvmRuntime {
     /**
      * Opens the file at [path] and brings its schema up to date: the whole schema on a database
      * that has none, the migrations in between on one that is behind, nothing at all on one that is
-     * current (docs/10 "스키마 마이그레이션").
+     * current (docs/10 "Schema migrations").
      */
     fun openDriver(path: String): SqlDriver =
         JdbcSqliteDriver("jdbc:sqlite:$path").also(::upgrade)

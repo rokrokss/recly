@@ -3,7 +3,7 @@ import Foundation
 
 /// The rate estimate, as arithmetic: no audio, no converter, no clock. Both streams say how many
 /// frames they have produced *on the 16 kHz timeline*, the wall clock says how long that took, and
-/// the ratio between the two rates is the drift (docs/12 "누적 프레임 수 vs 벽시계").
+/// the ratio between the two rates is the drift (docs/12 "cumulative frame count vs wall clock").
 ///
 /// It is a separate type from [DriftCompensator] so the claim the lane makes — an hour of a
 /// synthetic rate difference ends under 20 ms apart — can be checked as a calculation rather than
@@ -280,7 +280,7 @@ final class DriftCompensator {
         }
     }
 
-    /// The tap was away for [outageSec] and is back (docs/12 "tap 재생성"). The frames it did not
+    /// The tap was away for [outageSec] and is back (docs/12 "Tap re-creation"). The frames it did not
     /// deliver are missing, not slow, so the interval they fell in is abandoned rather than
     /// measured, and an interval that already closed across the hole is put back — [micFrames] is
     /// the recording's own count, which is the only clock here.

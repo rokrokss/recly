@@ -31,7 +31,7 @@ interface JobFacade {
 /**
  * The real one. Every core call is hopped onto `CoreDeps.io`: a `CoroutineWorker` runs `doWork` on
  * `Dispatchers.Default`, and the core's DB and file work belongs on the dispatcher the shell gave
- * it (docs/10 "동시성 · 스레딩").
+ * it (docs/10 "Concurrency · threading").
  */
 class CoreJobFacade(
     private val core: ReclyCore,

@@ -37,8 +37,7 @@ enum RecordingIntentTarget {
 /// docs/13 I7: Siri, Shortcuts, the action button (iPhone 15 Pro and later, through the App
 /// Shortcut) and the iOS 18 Control all start a recording through this one intent.
 ///
-/// `openAppWhenRun` is the point rather than a detail (docs/13 "iOS 18 Control은 `OpenIntent`로 앱을
-/// 열어 시작"): a long audio session started inside a widget extension is unreliable, so every
+/// `openAppWhenRun` is the point rather than a detail (docs/13 "an iOS 18 Control starts by opening the app with `OpenIntent`"): a long audio session started inside a widget extension is unreliable, so every
 /// entry point brings the app to the front and the app opens the microphone.
 struct StartRecordingIntent: AppIntent {
     static var title: LocalizedStringResource = "Start recording"

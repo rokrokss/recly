@@ -2,7 +2,7 @@ import ReclyCore
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 2, on the phone: the recordings are a ledger. One row per recording — when
+/// docs/09 screen principle 2, on the phone: the recordings are a ledger. One row per recording — when
 /// (monospace), what, how long, and the state as a code — and the detail is behind the row rather
 /// than in front of it: what the core last said, and the two or three things that can still be done
 /// about it (docs/13 I3 "목록").
@@ -13,8 +13,8 @@ struct RecordingsView: View {
     @Environment(\.blueprint) private var blueprint
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded: String?
-    /// docs/08 "결과 파일": the recording whose transcript is being read, as a page over the list —
-    /// the ledger has no navigation stack to push onto (docs/09 화면 원칙 2).
+    /// docs/08 "Result files": the recording whose transcript is being read, as a page over the list —
+    /// the ledger has no navigation stack to push onto (docs/09 screen principle 2).
     @State private var detail: RecordingDetailModel?
 
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
@@ -24,7 +24,7 @@ struct RecordingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // docs/09 화면 원칙 2: how many rows, and how many of them are waiting on something or
+            // docs/09 screen principle 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
             ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents))
             // docs/10 "iPhone": 목록 상단 배너 — one row per
@@ -50,7 +50,7 @@ struct RecordingsView: View {
                         row(item)
                     }
                     if model.recents.isEmpty {
-                        // docs/09 화면 원칙 8: no button here — the tab bar right below already says Record.
+                        // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
                         EmptyListMessage(
                             title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
                             hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
@@ -76,7 +76,7 @@ struct RecordingsView: View {
         .sheet(item: $detail) { detail in
             RecordingDetailView(model: detail) { self.detail = nil }
         }
-        // docs/03 "앱에서 지우기": one recording, two answers about Drive, and the default is the one
+        // docs/03 "Deleting in the app": one recording, two answers about Drive, and the default is the one
         // that can be undone.
         .blueprintDialog(
             item: Binding(
@@ -110,10 +110,10 @@ struct RecordingsView: View {
                 length: length,
                 state: item.stateLabel
             ),
-            // docs/09 "접근성": the row opens what is behind it, which a screen reader would
+            // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
             // otherwise only find out by tapping.
             expanded: expanded == item.id,
-            // docs/09 "모션": 200 ms ease-in-out, and nothing at all with reduce motion on — the
+            // docs/09 "Motion": 200 ms ease-in-out, and nothing at all with reduce motion on — the
             // row simply is open.
             action: {
                 withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
@@ -127,11 +127,11 @@ struct RecordingsView: View {
         }
     }
 
-    /// docs/09 화면 원칙 2: what is behind the row — where the recording stands, and the two or three
+    /// docs/09 screen principle 2: what is behind the row — where the recording stands, and the two or three
     /// things the user can do about it.
     private func expansion(_ item: RecentItem) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
-            // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it has
+            // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has
             // been waiting — the badge's RETRY would otherwise read as "stuck".
             if item.waitingMinutes != nil {
                 Text(verbatim: item.stateLabel)
@@ -140,14 +140,14 @@ struct RecordingsView: View {
             }
 
             // docs/07 §5: what the core last said about this job, with its diagnostic under it —
-            // the sentence translated, the diagnostic never. For a docs/08 "오류" the sentence is
+            // the sentence translated, the diagnostic never. For a docs/08 "Errors" the sentence is
             // what to do next and the diagnostic is the provider's own words. Red for a failure,
             // the badge's warning tone for a job that is only waiting.
             if item.alert != .needsAuth {
                 RowReason(item: item, download: model.modelDownload)
             }
 
-            // docs/09 "접근성" · 유동 타이포: several buttons across is a layout for ordinary type
+            // docs/09 "Accessibility" · 유동 타이포: several buttons across is a layout for ordinary type
             // sizes. On a narrow phone, or at an accessibility size, the same ones wrap onto
             // further lines — a label cut to a syllable says nothing, and a column is not what the
             // chips elsewhere do.
@@ -166,9 +166,9 @@ struct RecordingsView: View {
     /// The things that can still be done about this recording, across the row and onto a second
     /// line when they do not fit.
     private func actions(_ item: RecentItem) -> some View {
-        // docs/09 화면 원칙 2: Delete ends the last line, across the row's whole width.
+        // docs/09 screen principle 2: Delete ends the last line, across the row's whole width.
         ActionFlowLayout(trailingLast: item.canDelete) {
-            // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
+            // docs/05 "Fixed processing settings": the model this recording waits for, in its own
             // language, first — and nothing while the download runs (the banner has it).
             if item.waitingForModel, let download = model.modelDownload {
                 ModelDownloadButton(download: download, language: item.localLanguage)
@@ -177,7 +177,7 @@ struct RecordingsView: View {
             if item.link != nil {
                 BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
             }
-            // docs/10 "Drive 용량 초과": nothing here retries on its own, and the only thing that
+            // docs/10 "Drive out of space": nothing here retries on its own, and the only thing that
             // changes the answer is on Google's storage page.
             if item.alert == .needsSpace {
                 BlueprintButton(loc("Open Drive storage")) { model.openDriveStorage() }
@@ -200,7 +200,7 @@ struct RecordingsView: View {
                 BlueprintButton(RecordingDetailStrings.checkKey) { model.showProcessingSettings() }
                     .accessibilityIdentifier("check-key")
             }
-            // docs/08 "결과 파일": the transcript of this recording, the local copy first and Drive
+            // docs/08 "Result files": the transcript of this recording, the local copy first and Drive
             // after (`RecordingDetailModel`). As wide as the detail's own Play button.
             BlueprintButton(RecordingDetailStrings.open, minWidth: playButtonMinWidth) {
                 detail = model.detail(for: item)

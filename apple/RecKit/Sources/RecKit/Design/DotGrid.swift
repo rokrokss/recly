@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 "간격": an 8pt dot grid at 6% behind the content — the visible grid the nodes sit on.
+/// docs/09 "Spacing": an 8pt dot grid at 6% behind the content — the visible grid the nodes sit on.
 /// Off in high contrast, where a texture is noise.
 public struct DotGrid: View {
     @Environment(\.displayScale) private var displayScale

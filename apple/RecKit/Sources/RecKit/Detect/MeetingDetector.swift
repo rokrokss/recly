@@ -11,7 +11,7 @@ public struct MeetingDetectionRule {
         /// "회의 중인가요? 녹음 시작"
         case start
 
-        /// "녹음을 끝낼까요?" — an offer (docs/12 "종료 감지": never an automatic stop).
+        /// "녹음을 끝낼까요?" — an offer (docs/12 "End detection": never an automatic stop).
         case stop
     }
 
@@ -35,7 +35,7 @@ public struct MeetingDetectionRule {
     /// that a declined offer stays declined for the length of a stand-up.
     public static let cooldownSec: TimeInterval = 600
 
-    /// docs/12 "종료 감지": the microphone unused for 60 seconds straight.
+    /// docs/12 "End detection": the microphone unused for 60 seconds straight.
     public static let micIdleSec: TimeInterval = 60
 
     /// False from the moment a prompt is made until the meeting signal goes away again — so one
@@ -87,7 +87,7 @@ public struct MeetingDetectionRule {
     }
 }
 
-/// The two monitors, the rule and a clock, wired together (docs/12 "미팅 감지"). The shell gets one
+/// The two monitors, the rule and a clock, wired together (docs/12 "Meeting detection"). The shell gets one
 /// callback out of it and owns everything visible — the notification, the recording.
 public final class MeetingDetector {
     /// Both signals are polled here rather than only listened to: the meeting app's window title is

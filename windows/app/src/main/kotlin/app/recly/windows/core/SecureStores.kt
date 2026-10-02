@@ -14,7 +14,7 @@ import recly.core.platform.SecureStore
 
 object SecureStores {
     /**
-     * Windows Credential Manager (docs/05 "시크릿", docs/06) where there is one, the development
+     * Windows Credential Manager (docs/05 "Secrets", docs/06) where there is one, the development
      * stub everywhere else. The choice is made once, here, so nothing above it has to ask which
      * machine it is on.
      */

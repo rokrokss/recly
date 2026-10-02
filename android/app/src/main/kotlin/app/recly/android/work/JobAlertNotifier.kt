@@ -19,7 +19,7 @@ import recly.core.job.Job
 import app.recly.recording.R as RecordingR
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림" on the phone. Three rules, and they are the whole of
+ * docs/10 "Failures the user can fix, and their notices" on the phone. Three rules, and they are the whole of
  * it:
  *
  * 1. **One notification per reason.** Five jobs blocked on the same thing are one notification

@@ -12,7 +12,7 @@ fun interface AlertBalloon {
 }
 
 /**
- * docs/10 "사용자가 고칠 수 있는 실패와 그 알림" on Windows, and the one rule a tray balloon makes hard:
+ * docs/10 "Failures the user can fix, and their notices" on Windows, and the one rule a tray balloon makes hard:
  * **it is posted on entry and on change, never on every runner pass.**
  *
  * A balloon cannot be replaced or withdrawn the way a phone's notification can — `displayMessage`

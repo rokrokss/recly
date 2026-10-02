@@ -44,7 +44,7 @@ import recly.core.workflow.TemplateContext
  * flight is written to `state_json` after every chunk. Nothing the user may have put in the
  * folder themselves is ever deleted — only a file this step just uploaded and found corrupt.
  *
- * The step's [Step.DriveUpload.store] picks the storage (docs/03 "저장 위치"). In iCloud the files are
+ * The step's [Step.DriveUpload.store] picks the storage (docs/03 "Storage location"). In iCloud the files are
  * copied into the app's folder and the system uploads them later, so the step waits — spending no
  * attempt — until iCloud holds every one ([CloudFiles.settled]), and waits the same way while iCloud
  * cannot be used from this device at all.
@@ -58,7 +58,7 @@ class DriveUploadRunner(
 ) : StepRunner {
     override val type: String = TYPE
 
-    /** docs/03 "다른 기기의 녹음": what the other devices are told is still to come after this upload. */
+    /** docs/03 "Recordings from other devices": what the other devices are told is still to come after this upload. */
     private val marker = DriveFolderMarker(api, deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome {
@@ -135,14 +135,14 @@ class DriveUploadRunner(
         ctx.saveState(state.toJson())
         store.rememberRecordingFolder(ctx.recording.id, folder.id)
         // Into `meta.json` as well, before the meta is uploaded below: the copy that lands in Drive
-        // (and every device that adopts it, docs/03 "다른 기기의 녹음") then knows its own folder link.
+        // (and every device that adopts it, docs/03 "Recordings from other devices") then knows its own folder link.
         folder.webViewLink?.let { recordings.setDriveFolder(ctx.recording.id, folder.id, it) }
         // The folder exists before the first byte does, and it is the only thing another device can
-        // see while this one uploads (docs/03 "다른 기기의 녹음"): what comes after this step goes on it
+        // see while this one uploads (docs/03 "Recordings from other devices"): what comes after this step goes on it
         // now, so a list elsewhere can say "전사 중" instead of showing a finished recording.
         // In iCloud a resumed attempt is one waiting for the system's upload, every 30 seconds, and its
         // folder was marked when it was made: the same marker again would only send every device to
-        // read the folder file again (docs/03 "저장 위치").
+        // read the folder file again (docs/03 "Storage location").
         if (!resumed || step.store == StorageKind.DRIVE) {
             marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
         }
@@ -188,7 +188,7 @@ class DriveUploadRunner(
             uploaded += entry(0, META_KEY, name, bytes, PartHasher.sha256(deps.fileSystem, path), file)
         }
 
-        // docs/03 "저장 위치": iCloud uploads from the folder in its own time. Done is when it holds
+        // docs/03 "Storage location": iCloud uploads from the folder in its own time. Done is when it holds
         // every file; until then the step comes back and looks, each file already in place skipped.
         if (!files.settled(uploaded.mapNotNull { it.string("fileId") })) {
             return StepOutcome.Waiting(SETTLE_WAIT_SEC, state.toJson(), CoreMessage.ICLOUD_UPLOADING.code())
@@ -349,7 +349,7 @@ class DriveUploadRunner(
         internal const val META_MIME = "application/json"
         internal const val META_KEY = "meta"
 
-        /** How soon a step waiting for iCloud's own upload looks again (docs/03 "저장 위치"). */
+        /** How soon a step waiting for iCloud's own upload looks again (docs/03 "Storage location"). */
         internal const val SETTLE_WAIT_SEC = 30
 
         /** How soon a step waiting for iCloud to become usable looks again. */

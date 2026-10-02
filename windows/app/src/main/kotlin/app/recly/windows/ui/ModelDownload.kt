@@ -25,7 +25,7 @@ import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
 
 /**
- * docs/05 "고정 처리 설정 도입": the one download of the on-device speech model in this process.
+ * docs/05 "Fixed processing settings": the one download of the on-device speech model in this process.
  * Settings, the banner, a waiting row and the first-run card all read this and start or cancel
  * through it, so two surfaces never start two downloads. The download is always
  * `ReclyCore.prepareLocalEngine`, which is also what carries on the recordings waiting for the model.

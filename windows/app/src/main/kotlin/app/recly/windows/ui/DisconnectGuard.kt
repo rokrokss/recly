@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import recly.core.DisconnectResult
 
 /**
- * docs/03 "연결 해제" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
+ * docs/03 "Disconnect" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
  * not the moment [DisconnectPrompt] was built. A dialog is on screen for as long as the user leaves
  * it there, and a retry may be a whole launch later — so the two things that could make a disconnect
  * do the wrong thing are decided here and asked again by the model that is about to act. The phone's
@@ -206,7 +206,7 @@ object DisconnectGuard {
 }
 
 /**
- * docs/03 "연결 해제" · docs/06: how far the last disconnect got. It is persisted because the retry
+ * docs/03 "Disconnect" · docs/06: how far the last disconnect got. It is persisted because the retry
  * may be a whole launch later — the tokens are already gone by then, so this is the only thing that
  * keeps the Disconnect row on screen and keeps a second account out of the slot until the disconnect
  * has finished both of its halves.

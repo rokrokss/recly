@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "모션" and "유동 타이포": the numbers behind `ProcessingButton` and the type scale. The
+ * docs/09 "Motion" and "Fluid typography": the numbers behind `ProcessingButton` and the type scale. The
  * button is a shape; these functions are the promise — a processing state nobody can miss, a
  * completion badge that does not outstay the window, and type that grows with the window rather
  * than jumping at a breakpoint.
@@ -71,7 +71,7 @@ class MotionTest {
         )
     }
 
-    /** docs/09 "유동 타이포": a continuous ramp between the two window widths, clamped at both ends. */
+    /** docs/09 "Fluid typography": a continuous ramp between the two window widths, clamped at both ends. */
     @Test
     fun `the type scale is fluid between 640dp and 1280dp`() {
         assertEquals(1f, fluidScale(400f))

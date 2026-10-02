@@ -1,7 +1,7 @@
 import Foundation
 import ReclyCore
 
-/// docs/03 "보관 · 삭제": what the delete dialog and the disconnect warning have to say *first* —
+/// docs/03 "Retention · deletion": what the delete dialog and the disconnect warning have to say *first* —
 /// how much audio exists only on this device.
 ///
 /// A file on disk used to be the whole of that answer — ADR-017 purged the parts as soon as every
@@ -68,7 +68,7 @@ private extension Array {
     }
 }
 
-/// docs/03 "앱에서 지우기": what the delete dialog has to know before it can ask. [unuploaded] is how
+/// docs/03 "Deleting in the app": what the delete dialog has to know before it can ask. [unuploaded] is how
 /// many parts are still only on this device, which the dialog says first — that is the part of the
 /// deletion nothing anywhere else can give back.
 public struct DeleteRequest: Identifiable, Equatable, Sendable {
@@ -82,7 +82,7 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
     /// Whether a Drive folder exists to delete at all — the row's [RecentItem.link]. Without one
     /// there is no second answer to choose between.
     public let hasDriveFolder: Bool
-    /// docs/03 "저장 위치": the folder is in iCloud, and the dialog says so instead of Drive.
+    /// docs/03 "Storage location": the folder is in iCloud, and the dialog says so instead of Drive.
     public let icloud: Bool
 
     public var id: String { recordingId }
@@ -104,7 +104,7 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
     }
 }
 
-/// docs/03 "앱에서 지우기": what became of one recording's deletion, as the shells have to answer for
+/// docs/03 "Deleting in the app": what became of one recording's deletion, as the shells have to answer for
 /// it. `core.recordings.delete` is a Kotlin sealed result and both shells walked the same `onEnum`
 /// over it; what they do *with* each case is theirs, because the Mac has a transcript window open on
 /// the recording and the two put their sentences in different places.
@@ -139,7 +139,7 @@ public enum RecordingDeletion {
     }
 }
 
-/// docs/03 "연결 해제": the warning, and the count it has to name — the recordings Drive has not got
+/// docs/03 "Disconnect": the warning, and the count it has to name — the recordings Drive has not got
 /// yet, which stay on this device unless the user asks for them to go too.
 public struct DisconnectPrompt: Identifiable, Equatable, Sendable {
     public let unuploaded: Int
@@ -202,7 +202,7 @@ public struct DisconnectPrompt: Identifiable, Equatable, Sendable {
     }
 }
 
-/// docs/03 "연결 해제" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
+/// docs/03 "Disconnect" · docs/06: the decisions a disconnect makes at the moment it *runs*, which is
 /// not the moment [DisconnectPrompt] was built. A dialog is on screen for as long as the user leaves
 /// it there, and a retry may be a whole launch later — so the two things that could make a
 /// disconnect do the wrong thing are decided here and asked again by the shell that is about to act.
@@ -484,7 +484,7 @@ public enum DisconnectDevice: Sendable {
         }
     }
 
-    /// docs/03 "앱에서 지우기": the answer that leaves the Drive folder alone.
+    /// docs/03 "Deleting in the app": the answer that leaves the Drive folder alone.
     var deleteHereOnly: String {
         switch self {
         case .phone: return "Delete on this phone only"
@@ -492,7 +492,7 @@ public enum DisconnectDevice: Sendable {
         }
     }
 
-    /// docs/03 "로그아웃 vs 연결 해제": the first and gravest of them, and the one that names the
+    /// docs/03 "Sign out vs Disconnect": the first and gravest of them, and the one that names the
     /// thing to do instead.
     var everyDeviceLosesAccess: String {
         switch self {
@@ -529,7 +529,7 @@ public enum DisconnectDevice: Sendable {
     }
 }
 
-/// docs/03 "연결 해제" · docs/06: how far the last disconnect got. It is persisted because the retry
+/// docs/03 "Disconnect" · docs/06: how far the last disconnect got. It is persisted because the retry
 /// may be a whole launch later — the account is already cleared by then, so this is the only thing
 /// that keeps the Disconnect row on screen and keeps a second account out of the slot until the
 /// disconnect has finished both of its halves.

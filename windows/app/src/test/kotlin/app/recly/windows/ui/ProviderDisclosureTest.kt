@@ -34,7 +34,7 @@ class ProviderDisclosureTest {
     }
 
     /**
-     * docs/15 §3 "작성 규칙": the app does not say how long a provider keeps anything, because it
+     * docs/15 §3 "Writing rule": the app does not say how long a provider keeps anything, because it
      * does not know and cannot control it. A number in these three sentences would be exactly that
      * claim — "kept for 30 days", "30일 보관" — so there are none.
      */

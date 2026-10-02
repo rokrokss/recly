@@ -3,7 +3,7 @@ import os
 import ReclyCore
 import SwiftUI
 
-/// docs/08 "결과 파일", deliverable 3: what the `transcribe` step wrote for one recording. The local
+/// docs/08 "Result files", deliverable 3: what the `transcribe` step wrote for one recording. The local
 /// copy if the step ran on this device, and Drive's if it ran on another — `core.results` decides
 /// which, and keeps what it downloads.
 ///
@@ -15,9 +15,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var transcript: Transcript?
     @Published public private(set) var document: TranscriptDocument?
     @Published public private(set) var availability: TranscriptAvailability = .pending
-    /// docs/08 "결과 파일": the audio beside the transcript, when this device still has it.
+    /// docs/08 "Result files": the audio beside the transcript, when this device still has it.
     @Published public private(set) var audio = RecordingPlaylist.Selection.empty
-    /// docs/09 화면 원칙 2: the shape of [audio], one peak per 0.25 s window, for the bar to draw a
+    /// docs/09 screen principle 2: the shape of [audio], one peak per 0.25 s window, for the bar to draw a
     /// playhead across. Filled at the very end of [load] — after the trip to Drive, which is what
     /// settles which parts there are to draw — and left empty by a decode that failed. The bar
     /// shows the waveform loader until then ([waveformPending]), and a recording is never held up
@@ -79,7 +79,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     private var directory: URL?
     private var audioRecord: RecordingRecord?
 
-    /// docs/03 "저장 위치": the audio comes back from the app's iCloud folder rather than from Drive.
+    /// docs/03 "Storage location": the audio comes back from the app's iCloud folder rather than from Drive.
     public var icloud: Bool { audioRecord?.storage == .icloud }
 
     public init(core: ReclyCore_, recordingId: String, title: String, playbackGate: RecordingPlaybackGate? = nil) {
@@ -120,7 +120,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             waveformPending = false
             return
         }
-        // docs/09 화면 원칙 2: the picture last, and inside the load rather than beside it. Last
+        // docs/09 screen principle 2: the picture last, and inside the load rather than beside it. Last
         // because the trip to Drive is what settles which parts there are, and a decode of the
         // local prefix would be a picture of a different recording than the one that plays. Inside
         // because the `.task` that runs this load is also what cancels it: the Mac swaps the model
@@ -302,7 +302,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 }
 
-/// docs/09 화면 원칙 2 · "간격": the waveform row's own rhythm. A 2pt bar on a 1pt gap, so how many
+/// docs/09 screen principle 2 · "Spacing": the waveform row's own rhythm. A 2pt bar on a 1pt gap, so how many
 /// bars there are is however many 3pt columns the row is wide — the shape is the recording's, and
 /// the number of bars is the screen's.
 private enum Waveform {
@@ -310,7 +310,7 @@ private enum Waveform {
     static let step: CGFloat = 3
     /// A bin with no sound in it, so that silence is still part of the timeline.
     static let minBar: CGFloat = 1
-    /// docs/09 접근성: what one step of the adjustable action moves, for a scrub with no finger.
+    /// docs/09 Accessibility: what one step of the adjustable action moves, for a scrub with no finger.
     static let stepSec: Double = 5
 }
 
@@ -325,7 +325,7 @@ private final class DriveFetchProgress: NSObject, AudioFetchProgress {
     }
 }
 
-/// docs/09 화면 원칙 2: the detail is a page behind a ledger row rather than a pane in front of it,
+/// docs/09 screen principle 2: the detail is a page behind a ledger row rather than a pane in front of it,
 /// so the header carries the way back — docs/08's result file, the transcript as the speaker turns
 /// it is made of.
 #if os(iOS) || os(macOS)
@@ -474,7 +474,7 @@ public struct RecordingDetailView: View {
         .onDisappear { player.stop() }
     }
 
-    /// docs/08 "결과 파일" · docs/09 화면 원칙 2: the recording itself, where this device still has
+    /// docs/08 "Result files" · docs/09 screen principle 2: the recording itself, where this device still has
     /// it. Its shape on top, with the playhead moving across it and a drag on it to move where the
     /// playhead is, and the button and the recording's own clock under that.
     private var playerBar: some View {
@@ -482,7 +482,7 @@ public struct RecordingDetailView: View {
             if model.hasAudio, !(model.waveformPending && model.waveform.isEmpty) {
                 waveform
             } else if model.hasAudio {
-                // docs/09 "모션": the peaks are still being read or decoded — the same loader the
+                // docs/09 "Motion": the peaks are still being read or decoded — the same loader the
                 // Drive fetch shows, and not the baseline, which would be a silent recording.
                 // Playback does not need the peaks, so the rest of the bar is as it always is.
                 waveformLoader(label: loc("Loading waveform…"))
@@ -520,7 +520,7 @@ public struct RecordingDetailView: View {
         }
     }
 
-    /// docs/09 화면 원칙 2: the recording as a shape, and the one place on this page a second of it
+    /// docs/09 screen principle 2: the recording as a shape, and the one place on this page a second of it
     /// can be pointed at. The drag is on the whole row, so a tap anywhere in it is a seek — and
     /// playback is not interrupted by it, because what a scrub is for is hearing another part of
     /// the same take.
@@ -548,7 +548,7 @@ public struct RecordingDetailView: View {
         .accessibilityElement()
         .accessibilityIdentifier("waveform")
         .accessibilityLabel(Text(verbatim: loc("Position")))
-        // docs/09 접근성: the same stamp the clock beside it shows, because that is what the
+        // docs/09 Accessibility: the same stamp the clock beside it shows, because that is what the
         // playhead is — a drag has no reading of its own to give.
         .accessibilityValue(Text(verbatim: LedgerFormat.clock(Int(positionSec))))
         .accessibilityAdjustableAction { direction in
@@ -558,7 +558,7 @@ public struct RecordingDetailView: View {
             @unknown default: break
             }
         }
-        // docs/09 접근성: the same two steps without VoiceOver — the bar is a focus stop and the
+        // docs/09 Accessibility: the same two steps without VoiceOver — the bar is a focus stop and the
         // arrows move the playhead by [Waveform.stepSec], because a scrub that only a drag can do
         // is a control a keyboard cannot reach. The focus ring is the system's own.
         //
@@ -577,7 +577,7 @@ public struct RecordingDetailView: View {
         #endif
     }
 
-    /// docs/09 "모션": the waveform row while the recording comes back from Drive, or while its peaks
+    /// docs/09 "Motion": the waveform row while the recording comes back from Drive, or while its peaks
     /// are decoded, with no words — short ghost ticks where the bars will be, and a hard-edged band
     /// of ten that steps across them left to right, one bar a frame at 30 fps. It does not rise and
     /// fall or flow the way a playing or recording waveform does, and it leaves nothing filled
@@ -660,8 +660,8 @@ public struct RecordingDetailView: View {
     private static let growSec: Double = 0.75
     private static let growSpread: Double = 0.6
 
-    /// docs/09 "선": straight bars of one width on one gap, no caps and no gradient. Behind the
-    /// playhead is the accent and ahead of it the muted colour, both at full opacity: docs/09 접근성
+    /// docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
+    /// playhead is the accent and ahead of it the muted colour, both at full opacity: docs/09 Accessibility
     /// asks 3:1 of a graphic, and the muted token faded out to hint at "not played yet" is under
     /// 2:1 on the surface. The token promotes itself to the body colour in high contrast, so there
     /// is nothing here to special-case.
@@ -722,7 +722,7 @@ public struct RecordingDetailView: View {
         #endif
     }
 
-    /// docs/08 "결과 파일": one button and the recording's own clock.
+    /// docs/08 "Result files": one button and the recording's own clock.
     private var controls: some View {
         HStack(spacing: Space.s) {
             if model.driveFetch == .fetching {

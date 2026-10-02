@@ -5,7 +5,7 @@ import AppKit
 import XCTest
 @testable import RecKit
 
-/// docs/09 "접근성": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair the four Apple
+/// docs/09 "Accessibility": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair the four Apple
 /// apps actually draw, in all four palettes (light, dark, and each of them in high contrast).
 ///
 /// What is *not* in here is the grid colour against its background. A hairline divider carries no
@@ -79,7 +79,7 @@ final class BlueprintContrastTests: XCTestCase {
         }
     }
 
-    /// docs/09 "토큰": the two widget extensions link no RecKit — a widget process that carried the
+    /// docs/09 "Tokens": the two widget extensions link no RecKit — a widget process that carried the
     /// core would carry the database with it (docs/13) — so the handful of values they draw are
     /// written out in their own `WidgetTokens.swift`. This is what keeps those copies honest: a
     /// hex that moves in the palette has to move there too, or this fails.
@@ -116,7 +116,7 @@ final class BlueprintContrastTests: XCTestCase {
         XCTAssertEqual(WCAG.contrast(0x777777, 0x777777), 1, accuracy: 0.0001)
     }
 
-    /// docs/09 "고대비 모드": the two quiet tokens are promoted to the body colour and the line grows.
+    /// docs/09 "High-contrast mode": the two quiet tokens are promoted to the body colour and the line grows.
     func testHighContrastPromotesTheQuietTokensAndThickensTheLine() {
         let plain = BlueprintPalette.palette(dark: false, highContrast: false)
         let contrast = BlueprintPalette.palette(dark: false, highContrast: true)
@@ -145,7 +145,7 @@ final class BlueprintContrastTests: XCTestCase {
     }
 }
 
-/// docs/09 "접근성": the system's light/dark is followed without being asked about, and [AppTheme] is
+/// docs/09 "Accessibility": the system's light/dark is followed without being asked about, and [AppTheme] is
 /// the one override of it — stored on the device, and nothing stored means nothing chosen.
 final class AppThemeTests: XCTestCase {
 
@@ -179,7 +179,7 @@ final class AppThemeTests: XCTestCase {
     }
 
     #if os(macOS)
-    /// docs/12 "메뉴바": the Mac has no one SwiftUI root to hang a `.preferredColorScheme` on — the
+    /// docs/12 "Menu bar": the Mac has no one SwiftUI root to hang a `.preferredColorScheme` on — the
     /// popover is an `NSPanel` and the editor and details are windows — so the setting is written
     /// onto the application itself, which all three inherit and SwiftUI reads back as
     /// `\.colorScheme`. Nothing written is the system's own again.

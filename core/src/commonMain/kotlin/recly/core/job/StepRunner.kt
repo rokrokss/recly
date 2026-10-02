@@ -42,7 +42,7 @@ class StepContext(
     val job: Job,
     /**
      * The job's snapshot, decoded. Separate from [job] because [Job.workflow] is null for a
-     * snapshot this build cannot read, and such a job never reaches a runner (docs/10 "잡 스냅샷").
+     * snapshot this build cannot read, and such a job never reaches a runner (docs/10 "job snapshot").
      */
     val workflow: Workflow,
     /** The `step_run` row's ULID. */
@@ -79,7 +79,7 @@ internal fun StepContext.priorOutput(type: String): JsonObject? = workflow.prior
  * A step failure the executor knows how to route: [retryable] decides backoff versus `onError`,
  * [needsAuth] parks the whole job until the user signs in without spending a retry.
  *
- * [needsSpace] is the same kind of park for a full Drive (docs/10 "Drive 용량 초과"): nothing but
+ * [needsSpace] is the same kind of park for a full Drive (docs/10 "Drive out of space"): nothing but
  * the user clearing space changes the answer, so no attempt is spent there either.
  *
  * [retryAfterSec] is a `Retry-After` the server sent (429, 503); it replaces the computed backoff,

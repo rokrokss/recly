@@ -3,7 +3,7 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/10 "사용자가 고칠 수 있는 실패와 그 알림": which failures call the user, which ones do not, and
+/// docs/10 "Failures the user can fix, and their notices": which failures call the user, which ones do not, and
 /// what a queue full of them adds up to. Lane P1 acceptance 7 (one notification per reason, with
 /// the count in it) and 8 (a provider 500 never notifies) are both decided here.
 ///
@@ -253,7 +253,7 @@ final class JobAlertsTests: XCTestCase {
         )
     }
 
-    // MARK: - Where the key is entered (docs/10 · docs/08 "오류")
+    // MARK: - Where the key is entered (docs/10 · docs/08 "Errors")
 
     /// docs/10: `MISSING_SECRET` carries the key that is missing and the step that asked for it.
     func testTheKeyFailuresCarryTheSecretAndTheStepTheFormOpensOn() {
@@ -362,7 +362,7 @@ final class JobAlertsTests: XCTestCase {
         )
     }
 
-    /// docs/09 화면 원칙 2: the banner's badge is a code, and no two reasons share one.
+    /// docs/09 screen principle 2: the banner's badge is a code, and no two reasons share one.
     func testEveryReasonHasACodeOfItsOwn() {
         let codes = AlertReason.allCases.map(\.code)
         XCTAssertEqual(codes.count, Set(codes).count)

@@ -1,10 +1,10 @@
--- 1 → 2: the `secret_sync` table of M7-L4a (docs/05 "시크릿 동기화").
+-- 1 → 2: the `secret_sync` table of M7-L4a (docs/05 "secret sync").
 --
 -- The whole schema lives in `Rec.sq`; a migration is only what an installed database of the version
 -- it is named after is missing. The two have to agree, and `MigrationTest` — which builds a
 -- version-1 database by hand and upgrades it — is what says they do.
 --
--- Never edit a migration once it has run anywhere: add the next one (docs/10 "스키마 마이그레이션").
+-- Never edit a migration once it has run anywhere: add the next one (docs/10 "Schema migrations").
 --
 -- `IF NOT EXISTS` because version 1 is not one schema. Builds between M7-L4a and its second review
 -- round already had `secret_sync` in `Rec.sq` while the schema version was still 1, so a database

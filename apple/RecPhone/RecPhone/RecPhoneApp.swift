@@ -15,7 +15,7 @@ struct RecPhoneApp: App {
     /// docs/07 rule 3: the one place the app's language reaches the screen. Observing it here is
     /// what redraws every tab when the setting changes — no relaunch, no scene rebuild.
     @StateObject private var language = AppLanguage.shared
-    /// docs/09 "접근성": the one override of the system's light/dark. Observed here because the
+    /// docs/09 "Accessibility": the one override of the system's light/dark. Observed here because the
     /// setting reaches the screen as this root's `.preferredColorScheme`, which is what every
     /// palette below reads back as `\.colorScheme`.
     @StateObject private var theme = AppTheme.shared
@@ -34,7 +34,7 @@ struct RecPhoneApp: App {
             RootTabs(model: model, language: language, theme: theme)
                 .environment(\.locale, language.locale)
                 .environment(\.layoutDirection, language.locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
-                // docs/09 "접근성": nil is no preference of the app's own, which is the device's
+                // docs/09 "Accessibility": nil is no preference of the app's own, which is the device's
                 // scheme — the palette follows `\.colorScheme` either way.
                 .preferredColorScheme(theme.choice.colorScheme)
                 // docs/09: the tokens, the type scale and the reduce-motion answer, handed to every
@@ -47,7 +47,7 @@ struct RecPhoneApp: App {
     }
 }
 
-/// docs/09 트렌드 7 · "아이콘": the iOS tab bar is the platform's own chrome, so it stays glass — what
+/// docs/09 trend 7 · "icon": the iOS tab bar is the platform's own chrome, so it stays glass — what
 /// is ours is the tint (the blueprint accent on the selected tab) and the thin geometric symbols.
 ///
 /// A view of its own rather than a `TabView` in the scene: `\.blueprint` is put into the
@@ -57,12 +57,12 @@ private struct RootTabs: View {
     @ObservedObject var language: AppLanguage
     @ObservedObject var theme: AppTheme
     @Environment(\.blueprint) private var blueprint
-    /// Counts taps on the List tab, so the list can go back to every row closed (docs/09 화면 원칙 2).
+    /// Counts taps on the List tab, so the list can go back to every row closed (docs/09 screen principle 2).
     @State private var listTaps = 0
 
     /// The selection is the model's rather than this view's own state: without a binding the
     /// selection is the tab bar's and goes back to the first tab whenever the bar is rebuilt, and
-    /// docs/08 "오류" needs "check the key", which is on the list, to land on the settings tab.
+    /// docs/08 "Errors" needs "check the key", which is on the list, to land on the settings tab.
     ///
     /// The tab views live on behind the bar, so an open row would still be open on the way back.
     /// A tap on the List tab — from another tab, or again on itself, which reaches this setter too

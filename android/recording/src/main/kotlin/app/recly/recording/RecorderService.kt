@@ -116,7 +116,7 @@ class RecorderService : Service() {
                 core = core,
                 scope = scope,
                 segmentSec = segmentSec,
-                // docs/03 이름 규칙: a watch recording is `_watch_` and says `"source": "watch"`.
+                // docs/03 Naming rules: a watch recording is `_watch_` and says `"source": "watch"`.
                 // The shell already declares what it is running on, so nothing has to be passed in.
                 source = if (core.deps.device.platform == Platform.WEAROS) Source.WATCH else Source.PHONE,
                 onError = { fail(it) },
@@ -134,7 +134,7 @@ class RecorderService : Service() {
     }
 
     /**
-     * docs/09 화면 원칙 6: the levels the live strip draws, one window per [LEVEL_MS]. The recorder
+     * docs/09 screen principle 6: the levels the live strip draws, one window per [LEVEL_MS]. The recorder
      * is the only place the audio exists, so this is a reading of the track being written and not a
      * second tap on the microphone — which is the whole reason the strip answers "yes, it is
      * recording" at all.
@@ -246,7 +246,7 @@ class RecorderService : Service() {
         private const val CHANNEL_ID = "recording"
         private const val NOTIFICATION_ID = 1
 
-        /** The rate a window of the live strip finishes at (docs/09 화면 원칙 6). */
+        /** The rate a window of the live strip finishes at (docs/09 screen principle 6). */
         private const val LEVEL_MS = 100L
 
         /** Companion for the same reason [state] is: the screen comes and goes, the recording does not. */

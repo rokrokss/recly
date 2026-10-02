@@ -3,7 +3,7 @@ package recly.core.recording
 import kotlin.math.roundToInt
 
 /**
- * docs/09 화면 원칙 2: a recording's waveform — the loudest sample of every [WINDOW_SEC] window,
+ * docs/09 screen principle 2: a recording's waveform — the loudest sample of every [WINDOW_SEC] window,
  * 0–1, on the recording's own timeline — computed once by the shell's decoder and kept beside the
  * parts as [FILE], so opening the recording again draws it at once, even after its parts were
  * cleaned up and have to come back from Drive. It stays on the device: nothing uploads it, and it

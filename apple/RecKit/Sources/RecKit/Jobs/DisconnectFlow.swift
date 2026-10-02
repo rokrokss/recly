@@ -7,7 +7,7 @@ import Foundation
 import os
 import ReclyCore
 
-/// docs/03 "로그아웃 vs 연결 해제" · docs/06: the whole of a disconnect, once, for both shells.
+/// docs/03 "Sign out vs Disconnect" · docs/06: the whole of a disconnect, once, for both shells.
 ///
 /// [DisconnectGuard] already owns the *decisions* — what to revoke, what order to write the phase
 /// in, what to say at the end — and this is the thing that walks through them: the gate, the live
@@ -74,7 +74,7 @@ public final class DisconnectFlow {
         self.refresh = refresh
     }
 
-    /// docs/03 "연결 해제", both halves and in this order: the Google grant — which is what makes the
+    /// docs/03 "Disconnect", both halves and in this order: the Google grant — which is what makes the
     /// other devices lose access too — and then the core's local clean-up (tokens, the queue, the
     /// folder cache; the workflows and the keys are this device's own and stay).
     ///

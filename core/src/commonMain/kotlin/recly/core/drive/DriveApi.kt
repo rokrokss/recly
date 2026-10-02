@@ -99,7 +99,7 @@ class DriveApi(
     }
 
     /**
-     * Every recording folder this app made, from any device (docs/03 "다른 기기의 녹음"): the
+     * Every recording folder this app made, from any device (docs/03 "Recordings from other devices"): the
      * `{base}/` folders, which are the only folders it stamps a `recordingId` on (ADR-014). One
      * query whatever the folder templates were, since it does not walk the path at all.
      *
@@ -213,8 +213,7 @@ class DriveApi(
     }
 
     /**
-     * Merges keys into a file's `appProperties` — what the `pending` marker of docs/03 "다른 기기의
-     * 녹음" is written with. Drive merges rather than replaces, so the `recordingId`/`workflowId` the
+     * Merges keys into a file's `appProperties` — what the `pending` marker of docs/03 "Recordings from other devices" is written with. Drive merges rather than replaces, so the `recordingId`/`workflowId` the
      * folder was stamped with when it was created survive every call of this.
      */
     override suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) {
@@ -394,7 +393,7 @@ class DriveApi(
     }
 
     /**
-     * docs/10 "Drive 용량 초과": the one 403 that retrying cannot fix. It is judged on the body and
+     * docs/10 "Drive out of space": the one 403 that retrying cannot fix. It is judged on the body and
      * not the status, because a permission 403 looks identical from outside and stays on the
      * `DRIVE_REAUTH` / retry path. Every request goes through it — session start, chunk PUT,
      * multipart, `meta.json`, and the `transcribe` result files.
@@ -456,7 +455,7 @@ class DriveApi(
         internal const val FOLDER_FIELDS = "id,name,mimeType,webViewLink"
         internal const val CHILD_FIELDS = "files(id,name,md5Checksum,mimeType,webViewLink)"
 
-        /** Drive returns only what is asked for: `description` is the title (docs/03 "제목"). */
+        /** Drive returns only what is asked for: `description` is the title (docs/03 "Titles"). */
         internal const val RECORDING_FOLDER_FIELDS = "files(id,name,appProperties,createdTime,description)"
         private const val MULTIPART_LIMIT = 5L * 1024 * 1024
 

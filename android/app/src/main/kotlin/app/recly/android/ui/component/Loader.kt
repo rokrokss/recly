@@ -29,7 +29,7 @@ import app.recly.android.ui.theme.blueprint
  * running with no percentage to show for it — the state node's `UPLOADING`, a model download, a
  * recording coming back from Drive.
  *
- * docs/09 "모션": motion is a state signal. Straight edges, no rounding and no fade — the square is
+ * docs/09 "Motion": motion is a state signal. Straight edges, no rounding and no fade — the square is
  * the same shape everything else on the screen is. With reduce motion on it is not drawn: the words
  * beside it are the whole message either way.
  */

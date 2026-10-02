@@ -24,7 +24,7 @@ struct RecMacApp: App {
     }
 
     var body: some Scene {
-        // docs/09 화면 원칙 6: a popover rather than an `NSMenu`, because the design is three state
+        // docs/09 screen principle 6: a popover rather than an `NSMenu`, because the design is three state
         // nodes over a ledger and an `NSMenu` can draw neither. The popover itself is
         // [MenuBarPanel], made by the delegate: SwiftUI's `MenuBarExtra` closes on a click in this
         // app's own windows, which is the one thing it must not do. This one is never inserted —
@@ -48,7 +48,7 @@ struct RecMacApp: App {
         }
         .defaultSize(width: 520, height: 680)
 
-        // docs/08 "결과 파일": what is behind a recording — the audio, the transcript — which does
+        // docs/08 "Result files": what is behind a recording — the audio, the transcript — which does
         // not fit in a popover. Its title is resolved the same way the editor's is, and for the
         // same reason.
         Window(AppStrings.localized("Details"), id: RecordingsWindow.id) {
@@ -67,7 +67,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         MainActor.assumeIsolated {
-            // docs/09 "접근성": the stored override of the system's light/dark, written onto the
+            // docs/09 "Accessibility": the stored override of the system's light/dark, written onto the
             // application before anything of it is drawn — the popover, the editor and the details
             // window are three AppKit windows and all of them inherit it.
             AppTheme.shared.apply()

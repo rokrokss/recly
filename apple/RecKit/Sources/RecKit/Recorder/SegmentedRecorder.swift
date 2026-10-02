@@ -19,7 +19,7 @@ import ReclyCore
 /// In `meeting` mode there are three tracks and still one of everything else. The microphone is the
 /// clock: one `SegmentSplitter`, one frame count, one set of part numbers, and every microphone
 /// buffer that reaches a file takes the same number of system frames and the same number of mixed
-/// frames with it (docs/03 "같은 시작 시각·세그먼트 경계"). The system stream is put on that timeline
+/// frames with it (docs/03 "the same start time and segment boundaries"). The system stream is put on that timeline
 /// by `DriftCompensator` before it ever gets here.
 public final class SegmentedRecorder {
     /// ADR-006. Overridable so a smoke test does not have to run for fifteen minutes.
@@ -59,7 +59,7 @@ public final class SegmentedRecorder {
         var gaps: [ReclyCore.Range] = []
         /// docs/03 `silenced`: the interruptions the microphone was taken away by, closed at stop.
         var silence = SilenceMonitor()
-        /// docs/09 화면 원칙 6: the levels the shells draw while this recording runs. On the session,
+        /// docs/09 screen principle 6: the levels the shells draw while this recording runs. On the session,
         /// so the strip starts empty with every recording and is gone the moment one ends.
         var live = LiveWaveform()
 
@@ -124,7 +124,7 @@ public final class SegmentedRecorder {
         lock.withLock { session?.drift?.ratio }
     }
 
-    /// docs/12 M4-L3 "메뉴바": the output device the system tap is on, for the menu to name while a
+    /// docs/12 M4-L3 "Menu bar": the output device the system tap is on, for the menu to name while a
     /// meeting is being recorded. `nil` outside meeting mode, and until the tap is up.
     public var capturedOutputDevice: String? {
         systemInput?.outputDeviceName
@@ -209,7 +209,7 @@ public final class SegmentedRecorder {
         lock.withLock { session.map { Double($0.totalFrames) / Double(Self.sampleRateHz) } ?? 0 }
     }
 
-    /// docs/09 화면 원칙 6: the tenth-of-a-second peaks of the track a person hears, oldest first,
+    /// docs/09 screen principle 6: the tenth-of-a-second peaks of the track a person hears, oldest first,
     /// for the strip beside the clock. Empty when nothing is being recorded, which is what makes a
     /// shell's "draw it while recording" the whole of the condition.
     public func livePeaks() -> [Float] {
@@ -295,7 +295,7 @@ public final class SegmentedRecorder {
         return recordingId
     }
 
-    /// docs/03 "트랙": the desktop's meeting recording is `mic`/`sys`/`mix`; the microphone on its
+    /// docs/03 "Tracks": the desktop's meeting recording is `mic`/`sys`/`mix`; the microphone on its
     /// own is one `mono` track, which is what M4-L2 wrote and what a mobile recording writes.
     static func tracks(of mode: RecordingMode) -> [Track] {
         switch mode {
@@ -429,7 +429,7 @@ public final class SegmentedRecorder {
             try write(converted, into: session)
             // After the write, so the queue's depth is read at the one phase where it means "how far
             // out of step are the two streams" rather than "how much has piled up since the last
-            // microphone buffer" (docs/12 "60초마다 레이트 차 추정").
+            // microphone buffer" (docs/12 "estimate the rate difference every 60 seconds").
             session.drift?.observeMic(frames: session.totalFrames, atSec: Self.nowSec)
         } catch {
             report(RecorderError("could not write the segment", underlying: error))
@@ -519,7 +519,7 @@ public final class SegmentedRecorder {
     }
 
     /// The microphone chunk into `mic`, the system frames that sit under it into `sys`, and their
-    /// sum at half scale into `mix` (docs/12 "합산 −6 dB 헤드룸"). One track in `microphone` mode,
+    /// sum at half scale into `mix` (docs/12 "summed with −6 dB headroom"). One track in `microphone` mode,
     /// where the chunk goes into `mono` unchanged.
     ///
     /// False if any of them has no file to write into, and then none of the frames are counted:
@@ -553,7 +553,7 @@ public final class SegmentedRecorder {
         return true
     }
 
-    /// The frames a writer has just taken, into the strip the shells draw (docs/09 화면 원칙 6) —
+    /// The frames a writer has just taken, into the strip the shells draw (docs/09 screen principle 6) —
     /// after the write rather than before it, so what the strip shows is what the file got. The
     /// track a person hears: `mono` in microphone mode, `mix` in a meeting.
     private static func observe(_ heard: AVAudioPCMBuffer, in session: Session) {
@@ -601,7 +601,7 @@ public final class SegmentedRecorder {
     }
 
     /// A part that cannot reach the database is not a lost part: the audio is on disk and a sidecar
-    /// says so, so the next recovery pass files it (docs/03 "크래시 시 마지막 경계까지는 복구 가능").
+    /// says so, so the next recovery pass files it (docs/03 "after a crash, everything up to the last boundary is recoverable").
     ///
     /// One task for the whole boundary, so the tracks of a part are filed in order and a stop that
     /// waits for the last of them waits for all three.
@@ -786,7 +786,7 @@ public final class SegmentedRecorder {
         systemInput?.stop()
     }
 
-    /// An outage the tap covered by itself (docs/12 "tap 재생성"). It is not a restart — the
+    /// An outage the tap covered by itself (docs/12 "Tap re-creation"). It is not a restart — the
     /// microphone never stopped — so all it leaves is the hole in the meta's `gaps`.
     private func recordDiagnostic(_ event: CaptureDiagnostic) {
         let snapshot: (URL, [CaptureDiagnostic])? = lock.withLock {
@@ -810,7 +810,7 @@ public final class SegmentedRecorder {
             let at = Double(session.totalFrames) / Double(Self.sampleRateHz)
             session.gaps.append(ReclyCore.Range(startSec: max(0, at - seconds), endSec: at, reason: reason))
             // The interval this fell in has a hole in the system frames, and a rate read across it
-            // would be the hole rather than the clocks (docs/12 "60초마다 레이트 차 추정"). Started
+            // would be the hole rather than the clocks (docs/12 "estimate the rate difference every 60 seconds"). Started
             // again from here, so the next sixty seconds measure two streams that were both there.
             session.drift?.reanchor(
                 micFrames: session.totalFrames, atSec: Self.nowSec, outageSec: seconds

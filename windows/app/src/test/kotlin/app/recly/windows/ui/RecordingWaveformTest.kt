@@ -14,7 +14,7 @@ import okio.Path
 import okio.Path.Companion.toPath
 
 /**
- * docs/09 화면 원칙 2: the shape under the detail's clock. [RecordingWaveform.bins] is the half that
+ * docs/09 screen principle 2: the shape under the detail's clock. [RecordingWaveform.bins] is the half that
  * has to be right at every width the row can be, and [RecordingWaveform.peaks] the half that turns
  * what ffmpeg wrote into that shape — both without a file or a screen, which is why they are apart
  * from the player at all. RecKit's `RecordingWaveformTests` pins the same arithmetic.

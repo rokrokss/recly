@@ -55,7 +55,7 @@ data class ModelDownloadState(
 }
 
 /**
- * docs/05 "고정 처리 설정 도입": the one download controller. Settings, the list's banner and rows, and
+ * docs/05 "Fixed processing settings": the one download controller. Settings, the list's banner and rows, and
  * the Record tab's first-run card all read [state] and start or cancel through here, so no two of
  * them ever start two downloads. The download is [ModelDownloadWorker] under one unique work name —
  * it outlives the screen, and WorkManager is what remembers it across a process death.
@@ -179,7 +179,7 @@ fun modelSize(bytes: Long, locale: Locale = Locale.getDefault()): String {
 fun Language.wireTag(): String = name.lowercase().replace('_', '-')
 
 /**
- * docs/05 "고정 처리 설정 도입": the download itself — `prepareLocalEngine`, which also resumes the
+ * docs/05 "Fixed processing settings": the download itself — `prepareLocalEngine`, which also resumes the
  * recordings that were waiting for the model — as a `dataSync` foreground service, so it carries on
  * after the user leaves the app. The notification's Cancel is the same cancel as the app's.
  */

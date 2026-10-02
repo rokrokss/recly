@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One node of the recording dashboard: a label and the value under it (docs/09 화면 원칙 1).
+/// One node of the recording dashboard: a label and the value under it (docs/09 screen principle 1).
 public struct NodeSpec: Identifiable, Equatable, Sendable {
     public let id: String
     public let label: String
@@ -73,7 +73,7 @@ public struct StateNode: View {
 
 /// The dashboard nodes, joined edge to edge by straight 20pt connectors.
 ///
-/// docs/09 "접근성" · 유동 타이포: three nodes across a phone is a layout for ordinary type sizes. At
+/// docs/09 "Accessibility" · 유동 타이포: three nodes across a phone is a layout for ordinary type sizes. At
 /// an accessibility size the same graph runs downwards instead — same nodes, same straight
 /// connectors, one turn of ninety degrees.
 public struct StateNodeRow: View {
@@ -106,7 +106,7 @@ public struct StateNodeRow: View {
     }
 }
 
-/// docs/09 "타이포": the timer is the one piece of data big enough to be the screen.
+/// docs/09 "Typography": the timer is the one piece of data big enough to be the screen.
 public struct MonoTimer: View {
     @Environment(\.blueprint) private var blueprint
     private let text: String

@@ -2,7 +2,7 @@ package app.recly.windows.record
 
 /**
  * What the tray popup's strip draws: the loudest sample of each tenth of a second of the track being
- * written, oldest first, for the last thirty seconds (docs/09 화면 원칙 6).
+ * written, oldest first, for the last thirty seconds (docs/09 screen principle 6).
  *
  * The Mac's `RecKit.LiveWaveform` keeps the same ring off its own recorder; here the numbers arrive
  * as `HelperEvent.Level` and this is only the ring they land in. Thirty seconds of them is more

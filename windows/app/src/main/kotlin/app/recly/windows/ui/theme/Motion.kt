@@ -4,7 +4,7 @@ import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 
 /**
- * docs/09 "모션": motion is a state signal, never decoration. One easing, one duration for a normal
+ * docs/09 "Motion": motion is a state signal, never decoration. One easing, one duration for a normal
  * transition, a shorter one for a badge, and a deliberate window for the rare high-risk action —
  * start/stop, upload, sign-in, save — so the user sees that something happened.
  *

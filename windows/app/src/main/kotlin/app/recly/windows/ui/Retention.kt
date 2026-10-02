@@ -6,7 +6,7 @@ import recly.core.ReclyCore
 import recly.core.recording.RecordingRecord
 
 /**
- * docs/03 "보관 · 삭제": what the delete dialog and the disconnect warning have to say *first* — how
+ * docs/03 "Retention · deletion": what the delete dialog and the disconnect warning have to say *first* — how
  * much audio exists only on this PC.
  *
  * ADR-017's seven-day window is why the disk cannot answer this on its own any more: a part stays
@@ -56,7 +56,7 @@ object Retention {
 }
 
 /**
- * docs/03 "앱에서 지우기": what the delete dialog has to know before it can ask. [unuploaded] is how
+ * docs/03 "Deleting in the app": what the delete dialog has to know before it can ask. [unuploaded] is how
  * many parts are still only on this PC, which the dialog says first — that is the part of the
  * deletion nothing anywhere else can give back.
  */
@@ -73,7 +73,7 @@ data class DeleteRequest(
 )
 
 /**
- * docs/03 "로그아웃 vs 연결 해제": the warning is not a yes/no, it is a few facts and a separate
+ * docs/03 "Sign out vs Disconnect": the warning is not a yes/no, it is a few facts and a separate
  * question. [unuploaded] is one of them — how many recordings have never reached Drive and would be
  * left on this PC (principle 3: an original is not deleted by a decision about an account).
  * [recording] is what the dialog cannot let past, see [canConfirm].

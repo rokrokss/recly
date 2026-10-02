@@ -1,7 +1,7 @@
 import Foundation
 import RecKit
 
-/// What should be on the Lock Screen for what the recorder is doing (docs/13 "표시").
+/// What should be on the Lock Screen for what the recorder is doing (docs/13 "Display").
 ///
 /// A decision of its own, apart from ActivityKit, because it is the part that can be checked: the
 /// simulator will show a Live Activity but it will not tell a test what is on it.
@@ -16,7 +16,7 @@ enum RecordingActivityPlan: Equatable {
         return .show(RecordingActivityAttributes.ContentState(startedAt: startedAt))
     }
 
-    /// docs/13 "8시간 상한이면 갱신": ActivityKit ends a Live Activity eight hours after it was
+    /// docs/13 "renewed at the 8-hour limit": ActivityKit ends a Live Activity eight hours after it was
     /// requested, and a recording can outlast that. A new one is asked for before the cap rather
     /// than leaving a running recording with nothing on the Lock Screen.
     static let refreshAfterSec: TimeInterval = 7.5 * 3600

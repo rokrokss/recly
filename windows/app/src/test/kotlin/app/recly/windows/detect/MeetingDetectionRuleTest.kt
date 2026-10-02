@@ -90,7 +90,7 @@ class MeetingDetectionRuleTest {
     // --- the offer to end it ----------------------------------------------------------------------
 
     /**
-     * docs/14 "감지": sixty unbroken seconds of an unused microphone — and only then. A meeting
+     * docs/14 "Detection": sixty unbroken seconds of an unused microphone — and only then. A meeting
      * that goes quiet for fifty seconds is a meeting.
      */
     @Test

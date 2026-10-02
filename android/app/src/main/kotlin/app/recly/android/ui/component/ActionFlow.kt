@@ -7,7 +7,7 @@ import androidx.compose.ui.unit.Dp
 import app.recly.android.ui.theme.Space
 
 /**
- * docs/09 화면 원칙 2: an expanded ledger row's buttons, across the row's whole width and onto more
+ * docs/09 screen principle 2: an expanded ledger row's buttons, across the row's whole width and onto more
  * lines when they do not fit, with [trailing] — the row's Delete — at the end of the last line. It
  * used to stand in a column of its own under the status badge, and whatever it took from the row
  * the other buttons lost: at 360dp a Retry beside Open in Drive already had to go to a line of its

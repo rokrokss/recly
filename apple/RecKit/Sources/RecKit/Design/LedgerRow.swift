@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 화면 원칙 2: the ledger's four columns, in the widths the mockup sets.
+/// docs/09 screen principle 2: the ledger's four columns, in the widths the mockup sets.
 private enum Column {
     static let time: CGFloat = 62
     static let length: CGFloat = 44
@@ -91,13 +91,13 @@ public struct LedgerHeader: View {
 }
 
 /// One recording, as a row of the ledger: when (monospace), what, how long, and the state as a code
-/// (docs/09 화면 원칙 2). The whole row is one accessibility element — four separate announcements of
+/// (docs/09 screen principle 2). The whole row is one accessibility element — four separate announcements of
 /// `08-29`, a title, `42:10` and `DONE` are worse than one sentence — so the caller hands in the
 /// sentence, with the state in words rather than as a code.
 ///
 /// A row that opens under itself says so: whether it is open is the element's value, and the tap is
 /// offered a second time as a named action, so a screen reader can tell an open row from a closed
-/// one without tapping it to find out (docs/09 "접근성", as Android's `LedgerRow` does with
+/// one without tapping it to find out (docs/09 "Accessibility", as Android's `LedgerRow` does with
 /// `expand`/`collapse`).
 public struct LedgerRow<Trailing: View>: View {
     @Environment(\.blueprint) private var blueprint
@@ -204,7 +204,7 @@ public struct LedgerRow<Trailing: View>: View {
         expanded ? RecKitStrings.localized("Expanded") : RecKitStrings.localized("Collapsed")
     }
 
-    /// Four columns, as docs/09 화면 원칙 2 draws the ledger.
+    /// Four columns, as docs/09 screen principle 2 draws the ledger.
     private var columns: some View {
         HStack(spacing: 10) {
             when.frame(width: Column.time, alignment: .leading)
@@ -236,7 +236,7 @@ public struct LedgerRow<Trailing: View>: View {
                 howLong
                 Spacer(minLength: 0)
             }
-            // On a line of its own: the code is the state (docs/09 화면 원칙 2), and at these sizes
+            // On a line of its own: the code is the state (docs/09 screen principle 2), and at these sizes
             // `NEEDS_AUTH` is as wide as the stamp and the length together.
             StatusBadge(status)
         }

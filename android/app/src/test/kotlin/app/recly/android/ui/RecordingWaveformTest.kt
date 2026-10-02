@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * docs/09 화면 원칙 2: the shape under the detail's clock. [RecordingWaveform.bins] is the half that
+ * docs/09 screen principle 2: the shape under the detail's clock. [RecordingWaveform.bins] is the half that
  * has to be right at every width the row can be, and [RecordingWaveform.Windows] the half that cuts
  * what the codec hands over into the recording's own quarter-seconds — both without a file or a
  * screen, which is why they are apart from the decode at all. RecKit's `RecordingWaveformTests` and

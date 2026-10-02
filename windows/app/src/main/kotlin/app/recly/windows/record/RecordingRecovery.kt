@@ -13,7 +13,7 @@ import recly.core.recording.RecordingRecord
 import recly.core.recording.WaveformPeaks
 
 /**
- * docs/03 "복구", at the app level because on Windows the app is not the process that writes the
+ * docs/03 "recoverable", at the app level because on Windows the app is not the process that writes the
  * audio — the helper is (docs/14). The phone's `RecordingRecovery` and the Mac's can re-read a
  * segment they find on disk; this one cannot, and that difference is the whole of the rule below.
  *

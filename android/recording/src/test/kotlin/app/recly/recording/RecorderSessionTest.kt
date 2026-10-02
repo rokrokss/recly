@@ -35,7 +35,7 @@ private fun finalized(parts: Int = 2, durationSec: Double = 61.0) =
 /**
  * The service's state machine without the service. Two things are being pinned down here and both
  * cost the user a recording when they are wrong: who a finished recording is handed to (never
- * `enqueue` from in here — docs/11 "주의" means the same finalize has to mean a job on the phone and
+ * `enqueue` from in here — docs/11 "Caveats" means the same finalize has to mean a job on the phone and
  * a transfer on the watch), and what a stop does when it lands while the microphone is still
  * opening, which on a watch is one impatient double-tap away.
  */

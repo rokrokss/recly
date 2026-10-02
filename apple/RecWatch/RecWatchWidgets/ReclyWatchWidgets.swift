@@ -68,7 +68,7 @@ struct ComplicationFace: View {
         }
     }
 
-    /// docs/09 "Raw 미학": the complication says the state in monospace — it is a status code on a
+    /// docs/09 "Raw aesthetics": the complication says the state in monospace — it is a status code on a
     /// watch face, not a headline.
     @ViewBuilder
     private var face: some View {

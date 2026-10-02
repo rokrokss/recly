@@ -3,8 +3,8 @@ import ReclyCore
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 6: the menu-bar popover — three state nodes, the last five recordings as a
-/// ledger, and the actions. docs/09 트렌드 7 puts glass on the *chrome* and nowhere else: the header
+/// docs/09 screen principle 6: the menu-bar popover — three state nodes, the last five recordings as a
+/// ledger, and the actions. docs/09 trend 7 puts glass on the *chrome* and nowhere else: the header
 /// and the footer are `.ultraThinMaterial`, the ledger between them is the opaque surface, because
 /// a list of data read through a blur is the thing that trend is against.
 struct MenuPopover: View {
@@ -57,7 +57,7 @@ struct MenuPopover: View {
                 }
             }
         }
-        // docs/03 "앱에서 지우기": the same, for a delete started from a ledger row here. The
+        // docs/03 "Deleting in the app": the same, for a delete started from a ledger row here. The
         // Transcripts window keeps its own sheet for the ones its rows ask — the ask carries the
         // surface it came from, so one question is never drawn on both.
         .overlay {
@@ -112,7 +112,7 @@ struct MenuPopover: View {
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
             }
-            // docs/12 M4-L3 "메뉴바": which output device the system audio is being taken from,
+            // docs/12 M4-L3 "Menu bar": which output device the system audio is being taken from,
             // while it is being taken. Nothing to say in microphone mode, so nothing is said.
             if model.isRecording, let device = model.capturedOutputDevice {
                 Text(AppStrings.localized("System audio: %@", device))
@@ -122,9 +122,9 @@ struct MenuPopover: View {
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
             }
-            // docs/09 화면 원칙 1: while it is running, the timer *is* the dashboard — the same
+            // docs/09 screen principle 1: while it is running, the timer *is* the dashboard — the same
             // full-width mono clock Windows and the iPhone draw, not a readout tucked in beside
-            // the buttons. docs/09 화면 원칙 6 puts the track being written directly under it: the
+            // the buttons. docs/09 screen principle 6 puts the track being written directly under it: the
             // answer to "is it hearing me" that a clock alone cannot give.
             if model.isRecording {
                 VStack(spacing: Space.s) {
@@ -223,12 +223,12 @@ struct MenuPopover: View {
         .background(.ultraThinMaterial)
     }
 
-    // MARK: - The ledger (docs/09 화면 원칙 2 · docs/12 "메뉴바")
+    // MARK: - The ledger (docs/09 screen principle 2 · docs/12 "Menu bar")
 
     private var ledger: some View {
         // Lazy, so the page marker under the rows appears only when it is scrolled to.
         LazyVStack(spacing: 0) {
-            // docs/05 "고정 처리 설정 도입": the first-run card, above the ledger, for a Mac set to
+            // docs/05 "Fixed processing settings": the first-run card, above the ledger, for a Mac set to
             // transcribe on device that has no speech model yet.
             if let download = model.modelDownload {
                 ModelPromptCard(
@@ -252,7 +252,7 @@ struct MenuPopover: View {
             ForEach(model.recents) { item in
                 row(item)
             }
-            // docs/12 "메뉴바": the ledger's next page, asked for when its end comes into view. Keyed
+            // docs/12 "Menu bar": the ledger's next page, asked for when its end comes into view. Keyed
             // on the count so that a page that did not push it out of view asks again.
             if !model.recents.isEmpty {
                 Color.clear
@@ -291,11 +291,11 @@ struct MenuPopover: View {
                 length: length,
                 state: item.stateLabel
             ),
-            // docs/09 "접근성": the row opens what is behind it, which a screen reader would
+            // docs/09 "Accessibility": the row opens what is behind it, which a screen reader would
             // otherwise only find out by tapping — the same value and the same named action the
             // phone's row carries.
             expanded: expanded == item.id,
-            // docs/09 "모션": 200 ms ease-in-out, and nothing at all with reduce motion on — the
+            // docs/09 "Motion": 200 ms ease-in-out, and nothing at all with reduce motion on — the
             // row simply is open.
             action: {
                 withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
@@ -306,7 +306,7 @@ struct MenuPopover: View {
         .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
         if expanded == item.id {
             VStack(alignment: .leading, spacing: Space.s) {
-                // docs/08 "폴링 · 상태": a transcription in flight has no "when", only how long it
+                // docs/08 "Polling · status": a transcription in flight has no "when", only how long it
                 // has been waiting — the badge's RETRY would otherwise read as "stuck".
                 if item.waitingMinutes != nil {
                     Text(verbatim: item.stateLabel)
@@ -314,7 +314,7 @@ struct MenuPopover: View {
                         .foregroundStyle(blueprint.palette.textMuted)
                 }
                 // docs/07 §5: what the core last said about this job, with its diagnostic under it
-                // — the sentence translated, the diagnostic never. For a docs/08 "오류" the
+                // — the sentence translated, the diagnostic never. For a docs/08 "Errors" the
                 // sentence is what to do next and the diagnostic is the provider's own words.
                 // Red for a failure, the badge's warning tone for a job that is only waiting.
                 if item.alert != .needsAuth {
@@ -338,7 +338,7 @@ struct MenuPopover: View {
     private func actions(_ item: RecentItem) -> some View {
         HStack(alignment: .top, spacing: Space.s) {
             FlowLayout {
-                // docs/05 "고정 처리 설정 도입": the model this recording waits for, in its own
+                // docs/05 "Fixed processing settings": the model this recording waits for, in its own
                 // language, first — and nothing while the download runs (the banner has it).
                 if item.waitingForModel, let download = model.modelDownload {
                     ModelDownloadButton(download: download, language: item.localLanguage)
@@ -347,7 +347,7 @@ struct MenuPopover: View {
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
-                // docs/03 "저장 위치": an iCloud recording has no web page; its folder is in Finder.
+                // docs/03 "Storage location": an iCloud recording has no web page; its folder is in Finder.
                 if item.cloudFolder != nil {
                     BlueprintButton(loc("Show in Finder")) { model.showInFinder(item) }
                         .accessibilityIdentifier("show-in-finder")
@@ -366,7 +366,7 @@ struct MenuPopover: View {
                     }
                     .accessibilityIdentifier("check-key")
                 }
-                // docs/08 "결과 파일": the transcript, in the window that fits it.
+                // docs/08 "Result files": the transcript, in the window that fits it.
                 BlueprintButton(RecordingDetailStrings.open) {
                     model.showDetail(item)
                     NSApp.activate(ignoringOtherApps: true)
@@ -394,7 +394,7 @@ struct MenuPopover: View {
     }
 }
 
-/// docs/09 화면 원칙 4: the settings the menu used to carry, as a section table — account, language,
+/// docs/09 screen principle 4: the settings the menu used to carry, as a section table — account, language,
 /// theme, capture, recording processing, and the honest system block at the bottom.
 struct SettingsPane: View {
     @ObservedObject var model: MenuModel
@@ -418,7 +418,7 @@ struct SettingsPane: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // docs/03 "저장 위치": the storage choice on top of the Drive rows, where this build can
+            // docs/03 "Storage location": the storage choice on top of the Drive rows, where this build can
             // offer iCloud; the Drive block as it always was where it cannot.
             if let storage = model.storage {
                 StorageSection(
@@ -433,12 +433,12 @@ struct SettingsPane: View {
             // once (RecKit).
             LanguageSection(language: language)
 
-            // docs/09 "접근성": the one override of the system's light/dark, and the same block the
+            // docs/09 "Accessibility": the one override of the system's light/dark, and the same block the
             // phone's settings tab draws (RecKit).
             ThemeSection(theme: theme)
 
             section(loc("Capture"))
-            // docs/12 "실행기": `SMAppService`, written from the system's own answer.
+            // docs/12 "Runner": `SMAppService`, written from the system's own answer.
             SwitchRow(
                 title: loc("Launch at login"),
                 isOn: Binding(get: { model.launchAtLogin }, set: model.setLaunchAtLogin)
@@ -453,7 +453,7 @@ struct SettingsPane: View {
                 ProcessingSettingsView(model: processing)
             }
 
-            // docs/09 트렌드 6: no mascot and no "handmade" line — what this build actually is.
+            // docs/09 trend 6: no mascot and no "handmade" line — what this build actually is.
             section(loc("About"))
             VStack(alignment: .leading, spacing: 4) {
                 mono("recly \(CoreBridge.appVersion) (build \(CoreBridge.appBuild)) · macos \(CoreBridge.systemVersion)")
@@ -467,7 +467,7 @@ struct SettingsPane: View {
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
         }
-        // docs/03 "로그아웃 vs 연결 해제": the popover draws the warning over itself (above); the
+        // docs/03 "Sign out vs Disconnect": the popover draws the warning over itself (above); the
         // Settings window has a window to present from, so a disconnect asked there is its sheet.
         .blueprintDialog(
             item: Binding(

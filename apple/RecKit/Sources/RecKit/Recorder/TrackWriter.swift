@@ -8,7 +8,7 @@ import ReclyCore
 /// A mono recording has one of these and a meeting recording has three (`mic`, `sys`, `mix`), and
 /// the three are deliberately dumb about each other: the boundary lives in the recorder's single
 /// `SegmentSplitter`, which is what makes the part numbers, the offsets and the durations identical
-/// across the tracks (docs/03 "같은 시간 구간이면 같은 번호"). A writer that decided for itself when
+/// across the tracks (docs/03 "the same time span gets the same number"). A writer that decided for itself when
 /// its segment was full would drift out of step with its siblings within the hour.
 ///
 /// Everything here runs under the recorder's lock, on whatever thread delivered the audio.

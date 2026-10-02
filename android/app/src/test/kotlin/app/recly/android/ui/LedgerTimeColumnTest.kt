@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/09 화면 원칙 2: the ledger's time column is `MM-dd` over `HH:mm` in every language. A
+ * docs/09 screen principle 2: the ledger's time column is `MM-dd` over `HH:mm` in every language. A
  * twelve-hour clock without the day period would write a recording started at 15:05 as `03:05` —
  * the same text as one started at 03:05.
  */

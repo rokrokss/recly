@@ -11,7 +11,7 @@ import androidx.wear.compose.material3.ColorScheme
 import androidx.wear.compose.material3.MaterialTheme
 
 /**
- * docs/09 토큰, on the watch. A watch screen is always the dark palette — a Galaxy Watch is an OLED
+ * docs/09 Tokens, on the watch. A watch screen is always the dark palette — a Galaxy Watch is an OLED
  * that is off most of the time, and a paper background would be a battery bill — so these are the
  * phone's dark values, kept here rather than shared because the watch app does not depend on the
  * phone app (docs/11 W1: only the recorder and the data layer are shared).
@@ -29,12 +29,12 @@ object WearBlueprint {
     val success: Color = Color(0xFF42BE65)
     val warning: Color = Color(0xFFF1C21B)
 
-    /** docs/09 "선": one hairline, and the square node's thick edge. */
+    /** docs/09 "Lines": one hairline, and the square node's thick edge. */
     val line: Dp = 1.dp
     val nodeEdge: Dp = 3.dp
     val radius: Dp = 4.dp
 
-    /** docs/09 "타이포": the watch is small enough that the scale stops at 34. */
+    /** docs/09 "Typography": the watch is small enough that the scale stops at 34. */
     val timer: TextStyle = mono(34f)
     val label: TextStyle = mono(13f)
     val small: TextStyle = mono(11f)

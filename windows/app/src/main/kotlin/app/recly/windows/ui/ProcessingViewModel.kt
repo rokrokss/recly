@@ -51,7 +51,7 @@ class ProcessingViewModel(
         val language = draft?.language ?: return@launch
         runCatching { local = core.localEngineInfo(language.name.lowercase().replace('_', '-')) }.onFailure(::failed)
     }
-    /** docs/05 "고정 처리 설정 도입": the model download, in the saved settings' language — the one waiting recordings resume in. */
+    /** docs/05 "Fixed processing settings": the model download, in the saved settings' language — the one waiting recordings resume in. */
     fun prepare() = download.start(engineLanguage(summary.language))
     fun save() = scope.launch {
         val current = draft ?: return@launch

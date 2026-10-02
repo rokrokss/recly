@@ -32,7 +32,7 @@ class OpenAiCompatProvider(private val profile: Profile) : SttProvider {
      * Which vendor this instance talks to. `invokeUrl` overrides [base] for a regional host.
      *
      * Only two of the four publish a ceiling a Recly recording can reach: Groq's depends on the
-     * tier, and Together's 80 MB is out of reach at 32 kbps (docs/08 "길이·크기 한도").
+     * tier, and Together's 80 MB is out of reach at 32 kbps (docs/08 "Length · size limits").
      */
     enum class Profile(val provider: String, val base: String, val limits: SttLimits = SttLimits()) {
         OPENAI(OPENAI_NAME, "https://api.openai.com/v1", SttLimits(maxBytes = 26_214_400)),

@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertTrue
 
 /**
- * docs/09 "접근성": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair the app actually
+ * docs/09 "Accessibility": WCAG AA — 4.5:1 for text, 3:1 for a graphic — for every pair the app actually
  * draws, in both palettes (light and dark).
  *
  * What is *not* in here is the grid colour against its background. A hairline divider carries no

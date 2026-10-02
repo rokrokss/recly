@@ -2,7 +2,7 @@ import ReclyCore
 import RecKit
 import SwiftUI
 
-/// docs/09 화면 원칙 1: the recording screen is a dashboard — three state nodes at the top, a
+/// docs/09 screen principle 1: the recording screen is a dashboard — three state nodes at the top, a
 /// monospace timer under them, and one square node that starts and stops the recording
 /// (docs/13 I2).
 ///
@@ -18,7 +18,7 @@ struct RecordingView: View {
     /// status line, a RecKit label — and `Text(verbatim:)` carries no dependency on the language.
     /// Reading the locale is what declares one, so a change redraws this body with the new words.
     @Environment(\.locale) private var locale
-    /// docs/09 "접근성": at the accessibility sizes the dashboard is taller than the phone, and the
+    /// docs/09 "Accessibility": at the accessibility sizes the dashboard is taller than the phone, and the
     /// record node is the part that falls off the bottom of it.
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     /// What the record node draws, which outlives the recorder's own state by [holdBusy]'s window.
@@ -34,7 +34,7 @@ struct RecordingView: View {
                 // phones apart. The whole id is in Settings → About, where it is the point.
                 meta: "\(Source.phone.name.lowercased()) · \(model.deviceId.prefix(8))"
             )
-            // docs/05 "고정 처리 설정 도입": the first-run card, at the top of the Record tab, for a
+            // docs/05 "Fixed processing settings": the first-run card, at the top of the Record tab, for a
             // phone set to transcribe on device that has no speech model yet.
             if let download = model.modelDownload {
                 ModelPromptCard(
@@ -92,7 +92,7 @@ struct RecordingView: View {
             VStack(spacing: 12) {
                 MonoTimer(model.isRecording ? model.elapsed : LedgerFormat.clock(0))
                     .accessibilityIdentifier("elapsed")
-                // docs/09 화면 원칙 6: the same strip the menu bar draws, under the timer — what is
+                // docs/09 screen principle 6: the same strip the menu bar draws, under the timer — what is
                 // being written, while it is being written. Nothing stands in for it when idle:
                 // a placeholder waveform is a picture of audio that does not exist.
                 if model.isRecording {
@@ -172,9 +172,9 @@ struct RecordingView: View {
 
     /// What the app is doing while the recorder is idle, or nil while it is doing nothing.
     ///
-    /// A job of this phone's own comes first: docs/09 화면 원칙 1 wants the node to say what the app
+    /// A job of this phone's own comes first: docs/09 screen principle 1 wants the node to say what the app
     /// is *doing*, and an upload it is running is more that than a transfer it is being handed.
-    /// docs/03 "워치 → 폰 전송 계약": the transfer is worth saying at all because the ledger row is
+    /// docs/03 "Watch → phone transfer contract": the transfer is worth saying at all because the ledger row is
     /// otherwise the only sign of it.
     private var busyCode: String? {
         if Recents.uploading(model.recents) { return "UPLOADING" }
@@ -194,7 +194,7 @@ struct RecordingView: View {
 
     // MARK: - The record node
 
-    /// docs/09 "형태": the round record button is replaced by a square node with a thick border —
+    /// docs/09 "Shape": the round record button is replaced by a square node with a thick border —
     /// 72pt, outlined while idle and filled while recording, with the stop square in the page
     /// colour.
     private var recordNode: some View {
@@ -233,7 +233,7 @@ struct RecordingView: View {
     /// Whether the recorder itself is between two states.
     private var working: Bool { model.state == .starting || model.state == .stopping }
 
-    /// docs/09 트렌드 2 · "모션": start and stop are two of the rare high-risk actions, so what the
+    /// docs/09 trend 2 · "Motion": start and stop are two of the rare high-risk actions, so what the
     /// node shows while the recorder is working stays up for [Processing.hold] after the recorder
     /// has already moved on — the same window `ProcessingButton` holds for a button, and the one
     /// Android holds here (`RecordingScreen.rememberBusyHold`). A start the recorder answered in
@@ -360,7 +360,7 @@ private struct NamingSheet: View {
                         .font(blueprint.fonts.label)
                         .tracking(0.6)
                         .foregroundStyle(blueprint.palette.textMuted)
-                    // docs/09 유동 타이포: six chips across a phone is a row at the design's own type
+                    // docs/09 Fluid typography: six chips across a phone is a row at the design's own type
                     // size and several rows at the user's.
                     FlowLayout {
                         ForEach(choices, id: \.self) { choice in

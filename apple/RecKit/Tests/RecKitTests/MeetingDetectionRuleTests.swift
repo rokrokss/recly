@@ -68,7 +68,7 @@ final class MeetingDetectionRuleTests: XCTestCase {
 
     // MARK: - The offer to end it
 
-    /// docs/12 "종료 감지": the microphone unused for 60 seconds straight — and only then. A meeting
+    /// docs/12 "End detection": the microphone unused for 60 seconds straight — and only then. A meeting
     /// that goes quiet for fifty seconds is a meeting.
     func testAnIdleMicrophoneOffersToEndTheRecordingOnlyAfterSixtySeconds() {
         var rule = MeetingDetectionRule()

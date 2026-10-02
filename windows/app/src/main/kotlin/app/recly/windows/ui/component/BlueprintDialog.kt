@@ -52,13 +52,13 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 
 /**
- * docs/09 화면 원칙 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of this shell is drawn: a
+ * docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of this shell is drawn: a
  * square-cornered node on the grid, not Material's tonal card. `AlertDialog` is a container with its
  * own shape, its own elevation tint and its own 28dp corners, and none of those are in docs/09 — so
  * this is a `DialogWindow` carrying the same surface, hairline border and 4dp radius as [StateNode].
  *
  * The window is `undecorated` and `transparent`: a title bar would be a second title above the one
- * in the card, and a translucent window is one AWT draws no shadow behind (docs/09 트렌드 7 keeps
+ * in the card, and a translucent window is one AWT draws no shadow behind (docs/09 trend 7 keeps
  * elevation out of this design). Escape closes it, as the tray popup's does.
  *
  * [content] scrolls on its own so a long body (the disconnect warnings) never pushes [actions] off
@@ -267,7 +267,7 @@ fun BlueprintDialogText(text: String, modifier: Modifier = Modifier, tone: Dialo
 /**
  * One of several answers, as one accessibility node: the row is `selectable`, so what a screen
  * reader focuses is "<label>, radio button, selected" and not an unnamed mark beside a label
- * (docs/09 "접근성"). The row is [MinTouch] tall whatever the label does.
+ * (docs/09 "Accessibility"). The row is [MinTouch] tall whatever the label does.
  */
 @Composable
 fun BlueprintRadioRow(
@@ -311,7 +311,7 @@ private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () ->
 }
 
 /**
- * docs/09 "형태": no circles and no pills, so both marks are squares on the badge radius. A radio
+ * docs/09 "Shape": no circles and no pills, so both marks are squares on the badge radius. A radio
  * holds a smaller square inside its outline; a checkbox fills, because "on" is a state and "this one
  * of the two" is a position.
  *
@@ -342,7 +342,7 @@ fun selectionInk(palette: BlueprintColors, selected: Boolean): Color =
 
 /**
  * A link inside a dialog — the Google account permissions page. Accent and underlined, because a
- * link that is only a colour is invisible to a colour-blind reader (docs/09 "모든 상태는 색 + 텍스트"),
+ * link that is only a colour is invisible to a colour-blind reader (docs/09 "Every state is color + text"),
  * and [MinTouch] tall because it is something you click.
  */
 @Composable

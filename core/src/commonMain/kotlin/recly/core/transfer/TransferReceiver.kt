@@ -51,7 +51,7 @@ sealed interface AcceptMetaResult {
 }
 
 /**
- * The phone half of docs/03 "워치 → 폰 전송 계약". Parts arrive one at a time and `meta.json` last,
+ * The phone half of docs/03 "Watch → phone transfer contract". Parts arrive one at a time and `meta.json` last,
  * so the receiver has to hold an unfinished recording open, verify each part against the sha256
  * the watch computed, and only declare the recording finalized once the meta agrees with what is
  * on disk.
@@ -217,7 +217,7 @@ class TransferReceiver(
      * belong and the purge has something to find.
      *
      * [startedAt] is the one field the list reads before then, and it is the watch's, not this
-     * moment's: the id the watch made carries the millisecond it started (docs/01 "식별자·시간"), so
+     * moment's: the id the watch made carries the millisecond it started (docs/01 "Identifiers · time"), so
      * a 20-minute recording handed over at its end sits where it belongs among the rows instead of
      * at the top. [now] is only the fallback for an id that is not a ULID.
      */

@@ -163,7 +163,7 @@ transcription adapters and the job queue.
 Recly has no server. The only places data can go are your Google Drive (or your iCloud, if you
 choose it on iPhone or Mac), the transcription provider you chose, and your own paired watch or phone. The
 [privacy policy](https://recly.dev/policy/privacy-policy) lists every one of those paths, and
-[docs/recly.md §15](docs/recly.md#15-프라이버시데이터-흐름-구-docs15) is the engineering contract
+[docs/recly.md §15](docs/recly.md#15-privacy--data-flows-formerly-docs15) is the engineering contract
 behind it: any change that adds a network call must update that section first.
 
 ## Contributing, security, license
@@ -193,7 +193,7 @@ docs/        recly.md (the design source of truth) + install.md + development.md
 | Document | Contents |
 |---|---|
 | [docs/development.md](docs/development.md) | Build and test every client, values filled in locally (OAuth client IDs), cutting a release |
-| [docs/recly.md](docs/recly.md) | **The design source of truth** (Korean). Architecture, the internal step model, recording and retention, processing settings and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
+| [docs/recly.md](docs/recly.md) | **The design source of truth**. Architecture, the internal step model, recording and retention, processing settings and secrets, auth, transcription, per-platform notes, privacy, open decisions. Its section numbers are a contract: code comments cite them as `docs/NN "…"` |
 | [spec/](spec/) | Machine-readable contract: `recording-settings.schema.json`, `recording.meta.schema.json`, `transcript.schema.json`, `examples/` |
 | [skills/README.md](skills/README.md) | The `recly` plugin: what the two example skills do, how to set them up in Claude Code, the Claude app and ChatGPT, and how to write your own |
 | [AGENTS.md](AGENTS.md) | Orientation for coding agents working in this repository |

@@ -76,7 +76,7 @@
     <string name="job_state_recording">Recording</string>
     <string name="job_state_pending">Waiting</string>
     <string name="job_state_running">Uploading</string>
-    <!-- docs/03 "다른 기기의 녹음": the three things happening somewhere else. -->
+    <!-- docs/03 "Recordings from other devices": the three things happening somewhere else. -->
     <string name="job_state_receiving">Receiving from the watch</string>
     <string name="job_state_remote_uploading">Uploading on another device</string>
     <string name="job_state_remote_transcribing">Transcribing on another device</string>
@@ -96,13 +96,13 @@
 
     <!-- docs/08: the transcribe inspector. -->
     <string name="editor_provider">Provider</string>
-    <!-- docs/08 "폴링 · 상태": only the phones say this — a desktop is not the one whose background
+    <!-- docs/08 "Polling · status": only the phones say this — a desktop is not the one whose background
          budget cuts a long request off. -->
     <string name="editor_api_key">API key</string>
     <string name="editor_invoke_url">Invoke URL</string>
     <string name="editor_language">Spoken language</string>
 
-    <!-- Secrets (docs/05 "시크릿"). -->
+    <!-- Secrets (docs/05 "Secrets"). -->
     <string name="secret_name_invalid">Starts with a lowercase letter; lowercase, digits and underscores, up to 32</string>
     <string name="secret_value_required">Enter a value</string>
 
@@ -116,7 +116,7 @@
     <string name="settings_language_ko">한국어</string>
     <string name="settings_language_en">English</string>
 
-    <!-- docs/09 "접근성": the system's dark mode, or this device's own override of it. -->
+    <!-- docs/09 "Accessibility": the system's dark mode, or this device's own override of it. -->
     <string name="settings_theme">Theme</string>
     <string name="theme_system">System default</string>
     <string name="theme_light">Light</string>
@@ -138,7 +138,7 @@
     <string name="core_step_missing">This job\'s workflow has no step ‘%1$s’</string>
     <string name="core_unsupported_step">This job needs a newer version of the app: it uses a ‘%1$s’ step</string>
     <string name="core_step_failed">Failed: %1$s</string>
-    <!-- docs/08 "오류": the transcribe table, in the words of someone who has to decide what to do
+    <!-- docs/08 "Errors": the transcribe table, in the words of someone who has to decide what to do
          next. The provider\'s own line rides along as the code\'s detail. -->
     <string name="core_auth_rejected">The provider rejected the key.</string>
     <string name="core_quota">The provider is out of quota or is rate-limiting.</string>
@@ -158,11 +158,11 @@
     <string name="shortcut_start_short">Start recording</string>
     <string name="shortcut_start_long">Start a Recly recording</string>
 
-    <!-- docs/09 화면 원칙 1: the recording dashboard's three state nodes. -->
+    <!-- docs/09 screen principle 1: the recording dashboard's three state nodes. -->
     <string name="node_device">Device</string>
     <string name="node_state">State</string>
 
-    <!-- docs/09 화면 원칙 2: the ledger's columns and what an expanded row offers. -->
+    <!-- docs/09 screen principle 2: the ledger's columns and what an expanded row offers. -->
     <string name="jobs_column_time">Time</string>
     <string name="jobs_column_title">Title</string>
     <string name="jobs_column_length">Length</string>
@@ -174,7 +174,7 @@
 
     <!-- docs/08: the recording detail screen, and what a job that is transcribing says. -->
     <string name="detail_open">Details</string>
-    <!-- docs/03 "제목": the detail screen names the recording it is about, and renames it. -->
+    <!-- docs/03 "Titles": the detail screen names the recording it is about, and renames it. -->
     <string name="detail_rename">Rename</string>
     <string name="detail_loading">Loading…</string>
     <string name="detail_empty">Nothing here yet — the transcribe step has not finished.</string>
@@ -191,7 +191,7 @@
     <string name="job_waiting_transcription">Waiting for the transcription result — %1$d min elapsed</string>
     <string name="job_reason_check_key">Check the key</string>
 
-    <!-- docs/09 화면 원칙 4: the capture block and the honest footer. -->
+    <!-- docs/09 screen principle 4: the capture block and the honest footer. -->
     <string name="settings_capture">Capture</string>
     <string name="settings_microphone">Microphone</string>
     <!-- docs/15: Recly's own policy page, opened in the browser from Settings as on the iPhone. -->
@@ -203,19 +203,19 @@
     <string name="settings_open_source">Open-source notices</string>
     <string name="settings_open_source_value">AndroidX · Kotlin · kotlinx · Okio · SQLDelight · Ktor · sherpa-onnx — Apache-2.0 · ONNX Runtime — MIT</string>
 
-    <!-- docs/03 "앱에서 지우기": one recording at a time, and Drive is a separate answer whose
+    <!-- docs/03 "Deleting in the app": one recording at a time, and Drive is a separate answer whose
          default is "leave it" — the irreversible half is never the default one. -->
     <string name="delete_title">Delete ‘%1$s’?</string>
     <string name="delete_local_only">Delete on this phone only</string>
     <string name="delete_with_drive">Also delete the Drive folder</string>
-    <!-- docs/03 "다른 기기의 녹음": nothing of it is only here, so there is no half to keep. -->
+    <!-- docs/03 "Recordings from other devices": nothing of it is only here, so there is no half to keep. -->
     <string name="delete_remote_body">Recorded on another device. Deleting removes it from Drive and from every device.</string>
     <string name="delete_busy">Still uploading — try again once it has finished</string>
     <string name="delete_drive_failed">Deleted here, but Drive refused: %1$s</string>
     <!-- That some of the audio is only here, not how many parts: a count of files is not the user's. -->
     <string name="delete_unuploaded">Audio not yet in Drive is deleted with it.</string>
 
-    <!-- docs/03 "로그아웃 vs 연결 해제" · docs/06: signing out is this device, disconnecting is the grant. -->
+    <!-- docs/03 "Sign out vs Disconnect" · docs/06: signing out is this device, disconnecting is the grant. -->
     <string name="settings_disconnect">Disconnect</string>
     <string name="settings_disconnect_hint">Take this app’s access to your Google account away.</string>
     <string name="disconnect_title">Disconnect Google Drive?</string>
@@ -246,7 +246,7 @@
          so a store that would not take one is a disconnect that must not start. -->
     <string name="disconnect_save_failed">Could not save the disconnect state — try again</string>
 
-    <!-- docs/10 "Drive 용량 초과" and "사용자가 고칠 수 있는 실패와 그 알림": the seven reasons a
+    <!-- docs/10 "Drive out of space" and "Failures the user can fix, and their notices": the seven reasons a
          person has to do something about, folded one notification and one banner line per reason. -->
     <string name="job_state_needs_space">No space in Drive</string>
     <string name="jobs_open_storage">Open Drive storage</string>

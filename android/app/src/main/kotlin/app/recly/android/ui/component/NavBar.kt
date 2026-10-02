@@ -29,7 +29,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
-/** docs/09 "아이콘": thin geometric line work, drawn rather than drawn from a font. */
+/** docs/09 "icon": thin geometric line work, drawn rather than drawn from a font. */
 enum class NavGlyph { RECORD, LIST, SETTINGS }
 
 data class NavItem(val glyph: NavGlyph, val label: String, val selected: Boolean, val onClick: () -> Unit)

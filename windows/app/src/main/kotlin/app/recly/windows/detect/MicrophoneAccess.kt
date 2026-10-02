@@ -16,7 +16,7 @@ enum class MicAccess {
 }
 
 /**
- * docs/14 "권한": there is no microphone prompt on Windows. Settings → Privacy → Microphone →
+ * docs/14 "Permissions": there is no microphone prompt on Windows. Settings → Privacy → Microphone →
  * "Let desktop apps access your microphone" is a switch the user may have turned off years ago, and
  * with it off the capture helper opens a stream that returns silence forever. The only honest thing
  * an app can do is read the switch and say so.

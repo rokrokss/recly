@@ -5,7 +5,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * docs/09 "토큰": a neutral palette with one accent, and nothing else. Every colour this shell draws
+ * docs/09 "Tokens": a neutral palette with one accent, and nothing else. Every colour this shell draws
  * comes from here — Material's own scheme is derived from it in [ReclyDesktopTheme] so the M3
  * components that stay (text fields, chips, dropdowns) land in the same palette as the ones that do
  * not.
@@ -35,7 +35,7 @@ data class BlueprintColors(
     /** Input boundaries stay visible independently of the decorative grid. */
     val inputBorder: Color get() = textMuted
 
-    /** docs/09 "선": 1dp, and 2dp in high contrast. Connectors, dividers, node borders. */
+    /** docs/09 "Lines": 1dp, and 2dp in high contrast. Connectors, dividers, node borders. */
     val line: Dp get() = if (highContrast) 2.dp else 1.dp
 
     /**
@@ -46,7 +46,7 @@ data class BlueprintColors(
     val selectedLine: Dp get() = line + 1.dp
 }
 
-/** docs/09 팔레트 — Light. */
+/** docs/09 Palette — Light. */
 val BlueprintLight: BlueprintColors = BlueprintColors(
     background = Color(0xFFF7F7F5),
     surface = Color(0xFFFFFFFF),
@@ -64,7 +64,7 @@ val BlueprintLight: BlueprintColors = BlueprintColors(
     highContrast = false,
 )
 
-/** docs/09 팔레트 — Dark. */
+/** docs/09 Palette — Dark. */
 val BlueprintDark: BlueprintColors = BlueprintColors(
     background = Color(0xFF0E0F12),
     surface = Color(0xFF16181D),
@@ -84,7 +84,7 @@ val BlueprintDark: BlueprintColors = BlueprintColors(
 )
 
 /**
- * docs/09 "고대비 모드": the grid lines and the secondary text are promoted to the body colour, the
+ * docs/09 "High-contrast mode": the grid lines and the secondary text are promoted to the body colour, the
  * accent keeps its saturation, and borders become 2dp (see [BlueprintColors.line]). The dot grid is
  * switched off by the same flag (see [dotGrid]).
  */

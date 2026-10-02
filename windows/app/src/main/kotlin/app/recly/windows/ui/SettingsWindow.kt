@@ -46,8 +46,8 @@ import app.recly.windows.ui.theme.mono
 import kotlin.time.ExperimentalTime
 
 /**
- * docs/09 화면 원칙 4, over docs/14 "앱": a section table — the account (docs/06), the language
- * (docs/07), the theme override (docs/09 "접근성": motion and contrast are the system's alone, and
+ * docs/09 screen principle 4, over docs/14 "App": a section table — the account (docs/06), the language
+ * (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are the system's alone, and
  * there is no accessibility section), capture and its self-test, startup, and the honest block of
  * what this build actually is.
  */
@@ -137,7 +137,7 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/14 "감지" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. And
+ * docs/14 "Detection" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. And
  * the two facts a support question always starts with: whether there is a capture helper, and what
  * it says about the machine it is on.
  */
@@ -151,7 +151,7 @@ private fun Capture(model: ShellModel, strings: Strings) {
         checked = model.consentReminder,
         onCheckedChange = model::toggleConsentReminder,
     )
-    // docs/14 "권한": there is no prompt, so silence is all that is recorded while this is off — and
+    // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while this is off — and
     // a row that only says where the switch is leaves the user to find it. Its own row rather than a
     // line under the reminder, because it has something to be done about it: the page itself, which
     // is how the Mac answers the same refusal.
@@ -204,7 +204,7 @@ private fun Data(model: ShellModel, strings: Strings) {
     HairLine()
 }
 
-/** docs/09 트렌드 6: no mascot and no "handmade" line — what this build actually is, in monospace. */
+/** docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace. */
 @Composable
 private fun About(model: ShellModel, strings: Strings) {
     val palette = blueprint

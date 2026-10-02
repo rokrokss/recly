@@ -24,7 +24,7 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 
 /**
- * docs/09 화면 원칙 2: a recording's waveform, decoded once it is whole — a take this phone just
+ * docs/09 screen principle 2: a recording's waveform, decoded once it is whole — a take this phone just
  * finalized, or one the watch just finished handing over — and kept beside its parts
  * (`core.recordings.saveWaveform`), so that even its first open draws at once. What another device
  * recorded gets its own the first time its audio comes back and is opened.

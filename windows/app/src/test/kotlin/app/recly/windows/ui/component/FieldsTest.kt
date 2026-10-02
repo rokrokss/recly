@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 /**
- * docs/09 "접근성": a [BlueprintTextField] names itself.
+ * docs/09 "Accessibility": a [BlueprintTextField] names itself.
  *
  * The label is a `Text` node above the box rather than something inside the field (which is what
  * made it stop animating, see the component's own note), and Compose Desktop has no `labelledBy` to

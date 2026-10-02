@@ -1,7 +1,7 @@
 package app.recly.android.settings
 
 /**
- * docs/09 "접근성": light, dark, or whatever the OS says. Compose reads the system setting
+ * docs/09 "Accessibility": light, dark, or whatever the OS says. Compose reads the system setting
  * (`isSystemInDarkTheme`), and this is the override over it — a per-device choice like the language
  * (docs/07 rule 2) and stored beside it. The PC's `AppTheme` is the same three answers.
  *

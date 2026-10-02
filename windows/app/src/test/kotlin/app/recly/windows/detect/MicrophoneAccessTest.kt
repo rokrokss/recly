@@ -4,7 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/14 "권한" · deliverable 1: letting a desktop app have the microphone. The registry read
+ * docs/14 "Permissions" · deliverable 1: letting a desktop app have the microphone. The registry read
  * itself is JNA on a machine this lane cannot run on (M6-L3 "환경 제약"); what a test can hold still
  * is what the two values mean, and that is where a wrong answer costs the user an hour of silence.
  *

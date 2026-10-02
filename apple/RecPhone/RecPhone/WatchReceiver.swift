@@ -26,14 +26,14 @@ protocol WatchAckSender: AnyObject {
     func send(_ ack: TransferAck)
 }
 
-/// docs/13 I6 · docs/03 "워치 → 폰 전송 계약", the receiving half. Parts arrive one at a time and
+/// docs/13 I6 · docs/03 "Watch → phone transfer contract", the receiving half. Parts arrive one at a time and
 /// `meta.json` last; the meta ends the transfer and starts the work, and `ack-meta ok:true` is the
 /// watch's licence to delete its only copy of the audio.
 ///
 /// Three rules, and this class exists to keep all three testable off a pair of devices.
 ///
 /// 1. **The file is moved inside the callback.** `WCSession` deletes what it handed over the moment
-///    `session(_:didReceive:)` returns (docs/13 "주의"), so [received] is synchronous down to the
+///    `session(_:didReceive:)` returns (docs/13 "Caveats"), so [received] is synchronous down to the
 ///    move and everything after it is `async`.
 /// 2. **The meta must say it is the recording the metadata said it was.** The body's `recordingId`
 ///    is what the core files everything under, so a body that disagrees would write into a recording
@@ -99,7 +99,7 @@ final class WatchReceiver: NSObject, WCSessionDelegate {
     }
 
     /// The move, and nothing else that could throw before it. The staged name is the watch's own
-    /// (docs/03 "이름 규칙"): `acceptPart` files the part under it, and it is the name the meta will
+    /// (docs/03 "Naming rules"): `acceptPart` files the part under it, and it is the name the meta will
     /// ask for.
     ///
     /// **A directory per delivery**, named by nothing but itself. Two deliveries of the same part

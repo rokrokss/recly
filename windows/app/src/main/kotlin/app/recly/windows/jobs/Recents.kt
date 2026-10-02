@@ -23,7 +23,7 @@ import recly.core.recording.RecordingRecord
 import recly.core.transcribe.TranscribeRunner
 
 /**
- * One recent recording as the tray lists it (docs/14 "앱": the tray's … recents, the Mac's `RecentItem`).
+ * One recent recording as the tray lists it (docs/14 "App": the tray's … recents, the Mac's `RecentItem`).
  */
 data class RecentItem(
     val id: String,
@@ -34,7 +34,7 @@ data class RecentItem(
     val title: UiMessage,
     val startedAt: String,
     /**
-     * docs/09 화면 원칙 2: the ledger's 길이 column, as `meta.json` records it. Null until the
+     * docs/09 screen principle 2: the ledger's 길이 column, as `meta.json` records it. Null until the
      * recording is finalized — a take still being written to has no length yet, and the column says
      * so rather than showing a number that is about to change.
      */
@@ -70,11 +70,11 @@ data class RecentItem(
     val modelLanguage: String? = null,
 ) {
     /**
-     * docs/09 화면 원칙 2 "삭제(녹음·업로드 중 제외)": a recording being written to or uploaded right
+     * docs/09 screen principle 2 "Delete (except while recording or uploading)": a recording being written to or uploaded right
      * now is not one to delete — the core refuses it anyway, and offering the button would be
      * offering a refusal. The Mac's popover and its window draw the same two exceptions.
      *
-     * docs/03 "다른 기기의 녹음" (2026-09-04): and the two that are in flight *elsewhere*, for the same
+     * docs/03 "Recordings from other devices" (2026-09-04): and the two that are in flight *elsewhere*, for the same
      * reason read from the other side — deleting the folder out from under another device's upload,
      * or the row a watch transfer is still filling, is a refusal waiting to happen.
      */
@@ -91,7 +91,7 @@ data class RecentItem(
  */
 object Recents {
     /**
-     * docs/09 화면 원칙 2: how many rows one reading adds. The ledger is not a top-five any more —
+     * docs/09 screen principle 2: how many rows one reading adds. The ledger is not a top-five any more —
      * it is a page at a time, and scrolling onto the last row reads the next page
      * ([app.recly.windows.ui.ShellModel.loadMoreRecents]), which is what the Mac's popover does too.
      */
@@ -116,7 +116,7 @@ object Recents {
         now: Instant = Instant.DISTANT_PAST,
         localRunning: Boolean = false,
     ): RecentItem {
-        // docs/08 "폴링 · 상태": while a provider is transcribing there is no "when" to give, only
+        // docs/08 "Polling · status": while a provider is transcribing there is no "when" to give, only
         // how long it has been — and "waiting to retry" would be a different thing to say.
         val waiting = StepReport.waitingMinutes(steps, now)
             ?.takeIf { job?.status == JobStatus.WAITING }
@@ -133,7 +133,7 @@ object Recents {
                 else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job),
             link = driveLink(steps) ?: record.driveFolderUrl,
             // A snapshot this build cannot read is the whole reason the job stopped, and the steps
-            // it left behind say nothing about it (docs/10 "잡 스냅샷").
+            // it left behind say nothing about it (docs/10 "job snapshot").
             lastError = job?.snapshotError ?: blockingError(steps),
             waitingMinutes = waiting,
             remote = record.remote,
@@ -165,7 +165,7 @@ object Recents {
         items.any { (it.state as? UiMessage.Res)?.key == Str.STATE_UPLOADING }
 
     fun stateLabel(record: RecordingRecord, job: Job?): UiMessage {
-        // docs/03 "다른 기기의 녹음": what is going on somewhere else is read off the recording row —
+        // docs/03 "Recordings from other devices": what is going on somewhere else is read off the recording row —
         // none of it is a job of this PC's, so none of it can be read off the queue — and it is read
         // *first*: a transfer still coming in and another device's upload both carry
         // `status = recording`, and the local `REC` below would answer for both of them.
@@ -191,7 +191,7 @@ object Recents {
             JobStatus.DONE -> Str.STATE_DONE
             JobStatus.FAILED -> Str.STATE_FAILED
             JobStatus.NEEDS_AUTH -> Str.STATUS_SIGN_IN_NEEDED
-            // docs/10 "Drive 용량 초과": parked rather than failed, and the row says which — a retry
+            // docs/10 "Drive out of space": parked rather than failed, and the row says which — a retry
             // over a full Drive is the same 403 again, and freeing space is the only way past it.
             JobStatus.NEEDS_CONSENT -> Str.STATE_CONSENT_REQUIRED
             JobStatus.NEEDS_SPACE -> Str.STATE_NO_SPACE

@@ -36,7 +36,7 @@ import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import kotlin.time.Clock as TimeClock
 
-/** What a finished recording leaves behind — the shell enqueues it (docs/14 "실행기" (a)). */
+/** What a finished recording leaves behind — the shell enqueues it (docs/14 "Runner" (a)). */
 data class RecordingOutcome(
     val recordingId: String,
     val parts: Int,
@@ -62,7 +62,7 @@ sealed interface StopResult {
  * and the naming; the helper owns the audio.
  *
  * The two ways a recording ends are the same code path: the tray's stop, and the helper dying under
- * it. docs/14 "헬퍼가 죽으면 앱이 마지막 파트까지를 finalize한다" — [Session.recordedSec] is exactly
+ * it. docs/14 "if the helper dies, the app finalizes up to the last part" — [Session.recordedSec] is exactly
  * "the last `part_done` that reached the database", so a helper killed mid-segment costs the segment
  * in flight and nothing else, and a part the database refused holds the finalize back
  * ([StopResult.Deferred]) instead of disappearing from it.
@@ -76,7 +76,7 @@ class WindowsRecorder(
     private val onFinalized: suspend (RecordingOutcome) -> Unit,
     private val onState: (Boolean) -> Unit = {},
     /**
-     * docs/14 "감지". While a recording is running this helper is the only one that may report the
+     * docs/14 "Detection". While a recording is running this helper is the only one that may report the
      * microphone — it is the one process the helper's session enumeration leaves out — so detection
      * is handed over before this one is spawned and handed back when its stdout has ended.
      */
@@ -110,7 +110,7 @@ class WindowsRecorder(
         /** Set by [stop] so the reader's end-of-stream is not mistaken for the helper dying. */
         @Volatile var stopping: Boolean = false
 
-        /** docs/09 화면 원칙 6: the last thirty seconds of levels, for the popup's strip. */
+        /** docs/09 screen principle 6: the last thirty seconds of levels, for the popup's strip. */
         val live = LiveWaveform()
 
         /**
@@ -130,7 +130,7 @@ class WindowsRecorder(
     val isRecording: Boolean get() = session != null
 
     /**
-     * docs/09 화면 원칙 6: the levels of the recording that is running, oldest first — empty when
+     * docs/09 screen principle 6: the levels of the recording that is running, oldest first — empty when
      * there is none. Read on every tick of the strip rather than pushed into the model: three
      * hundred floats ten times a second through a Compose state would redraw the whole popup.
      */
@@ -144,7 +144,7 @@ class WindowsRecorder(
      * helper is asked for and the ones the meta records, and the helper opens the render endpoint
      * only for a track that needs it — so a microphone-only recording never touches the speakers.
      * It is a parameter and not a field because it is fixed at the start and cannot change under a
-     * running recording (docs/14 "캡처", as on the Mac).
+     * running recording (docs/14 "Capture", as on the Mac).
      */
     suspend fun start(
         title: String? = null,
@@ -168,7 +168,7 @@ class WindowsRecorder(
         try {
             client.open(scope)
             client.send(HelperCommand.Start(dir.toString(), base, segmentSec, tracks))
-            // docs/14 "감지": the microphone monitor belongs to whichever helper is running, and
+            // docs/14 "Detection": the microphone monitor belongs to whichever helper is running, and
             // for the length of this recording that is this one.
             client.send(HelperCommand.Detect(on = true))
         } catch (e: Exception) {
@@ -266,7 +266,7 @@ class WindowsRecorder(
                     .onFailure { failure ->
                         // The audio is on disk; a marker beside it carries everything the row would
                         // have said, so the next launch files it instead of quarantining it
-                        // (docs/03 "크래시 시 마지막 경계까지는 복구 가능"). Whether or not that
+                        // (docs/03 "after a crash, everything up to the last boundary is recoverable"). Whether or not that
                         // marker lands, the part is unfiled and the stop may not finalize over it.
                         open.unfiled += part
                         mark(open, part, failure)

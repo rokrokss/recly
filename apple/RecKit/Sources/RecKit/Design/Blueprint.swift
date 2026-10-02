@@ -7,7 +7,7 @@ import SwiftUI
 public struct Blueprint: Equatable, Sendable {
     public let palette: BlueprintPalette
     public let fonts: BlueprintFonts
-    /// True when the system says so (docs/09 "접근성").
+    /// True when the system says so (docs/09 "Accessibility").
     public let reduceMotion: Bool
 
     public init(
@@ -35,7 +35,7 @@ extension EnvironmentValues {
     }
 }
 
-/// docs/09 "접근성": the system's colour scheme, reduce-motion switch, contrast setting and font
+/// docs/09 "Accessibility": the system's colour scheme, reduce-motion switch, contrast setting and font
 /// size are read from the system, and nothing below has to ask again.
 ///
 /// The Dynamic Type ramp is measured once, here: `@ScaledMetric` over a hundred points gives the
@@ -46,7 +46,7 @@ public struct BlueprintRoot: ViewModifier {
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
     /// iOS "Increase Contrast" / macOS "Increase contrast", read for the same reason
     /// [systemReduceMotion] is: a user who has already told the system is answered by the app
-    /// without being asked again (docs/09 "접근성").
+    /// without being asked again (docs/09 "Accessibility").
     @Environment(\.colorSchemeContrast) private var systemContrast
     @ScaledMetric(relativeTo: .body) private var unit: CGFloat = 100
 

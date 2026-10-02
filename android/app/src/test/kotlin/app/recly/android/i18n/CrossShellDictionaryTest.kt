@@ -215,7 +215,7 @@ class CrossShellDictionaryTest {
                 windows = "status.sign.in.needed",
                 reckit = "Sign-in needed",
             ),
-            // docs/03 "다른 기기의 녹음" · docs/09 화면 원칙 2: the three "somewhere else" statuses.
+            // docs/03 "Recordings from other devices" · docs/09 screen principle 2: the three "somewhere else" statuses.
             Line(
                 what = "the RECEIVING status",
                 en = "Receiving from the watch",
@@ -240,7 +240,7 @@ class CrossShellDictionaryTest {
                 windows = "state.remote.transcribing",
                 reckit = "Transcribing on another device",
             ),
-            // docs/09 화면 원칙 2: the words on an expanded ledger row's own buttons.
+            // docs/09 screen principle 2: the words on an expanded ledger row's own buttons.
             Line(
                 what = "Retry",
                 en = "Retry",
@@ -296,7 +296,7 @@ class CrossShellDictionaryTest {
                 mac = "6+",
                 phone = "6+",
             ),
-            // docs/09 화면 원칙 2: the three states the audit found each shell wording its own way.
+            // docs/09 screen principle 2: the three states the audit found each shell wording its own way.
             Line(
                 what = "the RETRY status",
                 en = "Retry pending",
@@ -313,7 +313,7 @@ class CrossShellDictionaryTest {
                 windows = "state.too.short",
                 reckit = "Too short",
             ),
-            // docs/09 화면 원칙 2: a ledger with nothing in it yet. Not a sentence — it is the
+            // docs/09 screen principle 2: a ledger with nothing in it yet. Not a sentence — it is the
             // empty state of a table, and only Android had been ending it with a full stop.
             Line(
                 what = "the empty ledger",
@@ -333,7 +333,7 @@ class CrossShellDictionaryTest {
                 windows = "settings.consent.reminder",
                 mac = "Consent check before recording",
             ),
-            // docs/09 화면 원칙 3: the inspector's own field labels.
+            // docs/09 screen principle 3: the inspector's own field labels.
             Line(
                 what = "the minimum-length field",
                 en = "Minimum length (s)",
@@ -342,7 +342,7 @@ class CrossShellDictionaryTest {
                 windows = "field.min.duration",
                 reckit = "Minimum length (s)",
             ),
-            // docs/08 "결과 파일": the window a desktop opens and the screen a phone pushes. What is
+            // docs/08 "Result files": the window a desktop opens and the screen a phone pushes. What is
             // behind a row is the whole of the recording — its audio as well as its transcript — so
             // the surface is named after the row action that opens it, below. Android has only that
             // action, because the screen it pushes is titled with the recording instead.
@@ -365,7 +365,7 @@ class CrossShellDictionaryTest {
                 windows = "recent.details",
                 reckit = "Details",
             ),
-            // docs/03 "제목": the recording is renamed from the page that is about it, on every
+            // docs/03 "Titles": the recording is renamed from the page that is about it, on every
             // shell that opens one — the title reaches Drive and so every other device reads it,
             // which makes the words the user renames by the same words everywhere.
             Line(
@@ -376,7 +376,7 @@ class CrossShellDictionaryTest {
                 windows = "detail.rename",
                 reckit = "Rename",
             ),
-            // docs/08 "결과 파일" · docs/03 ADR-017: the player bar behind that row. One button, one
+            // docs/08 "Result files" · docs/03 ADR-017: the player bar behind that row. One button, one
             // clock, and the three sentences that stand in for them — the parts are the same parts
             // wherever the recording is opened, so what the bar says about them is the same too.
             Line(
@@ -449,7 +449,7 @@ class CrossShellDictionaryTest {
                 windows = "field.language",
                 reckit = "Spoken language",
             ),
-            // docs/05 "모델 대기와 다운로드": the on-device model's wait and its one-time prompt, said the
+            // docs/05 "Waiting for and downloading the model": the on-device model's wait and its one-time prompt, said the
             // same way wherever a recording can wait for it.
             Line(
                 what = "a recording waiting for the on-device model",
@@ -531,7 +531,7 @@ class CrossShellDictionaryTest {
                 windows = "language.en",
                 reckit = "language.en",
             ),
-            // docs/09 화면 원칙 4: the screen the settings are on is called the same thing on the
+            // docs/09 screen principle 4: the screen the settings are on is called the same thing on the
             // shell that gives it a tab and the ones that give it a window.
             Line(
                 what = "the settings surface",
@@ -553,7 +553,7 @@ class CrossShellDictionaryTest {
                 mac = "Launch at login",
                 pending = setOf("windows"),
             ),
-            // docs/09 화면 원칙 4 · docs/03: the account section, and the two things it says when
+            // docs/09 screen principle 4 · docs/03: the account section, and the two things it says when
             // there is nobody signed in. Which account it is about is the whole of the section, so
             // the heading names Google rather than leaving "Account" to mean anything at all.
             Line(
@@ -582,7 +582,7 @@ class CrossShellDictionaryTest {
                 mac = "The sign-in failed",
                 phone = "The sign-in failed",
             ),
-            // docs/15 "사용자가 여는 정책 페이지": the settings section that opens Recly's own policy.
+            // docs/15 "Policy pages the user opens": the settings section that opens Recly's own policy.
             Line(
                 what = "the privacy section",
                 en = "Privacy",
@@ -612,7 +612,7 @@ class CrossShellDictionaryTest {
                 mac = "Sign in with Google",
                 phone = "Sign in with Google",
             ),
-            // docs/09 화면 원칙 4: the about block's own line, which is a legal notice and so is the
+            // docs/09 screen principle 4: the about block's own line, which is a legal notice and so is the
             // same notice everywhere.
             Line(
                 what = "the open-source notices label",
@@ -623,7 +623,7 @@ class CrossShellDictionaryTest {
                 mac = "Open-source notices",
                 phone = "Open-source notices",
             ),
-            // docs/03 "다른 기기의 녹음": deleting one of those rows is deleting the Drive folder —
+            // docs/03 "Recordings from other devices": deleting one of those rows is deleting the Drive folder —
             // there is no local half to keep, and the deletion reaches every device that pulled it.
             // The shell that shows the softer wording would be the one that loses a recording.
             Line(
@@ -634,7 +634,7 @@ class CrossShellDictionaryTest {
                 windows = "delete.remote.body",
                 reckit = "Recorded on another device. Deleting removes it from Drive and from every device.",
             ),
-            // docs/03 "앱에서 지우기": Drive refused the folder and the local deletion is not undone
+            // docs/03 "Deleting in the app": Drive refused the folder and the local deletion is not undone
             // by it. RecKit's sentence says "this device" because it is shared by the Mac and the
             // phone (docs/07 rule 10); the PC's says PC, and is left out of this line for it.
             Line(
@@ -694,7 +694,7 @@ class CrossShellDictionaryTest {
                 android = "jobs_title",
                 phone = "Recordings",
             ),
-            // docs/09 "접근성": what a screen reader is told a ledger row is. Everything the row
+            // docs/09 "Accessibility": what a screen reader is told a ledger row is. Everything the row
             // draws, as one sentence — and the date and the length inside it are locale-formatted,
             // which is exactly what the row's own fixed-width columns are not.
             Line(
@@ -704,7 +704,7 @@ class CrossShellDictionaryTest {
                 android = "jobs_row_description",
                 reckit = "%1\$@, recorded %2\$@, length %3\$@, %4\$@",
             ),
-            // docs/09 "접근성": the system decides dark mode, and this is the user's override of it —
+            // docs/09 "Accessibility": the system decides dark mode, and this is the user's override of it —
             // a per-device choice like the language, said the same way on the shells that offer one.
             Line(
                 what = "the theme section",
@@ -734,7 +734,7 @@ class CrossShellDictionaryTest {
                 android = "theme_dark",
                 windows = "theme.dark",
             ),
-            // docs/03 "로그아웃 vs 연결 해제": what disconnecting is, under the row that does it.
+            // docs/03 "Sign out vs Disconnect": what disconnecting is, under the row that does it.
             // The apostrophe is the typographic one every shell but Windows already writes.
             Line(
                 what = "the disconnect hint",

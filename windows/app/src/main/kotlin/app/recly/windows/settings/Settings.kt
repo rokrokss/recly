@@ -7,7 +7,7 @@ import java.util.prefs.Preferences
 import recly.core.model.Track
 
 /**
- * docs/09 "접근성": light, dark, or whatever the OS says. Compose Desktop reads the system setting
+ * docs/09 "Accessibility": light, dark, or whatever the OS says. Compose Desktop reads the system setting
  * (`isSystemInDarkTheme`), and this is the override over it — a per-machine choice like the
  * language, and stored beside it.
  */
@@ -23,7 +23,7 @@ enum class AppTheme(val key: String, val label: Str) {
 }
 
 /**
- * docs/14 "캡처" · docs/12 M4-L3: what a recording on this PC is made of, and the Mac's
+ * docs/14 "Capture" · docs/12 M4-L3: what a recording on this PC is made of, and the Mac's
  * `RecordingMode` with the same two answers — the microphone alone, or the meeting with the system
  * audio in it. Picked before a recording and never during one: the track set is written into
  * `meta.json` at the start.
@@ -42,7 +42,7 @@ enum class RecordingMode(val key: String, val tracks: List<Track>) {
     ;
 
     /**
-     * docs/14 "감지" · docs/12 "종료 감지": the end-of-meeting offer is about *this* recording, and
+     * docs/14 "Detection" · docs/12 "End detection": the end-of-meeting offer is about *this* recording, and
      * only a meeting has one — a memo's own idle microphone is not a meeting that has ended.
      */
     val detectsEnd: Boolean get() = this == MEETING
@@ -55,7 +55,7 @@ enum class RecordingMode(val key: String, val tracks: List<Track>) {
 }
 
 /**
- * The shell's own switches (docs/14 "감지" · docs/12 M8 · docs/07). Not the core's settings
+ * The shell's own switches (docs/14 "Detection" · docs/12 M8 · docs/07). Not the core's settings
  * document: like the Mac's `UserDefaults` (`MenuModel.Defaults`), none of these is worth syncing
  * between machines — whether *this* user has read the consent reminder, or which language they
  * want this PC in, is a fact about one PC.
@@ -71,7 +71,7 @@ interface Settings {
     var theme: AppTheme
 
     /**
-     * docs/03 "연결 해제" · docs/06: how far the last disconnect got. Persisted because the retry may
+     * docs/03 "Disconnect" · docs/06: how far the last disconnect got. Persisted because the retry may
      * be a whole launch later — the tokens are already gone by then, and this is the only thing that
      * keeps the Disconnect row on screen and a second account out of the slot until it has finished.
      * The one setting an implementation has to write through synchronously: it is on disk before the
@@ -82,7 +82,7 @@ interface Settings {
     var disconnectPhase: DisconnectPhase
 
     /**
-     * docs/03 "연결 해제": true while Google is still listing this app because the `/revoke` call
+     * docs/03 "Disconnect": true while Google is still listing this app because the `/revoke` call
      * failed. The grant is then standing and only the user can take it down, so the debt outlives
      * the disconnect that could not pay it — and only the user saying they removed it by hand
      * clears it: a later revoke that succeeded may belong to another account, and the app keeps

@@ -19,7 +19,7 @@ import recly.core.platform.Clock
 import recly.core.platform.Logger
 
 /**
- * docs/14 "감지" wired together: the helper's `mic_in_use` events, the running processes, the rule
+ * docs/14 "Detection" wired together: the helper's `mic_in_use` events, the running processes, the rule
  * and a clock. The shell gets a handful of calls out of it ([Actions]) and owns everything visible.
  *
  * **One helper at a time** ([Detection]): a detect-only helper while nothing is being recorded, and
@@ -248,7 +248,7 @@ class MeetingDetector(
             }
 
             Prompt.STOP -> {
-                // Never a stop of its own (docs/14 "감지": never an automatic stop).
+                // Never a stop of its own (docs/14 "Detection": never an automatic stop).
                 if (!actions.isRecording()) return
                 logger.log(Logger.Level.INFO, "detect.meeting.idle")
                 publish(Prompt.STOP)

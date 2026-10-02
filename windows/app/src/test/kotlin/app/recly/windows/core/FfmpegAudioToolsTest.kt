@@ -12,7 +12,7 @@ import okio.Path
 import okio.Path.Companion.toOkioPath
 
 /**
- * docs/08 "오디오 준비" on the desktop: two AAC parts in, one file out, and the output as long as
+ * docs/08 "Audio preparation" on the desktop: two AAC parts in, one file out, and the output as long as
  * the parts put together. Real ffmpeg, because the whole point of the implementation is what
  * ffmpeg does with `-f concat -c copy`.
  *

@@ -104,7 +104,7 @@ class MainActivity : ComponentActivity() {
         consumeFix(intent)
         setContent {
             val settings by settingsModel.state.collectAsState()
-            // docs/09 "접근성": the system decides the font scale and reduce motion, and the theme is
+            // docs/09 "Accessibility": the system decides the font scale and reduce motion, and the theme is
             // the only place that knows about either. Dark is the system's too until the setting
             // says otherwise, which is the one thing the theme is told.
             val dark = settings.theme.isDark(isSystemInDarkTheme())
@@ -160,7 +160,7 @@ class MainActivity : ComponentActivity() {
                     // The line under the record button is news from the last start or stop; it does
                     // not wait on the tab for the user to come back to it.
                     if (tab != Tab.RECORD) recordingModel.clearMessages()
-                    // docs/03 "다른 기기의 녹음": the ledger is on screen, so what the other devices
+                    // docs/03 "Recordings from other devices": the ledger is on screen, so what the other devices
                     // have uploaded since is asked for — beside the list, never in front of it.
                     if (tab == Tab.JOBS) jobsModel.refresh()
                     // A recording's detail is a page inside the List tab, not a place the tab keeps:
@@ -168,7 +168,7 @@ class MainActivity : ComponentActivity() {
                     if (tab != Tab.JOBS) jobsModel.closeDetail()
                 }
 
-                // docs/10 "탭하면 고칠 수 있는 화면으로 간다": the one mapping, shared by the list's
+                // docs/10 "A tap goes to the screen that can fix it": the one mapping, shared by the list's
                 // banner and by the notification that says the same thing.
                 // docs/06 Android: signed in, the fix is the Drive consent itself, right here;
                 // signed out, it is the sign-in button, which lives in Settings.
@@ -210,7 +210,7 @@ class MainActivity : ComponentActivity() {
                                     selected = tab == entry,
                                     // The List tab tapped again shows the list as it opens: from a
                                     // recording's detail that is the way back, as Back is, and on the
-                                    // list it closes the open row (docs/09 화면 원칙 2).
+                                    // list it closes the open row (docs/09 screen principle 2).
                                     onClick = {
                                         if (entry == Tab.JOBS && tab == Tab.JOBS) {
                                             if (jobs.detail != null) jobsModel.closeDetail() else listTaps++
@@ -274,7 +274,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { WorkScheduler(applicationContext).runNow() }
         // docs/06 Android: and the activity a NEEDS_AUTH job has been waiting for.
         model.resumeParked(this)
-        // docs/03 "다른 기기의 녹음": and as good a reason to ask Drive what the other devices have
+        // docs/03 "Recordings from other devices": and as good a reason to ask Drive what the other devices have
         // uploaded since — the ledger is on screen again.
         jobsModel.refresh()
     }
@@ -351,7 +351,7 @@ private fun RecordTab(
     RecordingSection(
         state = state,
         recorder = recorder,
-        // docs/09 화면 원칙 1: the state node borrows the ledger while the recorder is idle, and the
+        // docs/09 screen principle 1: the state node borrows the ledger while the recorder is idle, and the
         // ledger is the same live list the jobs tab draws.
         ledger = ledgerCode(jobs.items),
         onOpenProcessing = onOpenProcessing,

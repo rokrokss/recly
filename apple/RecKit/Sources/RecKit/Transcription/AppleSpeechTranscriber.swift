@@ -53,7 +53,7 @@ import CoreMedia
 private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownloadCancelling, @unchecked Sendable {
     private let lock = NSLock()
     private var active: SpeechAnalyzer?
-    /// docs/05 "고정 처리 설정 도입": the system asset download in flight, kept so [__status] can say
+    /// docs/05 "Fixed processing settings": the system asset download in flight, kept so [__status] can say
     /// how far it has got — the request is `ProgressReporting` — and the shell can stop it.
     private var installing: Installing?
 
@@ -87,7 +87,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     func __prepare(language: String) async throws -> LocalEngineInfo {
         guard SpeechTranscriber.isAvailable, let locale = await locale(language) else { return info(.unsupported) }
         // No thermal or power gate here: that is for transcribing. The download is what the user just
-        // asked for, and the install is the system's to schedule (docs/05 "고정 처리 설정 도입").
+        // asked for, and the install is the system's to schedule (docs/05 "Fixed processing settings").
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
         if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
             // Its own task, so the shell's Cancel reaches it however the call above it is bridged.
@@ -156,7 +156,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         }
     }
 
-    /// docs/05 "고정 처리 설정 도입": transcribe unless the device is really hot. `.serious` is where Apple
+    /// docs/05 "Fixed processing settings": transcribe unless the device is really hot. `.serious` is where Apple
     /// says the system itself cuts performance and apps should stop CPU work; `.fair` is routine while
     /// charging, and a user would never guess it is why nothing was transcribed. Low Power Mode does
     /// not hold it back either.

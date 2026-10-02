@@ -111,7 +111,7 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
     }
 
     /**
-     * docs/05 "고정 처리 설정 도입": the model download, for the language on screen — the status line
+     * docs/05 "Fixed processing settings": the model download, for the language on screen — the status line
      * above the button is that language's. Recordings waiting on it resume ([ModelDownload]).
      */
     fun downloadModel(onWifi: Boolean) =

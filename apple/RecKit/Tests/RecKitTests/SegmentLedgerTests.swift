@@ -101,7 +101,7 @@ final class SegmentLedgerTests: XCTestCase {
 
     // MARK: - Names and offsets
 
-    /// docs/03 "이름 규칙": `{base}_p{NNN}_{track}.m4a`, three digits from one.
+    /// docs/03 "Naming rules": `{base}_p{NNN}_{track}.m4a`, three digits from one.
     func testPartFileNamesArePaddedToThreeDigits() {
         let ledger = SegmentLedger(base: base)
 

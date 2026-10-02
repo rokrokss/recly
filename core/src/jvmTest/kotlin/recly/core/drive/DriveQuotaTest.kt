@@ -27,7 +27,7 @@ import recly.core.testing.START
 import recly.core.transcribe.TranscribeHarness
 
 /**
- * docs/10 "Drive 용량 초과": a full Drive is not a failure to retry, it is a state to park in. The
+ * docs/10 "Drive out of space": a full Drive is not a failure to retry, it is a state to park in. The
  * lane's acceptance criteria 1, 2 and 3 are the three tests at the top.
  */
 class DriveQuotaTest {
@@ -149,7 +149,7 @@ class DriveQuotaTest {
     }
 
     /**
-     * docs/03 "Drive에서도 삭제" after a park: `parkNeedsSpace` drops `state_json`, so the folder the
+     * docs/03 "Also delete from Drive" after a park: `parkNeedsSpace` drops `state_json`, so the folder the
      * upload created has to have been written somewhere that survives — before the first chunk
      * went out, because that is the request that failed.
      */

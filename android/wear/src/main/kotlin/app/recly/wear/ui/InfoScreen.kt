@@ -34,10 +34,10 @@ import app.recly.wear.ui.theme.WearBlueprint
  * Wearable, on the *phone*. A button that silently did nothing on a non-Samsung watch would be
  * worse than a sentence that says where to go.
  *
- * The second one is not a nicety: docs/11 "주의" — Galaxy Wearable under battery optimisation loses
+ * The second one is not a nicety: docs/11 "Caveats" — Galaxy Wearable under battery optimisation loses
  * the Bluetooth proxy, and a watch whose proxy is gone holds every recording it makes.
  *
- * docs/11 "주의" (round screens): the list shrinks an item only once most of it has left the
+ * docs/11 "Caveats" (round screens): the list shrinks an item only once most of it has left the
  * screen, so a whole paragraph as one item ran off the curve above and below the middle — Play
  * rejected the build for it. Every title and every sentence is its own item, centred in a column
  * narrower than the scaffold's, and the screen opens on the first of them.
@@ -61,7 +61,7 @@ fun InfoScreen(onBack: () -> Unit) {
             sections.forEach { (title, body) -> section(title, body, inset) }
             item {
                 Spacer(Modifier.height(8.dp))
-                // docs/09 "형태": square on the theme's 4dp, like every other control on the watch.
+                // docs/09 "Shape": square on the theme's 4dp, like every other control on the watch.
                 Button(
                     onClick = onBack,
                     modifier = Modifier

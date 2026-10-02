@@ -2,7 +2,7 @@ import Foundation
 import XCTest
 @testable import RecKit
 
-/// docs/09 화면 원칙 2: the ledger's two-line time column is a fixed-width *pattern*, so its date
+/// docs/09 screen principle 2: the ledger's two-line time column is a fixed-width *pattern*, so its date
 /// half is `MM-dd` in every language — Korean used to hand the order to the locale and came out
 /// day-first (`02/09`), which made the same two numbers mean two different things depending on the
 /// language picker. The desktop shell has always written `MM-dd`.
@@ -67,7 +67,7 @@ final class LedgerFormatTests: XCTestCase {
         XCTAssertEqual(LedgerFormat.date("not a date"), "")
     }
 
-    /// docs/09 "타이포": the timer, the playback clock and a transcript stamp are `00:12:34` from
+    /// docs/09 "Typography": the timer, the playback clock and a transcript stamp are `00:12:34` from
     /// the first second — Android's `hms` — and the hours run past 24 rather than wrapping.
     func testTheClockAlwaysShowsTheHours() {
         XCTAssertEqual(LedgerFormat.clock(0), "00:00:00")

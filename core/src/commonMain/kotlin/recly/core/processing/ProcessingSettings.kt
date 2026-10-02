@@ -43,7 +43,7 @@ data class ProcessingStorage(
     val folder: String = "recly/memo/{{yyyy}}-{{MM}}",
     val minDurationSec: Int = 0,
     /**
-     * docs/03 "저장 위치": Google Drive or the app's iCloud folder (iPhone and Mac only, ADR-024).
+     * docs/03 "Storage location": Google Drive or the app's iCloud folder (iPhone and Mac only, ADR-024).
      * Changed only by [ProcessingSettingsRepository.setStorage] — the settings form and an import
      * keep the one this device has, since the choice is about this device's accounts.
      */
@@ -67,7 +67,7 @@ data class ProcessingTranscription(
     /** Retained while another mode is selected, so switching off does not discard configuration. */
     val external: ExternalTranscription? = null,
     /**
-     * docs/05 "시크릿": what was entered for each provider — its invoke URL and model — kept the way
+     * docs/05 "Secrets": what was entered for each provider — its invoke URL and model — kept the way
      * its key is, so choosing another provider and coming back does not ask for them again.
      * [external] is the one in use; this only remembers, and never hands one provider's values to
      * another.

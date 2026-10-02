@@ -24,7 +24,7 @@ interface RecorderControl {
 /**
  * The real one. The stop is the plain "ready now" one — there is no title dialog on a watch, so
  * nothing is being held back — and what ready means here is `RecWearApp.onRecordingReady`: the
- * transfer queue, never a job (docs/11 "주의"). The screen does not decide that and cannot get it
+ * transfer queue, never a job (docs/11 "Caveats"). The screen does not decide that and cannot get it
  * wrong.
  */
 class ServiceRecorderControl(private val context: Context) : RecorderControl {
