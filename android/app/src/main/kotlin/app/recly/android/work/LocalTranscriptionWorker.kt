@@ -7,7 +7,10 @@ import androidx.work.WorkerParameters
 import app.recly.android.core.CoreModule
 import kotlinx.coroutines.CancellationException
 
-/** Offline compute only. Publication is left for the existing network-constrained worker. */
+/**
+ * Offline work only: on-device transcription, and the copies into a local folder (docs/03 "Storage location").
+ * Publication over the network is left for the existing network-constrained worker.
+ */
 class LocalTranscriptionWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result = try {
         val core = CoreModule.get(applicationContext).core

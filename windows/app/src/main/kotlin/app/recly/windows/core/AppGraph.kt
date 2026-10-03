@@ -23,6 +23,7 @@ import recly.core.model.Platform
 import recly.core.platform.CoreDeps
 import recly.core.platform.DeviceInfo
 import recly.core.platform.JvmRuntime
+import recly.core.storage.PathFolder
 import kotlin.time.Clock as TimeClock
 import recly.core.platform.Clock as CoreClock
 
@@ -73,6 +74,9 @@ object AppModule {
             io = io,
             locale = localization.language.tag.ifEmpty { Host.language() },
             localTranscription = QwenSpeechEngine.make(dataDir, transport, fileSystem, io),
+            // docs/03 "Storage location": the folder the user picked, read from the settings store on
+            // every call so a new pick applies to the very next write.
+            localFolder = PathFolder(fileSystem) { localization.settings.localFolder },
         )
 
         val core = ReclyCore(deps, JvmDriverFactory(dataDir / databaseName))

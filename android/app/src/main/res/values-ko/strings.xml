@@ -62,6 +62,7 @@
     <string name="job_state_remote_transcribing">다른 기기에서 전사 중</string>
     <string name="job_state_waiting">재시도 대기</string>
     <string name="job_state_waiting_in">재시도 대기 · %1$s</string>
+    <string name="job_state_waiting_folder">로컬 폴더 대기 중</string>
     <string name="job_state_done">완료</string>
     <string name="job_state_failed">실패</string>
     <string name="job_state_needs_auth">업로드 대기</string>
@@ -82,6 +83,12 @@
     <string name="secret_value_required">값을 입력하세요</string>
 
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">저장 위치</string>
+    <string name="storage_local_folder">로컬 폴더</string>
+    <string name="folder_none">선택한 폴더 없음</string>
+    <string name="folder_choose">폴더 선택</string>
+    <string name="folder_change">폴더 변경</string>
+    <string name="folder_unreachable">이 폴더에 접근할 수 없습니다. 다시 선택하세요.</string>
     <string name="settings_uploads">업로드</string>
     <string name="settings_wifi_only">Wi-Fi에서만 업로드</string>
 
@@ -101,6 +108,7 @@
     <string name="core_icloud_unavailable">iCloud Drive를 쓸 수 없습니다. 설정의 iCloud에서 iCloud Drive와 Recly가 켜져 있는지 확인하세요.</string>
     <string name="core_icloud_storage_full">iCloud에 공간이 없습니다 — 정리한 뒤 다시 시도하세요</string>
     <string name="core_icloud_uploading">iCloud에 올리는 중</string>
+    <string name="core_folder_unavailable">로컬 폴더에 접근할 수 없습니다. 설정에서 다시 선택하세요.</string>
     <string name="core_drive_consent_required">Drive 권한 동의가 필요합니다</string>
     <string name="core_sign_in_cancelled">로그인이 취소되었습니다</string>
     <string name="core_missing_secret">이 기기에 시크릿 ‘%1$s’ 값이 없습니다</string>
@@ -152,6 +160,8 @@
     <string name="player_fetching">Drive에서 받는 중…</string>
     <string name="player_waveform_loading">파형 불러오는 중…</string>
     <string name="player_fetch_failed">Drive에서 받지 못했습니다</string>
+    <string name="player_fetching_folder">로컬 폴더에서 읽는 중…</string>
+    <string name="player_fetch_failed_folder">로컬 폴더에서 읽지 못했습니다</string>
     <string name="player_position">위치</string>
     <string name="job_waiting_transcription">전사 결과를 기다리는 중 — %1$d분 경과</string>
     <string name="job_reason_check_key">키 확인</string>
@@ -171,10 +181,13 @@
     <string name="delete_title">‘%1$s’을(를) 삭제할까요?</string>
     <string name="delete_local_only">이 폰에서만 삭제</string>
     <string name="delete_with_drive">Drive 폴더도 함께 삭제</string>
+    <string name="delete_with_folder">로컬 폴더에서도 함께 삭제</string>
     <string name="delete_remote_body">다른 기기에서 녹음한 것입니다. 지우면 Drive와 모든 기기에서 사라집니다.</string>
     <string name="delete_busy">아직 업로드 중입니다 — 끝난 뒤에 다시 시도하세요</string>
     <string name="delete_drive_failed">이 기기에서는 지웠지만 Drive에서 지우지 못했습니다: %1$s</string>
+    <string name="delete_folder_failed">이 기기에서는 지웠지만 로컬 폴더에서 지우지 못했습니다: %1$s</string>
     <string name="delete_unuploaded">아직 Drive에 올라가지 않은 오디오도 함께 지워집니다.</string>
+    <string name="delete_unuploaded_folder">아직 로컬 폴더에 없는 오디오도 함께 지워집니다.</string>
 
     <!-- docs/03 "Sign out vs Disconnect" · docs/06 -->
     <string name="settings_disconnect">연결 해제</string>

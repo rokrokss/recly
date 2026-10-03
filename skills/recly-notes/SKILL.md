@@ -6,7 +6,8 @@ description: Turn a Recly recording's transcript into minutes, a decision log, i
 # recly-notes — notes from a Recly recording
 
 Recly records on a watch, phone, or desktop and uploads the recording to the **user's own Google
-Drive** — or, on iPhone and Mac, to their iCloud if they chose it. When transcription is enabled in
+Drive** — or, on iPhone and Mac, to their iCloud, or, on iPhone, Mac, Windows and Android, into a local
+folder they picked. When transcription is enabled in
 Processing Settings, a transcript lands next to the audio.
 Speaker identification depends on the selected engine.
 Summarizing is deliberately not part of that pipeline — it is your job. This skill finds one
@@ -14,9 +15,9 @@ recording, reads its transcript, and writes the notes the user asked for.
 
 Two rules frame everything below:
 
-- **Drive and the iCloud folder are read-only for you.** They hold what the app recorded. Never
-  write into a recording folder (on a Mac the iCloud folder is writable, and anything put there
-  syncs to every device). The notes go in your reply and, when the user wants them kept, into Notion
+- **Drive, the iCloud folder and the local folder are read-only for you.** They hold what the app
+  recorded. Never write into a recording folder (on a Mac the iCloud folder is writable, and anything
+  put there syncs to every device). The notes go in your reply and, when the user wants them kept, into Notion
   through the `recly-notion` skill.
 - **"Recording" means the transcript.** Unless the user explicitly asks for audio, "get the
   recording" means read `{base}.transcript.txt`. You cannot listen to audio; if asked for it, give
@@ -36,12 +37,15 @@ start time, source device).
    Mac option): `~/Library/Mobile Documents/iCloud~app~recly/Documents/recly/`, shown in Finder as
    iCloud Drive → Recly. Same layout as Drive. No assistant has an iCloud connector, so this local
    folder is the only way to read it directly.
-3. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
+3. **The local folder the user picked**, for users who store recordings in a folder on their Mac,
+   Windows PC, iPhone or Android phone (Settings → Storage → Local folder). Ask where it is if they have not
+   said. Same layout as Drive under `recly/`, with a `{base}.transcript.md` beside the `.txt`.
+4. **A Google Drive tool** (a connector or MCP server in your tool list). Search by name for
    `.transcript.txt` — the Drive query is `name contains '.transcript.txt'` — or browse the
    `recly/` folder tree. Read the transcript and the `{base}.meta.json` beside it.
-4. **A Google Drive desktop sync folder**, if this machine has one:
+5. **A Google Drive desktop sync folder**, if this machine has one:
    `~/Library/CloudStorage/GoogleDrive-*/My Drive/recly/` or `G:\My Drive\recly`.
-5. **None of the above:** ask the user to attach or paste the transcript (on iPhone, an iCloud
+6. **None of the above:** ask the user to attach or paste the transcript (on iPhone, an iCloud
    recording's transcript can be attached from the Files app, in the Recly folder). If they use
    Google Drive, tell them in one line how to connect it to this assistant so it works next time.
 

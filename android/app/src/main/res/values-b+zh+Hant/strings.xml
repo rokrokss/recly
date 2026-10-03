@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">正在其他裝置上轉錄</string>
     <string name="job_state_waiting">等待重試</string>
     <string name="job_state_waiting_in">等待重試·%1$s</string>
+    <string name="job_state_waiting_folder">等待本機資料夾</string>
     <string name="job_state_done">完成</string>
     <string name="job_state_failed">失敗</string>
     <string name="job_state_needs_auth">等待上傳</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">以小寫字母開頭，僅含小寫字母、數字和底線，最多32個字元</string>
     <string name="secret_value_required">輸入值</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">儲存位置</string>
+    <string name="storage_local_folder">本機資料夾</string>
+    <string name="folder_none">未選擇資料夾</string>
+    <string name="folder_choose">選擇資料夾</string>
+    <string name="folder_change">變更資料夾</string>
+    <string name="folder_unreachable">無法存取此資料夾。請重新選擇。</string>
     <string name="settings_uploads">上傳</string>
     <string name="settings_wifi_only">僅透過Wi-Fi上傳</string>
     <string name="settings_language">語言</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">無法使用iCloud Drive。請在「設定」的iCloud中確認iCloud Drive和Recly已開啟。</string>
     <string name="core_icloud_storage_full">iCloud空間不足，請釋出空間後重試</string>
     <string name="core_icloud_uploading">正在上傳至iCloud</string>
+    <string name="core_folder_unavailable">無法存取本機資料夾。請在「設定」中重新選擇。</string>
     <string name="core_drive_consent_required">存取Drive需要您的同意</string>
     <string name="core_sign_in_cancelled">登入已取消</string>
     <string name="core_missing_secret">此裝置上沒有機密憑證「%1$s」的值</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">正在從Drive取得…</string>
     <string name="player_waveform_loading">正在載入波形…</string>
     <string name="player_fetch_failed">無法從Drive取得</string>
+    <string name="player_fetching_folder">正在從本機資料夾讀取…</string>
+    <string name="player_fetch_failed_folder">無法從本機資料夾讀取</string>
     <string name="player_position">位置</string>
     <string name="job_waiting_transcription">正在等待轉錄結果，已用時%1$d分鐘</string>
     <string name="job_reason_check_key">檢查金鑰</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">刪除「%1$s」？</string>
     <string name="delete_local_only">僅從此手機刪除</string>
     <string name="delete_with_drive">同時刪除Drive資料夾</string>
+    <string name="delete_with_folder">同時從本機資料夾刪除</string>
     <string name="delete_remote_body">錄製於其他裝置。刪除後將從Drive和所有裝置中移除。</string>
     <string name="delete_busy">仍在上傳，請在完成後重試</string>
     <string name="delete_drive_failed">已從此處刪除，但Drive拒絕刪除：%1$s</string>
+    <string name="delete_folder_failed">已從此處刪除，但未能從本機資料夾刪除：%1$s</string>
     <string name="delete_unuploaded">尚未上傳至Drive的音訊也將刪除。</string>
+    <string name="delete_unuploaded_folder">尚未存入本機資料夾的音訊也將刪除。</string>
     <string name="settings_disconnect">中斷連線</string>
     <string name="settings_disconnect_hint">撤銷此應用程式對您Google帳戶的存取權限。</string>
     <string name="disconnect_title">中斷Google Drive連線？</string>

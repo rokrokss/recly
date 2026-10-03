@@ -332,10 +332,14 @@ class TranscribeRunner(
 
         fun textFileName(base: String): String = "$base.transcript.txt"
 
+        /** Written only into a local folder, for a notes app that opens Markdown alone (docs/08 "Result files"). */
+        fun markdownFileName(base: String): String = "$base.transcript.md"
+
         fun create(deps: CoreDeps): TranscribeRunner = TranscribeRunner(CloudStorage.of(deps), deps)
 
         internal const val JSON_MIME = "application/json"
         internal const val TEXT_MIME = "text/plain"
+        internal const val MARKDOWN_MIME = "text/markdown"
         private const val POLL_SEC = 30
         private const val CONCAT_SUFFIX = ".concat.m4a"
         private const val MIB = 1024L * 1024L

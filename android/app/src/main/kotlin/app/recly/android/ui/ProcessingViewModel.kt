@@ -72,6 +72,18 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
         }.onFailure { failed(it) }
     }
 
+    /**
+     * docs/03 "Storage location": the storage was switched in the section above, which saved the next
+     * revision. The form takes that revision and keeps its draft — the iPhone's `storageChanged` —
+     * so a Save after the switch is not refused as stale, and nothing typed is lost to it.
+     */
+    fun storageChanged() = viewModelScope.launch {
+        runCatching {
+            val stored = core().initializeProcessing()
+            _state.update { it.copy(stored = stored) }
+        }.onFailure { failed(it) }
+    }
+
     fun save() = viewModelScope.launch {
         val before = state.value
         val draft = before.draft ?: return@launch

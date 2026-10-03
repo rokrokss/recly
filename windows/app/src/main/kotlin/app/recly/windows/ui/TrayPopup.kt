@@ -399,6 +399,10 @@ private fun RecentRow(
                     if (item.link != null) {
                         BlueprintButton(strings[Str.RECENT_OPEN_DRIVE], { model.openInDrive(item) })
                     }
+                    // docs/03 "Storage location": a recording in the local folder has its folder there instead.
+                    if (item.localFolderPath != null) {
+                        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], { model.openInFolder(item) })
+                    }
                     if (retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending)) {
                         ProcessingButton(
                             label = strings[Str.RECENT_RETRY],

@@ -347,7 +347,8 @@ struct MenuPopover: View {
                 if item.link != nil {
                     BlueprintButton(loc("Open in Drive")) { model.openInDrive(item) }
                 }
-                // docs/03 "Storage location": an iCloud recording has no web page; its folder is in Finder.
+                // docs/03 "Storage location": an iCloud or local folder recording has no web page; its folder
+                // is in Finder.
                 if item.cloudFolder != nil {
                     BlueprintButton(loc("Show in Finder")) { model.showInFinder(item) }
                         .accessibilityIdentifier("show-in-finder")
@@ -419,7 +420,7 @@ struct SettingsPane: View {
     var body: some View {
         VStack(spacing: 0) {
             // docs/03 "Storage location": the storage choice on top of the Drive rows, where this build can
-            // offer iCloud; the Drive block as it always was where it cannot.
+            // offer iCloud or a local folder; the Drive block as it always was where it cannot.
             if let storage = model.storage {
                 StorageSection(
                     choice: storage,

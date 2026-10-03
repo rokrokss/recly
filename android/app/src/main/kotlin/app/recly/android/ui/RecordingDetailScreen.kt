@@ -481,10 +481,10 @@ private fun WaveformLoader(label: String? = null) {
  * percentage.
  */
 @Composable
-private fun FetchProgress(fraction: Float) {
+private fun FetchProgress(fraction: Float, folder: Boolean) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
-    val label = stringResource(R.string.player_fetching)
+    val label = stringResource(fetchingLabel(folder))
     val shown by animateFloatAsState(fraction, if (LocalReduceMotion.current) snap() else tween(Motion.STANDARD_MS, easing = Motion.Standard))
     // docs/09 "Typography": a count of bytes is data, so it is a monospace stamp — the same `n%` in every
     // language, as the iPhone writes it.
@@ -571,10 +571,10 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
         ) {
             Box(Modifier.weight(1f)) {
                 if (LocalReduceMotion.current) {
-                    Text(stringResource(R.string.player_fetching), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
+                    Text(stringResource(fetchingLabel(detail.folder)), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
                 }
             }
-            FetchProgress(detail.fetchProgress)
+            FetchProgress(detail.fetchProgress, detail.folder)
         }
 
         !detail.audio.isEmpty -> Row(
@@ -645,12 +645,15 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
     // what stands between the page and the whole recording.
     if (detail.driveFetch == DriveFetch.FAILED) {
         Text(
-            stringResource(R.string.player_fetch_failed),
+            stringResource(if (detail.folder) R.string.player_fetch_failed_folder else R.string.player_fetch_failed),
             style = MaterialTheme.typography.bodyMedium,
             color = palette.textMuted,
         )
     }
 }
+
+/** docs/03 "Storage location": the trip back is to wherever the recording was copied — Drive, or the local folder. */
+private fun fetchingLabel(folder: Boolean): Int = if (folder) R.string.player_fetching_folder else R.string.player_fetching
 
 /** The whole page, when there is one line to say and nothing to read. */
 @Composable

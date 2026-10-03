@@ -37,7 +37,9 @@ import recly.core.testing.FakeDrive
 import recly.core.testing.FakeLogger
 import recly.core.testing.FakeUbiquityContainer
 import recly.core.storage.CloudStorage
+import recly.core.storage.FolderFiles
 import recly.core.storage.ICloudFiles
+import recly.core.storage.PathFolder
 import recly.core.testing.MapSecureStore
 import recly.core.testing.START
 import recly.core.testing.STEP_RUN_ID
@@ -90,6 +92,8 @@ class DriveHarness(
     val steps: List<Step> = listOf(Step.DriveUpload(id = "up")),
     /** docs/03 "Storage location": give the device an iCloud container, as the iPhone and Mac shells do. */
     icloud: Boolean = false,
+    /** docs/03 "Storage location": give the device a local folder, as the Mac, Windows and Android shells do. */
+    folder: Boolean = false,
 ) {
     val drive = FakeDrive()
     val clock = FakeClock()
@@ -97,6 +101,10 @@ class DriveHarness(
     /** Dated by the same clock as the queue: the retention sweep reads the parts' mtimes. */
     val fs = FakeFileSystem(clock)
     val container: FakeUbiquityContainer? = if (icloud) FakeUbiquityContainer(fs, clock) else null
+
+    /** The folder the user picked, read on every call as the shells' settings are; null is none picked. */
+    var folderRoot: String? = FOLDER_ROOT
+    val localFolder: PathFolder? = if (folder) PathFolder(fs) { folderRoot } else null
     val secrets = MapSecureStore()
     val logger = FakeLogger()
     val db: RecDatabase = inMemoryDatabase()
@@ -110,6 +118,7 @@ class DriveHarness(
         transport = mockTransport(drive, fs),
         platform = platform,
         ubiquity = container,
+        localFolder = localFolder,
     )
 
     val recordings = RecordingRepository(db, deps)
@@ -117,7 +126,7 @@ class DriveHarness(
     val api = DriveApi(deps)
 
     /** Drive, and iCloud when the device has a container: what the shells hand the runner. */
-    val storage = CloudStorage(api, container?.let { ICloudFiles(it, deps) })
+    val storage = CloudStorage(api, container?.let { ICloudFiles(it, deps) }, localFolder?.let { FolderFiles(it, deps) })
     val runner = DriveUploadRunner(storage, FolderResolver(storage, store, deps), store, recordings, deps)
 
     val recordingId = "01J9ABCDEF0123456789ABCDEF"
@@ -134,6 +143,7 @@ class DriveHarness(
     private val meta: RecordingMeta
 
     init {
+        if (folder) fs.createDirectories(FOLDER_ROOT.toPath())
         val skeleton = meta(emptyList())
         base = MetaWriter.baseName(skeleton)
         dir = "/data/recordings/$base".toPath()
@@ -258,5 +268,8 @@ class DriveHarness(
         /** Just past the 5 MB multipart limit, so these go resumable: six 1 MiB chunks. */
         const val RESUMABLE_BYTES = 5L * 1024 * 1024 + 512
         const val SMALL_BYTES = 4096L
+
+        /** Where the harness's local folder is picked, on its fake disk. */
+        const val FOLDER_ROOT = "/picked"
     }
 }

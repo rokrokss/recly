@@ -15,8 +15,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.auth.OAuthConfig
@@ -44,12 +46,13 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import kotlin.time.ExperimentalTime
+import recly.core.storage.StorageKind
 
 /**
- * docs/09 screen principle 4, over docs/14 "App": a section table — the account (docs/06), the language
- * (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are the system's alone, and
- * there is no accessibility section), capture and its self-test, startup, and the honest block of
- * what this build actually is.
+ * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
+ * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
+ * the system's alone, and there is no accessibility section), capture and its self-test, startup, and
+ * the honest block of what this build actually is.
  */
 @Composable
 fun SettingsWindow(model: ShellModel, strings: Strings) {
@@ -58,7 +61,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
         ScreenHeader(title = strings[Str.WINDOW_SETTINGS])
         HairLine()
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
-            Account(model, strings)
+            Storage(model, strings)
             Language(model, strings)
             Appearance(model, strings)
             Capture(model, strings)
@@ -70,9 +73,55 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
     }
 }
 
+/**
+ * docs/03 "Storage location": where new recordings go — Google Drive, or a folder the user picked on this
+ * PC — in chips as the theme is, saved the moment one is tapped. Under them only the chosen storage's
+ * rows: the Drive block exactly as it was, or the one local folder row in the same shape. Drive stays
+ * connected after a switch — the earlier recordings are still in it — and its Disconnect is back under
+ * the Google Drive chip.
+ */
+@Composable
+private fun Storage(model: ShellModel, strings: Strings) {
+    // Asked again whenever this window comes to the front, its opening included: the folder may be on
+    // a drive that was pulled out while the window was behind.
+    val focused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(focused) { if (focused) model.refreshStorage() }
+    Section(strings[Str.SETTINGS_STORAGE])
+    ChipRow(
+        // The Drive chip is the product name the account block was headed with (docs/07 rule 1).
+        options = listOf(
+            StorageKind.DRIVE to strings[Str.SETTINGS_ACCOUNT],
+            StorageKind.FOLDER to strings[Str.STORAGE_LOCAL_FOLDER],
+        ),
+        selected = model.storage,
+        onSelect = model::selectStorage,
+    )
+    if (model.storage == StorageKind.FOLDER) LocalFolderRow(model, strings) else Account(model, strings)
+}
+
+/**
+ * The local folder in the Drive row's shape: where it is and a way to change it, nothing picked yet, or
+ * a folder that cannot be reached any more and has to be picked again.
+ */
+@Composable
+private fun LocalFolderRow(model: ShellModel, strings: Strings) {
+    val folder = model.localFolder
+    val reachable = folder != null && model.localFolderAvailable
+    TableRow(
+        title = folder ?: strings[Str.STORAGE_NO_FOLDER],
+        subtitle = if (folder != null && !reachable) strings[Str.STORAGE_FOLDER_UNREACHABLE] else null,
+        trailing = {
+            BlueprintButton(
+                strings[if (reachable) Str.STORAGE_CHANGE_FOLDER else Str.STORAGE_CHOOSE_FOLDER],
+                model::chooseLocalFolder,
+            )
+        },
+    )
+}
+
+/** docs/06: the Drive rows, under the Google Drive chip. */
 @Composable
 private fun Account(model: ShellModel, strings: Strings) {
-    Section(strings[Str.SETTINGS_ACCOUNT])
     val signInBlocker = DisconnectGuard.signInBlocker(model.disconnectPhase.owed)
     if (model.signedIn || model.disconnectPhase.owed || model.disconnecting) {
         TableRow(title = strings[if (model.disconnecting) Str.SETTINGS_ACCOUNT else if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.DRIVE_ATTENTION], trailing = {
@@ -249,7 +298,7 @@ private fun Section(title: String) {
     HairLine()
 }
 
-/** A row of the choices for a setting that has three of them and will not grow — the theme. */
+/** A row of the choices for a setting that has a few of them and will not grow — the storage, the theme. */
 @Composable
 private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
     Row(

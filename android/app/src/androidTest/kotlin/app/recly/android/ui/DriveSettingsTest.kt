@@ -36,6 +36,7 @@ class DriveSettingsTest {
                             main.value = main.value.copy(disconnect = null, disconnecting = true, busy = true)
                         }
                     }, onRevokeDebtSettled = {},
+                    onStorage = {}, onPickFolder = {}, onRefreshStorage = {},
                 )
             }
         }

@@ -1,5 +1,6 @@
 package app.recly.android.core
 
+import app.recly.android.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -23,6 +24,12 @@ class CoreMessagesTest {
             assertTrue(clash == null, "$message and $clash share one string")
         }
         assertEquals(CoreMessage.entries.size, seen.size)
+    }
+
+    /** docs/03 "Storage location": the local folder's wait has a sentence of its own, with nothing to fill in. */
+    @Test
+    fun `the local folder wait says what to do about it`() {
+        assertEquals(UiMessage.Res(R.string.core_folder_unavailable), coreMessage(CoreMessage.FOLDER_UNAVAILABLE.code()))
     }
 
     /** The argument-taking keys are exactly the ones whose sentence has a placeholder in it. */

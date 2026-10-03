@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">Transkription auf anderem Gerät</string>
     <string name="job_state_waiting">Wiederholung ausstehend</string>
     <string name="job_state_waiting_in">Wiederholung ausstehend · %1$s</string>
+    <string name="job_state_waiting_folder">Wartet auf den lokalen Ordner</string>
     <string name="job_state_done">Fertig</string>
     <string name="job_state_failed">Fehlgeschlagen</string>
     <string name="job_state_needs_auth">Upload wartet</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">Beginnt mit Kleinbuchstaben; Kleinbuchstaben, Ziffern und Unterstriche, höchstens 32 Zeichen</string>
     <string name="secret_value_required">Wert eingeben</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">Speicherort</string>
+    <string name="storage_local_folder">Lokaler Ordner</string>
+    <string name="folder_none">Kein Ordner gewählt</string>
+    <string name="folder_choose">Ordner wählen</string>
+    <string name="folder_change">Ordner ändern</string>
+    <string name="folder_unreachable">Auf diesen Ordner kann nicht zugegriffen werden. Erneut auswählen.</string>
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Nur über WLAN hochladen</string>
     <string name="settings_language">Sprache</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">iCloud Drive ist nicht verfügbar. In den Einstellungen unter iCloud prüfen, ob iCloud Drive und Recly aktiviert sind.</string>
     <string name="core_icloud_storage_full">iCloud ist voll. Speicherplatz freigeben und erneut versuchen</string>
     <string name="core_icloud_uploading">Upload zu iCloud</string>
+    <string name="core_folder_unavailable">Auf den lokalen Ordner kann nicht zugegriffen werden. In den Einstellungen erneut auswählen.</string>
     <string name="core_drive_consent_required">Drive-Zugriff benötigt Ihre Einwilligung</string>
     <string name="core_sign_in_cancelled">Die Anmeldung wurde abgebrochen</string>
     <string name="core_missing_secret">Auf diesem Gerät fehlt der Wert für „%1$s“</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">Abruf aus Drive…</string>
     <string name="player_waveform_loading">Wellenform wird geladen…</string>
     <string name="player_fetch_failed">Abruf aus Drive fehlgeschlagen</string>
+    <string name="player_fetching_folder">Lesen aus dem lokalen Ordner…</string>
+    <string name="player_fetch_failed_folder">Lesen aus dem lokalen Ordner fehlgeschlagen</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Warten auf Transkript; %1$d Min. vergangen</string>
     <string name="job_reason_check_key">Schlüssel prüfen</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">„%1$s“ löschen?</string>
     <string name="delete_local_only">Nur auf diesem Telefon löschen</string>
     <string name="delete_with_drive">Auch den Drive-Ordner löschen</string>
+    <string name="delete_with_folder">Auch aus dem lokalen Ordner löschen</string>
     <string name="delete_remote_body">Auf einem anderen Gerät aufgenommen. Löschen entfernt die Aufnahme aus Drive und von allen Geräten.</string>
     <string name="delete_busy">Upload läuft noch. Nach Abschluss erneut versuchen</string>
     <string name="delete_drive_failed">Hier gelöscht, aber Drive hat abgelehnt: %1$s</string>
+    <string name="delete_folder_failed">Hier gelöscht, aber nicht aus dem lokalen Ordner: %1$s</string>
     <string name="delete_unuploaded">Noch nicht zu Drive übertragenes Audio wird ebenfalls gelöscht.</string>
+    <string name="delete_unuploaded_folder">Noch nicht in den lokalen Ordner kopiertes Audio wird ebenfalls gelöscht.</string>
     <string name="settings_disconnect">Trennen</string>
     <string name="settings_disconnect_hint">Dieser App den Zugriff auf Ihr Google-Konto entziehen.</string>
     <string name="disconnect_title">Google Drive trennen?</string>

@@ -36,7 +36,10 @@ public struct CoreBridge {
         transcriptionPolicy: TranscriptionPolicy? = nil,
         /// docs/03 "Storage location": the app's iCloud folder, on the iPhone and the Mac in a build signed
         /// with the iCloud entitlement. Nil everywhere else, and iCloud is then not offered.
-        ubiquity: (any ReclyCore.UbiquityContainer)? = CoreBridge.defaultUbiquity
+        ubiquity: (any ReclyCore.UbiquityContainer)? = CoreBridge.defaultUbiquity,
+        /// docs/03 "Storage location": the folder the user can pick on this device — the Mac's. Nil on the
+        /// iPhone and the watch, and the local folder is then not offered.
+        localFolder: (any ReclyCore.LocalFolder)? = CoreBridge.defaultLocalFolder
     ) async throws -> CoreBridge {
         try FileManager.default.createDirectory(at: dataDirectory, withIntermediateDirectories: true)
         try relocateLegacyDatabase(named: databaseName, into: dataDirectory, logger: logger)
@@ -65,7 +68,8 @@ public struct CoreBridge {
                 region: platform == .ios ? AppleStorefrontRegion() : nil
             ),
             localTranscription: LocalSpeechEngine.make(),
-            ubiquity: ubiquity
+            ubiquity: ubiquity,
+            localFolder: localFolder
         )
 
         let core = try AppleRuntime.shared.openCore(deps: deps, name: databaseName, basePath: dataDirectory.path)
@@ -237,6 +241,18 @@ public extension CoreBridge {
     static var defaultUbiquity: (any ReclyCore.UbiquityContainer)? {
         #if os(iOS) || os(macOS)
         ICloudContainer.configured.map { ICloudContainer(identifier: $0) }
+        #else
+        nil
+        #endif
+    }
+
+    /// docs/03 "Storage location": the local folder — on the Mac at the path picked in its settings, on the
+    /// iPhone the folder picked in Files, kept as a bookmark. The watch has none.
+    static var defaultLocalFolder: (any ReclyCore.LocalFolder)? {
+        #if os(macOS)
+        LocalFolderPath.folder()
+        #elseif os(iOS)
+        PickedFolder.shared
         #else
         nil
         #endif

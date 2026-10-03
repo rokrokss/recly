@@ -306,6 +306,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             self.processing = processing
             let storage = StorageChoice(core: bridge.core)
             storage.onChanged = { [weak processing] in await processing?.storageChanged() }
+            storage.onFolderPicked = { [weak self] in
+                self?.runner?.jobsDue()
+                self?.background.schedule()
+            }
             self.storage = storage
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
@@ -1025,6 +1029,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         let asked = deleteAsked
         Task {
             let unuploaded = await Retention.unuploadedParts(core: core, recordingId: item.id)
+            // Another device's recording is Drive's; this iPhone's own may not have a folder yet.
+            let storage = item.remote ? item.storage : await Retention.storage(core: core, recordingId: item.id)
             guard asked == self.deleteAsked else { return }
             deleteRequest = DeleteRequest(
                 recordingId: item.id,
@@ -1032,7 +1038,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 unuploaded: unuploaded,
                 remote: item.remote,
                 hasDriveFolder: item.hasCloudFolder,
-                icloud: item.storage == .icloud
+                icloud: storage == .icloud,
+                folder: storage == .folder
             )
         }
     }
@@ -1070,7 +1077,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             case .deleted(let driveError):
                 if let driveError {
                     self.message = .key(
-                        request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
+                        request.folder ? "Deleted here, but not from the local folder: %@"
+                            : request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
                         args: [.verbatim(driveError)]
                     )
                 }
@@ -1174,7 +1182,11 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // does nothing at all below it, so this is the only thing that brings the job back if
             // the user leaves the app before the upload has a background task of its own.
             self.background.schedule()
-            self.background.uploadNow(recordingId: item.id, title: item.titleLabel, icloud: item.storage == .icloud)
+            // A copy into the local folder needs no network and is quick: the passes above do it, and
+            // the system's "Uploading…" progress would name a place it is not going (docs/03 "Storage location").
+            if item.storage != .folder {
+                self.background.uploadNow(recordingId: item.id, title: item.titleLabel, icloud: item.storage == .icloud)
+            }
             return true
         }
     }

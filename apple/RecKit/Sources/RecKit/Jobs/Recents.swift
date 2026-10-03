@@ -59,12 +59,12 @@ public struct RecentItem: Identifiable, Sendable {
     public let link: URL?
     /// docs/03 "Storage location": the storage the recording's folder is in, nil until it has one.
     public let storage: StorageKind?
-    /// The recording's folder in the app's iCloud folder on this Mac, for "Show in Finder" — the
-    /// iCloud counterpart of [link]. Nil on the phone and for a recording on Drive.
+    /// The recording's folder in the app's iCloud folder or in the picked local folder on this Mac,
+    /// for "Show in Finder" — the counterpart of [link]. Nil on the phone and for a recording on Drive.
     public let cloudFolder: URL?
 
     /// Whether there is a folder in the user's storage to delete along with the recording.
-    public var hasCloudFolder: Bool { link != nil || storage == .icloud }
+    public var hasCloudFolder: Bool { link != nil || storage == .icloud || storage == .folder }
     /// docs/08 "Polling · status": how long the transcription has been in flight, when it is. Nil for
     /// every other state, which has a word of its own.
     public let waitingMinutes: Int?
@@ -115,8 +115,10 @@ public struct RecentItem: Identifiable, Sendable {
         jobId != nil && waitingMinutes == nil && Self.retryable.contains(state)
     }
 
-    private static let retryable: Set<String> =
-        ["Failed", "Sign-in needed", "No space in Drive", "No space in iCloud", "Waiting for iCloud", "Retry pending"]
+    private static let retryable: Set<String> = [
+        "Failed", "Sign-in needed", "No space in Drive", "No space in iCloud", "Waiting for iCloud",
+        "Waiting for the local folder", "Retry pending",
+    ]
 
     /// docs/09 screen principle 2: whether "delete" is a thing to offer. A recording being written to right
     /// now is not one to delete — the core refuses it anyway, and offering the button would be
@@ -149,9 +151,10 @@ public struct RecentItem: Identifiable, Sendable {
     public var waitingForModel: Bool { state == "Waiting for speech model" }
 
     /// The tone [reason] is drawn in: red for a failure, and the warning tone of the badge for a job
-    /// that is only waiting (consent, sign-in, Drive space, the speech model, iCloud).
+    /// that is only waiting (consent, sign-in, Drive space, the speech model, iCloud, the local folder).
     public var reasonTone: BadgeTone {
-        alert?.isWait == true || state == "Waiting for iCloud" ? .warning : .danger
+        alert?.isWait == true || state == "Waiting for iCloud" || state == "Waiting for the local folder"
+            ? .warning : .danger
     }
 
     public init(
@@ -253,10 +256,17 @@ public enum Recents {
         return core.localTranscription.coolingDown ? "Waiting for the device to cool down" : "Transcription pending"
     }
 
-    /// docs/03 "Storage location": the recording's folder in the iCloud folder on this Mac. The phone has no
-    /// Finder to show it in.
+    /// docs/03 "Storage location": the recording's folder in the iCloud folder on this Mac, or under the
+    /// local folder picked here. The phone has no Finder to show it in.
+    ///
+    /// A local folder recording whose folder is not there — the folder picked since is another one,
+    /// and earlier copies stay where they were — has nothing for Finder to show.
     static func cloudFolder(record: RecordingRecord, core: ReclyCore_) async -> URL? {
         #if os(macOS)
+        if let path = record.localFolderPath {
+            guard let url = LocalFolderPath.url(path), FileManager.default.fileExists(atPath: url.path) else { return nil }
+            return url
+        }
         guard let path = record.icloudFolderPath, let container = core.deps.ubiquity as? ICloudContainer else { return nil }
         return await container.folderURL(path)
         #else
@@ -289,13 +299,15 @@ public enum Recents {
         // A finalized recording stays done when disconnect clears its local job history.
         guard let job else { return "Done" }
         // docs/03 "Storage location": an iCloud upload waits on the system, not on a retry timer — while it
-        // uploads, and while iCloud cannot be used from here.
+        // uploads, and while iCloud cannot be used from here. A local folder that cannot be reached
+        // waits the same way, for the user to pick it again.
         let message = lastError.flatMap { CoreMessageRef.companion.parse(code: $0)?.message }
         switch job.status {
         case .pending: return "Waiting"
         case .running: return "Uploading"
         case .waiting where message == .icloudUploading: return "Uploading to iCloud"
         case .waiting where message == .icloudUnavailable: return "Waiting for iCloud"
+        case .waiting where message == .folderUnavailable: return "Waiting for the local folder"
         case .waiting: return "Retry pending"
         case .done: return "Done"
         case .failed: return "Failed"
@@ -338,7 +350,7 @@ public enum Recents {
         "Transcribing on this device", "Transcription pending", "Waiting for the device to cool down",
         "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",
         "Receiving from the watch", "Uploading on another device", "Sign-in needed",
-        "Waiting for iCloud",
+        "Waiting for iCloud", "Waiting for the local folder",
     ]
 
     private static let failing: Set<String> =

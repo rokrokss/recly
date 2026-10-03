@@ -47,6 +47,14 @@ class ProcessingViewModel(
             refreshLocal()
         }.onFailure(::failed)
     }
+    /**
+     * docs/03 "Storage location": the storage chips saved a new revision under this form. The draft stays
+     * as it is and only the revision it saves against moves, so the next Save is not refused as stale;
+     * the core keeps the stored storage over whatever the draft carries.
+     */
+    suspend fun storageChanged() {
+        runCatching { stored = core.initializeProcessing() }.onFailure(::failed)
+    }
     fun refreshLocal() = scope.launch {
         val language = draft?.language ?: return@launch
         runCatching { local = core.localEngineInfo(language.name.lowercase().replace('_', '-')) }.onFailure(::failed)

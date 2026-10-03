@@ -20,6 +20,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import okio.Path.Companion.toPath
 import recly.core.job.JobStatus
+import recly.core.message.CoreMessage
 import recly.core.model.AudioSettings
 import recly.core.model.Codec
 import recly.core.model.Container
@@ -193,6 +194,12 @@ class LedgerStatusTest {
                     null,
                 ),
                 "remote done" to Recents.stateLabel(record(remote = true), null),
+                // docs/03 "Storage location": the upload waiting for the local folder.
+                "folder wait" to Recents.stateLabel(
+                    record(),
+                    job("j", JobStatus.WAITING),
+                    CoreMessage.FOLDER_UNAVAILABLE.code(),
+                ),
             ) +
             JobStatus.entries.map { status ->
                 status.name to Recents.stateLabel(record(), job("j", status))

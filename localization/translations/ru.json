@@ -412,5 +412,17 @@
   "Show in Finder": "Показать в Finder",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "В «Настройки» → [ваше имя] → iCloud → Drive включите «Синхронизация этого iPhone», затем включите Recly в разделе «Сохранено в iCloud» → «Все».",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "В «Системные настройки» → [ваше имя] → iCloud → Drive включите «Синхронизация этого Mac», затем включите Recly в разделе «Приложения, которые синхронизируются с iCloud Drive».",
-  "Open iCloud Settings": "Открыть настройки iCloud"
+  "Open iCloud Settings": "Открыть настройки iCloud",
+  "Local folder": "Локальная папка",
+  "No folder chosen": "Папка не выбрана",
+  "Choose folder": "Выбрать папку",
+  "Change folder": "Сменить папку",
+  "This folder cannot be reached. Choose it again.": "Нет доступа к этой папке. Выберите её снова.",
+  "The local folder cannot be reached. Choose it again in Settings.": "Нет доступа к локальной папке. Выберите её снова в Настройках.",
+  "Waiting for the local folder": "Ожидание локальной папки",
+  "Also delete from the local folder": "Также удалить из локальной папки",
+  "Deleted here, but not from the local folder: {0}": "Удалено здесь, но не из локальной папки: {0}",
+  "Audio not yet in the local folder is deleted with it.": "Также удалится аудио, ещё не скопированное в локальную папку.",
+  "Reading from the local folder…": "Чтение из локальной папки…",
+  "Could not read from the local folder": "Не удалось прочитать из локальной папки"
 }

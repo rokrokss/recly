@@ -3,7 +3,9 @@ package recly.core.transcribe
 import kotlin.math.round
 import kotlinx.serialization.Serializable
 import recly.core.model.Part
+import recly.core.model.RecordingMeta
 import recly.core.model.Track
+import recly.core.model.recJson
 
 /** `spec/transcript.schema.json`, mirrored 1:1. Times are seconds on the recording's own axis. */
 @Serializable
@@ -120,6 +122,22 @@ object TranscriptNormalizer {
             append(segment.text.trim())
         }
         if (isNotEmpty()) append('\n')
+    }
+
+    /**
+     * `{base}.transcript.md` (docs/08 "Result files"): the lines of [text], one paragraph each — Markdown
+     * runs lines together unless a blank line parts them — under front matter with the recording's
+     * title, id and start, so a notes app such as Obsidian opens it as a note. The title is a JSON
+     * string, which YAML reads as a double-quoted scalar whatever it holds.
+     */
+    fun markdown(transcript: Transcript, meta: RecordingMeta): String = buildString {
+        append("---\n")
+        meta.title?.takeIf { it.isNotBlank() }?.let { append("title: ").append(recJson.encodeToString(it)).append('\n') }
+        append("recordingId: ").append(meta.recordingId).append('\n')
+        append("startedAt: ").append(meta.startedAt).append('\n')
+        append("---\n")
+        val lines = text(transcript).trimEnd('\n')
+        if (lines.isNotEmpty()) append('\n').append(lines.replace("\n", "\n\n")).append('\n')
     }
 
     /** `01:02:03` — hours are not wrapped at 24, a recording is not a clock. */

@@ -90,6 +90,6 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
     }
 }
 
-/** A `drive.upload` step bound for Google Drive rather than iCloud (docs/03 "Storage location"). */
+/** A `drive.upload` step bound for Google Drive rather than iCloud or a local folder (docs/03 "Storage location"). */
 internal val Step.uploadsToDrive: Boolean
     get() = this is Step.DriveUpload && store == StorageKind.DRIVE

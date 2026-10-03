@@ -76,6 +76,8 @@ import java.util.Locale
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import recly.core.job.StepReport
+import recly.core.message.CoreMessage
+import recly.core.message.CoreMessageRef
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
@@ -648,7 +650,7 @@ private fun DeleteDialog(
         // to read (docs/09 screen principle 2).
         if (request.unuploaded > 0) {
             BlueprintDialogText(
-                stringResource(R.string.delete_unuploaded),
+                stringResource(if (request.folder) R.string.delete_unuploaded_folder else R.string.delete_unuploaded),
                 tone = DialogTone.DANGER,
                 modifier = Modifier.testTag("delete-unuploaded"),
             )
@@ -662,7 +664,7 @@ private fun DeleteDialog(
             modifier = Modifier.testTag("delete-local-only"),
         )
         BlueprintRadioRow(
-            label = stringResource(R.string.delete_with_drive),
+            label = stringResource(if (request.folder) R.string.delete_with_folder else R.string.delete_with_drive),
             selected = deleteDrive,
             onSelect = { deleteDrive = true },
             modifier = Modifier.testTag("delete-with-drive"),
@@ -761,6 +763,13 @@ fun ItemState.inFlight(): Boolean =
  */
 fun JobItem.inFlight(): Boolean = !localPending && state.inFlight()
 
+/**
+ * docs/03 "Storage location": a `WAITING` job held up because the local folder cannot be used — waiting
+ * for the folder to be picked again, not for a retry timer, so the row says so instead of "when".
+ */
+internal fun JobItem.waitsForFolder(): Boolean =
+    state == ItemState.WAITING && error?.let(CoreMessageRef::parse)?.message == CoreMessage.FOLDER_UNAVAILABLE
+
 fun ItemState.failing(): Boolean =
     this == ItemState.FAILED || this == ItemState.NEEDS_SPACE ||
         this == ItemState.SKIPPED_SHORT
@@ -786,6 +795,7 @@ private fun label(item: JobItem): String = if (item.localPending) stringResource
     ItemState.RUNNING -> stringResource(R.string.job_state_running)
     ItemState.WAITING -> item.waitingMinutes
         ?.let { stringResource(R.string.job_waiting_transcription, it) }
+        ?: item.takeIf { it.waitsForFolder() }?.let { stringResource(R.string.job_state_waiting_folder) }
         ?: item.nextRunAt
             ?.let { stringResource(R.string.job_state_waiting_in, remaining(it)) }
         ?: stringResource(R.string.job_state_waiting)

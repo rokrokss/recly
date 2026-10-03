@@ -129,6 +129,13 @@ enum class Str {
     CONSENT_LINK,
 
     SETTINGS_ACCOUNT,
+    // docs/03 "Storage location": Google Drive or a folder the user picked on this PC, and that folder's row.
+    SETTINGS_STORAGE,
+    STORAGE_LOCAL_FOLDER,
+    STORAGE_NO_FOLDER,
+    STORAGE_CHOOSE_FOLDER,
+    STORAGE_CHANGE_FOLDER,
+    STORAGE_FOLDER_UNREACHABLE,
     SETTINGS_SIGNED_IN,
     SETTINGS_SIGNED_OUT,
     SIGN_IN,
@@ -195,6 +202,8 @@ enum class Str {
     /** docs/10 "Drive out of space": parked because Drive is full, and no retry gets past that. */
     STATE_CONSENT_REQUIRED,
     STATE_NO_SPACE,
+    /** docs/03 "Storage location": a wait, not a failure — the local folder cannot be reached. */
+    STATE_WAITING_FOLDER,
     /** docs/08 "Polling · status": a provider is transcribing and the only news is how long it has been. */
     STATE_WAITING_TRANSCRIPTION,
     /**
@@ -231,6 +240,8 @@ enum class Str {
     PLAYER_NO_AUDIO,
     PLAYER_FETCHING,
     PLAYER_FETCH_FAILED,
+    PLAYER_FOLDER_FETCHING,
+    PLAYER_FOLDER_FETCH_FAILED,
     /** docs/03: a delete refused because the speaker would not let go of the part it was reading. */
     PLAYER_STOP_FAILED,
     /** docs/09 Accessibility: what the waveform row is, for a reader that cannot see the shape. */
@@ -267,6 +278,10 @@ enum class Str {
     DELETE_UNUPLOADED,
     DELETE_BUSY,
     DELETE_DRIVE_FAILED,
+    /** The same three lines for a recording in the local folder (docs/03 "Storage location"). */
+    DELETE_WITH_FOLDER,
+    DELETE_FOLDER_UNUPLOADED,
+    DELETE_FOLDER_FAILED,
     DELETE_DONE,
 
     // docs/03 "Sign out vs Disconnect" · docs/06: signing out is this PC, disconnecting is the grant.
@@ -315,6 +330,7 @@ enum class Str {
     CORE_ICLOUD_UNAVAILABLE,
     CORE_ICLOUD_STORAGE_FULL,
     CORE_ICLOUD_UPLOADING,
+    CORE_FOLDER_UNAVAILABLE,
     CORE_SIGN_IN_CANCELLED,
     CORE_MISSING_SECRET,
     CORE_FOLDER_TEMPLATE,

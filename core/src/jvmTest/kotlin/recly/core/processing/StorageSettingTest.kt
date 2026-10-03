@@ -8,6 +8,7 @@ import kotlin.test.assertIs
 import kotlinx.coroutines.runBlocking
 import okio.fakefilesystem.FakeFileSystem
 import recly.core.model.Step
+import recly.core.storage.PathFolder
 import recly.core.storage.StorageKind
 import recly.core.testing.FakeClock
 import recly.core.testing.FakeUbiquityContainer
@@ -56,6 +57,20 @@ class StorageSettingTest {
 
         assertIs<ProcessingSaveResult.Invalid>(repository.setStorage(StorageKind.ICLOUD))
         assertEquals(StorageKind.DRIVE, repository.storage())
+    }
+
+    @Test
+    fun `a device with a local folder can choose it, and one without cannot`() = runBlocking<Unit> {
+        val withFolder = ProcessingSettingsRepository(db, testDeps(clock = clock, localFolder = PathFolder(FakeFileSystem(clock)) { null }))
+        withFolder.initialize()
+
+        val saved = assertIs<ProcessingSaveResult.Saved>(withFolder.setStorage(StorageKind.FOLDER)).document
+        assertEquals(StorageKind.FOLDER, upload(saved).store)
+
+        val without = ProcessingSettingsRepository(inMemoryDatabase(), testDeps(clock = clock))
+        without.initialize()
+        assertIs<ProcessingSaveResult.Invalid>(without.setStorage(StorageKind.FOLDER))
+        assertEquals(StorageKind.DRIVE, without.storage())
     }
 
     @Test

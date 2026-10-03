@@ -82,6 +82,8 @@
     <string name="job_state_remote_transcribing">Transcribing on another device</string>
     <string name="job_state_waiting">Retry pending</string>
     <string name="job_state_waiting_in">Retry pending · %1$s</string>
+    <!-- docs/03 "Storage location": a wait for the picked folder, not a retry timer. -->
+    <string name="job_state_waiting_folder">Waiting for the local folder</string>
     <string name="job_state_done">Done</string>
     <string name="job_state_failed">Failed</string>
     <string name="job_state_needs_auth">Upload waiting</string>
@@ -108,6 +110,13 @@
 
     <!-- Settings (docs/11 A10). -->
     <string name="settings_account">Google Drive</string>
+    <!-- docs/03 "Storage location": where new recordings go, and the local folder's one row. -->
+    <string name="settings_storage">Storage</string>
+    <string name="storage_local_folder">Local folder</string>
+    <string name="folder_none">No folder chosen</string>
+    <string name="folder_choose">Choose folder</string>
+    <string name="folder_change">Change folder</string>
+    <string name="folder_unreachable">This folder cannot be reached. Choose it again.</string>
     <string name="settings_uploads">Uploads</string>
     <string name="settings_wifi_only">Upload on Wi-Fi only</string>
 
@@ -129,6 +138,7 @@
     <string name="core_icloud_unavailable">iCloud Drive isn’t available. In Settings, under iCloud, check that iCloud Drive and Recly are turned on.</string>
     <string name="core_icloud_storage_full">iCloud is out of space — free some up and try again</string>
     <string name="core_icloud_uploading">Uploading to iCloud</string>
+    <string name="core_folder_unavailable">The local folder cannot be reached. Choose it again in Settings.</string>
     <string name="core_drive_consent_required">Drive access needs your consent</string>
     <string name="core_sign_in_cancelled">The sign-in was cancelled</string>
     <string name="core_missing_secret">This device has no value for the secret ‘%1$s’</string>
@@ -187,6 +197,8 @@
     <string name="player_fetching">Fetching from Drive…</string>
     <string name="player_waveform_loading">Loading waveform…</string>
     <string name="player_fetch_failed">Could not fetch from Drive</string>
+    <string name="player_fetching_folder">Reading from the local folder…</string>
+    <string name="player_fetch_failed_folder">Could not read from the local folder</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Waiting for the transcription result — %1$d min elapsed</string>
     <string name="job_reason_check_key">Check the key</string>
@@ -208,12 +220,15 @@
     <string name="delete_title">Delete ‘%1$s’?</string>
     <string name="delete_local_only">Delete on this phone only</string>
     <string name="delete_with_drive">Also delete the Drive folder</string>
+    <string name="delete_with_folder">Also delete from the local folder</string>
     <!-- docs/03 "Recordings from other devices": nothing of it is only here, so there is no half to keep. -->
     <string name="delete_remote_body">Recorded on another device. Deleting removes it from Drive and from every device.</string>
     <string name="delete_busy">Still uploading — try again once it has finished</string>
     <string name="delete_drive_failed">Deleted here, but Drive refused: %1$s</string>
+    <string name="delete_folder_failed">Deleted here, but not from the local folder: %1$s</string>
     <!-- That some of the audio is only here, not how many parts: a count of files is not the user's. -->
     <string name="delete_unuploaded">Audio not yet in Drive is deleted with it.</string>
+    <string name="delete_unuploaded_folder">Audio not yet in the local folder is deleted with it.</string>
 
     <!-- docs/03 "Sign out vs Disconnect" · docs/06: signing out is this device, disconnecting is the grant. -->
     <string name="settings_disconnect">Disconnect</string>

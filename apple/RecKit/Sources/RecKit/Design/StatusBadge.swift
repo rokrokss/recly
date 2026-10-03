@@ -79,7 +79,7 @@ public struct LedgerStatus: Equatable, Sendable {
         case "No space in Drive", "No space in iCloud": return LedgerStatus(code: "NO_SPACE", tone: .warning)
         // docs/03 "Storage location": iCloud is uploading on its own schedule — in flight, like a running upload.
         case "Uploading to iCloud": return LedgerStatus(code: "UPLOADING", tone: .accent)
-        case "Waiting for iCloud": return LedgerStatus(code: "WAITING", tone: .warning)
+        case "Waiting for iCloud", "Waiting for the local folder": return LedgerStatus(code: "WAITING", tone: .warning)
         case "Too short": return LedgerStatus(code: "SKIPPED", tone: .neutral)
         default: return LedgerStatus(code: "UNKNOWN", tone: .neutral)
         }

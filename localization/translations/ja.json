@@ -412,5 +412,17 @@
   "Show in Finder": "Finderで表示",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "設定 → [ユーザ名] → iCloud → Driveで「このiPhoneを同期」をオンにし、「iCloudに保存する項目」→「すべてを表示」でReclyをオンにしてください。",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "システム設定 → [ユーザ名] → iCloud → Driveで「このMacを同期」をオンにし、「iCloud Driveに同期しているアプリ」でReclyをオンにしてください。",
-  "Open iCloud Settings": "iCloud設定を開く"
+  "Open iCloud Settings": "iCloud設定を開く",
+  "Local folder": "ローカルフォルダ",
+  "No folder chosen": "フォルダ未選択",
+  "Choose folder": "フォルダを選択",
+  "Change folder": "フォルダを変更",
+  "This folder cannot be reached. Choose it again.": "このフォルダにアクセスできません。もう一度選択してください。",
+  "The local folder cannot be reached. Choose it again in Settings.": "ローカルフォルダにアクセスできません。設定でもう一度選択してください。",
+  "Waiting for the local folder": "ローカルフォルダ待ち",
+  "Also delete from the local folder": "ローカルフォルダからも削除",
+  "Deleted here, but not from the local folder: {0}": "このデバイスからは削除しましたが、ローカルフォルダからは削除できませんでした：{0}",
+  "Audio not yet in the local folder is deleted with it.": "ローカルフォルダに未保存の音声も削除されます。",
+  "Reading from the local folder…": "ローカルフォルダから読み込み中…",
+  "Could not read from the local folder": "ローカルフォルダから読み込めませんでした"
 }

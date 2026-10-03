@@ -17,6 +17,8 @@ import recly.core.job.JobStatus
 import recly.core.job.StepReport
 import recly.core.job.StepRun
 import recly.core.job.StepStatus
+import recly.core.message.CoreMessage
+import recly.core.message.CoreMessageRef
 import recly.core.model.RecordingStatus
 import recly.core.model.Step
 import recly.core.recording.RecordingRecord
@@ -46,6 +48,11 @@ data class RecentItem(
      * its own — an adopted recording was read out of that folder (docs/03).
      */
     val link: String?,
+    /**
+     * docs/03 "Storage location": the recording's folder under the local folder the user picked, once its
+     * files are there — the row's way to it, where a Drive recording has [link].
+     */
+    val localFolderPath: String? = null,
     /**
      * docs/07 §5: the code the core last wrote for whatever step is holding the job up — a
      * `CoreMessage`, or a sentence an older build stored. Turned into words where it is drawn, so
@@ -121,6 +128,9 @@ object Recents {
         val waiting = StepReport.waitingMinutes(steps, now)
             ?.takeIf { job?.status == JobStatus.WAITING }
         val local = job?.status in setOf(JobStatus.WAITING, JobStatus.RUNNING, JobStatus.PENDING) && StepReport.localPending(job?.workflow, steps)
+        // A snapshot this build cannot read is the whole reason the job stopped, and the steps it
+        // left behind say nothing about it (docs/10 "job snapshot").
+        val lastError = job?.snapshotError ?: blockingError(steps)
         return RecentItem(
             id = record.id,
             jobId = job?.id,
@@ -130,11 +140,10 @@ object Recents {
             startedAt = record.meta.startedAt,
             durationSec = record.meta.durationSec,
             state = if (local) (if (localRunning) Str.PROCESSING_LOCAL_RUNNING else Str.PROCESSING_LOCAL_PENDING).message()
-                else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job),
+                else waiting?.let { Str.STATE_WAITING_TRANSCRIPTION.message(it) } ?: stateLabel(record, job, lastError),
             link = driveLink(steps) ?: record.driveFolderUrl,
-            // A snapshot this build cannot read is the whole reason the job stopped, and the steps
-            // it left behind say nothing about it (docs/10 "job snapshot").
-            lastError = job?.snapshotError ?: blockingError(steps),
+            localFolderPath = record.localFolderPath,
+            lastError = lastError,
             waitingMinutes = waiting,
             remote = record.remote,
             localPending = local,
@@ -164,7 +173,8 @@ object Recents {
     fun uploading(items: List<RecentItem>): Boolean =
         items.any { (it.state as? UiMessage.Res)?.key == Str.STATE_UPLOADING }
 
-    fun stateLabel(record: RecordingRecord, job: Job?): UiMessage {
+    /** @param lastError the code holding the job up ([RecentItem.lastError]), for the waits it names. */
+    fun stateLabel(record: RecordingRecord, job: Job?, lastError: String? = null): UiMessage {
         // docs/03 "Recordings from other devices": what is going on somewhere else is read off the recording row —
         // none of it is a job of this PC's, so none of it can be read off the queue — and it is read
         // *first*: a transfer still coming in and another device's upload both carry
@@ -187,7 +197,9 @@ object Recents {
             null -> Str.STATE_DONE
             JobStatus.PENDING -> Str.STATUS_WAITING
             JobStatus.RUNNING -> Str.STATE_UPLOADING
-            JobStatus.WAITING -> Str.STATE_RETRY_WAIT
+            // docs/03 "Storage location": the local folder is gone or was never picked — a wait the pick
+            // ends, not a retry timer running down.
+            JobStatus.WAITING -> if (waitsForFolder(lastError)) Str.STATE_WAITING_FOLDER else Str.STATE_RETRY_WAIT
             JobStatus.DONE -> Str.STATE_DONE
             JobStatus.FAILED -> Str.STATE_FAILED
             JobStatus.NEEDS_AUTH -> Str.STATUS_SIGN_IN_NEEDED
@@ -200,6 +212,9 @@ object Recents {
             JobStatus.SKIPPED_SHORT -> Str.STATE_TOO_SHORT
         }.message()
     }
+
+    private fun waitsForFolder(lastError: String?): Boolean =
+        lastError?.let(CoreMessageRef::parse)?.message == CoreMessage.FOLDER_UNAVAILABLE
 
     fun driveLink(steps: List<StepRun>): String? = steps
         .mapNotNull { it.output?.link() }

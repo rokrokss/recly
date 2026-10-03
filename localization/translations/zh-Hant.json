@@ -412,5 +412,17 @@
   "Show in Finder": "在Finder中顯示",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "請在「設定」→[你的名稱]→iCloud→「雲碟」中開啟「同步此iPhone」，然後在「儲存至iCloud」→「顯示全部」中開啟Recly。",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "請在「系統設定」→[你的名稱]→iCloud→「雲碟」中開啟「同步此Mac」，然後在「同步到『iCloud雲碟』的App」中開啟Recly。",
-  "Open iCloud Settings": "打開iCloud設定"
+  "Open iCloud Settings": "打開iCloud設定",
+  "Local folder": "本機資料夾",
+  "No folder chosen": "未選擇資料夾",
+  "Choose folder": "選擇資料夾",
+  "Change folder": "變更資料夾",
+  "This folder cannot be reached. Choose it again.": "無法存取此資料夾。請重新選擇。",
+  "The local folder cannot be reached. Choose it again in Settings.": "無法存取本機資料夾。請在「設定」中重新選擇。",
+  "Waiting for the local folder": "等待本機資料夾",
+  "Also delete from the local folder": "同時從本機資料夾刪除",
+  "Deleted here, but not from the local folder: {0}": "已從此處刪除，但未能從本機資料夾刪除：{0}",
+  "Audio not yet in the local folder is deleted with it.": "尚未存入本機資料夾的音訊也將刪除。",
+  "Reading from the local folder…": "正在從本機資料夾讀取…",
+  "Could not read from the local folder": "無法從本機資料夾讀取"
 }

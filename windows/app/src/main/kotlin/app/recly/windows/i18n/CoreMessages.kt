@@ -27,6 +27,7 @@ object CoreMessages {
         CoreMessage.ICLOUD_UNAVAILABLE -> Str.CORE_ICLOUD_UNAVAILABLE
         CoreMessage.ICLOUD_STORAGE_FULL -> Str.CORE_ICLOUD_STORAGE_FULL
         CoreMessage.ICLOUD_UPLOADING -> Str.CORE_ICLOUD_UPLOADING
+        CoreMessage.FOLDER_UNAVAILABLE -> Str.CORE_FOLDER_UNAVAILABLE
         CoreMessage.SIGN_IN_CANCELLED -> Str.CORE_SIGN_IN_CANCELLED
         CoreMessage.MISSING_SECRET -> Str.CORE_MISSING_SECRET
         CoreMessage.FOLDER_TEMPLATE -> Str.CORE_FOLDER_TEMPLATE
@@ -63,6 +64,7 @@ object CoreMessages {
         CoreMessage.ICLOUD_UNAVAILABLE,
         CoreMessage.ICLOUD_STORAGE_FULL,
         CoreMessage.ICLOUD_UPLOADING,
+        CoreMessage.FOLDER_UNAVAILABLE,
         CoreMessage.SIGN_IN_CANCELLED,
         CoreMessage.STALE,
         // docs/08 "Errors": what to do about it is the whole sentence, and the provider's own line is

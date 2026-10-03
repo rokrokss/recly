@@ -33,6 +33,9 @@ import recly.core.message.CoreMessage
 import recly.core.storage.CloudFiles
 import recly.core.storage.StorageKind
 import recly.core.storage.StorageUnavailableException
+import recly.core.transcribe.TranscribeRunner
+import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptNormalizer
 import kotlinx.serialization.json.JsonObject
 
 /** What one [RemoteRecordings.pull] did. [skipped] is a pull that did not run — see the reasons. */
@@ -161,6 +164,7 @@ class RemoteRecordings(
                 val name = MetaWriter.metaFileName(MetaWriter.baseName(record.meta))
                 val metaFile = api.findChild(folderId, name) ?: continue
                 api.updateMedia(metaFile.id, recJson.encodeToString(record.meta).encodeToByteArray(), META_MIME)
+                if (StorageKind.ofId(folderId) == StorageKind.FOLDER) retitleMarkdown(record, folderId)
                 recordings.titlePushed(recordingId, title)
                 deps.logger.log(Logger.Level.INFO, "remote.title.pushed", mapOf("recordingId" to recordingId))
             } catch (e: CancellationException) {
@@ -182,6 +186,23 @@ class RemoteRecordings(
     }
 
     /**
+     * The Markdown transcript in a local folder carries the title in its front matter (docs/08 "Result
+     * files"), so a rename writes it again from the local transcript — when both are there.
+     */
+    private suspend fun retitleMarkdown(record: RecordingRecord, folderId: String) {
+        val base = MetaWriter.baseName(record.meta)
+        val markdown = api.findChild(folderId, TranscribeRunner.markdownFileName(base)) ?: return
+        val local = record.dir / TranscribeRunner.jsonFileName(base)
+        if (!deps.fileSystem.exists(local)) return
+        val transcript = recJson.decodeFromString<Transcript>(deps.fileSystem.read(local) { readUtf8() })
+        api.updateMedia(
+            markdown.id,
+            TranscriptNormalizer.markdown(transcript, record.meta).encodeToByteArray(),
+            TranscribeRunner.MARKDOWN_MIME,
+        )
+    }
+
+    /**
      * Every storage that can be listed now, each with its recording folders. Throws only when none
      * could be: the first storage's reason — no account is `AuthRequiredException`, as before there
      * were two.
@@ -192,6 +213,9 @@ class RemoteRecordings(
         for (kind in StorageKind.entries) {
             val files = api.forKind(kind) ?: continue
             if (kind == StorageKind.ICLOUD && !icloudChosen()) continue
+            // A local folder is this device's alone (docs/03 "Storage location"): nothing in it is another
+            // device's recording, and a row of its own is never dropped for not being listed.
+            if (kind == StorageKind.FOLDER) continue
             try {
                 listed[kind] = files.recordingFolders()
             } catch (e: CancellationException) {

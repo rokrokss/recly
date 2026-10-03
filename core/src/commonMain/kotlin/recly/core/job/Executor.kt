@@ -20,6 +20,7 @@ import recly.core.drive.string
 import recly.core.message.CoreMessage
 import recly.core.model.OnError
 import recly.core.model.Step
+import recly.core.storage.StorageKind
 import recly.core.model.Workflow
 import recly.core.platform.AuthRequiredException
 import recly.core.platform.CoreDeps
@@ -111,7 +112,20 @@ class Executor(
 
     internal suspend fun isLocalNext(job: Job): Boolean {
         val run = store.stepsOf(job.id).firstOrNull { it.status !in setOf(StepStatus.SUCCEEDED, StepStatus.SKIPPED) } ?: return false
-        return job.workflow?.steps?.firstOrNull { it.id == run.stepId } is Step.LocalTranscribe
+        val workflow = job.workflow ?: return false
+        return workflow.steps.firstOrNull { it.id == run.stepId }?.let { offline(it, workflow) } == true
+    }
+
+    /**
+     * What the offline pass may run: on-device transcription, and the copies into a local folder
+     * (docs/03 "Storage location") — writing to a folder on the device is no network request, so it
+     * does not wait for a connection, or for Wi-Fi.
+     */
+    private fun offline(step: Step, workflow: Workflow): Boolean = when (step) {
+        is Step.LocalTranscribe -> true
+        is Step.DriveUpload -> step.store == StorageKind.FOLDER
+        is Step.TranscriptPublish -> workflow.steps.any { it is Step.DriveUpload && it.store == StorageKind.FOLDER }
+        else -> false
     }
 
     private suspend fun runJob(job: Job, now: Instant, localOnly: Boolean) {
@@ -169,7 +183,7 @@ class Executor(
             if (disconnecting) return
             currentCoroutineContext().ensureActive()
             val step = defined[run.stepId]
-            if (localOnly && step !is Step.LocalTranscribe) {
+            if (localOnly && (step == null || !offline(step, workflow))) {
                 store.updateJob(job.id, JobStatus.PENDING, null, deps.clock.now())
                 return
             }

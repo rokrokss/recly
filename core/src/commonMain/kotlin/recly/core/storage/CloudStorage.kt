@@ -9,18 +9,20 @@ import recly.core.drive.UploadState
 import recly.core.platform.CoreDeps
 
 /**
- * Both storages behind one [CloudFiles]: a call that names a file or a folder goes to the storage
+ * Every storage behind one [CloudFiles]: a call that names a file or a folder goes to the storage
  * the id belongs to ([StorageKind.ofId]), so a folder id kept on a row reaches the right one even
  * after the setting changed (docs/03 "Storage location"). The calls that name nothing — a listing, the
- * root, the upload sizes — are Drive's; a caller that wants iCloud's asks [forKind] for it.
+ * root, the upload sizes — are Drive's; a caller that wants another one's asks [forKind] for it.
  *
  * [icloud] is null where there is no iCloud container: Android, Windows, the watches, and an Apple
- * build without the entitlement. An iCloud id reaching such a device fails the way an unreachable
- * iCloud does ([StorageUnavailableException]).
+ * build without the entitlement. [folder] is null where the shell offers no local folder: the
+ * watches. An id of either reaching such a device fails the way an unreachable
+ * storage does ([StorageUnavailableException]).
  */
 class CloudStorage(
     private val drive: CloudFiles,
     private val icloud: CloudFiles?,
+    private val folder: CloudFiles? = null,
 ) : CloudFiles {
     override val multipartLimit: Long get() = drive.multipartLimit
     override val orderedUploads: Boolean get() = drive.orderedUploads
@@ -29,6 +31,7 @@ class CloudStorage(
     override fun forKind(kind: StorageKind): CloudFiles? = when (kind) {
         StorageKind.DRIVE -> drive
         StorageKind.ICLOUD -> icloud
+        StorageKind.FOLDER -> folder
     }
 
     private fun at(id: String): CloudFiles {
@@ -83,8 +86,14 @@ class CloudStorage(
         fileIds.groupBy(StorageKind::ofId).values.all { ids -> at(ids.first()).settled(ids) }
 
     companion object {
-        /** Drive always; iCloud where the shell handed the core a container (docs/01 `CoreDeps`). */
-        fun of(deps: CoreDeps): CloudStorage =
-            CloudStorage(DriveApi(deps), deps.ubiquity?.let { ICloudFiles(it, deps) })
+        /**
+         * Drive always; iCloud where the shell handed the core a container, and a local folder where
+         * it handed one (docs/01 `CoreDeps`).
+         */
+        fun of(deps: CoreDeps): CloudStorage = CloudStorage(
+            DriveApi(deps),
+            deps.ubiquity?.let { ICloudFiles(it, deps) },
+            deps.localFolder?.let { FolderFiles(it, deps) },
+        )
     }
 }

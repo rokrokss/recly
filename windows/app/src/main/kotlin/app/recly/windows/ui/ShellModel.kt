@@ -49,6 +49,7 @@ import java.awt.Frame
 import java.io.File
 import java.net.URI
 import java.util.prefs.BackingStoreException
+import javax.swing.JFileChooser
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,8 +68,10 @@ import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
+import recly.core.processing.ProcessingSaveResult
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
+import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
 
@@ -94,6 +97,8 @@ data class RecordingDetail(
     val driveFetch: DriveFetch = DriveFetch.DECIDING,
     /** How much of that trip is done, 0 to 1, by the bytes of the parts it brings back. */
     val fetchProgress: Float = 0f,
+    /** docs/03 "Storage location": the trip is to the local folder this PC picked, not to Drive. */
+    val folder: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -366,6 +371,25 @@ class ShellModel(
         private set
 
     /**
+     * docs/03 "Storage location": where new recordings go, as the settings' chips show it. Read when the
+     * core opens and again whenever the settings window comes to the front — the tray reads it too,
+     * so it cannot wait for that window.
+     */
+    var storage: StorageKind by mutableStateOf(StorageKind.DRIVE)
+        private set
+
+    /** The folder the user picked for the local folder storage, kept on this PC; null while none is. */
+    var localFolder: String? by mutableStateOf(settings.localFolder)
+        private set
+
+    /** Whether [localFolder] can be used right now — a USB drive may have been pulled out since. */
+    var localFolderAvailable: Boolean by mutableStateOf(false)
+        private set
+
+    /** A chip's save in flight, so a second tap does not race its read-back ([selectStorage]). */
+    @Volatile private var storageBusy: Boolean = false
+
+    /**
      * Whether the recording that is ending gets to be named. False only on the way out: the user
      * asked to quit, and a dialog that keeps the app alive to ask for a title is the opposite of
      * that (the Mac's `MenuModel.finish(askingForTitle:)` draws the same line).
@@ -576,6 +600,7 @@ class ShellModel(
         )
 
         graph.core.initializeProcessing()
+        readStorage(graph)
         val models = ModelDownload(
             scope = scope,
             read = graph.core::localEngineInfo,
@@ -971,6 +996,16 @@ class ShellModel(
     }
 
     /**
+     * docs/03 "Storage location": the recording's own folder in the local folder, in the file manager — what
+     * "Open in Drive" is for a Drive recording, opened the way Settings opens the data folder.
+     */
+    fun openInFolder(item: RecentItem) {
+        val root = localFolder ?: return
+        val path = item.localFolderPath ?: return
+        open(File(root, path).path)
+    }
+
+    /**
      * docs/08 "Result files": the local copy if the step ran on this PC, and Drive's if it ran
      * elsewhere — the core decides which, and keeps what it downloads. The audio beside it is read
      * the same way: what is on this PC first, and Drive for what the sweep took ([fetchFromDrive]).
@@ -988,7 +1023,7 @@ class ShellModel(
             } ?: RecordingPlaylist.Selection.EMPTY
             updateDetail(recordingId) {
                 it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
-                    driveFetch = DriveFetch.DECIDING)
+                    driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER)
             }
             fetchFromDrive(graph, recordingId, record, local)
         }
@@ -1143,6 +1178,8 @@ class ShellModel(
                 title = item.title,
                 unuploaded = Retention.unuploadedParts(graph.core, item.id),
                 remote = item.remote,
+                // Another device's recording was read out of Drive; the local folder is never listed.
+                folder = !item.remote && Retention.storageOf(graph.core, item.id) == StorageKind.FOLDER,
             )
         }
     }
@@ -1178,7 +1215,11 @@ class ShellModel(
                         onSuccess = { result ->
                             when (result) {
                                 is DeleteResult.Deleted -> result.driveError
-                                    ?.let { Str.DELETE_DRIVE_FAILED.message(it) }
+                                    ?.let { refused ->
+                                        // docs/03 "Storage location": the other half was the local folder's.
+                                        (if (request.folder) Str.DELETE_FOLDER_FAILED else Str.DELETE_DRIVE_FAILED)
+                                            .message(refused)
+                                    }
                                     ?: Str.DELETE_DONE.message()
 
                                 DeleteResult.Busy -> Str.DELETE_BUSY.message()
@@ -1547,6 +1588,73 @@ class ShellModel(
         theme = choice
     }
 
+    // --- storage (docs/03 "Storage location") ---------------------------------------------------
+
+    /**
+     * A chip, saved the moment it is tapped — as the next revision of the processing settings, which
+     * an open processing form then takes under its draft ([ProcessingViewModel.storageChanged]). The
+     * choice is read back rather than assumed, so the chips say what the core holds.
+     */
+    fun selectStorage(kind: StorageKind) {
+        val graph = graph ?: return
+        // Taken here, on the thread the tap arrived on: two chips tapped in quick succession would
+        // otherwise race each other's read-back and leave the wrong one marked.
+        if (kind == storage || storageBusy) return
+        storageBusy = true
+        scope.launch {
+            try {
+                if (graph.core.processingSettings.setStorage(kind) is ProcessingSaveResult.Saved) {
+                    processing?.storageChanged()
+                }
+                readStorage(graph)
+            } finally {
+                storageBusy = false
+            }
+        }
+    }
+
+    /** The settings window has come to the front: the choice, and whether the folder is still there. */
+    fun refreshStorage() {
+        val graph = graph ?: return
+        scope.launch { readStorage(graph) }
+    }
+
+    /** The folder row's button: the picker, then [useLocalFolder] on what was chosen. */
+    fun chooseLocalFolder() {
+        if (graph == null) return
+        scope.launch {
+            val chosen = folderDialog(localFolder) ?: return@launch
+            useLocalFolder(chosen.absolutePath)
+        }
+    }
+
+    /**
+     * The folder the user picked: kept on this PC (never in the exported settings), and the uploads
+     * that were waiting for one let go now rather than at their next look, five minutes out. Apart
+     * from the picker so a test can pick without a dialog.
+     */
+    internal suspend fun useLocalFolder(path: String) {
+        val graph = graph ?: return
+        // In the store before anything is let go: the core reads the folder from it on every call,
+        // so the jobs released below must find it there.
+        settings.localFolder = path
+        localFolder = path
+        localFolderAvailable = graph.core.deps.localFolder?.available() == true
+        try {
+            graph.core.resumeFolderWaits()
+        } finally {
+            // docs/14 "Runner": the pass runs now, not at the timer the waits were parked on.
+            runner?.jobsDue()
+        }
+    }
+
+    private suspend fun readStorage(graph: AppGraph) {
+        runCatching { graph.core.processingSettings.storage() }
+            .onSuccess { storage = it }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.storage.failed", error = it) }
+        localFolderAvailable = graph.core.deps.localFolder?.available() == true
+    }
+
     /** deliverable 3: the helper's own report, from the settings window, on the machine it runs on. */
     fun runSelfTest() {
         val command = helperCommand ?: return
@@ -1587,6 +1695,20 @@ class ShellModel(
         name?.let { dialog.file = it }
         dialog.isVisible = true
         dialog.file?.let { File(dialog.directory ?: "", it) }
+    }
+
+    /**
+     * docs/03 "Storage location": a folder rather than a file. AWT's dialog cannot pick a directory on
+     * Windows, so this is Swing's chooser held to directories, run the way [fileDialog] runs its own:
+     * modal, on the UI thread's dispatcher. It opens on [current] when there is one. Null when the user
+     * closed it without choosing.
+     */
+    private suspend fun folderDialog(current: String?): File? = withContext(Dispatchers.Main) {
+        val chooser = JFileChooser(current).apply {
+            fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+            dialogTitle = APP_NAME
+        }
+        if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) chooser.selectedFile else null
     }
 
     /**

@@ -40,8 +40,9 @@ transcription on a supported device or with **your own** API key, and keeps the 
   separate tracks.
 - **Only your own storage.** Recordings go to a folder like `recly/2026/2026-09/` in
   your own Google Drive, using the narrowest permission Google offers (`drive.file`), and are never
-  deleted before the upload is confirmed. On iPhone and Mac you can choose your own iCloud instead;
-  Android and Windows use Google Drive. Recly cannot see your files. It has no server to see them with.
+  deleted before the upload is confirmed. On iPhone and Mac you can choose your own iCloud instead,
+  and on iPhone, Mac, Windows and Android a local folder you pick, such as an Obsidian vault. Recly cannot
+  see your files. It has no server to see them with.
 - **Files are the interface.** Your agent reads transcription results from your Drive. Settings offer
   on-device transcription, an external API using your key (AssemblyAI, Clova, Deepgram, OpenAI, Azure
   and more), or upload only. Speaker separation is automatic when supported. Notes are your agent's
@@ -161,7 +162,8 @@ transcription adapters and the job queue.
 ## Privacy
 
 Recly has no server. The only places data can go are your Google Drive (or your iCloud, if you
-choose it on iPhone or Mac), the transcription provider you chose, and your own paired watch or phone. The
+choose it on iPhone or Mac), the transcription provider you chose, and your own paired watch or phone; a
+local folder you pick stays on your device. The
 [privacy policy](https://recly.dev/policy/privacy-policy) lists every one of those paths, and
 [docs/recly.md §15](docs/recly.md#15-privacy--data-flows-formerly-docs15) is the engineering contract
 behind it: any change that adds a network call must update that section first.

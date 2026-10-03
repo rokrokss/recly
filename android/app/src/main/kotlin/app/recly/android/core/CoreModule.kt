@@ -8,6 +8,7 @@ import app.recly.android.R
 import app.recly.android.auth.AndroidTokenProvider
 import app.recly.android.auth.GoogleAuth
 import app.recly.android.auth.PlayAuthorizer
+import app.recly.android.settings.AppSettings
 import app.recly.android.transcribe.QwenSpeechEngine
 import app.recly.recording.platform.AndroidSecureStore
 import app.recly.recording.platform.SystemClock
@@ -32,6 +33,8 @@ class AppGraph internal constructor(
     val core: ReclyCore,
     val auth: GoogleAuth,
     val tokens: AndroidTokenProvider,
+    /** docs/03 "Storage location": the local folder the core writes into, which settings picks and names. */
+    val folder: SafFolder,
 )
 
 /**
@@ -58,6 +61,7 @@ object CoreModule {
         val dataDir = context.filesDir.absolutePath.toPath() / "rec"
         FileSystem.SYSTEM.createDirectories(dataDir)
         val transport = KtorTransport()
+        val folder = SafFolder(context, AppSettings(context), Dispatchers.IO)
 
         val deps = CoreDeps(
             clock = clock,
@@ -80,6 +84,7 @@ object CoreModule {
                 else locale.toLanguageTag()
             },
             localTranscription = QwenSpeechEngine.make(context, transport),
+            localFolder = folder,
         )
 
         val core = ReclyCore(deps, AndroidRuntime.driverFactory(context, "rec.db"))
@@ -95,6 +100,7 @@ object CoreModule {
                 serverClientId = context.getString(R.string.google_server_client_id),
             ),
             tokens = tokens,
+            folder = folder,
         )
     }
 }

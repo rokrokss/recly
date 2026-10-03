@@ -15,6 +15,7 @@ import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.missingTranscriptAvailability
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.message.CoreMessage
+import recly.core.message.CoreMessageRef
 import recly.core.db.RecDatabase
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveStore
@@ -114,6 +115,27 @@ class ReclyCore(
             }
             if (here) jobStore.resumeModel(job.id, deps.clock.now())
         }
+    }
+
+    /**
+     * docs/03 "Storage location": the user picked a local folder. The uploads and transcripts waiting for one
+     * are let go now rather than at their next look, five minutes out; nothing else about them
+     * changes. Returns how many jobs were let go — the shell runs the due jobs after it.
+     */
+    @Throws(Throwable::class)
+    suspend fun resumeFolderWaits(): Int {
+        val now = deps.clock.now()
+        var resumed = 0
+        for (job in jobs.list().filter { it.status == JobStatus.WAITING }) {
+            val waiting = jobs.steps(job.id).any {
+                it.status == StepStatus.PENDING &&
+                    it.lastError?.let(CoreMessageRef::parse)?.message == CoreMessage.FOLDER_UNAVAILABLE
+            }
+            if (!waiting) continue
+            jobStore.clearBackoff(job.id, now)
+            resumed++
+        }
+        return resumed
     }
 
     @Throws(Throwable::class)

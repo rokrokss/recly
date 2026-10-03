@@ -412,5 +412,17 @@
   "Show in Finder": "Im Finder zeigen",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "In den Einstellungen → [dein Name] → iCloud → Drive „iPhone synchronisieren“ aktivieren, dann unter „Auf iCloud gesichert“ → „Alle anzeigen“ Recly aktivieren.",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "In den Systemeinstellungen → [dein Name] → iCloud → Drive „Diesen Mac synchronisieren“ aktivieren, dann unter „Apps, die über iCloud Drive synchronisiert werden“ Recly aktivieren.",
-  "Open iCloud Settings": "iCloud-Einstellungen öffnen"
+  "Open iCloud Settings": "iCloud-Einstellungen öffnen",
+  "Local folder": "Lokaler Ordner",
+  "No folder chosen": "Kein Ordner gewählt",
+  "Choose folder": "Ordner wählen",
+  "Change folder": "Ordner ändern",
+  "This folder cannot be reached. Choose it again.": "Auf diesen Ordner kann nicht zugegriffen werden. Erneut auswählen.",
+  "The local folder cannot be reached. Choose it again in Settings.": "Auf den lokalen Ordner kann nicht zugegriffen werden. In den Einstellungen erneut auswählen.",
+  "Waiting for the local folder": "Wartet auf den lokalen Ordner",
+  "Also delete from the local folder": "Auch aus dem lokalen Ordner löschen",
+  "Deleted here, but not from the local folder: {0}": "Hier gelöscht, aber nicht aus dem lokalen Ordner: {0}",
+  "Audio not yet in the local folder is deleted with it.": "Noch nicht in den lokalen Ordner kopiertes Audio wird ebenfalls gelöscht.",
+  "Reading from the local folder…": "Lesen aus dem lokalen Ordner…",
+  "Could not read from the local folder": "Lesen aus dem lokalen Ordner fehlgeschlagen"
 }

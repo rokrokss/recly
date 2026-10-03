@@ -4,6 +4,7 @@ import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.UiMessage
 import recly.core.ReclyCore
 import recly.core.recording.RecordingRecord
+import recly.core.storage.StorageKind
 
 /**
  * docs/03 "Retention · deletion": what the delete dialog and the disconnect warning have to say *first* — how
@@ -51,6 +52,17 @@ object Retention {
             runCatching { core.deps.fileSystem.exists(record.dir / part.file) }.getOrDefault(false)
         }
 
+    /**
+     * docs/03 "Storage location": where one recording's files go — the storage its folder is in, or, before
+     * anything of it has been copied, the one its settings froze when it started. That second case
+     * is the one the dialog's "not yet" line is about, so the folder id alone would name Drive for it.
+     * Null when neither is known.
+     */
+    suspend fun storageOf(core: ReclyCore, recordingId: String): StorageKind? = runCatching {
+        core.recordings.get(recordingId)?.storage
+            ?: core.processingSettings.recordingSnapshot(recordingId)?.settings?.storage?.provider
+    }.getOrNull()
+
     /** Enough of the list to count what Drive has not got — the same depth the phone scans. */
     const val SCAN: Int = 100
 }
@@ -70,6 +82,11 @@ data class DeleteRequest(
      * "leave it in Drive" half to keep — the dialog says what the deletion costs instead of asking.
      */
     val remote: Boolean = false,
+    /**
+     * docs/03 "Storage location": the recording goes to the local folder this PC picked rather than to
+     * Drive, so the dialog's lines name that folder ([Retention.storageOf]).
+     */
+    val folder: Boolean = false,
 )
 
 /**

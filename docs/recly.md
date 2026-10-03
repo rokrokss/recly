@@ -45,7 +45,7 @@ marked "retired". The phone screen has three tabs: Record, List, Settings.
 ### One-line definition
 
 A recorder that leaves the original recordings and the transcription results in **the user's own Google Drive**. iPhone and
-Mac can choose the user's own iCloud instead of Drive (ADR-024). Processing runs in the order recording, original upload,
+Mac can choose the user's own iCloud instead of Drive, and iPhone, Mac, Windows and the Android phone a local folder the user picks (ADR-024). Processing runs in the order recording, original upload,
 transcription, result upload. The watch handles recording and transfer to the phone; the phone and desktop handle
 post-processing.
 
@@ -95,8 +95,8 @@ the current rule.
 | ADR-020 | The top of the default Drive folder is **`recly/`** — the `drive.upload` `folder` default `recly/{{yyyy}}/{{yyyy}}-{{MM}}`, and `recly/memo/{{yyyy}}-{{MM}}` for the "Memo" default workflow |
 | ADR-021 | In `transcribe` (STT + speaker diarization), **the device running the job calls the provider API directly with the user's key**. There is no intermediate server, relay or callback URL |
 | ADR-022 | **There is no telemetry.** No analytics, usage statistics, crash reporting, remote log collection, remote config, A/B testing or advertising identifiers. No shell has a Firebase/Crashlytics/Sentry/AppCenter-family dependency. Logs stay only in the device-local platform log and leave the device only when the user exports them |
-| ADR-023 | **Drive is the source of truth for the recording list** (2026-09-04). Recordings uploaded by another device on the same account also appear in this device's list — with no separate index file or server, the app lists in Drive the `{base}/` folders (ADR-014) it stamped with a `recordingId` and reads their `meta.json` (§3 "Recordings from other devices"). Such a row has no Job and no original on this device; playback downloads from Drive and caches. A folder that has no `meta.json` yet also appears in the list — as a provisional "Uploading on another device" row. When it disappears from Drive, the row disappears too. Rows this device created itself are left alone whatever Drive says. A device that chose iCloud lists the iCloud folder by the same rules (ADR-024) |
-| ADR-024 | **Each device picks its storage** (2026-10-02). The default is Google Drive; iPhone and Mac can switch to iCloud (the app's iCloud Drive folder) in Settings. The Android phone, Galaxy Watch and Windows use Drive only. A recording uploads to the storage fixed when it started, and an uploaded recording is not moved. iCloud adds one folder-properties file to the same layout as Drive, and an upload ends when iCloud says it has received it (§3 "Storage location") |
+| ADR-023 | **Drive is the source of truth for the recording list** (2026-09-04). Recordings uploaded by another device on the same account also appear in this device's list — with no separate index file or server, the app lists in Drive the `{base}/` folders (ADR-014) it stamped with a `recordingId` and reads their `meta.json` (§3 "Recordings from other devices"). Such a row has no Job and no original on this device; playback downloads from Drive and caches. A folder that has no `meta.json` yet also appears in the list — as a provisional "Uploading on another device" row. When it disappears from Drive, the row disappears too. Rows this device created itself are left alone whatever Drive says. A device that chose iCloud lists the iCloud folder by the same rules (ADR-024). A local folder is never listed |
+| ADR-024 | **Each device picks its storage** (2026-10-02). The default is Google Drive; iPhone and Mac can switch to iCloud (the app's iCloud Drive folder) in Settings, and iPhone, Mac, Windows and the Android phone to a local folder the user picks (2026-10-03). The watches hand their recordings to their phone, which uploads them to its own storage. A recording uploads to the storage fixed when it started, and an uploaded recording is not moved. iCloud adds one folder-properties file to the same layout as Drive, and an upload ends when iCloud says it has received it; a local folder gets the same layout plus a Markdown transcript, is this device's alone (never listed), and an upload ends with the copy (§3 "Storage location") |
 
 Reversing these rules does not end with editing this document. Reversing ADR-022 in particular means also changing
 `docs/policy/privacy-policy.md`, the Play "Data safety" form and the App Store privacy labels.
@@ -124,7 +124,7 @@ Reversing these rules does not end with editing this document. Reversing ADR-022
                  │                                           │
                  ▼                                           ▼
    Google Drive  {folder}/{base}/ parts + meta.json      STT provider (for external API transcription)
-   or iCloud (iPhone·Mac, ADR-024) — same layout
+   or iCloud (iPhone·Mac) or a local folder (iPhone·Mac·Windows·Android, ADR-024) — same layout
 ```
 
 ### Components
@@ -213,6 +213,9 @@ references the `:core:assembleXCFramework` output as a SwiftPM binary target.
 - `Transport` — Ktor by default. Apple can replace it with a background URLSession implementation (ADR-015)
 - `UbiquityContainer` — the app's iCloud container (optional). Only iPhone and Mac builds signed with the iCloud
   entitlement provide it (§3 "Storage location")
+- `LocalFolder` — the local folder the user picked (optional). The Mac and Windows provide it through the core's
+  `PathFolder`, the iPhone through a bookmark of the folder picked in Files (`PickedFolder`), the Android phone through the
+  Storage Access Framework (§3 "Storage location")
 - `AudioTools` — `concat` (lossless remux of parts, §8)
 - `Clock`, `Logger`, `DeviceInfo{deviceId, platform, name}`, the `io` dispatcher
 
@@ -579,6 +582,8 @@ The delete action on a list row. **One recording at a time**, and every time it 
   link.
 - For an **iCloud recording** (§3 "Storage location"), the same dialog speaks of iCloud instead of Drive (`Also delete the iCloud folder`), and the folder is
   deleted on every device through a coordinated delete. The failure message is likewise `Deleted here, but iCloud refused`.
+- For a **local folder recording** (§3 "Storage location"), the dialog speaks of the local folder (`Also delete from the local folder`), and the
+  recording's folder in it is deleted. The failure message is `Deleted here, but not from the local folder`.
 - **Drive is the only path by which a deletion reaches other devices.** A recording deleted with "Also delete the Drive folder" disappears, at the next fetch, from the list of
   every other device that **adopted** that folder ("Recordings from other devices" below). The row on the device that **made** the recording stays —
   it is that device's original and Job record, and Drive has no authority to delete it. "Delete local only" reaches no device.
@@ -600,7 +605,7 @@ The delete action on a list row. **One recording at a time**, and every time it 
 
 #### Detaching from the account — Sign out vs Disconnect
 
-This is about Google Drive — iCloud has no in-app disconnect (§3 "Storage location"). The Google Drive settings offer **a single “Disconnect” button**. The connected account and the button are shown in the same
+This is about Google Drive — iCloud and the local folder have no in-app disconnect (§3 "Storage location"). The Google Drive settings offer **a single “Disconnect” button**. The connected account and the button are shown in the same
 row and text size as the surrounding settings. Pressing the button opens one confirmation, and confirming performs **the Google grant revocation and the local cleanup on this device**
 together. There is no “Disconnect this device only” option and no scope-selection menu.
 The confirmation says, in one paragraph, that Recly's Drive access is revoked on every device connected with the same Google account, that pending work continues when the user reconnects to the same account, and that recordings and settings stay.
@@ -840,11 +845,15 @@ list and breaks nothing, and the only alternative is the full `drive` scope, whi
 ### Storage location (ADR-024)
 
 **2026-10-02 user decision**: by default, recordings and results go to Google Drive, and iPhone · Mac can switch to **iCloud**
-in settings. Android phones · Galaxy Watch · Windows use Drive only — iCloud has no official API for Android · Windows, and this difference
+in settings. Android phones · Galaxy Watch · Windows cannot use iCloud — iCloud has no official API for Android · Windows, and this difference
 is accepted. Apple Watch still hands its recordings to the iPhone (ADR-002), and the iPhone uploads them to its own storage. First run is the same as before.
 
-- **Where to choose**: in builds that can offer iCloud, the top section of settings becomes `Storage` and has two chips, `Google Drive` ·
-  `iCloud` (product names, so they are not translated). A tap saves immediately (`ProcessingSettingsRepository.setStorage`, §5).
+**2026-10-03 user decision**: Mac, Windows and the Android phone can also choose a **local folder** — a folder the user picks on the device, such as
+an Obsidian vault or a folder another tool syncs — as a third storage, with no Google account needed; the iPhone was added the same day, so an Apple
+Watch recording reaches an Obsidian vault through its iPhone. Its rules are under "Local folder" below; the watches do not offer it.
+
+- **Where to choose**: in builds that can offer iCloud or a local folder, the top section of settings becomes `Storage` and has the chips `Google Drive` ·
+  `iCloud` (product names, so they are not translated; `iCloud` only where it is offered) · `Local folder` (only where it is offered, "Local folder" below). A tap saves immediately (`ProcessingSettingsRepository.setStorage`, §5).
   Below the chips, only the row for the chosen storage appears, in the same shape — for Google Drive, `Drive connected` · `Disconnect` or
   `Drive not connected` · `Connect Drive`; for iCloud, `iCloud connected` or `iCloud not connected` plus where to turn it on (the menu names of system settings
   as they are — iPhone: `Sync this iPhone` in `Settings → [your name] → iCloud → Drive` and Recly under `Saved to iCloud → See All`; Mac:
@@ -855,8 +864,8 @@ is accepted. Apple Watch still hands its recordings to the iPhone (ADR-002), and
   — turning it on in settings and coming back changes it right away. Once it becomes usable, the first level of the storage folder (`recly`) is created right away, so that even before the first
   recording a Recly folder shows in the Files app · Finder and Recly shows in the system's list of iCloud apps. The list · notifications keep
   using the short sentence of `ICLOUD_UNAVAILABLE`. Switching to iCloud does not disconnect Drive — Drive is still needed to download and
-  delete earlier recordings that are in Drive. That disconnect is in the Drive row under the Google Drive chip. In builds without the iCloud entitlement, the section is
-  `Google Drive` as before.
+  delete earlier recordings that are in Drive. That disconnect is in the Drive row under the Google Drive chip. In builds that offer neither — an iPhone build without the iCloud
+  entitlement — the section is `Google Drive` as before.
 - **Fixed per recording**: the storage is `storage.provider` of the recording processing settings, and it is fixed along with the settings when the recording starts (§5). Recordings already
   started and recordings being uploaded go to their original storage. Uploaded recordings are not moved (no migration). A retry the user presses
   does the remaining work with the current settings (§5), so a failed upload retried after switching storage goes to the new storage.
@@ -912,6 +921,54 @@ is accepted. Apple Watch still hands its recordings to the iPhone (ADR-002), and
   checked (§20). In particular, when two devices each create the same month folder (`recly/memo/2026-10`) before syncing, it is unknown whether iCloud merges them into one
   or splits them like `2026-10 2` — the list does not walk paths but looks for the folder property files, so even if they split, the list is correct; the Files app
   just shows two folders.
+
+#### Local folder
+
+- **Where**: iPhone, Mac, Windows and the Android phone (2026-10-03). The `Local folder` chip in `Storage`, and under it one row in the shape of the Drive
+  row — `No folder chosen` · `Choose folder`, or where the folder is (Mac · Windows the path, iPhone the folder's name as Files shows it, Android a
+  readable name of the tree such as `Documents/Notes`) ·
+  `Change folder`; a folder that cannot be reached adds `This folder cannot be reached. Choose it again.` and offers `Choose folder`. Picking a folder
+  releases the uploads waiting for one at once (`ReclyCore.resumeFolderWaits`) and runs the queue. The status is checked again when settings appear and
+  when the app becomes active again.
+- **How the shell reaches it**: `CoreDeps.localFolder` (`LocalFolder`). The Mac and Windows hand the core's `PathFolder` a function that returns the
+  picked path — the Mac app is not sandboxed (§12), so a path is enough. The Android phone uses the Storage Access Framework (`ACTION_OPEN_DOCUMENT_TREE`
+  with a persisted read · write grant; an existing file is written over in place, since `createDocument` never replaces and would make `name (1)`, and
+  every file is made as `application/octet-stream` so the provider keeps its name exactly). The iPhone is sandboxed: the folder picked in Files
+  (`On My iPhone/Obsidian`, a folder in iCloud Drive, another app's provider) is kept as a `.minimalBookmark`, resolved into a security-scoped URL
+  whose access is held while the app runs, and every read and write goes through `NSFileCoordinator` (RecKit `PickedFolder`; Apple, "Providing
+  access to directories", checked 2026-10-03) — a coordinated read also brings down a file that is only in iCloud. The user can take that access
+  back in Settings › Privacy & Security › Files and Folders, which reads as a folder that cannot be reached. Which folder was picked is kept on the
+  device — Mac `UserDefaults` `storage.localFolder`, iPhone `UserDefaults` `storage.localFolderBookmark` (with its name in `storage.localFolderName`),
+  Windows the shell's preferences, Android the app settings — not in the processing settings, and not exported.
+- **Layout**: the same as Drive — inside `{folder template}/{base}/`: the parts, `{base}.meta.json`, and with transcription on
+  `{base}.transcript.json/.txt` plus `{base}.transcript.md` (§8 "Result files"). Nothing else: there is no folder-properties file, because the folder
+  is never listed and the title is already in `meta.json`, which a rename rewrites together with the `.md`. File · folder ids are `folder:` + the
+  path under the picked folder (`StorageKind.ofId`).
+- **Upload and completion**: the upload step (`drive.upload`, `store: folder`) **copies** the files, reads each one back for its md5, and is done
+  right away — the copy is the upload. It makes no network request, so the copy and the transcript publishing run in the offline pass as well (§5
+  "Fixed processing settings") — on Android they wait for neither a connection nor Wi-Fi only. The originals' 7-day window (ADR-017) then starts as it does
+  after a Drive upload, and playback after the sweep reads the parts back from the folder. The app deletes nothing in the folder except through "Also delete from the local folder".
+- **When it cannot be used**: no folder picked, the folder gone (a removed drive, a deleted or renamed folder), or the Android grant taken back —
+  upload and result publishing are `WAITING`, rechecked every 5 minutes (`FOLDER_UNAVAILABLE`, list `Waiting for the local folder`, in the warning
+  color of waiting, not the red of failure). Picking the folder again resumes them at once.
+- **Changing the folder**: later writes go to the new folder under the same relative paths — including the rest of a recording whose upload was cut
+  short. Files already copied stay where they are. Because ids keep only the relative path, a folder the user moved and picked again is still found
+  for playback and deletion.
+- **This device's alone**: a local folder is never listed (§3 "Recordings from other devices") — pointing two devices at one folder that another tool
+  syncs does not merge their lists, and a row of this device is never dropped for not being listed. Drive's "Disconnect" leaves local folder jobs as
+  they are, as it does iCloud's.
+- **No web link**: no `meta.drive` and no `Open in Drive`. The Mac has `Show in Finder` and Windows `Open the folder` for the recording's folder (in
+  the folder picked now); the iPhone and the Android phone have no action there.
+- **Known limitations**: a full disk is an ordinary retryable failure, not `NEEDS_SPACE`. On Windows, Controlled Folder Access can refuse writes to
+  protected folders such as Documents.
+- **Verification**: core JVM tests (`FolderUploadTest` · `FolderStorageTest` · `StorageSettingTest`), RecKit `LocalFolderStorageTests` and, on
+  the iOS simulator, `PickedFolderTests` (pick, copy, read back, a relaunch through the bookmark, a folder gone), Windows
+  `ShellStorageTest` · `PreferenceSettingsTest`, Android `FolderLabelTest`, and on the `rec36` emulator the real external-storage provider (2026-10-03):
+  picking `Documents/…`, a recording landing under its exact names, a rename rewriting `meta.json` in place, a deleted folder making the upload wait
+  with `attempts=0`, a new pick releasing it within a second, playback read back from the folder, and both delete options (`SafFolderTest`, opt-in,
+  needs a folder picked first). Not checked: a real Windows PC (paths, the `JFileChooser`, Controlled Folder Access, a removed USB drive), a grant
+  revoked by the system on Android, the transcript through a real engine on Android, and on a real iPhone: writing while the phone is locked (a
+  background pass), a folder in iCloud Drive or another app's provider, and Obsidian picking up what was written (§20).
 
 ### Watch → phone transfer contract
 
@@ -1186,8 +1243,9 @@ The overall direction and the conditions for a real-device release follow the [f
   changed also drops its earlier submission state (`state_json`) — steps missing from the new plan are deleted unless already finished, and newly added
   steps are added. The recording's pinned settings (`processing/recording/{id}`) are also changed to those settings. Retrying a failed recording after changing the key or
   fixing the CLOVA address runs with the new key and address.
-- **Storage** (2026-10-02, §3 "Storage location"): the settings' `storage.provider` (`drive` by default · `icloud`). The single entry point for changing it is
-  `setStorage`, which saves it immediately as the next revision. iCloud is accepted only on a device where the shell provided a container (otherwise `Invalid`).
+- **Storage** (2026-10-02, §3 "Storage location"): the settings' `storage.provider` (`drive` by default · `icloud` · `folder`). The single entry point for changing it is
+  `setStorage`, which saves it immediately as the next revision. iCloud is accepted only on a device where the shell provided a container, and the local folder only
+  where it provided one (`CoreDeps.localFolder`) — otherwise `Invalid`. Which folder was picked is the shell's, kept on the device, and not in this document.
   Saving the form and importing keep the storage this device has — it is a choice about the account, so each device decides it. If the
   storage changes while the form is open, the form takes the new revision and keeps its draft as is (`storageChanged`).
 - Speaker diarization and the minimum/maximum speaker count are not exposed in the UI. A new plan requests diarization automatically on providers/models that support it
@@ -1254,7 +1312,9 @@ The overall direction and the conditions for a real-device release follow the [f
   At thermal state `serious` or above it waits/stops (relaxed 2026-09-27 — `fair` is common even while charging, and the user cannot guess why it stopped).
   Low Power Mode does not stop it. Confirmed segments are saved, so once the device cools, it resumes automatically at the next chance to run.
 - Local computation runs one at a time per device and yields when a new recording starts. A platform run expiry/cancellation also cancels the native analyzer.
-  The local-only pass does not run Drive authentication, network requests or result publishing. The Wi-Fi constraint on network uploads stays as is.
+  The local-only pass does not run Drive authentication, network requests or result publishing — except the upload and transcript steps bound for a
+  local folder (§3 "Storage location"), which write to the device and make no request, so they need no connection and ignore Wi-Fi only. The Wi-Fi
+  constraint on network uploads stays as is.
 - The local engine on Android · Windows is Qwen3-ASR 0.6B INT8 (`Qwen3Asr`) on sherpa-onnx 1.13.8 (2026-09-26).
   The model (about 1 GB, 7 files) is not bundled in the app and is downloaded only through the user's download action (settings, a waiting recording or the banner, the first-run card) — it is pinned by commit, size and SHA-256, downloaded in 8 MB range
   requests that resume after an interruption, and only files whose hash matches are moved into place (`LocalModelStore`; paths in §15). The folder is Android
@@ -1324,7 +1384,8 @@ is never selected on Windows.
 
 ## 6. Authentication (formerly docs/06)
 
-This section is about Google Drive authentication. iCloud (§3 "Storage location") has no app authentication — the system uses the device's iCloud account.
+This section is about Google Drive authentication. iCloud (§3 "Storage location") has no app authentication — the system uses the device's iCloud account — and
+neither does the local folder.
 
 ### GCP project
 
@@ -1568,8 +1629,8 @@ job** (phone · Mac · Windows), and there is no server. The device calls the ST
 - **Serverless** — every call goes device → an API on the user's account (Drive, STT). No intermediate relay, no callback URL. So STT
   providers are used only through a **pollable asynchronous API or a synchronous API** (callback-only modes are not used).
 - **BYO key** — the key is a `secretRef` in the existing secret store (§5). If it is missing, `MISSING_SECRET`.
-- **Drive is the bus** — result files are placed in the recording folder `{folder}/{base}/` (for a recording that chose iCloud, the same folder in iCloud,
-  §3 "Storage location"). Other devices, agents and the user only need to
+- **Drive is the bus** — result files are placed in the recording folder `{folder}/{base}/` (for a recording that chose iCloud or a local folder, the same folder
+  there, §3 "Storage location"). Other devices, agents and the user only need to
   look at those files. There is no separate device-to-device communication.
 - **One track, one file** — one file, joined from the parts of one track (`mono` or `mix`) by remux, is uploaded. Per-part transcription
   is not used, because the speaker labels would differ from part to part.
@@ -1731,6 +1792,7 @@ screen; kept regardless of the part deletion rules).
 |---|---|
 | `{base}.transcript.json` | The schema below. The canonical copy for machines |
 | `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text`. A line break when the speaker changes or a segment passes 60 seconds |
+| `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt`, then the lines of `.txt`, each its own paragraph. A rename rewrites it together with `meta.json` |
 
 Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
 result is canonical).
@@ -2072,7 +2134,7 @@ recly.core
   recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5)
   job/          JobService · Executor · StepRunner · Backoff · JobStore
   drive/        DriveApi · ResumableUploadPlanner · FolderResolver · AppData
-  storage/      CloudFiles · CloudStorage (picks the storage by id) · ICloudFiles · UbiquityContainer · StorageKind
+  storage/      CloudFiles · CloudStorage (picks the storage by id) · ICloudFiles · UbiquityContainer · FolderFiles · LocalFolder (PathFolder) · StorageKind
   webhook/      Signer · PayloadBuilder · WebhookRunner   — retired (2026-09-24)
   transcribe/   SttProvider adapters · TranscribeRunner
   sync/         WorkflowSync (pull/push/merge)
@@ -2695,7 +2757,7 @@ macOS.
   An iOS 18 Control starts by opening the app with `OpenIntent` (starting a long-running audio session from a widget extension is unreliable).
 - **Auth**: AppAuth requests only `drive.file`, and `TokenProvider` handles token refresh, expiry and 401. RecKit `GoogleAuth` and `AppleTokenProvider` are shared with macOS, and the iPhone uses
   `signIn(presenting: UIViewController)`.
-- **Storage location** (§3 "Storage location"): the top row of settings chooses Google Drive or iCloud. iCloud uploads are done by the system, so
+- **Storage location** (§3 "Storage location"): the top row of settings chooses Google Drive, iCloud or a local folder picked in Files. iCloud uploads are done by the system, so
   `BackgroundTransport` and the background URLSession are used only for Drive chunks and uploads for external transcription.
 - **Runner** (the executor): in the foreground, RecKit `JobRunner` (right after a job is created · 5-minute timer · network return · `nextRunAt`
   follow-up + a fifth trigger only the phone has, app activation). When the app is not on screen, the work splits as in the table below.
@@ -2867,7 +2929,8 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
+devices. A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path.
 
@@ -2935,7 +2998,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 
 | Data | Where | Does it leave? |
 |---|---|---|
-| Original recording (`.m4a` parts) | §3 Local storage path | The Drive upload step uploads it to the user's Drive (§1). If external API transcription was chosen, one file of the concatenated track goes to that provider (§3). **Recordings made on the watch first move to the paired phone** (§4) |
+| Original recording (`.m4a` parts) | §3 Local storage path | The Drive upload step uploads it to the user's Drive (§1), or copies it into the local folder the user picked (§1c). If external API transcription was chosen, one file of the concatenated track goes to that provider (§3). **Recordings made on the watch first move to the paired phone** (§4) |
 | `meta.json` | Same folder | The upload step uploads it alongside. The watch's moves to the phone together with the parts |
 | Transcription result files | Same folder (local copy) | Written alongside into the Drive recording folder |
 | Job · step state, retry budget, upload session offsets | Local SQLite (`rec.db`) | **Never leaves** (principle 2) |
@@ -2982,6 +3045,17 @@ None of it is sent to Recly (there is no server to receive it). It is a local va
 | Who sends it | **The app makes no network request.** The app writes files into the device's iCloud container, and Apple's system service uploads them. The user's iCloud account and Apple's terms and policies apply, and for accounts with Advanced Data Protection turned on, iCloud Drive is end-to-end encrypted (Apple) |
 | Who sees it | The user, and the user's devices signed in with the same Apple ID. **Recly cannot access it** — it has neither a server nor any permission to this data |
 | Control | Switch the app's storage location back to Drive (later recordings only), turn off Recly's iCloud use in system settings, delete the folder in the Files app · Finder, delete Recly's data in iCloud storage management |
+
+### §1c Local folder — a folder the user picked on the device (iPhone · Mac · Windows · Android phone)
+
+| Item | Details |
+|---|---|
+| When | Only recordings on an iPhone, Mac, Windows PC or Android phone where the local folder was chosen as the storage location in settings (§3 "Storage location"). Does not apply to the watches, which hand their recordings to the phone |
+| What is written | Same layout as Drive — inside `{folder template}/{base}/` in the picked folder: the part `.m4a` files, `{base}.meta.json`, and `{base}.transcript.json/.txt/.md` if transcription is on |
+| Who sends it | **Nobody — the app makes no network request.** It copies files into a folder on the device. If that folder is synced by another app or service (Obsidian Sync, Dropbox, Syncthing, a NAS, iCloud Drive or OneDrive folders…), that tool and its terms decide where the files go next; Recly neither knows nor controls it |
+| Who sees it | Whoever can read that folder on the device, and whatever the user syncs it to. **Recly cannot access it from anywhere else** |
+| Access | Mac · Windows: an ordinary path the user picked. iPhone: only the folder the user picked in the Files picker, which the user can take back in Settings › Privacy & Security › Files and Folders. Android: only the folder the user granted through the system folder picker (Storage Access Framework); Recly asks for no "all files" access |
+| Control | Switch the storage back (later recordings only), pick another folder, or delete the files in the folder. Deleting the app leaves them in place |
 
 ### §2 Webhooks — an address the user entered
 
@@ -3123,6 +3197,7 @@ The canonical rules are in §3 Retention · deletion. Summary:
 | Automatic deletion | When every Job is DONE and the whole audio is in Drive, the local audio becomes eligible for cleanup 7 days after the later of the last Job update and the newest cache file time (ADR-017). Audio downloaded again starts a new period. `meta.json` · DB rows · transcript copy · waveform peaks (`waveform.v1`) remain | Unfinished · failed · permission-waiting Jobs keep the original. If Drive is full and a Job is parked at `NEEDS_SPACE`, that Job is not DONE, so **the local original is not deleted and stays on the device as is** |
 | Cut off Recly's Drive access | The app's "Disconnect" or Google account settings | The recording files in Drive remain — disconnect **never calls** `files.delete`. This device's Google token · finished Jobs · Drive folder cache are deleted, and unfinished Jobs are kept and paused until the same account reconnects. Recording processing settings · API keys · transfer permission records remain. **The recording files and the `recording`/`part` rows remain. Recordings are deleted separately from the list** |
 | Delete the recordings in iCloud | "Delete" in the list → `Also delete the iCloud folder` (the default keeps it), or the "Recly" folder in the Files app · Finder, or iCloud storage management | Deleting the app leaves the data in iCloud (Apple). There is no iCloud disconnect in the app — turn off Recly's iCloud use in system settings |
+| Delete the recordings in the local folder | "Delete" in the list → `Also delete from the local folder` (the default keeps it), or delete them in the folder yourself | Deleting the app leaves the folder and its files where they are |
 | Delete everything | Delete each key in the secrets list + disconnect + delete the app + delete the `recly/` folder in Drive | **Deleting the app erases everything only on Android/Wear.** On macOS `~/Library/Application Support/app.recly.mac/` and keychain items remain, on Windows `%LOCALAPPDATA%\Recly\` and Credential Manager items remain, and on iOS · watchOS keychain items may remain (Apple does not guarantee their deletion). Per-platform cleanup is in `docs/policy/privacy-policy.md` §7 |
 | Copies held by a provider | Recly cannot delete them on the user's behalf | The user does it directly, following that provider's console · policy |
 
@@ -3295,6 +3370,7 @@ violation prints 400. `--fail-first 1` answers 500 to the first delivery of a gi
 | Real-device heat · battery · long recordings (30–120 minutes) · accuracy of Android · Windows local transcription, the real-device flow from recording to publishing | No test Android phone or Windows PC. Emulator and macOS host speed is not real-device performance, and the smoke clip is synthetic speech |
 | M7 real-key acceptance (transcription scenarios 1 · 2 · 4) | Needs real STT keys. Checked with a fake key up to `AUTH_REJECTED` → "Check the key" → entering the editor |
 | iPhone · macOS real-device sign-in | This document has no record of it being checked. Store listing · signing are resolved (released on the App Store · Google Play on 2026-10-01, TestFlight skipped) |
+| Local folder storage on real devices (§3 "Storage location") | No Windows PC or test Android phone. Checked with core · shell unit tests, the `rec36` emulator's real external-storage provider, a macOS build and the iOS simulator. A real Windows path · `JFileChooser` · Controlled Folder Access · removed drive, a system-revoked Android grant, the Mac picker over the menu-bar popover, and on a real iPhone writing while locked · a folder in iCloud Drive or another app's provider · Obsidian reading it remain |
 | Real-device sync of iCloud storage (§3 "Storage location") | No iCloud container registration · App ID capability · Mac Developer ID profile yet (human work). Only upload waiting · completion · out of space · listing · titles were checked, with core JVM tests and RecKit unit tests. Uploading on an iPhone · Mac with the same Apple ID → listing on the other device → renaming → deleting must be checked on real devices |
 
 ---

@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">Расшифровка на другом устройстве</string>
     <string name="job_state_waiting">Ожидается повтор</string>
     <string name="job_state_waiting_in">Ожидается повтор · %1$s</string>
+    <string name="job_state_waiting_folder">Ожидание локальной папки</string>
     <string name="job_state_done">Готово</string>
     <string name="job_state_failed">Ошибка</string>
     <string name="job_state_needs_auth">Ожидание загрузки</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">Начинается со строчной буквы; строчные буквы, цифры и подчёркивания, до 32 символов</string>
     <string name="secret_value_required">Введите значение</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">Хранилище</string>
+    <string name="storage_local_folder">Локальная папка</string>
+    <string name="folder_none">Папка не выбрана</string>
+    <string name="folder_choose">Выбрать папку</string>
+    <string name="folder_change">Сменить папку</string>
+    <string name="folder_unreachable">Нет доступа к этой папке. Выберите её снова.</string>
     <string name="settings_uploads">Загрузки</string>
     <string name="settings_wifi_only">Загружать только по Wi-Fi</string>
     <string name="settings_language">Язык</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">iCloud Drive недоступен. В Настройках в разделе iCloud проверьте, что iCloud Drive и Recly включены.</string>
     <string name="core_icloud_storage_full">В iCloud закончилось место. Освободите его и повторите попытку</string>
     <string name="core_icloud_uploading">Загрузка в iCloud</string>
+    <string name="core_folder_unavailable">Нет доступа к локальной папке. Выберите её снова в Настройках.</string>
     <string name="core_drive_consent_required">Для доступа к Drive нужно ваше согласие</string>
     <string name="core_sign_in_cancelled">Вход отменён</string>
     <string name="core_missing_secret">На этом устройстве нет значения секрета «%1$s»</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">Получение из Drive…</string>
     <string name="player_waveform_loading">Загрузка формы волны…</string>
     <string name="player_fetch_failed">Не удалось получить из Drive</string>
+    <string name="player_fetching_folder">Чтение из локальной папки…</string>
+    <string name="player_fetch_failed_folder">Не удалось прочитать из локальной папки</string>
     <string name="player_position">Позиция</string>
     <string name="job_waiting_transcription">Ожидание расшифровки; прошло %1$d мин</string>
     <string name="job_reason_check_key">Проверить ключ</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">Удалить «%1$s»?</string>
     <string name="delete_local_only">Удалить только с этого телефона</string>
     <string name="delete_with_drive">Также удалить папку в Drive</string>
+    <string name="delete_with_folder">Также удалить из локальной папки</string>
     <string name="delete_remote_body">Записано на другом устройстве. Удаление уберёт запись из Drive и со всех устройств.</string>
     <string name="delete_busy">Загрузка ещё идёт. Повторите после завершения</string>
     <string name="delete_drive_failed">Удалено здесь, но Drive отказал: %1$s</string>
+    <string name="delete_folder_failed">Удалено здесь, но не из локальной папки: %1$s</string>
     <string name="delete_unuploaded">Также удалится аудио, ещё не загруженное в Drive.</string>
+    <string name="delete_unuploaded_folder">Также удалится аудио, ещё не скопированное в локальную папку.</string>
     <string name="settings_disconnect">Отключить</string>
     <string name="settings_disconnect_hint">Отозвать у приложения доступ к вашему аккаунту Google.</string>
     <string name="disconnect_title">Отключить Google Drive?</string>

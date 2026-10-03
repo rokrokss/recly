@@ -390,7 +390,11 @@ private fun PlayerBar(
             when {
                 // docs/03 ADR-017: the button's place holds how far the trip is. No words: this shell
                 // is told nothing about reduce motion, so the waveform row above always says it.
-                detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(detail.fetchProgress, strings[Str.PLAYER_FETCHING], strings)
+                detail.driveFetch == DriveFetch.FETCHING -> FetchProgress(
+                    detail.fetchProgress,
+                    strings[if (detail.folder) Str.PLAYER_FOLDER_FETCHING else Str.PLAYER_FETCHING],
+                    strings,
+                )
 
                 !detail.audio.isEmpty -> {
                     // Not while this PC is recording: the microphone and the speaker are one session on
@@ -451,7 +455,7 @@ private fun PlayerBar(
             // what stands between the page and the whole recording.
             if (detail.driveFetch == DriveFetch.FAILED) {
                 Text(
-                    strings[Str.PLAYER_FETCH_FAILED],
+                    strings[if (detail.folder) Str.PLAYER_FOLDER_FETCH_FAILED else Str.PLAYER_FETCH_FAILED],
                     style = MaterialTheme.typography.bodySmall,
                     color = palette.textMuted,
                 )

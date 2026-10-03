@@ -2,7 +2,10 @@
 
 package app.recly.android.ui
 
+import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -48,6 +52,7 @@ import app.recly.android.ui.theme.mono
 import app.recly.android.ui.component.TableRow
 import java.util.Locale
 import kotlin.time.ExperimentalTime
+import recly.core.storage.StorageKind
 
 /**
  * docs/11 A10 as docs/09 screen principle 4 draws it: a section table — account, language, theme, capture,
@@ -66,6 +71,9 @@ fun SettingsScreen(
     onCancelDisconnect: () -> Unit,
     onDisconnect: (Boolean) -> Unit,
     onRevokeDebtSettled: () -> Unit,
+    onStorage: (StorageKind) -> Unit,
+    onPickFolder: (Uri) -> Unit,
+    onRefreshStorage: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val palette = blueprint
@@ -75,13 +83,62 @@ fun SettingsScreen(
     Column(modifier.fillMaxSize()) {
         ScreenHeader(title = stringResource(R.string.tab_settings))
         Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())) {
-            Section(stringResource(R.string.settings_account))
+            // docs/03 "Storage location": where new recordings go, in chips as the theme is, and under
+            // them the chosen storage's rows alone — Drive's as they always were, or the folder's one.
+            // Drive stays connected after a switch, and its rows, with Disconnect, are back under its chip.
+            Section(stringResource(R.string.settings_storage))
+            LaunchedEffect(Unit) { onRefreshStorage() }
+            // Outside the branch below, so a pick the system is still showing lands whatever is drawn.
+            val folderPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { tree ->
+                tree?.let(onPickFolder)
+            }
+            FillRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(palette.surface)
+                    .padding(horizontal = Space.m, vertical = 12.dp),
+            ) {
+                // A product name, never translated (docs/07 rule 1).
+                BlueprintChip(
+                    label = stringResource(R.string.settings_account),
+                    selected = settings.storage != StorageKind.FOLDER,
+                    onClick = { onStorage(StorageKind.DRIVE) },
+                    enabled = !settings.storageBusy,
+                    modifier = Modifier.testTag("storage-drive"),
+                )
+                BlueprintChip(
+                    label = stringResource(R.string.storage_local_folder),
+                    selected = settings.storage == StorageKind.FOLDER,
+                    onClick = { onStorage(StorageKind.FOLDER) },
+                    enabled = !settings.storageBusy,
+                    modifier = Modifier.testTag("storage-folder"),
+                )
+            }
             val context = LocalContext.current
             val signInBlocker = DisconnectGuard.signInBlocker(main.disconnectPhase.owed)
-            // docs/06 Android: an account without the Drive grant — a consent screen that was
-            // closed — is not connected, and the row says so with the way to connect, as the
-            // iPhone's does. Only a disconnect still owed keeps the disconnect row without one.
-            if (main.driveConnected || main.disconnectPhase.owed || main.disconnecting) {
+            if (settings.storage == StorageKind.FOLDER) {
+                // Drive's row in shape: where the folder is and the way to change it, or that there is
+                // none to use and the way to pick one. The name is what the user picked it by.
+                val reachable = settings.folder != null && settings.folderReachable
+                TableRow(
+                    title = settings.folder ?: stringResource(R.string.folder_none),
+                    subtitle = if (settings.folder != null && !reachable) stringResource(R.string.folder_unreachable) else null,
+                    modifier = Modifier.testTag("folder-status"),
+                    trailing = {
+                        BlueprintButton(
+                            label = stringResource(if (reachable) R.string.folder_change else R.string.folder_choose),
+                            onClick = { folderPicker.launch(null) },
+                            // A folder in use only needs a way to change it; one that cannot be used
+                            // is what stands between the recordings and their copy.
+                            tone = if (reachable) ButtonTone.QUIET else ButtonTone.PRIMARY,
+                            modifier = Modifier.testTag("folder-choose"),
+                        )
+                    },
+                )
+            } else if (main.driveConnected || main.disconnectPhase.owed || main.disconnecting) {
+                // docs/06 Android: an account without the Drive grant — a consent screen that was
+                // closed — is not connected, and the row says so with the way to connect, as the
+                // iPhone's does. Only a disconnect still owed keeps the disconnect row without one.
                 TableRow(title = main.email ?: stringResource(if (main.disconnecting) R.string.settings_account else R.string.drive_attention), trailing = {
                     BlueprintButton(
                         stringResource(if (main.disconnecting) R.string.drive_disconnecting else R.string.drive_disconnect),
@@ -100,7 +157,7 @@ fun SettingsScreen(
                     },
                 )
             }
-            if (main.revokeDebt && !main.disconnecting) {
+            if (settings.storage != StorageKind.FOLDER && main.revokeDebt && !main.disconnecting) {
                 SectionFootnote(stringResource(R.string.disconnect_still_listed))
                 BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
                     context.openUrl(GOOGLE_PERMISSIONS_URL)
@@ -114,7 +171,7 @@ fun SettingsScreen(
             }
             // iPhone's `authNote`: a connection that failed, in the failure colour (docs/09 — red is
             // a failure). A closed picker or consent screen is the user's answer and says nothing.
-            main.authNote?.let {
+            main.authNote?.takeIf { settings.storage != StorageKind.FOLDER }?.let {
                 Text(
                     it.text(),
                     modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
@@ -122,7 +179,7 @@ fun SettingsScreen(
                     color = palette.danger,
                 )
             }
-            main.message?.let {
+            main.message?.takeIf { settings.storage != StorageKind.FOLDER }?.let {
                 Text(
                     it.text(),
                     modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s),
@@ -130,6 +187,7 @@ fun SettingsScreen(
                     color = palette.textMuted,
                 )
             }
+            settings.storageMessage?.let { SectionFootnote(it.text()) }
 
             // docs/07 rule 2: a per-device choice. A row that names the language it is in, and the
             // choices behind it: the list of languages grows, and a row stays one line however long

@@ -81,6 +81,7 @@ class FakeSettings(
     override var disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,
     override var revokeDebt: Boolean = false,
     override var modelPromptDismissed: Boolean = false,
+    override var localFolder: String? = null,
 ) : Settings
 
 /**

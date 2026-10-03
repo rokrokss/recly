@@ -102,6 +102,13 @@ interface Settings {
      */
     var modelPromptDismissed: Boolean
 
+    /**
+     * docs/03 "Storage location": the folder the user picked for recordings when the storage is the local
+     * folder, as an absolute path; null while none is picked. A fact about this PC like the rest of
+     * these — it is never in the exported processing settings, and another PC has no such path.
+     */
+    var localFolder: String?
+
     companion object {
         fun create(): Settings = PreferenceSettings()
     }
@@ -153,6 +160,10 @@ class PreferenceSettings(
         get() = prefs.getBoolean(MODEL_PROMPT_DISMISSED, false)
         set(value) = prefs.putBoolean(MODEL_PROMPT_DISMISSED, value)
 
+    override var localFolder: String?
+        get() = prefs.get(LOCAL_FOLDER, null)?.takeIf { it.isNotBlank() }
+        set(value) = if (value.isNullOrBlank()) prefs.remove(LOCAL_FOLDER) else prefs.put(LOCAL_FOLDER, value)
+
     private companion object {
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */
         const val NODE = "app/recly/windows"
@@ -162,5 +173,6 @@ class PreferenceSettings(
         const val DISCONNECT_PHASE = "disconnectPhase"
         const val REVOKE_DEBT = "revokeDebt"
         const val MODEL_PROMPT_DISMISSED = "modelPromptDismissed"
+        const val LOCAL_FOLDER = "localFolder"
     }
 }

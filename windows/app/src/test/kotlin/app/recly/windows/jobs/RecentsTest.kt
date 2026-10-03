@@ -289,6 +289,50 @@ class RecentsTest {
         assertEquals("$LINK?x", Recents.item(record, job = null, steps = emptyList()).link)
     }
 
+    /**
+     * docs/03 "Storage location": a recording in the local folder has no web link — its way back is the
+     * folder's own path under the one this PC picked.
+     */
+    @Test
+    fun `a recording in the local folder carries its folder and no Drive link`() {
+        val record = record(driveFolderId = "folder:recly/memo/2026-10/base")
+        val item = Recents.item(record, job("j", JobStatus.DONE), emptyList())
+
+        assertEquals("recly/memo/2026-10/base", item.localFolderPath)
+        assertNull(item.link)
+        assertNull(Recents.item(record(driveFolderId = "abc"), job("j", JobStatus.DONE), emptyList()).localFolderPath)
+    }
+
+    /**
+     * docs/03 "Storage location": an upload parked because the local folder cannot be reached says so —
+     * in the warning tone of a wait, never the red of a failure — and its reason is the sentence
+     * that says where to fix it. Any other wait is still the retry timer's.
+     */
+    @Test
+    fun `a job waiting for the local folder says so as a wait`() {
+        val code = CoreMessage.FOLDER_UNAVAILABLE.code()
+        val item = Recents.item(
+            record(),
+            job("j", JobStatus.WAITING),
+            listOf(step("upload", status = StepStatus.PENDING, lastError = code)),
+        )
+
+        assertEquals(Str.STATE_WAITING_FOLDER.message(), item.state)
+        assertEquals("WAITING", item.state.ledgerStatus().code)
+        assertEquals(BadgeTone.WARNING, item.state.ledgerStatus().tone)
+        assertEquals(code, item.lastError)
+        assertEquals(
+            "The local folder cannot be reached. Choose it again in Settings.",
+            coreMessage(code).text(StringTable.of(StringTable.BASE)),
+        )
+        val retry = Recents.item(
+            record(),
+            job("j", JobStatus.WAITING),
+            listOf(step("upload", status = StepStatus.PENDING, lastError = CoreMessage.STEP_FAILED.code("HTTP 503"))),
+        )
+        assertEquals(Str.STATE_RETRY_WAIT.message(), retry.state)
+    }
+
     @Test
     fun `a job that has not uploaded anything has no link`() {
         assertNull(Recents.item(record(), job("j", JobStatus.PENDING), listOf(step("upload"))).link)

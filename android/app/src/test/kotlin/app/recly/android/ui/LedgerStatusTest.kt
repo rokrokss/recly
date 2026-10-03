@@ -9,6 +9,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import recly.core.message.CoreMessage
 
 /**
  * docs/09 screen principle 2: every row state has a code and a tone, the code is the word the core and the
@@ -177,6 +178,24 @@ class LedgerStatusTest {
         assertTrue(ItemState.REMOTE_UPLOADING.waiting())
         assertFalse(ItemState.REMOTE_TRANSCRIBING.waiting())
         assertFalse(ItemState.REMOTE_TRANSCRIBING.failing())
+    }
+
+    /**
+     * docs/03 "Storage location": an upload waiting for the local folder is a wait in the warning tone,
+     * never a failure, and its row says it waits for the folder rather than when it retries.
+     */
+    @Test
+    fun `a job waiting for the local folder is a wait`() {
+        val waiting = item(ItemState.WAITING).copy(error = CoreMessage.FOLDER_UNAVAILABLE.code())
+        assertTrue(waiting.waitsForFolder())
+        assertTrue(waiting.waiting())
+        assertFalse(waiting.state.failing())
+        assertEquals(BadgeTone.WARNING, waiting.state.reasonTone())
+        assertFalse(item(ItemState.WAITING).waitsForFolder(), "a plain retry backoff")
+        assertFalse(
+            item(ItemState.WAITING).copy(error = CoreMessage.ICLOUD_UNAVAILABLE.code()).waitsForFolder(),
+            "another storage's wait",
+        )
     }
 
     private fun item(state: ItemState, localPending: Boolean = false): JobItem = JobItem(

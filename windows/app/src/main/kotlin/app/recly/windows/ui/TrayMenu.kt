@@ -4,6 +4,7 @@ import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
+import recly.core.storage.StorageKind
 
 /** One line of the tray menu. [Separator] is the rule between two groups of them. */
 sealed interface TrayEntry {
@@ -38,8 +39,9 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
     model.statusDetail?.let { add(TrayEntry.Item("    $it", enabled = false) {}) }
     // docs/06: a job parked in NEEDS_AUTH is unblocked by signing in, and the popup is the only
     // other place that offers it — on a machine where that window will not open, this is the whole
-    // of what the user has.
-    if (model.needsAuth || !model.signedIn) {
+    // of what the user has. A PC whose recordings go to the local folder is not asked to connect
+    // Drive (docs/03 "Storage location") — unless a job from before the switch is still waiting for it.
+    if (model.needsAuth || (!model.signedIn && model.storage == StorageKind.DRIVE)) {
         val label = if (model.needsAuth) ShellModel.NEEDS_AUTH_NOTICE else Str.TRAY_SIGN_IN
         add(TrayEntry.Item(strings[label], onClick = model::signIn))
     }

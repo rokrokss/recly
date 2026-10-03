@@ -61,7 +61,9 @@ public struct DeleteDialog: View {
     private var choices: some View {
         if request.unuploaded > 0 {
             BlueprintDialogText(
-                loc(request.icloud ? "Audio not yet in iCloud is deleted with it." : "Audio not yet in Drive is deleted with it."),
+                request.folder
+                    ? loc("Audio not yet in the local folder is deleted with it.")
+                    : loc(request.icloud ? "Audio not yet in iCloud is deleted with it." : "Audio not yet in Drive is deleted with it."),
                 tone: .danger
             )
             .accessibilityIdentifier("delete-unuploaded")
@@ -73,7 +75,9 @@ public struct DeleteDialog: View {
             }
             .accessibilityIdentifier("delete-local-only")
             BlueprintRadioRow(
-                loc(request.icloud ? "Also delete the iCloud folder" : "Also delete the Drive folder"),
+                request.folder
+                    ? loc("Also delete from the local folder")
+                    : loc(request.icloud ? "Also delete the iCloud folder" : "Also delete the Drive folder"),
                 selected: deleteDrive
             ) {
                 deleteDrive = true

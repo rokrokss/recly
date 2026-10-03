@@ -449,8 +449,8 @@ class JobStore(
             queries.selectJobs().executeAsList().forEach { row ->
                 val steps = row.workflowOrNull()?.steps
                 if (row.status == JobStatus.DONE.name) {
-                    // Everything but an iCloud job is cleared as before, a snapshot this build cannot read included.
-                    if (steps?.any { it is Step.DriveUpload && it.store == StorageKind.ICLOUD } != true) {
+                    // Everything but an iCloud or local folder job is cleared as before, a snapshot this build cannot read included.
+                    if (steps?.any { it is Step.DriveUpload && it.store != StorageKind.DRIVE } != true) {
                         queries.deleteStepRunsByJob(row.id)
                         queries.deleteJobById(row.id)
                     }

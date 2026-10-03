@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintNavBar
 import app.recly.android.ui.component.NavGlyph
@@ -277,6 +278,9 @@ class MainActivity : ComponentActivity() {
         // docs/03 "Recordings from other devices": and as good a reason to ask Drive what the other devices have
         // uploaded since — the ledger is on screen again.
         jobsModel.refresh()
+        // docs/03 "Storage location": and the local folder may have been moved, deleted or had its grant
+        // taken back while the app was away — the folder picker itself is one such trip.
+        settingsModel.refreshStorage()
     }
 
     private fun consumeAutoStart(intent: Intent) {
@@ -429,6 +433,8 @@ private fun SettingsTab(
     activity: Activity,
     modifier: Modifier,
 ) {
+    // The activity's own, the one the processing section on this screen draws.
+    val processing: ProcessingViewModel = viewModel()
     SettingsScreen(
         main = main,
         settings = settings,
@@ -441,6 +447,9 @@ private fun SettingsTab(
         onCancelDisconnect = model::cancelDisconnect,
         onDisconnect = model::disconnect,
         onRevokeDebtSettled = model::revokeDebtSettled,
+        onStorage = { kind -> settingsModel.selectStorage(kind) { processing.storageChanged() } },
+        onPickFolder = settingsModel::pickFolder,
+        onRefreshStorage = settingsModel::refreshStorage,
         modifier = modifier,
     )
 }

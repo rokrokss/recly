@@ -65,8 +65,8 @@ data class RecordingRecord(
     val driveSynced: Boolean = false,
 ) {
     /**
-     * docs/03 "Storage location": where the recording's folder is — Google Drive or iCloud — read off its
-     * id; null until one is known.
+     * docs/03 "Storage location": where the recording's folder is — Google Drive, iCloud or a local folder —
+     * read off its id; null until one is known.
      */
     val storage: StorageKind? get() = driveFolderId?.let(StorageKind::ofId)
 
@@ -77,6 +77,14 @@ data class RecordingRecord(
     val icloudFolderPath: String?
         get() = driveFolderId?.takeIf { !remoteUploading && StorageKind.ofId(it) == StorageKind.ICLOUD }
             ?.removePrefix(StorageKind.ICLOUD_PREFIX)
+
+    /**
+     * The folder's path under the local folder the user picked, for a shell that shows it in Finder
+     * or Explorer; null for a recording elsewhere or not copied yet (docs/03 "Storage location").
+     */
+    val localFolderPath: String?
+        get() = driveFolderId?.takeIf { StorageKind.ofId(it) == StorageKind.FOLDER }
+            ?.removePrefix(StorageKind.FOLDER_PREFIX)
 
     /**
      * A watch transfer in flight (docs/03 "Watch → phone transfer contract"): the phone opens the row when the
@@ -101,7 +109,7 @@ data class RecordingRecord(
      * in-flight rows offer no actions.
      */
     val driveFolderUrl: String?
-        get() = if (remoteUploading || storage == StorageKind.ICLOUD) null
+        get() = if (remoteUploading || storage == StorageKind.ICLOUD || storage == StorageKind.FOLDER) null
         else meta.drive?.folderUrl ?: driveFolderId?.let { "https://drive.google.com/drive/folders/$it" }
 }
 
@@ -132,8 +140,8 @@ class RecordingRepository(
     private val db: RecDatabase,
     private val deps: CoreDeps,
     /**
-     * Only [delete] with `deleteDrive` uses it, and only to delete the folder — on Drive or in iCloud,
-     * wherever its id says it is (docs/03 "Storage location").
+     * Only [delete] with `deleteDrive` uses it, and only to delete the folder — on Drive, in iCloud or
+     * in the local folder, wherever its id says it is (docs/03 "Storage location").
      */
     private val drive: CloudFiles = CloudStorage.of(deps),
 ) {

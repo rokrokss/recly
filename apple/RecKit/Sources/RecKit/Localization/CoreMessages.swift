@@ -48,6 +48,7 @@ public enum CoreMessages {
         case .icloudUnavailable: return "iCloud Drive isn’t available. In Settings, under iCloud, check that iCloud Drive and Recly are turned on."
         case .icloudStorageFull: return "iCloud is out of space — free some up and try again"
         case .icloudUploading: return "Uploading to iCloud"
+        case .folderUnavailable: return "The local folder cannot be reached. Choose it again in Settings."
         case .signInCancelled: return "The sign-in was cancelled"
         case .missingSecret: return "This device has no value for the secret ‘%@’"
         case .folderTemplate: return "Folder template: %@"
@@ -71,7 +72,7 @@ public enum CoreMessages {
     /// The keys whose sentence has a `%@` in it; the rest are looked up without one.
     static func takesArgument(_ message: CoreMessage) -> Bool {
         switch message {
-        case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .providerNotOffered, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .icloudUnavailable, .icloudStorageFull, .icloudUploading, .signInCancelled,
+        case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .providerNotOffered, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .icloudUnavailable, .icloudStorageFull, .icloudUploading, .folderUnavailable, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
              .noInputTrack, .resultTimeout:
             return false

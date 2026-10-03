@@ -39,6 +39,7 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
+import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.TranscriptAvailability
 import recly.core.transcribe.Transcript
@@ -72,6 +73,8 @@ data class JobItem(
      * on its own — an adopted recording was read out of that folder (docs/03).
      */
     val link: String?,
+    /** docs/03 "Storage location": where the recording's folder is; null until it has one. */
+    val storage: StorageKind? = null,
     val nextRunAt: Instant?,
     val localPending: Boolean = false,
     val localRunning: Boolean = false,
@@ -123,8 +126,13 @@ data class DeleteRequest(
     val title: String?,
     val unuploaded: Int,
     val remote: Boolean,
-    /** Whether a Drive folder exists to delete at all — the row's [JobItem.link]. */
+    /**
+     * Whether a folder exists to delete at all — the row's [JobItem.link] on Drive, or the
+     * recording's folder in the local folder, which has no link (docs/03 "Storage location").
+     */
     val hasDriveFolder: Boolean,
+    /** The recording goes to the local folder, so the dialog speaks of that rather than of Drive. */
+    val folder: Boolean = false,
 )
 
 data class JobsUiState(
@@ -183,6 +191,8 @@ data class DetailState(
     val driveFetch: DriveFetch = DriveFetch.DECIDING,
     /** How much of that trip is done, 0 to 1, by the bytes of the parts it brings back. */
     val fetchProgress: Float = 0f,
+    /** The parts come back from the local folder rather than Drive (docs/03 "Storage location"). */
+    val folder: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -316,6 +326,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     fun confirmDelete(item: JobItem) = launch {
         val asked = deleteAsks.ask()
         val unuploaded = Retention.unuploadedParts(core(), item.recordingId)
+        // docs/03 "Storage location": a recording not copied yet has no folder to say where it goes, so
+        // the storage it froze when it started does — or, with nothing frozen yet, the one it will freeze.
+        val storage = item.storage
+            ?: core().processingSettings.recordingSnapshot(item.recordingId)?.settings?.storage?.provider
+            ?: core().processingSettings.storage()
         if (!deleteAsks.isCurrent(asked)) return@launch
         _state.update {
             it.copy(
@@ -324,7 +339,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     title = item.title,
                     unuploaded = unuploaded,
                     remote = item.remote,
-                    hasDriveFolder = item.link != null,
+                    hasDriveFolder = item.link != null || item.storage == StorageKind.FOLDER,
+                    folder = storage == StorageKind.FOLDER,
                 ),
             )
         }
@@ -358,8 +374,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
             is DeleteResult.Deleted -> {
                 result.driveError?.let { error ->
+                    val failed = if (request.folder) R.string.delete_folder_failed else R.string.delete_drive_failed
                     _state.update {
-                        it.copy(message = UiMessage.Res(R.string.delete_drive_failed, listOf(error)))
+                        it.copy(message = UiMessage.Res(failed, listOf(error)))
                     }
                 }
                 result.driveError == null
@@ -415,7 +432,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 val same = it.audio == audio && it.waveform.isNotEmpty()
                 it.copy(loading = false, audio = audio, waveform = if (same) it.waveform else FloatArray(0),
                     waveformLoading = !same && !audio.isEmpty,
-                    writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING)
+                    writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING,
+                    folder = record?.storage == StorageKind.FOLDER)
             }
             fetchFromDrive(core, recordingId, record, audio)
             decodeWaveform(core, recordingId)
@@ -610,6 +628,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 localRunning = core.localTranscription.isRunning(record.id),
                 localCooling = core.localTranscription.coolingDown,
                 link = linkOf(steps) ?: record.driveFolderUrl,
+                storage = record.storage,
                 nextRunAt = job?.nextRunAt,
                 modelLanguage = job?.takeIf { it.status == JobStatus.NEEDS_MODEL }?.let { waiting ->
                     val run = steps.firstOrNull { it.status == StepStatus.NEEDS_MODEL }

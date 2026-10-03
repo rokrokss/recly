@@ -412,5 +412,17 @@
   "Show in Finder": "Mostrar no Finder",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "Em Ajustes → [seu nome] → iCloud → Drive, ative “Sincronizar este iPhone” e depois ative o Recly em “Salvo no iCloud” → “Ver Tudo”.",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "Em Ajustes do Sistema → [seu nome] → iCloud → Drive, ative “Sincronizar este Mac” e depois ative o Recly em “Sincronização de Apps com o iCloud Drive”.",
-  "Open iCloud Settings": "Abrir Ajustes do iCloud"
+  "Open iCloud Settings": "Abrir Ajustes do iCloud",
+  "Local folder": "Pasta local",
+  "No folder chosen": "Nenhuma pasta escolhida",
+  "Choose folder": "Escolher pasta",
+  "Change folder": "Alterar pasta",
+  "This folder cannot be reached. Choose it again.": "Não é possível acessar esta pasta. Escolha-a novamente.",
+  "The local folder cannot be reached. Choose it again in Settings.": "Não é possível acessar a pasta local. Escolha-a novamente em Configurações.",
+  "Waiting for the local folder": "Aguardando a pasta local",
+  "Also delete from the local folder": "Excluir também da pasta local",
+  "Deleted here, but not from the local folder: {0}": "Excluído aqui, mas não da pasta local: {0}",
+  "Audio not yet in the local folder is deleted with it.": "O áudio que ainda não está na pasta local também será excluído.",
+  "Reading from the local folder…": "Lendo da pasta local…",
+  "Could not read from the local folder": "Não foi possível ler da pasta local"
 }

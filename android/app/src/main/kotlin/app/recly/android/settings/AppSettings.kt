@@ -65,6 +65,13 @@ class AppSettings(private val context: Context) {
      */
     val modelPromptDismissed: Flow<Boolean> = context.store.data.map { it[MODEL_PROMPT_DISMISSED] ?: false }
 
+    /**
+     * docs/03 "Storage location": the document tree the user picked as the local folder, as its URI; null
+     * until one is picked. A fact about this device and its grant, so it is kept here and never in
+     * the processing settings or their export.
+     */
+    val localFolder: Flow<String?> = context.store.data.map { it[LOCAL_FOLDER] }
+
     suspend fun setWifiOnly(value: Boolean) {
         context.store.edit { it[WIFI_ONLY] = value }
     }
@@ -101,6 +108,10 @@ class AppSettings(private val context: Context) {
         context.store.edit { it[MODEL_PROMPT_DISMISSED] = true }
     }
 
+    suspend fun setLocalFolder(uri: String) {
+        context.store.edit { it[LOCAL_FOLDER] = uri }
+    }
+
     private companion object {
         val WIFI_ONLY = booleanPreferencesKey("wifi_only")
         val THEME = stringPreferencesKey("theme")
@@ -109,5 +120,6 @@ class AppSettings(private val context: Context) {
         val CONSENT_REMINDER = booleanPreferencesKey("consent_reminder")
         val CONSENT_ASKED = booleanPreferencesKey("consent_asked")
         val MODEL_PROMPT_DISMISSED = booleanPreferencesKey("model_prompt_dismissed")
+        val LOCAL_FOLDER = stringPreferencesKey("local_folder")
     }
 }

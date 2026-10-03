@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">Transcrevendo em outro dispositivo</string>
     <string name="job_state_waiting">Nova tentativa pendente</string>
     <string name="job_state_waiting_in">Nova tentativa pendente · %1$s</string>
+    <string name="job_state_waiting_folder">Aguardando a pasta local</string>
     <string name="job_state_done">Concluído</string>
     <string name="job_state_failed">Falha</string>
     <string name="job_state_needs_auth">Envio em espera</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">Começa com minúscula; minúsculas, números e sublinhados, até 32 caracteres</string>
     <string name="secret_value_required">Insira um valor</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">Armazenamento</string>
+    <string name="storage_local_folder">Pasta local</string>
+    <string name="folder_none">Nenhuma pasta escolhida</string>
+    <string name="folder_choose">Escolher pasta</string>
+    <string name="folder_change">Alterar pasta</string>
+    <string name="folder_unreachable">Não é possível acessar esta pasta. Escolha-a novamente.</string>
     <string name="settings_uploads">Envios</string>
     <string name="settings_wifi_only">Enviar somente por Wi-Fi</string>
     <string name="settings_language">Idioma</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">O iCloud Drive não está disponível. Nos Ajustes, em iCloud, verifique se o iCloud Drive e o Recly estão ativados.</string>
     <string name="core_icloud_storage_full">O iCloud está sem espaço. Libere espaço e tente novamente</string>
     <string name="core_icloud_uploading">Enviando ao iCloud</string>
+    <string name="core_folder_unavailable">Não é possível acessar a pasta local. Escolha-a novamente em Configurações.</string>
     <string name="core_drive_consent_required">O acesso ao Drive exige seu consentimento</string>
     <string name="core_sign_in_cancelled">O login foi cancelado</string>
     <string name="core_missing_secret">Este dispositivo não tem valor para o segredo “%1$s”</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">Obtendo do Drive…</string>
     <string name="player_waveform_loading">Carregando forma de onda…</string>
     <string name="player_fetch_failed">Não foi possível obter do Drive</string>
+    <string name="player_fetching_folder">Lendo da pasta local…</string>
+    <string name="player_fetch_failed_folder">Não foi possível ler da pasta local</string>
     <string name="player_position">Posição</string>
     <string name="job_waiting_transcription">Aguardando a transcrição; %1$d min decorridos</string>
     <string name="job_reason_check_key">Verificar a chave</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">Excluir “%1$s”?</string>
     <string name="delete_local_only">Excluir apenas deste telefone</string>
     <string name="delete_with_drive">Excluir também a pasta do Drive</string>
+    <string name="delete_with_folder">Excluir também da pasta local</string>
     <string name="delete_remote_body">Gravado em outro dispositivo. A exclusão remove do Drive e de todos os dispositivos.</string>
     <string name="delete_busy">Ainda enviando. Tente novamente quando terminar</string>
     <string name="delete_drive_failed">Excluído aqui, mas o Drive recusou: %1$s</string>
+    <string name="delete_folder_failed">Excluído aqui, mas não da pasta local: %1$s</string>
     <string name="delete_unuploaded">O áudio ainda não enviado ao Drive também será excluído.</string>
+    <string name="delete_unuploaded_folder">O áudio que ainda não está na pasta local também será excluído.</string>
     <string name="settings_disconnect">Desconectar</string>
     <string name="settings_disconnect_hint">Remova o acesso deste app à sua conta Google.</string>
     <string name="disconnect_title">Desconectar o Google Drive?</string>

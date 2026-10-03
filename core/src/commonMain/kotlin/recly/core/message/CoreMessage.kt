@@ -59,6 +59,13 @@ enum class CoreMessage {
      */
     ICLOUD_UPLOADING,
 
+    /**
+     * docs/03 "Storage location": the local folder cannot be used — none is picked, it is gone (a removed
+     * drive, a deleted folder), or on Android the access granted to it was taken back. The upload
+     * waits and looks again; picking the folder in settings is what fixes it.
+     */
+    FOLDER_UNAVAILABLE,
+
     /** The user backed out of the consent screen. */
     SIGN_IN_CANCELLED,
 

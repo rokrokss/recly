@@ -47,7 +47,8 @@ import recly.core.workflow.TemplateContext
  * The step's [Step.DriveUpload.store] picks the storage (docs/03 "Storage location"). In iCloud the files are
  * copied into the app's folder and the system uploads them later, so the step waits — spending no
  * attempt — until iCloud holds every one ([CloudFiles.settled]), and waits the same way while iCloud
- * cannot be used from this device at all.
+ * cannot be used from this device at all. In a local folder the copy is the upload, and the step
+ * waits the same way while no folder is picked or the one picked cannot be reached.
  */
 class DriveUploadRunner(
     private val api: CloudFiles,
@@ -68,17 +69,17 @@ class DriveUploadRunner(
                 reason = CoreMessage.STEP_FAILED.code("$TYPE runner got a ${ctx.step::class.simpleName}"),
             )
         val rendered = renderFolder(step, ctx)
-        val files = api.forKind(step.store) ?: return unavailable(ctx)
+        val files = api.forKind(step.store) ?: return unavailable(ctx, step.store)
         return try {
             uploaded(ctx, step, rendered, files)
         } catch (e: StorageUnavailableException) {
-            unavailable(ctx)
+            unavailable(ctx, e.kind)
         }
     }
 
-    /** iCloud cannot be used from this device right now: looked at again later, not failed. */
-    private fun unavailable(ctx: StepContext): StepOutcome =
-        StepOutcome.Waiting(UNAVAILABLE_WAIT_SEC, ctx.state ?: JsonObject(emptyMap()), CoreMessage.ICLOUD_UNAVAILABLE.code())
+    /** iCloud or the local folder cannot be used from this device right now: looked at again later, not failed. */
+    private fun unavailable(ctx: StepContext, kind: StorageKind): StepOutcome =
+        StepOutcome.Waiting(UNAVAILABLE_WAIT_SEC, ctx.state ?: JsonObject(emptyMap()), unavailableReason(kind))
 
     private suspend fun uploaded(
         ctx: StepContext,
@@ -352,8 +353,12 @@ class DriveUploadRunner(
         /** How soon a step waiting for iCloud's own upload looks again (docs/03 "Storage location"). */
         internal const val SETTLE_WAIT_SEC = 30
 
-        /** How soon a step waiting for iCloud to become usable looks again. */
+        /** How soon a step waiting for iCloud or the local folder to become usable looks again. */
         internal const val UNAVAILABLE_WAIT_SEC = 300
+
+        /** Why a step waits for a storage this device cannot use now (docs/03 "Storage location"). */
+        internal fun unavailableReason(kind: StorageKind): String =
+            if (kind == StorageKind.FOLDER) CoreMessage.FOLDER_UNAVAILABLE.code() else CoreMessage.ICLOUD_UNAVAILABLE.code()
 
         fun create(db: RecDatabase, deps: CoreDeps): DriveUploadRunner {
             val api = CloudStorage.of(deps)

@@ -3,9 +3,13 @@
 package app.recly.android.ui
 
 import android.app.Application
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import app.recly.android.R
 import app.recly.android.core.CoreModule
+import app.recly.android.core.UiMessage
+import app.recly.android.core.coreMessage
 import app.recly.android.settings.AppLanguage
 import app.recly.android.settings.AppSurfaces
 import app.recly.android.settings.AppSettings
@@ -22,6 +26,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import recly.core.message.CoreMessage
+import recly.core.processing.ProcessingSaveResult
+import recly.core.storage.StorageKind
 
 data class SettingsUiState(
     val wifiOnly: Boolean = false,
@@ -29,6 +36,16 @@ data class SettingsUiState(
     val consentReminder: Boolean = true,
     /** docs/09 "Accessibility": the system's dark mode until this device says otherwise. */
     val theme: AppTheme = AppTheme.SYSTEM,
+    /** docs/03 "Storage location": where new recordings go from this phone. */
+    val storage: StorageKind = StorageKind.DRIVE,
+    /** The picked local folder as its row names it; null while none is picked. */
+    val folder: String? = null,
+    /** Whether the picked folder can be used now — picked, its grant held, and still there. */
+    val folderReachable: Boolean = false,
+    /** A storage switch is being saved; the chips wait for it. */
+    val storageBusy: Boolean = false,
+    /** What a switch or a pick that did not go through had to say, under the storage rows. */
+    val storageMessage: UiMessage? = null,
 )
 
 /** docs/11 A10, the M2 slice: the language (docs/07) and the network setting. The account lives on
@@ -75,6 +92,73 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      */
     fun setLanguage(value: AppLanguage) {
         language.select(value)
+    }
+
+    /**
+     * docs/03 "Storage location": asked again whenever it may have changed out of sight — the settings
+     * screen coming up, the app coming back, a pick — so the folder row never keeps saying what
+     * was true before the trip to the system's settings or file manager.
+     */
+    fun refreshStorage() {
+        viewModelScope.launch { readStorage() }
+    }
+
+    /**
+     * Saved the moment it is chosen, as the theme is (`setStorage`). [changed] is the open processing
+     * form taking the new revision under its draft, so its next Save is not refused as stale.
+     */
+    fun selectStorage(kind: StorageKind, changed: () -> Unit) {
+        val current = _state.value
+        if (kind == current.storage || current.storageBusy) return
+        _state.update { it.copy(storageBusy = true, storageMessage = null) }
+        viewModelScope.launch {
+            try {
+                when (val result = CoreModule.get(getApplication()).core.processingSettings.setStorage(kind)) {
+                    is ProcessingSaveResult.Saved -> {
+                        _state.update { it.copy(storage = kind) }
+                        changed()
+                    }
+                    is ProcessingSaveResult.Invalid -> storageFailed(result.errors.joinToString("\n"))
+                    else -> _state.update { it.copy(storageMessage = UiMessage.Res(R.string.processing_unreadable)) }
+                }
+            } catch (e: Exception) {
+                storageFailed(e.message.orEmpty())
+            } finally {
+                _state.update { it.copy(storageBusy = false) }
+                readStorage()
+            }
+        }
+    }
+
+    /**
+     * The folder the user picked. What was waiting for one goes now rather than at its next look,
+     * five minutes out (`resumeFolderWaits`), and the queue runs for it.
+     */
+    fun pickFolder(tree: Uri) {
+        viewModelScope.launch {
+            val app = getApplication<Application>()
+            try {
+                val graph = CoreModule.get(app)
+                graph.folder.pick(tree)
+                graph.core.resumeFolderWaits()
+                WorkScheduler(app).onJobsDue()
+            } catch (e: Exception) {
+                storageFailed(e.message.orEmpty())
+            }
+            readStorage()
+        }
+    }
+
+    private suspend fun readStorage() {
+        val graph = CoreModule.get(getApplication())
+        val storage = graph.core.processingSettings.storage()
+        val folder = graph.folder.label()
+        val reachable = graph.folder.available()
+        _state.update { it.copy(storage = storage, folder = folder, folderReachable = reachable) }
+    }
+
+    private fun storageFailed(reason: String) {
+        _state.update { it.copy(storageMessage = coreMessage(CoreMessage.STEP_FAILED, reason)) }
     }
 
     fun setWifiOnly(value: Boolean) {

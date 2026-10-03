@@ -23,6 +23,14 @@ public enum Retention {
         )
     }
 
+    /// Where a recording's files are, or are going: its folder's storage once one exists, otherwise
+    /// the storage it froze when it started — the case the delete dialog's "not yet in …" line is
+    /// about (docs/03 "Storage location"). Nil when neither can be read.
+    public static func storage(core: ReclyCore_, recordingId: String) async -> StorageKind? {
+        if let storage = (try? await core.recordings.get(id: recordingId))?.storage { return storage }
+        return (try? await core.processingSettings.recordingSnapshot(recordingId: recordingId))?.settings.storage.provider
+    }
+
     /// How many recordings still have audio here, over the newest [limit] of them — the count the
     /// disconnect warning names, because those are the ones that stay behind.
     ///
@@ -84,6 +92,9 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
     public let hasDriveFolder: Bool
     /// docs/03 "Storage location": the folder is in iCloud, and the dialog says so instead of Drive.
     public let icloud: Bool
+    /// docs/03 "Storage location": the folder is in the local folder picked on this device, and the dialog
+    /// says so instead of Drive.
+    public let folder: Bool
 
     public var id: String { recordingId }
 
@@ -93,7 +104,8 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
         unuploaded: Int,
         remote: Bool = false,
         hasDriveFolder: Bool,
-        icloud: Bool = false
+        icloud: Bool = false,
+        folder: Bool = false
     ) {
         self.recordingId = recordingId
         self.title = title
@@ -101,6 +113,7 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
         self.remote = remote
         self.hasDriveFolder = hasDriveFolder
         self.icloud = icloud
+        self.folder = folder
     }
 }
 

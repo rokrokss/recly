@@ -37,9 +37,14 @@ class CoreDeps(
      * (ADR-024); everywhere else this is null and iCloud is not offered.
      */
     val ubiquity: recly.core.storage.UbiquityContainer? = null,
+    /**
+     * docs/03 "Storage location": the local folder the user can pick on this device. The iPhone, Mac, Windows
+     * and Android phone shells have one; the watches pass null and it is not offered.
+     */
+    val localFolder: recly.core.storage.LocalFolder? = null,
 ) {
     internal fun withTransport(transport: Transport): CoreDeps = CoreDeps(
         clock, logger, secureStore, tokenProvider, transport, fileSystem, audio, dataDir,
-        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription, ubiquity,
+        device, io, locale, requireTransferConsent, transcriptionPolicy, localTranscription, ubiquity, localFolder,
     )
 }

@@ -412,5 +412,17 @@
   "Show in Finder": "Finder में दिखाएँ",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "सेटिंग → [आपका नाम] → iCloud → ड्राइव में “यह iPhone सिंक करें” चालू करें, फिर “iCloud में सहेजे गए” → “सभी देखें” में Recly चालू करें।",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "सिस्टम सेटिंग → [आपका नाम] → iCloud → ड्राइव में “यह Mac सिंक करें” चालू करें, फिर “iCloud Drive पर सिंक हो रहे ऐप्स” में Recly चालू करें।",
-  "Open iCloud Settings": "iCloud सेटिंग खोलें"
+  "Open iCloud Settings": "iCloud सेटिंग खोलें",
+  "Local folder": "लोकल फ़ोल्डर",
+  "No folder chosen": "कोई फ़ोल्डर नहीं चुना गया",
+  "Choose folder": "फ़ोल्डर चुनें",
+  "Change folder": "फ़ोल्डर बदलें",
+  "This folder cannot be reached. Choose it again.": "इस फ़ोल्डर तक नहीं पहुँचा जा सकता। इसे फिर से चुनें।",
+  "The local folder cannot be reached. Choose it again in Settings.": "लोकल फ़ोल्डर तक नहीं पहुँचा जा सकता। सेटिंग में इसे फिर से चुनें।",
+  "Waiting for the local folder": "लोकल फ़ोल्डर की प्रतीक्षा",
+  "Also delete from the local folder": "लोकल फ़ोल्डर से भी हटाएँ",
+  "Deleted here, but not from the local folder: {0}": "यहाँ हटा दिया गया, लेकिन लोकल फ़ोल्डर से नहीं: {0}",
+  "Audio not yet in the local folder is deleted with it.": "लोकल फ़ोल्डर तक नहीं पहुँचा ऑडियो भी हटेगा।",
+  "Reading from the local folder…": "लोकल फ़ोल्डर से पढ़ा जा रहा है…",
+  "Could not read from the local folder": "लोकल फ़ोल्डर से पढ़ा नहीं जा सका"
 }

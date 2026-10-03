@@ -1,7 +1,7 @@
-# What Recly leaves in Google Drive or iCloud
+# What Recly leaves in Google Drive, iCloud or a local folder
 
 Contents: folder layout · names · `meta.json` · the transcript files · folder states · local copies
-· iCloud.
+· iCloud · local folder.
 
 ## Folder layout
 
@@ -100,7 +100,7 @@ A recording from another device the app has not opened yet is in Drive (or iClou
 ## iCloud (iPhone and Mac)
 
 On iPhone and Mac the user can store new recordings in iCloud instead of Drive (Settings →
-Storage); Android and Windows always use Drive. An iCloud recording is in the app's iCloud Drive
+Storage); Android and Windows cannot use iCloud. An iCloud recording is in the app's iCloud Drive
 folder, which Finder and the Files app show as **Recly**, in the same layout as Drive:
 
 ```
@@ -125,3 +125,24 @@ folder, which Finder and the Files app show as **Recly**, in the same layout as 
 - Only a Mac can read the folder directly, from the path above. No AI assistant has an iCloud
   connector (Claude, ChatGPT and Gemini, checked 2026-10-02). On iPhone the user can attach a
   transcript from the Files app.
+
+## Local folder (iPhone, Mac, Windows and Android)
+
+On an iPhone, a Mac, a Windows PC or an Android phone the user can store new recordings in a folder they
+picked on that device instead (Settings → Storage → Local folder) — often a notes vault such as
+Obsidian's. Only the user knows where it is: ask, or look where they say. The layout is Drive's,
+plus the transcript as Markdown:
+
+```
+<the folder the user picked>/
+  recly/memo/2026-08/
+    20260826T010000Z_desktop_01J9ABCD/
+      ...                                                the same files as in Drive
+      20260826T010000Z_desktop_01J9ABCD.transcript.md    front matter (title, recordingId, startedAt) + the .txt lines
+```
+
+- There is no folder-properties file and no `pending` marker: the folder is only ever written by
+  the device that recorded, and the title is the one in `meta.json` (a rename rewrites it and the
+  `.md`).
+- `meta.json` has no `drive` field, so there is no folder link.
+- Recordings are never moved, so a user who switched storage has recordings in both places.

@@ -56,7 +56,7 @@ fun DeleteDialog(
         } else {
             if (request.unuploaded > 0) {
                 BlueprintDialogText(
-                    strings[Str.DELETE_UNUPLOADED],
+                    strings[if (request.folder) Str.DELETE_FOLDER_UNUPLOADED else Str.DELETE_UNUPLOADED],
                     tone = DialogTone.DANGER,
                 )
             }
@@ -65,8 +65,9 @@ fun DeleteDialog(
                 selected = !deleteDrive,
                 onSelect = { deleteDrive = false },
             )
+            // docs/03 "Storage location": the same answer about the local folder, and the same default.
             BlueprintRadioRow(
-                label = strings[Str.DELETE_WITH_DRIVE],
+                label = strings[if (request.folder) Str.DELETE_WITH_FOLDER else Str.DELETE_WITH_DRIVE],
                 selected = deleteDrive,
                 onSelect = { deleteDrive = true },
             )

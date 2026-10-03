@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">दूसरे डिवाइस पर ट्रांसक्रिप्शन जारी</string>
     <string name="job_state_waiting">फिर कोशिश बाकी</string>
     <string name="job_state_waiting_in">फिर कोशिश बाकी · %1$s</string>
+    <string name="job_state_waiting_folder">लोकल फ़ोल्डर की प्रतीक्षा</string>
     <string name="job_state_done">पूरा हुआ</string>
     <string name="job_state_failed">विफल</string>
     <string name="job_state_needs_auth">अपलोड की प्रतीक्षा</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">छोटे अक्षर से शुरू; छोटे अक्षर, अंक और अंडरस्कोर, अधिकतम 32</string>
     <string name="secret_value_required">मान दर्ज करें</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">स्टोरेज</string>
+    <string name="storage_local_folder">लोकल फ़ोल्डर</string>
+    <string name="folder_none">कोई फ़ोल्डर नहीं चुना गया</string>
+    <string name="folder_choose">फ़ोल्डर चुनें</string>
+    <string name="folder_change">फ़ोल्डर बदलें</string>
+    <string name="folder_unreachable">इस फ़ोल्डर तक नहीं पहुँचा जा सकता। इसे फिर से चुनें।</string>
     <string name="settings_uploads">अपलोड</string>
     <string name="settings_wifi_only">केवल Wi-Fi से अपलोड करें</string>
     <string name="settings_language">भाषा</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">iCloud Drive उपलब्ध नहीं है। सेटिंग में iCloud के अंदर जाँचें कि iCloud Drive और Recly चालू हैं।</string>
     <string name="core_icloud_storage_full">iCloud में जगह नहीं है। जगह खाली करके फिर कोशिश करें</string>
     <string name="core_icloud_uploading">iCloud पर अपलोड जारी</string>
+    <string name="core_folder_unavailable">लोकल फ़ोल्डर तक नहीं पहुँचा जा सकता। सेटिंग में इसे फिर से चुनें।</string>
     <string name="core_drive_consent_required">Drive एक्सेस के लिए आपकी सहमति चाहिए</string>
     <string name="core_sign_in_cancelled">साइन इन रद्द हुआ</string>
     <string name="core_missing_secret">इस डिवाइस पर सीक्रेट ‘%1$s’ का मान नहीं है</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">Drive से प्राप्त हो रहा है…</string>
     <string name="player_waveform_loading">वेवफ़ॉर्म लोड हो रहा है…</string>
     <string name="player_fetch_failed">Drive से प्राप्त नहीं हो सका</string>
+    <string name="player_fetching_folder">लोकल फ़ोल्डर से पढ़ा जा रहा है…</string>
+    <string name="player_fetch_failed_folder">लोकल फ़ोल्डर से पढ़ा नहीं जा सका</string>
     <string name="player_position">स्थिति</string>
     <string name="job_waiting_transcription">ट्रांसक्रिप्शन परिणाम की प्रतीक्षा; %1$d मिनट बीते</string>
     <string name="job_reason_check_key">कुंजी जाँचें</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">‘%1$s’ हटाएँ?</string>
     <string name="delete_local_only">केवल इस फ़ोन से हटाएँ</string>
     <string name="delete_with_drive">Drive फ़ोल्डर भी हटाएँ</string>
+    <string name="delete_with_folder">लोकल फ़ोल्डर से भी हटाएँ</string>
     <string name="delete_remote_body">दूसरे डिवाइस पर रिकॉर्ड हुआ। हटाने पर Drive और सभी डिवाइस से हटेगा।</string>
     <string name="delete_busy">अभी अपलोड जारी है। पूरा होने पर फिर कोशिश करें</string>
     <string name="delete_drive_failed">यहाँ हटा दिया गया, लेकिन Drive ने मना किया: %1$s</string>
+    <string name="delete_folder_failed">यहाँ हटा दिया गया, लेकिन लोकल फ़ोल्डर से नहीं: %1$s</string>
     <string name="delete_unuploaded">Drive तक नहीं पहुँचा ऑडियो भी हटेगा।</string>
+    <string name="delete_unuploaded_folder">लोकल फ़ोल्डर तक नहीं पहुँचा ऑडियो भी हटेगा।</string>
     <string name="settings_disconnect">डिस्कनेक्ट करें</string>
     <string name="settings_disconnect_hint">इस ऐप का आपके Google खाते का एक्सेस हटाएँ।</string>
     <string name="disconnect_title">Google Drive डिस्कनेक्ट करें?</string>

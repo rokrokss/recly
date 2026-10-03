@@ -78,8 +78,9 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
     }
 
     /**
-     * docs/03 "Storage location": where new recordings go — Google Drive, or the app's iCloud folder on the
-     * devices that have one ([CoreDeps.ubiquity], ADR-024). Saved at once, as the next revision; a
+     * docs/03 "Storage location": where new recordings go — Google Drive, the app's iCloud folder on the
+     * devices that have one ([CoreDeps.ubiquity], ADR-024), or a local folder on the devices that offer
+     * one ([CoreDeps.localFolder]). Saved at once, as the next revision; a
      * recording already started keeps the storage it froze ([capture]), and nothing already uploaded
      * moves.
      */
@@ -90,6 +91,9 @@ class ProcessingSettingsRepository(private val db: RecDatabase, private val deps
                 ?: return@transactionWithResult ProcessingSaveResult.Unavailable
             if (provider == StorageKind.ICLOUD && deps.ubiquity == null) {
                 return@transactionWithResult ProcessingSaveResult.Invalid(listOf("iCloud is not available on this device"))
+            }
+            if (provider == StorageKind.FOLDER && deps.localFolder == null) {
+                return@transactionWithResult ProcessingSaveResult.Invalid(listOf("a local folder is not available on this device"))
             }
             val document = current.document
             if (document.settings.storage.provider == provider) return@transactionWithResult ProcessingSaveResult.Saved(document)

@@ -26,8 +26,8 @@
             },
             "minDurationSec": { "type": "integer", "minimum": 0, "maximum": 2147483647, "default": 0 },
             "provider": {
-              "enum": ["drive", "icloud"], "default": "drive",
-              "description": "Where new recordings are uploaded: the user's Google Drive, or the app's iCloud Drive folder (iPhone and Mac only). Changed from the storage setting, not by saving or importing this document. See docs/recly.md section 3 \"저장 위치\"."
+              "enum": ["drive", "icloud", "folder"], "default": "drive",
+              "description": "Where new recordings are uploaded: the user's Google Drive, the app's iCloud Drive folder (iPhone and Mac only), or a local folder the user picked on the device (iPhone, Mac, Windows and the Android phone; the folder itself is device-local and not in this document). Changed from the storage setting, not by saving or importing this document. See docs/recly.md section 3 \"Storage location\"."
             }
           }
         },

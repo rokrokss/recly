@@ -412,5 +412,17 @@
   "Show in Finder": "إظهار في Finder",
   "In Settings → [your name] → iCloud → Drive, turn on Sync this iPhone, then turn on Recly under Saved to iCloud → See All.": "‏في الإعدادات ← [اسمك] ← iCloud ← Drive، شغّل «مزامنة هذا الـ iPhone»، ثم شغّل Recly ضمن «المحفوظ في iCloud» ← «عرض الكل».",
   "In System Settings → [your name] → iCloud → Drive, turn on Sync this Mac, then turn on Recly under Apps Syncing to iCloud Drive.": "‏في إعدادات النظام ← [اسمك] ← iCloud ← Drive، شغّل «مزامنة هذا الـ Mac»، ثم شغّل Recly ضمن «التطبيقات التي تتم مزامنتها مع iCloud Drive».",
-  "Open iCloud Settings": "فتح إعدادات iCloud"
+  "Open iCloud Settings": "فتح إعدادات iCloud",
+  "Local folder": "المجلد المحلي",
+  "No folder chosen": "لم يُختر أي مجلد",
+  "Choose folder": "اختيار مجلد",
+  "Change folder": "تغيير المجلد",
+  "This folder cannot be reached. Choose it again.": "تعذّر الوصول إلى هذا المجلد. اختره مرة أخرى.",
+  "The local folder cannot be reached. Choose it again in Settings.": "تعذّر الوصول إلى المجلد المحلي. اختره مرة أخرى في الإعدادات.",
+  "Waiting for the local folder": "في انتظار المجلد المحلي",
+  "Also delete from the local folder": "الحذف من المجلد المحلي أيضًا",
+  "Deleted here, but not from the local folder: {0}": "تم الحذف هنا، لكن ليس من المجلد المحلي: {0}",
+  "Audio not yet in the local folder is deleted with it.": "سيُحذف أيضًا الصوت الذي لم يصل إلى المجلد المحلي بعد.",
+  "Reading from the local folder…": "جارٍ القراءة من المجلد المحلي…",
+  "Could not read from the local folder": "تعذّرت القراءة من المجلد المحلي"
 }

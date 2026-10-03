@@ -162,6 +162,7 @@ fun testDeps(
     transcriptionPolicy: recly.core.transcribe.TranscriptionPolicy = recly.core.transcribe.TranscriptionPolicy(),
     locale: String = "en",
     ubiquity: recly.core.storage.UbiquityContainer? = null,
+    localFolder: recly.core.storage.LocalFolder? = null,
 ): CoreDeps = CoreDeps(
     clock = clock,
     logger = logger,
@@ -178,6 +179,7 @@ fun testDeps(
     localTranscription = localTranscription,
     locale = locale,
     ubiquity = ubiquity,
+    localFolder = localFolder,
 )
 
 fun testMeta(

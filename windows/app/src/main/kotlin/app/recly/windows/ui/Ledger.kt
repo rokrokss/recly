@@ -59,6 +59,9 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING),
     // Waiting for the on-device speech model: like consent, a wait the user ends, not a failure.
     Str.STATE_NEEDS_MODEL to LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING),
+    // docs/03 "Storage location": the local folder cannot be reached, and picking it again is what carries
+    // the job on — a wait, worn in the warning tone like the model's, never FAILED.
+    Str.STATE_WAITING_FOLDER to LedgerStatus("WAITING", BadgeTone.WARNING),
     Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL),
 )
 

@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">Transcription sur un autre appareil</string>
     <string name="job_state_waiting">Nouvelle tentative en attente</string>
     <string name="job_state_waiting_in">Nouvelle tentative en attente · %1$s</string>
+    <string name="job_state_waiting_folder">En attente du dossier local</string>
     <string name="job_state_done">Terminé</string>
     <string name="job_state_failed">Échec</string>
     <string name="job_state_needs_auth">Envoi en attente</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">Commence par une minuscule ; minuscules, chiffres et tirets bas, 32 caractères maximum</string>
     <string name="secret_value_required">Saisissez une valeur</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">Stockage</string>
+    <string name="storage_local_folder">Dossier local</string>
+    <string name="folder_none">Aucun dossier choisi</string>
+    <string name="folder_choose">Choisir un dossier</string>
+    <string name="folder_change">Changer de dossier</string>
+    <string name="folder_unreachable">Ce dossier est inaccessible. Choisissez-le à nouveau.</string>
     <string name="settings_uploads">Envois</string>
     <string name="settings_wifi_only">Envoyer uniquement en Wi-Fi</string>
     <string name="settings_language">Langue</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">iCloud Drive n’est pas disponible. Dans Réglages, sous iCloud, vérifiez que iCloud Drive et Recly sont activés.</string>
     <string name="core_icloud_storage_full">iCloud est plein. Libérez de l’espace et réessayez</string>
     <string name="core_icloud_uploading">Envoi vers iCloud</string>
+    <string name="core_folder_unavailable">Le dossier local est inaccessible. Choisissez-le à nouveau dans les Réglages.</string>
     <string name="core_drive_consent_required">L’accès à Drive nécessite votre consentement</string>
     <string name="core_sign_in_cancelled">La connexion a été annulée</string>
     <string name="core_missing_secret">Cet appareil n’a pas de valeur pour le secret « %1$s »</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">Récupération depuis Drive…</string>
     <string name="player_waveform_loading">Chargement de la forme d’onde…</string>
     <string name="player_fetch_failed">Impossible de récupérer depuis Drive</string>
+    <string name="player_fetching_folder">Lecture depuis le dossier local…</string>
+    <string name="player_fetch_failed_folder">Impossible de lire depuis le dossier local</string>
     <string name="player_position">Position</string>
     <string name="job_waiting_transcription">Transcription en attente ; %1$d min écoulées</string>
     <string name="job_reason_check_key">Vérifier la clé</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">Supprimer « %1$s » ?</string>
     <string name="delete_local_only">Supprimer uniquement de ce téléphone</string>
     <string name="delete_with_drive">Supprimer aussi le dossier Drive</string>
+    <string name="delete_with_folder">Supprimer aussi du dossier local</string>
     <string name="delete_remote_body">Enregistré sur un autre appareil. La suppression le retire de Drive et de tous les appareils.</string>
     <string name="delete_busy">Envoi en cours. Réessayez après sa fin</string>
     <string name="delete_drive_failed">Supprimé ici, mais refusé par Drive : %1$s</string>
+    <string name="delete_folder_failed">Supprimé ici, mais pas du dossier local : %1$s</string>
     <string name="delete_unuploaded">L’audio pas encore envoyé à Drive sera aussi supprimé.</string>
+    <string name="delete_unuploaded_folder">L’audio pas encore copié dans le dossier local sera aussi supprimé.</string>
     <string name="settings_disconnect">Déconnecter</string>
     <string name="settings_disconnect_hint">Retirez à cette app l’accès à votre compte Google.</string>
     <string name="disconnect_title">Déconnecter Google Drive ?</string>

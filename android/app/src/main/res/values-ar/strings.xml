@@ -55,6 +55,7 @@
     <string name="job_state_remote_transcribing">جارٍ النسخ على جهاز آخر</string>
     <string name="job_state_waiting">إعادة المحاولة معلّقة</string>
     <string name="job_state_waiting_in">إعادة المحاولة معلّقة · %1$s</string>
+    <string name="job_state_waiting_folder">في انتظار المجلد المحلي</string>
     <string name="job_state_done">تم</string>
     <string name="job_state_failed">فشل</string>
     <string name="job_state_needs_auth">الرفع قيد الانتظار</string>
@@ -71,6 +72,12 @@
     <string name="secret_name_invalid">يبدأ بحرف صغير؛ أحرف صغيرة وأرقام وشرطة سفلية، حتى 32 حرفًا</string>
     <string name="secret_value_required">أدخل قيمة</string>
     <string name="settings_account">Google Drive</string>
+    <string name="settings_storage">التخزين</string>
+    <string name="storage_local_folder">المجلد المحلي</string>
+    <string name="folder_none">لم يُختر أي مجلد</string>
+    <string name="folder_choose">اختيار مجلد</string>
+    <string name="folder_change">تغيير المجلد</string>
+    <string name="folder_unreachable">تعذّر الوصول إلى هذا المجلد. اختره مرة أخرى.</string>
     <string name="settings_uploads">عمليات الرفع</string>
     <string name="settings_wifi_only">الرفع عبر Wi-Fi فقط</string>
     <string name="settings_language">اللغة</string>
@@ -87,6 +94,7 @@
     <string name="core_icloud_unavailable">‏iCloud Drive غير متاح. في الإعدادات، ضمن iCloud، تحقّق من تفعيل iCloud Drive وRecly.</string>
     <string name="core_icloud_storage_full">مساحة iCloud ممتلئة. أفرغ بعض المساحة وأعد المحاولة</string>
     <string name="core_icloud_uploading">جارٍ الرفع إلى iCloud</string>
+    <string name="core_folder_unavailable">تعذّر الوصول إلى المجلد المحلي. اختره مرة أخرى في الإعدادات.</string>
     <string name="core_drive_consent_required">يتطلب الوصول إلى Drive موافقتك</string>
     <string name="core_sign_in_cancelled">أُلغي تسجيل الدخول</string>
     <string name="core_missing_secret">لا توجد قيمة للسر «%1$s» على هذا الجهاز</string>
@@ -132,6 +140,8 @@
     <string name="player_fetching">جارٍ الجلب من Drive…</string>
     <string name="player_waveform_loading">جارٍ تحميل شكل الموجة…</string>
     <string name="player_fetch_failed">تعذّر الجلب من Drive</string>
+    <string name="player_fetching_folder">جارٍ القراءة من المجلد المحلي…</string>
+    <string name="player_fetch_failed_folder">تعذّرت القراءة من المجلد المحلي</string>
     <string name="player_position">الموضع</string>
     <string name="job_waiting_transcription">بانتظار نتيجة النسخ؛ مضت %1$d دقيقة</string>
     <string name="job_reason_check_key">التحقق من المفتاح</string>
@@ -147,10 +157,13 @@
     <string name="delete_title">حذف «%1$s»؟</string>
     <string name="delete_local_only">الحذف من هذا الهاتف فقط</string>
     <string name="delete_with_drive">حذف مجلد Drive أيضًا</string>
+    <string name="delete_with_folder">الحذف من المجلد المحلي أيضًا</string>
     <string name="delete_remote_body">سُجّل على جهاز آخر. يؤدي الحذف إلى إزالته من Drive وجميع الأجهزة.</string>
     <string name="delete_busy">الرفع مستمر. أعد المحاولة بعد انتهائه</string>
     <string name="delete_drive_failed">تم الحذف هنا، لكن Drive رفض: %1$s</string>
+    <string name="delete_folder_failed">تم الحذف هنا، لكن ليس من المجلد المحلي: %1$s</string>
     <string name="delete_unuploaded">سيُحذف أيضًا الصوت الذي لم يصل إلى Drive بعد.</string>
+    <string name="delete_unuploaded_folder">سيُحذف أيضًا الصوت الذي لم يصل إلى المجلد المحلي بعد.</string>
     <string name="settings_disconnect">فصل الاتصال</string>
     <string name="settings_disconnect_hint">ألغِ وصول هذا التطبيق إلى حساب Google الخاص بك.</string>
     <string name="disconnect_title">فصل Google Drive؟</string>

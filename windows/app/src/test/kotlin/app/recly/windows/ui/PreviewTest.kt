@@ -175,5 +175,11 @@ class PreviewTest {
                 writes += "modelPromptDismissed"
                 field = value
             }
+
+        override var localFolder: String? = null
+            set(value) {
+                writes += "localFolder"
+                field = value
+            }
     }
 }

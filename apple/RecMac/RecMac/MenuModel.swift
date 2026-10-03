@@ -38,7 +38,8 @@ final class MenuModel: ObservableObject {
     /// a menu that was not told would go on showing the note it replaced.
     @Published private(set) var message: UiMessage?
     @Published private(set) var processing: ProcessingSettingsModel?
-    /// docs/03 "Storage location": Google Drive or the app's iCloud folder, for the settings' storage block.
+    /// docs/03 "Storage location": Google Drive, the app's iCloud folder or a local folder, for the settings'
+    /// storage block.
     @Published private(set) var storage: StorageChoice?
     /// docs/05 "Fixed processing settings": the one speech-model download, shared by the settings row, the
     /// banner, a waiting recording's row and the popover's first-run card.
@@ -251,6 +252,8 @@ final class MenuModel: ObservableObject {
             self.processing = processing
             let storage = StorageChoice(core: bridge.core)
             storage.onChanged = { [weak processing] in await processing?.storageChanged() }
+            // The recordings a picked folder let go are due now.
+            storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
@@ -818,6 +821,8 @@ final class MenuModel: ObservableObject {
         let asked = deleteAsked
         Task {
             let unuploaded = await Retention.unuploadedParts(core: core, recordingId: item.id)
+            // Another device's recording is Drive's; this Mac's own may not have a folder yet.
+            let storage = item.remote ? item.storage : await Retention.storage(core: core, recordingId: item.id)
             guard asked == self.deleteAsked else { return }
             deleteRequest = DeleteAsk(
                 request: DeleteRequest(
@@ -826,7 +831,8 @@ final class MenuModel: ObservableObject {
                     unuploaded: unuploaded,
                     remote: item.remote,
                     hasDriveFolder: item.hasCloudFolder,
-                    icloud: item.storage == .icloud
+                    icloud: storage == .icloud,
+                    folder: storage == .folder
                 ),
                 source: source
             )
@@ -867,10 +873,12 @@ final class MenuModel: ObservableObject {
 
             case .deleted(let driveError):
                 if let driveError {
-                    self.message = .key(
-                        request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
-                        args: [.verbatim(driveError)]
-                    )
+                    self.message = request.folder
+                        ? .key("Deleted here, but not from the local folder: %@", args: [.verbatim(driveError)])
+                        : .key(
+                            request.icloud ? "Deleted here, but iCloud refused: %@" : "Deleted here, but Drive refused: %@",
+                            args: [.verbatim(driveError)]
+                        )
                 }
                 return driveError == nil
 
@@ -969,7 +977,8 @@ final class MenuModel: ObservableObject {
         NSWorkspace.shared.open(link)
     }
 
-    /// docs/03 "Storage location": an iCloud recording's folder, in the iCloud Drive folder Finder shows.
+    /// docs/03 "Storage location": an iCloud recording's folder, in the iCloud Drive folder Finder shows — or a
+    /// local folder recording's, under the folder picked in settings.
     func showInFinder(_ item: RecentItem) {
         guard let folder = item.cloudFolder else { return }
         NSWorkspace.shared.activateFileViewerSelecting([folder])
