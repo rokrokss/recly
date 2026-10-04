@@ -218,12 +218,12 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 
 /* The hero's demo (design/demo.mp4, the README's demo.gif at full resolution) and, under it, the flow
    diagram (design/flow.svg), as in the README; "How it works" spells out each step. */
-.demo { max-width: 560px; margin: 0; overflow: hidden; border: 1px solid var(--grid); border-radius: var(--r-card); background: #0E0F12; }
+.demo { max-width: 640px; margin: 0; overflow: hidden; border: 1px solid var(--grid); border-radius: var(--r-card); background: #0E0F12; }
 .demo video { display: block; width: 100%; height: auto; }
 /* Wide screens put the demo beside the title and lede; the diagram spans both columns under them. */
 @media (min-width: 1000px) {
-  .hero .wrap { grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); column-gap: 56px; align-items: center; }
-  .hero .demo { max-width: 500px; justify-self: end; }
+  .hero .wrap { grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); column-gap: 48px; align-items: center; }
+  .hero .demo { max-width: 620px; justify-self: end; }
   .hero .diagram { grid-column: 1 / -1; }
 }
 .diagram { margin: 0; }
