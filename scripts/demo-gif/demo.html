@@ -1,0 +1,303 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  The README demo: double-press the Galaxy Watch home key → recording → hand-off → upload and
+  transcription → the transcript in Drive. A reconstruction of the real screens, not a screen
+  recording. Every visual is a pure function of `t` (render.mjs drives it frame by frame), so there
+  are no CSS transitions or animations here. App strings are injected from the Android resources.
+-->
+<style>
+:root {
+  --stage: #0E0F12; --stage-ink: #F2F2F0; --stage-muted: #9A9CA3; --stage-line: #3D4048;
+  --ground: #F7F7F5; --surface: #FFFFFF; --grid: #E6E6E2; --ink: #111111; --muted: #5E5E5A;
+  --accent: #0F62FE; --accent-soft: #EDF3FF; --record: #DA1E28; --record-dark: #FA4D56;
+  --success: #198038;
+  --sans: system-ui, -apple-system, "Apple SD Gothic Neo", sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, "Apple SD Gothic Neo", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 960px; height: 540px; overflow: hidden; background: var(--stage); }
+body { font-family: var(--sans); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+#stage {
+  position: relative; width: 960px; height: 540px; overflow: hidden;
+  background-color: var(--stage);
+  background-image: radial-gradient(rgba(154, 156, 163, 0.13) 1px, transparent 1px);
+  background-size: 16px 16px; background-position: 8px 8px;
+}
+.abs { position: absolute; }
+
+/* brand + headline */
+.brand { left: 28px; top: 22px; display: flex; align-items: center; gap: 8px; color: var(--stage-ink); font-weight: 700; font-size: 15px; }
+.brand svg { width: 24px; height: 24px; border-radius: 6px; }
+.head { left: 0; right: 0; top: 18px; text-align: center; }
+.head h1 { color: var(--stage-ink); font-size: 28px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; }
+.head p { color: var(--stage-muted); font-size: 15px; margin-top: 8px; }
+.head p.path { font-family: var(--mono); font-size: 12.5px; color: var(--stage-ink); }
+.head p.path b { color: var(--stage-muted); font-weight: 400; }
+
+/* watch */
+.strap { left: 140px; width: 180px; background: #1A1B1F; border: 1px solid #2A2C32; }
+.strap.top { top: 96px; height: 120px; border-radius: 0 0 14px 14px; }
+.strap.bottom { top: 440px; height: 140px; border-radius: 14px 14px 0 0; }
+.case { left: 75px; top: 175px; width: 310px; height: 310px; border-radius: 50%; background: #2B2D33; border: 2px solid #43464F; }
+.bezel { left: 92px; top: 192px; width: 276px; height: 276px; border-radius: 50%; background: #0A0A0B; }
+.screen { left: 95px; top: 195px; width: 270px; height: 270px; border-radius: 50%; background: #000; overflow: hidden; color: #F2F2F0; }
+.key { width: 14px; height: 44px; border-radius: 5px; background: #43464F; border: 1px solid #555963; }
+.keylabel { font-family: var(--mono); font-size: 13px; color: var(--stage-ink); background: #2B2D33; border: 1px solid #43464F; border-radius: 3px; padding: 2px 7px; }
+.tap { border-radius: 50%; pointer-events: none; }
+
+.ws { position: absolute; inset: 0; text-align: center; }
+.ws .clock { position: absolute; left: 0; right: 0; top: 12px; font-size: 14px; color: #C8C8C8; font-weight: 500; }
+.ws .timer { position: absolute; left: 0; right: 0; top: 34px; font-family: var(--mono); font-size: 40px; letter-spacing: 0.02em; }
+.ws .state { position: absolute; left: 0; right: 0; top: 86px; font-family: var(--mono); font-size: 14px; }
+.ws .btn { position: absolute; left: 101px; top: 112px; width: 68px; height: 68px; border-radius: 6px; }
+.ws .btn i { position: absolute; left: 23px; top: 23px; width: 22px; height: 22px; border-radius: 3px; }
+.ws .badge { position: absolute; left: 0; right: 0; top: 190px; font-family: var(--mono); font-size: 13px; color: #9A9CA3; }
+.ws .help { position: absolute; left: 104px; top: 214px; width: 62px; height: 36px; border: 1px solid #333; border-radius: 6px; font-size: 14px; font-weight: 700; line-height: 34px; }
+.face .bigtime { position: absolute; left: 0; right: 0; top: 92px; font-size: 64px; font-weight: 300; letter-spacing: -0.02em; }
+.face .date { position: absolute; left: 0; right: 0; top: 70px; font-size: 15px; color: #9A9CA3; }
+
+/* skip cue */
+.skip { font-family: var(--mono); font-size: 12px; color: var(--stage-ink); background: #2B2D33; border: 1px solid #43464F; border-radius: 3px; padding: 3px 8px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.skip .ff { display: inline-flex; }
+.skip .ff s { width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid var(--stage-ink); }
+
+/* connector */
+.wire { left: 388px; top: 330px; width: 200px; height: 0; border-top: 1.5px dashed var(--stage-line); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--stage-line); }
+.packet { top: 318px; font-family: var(--mono); font-size: 11px; color: var(--stage-ink); background: #16181D; border: 1px solid #9A9CA3; border-radius: 3px; padding: 4px 7px; white-space: nowrap; }
+
+/* phone */
+.phone { left: 596px; top: 112px; width: 336px; height: 700px; border-radius: 40px; background: #1A1B1F; border: 2px solid #34363D; }
+.pscreen { position: absolute; left: 9px; top: 9px; right: 9px; bottom: 9px; border-radius: 31px; overflow: hidden;
+  background-color: var(--ground); background-image: radial-gradient(rgba(136, 136, 132, 0.18) 1px, transparent 1px); background-size: 12px 12px; color: var(--ink); }
+.statusbar { position: absolute; left: 22px; right: 20px; top: 12px; height: 16px; font-size: 12px; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+.cam { position: absolute; left: 50%; top: 11px; width: 11px; height: 11px; margin-left: -5px; border-radius: 50%; background: #111; }
+.sicons { display: flex; gap: 4px; align-items: center; }
+.sicons i { display: block; background: #111; }
+.view { position: absolute; left: 0; right: 0; top: 40px; bottom: 0; }
+
+.list .title { position: absolute; left: 16px; top: 8px; font-size: 17px; font-weight: 700; }
+.list .summary { position: absolute; left: 16px; top: 33px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.ledger { position: absolute; left: 0; right: 0; top: 60px; }
+.cols, .row { display: grid; grid-template-columns: 58px minmax(0, 1fr) 44px 92px; column-gap: 8px; align-items: center; padding: 0 12px 0 16px; }
+.cols { font-size: 11px; color: var(--muted); height: 28px; border-bottom: 1px solid var(--grid); }
+.row { background: var(--surface); border-bottom: 1px solid var(--grid); min-height: 50px; padding-top: 7px; padding-bottom: 7px; }
+.row .tm { font-family: var(--mono); font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+.row .tt { font-size: 13px; font-weight: 700; }
+.row .ln { font-family: var(--mono); font-size: 12px; }
+.chip { justify-self: start; font-family: var(--mono); font-size: 10.5px; line-height: 1.3; border: 1px solid; border-radius: 2px; padding: 2px 5px; }
+.chip.done { color: var(--success); border-color: var(--success); }
+.chip.busy { color: var(--accent); border-color: var(--accent); }
+.actions { display: flex; gap: 8px; padding: 10px 16px; background: var(--ground); border-bottom: 1px solid var(--grid); }
+.obtn { font-size: 12.5px; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 6px 10px; background: var(--surface); }
+
+.detail .dh { position: absolute; left: 16px; right: 14px; top: 6px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.detail .dt { font-size: 16px; font-weight: 700; }
+.detail .did { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 3px; }
+.detail .dbtns { display: flex; gap: 6px; }
+.detail .dbtns span { font-size: 11.5px; border: 1px solid var(--grid); background: var(--surface); border-radius: 4px; padding: 5px 8px; }
+.detail .body { position: absolute; left: 16px; right: 16px; top: 62px; border-top: 1px solid var(--grid); padding-top: 12px; display: grid; gap: 10px; }
+.detail .ts { display: inline-block; font-family: var(--mono); font-size: 11px; border: 1px solid var(--grid); background: var(--surface); border-radius: 2px; padding: 3px 7px; }
+.detail .para { font-size: 13px; line-height: 1.55; margin-top: 6px; }
+</style>
+</head>
+<body>
+<script type="application/json" id="strings">/*STRINGS*/</script>
+<div id="stage">
+  <div class="abs brand">
+    <svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" fill="#F7F7F5"/><rect x="232" y="232" width="560" height="560" rx="40" fill="#FFFFFF" stroke="#111111" stroke-width="28"/><rect x="392" y="392" width="240" height="240" rx="24" fill="#DA1E28"/></svg>
+    <span>Recly</span>
+  </div>
+  <div id="heads"></div>
+
+  <div class="abs strap top"></div>
+  <div class="abs strap bottom"></div>
+  <div class="abs case"></div>
+  <div class="abs key" id="homekey"></div>
+  <div class="abs key" id="backkey"></div>
+  <div class="abs bezel"></div>
+  <div class="abs screen" id="wscreen"></div>
+  <div class="abs keylabel" id="x2">×2</div>
+  <div class="abs skip" id="wskip"><span class="ff"><s></s><s></s></span><span id="wskiptext"></span></div>
+
+  <div class="abs wire"></div>
+  <div class="abs dot" style="left:385px;top:327px"></div>
+  <div class="abs dot" style="left:584px;top:327px"></div>
+  <div class="abs packet" id="packet"></div>
+
+  <div class="abs phone">
+    <div class="pscreen">
+      <div class="statusbar"><span>9:41</span><span class="sicons"><i style="width:3px;height:5px"></i><i style="width:3px;height:7px"></i><i style="width:3px;height:9px"></i><i style="width:16px;height:8px;border-radius:2px;margin-left:3px"></i></span></div>
+      <div class="cam"></div>
+      <div class="view" id="pview"></div>
+    </div>
+  </div>
+  <div class="abs skip" id="pskip"><span class="ff"><s></s><s></s></span><span id="pskiptext"></span></div>
+  <div class="abs tap" id="tap"></div>
+</div>
+
+<script>
+const S = JSON.parse(document.getElementById('strings').textContent);
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const ramp = (t, a, b) => clamp((t - a) / (b - a), 0, 1);
+const mmss = (s) => String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+const fmt = (pattern, ...args) => args.reduce((p, a, i) => p.replace(`%${i + 1}$d`, a).replace(`%${i + 1}$s`, a), pattern);
+
+// The timeline, in seconds. render.mjs reads END.
+const END = 14.0;
+const STEPS = [[0, 1.75], [1.75, 5.3], [5.3, 7.6], [7.6, 10.3], [10.3, END + 1]];
+const PRESS = [0.75, 1.1];          // the two home-key presses
+const REC_START = 1.75, JUMP = 4.6, STOP = 5.0, SAVED = 5.6, SENT = 7.3;
+const PACKET = [6.0, 7.2];
+const UPLOADING = 8.1, DONE_AT = 9.4, ROW_TAP = 9.75, DETAILS_TAP = 10.15, DETAIL = 10.35;
+const LENGTH_S = 41;
+
+// Geometry of the watch keys: on the case's right edge, the upper one is the home key.
+const CX = 230, CY = 330, R = 156;
+function placeKey(el, deg, inset) {
+  const a = deg * Math.PI / 180, r = R - inset;
+  el.style.left = (CX + r * Math.cos(a) - 7) + 'px';
+  el.style.top = (CY + r * Math.sin(a) - 22) + 'px';
+  el.style.transform = `rotate(${deg}deg)`;
+}
+
+function pressDepth(t) {
+  let d = 0;
+  for (const p of PRESS) d = Math.max(d, 1 - Math.abs(t - (p + 0.07)) / 0.07);
+  return clamp(d, 0, 1);
+}
+
+function heads(t) {
+  return STEPS.map(([a, b], i) => {
+    if (t < a || t >= b) return '';
+    const h = S.copy.steps[i];
+    const sub = i === 4
+      ? `<p class="path"><b>${esc(S.copy.myDrive)} / </b>${esc(S.copy.folder)}/<b>${esc(S.copy.base)}/</b>${esc(S.copy.base)}.transcript.txt</p>`
+      : `<p>${esc(h[1])}</p>`;
+    return `<div class="abs head"><h1>${esc(h[0])}</h1>${sub}</div>`;
+  }).join('');
+}
+
+function watchScreen(t) {
+  if (t < REC_START) {
+    return `<div class="ws face"><div class="date">${esc(S.copy.faceDate)}</div><div class="bigtime">9:41</div></div>`;
+  }
+  let timer, state, stateColor, btnBg, btnBorder, inner, badge = '';
+  if (t < STOP) {
+    const secs = t < JUMP ? Math.floor(t - REC_START) : LENGTH_S;
+    timer = mmss(secs); state = S.wear.recording_active; stateColor = '#FA4D56';
+    btnBg = '#FA4D56'; btnBorder = '#FA4D56'; inner = '#111';
+  } else if (t < SAVED) {
+    timer = mmss(LENGTH_S); state = S.wear.recording_stopping; stateColor = '#9A9CA3';
+    btnBg = '#3A3B40'; btnBorder = '#3A3B40'; inner = '#111';
+  } else {
+    timer = '00:00'; state = S.wear.recording_idle; stateColor = '#9A9CA3';
+    btnBg = '#000'; btnBorder = '#FA4D56'; inner = '#FA4D56';
+    if (t < SENT) badge = fmt(S.wear.sending_badge, 1);
+  }
+  return `<div class="ws"><div class="clock">9:41</div><div class="timer">${timer}</div>` +
+    `<div class="state" style="color:${stateColor}">${esc(state)}</div>` +
+    `<div class="btn" style="background:${btnBg};border:2px solid ${btnBorder}"><i style="background:${inner}"></i></div>` +
+    `<div class="badge">${esc(badge)}</div><div class="help">${esc(S.wear.info_open)}</div></div>`;
+}
+
+function chip(state) {
+  const cls = state === 'done' ? 'done' : 'busy';
+  const label = { receiving: S.app.job_state_receiving, running: S.app.job_state_running, done: S.app.job_state_done }[state];
+  return `<span class="chip ${cls}">${esc(label)}</span>`;
+}
+
+function row(r, extra = '') {
+  return `<div class="row" style="${extra}"><div class="tm">${esc(r.date)}<br>${esc(r.time)}</div>` +
+    `<div class="tt">${esc(r.title)}</div><div class="ln">${esc(r.len)}</div>${chip(r.state)}</div>`;
+}
+
+function phoneView(t) {
+  if (t >= DETAIL) {
+    const p = S.copy.transcript;
+    const o1 = ramp(t, DETAIL + 0.05, DETAIL + 0.35), o2 = ramp(t, DETAIL + 0.35, DETAIL + 0.65);
+    return `<div class="detail"><div class="dh"><div><div class="dt">${esc(S.app.jobs_untitled)}</div>` +
+      `<div class="did">${esc(S.copy.recordingId)}</div></div>` +
+      `<div class="dbtns"><span>${esc(S.app.detail_rename)}</span><span>${esc(S.app.action_close)}</span></div></div>` +
+      `<div class="body"><div style="opacity:${o1}"><span class="ts">00:00</span><p class="para">${esc(p[0])}</p></div>` +
+      `<div style="opacity:${o2}"><span class="ts">00:24</span><p class="para">${esc(p[1])}</p></div></div></div>`;
+  }
+  const rows = S.copy.oldRows.map((r) => row({ ...r, state: 'done' }));
+  let total = 3, waiting = 0;
+  if (t >= SENT) {
+    const state = t < UPLOADING ? 'receiving' : t < DONE_AT ? 'running' : 'done';
+    total = 4; waiting = state === 'done' ? 0 : 1;
+    const glow = 1 - ramp(t, SENT, SENT + 1.2);
+    const bg = `background:color-mix(in srgb, var(--accent-soft) ${Math.round(glow * 100)}%, var(--surface))`;
+    let html = row({ date: S.copy.newDate, time: '09:41', title: S.app.jobs_untitled, len: mmss(LENGTH_S), state }, bg);
+    if (t >= ROW_TAP + 0.1) {
+      html += `<div class="actions"><span class="obtn">${esc(S.app.jobs_open_drive)}</span><span class="obtn">${esc(S.app.detail_open)}</span></div>`;
+    }
+    rows.unshift(html);
+  }
+  return `<div class="list"><div class="title">${esc(S.app.jobs_title)}</div>` +
+    `<div class="summary">${esc(fmt(S.app.jobs_summary, total, waiting, 0))}</div>` +
+    `<div class="ledger"><div class="cols"><span>${esc(S.app.jobs_column_time)}</span><span>${esc(S.app.jobs_column_title)}</span>` +
+    `<span>${esc(S.app.jobs_column_length)}</span><span>${esc(S.app.jobs_column_status)}</span></div>${rows.join('')}</div></div>`;
+}
+
+function tapAt(x, y, t0, t, dark) {
+  const k = ramp(t, t0, t0 + 0.35);
+  if (t < t0 || k >= 1) return 'display:none';
+  const size = 22 + 26 * k, a = (dark ? 0.28 : 0.45) * (1 - k);
+  const c = dark ? `rgba(17,17,17,${a})` : `rgba(255,255,255,${a})`;
+  return `display:block;left:${x - size / 2}px;top:${y - size / 2}px;width:${size}px;height:${size}px;background:${c}`;
+}
+
+function render(t) {
+  $('heads').innerHTML = heads(t);
+
+  const depth = pressDepth(t);
+  placeKey($('homekey'), -32, 6 * depth);
+  placeKey($('backkey'), 32, 0);
+  $('homekey').style.background = depth > 0 ? '#6A6E79' : '#43464F';
+  const x2 = $('x2');
+  x2.style.display = t >= PRESS[0] && t < REC_START + 0.2 ? 'block' : 'none';
+  x2.textContent = t >= PRESS[1] ? '×2' : '×1';
+  x2.style.left = '392px'; x2.style.top = '222px';
+
+  $('wscreen').innerHTML = watchScreen(t);
+
+  const ws = $('wskip');
+  ws.style.display = t >= JUMP - 0.05 && t < STOP ? 'flex' : 'none';
+  ws.style.left = '400px'; ws.style.top = '258px';
+  $('wskiptext').textContent = S.copy.skipSeconds;
+
+  const pk = $('packet'), k = ramp(t, PACKET[0], PACKET[1]);
+  pk.style.display = t >= PACKET[0] && t < PACKET[1] ? 'block' : 'none';
+  pk.textContent = '_p001_mono.m4a';
+  pk.style.left = (392 + 92 * k) + 'px';
+  pk.style.opacity = Math.min(ramp(t, PACKET[0], PACKET[0] + 0.15), 1 - ramp(t, PACKET[1] - 0.15, PACKET[1]));
+
+  $('pview').innerHTML = phoneView(t);
+  const ps = $('pskip');
+  ps.style.display = t >= DONE_AT - 0.5 && t < DONE_AT + 0.1 ? 'flex' : 'none';
+  ps.style.left = '440px'; ps.style.top = '346px';
+  $('pskiptext').textContent = S.copy.skipLater;
+
+  // Phone taps land on the element they press, measured after layout.
+  const center = (el) => { const r = el.getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; };
+  const tap = $('tap');
+  let st = 'display:none';
+  if (t >= STOP && t < STOP + 0.4) st = tapAt(CX, 341, STOP, t, false);
+  else if (t >= ROW_TAP && t < ROW_TAP + 0.4) st = tapAt(...center(document.querySelector('.row')), ROW_TAP, t, true);
+  else if (t >= DETAILS_TAP && t < DETAIL) st = tapAt(...center(document.querySelectorAll('.obtn')[1]), DETAILS_TAP, t, true);
+  tap.setAttribute('style', st);
+}
+
+window.END = END;
+window.render = render;
+render(Number(location.hash.slice(1)) || 0);
+</script>
+</body>
+</html>
