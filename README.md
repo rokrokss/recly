@@ -17,6 +17,8 @@ A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Y
 
 </div>
 
+<p align="center"><img src="docs/design/demo.gif" width="100%" alt="Double-press the Galaxy Watch home key to start recording; the watch hands the recording to the phone, which uploads it to your Google Drive and transcribes it, and the transcript appears in the app and in your Drive folder"></p>
+
 <p align="center">
   <img src="docs/design/screenshots/en/01-record-for-your-ai.png" width="24%" alt="Record for your AI: your recordings, your Drive, your choice of transcription">
   <img src="docs/design/screenshots/en/02-transcribe.png" width="24%" alt="Transcribe on device: read along, then jump to any moment">

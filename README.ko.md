@@ -17,6 +17,8 @@ Plaud 같은 AI 노트테이커를, 이미 가진 워치와 폰으로.<br>오디
 
 </div>
 
+<p align="center"><img src="docs/design/demo.ko.gif" width="100%" alt="Galaxy Watch 홈키를 두 번 누르면 녹음이 시작되고, 워치가 녹음을 폰으로 넘기면 폰이 내 Google 드라이브에 올리고 전사해서, 전사본이 앱과 드라이브 폴더에 생깁니다"></p>
+
 <p align="center">
   <img src="docs/design/screenshots/ko/01-record-for-your-ai.png" width="24%" alt="내 AI를 위한 녹음기: 녹음은 내 드라이브에, 전사는 원하는 방식으로">
   <img src="docs/design/screenshots/ko/02-transcribe.png" width="24%" alt="기기에서 바로 전사: 읽으면서 원하는 순간으로 이동">
