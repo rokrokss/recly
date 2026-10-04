@@ -216,9 +216,9 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
-/* The hero's flow diagram (design/flow.svg, as in the README); "How it works" spells out each step. */
-.diagram { margin: 0; }
-.diagram img { display: block; width: 100%; height: auto; }
+/* The hero's demo (design/demo.mp4, the README's demo.gif at full resolution); "How it works" spells out each step. */
+.demo { margin: 0; overflow: hidden; border: 1px solid var(--grid); border-radius: var(--r-card); background: #0E0F12; }
+.demo video { display: block; width: 100%; height: auto; }
 .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 44px; margin: 0; padding: 0; list-style: none; }
 .flow li { position: relative; display: flex; flex-direction: column; min-height: 100%; padding: 18px; border: 1px solid var(--ink); border-radius: var(--r-node); background: var(--surface); }
 .flow li:not(:last-child)::after {

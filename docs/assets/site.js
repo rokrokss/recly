@@ -29,6 +29,14 @@
     });
   });
 
+  // The hero demo autoplays; with reduced motion asked for, it stops and offers its controls.
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    document.querySelectorAll(".demo video").forEach(function (video) {
+      video.pause();
+      video.controls = true;
+    });
+  }
+
   var slots = document.querySelectorAll("[data-asset]");
   var versions = document.querySelectorAll("[data-version]");
   if (!slots.length && !versions.length) return;
