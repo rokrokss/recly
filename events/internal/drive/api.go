@@ -130,16 +130,6 @@ func (a *API) List(ctx context.Context, query string, pageSize int) ([]File, err
 	return out.Files, a.get(ctx, "/files", q, &out)
 }
 
-// Account returns the signed-in account's email address.
-func (a *API) Account(ctx context.Context) (string, error) {
-	var out struct {
-		User struct {
-			EmailAddress string `json:"emailAddress"`
-		} `json:"user"`
-	}
-	return out.User.EmailAddress, a.get(ctx, "/about", url.Values{"fields": {"user(emailAddress)"}}, &out)
-}
-
 // AccountID returns the signed-in account's opaque Drive identifier, the one the Recly apps keep
 // for their own connection (docs/recly.md §15 §1), so a desktop app can tell whether this is the
 // account it uploads to without either side reading an email.

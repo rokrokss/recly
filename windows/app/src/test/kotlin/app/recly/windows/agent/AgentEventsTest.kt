@@ -165,6 +165,20 @@ class AgentEventsTest {
     }
 
     @Test
+    fun `a tunnel saved or a sign-in made with the switch off starts nothing`() = withAgent { agent, runner, _ ->
+        agent.refresh()
+        val saved = java.util.concurrent.atomic.AtomicBoolean(false)
+        agent.saveTunnel("tunnel_y", "sk-test") { saved.set(true) }
+        repeat(100) { if (!saved.get()) kotlinx.coroutines.delay(20) }
+        assertTrue(saved.get())
+        agent.connectGoogle()
+        runner.awaitCall { it == AgentEventsCommand.SIGN_IN }
+        agent.refresh()
+        assertNull(runner.serving, "the switch alone decides whether it runs")
+        assertEquals(AgentEventsPhase.Off, agent.phase)
+    }
+
+    @Test
     fun `nothing runs until the storage is known, and a storage that is not Drive stops the server`() = withAgent(storage = null) { agent, runner, _ ->
         agent.toggle(true)
         agent.refresh()

@@ -3,9 +3,9 @@ import SwiftUI
 
 /// docs/12 "Agent connection": the settings block that runs recly-events (events/) on this Mac so
 /// a ChatGPT agent hears about each new transcript. Off by default, and only where recordings go to
-/// Google Drive. On, it says in one line under the switch how the server is, then asks for what
-/// `serve` needs — recly-events' own Google sign-in and an OpenAI tunnel — and keeps the set-up
-/// guide in view until an agent subscribes.
+/// Google Drive. The switch only decides whether it runs: what `serve` needs — recly-events' own
+/// Google sign-in and an OpenAI tunnel — can be set up or changed with it off, and the set-up guide
+/// stays in view until an agent subscribes. On, one line under the switch says how the server is.
 struct AgentConnectionSection: View {
     @ObservedObject var agent: AgentEventsController
     @Environment(\.blueprint) private var blueprint
@@ -27,7 +27,8 @@ struct AgentConnectionSection: View {
                 isOn: Binding(get: { agent.enabled && !blocked }, set: { agent.enabled = $0 })
             )
             .disabled(blocked)
-            if agent.enabled, !blocked {
+            if !blocked {
+                // Off, the phase says nothing: the line is there only while the switch is on.
                 status
                 googleRow
                 tunnelRow

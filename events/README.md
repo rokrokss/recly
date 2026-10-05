@@ -50,9 +50,9 @@ Tell ChatGPT about new transcripts** is on. It is off by default, and available 
 stores recordings in Google Drive.
 
 1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
-2. Turn the switch on. Choose **Sign in** in the **Google sign-in** row, and in your browser sign in
-   with the account Recly uploads to and allow Recly. Then enter the tunnel ID and key and choose
-   **Save**.
+2. Choose **Sign in** in the **Google sign-in** row, and in your browser sign in with the account
+   Recly uploads to and allow Recly. Then enter the tunnel ID and key, choose **Save**, and turn the
+   switch on.
 3. When the line under the switch says **Add the app in ChatGPT and ask your agent to subscribe**, do
    [steps 5 and 6](#5-add-it-to-chatgpt) below.
 
@@ -126,7 +126,7 @@ recly-events init --google --tunnel-id tunnel_…
    see the Drive files it created. This is the same permission the Recly apps ask for.
 2. Paste the key when asked. To read it from a file instead, add `--tunnel-key-file FILE`, or pipe it
    in with `--tunnel-key-stdin`.
-3. `init` then checks both: `Google Drive: connected as …` and, about 30 seconds later,
+3. `init` then checks both: `Google Drive: connected` and, about 30 seconds later,
    `Tunnel: ready tunnel_…`.
 
 Run `init` again with only the flag you need to change one part later: `--google` to sign in again,

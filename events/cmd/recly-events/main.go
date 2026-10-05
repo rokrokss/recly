@@ -198,11 +198,12 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 	if api, err := driveAPI(ctx, home, cfg); err != nil {
 		fmt.Println("Google Drive:  not connected —", err)
 		ok = false
-	} else if email, err := api.Account(ctx); err != nil {
+	} else if _, err := api.AccountID(ctx); err != nil {
 		fmt.Println("Google Drive:  error —", err)
 		ok = false
 	} else {
-		fmt.Println("Google Drive:  connected as", email)
+		// Google's consent screen has just shown which account it is; no email is read to say it again.
+		fmt.Println("Google Drive:  connected")
 	}
 	key, keyErr := app.ReadTunnelKey(home)
 	switch {

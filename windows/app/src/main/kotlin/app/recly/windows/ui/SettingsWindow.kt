@@ -255,9 +255,9 @@ private fun Startup(model: ShellModel, strings: Strings) {
 
 /**
  * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
- * go to Google Drive. On, it says in one line under the switch how the server is, then asks for what
- * `serve` needs — recly-events' own Google sign-in and an OpenAI tunnel — and keeps the set-up guide in
- * view until an agent subscribes.
+ * go to Google Drive. The switch only decides whether it runs: what `serve` needs — recly-events' own
+ * Google sign-in and an OpenAI tunnel — can be set up or changed with it off, and the set-up guide stays
+ * in view until an agent subscribes. On, one line under the switch says how the server is.
  */
 @Composable
 private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
@@ -280,7 +280,8 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
         onCheckedChange = agent::toggle,
         enabled = note == null,
     )
-    if (!agent.enabled || note != null) return
+    if (note != null) return
+    // Off, the phase says nothing: the line is there only while the switch is on.
     AgentStatus(agent, strings)
     AgentGoogle(agent, strings)
     AgentTunnel(agent, strings)
