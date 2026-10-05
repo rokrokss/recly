@@ -222,6 +222,7 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .demo video { display: block; width: 100%; height: auto; }
 .diagram { margin: 0; }
 .diagram img { display: block; width: 100%; height: auto; }
+.diagram.agent { margin-bottom: clamp(32px, 5vw, 56px); }
 .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 44px; margin: 0; padding: 0; list-style: none; }
 .flow li { position: relative; display: flex; flex-direction: column; min-height: 100%; padding: 18px; border: 1px solid var(--ink); border-radius: var(--r-node); background: var(--surface); }
 .flow li:not(:last-child)::after {

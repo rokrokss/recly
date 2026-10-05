@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="A transcript lands in your Google Drive. recly-events, on a computer you keep on, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed event through OpenAI MCP Events. The agent starts by itself, reads the transcript with ChatGPT's Google Drive app, and writes the minutes, or whatever you asked for.">
+  <!-- README and recly.dev "Automatic minutes": what happens after a transcript lands, when
+       recly-events is running (events/README.md). Same palette, fonts and node shapes as
+       flow.svg. agent-flow.ko.svg is the Korean copy: change the two together. -->
+  <defs>
+    <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="12" cy="12" r="1.6" fill="#888884" opacity="0.28"/>
+    </pattern>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#111111"/>
+    </marker>
+    <marker id="arrow-rec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#DA1E28"/>
+    </marker>
+    <style>
+      .t  { font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: #111111; }
+      .m  { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; fill: #111111; }
+      .title { font-size: 18px; font-weight: 700; }
+      .sub   { font-size: 14px; fill: #6B6B68; }
+      .band  { font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; fill: #6B6B68; }
+      .note  { font-size: 14px; fill: #6B6B68; }
+      .ink   { fill: none; stroke: #111111; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+      .node  { fill: #FFFFFF; stroke: #111111; stroke-width: 2.5; }
+      .wire  { fill: none; stroke: #111111; stroke-width: 2.5; marker-end: url(#arrow); }
+      .event { fill: none; stroke: #DA1E28; stroke-width: 2.5; marker-end: url(#arrow-rec); }
+      .read  { fill: none; stroke: #111111; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow); }
+    </style>
+  </defs>
+
+  <rect width="1200" height="480" rx="20" fill="#F7F7F5"/>
+  <rect width="1200" height="480" rx="20" fill="url(#dots)"/>
+
+  <!-- bands: every place on this path is the user's own -->
+  <g class="t band">
+    <line x1="40" y1="64" x2="290" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="40" y1="58" x2="40" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <line x1="290" y1="58" x2="290" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <rect x="70" y="52" width="190" height="24" fill="#F7F7F5"/>
+    <text x="165" y="69" text-anchor="middle">Your Google Drive</text>
+
+    <line x1="460" y1="64" x2="710" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="460" y1="58" x2="460" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <line x1="710" y1="58" x2="710" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <rect x="505" y="52" width="160" height="24" fill="#F7F7F5"/>
+    <text x="585" y="69" text-anchor="middle">Your computer</text>
+
+    <line x1="910" y1="64" x2="1160" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="910" y1="58" x2="910" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <line x1="1160" y1="58" x2="1160" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <rect x="960" y="52" width="150" height="24" fill="#F7F7F5"/>
+    <text x="1035" y="69" text-anchor="middle">Your ChatGPT</text>
+  </g>
+
+  <!-- wires: Drive → recly-events → the agent → the minutes, and the agent reading Drive itself -->
+  <line class="wire" x1="290" y1="175" x2="458" y2="175"/>
+  <line class="event" x1="710" y1="175" x2="908" y2="175"/>
+  <line class="wire" x1="1035" y1="250" x2="1035" y2="318"/>
+  <path class="read" d="M950,250 V296 H165 V253"/>
+
+  <g class="t sub" text-anchor="middle">
+    <text x="375" y="163">every 10 s</text>
+    <text x="375" y="199">names and links</text>
+    <text x="810" y="199">an OpenAI MCP event</text>
+  </g>
+  <text class="m" x="810" y="163" text-anchor="middle">recording.transcribed</text>
+
+  <rect x="322" y="285" width="466" height="22" fill="#F7F7F5"/>
+  <text class="t sub" x="555" y="301" text-anchor="middle">The agent reads the transcript itself, with ChatGPT's Google Drive app</text>
+
+  <!-- 1 · the transcript in Drive -->
+  <g transform="translate(40,100)">
+    <rect width="250" height="150" rx="12" class="node"/>
+    <g transform="translate(81,14)">
+      <path d="M14,44 h34 a12,12 0 0 0 1,-24 a16,16 0 0 0 -31,-4 a11,11 0 0 0 -4,28 z" class="ink"/>
+      <g transform="translate(52,6)">
+        <path d="M0,0 h22 l12,12 v38 h-34 z" fill="#FFFFFF" class="ink"/>
+        <path d="M22,0 v12 h12" class="ink"/>
+        <line x1="8" y1="24" x2="26" y2="24" class="ink"/>
+        <line x1="8" y1="33" x2="26" y2="33" class="ink"/>
+        <line x1="8" y1="42" x2="19" y2="42" class="ink"/>
+      </g>
+    </g>
+    <text class="t title" x="125" y="98" text-anchor="middle">A transcript lands</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">Recly writes it to your Drive</text>
+  </g>
+
+  <!-- 2 · recly-events -->
+  <g transform="translate(460,100)">
+    <rect width="250" height="150" rx="12" class="node"/>
+    <g transform="translate(93,18)">
+      <rect x="0" y="0" width="64" height="40" rx="5" class="ink"/>
+      <line x1="20" y1="52" x2="44" y2="52" class="ink"/>
+      <line x1="32" y1="40" x2="32" y2="52" class="ink"/>
+      <path d="M14,14 l7,6 l-7,6" class="ink"/>
+      <line x1="26" y1="27" x2="38" y2="27" class="ink"/>
+      <circle cx="62" cy="2" r="7" fill="#DA1E28" stroke="#FFFFFF" stroke-width="2.5"/>
+    </g>
+    <text class="t title" x="125" y="98" text-anchor="middle">recly-events sees it</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">on a computer you keep on</text>
+  </g>
+
+  <!-- 3 · the agent -->
+  <g transform="translate(910,100)">
+    <rect width="250" height="150" rx="12" fill="#FFFFFF" stroke="#DA1E28" stroke-width="2.5"/>
+    <g transform="translate(97,12)">
+      <path d="M28,0 c2,14 8,20 22,22 c-14,2 -20,8 -22,22 c-2,-14 -8,-20 -22,-22 c14,-2 20,-8 22,-22 z" fill="#DA1E28"/>
+      <path d="M8,34 c1,7 4,10 11,11 c-7,1 -10,4 -11,11 c-1,-7 -4,-10 -11,-11 c7,-1 10,-4 11,-11 z" fill="#DA1E28"/>
+    </g>
+    <text class="t title" x="125" y="98" text-anchor="middle">Your agent starts</text>
+    <text class="t sub" x="125" y="124" text-anchor="middle">a dot or a Work chat, unasked</text>
+  </g>
+
+  <!-- 4 · the minutes -->
+  <g transform="translate(910,320)">
+    <rect width="250" height="120" rx="12" class="node"/>
+    <g transform="translate(108,12)">
+      <path d="M0,0 h24 l10,10 v34 h-34 z" class="ink"/>
+      <path d="M24,0 v10 h10" class="ink"/>
+      <path d="M7,21 l3,3 l5,-6" fill="none" stroke="#DA1E28" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="19" y1="21" x2="27" y2="21" class="ink"/>
+      <path d="M7,33 l3,3 l5,-6" fill="none" stroke="#DA1E28" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <line x1="19" y1="33" x2="27" y2="33" class="ink"/>
+    </g>
+    <text class="t title" x="125" y="82" text-anchor="middle">Minutes are ready</text>
+    <text class="t sub" x="125" y="106" text-anchor="middle">or whatever you asked for</text>
+  </g>
+
+  <g class="t note" text-anchor="middle">
+    <text x="455" y="384">recly-events passes on names and links, never what was said.</text>
+    <text x="455" y="406">No Recly server, no public address: ChatGPT reaches it through your own OpenAI tunnel.</text>
+  </g>
+</svg>

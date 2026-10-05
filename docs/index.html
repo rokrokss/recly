@@ -25,7 +25,7 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/design/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css?v=8">
+  <link rel="stylesheet" href="/assets/site.css?v=9">
   <script src="/assets/site.js?v=3" defer></script>
 </head>
 <body>
@@ -277,6 +277,9 @@
       <h2>Notes are your agent's job, not a paid tier.</h2>
       <p class="lede">Recly's pipeline ends at the transcript on purpose, and hands it to the AI you already use. A ChatGPT agent starts on its own the moment a transcript lands; any agent writes notes when you ask, from two example skills you can change or replace. Drive stays the archive the app writes.</p>
     </div>
+    <figure class="diagram agent">
+      <img src="/design/agent-flow.svg" width="1200" height="480" loading="lazy" alt="A transcript lands in your Google Drive; recly-events on your computer sees it within 10 seconds and sends your ChatGPT agent a signed recording.transcribed event through OpenAI MCP Events; the agent starts by itself, reads the transcript with ChatGPT&#39;s Google Drive app and writes the minutes">
+    </figure>
     <div class="split">
       <div>
         <p class="sub">Automatic, with ChatGPT</p>

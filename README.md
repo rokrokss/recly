@@ -38,6 +38,8 @@ transcript reaches your ChatGPT agent through [OpenAI's MCP Events](https://deve
 and the agent [writes the minutes on its own](#automatic-minutes-with-a-chatgpt-agent): you stop
 recording, and the minutes show up in ChatGPT.
 
+<p align="center"><img src="docs/design/agent-flow.svg" width="100%" alt="A transcript lands in your Google Drive; recly-events on your computer sees it within 10 seconds and sends your ChatGPT agent a signed recording.transcribed event through OpenAI MCP Events; the agent starts by itself, reads the transcript with ChatGPT's Google Drive app and writes the minutes"></p>
+
 ## Why Recly
 
 - **The recorder you already wear.** A double press of the Galaxy Watch's home key starts

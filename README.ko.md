@@ -37,6 +37,8 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 ChatGPT 에이전트에게 전해지고, 에이전트가 [알아서 회의록을 씁니다](#chatgpt-에이전트로-자동-회의록). 녹음을
 멈추면 ChatGPT에 회의록이 올라옵니다.
 
+<p align="center"><img src="docs/design/agent-flow.ko.svg" width="100%" alt="녹취록이 내 Google Drive에 올라오면 내 컴퓨터의 recly-events가 10초 안에 찾아 OpenAI MCP Events로 내 ChatGPT 에이전트에게 서명된 recording.transcribed 이벤트를 보내고, 에이전트가 알아서 시작해 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을 씁니다"></p>
+
 ## 왜 Recly인가
 
 - **이미 차고 있는 녹음기.** Galaxy Watch 홈 키를 두 번 누르면 녹음이 시작되고, 워치는 폰에 오디오를
