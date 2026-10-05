@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"math/rand/v2"
 	"net"
 	"net/http"
 	"os"
@@ -43,7 +44,7 @@ var googleClientID, googleClientSecret string
 const usage = `recly-events — tell your ChatGPT agent when Recly finishes a transcript
 
 Usage:
-  recly-events init [--google | --google-client FILE] [--tunnel-id ID]
+  recly-events init [--google | --google-client FILE] [--no-browser] [--tunnel-id ID]
                     [--tunnel-key-file FILE | --tunnel-key-stdin] [--no-check]
   recly-events serve [--exit-with-stdin]
   recly-events status [--json]
@@ -102,6 +103,7 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	connectGoogle := fs.Bool("google", false, "connect Google Drive with Recly's sign-in (sees only the files Recly created)")
 	googleClient := fs.String("google-client", "", "connect with a desktop OAuth client JSON from your own Google Cloud project instead")
+	noBrowser := fs.Bool("no-browser", false, "sign in to Google in a browser on another computer and paste back the address it ends on (the default on Linux without a graphical session)")
 	tunnelID := fs.String("tunnel-id", "", "OpenAI Secure MCP Tunnel ID (tunnel_…)")
 	keyFile := fs.String("tunnel-key-file", "", "file holding the tunnel runtime API key (otherwise you are asked for it)")
 	keyStdin := fs.Bool("tunnel-key-stdin", false, "read the tunnel runtime API key from standard input")
@@ -135,11 +137,17 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Println("Opening Google sign-in in your browser. Sign in with the account Recly uploads to.")
-		if cfg.GoogleClient == "file" {
-			fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow file metadata.")
+		var tok *oauth2.Token
+		if *noBrowser || !hasBrowser() {
+			tok, err = signInElsewhere(ctx, oc, cfg.GoogleClient == "file")
+		} else {
+			fmt.Println("Opening Google sign-in in your browser. Sign in with the account Recly uploads to.")
+			if cfg.GoogleClient == "file" {
+				fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow file metadata.")
+			}
+			fmt.Println("If no browser opens, stop with Ctrl-C and run init again with --no-browser.")
+			tok, err = drive.Login(ctx, oc, openBrowser)
 		}
-		tok, err := drive.Login(ctx, oc, openBrowser)
 		if err != nil {
 			return err
 		}
@@ -264,6 +272,88 @@ func openBrowser(url string) {
 		cmd = exec.Command("xdg-open", url)
 	}
 	_ = cmd.Start()
+}
+
+// hasBrowser reports whether a browser can open on this computer: on macOS and Windows always,
+// elsewhere only inside a graphical session.
+func hasBrowser() bool {
+	switch runtime.GOOS {
+	case "darwin", "windows":
+		return true
+	}
+	return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
+}
+
+// signInElsewhere signs in to Google from a computer without a browser, such as a server reached
+// over SSH: the consent page is opened in a browser on another computer, and the address that
+// browser is sent back to, which does not load there, is pasted here. Nothing listens for the
+// redirect, and the PKCE verifier never leaves this computer.
+func signInElsewhere(ctx context.Context, oc *oauth2.Config, ownClient bool) (*oauth2.Token, error) {
+	// A random port, so that the redirect does not land on a server the other computer runs.
+	c, err := drive.NewConsent(oc, 49152+rand.IntN(16384))
+	if err != nil {
+		return nil, err
+	}
+	fmt.Printf("Open this address in a browser on any computer and sign in with the account Recly uploads to:\n\n%s\n\n", c.URL())
+	if ownClient {
+		fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow file metadata.")
+	}
+	fmt.Println("The browser then goes to a 127.0.0.1 page that does not load. Copy that page's whole address from the address bar and paste it here.")
+	for {
+		fmt.Print("Address: ")
+		line, err := readLine(ctx)
+		if errors.Is(err, io.EOF) {
+			return nil, errors.New("no address was pasted")
+		}
+		if err != nil {
+			return nil, err
+		}
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		code, err := c.Pasted(line)
+		if err != nil {
+			fmt.Printf("That does not work (%v). Paste the whole address of the page that did not load, starting with http://127.0.0.1.\n", err)
+			continue
+		}
+		return c.Exchange(ctx, code)
+	}
+}
+
+// readLine reads one line from standard input, a byte at a time so that nothing after it is taken
+// from the tunnel key prompt or --tunnel-key-stdin. It gives up when ctx ends, because
+// signal.NotifyContext keeps Ctrl-C from ending a blocked read.
+func readLine(ctx context.Context) (string, error) {
+	type result struct {
+		line string
+		err  error
+	}
+	done := make(chan result, 1)
+	go func() {
+		var line []byte
+		b := make([]byte, 1)
+		for {
+			n, err := os.Stdin.Read(b)
+			if n == 1 && b[0] == '\n' {
+				done <- result{string(line), nil}
+				return
+			}
+			line = append(line, b[:n]...)
+			if err != nil {
+				if errors.Is(err, io.EOF) && len(line) > 0 {
+					err = nil
+				}
+				done <- result{string(line), err}
+				return
+			}
+		}
+	}()
+	select {
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case r := <-done:
+		return r.line, r.err
+	}
 }
 
 // oauthConfig is Recly's compiled-in client, or the user's own from google-client.json.

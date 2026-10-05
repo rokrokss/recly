@@ -41,7 +41,9 @@ Google and to OpenAI.
 - **An OpenAI Platform account** to create the tunnel and its key, at
   [platform.openai.com](https://platform.openai.com).
 - **A computer that stays on** while you want events. While it sleeps nothing is lost; events arrive
-  when it wakes. It has been run on macOS so far; the Linux and Windows parts are untested.
+  when it wakes. It has been run on macOS so far. On Linux (Ubuntu 24.04 in a container), the
+  sign-in without a browser and the systemd service have been tried, but not yet with a real Google
+  account and tunnel. Windows is untested.
 
 ## From the Recly Mac or Windows app
 
@@ -132,6 +134,12 @@ recly-events init --google --tunnel-id tunnel_…
 3. `init` then checks both: `Google Drive: connected` and, about 30 seconds later,
    `Tunnel: ready tunnel_…`.
 
+On a computer without a browser, such as a server you reach over SSH, `init` prints Google's sign-in
+address instead. Open it in a browser on any computer and sign in. That browser then goes to an
+`http://127.0.0.1:…` page that does not load: copy the page's whole address from the address bar and
+paste it into `init`. It works this way by itself on Linux without a graphical session; elsewhere,
+add `--no-browser`.
+
 Run `init` again with only the flag you need to change one part later: `--google` to sign in again,
 `--tunnel-id` for another tunnel, `--tunnel-key-file` for a new key.
 
@@ -143,7 +151,11 @@ recly-events service install
 
 - **macOS:** a launch agent (`~/Library/LaunchAgents/dev.recly.events.plist`) that starts at login and
   restarts the server if it stops.
-- **Linux:** a systemd user unit (`~/.config/systemd/user/recly-events.service`).
+- **Linux:** a systemd user unit (`~/.config/systemd/user/recly-events.service`). systemd runs it
+  only while you are logged in, unless lingering is on for your user: on a server, run
+  `loginctl enable-linger` once (or `sudo loginctl enable-linger $USER` where that is refused) so it
+  keeps running after you log out and starts at boot. `service install` says so when lingering is
+  off.
 - **Windows:** `service install` is not supported. Create a Task Scheduler task that runs
   `recly-events serve` at logon.
 

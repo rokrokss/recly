@@ -12,7 +12,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -56,23 +58,78 @@ func LoadClient(path string) (*oauth2.Config, error) {
 	return cfg, nil
 }
 
-// Login runs the installed-app flow: a loopback listener on 127.0.0.1, PKCE, and a browser
-// for the user's consent. open is called with the consent URL.
+// Consent is one sign-in through the installed-app flow: PKCE, the user's consent in a
+// browser, and Google's redirect to 127.0.0.1 with the code.
+type Consent struct {
+	cfg      oauth2.Config
+	state    string
+	verifier string
+}
+
+// NewConsent prepares a sign-in whose redirect goes to port on 127.0.0.1.
+func NewConsent(cfg *oauth2.Config, port int) (*Consent, error) {
+	stateBytes := make([]byte, 24)
+	if _, err := rand.Read(stateBytes); err != nil {
+		return nil, err
+	}
+	c := &Consent{cfg: *cfg, state: base64.RawURLEncoding.EncodeToString(stateBytes), verifier: oauth2.GenerateVerifier()}
+	c.cfg.RedirectURL = fmt.Sprintf("http://127.0.0.1:%d/callback", port)
+	return c, nil
+}
+
+// URL is Google's consent page.
+func (c *Consent) URL() string {
+	return c.cfg.AuthCodeURL(c.state, oauth2.AccessTypeOffline, oauth2.ApprovalForce, oauth2.S256ChallengeOption(c.verifier))
+}
+
+// Code is the code in the query Google redirected the browser with, once the query is checked
+// to answer this sign-in.
+func (c *Consent) Code(q url.Values) (string, error) {
+	switch {
+	case q.Get("state") != c.state:
+		return "", errors.New("state mismatch")
+	case q.Get("error") != "":
+		return "", fmt.Errorf("google refused: %s", q.Get("error"))
+	}
+	return q.Get("code"), nil
+}
+
+// Pasted is Code for an address pasted by hand. On a computer without a browser, the consent
+// page is opened on another one, whose browser then cannot load the 127.0.0.1 page, and the
+// user copies that page's address. Only its query counts: a browser may show the address with
+// https:// or localhost.
+func (c *Consent) Pasted(addr string) (string, error) {
+	u, err := url.Parse(strings.TrimSpace(addr))
+	if err != nil || u.Query().Get("code") == "" && u.Query().Get("error") == "" {
+		return "", errors.New("not the address Google sent the browser to")
+	}
+	return c.Code(u.Query())
+}
+
+// Exchange trades the code for a token, which must carry a refresh token.
+func (c *Consent) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	tok, err := c.cfg.Exchange(ctx, code, oauth2.VerifierOption(c.verifier))
+	if err != nil {
+		return nil, err
+	}
+	if tok.RefreshToken == "" {
+		return nil, errors.New("google returned no refresh token; remove recly-events from https://myaccount.google.com/permissions and run init again")
+	}
+	return tok, nil
+}
+
+// Login signs in with a browser on this computer: a loopback listener on 127.0.0.1 receives
+// the redirect. open is called with the consent URL.
 func Login(ctx context.Context, cfg *oauth2.Config, open func(url string)) (*oauth2.Token, error) {
 	ln, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
 	defer ln.Close()
-	c := *cfg
-	c.RedirectURL = fmt.Sprintf("http://127.0.0.1:%d/callback", ln.Addr().(*net.TCPAddr).Port)
-
-	stateBytes := make([]byte, 24)
-	if _, err := rand.Read(stateBytes); err != nil {
+	c, err := NewConsent(cfg, ln.Addr().(*net.TCPAddr).Port)
+	if err != nil {
 		return nil, err
 	}
-	st := base64.RawURLEncoding.EncodeToString(stateBytes)
-	verifier := oauth2.GenerateVerifier()
 
 	type result struct {
 		code string
@@ -85,16 +142,8 @@ func Login(ctx context.Context, cfg *oauth2.Config, open func(url string)) (*oau
 			http.NotFound(w, r)
 			return
 		}
-		q := r.URL.Query()
 		var res result
-		switch {
-		case q.Get("state") != st:
-			res.err = errors.New("state mismatch")
-		case q.Get("error") != "":
-			res.err = fmt.Errorf("google refused: %s", q.Get("error"))
-		default:
-			res.code = q.Get("code")
-		}
+		res.code, res.err = c.Code(r.URL.Query())
 		if res.err != nil {
 			http.Error(w, "recly-events: sign-in failed. Return to the terminal.", http.StatusBadRequest)
 		} else {
@@ -105,7 +154,7 @@ func Login(ctx context.Context, cfg *oauth2.Config, open func(url string)) (*oau
 	go srv.Serve(ln)
 	defer srv.Close()
 
-	open(c.AuthCodeURL(st, oauth2.AccessTypeOffline, oauth2.ApprovalForce, oauth2.S256ChallengeOption(verifier)))
+	open(c.URL())
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
@@ -113,14 +162,7 @@ func Login(ctx context.Context, cfg *oauth2.Config, open func(url string)) (*oau
 		if res.err != nil {
 			return nil, res.err
 		}
-		tok, err := c.Exchange(ctx, res.code, oauth2.VerifierOption(verifier))
-		if err != nil {
-			return nil, err
-		}
-		if tok.RefreshToken == "" {
-			return nil, errors.New("google returned no refresh token; remove recly-events from https://myaccount.google.com/permissions and run init again")
-		}
-		return tok, nil
+		return c.Exchange(ctx, res.code)
 	}
 }
 

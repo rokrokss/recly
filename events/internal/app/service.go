@@ -91,7 +91,13 @@ WantedBy=default.target
 				return "", fmt.Errorf("systemctl --user %s: %v: %s", strings.Join(args, " "), err, strings.TrimSpace(string(out)))
 			}
 		}
-		return "systemd user unit " + path + " (log: journalctl --user -u recly-events)", nil
+		where := "systemd user unit " + path + " (log: journalctl --user -u recly-events)"
+		// Without lingering, systemd runs a user's units only while the user is logged in: on a
+		// server reached over SSH, the service would stop at logout and not start after a reboot.
+		if out, err := exec.Command("loginctl", "show-user", strconv.Itoa(os.Getuid()), "--property=Linger", "--value").Output(); err == nil && strings.TrimSpace(string(out)) == "no" {
+			where += "\nIt runs only while you are logged in. To keep it running after you log out, and start it at boot: loginctl enable-linger (or, where that is refused, sudo loginctl enable-linger $USER)"
+		}
+		return where, nil
 	default:
 		return "", errors.New("service install supports macOS and Linux; on Windows, start `recly-events serve` from Task Scheduler")
 	}
