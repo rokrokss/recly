@@ -79,7 +79,7 @@ class AgentEventsTest {
     @Test
     fun `serve starts only when on, set up and nothing else answers`() {
         fun act(enabled: Boolean = true, gaveUp: Boolean = false, child: Boolean = false, status: AgentEventsStatus?) =
-            AgentEventsAction.reconcile(enabled, available = true, gaveUp = gaveUp, childRunning = child, status = status)
+            AgentEventsAction.reconcile(enabled, gaveUp = gaveUp, childRunning = child, status = status)
         assertEquals(AgentEventsAction.START, act(status = ready))
         assertEquals(AgentEventsAction.NONE, act(status = null))
         assertEquals(AgentEventsAction.NONE, act(status = AgentEventsStatus(home = "/h")))
@@ -169,7 +169,7 @@ class AgentEventsTest {
             return 0 to """{"home":"/h","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"server":$server,"drive":{},"subscriptions":0}"""
         }
 
-        override fun serve(log: File?): Process {
+        override fun serve(log: File): Process {
             started++
             return FakeProcess(4242L + started, alive = !diesAtOnce).also { serving = it }
         }

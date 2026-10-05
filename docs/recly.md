@@ -2678,10 +2678,10 @@ The Mac app bundles `recly-events` (`events/`, §15 §9) as `Recly.app/Contents/
 **Settings → Agent connection → Tell ChatGPT about new transcripts** is on. It is **off by default** (2026-10-05). The app talks to it only by running it:
 `status --json` every 5 seconds while the switch is on; `init --google --no-check` for the Google row (the program opens the browser itself and is stopped after
 5 minutes); `init --tunnel-id … --tunnel-key-stdin --no-check` for the tunnel fields, with the key on standard input and never in the arguments; and `serve` as a
-child process writing to the program's own `logs/serve.log`. A server that exits is restarted at most 3 times in 10 minutes, then the row says so until the
+child process (`serve --exit-with-stdin`, with a pipe on its standard input that only the app holds, so it stops whenever the app does, a crash included) writing to the program's own `logs/serve.log`. A server that exits is restarted at most 3 times in 10 minutes, then the row says so until the
 switch is turned off and on. A server the app did not start — the CLI's `service install`, or a terminal — is left alone and shown as running outside Recly.
 The program keeps its own home directory (`~/Library/Application Support/recly-events`), Google sign-in (Recly's desktop client, `drive.file`, a consent of its own)
-and tunnel key, shared with the CLI; the app stores only the switch (`agentEventsEnabled`) and the server's process ID. Quitting the app stops the server.
+and tunnel key, shared with the CLI; the app stores only the switch (`agentEventsEnabled`).
 `make mac` and `make mac-release` build the arm64 program first (Go, Recly's desktop client from `local.properties`, with its notices as
 `Contents/Resources/THIRD-PARTY-recly-events.txt`), and the `Embed recly-events` build phase signs it like the app, with the hardened runtime. A build made without Go has
 no program, and the switch says `Not in this build`.

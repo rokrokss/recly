@@ -7,12 +7,11 @@ import os
 /// so this is everything it knows about it.
 public struct AgentEventsStatus: Decodable, Equatable, Sendable {
     public struct Server: Decodable, Equatable, Sendable {
-        /// Absent from builds older than the field; 0 is then "not known".
-        public var pid: Int32?
+        public var pid: Int32
         public var tunnelReady: Bool
         public var tunnelError: String?
 
-        public init(pid: Int32?, tunnelReady: Bool, tunnelError: String?) {
+        public init(pid: Int32, tunnelReady: Bool, tunnelError: String?) {
             self.pid = pid
             self.tunnelReady = tunnelReady
             self.tunnelError = tunnelError
@@ -37,11 +36,11 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
     public var subscriptions: Int
     /// There were subscriptions and none is left — the agent unsubscribed, or ChatGPT refused a
     /// delivery with 410. recly-events never expires one itself.
-    public var subscriptionsEnded: Bool?
+    public var subscriptionsEnded: Bool
 
     public init(
         home: String, tunnelId: String? = nil, tunnelKey: Bool = false, googleSignedIn: Bool = false,
-        server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0, subscriptionsEnded: Bool? = nil
+        server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0, subscriptionsEnded: Bool = false
     ) {
         self.home = home
         self.tunnelId = tunnelId
@@ -56,7 +55,7 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
     /// Whether an agent is listening, for the running row.
     public var subscription: AgentEventsSubscription {
         if subscriptions > 0 { return .active }
-        return subscriptionsEnded == true ? .ended : .none
+        return subscriptionsEnded ? .ended : .none
     }
 
     /// Everything `serve` needs: a Google sign-in, a tunnel and its key.
@@ -126,9 +125,9 @@ public enum AgentEventsAction: Equatable, Sendable {
     case stop
 
     public static func reconcile(
-        enabled: Bool, available: Bool, gaveUp: Bool, childRunning: Bool, status: AgentEventsStatus?
+        enabled: Bool, gaveUp: Bool, childRunning: Bool, status: AgentEventsStatus?
     ) -> AgentEventsAction {
-        guard enabled, available, !gaveUp else { return childRunning ? .stop : .none }
+        guard enabled, !gaveUp else { return childRunning ? .stop : .none }
         guard !childRunning, let status, status.setUp, status.server == nil else { return .none }
         return .start
     }
@@ -159,7 +158,8 @@ public struct AgentEventsRestarts: Sendable {
 /// The commands the app runs, in one place.
 public enum AgentEventsCommand {
     public static let status = ["status", "--json"]
-    public static let serve = ["serve"]
+    /// Stops when the app's end of its standard input closes — when the app goes, however it goes.
+    public static let serve = ["serve", "--exit-with-stdin"]
     public static let signIn = ["init", "--google", "--no-check"]
 
     /// The key goes in on standard input, never in the arguments, which other processes can read.
@@ -191,14 +191,13 @@ public final class AgentEventsController: ObservableObject {
     }
 
     public static let enabledKey = "agentEventsEnabled"
-    /// The process this app started, by ID: one left behind by a crash of the app is recognised as
-    /// its own on the next launch rather than as somebody else's server.
-    static let pidKey = "agentEventsPid"
 
     private let executable: URL?
     private let defaults: UserDefaults
     private let logger = Logger(subsystem: CoreBridge.appName, category: "agent")
     private var child: Process?
+    /// The server's standard input; it stops when this end closes ([AgentEventsCommand.serve]).
+    private var childInput: Pipe?
     private var signingIn = false
     private var gaveUp = false
     private var restarts = AgentEventsRestarts()
@@ -216,8 +215,8 @@ public final class AgentEventsController: ObservableObject {
         }
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
-        // Off means the program is not run at all — except to stop a server this app left behind.
-        if enabled || defaults.object(forKey: Self.pidKey) != nil {
+        // Off means the program is not run at all.
+        if enabled {
             Task { await refresh() }
         }
     }
@@ -291,12 +290,9 @@ public final class AgentEventsController: ObservableObject {
         if let status {
             tunnelId = status.tunnelId ?? ""
             googleSignedIn = status.googleSignedIn
-            adoptOrphan(status)
         }
-        switch AgentEventsAction.reconcile(
-            enabled: enabled, available: true, gaveUp: gaveUp, childRunning: child != nil, status: status
-        ) {
-        case .start: startChild(home: status?.home)
+        switch AgentEventsAction.reconcile(enabled: enabled, gaveUp: gaveUp, childRunning: child != nil, status: status) {
+        case .start: if let status { startChild(home: status.home) }
         case .stop: stopChild()
         case .none: break
         }
@@ -306,45 +302,30 @@ public final class AgentEventsController: ObservableObject {
     private func publish() {
         phase = AgentEventsPhase.of(
             enabled: enabled, available: executable != nil, signingIn: signingIn, gaveUp: gaveUp,
-            owned: owned, status: status
+            owned: status?.server?.pid == child?.processIdentifier, status: status
         )
-    }
-
-    private var owned: Bool {
-        guard let pid = status?.server?.pid, pid != 0 else { return child != nil }
-        return pid == child?.processIdentifier || pid == Int32(defaults.integer(forKey: Self.pidKey))
-    }
-
-    /// A server this app started before it crashed or was killed still answers; with the switch
-    /// off it is stopped like any other of the app's own.
-    private func adoptOrphan(_ status: AgentEventsStatus) {
-        guard child == nil, let pid = status.server?.pid, pid != 0,
-              pid == Int32(defaults.integer(forKey: Self.pidKey)), !enabled else { return }
-        kill(pid, SIGTERM)
-        defaults.removeObject(forKey: Self.pidKey)
-        logger.info("agent.orphan.stopped")
     }
 
     // MARK: - The server process
 
-    private func startChild(home: String?) {
+    private func startChild(home: String) {
         guard let executable, child == nil else { return }
         let process = Process()
         process.executableURL = executable
         process.arguments = AgentEventsCommand.serve
+        let input = Pipe()
+        process.standardInput = input
         // The service's own log file (events/README.md "Everyday use"), so one place has it all.
-        if let home {
-            let logs = URL(fileURLWithPath: home).appendingPathComponent("logs")
-            try? FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
-            let file = logs.appendingPathComponent("serve.log")
-            if !FileManager.default.fileExists(atPath: file.path) {
-                FileManager.default.createFile(atPath: file.path, contents: nil)
-            }
-            if let handle = try? FileHandle(forWritingTo: file) {
-                handle.seekToEndOfFile()
-                process.standardOutput = handle
-                process.standardError = handle
-            }
+        let logs = URL(fileURLWithPath: home).appendingPathComponent("logs")
+        try? FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+        let file = logs.appendingPathComponent("serve.log")
+        if !FileManager.default.fileExists(atPath: file.path) {
+            FileManager.default.createFile(atPath: file.path, contents: nil)
+        }
+        if let handle = try? FileHandle(forWritingTo: file) {
+            handle.seekToEndOfFile()
+            process.standardOutput = handle
+            process.standardError = handle
         }
         process.terminationHandler = { [weak self] ended in
             Task { @MainActor in self?.childEnded(ended) }
@@ -352,7 +333,7 @@ public final class AgentEventsController: ObservableObject {
         do {
             try process.run()
             child = process
-            defaults.set(Int(process.processIdentifier), forKey: Self.pidKey)
+            childInput = input
             logger.info("agent.serve.start")
         } catch {
             logger.error("agent.serve.failed error=\(String(describing: error), privacy: .public)")
@@ -363,7 +344,7 @@ public final class AgentEventsController: ObservableObject {
     private func childEnded(_ process: Process) {
         guard process === child else { return }
         child = nil
-        defaults.removeObject(forKey: Self.pidKey)
+        childInput = nil
         logger.info("agent.serve.exit code=\(process.terminationStatus, privacy: .public)")
         if enabled, !restarts.allow(at: Date()) {
             gaveUp = true
@@ -375,7 +356,7 @@ public final class AgentEventsController: ObservableObject {
     private func stopChild() {
         guard let process = child else { return }
         child = nil
-        defaults.removeObject(forKey: Self.pidKey)
+        childInput = nil
         process.terminationHandler = nil
         // SIGTERM: `serve` stops its tunnel and closes its socket on the way out.
         process.terminate()

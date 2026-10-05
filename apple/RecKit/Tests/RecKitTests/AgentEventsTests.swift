@@ -23,7 +23,7 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(status.subscriptions, 1)
 
         let fresh = try JSONDecoder().decode(AgentEventsStatus.self, from: Data("""
-        {"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {"pollSeconds": 10, "announced": 0}, "subscriptions": 0, "pending": 0}
+        {"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {"pollSeconds": 10, "announced": 0}, "subscriptions": 0, "subscriptionsEnded": false, "pending": 0}
         """.utf8))
         XCTAssertNil(fresh.server)
         XCTAssertFalse(fresh.setUp)
@@ -73,7 +73,7 @@ final class AgentEventsTests: XCTestCase {
 
     func testStartsOnlyWhenOnSetUpAndNothingElseAnswers() {
         func act(enabled: Bool = true, gaveUp: Bool = false, child: Bool = false, _ status: AgentEventsStatus?) -> AgentEventsAction {
-            .reconcile(enabled: enabled, available: true, gaveUp: gaveUp, childRunning: child, status: status)
+            .reconcile(enabled: enabled, gaveUp: gaveUp, childRunning: child, status: status)
         }
         XCTAssertEqual(act(ready), .start)
         XCTAssertEqual(act(nil), .none)
@@ -130,7 +130,7 @@ final class AgentEventsTests: XCTestCase {
           if [ -f "$dir/serve.pid" ] && kill -0 "$(cat "$dir/serve.pid")" 2>/dev/null; then
             server="{\\"pid\\": $(cat "$dir/serve.pid"), \\"tunnelReady\\": true}"
           fi
-          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"server":%s,"drive":{},"subscriptions":0}\\n' "$dir" "$server"
+          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"server":%s,"drive":{},"subscriptions":0,"subscriptionsEnded":false}\\n' "$dir" "$server"
           ;;
         serve)
           echo $$ > "$dir/serve.pid"

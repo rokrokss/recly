@@ -55,10 +55,11 @@ Tell ChatGPT about new transcripts** is on. It is off by default.
    ([steps 5 and 6](#5-add-it-to-chatgpt) below).
 
 The app keeps the server running while the app runs, restarts it if it stops (up to three times in
-ten minutes), and stops it when you quit or turn the switch off. It uses the same folder, sign-in
-and key as the command line, so `recly-events status` shows it too. A server started some other
-way, such as `service install`, is left alone, and the switch says it is running outside Recly. On a
-Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test` sends the test event.
+ten minutes), and stops it when you turn the switch off or the app goes, even if it crashes. It
+uses the same folder, sign-in and key as the command line, so `recly-events status` shows it too.
+A server started some other way, such as `service install`, is left alone, and the switch says it
+is running outside Recly. On a Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test`
+sends the test event.
 
 ## Set up
 

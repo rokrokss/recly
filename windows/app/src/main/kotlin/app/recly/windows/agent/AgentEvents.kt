@@ -47,7 +47,7 @@ data class AgentEventsStatus(
     val subscriptionsEnded: Boolean = false,
 ) {
     @Serializable
-    data class Server(val pid: Long? = null, val tunnelReady: Boolean = false, val tunnelError: String? = null)
+    data class Server(val pid: Long, val tunnelReady: Boolean = false, val tunnelError: String? = null)
 
     @Serializable
     data class Drive(val lastError: String? = null)
@@ -136,12 +136,11 @@ enum class AgentEventsAction {
     companion object {
         fun reconcile(
             enabled: Boolean,
-            available: Boolean,
             gaveUp: Boolean,
             childRunning: Boolean,
             status: AgentEventsStatus?,
         ): AgentEventsAction {
-            if (!enabled || !available || gaveUp) return if (childRunning) STOP else NONE
+            if (!enabled || gaveUp) return if (childRunning) STOP else NONE
             if (childRunning || status == null || !status.setUp || status.server != null) return NONE
             return START
         }
@@ -151,7 +150,11 @@ enum class AgentEventsAction {
 /** The commands the app runs, in one place. */
 object AgentEventsCommand {
     val STATUS = listOf("status", "--json")
-    val SERVE = listOf("serve")
+    /**
+     * Stops when the app's end of its standard input closes — when the app goes, however it goes.
+     * `ProcessBuilder` gives the child a pipe there by default, and the app never closes its end.
+     */
+    val SERVE = listOf("serve", "--exit-with-stdin")
     val SIGN_IN = listOf("init", "--google", "--no-check")
 
     /** The key goes in on standard input, never in the arguments, which other processes can read. */
@@ -186,7 +189,7 @@ interface AgentEventsRunner {
     /** Exit code and standard output; -1 when it could not be started or was stopped at [timeout]. */
     suspend fun run(arguments: List<String>, input: String? = null, timeout: Duration? = null): Pair<Int, String>
 
-    fun serve(log: File?): Process
+    fun serve(log: File): Process
 }
 
 class ProcessRunner(private val program: String) : AgentEventsRunner {
@@ -208,15 +211,12 @@ class ProcessRunner(private val program: String) : AgentEventsRunner {
             (if (finished) process.exitValue() else -1) to output.await()
         }
 
-    override fun serve(log: File?): Process {
-        val builder = ProcessBuilder(program, *AgentEventsCommand.SERVE.toTypedArray())
-        if (log != null) {
-            log.parentFile?.mkdirs()
-            builder.redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.appendTo(log))
-        } else {
-            builder.redirectErrorStream(true).redirectOutput(ProcessBuilder.Redirect.DISCARD)
-        }
-        return builder.start()
+    override fun serve(log: File): Process {
+        log.parentFile?.mkdirs()
+        return ProcessBuilder(program, *AgentEventsCommand.SERVE.toTypedArray())
+            .redirectErrorStream(true)
+            .redirectOutput(ProcessBuilder.Redirect.appendTo(log))
+            .start()
     }
 }
 
@@ -340,8 +340,8 @@ class AgentEvents(
             tunnelId = current.tunnelId.orEmpty()
             googleSignedIn = current.googleSignedIn
         }
-        when (AgentEventsAction.reconcile(enabled, available = true, gaveUp, child != null, current)) {
-            AgentEventsAction.START -> startChild(runner, current?.home)
+        when (AgentEventsAction.reconcile(enabled, gaveUp, child != null, current)) {
+            AgentEventsAction.START -> current?.let { startChild(runner, it.home) }
             AgentEventsAction.STOP -> stopChild()
             AgentEventsAction.NONE -> Unit
         }
@@ -349,14 +349,13 @@ class AgentEvents(
     }
 
     private fun publish() {
-        val owned = status?.server?.pid?.takeIf { it != 0L }?.let { pid -> child?.pid() == pid } ?: (child != null)
+        val owned = child != null && status?.server?.pid == child?.pid()
         phase = AgentEventsPhase.of(enabled, runner != null, signingIn, gaveUp, owned, status)
     }
 
-    private fun startChild(runner: AgentEventsRunner, home: String?) {
+    private fun startChild(runner: AgentEventsRunner, home: String) {
         // The service's own log file (events/README.md "Everyday use"), so one place has it all.
-        val log = home?.let { File(File(it, "logs"), "serve.log") }
-        child = runCatching { runner.serve(log) }
+        child = runCatching { runner.serve(File(File(home, "logs"), "serve.log")) }
             .onSuccess { log(Logger.Level.INFO, "agent.serve.start") }
             .onFailure {
                 log(Logger.Level.ERROR, "agent.serve.failed", error = it)
