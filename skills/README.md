@@ -52,6 +52,12 @@ Chat inside that project.
 *"Make minutes from the latest recording and put them in Notion."*
 *"What did we decide about pricing last week?"*
 
+## Start on its own
+
+To have a ChatGPT dot or Work chat start as soon as a transcript lands, run
+[recly-events](../events/README.md): it tells your agent about each new transcript, and its
+subscription prompt can ask the agent to follow these skills for the recording it names.
+
 ## Write your own
 
 The examples are a starting point. Want another format, another language, or notes in an app
