@@ -15,7 +15,9 @@ out="${1:?usage: build.sh OUT [VERSION]}"
 version="${2:-dev}"
 case "$out" in /*) ;; *) out="$PWD/$out" ;; esac
 
-prop() { sed -n "s/^$1=//p" local.properties 2>/dev/null | head -1; }
+# A key's first value in local.properties, or nothing: CI has no such file, and under `set -e` a sed
+# that cannot open it would end the script without a word.
+prop() { [[ -f local.properties ]] && sed -n "s/^$1=//p" local.properties | head -1 || true; }
 id="$(prop google.desktopClientId)"
 id="${id:-${REC_GOOGLE_DESKTOP_CLIENT_ID:-}}"
 secret="$(prop google.desktopClientSecret)"
