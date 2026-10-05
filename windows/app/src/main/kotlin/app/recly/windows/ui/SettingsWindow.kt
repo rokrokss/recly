@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.agent.AgentEvents
+import app.recly.windows.agent.AgentEventsAccount
 import app.recly.windows.agent.AgentEventsPhase
 import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
@@ -48,6 +49,7 @@ import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
+import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
@@ -252,31 +254,94 @@ private fun Startup(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/14 "Agent connection": recly-events run for the user, off by default. On, it asks for what
- * `serve` needs — a Google sign-in and an OpenAI tunnel — and says in one sentence how the server is.
+ * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
+ * go to Google Drive. On, it says in one line under the switch how the server is, then asks for what
+ * `serve` needs — recly-events' own Google sign-in and an OpenAI tunnel — and keeps the set-up guide in
+ * view until an agent subscribes.
  */
 @Composable
 private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
+    // Asked again whenever this window comes to the front: the Drive this PC uploads to may have been
+    // reconnected while it was behind.
+    val focused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(focused) { if (focused) agent.sectionShown() }
     Section(strings[Str.AGENT_SECTION])
-    val unavailable = agent.phase == AgentEventsPhase.Unavailable
+    // A build without the program, or a storage recly-events cannot watch: the switch says which, in
+    // the place of its second line, and cannot be turned.
+    val note = when (agent.phase) {
+        AgentEventsPhase.Unavailable -> Str.AGENT_UNAVAILABLE
+        AgentEventsPhase.NotDrive -> Str.AGENT_NOT_DRIVE
+        else -> null
+    }
     SwitchRow(
         title = strings[Str.AGENT_TOGGLE],
-        subtitle = if (unavailable) strings[Str.AGENT_UNAVAILABLE] else null,
-        checked = agent.enabled,
+        subtitle = note?.let { strings[it] },
+        checked = agent.enabled && note == null,
         onCheckedChange = agent::toggle,
-        enabled = !unavailable,
+        enabled = note == null,
     )
-    if (!agent.enabled || unavailable) return
-    // A working sign-in has no button: the row offers Connect without one, and Connect again only
-    // once Google has refused the stored one.
-    val (subtitle, button) = when {
-        !agent.googleSignedIn -> Str.AGENT_GOOGLE_NOT_CONNECTED to Str.AGENT_GOOGLE_CONNECT
-        agent.googleEnded -> Str.AGENT_GOOGLE_ENDED to Str.AGENT_GOOGLE_RECONNECT
-        else -> Str.AGENT_GOOGLE_CONNECTED to null
+    if (!agent.enabled || note != null) return
+    AgentStatus(agent, strings)
+    AgentGoogle(agent, strings)
+    AgentTunnel(agent, strings)
+    if (!agent.subscribed) {
+        SectionFootnote(strings[Str.AGENT_FOOTNOTE])
+        Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
+            BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
+        }
     }
+}
+
+/**
+ * One line under the switch, and only what the rows below do not already say: nothing while set-up
+ * is incomplete or the sign-in is what is wrong. The square loader only while something is under way;
+ * a running server says that it works, or what to do next — never what is merely possible.
+ */
+@Composable
+private fun AgentStatus(agent: AgentEvents, strings: Strings) {
+    when (val phase = agent.phase) {
+        AgentEventsPhase.Off, AgentEventsPhase.Unavailable, AgentEventsPhase.NotDrive,
+        AgentEventsPhase.NeedsSetup, AgentEventsPhase.GoogleEnded -> Unit
+        AgentEventsPhase.SigningIn -> AgentWorking(strings[Str.AGENT_STATUS_SIGNING_IN])
+        AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
+        AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
+        // Another account sees none of Recly's files, so the agent hears nothing: the row says so.
+        is AgentEventsPhase.Running -> if (agent.account != AgentEventsAccount.DIFFERENT) {
+            AgentLine(
+                strings[
+                    when (phase.subscription) {
+                        AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
+                        AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
+                        AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
+                    },
+                ],
+            )
+        }
+        AgentEventsPhase.TunnelError -> AgentLine(strings[Str.AGENT_STATUS_TUNNEL_ERROR], danger = true)
+        AgentEventsPhase.Elsewhere -> AgentLine(strings[Str.AGENT_STATUS_ELSEWHERE])
+        AgentEventsPhase.GaveUp -> AgentLine(strings[Str.AGENT_STATUS_GAVE_UP], danger = true)
+    }
+}
+
+/**
+ * recly-events' own Google sign-in — a consent of its own, not the Drive connection that uploads —
+ * named for what it is, and whether it is the account Recly uploads to. A working sign-in has no
+ * button.
+ */
+@Composable
+private fun AgentGoogle(agent: AgentEvents, strings: Strings) {
+    val (subtitle, button) = when {
+        !agent.googleSignedIn -> Str.AGENT_GOOGLE_SIGN_IN_HINT to Str.AGENT_GOOGLE_SIGN_IN
+        agent.googleEnded -> Str.AGENT_GOOGLE_ENDED to Str.AGENT_GOOGLE_SIGN_IN_AGAIN
+        agent.account == AgentEventsAccount.DIFFERENT -> Str.AGENT_GOOGLE_DIFFERENT to Str.AGENT_GOOGLE_SIGN_IN_AGAIN
+        agent.account == AgentEventsAccount.SAME -> Str.AGENT_GOOGLE_SAME to null
+        else -> Str.AGENT_GOOGLE_SIGNED_IN to null
+    }
+    val danger = button == Str.AGENT_GOOGLE_SIGN_IN_AGAIN
     TableRow(
         title = strings[Str.AGENT_GOOGLE],
         subtitle = strings[subtitle],
+        subtitleColor = if (danger) blueprint.danger else null,
         trailing = if (button == null) {
             null
         } else {
@@ -290,56 +355,81 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
             }
         },
     )
+}
+
+/**
+ * docs/05 "Secrets": a saved tunnel is a row that says so, as a saved transcription key is; the
+ * fields come back only to take a new one, and a key left empty keeps the saved one.
+ */
+@Composable
+private fun AgentTunnel(agent: AgentEvents, strings: Strings) {
+    var changing by remember { mutableStateOf(false) }
     var tunnelId by remember(agent.tunnelId) { mutableStateOf(agent.tunnelId) }
     var tunnelKey by remember { mutableStateOf("") }
-    SettingsCard {
-        BlueprintTextField(tunnelId, { tunnelId = it }, strings[Str.AGENT_TUNNEL_ID], placeholder = "tunnel_…")
-        BlueprintTextField(tunnelKey, { tunnelKey = it }, strings[Str.AGENT_TUNNEL_KEY], placeholder = "sk-…", secret = true)
-        BlueprintButton(
-            strings[Str.SAVE],
-            {
-                agent.saveTunnel(tunnelId, tunnelKey)
-                tunnelKey = ""
+    if (agent.tunnelId.isNotEmpty() && agent.tunnelKeySaved && !changing) {
+        TableRow(
+            title = strings[Str.AGENT_TUNNEL],
+            subtitle = "$SELECTION_MARK ${strings[Str.PROCESSING_KEY_ON_DEVICE]}",
+            subtitleColor = blueprint.success,
+            trailing = {
+                BlueprintButton(
+                    strings[Str.AGENT_TUNNEL_CHANGE],
+                    {
+                        tunnelId = agent.tunnelId
+                        tunnelKey = ""
+                        changing = true
+                    },
+                    tone = ButtonTone.QUIET,
+                )
             },
-            tone = ButtonTone.QUIET,
-            enabled = tunnelId.isNotBlank(),
         )
+        return
+    }
+    SettingsCard {
+        Text(strings[Str.AGENT_TUNNEL], style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
+        BlueprintTextField(tunnelId, { tunnelId = it }, strings[Str.AGENT_TUNNEL_ID], placeholder = "tunnel_…")
+        BlueprintTextField(
+            tunnelKey,
+            { tunnelKey = it },
+            strings[Str.AGENT_TUNNEL_KEY],
+            placeholder = if (agent.tunnelKeySaved) strings[Str.AGENT_TUNNEL_KEY_KEEP] else "sk-…",
+            secret = true,
+        )
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            if (changing) {
+                BlueprintButton(
+                    strings[Str.CANCEL],
+                    {
+                        tunnelKey = ""
+                        changing = false
+                    },
+                    tone = ButtonTone.QUIET,
+                )
+            }
+            BlueprintButton(
+                strings[Str.SAVE],
+                {
+                    agent.saveTunnel(tunnelId, tunnelKey) { changing = false }
+                    tunnelKey = ""
+                },
+                tone = ButtonTone.QUIET,
+                // An ID, and a key unless one is saved already.
+                enabled = tunnelId.isNotBlank() && (agent.tunnelKeySaved || tunnelKey.isNotBlank()),
+            )
+        }
         if (agent.saveFailed) {
             Text(strings[Str.AGENT_SAVE_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
         }
     }
     HairLine()
-    AgentStatus(agent.phase, strings)
-    SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-    Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
-    }
 }
 
-/** One sentence for where things are; the square loader only while something is under way. */
 @Composable
-private fun AgentStatus(phase: AgentEventsPhase, strings: Strings) {
-    when (phase) {
-        AgentEventsPhase.Off, AgentEventsPhase.Unavailable -> Unit
-        AgentEventsPhase.SigningIn -> AgentWorking(strings[Str.AGENT_STATUS_SIGNING_IN])
-        AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
-        AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
-        AgentEventsPhase.NeedsSetup -> TableRow(strings[Str.AGENT_STATUS_SETUP])
-        is AgentEventsPhase.Running -> TableRow(
-            strings[Str.AGENT_STATUS_RUNNING],
-            subtitle = strings[
-                when (phase.subscription) {
-                    AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
-                    AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
-                    AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
-                },
-            ],
-        )
-        AgentEventsPhase.TunnelError -> TableRow(strings[Str.AGENT_STATUS_TUNNEL_ERROR])
-        AgentEventsPhase.GoogleEnded -> TableRow(strings[Str.AGENT_STATUS_GOOGLE_ENDED])
-        AgentEventsPhase.Elsewhere -> TableRow(strings[Str.AGENT_STATUS_ELSEWHERE])
-        AgentEventsPhase.GaveUp -> TableRow(strings[Str.AGENT_STATUS_GAVE_UP])
+private fun AgentLine(text: String, danger: Boolean = false) {
+    SettingsCard {
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (danger) blueprint.danger else blueprint.text)
     }
+    HairLine()
 }
 
 @Composable

@@ -108,11 +108,17 @@ public struct SectionRow<Trailing: View>: View {
     @Environment(\.insideSectionBlock) private var insideBlock
     private let title: String
     private let subtitle: String?
+    /// A state that needs the user, such as an ended sign-in, is said in the danger colour as well as
+    /// in words (docs/09 "Every state is color + text"); nil is the quiet secondary colour.
+    private let subtitleColor: Color?
     private let trailing: Trailing
 
-    public init(title: String, subtitle: String? = nil, @ViewBuilder trailing: () -> Trailing) {
+    public init(
+        title: String, subtitle: String? = nil, subtitleColor: Color? = nil, @ViewBuilder trailing: () -> Trailing
+    ) {
         self.title = title
         self.subtitle = subtitle
+        self.subtitleColor = subtitleColor
         self.trailing = trailing()
     }
 
@@ -126,7 +132,7 @@ public struct SectionRow<Trailing: View>: View {
                     if let subtitle {
                         Text(verbatim: subtitle)
                             .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.textMuted)
+                            .foregroundStyle(subtitleColor ?? blueprint.palette.textMuted)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -142,8 +148,8 @@ public struct SectionRow<Trailing: View>: View {
 }
 
 extension SectionRow where Trailing == EmptyView {
-    public init(title: String, subtitle: String? = nil) {
-        self.init(title: title, subtitle: subtitle) { EmptyView() }
+    public init(title: String, subtitle: String? = nil, subtitleColor: Color? = nil) {
+        self.init(title: title, subtitle: subtitle, subtitleColor: subtitleColor) { EmptyView() }
     }
 }
 

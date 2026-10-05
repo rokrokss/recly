@@ -1,6 +1,6 @@
 # Recly Privacy Policy
 
-**Effective date: 2026-10-05**
+**Effective date: 2026-10-06**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
@@ -113,9 +113,9 @@ On those devices, choose an external provider if you want transcripts. Recly nev
 
 `recly-events` is a program from the Recly project that tells your ChatGPT agent (a dot or a Work chat) about each new transcript. You can run it yourself, or turn it on in the Mac or Windows app under Settings → Agent connection, which runs the copy the app includes. It is off by default, and the phone and watch apps do not include it. Nothing in this subsection happens unless you run it or turn it on.
 
-- **Google Drive, metadata only.** It signs in with the same Google authorization as the Recly apps (`drive.file`), so Google shows it only the files Recly created. About every 10 seconds it asks Drive what changed and reads the names, IDs, links and folder descriptions (recording titles) of those files. It never downloads a recording or a transcript. If you set it up with a Google client of your own instead, Google lets it see the metadata (not the contents) of every file in your Drive (`drive.metadata.readonly`); it ignores everything except Recly's transcripts and their folders.
+- **Google Drive, metadata only.** It signs in with the same Google authorization as the Recly apps (`drive.file`), so Google shows it only the files Recly created. About every 10 seconds it asks Drive what changed and reads the names, IDs, links and folder descriptions (recording titles) of those files. Once per sign-in it also reads the Drive account's opaque identifier — not its name or email — so the Mac or Windows app can tell whether it is the account the app uploads to. It never downloads a recording or a transcript. If you set it up with a Google client of your own instead, Google lets it see the metadata (not the contents) of every file in your Drive (`drive.metadata.readonly`); it ignores everything except Recly's transcripts and their folders.
 - **Your ChatGPT account.** When a new transcript appears, it sends a notice — the recording's name, title, start time, device type, and Drive file IDs and links — to your ChatGPT account through OpenAI's Secure MCP Tunnel and the event address ChatGPT gave it. Your agent then reads the transcript from your Drive with ChatGPT's own Google Drive connector; that processing is governed by OpenAI's terms and privacy policy and your ChatGPT settings.
-- **Nothing reaches the developer.** It runs on your computer and talks only to Google and OpenAI. Its settings, its Google token, your OpenAI tunnel key and its list of notices stay in its own folder on that computer, readable only by your user account.
+- **Nothing reaches the developer.** It runs on your computer and talks only to Google and OpenAI. Its settings, its Google token and that account identifier, your OpenAI tunnel key and its list of notices stay in its own folder on that computer, readable only by your user account.
 - **Stopping it.** Turn off Settings → Agent connection, or run `recly-events service uninstall`, and delete its folder, then remove the tunnel and key in your OpenAI Platform settings and the app in ChatGPT. Disconnecting Google Drive in any Recly app also ends recly-events' Google access.
 
 ## 4. What is not collected

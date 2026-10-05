@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -80,6 +81,11 @@ fun TableRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    /**
+     * A state that needs the user, such as an ended sign-in, is said in the danger colour as well as
+     * in words (docs/09 "Every state is color + text"); null is the quiet secondary colour.
+     */
+    subtitleColor: Color? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
@@ -94,7 +100,7 @@ fun TableRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
                 subtitle?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor ?: palette.textMuted)
                 }
             }
             trailing?.invoke()

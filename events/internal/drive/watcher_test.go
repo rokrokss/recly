@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/rokrokss/recly/events/internal/state"
 )
@@ -23,6 +24,9 @@ type fakeDrive struct {
 	files     map[string]File
 	failGet   bool
 	listCalls []string
+	// account is the permissionId /about answers; empty answers 404.
+	account    string
+	aboutCalls int
 }
 
 func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -31,6 +35,13 @@ func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.URL.Path == "/changes/startPageToken":
 		_ = json.NewEncoder(w).Encode(map[string]string{"startPageToken": d.start})
+	case r.URL.Path == "/about":
+		d.aboutCalls++
+		if d.account == "" {
+			http.NotFound(w, r)
+			return
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"user": map[string]string{"permissionId": d.account}})
 	case r.URL.Path == "/changes":
 		_ = json.NewEncoder(w).Encode(d.pages[r.URL.Query().Get("pageToken")])
 	case r.URL.Path == "/files":
@@ -212,4 +223,59 @@ func TestLatestFindsNewestTranscript(t *testing.T) {
 	if err != nil || f.ID != "txt1" {
 		t.Fatalf("latest = %+v %v", f, err)
 	}
+}
+
+func TestRecordsTheAccountOncePerSignIn(t *testing.T) {
+	w, fd, _, store := setup(t)
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t1"}
+	fd.account = "perm-1"
+	first := time.Date(2026, 10, 6, 9, 0, 0, 0, time.UTC)
+	w.SignedInAt = first
+	for range 2 {
+		if err := w.Poll(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	store.View(func(s *state.State) {
+		if s.Drive.AccountID != "perm-1" || !s.Drive.AccountSignedInAt.Equal(first) {
+			t.Fatalf("account = %q at %v", s.Drive.AccountID, s.Drive.AccountSignedInAt)
+		}
+	})
+	if fd.aboutCalls != 1 {
+		t.Fatalf("about asked %d times for one sign-in", fd.aboutCalls)
+	}
+
+	// A new sign-in may be another account: it is read again, not assumed.
+	fd.account = "perm-2"
+	w.SignedInAt = first.Add(time.Hour)
+	if err := w.Poll(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store.View(func(s *state.State) {
+		if s.Drive.AccountID != "perm-2" || !s.Drive.AccountSignedInAt.Equal(w.SignedInAt) {
+			t.Fatalf("account = %q at %v", s.Drive.AccountID, s.Drive.AccountSignedInAt)
+		}
+	})
+}
+
+func TestAnAccountLookupFailureDoesNotFailThePoll(t *testing.T) {
+	w, fd, _, store := setup(t)
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t1"}
+	if err := w.Poll(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store.View(func(s *state.State) {
+		if s.Drive.AccountID != "" || s.Drive.LastError != "" {
+			t.Fatalf("account = %q, error = %q", s.Drive.AccountID, s.Drive.LastError)
+		}
+	})
+	fd.account = "perm-1"
+	if err := w.Poll(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store.View(func(s *state.State) {
+		if s.Drive.AccountID != "perm-1" {
+			t.Fatalf("account not read on the next poll: %q", s.Drive.AccountID)
+		}
+	})
 }

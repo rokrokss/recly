@@ -255,10 +255,17 @@ final class MenuModel: ObservableObject {
             }
             self.processing = processing
             let storage = StorageChoice(core: bridge.core)
-            storage.onChanged = { [weak processing] in await processing?.storageChanged() }
+            storage.onChanged = { [weak self, weak processing, weak storage] in
+                await processing?.storageChanged()
+                // docs/12 "Agent connection": recly-events can watch Google Drive only.
+                if let storage { self?.agentEvents.driveStorage = storage.selected == .drive }
+            }
             // The recordings a picked folder let go are due now.
             storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
+            let core = bridge.core
+            agentEvents.uploadAccount = { try? await core.driveAccountId() }
+            agentEvents.driveStorage = (try? await core.processingSettings.storage()).map { $0 == .drive } ?? true
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was

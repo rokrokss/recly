@@ -46,19 +46,21 @@ Google and to OpenAI.
 ## From the Recly Mac or Windows app
 
 The Mac and Windows apps include recly-events and run it for you while **Settings → Agent connection →
-Tell ChatGPT about new transcripts** is on. It is off by default.
+Tell ChatGPT about new transcripts** is on. It is off by default, and available only while the app
+stores recordings in Google Drive.
 
 1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
-2. Turn the switch on. Choose **Connect** next to Google Drive and allow Recly in your browser, then
-   enter the tunnel ID and key and choose **Save**.
-3. When the row says ChatGPT can reach your computer, add the app to ChatGPT and subscribe your agent
-   ([steps 5 and 6](#5-add-it-to-chatgpt) below).
+2. Turn the switch on. Choose **Sign in** in the **Google sign-in** row, and in your browser sign in
+   with the account Recly uploads to and allow Recly. Then enter the tunnel ID and key and choose
+   **Save**.
+3. When the line under the switch says **Add the app in ChatGPT and ask your agent to subscribe**, do
+   [steps 5 and 6](#5-add-it-to-chatgpt) below.
 
 The app keeps the server running while the app runs, restarts it if it stops (up to three times in
 ten minutes), and stops it when you turn the switch off or the app goes, even if it crashes. It
 uses the same folder, sign-in and key as the command line, so `recly-events status` shows it too.
-A server started some other way, such as `service install`, is left alone, and the switch says it
-is running outside Recly. On a Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test`
+A server started some other way, such as `service install`, is left alone, and the line under the
+switch says it is already running outside Recly. On a Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test`
 sends the test event.
 
 ## Set up
@@ -203,7 +205,7 @@ elsewhere.
 | `config.json` | settings (below) |
 | `google-token.json` | the Google sign-in (`google-client.json` too, with a client of your own) |
 | `tunnel-key` | the OpenAI tunnel key |
-| `state.json` | the Drive position, subscriptions, the event inbox and the delivery queue |
+| `state.json` | the Drive position and the Drive account's ID, subscriptions, the event inbox and the delivery queue |
 | `logs/serve.log` | the server log under the macOS service; on Linux, `journalctl --user -u recly-events` |
 
 `config.json` takes:

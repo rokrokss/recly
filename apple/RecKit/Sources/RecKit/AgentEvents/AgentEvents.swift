@@ -30,6 +30,9 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
     public var tunnelId: String?
     public var tunnelKey: Bool
     public var googleSignedIn: Bool
+    /// The signed-in Drive account's opaque `permissionId`, once the server has read it for this
+    /// sign-in — never an email.
+    public var googleAccountId: String?
     /// nil when no server answers on this home.
     public var server: Server?
     public var drive: Drive
@@ -40,12 +43,14 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
 
     public init(
         home: String, tunnelId: String? = nil, tunnelKey: Bool = false, googleSignedIn: Bool = false,
-        server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0, subscriptionsEnded: Bool = false
+        googleAccountId: String? = nil, server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0,
+        subscriptionsEnded: Bool = false
     ) {
         self.home = home
         self.tunnelId = tunnelId
         self.tunnelKey = tunnelKey
         self.googleSignedIn = googleSignedIn
+        self.googleAccountId = googleAccountId
         self.server = server
         self.drive = drive
         self.subscriptions = subscriptions
@@ -79,10 +84,27 @@ public enum AgentEventsSubscription: Equatable, Sendable {
     case ended
 }
 
+/// Whether recly-events signed in to the account this device uploads to, by the two opaque Drive
+/// identifiers: its own sign-in is a consent of its own, and under `drive.file` another account
+/// would see none of Recly's files.
+public enum AgentEventsAccount: Equatable, Sendable {
+    /// One side has no identifier: this device's Drive is not connected, or Google was not asked yet.
+    case unknown
+    case same
+    case different
+
+    public static func of(agent: String?, upload: String?) -> AgentEventsAccount {
+        guard let agent, let upload else { return .unknown }
+        return agent == upload ? .same : .different
+    }
+}
+
 /// What the settings row says. One case per sentence the row can show.
 public enum AgentEventsPhase: Equatable, Sendable {
     /// This build has no recly-events in it.
     case unavailable
+    /// Recordings go to iCloud or a local folder, where recly-events sees nothing.
+    case notDrive
     case off
     /// `init --google` is waiting for the browser.
     case signingIn
@@ -99,15 +121,17 @@ public enum AgentEventsPhase: Equatable, Sendable {
     case tunnelError
     case running(AgentEventsSubscription)
 
+    /// - Parameter driveStorage: whether recordings go to Google Drive; nil until the app has read it.
     public static func of(
-        enabled: Bool, available: Bool, signingIn: Bool, gaveUp: Bool, owned: Bool,
+        enabled: Bool, available: Bool, driveStorage: Bool? = true, signingIn: Bool, gaveUp: Bool, owned: Bool,
         status: AgentEventsStatus?
     ) -> AgentEventsPhase {
         guard available else { return .unavailable }
+        if driveStorage == false { return .notDrive }
         guard enabled else { return .off }
         if signingIn { return .signingIn }
         if gaveUp { return .gaveUp }
-        guard let status else { return .starting }
+        guard driveStorage != nil, let status else { return .starting }
         if status.googleEnded { return .googleEnded }
         guard status.setUp else { return .needsSetup }
         guard let server = status.server else { return .starting }
@@ -178,6 +202,12 @@ public final class AgentEventsController: ObservableObject {
     @Published public private(set) var googleSignedIn = false
     /// Google refused the stored sign-in ([AgentEventsStatus.googleEnded]), for the Google row.
     @Published public private(set) var googleEnded = false
+    /// Whether the sign-in is the account this device uploads to, for the Google row.
+    @Published public private(set) var account: AgentEventsAccount = .unknown
+    /// A tunnel key is saved; the key itself is never read back.
+    @Published public private(set) var tunnelKeySaved = false
+    /// An agent is subscribed: the set-up guide has nothing left to say.
+    @Published public private(set) var subscribed = false
     /// The last tunnel save failed (a bad ID, no key).
     @Published public private(set) var saveFailed = false
 
@@ -194,6 +224,20 @@ public final class AgentEventsController: ObservableObject {
 
     public static let enabledKey = "agentEventsEnabled"
 
+    /// Whether recordings go to Google Drive, the only storage recly-events can watch; nil until the
+    /// app has read it, and nothing is started before then.
+    public var driveStorage: Bool? {
+        didSet {
+            guard driveStorage != oldValue else { return }
+            logger.info("agent.storage drive=\(String(describing: self.driveStorage), privacy: .public)")
+            Task { await refresh() }
+        }
+    }
+
+    /// This device's own Drive account (`ReclyCore.driveAccountId`), asked when the section is shown
+    /// or the sign-in's account changes.
+    public var uploadAccount: (() async -> String?)?
+
     private let executable: URL?
     private let defaults: UserDefaults
     private let logger = Logger(subsystem: CoreBridge.appName, category: "agent")
@@ -205,6 +249,10 @@ public final class AgentEventsController: ObservableObject {
     private var restarts = AgentEventsRestarts()
     private var status: AgentEventsStatus?
     private var timer: Timer?
+    /// The sign-in's account the upload account was last compared with, and that account; cleared
+    /// when the section is shown, so a Drive reconnected meanwhile is asked again.
+    private var comparedAccount: String?
+    private var uploadAccountId: String?
 
     /// - Parameter executable: the bundled recly-events, or nil when this build has none.
     public init(executable: URL?, defaults: UserDefaults = .standard) {
@@ -241,8 +289,9 @@ public final class AgentEventsController: ObservableObject {
         }
     }
 
-    /// `init --tunnel-id`, with the key on standard input when one was typed.
-    public func saveTunnel(id: String, key: String) {
+    /// `init --tunnel-id`, with the key on standard input when one was typed — without one, the
+    /// saved key stays. `onSaved` runs once the program has taken it.
+    public func saveTunnel(id: String, key: String, onSaved: (() -> Void)? = nil) {
         guard let executable else { return }
         let id = id.trimmingCharacters(in: .whitespacesAndNewlines)
         let key = key.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -256,6 +305,7 @@ public final class AgentEventsController: ObservableObject {
             if result.code == 0 {
                 gaveUp = false
                 restarts.reset()
+                onSaved?()
                 await restartChild()
             }
             await refresh()
@@ -263,8 +313,10 @@ public final class AgentEventsController: ObservableObject {
     }
 
     /// Looks again now rather than at the next tick. A menu bar app out of sight is napped and its
-    /// timer can run minutes late, so the section asks when it is shown.
+    /// timer can run minutes late, so the section asks when it is shown — and asks for this device's
+    /// Drive account again, which may have been reconnected since.
     public func refreshNow() {
+        comparedAccount = nil
         Task { await refresh() }
     }
 
@@ -278,7 +330,7 @@ public final class AgentEventsController: ObservableObject {
     // MARK: - Reconciling
 
     private func tick() async {
-        guard enabled || child != nil else { return }
+        guard (enabled && driveStorage == true) || child != nil else { return }
         await refresh()
     }
 
@@ -293,8 +345,12 @@ public final class AgentEventsController: ObservableObject {
             tunnelId = status.tunnelId ?? ""
             googleSignedIn = status.googleSignedIn
             googleEnded = status.googleEnded
+            tunnelKeySaved = status.tunnelKey
+            subscribed = status.subscription == .active
+            await compareAccounts(status.googleAccountId)
         }
-        switch AgentEventsAction.reconcile(enabled: enabled, gaveUp: gaveUp, childRunning: child != nil, status: status) {
+        let on = enabled && driveStorage == true
+        switch AgentEventsAction.reconcile(enabled: on, gaveUp: gaveUp, childRunning: child != nil, status: status) {
         case .start: if let status { startChild(home: status.home) }
         case .stop: stopChild()
         case .none: break
@@ -304,9 +360,19 @@ public final class AgentEventsController: ObservableObject {
 
     private func publish() {
         phase = AgentEventsPhase.of(
-            enabled: enabled, available: executable != nil, signingIn: signingIn, gaveUp: gaveUp,
-            owned: status?.server?.pid == child?.processIdentifier, status: status
+            enabled: enabled, available: executable != nil, driveStorage: driveStorage, signingIn: signingIn,
+            gaveUp: gaveUp, owned: status?.server?.pid == child?.processIdentifier, status: status
         )
+    }
+
+    /// One `about` call per sign-in account and showing of the section, not one per poll — and none
+    /// while the switch is off or recordings do not go to Drive, when no row shows the answer.
+    private func compareAccounts(_ agent: String?) async {
+        if enabled, driveStorage == true, let agent, agent != comparedAccount, let uploadAccount {
+            comparedAccount = agent
+            uploadAccountId = await uploadAccount()
+        }
+        account = AgentEventsAccount.of(agent: agent, upload: uploadAccountId)
     }
 
     // MARK: - The server process

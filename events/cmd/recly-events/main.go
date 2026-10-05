@@ -343,6 +343,10 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	if err != nil {
 		return err
 	}
+	tf, err := drive.LoadToken(home.GoogleToken())
+	if err != nil {
+		return err
+	}
 	store, err := state.Open(home.State())
 	if err != nil {
 		return err
@@ -352,7 +356,8 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	handler := &mcpserver.Handler{Hub: hub, Log: log, Version: version}
 	watcher := &drive.Watcher{
 		API: api, Store: store, Log: log, Every: time.Duration(cfg.PollInterval()) * time.Second,
-		Emit: func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
+		Emit:       func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
+		SignedInAt: tf.ObtainedAt,
 	}
 	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version}}
 	stopAdmin, err := serveAdmin(home, api, hub, rt, log)
@@ -463,6 +468,9 @@ type statusReport struct {
 	SubscriptionsEnded bool            `json:"subscriptionsEnded"`
 	Pending            int             `json:"pending"`
 	LastDelivery       *deliveryReport `json:"lastDelivery,omitempty"`
+	// GoogleAccountID is the signed-in Drive account's opaque permissionId, once serve has read
+	// it for this sign-in; the apps compare it with the account they upload to.
+	GoogleAccountID string `json:"googleAccountId,omitempty"`
 }
 
 type driveReport struct {
@@ -513,6 +521,9 @@ func cmdStatus(home app.Home, args []string) error {
 			Home: home.Dir, TunnelID: cfg.TunnelID, TunnelKey: keyErr == nil, GoogleSignedIn: tokenErr == nil,
 			Server: rt, Subscriptions: len(st.Subscriptions), SubscriptionsEnded: ended, Pending: pending,
 			Drive: driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
+		}
+		if tokenErr == nil && st.Drive.AccountSignedInAt.Equal(tf.ObtainedAt) {
+			r.GoogleAccountID = st.Drive.AccountID
 		}
 		if !st.Drive.LastPollAt.IsZero() {
 			r.Drive.LastPollAt = &st.Drive.LastPollAt

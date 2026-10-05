@@ -39,6 +39,8 @@ data class AgentEventsStatus(
     val tunnelId: String? = null,
     val tunnelKey: Boolean = false,
     val googleSignedIn: Boolean = false,
+    /** The signed-in Drive account's opaque `permissionId`, once the server has read it for this sign-in — never an email. */
+    val googleAccountId: String? = null,
     /** Null when no server answers on this home. */
     val server: Server? = null,
     val drive: Drive = Drive(),
@@ -82,10 +84,33 @@ data class AgentEventsStatus(
  */
 enum class AgentEventsSubscription { ACTIVE, NONE, ENDED }
 
+/**
+ * Whether recly-events signed in to the account this PC uploads to, by the two opaque Drive
+ * identifiers: its own sign-in is a consent of its own, and under `drive.file` another account
+ * would see none of Recly's files.
+ */
+enum class AgentEventsAccount {
+    /** One side has no identifier: this PC's Drive is not connected, or Google was not asked yet. */
+    UNKNOWN,
+    SAME,
+    DIFFERENT,
+    ;
+
+    companion object {
+        fun of(agent: String?, upload: String?): AgentEventsAccount = when {
+            agent == null || upload == null -> UNKNOWN
+            agent == upload -> SAME
+            else -> DIFFERENT
+        }
+    }
+}
+
 /** What the settings row says. One case per sentence the row can show. */
 sealed interface AgentEventsPhase {
     /** This build has no recly-events in it. */
     data object Unavailable : AgentEventsPhase
+    /** Recordings go to a local folder, where recly-events sees nothing. */
+    data object NotDrive : AgentEventsPhase
     data object Off : AgentEventsPhase
     /** `init --google` is waiting for the browser. */
     data object SigningIn : AgentEventsPhase
@@ -109,12 +134,15 @@ sealed interface AgentEventsPhase {
             gaveUp: Boolean,
             owned: Boolean,
             status: AgentEventsStatus?,
+            /** Whether recordings go to Google Drive; null until the app has read it. */
+            driveStorage: Boolean? = true,
         ): AgentEventsPhase {
             if (!available) return Unavailable
+            if (driveStorage == false) return NotDrive
             if (!enabled) return Off
             if (signingIn) return SigningIn
             if (gaveUp) return GaveUp
-            if (status == null) return Starting
+            if (driveStorage == null || status == null) return Starting
             if (status.googleEnded) return GoogleEnded
             if (!status.setUp) return NeedsSetup
             val server = status.server ?: return Starting
@@ -232,6 +260,11 @@ class AgentEvents(
     private val clock: Clock,
     private val logger: Logger? = null,
     private val poll: Duration = 5.seconds,
+    /**
+     * This PC's own Drive account (`ReclyCore.driveAccountId`), asked when the section is shown or
+     * the sign-in's account changes.
+     */
+    private val uploadAccount: suspend () -> String? = { null },
 ) {
     var phase by mutableStateOf<AgentEventsPhase>(if (runner == null) AgentEventsPhase.Unavailable else AgentEventsPhase.Off)
         private set
@@ -248,6 +281,18 @@ class AgentEvents(
     var googleEnded by mutableStateOf(false)
         private set
 
+    /** Whether the sign-in is the account this PC uploads to, for the Google row. */
+    var account by mutableStateOf(AgentEventsAccount.UNKNOWN)
+        private set
+
+    /** A tunnel key is saved; the key itself is never read back. */
+    var tunnelKeySaved by mutableStateOf(false)
+        private set
+
+    /** An agent is subscribed: the set-up guide has nothing left to say. */
+    var subscribed by mutableStateOf(false)
+        private set
+
     /** The last tunnel save failed (a bad ID, no key). */
     var saveFailed by mutableStateOf(false)
         private set
@@ -259,14 +304,44 @@ class AgentEvents(
     private var restarts = HelperRestarts()
     private var status: AgentEventsStatus? = null
     private var poller: Job? = null
+    /** Whether recordings go to Google Drive, the only storage recly-events can watch; null until told. */
+    @Volatile private var driveStorage: Boolean? = null
+    /**
+     * The sign-in's account the upload account was last compared with, and that account; cleared
+     * when the section is shown, so a Drive reconnected meanwhile is asked again.
+     */
+    private var comparedAccount: String? = null
+    private var uploadAccountId: String? = null
 
-    /** Off means the program is not run at all: the poller only runs it while the switch is on. */
+    /**
+     * Off means the program is not run at all: the poller only runs it while the switch is on and
+     * recordings go to Google Drive.
+     */
     fun start() {
         poller = scope.launch {
             while (isActive) {
-                if (enabled || child != null) refresh()
+                if ((enabled && driveStorage == true) || child != null) refresh()
                 delay(poll)
             }
+        }
+    }
+
+    /** docs/03 "Storage location": where recordings go now. Nothing is started before the first answer. */
+    fun storageChanged(drive: Boolean) {
+        if (driveStorage == drive) return
+        driveStorage = drive
+        log(Logger.Level.INFO, "agent.storage", mapOf("drive" to drive))
+        scope.launch { refresh() }
+    }
+
+    /**
+     * The section came on screen: look now rather than at the next poll, and ask for this PC's
+     * Drive account again, which may have been reconnected since.
+     */
+    fun sectionShown() {
+        scope.launch {
+            lock.withLock { comparedAccount = null }
+            refresh()
         }
     }
 
@@ -299,8 +374,11 @@ class AgentEvents(
         }
     }
 
-    /** `init --tunnel-id`, with the key on standard input when one was typed. */
-    fun saveTunnel(id: String, key: String) {
+    /**
+     * `init --tunnel-id`, with the key on standard input when one was typed — without one, the saved
+     * key stays. [onSaved] runs once the program has taken it.
+     */
+    fun saveTunnel(id: String, key: String, onSaved: () -> Unit = {}) {
         val runner = runner ?: return
         val trimmedKey = key.trim()
         scope.launch {
@@ -313,6 +391,7 @@ class AgentEvents(
             if (code == 0) {
                 gaveUp = false
                 restarts = HelperRestarts()
+                onSaved()
                 restartChild()
             }
             refresh()
@@ -344,8 +423,11 @@ class AgentEvents(
             tunnelId = current.tunnelId.orEmpty()
             googleSignedIn = current.googleSignedIn
             googleEnded = current.googleEnded
+            tunnelKeySaved = current.tunnelKey
+            subscribed = current.subscription == AgentEventsSubscription.ACTIVE
+            compareAccounts(current.googleAccountId)
         }
-        when (AgentEventsAction.reconcile(enabled, gaveUp, child != null, current)) {
+        when (AgentEventsAction.reconcile(enabled && driveStorage == true, gaveUp, child != null, current)) {
             AgentEventsAction.START -> current?.let { startChild(runner, it.home) }
             AgentEventsAction.STOP -> stopChild()
             AgentEventsAction.NONE -> Unit
@@ -355,7 +437,19 @@ class AgentEvents(
 
     private fun publish() {
         val owned = child != null && status?.server?.pid == child?.pid()
-        phase = AgentEventsPhase.of(enabled, runner != null, signingIn, gaveUp, owned, status)
+        phase = AgentEventsPhase.of(enabled, runner != null, signingIn, gaveUp, owned, status, driveStorage)
+    }
+
+    /**
+     * One `about` call per sign-in account and showing of the section, not one per poll — and none
+     * while the switch is off or recordings do not go to Drive, when no row shows the answer.
+     */
+    private suspend fun compareAccounts(agent: String?) {
+        if (enabled && driveStorage == true && agent != null && agent != comparedAccount) {
+            comparedAccount = agent
+            uploadAccountId = uploadAccount()
+        }
+        account = AgentEventsAccount.of(agent, uploadAccountId)
     }
 
     private fun startChild(runner: AgentEventsRunner, home: String) {

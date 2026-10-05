@@ -541,6 +541,7 @@ class ShellModel(
             scope = scope,
             clock = graph.core.deps.clock,
             logger = logger,
+            uploadAccount = graph.core::driveAccountId,
         ).also { it.start() }
 
         val command = helperCommand
@@ -1668,7 +1669,11 @@ class ShellModel(
 
     private suspend fun readStorage(graph: AppGraph) {
         runCatching { graph.core.processingSettings.storage() }
-            .onSuccess { storage = it }
+            .onSuccess {
+                storage = it
+                // docs/14 "Agent connection": recly-events can watch Google Drive only.
+                agentEvents?.storageChanged(it == StorageKind.DRIVE)
+            }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.storage.failed", error = it) }
         localFolderAvailable = graph.core.deps.localFolder?.available() == true
     }

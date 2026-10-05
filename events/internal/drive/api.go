@@ -3,6 +3,7 @@ package drive
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -137,6 +138,24 @@ func (a *API) Account(ctx context.Context) (string, error) {
 		} `json:"user"`
 	}
 	return out.User.EmailAddress, a.get(ctx, "/about", url.Values{"fields": {"user(emailAddress)"}}, &out)
+}
+
+// AccountID returns the signed-in account's opaque Drive identifier, the one the Recly apps keep
+// for their own connection (docs/recly.md §15 §1), so a desktop app can tell whether this is the
+// account it uploads to without either side reading an email.
+func (a *API) AccountID(ctx context.Context) (string, error) {
+	var out struct {
+		User struct {
+			PermissionID string `json:"permissionId"`
+		} `json:"user"`
+	}
+	if err := a.get(ctx, "/about", url.Values{"fields": {"user(permissionId)"}}, &out); err != nil {
+		return "", err
+	}
+	if out.User.PermissionID == "" {
+		return "", errors.New("drive: about answered without a permissionId")
+	}
+	return out.User.PermissionID, nil
 }
 
 // quote escapes a value for a Drive query string literal.

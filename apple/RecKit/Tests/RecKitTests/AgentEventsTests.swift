@@ -21,6 +21,11 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(status.server?.pid, 42)
         XCTAssertTrue(status.setUp)
         XCTAssertEqual(status.subscriptions, 1)
+        XCTAssertNil(status.googleAccountId)
+        let signedIn = try JSONDecoder().decode(AgentEventsStatus.self, from: Data("""
+        {"home": "/h", "tunnelKey": true, "googleSignedIn": true, "googleAccountId": "perm-1", "drive": {}, "subscriptions": 0, "subscriptionsEnded": false}
+        """.utf8))
+        XCTAssertEqual(signedIn.googleAccountId, "perm-1")
 
         let fresh = try JSONDecoder().decode(AgentEventsStatus.self, from: Data("""
         {"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {"pollSeconds": 10, "announced": 0}, "subscriptions": 0, "subscriptionsEnded": false, "pending": 0}
@@ -71,6 +76,26 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(phase(signedOut), .googleEnded)
     }
 
+    func testAStorageItCannotWatchIsSaidBeforeAnythingElseAndAnUnreadOneWaits() {
+        var running = ready
+        running.server = .init(pid: 7, tunnelReady: true, tunnelError: nil)
+        func phase(enabled: Bool = true, available: Bool = true, _ drive: Bool?) -> AgentEventsPhase {
+            .of(enabled: enabled, available: available, driveStorage: drive, signingIn: false, gaveUp: false, owned: true, status: running)
+        }
+        XCTAssertEqual(phase(available: false, false), .unavailable)
+        XCTAssertEqual(phase(false), .notDrive)
+        XCTAssertEqual(phase(enabled: false, false), .notDrive, "said even while off")
+        XCTAssertEqual(phase(nil), .starting)
+        XCTAssertEqual(phase(enabled: false, nil), .off)
+    }
+
+    func testTheAccountIsTheSameAnotherOrNotKnownFromOneSide() {
+        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: "perm-1"), .same)
+        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: "perm-2"), .different)
+        XCTAssertEqual(AgentEventsAccount.of(agent: nil, upload: "perm-1"), .unknown)
+        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: nil), .unknown)
+    }
+
     func testStartsOnlyWhenOnSetUpAndNothingElseAnswers() {
         func act(enabled: Bool = true, gaveUp: Bool = false, child: Bool = false, _ status: AgentEventsStatus?) -> AgentEventsAction {
             .reconcile(enabled: enabled, gaveUp: gaveUp, childRunning: child, status: status)
@@ -114,7 +139,8 @@ final class AgentEventsTests: XCTestCase {
     }
 
     /// The whole loop against a shell script that answers `status --json` and `serve` the way the
-    /// program does: on, it starts the server and calls it its own; off, it stops it.
+    /// program does: on, it starts the server and calls it its own, and compares its account with
+    /// the upload account once; off, or a storage it cannot watch, stops it.
     @MainActor
     func testRunsServeWhileOnAndStopsItWhenOff() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("agent-\(UUID().uuidString)")
@@ -130,7 +156,7 @@ final class AgentEventsTests: XCTestCase {
           if [ -f "$dir/serve.pid" ] && kill -0 "$(cat "$dir/serve.pid")" 2>/dev/null; then
             server="{\\"pid\\": $(cat "$dir/serve.pid"), \\"tunnelReady\\": true}"
           fi
-          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"server":%s,"drive":{},"subscriptions":0,"subscriptionsEnded":false}\\n' "$dir" "$server"
+          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"googleAccountId":"perm-1","server":%s,"drive":{},"subscriptions":0,"subscriptionsEnded":false}\\n' "$dir" "$server"
           ;;
         serve)
           echo $$ > "$dir/serve.pid"
@@ -143,15 +169,43 @@ final class AgentEventsTests: XCTestCase {
 
         let controller = AgentEventsController(executable: script, defaults: defaults)
         defer { controller.shutdown() }
+        var asks = 0
+        controller.uploadAccount = {
+            asks += 1
+            return "perm-1"
+        }
         XCTAssertEqual(controller.phase, .off)
         controller.enabled = true
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: dir.appendingPathComponent("serve.pid").path),
+                       "not started before the storage was read")
+        controller.driveStorage = true
         try await waitFor(controller, .running(.none))
-        let pid = try XCTUnwrap(Int32(String(contentsOf: dir.appendingPathComponent("serve.pid"), encoding: .utf8)
-            .trimmingCharacters(in: .whitespacesAndNewlines)))
+        let pid = try servePid(dir)
         XCTAssertEqual(kill(pid, 0), 0, "serve is running")
+        XCTAssertEqual(controller.account, .same)
+        controller.refreshNow()
+        try await Task.sleep(nanoseconds: 500_000_000)
+        XCTAssertEqual(asks, 2, "asked once, and again when the section is shown")
 
         controller.enabled = false
         try await waitFor(controller, .off)
+        try await waitUntilGone(pid)
+
+        controller.enabled = true
+        try await waitFor(controller, .running(.none))
+        let second = try servePid(dir)
+        controller.driveStorage = false
+        try await waitFor(controller, .notDrive)
+        try await waitUntilGone(second)
+    }
+
+    private func servePid(_ dir: URL) throws -> Int32 {
+        try XCTUnwrap(Int32(String(contentsOf: dir.appendingPathComponent("serve.pid"), encoding: .utf8)
+            .trimmingCharacters(in: .whitespacesAndNewlines)))
+    }
+
+    private func waitUntilGone(_ pid: Int32) async throws {
         for _ in 0..<50 where kill(pid, 0) == 0 {
             try await Task.sleep(nanoseconds: 100_000_000)
         }
@@ -175,6 +229,7 @@ final class AgentEventsTests: XCTestCase {
 
         let controller = AgentEventsController(executable: program, defaults: defaults)
         defer { controller.shutdown() }
+        controller.driveStorage = true
         controller.enabled = true
         try await waitFor(controller, .needsSetup)
 

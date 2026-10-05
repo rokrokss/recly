@@ -42,9 +42,11 @@ class AgentEventsTest {
         assertEquals(42L, status.server?.pid)
         assertTrue(status.setUp)
         assertEquals(1, status.subscriptions)
+        assertNull(status.googleAccountId)
         val fresh = assertNotNull(AgentEventsStatus.parse("""{"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {}, "subscriptions": 0}"""))
         assertNull(fresh.server)
         assertFalse(fresh.setUp)
+        assertEquals("perm-1", AgentEventsStatus.parse("""{"home": "/h", "googleSignedIn": true, "googleAccountId": "perm-1"}""")?.googleAccountId)
         assertNull(AgentEventsStatus.parse("recly-events: usage"))
     }
 
@@ -74,6 +76,24 @@ class AgentEventsTest {
         assertEquals(AgentEventsPhase.Connecting, phase(status = connecting))
         assertEquals(AgentEventsPhase.TunnelError, phase(status = connecting.copy(server = connecting.server?.copy(tunnelError = "tunnel: unauthorized"))))
         assertEquals(AgentEventsPhase.GoogleEnded, phase(status = running.copy(drive = AgentEventsStatus.Drive("invalid_grant"))))
+    }
+
+    @Test
+    fun `a storage recly-events cannot watch says so before anything else, and an unread one waits`() {
+        val running = ready.copy(server = AgentEventsStatus.Server(pid = 7, tunnelReady = true))
+        assertEquals(AgentEventsPhase.Unavailable, AgentEventsPhase.of(true, false, false, false, true, running, driveStorage = false))
+        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(true, true, false, false, true, running, driveStorage = false))
+        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(false, true, false, false, true, running, driveStorage = false), "said even while off")
+        assertEquals(AgentEventsPhase.Starting, AgentEventsPhase.of(true, true, false, false, true, running, driveStorage = null))
+        assertEquals(AgentEventsPhase.Off, AgentEventsPhase.of(false, true, false, false, true, running, driveStorage = null))
+    }
+
+    @Test
+    fun `the account is the same, another, or not known from one side`() {
+        assertEquals(AgentEventsAccount.SAME, AgentEventsAccount.of("perm-1", "perm-1"))
+        assertEquals(AgentEventsAccount.DIFFERENT, AgentEventsAccount.of("perm-1", "perm-2"))
+        assertEquals(AgentEventsAccount.UNKNOWN, AgentEventsAccount.of(null, "perm-1"))
+        assertEquals(AgentEventsAccount.UNKNOWN, AgentEventsAccount.of("perm-1", null))
     }
 
     @Test
@@ -135,17 +155,67 @@ class AgentEventsTest {
 
     @Test
     fun `a saved tunnel passes the key on standard input`() = withAgent { agent, runner, _ ->
-        agent.saveTunnel(" tunnel_y ", " sk-test ")
+        val saved = java.util.concurrent.atomic.AtomicBoolean(false)
+        agent.saveTunnel(" tunnel_y ", " sk-test ") { saved.set(true) }
         runner.awaitCall { it.firstOrNull() == "init" }
         assertEquals(listOf("init", "--tunnel-id", "tunnel_y", "--tunnel-key-stdin", "--no-check"), runner.calls.first { it.first() == "init" })
         assertEquals("sk-test", runner.stdin)
+        repeat(100) { if (!saved.get()) kotlinx.coroutines.delay(20) }
+        assertTrue(saved.get(), "the row closes its fields once the program took the tunnel")
     }
 
-    private fun withAgent(diesAtOnce: Boolean = false, block: suspend (AgentEvents, FakeRunner, FakeSettings) -> Unit) = runBlocking {
+    @Test
+    fun `nothing runs until the storage is known, and a storage that is not Drive stops the server`() = withAgent(storage = null) { agent, runner, _ ->
+        agent.toggle(true)
+        agent.refresh()
+        assertNull(runner.serving, "not started before the storage was read")
+        assertEquals(AgentEventsPhase.Starting, agent.phase)
+
+        agent.storageChanged(true)
+        agent.refresh()
+        val server = assertNotNull(runner.serving)
+        agent.storageChanged(false)
+        agent.refresh()
+        assertFalse(server.isAlive, "a local folder is nothing recly-events can watch")
+        assertEquals(AgentEventsPhase.NotDrive, agent.phase)
+    }
+
+    @Test
+    fun `the sign-in is compared with the upload account once per account and showing`() = withAgent(account = "perm-1", upload = { "perm-1" }) { agent, runner, _ ->
+        agent.toggle(true)
+        agent.refresh()
+        assertEquals(AgentEventsAccount.SAME, agent.account)
+        agent.refresh()
+        assertEquals(1, runner.uploadAsks, "not asked again on every poll")
+
+        runner.account = "perm-2"
+        agent.refresh()
+        assertEquals(AgentEventsAccount.DIFFERENT, agent.account)
+        assertEquals(2, runner.uploadAsks, "a new sign-in account is asked about")
+    }
+
+    @Test
+    fun `no account is asked about while the switch is off`() = withAgent(account = "perm-1", upload = { "perm-1" }) { agent, runner, _ ->
+        agent.refresh()
+        assertEquals(AgentEventsAccount.UNKNOWN, agent.account)
+        assertEquals(0, runner.uploadAsks)
+    }
+
+    private fun withAgent(
+        diesAtOnce: Boolean = false,
+        storage: Boolean? = true,
+        account: String? = null,
+        upload: suspend () -> String? = { null },
+        block: suspend (AgentEvents, FakeRunner, FakeSettings) -> Unit,
+    ) = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val runner = FakeRunner(diesAtOnce)
+        val runner = FakeRunner(diesAtOnce).also { it.account = account }
         val settings = FakeSettings()
-        val agent = AgentEvents(settings, runner, scope, FixedClock(), poll = 1.hours)
+        val agent = AgentEvents(
+            settings, runner, scope, FixedClock(), poll = 1.hours,
+            uploadAccount = { runner.uploadAsks++; upload() },
+        )
+        storage?.let { agent.storageChanged(it) }
         try {
             block(agent, runner, settings)
         } finally {
@@ -160,13 +230,17 @@ class AgentEventsTest {
         @Volatile var stdin: String? = null
         @Volatile var serving: FakeProcess? = null
         @Volatile var started = 0
+        /** The sign-in's account `status --json` reports, and how often the upload account was asked. */
+        @Volatile var account: String? = null
+        @Volatile var uploadAsks = 0
 
         override suspend fun run(arguments: List<String>, input: String?, timeout: Duration?): Pair<Int, String> {
             calls += arguments
             input?.let { stdin = it }
             if (arguments != AgentEventsCommand.STATUS) return 0 to ""
             val server = serving?.takeIf { it.isAlive }?.let { """{"pid": ${it.pid()}, "tunnelReady": true}""" } ?: "null"
-            return 0 to """{"home":"/h","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"server":$server,"drive":{},"subscriptions":0}"""
+            val id = account?.let { ""","googleAccountId":"$it"""" }.orEmpty()
+            return 0 to """{"home":"/h","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true$id,"server":$server,"drive":{},"subscriptions":0}"""
         }
 
         override fun serve(log: File): Process {

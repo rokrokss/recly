@@ -424,6 +424,15 @@ class ReclyCoreTest {
     }
 
     @Test
+    fun `the Drive account id is the connection's opaque owner, asked each time and none once disconnected`() = runBlocking {
+        assertEquals("drive-owner-a", core.driveAccountId())
+        drive.accountId = "drive-owner-b"
+        assertEquals("drive-owner-b", core.driveAccountId(), "nothing is kept between asks")
+        core.disconnect(alsoDeleteRecordings = false)
+        assertNull(core.driveAccountId())
+    }
+
+    @Test
     fun `failed work remains failed after disconnect and a verified reconnect`() = runBlocking {
         val jobId = waitingTranscription()
         queries.updateJobStatus(JobStatus.FAILED.name, null, clock.now().isoUtc(), jobId)

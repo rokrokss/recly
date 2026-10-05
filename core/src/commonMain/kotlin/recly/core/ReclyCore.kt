@@ -231,6 +231,23 @@ class ReclyCore(
     suspend fun reconnectDrive(): Int = jobs.quiesced { driveJobAccess.reconnect() }
 
     /**
+     * docs/12 "Agent connection": the opaque owner of this device's Drive connection — the same
+     * `about.user.permissionId` a reconnect verifies — so a desktop shell can tell whether
+     * recly-events signed in to the account it uploads to. Null without a Drive connection, or
+     * when Google cannot be asked right now. No email or profile is read, and nothing is kept.
+     */
+    suspend fun driveAccountId(): String? {
+        if (!jobStore.driveConnected()) return null
+        return try {
+            recly.core.drive.DriveApi(deps).accountId()
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
      * docs/03 "Titles": the detail screen's rename. Written locally at once — the list shows it on
      * `recordings.observe()` — and pushed to Drive (the folder's `description` and `meta.json`)
      * right away when the account and the network allow, otherwise by the next job pass. Returns
