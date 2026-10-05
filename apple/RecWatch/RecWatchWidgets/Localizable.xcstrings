@@ -155,79 +155,79 @@
         }
       }
     },
-    "Sending %lld": {
+    "Waiting": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sending %lld"
+            "value": "Waiting"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "보내는 중 %lld"
+            "value": "전송 대기"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "送信中 %lld"
+            "value": "送信待ち"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在发送%lld"
+            "value": "等待中"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在傳送%lld"
+            "value": "等待中"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enviando %lld"
+            "value": "En espera"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envoi de %lld"
+            "value": "En attente"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wird gesendet: %lld"
+            "value": "Wartend"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enviando %lld"
+            "value": "Em espera"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ إرسال %lld"
+            "value": "قيد الانتظار"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld भेजा जा रहा है"
+            "value": "प्रतीक्षा में"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отправка %lld"
+            "value": "К отправке"
           }
         }
       }

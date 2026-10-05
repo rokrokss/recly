@@ -33,12 +33,12 @@ final class WatchComplicationTests: XCTestCase {
     /// docs/03: a part is deleted only after `ack-meta ok` — until the phone acks, the audio is
     /// still on the
     /// watch, and that is worth saying on the face.
-    func testRecordingsWaitingForThePhoneAreCounted() {
+    func testRecordingsWaitingForThePhoneAreShown() {
         let status = WatchStatus(state: .idle, startedAt: nil, waiting: 2)
 
         XCTAssertEqual(status.symbol, "arrow.up.square")
-        // The count cannot ride in a key, so the face formats this branch itself.
-        XCTAssertEqual(status.label, "Sending %lld")
+        // docs/09 screen principle 7: said without a count — whether any are left is the question.
+        XCTAssertEqual(status.label, "Waiting")
         XCTAssertTrue(status.startsOnTap, "a queue is no reason not to start another recording")
     }
 

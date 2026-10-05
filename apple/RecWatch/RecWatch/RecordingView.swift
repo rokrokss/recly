@@ -1,9 +1,9 @@
 import RecKit
 import SwiftUI
 
-/// docs/09 screen principle 7 · docs/13 "Apple Watch": a monospace timer, a square start/stop, one line of
-/// status and the number of recordings the phone still owes an ack for. Nothing else fits, and
-/// nothing else is needed.
+/// docs/09 screen principle 7 · docs/13 "Apple Watch": a monospace timer, a square start/stop and one line of
+/// status, which is also where it says the phone still owes an ack for a recording.
+/// Nothing else fits, and nothing else is needed.
 struct RecordingView: View {
     @ObservedObject var model: WatchRecordingModel
     @Environment(\.blueprint) private var blueprint
@@ -16,9 +16,8 @@ struct RecordingView: View {
     var body: some View {
         ScrollView {
         VStack(spacing: Space.s) {
-            Text(model.status)
+            statusLine
                 .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
-                .foregroundStyle(blueprint.palette.text)
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.center)
 
@@ -32,13 +31,6 @@ struct RecordingView: View {
 
             button
 
-            if model.waiting > 0 {
-                // docs/03: a part is deleted only after `ack-meta ok`, so this is the answer to
-                // "can I take the watch off yet".
-                Text("Sending \(model.waiting)")
-                    .font(blueprint.fonts.monoSmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-            }
             if model.microphoneDenied {
                 Text("Turn the microphone on in Settings > Privacy")
                     .font(blueprint.fonts.sans(TypeSize.small))
@@ -49,6 +41,25 @@ struct RecordingView: View {
         .frame(maxWidth: .infinity)
         }
         .background(blueprint.palette.background)
+    }
+
+    /// docs/09 screen principle 7: what the recorder is doing or last had to say, else the recordings
+    /// still on this watch, else nothing — blank, the line keeps its height so the button does not
+    /// move when something comes back to say.
+    @ViewBuilder
+    private var statusLine: some View {
+        if !model.status.isEmpty {
+            Text(verbatim: model.status)
+                .foregroundStyle(blueprint.palette.text)
+        } else if model.waiting > 0 {
+            // docs/03: a part is deleted only after `ack-meta ok`, so this is the answer to
+            // "can I take the watch off yet". Always "waiting", never "sending": `WCSession` cannot
+            // say whether a queued file is moving (docs/09 screen principle 7).
+            Text("Waiting to send")
+                .foregroundStyle(blueprint.palette.textMuted)
+        } else {
+            Text(verbatim: " ")
+        }
     }
 
     /// docs/09 "Shape": a square node with a thick border, filled while recording — the watch's

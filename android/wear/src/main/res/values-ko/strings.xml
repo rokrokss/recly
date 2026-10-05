@@ -5,23 +5,21 @@
     <string name="recording_start">시작</string>
     <string name="recording_stop">정지</string>
     <string name="recording_busy">…</string>
-    <string name="recording_idle">대기</string>
     <string name="recording_active">녹음 중</string>
     <string name="recording_stopping">저장 중…</string>
     <string name="recording_mic_denied">마이크 권한 필요</string>
-    <string name="recording_saved">저장됨 · %1$d개 · %2$d초</string>
     <string name="recording_save_deferred">저장 마무리 실패 — 다음에 복구</string>
     <string name="recording_failed">실패: %1$s</string>
-    <string name="pending_badge">대기 %1$d개</string>
-    <string name="sending_badge">전송 중 %1$d개</string>
-    <string name="transfer_failed_badge">전송 실패 %1$d개</string>
+    <string name="pending_badge">전송 대기</string>
+    <string name="sending_badge">전송 중</string>
+    <string name="transfer_failed_badge">전송 실패</string>
 
     <string name="tile_start">녹음 시작</string>
     <string name="quick_start_label">Recly 녹음</string>
     <string name="entry_ready">대기 중</string>
     <string name="complication_recording">REC</string>
-    <string name="complication_pending">대기 %1$d</string>
-    <string name="complication_sending">전송 중 %1$d</string>
+    <string name="complication_pending">전송 대기</string>
+    <string name="complication_sending">전송 중</string>
     <string name="complication_idle">Recly</string>
 
     <string name="info_open">안내</string>

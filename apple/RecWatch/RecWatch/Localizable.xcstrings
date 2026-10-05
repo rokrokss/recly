@@ -78,83 +78,6 @@
         }
       }
     },
-    "Idle": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Idle"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "대기"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "待機中"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "空闲"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "閒置"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inactivo"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inactif"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bereit"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inativo"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "خامل"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "निष्क्रिय"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ожидание"
-          }
-        }
-      }
-    },
     "Opening": {
       "extractionState": "manual",
       "localizations": {
@@ -463,79 +386,79 @@
         }
       }
     },
-    "Sending %lld": {
+    "Waiting to send": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sending %lld"
+            "value": "Waiting to send"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "보내는 중 %lld"
+            "value": "전송 대기"
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "送信中 %lld"
+            "value": "送信待ち"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在发送%lld"
+            "value": "等待发送"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "正在傳送%lld"
+            "value": "等待傳送"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enviando %lld"
+            "value": "Pendiente de envío"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envoi de %lld"
+            "value": "En attente d'envoi"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wird gesendet: %lld"
+            "value": "Senden ausstehend"
           }
         },
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enviando %lld"
+            "value": "Aguardando envio"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "جارٍ إرسال %lld"
+            "value": "بانتظار الإرسال"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lld भेजा जा रहा है"
+            "value": "भेजने की प्रतीक्षा में"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Отправка %lld"
+            "value": "Ожидает отправки"
           }
         }
       }

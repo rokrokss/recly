@@ -172,12 +172,13 @@ class WearRecordingViewModelTest {
     }
 
     /**
-     * The screen says what happened and queues nothing. `RecWearApp.onRecordingReady` has already
-     * put the recording on the transfer queue by the time this event lands — which is the point: a
-     * recording stopped from the watch-face chip finishes with no screen alive to see it.
+     * A stop that went as asked is not announced (docs/09 §7), and the screen queues nothing.
+     * `RecWearApp.onRecordingReady` has already put the recording on the transfer queue by the time
+     * this event lands — which is the point: a recording stopped from the watch-face chip finishes
+     * with no screen alive to see it.
      */
     @Test
-    fun `a finished recording is reported, not queued`() = runTest(dispatcher) {
+    fun `a finished recording is neither announced nor queued`() = runTest(dispatcher) {
         val vm = viewModel()
         runCurrent()
 
@@ -185,7 +186,20 @@ class WearRecordingViewModelTest {
         runCurrent()
 
         assertEquals(emptyList(), queue.added)
-        assertEquals(WearMessage.Saved(parts = 2, durationSec = 61), vm.state.value.message)
+        assertNull(vm.state.value.message)
+    }
+
+    /** A fatal capture error stops the recording; the finish that follows does not wipe the failure. */
+    @Test
+    fun `a failure outlives the finish it causes`() = runTest(dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+
+        recorder.emit(RecorderEvent.Failed("01J9REC", "mic busy"))
+        recorder.emit(RecorderEvent.Finished("01J9REC", durationSec = 12.0, parts = 1, silenced = emptyList(), enqueue = true))
+        runCurrent()
+
+        assertEquals(WearMessage.Failed("mic busy"), vm.state.value.message)
     }
 
     /** A deferred stop did not finalize: the meta is still open, so there is nothing to send yet. */
@@ -242,7 +256,7 @@ class WearRecordingViewModelTest {
         assertFalse(vm.state.value.handingOver)
     }
 
-    /** The last recording of a pass leaves the queue before the pass ends: no `Sending 0`. */
+    /** The last recording of a pass leaves the queue before the pass ends: no `Sending` over an empty queue. */
     @Test
     fun `an empty queue is never sending`() = runTest(dispatcher) {
         val vm = viewModel()

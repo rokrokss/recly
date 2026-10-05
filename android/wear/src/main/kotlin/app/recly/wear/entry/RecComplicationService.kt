@@ -36,8 +36,8 @@ class RecComplicationService : SuspendingComplicationDataSourceService() {
         return shortText(
             text = when {
                 recording -> getString(R.string.complication_recording)
-                pending > 0 && sending -> getString(R.string.complication_sending, pending)
-                pending > 0 -> getString(R.string.complication_pending, pending)
+                pending > 0 && sending -> getString(R.string.complication_sending)
+                pending > 0 -> getString(R.string.complication_pending)
                 else -> getString(R.string.complication_idle)
             },
             description = entryStatus(),

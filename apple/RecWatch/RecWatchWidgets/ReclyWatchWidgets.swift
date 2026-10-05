@@ -96,8 +96,6 @@ struct ComplicationFace: View {
     /// itself, so the app writes the language it is following into the status file and the face
     /// hands it down as `\.locale` — which is what resolves these keys.
     private var title: Text {
-        status.waiting > 0 && !status.isRecording
-            ? Text("Sending \(status.waiting)")
-            : Text(LocalizedStringKey(status.label))
+        Text(LocalizedStringKey(status.label))
     }
 }

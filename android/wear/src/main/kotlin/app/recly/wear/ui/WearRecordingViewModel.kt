@@ -44,19 +44,18 @@ data class WearUiState(
     /**
      * docs/11 W2: the badge reads "sending" only while there is something in flight to say it
      * about — the last recording of a pass is removed from the queue before the pass ends, and
-     * `Sending 0` would be the badge saying so.
+     * `Sending` over an empty queue would be the badge saying so.
      */
     val handingOver: Boolean get() = sending && pending > 0
 }
 
 /**
- * What the line under the clock says about the recording that just ended. The ViewModel has no
- * `Context` — it is a plain `ViewModel`, so the whole of it runs on the JVM — so it names the
- * string and the screen looks it up in the watch's language (docs/07).
+ * What the line under the clock says about the recording that just ended — only when there is news:
+ * a stop that went as asked is not announced (docs/09 §7). The ViewModel has no `Context` — it is a
+ * plain `ViewModel`, so the whole of it runs on the JVM — so it names the string and the screen
+ * looks it up in the watch's language (docs/07).
  */
 sealed interface WearMessage {
-    data class Saved(val parts: Int, val durationSec: Int) : WearMessage
-
     data object SaveDeferred : WearMessage
 
     data class Failed(val reason: String) : WearMessage
@@ -119,15 +118,11 @@ class WearRecordingViewModel(
     private fun onEvent(event: RecorderEvent) {
         when (event) {
             // A deferred stop did not finalize: the parts are on disk, the meta is still open and
-            // the next recovery scan is what finishes it. Nothing was handed over.
-            is RecorderEvent.Finished -> _state.update {
-                it.copy(
-                    message = if (event.deferred) {
-                        WearMessage.SaveDeferred
-                    } else {
-                        WearMessage.Saved(event.parts, event.durationSec.toInt())
-                    },
-                )
+            // the next recovery scan is what finishes it. Nothing was handed over. A stop that did
+            // finalize says nothing, and leaves standing the failure that may have caused it — the
+            // line goes on to the count of what is still on this watch.
+            is RecorderEvent.Finished -> if (event.deferred) {
+                _state.update { it.copy(message = WearMessage.SaveDeferred) }
             }
 
             is RecorderEvent.Failed -> _state.update { it.copy(message = WearMessage.Failed(event.reason)) }

@@ -22,9 +22,9 @@ suspend fun Context.entryStatus(): String {
     val pending = app?.pendingCount() ?: 0
     if (pending == 0) return getString(R.string.entry_ready)
     // docs/11 W2: the screen's own rule — a pass with a phone on the other end is "sending", and
-    // the same count with nobody there is "waiting".
+    // the same recordings with nobody there are "waiting".
     val sending = app?.queue?.sending?.value == true
-    return getString(if (sending) R.string.sending_badge else R.string.pending_badge, pending)
+    return getString(if (sending) R.string.sending_badge else R.string.pending_badge)
 }
 
 /**

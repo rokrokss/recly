@@ -20,7 +20,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     static let shared = WatchRecordingModel()
 
     @Published private(set) var state: RecorderState = .idle
-    /// docs/07 rule 3: a *key*, resolved by [status] where the screen draws it.
+    /// docs/07 rule 3: a *key*, resolved by [status] where the screen draws it. Empty is "nothing to
+    /// say": the screen shows the waiting count there instead, or nothing (docs/09 screen principle 7).
     @Published private(set) var note = "Opening"
     @Published private(set) var elapsed = ""
     @Published private(set) var isReady = false
@@ -109,7 +110,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
 
             observeBecomingActive()
             isReady = true
-            note = "Idle"
+            note = ""
             logger.info(
                 """
                 shell.ready device=\(bridge.deps.device.deviceId, privacy: .private) \
@@ -202,7 +203,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             )
 
         case .finalized(let outcome):
-            note = "Idle"
+            note = ""
             WKInterfaceDevice.current().play(.stop)
             logger.info(
                 """

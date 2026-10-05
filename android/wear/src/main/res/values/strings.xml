@@ -8,18 +8,16 @@
     <string name="recording_start">Start</string>
     <string name="recording_stop">Stop</string>
     <string name="recording_busy">…</string>
-    <string name="recording_idle">Idle</string>
     <string name="recording_active">Recording</string>
     <string name="recording_stopping">Saving…</string>
     <string name="recording_mic_denied">The microphone permission is needed</string>
-    <string name="recording_saved">Saved · %1$d parts · %2$d s</string>
     <string name="recording_save_deferred">Could not finish saving — recovered next time</string>
     <string name="recording_failed">Failed: %1$s</string>
-    <!-- docs/11 W2: the same count, said as the pass sees it — waiting for a phone, or going
-         over to one right now. -->
-    <string name="pending_badge">%1$d waiting</string>
-    <string name="sending_badge">Sending %1$d</string>
-    <string name="transfer_failed_badge">%1$d transfers failed</string>
+    <!-- docs/11 W2: the same recordings, said as the pass sees them — waiting for a phone, or
+         going over to one right now. No count: what the user asks is whether any are left. -->
+    <string name="pending_badge">Waiting to send</string>
+    <string name="sending_badge">Sending</string>
+    <string name="transfer_failed_badge">Transfer failed</string>
 
     <!-- docs/11 W5: the tile and the complication. They render outside the app process, so the
          wording is the whole of the state they can show. -->
@@ -28,8 +26,8 @@
     <string name="quick_start_label">Recly Record</string>
     <string name="entry_ready">Idle</string>
     <string name="complication_recording">REC</string>
-    <string name="complication_pending">%1$d waiting</string>
-    <string name="complication_sending">Sending %1$d</string>
+    <string name="complication_pending">Waiting</string>
+    <string name="complication_sending">Sending</string>
     <string name="complication_idle">Recly</string>
 
     <!-- docs/11 W5 "setup guide screen". Neither place can be deep-linked from here, so the screen can

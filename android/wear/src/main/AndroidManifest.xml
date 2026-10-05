@@ -82,7 +82,7 @@
                 android:resource="@mipmap/ic_launcher" />
         </service>
 
-        <!-- docs/11 W5: the complication. One SHORT_TEXT ("REC" / "n waiting"); a tap opens the app. -->
+        <!-- docs/11 W5: the complication. One SHORT_TEXT ("REC" / "Waiting"); a tap opens the app. -->
         <service
             android:name=".entry.RecComplicationService"
             android:exported="true"

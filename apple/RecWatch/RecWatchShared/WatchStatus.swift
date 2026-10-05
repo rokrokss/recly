@@ -61,11 +61,11 @@ extension WatchStatus {
         return waiting > 0 ? "arrow.up.square" : "mic"
     }
 
-    /// A docs/07 key. The waiting one carries a count, which a key cannot, so the face formats
-    /// that branch itself — this names the key it uses.
+    /// A docs/07 key. Waiting recordings are said without a count, and as waiting rather than
+    /// sending (docs/09 screen principle 7): what the face answers is whether any are left.
     var label: String {
         if isRecording { return "Recording" }
-        return waiting > 0 ? "Sending %lld" : "Record"
+        return waiting > 0 ? "Waiting" : "Record"
     }
 
     /// The complication's tap: start when there is nothing running, stop when there is. Both run in

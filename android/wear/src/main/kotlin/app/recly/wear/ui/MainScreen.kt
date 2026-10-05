@@ -26,14 +26,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.wear.compose.foundation.requestFocusOnHierarchyActive
+import androidx.wear.compose.foundation.rotary.RotaryScrollableDefaults
+import androidx.wear.compose.foundation.rotary.rotaryScrollable
 import androidx.wear.compose.material3.AppScaffold
 import androidx.wear.compose.material3.ButtonDefaults
 import androidx.wear.compose.material3.CompactButton
@@ -89,58 +95,48 @@ private fun RecordScreen(
                 .fillMaxSize()
                 .background(WearBlueprint.background)
                 .verticalScroll(scrollState)
-                .padding(padding)
-                .padding(horizontal = 16.dp),
+                // docs/11 W2: Help is below the fold, and a Galaxy Watch is scrolled with its bezel.
+                .requestFocusOnHierarchyActive()
+                .rotaryScrollable(RotaryScrollableDefaults.behavior(scrollState), remember { FocusRequester() }),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
         ) {
-            FitToWatch {
-                Text(
-                    text = formatElapsed(elapsedSeconds(state.startedAt)),
-                    style = WearBlueprint.timer,
-                    color = WearBlueprint.text,
-                    maxLines = 1,
-                )
-
-                // docs/09 §7 "one-line status": the state as a code and a colour, and — when a stop had
-                // something to report — what it was, because on a watch there is nowhere else to put it.
-                Text(
-                    text = state.message?.text() ?: stringResource(statusLabel(state)),
-                    style = WearBlueprint.small,
-                    color = if (state.canStop) WearBlueprint.danger else WearBlueprint.textMuted,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                )
-
-                Spacer(Modifier.height(10.dp))
-                RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
-
-                Spacer(Modifier.height(8.dp))
-                // docs/11 "Caveats": Samsung will delay the worker, so the badge says "n waiting" rather
-                // than pretending the phone has it. A refusal is worse news than a wait and gets its
-                // own line — the audio is still on this watch and nothing will retry it.
-                // docs/11 W2: while a pass has a phone and is handing files over, the same count is
-                // "n sending" — a delayed worker and a transfer in flight are the user's two questions
-                // about the same number, and only the sender can tell them apart.
-                Text(
-                    text = stringResource(
-                        if (state.handingOver) R.string.sending_badge else R.string.pending_badge,
-                        state.pending,
-                    ),
-                    style = WearBlueprint.small,
-                    color = WearBlueprint.textMuted,
-                    maxLines = 3,
-                )
-                if (state.failed > 0) {
+            // docs/11 W2: the record screen is the whole first screen. The guide is read once; the
+            // button is what every visit is for.
+            Column(
+                modifier = Modifier
+                    .height(LocalConfiguration.current.screenHeightDp.dp)
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                FitToWatch {
                     Text(
-                        text = stringResource(R.string.transfer_failed_badge, state.failed),
-                        style = WearBlueprint.small,
-                        color = WearBlueprint.danger,
-                        maxLines = 3,
+                        text = formatElapsed(elapsedSeconds(state.startedAt)),
+                        style = WearBlueprint.timer,
+                        color = WearBlueprint.text,
+                        maxLines = 1,
                     )
-                }
 
-                Spacer(Modifier.height(6.dp))
+                    // docs/09 §7 "one-line status": the one thing worth saying, and nothing when
+                    // there is none. Blank, the line still holds a real one's height, measured in the
+                    // watch's own script — a Hangul line stands taller than a Latin or empty one, and
+                    // the node would hop when something came back to say.
+                    val line = statusLine(state)
+                    Text(
+                        text = line?.first ?: stringResource(R.string.recording_active),
+                        modifier = if (line == null) Modifier.clearAndSetSemantics {} else Modifier,
+                        style = WearBlueprint.small,
+                        color = line?.second ?: Color.Transparent,
+                        textAlign = TextAlign.Center,
+                        maxLines = 2,
+                    )
+
+                    Spacer(Modifier.height(10.dp))
+                    RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
+                }
+            }
+            FitToWatch {
                 CompactButton(
                     onClick = onInfo,
                     shape = RoundedCornerShape(WearBlueprint.radius),
@@ -149,7 +145,34 @@ private fun RecordScreen(
                     label = { Text(text = stringResource(R.string.info_open), maxLines = 1) },
                 )
             }
+            Spacer(Modifier.height(padding.calculateBottomPadding()))
         }
+    }
+}
+
+/**
+ * docs/09 §7 "one-line status", in the order it is worth saying: what a stop had to report, what the
+ * recorder is doing, then what is still on this watch. Idle with nothing left it is `null` — the
+ * hollow node and 00:00 already do.
+ *
+ * docs/11 "Caveats": Samsung will delay the worker, so the line says "waiting to send" rather than
+ * pretending the phone has it, and W2: while a pass has a phone and is handing files over, the same
+ * recordings are "sending". No count — what the user asks is whether any are left. A refusal is
+ * worse news than a wait and outranks it — the audio is still on this watch and nothing will retry it.
+ */
+@Composable
+private fun statusLine(state: WearUiState): Pair<String, Color>? {
+    val message = state.message
+    return when {
+        message != null -> message.text() to WearBlueprint.textMuted
+        state.recorder is RecorderState.Recording -> stringResource(R.string.recording_active) to WearBlueprint.danger
+        state.recorder == RecorderState.Starting -> stringResource(R.string.recording_busy) to WearBlueprint.textMuted
+        state.recorder == RecorderState.Stopping -> stringResource(R.string.recording_stopping) to WearBlueprint.textMuted
+        state.failed > 0 -> stringResource(R.string.transfer_failed_badge) to WearBlueprint.danger
+        state.pending > 0 -> stringResource(
+            if (state.handingOver) R.string.sending_badge else R.string.pending_badge,
+        ) to WearBlueprint.textMuted
+        else -> null
     }
 }
 
@@ -206,17 +229,9 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
 /** docs/07: the ViewModel names the string, the screen says it in the watch's language. */
 @Composable
 private fun WearMessage.text(): String = when (this) {
-    is WearMessage.Saved -> stringResource(R.string.recording_saved, parts, durationSec)
     WearMessage.SaveDeferred -> stringResource(R.string.recording_save_deferred)
     is WearMessage.Failed -> stringResource(R.string.recording_failed, reason)
     WearMessage.MicDenied -> stringResource(R.string.recording_mic_denied)
-}
-
-private fun statusLabel(state: WearUiState): Int = when (state.recorder) {
-    RecorderState.Idle -> R.string.recording_idle
-    RecorderState.Starting -> R.string.recording_busy
-    RecorderState.Stopping -> R.string.recording_stopping
-    is RecorderState.Recording -> R.string.recording_active
 }
 
 /**

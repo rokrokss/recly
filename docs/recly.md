@@ -2068,9 +2068,15 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
-7. **Watch**: mono timer + square start/stop, **one-line status**, the transfer waiting count — while the transfer pass is finding the phone and handing over files,
-   the same count is spoken as `Sending %1$d` (2026-09-04; tiles and complications follow the same rule).
-   Waiting and sending are two questions the user asks about the same number, and only the transfer pass knows which one applies.
+7. **Watch**: mono timer + square start/stop, **one-line status**, recordings still waiting to transfer — while the transfer pass is finding the phone and handing over files,
+   the same recordings are spoken as `Sending` (2026-09-04; tiles and complications follow the same rule).
+   Waiting and sending are two questions the user asks about the same recordings, and only the transfer pass knows which one applies.
+   Apple Watch always says `Waiting to send` (complication `Waiting`) until the phone acks (2026-10-05): `WCSession` cannot tell a queued file from one that is
+   moving — `isTransferring` is true until delivery and the system may throttle it — so "sending" would be a guess.
+   The transfer state shares the status line rather than taking a second one, and is said **without a count** — what the user asks is whether any recordings are left,
+   and the number does not change what they do (2026-10-05, both watches, tiles and complications included). The line says one thing, in this order: what a stop had to report
+   (a failure, a deferred save), what the recorder is doing, transfers the phone refused (Wear), then recordings still on the watch. Idle with nothing
+   left, it is blank and keeps its height, because the hollow button already says the watch is ready. A stop that went as asked is not announced.
 8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
    - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
      settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing
@@ -2536,7 +2542,7 @@ android/
 | # | Scope |
 |---|---|
 | W1 | Skeleton: Wear Compose M3, `standalone=false` (phone app required), reuses `RecorderService` |
-| W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, n waiting to transfer (`Sending n` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04). There are only two screens and no navigation library — the only journey on the watch is "record" |
+| W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, recordings waiting to transfer (`Sending` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04; in the status line without a count, §9 screen principle 7). The record screen fills the first screen, and Help sits below it, reached by touch or bezel scroll (2026-10-05). There are only two screens and no navigation library — the only journey on the watch is "record" |
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
 | W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
 | W5 | Entry points: tile (`launchAction`), complication (state), **a second launcher item "Recly Record"** (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
@@ -2549,14 +2555,15 @@ android/
 - The watch app has no auth, network or workflow execution code. From `:core` it uses only `model`, `recording` and `transfer` (the sending-side
   queue model), and the module has no HTTP client at all.
 - If battery optimization is on for the Galaxy Wearable app, the BT proxy drops — this is included in the setup guide.
-- **Samsung sleeping apps delay WorkManager.** The UI does not hide it and honestly shows "n waiting"
+- **Samsung sleeping apps delay WorkManager.** The UI does not hide it and honestly shows "Waiting to send"
   (2026-09-02: the "Upload now" button is gone — opening the app runs a foreground pass, and "Retry" runs a failed job
   at once).
 - **Round screens** (2026-09-29, Play Wear quality rejection for "watch shape"): a scrolling list shrinks an item only once it has almost entirely left the screen,
   so a whole paragraph in one item gets clipped by the curve above and below the center. The setup guide screen gives the title and each sentence its own item
   (the split follows the language's sentence boundaries, so the translations stay whole paragraphs) and centers them; it adds 9.4% of the screen width to the scaffold's 5.2% on each side
   to fit the width of the square inscribed in the circle (14.6% per side), and it opens at the first item. The recording screen takes sizes designed for a large round watch (227dp)
-  and scales them down by the width ratio on smaller watches (§9 "Fluid typography") — on a 192dp watch the Help button caught on the bottom curve.
+  and scales them down by the width ratio on smaller watches (§9 "Fluid typography") — on a 192dp watch the Help button caught on the bottom curve
+  (it has been below the first screen since 2026-10-05).
   Verification uses round 454 px and 384 px emulators at font scale 1.0 and 1.24, with screenshots when the screen opens, mid-scroll and at the end.
 
 ---
