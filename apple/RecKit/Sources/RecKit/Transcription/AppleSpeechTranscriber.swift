@@ -75,7 +75,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     func __status(language: String) async throws -> LocalEngineInfo {
         guard SpeechTranscriber.isAvailable, let locale = await locale(language) else { return info(.unsupported) }
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
-        guard await AssetInventory.status(forModules: [module]) == .installed else {
+        guard await Self.installed(module, locale) else {
             // The system does not say how big its assets are: a share of them, and no byte count.
             let download = lock.withLock { installing }.flatMap { $0.language == language ? $0 : nil }
             return info(.modelRequired, progress: download?.request.progress.fractionCompleted, downloading: download != nil)
@@ -162,6 +162,15 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     /// not hold it back either.
     private static var tooHot: Bool {
         ProcessInfo.processInfo.thermalState.rawValue >= ProcessInfo.ThermalState.serious.rawValue
+    }
+
+    /// docs/05 "Fixed processing settings": either answer that the assets are here is enough.
+    /// `AssetInventory.status` went on saying `.supported` after the system had finished installing
+    /// the Korean assets, while `installedLocales` already listed the locale; a locale that is only
+    /// downloadable is in neither.
+    private static func installed(_ module: SpeechTranscriber, _ locale: Locale) async -> Bool {
+        if await AssetInventory.status(forModules: [module]) == .installed { return true }
+        return await SpeechTranscriber.installedLocales.contains { $0.identifier == locale.identifier }
     }
 
     private func locale(_ language: String) async -> Locale? {

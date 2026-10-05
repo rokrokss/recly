@@ -1304,6 +1304,8 @@ The overall direction and the conditions for a real-device release follow the [f
   the download continues after leaving the app, and choosing `Download on Wi-Fi` waits for an unmetered connection (`Waiting for Wi-Fi`).
 - Apple's local engine is the iOS/macOS 26 `SpeechTranscriber`/`SpeechAnalyzer`, and the user requests the language asset download in settings.
   For a shared asset installation already handed to the OS, the OS manages when it completes and when it is retried.
+  The model counts as present when `AssetInventory.status` answers `installed` or `SpeechTranscriber.installedLocales` lists the locale — on
+  macOS 26.6 the status still answered `supported` minutes after the system had finished the install, while `installedLocales` already listed it (2026-10-05).
   When a model download finishes, only `NEEDS_MODEL` waits for the same language resume automatically;
   completed uploads, saved transcription progress, other failures and the disconnected state are kept. The download is requested from the system regardless of thermal and power state
   (thermal and power limits apply only to transcription, 2026-09-27). If the request ends and the model is still missing (except on cancel), `The model didn’t finish downloading. Try again.`
