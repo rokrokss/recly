@@ -123,7 +123,8 @@ macOS as one universal binary signed with Developer ID and notarized (`NOTARY_PR
 `LICENSE-EXCEPTIONS.md` and `THIRD-PARTY-NOTICES.txt`, the licence and NOTICE files of every linked
 Go module (`events/scripts/notices.sh`). Recly's
 desktop OAuth client is compiled in from `local.properties`, as for the Windows app; the script
-stops without it, and when `events/` has uncommitted changes. `UPLOAD=1` also creates a draft
+stops without it, and when `events/` has uncommitted changes. The build flags live in
+`events/scripts/build.sh`, which `make events`, `make mac-helper` and the Windows release job use too. `UPLOAD=1` also creates a draft
 pre-release that does not become "Latest"; publishing it creates the tag. CI
 (`.github/workflows/events.yml`) tests `events/` on Linux, macOS and Windows.
 

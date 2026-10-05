@@ -109,13 +109,10 @@ jobs:
           REC_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.REC_GOOGLE_DESKTOP_CLIENT_SECRET }}
         run: |
           set -e
-          cd events
-          go test ./...
-          CGO_ENABLED=0 go build -trimpath \
-            -ldflags "-s -w -X main.version=app-${GITHUB_SHA::7} -X main.googleClientID=$REC_GOOGLE_DESKTOP_CLIENT_ID -X main.googleClientSecret=$REC_GOOGLE_DESKTOP_CLIENT_SECRET" \
-            -o ../windows/app/resources/windows-x64/recly-events.exe ./cmd/recly-events
-          ../windows/app/resources/windows-x64/recly-events.exe version
-          bash scripts/notices.sh > ../windows/app/resources/common/THIRD-PARTY-recly-events.txt
+          (cd events && go test ./...)
+          REQUIRE_CLIENT=1 bash events/scripts/build.sh windows/app/resources/windows-x64/recly-events.exe "app-${GITHUB_SHA::7}"
+          windows/app/resources/windows-x64/recly-events.exe version
+          bash events/scripts/notices.sh > windows/app/resources/common/THIRD-PARTY-recly-events.txt
 
       # jpackage shells out to WiX 3 (`candle`/`light`) and finds it on PATH or not at all.
       - name: WiX 3 on PATH

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Builds the recly-events release archives on a Mac (docs/development.md "recly-events releases"):
 # macOS as one universal binary, signed with Developer ID and notarized; Linux amd64 and arm64;
-# Windows amd64, not code-signed; and SHA256SUMS. Recly's desktop OAuth client is compiled in,
-# read from local.properties or the environment like `make events`. It is never committed.
+# Windows amd64, not code-signed; and SHA256SUMS. Recly's desktop OAuth client is compiled in by
+# build.sh, as for `make events`; it is never committed, and without it nothing is built.
 #
 #   TAG=events-v0.1.0 NOTARY_PROFILE=recly events/scripts/release.sh            # → events/dist/0.1.0/
 #   TAG=events-v0.1.0 NOTARY_PROFILE=recly UPLOAD=1 events/scripts/release.sh   # and a draft release
@@ -27,16 +27,6 @@ if [[ -n "$(git status --porcelain -- events)" ]]; then
 fi
 commit="$(git rev-parse HEAD)"
 
-prop() { sed -n "s/^$1=//p" local.properties 2>/dev/null | head -1; }
-client_id="$(prop google.desktopClientId)"
-client_id="${client_id:-${REC_GOOGLE_DESKTOP_CLIENT_ID:-}}"
-client_secret="$(prop google.desktopClientSecret)"
-client_secret="${client_secret:-${REC_GOOGLE_DESKTOP_CLIENT_SECRET:-}}"
-if [[ -z "$client_id" || -z "$client_secret" || "$client_id$client_secret" == *REPLACE_ME* ]]; then
-  echo "release: no Recly desktop OAuth client (google.desktopClientId/Secret in local.properties)" >&2
-  exit 1
-fi
-
 identity="$(security find-identity -v -p codesigning \
   | sed -n 's/.*"\(Developer ID Application:.*\)"$/\1/p' | head -1)"
 if [[ -z "$identity" ]]; then
@@ -48,13 +38,10 @@ out="events/dist/$version"
 work="$out/work"
 rm -rf "$out"
 mkdir -p "$work"
-ldflags="-s -w -X main.version=$version -X main.googleClientID=$client_id -X main.googleClientSecret=$client_secret"
 
-# build GOOS GOARCH OUTPUT
+# build GOOS GOARCH OUTPUT — with Recly's desktop client, or not at all (build.sh).
 build() {
-  mkdir -p "$(dirname "$3")"
-  (cd events && CGO_ENABLED=0 GOOS="$1" GOARCH="$2" go build -trimpath -ldflags "$ldflags" \
-    -o "../$3" ./cmd/recly-events)
+  GOOS="$1" GOARCH="$2" REQUIRE_CLIENT=1 events/scripts/build.sh "$3" "$version"
 }
 
 # stage NAME BINARY — a directory with the binary, its licence and its dependencies' notices.

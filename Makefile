@@ -93,13 +93,10 @@ helper-test:
 
 # ---- recly-events (optional companion server, Go)
 
-# Recly's desktop OAuth client (the Windows app's), compiled in so `recly-events init --google`
-# needs no Google Cloud setup. From local.properties, else the environment; never committed, never echoed.
-EVENTS_GOOGLE_ID = $(or $(shell sed -n 's/^google.desktopClientId=//p' local.properties 2>/dev/null),$(REC_GOOGLE_DESKTOP_CLIENT_ID))
-EVENTS_GOOGLE_SECRET = $(or $(shell sed -n 's/^google.desktopClientSecret=//p' local.properties 2>/dev/null),$(REC_GOOGLE_DESKTOP_CLIENT_SECRET))
-
+# events/scripts/build.sh compiles in Recly's desktop OAuth client (the Windows app's) from
+# local.properties or the environment, so `recly-events init --google` needs no Google Cloud setup.
 events:
-	@cd events && go build -ldflags "-X main.googleClientID=$(EVENTS_GOOGLE_ID) -X main.googleClientSecret=$(EVENTS_GOOGLE_SECRET)" -o bin/recly-events ./cmd/recly-events
+	@events/scripts/build.sh events/bin/recly-events
 	@echo "built events/bin/recly-events"
 
 events-test:
@@ -124,10 +121,7 @@ mac: mac-helper
 # from local.properties), with its notices. Without Go the app is built without it.
 mac-helper:
 	@if command -v go > /dev/null; then \
-	  mkdir -p apple/build/recly-events && \
-	  (cd events && CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath \
-	    -ldflags "-s -w -X main.version=app-$$(git rev-parse --short HEAD) -X main.googleClientID=$(EVENTS_GOOGLE_ID) -X main.googleClientSecret=$(EVENTS_GOOGLE_SECRET)" \
-	    -o ../apple/build/recly-events/recly-events ./cmd/recly-events) && \
+	  GOOS=darwin GOARCH=arm64 events/scripts/build.sh apple/build/recly-events/recly-events app-$$(git rev-parse --short HEAD) && \
 	  events/scripts/notices.sh > apple/build/recly-events/THIRD-PARTY-NOTICES.txt; \
 	else echo "mac-helper: no Go; Recly Mac is built without recly-events"; fi
 
