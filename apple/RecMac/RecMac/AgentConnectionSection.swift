@@ -57,7 +57,10 @@ struct AgentConnectionSection: View {
                 .padding(.bottom, Space.s)
             }
         }
-        .onAppear { tunnelId = agent.tunnelId }
+        .onAppear {
+            tunnelId = agent.tunnelId
+            agent.refreshNow()
+        }
         .onChange(of: agent.tunnelId) { _, saved in
             if tunnelId.isEmpty { tunnelId = saved }
         }

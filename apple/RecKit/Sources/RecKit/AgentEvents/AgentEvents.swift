@@ -243,6 +243,12 @@ public final class AgentEventsController: ObservableObject {
         }
     }
 
+    /// Looks again now rather than at the next tick. A menu bar app out of sight is napped and its
+    /// timer can run minutes late, so the section asks when it is shown.
+    public func refreshNow() {
+        Task { await refresh() }
+    }
+
     /// The app is quitting: the server goes with it.
     public func shutdown() {
         timer?.invalidate()
