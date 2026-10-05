@@ -564,7 +564,7 @@ class CrossShellDictionaryTest {
             Line(
                 what = "the agent connection switch",
                 en = "Tell ChatGPT about new recordings",
-                ko = "ChatGPT에 새 녹음 알리기",
+                ko = "ChatGPT에 새 녹음 전달하기",
                 windows = "agent.toggle",
                 mac = "Tell ChatGPT about new recordings",
             ),
