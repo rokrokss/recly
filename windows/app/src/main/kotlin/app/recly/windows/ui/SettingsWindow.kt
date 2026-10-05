@@ -26,7 +26,6 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.agent.AgentEvents
-import app.recly.windows.agent.AgentEventsAccount
 import app.recly.windows.agent.AgentEventsPhase
 import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
@@ -255,14 +254,15 @@ private fun Startup(model: ShellModel, strings: Strings) {
 
 /**
  * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
- * go to Google Drive. The switch only decides whether it runs: what `serve` needs — recly-events' own
- * Google sign-in and an OpenAI tunnel — can be set up or changed with it off, and the set-up guide stays
- * in view until an agent subscribes. On, one line under the switch says how the server is.
+ * go to Google Drive. It runs on this PC's own Drive connection, so the one thing it asks for is an
+ * OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
+ * off, and the set-up guide stays in view until an agent subscribes. On, one line under the switch says
+ * how the server is.
  */
 @Composable
 private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
-    // Asked again whenever this window comes to the front: the Drive this PC uploads to may have been
-    // reconnected while it was behind.
+    // Asked again whenever this window comes to the front: the server may have come or gone while it
+    // was behind.
     val focused = LocalWindowInfo.current.isWindowFocused
     LaunchedEffect(focused) { if (focused) agent.sectionShown() }
     Section(strings[Str.AGENT_SECTION])
@@ -283,7 +283,6 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     if (note != null) return
     // Off, the phase says nothing: the line is there only while the switch is on.
     AgentStatus(agent, strings)
-    AgentGoogle(agent, strings)
     AgentTunnel(agent, strings)
     if (!agent.subscribed) {
         SectionFootnote(strings[Str.AGENT_FOOTNOTE])
@@ -294,68 +293,31 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
 }
 
 /**
- * One line under the switch, and only what the rows below do not already say: nothing while set-up
- * is incomplete or the sign-in is what is wrong. The square loader only while something is under way;
- * a running server says that it works, or what to do next — never what is merely possible.
+ * One line under the switch, and only what the rows below do not already say: nothing while the tunnel
+ * row asks for its fields. The square loader only while something is under way; a running server says
+ * that it works, or what to do next — never what is merely possible.
  */
 @Composable
 private fun AgentStatus(agent: AgentEvents, strings: Strings) {
     when (val phase = agent.phase) {
         AgentEventsPhase.Off, AgentEventsPhase.Unavailable, AgentEventsPhase.NotDrive,
-        AgentEventsPhase.NeedsSetup, AgentEventsPhase.GoogleEnded -> Unit
-        AgentEventsPhase.SigningIn -> AgentWorking(strings[Str.AGENT_STATUS_SIGNING_IN])
+        AgentEventsPhase.NeedsSetup -> Unit
+        AgentEventsPhase.NeedsDrive -> AgentLine(strings[Str.AGENT_STATUS_NEEDS_DRIVE])
         AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
         AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
-        // Another account sees none of Recly's files, so the agent hears nothing: the row says so.
-        is AgentEventsPhase.Running -> if (agent.account != AgentEventsAccount.DIFFERENT) {
-            AgentLine(
-                strings[
-                    when (phase.subscription) {
-                        AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
-                        AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
-                        AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
-                    },
-                ],
-            )
-        }
+        is AgentEventsPhase.Running -> AgentLine(
+            strings[
+                when (phase.subscription) {
+                    AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
+                    AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
+                    AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
+                },
+            ],
+        )
         AgentEventsPhase.TunnelError -> AgentLine(strings[Str.AGENT_STATUS_TUNNEL_ERROR], danger = true)
         AgentEventsPhase.Elsewhere -> AgentLine(strings[Str.AGENT_STATUS_ELSEWHERE])
         AgentEventsPhase.GaveUp -> AgentLine(strings[Str.AGENT_STATUS_GAVE_UP], danger = true)
     }
-}
-
-/**
- * recly-events' own Google sign-in — a consent of its own, not the Drive connection that uploads —
- * named for what it is, and whether it is the account Recly uploads to. A working sign-in has no
- * button.
- */
-@Composable
-private fun AgentGoogle(agent: AgentEvents, strings: Strings) {
-    val (subtitle, button) = when {
-        !agent.googleSignedIn -> Str.AGENT_GOOGLE_SIGN_IN_HINT to Str.AGENT_GOOGLE_SIGN_IN
-        agent.googleEnded -> Str.AGENT_GOOGLE_ENDED to Str.AGENT_GOOGLE_SIGN_IN_AGAIN
-        agent.account == AgentEventsAccount.DIFFERENT -> Str.AGENT_GOOGLE_DIFFERENT to Str.AGENT_GOOGLE_SIGN_IN_AGAIN
-        agent.account == AgentEventsAccount.SAME -> Str.AGENT_GOOGLE_SAME to null
-        else -> Str.AGENT_GOOGLE_SIGNED_IN to null
-    }
-    val danger = button == Str.AGENT_GOOGLE_SIGN_IN_AGAIN
-    TableRow(
-        title = strings[Str.AGENT_GOOGLE],
-        subtitle = strings[subtitle],
-        subtitleColor = if (danger) blueprint.danger else null,
-        trailing = if (button == null) {
-            null
-        } else {
-            {
-                BlueprintButton(
-                    strings[button],
-                    agent::connectGoogle,
-                    tone = ButtonTone.QUIET,
-                    enabled = agent.phase != AgentEventsPhase.SigningIn,
-                )
-            }
-        },
-    )
 }
 
 /**

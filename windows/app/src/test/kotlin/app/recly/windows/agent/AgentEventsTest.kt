@@ -29,7 +29,7 @@ import kotlinx.coroutines.runBlocking
  */
 class AgentEventsTest {
 
-    private val ready = AgentEventsStatus(home = "/h", tunnelId = "tunnel_x", tunnelKey = true, googleSignedIn = true)
+    private val ready = AgentEventsStatus(home = "/h", tunnelId = "tunnel_x", tunnelKey = true)
 
     @Test
     fun `reads what status --json prints`() {
@@ -42,58 +42,49 @@ class AgentEventsTest {
         assertEquals(42L, status.server?.pid)
         assertTrue(status.setUp)
         assertEquals(1, status.subscriptions)
-        assertNull(status.googleAccountId)
         val fresh = assertNotNull(AgentEventsStatus.parse("""{"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {}, "subscriptions": 0}"""))
         assertNull(fresh.server)
         assertFalse(fresh.setUp)
-        assertEquals("perm-1", AgentEventsStatus.parse("""{"home": "/h", "googleSignedIn": true, "googleAccountId": "perm-1"}""")?.googleAccountId)
         assertNull(AgentEventsStatus.parse("recly-events: usage"))
     }
 
     @Test
-    fun `google ends when Google refuses the sign-in`() {
-        assertTrue(ready.copy(drive = AgentEventsStatus.Drive("""oauth2: "invalid_grant" "Token has been expired or revoked."""")).googleEnded)
-        assertFalse(ready.copy(drive = AgentEventsStatus.Drive("drive: HTTP 503: backend")).googleEnded)
+    fun `set-up is the tunnel alone, since Drive is the app's own`() {
+        assertTrue(ready.setUp, "no Google sign-in of its own is needed")
+        assertFalse(AgentEventsStatus(home = "/h", tunnelId = "tunnel_x").setUp)
+        assertFalse(AgentEventsStatus(home = "/h", tunnelKey = true).setUp)
     }
 
     @Test
     fun `the phase says the most urgent thing first`() {
-        fun phase(enabled: Boolean = true, available: Boolean = true, signingIn: Boolean = false, gaveUp: Boolean = false, owned: Boolean = true, status: AgentEventsStatus?) =
-            AgentEventsPhase.of(enabled, available, signingIn, gaveUp, owned, status)
+        fun phase(enabled: Boolean = true, available: Boolean = true, gaveUp: Boolean = false, owned: Boolean = true, drive: Boolean = true, status: AgentEventsStatus?) =
+            AgentEventsPhase.of(enabled, available, gaveUp, owned, status, driveConnected = drive)
         val running = ready.copy(server = AgentEventsStatus.Server(pid = 7, tunnelReady = true))
         assertEquals(AgentEventsPhase.Unavailable, phase(available = false, status = running))
         assertEquals(AgentEventsPhase.Off, phase(enabled = false, status = running))
-        assertEquals(AgentEventsPhase.SigningIn, phase(signingIn = true, status = running))
         assertEquals(AgentEventsPhase.GaveUp, phase(gaveUp = true, status = running))
         assertEquals(AgentEventsPhase.Starting, phase(status = null))
         assertEquals(AgentEventsPhase.NeedsSetup, phase(status = AgentEventsStatus(home = "/h")))
         assertEquals(AgentEventsPhase.Starting, phase(status = ready))
         assertEquals(AgentEventsPhase.Elsewhere, phase(owned = false, status = running))
+        assertEquals(AgentEventsPhase.NeedsDrive, phase(drive = false, status = ready))
+        assertEquals(AgentEventsPhase.NeedsDrive, phase(drive = false, status = AgentEventsStatus(home = "/h")), "said before the tunnel the row asks for")
         assertEquals(AgentEventsPhase.Running(AgentEventsSubscription.NONE), phase(status = running))
         assertEquals(AgentEventsPhase.Running(AgentEventsSubscription.ACTIVE), phase(status = running.copy(subscriptions = 1)))
         assertEquals(AgentEventsPhase.Running(AgentEventsSubscription.ENDED), phase(status = running.copy(subscriptionsEnded = true)))
         val connecting = running.copy(server = AgentEventsStatus.Server(pid = 7, tunnelReady = false))
         assertEquals(AgentEventsPhase.Connecting, phase(status = connecting))
         assertEquals(AgentEventsPhase.TunnelError, phase(status = connecting.copy(server = connecting.server?.copy(tunnelError = "tunnel: unauthorized"))))
-        assertEquals(AgentEventsPhase.GoogleEnded, phase(status = running.copy(drive = AgentEventsStatus.Drive("invalid_grant"))))
     }
 
     @Test
     fun `a storage recly-events cannot watch says so before anything else, and an unread one waits`() {
         val running = ready.copy(server = AgentEventsStatus.Server(pid = 7, tunnelReady = true))
-        assertEquals(AgentEventsPhase.Unavailable, AgentEventsPhase.of(true, false, false, false, true, running, driveStorage = false))
-        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(true, true, false, false, true, running, driveStorage = false))
-        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(false, true, false, false, true, running, driveStorage = false), "said even while off")
-        assertEquals(AgentEventsPhase.Starting, AgentEventsPhase.of(true, true, false, false, true, running, driveStorage = null))
-        assertEquals(AgentEventsPhase.Off, AgentEventsPhase.of(false, true, false, false, true, running, driveStorage = null))
-    }
-
-    @Test
-    fun `the account is the same, another, or not known from one side`() {
-        assertEquals(AgentEventsAccount.SAME, AgentEventsAccount.of("perm-1", "perm-1"))
-        assertEquals(AgentEventsAccount.DIFFERENT, AgentEventsAccount.of("perm-1", "perm-2"))
-        assertEquals(AgentEventsAccount.UNKNOWN, AgentEventsAccount.of(null, "perm-1"))
-        assertEquals(AgentEventsAccount.UNKNOWN, AgentEventsAccount.of("perm-1", null))
+        assertEquals(AgentEventsPhase.Unavailable, AgentEventsPhase.of(true, false, false, true, running, driveStorage = false))
+        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(true, true, false, true, running, driveStorage = false))
+        assertEquals(AgentEventsPhase.NotDrive, AgentEventsPhase.of(false, true, false, true, running, driveStorage = false), "said even while off")
+        assertEquals(AgentEventsPhase.Starting, AgentEventsPhase.of(true, true, false, true, running, driveStorage = null))
+        assertEquals(AgentEventsPhase.Off, AgentEventsPhase.of(false, true, false, true, running, driveStorage = null))
     }
 
     @Test
@@ -165,14 +156,12 @@ class AgentEventsTest {
     }
 
     @Test
-    fun `a tunnel saved or a sign-in made with the switch off starts nothing`() = withAgent { agent, runner, _ ->
+    fun `a tunnel saved with the switch off starts nothing`() = withAgent { agent, runner, _ ->
         agent.refresh()
         val saved = java.util.concurrent.atomic.AtomicBoolean(false)
         agent.saveTunnel("tunnel_y", "sk-test") { saved.set(true) }
         repeat(100) { if (!saved.get()) kotlinx.coroutines.delay(20) }
         assertTrue(saved.get())
-        agent.connectGoogle()
-        runner.awaitCall { it == AgentEventsCommand.SIGN_IN }
         agent.refresh()
         assertNull(runner.serving, "the switch alone decides whether it runs")
         assertEquals(AgentEventsPhase.Off, agent.phase)
@@ -195,39 +184,50 @@ class AgentEventsTest {
     }
 
     @Test
-    fun `the sign-in is compared with the upload account once per account and showing`() = withAgent(account = "perm-1", upload = { "perm-1" }) { agent, runner, _ ->
+    fun `the server gets this PC's Drive token on standard input, each new one once`() = withAgent { agent, runner, _ ->
         agent.toggle(true)
         agent.refresh()
-        assertEquals(AgentEventsAccount.SAME, agent.account)
+        val server = assertNotNull(runner.serving)
+        assertEquals("tok-1\n", server.written())
         agent.refresh()
-        assertEquals(1, runner.uploadAsks, "not asked again on every poll")
-
-        runner.account = "perm-2"
+        assertEquals("tok-1\n", server.written(), "a token is written once")
+        runner.token = "tok-2"
         agent.refresh()
-        assertEquals(AgentEventsAccount.DIFFERENT, agent.account)
-        assertEquals(2, runner.uploadAsks, "a new sign-in account is asked about")
+        assertEquals("tok-1\ntok-2\n", server.written())
+        runner.token = null
+        agent.refresh()
+        assertEquals("tok-1\ntok-2\n", server.written(), "nothing to give, nothing written")
     }
 
     @Test
-    fun `no account is asked about while the switch is off`() = withAgent(account = "perm-1", upload = { "perm-1" }) { agent, runner, _ ->
+    fun `without this PC's Drive the server is not run, and stops when Drive goes`() = withAgent { agent, runner, _ ->
+        runner.connected = false
+        agent.toggle(true)
         agent.refresh()
-        assertEquals(AgentEventsAccount.UNKNOWN, agent.account)
-        assertEquals(0, runner.uploadAsks)
+        assertNull(runner.serving)
+        assertEquals(AgentEventsPhase.NeedsDrive, agent.phase)
+        runner.connected = true
+        agent.refresh()
+        val server = assertNotNull(runner.serving)
+        runner.connected = false
+        agent.refresh()
+        assertFalse(server.isAlive, "the server runs on this PC's Drive")
+        agent.refresh()
+        assertEquals(AgentEventsPhase.NeedsDrive, agent.phase)
     }
 
     private fun withAgent(
         diesAtOnce: Boolean = false,
         storage: Boolean? = true,
-        account: String? = null,
-        upload: suspend () -> String? = { null },
         block: suspend (AgentEvents, FakeRunner, FakeSettings) -> Unit,
     ) = runBlocking {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        val runner = FakeRunner(diesAtOnce).also { it.account = account }
+        val runner = FakeRunner(diesAtOnce)
         val settings = FakeSettings()
         val agent = AgentEvents(
             settings, runner, scope, FixedClock(), poll = 1.hours,
-            uploadAccount = { runner.uploadAsks++; upload() },
+            driveConnected = { runner.connected },
+            driveToken = { runner.token },
         )
         storage?.let { agent.storageChanged(it) }
         try {
@@ -244,17 +244,16 @@ class AgentEventsTest {
         @Volatile var stdin: String? = null
         @Volatile var serving: FakeProcess? = null
         @Volatile var started = 0
-        /** The sign-in's account `status --json` reports, and how often the upload account was asked. */
-        @Volatile var account: String? = null
-        @Volatile var uploadAsks = 0
+        /** This PC's Drive as the app would give it: connected, and its current access token. */
+        @Volatile var connected = true
+        @Volatile var token: String? = "tok-1"
 
         override suspend fun run(arguments: List<String>, input: String?, timeout: Duration?): Pair<Int, String> {
             calls += arguments
             input?.let { stdin = it }
             if (arguments != AgentEventsCommand.STATUS) return 0 to ""
             val server = serving?.takeIf { it.isAlive }?.let { """{"pid": ${it.pid()}, "tunnelReady": true}""" } ?: "null"
-            val id = account?.let { ""","googleAccountId":"$it"""" }.orEmpty()
-            return 0 to """{"home":"/h","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true$id,"server":$server,"drive":{},"subscriptions":0}"""
+            return 0 to """{"home":"/h","tunnelId":"tunnel_x","tunnelKey":true,"server":$server,"subscriptions":0}"""
         }
 
         override fun serve(log: File): Process {
@@ -271,7 +270,13 @@ class AgentEventsTest {
     }
 
     private class FakeProcess(private val id: Long, @Volatile private var alive: Boolean) : Process() {
-        override fun getOutputStream(): OutputStream = OutputStream.nullOutputStream()
+        /** What the app wrote to the server's standard input. */
+        private val stdin = java.io.ByteArrayOutputStream()
+        fun written(): String = synchronized(stdin) { stdin.toString(Charsets.UTF_8) }
+        override fun getOutputStream(): OutputStream = object : OutputStream() {
+            override fun write(b: Int) = synchronized(stdin) { stdin.write(b) }
+            override fun write(b: ByteArray, off: Int, len: Int) = synchronized(stdin) { stdin.write(b, off, len) }
+        }
         override fun getInputStream(): InputStream = InputStream.nullInputStream()
         override fun getErrorStream(): InputStream = InputStream.nullInputStream()
         override fun waitFor(): Int = 0

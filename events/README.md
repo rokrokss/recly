@@ -49,16 +49,19 @@ The Mac and Windows apps include recly-events and run it for you while **Setting
 Tell ChatGPT about new transcripts** is on. It is off by default, and available only while the app
 stores recordings in Google Drive.
 
+There is no Google sign-in step: the app's copy uses the Google Drive connection the app already
+has, handing it the app's short-lived Drive access token, so it needs no `google-token.json`.
+
 1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
-2. Choose **Sign in** in the **Google sign-in** row, and in your browser sign in with the account
-   Recly uploads to and allow Recly. Then enter the tunnel ID and key, choose **Save**, and turn the
-   switch on.
+2. Enter the tunnel ID and key and choose **Save**, then turn the switch on. Google Drive must be
+   connected in the app.
 3. When the line under the switch says **Add the app in ChatGPT and ask your agent to subscribe**, do
    [steps 5 and 6](#5-add-it-to-chatgpt) below.
 
 The app keeps the server running while the app runs, restarts it if it stops (up to three times in
-ten minutes), and stops it when you turn the switch off or the app goes, even if it crashes. It
-uses the same folder, sign-in and key as the command line, so `recly-events status` shows it too.
+ten minutes), and stops it when you turn the switch off, disconnect Google Drive, or the app goes,
+even if it crashes. It uses the same folder and key as the command line, so `recly-events status`
+shows it too, with `Google: the Recly app's own Drive connection`.
 A server started some other way, such as `service install`, is left alone, and the line under the
 switch says it is already running outside Recly. On a Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test`
 sends the test event.
@@ -205,7 +208,7 @@ elsewhere.
 | `config.json` | settings (below) |
 | `google-token.json` | the Google sign-in (`google-client.json` too, with a client of your own) |
 | `tunnel-key` | the OpenAI tunnel key |
-| `state.json` | the Drive position and the Drive account's ID, subscriptions, the event inbox and the delivery queue |
+| `state.json` | the Drive position, subscriptions, the event inbox and the delivery queue |
 | `logs/serve.log` | the server log under the macOS service; on Linux, `journalctl --user -u recly-events` |
 
 `config.json` takes:

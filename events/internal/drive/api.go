@@ -130,9 +130,8 @@ func (a *API) List(ctx context.Context, query string, pageSize int) ([]File, err
 	return out.Files, a.get(ctx, "/files", q, &out)
 }
 
-// AccountID returns the signed-in account's opaque Drive identifier, the one the Recly apps keep
-// for their own connection (docs/recly.md §15 §1), so a desktop app can tell whether this is the
-// account it uploads to without either side reading an email.
+// AccountID returns the signed-in account's opaque Drive identifier: `init` confirms Drive with it,
+// and no email, name or profile is read (docs/recly.md §15 §9).
 func (a *API) AccountID(ctx context.Context) (string, error) {
 	var out struct {
 		User struct {

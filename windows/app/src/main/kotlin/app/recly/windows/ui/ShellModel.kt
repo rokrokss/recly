@@ -541,7 +541,18 @@ class ShellModel(
             scope = scope,
             clock = graph.core.deps.clock,
             logger = logger,
-            uploadAccount = graph.core::driveAccountId,
+            // recly-events runs on this PC's own Drive connection — its short-lived access token,
+            // never the refresh token (docs/recly.md §15 §9).
+            driveConnected = { signedIn },
+            driveToken = {
+                try {
+                    graph.core.deps.tokenProvider.accessToken()
+                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    null
+                }
+            },
         ).also { it.start() }
 
         val command = helperCommand

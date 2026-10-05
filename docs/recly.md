@@ -2683,39 +2683,33 @@ use the same mutex and the same staleness rule.
 
 The Mac app bundles `recly-events` (`events/`, §15 §9) as `Recly.app/Contents/MacOS/recly-events` and runs it for the user while
 **Settings → Agent connection → Tell ChatGPT about new transcripts** is on. It is **off by default** (2026-10-05). The app talks to it only by running it:
-`status --json` every 5 seconds while the switch is on; `init --google --no-check` for the `Google sign-in` row (the program opens the browser itself and is stopped after
-5 minutes; the row offers it as `Sign in` without a sign-in, and as `Sign in again` only for an account other than the upload account or a sign-in Google has refused, 2026-10-06); `init --tunnel-id … --tunnel-key-stdin --no-check` for the tunnel fields, with the key on standard input and never in the arguments; and `serve` as a
-child process (`serve --exit-with-stdin`, with a pipe on its standard input that only the app holds, so it stops whenever the app does, a crash included) writing to the program's own `logs/serve.log`. A server that exits is restarted at most 3 times in 10 minutes, then the status line says so until the
-switch is turned off and on. A server the app did not start — the CLI's `service install`, or a terminal — is left alone and shown as running outside Recly.
-The program keeps its own home directory (`~/Library/Application Support/recly-events`), Google sign-in (Recly's desktop client, `drive.file`, a consent of its own)
-and tunnel key, shared with the CLI; the app stores only the switch (`agentEventsEnabled`).
+`status --json` every 5 seconds while the switch is on; `init --tunnel-id … --tunnel-key-stdin --no-check` for the tunnel fields, with the key on standard input and never in the arguments; and
+`serve --drive-token-stdin` as a child process writing to the program's own `logs/serve.log`, with a pipe on its standard input that only the app holds (2026-10-06). The app
+writes its own Drive connection's short-lived access token (about an hour) to that pipe, one per line — right after the start, then whenever the token changes (checked every 5 seconds
+while the server runs) — so this copy has no Google sign-in of its own and the refresh token never leaves the app's secure storage (§15 §9); and the server stops whenever the pipe
+closes, the app quitting or crashing, as `--exit-with-stdin` did. A server that exits is restarted at most 3 times in 10 minutes, then the status line says so until the
+switch is turned off and on. A server the app did not start — the CLI's `service install`, or a terminal — is left alone and shown as running outside Recly; it keeps
+the CLI's own Google sign-in (`init --google`, `google-token.json`).
+The program keeps its own home directory (`~/Library/Application Support/recly-events`) and tunnel key, shared with the CLI; the app stores only the switch (`agentEventsEnabled`).
 `make mac` and `make mac-release` build the arm64 program first (Go, Recly's desktop client from `local.properties`, with its notices as
 `Contents/Resources/THIRD-PARTY-recly-events.txt`), and the `Embed recly-events` build phase signs it like the app, with the hardened runtime. A build made without Go has
 no program, and the switch says `Not in this build`.
 
-**The section (2026-10-06)**, top to bottom: the switch, one status line, the `Google sign-in` row, the `OpenAI tunnel` row, and, only until an agent
+**The section (2026-10-06)**, top to bottom: the switch, one status line (only while the switch is on), the `OpenAI tunnel` row, and, only until an agent
 subscribes, the footnote (`Runs recly-events on this Mac. It reads only the names and links …`) and `Set-up guide`. The switch only decides whether
-recly-events runs: the two rows, the footnote and the guide are there with it off too, so it can be set up first and turned on last, or a tunnel changed
-without starting it. Off, there is no status line, nothing is started by a sign-in or a saved tunnel, and the Google row is not compared with the upload
-account.
+recly-events runs: the tunnel row, the footnote and the guide are there with it off too, so it can be set up first and turned on last, or a tunnel changed
+without starting it; off, a saved tunnel starts nothing. There is no Google row: the copy the app runs reaches Drive through the app's own connection, the
+`Drive connected` row in the same pane. (A `Google sign-in` row — recly-events' own sign-in, compared with the upload account by `permissionId` — was
+retired the same day.)
 
-- **Status line**: one sentence that says only what the rows below do not. With the §9 square loader: `Finish signing in in your browser` · `Starting` ·
-  `Connecting to the tunnel`. Running with a subscribed agent: `Your subscribed agent hears about each new transcript`; with no subscription yet:
-  `Add the app in ChatGPT and ask your agent to subscribe`; after the subscription ended: `The subscription ended. Ask your agent to subscribe again.`
-  A server started elsewhere: `Already running outside Recly`. In the danger color: `The tunnel is not connecting. Check the tunnel ID and key.` and
-  `Stopped after repeated errors. Turn it off and on to try again.` Nothing while set-up is incomplete, when Google has refused the sign-in, or when recly-events
-  is signed in to an account other than the one Recly uploads to — the rows say those. `Running — ChatGPT can reach this Mac`,
-  `Connect Google Drive and save a tunnel to start` and `Google sign-in ended. Connect again.` are gone: "can reach" said what was possible, not what was
-  happening or what to do next.
-- **`Google sign-in`** (titled `Google Drive` before, which read like the upload connection in the same pane) is recly-events' own sign-in, with its own consent and
-  token (§15 §9) — not the app's upload connection, which keeps `Drive connected` · `Disconnect`. Not signed in: `Sign in with the account Recly uploads to` ·
-  `Sign in`. Signed in to the same Drive account as this device's upload connection: `Signed in with the upload account`, no button; when the two cannot be
-  compared (this device's Drive is not connected, or Google could not be asked): `Signed in`, no button. Another account: `Not the upload account` in the danger
-  color · `Sign in again`. Google refused the stored sign-in (`invalid_grant` or 401 on Drive polling): `Sign-in ended` in the danger color · `Sign in again`.
-- **Same account** compares two opaque Drive `permissionId`s, and no email, name or profile is read for it on either side: the one recly-events reports as
-  `googleAccountId` in `status --json` (§15 §9), and the one of this device's upload connection, which the app reads with the `about?fields=user(permissionId)`
-  call it already makes to confirm the account on reconnect (core `driveAccountId()`, §15 §1) when the section is shown or recly-events reports a different
-  account ID. The app stores neither.
+- **Status line**: one sentence that says only what the rows do not. `Connect Google Drive above to start` while this device's Drive is not connected (the app's
+  own state: the Mac's restored credential, Windows' signed-in state) — the server is not started then, and is stopped if Drive is disconnected while it runs.
+  With the §9 square loader: `Starting` · `Connecting to the tunnel`. Running with a subscribed agent: `Your subscribed agent hears about each new transcript`;
+  with no subscription yet: `Add the app in ChatGPT and ask your agent to subscribe`; after the subscription ended:
+  `The subscription ended. Ask your agent to subscribe again.` A server started elsewhere: `Already running outside Recly`. In the danger color:
+  `The tunnel is not connecting. Check the tunnel ID and key.` and `Stopped after repeated errors. Turn it off and on to try again.` Nothing while the tunnel
+  row asks for its fields. `Running — ChatGPT can reach this Mac`, `Connect Google Drive and save a tunnel to start` and `Google sign-in ended. Connect again.`
+  are gone — "can reach" said what was possible, not what was happening or what to do next — and `Finish signing in in your browser` went with the sign-in row.
 - **`OpenAI tunnel`**: once a tunnel ID and key are saved, one row `✓ Saved on this device` in the success color — the shape of the API key row (§5 "Secrets") —
   with a quiet `Change tunnel`. The `Tunnel ID` · `Tunnel key` fields and `Save` show only while nothing is saved, or after `Change tunnel` (then with `Cancel`;
   the ID is prefilled, and a key left empty keeps the saved key — its placeholder says `Leave empty to keep the saved key`). `Save` needs an ID, and a key when
@@ -3077,7 +3071,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` in `appProperties` |
 | appDataFolder | **Not used.** Recording processing settings and secret values both exist only on the device (§5), and the only way to move them between devices is a settings export/import that the user does by hand |
 | What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested |
-| Who sees it | The user, and people the user has shared the folder with. **Recly has no server that can access these files** — the OAuth token exists only in the device's secure storage, is used only for Google API calls, and is never sent to Recly |
+| Who sees it | The user, and people the user has shared the folder with. **Recly has no server that can access these files** — the OAuth refresh token exists only in the device's secure storage; the short-lived access tokens it yields are used only for Google API calls on the device (including, while Agent connection is on, by the recly-events copy the desktop app runs, §9) and are never sent to Recly |
 | Control | Disconnect at any time in Google account settings (<https://myaccount.google.com/permissions>). The in-app "Disconnect" is also in all four shells (§3) — one action does both the grant revoke (Android `AuthorizationClient.revokeAccess`, Apple · Windows `oauth2.googleapis.com/revoke`) and the local cleanup of `ReclyCore.disconnect` |
 
 The only Google endpoints Recly calls are the Drive API (`www.googleapis.com`) and
@@ -3087,8 +3081,8 @@ and it calls no profile lookup API. To confirm the account on reconnect, it call
 `GET https://www.googleapis.com/drive/v3/about?fields=user(permissionId)`.
 Only Drive's opaque identifier, not the name or email, is stored in the device DB, and the identifier of unfinished jobs stays after disconnecting so they can resume.
 Account confirmation for earlier jobs uses only the `owners(permissionId)` field of the existing `files.get`. Deleting the job records also deletes that identifier.
-The Mac and Windows apps also make that `about` call, only while Settings → Agent connection is on, to tell whether recly-events is signed in to the account
-they upload to (§9, 2026-10-06); the identifier it returns is compared in memory and not stored.
+While Settings → Agent connection is on, the Mac and Windows apps hand the copy of recly-events they run this connection's short-lived access token through the
+standard-input pipe only they hold (§9, 2026-10-06); the refresh token stays in the app's secure storage.
 
 **Account email handling** per shell is as follows:
 
@@ -3293,14 +3287,14 @@ connections:
 
 | Path | To | What is sent | What comes back |
 |---|---|---|---|
-| Google sign-in, Drive metadata | `accounts.google.com` (consent in the user's browser), `oauth2.googleapis.com`, `www.googleapis.com/drive/v3` (`changes`, `files`, `about`) | Recly's own desktop OAuth client (the Windows app's, compiled into the `events-v…` release archives) and its token, scope `drive.file`, so Drive shows it only the files Recly's apps created. Built from source without that client, it takes the user's own client and `drive.metadata.readonly` instead | names, IDs, folder descriptions (Recly titles), the folder's `recordingId` and links, and the account's opaque `permissionId` — **it never downloads file contents** |
+| Google sign-in, Drive metadata | `accounts.google.com` (consent in the user's browser, CLI only), `oauth2.googleapis.com` (CLI only), `www.googleapis.com/drive/v3` (`changes`, `files`, `about`) | Run from the CLI: Recly's own desktop OAuth client (the Windows app's, compiled into the `events-v…` release archives) and its token, scope `drive.file`, so Drive shows it only the files Recly's apps created; built from source without that client, it takes the user's own client and `drive.metadata.readonly` instead. The copy a desktop app runs: that app's own Drive connection's access token as the Bearer token, the same `drive.file` reach (2026-10-06) | names, IDs, folder descriptions (Recly titles), the folder's `recordingId` and links, and, for the CLI's `init` check, the account's opaque `permissionId` — **it never downloads file contents** |
 | OpenAI Secure MCP Tunnel | `api.openai.com` (`/v1/tunnel…`, long polling by the embedded `tunnel-client`) | the tunnel ID, a runtime key restricted to Tunnels Read + Use, and the answers to ChatGPT's MCP requests: the event inbox (recording name, title, start time, device, Drive IDs and links) | ChatGPT's MCP requests: discovery, tool calls, `events/subscribe` |
 | Event delivery | the callback URL from `events/subscribe`, only when its host is in `callbackHosts` (default `connectors.api.openai.com`), port 443, public addresses only, no redirects | a Standard Webhooks-signed `recording.transcribed` event with the fields above | 2xx, 410 (ends the subscription) or a retry |
 
-- No transcript text, audio, STT key or Recly app token passes through it. The agent reads the transcript itself, through its own Google Drive connector.
-- Its Google grant belongs to Recly's Cloud project, so "Disconnect" in any Recly app (a revoke, §6) ends its token too and it asks to be signed in again; recly-events itself never revokes, which would disconnect every Recly device.
-- Its Drive account (2026-10-06): after a successful Drive poll, whenever it has no account ID for the current sign-in, it reads `GET www.googleapis.com/drive/v3/about?fields=user(permissionId)` and keeps the result in `state.json` as `drive.accountId`, with `drive.accountSignedInAt` set to the `obtainedAt` of the Google token it belongs to, so a new sign-in never reports the old account; `status --json` reports it as `googleAccountId` only when it belongs to the current token. The Mac and Windows apps compare it with their own upload connection's `permissionId` (§1) to say whether it is the upload account (§12 "Agent connection"). Neither side reads an email, name or profile for this, and recly-events reads none at all: the `init` check confirms Drive with the same `permissionId` call and prints only that it is connected — Google's consent screen has just shown the account (2026-10-06).
-- Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the Google client and token, the tunnel key, `state.json` (Drive cursor, the Drive account's `permissionId`, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).
+- No transcript text, audio, STT key or long-lived Recly credential passes through it. The copy a desktop app runs receives that app's short-lived Drive access token on standard input (`serve --drive-token-stdin`, §12 "Agent connection"), keeps only the latest in memory, sends it as the Bearer token on every Drive request (the first one waits up to 15 s for the first line), and never writes it to disk or logs it; the app's refresh token stays in its secure storage. `status --json` then reports `driveFromApp: true` in its `server` object, `recly-events status` prints `Google: the Recly app's own Drive connection`, and `serve.start` logs `driveFromApp` (2026-10-06). The agent reads the transcript itself, through its own Google Drive connector.
+- "Disconnect" in any Recly app ends its Drive access on either path. The CLI's sign-in is a grant of Recly's Cloud project, so that revoke (§6) ends its token too and it asks to be signed in again; the copy a desktop app runs simply gets no more tokens from a disconnected app, and that app stops it. recly-events itself never revokes, which would disconnect every Recly device.
+- It reads no email, name or profile at all: the CLI's `init` check confirms Drive with `about?fields=user(permissionId)` and prints only that it is connected — Google's consent screen has just shown the account (2026-10-06).
+- Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the CLI's Google client and token, the tunnel key, `state.json` (Drive cursor, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).
 - Removing it: turn off Settings → Agent connection or run `recly-events service uninstall`, delete the home directory (its Google token goes with it), delete the tunnel and key in OpenAI Platform, delete the app in ChatGPT. Removing Recly at https://myaccount.google.com/permissions would disconnect every Recly app as well; do that only for a client of the user's own.
 
 ---

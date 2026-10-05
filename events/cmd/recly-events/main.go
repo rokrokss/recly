@@ -297,6 +297,8 @@ type runtimeStatus struct {
 	TunnelError string    `json:"tunnelError,omitempty"`
 	StartedAt   time.Time `json:"startedAt"`
 	Version     string    `json:"version"`
+	// DriveFromApp says Drive is reached with the desktop app's own connection, not the saved sign-in.
+	DriveFromApp bool `json:"driveFromApp,omitempty"`
 }
 
 // liveStatus is the runtimeStatus shared between the tunnel loop and the admin socket.
@@ -320,14 +322,20 @@ func (l *liveStatus) snapshot() runtimeStatus {
 func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
 	withStdin := fs.Bool("exit-with-stdin", false, "stop when standard input closes, for a parent process such as the Recly desktop app")
+	tokenStdin := fs.Bool("drive-token-stdin", false, "take Google Drive access tokens, one per line, on standard input from a parent such as the Recly desktop app instead of the saved sign-in; stop when it closes")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
-	if *withStdin {
+	var pipe *drive.TokenPipe
+	if *withStdin || *tokenStdin {
 		var cancel context.CancelFunc
 		ctx, cancel = context.WithCancel(ctx)
 		defer cancel()
-		app.StopWhenClosed(os.Stdin, cancel)
+		if *tokenStdin {
+			pipe = drive.ReadTokens(os.Stdin, cancel)
+		} else {
+			app.StopWhenClosed(os.Stdin, cancel)
+		}
 	}
 	cfg, err := app.LoadConfig(home)
 	if err != nil {
@@ -340,12 +348,11 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	if err != nil {
 		return err
 	}
-	api, err := driveAPI(ctx, home, cfg)
-	if err != nil {
-		return err
-	}
-	tf, err := drive.LoadToken(home.GoogleToken())
-	if err != nil {
+	// The desktop app's own Drive connection when it runs this copy (§15 §9), else the saved sign-in.
+	var api *drive.API
+	if pipe != nil {
+		api = &drive.API{Client: pipe.Client()}
+	} else if api, err = driveAPI(ctx, home, cfg); err != nil {
 		return err
 	}
 	store, err := state.Open(home.State())
@@ -357,17 +364,16 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	handler := &mcpserver.Handler{Hub: hub, Log: log, Version: version}
 	watcher := &drive.Watcher{
 		API: api, Store: store, Log: log, Every: time.Duration(cfg.PollInterval()) * time.Second,
-		Emit:       func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
-		SignedInAt: tf.ObtainedAt,
+		Emit: func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
 	}
-	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version}}
+	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version, DriveFromApp: pipe != nil}}
 	stopAdmin, err := serveAdmin(home, api, hub, rt, log)
 	if err != nil {
 		return err
 	}
 	defer stopAdmin()
 
-	log.Info("serve.start", "version", version, "tunnel", cfg.TunnelID, "pollSeconds", cfg.PollInterval())
+	log.Info("serve.start", "version", version, "tunnel", cfg.TunnelID, "pollSeconds", cfg.PollInterval(), "driveFromApp", pipe != nil)
 	go hub.Run(ctx)
 	go watcher.Run(ctx)
 	for ctx.Err() == nil {
@@ -469,9 +475,6 @@ type statusReport struct {
 	SubscriptionsEnded bool            `json:"subscriptionsEnded"`
 	Pending            int             `json:"pending"`
 	LastDelivery       *deliveryReport `json:"lastDelivery,omitempty"`
-	// GoogleAccountID is the signed-in Drive account's opaque permissionId, once serve has read
-	// it for this sign-in; the apps compare it with the account they upload to.
-	GoogleAccountID string `json:"googleAccountId,omitempty"`
 }
 
 type driveReport struct {
@@ -523,9 +526,6 @@ func cmdStatus(home app.Home, args []string) error {
 			Server: rt, Subscriptions: len(st.Subscriptions), SubscriptionsEnded: ended, Pending: pending,
 			Drive: driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
 		}
-		if tokenErr == nil && st.Drive.AccountSignedInAt.Equal(tf.ObtainedAt) {
-			r.GoogleAccountID = st.Drive.AccountID
-		}
 		if !st.Drive.LastPollAt.IsZero() {
 			r.Drive.LastPollAt = &st.Drive.LastPollAt
 		}
@@ -554,7 +554,9 @@ func cmdStatus(home app.Home, args []string) error {
 			fmt.Println("Tunnel:        ", cfg.TunnelID, "connecting")
 		}
 	}
-	if tokenErr != nil {
+	if rt != nil && rt.DriveFromApp {
+		fmt.Println("Google:         the Recly app's own Drive connection")
+	} else if tokenErr != nil {
 		fmt.Println("Google:         not connected —", tokenErr)
 	} else {
 		fmt.Printf("Google:         signed in %s, token last refreshed %s\n", ago(tf.ObtainedAt), ago(tf.RefreshedAt))

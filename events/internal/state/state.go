@@ -41,10 +41,6 @@ type Drive struct {
 	LastPollAt    time.Time `json:"lastPollAt,omitzero"`
 	LastSuccessAt time.Time `json:"lastSuccessAt,omitzero"`
 	LastError     string    `json:"lastError,omitempty"`
-	// AccountID is the Drive account's opaque permissionId, and AccountSignedInAt the obtainedAt
-	// of the Google sign-in it was read with: a new sign-in is not reported as the old account.
-	AccountID         string    `json:"accountId,omitempty"`
-	AccountSignedInAt time.Time `json:"accountSignedInAt,omitzero"`
 	// Seen maps a transcript file ID to the content version already announced, so a change
 	// that touches only metadata does not announce the same transcript twice.
 	Seen map[string]string `json:"seen"`

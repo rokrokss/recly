@@ -263,9 +263,11 @@ final class MenuModel: ObservableObject {
             // The recordings a picked folder let go are due now.
             storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
-            let core = bridge.core
-            agentEvents.uploadAccount = { try? await core.driveAccountId() }
-            agentEvents.driveStorage = (try? await core.processingSettings.storage()).map { $0 == .drive } ?? true
+            // docs/12 "Agent connection": recly-events runs on this Mac's own Drive connection — its
+            // short-lived access token, never the refresh token (docs/recly.md §15 §9).
+            agentEvents.driveConnected = { [weak self] in self?.hasGoogleCredential ?? false }
+            agentEvents.driveToken = { [tokens] in try? await tokens.__accessToken() }
+            agentEvents.driveStorage = (try? await bridge.core.processingSettings.storage()).map { $0 == .drive } ?? true
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
@@ -282,6 +284,8 @@ final class MenuModel: ObservableObject {
             self.auth = auth
             await auth.restore()
             account = auth.account
+            // The Drive connection recly-events runs on is known now, not at the next poll.
+            agentEvents.refreshNow()
             let runner = JobRunner(
                 queue: CoreJobQueue(core: bridge.core),
                 onPass: { [weak self] _ in self?.passFinished() }

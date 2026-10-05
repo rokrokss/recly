@@ -6,9 +6,7 @@ import XCTest
 /// starts and stops `serve`, and the process itself against a stand-in for the program.
 final class AgentEventsTests: XCTestCase {
 
-    private let ready = AgentEventsStatus(
-        home: "/tmp/h", tunnelId: "tunnel_x", tunnelKey: true, googleSignedIn: true
-    )
+    private let ready = AgentEventsStatus(home: "/tmp/h", tunnelId: "tunnel_x", tunnelKey: true)
 
     func testDecodesWhatStatusJSONPrints() throws {
         let json = """
@@ -21,11 +19,6 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(status.server?.pid, 42)
         XCTAssertTrue(status.setUp)
         XCTAssertEqual(status.subscriptions, 1)
-        XCTAssertNil(status.googleAccountId)
-        let signedIn = try JSONDecoder().decode(AgentEventsStatus.self, from: Data("""
-        {"home": "/h", "tunnelKey": true, "googleSignedIn": true, "googleAccountId": "perm-1", "drive": {}, "subscriptions": 0, "subscriptionsEnded": false}
-        """.utf8))
-        XCTAssertEqual(signedIn.googleAccountId, "perm-1")
 
         let fresh = try JSONDecoder().decode(AgentEventsStatus.self, from: Data("""
         {"home": "/h", "tunnelKey": false, "googleSignedIn": false, "server": null, "drive": {"pollSeconds": 10, "announced": 0}, "subscriptions": 0, "subscriptionsEnded": false, "pending": 0}
@@ -34,29 +27,29 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertFalse(fresh.setUp)
     }
 
-    func testGoogleEndsWhenGoogleRefusesTheSignIn() {
-        var status = ready
-        status.drive.lastError = #"oauth2: "invalid_grant" "Token has been expired or revoked.""#
-        XCTAssertTrue(status.googleEnded)
-        status.drive.lastError = "drive: HTTP 503: backend"
-        XCTAssertFalse(status.googleEnded)
+    func testSetUpIsTheTunnelAloneSinceDriveIsTheAppsOwn() {
+        XCTAssertTrue(ready.setUp, "no Google sign-in of its own is needed")
+        XCTAssertFalse(AgentEventsStatus(home: "/h", tunnelId: "tunnel_x").setUp)
+        XCTAssertFalse(AgentEventsStatus(home: "/h", tunnelKey: true).setUp)
     }
 
     func testPhaseSaysTheMostUrgentThingFirst() {
-        func phase(enabled: Bool = true, available: Bool = true, signingIn: Bool = false, gaveUp: Bool = false,
+        func phase(enabled: Bool = true, available: Bool = true, drive: Bool? = true, gaveUp: Bool = false,
                    owned: Bool = true, _ status: AgentEventsStatus?) -> AgentEventsPhase {
-            .of(enabled: enabled, available: available, signingIn: signingIn, gaveUp: gaveUp, owned: owned, status: status)
+            .of(enabled: enabled, available: available, driveConnected: drive, gaveUp: gaveUp, owned: owned, status: status)
         }
         var running = ready
         running.server = .init(pid: 7, tunnelReady: true, tunnelError: nil)
         XCTAssertEqual(phase(available: false, running), .unavailable)
         XCTAssertEqual(phase(enabled: false, running), .off)
-        XCTAssertEqual(phase(signingIn: true, running), .signingIn)
         XCTAssertEqual(phase(gaveUp: true, running), .gaveUp)
         XCTAssertEqual(phase(nil), .starting)
         XCTAssertEqual(phase(AgentEventsStatus(home: "/h")), .needsSetup)
         XCTAssertEqual(phase(ready), .starting)
         XCTAssertEqual(phase(owned: false, running), .elsewhere)
+        XCTAssertEqual(phase(drive: false, ready), .needsDrive)
+        XCTAssertEqual(phase(drive: false, AgentEventsStatus(home: "/h")), .needsDrive, "said before the tunnel the row asks for")
+        XCTAssertEqual(phase(drive: nil, ready), .starting)
         XCTAssertEqual(phase(running), .running(.none))
 
         var subscribed = running
@@ -71,16 +64,13 @@ final class AgentEventsTests: XCTestCase {
         var broken = connecting
         broken.server?.tunnelError = "tunnel: unauthorized"
         XCTAssertEqual(phase(broken), .tunnelError)
-        var signedOut = running
-        signedOut.drive.lastError = "invalid_grant"
-        XCTAssertEqual(phase(signedOut), .googleEnded)
     }
 
     func testAStorageItCannotWatchIsSaidBeforeAnythingElseAndAnUnreadOneWaits() {
         var running = ready
         running.server = .init(pid: 7, tunnelReady: true, tunnelError: nil)
         func phase(enabled: Bool = true, available: Bool = true, _ drive: Bool?) -> AgentEventsPhase {
-            .of(enabled: enabled, available: available, driveStorage: drive, signingIn: false, gaveUp: false, owned: true, status: running)
+            .of(enabled: enabled, available: available, driveStorage: drive, gaveUp: false, owned: true, status: running)
         }
         XCTAssertEqual(phase(available: false, false), .unavailable)
         XCTAssertEqual(phase(false), .notDrive)
@@ -89,12 +79,6 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(phase(enabled: false, nil), .off)
     }
 
-    func testTheAccountIsTheSameAnotherOrNotKnownFromOneSide() {
-        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: "perm-1"), .same)
-        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: "perm-2"), .different)
-        XCTAssertEqual(AgentEventsAccount.of(agent: nil, upload: "perm-1"), .unknown)
-        XCTAssertEqual(AgentEventsAccount.of(agent: "perm-1", upload: nil), .unknown)
-    }
 
     func testStartsOnlyWhenOnSetUpAndNothingElseAnswers() {
         func act(enabled: Bool = true, gaveUp: Bool = false, child: Bool = false, _ status: AgentEventsStatus?) -> AgentEventsAction {
@@ -139,8 +123,8 @@ final class AgentEventsTests: XCTestCase {
     }
 
     /// The whole loop against a shell script that answers `status --json` and `serve` the way the
-    /// program does: on, it starts the server and calls it its own, and compares its account with
-    /// the upload account once; off, or a storage it cannot watch, stops it.
+    /// program does: on, it starts the server, calls it its own and hands it this Mac's Drive token
+    /// on standard input; off, a Drive no longer connected, or a storage it cannot watch, stops it.
     @MainActor
     func testRunsServeWhileOnAndStopsItWhenOff() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("agent-\(UUID().uuidString)")
@@ -156,11 +140,11 @@ final class AgentEventsTests: XCTestCase {
           if [ -f "$dir/serve.pid" ] && kill -0 "$(cat "$dir/serve.pid")" 2>/dev/null; then
             server="{\\"pid\\": $(cat "$dir/serve.pid"), \\"tunnelReady\\": true}"
           fi
-          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":true,"googleAccountId":"perm-1","server":%s,"drive":{},"subscriptions":0,"subscriptionsEnded":false}\\n' "$dir" "$server"
+          printf '{"home":"%s","tunnelId":"tunnel_x","tunnelKey":true,"googleSignedIn":false,"server":%s,"drive":{},"subscriptions":0,"subscriptionsEnded":false}\\n' "$dir" "$server"
           ;;
         serve)
           echo $$ > "$dir/serve.pid"
-          exec sleep 600
+          exec cat > "$dir/tokens"
           ;;
         esac
         """.write(to: script, atomically: true, encoding: .utf8)
@@ -169,11 +153,10 @@ final class AgentEventsTests: XCTestCase {
 
         let controller = AgentEventsController(executable: script, defaults: defaults)
         defer { controller.shutdown() }
-        var asks = 0
-        controller.uploadAccount = {
-            asks += 1
-            return "perm-1"
-        }
+        var connected = true
+        var token = "tok-1"
+        controller.driveConnected = { connected }
+        controller.driveToken = { token }
         XCTAssertEqual(controller.phase, .off)
         controller.enabled = true
         try await Task.sleep(nanoseconds: 300_000_000)
@@ -183,10 +166,13 @@ final class AgentEventsTests: XCTestCase {
         try await waitFor(controller, .running(.none))
         let pid = try servePid(dir)
         XCTAssertEqual(kill(pid, 0), 0, "serve is running")
-        XCTAssertEqual(controller.account, .same)
+        try await waitForTokens(dir, "tok-1\n")
+        token = "tok-2"
         controller.refreshNow()
-        try await Task.sleep(nanoseconds: 500_000_000)
-        XCTAssertEqual(asks, 2, "asked once, and again when the section is shown")
+        try await waitForTokens(dir, "tok-1\ntok-2\n")
+        controller.refreshNow()
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertEqual(try tokens(dir), "tok-1\ntok-2\n", "a token is written once")
 
         controller.enabled = false
         try await waitFor(controller, .off)
@@ -195,9 +181,29 @@ final class AgentEventsTests: XCTestCase {
         controller.enabled = true
         try await waitFor(controller, .running(.none))
         let second = try servePid(dir)
+        connected = false
+        controller.refreshNow()
+        try await waitFor(controller, .needsDrive)
+        try await waitUntilGone(second)
+
+        connected = true
+        controller.refreshNow()
+        try await waitFor(controller, .running(.none))
+        let third = try servePid(dir)
         controller.driveStorage = false
         try await waitFor(controller, .notDrive)
-        try await waitUntilGone(second)
+        try await waitUntilGone(third)
+    }
+
+    private func tokens(_ dir: URL) throws -> String {
+        try String(contentsOf: dir.appendingPathComponent("tokens"), encoding: .utf8)
+    }
+
+    private func waitForTokens(_ dir: URL, _ expected: String) async throws {
+        for _ in 0..<50 where (try? tokens(dir)) != expected {
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        XCTAssertEqual(try tokens(dir), expected)
     }
 
     private func servePid(_ dir: URL) throws -> Int32 {
@@ -229,9 +235,11 @@ final class AgentEventsTests: XCTestCase {
 
         let controller = AgentEventsController(executable: program, defaults: defaults)
         defer { controller.shutdown() }
+        // No Drive connection: saving the tunnel must not start a real server against OpenAI.
+        controller.driveConnected = { false }
         controller.driveStorage = true
         controller.enabled = true
-        try await waitFor(controller, .needsSetup)
+        try await waitFor(controller, .needsDrive)
 
         controller.saveTunnel(id: "tunnel_test", key: "sk-test")
         for _ in 0..<100 where controller.tunnelId != "tunnel_test" {
@@ -239,7 +247,8 @@ final class AgentEventsTests: XCTestCase {
         }
         XCTAssertEqual(controller.tunnelId, "tunnel_test")
         XCTAssertFalse(controller.saveFailed)
-        XCTAssertEqual(controller.phase, .needsSetup, "no Google sign-in yet")
+        XCTAssertTrue(controller.tunnelKeySaved)
+        XCTAssertEqual(controller.phase, .needsDrive, "this Mac's Drive is not connected")
         let key = home.appendingPathComponent("tunnel-key")
         XCTAssertEqual(try String(contentsOf: key, encoding: .utf8), "sk-test")
         XCTAssertEqual(try FileManager.default.attributesOfItem(atPath: key.path)[.posixPermissions] as? Int, 0o600)

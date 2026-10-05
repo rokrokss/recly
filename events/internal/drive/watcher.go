@@ -51,9 +51,6 @@ type Watcher struct {
 	Emit  Emit
 	Log   *slog.Logger
 	Every time.Duration
-	// SignedInAt is the obtainedAt of the Google sign-in the API runs with; the account read
-	// with it is kept against it.
-	SignedInAt time.Time
 }
 
 // Run polls until ctx is done.
@@ -101,32 +98,7 @@ func (w *Watcher) Poll(ctx context.Context) error {
 		}
 		return nil
 	})
-	if err == nil {
-		w.recordAccount(ctx)
-	}
 	return err
-}
-
-// recordAccount reads the account once per sign-in, after a poll proved the sign-in works. A
-// failure only waits for the next successful poll: the account is for the settings row, and
-// announcing does not depend on it.
-func (w *Watcher) recordAccount(ctx context.Context) {
-	known := false
-	w.Store.View(func(s *state.State) {
-		known = s.Drive.AccountID != "" && s.Drive.AccountSignedInAt.Equal(w.SignedInAt)
-	})
-	if known {
-		return
-	}
-	id, err := w.API.AccountID(ctx)
-	if err != nil {
-		w.Log.Warn("drive.account.failed", "error", err.Error())
-		return
-	}
-	_ = w.Store.Update(func(s *state.State) error {
-		s.Drive.AccountID, s.Drive.AccountSignedInAt = id, w.SignedInAt
-		return nil
-	})
 }
 
 func (w *Watcher) poll(ctx context.Context, token string) error {
