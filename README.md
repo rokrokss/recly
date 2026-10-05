@@ -33,6 +33,11 @@ wear the recorder, and you already pay for the AI. Recly supplies the one piece 
 transcription on a supported device or with **your own** API key, and keeps the original audio in
 **your** Google Drive. There is no Recly server, no bot joining your call, and no monthly fee.
 
+And the notes need not wait for you to ask. With [`recly-events`](events/README.md), every new
+transcript reaches your ChatGPT agent through [OpenAI's MCP Events](https://developers.openai.com/plugins/build/mcp-events),
+and the agent [writes the minutes on its own](#automatic-minutes-with-a-chatgpt-agent): you stop
+recording, and the minutes show up in ChatGPT.
+
 ## Why Recly
 
 - **The recorder you already wear.** A double press of the Galaxy Watch's home key starts
@@ -45,6 +50,12 @@ transcription on a supported device or with **your own** API key, and keeps the 
   deleted before the upload is confirmed. On iPhone and Mac you can choose your own iCloud instead,
   and on iPhone, Mac, Windows and Android a local folder you pick, such as an Obsidian vault. Recly cannot
   see your files. It has no server to see them with.
+- **Minutes that start themselves.** When a transcript lands in your Drive,
+  [`recly-events`](events/README.md) sends your ChatGPT agent (a dot or a Work chat) a
+  `recording.transcribed` MCP event. The agent reads the transcript with ChatGPT's own Google Drive
+  app and writes the minutes, or whatever you told it to do with each recording, with no prompt from
+  you. recly-events runs on your own computer and passes on the recording's name and Drive links,
+  never what was said.
 - **Files are the interface.** Your agent reads transcription results from your Drive. Settings offer
   on-device transcription, an external API using your key (AssemblyAI, Clova, Deepgram, OpenAI, Azure
   and more), or upload only. Speaker separation is automatic when supported. Notes are your agent's
@@ -59,7 +70,7 @@ transcription on a supported device or with **your own** API key, and keeps the 
 | Recording | Your watch, phone or desktop | Nothing. A watch hands the audio to your paired phone, and only there. |
 | Storage | Your Google Drive | The audio parts and a small metadata file, to your own account. |
 | Transcription | On device, or a provider you chose with your own key | Local transcription sends no audio to an ASR service. External mode sends the joined audio to the selected provider. Results are written next to the recording in Drive. |
-| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes wherever you keep them (Notion, in the example skills). Recly is not involved. |
+| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your Drive and writes the notes wherever you keep them (Notion, in the example skills). If you run recly-events, it tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, never the audio or what was said. |
 | Processing settings and API keys | Your device | Nothing is synced. Settings → Export/Import moves configuration only; enter keys separately on each device. |
 
 The full list of every network path, with nothing left out, is in the
@@ -115,11 +126,40 @@ Settings and transcript formats are documented in [`spec/`](spec/).
 ## Notes: bring your own agent
 
 Recly's pipeline ends at the transcript on purpose. Turning it into notes is something your
-existing AI subscription already does well, so Recly ships two **example skills** for your agent
-instead of a metered feature. They are a starting point: use them as they are, change them, or
-write your own for your format and the app you keep notes in. Drive stays the archive the app
-writes and the agent only reads it. In the examples, the notes, and every edit you make to them
-later, live in your Notion.
+existing AI subscription already does well, so instead of a metered feature Recly hands the
+transcript to your agent: on its own, the moment the transcript lands, or whenever you ask.
+
+### Automatic minutes with a ChatGPT agent
+
+Stop recording, and once the transcript is in your Drive, your ChatGPT agent starts on the minutes
+by itself, usually within a minute. [`recly-events`](events/README.md), a small program in this
+repository, connects the two through [OpenAI's MCP Events](https://developers.openai.com/plugins/build/mcp-events):
+
+1. A Recly app uploads the transcript to your Google Drive.
+2. recly-events sees it within about 10 seconds and sends your agent a signed
+   `recording.transcribed` event, which starts a run of the agent.
+3. The agent opens the transcript with ChatGPT's Google Drive app and does what you asked it to do
+   with every recording: minutes, decisions and action items, a follow-up email to draft.
+
+You tell the agent once, in plain words, what to do with each recording ([an example](events/README.md#6-subscribe-your-agent));
+after that every recording triggers it. recly-events reaches ChatGPT through an
+[OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), so it
+needs no public address and there is still no Recly server. It passes on the recording's name, title
+and Drive links, never the audio or what was said.
+
+What you need: recordings stored in Google Drive (not iCloud or a local folder); a ChatGPT dot (at
+the time of writing, ChatGPT Pro or Business Premium, outside the EEA) or a Work chat on ChatGPT
+web; an OpenAI Platform account for the tunnel; and a computer that stays on. Run recly-events there,
+or turn it on in the Mac or Windows app under Settings → Agent connection. Setup is in
+[events/README.md](events/README.md).
+
+### On request: example skills
+
+For notes in another format, notes kept outside ChatGPT, or questions across past recordings, Recly
+ships two **example skills** for any agent: Claude, ChatGPT, Codex and others. They are a starting
+point: use them as they are, change them, or write your own for your format and the app you keep
+notes in. Drive stays the archive the app writes and the agent only reads it. In the examples, the
+notes, and every edit you make to them later, live in your Notion.
 
 | Example skill | What it does |
 |---|---|
@@ -140,11 +180,6 @@ ChatGPT apps instead of a coding agent? The same five files work there too. Setu
 Then ask: *"Make minutes from the latest recording and put them in Notion"* or *"What did we
 decide about pricing last week?"*. Want another format, or notes somewhere other than Notion?
 Edit a skill, or copy one and [write your own](skills/README.md#write-your-own). That is the point.
-
-Want a ChatGPT dot to start on a recording as soon as its transcript lands?
-[`recly-events`](events/README.md) watches your Drive for new transcripts and tells your agent through
-MCP events. Turn it on in the Mac or Windows app under Settings → Agent connection, or run it on any
-computer yourself.
 
 ## Clients
 

@@ -32,6 +32,11 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 구독 중입니다. Recly는 지원 기기의 로컬 전사 또는 **내** API 키로 녹취를 만들고, 원본 오디오와 결과를
 **내** Google Drive에 남깁니다. Recly 서버는 없고, 회의에 들어오는 봇도 없고, 월 구독료도 없습니다.
 
+노트도 내가 부탁할 때까지 기다리지 않아도 됩니다. [`recly-events`](events/README.md)(영어)를 쓰면 새
+녹취록이 생길 때마다 [OpenAI MCP Events](https://developers.openai.com/plugins/build/mcp-events)로 내
+ChatGPT 에이전트에게 전해지고, 에이전트가 [알아서 회의록을 씁니다](#chatgpt-에이전트로-자동-회의록). 녹음을
+멈추면 ChatGPT에 회의록이 올라옵니다.
+
 ## 왜 Recly인가
 
 - **이미 차고 있는 녹음기.** Galaxy Watch 홈 키를 두 번 누르면 녹음이 시작되고, 워치는 폰에 오디오를
@@ -42,6 +47,10 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
   제공하는 가장 좁은 권한(`drive.file`)만 쓰고, 업로드가 확인되기 전에는 원본을 지우지 않습니다. iPhone과
   Mac에서는 대신 내 iCloud를, iPhone·Mac·Windows·Android에서는 Obsidian 볼트 같은 내가 고른 로컬 폴더를 고를 수 있습니다. Recly는
   내 파일을 볼 수 없습니다. 볼 서버 자체가 없으니까요.
+- **알아서 시작되는 회의록.** 내 Drive에 녹취록이 올라오면 [`recly-events`](events/README.md)가 내 ChatGPT
+  에이전트(dot이나 Work 채팅)에 `recording.transcribed` MCP 이벤트를 보냅니다. 에이전트는 ChatGPT의 Google
+  Drive 앱으로 녹취록을 읽고, 내가 부탁하지 않아도 회의록을, 또는 녹음마다 하라고 정해 둔 일을 합니다.
+  recly-events는 내 컴퓨터에서 돌고, 녹음 이름과 Drive 링크만 전할 뿐 대화 내용은 전하지 않습니다.
 - **파일이 인터페이스.** 내 에이전트가 Drive에서 전사 결과를 읽어 후속 작업을 합니다. 설정에서 로컬 전사,
   외부 API, 전사 안 함을 선택합니다. 외부 전사는 provider(AssemblyAI, 클로바, Deepgram, OpenAI, Azure
   등) 중 하나에 내 키를 넣어 씁니다. 지원하는 경우 화자를 자동으로 구분합니다. 노트는 내 에이전트의 몫입니다.
@@ -55,7 +64,7 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 | 녹음 | 내 워치·폰·데스크톱 | 없음. 워치는 짝 지은 내 폰으로만 오디오를 넘깁니다. |
 | 저장 | 내 Google Drive | 오디오 파트와 작은 메타데이터 파일, 내 계정으로. |
 | 녹취 | 기기 안, 또는 내가 고른 provider(내 키로) | 외부 API를 선택했을 때만 오디오. 로컬 분석에는 외부 전사 전송이 없습니다. 결과는 녹음 옆에 파일로 돌아옵니다. |
-| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 Drive에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). Recly는 관여하지 않습니다. |
+| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 Drive에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). recly-events를 쓰면 새 녹취록마다 OpenAI를 거쳐 내 ChatGPT 에이전트에게 알립니다. 녹음 이름, 제목, Drive 링크만 보내고 오디오나 대화 내용은 보내지 않습니다. |
 | 처리 설정, API 키 | 기기 안 | 동기화하지 않습니다. 설정 내보내기에는 키 값이 포함되지 않아 기기마다 별도로 입력합니다. |
 
 네트워크로 나가는 경로 전부를 하나도 빼지 않고 적은 문서가 [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)입니다.
@@ -102,9 +111,38 @@ Windows SmartScreen 경고 넘기기는 [설치 안내](docs/install.md)에 있�
 ## 노트: 내 에이전트로
 
 Recly의 파이프라인은 일부러 녹취록에서 끝납니다. 녹취록을 노트로 만드는 일은 이미 쓰고 있는 AI 구독이
-잘하는 일이라, Recly는 과금되는 기능 대신 에이전트용 **예시 스킬** 두 개를 함께 배포합니다. 출발점일
-뿐이니 그대로 쓰거나, 고치거나, 내 양식과 내가 쓰는 노트 앱에 맞게 직접 만들어 쓰세요. Drive는 앱이 쓰는
-원본 보관소라 에이전트는 읽기만 합니다. 예시 스킬에서는 노트와 그 뒤의 모든 수정이 내 Notion에 남습니다.
+잘하는 일이라, Recly는 과금되는 기능 대신 녹취록을 내 에이전트에게 넘깁니다. 녹취록이 올라오는 순간
+알아서, 또는 내가 부탁할 때.
+
+### ChatGPT 에이전트로 자동 회의록
+
+녹음을 멈추고 녹취록이 내 Drive에 올라오면, 내 ChatGPT 에이전트가 보통 1분 안에 알아서 회의록을 쓰기
+시작합니다. 이 저장소의 작은 프로그램 [`recly-events`](events/README.md)(영어)가
+[OpenAI MCP Events](https://developers.openai.com/plugins/build/mcp-events)로 둘을 잇습니다.
+
+1. Recly 앱이 녹취록을 내 Google Drive에 올립니다.
+2. recly-events가 10초쯤 안에 그것을 찾아 에이전트에게 서명된 `recording.transcribed` 이벤트를 보내고,
+   이 이벤트가 에이전트 실행을 시작합니다.
+3. 에이전트가 ChatGPT의 Google Drive 앱으로 녹취록을 열고, 녹음마다 하라고 정해 둔 일을 합니다. 회의록,
+   결정 사항과 할 일, 후속 메일 초안 같은 것들입니다.
+
+녹음마다 무엇을 할지는 에이전트에게 평소 말로 한 번만 알려 주면 됩니다([예시](events/README.md#6-subscribe-your-agent)).
+그다음부터는 녹음마다 에이전트가 움직입니다. recly-events는
+[OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)로 ChatGPT와
+연결되므로 공개 주소가 필요 없고, 여전히 Recly 서버도 없습니다. 녹음 이름, 제목, Drive 링크만 전하고
+오디오나 대화 내용은 전하지 않습니다.
+
+필요한 것: Google Drive에 저장되는 녹음(iCloud나 로컬 폴더는 해당 없음), ChatGPT dot(이 글을 쓰는 시점에
+ChatGPT Pro 또는 Business Premium, EEA 밖) 또는 ChatGPT 웹의 Work 채팅, 터널을 만들 OpenAI Platform 계정,
+켜 두는 컴퓨터 한 대. 그 컴퓨터에서 recly-events를 직접 실행하거나, Mac·Windows 앱의 설정 → 에이전트
+연결에서 켜면 됩니다. 설정 방법은 [events/README.md](events/README.md)(영어)에 있습니다.
+
+### 부탁할 때: 예시 스킬
+
+다른 양식의 노트, ChatGPT 밖에 두는 노트, 지난 녹음들에 대한 질문에는 Claude, ChatGPT, Codex 등 어떤
+에이전트에서든 쓰는 **예시 스킬** 두 개를 함께 배포합니다. 출발점일 뿐이니 그대로 쓰거나, 고치거나, 내
+양식과 내가 쓰는 노트 앱에 맞게 직접 만들어 쓰세요. Drive는 앱이 쓰는 원본 보관소라 에이전트는 읽기만
+합니다. 예시 스킬에서는 노트와 그 뒤의 모든 수정이 내 Notion에 남습니다.
 
 | 예시 스킬 | 하는 일 |
 |---|---|
@@ -125,10 +163,6 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 그다음 이렇게 부탁하면 됩니다. *"최근 녹음으로 회의록 만들어서 Notion에 넣어 줘"*, *"지난주에 가격에
 대해 뭘 결정했지?"*. 다른 양식이 필요하거나 Notion이 아닌 곳에 노트를 두고 싶다면 스킬을 고치거나, 하나를
 복사해 [직접 만드세요](skills/README.md#write-your-own). 그게 이 구조의 요점입니다.
-
-녹취록이 올라오자마자 ChatGPT dot이 바로 일을 시작하게 하고 싶다면
-[`recly-events`](events/README.md)(영어)를 쓰세요. 내 Drive에 새 녹취록이 생기면 MCP 이벤트로 에이전트에게
-알려 줍니다. Mac·Windows 앱의 설정 → 에이전트 연결에서 켜거나, 어느 컴퓨터에서든 직접 실행하면 됩니다.
 
 ## 클라이언트
 
