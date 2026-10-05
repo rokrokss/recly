@@ -30,7 +30,6 @@ const (
 	inboxPendingKeep = 30 * 24 * time.Hour
 	giveUpAfter      = 24 * time.Hour
 	maxBackoff       = time.Hour
-	verifiedFor      = 5 * time.Minute
 	rotationOverlap  = 5 * time.Minute
 )
 
@@ -53,8 +52,6 @@ type SubscribeParams struct {
 		Secret string `json:"secret"`
 	} `json:"delivery"`
 	Cursor *string `json:"cursor"`
-	// TTLMs is read and ignored: a subscription never expires here (see [Hub.Subscribe]).
-	TTLMs *int64 `json:"ttlMs"`
 }
 
 // SubscribeResult is the events/subscribe result.
@@ -72,9 +69,8 @@ type Hub struct {
 	Log   *slog.Logger
 	Now   func() time.Time
 
-	wake     chan struct{}
-	mu       sync.Mutex
-	verified map[string]time.Time
+	wake chan struct{}
+	mu   sync.Mutex
 }
 
 func (h *Hub) now() time.Time {
@@ -131,18 +127,17 @@ func (h *Hub) Subscribe(ctx context.Context, p SubscribeParams) (*SubscribeResul
 			existing = &c
 		}
 	})
-	cacheKey := id + "\x00" + p.Delivery.Secret
-	stillValid := existing != nil && existing.Secret == p.Delivery.Secret
-	if !stillValid && !h.recentlyVerified(cacheKey, now) {
+	// A refresh with the secret already verified skips the challenge; anything else proves the
+	// callback again.
+	if existing == nil || existing.Secret != p.Delivery.Secret {
 		if err := h.verify(ctx, id, p.Delivery.URL, p.Delivery.Secret); err != nil {
 			h.Log.Warn("subscribe.verification.failed", "subscription", id, "error", err.Error())
 			return nil, &SubscribeError{Code: -32015, Reason: "challenge_failed", Message: "callback challenge failed"}
 		}
-		h.markVerified(cacheKey, now)
 	}
 
 	sub := &state.Subscription{
-		ID: id, Name: p.Name, URL: p.Delivery.URL, Secret: p.Delivery.Secret,
+		ID: id, URL: p.Delivery.URL, Secret: p.Delivery.Secret,
 		CreatedAt: now, RefreshedAt: now,
 	}
 	if existing != nil {
@@ -187,21 +182,6 @@ func (h *Hub) Unsubscribe(p SubscribeParams) error {
 func subscriptionID(url string) string {
 	sum := sha256.Sum256([]byte(EventName + "\x00" + url))
 	return "sub_" + hex.EncodeToString(sum[:16])
-}
-
-func (h *Hub) recentlyVerified(key string, now time.Time) bool {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	return now.Before(h.verified[key])
-}
-
-func (h *Hub) markVerified(key string, now time.Time) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.verified == nil {
-		h.verified = map[string]time.Time{}
-	}
-	h.verified[key] = now.Add(verifiedFor)
 }
 
 // verify posts a signed challenge that the callback must echo. Like every delivery it names

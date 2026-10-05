@@ -45,7 +45,7 @@ const usage = `recly-events — tell your ChatGPT agent when Recly finishes a tr
 Usage:
   recly-events init [--google | --google-client FILE] [--tunnel-id ID]
                     [--tunnel-key-file FILE | --tunnel-key-stdin] [--no-check]
-  recly-events serve
+  recly-events serve [--exit-with-stdin]
   recly-events status [--json]
   recly-events test
   recly-events service install|uninstall
@@ -69,7 +69,7 @@ func main() {
 	case "init":
 		err = cmdInit(ctx, home, os.Args[2:])
 	case "serve":
-		err = cmdServe(ctx, home)
+		err = cmdServe(ctx, home, os.Args[2:])
 	case "status":
 		err = cmdStatus(home, os.Args[2:])
 	case "test":
@@ -316,7 +316,18 @@ func (l *liveStatus) snapshot() runtimeStatus {
 	return l.rt
 }
 
-func cmdServe(ctx context.Context, home app.Home) error {
+func cmdServe(ctx context.Context, home app.Home, args []string) error {
+	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	withStdin := fs.Bool("exit-with-stdin", false, "stop when standard input closes, for a parent process such as the Recly desktop app")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if *withStdin {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithCancel(ctx)
+		defer cancel()
+		app.StopWhenClosed(os.Stdin, cancel)
+	}
 	cfg, err := app.LoadConfig(home)
 	if err != nil {
 		return err

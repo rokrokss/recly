@@ -111,16 +111,10 @@ func newFixture(t *testing.T) *fixture {
 
 func (f *fixture) subscribe(t *testing.T) *SubscribeResult {
 	t.Helper()
-	return f.subscribeFor(t, nil)
-}
-
-func (f *fixture) subscribeFor(t *testing.T, ttlMs *int64) *SubscribeResult {
-	t.Helper()
 	var p SubscribeParams
 	p.Name = EventName
 	p.Arguments = json.RawMessage(`{}`)
 	p.Delivery.Mode, p.Delivery.URL, p.Delivery.Secret = "webhook", f.url, secret
-	p.TTLMs = ttlMs
 	res, err := f.hub.Subscribe(context.Background(), p)
 	if err != nil {
 		t.Fatalf("subscribe: %v", err)
@@ -134,9 +128,7 @@ func TestSubscribeVerifiesAndGrantsNoExpiry(t *testing.T) {
 	if !strings.HasPrefix(res.ID, "sub_") || res.RefreshBefore != nil || res.Cursor != nil {
 		t.Fatalf("result = %+v", res)
 	}
-	// A lifetime asked for is not granted either: subscriptions never expire here.
-	hour := int64(time.Hour / time.Millisecond)
-	again := f.subscribeFor(t, &hour)
+	again := f.subscribe(t)
 	if again.ID != res.ID || again.RefreshBefore != nil {
 		t.Fatalf("refresh = %+v, first %s", again, res.ID)
 	}

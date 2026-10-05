@@ -48,15 +48,13 @@ type Drive struct {
 
 // Subscription is one events/subscribe from ChatGPT.
 type Subscription struct {
-	ID             string          `json:"id"`
-	Name           string          `json:"name"`
-	URL            string          `json:"url"`
-	Secret         string          `json:"secret"`
-	PreviousSecret string          `json:"previousSecret,omitempty"`
-	RotationUntil  time.Time       `json:"rotationUntil,omitzero"`
-	Arguments      json.RawMessage `json:"arguments,omitempty"`
-	CreatedAt      time.Time       `json:"createdAt"`
-	RefreshedAt    time.Time       `json:"refreshedAt"`
+	ID             string    `json:"id"`
+	URL            string    `json:"url"`
+	Secret         string    `json:"secret"`
+	PreviousSecret string    `json:"previousSecret,omitempty"`
+	RotationUntil  time.Time `json:"rotationUntil,omitzero"`
+	CreatedAt      time.Time `json:"createdAt"`
+	RefreshedAt    time.Time `json:"refreshedAt"`
 }
 
 // InboxEvent is an event as the agent reads it back with get_pending_events.
