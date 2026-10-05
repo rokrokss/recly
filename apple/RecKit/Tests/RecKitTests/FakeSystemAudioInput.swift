@@ -4,7 +4,7 @@ import Foundation
 
 /// The process tap, minus Core Audio. It is what lets a meeting recording — three tracks, one
 /// boundary, one set of part numbers — be driven end to end by a test, on real files, with no
-/// aggregate device and no "시스템 오디오 녹음" prompt.
+/// aggregate device and no "System Audio Recording" prompt.
 ///
 /// The recorder touches it on its control queue and the test pushes buffers from wherever XCTest is,
 /// so everything mutable is behind [lock].

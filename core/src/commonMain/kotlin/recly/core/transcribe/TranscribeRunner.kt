@@ -153,7 +153,7 @@ class TranscribeRunner(
     /**
      * The submission is gone, so the state that points at it has to go with it — otherwise every
      * remaining attempt polls the same dead ref and the step spends its budget without ever
-     * re-submitting (docs/08: "재시도는 새로 제출"). The write lands before the throw, and the
+     * re-submitting (docs/08: "the retry to submit anew"). The write lands before the throw, and the
      * executor's failure path never touches `state_json`, so it survives the parked attempt.
      *
      * The provider's own scratch stays: a cached access token outlives the submission it was

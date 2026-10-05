@@ -86,7 +86,7 @@ class JobService(
 
     internal suspend fun localJobs(): List<Job> = store.list().filter { executor.isLocalNext(it) }
 
-    /** "연결 해제" (docs/03) runs in here; see [Executor.quiesced]. Internal: the shells never
+    /** "Disconnect" (docs/03) runs in here; see [Executor.quiesced]. Internal: the shells never
      * quiesce the queue themselves, they call `ReclyCore.disconnect`. */
     internal suspend fun <T> quiesced(block: suspend () -> T): T = executor.quiesced(block)
 
@@ -141,7 +141,7 @@ class JobService(
     private companion object {
         val RETRYABLE = setOf(
             JobStatus.NEEDS_AUTH,
-            // docs/10: nothing tells the core that space was freed, so "다시 시도" is the only way out.
+            // docs/10: nothing tells the core that space was freed, so "Retry" is the only way out.
             JobStatus.NEEDS_SPACE,
             // A recording waiting for the model re-plans from the current settings — another mode.
             JobStatus.NEEDS_MODEL,

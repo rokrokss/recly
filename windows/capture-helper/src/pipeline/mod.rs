@@ -1,6 +1,6 @@
 //! The parts of the helper that are arithmetic rather than Windows: resampling, drift, the mix and
 //! the segment boundary. They are what `cargo test` checks on the macOS development host
-//! (docs/lanes/M6-L2 "환경 제약").
+//! (docs/lanes/M6-L2 "Environment constraints").
 
 pub mod drift;
 pub mod level;

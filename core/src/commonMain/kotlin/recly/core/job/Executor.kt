@@ -56,7 +56,7 @@ class Executor(
 ) {
     private val mutex = Mutex()
 
-    /** Set by [quiesced] while a "연결 해제" waits for the gate; read between steps, from the thread
+    /** Set by [quiesced] while a "Disconnect" waits for the gate; read between steps, from the thread
      * the run is on rather than the one disconnecting. */
     @Volatile
     private var disconnecting = false
@@ -92,7 +92,7 @@ class Executor(
     }
 
     /**
-     * Runs [block] with nothing of the queue in flight — what "연결 해제" (docs/03) needs before it
+     * Runs [block] with nothing of the queue in flight — what "Disconnect" (docs/03) needs before it
      * empties the secrets, the tokens and the queue rows a run would otherwise still be reading.
      *
      * Two halves: [disconnecting] stops a run that is already going between its steps — the step in
@@ -133,7 +133,7 @@ class Executor(
         // it is rather than parked in RUNNING: a snapshot this build cannot decode has nothing to
         // run against, and the list already shows it as failed (docs/10 "job snapshot").
         val workflow = job.workflow ?: return
-        // The claim before the work, and transactional: "녹음 삭제" refuses a recording whose job is
+        // The claim before the work, and transactional: "Delete recording" refuses a recording whose job is
         // RUNNING in a transaction of its own, so between the two of them a run and a deletion of
         // what it reads cannot both happen. A job the deletion won is simply gone.
         if (!store.claimRunning(job.id, deps.clock.now())) return
@@ -439,7 +439,7 @@ class Executor(
 
     /**
      * docs/10 "Drive out of space": no attempt is spent either, because retrying a full Drive only
-     * produces the same 403 — the user has to clear space and press "다시 시도". The resumable
+     * produces the same 403 — the user has to clear space and press "Retry". The resumable
      * session in `state_json` goes with it: Drive keeps one for a week, and by the time somebody
      * has made room a fresh session is the surer bet.
      */

@@ -76,9 +76,9 @@ public enum AlertReason: String, CaseIterable, Sendable {
     }
 }
 
-/// Where the fix is. docs/10: "탭하면 고칠 수 있는 화면으로 간다 — 로그인 화면, 시크릿 폼, 워크플로우
-/// 편집기. '앱 열기'로 끝내지 않는다." [driveStorage] is the one that leaves the app, because the
-/// space is Google's to give back.
+/// Where the fix is. docs/10: "A tap goes to the screen that can fix it — the sign-in screen, the
+/// secret form, the workflow editor. It does not end at 'Open app'." [driveStorage] is the one that
+/// leaves the app, because the space is Google's to give back.
 public enum FixSurface: CaseIterable, Sendable {
     case privacy
     case signIn

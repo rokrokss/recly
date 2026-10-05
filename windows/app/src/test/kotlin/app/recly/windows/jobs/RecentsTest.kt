@@ -146,7 +146,7 @@ class RecentsTest {
         assertFalse(item.deletable)
         assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
         assertNull(item.link)
-        // docs/09 screen principle 2: nothing is finalized yet, so the 길이 column says "not in yet".
+        // docs/09 screen principle 2: nothing is finalized yet, so the length column says "not in yet".
         assertNull(item.durationSec)
     }
 
@@ -394,7 +394,7 @@ class RecentsTest {
         assertTrue(Recents.item(record(), job("failed", JobStatus.FAILED), emptyList()).deletable)
     }
 
-    /** docs/09 screen principle 2: the 길이 column, off `meta.json` — and empty until it is finalized. */
+    /** docs/09 screen principle 2: the length column, off `meta.json` — and empty until it is finalized. */
     @Test
     fun `the length is the meta's, and there is none until the recording is finalized`() {
         assertEquals(90.0, Recents.item(record(durationSec = 90.0), null, emptyList()).durationSec)

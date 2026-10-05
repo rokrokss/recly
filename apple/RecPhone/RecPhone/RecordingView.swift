@@ -309,9 +309,9 @@ private struct ConsentDialog: View {
             }
             .accessibilityIdentifier("consent-confirm")
         } content: {
-            // docs/research/02 §동의·법. Not legal advice and not a jurisdiction the app tries to
-            // guess: the three lines are what the user needs to know that the question is not
-            // rhetorical.
+            // docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app
+            // tries to guess: the three lines are what the user needs to know that the question is
+            // not rhetorical.
             BlueprintDialogText(loc("consent.body"))
                 .accessibilityIdentifier("consent-body")
             // A link and not a third button, for the same reason as on the Mac: the question the

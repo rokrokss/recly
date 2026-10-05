@@ -25,17 +25,18 @@
 	<string>Recly records meetings and memos so they can be transcribed.</string>
 
 	<!--
-	  docs/13 "iPhone RecPhone": `UIBackgroundModes: audio`로 잠금 중 계속 — a recording that stops
-	  when the screen locks is not a recording of a meeting. The session itself is M5-L2.
+	  docs/13 "iPhone RecPhone": `UIBackgroundModes: audio` keeps it going while locked — a
+	  recording that stops when the screen locks is not a recording of a meeting. The session
+	  itself is M5-L2.
 	-->
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>audio</string>
 		<!--
 		  docs/13 I4·M5-L3 deliverable 4: `BGTaskScheduler` refuses to register `app.recly.jobs`
-		  without it, and the job that finishes an upload — 웹훅 등 나머지 단계 — is what needs the
-		  processing time. The chunk PUTs themselves need no mode at all: a background `URLSession`
-		  keeps running for a suspended app on its own.
+		  without it, and the job that finishes an upload — the remaining steps, such as webhooks —
+		  is what needs the processing time. The chunk PUTs themselves need no mode at all: a
+		  background `URLSession` keeps running for a suspended app on its own.
 		-->
 		<string>processing</string>
 	</array>

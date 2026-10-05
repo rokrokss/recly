@@ -358,7 +358,7 @@ final class MenuModel: ObservableObject {
     /// status item is the same shape as the launcher icon. The idle one is a template image and
     /// AppKit paints it in the menu bar's own colour; the recording one is red (docs/12 "Status icon") and a template would lose that, so it is an ordinary image with a light and a dark
     /// variant in the catalog instead — the appearance is what the menu bar hands it.
-    /// docs/10 "macOS": 메뉴바 아이콘 오류 상태. A job the user has to do something about puts a mark
+    /// docs/10 "macOS": menu bar icon error state. A job the user has to do something about puts a mark
     /// on the icon — the same square badge the ledger draws, in the corner the recording tint does
     /// not use. Recording wins: a recording in progress is the more urgent thing to be told, and
     /// the queue's news is one click away in the popover either way.
@@ -766,9 +766,9 @@ final class MenuModel: ObservableObject {
         await alertNotifier.publish(alerts)
     }
 
-    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다." On a `LSUIElement` Mac
-    /// that means the settings window — [openEditor] is set by the scene, which is the only thing
-    /// that can open one.
+    /// docs/10: "A tap goes to the screen that can fix it. It does not end at 'Open app'." On a
+    /// `LSUIElement` Mac that means the settings window — [openEditor] is set by the scene, which
+    /// is the only thing that can open one.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
         case .privacy:
@@ -1091,8 +1091,9 @@ final class MenuModel: ObservableObject {
         guard mode == .meeting, consentReminder else { return true }
         let alert = NSAlert()
         alert.messageText = AppStrings.localized("Did you tell the participants about the recording?")
-        // docs/research/02 §동의·법. Not legal advice and not a jurisdiction the app tries to guess:
-        // the three lines are what the user needs to know that the question is not rhetorical.
+        // docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app tries
+        // to guess: the three lines are what the user needs to know that the question is not
+        // rhetorical.
         alert.informativeText = AppStrings.localized("consent.body")
         alert.addButton(withTitle: AppStrings.localized("I told them · Start recording"))
         alert.addButton(withTitle: AppStrings.localized("Cancel"))

@@ -56,7 +56,7 @@ class StepContext(
     /**
      * Part of the step's own output, written before it is finished. Unlike [saveState] it is not
      * dropped when the job parks, so it is where a fact the *recording* needs later goes — the
-     * Drive folder id, which "Drive에서도 삭제" (docs/03) has to find even after a `NEEDS_SPACE`
+     * Drive folder id, which "Also delete from Drive" (docs/03) has to find even after a `NEEDS_SPACE`
      * park threw the resume state away. The final [StepOutput] replaces whatever it wrote.
      */
     val saveOutput: suspend (JsonObject) -> Unit,

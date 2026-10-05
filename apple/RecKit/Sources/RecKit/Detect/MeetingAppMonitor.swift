@@ -3,7 +3,7 @@ import AppKit
 import CoreGraphics
 import Foundation
 
-/// Which meeting app is running, if any (docs/12 "Meeting detection" 신호 3).
+/// Which meeting app is running, if any (docs/12 "Meeting detection" signal 3).
 ///
 /// Read on demand rather than observed: `MeetingDetector` already ticks every two seconds for the
 /// microphone, and the browser half of the answer is a window *title*, which no launch notification

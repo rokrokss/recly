@@ -1,9 +1,9 @@
 //! `--self-test`: what a Windows machine can answer about this helper without recording anything.
 //!
-//! It is CI's half of docs/20 S8 (docs/lanes/M6-L2 "Windows 검증은 CI로"). A `windows-latest` runner
-//! has no audio endpoint at all, so the endpoint lines are expected to fail there and are printed
-//! rather than asserted — what CI is really being asked is the **encoder** question docs/14 left
-//! open: can Media Foundation's AAC encoder produce ADR-006's format?
+//! It is CI's half of docs/20 S8 (docs/lanes/M6-L2 "Windows is verified in CI"). A
+//! `windows-latest` runner has no audio endpoint at all, so the endpoint lines are expected to fail
+//! there and are printed rather than asserted — what CI is really being asked is the **encoder**
+//! question docs/14 left open: can Media Foundation's AAC encoder produce ADR-006's format?
 //!
 //! Everything goes to stdout, and the exit code is always 0: this is a report, not a gate.
 

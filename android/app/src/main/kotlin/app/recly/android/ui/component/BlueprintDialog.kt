@@ -45,19 +45,20 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 
 /**
- * docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
- * square-cornered node on the grid, not Material's tonal card. `AlertDialog` is a container with
- * its own shape, its own elevation tint and its own 28dp corners, and none of those are in docs/09
- * — so this is `Dialog` plus the same surface, 1dp border and 4dp radius as [StateNode].
+ * docs/09 screen principle 5 ("title + one-line description + at most 2 buttons"), drawn the way
+ * the rest of the app is drawn: a square-cornered node on the grid, not Material's tonal card.
+ * `AlertDialog` is a container with its own shape, its own elevation tint and its own 28dp corners,
+ * and none of those are in docs/09 — so this is `Dialog` plus the same surface, 1dp border and 4dp
+ * radius as [StateNode].
  *
  * There is no motion to reduce: a `Dialog` window is not animated, so the system's own reduce-motion
  * setting has nothing to switch off here. Dark arrives through the palette.
  *
  * [content] scrolls on its own so a long body (the disconnect warnings) never pushes [actions] off
- * the screen; the card is capped at [dialogMaxHeight] of the window. docs/09 §유동 타이포 makes the
- * font size the user's, so the two things that grow with it are both bounded: the title keeps
- * [TITLE_LINES] in the header and spills the rest into that same scroll region, and [actions] stack
- * when a row of them would no longer fit (see [DialogActions]).
+ * the screen; the card is capped at [dialogMaxHeight] of the window. docs/09 "Fluid typography"
+ * makes the font size the user's, so the two things that grow with it are both bounded: the title
+ * keeps [TITLE_LINES] in the header and spills the rest into that same scroll region, and [actions]
+ * stack when a row of them would no longer fit (see [DialogActions]).
  */
 @Composable
 fun BlueprintDialog(
@@ -116,8 +117,8 @@ fun BlueprintDialog(
 
 /**
  * The answers, in a row while they fit and in a stack when they do not. What decides it is nearly
- * always the user's font size and not the width of the device (docs/09 §유동 타이포), and a clipped
- * answer makes the question unanswerable — so the row is measured rather than assumed.
+ * always the user's font size and not the width of the device (docs/09 "Fluid typography"), and a
+ * clipped answer makes the question unanswerable — so the row is measured rather than assumed.
  *
  * Stacked, each answer is full width and they keep their order, which puts the primary one at the
  * bottom: last, the same as it is last on the right, and nearest the thumb.

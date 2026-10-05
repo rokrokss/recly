@@ -29,8 +29,8 @@ object SecureStores {
 /**
  * **Development only.** A JSON file next to the database, values base64-encoded and not encrypted
  * at all: it exists so the app can be built and run on the macOS development host (lane M6-L1
- * "환경 제약"), and it is never reached on Windows, where [WindowsCredentialStore] is chosen
- * instead. A refresh token in here is as safe as the user's home directory and no safer.
+ * "Environment constraints"), and it is never reached on Windows, where [WindowsCredentialStore]
+ * is chosen instead. A refresh token in here is as safe as the user's home directory and no safer.
  */
 class DevFileSecureStore(
     private val fileSystem: FileSystem,

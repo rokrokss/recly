@@ -3,8 +3,8 @@ import os
 import RecKit
 import WatchConnectivity
 
-/// The watch's end of `WCSession` (docs/13 "Apple Watch" 전송, M5-L4 deliverable 2): the queue's way
-/// out, the acks' way in, and the phone's language setting's way in.
+/// The watch's end of `WCSession` (docs/13 "Apple Watch" Transfer, M5-L4 deliverable 2): the
+/// queue's way out, the acks' way in, and the phone's language setting's way in.
 ///
 /// It is built before the core is — activating the session early is what lets the acks for a
 /// transfer that finished while the app was gone be waiting when the queue opens — so the queue is

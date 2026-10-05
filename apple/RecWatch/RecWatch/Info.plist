@@ -31,7 +31,7 @@
 	<string>Recly records meetings and memos so they can be transcribed.</string>
 
 	<!--
-	  docs/13: `UIBackgroundModes: audio` — WatchKit의 `WKBackgroundModes`가 아니다. This is what
+	  docs/13: `UIBackgroundModes: audio` — not WatchKit's `WKBackgroundModes`. This is what
 	  keeps the recording running once the wrist drops. The session itself is M5-L4.
 	-->
 	<key>UIBackgroundModes</key>

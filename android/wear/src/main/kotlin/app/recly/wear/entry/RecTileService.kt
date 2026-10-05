@@ -22,8 +22,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 
 /**
- * docs/11 W5: "타일 탭 → 즉시 녹음". One chip and one line of status, which is all a tile is worth —
- * the user swiped here to start recording, not to read.
+ * docs/11 W5: "tap the tile → recording starts at once". One chip and one line of status, which is
+ * all a tile is worth — the user swiped here to start recording, not to read.
  *
  * The chip is a `launchAction`, not anything that touches the recorder: a `microphone` foreground
  * service started from a tile is a background start and the platform throws (the phone's

@@ -849,6 +849,6 @@ public enum RecordingDetailStrings {
 }
 
 /// The phone's Play button, and the ledger row's Details button that opens the page it is on: the
-/// row's most used action, so it is not left the narrowest ("상세" is two letters). Android's
-/// `PlayMinWidth` and `DetailMinWidth` are the same 120.
+/// row's most used action, so it is not left the narrowest (its Korean label, "상세", is two
+/// letters). Android's `PlayMinWidth` and `DetailMinWidth` are the same 120.
 public let playButtonMinWidth: CGFloat = 120

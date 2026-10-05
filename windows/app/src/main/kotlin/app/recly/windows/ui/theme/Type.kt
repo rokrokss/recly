@@ -42,7 +42,7 @@ private const val WIDE_FACTOR = 1.15f
 /**
  * The monospace styles, which Material has no slot for: timers, part numbers, byte counts, hashes,
  * status codes, device ids and the core's untranslated diagnostics all come from here (docs/09
- * "Raw 미학").
+ * "Raw aesthetics").
  */
 data class MonoType(
     val small: TextStyle,

@@ -72,7 +72,7 @@ private struct ModelWaitLine: View {
 
 /// One reason: what it is, how many recordings are behind it, the code, and the fix. The line is
 /// red for a failure and the badge's warning tone for a job that is only waiting (docs/09
-/// "모든 상태는 색 + 텍스트": red means failed).
+/// "Every state is color + text": red means failed).
 private struct AlertLine<Action: View>: View {
     @Environment(\.blueprint) private var blueprint
     let alert: JobAlert

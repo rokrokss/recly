@@ -4,7 +4,7 @@
 //!
 //! It is a library as well as a binary so the arithmetic — resampling, drift, mix, segment
 //! boundaries, the protocol, sha256 — can be tested on the macOS development host, where none of the
-//! Windows half exists (docs/lanes/M6-L2 "환경 제약").
+//! Windows half exists (docs/lanes/M6-L2 "Environment constraints").
 
 pub mod capture;
 pub mod detect;

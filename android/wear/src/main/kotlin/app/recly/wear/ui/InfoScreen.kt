@@ -28,7 +28,7 @@ import app.recly.wear.R
 import app.recly.wear.ui.theme.WearBlueprint
 
 /**
- * docs/11 W5 "설정 안내 화면", and text is deliberately all it is. Both things the user has to do
+ * docs/11 W5 "setup guide screen", and text is deliberately all it is. Both things the user has to do
  * live in apps this one cannot deep-link into: the double-press mapping is in Samsung's own
  * settings (the intent is undocumented and vendor-specific) and the battery exemption is in Galaxy
  * Wearable, on the *phone*. A button that silently did nothing on a non-Samsung watch would be

@@ -37,7 +37,7 @@ pub enum Delivery {
     Frames(Buffer),
     /// The endpoint handed over nothing for this long. The frames across it are missing rather than
     /// slow, so the drift estimate re-anchors instead of reading the hole as a rate (docs/12
-    /// "tap 재생성"). Sent *after* the silence that filled it, so the re-anchor counts it.
+    /// "Tap re-creation"). Sent *after* the silence that filled it, so the re-anchor counts it.
     Outage { seconds: f64 },
     /// The endpoint is gone. docs/14 `error`, and the end of this thread.
     Failed(io::Error),

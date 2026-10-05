@@ -88,7 +88,7 @@ class GladiaProviderTest {
         val expected = mapOf(
             Language.KO to (listOf("ko") to false),
             Language.EN to (listOf("en") to false),
-            // 한영 혼용 is the only case that asks for a switch mid-recording.
+            // Mixed Korean and English is the only case that asks for a switch mid-recording.
             Language.KO_EN to (listOf("ko", "en") to true),
         )
         expected.entries.forEachIndexed { index, (language, wanted) ->

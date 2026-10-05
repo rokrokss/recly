@@ -441,7 +441,7 @@ private fun ConsentPrompt(
 
 /**
  * The tray icon, drawn rather than bundled: the app mark's monochrome template (docs/09
- * "앱 아이콘", docs/design/icon.svg) — an outer node with an inner square that turns red while
+ * "App icon", docs/design/icon.svg) — an outer node with an inner square that turns red while
  * recording (docs/12 "Status icon", the same rule on both desktops). A vector needs no asset
  * pipeline; the .ico the installer carries is the same mark, exported by scripts/render-icons.swift.
  *

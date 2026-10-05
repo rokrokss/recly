@@ -223,7 +223,7 @@ final class RecentsUploadingTests: XCTestCase {
     }
 }
 
-/// docs/08 "Polling · status": a job waiting out a backoff says *when* it comes back — "재시도 대기" on
+/// docs/08 "Polling · status": a job waiting out a backoff says *when* it comes back — "Retry pending" on
 /// its own reads like "stuck". The rule is Android's (`JobsScreen.remaining`) down to its
 /// truncation, because the two ledgers are one ledger seen on two devices.
 final class RecentItemStateLabelTests: XCTestCase {

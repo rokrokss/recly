@@ -3,8 +3,8 @@ import XCTest
 @testable import RecKit
 
 /// `ProcessTapCapture`'s outage bookkeeping, which is the only part of it an automated run can
-/// reach: everything else is Core Audio and the "시스템 오디오 녹음" prompt. What it decides is what
-/// the meta's `gaps` say about audio nobody recorded (docs/12 "Tap re-creation").
+/// reach: everything else is Core Audio and the "System Audio Recording" prompt. What it decides
+/// is what the meta's `gaps` say about audio nobody recorded (docs/12 "Tap re-creation").
 final class TapOutageTests: XCTestCase {
     /// The watchdog's outage did not begin when the watchdog noticed. Ten seconds of silence have
     /// to pass before it can be sure the tap is dead, and that silence is missing from the

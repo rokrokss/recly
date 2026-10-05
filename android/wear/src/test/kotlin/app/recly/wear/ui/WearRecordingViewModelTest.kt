@@ -242,7 +242,7 @@ class WearRecordingViewModelTest {
         assertFalse(vm.state.value.handingOver)
     }
 
-    /** The last recording of a pass leaves the queue before the pass ends: no `전송 중 0개`. */
+    /** The last recording of a pass leaves the queue before the pass ends: no `Sending 0`. */
     @Test
     fun `an empty queue is never sending`() = runTest(dispatcher) {
         val vm = viewModel()

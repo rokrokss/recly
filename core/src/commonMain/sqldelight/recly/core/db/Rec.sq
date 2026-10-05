@@ -1,10 +1,10 @@
 -- `drive_folder_id` is the recording's `{base}/` folder on Drive (ADR-014): written by the upload
 -- step when it makes or finds the folder, and by a pull when it adopts one — so it outlives the
--- queue rows "연결 해제" clears. `remote` marks a row adopted from Drive (docs/03 "Recordings from other devices"):
+-- queue rows "Disconnect" clears. `remote` marks a row adopted from Drive (docs/03 "Recordings from other devices"):
 -- another device recorded it, this one has no job for it and no original.
 --
 -- `remote_pending` is what the device that *is* running the workflow says it still has to do, read
--- off the folder's `pending` marker (docs/03 "Recordings from other devices" — 진행 표시): the comma-joined step
+-- off the folder's `pending` marker (docs/03 "Recordings from other devices" — progress marker): the comma-joined step
 -- types after the upload, or NULL when there are none, the marker is stale, or the row is this
 -- device's own (its own job rows are the truth about it).
 CREATE TABLE recording (
@@ -86,7 +86,7 @@ resumeAuthStepRuns:
 UPDATE step_run SET status = 'PENDING', last_error = NULL
 WHERE job_id = ? AND status = 'NEEDS_AUTH';
 
--- "연결 해제" (docs/03) takes completed jobs one at a time, leaving iCloud's (docs/03 "Storage location").
+-- "Disconnect" (docs/03) takes completed jobs one at a time, leaving iCloud's (docs/03 "Storage location").
 deleteStepRunsByJob:
 DELETE FROM step_run WHERE job_id = ?;
 
@@ -172,7 +172,7 @@ DELETE FROM recording WHERE id = ?;
 deletePartsByRecording:
 DELETE FROM part WHERE recording_id = ?;
 
--- "녹음 삭제" (docs/03): the rows a recording leaves behind, since nothing cascades.
+-- "Delete recording" (docs/03): the rows a recording leaves behind, since nothing cascades.
 deleteJobsByRecording:
 DELETE FROM job WHERE recording_id = ?;
 
@@ -253,7 +253,7 @@ JOIN job ON job.id = step_run.job_id
 WHERE job.recording_id = ? ORDER BY job.created_at, step_run.ordinal;
 
 -- `output_json` is only ever added to, never cleared: a step that writes part of its answer before
--- it can fail — the Drive folder id, so "Drive에서도 삭제" still knows what to delete after a park
+-- it can fail — the Drive folder id, so "Also delete from Drive" still knows what to delete after a park
 -- (docs/03) — must not lose it to the failing attempt's own write.
 updateStepRun:
 UPDATE step_run SET status = ?, attempts = ?, next_attempt_at = ?, last_error = ?,

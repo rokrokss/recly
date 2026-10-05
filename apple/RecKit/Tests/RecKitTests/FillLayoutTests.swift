@@ -5,7 +5,8 @@ import XCTest
 /// `FillRowTest` asks the same questions.
 final class FillLayoutTests: XCTestCase {
 
-    /// 시스템 기본 / 밝게 / 어둡게 in a phone's line: short enough for an even split, so they get one.
+    /// The Korean "시스템 기본" / "밝게" / "어둡게" (System default / Light / Dark) in a phone's
+    /// line: short enough for an even split, so they get one.
     func testChipsThatFitAnEvenSplitShareTheLineEqually() {
         XCTAssertEqual(fillLines([100, 44, 60], width: 358, spacing: 8), [[114, 114, 114]])
     }

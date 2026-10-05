@@ -32,7 +32,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 
-/** docs/09 screen principle 2: the ledger's four columns — `시각 · 제목 · 길이 · 상태`, as on the Mac. */
+/** docs/09 screen principle 2: the ledger's four columns — `Time · Title · Length · Status`, as on the Mac. */
 private val TIME_COLUMN = 68.dp
 
 /**

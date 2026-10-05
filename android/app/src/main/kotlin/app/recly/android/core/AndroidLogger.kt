@@ -5,7 +5,7 @@ import recly.core.platform.Logger
 
 /**
  * `android.util.Log` under one tag, with the core's event name first so `logcat -s recly` reads like
- * the shared event stream docs/20 expects. The file ring buffer ("로그 내보내기", A10) is a later lane.
+ * the shared event stream docs/20 expects. The file ring buffer ("Export logs", A10) is a later lane.
  */
 class AndroidLogger : Logger {
     override fun log(level: Logger.Level, event: String, fields: Map<String, Any?>, error: Throwable?) {

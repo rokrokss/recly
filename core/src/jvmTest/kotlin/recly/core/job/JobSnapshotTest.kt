@@ -40,7 +40,7 @@ private val poisonedJson: String =
 
 /**
  * docs/10 "Unknown steps in a job snapshot": a job queued on a newer app names a step type this build's
- * serializer has never heard of. It has to stay *one* job — the list, the queue and "녹음 삭제" all
+ * serializer has never heard of. It has to stay *one* job — the list, the queue and "Delete recording" all
  * go on working — and its `workflow_json` has to survive untouched, because the same row is what an
  * updated build will run.
  */

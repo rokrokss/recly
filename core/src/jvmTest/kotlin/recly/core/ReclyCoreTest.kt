@@ -337,7 +337,7 @@ class ReclyCoreTest {
     }
 
     /**
-     * docs/03: a `RUNNING` job is reading the very files "녹음도 함께 삭제" would delete, so that one
+     * docs/03: a `RUNNING` job is reading the very files "Also delete the recordings" would delete, so that one
      * recording — and the queue rows that run is written against — outlives the disconnect, and the
      * result says which, so the screen can say so instead of losing it silently.
      */
@@ -550,7 +550,7 @@ class ReclyCoreTest {
 }
 
 /**
- * The shell's keychain, plus a note of which namespace every deletion emptied — "연결 해제" is the
+ * The shell's keychain, plus a note of which namespace every deletion emptied — "Disconnect" is the
  * one caller that has to do those in an order.
  */
 private class RecordingSecureStore(

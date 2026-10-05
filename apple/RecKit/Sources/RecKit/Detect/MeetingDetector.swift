@@ -8,10 +8,10 @@ import Foundation
 /// cooldown" is the part with the rules in it, and the part a test can hold still.
 public struct MeetingDetectionRule {
     public enum Prompt: Equatable, Sendable {
-        /// "회의 중인가요? 녹음 시작"
+        /// "Are you in a meeting? Start recording"
         case start
 
-        /// "녹음을 끝낼까요?" — an offer (docs/12 "End detection": never an automatic stop).
+        /// "End the recording?" — an offer (docs/12 "End detection": never an automatic stop).
         case stop
     }
 
@@ -39,8 +39,8 @@ public struct MeetingDetectionRule {
     public static let micIdleSec: TimeInterval = 60
 
     /// False from the moment a prompt is made until the meeting signal goes away again — so one
-    /// meeting gets one invitation (docs/20 M4: "Zoom 입장 시 알림 1회"), and so a recording the
-    /// user stopped by hand is not immediately offered back to them.
+    /// meeting gets one invitation (docs/20 M4: "One notice on joining Zoom"), and so a recording
+    /// the user stopped by hand is not immediately offered back to them.
     ///
     /// The microphone going idle mid-meeting re-arms it, which can cost a second prompt once the
     /// cooldown is up; re-arming only when the meeting app quits would be quieter but would miss

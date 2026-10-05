@@ -127,7 +127,7 @@ private fun Header(model: ShellModel, strings: Strings) {
             )
         }
 
-        // docs/09 §유동 타이포 · i18n: four buttons of Korean labels are wider than a 520dp popup, so
+        // docs/09 §Fluid typography · i18n: four buttons of Korean labels are wider than a 520dp popup, so
         // the row wraps rather than pushing the last of them off the window.
         FlowRow(
             modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = 10.dp),

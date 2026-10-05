@@ -24,7 +24,7 @@ import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
 
 /**
- * Return Zero (리턴제로) VITO STT (docs/08 provider table, verified against the developer docs on
+ * Return Zero VITO STT (docs/08 provider table, verified against the developer docs on
  * 2026-08-29): the secret is `{clientId}:{clientSecret}`, which buys a six-hour access token from
  * `POST /v1/authenticate`; the audio goes to `POST /v1/transcribe` as `multipart/form-data`
  * (`file` + a `config` JSON string) and the job is polled at `GET /v1/transcribe/{id}`.
@@ -154,7 +154,7 @@ class RtzrProvider : SttProvider {
     /**
      * docs/08 language mapping. `sommers` is the default model but only speaks Korean and
      * Japanese, so everything else routes to `whisper` — which is also the only model that takes
-     * `multi` (한영 혼용) and `detect`.
+     * `multi` (mixed Korean and English) and `detect`.
      */
     private fun config(ctx: SttContext): JsonObject = buildJsonObject {
         val language = when (ctx.step.language) {

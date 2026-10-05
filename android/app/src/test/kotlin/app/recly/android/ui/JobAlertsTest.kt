@@ -68,7 +68,10 @@ class JobAlertsTest {
         }
     }
 
-    /** docs/10: "재시도로 낫는 실패는 알리지 않는다." A 5xx is inside the backoff, not at the end of it. */
+    /**
+     * docs/10: "Failures that retrying heals are not notified." A 5xx is inside the backoff, not at
+     * the end of it.
+     */
     @Test
     fun `a provider 500 on the retry path never notifies`() {
         assertNull(alertReasonOf(JobStatus.WAITING, CoreMessage.PROVIDER_ERROR.code(detail = "500")))

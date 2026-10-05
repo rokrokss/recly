@@ -438,9 +438,9 @@ class JobStore(
 
     /**
      * Disconnect preserves unfinished steps and their resume state; only completed jobs go — but not
-     * iCloud's. A completed iCloud job's upload output holds the file ids its playback fetches by
-     * once the local audio is swept, and disconnecting Drive says nothing about iCloud (docs/03
-     * "저장 위치").
+     * iCloud's or a local folder's. Such a job's upload output holds the file ids its playback fetches
+     * by once the local audio is swept, and disconnecting Drive says nothing about either (docs/03
+     * "Storage location").
      */
     internal suspend fun disconnectDrive(): Unit = locked {
         db.transaction {

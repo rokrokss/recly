@@ -21,7 +21,7 @@ public protocol WatchRecordings: AnyObject {
     func delete(recordingId: String) async
 }
 
-/// One recording as the queue shows it (the screen's "보내는 중 n", and what a test asserts on).
+/// One recording as the queue shows it (the screen's "Sending n", and what a test asserts on).
 public struct WatchTransferEntry: Equatable {
     public let recordingId: String
     public let parts: Int
@@ -45,8 +45,9 @@ public struct WatchTransferPart: Equatable {
     }
 }
 
-/// docs/03 "Watch → phone transfer contract", the sending half on `WCSession` (docs/13 "Apple Watch" 전송,
-/// M5-L4 deliverable 2): per recording, every part in `meta.parts` order, then `meta.json` last.
+/// docs/03 "Watch → phone transfer contract", the sending half on `WCSession`
+/// (docs/13 "Apple Watch" Transfer, M5-L4 deliverable 2): per recording, every part in
+/// `meta.parts` order, then `meta.json` last.
 /// **`ack-meta ok:true` is the only thing that deletes audio from this watch.** A part ack is
 /// recorded — it is what stops the part being sent again — but it does not license a delete: until
 /// the phone has filed the meta it has loose parts and a 24-hour purge timer, and a watch that has
@@ -149,9 +150,9 @@ public actor WatchTransferQueue {
 
     /// Hands `WCSession` everything it is not already carrying: the unacked parts of each recording,
     /// and the meta once every part of that recording is acked. Called after a stop, when the app
-    /// becomes active and when the session activates (docs/13 "Apple Watch" 전송: unacked parts get
-    /// resent on activation) — the phone ignores a duplicate part by its sha256, so re-sending one is only
-    /// ever wasted radio, never a wrong file.
+    /// becomes active and when the session activates (docs/13 "Apple Watch" Transfer: unacked parts
+    /// get resent on activation) — the phone ignores a duplicate part by its sha256, so re-sending
+    /// one is only ever wasted radio, never a wrong file.
     public func pump() {
         let outstanding = Set(link.outstandingTransfers.compactMap { TransferMetadata.parse($0)?.key })
         var changed = false

@@ -59,7 +59,7 @@ class JobAlertsTest {
         }
     }
 
-    /** docs/10: "재시도로 낫는 실패는 알리지 않는다." */
+    /** docs/10: "Failures that retrying heals are not notified." */
     @Test
     fun `a provider error on the retry path never notifies`() {
         assertNull(alertReasonOf(JobStatus.WAITING, CoreMessage.PROVIDER_ERROR.code(detail = "transcribe 503")))

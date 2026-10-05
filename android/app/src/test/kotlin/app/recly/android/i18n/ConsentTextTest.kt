@@ -7,10 +7,11 @@ import kotlin.test.assertTrue
 import org.w3c.dom.Element
 
 /**
- * Lane P1 deliverable 7: the recording-consent reminder is the Mac's, "같은 질문 · 같은 본문 · 같은
- * 관할 링크 · 같은 다시 묻지 않기" — in both languages, because since I18N-L2 the Mac says all of it
- * in two. A user with a Mac and a phone is being told about the same law by the same product, and a
- * rewording on either side fails here, which is the only place it could be noticed.
+ * Lane P1 deliverable 7: the recording-consent reminder is the Mac's, "same question · same body ·
+ * same jurisdiction link · same `Do not ask again`" — in both languages, because since I18N-L2 the
+ * Mac says all of it in two. A user with a Mac and a phone is being told about the same law by the
+ * same product, and a rewording on either side fails here, which is the only place it could be
+ * noticed.
  *
  * The Mac's own String Catalog is read rather than a copy of it — the same shape as Windows'
  * `ConsentTest`, which holds those two together.

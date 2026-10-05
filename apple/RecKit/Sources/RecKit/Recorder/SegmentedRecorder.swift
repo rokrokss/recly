@@ -562,7 +562,7 @@ public final class SegmentedRecorder {
     }
 
     /// `mix` — the file the user's own AI is meant to eat, where the separate tracks are for speaker
-    /// diarisation (docs/research/02 §데스크톱 캡처). Half scale each, so two streams that are both
+    /// diarisation (docs/research/02 §Desktop capture). Half scale each, so two streams that are both
     /// loud add up to full scale rather than clipping.
     ///
     /// The two buffers are the same length by construction: `take` fills exactly as many system

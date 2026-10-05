@@ -8,7 +8,7 @@ import java.security.MessageDigest;
  * A stand-in for the Rust capture helper (docs/14, M6-L2) that speaks the docs/14 JSON-line
  * protocol and writes no audio. It is what `HelperClientTest` runs and what puts the recording path
  * in front of a person on a machine that has no helper binary — the development host this lane is
- * built on (M6-L1 "환경 제약").
+ * built on (M6-L1 "Environment constraints").
  *
  * Java, and a single source file, deliberately: `java path/to/FakeHelper.java` runs it on every
  * platform the app is tested on with no classpath, no build step and no shell.
@@ -20,7 +20,7 @@ import java.security.MessageDigest;
  *   sec=D        the duration each part reports (default 1.0)
  *   die          exit after the parts instead of waiting for `stop` — the helper-death path
  *   micInUse=APP emit one `mic_in_use` (inUse true) when `detect on` arrives
- *   micIdleAfter=D  seconds after that, emit `mic_in_use` inUse false — the 유휴 감지 경로
+ *   micIdleAfter=D  seconds after that, emit `mic_in_use` inUse false — the idle-detection path
  *   noise        print a line that is not protocol before the parts
  *   partsOnStop  emit the parts when `stop` arrives instead of when `start` does
  *   hang         never answer `stop` and never exit — the app has to kill it
@@ -75,7 +75,7 @@ public final class FakeHelper {
             } else if (line.contains("\"detect\"") && micInUse != null && line.contains("true")) {
                 emitMic(micInUse, true);
                 if (micIdleAfter > 0) {
-                    // The meeting going quiet, on a timer: docs/14's 유휴 60초 offer needs the
+                    // The meeting going quiet, on a timer: docs/14's 60 s idle offer needs the
                     // microphone to be *given back*, which no fake can do by holding still.
                     final String app = micInUse;
                     final long ms = (long) (micIdleAfter * 1000);

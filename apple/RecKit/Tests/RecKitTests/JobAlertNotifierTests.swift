@@ -44,7 +44,7 @@ final class StandingAlertsTests: XCTestCase {
         XCTAssertEqual(standing.apply(moved).post, moved)
     }
 
-    /// docs/10 rule 3: "그 이유가 큐에서 사라지면 알림도 내려간다."
+    /// docs/10 rule 3: "When that reason disappears from the queue, the notification goes away too."
     func testAReasonThatHasLeftTheQueueIsWithdrawn() {
         var standing = StandingAlerts()
         standing.record(JobAlert(reason: .needsSpace, count: 1))

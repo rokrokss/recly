@@ -28,7 +28,7 @@ object LaunchAtLogins {
 /**
  * **Development host only.** macOS has its own login items and this app is not a macOS app; the
  * setting is shown disabled rather than hidden, so what is missing on this host is visible
- * (M6-L1 "환경 제약").
+ * (M6-L1 "Environment constraints").
  */
 object NoLaunchAtLogin : LaunchAtLogin {
     override val supported: Boolean = false

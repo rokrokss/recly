@@ -20,8 +20,8 @@ public struct RecentItem: Identifiable, Sendable {
     /// the list was loaded.
     ///
     /// docs/08 "Polling · status": while a provider is transcribing there is no "when" to give, only how
-    /// long it has been — and "재시도 대기" would be a different thing to say. A job waiting out a
-    /// backoff *does* have a when, and says it: "재시도 대기" on its own reads like "stuck".
+    /// long it has been — and "Retry pending" would be a different thing to say. A job waiting out a
+    /// backoff *does* have a when, and says it: "Retry pending" on its own reads like "stuck".
     public var stateLabel: String {
         if let waitingMinutes {
             return RecKitStrings.localized(
@@ -71,7 +71,7 @@ public struct RecentItem: Identifiable, Sendable {
 
     /// When the queue comes back to a job that is waiting out a backoff, as the job row keeps it.
     /// Nil for every other state, and for a `WAITING` job the store never dated — [stateLabel] then
-    /// says "재시도 대기" and no more, which is all there is to say about it.
+    /// says "Retry pending" and no more, which is all there is to say about it.
     public let nextRunAt: Date?
 
     /// docs/07 §5: the code the core last wrote for this job — a `CoreMessage` key, or a sentence
@@ -212,7 +212,7 @@ public enum Recents {
             var steps: [StepRun] = []
             if let job { steps = (try? await core.jobs.steps(jobId: job.id)) ?? [] }
             // docs/08 "Polling · status": while a provider is transcribing there is no "when" to give,
-            // only how long it has been — and "재시도 대기" would be a different thing to say.
+            // only how long it has been — and "Retry pending" would be a different thing to say.
             let waiting = job?.status == .waiting
                 ? StepReport.shared.waitingMinutes(steps: steps, now: now)?.intValue
                 : nil
@@ -358,7 +358,7 @@ public enum Recents {
 
     /// Whether a job is running right now, off the same `"Uploading"` key the ledger badge reads —
     /// and an iCloud upload the system is still doing counts as one, as its badge does (docs/03
-    /// "저장 위치").
+    /// "Storage location").
     ///
     /// The ledger is the newest five recordings, so a job still running on one older than those is
     /// not seen here — the same scope the ledger itself has, and the dashboard says no more than

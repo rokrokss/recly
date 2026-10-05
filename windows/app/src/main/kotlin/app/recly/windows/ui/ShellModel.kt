@@ -922,8 +922,9 @@ class ShellModel(
     }
 
     /**
-     * docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다." Five surfaces, and the
-     * only one that leaves the app is the storage page, because the space is Google's to give back.
+     * docs/10: "A tap goes to the screen that can fix it — it does not end at 'Open app'." Five
+     * surfaces, and the only one that leaves the app is the storage page, because the space is
+     * Google's to give back.
      */
     fun fix(alert: JobAlert) = when (alert.reason.fix) {
         FixSurface.SIGN_IN -> signIn()
@@ -1790,7 +1791,7 @@ class ShellModel(
         /** docs/03: Google's own page, which is the only place a failed revoke can be finished. */
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
-        /** docs/14 "Permissions": 설정 → 개인정보 → 마이크, the page and not directions to it. */
+        /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"
 
         /** Windows' own settings scheme — a deep link, not a path (see `open`). */

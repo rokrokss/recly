@@ -41,9 +41,9 @@ class MotionTest {
     }
 
     /**
-     * docs/09 "Motion": `reduce motion` 시 "즉시 전환 + 텍스트 상태만" — the transition goes, the text
-     * state stays. Both windows used to collapse to zero, which took away the only thing a user
-     * with animations off had left to tell them the tap was heard.
+     * docs/09 "Motion": with `reduce motion`, "instant transition + text status only" — the
+     * transition goes, the text state stays. Both windows used to collapse to zero, which took away
+     * the only thing a user with animations off had left to tell them the tap was heard.
      */
     @Test
     fun `reduce motion keeps the text states, because they are not motion`() {

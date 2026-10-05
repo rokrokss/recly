@@ -2,7 +2,8 @@ import AppIntents
 import SwiftUI
 import WidgetKit
 
-/// docs/13 "Apple Watch" 진입점: the complication — the state, and a tap that starts a recording.
+/// docs/13 "Apple Watch" Entry points: the complication — the state, and a tap that starts a
+/// recording.
 ///
 /// The extension links no `RecKit` and no core, for the reason `RecPhoneWidgets` gives: it would
 /// carry the whole database with it for the sake of one status line, and the watch has a 75 MB

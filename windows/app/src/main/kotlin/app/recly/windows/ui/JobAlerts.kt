@@ -38,9 +38,9 @@ enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
 }
 
 /**
- * Where the fix is. docs/10: "탭하면 고칠 수 있는 화면으로 간다 — 로그인 화면, 시크릿 폼, 워크플로우
- * 편집기. '앱 열기'로 끝내지 않는다." [DRIVE_STORAGE] is the one that leaves the app, because the
- * space is Google's to give back.
+ * Where the fix is. docs/10: "A tap goes to the screen that can fix it — the sign-in screen, the
+ * secret form, the workflow editor. It does not end at 'Open app'." [DRIVE_STORAGE] is the one that
+ * leaves the app, because the space is Google's to give back.
  */
 enum class FixSurface(val label: Str) {
     SIGN_IN(Str.SIGN_IN),

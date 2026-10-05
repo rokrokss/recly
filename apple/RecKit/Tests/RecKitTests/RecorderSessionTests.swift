@@ -57,8 +57,8 @@ final class RecorderSessionTests: XCTestCase {
         XCTAssertEqual(state, .idle)
     }
 
-    /// Two clicks on "녹음 시작" while the microphone is still opening. The second is refused — not
-    /// as an error, there is nothing to tell the user — and only one recording is ever created.
+    /// Two clicks on "Start recording" while the microphone is still opening. The second is refused
+    /// — not as an error, there is nothing to tell the user — and only one recording is ever created.
     func testASecondStartWhileTheFirstIsStillOpeningIsRefused() async throws {
         let capture = FakeCapture()
         let states = States()

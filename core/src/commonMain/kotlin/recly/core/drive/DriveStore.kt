@@ -47,7 +47,7 @@ class DriveStore(
 
     suspend fun forgetFolder(path: String): Unit = locked { queries.deleteFolderCache(path) }
 
-    /** "연결 해제" (docs/03): the ids are about someone else's Drive once the grant is gone. */
+    /** "Disconnect" (docs/03): the ids are about someone else's Drive once the grant is gone. */
     suspend fun forgetAllFolders(): Unit = locked { queries.deleteAllFolderCache() }
 
     /** The recording's own `{base}/` folder, on its row (docs/03): survives the queue rows. */

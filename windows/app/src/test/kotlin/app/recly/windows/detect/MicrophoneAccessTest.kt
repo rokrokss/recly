@@ -5,8 +5,9 @@ import kotlin.test.assertEquals
 
 /**
  * docs/14 "Permissions" · deliverable 1: letting a desktop app have the microphone. The registry read
- * itself is JNA on a machine this lane cannot run on (M6-L3 "환경 제약"); what a test can hold still
- * is what the two values mean, and that is where a wrong answer costs the user an hour of silence.
+ * itself is JNA on a machine this lane cannot run on (M6-L3 "Environment constraints"); what a test
+ * can hold still is what the two values mean, and that is where a wrong answer costs the user an
+ * hour of silence.
  *
  * The fixtures are the strings Windows actually writes under
  * `…\CapabilityAccessManager\ConsentStore\microphone`.

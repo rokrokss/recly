@@ -11,10 +11,10 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.w3c.dom.Element
 
 /**
- * The cross-shell dictionary (리드 정본, 2026-08-31): the lines a user meets on more than one of the
- * four shells are the *same* line there, in both languages. `ConsentTextTest` holds the consent
- * reminder that way; this holds everything else the parity audit found drifting — a status word, a
- * field label, the sentence under a generated secret.
+ * The cross-shell dictionary (the lead's canonical wording, 2026-08-31): the lines a user meets on
+ * more than one of the four shells are the *same* line there, in both languages. `ConsentTextTest`
+ * holds the consent reminder that way; this holds everything else the parity audit found drifting —
+ * a status word, a field label, the sentence under a generated secret.
  *
  * Every shell's own resource file is read rather than a copy of it, so a rewording on any one of
  * them fails here, which is the only place a user could otherwise be the one to notice.

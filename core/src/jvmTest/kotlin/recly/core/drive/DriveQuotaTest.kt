@@ -63,7 +63,7 @@ class DriveQuotaTest {
         assertEquals(requests, h.drive.requests.size, "nothing was sent on the ten passes after the park")
         assertEquals(JobStatus.NEEDS_SPACE, assertNotNull(store.get(job.id)).status)
 
-        // "다시 시도" after the user made room: the upload starts over and finishes.
+        // "Retry" after the user made room: the upload starts over and finishes.
         h.drive.clearFaults()
         assertTrue(jobs.retry(job.id))
         executor.runDueJobs(START)
@@ -135,7 +135,7 @@ class DriveQuotaTest {
         assertTrue(onUpload.needsSpace)
     }
 
-    /** docs/10: "이 판정은 `transcribe`의 Drive 쓰기에도 같이 적용된다." */
+    /** docs/10: "This detection also applies to the Drive writes of `transcribe`." */
     @Test
     fun `a transcribe result file that will not fit is NEEDS_SPACE too`() = runBlocking {
         val h = TranscribeHarness(partCount = 1)

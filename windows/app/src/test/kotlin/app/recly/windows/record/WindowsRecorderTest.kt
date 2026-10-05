@@ -33,7 +33,7 @@ import recly.core.model.Track
 /**
  * Deliverable 5 against the real database: what the helper reports is what `meta.json` and the row
  * end up saying, and a helper that dies still leaves a finalized recording behind — docs/14
- * "헬퍼가 죽으면 앱이 마지막 파트까지를 finalize한다".
+ * "If the helper dies, the app finalizes up to the last part".
  */
 class WindowsRecorderTest {
 

@@ -113,7 +113,7 @@ data class RecordingRecord(
         else meta.drive?.folderUrl ?: driveFolderId?.let { "https://drive.google.com/drive/folders/$it" }
 }
 
-/** What "녹음 삭제" (docs/03) did, or why it did nothing. */
+/** What "Delete recording" (docs/03) did, or why it did nothing. */
 sealed interface DeleteResult {
     /**
      * Everything local is gone. [driveDeleted] is true only when the user asked for the Drive
@@ -228,7 +228,7 @@ class RecordingRepository(
      *
      * Nothing is written when the recording is already here — the one this device made, or the
      * one an earlier pull adopted — or when the user deleted it here while keeping its folder
-     * ([ignored]); that check is inside the transaction, so a "로컬만 삭제" that lands during a pull
+     * ([ignored]); that check is inside the transaction, so a "Delete local only" that lands during a pull
      * is not undone by it.
      *
      * The one existing row it does write over is a **provisional** one ([provisional]): the
@@ -345,7 +345,7 @@ class RecordingRepository(
 
     /**
      * What the device running the workflow says is still to come, off the folder's marker (docs/03
-     * "다른 기기의 녹음"): the comma-joined step types, or null for nothing. Remote rows and verified jobless local copies have one; existing local job rows remain authoritative.
+     * "Recordings from other devices"): the comma-joined step types, or null for nothing. Remote rows and verified jobless local copies have one; existing local job rows remain authoritative.
      *
      * @return true when the row changed, so an unchanged marker does not wake every ledger on
      * `recordings.observe()` once a pass.
@@ -385,7 +385,7 @@ class RecordingRepository(
 
     /**
      * docs/03 "Recordings from other devices": the folders a pull must not adopt, by recording id. Written by
-     * [delete] when the user kept the Drive folder ("로컬만 삭제"): the row is gone but the folder is
+     * [delete] when the user kept the Drive folder ("Delete local only"): the row is gone but the folder is
      * still listed, and without this the next pull would put the recording straight back.
      */
     suspend fun ignored(): Map<String, String> = locked {
@@ -396,7 +396,7 @@ class RecordingRepository(
     suspend fun unignore(recordingId: String): Unit = locked { queries.kvDelete(IGNORED_PREFIX + recordingId) }
 
     /**
-     * "연결 해제": a device wiped of its recordings starts over with what Drive has. Only the folders of
+     * "Disconnect": a device wiped of its recordings starts over with what Drive has. Only the folders of
      * [kind] are forgotten — disconnecting Drive says nothing about the iCloud folder (docs/03 "Storage location").
      */
     suspend fun clearIgnored(kind: StorageKind): Unit = locked {
@@ -514,7 +514,7 @@ class RecordingRepository(
     }
 
     /**
-     * "녹음 삭제" (docs/03): the parts, `meta.json`, the result files and the directory, plus the
+     * "Delete recording" (docs/03): the parts, `meta.json`, the result files and the directory, plus the
      * `recording`, `part`, `job` and `step_run` rows — nothing cascades, so every table is named.
      *
      * [deleteDrive] is the other half of the dialog, and the one whose default is off: the files
@@ -687,8 +687,8 @@ class RecordingRepository(
      * and may already be pushing it to Drive, and a DONE one has. Returns false when nothing was
      * applied, so the UI can say so instead of silently losing it.
      *
-     * @param title the name to give it; null leaves the one it has (the dialog's 건너뛰기).
-     * @param participants the count the user picked; null is "모름" and leaves the meta alone.
+     * @param title the name to give it; null leaves the one it has (the dialog's "Skip").
+     * @param participants the count the user picked; null is "Unknown" and leaves the meta alone.
      */
     suspend fun updateTitle(recordingId: String, title: String?, participants: Int? = null): Boolean = locked {
         val record = record(recordingId) ?: return@locked false

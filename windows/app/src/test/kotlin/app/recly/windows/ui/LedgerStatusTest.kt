@@ -162,7 +162,7 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 screen principle 2: the 길이 column, in the shape the phone and the Mac write it — and the
+     * docs/09 screen principle 2: the length column, in the shape the phone and the Mac write it — and the
      * placeholder all three use for a recording that has no length yet, which is a cell that says
      * "not in yet" rather than one that lost its value.
      */

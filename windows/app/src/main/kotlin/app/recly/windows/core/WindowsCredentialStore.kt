@@ -21,9 +21,9 @@ import recly.core.platform.SecureStore
  * functions, so the four this needs are declared here. `CredReadW`/`CredWriteW` — the exported
  * names, so no function mapper is involved and what is called is what is written.
  *
- * **Not exercised on the development host.** This lane builds and runs on macOS (M6-L1 "환경 제약"),
- * where [SecureStores] picks [DevFileSecureStore] instead and nothing below is ever loaded. The
- * runtime check belongs to the user's Windows PC / M6-L3.
+ * **Not exercised on the development host.** This lane builds and runs on macOS (M6-L1
+ * "Environment constraints"), where [SecureStores] picks [DevFileSecureStore] instead and nothing
+ * below is ever loaded. The runtime check belongs to the user's Windows PC / M6-L3.
  */
 class WindowsCredentialStore(private val io: CoroutineDispatcher) : SecureStore {
 

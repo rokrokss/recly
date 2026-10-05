@@ -239,9 +239,10 @@ struct MenuPopover: View {
                     model.modelPromptDismissed = true
                 }
             }
-            // docs/10 "macOS": 팝오버 상단 배너 — the same lines the notifications carry, one row per
-            // reason however many jobs are behind it, and the row is the way to the screen that
-            // fixes it. It replaces the sign-in-only banner: `NEEDS_AUTH` is one of the seven.
+            // docs/10 "macOS": a banner at the top of the popover — the same lines the
+            // notifications carry, one row per reason however many jobs are behind it, and the row
+            // is the way to the screen that fixes it. It replaces the sign-in-only banner:
+            // `NEEDS_AUTH` is one of the seven.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
             LedgerHeader(
                 time: loc("Time"),

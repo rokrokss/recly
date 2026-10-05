@@ -7,11 +7,11 @@ import Foundation
 /// The signal the lane names is `kAudioDevicePropertyDeviceIsRunningSomewhere` on the default input,
 /// with a listener on the default input itself so the answer follows the device the user switches
 /// to. That property alone cannot carry the second half of the deliverable, though: once Recly is
-/// recording, *we* are the process keeping the device running, so "마이크 미사용 60초" would never
-/// come true and the "녹음을 끝낼까요?" prompt would be dead code. So the device property is the
-/// cheap gate and the answer is refined by the per-process input flags Core Audio has had since
-/// 14.2 (`kAudioProcessPropertyIsRunningInput`), with this process left out — the same exclusion
-/// `ProcessTapCapture` makes for the tap, for the same reason.
+/// recording, *we* are the process keeping the device running, so "microphone unused for 60 seconds"
+/// would never come true and the "End the recording?" prompt would be dead code. So the device
+/// property is the cheap gate and the answer is refined by the per-process input flags Core Audio
+/// has had since 14.2 (`kAudioProcessPropertyIsRunningInput`), with this process left out — the
+/// same exclusion `ProcessTapCapture` makes for the tap, for the same reason.
 ///
 /// Both a listener and a poll. The listener is what makes joining a meeting register at once; the
 /// poll is what notices the meeting app releasing the microphone while we are still holding it,

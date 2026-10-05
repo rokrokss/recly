@@ -18,7 +18,7 @@ import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
 
 /**
- * Daglo (다글로) asynchronous STT (docs/08 provider table): the audio goes to
+ * Daglo asynchronous STT (docs/08 provider table): the audio goes to
  * `POST /stt/v1/async/transcripts` as `multipart/form-data` (`file` + an `sttConfig` JSON string)
  * and the job is polled at `GET /stt/v1/async/transcripts/{rid}`.
  *

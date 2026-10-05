@@ -17,9 +17,9 @@ enum WatchRecordingTarget {
     static weak var commands: (any WatchRecordingCommands)?
 }
 
-/// docs/13 "Apple Watch" 진입점: the complication's tap and the App Shortcut the Ultra action button
-/// runs. `openAppWhenRun` is the point rather than a detail — the audio session belongs to the app,
-/// and a widget extension is not allowed to hold one for three hours.
+/// docs/13 "Apple Watch" Entry points: the complication's tap and the App Shortcut the Ultra action
+/// button runs. `openAppWhenRun` is the point rather than a detail — the audio session belongs to
+/// the app, and a widget extension is not allowed to hold one for three hours.
 struct StartWatchRecordingIntent: AppIntent {
     static var title: LocalizedStringResource = "Start recording"
     static var description = IntentDescription("Start a recording with Recly.")

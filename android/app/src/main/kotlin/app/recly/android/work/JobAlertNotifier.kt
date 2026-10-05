@@ -140,7 +140,7 @@ private class SystemShade(private val context: Context) : AlertShade {
 
     override fun cancel(reason: AlertReason) = manager.cancel(notificationId(reason))
 
-    /** docs/10: "무음 · 우선순위 기본" — it is worth seeing, and never worth waking anybody up. */
+    /** docs/10: "silent · default priority" — it is worth seeing, and never worth waking anybody up. */
     private fun channel(): NotificationChannel = NotificationChannel(
         CHANNEL_ID,
         context.getString(R.string.alert_channel),
@@ -158,7 +158,7 @@ private class SystemShade(private val context: Context) : AlertShade {
             .setSmallIcon(RecordingR.drawable.ic_rec_notification)
             .setContentTitle(context.getString(alert.reason.label))
             .setContentText(context.resources.getQuantityString(R.plurals.alert_waiting, alert.count, alert.count))
-            // docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다."
+            // docs/10: "A tap goes to the screen that can fix it … It does not end at 'Open app'."
             .setContentIntent(
                 PendingIntent.getActivity(
                     context,

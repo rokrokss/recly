@@ -69,7 +69,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/13 deliverable 1: a refusal is not something the app can retry its way out of, so the
     /// screen offers the one thing that can undo it — Settings.
     @Published var microphoneDenied = false
-    /// docs/13 I3 "목록": the last five recordings, refreshed after every executor pass.
+    /// docs/13 I3 "list": the last five recordings, refreshed after every executor pass.
     @Published private(set) var recents: [RecentItem] = []
     @Published private(set) var recentsLoading = true
     /// The signed-in Google account, or nil.
@@ -150,7 +150,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/06: the core's `TokenProvider`, and the sign-in that fills it.
     private let tokens = AppleTokenProvider()
     private var auth: GoogleAuth?
-    /// docs/13 I3 "실행기": the same `JobRunner` the Mac runs (docs/12), plus the phone's own
+    /// docs/13 I3 "runner": the same `JobRunner` the Mac runs (docs/12), plus the phone's own
     /// trigger — the app becoming active.
     private var runner: JobRunner?
     /// ADR-015 · docs/13 I4. Built here rather than inside [load] so that an app relaunched into
@@ -191,9 +191,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// docs/07 rule 3: the two things the picker has to reach that are not SwiftUI bodies — the
     /// watch and the Live Activity's own process.
     private var languageObserver: NSObjectProtocol?
-    /// docs/10 "iPhone": `UNUserNotificationCenter` 로컬 알림 + 목록 상단 배너. Nothing else in this
-    /// process claims the notification delegate, so this is the one that takes it — from
-    /// [installNotificationDelegate], which the app calls at launch.
+    /// docs/10 "iPhone": `UNUserNotificationCenter` local notifications + a banner at the top of
+    /// the list. Nothing else in this process claims the notification delegate, so this is the one
+    /// that takes it — from [installNotificationDelegate], which the app calls at launch.
     ///
     /// Built with the model rather than lazily at the first reading of the queue: the delegate has
     /// to be Notification Center's before the response of a tap that *launched* the app is
@@ -920,7 +920,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             .rootViewController
     }
 
-    // MARK: - The list (docs/13 I3 "목록")
+    // MARK: - The list (docs/13 I3 "list")
 
     /// A pass has finished: the list is redrawn from the queue it left behind, and the banner and
     /// the notifications are folded out of the same reading ([publishAlerts]). docs/10 replaced the
@@ -980,8 +980,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         await alertNotifier.publish(alerts)
     }
 
-    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다." On a phone that means a
-    /// tab.
+    /// docs/10: "A tap goes to the screen that can fix it. It does not end at 'Open app'." On a
+    /// phone that means a tab.
     func fix(_ alert: JobAlert) {
         switch alert.reason.fix {
         case .privacy:

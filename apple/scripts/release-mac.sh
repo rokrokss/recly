@@ -57,7 +57,7 @@ fi
 rm -rf "$derived"
 # `ARCHS=arm64` on the command line and not only in the project: the RecKit package does not inherit
 # the target's setting, and a Release build has no `ONLY_ACTIVE_ARCH` to fall back on — so it reaches
-# for x86_64, which the XCFramework has no slice of (docs/12: Apple Silicon 우선).
+# for x86_64, which the XCFramework has no slice of (docs/12: Apple Silicon first).
 xcodebuild \
   -collect-test-diagnostics never \
   -workspace "$repo_root/apple/Rec.xcworkspace" \

@@ -184,7 +184,7 @@ final class JobRunnerTests: XCTestCase {
         XCTAssertEqual(armed.delays, [])
     }
 
-    /// What the menu reads to show "로그인 필요" and the recent list.
+    /// What the menu reads to show "Sign-in needed" and the recent list.
     func testTheQueueAfterAPassIsReportedToTheShell() async {
         let queue = FakeJobQueue(queueAfterRun: [job(.needsAuth), job(.done)])
         let armed = ArmRecorder()

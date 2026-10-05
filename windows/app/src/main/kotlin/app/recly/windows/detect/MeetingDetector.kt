@@ -234,7 +234,7 @@ class MeetingDetector(
         if (prompt == Prompt.START) micInUse else !micInUse
 
     /**
-     * ADR-011: 감지 → 확인 → 녹음, so both prompts are a notification and nothing else — a
+     * ADR-011: detect → confirm → record, so both prompts are a notification and nothing else — a
      * recording never starts on its own.
      *
      * Caller holds [lock].

@@ -50,8 +50,9 @@
             </intent-filter>
         </activity>
 
-        <!-- docs/11 W4: 폰(`rec_phone`)이 붙는 순간이 큐를 다시 돌릴 유일한 이벤트다. 이 앱이
-             돌고 있지 않아도 Play 서비스가 프로세스를 띄워 전달한다. -->
+        <!-- docs/11 W4: the phone (`rec_phone`) becoming reachable is the only event that runs the
+             queue again. Play Services starts the process to deliver it even when this app is not
+             running. -->
         <service
             android:name=".transfer.PhoneCapabilityService"
             android:exported="true">
@@ -64,8 +65,9 @@
             </intent-filter>
         </service>
 
-        <!-- docs/11 W5: 타일. `launchAction`으로 MainActivity를 열고 거기서 녹음을 시작한다 —
-             타일에서 microphone FGS를 직접 띄우면 백그라운드 시작으로 막힌다. -->
+        <!-- docs/11 W5: the tile. It opens MainActivity through `launchAction` and recording starts
+             there — a microphone FGS started straight from the tile is blocked as a background
+             start. -->
         <service
             android:name=".entry.RecTileService"
             android:exported="true"
@@ -80,7 +82,7 @@
                 android:resource="@mipmap/ic_launcher" />
         </service>
 
-        <!-- docs/11 W5: 컴플리케이션. SHORT_TEXT 하나("REC" / "대기 n"), 탭하면 앱. -->
+        <!-- docs/11 W5: the complication. One SHORT_TEXT ("REC" / "n waiting"); a tap opens the app. -->
         <service
             android:name=".entry.RecComplicationService"
             android:exported="true"
@@ -93,8 +95,9 @@
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
                 android:value="SHORT_TEXT" />
-            <!-- 워치페이스가 알아서 다시 물어보는 주기. 녹음 시작·전송 완료는 그보다 빨리
-                 `ComplicationDataSourceUpdateRequester`로 밀어 넣는다. -->
+            <!-- How often the watch face asks again on its own. A recording starting or a transfer
+                 finishing is pushed sooner than that, through
+                 `ComplicationDataSourceUpdateRequester`. -->
             <meta-data
                 android:name="android.support.wearable.complications.UPDATE_PERIOD_SECONDS"
                 android:value="300" />

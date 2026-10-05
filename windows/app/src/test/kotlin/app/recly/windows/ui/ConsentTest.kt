@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /**
- * M6-L3 deliverable 2: the consent reminder is the Mac's, "같은 문구" — and since I18N-L2 the Mac
+ * M6-L3 deliverable 2: the consent reminder is the Mac's, "the same wording" — and since I18N-L2 the Mac
  * says it in two languages, so this holds both of ours against both of its. A user with two
  * machines is being told about the same law by the same product, and a rewording on either side
  * fails here, which is the only place it could be noticed.

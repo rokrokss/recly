@@ -1,8 +1,8 @@
 import Foundation
 import XCTest
 
-/// docs/13 "Apple Watch" 진입점: what the complication draws for each state the app can leave behind,
-/// and what its tap does (docs/lanes M5-L4 deliverable 6 "컴플리케이션 상태 매핑").
+/// docs/13 "Apple Watch" Entry points: what the complication draws for each state the app can leave
+/// behind, and what its tap does (docs/lanes M5-L4 deliverable 6 "complication state mapping").
 ///
 /// docs/07: the labels are catalog keys rather than sentences, so this asserts the mapping and the
 /// catalog test asserts that every key has words in both languages.

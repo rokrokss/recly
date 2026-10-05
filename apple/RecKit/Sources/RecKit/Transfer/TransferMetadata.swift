@@ -2,7 +2,7 @@ import Foundation
 import ReclyCore
 
 /// docs/11 A8's two Data Layer paths, as the `WCSession.transferFile` metadata dictionary the Apple
-/// link carries instead (docs/13 "Apple Watch" 전송): the same five fields for a part, the recording
+/// link carries instead (docs/13 "Apple Watch" Transfer): the same five fields for a part, the recording
 /// id alone for the meta. The Android `TransferPath` is the same grammar and the same checks, and
 /// both sides of this one link this file for the same reason it named itself a grammar there — a
 /// format two builds could disagree about is not a format.

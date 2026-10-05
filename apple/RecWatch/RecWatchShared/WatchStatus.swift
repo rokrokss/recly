@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the complication draws, as the app last left it (docs/13 "Apple Watch" 진입점: the
+/// What the complication draws, as the app last left it (docs/13 "Apple Watch" Entry points: the
 /// complication's state, and a tap that starts a recording).
 ///
 /// It is a file in the app group rather than anything richer because a widget extension is a

@@ -111,7 +111,7 @@ class GoogleAuth(
     }
 
     /**
-     * "연결 해제" (docs/03), the half that is not the core's: `AuthorizationClient.revokeAccess`
+     * "Disconnect" (docs/03), the half that is not the core's: `AuthorizationClient.revokeAccess`
      * hands the two ADR-009 scopes back to Google for this account, which is what makes the other
      * devices lose access too. docs/06 is explicit that the ordinary sign-out never does this.
      *

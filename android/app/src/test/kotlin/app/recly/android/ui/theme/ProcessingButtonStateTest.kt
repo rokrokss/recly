@@ -49,10 +49,10 @@ class ProcessingButtonStateTest {
     }
 
     /**
-     * docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" with reduce motion on, so the phases do not
-     * depend on it at all: the button swaps its label, which is already an instant transition, and
-     * the label is the state a user with animations off is left with. Nothing here takes a
-     * reduce-motion flag any more — this is the test that says so.
+     * docs/09 "Motion" asks for "instant transition + text status only" with reduce motion on, so the
+     * phases do not depend on it at all: the button swaps its label, which is already an instant
+     * transition, and the label is the state a user with animations off is left with. Nothing here
+     * takes a reduce-motion flag any more — this is the test that says so.
      */
     @Test
     fun `the phases are the same whatever the animation setting is`() {

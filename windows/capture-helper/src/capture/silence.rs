@@ -13,7 +13,7 @@
 //! **long** fill is not a rate — it is a hole, and a hole read as a rate is what
 //! [`crate::pipeline::drift`] refuses intervals for. Past [`Self::outage_sec`] the gap is reported
 //! once, for its whole length so far, and the drift estimate re-anchors across it (docs/12
-//! "tap 재생성").
+//! "Tap re-creation").
 //!
 //! Pure and clock-free so the arithmetic can be tested on a host with no render endpoint — the
 //! caller passes the elapsed seconds in.

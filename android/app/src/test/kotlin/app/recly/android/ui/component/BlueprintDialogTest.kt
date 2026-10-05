@@ -32,7 +32,7 @@ class BlueprintDialogTest {
     }
 
     /**
-     * docs/09 §유동 타이포: the font size is the user's, so two answers that fit side by side at
+     * docs/09 "Fluid typography": the font size is the user's, so two answers that fit side by side at
      * scale 1.0 need not fit at 1.3 — and a clipped answer makes the question unanswerable. The
      * gaps between them count towards the row, or a row that only just fits would be judged to.
      */

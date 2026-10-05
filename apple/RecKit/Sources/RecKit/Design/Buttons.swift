@@ -22,10 +22,10 @@ public struct BlueprintButton: View {
     private let action: () -> Void
 
     /// docs/09 "Shape": the narrowest a worded button is on the phone (2026-09-29), so a two-letter
-    /// label — `열기`, `Open` — no longer makes the narrowest thing on the screen, and short buttons
-    /// side by side come out one width. Close, Delete and Cancel keep their own width (they pass
-    /// [minTouch]), as do buttons whose label is data. Not on the Mac: its menu is too narrow a
-    /// panel to widen every button in, and the question was asked about the phones.
+    /// label — `열기` in Korean, `Open` — no longer makes the narrowest thing on the screen, and
+    /// short buttons side by side come out one width. Close, Delete and Cancel keep their own width
+    /// (they pass [minTouch]), as do buttons whose label is data. Not on the Mac: its menu is too
+    /// narrow a panel to widen every button in, and the question was asked about the phones.
     #if os(iOS)
     public static let wordedMinWidth: CGFloat? = 88
     #else
@@ -129,8 +129,8 @@ extension EnvironmentValues {
 /// A `Menu` draws its own label, which is the box below, and pops the same platform menu; a pop-up
 /// menu is chrome the platform owns (docs/09 trend 7), so it is left as the platform draws it.
 ///
-/// Not on the watch: it has no settings screen of its own (docs/07 §7 매핑 — the watch follows the
-/// system language), and a menu is not a control a screen that size offers.
+/// Not on the watch: it has no settings screen of its own (docs/07 §7 "Platform mapping" — the
+/// watch follows the system language), and a menu is not a control a screen that size offers.
 #if !os(watchOS)
 public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
     @Environment(\.blueprint) private var blueprint
@@ -181,15 +181,16 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         .menuIndicator(.hidden)
         // One element, deliberately (the AlertBanner/LedgerRow idiom): a `Menu` publishes its own
         // menu-button element AND its plain-styled label subtree publishes a second one, so the
-        // setting reads twice — 언어/한국어, then 언어/한국어 again over nothing. Ignoring the
-        // children keeps the menu's role and activation while this one element carries the words.
-        // (Hiding the label instead removes *both* elements — verified live.)
+        // setting reads twice — Language/한국어, then Language/한국어 again over nothing. Ignoring
+        // the children keeps the menu's role and activation while this one element carries the
+        // words. (Hiding the label instead removes *both* elements — verified live.)
         .accessibilityElement(children: .ignore)
         // Flattening drops the menu-button role with the children, so the trait puts an
         // actionable role back on the one element that is left.
         .accessibilityAddTraits(.isButton)
         // docs/09 "Accessibility": the element says the value, and the row it sits in says what the value
-        // is of — a reader given only the value would hear "한국어" and no question.
+        // is of — a reader given only the value would hear "한국어" (Korean, named in its own language)
+        // and no question.
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityValue(Text(verbatim: title(selection)))
     }
@@ -240,11 +241,11 @@ public enum Processing {
     /// How much longer the "…" has to stay after the work finished in [workSec]. Instant work is
     /// padded up to [Motion.processingMin]; work that already took that long is not padded at all.
     ///
-    /// Reduce motion does not shorten this. docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" —
-    /// instant transitions *and* the text state, not no state at all — and a user who has turned
-    /// animations off is the one with nothing else to tell them the tap was heard. What reduce
-    /// motion switches off is the fade between the labels (`Motion.badgeAnimation`), which is the
-    /// transition; the label itself is the state.
+    /// Reduce motion does not shorten this. docs/09 "Motion" asks for "instant transition + text
+    /// status only" — instant transitions *and* the text state, not no state at all — and a user
+    /// who has turned animations off is the one with nothing else to tell them the tap was heard.
+    /// What reduce motion switches off is the fade between the labels (`Motion.badgeAnimation`),
+    /// which is the transition; the label itself is the state.
     public static func hold(workSec: Double) -> Double {
         max(0, Motion.processingMin - workSec)
     }
@@ -280,8 +281,8 @@ public enum Processing {
 /// screen reports.
 ///
 /// Reduce motion keeps all three labels and drops only the fade between them (docs/09 "Motion":
-/// "즉시 전환 + 텍스트 상태만"). A window of zero would leave a user who has turned animations off
-/// with no sign at all that the tap was heard.
+/// "instant transition + text status only"). A window of zero would leave a user who has turned
+/// animations off with no sign at all that the tap was heard.
 public struct ProcessingButton: View {
     @Environment(\.blueprint) private var blueprint
     private let label: String

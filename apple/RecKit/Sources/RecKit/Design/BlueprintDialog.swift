@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of the app is drawn: a
-/// square-cornered node on the grid, not the platform's own alert. `alert` and `confirmationDialog`
-/// are containers with their own shape, their own material and their own corner radius, and none of
-/// those is in docs/09 — so this is the same surface, [Blueprint.line] border and [Radius.node]
-/// corner as `StateNode`, with no shadow.
+/// docs/09 screen principle 5 ("title + one-line description + at most 2 buttons"), drawn the way
+/// the rest of the app is drawn: a square-cornered node on the grid, not the platform's own alert.
+/// `alert` and `confirmationDialog` are containers with their own shape, their own material and
+/// their own corner radius, and none of those is in docs/09 — so this is the same surface,
+/// [Blueprint.line] border and [Radius.node] corner as `StateNode`, with no shadow.
 ///
 /// The Android shell's `BlueprintDialog` is the same component, and this mirrors it line for line:
 /// the body scrolls on its own so a long one (the disconnect warnings) never pushes the answers off
@@ -47,10 +47,11 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
                 content
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            // docs/09 "Accessibility" · 유동 타이포: the answers go across while they fit and downwards
-            // when they do not — an answer clipped to a syllable makes the question unanswerable.
-            // Stacked they go full width and keep their order, which puts the primary one at the
-            // bottom: last, as it is last on the right, and nearest the thumb (docs/09 screen principle 8).
+            // docs/09 "Accessibility" · Fluid typography: the answers go across while they fit
+            // and downwards when they do not — an answer clipped to a syllable makes the question
+            // unanswerable. Stacked they go full width and keep their order, which puts the primary
+            // one at the bottom: last, as it is last on the right, and nearest the thumb (docs/09
+            // screen principle 8).
             ViewThatFits(in: .horizontal) {
                 HStack(spacing: Space.s) {
                     Spacer(minLength: 0)
@@ -318,7 +319,7 @@ private struct SelectionMark: View {
 
 /// A link inside a dialog — the Google permissions page, the consent guidance. Accent *and*
 /// underlined, because a link that is only a colour is invisible to a colour-blind reader (docs/09
-/// "모든 상태는 색 + 텍스트"), and [minTouch] tall because it is something you tap.
+/// "Every state is color + text"), and [minTouch] tall because it is something you tap.
 public struct BlueprintDialogLink: View {
     @Environment(\.blueprint) private var blueprint
     private let label: String

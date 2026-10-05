@@ -27,9 +27,9 @@ struct RecWatchApp: App {
     }
 }
 
-/// docs/13 "Apple Watch" 진입점: the Ultra action button runs an App Shortcut, and this is the app's
-/// list of them. It has to live in the app target rather than in the extension — the system reads it
-/// from the app.
+/// docs/13 "Apple Watch" Entry points: the Ultra action button runs an App Shortcut, and this is
+/// the app's list of them. It has to live in the app target rather than in the extension — the
+/// system reads it from the app.
 struct RecWatchShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(

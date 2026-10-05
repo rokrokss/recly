@@ -3,9 +3,9 @@ import XCTest
 @testable import RecKit
 
 /// M4-L3 deliverable 2: the microphone runs on the input device's clock and the tap on the output
-/// device's, and docs/12 puts the difference at "시간당 수십 ms". These are the claim that an hour of
-/// it ends under 20 ms apart — as arithmetic first (`DriftEstimator`, no audio at all), then through
-/// the real resampler.
+/// device's, and docs/12 puts the difference at "tens of ms per hour". These are the claim that an
+/// hour of it ends under 20 ms apart — as arithmetic first (`DriftEstimator`, no audio at all), then
+/// through the real resampler.
 final class DriftCompensatorTests: XCTestCase {
     /// docs/12's own number, as a rate: fifty milliseconds an hour is fourteen parts per million.
     private static let documentedDrift = 50.0 / 3_600_000

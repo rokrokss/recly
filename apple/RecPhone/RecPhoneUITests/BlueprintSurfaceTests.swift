@@ -77,7 +77,7 @@ final class BlueprintSurfaceTests: XCTestCase {
             app.buttons["Cancel"].firstMatch.tap()
             return
         }
-        // docs/03: "되돌릴 수 없는 쪽을 기본값으로 두지 않는다."
+        // docs/03: "The irreversible option is never the default."
         XCTAssertTrue(app.buttons["delete-local-only"].isSelected, "Drive was the default answer")
         XCTAssertFalse(app.buttons["delete-with-drive"].isSelected)
         attach("delete dialog")

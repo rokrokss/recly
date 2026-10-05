@@ -61,7 +61,7 @@ data class PullSummary(
  * This device's own rows and audio are never dropped by a listing. A jobless local recording
  * can regain verified Drive file references and completion state without rerunning its workflow. A
  * recording is only adopted when no row of that id exists — or when the row that does is the
- * provisional one below. A recording the user deleted here while keeping its folder ("로컬만 삭제")
+ * provisional one below. A recording the user deleted here while keeping its folder ("Delete local only")
  * stays deleted: the folder is remembered ([RecordingRepository.ignored]) until Drive stops listing
  * it. Two folders with the same id — a re-run into another path — resolve to the newest one that is
  * complete: an adopted row moves to a newer folder once that one completes, and to whatever is left
@@ -271,7 +271,7 @@ class RemoteRecordings(
             if (recordings.drop(recordingId, folderId)) dropped++
         }
 
-        // A "로컬만 삭제" is kept for as long as the folder it kept is listed.
+        // A "Delete local only" is kept for as long as the folder it kept is listed.
         val ignored = recordings.ignored()
         for ((recordingId, folderId) in ignored) {
             if (folderId !in listed && covered(folderId)) recordings.unignore(recordingId)
@@ -539,7 +539,8 @@ class RemoteRecordings(
         val MIN_INTERVAL: Duration = 2.minutes
 
         /** The wait while another device is uploading or still has steps to run: a list that says
-         * "업로드 중" has to stop saying it soon after it stops being true (docs/03). */
+         * "Uploading on another device" has to stop saying it soon after it stops being true
+         * (docs/03). */
         val FAST_INTERVAL: Duration = 30.seconds
 
         /** How long a folder with no `meta.json` in it is still an upload in flight (docs/03). */

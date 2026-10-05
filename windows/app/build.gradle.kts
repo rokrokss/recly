@@ -182,8 +182,8 @@ compose.desktop {
                 iconFile.set(icons.file("recly.icns"))
                 bundleID = "app.recly.windows"
                 // macOS refuses a major version of 0, and this bundle is only ever the development
-                // host's build of a Windows app (M6-L1 "환경 제약") — the shipped version is the
-                // project's, which is what `OAuthConfig.APP_VERSION` carries.
+                // host's build of a Windows app (M6-L1 "Environment constraints") — the shipped
+                // version is the project's, which is what `OAuthConfig.APP_VERSION` carries.
                 packageVersion = "1.0.0"
             }
         }

@@ -7,7 +7,7 @@ import XCTest
 /// M4-L3's three tracks through the real recorder, with a fake microphone and a fake tap in front of
 /// it: the converter, the AAC encoder, the shared boundary, the hash and `addPart`, on real files.
 /// Everything except Core Audio itself, which `ProcessTapCapture` owns and which no automated run
-/// can have without the "시스템 오디오 녹음" prompt.
+/// can have without the "System Audio Recording" prompt.
 final class MeetingRecorderTests: XCTestCase {
     private var dataDirectory: URL!
 
@@ -94,7 +94,7 @@ final class MeetingRecorderTests: XCTestCase {
         XCTAssertEqual(record.meta.parts.map(\.startOffsetSec), [0, 0, 0, 5, 5, 5])
 
         // The frames themselves, not the numbers written about them: the closed segment of every
-        // track is five seconds to the frame, which is what "같은 세그먼트 경계" means on disk.
+        // track is five seconds to the frame, which is what "the same segment boundaries" means on disk.
         for part in record.meta.parts where part.part == 1 {
             let frames = try decode(record.dir.url.appendingPathComponent(part.file)).count
             XCTAssertEqual(frames, 5 * SegmentedRecorder.sampleRateHz, "\(part.file)")

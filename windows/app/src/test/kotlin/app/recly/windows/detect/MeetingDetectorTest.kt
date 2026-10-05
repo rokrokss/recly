@@ -30,9 +30,9 @@ import kotlinx.coroutines.withTimeout
  * microphone report *stale* (the situation passing, and detection changing hands).
  *
  * The helper is `null` in most of these (there is no capture helper on the development host, M6-L1
- * "환경 제약"), so the microphone events are handed over exactly as the recorder's reader hands them
- * over, and the two-second tick is driven by hand — the timer is not the part that can be wrong in a
- * way the user notices.
+ * "Environment constraints"), so the microphone events are handed over exactly as the recorder's
+ * reader hands them over, and the two-second tick is driven by hand — the timer is not the part that
+ * can be wrong in a way the user notices.
  */
 class MeetingDetectorTest {
 

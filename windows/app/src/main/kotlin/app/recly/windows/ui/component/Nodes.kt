@@ -46,7 +46,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             // docs/09 "Accessibility": a label and its value are one fact, so a screen reader hears
-            // "Workflow, 회의" rather than two unconnected runs of text.
+            // "Workflow, Meeting" rather than two unconnected runs of text.
             .semantics(mergeDescendants = true) {}
             .border(
                 width = palette.line,

@@ -32,7 +32,7 @@
     <string name="complication_sending">Sending %1$d</string>
     <string name="complication_idle">Recly</string>
 
-    <!-- docs/11 W5 "설정 안내 화면". Neither place can be deep-linked from here, so the screen can
+    <!-- docs/11 W5 "setup guide screen". Neither place can be deep-linked from here, so the screen can
          only describe the way there. -->
     <string name="info_open">Help</string>
     <string name="info_back">Close</string>

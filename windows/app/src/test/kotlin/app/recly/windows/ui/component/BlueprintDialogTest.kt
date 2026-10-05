@@ -5,10 +5,11 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /**
- * docs/09 screen principle 5 · §유동 타이포: the answers to a dialog sit in a row while they fit and stack
- * when they do not — and what decides it is the language and the type scale rather than the width of
- * the card. "Cancel · Delete" fits at any size; "취소 · 연결 해제" at a large font scale does not, and
- * a confirm button clipped off the card is a question nobody can answer.
+ * docs/09 screen principle 5 · §Fluid typography: the answers to a dialog sit in a row while they fit
+ * and stack when they do not — and what decides it is the language and the type scale rather than the
+ * width of the card. "Cancel · Delete" fits at any size; the Korean "취소 · 연결 해제" ("Cancel ·
+ * Disconnect") at a large font scale does not, and a confirm button clipped off the card is a
+ * question nobody can answer.
  */
 class BlueprintDialogTest {
 

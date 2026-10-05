@@ -42,7 +42,7 @@ class MeetingDetectionRuleTest {
     }
 
     /**
-     * ADR-011: 감지 → 확인 → 녹음. Both signals together is the offer, and docs/20 M6 says it is made
+     * ADR-011: detect → confirm → record. Both signals together is the offer, and docs/20 M6 says it is made
      * once — the tick two seconds later must not make it again.
      */
     @Test

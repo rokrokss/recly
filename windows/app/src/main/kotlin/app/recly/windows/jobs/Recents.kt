@@ -36,7 +36,7 @@ data class RecentItem(
     val title: UiMessage,
     val startedAt: String,
     /**
-     * docs/09 screen principle 2: the ledger's 길이 column, as `meta.json` records it. Null until the
+     * docs/09 screen principle 2: the ledger's length column, as `meta.json` records it. Null until the
      * recording is finalized — a take still being written to has no length yet, and the column says
      * so rather than showing a number that is about to change.
      */

@@ -461,7 +461,7 @@ class RemoteRecordingsTest {
     }
 
     /**
-     * "로컬만 삭제" keeps the Drive folder, and a folder that is listed is one a pull would adopt: the
+     * "Delete local only" keeps the Drive folder, and a folder that is listed is one a pull would adopt: the
      * recording the user just removed from this list would be straight back in it, as "another
      * device's". The kept folder is remembered instead, for as long as Drive lists it.
      */
@@ -483,7 +483,7 @@ class RemoteRecordingsTest {
         assertEquals(emptyMap(), h.recordings.ignored())
     }
 
-    /** "연결 해제" starts the device over; what Drive has is the list again. */
+    /** "Disconnect" starts the device over; what Drive has is the list again. */
     @Test
     fun `forgetting the kept folders lets the next pull adopt them`() = runBlocking {
         val h = Harness()
@@ -570,7 +570,7 @@ class RemoteRecordingsTest {
         assertNull(h.recordings.get(mine.recordingId))
     }
 
-    /** "연결 해제" clears the queue rows the folder id used to live in; the row remembers it now. */
+    /** "Disconnect" clears the queue rows the folder id used to live in; the row remembers it now. */
     @Test
     fun `a recording deleted here after its queue rows were cleared still keeps its folder out`() = runBlocking {
         val h = Harness()
@@ -605,7 +605,8 @@ class RemoteRecordingsTest {
     }
 
     /** Nothing has refreshed it for longer than any provider result can take (docs/08): the device
-     * that wrote it is gone, and the row must not say "전사 중" forever. */
+     * that wrote it is gone, and the row must not say "Transcribing on another device"
+     * forever. */
     @Test
     fun `a marker nobody has refreshed for eight hours is not read`() = runBlocking {
         val h = Harness()

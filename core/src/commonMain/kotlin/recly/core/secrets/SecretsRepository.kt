@@ -9,7 +9,7 @@ import recly.core.platform.SecureStore
  *
  * Values are per-device and stay per-device — there is no sync and no export carries them, so a new
  * device is a device whose `secretRef`s have nothing behind them until its user types them in
- * ("이 기기에 키 없음"). Shells write through here rather than through [SecureStore] directly, so
+ * ("No key on this device"). Shells write through here rather than through [SecureStore] directly, so
  * that the one namespace the core owns has one entry point.
  */
 class SecretsRepository(private val deps: CoreDeps) {

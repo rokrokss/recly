@@ -71,7 +71,7 @@ public final class KeychainSecureStore: ReclyCore.SecureStore {
     }
 
     /// Every key stored in [ns]: what `SecureStore.clear` loops over to empty a namespace on
-    /// "연결 해제" (docs/03), and what the core's `SecretsRepository` lists the secrets from.
+    /// "Disconnect" (docs/03), and what the core's `SecretsRepository` lists the secrets from.
     /// Nothing to await — every call here is a synchronous `SecItem*`.
     ///
     /// Only "no such item" is an empty list. A keychain that will not be *read* — a process with no

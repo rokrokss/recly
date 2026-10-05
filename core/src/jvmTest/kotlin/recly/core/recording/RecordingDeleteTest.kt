@@ -46,7 +46,7 @@ class RecordingDeleteTest {
         assertEquals(emptyList(), h.drive.deleted, "nothing on Drive was asked about")
     }
 
-    /** The dialog's default is "로컬만 삭제", and that must never reach `files.delete`. */
+    /** The dialog's default is "Delete local only", and that must never reach `files.delete`. */
     @Test
     fun `an uploaded recording deleted without the Drive box leaves the Drive folder alone`() = runBlocking {
         val h = uploaded()

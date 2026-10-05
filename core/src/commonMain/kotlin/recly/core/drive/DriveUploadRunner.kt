@@ -140,7 +140,7 @@ class DriveUploadRunner(
         folder.webViewLink?.let { recordings.setDriveFolder(ctx.recording.id, folder.id, it) }
         // The folder exists before the first byte does, and it is the only thing another device can
         // see while this one uploads (docs/03 "Recordings from other devices"): what comes after this step goes on it
-        // now, so a list elsewhere can say "전사 중" instead of showing a finished recording.
+        // now, so a list elsewhere can say "Transcribing on another device" instead of showing a finished recording.
         // In iCloud a resumed attempt is one waiting for the system's upload, every 30 seconds, and its
         // folder was marked when it was made: the same marker again would only send every device to
         // read the folder file again (docs/03 "Storage location").
@@ -148,7 +148,7 @@ class DriveUploadRunner(
             marker.mark(folder.id, ctx.workflow.steps.dropWhile { it.id != ctx.step.id }.drop(1).map { it.type })
         }
         // Before the first byte goes out, and into the output rather than the state: a NEEDS_SPACE
-        // park drops `state_json` (docs/10), and "Drive에서도 삭제" (docs/03) still has to know which
+        // park drops `state_json` (docs/10), and "Also delete from Drive" (docs/03) still has to know which
         // folder this recording made. Overwritten by the full output when the step finishes.
         ctx.saveOutput(buildJsonObject { put("folderId", folder.id) })
 

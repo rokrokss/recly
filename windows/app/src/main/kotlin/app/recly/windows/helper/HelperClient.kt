@@ -181,7 +181,7 @@ object CaptureHelper {
     }
 
     /**
-     * docs/lanes/M6-L3 deliverable 3, the "버전 확인" half: what the binary at the end of [command]
+     * docs/lanes/M6-L3 deliverable 3, the "version check" half: what the binary at the end of [command]
      * says it is. Null when it could not be run at all, which is the answer that matters — the path
      * check above only says a file is there.
      *

@@ -25,7 +25,8 @@ final class JobAlertsTests: XCTestCase {
         }
     }
 
-    /// docs/10: "재시도로 낫는 실패는 알리지 않는다." A 5xx is inside the backoff, not at the end of it.
+    /// docs/10: "Failures that retrying heals are not notified." A 5xx is inside the backoff, not at
+    /// the end of it.
     func testAProvider500OnTheRetryPathNeverNotifies() {
         XCTAssertNil(JobAlerts.reason(status: .waiting, lastError: providerError()))
         // And even once it has run out of attempts: what spent them was something a retry could

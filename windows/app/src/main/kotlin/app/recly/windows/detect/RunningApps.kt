@@ -20,8 +20,8 @@ interface RunningApps {
     companion object {
         /**
          * A comma-separated process list that stands in for the real one. The development host is
-         * macOS and has no `ms-teams.exe` to find (M6-L3 "환경 제약"), so this is how the detection
-         * path is put in front of a person here — `windows/app/README.md`.
+         * macOS and has no `ms-teams.exe` to find (M6-L3 "Environment constraints"), so this is how
+         * the detection path is put in front of a person here — `windows/app/README.md`.
          */
         const val OVERRIDE_ENV: String = "RECLY_DETECT_PROCESSES"
 

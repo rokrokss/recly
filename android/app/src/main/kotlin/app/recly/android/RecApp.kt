@@ -27,8 +27,9 @@ import recly.core.platform.Logger
  * Three things only. `RecorderService` lives in `:android:recording`, which cannot see [CoreModule],
  * so the shell hands its core over through `RecorderHost`. A process that is starting is a process
  * that may have been killed mid-recording, so it reconciles what the last one left (docs/03
- * "크래시 시 마지막 경계까지는 복구 가능") before the user can do anything about it. And whatever the
- * reconcile queued — plus anything a previous run left parked — needs a scheduler behind it.
+ * "after a crash, everything up to the last boundary is recoverable") before the user can do
+ * anything about it. And whatever the reconcile queued — plus anything a previous run left parked —
+ * needs a scheduler behind it.
  */
 class RecApp : Application(), RecorderHost {
 

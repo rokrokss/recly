@@ -229,7 +229,7 @@
     <!-- docs/15 §3 -->
     <string name="provider_disclosure_transcribe">외부 전사는 녹음 오디오 전체를 %1$s에 보냅니다.\n얼마나 보관하는지, 학습에 쓰는지는 그 업체의 정책이고 Recly가 통제하지 못합니다.\n쓰기 전에 업체의 정책을 확인하세요.</string>
 
-    <!-- docs/12 M8 · ADR-011: 문구는 Mac의 것을 그대로 쓴다(ConsentTextTest). -->
+    <!-- docs/12 M8 · ADR-011: the wording is the Mac's, word for word (ConsentTextTest). -->
     <string name="settings_consent_reminder">동의 리마인더</string>
     <string name="consent_question">참가자에게 녹음을 알렸습니까?</string>
     <string name="consent_body">이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다.</string>

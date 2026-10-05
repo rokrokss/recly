@@ -59,7 +59,8 @@ protocol AudioInput: AnyObject {
 /// Started and stopped on the recorder's control queue, one call at a time; the buffer callback and
 /// [onOutage] arrive on whatever thread Core Audio used.
 protocol SystemAudioInput: AnyObject {
-    /// The output device the tap is on, for the menu (docs/12 M4-L3 "캡처 중인 출력 장치명").
+    /// The output device the tap is on, for the menu (docs/12 M4-L3 "the name of the output device
+    /// being captured").
     var outputDeviceName: String? { get }
 
     /// An outage this input covered by itself: the reason for the meta's `gaps` and how long the

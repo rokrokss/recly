@@ -3,8 +3,9 @@ import CoreAudio
 import Foundation
 
 /// The default output device, as much of it as the tap and the menu need: what to name in the menu
-/// (docs/12 M4-L3 "캡처 중인 출력 장치명"), what UID to build the aggregate device around, and
-/// whether it is the built-in speaker — which is the whole of the echo policy's question.
+/// (docs/12 M4-L3 "the name of the output device being captured"), what UID to build the aggregate
+/// device around, and whether it is the built-in speaker — which is the whole of the echo policy's
+/// question.
 public struct SystemAudioDevice: Sendable {
     public let name: String
     /// docs/12 "Echo": headphones and the problem does not exist; the built-in speaker and the

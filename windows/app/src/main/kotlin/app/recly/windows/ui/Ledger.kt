@@ -119,7 +119,7 @@ fun reasonTone(status: recly.core.job.JobStatus?): BadgeTone =
     if (status == recly.core.job.JobStatus.FAILED) BadgeTone.DANGER else BadgeTone.WARNING
 
 /**
- * docs/09 screen principle 2 lists `키를 확인하세요` among a row's actions, in the one line the others are in —
+ * docs/09 screen principle 2 lists `Check the key` among a row's actions, in the one line the others are in —
  * so a surface that has such a line draws it there itself (the popup's expanded row, and the Mac's
  * `MenuPopover.actions` in the same order). The recordings window's sidebar has no actions line, and
  * for it the button stays under the reason, which is what [FailureReason] does with an `onCheckKey`.
@@ -164,7 +164,7 @@ object LedgerFormat {
     }
 
     /**
-     * docs/09 screen principle 2: the ledger's 길이 column — `42:10`, or `1:02:33` past the hour, which is
+     * docs/09 screen principle 2: the ledger's length column — `42:10`, or `1:02:33` past the hour, which is
      * what the phone and the Mac write in the same column (`LedgerFormat.length`, `duration`).
      *
      * A recording that has not been finalized has no length yet, and [NO_LENGTH] is what says so: a

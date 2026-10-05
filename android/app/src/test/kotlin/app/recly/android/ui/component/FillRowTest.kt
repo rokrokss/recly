@@ -7,7 +7,10 @@ import kotlin.test.assertTrue
 /** The widths [FillRow] hands out, which are the whole of what it decides. */
 class FillRowTest {
 
-    /** 시스템 기본 / 밝게 / 어둡게 in a phone's line: short enough for an even split, so they get one. */
+    /**
+     * The Korean `시스템 기본` / `밝게` / `어둡게` (System default / Light / Dark) in a phone's line:
+     * short enough for an even split, so they get one.
+     */
     @Test
     fun `chips that fit an even split share the line equally`() {
         assertEquals(listOf(listOf(120, 120, 120)), fillLines(listOf(100, 48, 60), width = 376, gap = 8))

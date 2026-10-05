@@ -8,8 +8,8 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
 /**
- * When to offer a recording and when to offer to end one (ADR-011: 감지 → 확인 → 녹음, never a
- * recording nobody asked for and never a stop nobody asked for).
+ * When to offer a recording and when to offer to end one (ADR-011: detect → confirm → record,
+ * never a recording nobody asked for and never a stop nobody asked for).
  *
  * A port of the Mac's `MeetingDetectionRule` (docs/12 M4-L5), constant for constant and branch for
  * branch, and its tests come with it: the two desktops answer the same question and a Windows user
@@ -39,7 +39,7 @@ class MeetingDetectionRule {
 
     /**
      * False from the moment a prompt is made until the meeting signal goes away again — so one
-     * meeting gets one invitation (docs/20 M6: "Teams 입장 → 알림"), and so a recording the user
+     * meeting gets one invitation (docs/20 M6: "Join Teams → notice"), and so a recording the user
      * stopped by hand is not immediately offered back to them.
      */
     private var armed = true

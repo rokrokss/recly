@@ -44,7 +44,7 @@ enum class AlertReason(
 }
 
 /**
- * Where the fix is. docs/10: "탭하면 고칠 수 있는 화면으로 간다 — '앱 열기'로 끝내지 않는다."
+ * Where the fix is. docs/10: "A tap goes to the screen that can fix it … It does not end at 'Open app'."
  * [SECRETS] and [PROCESSING] are the processing settings, where the keys live too. [DRIVE_STORAGE]
  * is the one that leaves the app, because the space is Google's to give back
  * (<https://drive.google.com/settings/storage>).

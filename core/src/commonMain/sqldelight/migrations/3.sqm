@@ -8,7 +8,7 @@
 --
 -- Every row already here is this device's own (`remote = 0`), and none of them knows its Drive
 -- folder yet: `drive_folder_id` is filled by the next upload that touches the folder, and until
--- then "Drive에서도 삭제" reads it off the step output like before.
+-- then "Also delete from Drive" reads it off the step output like before.
 ALTER TABLE recording ADD COLUMN drive_folder_id TEXT;
 ALTER TABLE recording ADD COLUMN remote INTEGER NOT NULL DEFAULT 0;
 ALTER TABLE part ADD COLUMN drive_file_id TEXT;

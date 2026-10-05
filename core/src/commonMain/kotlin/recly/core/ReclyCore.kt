@@ -386,7 +386,7 @@ class ReclyCore(
     }
 
     /**
-     * "연결 해제" (docs/03 "Sign out vs Disconnect"), the local half of it: the `tokens` namespace of
+     * "Disconnect" (docs/03 "Sign out vs Disconnect"), the local half of it: the `tokens` namespace of
      * [SecureStore], completed job records and the Drive folder cache. Unfinished jobs keep their steps and
      * resume state, parked until the same Drive owner is verified on reconnection. Nothing in Drive is
      * touched — those files are the user's own (docs/03), and this never calls `files.delete`.
@@ -401,7 +401,7 @@ class ReclyCore(
      *
      * The recordings and their `recording`/`part` rows stay unless [alsoDeleteRecordings]: an
      * original that has not been uploaded yet is not deleted by a decision about an account
-     * (principle 3, "ack 전에 지우지 않는다"). The dialog says how many are in that state and
+     * (principle 3, "not deleted before the ack"). The dialog says how many are in that state and
      * offers this flag as a separate answer.
      *
      * **Revoking the grant is the shell's job**, not this one: it is a platform SDK call
@@ -441,7 +441,7 @@ class ReclyCore(
             recordings.synced().filterValues { StorageKind.ofId(it) == StorageKind.DRIVE }.keys
                 .forEach { recordings.forgetDriveCopy(it) }
             driveStore.forgetAllFolders()
-            // The "로컬만 삭제" memory (docs/03 "Recordings from other devices") is about this account's folders, and
+            // The "Delete local only" memory (docs/03 "Recordings from other devices") is about this account's folders, and
             // a device that starts over with an account starts over with its list.
             recordings.clearIgnored(StorageKind.DRIVE)
             deps.logger.log(
@@ -459,7 +459,7 @@ class ReclyCore(
 }
 
 /**
- * What "연결 해제" (docs/03) managed. [busyRecordings] are the ones a `RUNNING` job would not let
+ * What "Disconnect" (docs/03) managed. [busyRecordings] are the ones a `RUNNING` job would not let
  * go of: they and their queue rows are still here, and the screen has to say so — disconnecting
  * again once the job has finished takes them.
  */

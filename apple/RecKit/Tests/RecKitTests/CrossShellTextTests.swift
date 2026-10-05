@@ -103,9 +103,9 @@ final class ProviderDisclosureTests: XCTestCase {
     }
 }
 
-/// Lane P1 deliverable 7 · docs/12 M8: the iPhone's recording-consent reminder is the Mac's — "같은
-/// 질문 · 같은 본문 · 같은 관할 링크 · 같은 다시 묻지 않기" — in both languages. A user with a Mac and
-/// a phone is being told about the same law by the same product.
+/// Lane P1 deliverable 7 · docs/12 M8: the iPhone's recording-consent reminder is the Mac's — "same
+/// question · same body · same jurisdiction link · same don't-ask-again" — in both languages. A
+/// user with a Mac and a phone is being told about the same law by the same product.
 ///
 /// The Mac's is the original: Android's `ConsentTextTest` and Windows' `ConsentTest` both read the
 /// Mac's own catalog, and this reads it for the phone.

@@ -8,8 +8,9 @@ public struct NodeBox: Equatable, Sendable {
     public var end: CGFloat { start + extent }
 }
 
-/// The run after a node: a straight line with a square `+` on it (docs/09 screen principle 3 — "단계 추가는
-/// 커넥터 위 +"). The two legs are `start..<plusStart` and `plusEnd..<end`.
+/// The run after a node: a straight line with a square `+` on it (docs/09 screen principle 3 —
+/// "Steps are added with `+` on a connector"). The two legs are `start..<plusStart` and
+/// `plusEnd..<end`.
 ///
 /// The `+` is drawn [plusSize] wide but is *touched* over [touchSize], centred on the same point:
 /// the glyph stays small enough for the mockup's rhythm while the target stays at least 44pt.

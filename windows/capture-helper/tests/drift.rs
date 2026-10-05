@@ -1,6 +1,6 @@
 //! Deliverable 4: the drift correction, as a calculation.
 //!
-//! docs/12's target is "1시간 후 오프셋 < 20 ms" and docs/14 N3 repeats it for Windows. On macOS that
+//! docs/12's target is "offset < 20 ms after 1 hour" and docs/14 N3 repeats it for Windows. On macOS that
 //! number is checked with a clap test on real hardware; here it is checked the way the lane asks —
 //! an hour of a *synthetic* rate difference, run through the same [`DriftCompensator`] the helper
 //! uses, on a machine with no audio device at all.

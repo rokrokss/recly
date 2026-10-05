@@ -24,7 +24,7 @@ interface SecureStore {
 }
 
 /**
- * "연결 해제" (docs/03): everything in [ns] goes, one [SecureStore.names] entry at a time.
+ * "Disconnect" (docs/03): everything in [ns] goes, one [SecureStore.names] entry at a time.
  *
  * An extension and not a member with a default body: a `suspend` member is exported to Swift as a
  * protocol requirement, so every shell's conformer would have to write its own `__clear` for a

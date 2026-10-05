@@ -11,9 +11,9 @@ import UserNotifications
 /// 3. **It comes down by itself.** The queue is the source of truth, so a reason that is no longer
 ///    in it is withdrawn on the next reading — a sign-in, a `retry()`, a deletion.
 ///
-/// docs/10 also says the phone falls back to "배너만" when there is no permission, which is what
-/// this does by simply not posting: the list's own banner is drawn from the same [JobAlert]s and
-/// needs nothing from Notification Center.
+/// docs/10 also says the phone falls back to "banner only" when there is no permission, which is
+/// what this does by simply not posting: the list's own banner is drawn from the same [JobAlert]s
+/// and needs nothing from Notification Center.
 ///
 /// The Android twin is `JobAlertNotifier`/`JobAlertShade`; the macOS half shares Notification
 /// Center with `MeetingNotifier`, which is why the delegate is optional here — a process may only
@@ -22,7 +22,7 @@ import UserNotifications
 public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     /// Where the fix is.
-    /// docs/10: "탭하면 고칠 수 있는 화면으로 간다. '앱 열기'로 끝내지 않는다."
+    /// docs/10: "A tap goes to the screen that can fix it. It does not end at 'Open app'."
     public var onFix: ((JobAlert) -> Void)?
 
     /// The last reading of the queue. Kept because two things repaint from it: a language change,
@@ -148,7 +148,7 @@ public final class JobAlertNotifier: NSObject, UNUserNotificationCenterDelegate 
         if let stepId = alert.stepId {
             content.userInfo[Self.stepKey] = stepId
         }
-        // docs/10: "무음" — worth seeing, never worth interrupting anybody for.
+        // docs/10: "silent" — worth seeing, never worth interrupting anybody for.
         content.sound = nil
         // The identifier is the reason's own, so a new count replaces the standing notification
         // rather than stacking a column of them.

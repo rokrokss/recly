@@ -11,7 +11,7 @@ import recly.core.message.CoreMessageRef
 
 /**
  * What a shell has to know about a `step_run` to say something useful about it (docs/08 "Errors",
- * "폴링 · 상태"). The wording is each shell's own, in its own resources; which of the sentences to
+ * "Polling · status"). The wording is each shell's own, in its own resources; which of the sentences to
  * show is decided by [CoreMessageRef.parse] (docs/07 §5), and what is left here is the two things
  * a `last_error` alone does not answer.
  */
@@ -40,7 +40,7 @@ object StepReport {
 
     /**
      * How long the transcription has been in flight, in whole minutes — docs/08 parks the job in
-     * `WAITING` while the provider works, and "n분 경과" is the only honest thing to say about a
+     * `WAITING` while the provider works, and "n min elapsed" is the only honest thing to say about a
      * wait with no progress in it. Null when nothing has been submitted.
      *
      * The submission time is the `transcribe` runner's own state (`submittedAt`), because that is

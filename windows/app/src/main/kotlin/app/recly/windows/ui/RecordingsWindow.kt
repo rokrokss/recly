@@ -648,8 +648,8 @@ private fun Waveform(
         val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
         // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
         // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
-        // 접근성 asks 3:1 of a graphic, and the muted token faded out to hint at "not played yet" is
-        // under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
+        // "Accessibility" asks 3:1 of a graphic, and the muted token faded out to hint at "not played
+        // yet" is under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
         // so there is nothing here to special-case.
         if (bins.isEmpty()) {
             drawRect(

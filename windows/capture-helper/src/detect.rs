@@ -110,7 +110,7 @@ mod windows_impl {
     }
 
     /// `Zoom.exe`, `ms-teams.exe`, `chrome.exe` — the executable's own name, which is what docs/14
-    /// "감지" lists and what the app matches meeting apps against.
+    /// "Detection" lists and what the app matches meeting apps against.
     fn process_name(pid: u32) -> Option<String> {
         unsafe {
             let handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid).ok()?;

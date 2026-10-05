@@ -406,7 +406,7 @@ private fun ExpandedRow(
             // when there is one — on every shell alike, so it is offered on every row. A recording
             // still being written to is a thing to look at as well, and the detail says so itself
             // rather than being hidden for it (`DetailState.writing`).
-            // The row's most used action, so it is not left the narrowest: "상세" is two letters.
+            // The row's most used action, so it is not left the narrowest: in Korean, "상세" is two letters.
             BlueprintButton(
                 label = stringResource(R.string.detail_open),
                 onClick = onOpenDetail,
@@ -607,7 +607,7 @@ private fun Refreshable(
  *
  * A recording another device uploaded has no local half to keep, so there is no choice to offer:
  * deleting it is deleting the Drive folder, and the dialog says so and asks that (docs/03
- * "다른 기기의 녹음").
+ * "Recordings from other devices").
  */
 @Composable
 private fun DeleteDialog(

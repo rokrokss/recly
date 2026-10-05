@@ -44,7 +44,7 @@ data class WearUiState(
     /**
      * docs/11 W2: the badge reads "sending" only while there is something in flight to say it
      * about — the last recording of a pass is removed from the queue before the pass ends, and
-     * `전송 중 0개` would be the badge saying so.
+     * `Sending 0` would be the badge saying so.
      */
     val handingOver: Boolean get() = sending && pending > 0
 }

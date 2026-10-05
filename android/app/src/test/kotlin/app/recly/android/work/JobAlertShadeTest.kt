@@ -7,10 +7,11 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /**
- * docs/10 rule 3 ("상태가 풀리면 알림을 내린다") against the one thing that can break it: two writers.
- * The queue collector and a locale change both paint the shade, and a refresh that re-posted what
- * *was* on screen could put back a notification the queue had just taken down — with nothing left
- * to take it down again, because a reason the queue no longer has will not emit about it twice.
+ * docs/10 rule 3 ("When the state clears, the notification is removed") against the one thing that
+ * can break it: two writers. The queue collector and a locale change both paint the shade, and a
+ * refresh that re-posted what *was* on screen could put back a notification the queue had just
+ * taken down — with nothing left to take it down again, because a reason the queue no longer has
+ * will not emit about it twice.
  */
 class JobAlertShadeTest {
 

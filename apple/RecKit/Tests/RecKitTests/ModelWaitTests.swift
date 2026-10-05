@@ -310,7 +310,8 @@ final class ModelDownloadTests: XCTestCase {
         ).core
     }
 
-    /// docs/05: "녹음 시작·진행·종료 중에는 모델 다운로드를 누를 수 없다" — wherever it is pressed.
+    /// docs/05: "`Download model` cannot be pressed while a recording is starting, in progress or
+    /// ending" — wherever it is pressed.
     func testNothingDownloadsWhileACaptureIsRunning() async throws {
         let download = ModelDownload(core: try await core())
         download.capturing = true

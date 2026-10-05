@@ -5,7 +5,7 @@ import SwiftUI
 /// docs/09 screen principle 2, on the phone: the recordings are a ledger. One row per recording — when
 /// (monospace), what, how long, and the state as a code — and the detail is behind the row rather
 /// than in front of it: what the core last said, and the two or three things that can still be done
-/// about it (docs/13 I3 "목록").
+/// about it (docs/13 I3 "list").
 struct RecordingsView: View {
     @ObservedObject var model: RecordingModel
     /// Changes whenever the List tab is tapped: the ledger goes back to every row closed.
@@ -27,7 +27,7 @@ struct RecordingsView: View {
             // docs/09 screen principle 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
             ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents))
-            // docs/10 "iPhone": 목록 상단 배너 — one row per
+            // docs/10 "iPhone": a banner at the top of the list — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
             AlertBanner(alerts: model.alerts, download: model.modelDownload) { model.fix($0) }
@@ -147,10 +147,10 @@ struct RecordingsView: View {
                 RowReason(item: item, download: model.modelDownload)
             }
 
-            // docs/09 "Accessibility" · 유동 타이포: several buttons across is a layout for ordinary type
-            // sizes. On a narrow phone, or at an accessibility size, the same ones wrap onto
-            // further lines — a label cut to a syllable says nothing, and a column is not what the
-            // chips elsewhere do.
+            // docs/09 "Accessibility" · Fluid typography: several buttons across is a layout for
+            // ordinary type sizes. On a narrow phone, or at an accessibility size, the same ones
+            // wrap onto further lines — a label cut to a syllable says nothing, and a column is not
+            // what the chips elsewhere do.
             actions(item)
         }
         // The row's own time column is what the detail is indented past; at an accessibility size

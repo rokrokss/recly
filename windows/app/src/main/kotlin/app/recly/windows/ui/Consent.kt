@@ -15,7 +15,7 @@ import app.recly.windows.i18n.Str
 object Consent {
     val QUESTION: Str = Str.CONSENT_QUESTION
 
-    /** docs/research/02 §동의·법. Not legal advice and not a jurisdiction the app tries to guess. */
+    /** docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app tries to guess. */
     val BODY: Str = Str.CONSENT_BODY
 
     val CONFIRM: Str = Str.CONSENT_CONFIRM

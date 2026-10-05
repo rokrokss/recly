@@ -66,7 +66,7 @@ class StringTableTest {
     }
 
     /**
-     * The cross-shell dictionary (리드 정본), this shell's half: docs/03 "Recordings from other devices" says the
+     * The cross-shell dictionary (the lead's canonical wording), this shell's half: docs/03 "Recordings from other devices" says the
      * same three things on every shell, so the wording is locked here rather than left to drift out
      * of step with the phones' `job_state_*` and RecKit's `stateLabel`. Android's own
      * `CrossShellDictionaryTest` reads these very properties and holds the four of them together.

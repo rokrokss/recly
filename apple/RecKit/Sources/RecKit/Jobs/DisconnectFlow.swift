@@ -84,7 +84,7 @@ public final class DisconnectFlow {
     /// standing and only they can take it down.
     ///
     /// - Returns: whether the whole of it finished, which is what the button reports (docs/09
-    ///   트렌드 2).
+    ///   trend 2).
     public func run(alsoDeleteRecordings: Bool) async -> Bool {
         guard let core = core() else { return false }
         // Shut for the whole of it, before anything is read: the revoke below is a network round

@@ -16,8 +16,8 @@ import kotlin.time.Instant
  * say so.
  *
  * The **recording** helper has no policy here on purpose. Its death ends the recording (docs/14
- * "헬퍼가 죽으면 앱이 마지막 파트까지를 finalize한다"), and a restart that silently began a second
- * recording is exactly the thing ADR-011 forbids — the shell offers, the user decides.
+ * "If the helper dies, the app finalizes up to the last part"), and a restart that silently began a
+ * second recording is exactly the thing ADR-011 forbids — the shell offers, the user decides.
  */
 class HelperRestarts(
     private val max: Int = MAX,

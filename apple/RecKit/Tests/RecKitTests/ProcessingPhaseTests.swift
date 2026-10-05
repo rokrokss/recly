@@ -35,10 +35,10 @@ final class ProcessingPhaseTests: XCTestCase {
         XCTAssertEqual(Processing.doneBadge(workSec: 5), Motion.badgeFade)
     }
 
-    /// docs/09 "Motion" asks for "즉시 전환 + 텍스트 상태만" — instant transitions *and* the text
-    /// state. Reduce motion takes the fade and leaves the labels, so the two windows are the same
-    /// length as they are for everybody else: a user who has turned animations off is the one with
-    /// nothing else to tell them the tap was heard.
+    /// docs/09 "Motion" asks for "instant transition + text status only" — instant transitions
+    /// *and* the text state. Reduce motion takes the fade and leaves the labels, so the two windows
+    /// are the same length as they are for everybody else: a user who has turned animations off is
+    /// the one with nothing else to tell them the tap was heard.
     func testReduceMotionKeepsBothWindowsAndOnlyDropsTheFade() {
         XCTAssertEqual(Processing.hold(workSec: 0), Motion.processingMin, accuracy: 1e-9)
         XCTAssertEqual(Processing.doneBadge(workSec: 0), Motion.processingMax - Motion.processingMin, accuracy: 1e-9)

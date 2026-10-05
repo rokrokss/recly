@@ -52,7 +52,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 
 /**
- * docs/09 screen principle 5 ("제목 + 설명 + 최대 2개 버튼"), drawn the way the rest of this shell is drawn: a
+ * docs/09 screen principle 5 ("title + description + at most 2 buttons"), drawn the way the rest of this shell is drawn: a
  * square-cornered node on the grid, not Material's tonal card. `AlertDialog` is a container with its
  * own shape, its own elevation tint and its own 28dp corners, and none of those are in docs/09 — so
  * this is a `DialogWindow` carrying the same surface, hairline border and 4dp radius as [StateNode].
@@ -62,10 +62,10 @@ import app.recly.windows.ui.theme.blueprint
  * elevation out of this design). Escape closes it, as the tray popup's does.
  *
  * [content] scrolls on its own so a long body (the disconnect warnings) never pushes [actions] off
- * the card, which is capped at [MAX_HEIGHT]. docs/09 §유동 타이포 makes the type scale the window's,
- * so the two things that grow with it are both bounded: the title keeps [TITLE_LINES] in the header
- * and spills the rest into that same scroll region, and [actions] stack when a row of them would no
- * longer fit (see [DialogActions]).
+ * the card, which is capped at [MAX_HEIGHT]. docs/09 §Fluid typography makes the type scale the
+ * window's, so the two things that grow with it are both bounded: the title keeps [TITLE_LINES] in
+ * the header and spills the rest into that same scroll region, and [actions] stack when a row of
+ * them would no longer fit (see [DialogActions]).
  *
  * The Android twin is `ui/component/BlueprintDialog.kt`, and the Mac's is `Design/BlueprintDialog`.
  */
@@ -185,9 +185,9 @@ private fun DialogCard(
 
 /**
  * The answers, in a row while they fit and in a stack when they do not. What decides it is nearly
- * always the language and the type scale rather than the width of the card (docs/09 §유동 타이포 —
- * "이 폰에서만 삭제" is not "Delete on this PC only"), and a clipped answer makes the question
- * unanswerable, so the row is measured rather than assumed.
+ * always the language and the type scale rather than the width of the card (docs/09 §Fluid
+ * typography — the Korean "이 폰에서만 삭제" is not "Delete on this PC only"), and a clipped
+ * answer makes the question unanswerable, so the row is measured rather than assumed.
  *
  * Stacked, each answer is full width and they keep their order, which puts the confirming one at
  * the bottom: last, the same as it is last on the right.

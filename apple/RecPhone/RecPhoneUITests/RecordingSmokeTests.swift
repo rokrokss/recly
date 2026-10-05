@@ -1,6 +1,6 @@
 import XCTest
 
-/// docs/lanes M5-L2 시뮬레이터 스모크: a real recording, made the way a person makes one — tap
+/// docs/lanes M5-L2 simulator smoke: a real recording, made the way a person makes one — tap
 /// Start recording, put the phone away, come back, stop, name it — with the real `AVAudioSession`,
 /// the
 /// real AAC encoder and the real segment boundary underneath.
