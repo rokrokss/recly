@@ -108,11 +108,11 @@ settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_I
 `recly-events.exe` the MSI bundles, with the same client. See
 [`windows/README.md`](../windows/README.md) for details.
 
-The display version of the current release is `0.1.3` on every platform. The build is `33` for the
-Apple apps, the embedded Watch app and the widgets, `38` for Android and `1,000,038` for Wear OS.
-The Windows MSI install version is separate from the display version and keeps raising the third
-field: it is `0.1.32` — it was raised up to `0.1.29` during `0.1.0`, so the lower `0.1.3` would not
-upgrade.
+The display version of the current release is `0.2.0` on every platform. The build is `34` for the
+Apple apps, the embedded Watch app and the widgets, `39` for Android and `1,000,039` for Wear OS.
+The Windows MSI install version is set apart from the display version (`installerVersion`): it is
+`0.2.0`. During `0.1.x` its third field had to keep rising — it reached `0.1.32`, above the lower
+`0.1.3` — and `0.2.0` is above all of those, so it upgrades every earlier MSI.
 
 ### recly-events releases
 
