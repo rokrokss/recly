@@ -6,8 +6,8 @@ Recly is licensed under AGPL-3.0-or-later (see [LICENSE](LICENSE) and
 **This file is maintained by hand.** The authoritative list of dependencies is the build files:
 [`gradle/libs.versions.toml`](gradle/libs.versions.toml), each module's `build.gradle.kts`,
 [`apple/RecKit/Package.swift`](apple/RecKit/Package.swift),
-[`windows/capture-helper/Cargo.toml`](windows/capture-helper/Cargo.toml) and
-[`spec/package.json`](spec/package.json). If they disagree, the build files are right and this file
+[`windows/capture-helper/Cargo.toml`](windows/capture-helper/Cargo.toml),
+[`events/go.mod`](events/go.mod) and [`spec/package.json`](spec/package.json). If they disagree, the build files are right and this file
 is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) is not listed.
 
 ## Components
@@ -37,6 +37,7 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | serde_json | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/serde-rs/json> |
 | sha2 | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/RustCrypto/hashes> |
 | windows (windows-rs) | Windows capture helper | MIT OR Apache-2.0 | <https://github.com/microsoft/windows-rs> |
+| Go standard library and the Go modules linked into recly-events — MCP Go SDK, OpenAI tunnel-client, `golang.org/x/*` (oauth2, net, sys, term, sync, time), OpenTelemetry, Prometheus client, Uber fx/dig/zap/multierr, protobuf and others | recly-events | MIT, BSD-3-Clause, Apache-2.0. Every archive carries `THIRD-PARTY-NOTICES.txt` with each module's licence and NOTICE files, made by [`events/scripts/notices.sh`](events/scripts/notices.sh) | <https://github.com/modelcontextprotocol/go-sdk>, <https://github.com/openai/tunnel-client>, [`events/go.mod`](events/go.mod) |
 | FFmpeg (bundled `ffmpeg.exe` and its DLLs) | Windows | LGPL-2.1-or-later — see below | <https://ffmpeg.org/> |
 | sherpa-onnx (Android AAR, JVM jar and its native jar) | Android phone, Windows | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
 | ONNX Runtime (inside the sherpa-onnx AAR and native jar) | Android phone, Windows | MIT | <https://github.com/microsoft/onnxruntime> |

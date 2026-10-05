@@ -57,14 +57,15 @@ build() {
     -o "../$3" ./cmd/recly-events)
 }
 
-# stage NAME BINARY — a directory with the binary and the licence it is under.
+# stage NAME BINARY — a directory with the binary, its licence and its dependencies' notices.
 stage() {
   mkdir -p "$work/$1"
   cp "$2" "$work/$1/"
-  cp LICENSE LICENSE-EXCEPTIONS.md "$work/$1/"
+  cp LICENSE LICENSE-EXCEPTIONS.md "$work/THIRD-PARTY-NOTICES.txt" "$work/$1/"
 }
 
 echo "release: building recly-events $version from ${commit:0:7}"
+events/scripts/notices.sh > "$work/THIRD-PARTY-NOTICES.txt"
 
 # macOS: Apple silicon and Intel in one binary, hardened runtime, notarized. A bare binary cannot
 # be stapled; Gatekeeper finds the notarization online when a downloaded copy is first run.
