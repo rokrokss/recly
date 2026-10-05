@@ -244,6 +244,10 @@ class AgentEvents(
     var googleSignedIn by mutableStateOf(false)
         private set
 
+    /** Google refused the stored sign-in ([AgentEventsStatus.googleEnded]), for the Google row. */
+    var googleEnded by mutableStateOf(false)
+        private set
+
     /** The last tunnel save failed (a bad ID, no key). */
     var saveFailed by mutableStateOf(false)
         private set
@@ -339,6 +343,7 @@ class AgentEvents(
         if (current != null) {
             tunnelId = current.tunnelId.orEmpty()
             googleSignedIn = current.googleSignedIn
+            googleEnded = current.googleEnded
         }
         when (AgentEventsAction.reconcile(enabled, gaveUp, child != null, current)) {
             AgentEventsAction.START -> current?.let { startChild(runner, it.home) }

@@ -176,6 +176,8 @@ public final class AgentEventsController: ObservableObject {
     /// The saved tunnel ID, for the field's first value.
     @Published public private(set) var tunnelId = ""
     @Published public private(set) var googleSignedIn = false
+    /// Google refused the stored sign-in ([AgentEventsStatus.googleEnded]), for the Google row.
+    @Published public private(set) var googleEnded = false
     /// The last tunnel save failed (a bad ID, no key).
     @Published public private(set) var saveFailed = false
 
@@ -290,6 +292,7 @@ public final class AgentEventsController: ObservableObject {
         if let status {
             tunnelId = status.tunnelId ?? ""
             googleSignedIn = status.googleSignedIn
+            googleEnded = status.googleEnded
         }
         switch AgentEventsAction.reconcile(enabled: enabled, gaveUp: gaveUp, childRunning: child != nil, status: status) {
         case .start: if let status { startChild(home: status.home) }

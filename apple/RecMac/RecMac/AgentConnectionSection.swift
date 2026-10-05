@@ -24,15 +24,7 @@ struct AgentConnectionSection: View {
             )
             .disabled(agent.phase == .unavailable)
             if agent.enabled, agent.phase != .unavailable {
-                SectionRow(
-                    title: loc("Google Drive"),
-                    subtitle: agent.googleSignedIn ? loc("Connected") : loc("Not connected")
-                ) {
-                    BlueprintButton(agent.googleSignedIn ? loc("Connect again") : loc("Connect"), tone: .quiet) {
-                        agent.connectGoogle()
-                    }
-                    .disabled(agent.phase == .signingIn)
-                }
+                googleRow
                 SectionBlock {
                     BlueprintField(loc("Tunnel ID"), text: $tunnelId, mono: true, placeholder: "tunnel_…")
                     BlueprintField(loc("Tunnel key"), text: $tunnelKey, mono: true, secure: true, placeholder: "sk-…")
@@ -63,6 +55,26 @@ struct AgentConnectionSection: View {
         }
         .onChange(of: agent.tunnelId) { _, saved in
             if tunnelId.isEmpty { tunnelId = saved }
+        }
+    }
+
+    /// A working sign-in has no button: the row offers Connect without one, and Connect again only
+    /// once Google has refused the stored one.
+    @ViewBuilder
+    private var googleRow: some View {
+        if !agent.googleSignedIn {
+            connectRow(loc("Not connected"), button: loc("Connect"))
+        } else if agent.googleEnded {
+            connectRow(loc("Sign-in ended"), button: loc("Connect again"))
+        } else {
+            SectionRow(title: loc("Google Drive"), subtitle: loc("Connected"))
+        }
+    }
+
+    private func connectRow(_ subtitle: String, button: String) -> some View {
+        SectionRow(title: loc("Google Drive"), subtitle: subtitle) {
+            BlueprintButton(button, tone: .quiet) { agent.connectGoogle() }
+                .disabled(agent.phase == .signingIn)
         }
     }
 

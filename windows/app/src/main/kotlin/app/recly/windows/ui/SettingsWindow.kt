@@ -267,16 +267,27 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
         enabled = !unavailable,
     )
     if (!agent.enabled || unavailable) return
+    // A working sign-in has no button: the row offers Connect without one, and Connect again only
+    // once Google has refused the stored one.
+    val (subtitle, button) = when {
+        !agent.googleSignedIn -> Str.AGENT_GOOGLE_NOT_CONNECTED to Str.AGENT_GOOGLE_CONNECT
+        agent.googleEnded -> Str.AGENT_GOOGLE_ENDED to Str.AGENT_GOOGLE_RECONNECT
+        else -> Str.AGENT_GOOGLE_CONNECTED to null
+    }
     TableRow(
         title = strings[Str.AGENT_GOOGLE],
-        subtitle = strings[if (agent.googleSignedIn) Str.AGENT_GOOGLE_CONNECTED else Str.AGENT_GOOGLE_NOT_CONNECTED],
-        trailing = {
-            BlueprintButton(
-                strings[if (agent.googleSignedIn) Str.AGENT_GOOGLE_RECONNECT else Str.AGENT_GOOGLE_CONNECT],
-                agent::connectGoogle,
-                tone = ButtonTone.QUIET,
-                enabled = agent.phase != AgentEventsPhase.SigningIn,
-            )
+        subtitle = strings[subtitle],
+        trailing = if (button == null) {
+            null
+        } else {
+            {
+                BlueprintButton(
+                    strings[button],
+                    agent::connectGoogle,
+                    tone = ButtonTone.QUIET,
+                    enabled = agent.phase != AgentEventsPhase.SigningIn,
+                )
+            }
         },
     )
     var tunnelId by remember(agent.tunnelId) { mutableStateOf(agent.tunnelId) }
