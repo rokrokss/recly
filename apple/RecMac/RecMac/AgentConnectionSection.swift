@@ -23,7 +23,7 @@ struct AgentConnectionSection: View {
         VStack(spacing: 0) {
             SectionHeader(loc("Agent connection")).padding(.horizontal, Space.m)
             SwitchRow(
-                title: loc("Tell ChatGPT about new transcripts"),
+                title: loc("Tell ChatGPT about new recordings"),
                 subtitle: switchNote,
                 isOn: Binding(get: { agent.enabled && !blocked }, set: { agent.enabled = $0 })
             )

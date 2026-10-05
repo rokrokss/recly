@@ -46,7 +46,7 @@ Google and to OpenAI.
 ## From the Recly Mac or Windows app
 
 The Mac and Windows apps include recly-events and run it for you while **Settings → Agent connection →
-Tell ChatGPT about new transcripts** is on. It is off by default, and available only while the app
+Tell ChatGPT about new recordings** is on. It is off by default, and available only while the app
 stores recordings in Google Drive.
 
 There is no Google sign-in step: the app's copy uses the Google Drive connection the app already

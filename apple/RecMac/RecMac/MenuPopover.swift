@@ -452,10 +452,16 @@ struct SettingsPane: View {
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).
             if let processing = model.processing {
-                ProcessingSettingsView(model: processing)
+                ProcessingSettingsView(model: processing, settingsFile: false)
             }
 
             AgentConnectionSection(agent: model.agentEvents)
+
+            // docs/09 screen principle 4: the settings file is a utility, so it comes after the
+            // features, Agent connection included (2026-10-06).
+            if let processing = model.processing {
+                ProcessingSettingsFileSection(model: processing)
+            }
 
             // docs/09 trend 6: no mascot and no "handmade" line — what this build actually is.
             section(loc("About"))

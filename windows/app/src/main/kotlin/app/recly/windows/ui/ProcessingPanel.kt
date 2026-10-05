@@ -114,12 +114,26 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                 }
             }
         }
-        SectionHeader(strings[Str.PROCESSING_SETTINGS_FILE])
-        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            BlueprintButton(strings[Str.PROCESSING_EXPORT], { model.export() }, tone = ButtonTone.QUIET, enabled = model.stored is ProcessingSettingsState.Ready && !model.dirty)
-            BlueprintButton(strings[Str.PROCESSING_IMPORT], { model.importSettings() }, tone = ButtonTone.QUIET, enabled = !model.dirty)
-        }
     }
+}
+
+/**
+ * docs/05: the processing settings out to a file and back. Its own section in Settings, after the
+ * features — Agent connection included — because it is a utility (docs/09 screen principle 4).
+ */
+@Composable
+fun ProcessingSettingsFile(model: ProcessingViewModel, strings: Strings) {
+    if (model.draft == null) return
+    SectionHeader(strings[Str.PROCESSING_SETTINGS_FILE], Modifier.padding(horizontal = Space.m))
+    HairLine()
+    FlowRow(
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+    ) {
+        BlueprintButton(strings[Str.PROCESSING_EXPORT], { model.export() }, tone = ButtonTone.QUIET, enabled = model.stored is ProcessingSettingsState.Ready && !model.dirty)
+        BlueprintButton(strings[Str.PROCESSING_IMPORT], { model.importSettings() }, tone = ButtonTone.QUIET, enabled = !model.dirty)
+    }
+    HairLine()
 }
 @Composable
 /**

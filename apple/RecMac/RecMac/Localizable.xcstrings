@@ -7393,83 +7393,6 @@
         }
       }
     },
-    "Tell ChatGPT about new transcripts": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tell ChatGPT about new transcripts"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "새 전사 결과를 ChatGPT에 알리기"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "新しい文字起こしをChatGPTに知らせる"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "将新的转录文本通知ChatGPT"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "將新的逐字稿通知ChatGPT"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avisar a ChatGPT de las nuevas transcripciones"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Prévenir ChatGPT des nouvelles transcriptions"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ChatGPT über neue Transkripte informieren"
-          }
-        },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avisar o ChatGPT sobre novas transcrições"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "إبلاغ ChatGPT بالنصوص الجديدة"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "नई ट्रांसक्रिप्ट के बारे में ChatGPT को बताएं"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Сообщать ChatGPT о новых расшифровках"
-          }
-        }
-      }
-    },
     "The tunnel is not connecting. Check the tunnel ID and key.": {
       "extractionState": "manual",
       "localizations": {
@@ -8313,6 +8236,83 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подключите Google Drive выше, чтобы начать"
+          }
+        }
+      }
+    },
+    "Tell ChatGPT about new recordings": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tell ChatGPT about new recordings"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT에 새 녹음 알리기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "新しい録音をChatGPTに知らせる"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "将新录音通知ChatGPT"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "將新錄音通知ChatGPT"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar a ChatGPT de las nuevas grabaciones"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prévenir ChatGPT des nouveaux enregistrements"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT über neue Aufnahmen informieren"
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisar o ChatGPT sobre novas gravações"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إبلاغ ChatGPT بالتسجيلات الجديدة"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नई रिकॉर्डिंग के बारे में ChatGPT को बताएं"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сообщать ChatGPT о новых записях"
           }
         }
       }

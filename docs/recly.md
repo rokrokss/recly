@@ -2043,7 +2043,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    settings, so if the provider is unchanged the key field is unchanged too.
    On mobile, switching tabs preserves drafts, and Android's back applies only to the current tab.
 4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Agent connection (desktop, §12 and §14
-   "Agent connection") / Privacy (phone) / About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29). **Theme**
+   "Agent connection") / Settings file (desktop) / Privacy (phone) / About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29).
+   The settings file — export and import of the recording processing settings — is a utility, so the desktops show it as a section of its own after the features,
+   Agent connection included; the phones keep it at the end of Recording processing (2026-10-06). **Theme**
    is three chips common to all four shells, `System default` · `Light` · `Dark`, and like language it is a local setting of this
    device — when unset, it follows the system's `prefers-color-scheme` (Windows 2026-09-01, the other three 2026-09-04).
    Settings hold no technical values (segment length and the like) — values the user cannot change are not shown (2026-09-04).
@@ -2682,7 +2684,7 @@ use the same mutex and the same staleness rule.
 ### Agent connection
 
 The Mac app bundles `recly-events` (`events/`, §15 §9) as `Recly.app/Contents/MacOS/recly-events` and runs it for the user while
-**Settings → Agent connection → Tell ChatGPT about new transcripts** is on. It is **off by default** (2026-10-05). The app talks to it only by running it:
+**Settings → Agent connection → Tell ChatGPT about new recordings** is on. It is **off by default** (2026-10-05). The app talks to it only by running it:
 `status --json` every 5 seconds while the switch is on; `init --tunnel-id … --tunnel-key-stdin --no-check` for the tunnel fields, with the key on standard input and never in the arguments; and
 `serve --drive-token-stdin` as a child process writing to the program's own `logs/serve.log`, with a pipe on its standard input that only the app holds (2026-10-06). The app
 writes its own Drive connection's short-lived access token (about an hour) to that pipe, one per line — right after the start, then whenever the token changes (checked every 5 seconds

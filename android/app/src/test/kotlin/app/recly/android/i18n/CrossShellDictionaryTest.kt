@@ -563,10 +563,10 @@ class CrossShellDictionaryTest {
             ),
             Line(
                 what = "the agent connection switch",
-                en = "Tell ChatGPT about new transcripts",
-                ko = "새 전사 결과를 ChatGPT에 알리기",
+                en = "Tell ChatGPT about new recordings",
+                ko = "ChatGPT에 새 녹음 알리기",
                 windows = "agent.toggle",
-                mac = "Tell ChatGPT about new transcripts",
+                mac = "Tell ChatGPT about new recordings",
             ),
             Line(
                 what = "the agent connection's tunnel fields",

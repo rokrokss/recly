@@ -173,7 +173,7 @@
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "送信待ち"
+            "value": "待機中"
           }
         },
         "zh-Hans": {
@@ -209,7 +209,7 @@
         "pt": {
           "stringUnit": {
             "state": "translated",
-            "value": "Em espera"
+            "value": "Aguardando"
           }
         },
         "ar": {
@@ -227,7 +227,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "К отправке"
+            "value": "Ожидание"
           }
         }
       }

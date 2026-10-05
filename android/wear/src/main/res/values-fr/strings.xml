@@ -11,7 +11,7 @@
     <string name="recording_save_deferred">Enregistrement incomplet ; récupération au prochain lancement</string>
     <string name="recording_failed">Échec : %1$s</string>
     <string name="pending_badge">En attente d\'envoi</string>
-    <string name="sending_badge">Envoi en cours</string>
+    <string name="sending_badge">Envoi</string>
     <string name="transfer_failed_badge">Échec du transfert</string>
     <string name="tile_start">Démarrer l’enregistrement</string>
     <string name="quick_start_label">Recly Enregistrer</string>

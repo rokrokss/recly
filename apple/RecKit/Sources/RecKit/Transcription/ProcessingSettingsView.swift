@@ -163,14 +163,15 @@ public struct ProcessingSettingsView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var pickingLanguage = false
     @State private var pickingProvider = false
-    @State private var importer = false
-    @State private var exporter = false
-    @State private var file: ProcessingFile?
     @State private var deletingKey: String?
     @State private var trainingOff = false
-    public init(model: ProcessingSettingsModel) {
+    /// The settings file at the end of the block; a shell that shows it as a section of its own,
+    /// further down ([ProcessingSettingsFileSection]), leaves it out here.
+    private let settingsFile: Bool
+    public init(model: ProcessingSettingsModel, settingsFile: Bool = true) {
         self.model = model
         self.download = model.download
+        self.settingsFile = settingsFile
     }
     public var body: some View {
         SectionHeader(loc("Recording processing")).padding(.horizontal, Space.m)
@@ -269,12 +270,10 @@ public struct ProcessingSettingsView: View {
                         }
                     }
                 }
-                SectionHeader(loc("Settings file"))
-                FlowLayout(alignment: .trailing) {
-                    BlueprintButton(loc("Export settings"), tone: .quiet) { export() }.disabled(!model.canExport)
-                    BlueprintButton(loc("Import settings"), tone: .quiet) { importer = true }.disabled(model.dirty)
+                if settingsFile {
+                    SectionHeader(loc("Settings file"))
+                    SettingsFileButtons(model: model)
                 }
-                .frame(maxWidth: .infinity, alignment: .trailing)
             } else if let message = model.message {
                 SectionFootnote(message.text)
             }
@@ -305,10 +304,6 @@ public struct ProcessingSettingsView: View {
                 TransferDisclosureList(targets: model.consentNeeded, trainingOff: $trainingOff)
             }
         }
-        .fileImporter(isPresented: $importer, allowedContentTypes: [.json, .plainText]) { result in
-            if case .success(let url) = result { Task { await model.pick(url) } }
-        }
-        .fileExporter(isPresented: $exporter, document: file, contentType: .json, defaultFilename: "recly-settings") { _ in }
         .blueprintDialog(isPresented: $pickingLanguage) {
             BlueprintDialog(title: loc("Spoken language")) {
                 BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingLanguage = false }
@@ -341,6 +336,41 @@ public struct ProcessingSettingsView: View {
     }
     private func field<Value>(_ path: ReferenceWritableKeyPath<ProcessingDraft, Value>) -> Binding<Value> {
         Binding(get: { model.draft![keyPath: path] }, set: { value in model.edit { $0[keyPath: path] = value } })
+    }
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// docs/09 screen principle 4: the settings file as a section of its own, for a shell that shows it
+/// after the sections below Recording processing — the Mac, under Agent connection.
+public struct ProcessingSettingsFileSection: View {
+    @ObservedObject private var model: ProcessingSettingsModel
+    public init(model: ProcessingSettingsModel) {
+        self.model = model
+    }
+    public var body: some View {
+        if model.draft != nil {
+            SectionHeader(RecKitStrings.localized("Settings file")).padding(.horizontal, Space.m)
+            SectionBlock { SettingsFileButtons(model: model) }
+        }
+    }
+}
+
+/// docs/05: the processing settings out to a file and back, with the panels that takes.
+private struct SettingsFileButtons: View {
+    @ObservedObject var model: ProcessingSettingsModel
+    @State private var importer = false
+    @State private var exporter = false
+    @State private var file: ProcessingFile?
+    var body: some View {
+        FlowLayout(alignment: .trailing) {
+            BlueprintButton(loc("Export settings"), tone: .quiet) { export() }.disabled(!model.canExport)
+            BlueprintButton(loc("Import settings"), tone: .quiet) { importer = true }.disabled(model.dirty)
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .fileImporter(isPresented: $importer, allowedContentTypes: [.json, .plainText]) { result in
+            if case .success(let url) = result { Task { await model.pick(url) } }
+        }
+        .fileExporter(isPresented: $exporter, document: file, contentType: .json, defaultFilename: "recly-settings") { _ in }
     }
     private func export() { Task { if let json = await model.export() { file = ProcessingFile(json: json); exporter = true } } }
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }

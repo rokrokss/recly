@@ -17,7 +17,7 @@
     <string name="quick_start_label">Recly Запись</string>
     <string name="entry_ready">Ожидание</string>
     <string name="complication_recording">ЗАП</string>
-    <string name="complication_pending">К отправке</string>
+    <string name="complication_pending">Ожидание</string>
     <string name="complication_sending">Отправка</string>
     <string name="complication_idle">Recly</string>
     <string name="info_open">Справка</string>

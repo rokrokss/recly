@@ -79,6 +79,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
             model.agentEvents?.let { AgentConnection(model, it, strings) }
+            model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
         }
     }
