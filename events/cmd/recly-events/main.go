@@ -361,6 +361,11 @@ func cmdServe(ctx context.Context, home app.Home) error {
 // serveAdmin answers `status` and `test` on a Unix socket in the home directory, which only
 // the owner can reach.
 func serveAdmin(home app.Home, api *drive.API, hub *webhook.Hub, rt *liveStatus, log *slog.Logger) (func(), error) {
+	// A second server on the same home would fight the first over the tunnel and state.json.
+	if c, err := net.DialTimeout("unix", home.AdminSocket(), time.Second); err == nil {
+		_ = c.Close()
+		return nil, fmt.Errorf("already running for %s", home.Dir)
+	}
 	_ = os.Remove(home.AdminSocket())
 	ln, err := net.Listen("unix", home.AdminSocket())
 	if err != nil {

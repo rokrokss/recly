@@ -21,7 +21,7 @@ CORE_GRADLE_ARGS ?=
 SIM_BUILD_ARGS ?=
 
 .PHONY: help test core core-mac core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
-        mac mac-test ios watch spec skills ios-release-test events events-test
+        mac mac-test ios watch spec skills ios-release-test events events-test events-release
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
@@ -49,6 +49,7 @@ help:
 	@echo "make helper-test    Rust capture helper tests"
 	@echo "make events         build recly-events, the optional ChatGPT events server (events/bin/)"
 	@echo "make events-test    recly-events tests (go test -race)"
+	@echo "make events-release recly-events archives, macOS notarized (TAG=events-vX.Y.Z, UPLOAD=1 for a draft release)"
 	@echo "make spec           validate spec/examples against the JSON Schemas"
 	@echo "make skills         zip the two agent skills for the Claude app (build/skills/)"
 
@@ -103,6 +104,10 @@ events:
 
 events-test:
 	cd events && go test -race ./...
+
+# docs/development.md "recly-events releases": UPLOAD=1 also creates a draft GitHub release.
+events-release:
+	TAG="$(TAG)" UPLOAD="$(UPLOAD)" NOTARY_PROFILE="$(NOTARY_PROFILE)" ./events/scripts/release.sh
 
 # ---- Apple (macOS host)
 

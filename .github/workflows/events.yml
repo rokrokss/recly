@@ -1,0 +1,50 @@
+# recly-events (events/) on the three systems its release archives are for. Windows runs here on
+# every change, unlike `windows.yml`: events/ changes rarely, and the Windows binary ships with no
+# Windows PC to try it on, so this is the only place it runs before a release.
+name: events
+
+on:
+  push:
+    branches: [main]
+    paths: ['events/**', '.github/workflows/events.yml']
+  pull_request:
+    paths: ['events/**', '.github/workflows/events.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+        working-directory: events
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: events/go.mod
+          cache-dependency-path: events/go.sum
+
+      # The race detector needs cgo, which the Windows runner's Go has no compiler for.
+      - name: Test
+        run: |
+          if [[ "$RUNNER_OS" == Windows ]]; then go test ./...; else go test -race ./...; fi
+
+      # The commands that need no Google or OpenAI account: the binary starts, reads an empty home
+      # and reports that nothing is set up.
+      - name: Smoke
+        env:
+          RECLY_EVENTS_HOME: ${{ runner.temp }}/recly-events-home
+        run: |
+          exe=; if [[ "$RUNNER_OS" == Windows ]]; then exe=.exe; fi
+          go build -o "./recly-events$exe" ./cmd/recly-events
+          "./recly-events$exe" version
+          "./recly-events$exe" status

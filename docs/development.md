@@ -111,6 +111,17 @@ The Windows MSI install version is separate from the display version and keeps r
 field: it is `0.1.32` — it was raised up to `0.1.29` during `0.1.0`, so the lower `0.1.3` would not
 upgrade.
 
+### recly-events releases
+
+`recly-events` (`events/`) is released apart from the apps, under its own `events-vX.Y.Z` tags.
+`TAG=events-vX.Y.Z make events-release` on a Mac builds the archives into `events/dist/X.Y.Z/`:
+macOS as one universal binary signed with Developer ID and notarized (`NOTARY_PROFILE`, default
+`recly`), Linux amd64 and arm64, Windows amd64 without a code signature, and `SHA256SUMS`. Recly's
+desktop OAuth client is compiled in from `local.properties`, as for the Windows app; the script
+stops without it, and when `events/` has uncommitted changes. `UPLOAD=1` also creates a draft
+pre-release that does not become "Latest"; publishing it creates the tag. CI
+(`.github/workflows/events.yml`) tests `events/` on Linux, macOS and Windows.
+
 **Icons**, when regenerating (macOS only): `swift scripts/render-icons.swift`, then
 `python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico`.
 

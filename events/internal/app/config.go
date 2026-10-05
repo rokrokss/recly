@@ -59,12 +59,10 @@ type Config struct {
 	CallbackHosts []string `json:"callbackHosts,omitempty"`
 }
 
-// PollInterval is how often Drive is asked for changes, in seconds (default 10).
+// PollInterval is how often Drive is asked for changes, in seconds: 10 by default and never less,
+// because everyone signed in with Recly's Google client shares one Drive API quota.
 func (c Config) PollInterval() int {
-	if c.PollSeconds <= 0 {
-		return 10
-	}
-	return c.PollSeconds
+	return max(c.PollSeconds, 10)
 }
 
 // AllowedCallbackHosts is the exact-host allowlist for event callbacks.

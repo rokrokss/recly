@@ -138,7 +138,7 @@ func LoadToken(path string) (TokenFile, error) {
 	var tf TokenFile
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return tf, fmt.Errorf("google token: %w (run `recly-events init --google-client …`)", err)
+		return tf, fmt.Errorf("google token: %w (run `recly-events init --google`)", err)
 	}
 	if err := json.Unmarshal(b, &tf); err != nil {
 		return tf, err

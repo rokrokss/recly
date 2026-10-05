@@ -41,31 +41,45 @@ no network port. Every connection it makes goes out, to Google and to OpenAI.
   [platform.openai.com](https://platform.openai.com).
 - **A computer that stays on** while you want events. While it sleeps nothing is lost; events arrive
   when it wakes. It has been run on macOS so far; the Linux and Windows parts are untested.
-- **Go** to build it. The module needs Go 1.27; an older `go` (1.21 or later) downloads that
-  toolchain by itself.
 
 ## Set up
 
-### 1. Build
+### 1. Get it
+
+Download the archive for your computer from the newest
+[`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true):
+
+| Computer | Archive |
+|---|---|
+| Mac (Apple silicon or Intel) | `recly-events_<version>_darwin_universal.zip` — signed with Developer ID and notarized |
+| Linux | `recly-events_<version>_linux_amd64.tar.gz` or `…_linux_arm64.tar.gz` |
+| Windows | `recly-events_<version>_windows_amd64.zip` — not code-signed, and not yet tried on a Windows PC |
+
+Check it against `SHA256SUMS` from the same release, unpack it, and put `recly-events` where it
+will stay: `service install` records where the program is.
+
+```sh
+shasum -a 256 -c SHA256SUMS --ignore-missing
+mkdir -p ~/.local/bin && cp recly-events_*/recly-events ~/.local/bin/
+```
+
+Release builds carry Recly's own Google sign-in, so you need no Google Cloud project. The commands
+below assume `recly-events` is on your `PATH`.
+
+#### Building it yourself
 
 ```sh
 make events          # → events/bin/recly-events
 ```
 
-`make events` compiles in Recly's own Google sign-in, so you do not need a Google Cloud project.
-It reads Recly's desktop OAuth client from `local.properties` (`google.desktopClientId` and
-`google.desktopClientSecret`, the same values the Windows app is built with) or from
-`REC_GOOGLE_DESKTOP_CLIENT_ID` and `REC_GOOGLE_DESKTOP_CLIENT_SECRET`. Without them the build
+The module needs Go 1.27; an older `go` (1.21 or later) downloads that toolchain by itself.
+
+`make events` compiles in Recly's Google sign-in only when it finds Recly's desktop OAuth client in
+`local.properties` (`google.desktopClientId` and `google.desktopClientSecret`, the values the
+Windows app is built with) or in `REC_GOOGLE_DESKTOP_CLIENT_ID` and
+`REC_GOOGLE_DESKTOP_CLIENT_SECRET`, which only Recly's maintainers have. Without them the build
 works, but `init --google` stops with "this build has no Recly Google client"; use
 [a client of your own](#using-a-google-client-of-your-own) instead.
-
-`service install` records where the program is, so copy it to a place where it will stay:
-
-```sh
-mkdir -p ~/.local/bin && cp events/bin/recly-events ~/.local/bin/
-```
-
-The commands below assume `recly-events` is on your `PATH`.
 
 ### 2. Create an OpenAI tunnel and its key
 
@@ -118,6 +132,8 @@ Keep the server running for this step: ChatGPT talks to it while you create the 
 1. In ChatGPT, open **Plugins** → **+** → **Create custom MCP server**.
 2. Name it, for example `Recly events`. Connection: **Tunnel**, and pick your tunnel. Authentication:
    **No authentication**.
+   Use your personal workspace. The app has no sign-in of its own, and who else in a shared
+   workspace could use it, and see your recording titles, has not been checked.
 3. Create it. The app's page should list the event `recording.transcribed` and the tools
    `get_pending_events` and `acknowledge_events`.
 
@@ -171,8 +187,8 @@ elsewhere.
 
 `config.json` takes:
 
-- `pollSeconds`: how often Drive is asked for changes (default 10). With Recly's sign-in every
-  recly-events user shares one Google API quota, so keep it at 10 or more.
+- `pollSeconds`: how often Drive is asked for changes, in seconds: 10 by default and never less,
+  because everyone signed in with Recly's Google client shares one Drive API quota.
 - `callbackHosts`: the hosts events may be sent to (default `connectors.api.openai.com`).
 
 Restart after changing it: `launchctl kickstart -k gui/$(id -u)/dev.recly.events` on macOS,
@@ -221,7 +237,8 @@ Start with `recly-events status`, then the log. The log names below are what to 
 
 | Symptom | Cause and fix |
 |---|---|
-| `init`: "this build has no Recly Google client" | The build has no Recly sign-in. See [Build](#1-build). |
+| `init`: "this build has no Recly Google client" | The build has no Recly sign-in. Use a [release](#1-get-it), or [a client of your own](#using-a-google-client-of-your-own). |
+| `serve`: "already running" | Another `recly-events serve` uses the same directory, for example the service. Stop one of them. |
 | ChatGPT lists no tunnel | The tunnel is not linked to your ChatGPT workspace, is less than 30 seconds old, or belongs to another organization. Edit it in OpenAI Platform. |
 | ChatGPT cannot create the app | The server is not running or the tunnel is not ready yet: `status` must show `Tunnel: … ready`. |
 | The agent says subscribing failed | `subscribe.refused`: the callback address was not allowed; the log says why. If its host is not `connectors.api.openai.com` and you trust it, add it to `callbackHosts`. `subscribe.verification.failed`: ChatGPT did not answer the signed check; ask again. |
@@ -243,7 +260,7 @@ disconnects every Recly app on every device as well.
 
 ## Using a Google client of your own
 
-If your build has no Recly sign-in, create a desktop OAuth client in your own Google Cloud project
+If you build recly-events without Recly's sign-in, create a desktop OAuth client in your own Google Cloud project
 and pass its JSON file:
 
 ```sh
@@ -270,7 +287,14 @@ developer.
 
 ```sh
 make events-test     # go test -race ./...
+TAG=events-v0.1.0 make events-release            # archives in events/dist/0.1.0/, macOS notarized
+TAG=events-v0.1.0 UPLOAD=1 make events-release   # and a draft GitHub release
 ```
+
+`events-release` runs [`scripts/release.sh`](scripts/release.sh) on a Mac with Recly's desktop
+OAuth client in `local.properties`, a Developer ID Application certificate and a notarytool
+keychain profile (`NOTARY_PROFILE`, default `recly`). CI (`.github/workflows/events.yml`) runs the
+tests on Linux, macOS and Windows.
 
 | Package | |
 |---|---|

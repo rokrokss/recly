@@ -53,7 +53,7 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 | `make windows-run` | run the Windows shell on this host |
 | `make windows-msi` | Windows MSI — **Windows hosts only** |
 | `make helper-test` | Rust capture helper tests (`cargo test`) |
-| `make events` / `make events-test` | build recly-events / its tests (`go test -race`) |
+| `make events` / `make events-test` | build recly-events / its tests (`go test -race`); `make events-release` builds its release archives (docs/development.md) |
 | `make core` | build the XCFramework and stage it into `apple/RecKit` — do this first on a Mac |
 | `make core-mac` | refresh only the macOS slice — one Kotlin/Native target instead of six; enough for `make mac` / `make mac-test` |
 | `make mac` / `make mac-test` | build Recly Mac / run RecKit tests on macOS |

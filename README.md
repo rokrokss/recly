@@ -141,6 +141,10 @@ Then ask: *"Make minutes from the latest recording and put them in Notion"* or *
 decide about pricing last week?"*. Want another format, or notes somewhere other than Notion?
 Edit a skill, or copy one and [write your own](skills/README.md#write-your-own). That is the point.
 
+Want a ChatGPT dot to start on a recording as soon as its transcript lands?
+[`recly-events`](events/README.md) is an optional program you run on your own computer: it watches
+your Drive for new transcripts and tells your agent through MCP events.
+
 ## Clients
 
 | Client | Built with | What it does |
@@ -190,6 +194,7 @@ apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / 
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI)
 spec/        JSON Schema + examples — the contract every client honors
 skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
+events/      recly-events — optional program that tells a ChatGPT agent about new transcripts (MCP events)
 scripts/     icon rendering
 docs/        recly.md (the design source of truth) + install.md + development.md + policy/
 ```
