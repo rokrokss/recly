@@ -35,10 +35,13 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
     public var server: Server?
     public var drive: Drive
     public var subscriptions: Int
+    /// There were subscriptions and none is left — the agent unsubscribed, or ChatGPT refused a
+    /// delivery with 410. recly-events never expires one itself.
+    public var subscriptionsEnded: Bool?
 
     public init(
         home: String, tunnelId: String? = nil, tunnelKey: Bool = false, googleSignedIn: Bool = false,
-        server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0
+        server: Server? = nil, drive: Drive = Drive(), subscriptions: Int = 0, subscriptionsEnded: Bool? = nil
     ) {
         self.home = home
         self.tunnelId = tunnelId
@@ -47,6 +50,13 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
         self.server = server
         self.drive = drive
         self.subscriptions = subscriptions
+        self.subscriptionsEnded = subscriptionsEnded
+    }
+
+    /// Whether an agent is listening, for the running row.
+    public var subscription: AgentEventsSubscription {
+        if subscriptions > 0 { return .active }
+        return subscriptionsEnded == true ? .ended : .none
     }
 
     /// Everything `serve` needs: a Google sign-in, a tunnel and its key.
@@ -60,6 +70,14 @@ public struct AgentEventsStatus: Decodable, Equatable, Sendable {
         guard let error = drive.lastError else { return false }
         return error.contains("invalid_grant") || error.contains("HTTP 401")
     }
+}
+
+/// Whether an agent listens: one subscribed, none ever did, or one did and stopped — which only
+/// the agent can undo, by subscribing again.
+public enum AgentEventsSubscription: Equatable, Sendable {
+    case active
+    case none
+    case ended
 }
 
 /// What the settings row says. One case per sentence the row can show.
@@ -80,7 +98,7 @@ public enum AgentEventsPhase: Equatable, Sendable {
     case starting
     case connecting
     case tunnelError
-    case running(subscribed: Bool)
+    case running(AgentEventsSubscription)
 
     public static func of(
         enabled: Bool, available: Bool, signingIn: Bool, gaveUp: Bool, owned: Bool,
@@ -97,7 +115,7 @@ public enum AgentEventsPhase: Equatable, Sendable {
         if !owned { return .elsewhere }
         if let error = server.tunnelError, !error.isEmpty { return .tunnelError }
         if !server.tunnelReady { return .connecting }
-        return .running(subscribed: status.subscriptions > 0)
+        return .running(status.subscription)
     }
 }
 

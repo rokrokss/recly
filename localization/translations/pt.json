@@ -449,5 +449,6 @@
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Executa o recly-events neste Mac. Ele lê apenas os nomes e links das novas transcrições no seu Drive e avisa seu agente do ChatGPT pelo seu próprio túnel da OpenAI.",
   "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Executa o recly-events neste PC. Ele lê apenas os nomes e links das novas transcrições no seu Drive e avisa seu agente do ChatGPT pelo seu próprio túnel da OpenAI.",
   "Running — ChatGPT can reach this Mac": "Em execução — o ChatGPT consegue acessar este Mac",
-  "Running — ChatGPT can reach this PC": "Em execução — o ChatGPT consegue acessar este PC"
+  "Running — ChatGPT can reach this PC": "Em execução — o ChatGPT consegue acessar este PC",
+  "The subscription ended. Ask your agent to subscribe again.": "A inscrição terminou. Peça ao seu agente para se inscrever de novo."
 }

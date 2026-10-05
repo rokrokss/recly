@@ -8547,6 +8547,83 @@
           }
         }
       }
+    },
+    "The subscription ended. Ask your agent to subscribe again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The subscription ended. Ask your agent to subscribe again."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "구독이 끝났습니다. 에이전트에게 다시 구독해 달라고 말해 주세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "購読が終了しました。エージェントにもう一度購読するよう頼んでください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "订阅已结束。请让你的智能体重新订阅。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "訂閱已結束。請讓你的代理重新訂閱。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La suscripción terminó. Pide a tu agente que se suscriba de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’abonnement a pris fin. Demandez à votre agent de se réabonner."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Abonnement ist beendet. Bitten Sie Ihren Agenten, erneut zu abonnieren."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A inscrição terminou. Peça ao seu agente para se inscrever de novo."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "انتهى الاشتراك. اطلب من وكيلك الاشتراك مرة أخرى."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सब्सक्रिप्शन समाप्त हो गया। अपने एजेंट से फिर से सब्सक्राइब करने को कहें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Подписка закончилась. Попросите агента подписаться снова."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

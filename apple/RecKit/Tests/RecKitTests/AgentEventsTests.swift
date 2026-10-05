@@ -14,7 +14,7 @@ final class AgentEventsTests: XCTestCase {
         let json = """
         {"home": "/h", "tunnelId": "tunnel_x", "tunnelKey": true, "googleSignedIn": true,
          "server": {"pid": 42, "tunnelReady": true, "startedAt": "2026-10-05T12:39:28+04:00", "version": "0.1.0"},
-         "drive": {"pollSeconds": 10, "announced": 2}, "subscriptions": 1, "pending": 0,
+         "drive": {"pollSeconds": 10, "announced": 2}, "subscriptions": 1, "subscriptionsEnded": false, "pending": 0,
          "lastDelivery": {"at": "2026-10-05T12:10:48+04:00", "status": 200}}
         """
         let status = try JSONDecoder().decode(AgentEventsStatus.self, from: Data(json.utf8))
@@ -52,20 +52,23 @@ final class AgentEventsTests: XCTestCase {
         XCTAssertEqual(phase(AgentEventsStatus(home: "/h")), .needsSetup)
         XCTAssertEqual(phase(ready), .starting)
         XCTAssertEqual(phase(owned: false, running), .elsewhere)
-        XCTAssertEqual(phase(running), .running(subscribed: false))
+        XCTAssertEqual(phase(running), .running(.none))
 
         var subscribed = running
         subscribed.subscriptions = 1
-        XCTAssertEqual(phase(subscribed), .running(subscribed: true))
+        XCTAssertEqual(phase(subscribed), .running(.active))
+        var ended = running
+        ended.subscriptionsEnded = true
+        XCTAssertEqual(phase(ended), .running(.ended), "an agent that stopped listening is told apart from none yet")
         var connecting = running
         connecting.server?.tunnelReady = false
         XCTAssertEqual(phase(connecting), .connecting)
         var broken = connecting
         broken.server?.tunnelError = "tunnel: unauthorized"
         XCTAssertEqual(phase(broken), .tunnelError)
-        var ended = running
-        ended.drive.lastError = "invalid_grant"
-        XCTAssertEqual(phase(ended), .googleEnded)
+        var signedOut = running
+        signedOut.drive.lastError = "invalid_grant"
+        XCTAssertEqual(phase(signedOut), .googleEnded)
     }
 
     func testStartsOnlyWhenOnSetUpAndNothingElseAnswers() {
@@ -142,7 +145,7 @@ final class AgentEventsTests: XCTestCase {
         defer { controller.shutdown() }
         XCTAssertEqual(controller.phase, .off)
         controller.enabled = true
-        try await waitFor(controller, .running(subscribed: false))
+        try await waitFor(controller, .running(.none))
         let pid = try XCTUnwrap(Int32(String(contentsOf: dir.appendingPathComponent("serve.pid"), encoding: .utf8)
             .trimmingCharacters(in: .whitespacesAndNewlines)))
         XCTAssertEqual(kill(pid, 0), 0, "serve is running")

@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.agent.AgentEvents
 import app.recly.windows.agent.AgentEventsPhase
+import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
@@ -315,7 +316,13 @@ private fun AgentStatus(phase: AgentEventsPhase, strings: Strings) {
         AgentEventsPhase.NeedsSetup -> TableRow(strings[Str.AGENT_STATUS_SETUP])
         is AgentEventsPhase.Running -> TableRow(
             strings[Str.AGENT_STATUS_RUNNING],
-            subtitle = strings[if (phase.subscribed) Str.AGENT_STATUS_SUBSCRIBED else Str.AGENT_STATUS_NOT_SUBSCRIBED],
+            subtitle = strings[
+                when (phase.subscription) {
+                    AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
+                    AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
+                    AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
+                },
+            ],
         )
         AgentEventsPhase.TunnelError -> TableRow(strings[Str.AGENT_STATUS_TUNNEL_ERROR])
         AgentEventsPhase.GoogleEnded -> TableRow(strings[Str.AGENT_STATUS_GOOGLE_ENDED])

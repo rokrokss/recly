@@ -43,12 +43,22 @@ data class AgentEventsStatus(
     val server: Server? = null,
     val drive: Drive = Drive(),
     val subscriptions: Int = 0,
+    /** There were subscriptions and none is left; recly-events never expires one itself. */
+    val subscriptionsEnded: Boolean = false,
 ) {
     @Serializable
     data class Server(val pid: Long? = null, val tunnelReady: Boolean = false, val tunnelError: String? = null)
 
     @Serializable
     data class Drive(val lastError: String? = null)
+
+    /** Whether an agent is listening, for the running row. */
+    val subscription: AgentEventsSubscription
+        get() = when {
+            subscriptions > 0 -> AgentEventsSubscription.ACTIVE
+            subscriptionsEnded -> AgentEventsSubscription.ENDED
+            else -> AgentEventsSubscription.NONE
+        }
 
     /** Everything `serve` needs: a Google sign-in, a tunnel and its key. */
     val setUp: Boolean get() = googleSignedIn && !tunnelId.isNullOrEmpty() && tunnelKey
@@ -65,6 +75,12 @@ data class AgentEventsStatus(
         fun parse(text: String): AgentEventsStatus? = runCatching { json.decodeFromString<AgentEventsStatus>(text) }.getOrNull()
     }
 }
+
+/**
+ * Whether an agent listens: one subscribed, none ever did, or one did and stopped — which only the
+ * agent can undo, by subscribing again.
+ */
+enum class AgentEventsSubscription { ACTIVE, NONE, ENDED }
 
 /** What the settings row says. One case per sentence the row can show. */
 sealed interface AgentEventsPhase {
@@ -83,7 +99,7 @@ sealed interface AgentEventsPhase {
     data object Starting : AgentEventsPhase
     data object Connecting : AgentEventsPhase
     data object TunnelError : AgentEventsPhase
-    data class Running(val subscribed: Boolean) : AgentEventsPhase
+    data class Running(val subscription: AgentEventsSubscription) : AgentEventsPhase
 
     companion object {
         fun of(
@@ -105,7 +121,7 @@ sealed interface AgentEventsPhase {
             if (!owned) return Elsewhere
             if (!server.tunnelError.isNullOrEmpty()) return TunnelError
             if (!server.tunnelReady) return Connecting
-            return Running(subscribed = status.subscriptions > 0)
+            return Running(status.subscription)
         }
     }
 }

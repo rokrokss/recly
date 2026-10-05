@@ -80,11 +80,8 @@ struct AgentConnectionSection: View {
             working(loc("Connecting to the tunnel"))
         case .needsSetup:
             SectionRow(title: loc("Connect Google Drive and save a tunnel to start"))
-        case .running(let subscribed):
-            SectionRow(
-                title: loc("Running — ChatGPT can reach this Mac"),
-                subtitle: subscribed ? loc("Your agent is subscribed") : loc("No agent has subscribed yet")
-            )
+        case .running(let subscription):
+            SectionRow(title: loc("Running — ChatGPT can reach this Mac"), subtitle: Self.text(subscription))
         case .tunnelError:
             SectionRow(title: loc("The tunnel is not connecting. Check the tunnel ID and key."))
         case .googleEnded:
@@ -97,6 +94,14 @@ struct AgentConnectionSection: View {
     }
 
     /// The square loader beside the sentence (docs/09 "Screen principles"), in the row it replaces.
+    private static func text(_ subscription: AgentEventsSubscription) -> String {
+        switch subscription {
+        case .active: loc("Your agent is subscribed")
+        case .none: loc("No agent has subscribed yet")
+        case .ended: loc("The subscription ended. Ask your agent to subscribe again.")
+        }
+    }
+
     private func working(_ text: String) -> some View {
         SectionBlock {
             LoadingText(text: text, font: blueprint.fonts.bodySmall, color: blueprint.palette.text)

@@ -449,5 +449,6 @@
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "在此Mac上运行recly-events。它只读取Drive中新转录文本的名称和链接，并通过你自己的OpenAI隧道通知ChatGPT智能体。",
   "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "在此电脑上运行recly-events。它只读取Drive中新转录文本的名称和链接，并通过你自己的OpenAI隧道通知ChatGPT智能体。",
   "Running — ChatGPT can reach this Mac": "运行中 — ChatGPT可以连接到此Mac",
-  "Running — ChatGPT can reach this PC": "运行中 — ChatGPT可以连接到此电脑"
+  "Running — ChatGPT can reach this PC": "运行中 — ChatGPT可以连接到此电脑",
+  "The subscription ended. Ask your agent to subscribe again.": "订阅已结束。请让你的智能体重新订阅。"
 }
