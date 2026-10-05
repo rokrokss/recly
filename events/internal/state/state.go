@@ -22,6 +22,15 @@ type State struct {
 	Inbox         []*InboxEvent            `json:"inbox"`
 	Outbox        []*OutboxItem            `json:"outbox"`
 	LastDelivery  *DeliveryResult          `json:"lastDelivery,omitempty"`
+	// SubscriptionEndedAt is when the last subscription went — unsubscribed, or refused with 410 —
+	// until a new one arrives, so the user can be told to ask the agent again.
+	SubscriptionEndedAt *time.Time `json:"subscriptionEndedAt,omitempty"`
+}
+
+// SubscriptionsEnded says there were subscriptions and none is left: the agent unsubscribed, or
+// a callback answered 410. Subscriptions never expire here, so nothing else ends one.
+func (s *State) SubscriptionsEnded() bool {
+	return len(s.Subscriptions) == 0 && s.SubscriptionEndedAt != nil
 }
 
 // Drive is the change-feed position and what has already been announced.
@@ -48,13 +57,6 @@ type Subscription struct {
 	Arguments      json.RawMessage `json:"arguments,omitempty"`
 	CreatedAt      time.Time       `json:"createdAt"`
 	RefreshedAt    time.Time       `json:"refreshedAt"`
-	// ExpiresAt is nil for a subscription granted without expiry.
-	ExpiresAt *time.Time `json:"expiresAt,omitempty"`
-}
-
-// Active reports whether the subscription should still receive events at now.
-func (s *Subscription) Active(now time.Time) bool {
-	return s.ExpiresAt == nil || now.Before(*s.ExpiresAt)
 }
 
 // InboxEvent is an event as the agent reads it back with get_pending_events.

@@ -247,6 +247,7 @@ Start with `recly-events status`, then the log. The log names below are what to 
 | An event started no run | Events sent in the first seconds after subscribing have been seen to start nothing. The next run picks them up from the inbox, or run `recly-events test`. |
 | No event for a recording | Was it stored in Google Drive, made after the first start, and transcribed with speech in it? `status` shows when Drive was last polled. |
 | `drive.poll.failed` with `invalid_grant` | Google ended the sign-in. Disconnecting Google Drive in any Recly app does this, because recly-events uses the same Recly sign-in. Run `recly-events init --google` again. |
+| `status`: "the subscription ended" | The agent unsubscribed, or ChatGPT turned a delivery away with 410. Subscriptions never expire on this side, so only the agent can start again: ask it to subscribe to `recording.transcribed` again. Events from the meantime wait in the inbox. |
 | `delivery.retry` / `delivery.abandoned` | ChatGPT did not accept the event. It is retried for 24 hours and stays in the inbox for the agent's next run. |
 
 recly-events never signs out of Google itself, and you should not remove Recly at

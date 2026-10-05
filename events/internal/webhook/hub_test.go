@@ -111,10 +111,16 @@ func newFixture(t *testing.T) *fixture {
 
 func (f *fixture) subscribe(t *testing.T) *SubscribeResult {
 	t.Helper()
+	return f.subscribeFor(t, nil)
+}
+
+func (f *fixture) subscribeFor(t *testing.T, ttlMs *int64) *SubscribeResult {
+	t.Helper()
 	var p SubscribeParams
 	p.Name = EventName
 	p.Arguments = json.RawMessage(`{}`)
 	p.Delivery.Mode, p.Delivery.URL, p.Delivery.Secret = "webhook", f.url, secret
+	p.TTLMs = ttlMs
 	res, err := f.hub.Subscribe(context.Background(), p)
 	if err != nil {
 		t.Fatalf("subscribe: %v", err)
@@ -128,13 +134,19 @@ func TestSubscribeVerifiesAndGrantsNoExpiry(t *testing.T) {
 	if !strings.HasPrefix(res.ID, "sub_") || res.RefreshBefore != nil || res.Cursor != nil {
 		t.Fatalf("result = %+v", res)
 	}
-	again := f.subscribe(t)
-	if again.ID != res.ID {
-		t.Fatalf("refresh changed the id: %s vs %s", again.ID, res.ID)
+	// A lifetime asked for is not granted either: subscriptions never expire here.
+	hour := int64(time.Hour / time.Millisecond)
+	again := f.subscribeFor(t, &hour)
+	if again.ID != res.ID || again.RefreshBefore != nil {
+		t.Fatalf("refresh = %+v, first %s", again, res.ID)
+	}
+	f.now = f.now.Add(365 * 24 * time.Hour)
+	if _, err := f.hub.Emit("evt_late", map[string]string{}); err != nil {
+		t.Fatal(err)
 	}
 	f.store.View(func(s *state.State) {
-		if len(s.Subscriptions) != 1 || s.Subscriptions[res.ID].ExpiresAt != nil {
-			t.Fatalf("subscriptions = %+v", s.Subscriptions)
+		if len(s.Subscriptions) != 1 || len(s.Outbox) != 1 || s.SubscriptionsEnded() {
+			t.Fatalf("a year later: subs = %d outbox = %d", len(s.Subscriptions), len(s.Outbox))
 		}
 	})
 }
@@ -226,8 +238,16 @@ func TestGoneEndsSubscription(t *testing.T) {
 	}
 	f.hub.deliverDue(context.Background())
 	f.store.View(func(s *state.State) {
-		if len(s.Subscriptions) != 0 || len(s.Outbox) != 0 {
-			t.Fatalf("subs = %d outbox = %d", len(s.Subscriptions), len(s.Outbox))
+		if len(s.Subscriptions) != 0 || len(s.Outbox) != 0 || !s.SubscriptionsEnded() {
+			t.Fatalf("subs = %d outbox = %d ended = %v", len(s.Subscriptions), len(s.Outbox), s.SubscriptionsEnded())
+		}
+	})
+	// Asked again, the agent subscribes again and the ended notice goes.
+	f.rc.statuses = nil
+	f.subscribe(t)
+	f.store.View(func(s *state.State) {
+		if s.SubscriptionsEnded() || s.SubscriptionEndedAt != nil {
+			t.Fatalf("still ended after a new subscription")
 		}
 	})
 }
@@ -247,6 +267,11 @@ func TestUnsubscribeStopsDelivery(t *testing.T) {
 	if len(f.rc.events) != 0 {
 		t.Fatalf("delivered after unsubscribe: %+v", f.rc.events)
 	}
+	f.store.View(func(s *state.State) {
+		if !s.SubscriptionsEnded() {
+			t.Fatal("an unsubscribed agent is not reported as ended")
+		}
+	})
 }
 
 func TestGuardRefusesPrivateAddressesAndOtherPorts(t *testing.T) {

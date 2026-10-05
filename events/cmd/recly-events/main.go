@@ -441,15 +441,17 @@ func adminClient(home app.Home) *http.Client {
 // statusReport is `status --json`, which the desktop apps read to show the agent connection
 // (docs/recly.md §15 §9). It names no subscription or event.
 type statusReport struct {
-	Home           string          `json:"home"`
-	TunnelID       string          `json:"tunnelId,omitempty"`
-	TunnelKey      bool            `json:"tunnelKey"`
-	GoogleSignedIn bool            `json:"googleSignedIn"`
-	Server         *runtimeStatus  `json:"server"`
-	Drive          driveReport     `json:"drive"`
-	Subscriptions  int             `json:"subscriptions"`
-	Pending        int             `json:"pending"`
-	LastDelivery   *deliveryReport `json:"lastDelivery,omitempty"`
+	Home           string         `json:"home"`
+	TunnelID       string         `json:"tunnelId,omitempty"`
+	TunnelKey      bool           `json:"tunnelKey"`
+	GoogleSignedIn bool           `json:"googleSignedIn"`
+	Server         *runtimeStatus `json:"server"`
+	Drive          driveReport    `json:"drive"`
+	// SubscriptionsEnded says there were subscriptions and none is left: ask the agent again.
+	Subscriptions      int             `json:"subscriptions"`
+	SubscriptionsEnded bool            `json:"subscriptionsEnded"`
+	Pending            int             `json:"pending"`
+	LastDelivery       *deliveryReport `json:"lastDelivery,omitempty"`
 }
 
 type driveReport struct {
@@ -487,6 +489,7 @@ func cmdStatus(home app.Home, args []string) error {
 		rt = &r
 	}
 	tf, tokenErr := drive.LoadToken(home.GoogleToken())
+	ended := st.SubscriptionsEnded()
 	pending := 0
 	for _, e := range st.Inbox {
 		if e.AckedAt == nil {
@@ -497,7 +500,7 @@ func cmdStatus(home app.Home, args []string) error {
 		_, keyErr := app.ReadTunnelKey(home)
 		r := statusReport{
 			Home: home.Dir, TunnelID: cfg.TunnelID, TunnelKey: keyErr == nil, GoogleSignedIn: tokenErr == nil,
-			Server: rt, Subscriptions: len(st.Subscriptions), Pending: pending,
+			Server: rt, Subscriptions: len(st.Subscriptions), SubscriptionsEnded: ended, Pending: pending,
 			Drive: driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
 		}
 		if !st.Drive.LastPollAt.IsZero() {
@@ -542,17 +545,13 @@ func cmdStatus(home app.Home, args []string) error {
 	default:
 		fmt.Printf("Drive:          polled %s, every %ds; %d transcripts announced\n", ago(d.LastPollAt), cfg.PollInterval(), len(d.Seen))
 	}
-	now := time.Now()
-	fmt.Printf("Subscriptions:  %d\n", len(st.Subscriptions))
+	if ended {
+		fmt.Println("Subscriptions:  0 — the subscription ended; ask your agent to subscribe again")
+	} else {
+		fmt.Printf("Subscriptions:  %d\n", len(st.Subscriptions))
+	}
 	for _, s := range st.Subscriptions {
-		exp := "no expiry"
-		if s.ExpiresAt != nil {
-			exp = "expires " + s.ExpiresAt.Local().Format(time.DateTime)
-			if !s.Active(now) {
-				exp = "expired " + ago(*s.ExpiresAt)
-			}
-		}
-		fmt.Printf("  %s  since %s, refreshed %s, %s\n", s.ID, s.CreatedAt.Local().Format(time.DateTime), ago(s.RefreshedAt), exp)
+		fmt.Printf("  %s  since %s, refreshed %s\n", s.ID, s.CreatedAt.Local().Format(time.DateTime), ago(s.RefreshedAt))
 	}
 	fmt.Printf("Inbox:          %d events, %d not acknowledged\n", len(st.Inbox), pending)
 	fmt.Printf("Delivery queue: %d\n", len(st.Outbox))

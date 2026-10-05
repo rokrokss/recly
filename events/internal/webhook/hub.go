@@ -53,7 +53,8 @@ type SubscribeParams struct {
 		Secret string `json:"secret"`
 	} `json:"delivery"`
 	Cursor *string `json:"cursor"`
-	TTLMs  *int64  `json:"ttlMs"`
+	// TTLMs is read and ignored: a subscription never expires here (see [Hub.Subscribe]).
+	TTLMs *int64 `json:"ttlMs"`
 }
 
 // SubscribeResult is the events/subscribe result.
@@ -97,8 +98,9 @@ func (h *Hub) wakeUp() {
 }
 
 // Subscribe validates the request, verifies the callback with a signed challenge and stores
-// the subscription. A subscription is granted without expiry unless ChatGPT asks for a TTL:
-// it ends on events/unsubscribe or when the callback answers 410.
+// the subscription. It never expires, whatever ttlMs asks (a product decision, 2026-10-05; the
+// MCP Events guide would have a finite one, and ChatGPT sends no ttlMs): it ends on
+// events/unsubscribe or when the callback answers 410, and status then says so.
 func (h *Hub) Subscribe(ctx context.Context, p SubscribeParams) (*SubscribeResult, error) {
 	if p.Name != EventName {
 		return nil, &SubscribeError{Code: -32602, Message: "unknown event " + p.Name}
@@ -130,7 +132,7 @@ func (h *Hub) Subscribe(ctx context.Context, p SubscribeParams) (*SubscribeResul
 		}
 	})
 	cacheKey := id + "\x00" + p.Delivery.Secret
-	stillValid := existing != nil && existing.Secret == p.Delivery.Secret && existing.Active(now)
+	stillValid := existing != nil && existing.Secret == p.Delivery.Secret
 	if !stillValid && !h.recentlyVerified(cacheKey, now) {
 		if err := h.verify(ctx, id, p.Delivery.URL, p.Delivery.Secret); err != nil {
 			h.Log.Warn("subscribe.verification.failed", "subscription", id, "error", err.Error())
@@ -152,21 +154,15 @@ func (h *Hub) Subscribe(ctx context.Context, p SubscribeParams) (*SubscribeResul
 			sub.PreviousSecret, sub.RotationUntil = existing.PreviousSecret, existing.RotationUntil
 		}
 	}
-	var refreshBefore *string
-	if p.TTLMs != nil && *p.TTLMs > 0 {
-		exp := now.Add(time.Duration(*p.TTLMs) * time.Millisecond)
-		sub.ExpiresAt = &exp
-		s := exp.UTC().Format(time.RFC3339Nano)
-		refreshBefore = &s
-	}
 	if err := h.Store.Update(func(s *state.State) error {
 		s.Subscriptions[id] = sub
+		s.SubscriptionEndedAt = nil
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	h.Log.Info("subscribe.ok", "subscription", id, "refresh", existing != nil, "expires", refreshBefore != nil)
-	return &SubscribeResult{ID: id, RefreshBefore: refreshBefore}, nil
+	h.Log.Info("subscribe.ok", "subscription", id, "refresh", existing != nil)
+	return &SubscribeResult{ID: id}, nil
 }
 
 // Unsubscribe removes the subscription for the given callback URL, if any.
@@ -178,6 +174,8 @@ func (h *Hub) Unsubscribe(p SubscribeParams) error {
 	return h.Store.Update(func(s *state.State) error {
 		if _, ok := s.Subscriptions[id]; ok {
 			delete(s.Subscriptions, id)
+			ended := h.now()
+			s.SubscriptionEndedAt = &ended
 			s.Outbox = slices.DeleteFunc(s.Outbox, func(o *state.OutboxItem) bool { return o.SubscriptionID == id })
 			h.Log.Info("unsubscribe.ok", "subscription", id)
 		}
@@ -248,9 +246,7 @@ func (h *Hub) Emit(eventID string, data any) (bool, error) {
 		added = true
 		s.Inbox = append(s.Inbox, &state.InboxEvent{EventID: eventID, Name: EventName, Timestamp: now, Data: raw})
 		for _, sub := range s.Subscriptions {
-			if sub.Active(now) {
-				s.Outbox = append(s.Outbox, &state.OutboxItem{EventID: eventID, SubscriptionID: sub.ID, FirstAt: now, NextAt: now})
-			}
+			s.Outbox = append(s.Outbox, &state.OutboxItem{EventID: eventID, SubscriptionID: sub.ID, FirstAt: now, NextAt: now})
 		}
 		return nil
 	})
@@ -388,6 +384,7 @@ func (h *Hub) deliver(ctx context.Context, j job) {
 			h.Log.Info("delivery.ok", "event", j.event.EventID, "subscription", j.sub.ID, "status", status)
 		case err == nil && status == http.StatusGone:
 			delete(s.Subscriptions, j.sub.ID)
+			s.SubscriptionEndedAt = &now
 			s.Outbox = slices.DeleteFunc(s.Outbox, func(o *state.OutboxItem) bool { return o.SubscriptionID == j.sub.ID })
 			h.Log.Warn("delivery.gone", "subscription", j.sub.ID)
 		case err == nil && !retryable(status):
