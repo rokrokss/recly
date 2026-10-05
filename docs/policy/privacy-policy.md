@@ -1,6 +1,6 @@
 # Recly Privacy Policy
 
-**Effective date: 2026-10-03**
+**Effective date: 2026-10-05**
 **Contact: q0115643@gmail.com**
 
 The public URL for the Google OAuth consent screen and app stores is <https://recly.dev/policy/privacy-policy>. The technical basis is `docs/recly.md` §15 (privacy and data flow). [한국어](https://recly.dev/policy/privacy-policy.ko)
@@ -11,7 +11,7 @@ The public URL for the Google OAuth consent screen and app stores is <https://re
 
 Recly is a **recording app**. Recordings are uploaded to **your own Google Drive** — or, on iPhone and Mac, to **your own iCloud** if you choose it, or, on iPhone, Mac, Windows and the Android phone, copied into **a local folder you pick** — followed by the transcription method you choose in Settings.
 
-**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. The app does not send your recordings, transcripts, settings, or Google account data to the developer. Google, Apple (for iCloud) and any transcription provider you choose process the data sent to them under their own policies and your account agreements.
+**Recly has no servers.** There is no backend, no database, and no account system operated by the developer. The app does not send your recordings, transcripts, settings, or Google account data to the developer. Google, Apple (for iCloud), any transcription provider you choose and — if you run recly-events (§3) — OpenAI process the data sent to them under their own policies and your account agreements.
 
 ## 2. What the app handles, and where it lives
 
@@ -109,17 +109,26 @@ On iPhone and Mac with iOS or macOS 26 or later, new recording settings default 
 
 On those devices, choose an external provider if you want transcripts. Recly never silently switches local transcription to a paid or cloud API, and external transcription sends audio only to the provider you selected. Processing settings and API keys remain on the device; exported settings contain key references, not key values.
 
+### recly-events, an optional program you run yourself
+
+`recly-events` is a separate program from the Recly project that you can install on your own computer so that your ChatGPT agent (a dot or a Work chat) hears about each new transcript. The Recly apps do not include, start or call it; nothing in this subsection happens unless you run it.
+
+- **Google Drive, metadata only.** It signs in with the same Google authorization as the Recly apps (`drive.file`), so Google shows it only the files Recly created. About every 10 seconds it asks Drive what changed and reads the names, IDs, links and folder descriptions (recording titles) of those files. It never downloads a recording or a transcript. If you set it up with a Google client of your own instead, Google lets it see the metadata (not the contents) of every file in your Drive (`drive.metadata.readonly`); it ignores everything except Recly's transcripts and their folders.
+- **Your ChatGPT account.** When a new transcript appears, it sends a notice — the recording's name, title, start time, device type, and Drive file IDs and links — to your ChatGPT account through OpenAI's Secure MCP Tunnel and the event address ChatGPT gave it. Your agent then reads the transcript from your Drive with ChatGPT's own Google Drive connector; that processing is governed by OpenAI's terms and privacy policy and your ChatGPT settings.
+- **Nothing reaches the developer.** It runs on your computer and talks only to Google and OpenAI. Its settings, its Google token, your OpenAI tunnel key and its list of notices stay in its own folder on that computer, readable only by your user account.
+- **Stopping it.** Run `recly-events service uninstall` and delete its folder, then remove the tunnel and key in your OpenAI Platform settings and the app in ChatGPT. Disconnecting Google Drive in any Recly app also ends recly-events' Google access.
+
 ## 4. What is not collected
 
 - No analytics, usage statistics, or behavioral logging.
 - No automatic crash reporting.
 - No advertising identifiers and no ads.
 - No Recly account: no sign-up, and no email or profile data reaching the developer. iPhone, Mac and Windows use OAuth to request only `drive.file`, without requesting identity scopes (`openid`, `email`, `profile`). Android uses Google account selection and stores the selected email locally before requesting Drive access, as described in §2. Migrating an existing iPhone or Mac connection removes local profile data; it does not revoke permissions previously granted to Google. Disconnecting Drive revokes the Google authorization.
-- **The developer (Recly) collects nothing about you and sells, shares, or transfers nothing to third parties** — there is no data in the developer's hands to begin with. What does happen is **the transfers you direct**: as set out in §3, to your own Google Drive (or, on iPhone and Mac, your own iCloud), to the STT provider you chose, and between your own paired devices (watch ↔ phone). Those happen because you asked for them; they are not the developer handing your data to a third party.
+- **The developer (Recly) collects nothing about you and sells, shares, or transfers nothing to third parties** — there is no data in the developer's hands to begin with. What does happen is **the transfers you direct**: as set out in §3, to your own Google Drive (or, on iPhone and Mac, your own iCloud), to the STT provider you chose, between your own paired devices (watch ↔ phone), and — if you run recly-events — notices to your own ChatGPT account. Those happen because you asked for them; they are not the developer handing your data to a third party.
 
 ## 5. Limited Use of Google user data
 
-Recly's use and transfer of information received from Google APIs adheres to the **Google API Services User Data Policy**, including the Limited Use requirements. Drive data is used only to provide the features you requested (uploading, listing and retrieving your recordings and transcripts), is never used for advertising, and is not read by humans — there is no server that could read it.
+Recly's use and transfer of information received from Google APIs adheres to the **Google API Services User Data Policy**, including the Limited Use requirements. Drive data is used only to provide the features you requested (uploading, listing and retrieving your recordings and transcripts, and — in recly-events, if you run it — telling the ChatGPT agent you connected that a new transcript exists), is never used for advertising, and is not read by humans — there is no server that could read it.
 
 ## 6. Security
 

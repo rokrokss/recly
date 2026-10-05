@@ -2932,7 +2932,8 @@ transcription** in the recording processing settings, and (3) **the user's own o
 devices. A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
-links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path.
+links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
+`recly-events` program (§9) is separate: the apps never start or call it, and its paths are listed there.
 
 ### Apple on-device speech model assets
 
@@ -3216,6 +3217,24 @@ on the next run, and sign-in is blocked in the meantime. A recording that could 
 
 If there is even one of a new network call, a new step type, a new scope, a new storage location, or the introduction of telemetry (= amending ADR-022), amend this section,
 `docs/policy/privacy-policy.md`, and the Play "Data safety" form · App Store privacy labels together.
+
+### §9 recly-events — an optional server the user runs (2026-10-05)
+
+`events/` builds `recly-events`, a separate program the user may install and run on their own computer so that their
+ChatGPT agent (a dot or a Work chat) hears about a new transcript. **The apps neither start it nor call it**: none of
+§0–§7 changes, and nothing below happens unless the user runs it. It listens on no network port (`status` and `test`
+reach it through a Unix socket in its own directory) and makes three kinds of outbound connections:
+
+| Path | To | What is sent | What comes back |
+|---|---|---|---|
+| Google sign-in, Drive metadata | `accounts.google.com` (consent in the user's browser), `oauth2.googleapis.com`, `www.googleapis.com/drive/v3` (`changes`, `files`, `about`) | Recly's own desktop OAuth client (the Windows app's, compiled in) and its token, scope `drive.file`, so Drive shows it only the files Recly's apps created. Built from source without that client, it takes the user's own client and `drive.metadata.readonly` instead | names, IDs, folder descriptions (Recly titles), the folder's `recordingId` and links — **it never downloads file contents** |
+| OpenAI Secure MCP Tunnel | `api.openai.com` (`/v1/tunnel…`, long polling by the embedded `tunnel-client`) | the tunnel ID, a runtime key restricted to Tunnels Read + Use, and the answers to ChatGPT's MCP requests: the event inbox (recording name, title, start time, device, Drive IDs and links) | ChatGPT's MCP requests: discovery, tool calls, `events/subscribe` |
+| Event delivery | the callback URL from `events/subscribe`, only when its host is in `callbackHosts` (default `connectors.api.openai.com`), port 443, public addresses only, no redirects | a Standard Webhooks-signed `recording.transcribed` event with the fields above | 2xx, 410 (ends the subscription) or a retry |
+
+- No transcript text, audio, STT key or Recly app token passes through it. The agent reads the transcript itself, through its own Google Drive connector.
+- Its Google grant belongs to Recly's Cloud project, so "Disconnect" in any Recly app (a revoke, §6) ends its token too and it asks to be signed in again; recly-events itself never revokes, which would disconnect every Recly device.
+- Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the Google client and token, the tunnel key, `state.json` (Drive cursor, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).
+- Removing it: `recly-events service uninstall`, delete the home directory (its Google token goes with it), delete the tunnel and key in OpenAI Platform, delete the app in ChatGPT. Removing Recly at https://myaccount.google.com/permissions would disconnect every Recly app as well; do that only for a client of the user's own.
 
 ---
 

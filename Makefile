@@ -21,7 +21,7 @@ CORE_GRADLE_ARGS ?=
 SIM_BUILD_ARGS ?=
 
 .PHONY: help test core core-mac core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
-        mac mac-test ios watch spec skills ios-release-test
+        mac mac-test ios watch spec skills ios-release-test events events-test
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
@@ -47,6 +47,8 @@ help:
 	@echo "make windows-run    run the Windows shell on this host"
 	@echo "make windows-msi    Windows MSI (Windows hosts only)"
 	@echo "make helper-test    Rust capture helper tests"
+	@echo "make events         build recly-events, the optional ChatGPT events server (events/bin/)"
+	@echo "make events-test    recly-events tests (go test -race)"
 	@echo "make spec           validate spec/examples against the JSON Schemas"
 	@echo "make skills         zip the two agent skills for the Claude app (build/skills/)"
 
@@ -87,6 +89,20 @@ windows-msi:
 
 helper-test:
 	cd windows/capture-helper && cargo test
+
+# ---- recly-events (optional companion server, Go)
+
+# Recly's desktop OAuth client (the Windows app's), compiled in so `recly-events init --google`
+# needs no Google Cloud setup. From local.properties, else the environment; never committed, never echoed.
+EVENTS_GOOGLE_ID = $(or $(shell sed -n 's/^google.desktopClientId=//p' local.properties 2>/dev/null),$(REC_GOOGLE_DESKTOP_CLIENT_ID))
+EVENTS_GOOGLE_SECRET = $(or $(shell sed -n 's/^google.desktopClientSecret=//p' local.properties 2>/dev/null),$(REC_GOOGLE_DESKTOP_CLIENT_SECRET))
+
+events:
+	@cd events && go build -ldflags "-X main.googleClientID=$(EVENTS_GOOGLE_ID) -X main.googleClientSecret=$(EVENTS_GOOGLE_SECRET)" -o bin/recly-events ./cmd/recly-events
+	@echo "built events/bin/recly-events"
+
+events-test:
+	cd events && go test -race ./...
 
 # ---- Apple (macOS host)
 

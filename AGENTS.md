@@ -26,6 +26,8 @@ apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / 
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled ffmpeg
 spec/        JSON Schema + examples — the contract every client honors
 skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
+events/      recly-events (Go) — optional server the user runs: watches Drive for new transcripts and
+             publishes MCP events to ChatGPT through an OpenAI Secure MCP Tunnel; the apps do not call it
 scripts/     icon rendering
 docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```
@@ -51,6 +53,7 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 | `make windows-run` | run the Windows shell on this host |
 | `make windows-msi` | Windows MSI — **Windows hosts only** |
 | `make helper-test` | Rust capture helper tests (`cargo test`) |
+| `make events` / `make events-test` | build recly-events / its tests (`go test -race`) |
 | `make core` | build the XCFramework and stage it into `apple/RecKit` — do this first on a Mac |
 | `make core-mac` | refresh only the macOS slice — one Kotlin/Native target instead of six; enough for `make mac` / `make mac-test` |
 | `make mac` / `make mac-test` | build Recly Mac / run RecKit tests on macOS |
@@ -97,6 +100,7 @@ Never report done on code that was not exercised.
 3. `make mac-test` (after `make core`, or `make core-mac` when only the Mac is checked) — if you
    touched `core/` or anything under `apple/`.
 4. `make helper-test` — if you touched `windows/capture-helper/`.
+5. `make events-test` — if you touched `events/`.
 
 ## Gotchas
 
