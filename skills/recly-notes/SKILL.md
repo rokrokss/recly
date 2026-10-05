@@ -25,8 +25,7 @@ Two rules frame everything below:
 
 ## Find the recording
 
-If you were told which recording — the user named it, or an event names it, such as
-`recording.transcribed` from [recly-events](https://github.com/rokrokss/recly/blob/main/events/README.md)
+If you were told which recording — the user named it, or a `recording.transcribed` event names it
 with the Drive file ID of its transcript — use that one, even when a newer recording exists.
 Otherwise try these in order and use the first that works. Always say which recording you picked
 (title, start time, source device).
