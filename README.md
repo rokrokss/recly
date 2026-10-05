@@ -142,8 +142,9 @@ decide about pricing last week?"*. Want another format, or notes somewhere other
 Edit a skill, or copy one and [write your own](skills/README.md#write-your-own). That is the point.
 
 Want a ChatGPT dot to start on a recording as soon as its transcript lands?
-[`recly-events`](events/README.md) is an optional program you run on your own computer: it watches
-your Drive for new transcripts and tells your agent through MCP events.
+[`recly-events`](events/README.md) watches your Drive for new transcripts and tells your agent through
+MCP events. Turn it on in the Mac or Windows app under Settings → Agent connection, or run it on any
+computer yourself.
 
 ## Clients
 

@@ -76,6 +76,7 @@ fun job(
 /** [Settings] as the plain data holder it is on a PC, minus the registry. */
 class FakeSettings(
     override var consentReminder: Boolean = true,
+    override var agentEvents: Boolean = false,
     override var language: AppLanguage = AppLanguage.SYSTEM,
     override var theme: AppTheme = AppTheme.SYSTEM,
     override var disconnectPhase: DisconnectPhase = DisconnectPhase.NONE,

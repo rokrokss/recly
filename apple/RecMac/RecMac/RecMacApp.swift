@@ -83,6 +83,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         MainActor.assumeIsolated { MenuModel.shared.terminate() }
     }
 
+    /// docs/12 "Agent connection": the server the app started goes with it.
+    func applicationWillTerminate(_ notification: Notification) {
+        MainActor.assumeIsolated { MenuModel.shared.agentEvents.shutdown() }
+    }
+
     /// With no `MenuBarExtra` inserted, SwiftUI would otherwise quit the app when the details or
     /// the settings window closes as the last one open. A menu bar app outlives its windows.
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

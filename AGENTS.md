@@ -26,8 +26,9 @@ apple/       Rec.xcworkspace — RecKit (Swift package) + RecPhone / RecWatch / 
 windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled ffmpeg
 spec/        JSON Schema + examples — the contract every client honors
 skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
-events/      recly-events (Go) — optional server the user runs: watches Drive for new transcripts and
-             publishes MCP events to ChatGPT through an OpenAI Secure MCP Tunnel; the apps do not call it
+events/      recly-events (Go) — optional server: watches Drive for new transcripts and publishes MCP events
+             to ChatGPT through an OpenAI Secure MCP Tunnel; the user runs it, or the Mac and Windows apps
+             run their bundled copy while Settings → Agent connection is on (off by default)
 scripts/     icon rendering
 docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```

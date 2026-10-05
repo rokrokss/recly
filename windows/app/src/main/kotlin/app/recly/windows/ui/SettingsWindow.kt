@@ -16,11 +16,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.recly.windows.agent.AgentEvents
+import app.recly.windows.agent.AgentEventsPhase
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
@@ -33,6 +39,8 @@ import app.recly.windows.settings.AppTheme
 import app.recly.windows.ui.component.BlueprintDialogLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
+import app.recly.windows.ui.component.BlueprintTextField
+import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.BlueprintDropdown
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
@@ -51,8 +59,8 @@ import recly.core.storage.StorageKind
 /**
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
- * the system's alone, and there is no accessibility section), capture and its self-test, startup, and
- * the honest block of what this build actually is.
+ * the system's alone, and there is no accessibility section), capture and its self-test, startup, the
+ * agent connection, and the honest block of what this build actually is.
  */
 @Composable
 fun SettingsWindow(model: ShellModel, strings: Strings) {
@@ -68,6 +76,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Startup(model, strings)
             Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
+            model.agentEvents?.let { AgentConnection(model, it, strings) }
             About(model, strings)
         }
     }
@@ -239,6 +248,86 @@ private fun Startup(model: ShellModel, strings: Strings) {
         onCheckedChange = model::toggleLaunchAtLogin,
         enabled = model.launchAtLoginSupported,
     )
+}
+
+/**
+ * docs/14 "Agent connection": recly-events run for the user, off by default. On, it asks for what
+ * `serve` needs — a Google sign-in and an OpenAI tunnel — and says in one sentence how the server is.
+ */
+@Composable
+private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
+    Section(strings[Str.AGENT_SECTION])
+    val unavailable = agent.phase == AgentEventsPhase.Unavailable
+    SwitchRow(
+        title = strings[Str.AGENT_TOGGLE],
+        subtitle = if (unavailable) strings[Str.AGENT_UNAVAILABLE] else null,
+        checked = agent.enabled,
+        onCheckedChange = agent::toggle,
+        enabled = !unavailable,
+    )
+    if (!agent.enabled || unavailable) return
+    TableRow(
+        title = strings[Str.AGENT_GOOGLE],
+        subtitle = strings[if (agent.googleSignedIn) Str.AGENT_GOOGLE_CONNECTED else Str.AGENT_GOOGLE_NOT_CONNECTED],
+        trailing = {
+            BlueprintButton(
+                strings[if (agent.googleSignedIn) Str.AGENT_GOOGLE_RECONNECT else Str.AGENT_GOOGLE_CONNECT],
+                agent::connectGoogle,
+                tone = ButtonTone.QUIET,
+                enabled = agent.phase != AgentEventsPhase.SigningIn,
+            )
+        },
+    )
+    var tunnelId by remember(agent.tunnelId) { mutableStateOf(agent.tunnelId) }
+    var tunnelKey by remember { mutableStateOf("") }
+    SettingsCard {
+        BlueprintTextField(tunnelId, { tunnelId = it }, strings[Str.AGENT_TUNNEL_ID], placeholder = "tunnel_…")
+        BlueprintTextField(tunnelKey, { tunnelKey = it }, strings[Str.AGENT_TUNNEL_KEY], placeholder = "sk-…", secret = true)
+        BlueprintButton(
+            strings[Str.SAVE],
+            {
+                agent.saveTunnel(tunnelId, tunnelKey)
+                tunnelKey = ""
+            },
+            tone = ButtonTone.QUIET,
+            enabled = tunnelId.isNotBlank(),
+        )
+        if (agent.saveFailed) {
+            Text(strings[Str.AGENT_SAVE_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
+        }
+    }
+    HairLine()
+    AgentStatus(agent.phase, strings)
+    SectionFootnote(strings[Str.AGENT_FOOTNOTE])
+    Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
+        BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
+    }
+}
+
+/** One sentence for where things are; the square loader only while something is under way. */
+@Composable
+private fun AgentStatus(phase: AgentEventsPhase, strings: Strings) {
+    when (phase) {
+        AgentEventsPhase.Off, AgentEventsPhase.Unavailable -> Unit
+        AgentEventsPhase.SigningIn -> AgentWorking(strings[Str.AGENT_STATUS_SIGNING_IN])
+        AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
+        AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
+        AgentEventsPhase.NeedsSetup -> TableRow(strings[Str.AGENT_STATUS_SETUP])
+        is AgentEventsPhase.Running -> TableRow(
+            strings[Str.AGENT_STATUS_RUNNING],
+            subtitle = strings[if (phase.subscribed) Str.AGENT_STATUS_SUBSCRIBED else Str.AGENT_STATUS_NOT_SUBSCRIBED],
+        )
+        AgentEventsPhase.TunnelError -> TableRow(strings[Str.AGENT_STATUS_TUNNEL_ERROR])
+        AgentEventsPhase.GoogleEnded -> TableRow(strings[Str.AGENT_STATUS_GOOGLE_ENDED])
+        AgentEventsPhase.Elsewhere -> TableRow(strings[Str.AGENT_STATUS_ELSEWHERE])
+        AgentEventsPhase.GaveUp -> TableRow(strings[Str.AGENT_STATUS_GAVE_UP])
+    }
+}
+
+@Composable
+private fun AgentWorking(text: String) {
+    SettingsCard { LoadingText(text, MaterialTheme.typography.bodyMedium, blueprint.text) }
+    HairLine()
 }
 
 @Composable

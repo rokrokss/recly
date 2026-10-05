@@ -21,7 +21,7 @@ CORE_GRADLE_ARGS ?=
 SIM_BUILD_ARGS ?=
 
 .PHONY: help test core core-mac core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
-        mac mac-test ios watch spec skills ios-release-test events events-test events-release
+        mac mac-helper mac-test ios watch spec skills ios-release-test events events-test events-release
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
@@ -117,8 +117,19 @@ core:
 core-mac:
 	CORE_SLICES=macos ./apple/scripts/build-core.sh $(CORE_GRADLE_ARGS)
 
-mac:
+mac: mac-helper
 	$(XCODEBUILD) -scheme 'Recly Mac' -destination 'platform=macOS' build
+
+# docs/12 "Agent connection": the recly-events the Mac app bundles (arm64, Recly's desktop client
+# from local.properties), with its notices. Without Go the app is built without it.
+mac-helper:
+	@if command -v go > /dev/null; then \
+	  mkdir -p apple/build/recly-events && \
+	  (cd events && CGO_ENABLED=0 GOOS=darwin GOARCH=arm64 go build -trimpath \
+	    -ldflags "-s -w -X main.version=app-$$(git rev-parse --short HEAD) -X main.googleClientID=$(EVENTS_GOOGLE_ID) -X main.googleClientSecret=$(EVENTS_GOOGLE_SECRET)" \
+	    -o ../apple/build/recly-events/recly-events ./cmd/recly-events) && \
+	  events/scripts/notices.sh > apple/build/recly-events/THIRD-PARTY-NOTICES.txt; \
+	else echo "mac-helper: no Go; Recly Mac is built without recly-events"; fi
 
 mac-test:
 	$(XCODEBUILD) -scheme RecKit -destination 'platform=macOS' test
@@ -137,7 +148,7 @@ ios-upload:
 # The notarytool keychain profile: xcrun notarytool store-credentials <name> --apple-id … --team-id …
 NOTARY_PROFILE ?= recly
 
-mac-release:
+mac-release: mac-helper
 	NOTARIZE=1 NOTARY_PROFILE="$(NOTARY_PROFILE)" ./apple/scripts/release-mac.sh
 
 ios:

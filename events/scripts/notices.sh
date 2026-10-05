@@ -12,6 +12,11 @@ modules() {
   done | sort -u
 }
 
+# posix PATH — Git Bash on Windows gets `C:\…` paths from Go, which its own tools cannot read.
+posix() {
+  if command -v cygpath > /dev/null; then cygpath -u "$1"; else printf '%s' "$1"; fi
+}
+
 # legal FILE... — each file under its own heading.
 legal() {
   for f in "$@"; do
@@ -34,10 +39,10 @@ follows its name.
 
 EOF
 printf '=== Go standard library %s\n\n' "$(go env GOVERSION)"
-legal "$(go env GOROOT)/LICENSE"
+legal "$(posix "$(go env GOROOT)")/LICENSE"
 modules | while read -r module dir; do
   printf '=== %s\n\n' "$module"
-  found="$(files "$dir")"
+  found="$(files "$(posix "$dir")")"
   if [[ -z "$found" ]]; then
     echo "notices: no licence file in $module" >&2
     exit 1

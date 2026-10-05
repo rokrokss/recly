@@ -27,6 +27,9 @@ Packages/
 # Gradle output staged into the package by apple/scripts/build-core.sh
 apple/RecKit/Frameworks/
 
+# recly-events' notices for the MSI, made by the Windows release job (docs/14 "Agent connection")
+windows/app/resources/common/THIRD-PARTY-recly-events.txt
+
 # Rust
 target/
 

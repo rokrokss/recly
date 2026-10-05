@@ -2042,8 +2042,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    switches to that provider's) clear the entered value, and coming back to the same provider does not restore it. `Cancel` on the settings draft only reverts to the saved
    settings, so if the provider is unchanged the key field is unchanged too.
    On mobile, switching tabs preserves drafts, and Android's back applies only to the current tab.
-4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Privacy (phone) /
-   About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29). **Theme**
+4. **Settings = sectioned table**: Account / Language / Theme / Capture (per platform) / Uploads (phone) / Recording processing / Agent connection (desktop, §12 and §14
+   "Agent connection") / Privacy (phone) / About (version · build · device ID · open-source notices, mono) — in this order, and a section the shell does not have is skipped (2026-09-29). **Theme**
    is three chips common to all four shells, `System default` · `Light` · `Dark`, and like language it is a local setting of this
    device — when unset, it follows the system's `prefers-color-scheme` (Windows 2026-09-01, the other three 2026-09-04).
    Settings hold no technical values (segment length and the like) — values the user cannot change are not shown (2026-09-04).
@@ -2672,6 +2672,20 @@ use the same mutex and the same staleness rule.
 - **Workflow editing window** — **retired (2026-09-24)**. For the record: the same features as on the phone. A SwiftUI form + `WorkflowInspector` (shared in RecKit). The desktop is the main
   stage for editing.
 
+### Agent connection
+
+The Mac app bundles `recly-events` (`events/`, §15 §9) as `Recly.app/Contents/MacOS/recly-events` and runs it for the user while
+**Settings → Agent connection → Tell ChatGPT about new transcripts** is on. It is **off by default** (2026-10-05). The app talks to it only by running it:
+`status --json` every 5 seconds while the switch is on; `init --google --no-check` for the Google row (the program opens the browser itself and is stopped after
+5 minutes); `init --tunnel-id … --tunnel-key-stdin --no-check` for the tunnel fields, with the key on standard input and never in the arguments; and `serve` as a
+child process writing to the program's own `logs/serve.log`. A server that exits is restarted at most 3 times in 10 minutes, then the row says so until the
+switch is turned off and on. A server the app did not start — the CLI's `service install`, or a terminal — is left alone and shown as running outside Recly.
+The program keeps its own home directory (`~/Library/Application Support/recly-events`), Google sign-in (Recly's desktop client, `drive.file`, a consent of its own)
+and tunnel key, shared with the CLI; the app stores only the switch (`agentEventsEnabled`) and the server's process ID. Quitting the app stops the server.
+`make mac` and `make mac-release` build the arm64 program first (Go, Recly's desktop client from `local.properties`, with its notices as
+`Contents/Resources/THIRD-PARTY-recly-events.txt`), and the `Embed recly-events` build phase signs it like the app, with the hardened runtime. A build made without Go has
+no program, and the switch says `Not in this build`.
+
 ### Tasks
 
 | # | Scope |
@@ -2890,6 +2904,13 @@ File names are built from the `base` the app gives — the helper does not name 
   receives them through `compose.application.resources.dir` and passes `--ffmpeg <path>` to the helper. The ffmpeg LGPL notice
   ships with the installation as `THIRD-PARTY-ffmpeg.md`. The MSI can only be built on Windows, so CI (`windows-release.yml`) builds it on release tags (`v*`) and attaches it to the GitHub release.
 
+### Agent connection
+
+The same as the Mac's (§12 "Agent connection"), off by default: `recly-events.exe` sits next to the capture helper in `app/resources/windows-x64/`, built by
+`windows-release.yml` with Recly's desktop client, with its notices as `THIRD-PARTY-recly-events.txt`, and runs while **Settings → Agent connection** is on (the
+registry value `agentEvents`). Its home directory is `%AppData%\recly-events`. On the development host, `RECLY_EVENTS` points the app at another program, such as
+`events/bin/recly-events`.
+
 ### Development host (macOS) stand-ins
 
 The development machine is macOS, so the Windows-only parts sit behind interfaces and stubs are selected on macOS.
@@ -2935,7 +2956,7 @@ devices. A local folder the user picked on iPhone · Mac · Windows · the Andro
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
-`recly-events` program (§9) is separate: the apps never start or call it, and its paths are listed there.
+`recly-events` program (§9) runs only when the user runs it or turns it on in the Mac or Windows app, and its paths are listed there.
 
 ### Apple on-device speech model assets
 
@@ -3222,10 +3243,13 @@ If there is even one of a new network call, a new step type, a new scope, a new 
 
 ### §9 recly-events — an optional server the user runs (2026-10-05)
 
-`events/` builds `recly-events`, a separate program the user may install and run on their own computer so that their
-ChatGPT agent (a dot or a Work chat) hears about a new transcript. **The apps neither start it nor call it**: none of
-§0–§7 changes, and nothing below happens unless the user runs it. It listens on no network port (`status` and `test`
-reach it through a Unix socket in its own directory) and makes three kinds of outbound connections:
+`events/` builds `recly-events`, a program that lets the user's ChatGPT agent (a dot or a Work chat) hear about a new
+transcript. The user runs it themselves, or turns it on in the Mac or Windows app (**Settings → Agent connection, off by
+default**, §12 and §14 "Agent connection"), which runs the copy the app bundles. The phone and watch apps do not have it, and
+the desktop apps talk to it only by running it, so none of §0–§7 changes, and nothing below happens unless the user runs it or
+turns it on. Only the Mac DMG and the Windows MSI carry it; the App Store and Play forms are unaffected. It listens on no
+network port (`status` and `test` reach it through a Unix socket in its own directory) and makes three kinds of outbound
+connections:
 
 | Path | To | What is sent | What comes back |
 |---|---|---|---|
@@ -3236,7 +3260,7 @@ reach it through a Unix socket in its own directory) and makes three kinds of ou
 - No transcript text, audio, STT key or Recly app token passes through it. The agent reads the transcript itself, through its own Google Drive connector.
 - Its Google grant belongs to Recly's Cloud project, so "Disconnect" in any Recly app (a revoke, §6) ends its token too and it asks to be signed in again; recly-events itself never revokes, which would disconnect every Recly device.
 - Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the Google client and token, the tunnel key, `state.json` (Drive cursor, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).
-- Removing it: `recly-events service uninstall`, delete the home directory (its Google token goes with it), delete the tunnel and key in OpenAI Platform, delete the app in ChatGPT. Removing Recly at https://myaccount.google.com/permissions would disconnect every Recly app as well; do that only for a client of the user's own.
+- Removing it: turn off Settings → Agent connection or run `recly-events service uninstall`, delete the home directory (its Google token goes with it), delete the tunnel and key in OpenAI Platform, delete the app in ChatGPT. Removing Recly at https://myaccount.google.com/permissions would disconnect every Recly app as well; do that only for a client of the user's own.
 
 ---
 

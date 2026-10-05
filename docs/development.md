@@ -96,13 +96,16 @@ key into `android/*/build/outputs/apk/release/`. They may differ from the app si
 Play-installed builds.
 
 For macOS, `make mac-release` builds the distribution file
-`apple/build/dist/Recly-<version>-<build>.dmg`, signed with Developer ID and notarized. Existing
+`apple/build/dist/Recly-<version>-<build>.dmg`, signed with Developer ID and notarized. It and `make mac`
+first build the recly-events the app bundles (`make mac-helper`, which needs Go); without Go the app is
+built without it, and its Agent connection switch says so (docs/recly.md §12 "Agent connection"). Existing
 iOS archives and DMGs are kept. The Windows MSI is built with `make windows-msi` on a Windows host
 or with `.github/workflows/windows-release.yml`. A manual run by default only produces an Actions
 artifact that keeps the MSI and the two skill ZIPs for 30 days. Only a `v*` tag push or a manual
 run with `publish_release=true` set explicitly publishes to a GitHub release. The Windows OAuth
 settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
-`REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. See
+`REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. The same job builds the
+`recly-events.exe` the MSI bundles, with the same client. See
 [`windows/README.md`](../windows/README.md) for details.
 
 The display version of the current release is `0.1.3` on every platform. The build is `33` for the

@@ -28,6 +28,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -66,6 +68,8 @@ fun BlueprintTextField(
     monospace: Boolean = true,
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
+    /** A key: drawn as dots, never as what was typed. */
+    secret: Boolean = false,
 ) {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
@@ -94,6 +98,7 @@ fun BlueprintTextField(
                 .background(palette.surface, RoundedCornerShape(Radius.node))
                 .padding(horizontal = Space.s, vertical = 10.dp),
             singleLine = singleLine,
+            visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
             textStyle = style.copy(color = palette.text),
             cursorBrush = SolidColor(palette.accent),
             decorationBox = { innerTextField ->

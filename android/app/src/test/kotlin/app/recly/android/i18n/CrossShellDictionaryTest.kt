@@ -553,6 +553,28 @@ class CrossShellDictionaryTest {
                 mac = "Launch at login",
                 pending = setOf("windows"),
             ),
+            // docs/12 · docs/14 "Agent connection": recly-events, which only a desktop runs.
+            Line(
+                what = "the agent connection section",
+                en = "Agent connection",
+                ko = "에이전트 연결",
+                windows = "agent.section",
+                mac = "Agent connection",
+            ),
+            Line(
+                what = "the agent connection switch",
+                en = "Tell ChatGPT about new transcripts",
+                ko = "새 전사 결과를 ChatGPT에 알리기",
+                windows = "agent.toggle",
+                mac = "Tell ChatGPT about new transcripts",
+            ),
+            Line(
+                what = "the agent connection's tunnel fields",
+                en = "Tunnel ID",
+                ko = "터널 ID",
+                windows = "agent.tunnel.id",
+                mac = "Tunnel ID",
+            ),
             // docs/09 screen principle 4 · docs/03: the account section, and the two things it says when
             // there is nobody signed in. Which account it is about is the whole of the section, so
             // the heading names Google rather than leaving "Account" to mean anything at all.

@@ -32,12 +32,18 @@ struct BlueprintLoader: View {
 }
 
 /// A sentence about work in progress, with the loader beside it in the sentence's own colour.
-struct LoadingText: View {
+public struct LoadingText: View {
     let text: String
     let font: Font
     let color: Color
 
-    var body: some View {
+    public init(text: String, font: Font, color: Color) {
+        self.text = text
+        self.font = font
+        self.color = color
+    }
+
+    public var body: some View {
         HStack(spacing: Space.xs) {
             BlueprintLoader(color: color)
             Text(verbatim: text).font(font).foregroundStyle(color)

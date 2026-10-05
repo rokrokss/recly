@@ -76,6 +76,7 @@
 				AB0100000000000000000041 /* Sources */,
 				AB0100000000000000000040 /* Frameworks */,
 				AB0100000000000000000042 /* Resources */,
+				AB01000000000000000000E1 /* Embed recly-events */,
 			);
 			buildRules = (
 			);
@@ -146,6 +147,29 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		AB01000000000000000000E1 /* Embed recly-events */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Embed recly-events";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# docs/12 \"Agent connection\": the recly-events that `make mac` and `make mac-release` built into\n# apple/build/recly-events, signed like the app. Without it the app says the switch is not in this build.\nsrc=\"${SRCROOT}/../build/recly-events\"\nif [ ! -f \"$src/recly-events\" ]; then\n  echo \"note: no apple/build/recly-events/recly-events; this build has no agent connection\"\n  exit 0\nfi\ndst=\"${TARGET_BUILD_DIR}/${EXECUTABLE_FOLDER_PATH}/recly-events\"\ncp -f \"$src/recly-events\" \"$dst\"\ncp -f \"$src/THIRD-PARTY-NOTICES.txt\" \"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/THIRD-PARTY-recly-events.txt\"\nif [ \"${CODE_SIGNING_ALLOWED}\" = \"YES\" ] && [ -n \"${EXPANDED_CODE_SIGN_IDENTITY}\" ]; then\n  if [ \"${CONFIGURATION}\" = \"Release\" ]; then ts=\"--timestamp\"; else ts=\"--timestamp=none\"; fi\n  codesign --force --options runtime $ts --sign \"${EXPANDED_CODE_SIGN_IDENTITY}\" \"$dst\"\nfi\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		AB0100000000000000000041 /* Sources */ = {

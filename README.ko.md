@@ -127,8 +127,8 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 복사해 [직접 만드세요](skills/README.md#write-your-own). 그게 이 구조의 요점입니다.
 
 녹취록이 올라오자마자 ChatGPT dot이 바로 일을 시작하게 하고 싶다면
-[`recly-events`](events/README.md)(영어)를 쓰세요. 내 컴퓨터에서 실행하는 선택 프로그램으로, 내 Drive에
-새 녹취록이 생기면 MCP 이벤트로 에이전트에게 알려 줍니다.
+[`recly-events`](events/README.md)(영어)를 쓰세요. 내 Drive에 새 녹취록이 생기면 MCP 이벤트로 에이전트에게
+알려 줍니다. Mac·Windows 앱의 설정 → 에이전트 연결에서 켜거나, 어느 컴퓨터에서든 직접 실행하면 됩니다.
 
 ## 클라이언트
 

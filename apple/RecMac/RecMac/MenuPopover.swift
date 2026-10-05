@@ -397,7 +397,7 @@ struct MenuPopover: View {
 }
 
 /// docs/09 screen principle 4: the settings the menu used to carry, as a section table — account, language,
-/// theme, capture, recording processing, and the honest system block at the bottom.
+/// theme, capture, recording processing, the agent connection, and the honest system block at the bottom.
 struct SettingsPane: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
@@ -454,6 +454,8 @@ struct SettingsPane: View {
             if let processing = model.processing {
                 ProcessingSettingsView(model: processing)
             }
+
+            AgentConnectionSection(agent: model.agentEvents)
 
             // docs/09 trend 6: no mascot and no "handmade" line — what this build actually is.
             section(loc("About"))

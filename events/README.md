@@ -14,8 +14,9 @@ write meeting minutes.
 - Your agent then reads the transcript itself, with ChatGPT's
   [Google Drive app](https://help.openai.com/en/articles/10929079-google-drive-app-and-setup-in-chatgpt).
 
-It is optional and separate from the apps: no Recly app includes, starts or calls it. It listens on
-no network port. Every connection it makes goes out, to Google and to OpenAI.
+It is optional. Turn it on in the Recly Mac or Windows app, which runs the copy it includes, or run it
+yourself on any computer. It listens on no network port. Every connection it makes goes out, to
+Google and to OpenAI.
 
 ## How it works
 
@@ -41,6 +42,23 @@ no network port. Every connection it makes goes out, to Google and to OpenAI.
   [platform.openai.com](https://platform.openai.com).
 - **A computer that stays on** while you want events. While it sleeps nothing is lost; events arrive
   when it wakes. It has been run on macOS so far; the Linux and Windows parts are untested.
+
+## From the Recly Mac or Windows app
+
+The Mac and Windows apps include recly-events and run it for you while **Settings → Agent connection →
+Tell ChatGPT about new transcripts** is on. It is off by default.
+
+1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
+2. Turn the switch on. Choose **Connect** next to Google Drive and allow Recly in your browser, then
+   enter the tunnel ID and key and choose **Save**.
+3. When the row says ChatGPT can reach your computer, add the app to ChatGPT and subscribe your agent
+   ([steps 5 and 6](#5-add-it-to-chatgpt) below).
+
+The app keeps the server running while the app runs, restarts it if it stops (up to three times in
+ten minutes), and stops it when you quit or turn the switch off. It uses the same folder, sign-in
+and key as the command line, so `recly-events status` shows it too. A server started some other
+way, such as `service install`, is left alone, and the switch says it is running outside Recly. On a
+Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test` sends the test event.
 
 ## Set up
 
@@ -256,7 +274,8 @@ disconnects every Recly app on every device as well.
 
 ## Remove it
 
-1. `recly-events service uninstall` (or stop `serve`, or delete the Windows task).
+1. Turn off Settings → Agent connection in the app, or run `recly-events service uninstall` (or stop
+   `serve`, or delete the Windows task).
 2. Delete its directory (see [Everyday use](#everyday-use)). Its Google sign-in and tunnel key go
    with it.
 3. Delete the tunnel and its key in OpenAI Platform, and the app in ChatGPT.

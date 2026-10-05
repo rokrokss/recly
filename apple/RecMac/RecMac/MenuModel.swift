@@ -116,6 +116,10 @@ final class MenuModel: ObservableObject {
     /// which is the only thing that knows it.
     @Published private(set) var deviceId = ""
 
+    /// docs/12 "Agent connection": recly-events, run for the user while its switch is on. Nil
+    /// executable — a build made without Go — and the switch says so.
+    let agentEvents = AgentEventsController(executable: Bundle.main.url(forAuxiliaryExecutable: "recly-events"))
+
     private let logger = Logger(subsystem: "app.recly.mac", category: "shell")
     private var bridge: CoreBridge?
     private var recorder: SegmentedRecorder?

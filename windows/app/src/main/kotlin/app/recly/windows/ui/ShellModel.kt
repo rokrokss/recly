@@ -5,6 +5,9 @@ package app.recly.windows.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import app.recly.windows.agent.AgentEvents
+import app.recly.windows.agent.AgentEventsProgram
+import app.recly.windows.agent.ProcessRunner
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.auth.RevokeResult
 import app.recly.windows.auth.SignInResult
@@ -240,6 +243,10 @@ class ShellModel(
         private set
 
     var launchAtLogin: Boolean by mutableStateOf(false)
+        private set
+
+    /** docs/14 "Agent connection": recly-events, run while its switch is on. Null until [load]. */
+    var agentEvents: AgentEvents? by mutableStateOf(null)
         private set
 
     /** docs/03 "Deleting in the app": the recording the delete dialog is asking about, while it is up. */
@@ -526,6 +533,15 @@ class ShellModel(
         launchAtLogin = launcher.isEnabled()
         consentReminder = settings.consentReminder
         micAccess = MicrophoneAccess.create(logger).state()
+        // docs/14 "Agent connection": off unless the user turned it on; a build without recly-events
+        // says so on the switch.
+        agentEvents = AgentEvents(
+            settings = settings,
+            runner = AgentEventsProgram.locate()?.let(::ProcessRunner),
+            scope = scope,
+            clock = graph.core.deps.clock,
+            logger = logger,
+        ).also { it.start() }
 
         val command = helperCommand
         this.helperCommand = command
@@ -826,6 +842,7 @@ class ShellModel(
     /** Quit: a recording in flight is finalized and queued first — the crash path is not the exit. */
     suspend fun shutdown() {
         askTitle = false
+        agentEvents?.shutdown()
         detector?.stop()
         // A quit with the dialog still open is a skip: that recording is already finalized and
         // `stop` has nothing left to do for it, so without this its job would never be made.
@@ -1727,6 +1744,8 @@ class ShellModel(
         }
     }
 
+    fun openAgentGuide() = open(AGENT_GUIDE_URL)
+
     private fun open(target: String) {
         runCatching {
             // A URL and a `ms-settings:` deep link are both for whoever owns the scheme; only a
@@ -1790,6 +1809,9 @@ class ShellModel(
 
         /** docs/03: Google's own page, which is the only place a failed revoke can be finished. */
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
+
+        /** docs/14 "Agent connection": the set-up guide — the OpenAI tunnel, the ChatGPT app, the prompt. */
+        const val AGENT_GUIDE_URL = "https://github.com/rokrokss/recly/blob/main/events/README.md"
 
         /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"

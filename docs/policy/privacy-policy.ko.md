@@ -111,12 +111,12 @@ iOS·macOS 26 이상의 iPhone·Mac에서는 새 녹음 처리 설정이 로컬 
 
 ### recly-events — 사용자가 직접 실행하는 선택 프로그램
 
-`recly-events`는 Recly 프로젝트의 별도 프로그램으로, 사용자가 자기 컴퓨터에 설치하면 사용자의 ChatGPT 에이전트(dot이나 Work 채팅)가 새 녹취록이 생길 때마다 알림을 받습니다. Recly 앱은 이 프로그램을 포함하지도, 실행하지도, 호출하지도 않으며, 사용자가 실행하지 않으면 이 항목의 어떤 일도 일어나지 않습니다.
+`recly-events`는 Recly 프로젝트의 프로그램으로, 새 녹취록이 생길 때마다 사용자의 ChatGPT 에이전트(dot이나 Work 채팅)에 알립니다. 사용자가 직접 실행하거나, Mac·Windows 앱의 설정 → 에이전트 연결에서 켜면 앱에 포함된 사본이 실행됩니다. 기본값은 꺼짐이며, 폰·워치 앱에는 포함되지 않습니다. 사용자가 실행하거나 켜지 않으면 이 항목의 어떤 일도 일어나지 않습니다.
 
 - **Google Drive — 메타데이터만.** Recly 앱과 같은 Google 권한(`drive.file`)으로 로그인하므로, Google은 이 프로그램에 Recly가 만든 파일만 보여 줍니다. 약 10초마다 Drive에 바뀐 것을 묻고, 그 파일들의 이름·ID·링크·폴더 설명(녹음 제목)을 읽습니다. 녹음이나 녹취록 내용은 내려받지 않습니다. 대신 사용자 자신의 Google 클라이언트로 설정하면 Google은 Drive의 모든 파일의 메타데이터(내용은 아님)를 보여 주며(`drive.metadata.readonly`), 이 프로그램은 Recly 녹취록과 그 폴더 말고는 모두 무시합니다.
 - **사용자의 ChatGPT 계정.** 새 녹취록이 생기면 알림(녹음 이름, 제목, 시작 시각, 기기 종류, Drive 파일 ID와 링크)을 OpenAI의 Secure MCP Tunnel과 ChatGPT가 알려 준 이벤트 주소를 통해 사용자의 ChatGPT 계정으로 보냅니다. 에이전트는 ChatGPT 자체의 Google Drive 커넥터로 사용자의 Drive에서 녹취록을 읽으며, 그 처리는 OpenAI의 약관·개인정보처리방침과 사용자의 ChatGPT 설정을 따릅니다.
 - **개발자에게는 아무것도 가지 않습니다.** 사용자 컴퓨터에서 실행되며 Google과 OpenAI하고만 통신합니다. 설정, Google 토큰, OpenAI 터널 키, 알림 목록은 그 컴퓨터의 전용 폴더에 사용자 계정만 읽을 수 있게 보관됩니다.
-- **그만 쓰려면** `recly-events service uninstall`을 실행하고 전용 폴더를 지운 뒤, OpenAI Platform 설정에서 터널과 키를, ChatGPT에서 앱을 지우세요. 어느 Recly 앱에서든 Google Drive 연결을 해제하면 recly-events의 Google 접근도 함께 끝납니다.
+- **그만 쓰려면** 설정 → 에이전트 연결을 끄거나 `recly-events service uninstall`을 실행하고 전용 폴더를 지운 뒤, OpenAI Platform 설정에서 터널과 키를, ChatGPT에서 앱을 지우세요. 어느 Recly 앱에서든 Google Drive 연결을 해제하면 recly-events의 Google 접근도 함께 끝납니다.
 
 ## 4. 수집하지 않는 것
 
@@ -157,8 +157,8 @@ Recly가 Google API로 받은 정보의 사용과 다른 앱으로의 이전은 
 |---|---|---|
 | Android 폰 · 갤럭시 워치 | **앱 데이터가 함께 지워집니다** — 녹음 파일, 로컬 DB, 토큰·API 키를 담은 암호화 저장소가 모두 앱 전용 영역에 있고 OS가 앱과 함께 지웁니다 | 없습니다. Drive나 사용자가 고른 로컬 폴더의 파일은 사용자 것이므로 남습니다 |
 | iPhone · Apple Watch | 앱 컨테이너(녹음·DB·설정·iPhone 전송 허용 기록)가 지워집니다 | 키체인 항목은 앱 삭제 후에도 남을 수 있습니다. iPhone에서 **앱을 삭제하기 전에 설정 → 녹음 처리 → 외부 API → API 키에서 API 키를 각각 삭제한 뒤 연결 해제하세요.** 연결 해제는 Google 인증 정보를 지우지만 API 키는 지우지 않습니다. Recly 자체 시크릿은 기기 전용입니다. 허용을 기기에 연결하는 식별값(`app.recly.privacy`)도 남을 수 있지만, 삭제된 로컬 허용 기록 없이는 전송을 허용하지 않으며 API 인증 정보가 아닙니다. 워치는 로그인·API 키 입력 없이 설치 식별자를 저장하며, 이를 지우는 앱 내 기능은 없습니다. iCloud를 골랐다면 iCloud Drive의 Recly 폴더는 앱과 함께 지워지지 않습니다. 설정 → [사용자 이름] → iCloud → 저장 공간(또는 계정 저장 공간 관리)에서 Recly 데이터를 지우거나, 파일 앱에서 폴더를 지우세요. 파일 앱에서 지운 파일은 30일 동안 최근 삭제된 항목에 남습니다. 로컬 폴더를 골랐다면 그 폴더에 복사된 녹음은 그대로 남습니다 |
-| macOS | **앱 번들(`.app`)만 지워집니다** | ① `~/Library/Application Support/app.recly.mac/`(녹음, `rec.db`, `device.id`)를 직접 지우십시오. ② 키체인 접근에서 서비스 이름이 `app.recly.mac.secrets`인 항목(입력해 둔 API 키)과 `app.recly.drive.oauth` 항목(Google 토큰), 이전 Google 로그인 SDK의 `auth` 항목이 남아 있다면 함께 지우십시오. ③ **앱 설정이 `UserDefaults`에 남습니다** — 녹음 모드·동의 리마인더·언어·접근성 설정과 고른 로컬 폴더의 경로입니다. 이전 버전에서 아직 이관하지 않았다면 이메일 힌트(`app.recly.auth.lastAccount`)도 남아 있을 수 있습니다. 터미널에서 `defaults delete app.recly.mac`으로 함께 지웁니다. ④ iCloud를 골랐다면 iCloud Drive의 Recly 폴더는 앱과 함께 지워지지 않습니다. 시스템 설정 → [사용자 이름] → iCloud → 관리에서 Recly 데이터를 지우거나, Finder에서 폴더를 지우세요. ⑤ 로컬 폴더를 골랐다면 그 폴더에 복사된 녹음은 그대로 남습니다 |
-| Windows | **설치된 파일만 지워집니다** | ① `%LOCALAPPDATA%\Recly\`(녹음, `rec.db`, `device.id`)를 직접 지우십시오. ② 자격 증명 관리자의 Windows 자격 증명에서 `app.recly.windows/tokens/…`·`app.recly.windows/secrets/…` 항목을 지우십시오. ③ **앱 설정이 레지스트리에 남습니다** — 동의 리마인더·언어·테마·접근성 설정과 고른 로컬 폴더의 경로가 `HKCU\Software\JavaSoft\Prefs\app\recly\windows`에 있고, 레지스트리 편집기에서 그 키를 지우면 됩니다. Windows 앱은 계정 이메일을 저장하지 않으므로 지울 것이 없습니다. ④ 로컬 폴더를 골랐다면 그 폴더에 복사된 녹음은 그대로 남습니다 |
+| macOS | **앱 번들(`.app`)만 지워집니다** | ① `~/Library/Application Support/app.recly.mac/`(녹음, `rec.db`, `device.id`)를 직접 지우십시오. ② 키체인 접근에서 서비스 이름이 `app.recly.mac.secrets`인 항목(입력해 둔 API 키)과 `app.recly.drive.oauth` 항목(Google 토큰), 이전 Google 로그인 SDK의 `auth` 항목이 남아 있다면 함께 지우십시오. ③ **앱 설정이 `UserDefaults`에 남습니다** — 녹음 모드·동의 리마인더·언어·접근성 설정과 고른 로컬 폴더의 경로입니다. 이전 버전에서 아직 이관하지 않았다면 이메일 힌트(`app.recly.auth.lastAccount`)도 남아 있을 수 있습니다. 터미널에서 `defaults delete app.recly.mac`으로 함께 지웁니다. ④ iCloud를 골랐다면 iCloud Drive의 Recly 폴더는 앱과 함께 지워지지 않습니다. 시스템 설정 → [사용자 이름] → iCloud → 관리에서 Recly 데이터를 지우거나, Finder에서 폴더를 지우세요. ⑤ 로컬 폴더를 골랐다면 그 폴더에 복사된 녹음은 그대로 남습니다. ⑥ 에이전트 연결을 켰다면 `~/Library/Application Support/recly-events`(Google 토큰, 터널 키, 알림 목록)를 지우세요 |
+| Windows | **설치된 파일만 지워집니다** | ① `%LOCALAPPDATA%\Recly\`(녹음, `rec.db`, `device.id`)를 직접 지우십시오. ② 자격 증명 관리자의 Windows 자격 증명에서 `app.recly.windows/tokens/…`·`app.recly.windows/secrets/…` 항목을 지우십시오. ③ **앱 설정이 레지스트리에 남습니다** — 동의 리마인더·언어·테마·접근성 설정과 고른 로컬 폴더의 경로가 `HKCU\Software\JavaSoft\Prefs\app\recly\windows`에 있고, 레지스트리 편집기에서 그 키를 지우면 됩니다. Windows 앱은 계정 이메일을 저장하지 않으므로 지울 것이 없습니다. ④ 로컬 폴더를 골랐다면 그 폴더에 복사된 녹음은 그대로 남습니다. ⑤ 에이전트 연결을 켰다면 `%AppData%\recly-events`(Google 토큰, 터널 키, 알림 목록)를 지우세요 |
 
 ### 앱 안에서 지우는 것이 먼저입니다
 
