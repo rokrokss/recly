@@ -121,7 +121,7 @@ try {
   const list = await rpc("events/list", {}, tok.access_token);
   check(list.json?.result?.events?.[0]?.name === "recording.transcribed", "events/list");
   const tools = await rpc("tools/list", {}, tok.access_token);
-  check(tools.json?.result?.tools?.some((t) => t.name === "get_transcript") && tools.json.result.tools.some((t) => t.name === "list_recent_recordings"), "tools/list");
+  check(tools.json?.result?.tools?.map((t) => t.name).sort().join() === "acknowledge_events,get_pending_events", "tools/list has only the event inbox");
 
   const subParams = { name: "recording.transcribed", arguments: {}, delivery: { mode: "webhook", url: `http://localhost:${RECV}/hook`, secret }, cursor: null }; // hostname, so delivery goes through DNS lookup
   const sub = await rpc("events/subscribe", subParams, tok.access_token);
@@ -137,11 +137,14 @@ try {
   const event = received.find((r) => r.payload.eventId === fired.event.eventId);
   check(fired.results[0]?.status === 204 && event?.signed && event.subscription === sub.json.result.id, "fired event arrives signed with X-MCP-Subscription-Id");
 
-  const transcript = await rpc("tools/call", { name: "get_transcript", arguments: { recordingId: fired.event.data.recordingId } }, tok.access_token);
-  check(transcript.json?.result?.structuredContent?.transcript?.includes("weekly sync"), "get_transcript returns the transcript");
+  check(fired.event.data.drive?.transcriptTxtFileId && fired.event.data.excerpt === undefined, "event carries Drive references, no transcript text");
 
-  const recent = await rpc("tools/call", { name: "list_recent_recordings", arguments: { limit: 3 } }, tok.access_token);
-  check(recent.json?.result?.structuredContent?.recordings?.[0]?.recordingId === fired.event.data.recordingId, "list_recent_recordings returns the newest recording first");
+  const pending = await rpc("tools/call", { name: "get_pending_events", arguments: {} }, tok.access_token);
+  const pendingEvents = pending.json?.result?.structuredContent?.events ?? [];
+  check(pendingEvents.length === 1 && pendingEvents[0].eventId === fired.event.eventId && pendingEvents[0].data.drive.transcriptTxtUrl, "get_pending_events returns the delivered event with its data");
+  const ack = await rpc("tools/call", { name: "acknowledge_events", arguments: { eventIds: [fired.event.eventId] } }, tok.access_token);
+  const empty = await rpc("tools/call", { name: "get_pending_events", arguments: {} }, tok.access_token);
+  check(ack.json?.result?.structuredContent?.acknowledged === 1 && empty.json?.result?.structuredContent?.events?.length === 0, "acknowledged events are not returned again");
 
   const unsub = await rpc("events/unsubscribe", { name: "recording.transcribed", arguments: {}, delivery: { mode: "webhook", url: `http://localhost:${RECV}/hook` } }, tok.access_token);
   const after = await (await fetch(`http://127.0.0.1:${ADMIN}/fire`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).json();

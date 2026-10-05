@@ -19,10 +19,28 @@ never being created for custom developer-mode servers; @hunter reported Work cha
   client registration (return 404); a first Funnel takes ~10 minutes of public DNS propagation;
   a pinned `lookup` must answer `options.all` with an array.
 
+## Findings (2026-10-05, ChatGPT Pro, events-only server)
+
+The server now holds no transcripts. An event names the transcript file in the user's Google Drive,
+and the only tools are an event inbox: `get_pending_events` and `acknowledge_events`.
+
+- **Port**: a ChatGPT app with a `:10000` Funnel URL failed with "service temporarily unavailable"
+  and no request reached the server; the same server behind a port-443 URL (TryCloudflare) was
+  discovered and created at once.
+- **Secure MCP Tunnel, no authentication** (`AUTH_MODE=none`, `tunnel-client` 0.0.14, restricted
+  runtime key with Tunnels Read + Use, tunnel associated with the personal ChatGPT workspace): the
+  dot's tool calls reached the server (openai/tunnel-client#60 did not occur on this account),
+  `events/subscribe` arrived without `ttlMs`, and callback verification and delivery returned 200.
+- **End to end with a real recording** (46 min, watch): delivery at 05:54:42 UTC → the dot's event
+  run called `get_pending_events` 26 s later → it opened the `.transcript.txt` through the ChatGPT
+  Google Drive app, posted timestamped minutes covering the whole meeting in the dot conversation,
+  and called `acknowledge_events` 4 min 6 s after the delivery.
+
 `probe.mjs` is one file with Node built-ins only:
 
 - MCP 2.0 (`2026-07-28`) server at `/mcp`: `server/discover`, `tools/list`, `tools/call`
-  (`get_transcript`), `events/list`, `events/subscribe`, `events/unsubscribe`.
+  (`get_pending_events`, `acknowledge_events`), `events/list`, `events/subscribe`,
+  `events/unsubscribe`. With `AUTH_MODE=none` it serves no OAuth metadata (for a Secure MCP Tunnel).
 - One event, `recording.transcribed` (optional `device` filter), delivered as a Standard Webhooks
   signed POST after a signed callback challenge, as in the
   [MCP Events guide](https://developers.openai.com/plugins/build/mcp-events).
