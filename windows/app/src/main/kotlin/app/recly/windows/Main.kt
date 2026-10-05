@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +77,7 @@ import app.recly.windows.ui.theme.observeSystemHighContrast
 import app.recly.windows.ui.trayMenu
 import java.util.Locale
 import java.awt.KeyboardFocusManager
+import java.beans.PropertyChangeListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -154,6 +156,7 @@ fun main(args: Array<String>) {
                 },
             ) {
                 if (!dev.pinned) CloseWhenItLosesFocus { model.popupOpen = false }
+                GiveWayToOwnWindows()
                 Themed(model, dev) { TrayPopup(model, strings, quit) }
             }
         }
@@ -317,6 +320,40 @@ internal fun popupClosesOnFocusLoss(active: Any?, popup: Any?): Boolean = active
 
 /** Long enough for the OS to have finished handing the focus over. */
 private const val FOCUS_SETTLES_MS = 150L
+
+/**
+ * The popup is on top of every window so that a click on the tray icon is never answered by a window
+ * that opens behind the one the user was in — and that put it on top of this app's own windows too:
+ * the title prompt, the consent and delete questions, Details and Settings came up underneath it.
+ * The Mac's popover gives way the same way (`MenuBarPanel.followActivation`).
+ *
+ * So once one of them has the focus, the popup stops being on top for the rest of its life: the
+ * focus leaving the application closes it ([CloseWhenItLosesFocus]), so there is no later moment it
+ * needs the top back. AWT takes it off with `SetWindowPos(HWND_NOTOPMOST)` and no `SWP_NOACTIVATE`,
+ * which puts it above every other window and activates it — so the window that had the focus is
+ * brought back in front after it, and in that order.
+ *
+ * Lowered here rather than through the window's `alwaysOnTop` argument, which would apply it at the
+ * next recomposition, after the window it gives way to had been raised. Compose sets that argument
+ * only when its value changes, so it does not put the popup back on top.
+ */
+@Composable
+private fun FrameWindowScope.GiveWayToOwnWindows() {
+    DisposableEffect(window) {
+        val focus = KeyboardFocusManager.getCurrentKeyboardFocusManager()
+        // AWT's focus manager knows this JVM's windows and no others, so any active window that is
+        // not the popup is one of ours.
+        val listener = PropertyChangeListener { event ->
+            val active = event.newValue as? java.awt.Window
+            if (active != null && active !== window && window.isAlwaysOnTop) {
+                window.isAlwaysOnTop = false
+                active.toFront()
+            }
+        }
+        focus.addPropertyChangeListener("activeWindow", listener)
+        onDispose { focus.removePropertyChangeListener("activeWindow", listener) }
+    }
+}
 
 /**
  * Which corner the tray icon is in. AWT does not report the icon's own position, so this is the

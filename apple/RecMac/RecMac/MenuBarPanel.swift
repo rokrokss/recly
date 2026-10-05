@@ -13,8 +13,11 @@ import SwiftUI
 /// in one of this app's windows does not, and the status item and Escape close it either way.
 ///
 /// The panel is non-activating and can become key, so the settings fields take typing without the
-/// app being brought to the front, and it floats at the pop-up-menu level the way the SwiftUI one
-/// did. It fits below the status item within the screen's usable bounds. The middle section
+/// app being brought to the front. While the app is not frontmost it floats at the pop-up-menu
+/// level the way the SwiftUI one did, so another app's windows cannot bury it; once the app is
+/// frontmost it sits at the normal level, so the windows the app opens from it — the title prompt,
+/// the alerts, Settings, Details — come up in front of it rather than under it. It fits below the
+/// status item within the screen's usable bounds. The middle section
 /// scrolls so the settings toggle and Quit remain visible even when settings exceed the screen height.
 @MainActor
 final class MenuBarPanel {
@@ -29,6 +32,7 @@ final class MenuBarPanel {
     private var monitors: [Any] = []
     private var iconChanges: AnyCancellable?
     private var screenChanges: AnyCancellable?
+    private var activationChanges: AnyCancellable?
 
     init(model: MenuModel, language: AppLanguage, theme: AppTheme) {
         self.model = model
@@ -43,7 +47,6 @@ final class MenuBarPanel {
             defer: false
         )
         self.panel = panel
-        panel.level = .popUpMenu
         panel.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
         panel.isReleasedWhenClosed = false
         // An `NSPanel` hides itself when the app deactivates by default, and the app deactivates
@@ -105,6 +108,31 @@ final class MenuBarPanel {
         screenChanges = NotificationCenter.default.publisher(for: NSApplication.didChangeScreenParametersNotification)
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in self?.scheduleFit() }
+        // Delivered as posted, not `receive(on: RunLoop.main)`: every window this app opens over the
+        // popover is application-modal (`BlueprintPanel`, the alerts, the folder picker), and the
+        // run loop spins in its modal mode until that window closes — a default-mode delivery would
+        // lower the panel only once the question it was covering had been answered.
+        activationChanges = NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)
+            .merge(with: NotificationCenter.default.publisher(for: NSApplication.didResignActiveNotification))
+            .sink { [weak self] _ in self?.followActivation() }
+        followActivation()
+    }
+
+    /// Frontmost, the app's own windows are already above every other app's, so the panel needs no
+    /// level of its own and takes its turn among them. Not frontmost, it floats again.
+    ///
+    /// Activation reaches here after the window that asked for it has been ordered front — every
+    /// caller activates and then shows its window — and a panel dropped to the normal level can
+    /// land at the top of it, over that window. So it is put back under the key window explicitly.
+    private func followActivation() {
+        guard NSApp.isActive else {
+            panel.level = .popUpMenu
+            return
+        }
+        panel.level = .normal
+        if panel.isVisible, let key = NSApp.keyWindow, key !== panel {
+            panel.order(.below, relativeTo: key.windowNumber)
+        }
     }
 
     @objc private func toggle() {
