@@ -43,9 +43,10 @@ var googleClientID, googleClientSecret string
 const usage = `recly-events — tell your ChatGPT agent when Recly finishes a transcript
 
 Usage:
-  recly-events init [--google | --google-client FILE] [--tunnel-id ID] [--tunnel-key-file FILE]
+  recly-events init [--google | --google-client FILE] [--tunnel-id ID]
+                    [--tunnel-key-file FILE | --tunnel-key-stdin] [--no-check]
   recly-events serve
-  recly-events status
+  recly-events status [--json]
   recly-events test
   recly-events service install|uninstall
   recly-events version
@@ -70,7 +71,7 @@ func main() {
 	case "serve":
 		err = cmdServe(ctx, home)
 	case "status":
-		err = cmdStatus(home)
+		err = cmdStatus(home, os.Args[2:])
 	case "test":
 		err = cmdTest(home)
 	case "service":
@@ -103,6 +104,8 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 	googleClient := fs.String("google-client", "", "connect with a desktop OAuth client JSON from your own Google Cloud project instead")
 	tunnelID := fs.String("tunnel-id", "", "OpenAI Secure MCP Tunnel ID (tunnel_…)")
 	keyFile := fs.String("tunnel-key-file", "", "file holding the tunnel runtime API key (otherwise you are asked for it)")
+	keyStdin := fs.Bool("tunnel-key-stdin", false, "read the tunnel runtime API key from standard input")
+	noCheck := fs.Bool("no-check", false, "save the settings without checking Google Drive and the tunnel")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -160,6 +163,18 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 		if err := app.WriteSecret(home.TunnelKey(), []byte(strings.TrimSpace(string(b)))); err != nil {
 			return err
 		}
+	case *keyStdin:
+		b, err := io.ReadAll(io.LimitReader(os.Stdin, 4096))
+		if err != nil {
+			return err
+		}
+		key := strings.TrimSpace(string(b))
+		if key == "" {
+			return errors.New("empty key on standard input")
+		}
+		if err := app.WriteSecret(home.TunnelKey(), []byte(key)); err != nil {
+			return err
+		}
 	case *tunnelID != "":
 		if _, err := app.ReadTunnelKey(home); err != nil {
 			key, err := askSecret("OpenAI tunnel runtime key (restricted: Tunnels Read + Use; input hidden): ")
@@ -173,6 +188,9 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 	}
 	if err := app.SaveConfig(home, cfg); err != nil {
 		return err
+	}
+	if *noCheck {
+		return nil
 	}
 
 	// Check what is configured now.
@@ -273,6 +291,7 @@ func driveAPI(ctx context.Context, home app.Home, cfg app.Config) (*drive.API, e
 // ---------------------------------------------------------------- serve
 
 type runtimeStatus struct {
+	PID         int       `json:"pid"`
 	TunnelReady bool      `json:"tunnelReady"`
 	TunnelError string    `json:"tunnelError,omitempty"`
 	StartedAt   time.Time `json:"startedAt"`
@@ -324,7 +343,7 @@ func cmdServe(ctx context.Context, home app.Home) error {
 		API: api, Store: store, Log: log, Every: time.Duration(cfg.PollInterval()) * time.Second,
 		Emit: func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
 	}
-	rt := &liveStatus{rt: runtimeStatus{StartedAt: time.Now(), Version: version}}
+	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version}}
 	stopAdmin, err := serveAdmin(home, api, hub, rt, log)
 	if err != nil {
 		return err
@@ -419,7 +438,39 @@ func adminClient(home app.Home) *http.Client {
 
 // ---------------------------------------------------------------- status / test / service
 
-func cmdStatus(home app.Home) error {
+// statusReport is `status --json`, which the desktop apps read to show the agent connection
+// (docs/recly.md §15 §9). It names no subscription or event.
+type statusReport struct {
+	Home           string          `json:"home"`
+	TunnelID       string          `json:"tunnelId,omitempty"`
+	TunnelKey      bool            `json:"tunnelKey"`
+	GoogleSignedIn bool            `json:"googleSignedIn"`
+	Server         *runtimeStatus  `json:"server"`
+	Drive          driveReport     `json:"drive"`
+	Subscriptions  int             `json:"subscriptions"`
+	Pending        int             `json:"pending"`
+	LastDelivery   *deliveryReport `json:"lastDelivery,omitempty"`
+}
+
+type driveReport struct {
+	PollSeconds   int        `json:"pollSeconds"`
+	LastPollAt    *time.Time `json:"lastPollAt,omitempty"`
+	LastSuccessAt *time.Time `json:"lastSuccessAt,omitempty"`
+	LastError     string     `json:"lastError,omitempty"`
+	Announced     int        `json:"announced"`
+}
+
+type deliveryReport struct {
+	At     time.Time `json:"at"`
+	Status int       `json:"status,omitempty"`
+	Error  string    `json:"error,omitempty"`
+}
+
+func cmdStatus(home app.Home, args []string) error {
+	asJSON := len(args) == 1 && args[0] == "--json"
+	if len(args) > 0 && !asJSON {
+		return errors.New("usage: recly-events status [--json]")
+	}
 	cfg, err := app.LoadConfig(home)
 	if err != nil {
 		return err
@@ -428,14 +479,45 @@ func cmdStatus(home app.Home) error {
 	if err != nil {
 		return err
 	}
+	var rt *runtimeStatus
+	if resp, err := adminClient(home).Get("http://admin/status"); err == nil {
+		var r runtimeStatus
+		_ = json.NewDecoder(resp.Body).Decode(&r)
+		resp.Body.Close()
+		rt = &r
+	}
+	tf, tokenErr := drive.LoadToken(home.GoogleToken())
+	pending := 0
+	for _, e := range st.Inbox {
+		if e.AckedAt == nil {
+			pending++
+		}
+	}
+	if asJSON {
+		_, keyErr := app.ReadTunnelKey(home)
+		r := statusReport{
+			Home: home.Dir, TunnelID: cfg.TunnelID, TunnelKey: keyErr == nil, GoogleSignedIn: tokenErr == nil,
+			Server: rt, Subscriptions: len(st.Subscriptions), Pending: pending,
+			Drive: driveReport{PollSeconds: cfg.PollInterval(), LastError: st.Drive.LastError, Announced: len(st.Drive.Seen)},
+		}
+		if !st.Drive.LastPollAt.IsZero() {
+			r.Drive.LastPollAt = &st.Drive.LastPollAt
+		}
+		if !st.Drive.LastSuccessAt.IsZero() {
+			r.Drive.LastSuccessAt = &st.Drive.LastSuccessAt
+		}
+		if l := st.LastDelivery; l != nil {
+			r.LastDelivery = &deliveryReport{At: l.At, Status: l.Status, Error: l.Error}
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetIndent("", "  ")
+		return enc.Encode(r)
+	}
+
 	fmt.Println("Home:          ", home.Dir)
-	var rt runtimeStatus
-	resp, err := adminClient(home).Get("http://admin/status")
-	if err != nil {
+	if rt == nil {
 		fmt.Println("Server:         not running")
 	} else {
-		_ = json.NewDecoder(resp.Body).Decode(&rt)
-		resp.Body.Close()
 		fmt.Printf("Server:         running since %s (version %s)\n", rt.StartedAt.Local().Format(time.DateTime), rt.Version)
 		switch {
 		case rt.TunnelReady:
@@ -446,8 +528,8 @@ func cmdStatus(home app.Home) error {
 			fmt.Println("Tunnel:        ", cfg.TunnelID, "connecting")
 		}
 	}
-	if tf, err := drive.LoadToken(home.GoogleToken()); err != nil {
-		fmt.Println("Google:         not connected —", err)
+	if tokenErr != nil {
+		fmt.Println("Google:         not connected —", tokenErr)
 	} else {
 		fmt.Printf("Google:         signed in %s, token last refreshed %s\n", ago(tf.ObtainedAt), ago(tf.RefreshedAt))
 	}
@@ -471,12 +553,6 @@ func cmdStatus(home app.Home) error {
 			}
 		}
 		fmt.Printf("  %s  since %s, refreshed %s, %s\n", s.ID, s.CreatedAt.Local().Format(time.DateTime), ago(s.RefreshedAt), exp)
-	}
-	pending := 0
-	for _, e := range st.Inbox {
-		if e.AckedAt == nil {
-			pending++
-		}
 	}
 	fmt.Printf("Inbox:          %d events, %d not acknowledged\n", len(st.Inbox), pending)
 	fmt.Printf("Delivery queue: %d\n", len(st.Outbox))

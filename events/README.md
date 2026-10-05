@@ -103,7 +103,8 @@ recly-events init --google --tunnel-id tunnel_…
 
 1. Your browser opens Google's sign-in. Sign in with the account Recly uploads to and allow Recly to
    see the Drive files it created. This is the same permission the Recly apps ask for.
-2. Paste the key when asked. To read it from a file instead, add `--tunnel-key-file FILE`.
+2. Paste the key when asked. To read it from a file instead, add `--tunnel-key-file FILE`, or pipe it
+   in with `--tunnel-key-stdin`.
 3. `init` then checks both: `Google Drive: connected as …` and, about 30 seconds later,
    `Tunnel: ready tunnel_…`.
 
@@ -168,6 +169,7 @@ that still shows the whole path works. The real test is your next recording.
 
 ```sh
 recly-events status     # server, tunnel, Google, last Drive poll, subscriptions, inbox, deliveries
+recly-events status --json   # the same for programs, without subscription or event IDs
 recly-events test       # announce the newest transcript again
 recly-events version
 ```
