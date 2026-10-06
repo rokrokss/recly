@@ -18,6 +18,11 @@ It is optional. Turn it on in the Recly Mac or Windows app, which runs the copy 
 yourself on any computer. It listens on no network port. Every connection it makes goes out, to
 Google and to OpenAI.
 
+Using the Recly Mac or Windows app? Follow the [ChatGPT agent guide](https://recly.dev/agent.html).
+Running it yourself on a server, Linux or a computer without the app? The step-by-step guide is
+[Running recly-events yourself](https://recly.dev/recly-events.html); this page is the full
+reference.
+
 ## How it works
 
 1. A Recly app uploads `{recording}.transcript.txt` to your Drive.
@@ -33,16 +38,16 @@ Google and to OpenAI.
 
 ## What you need
 
-- **Recly storing recordings in Google Drive.** Recordings kept in iCloud or a local folder are not
-  seen.
-- **A ChatGPT agent that can subscribe to MCP events:** a dot or a Work chat on ChatGPT web. At the
-  time of writing dots need ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland
+- **Recly storing recordings in Google Drive.** Recordings in iCloud or a local folder are not seen.
+- **A ChatGPT agent that can subscribe to events**: a dot, or a Work chat on ChatGPT web. At the
+  time of writing, dots need ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland
   and the UK.
-- **ChatGPT's Google Drive app**, connected to the Google account Recly uploads to.
-- **An OpenAI Platform account** to create the tunnel and its key, at
-  [platform.openai.com](https://platform.openai.com).
-- **A computer that stays on** while you want events. While it sleeps nothing is lost; events arrive
-  when it wakes. It has been run on macOS so far. On Linux (Ubuntu 24.04 in a container), the
+- **ChatGPT's [Google Drive app](https://help.openai.com/en/articles/10929079-google-drive-app-and-setup-in-chatgpt)**,
+  connected to the Google account Recly uploads to.
+- **An OpenAI Platform account** at [platform.openai.com](https://platform.openai.com), for the
+  tunnel and its key.
+- **A computer that stays on** while you want events. While it sleeps nothing is lost: it catches
+  up when it wakes. It has been run on macOS so far. On Linux (Ubuntu 24.04 in a container), the
   sign-in without a browser and the systemd service have been tried, but not yet with a real Google
   account and tunnel. Windows is untested.
 
@@ -84,7 +89,7 @@ check it against `SHA256SUMS` from the same release:
 | Windows | `recly-events_<version>_windows_amd64.zip` — not code-signed, and not yet tried on a Windows PC |
 
 ```sh
-shasum -a 256 -c SHA256SUMS --ignore-missing
+shasum -a 256 --ignore-missing -c SHA256SUMS
 ```
 
 - **Mac:** open the package and follow the installer, or run
@@ -179,9 +184,9 @@ Keep the server running for this step: ChatGPT talks to it while you create the 
 
 1. In ChatGPT, open [Plugins](https://chatgpt.com/plugins), choose **+** and add a custom MCP server.
 2. Name it, for example `Recly events`. Connection: **Tunnel**, and pick your tunnel. Authentication:
-   **No authentication**.
-   Use your personal workspace. The app has no sign-in of its own, and who else in a shared
-   workspace could use it, and see your recording titles, has not been checked.
+   **No authentication**. Add it in the workspace your dot or Work chat lives in. The app has no
+   sign-in of its own, and who else in a shared workspace could use it, and see your recording
+   titles, has not been checked; a personal workspace avoids the question.
 3. ChatGPT warns about the risk of a custom server: choose **I understand and want to continue**,
    then **Create as a plugin**. The app's page should list the event `recording.transcribed` and the
    tools `get_pending_events` and `acknowledge_events`.
@@ -358,8 +363,8 @@ developer.
 
 ```sh
 make events-test     # go test -race ./...
-TAG=events-v0.1.0 make events-release            # archives in events/dist/0.1.0/, macOS notarized
-TAG=events-v0.1.0 UPLOAD=1 make events-release   # and a draft GitHub release
+TAG=events-vX.Y.Z make events-release            # archives in events/dist/X.Y.Z/, macOS notarized
+TAG=events-vX.Y.Z UPLOAD=1 make events-release   # and a draft GitHub release
 ```
 
 `events-release` runs [`scripts/release.sh`](scripts/release.sh) on a Mac with Recly's desktop

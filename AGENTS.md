@@ -30,7 +30,7 @@ events/      recly-events (Go) — optional server: watches Drive for new transc
              to ChatGPT through an OpenAI Secure MCP Tunnel; the user runs it, or the Mac and Windows apps
              run their bundled copy while Settings → Agent connection is on (off by default)
 scripts/     icon rendering
-docs/        recly.md (design source of truth) · development.md · install.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
+docs/        recly.md (design source of truth) · user guides (install, setup, agent, recly-events, faq; also on recly.dev) · development.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```
 
 ## Build & test commands

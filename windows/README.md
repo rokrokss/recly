@@ -1,10 +1,13 @@
 # `windows/` — the Recly Windows client
 
+**Beta.** The Windows app is built and tested in CI but has not yet been checked on a real
+Windows PC. Please report what you find in [Issues](https://github.com/rokrokss/recly/issues).
+
 Two parts. The details of each are in that part's README.
 
 | | |
 |---|---|
-| [`app/`](app/README.md) | Compose Desktop shell — tray, auth, runner, editor window, **detection & notification** (M6-L3) |
+| [`app/`](app/README.md) | Compose Desktop shell — tray, auth, runner, Settings and Recordings windows, **detection & notification** (M6-L3) |
 | [`capture-helper/`](capture-helper/README.md) | Rust capture helper — WASAPI mic + loopback, segments, `mic_in_use` |
 
 This document covers only what binds the two into one — **MSI packaging · signing · SmartScreen**
@@ -23,8 +26,12 @@ before packaging. `windows.yml` only compiles and tests.
 Set repository Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
 `REC_GOOGLE_DESKTOP_CLIENT_SECRET` from the local desktop OAuth configuration; packaging refuses
 missing values or placeholders. Signing credentials are separate and optional (below).
-The app displays `0.1.0`; `installerVersion` in `app/build.gradle.kts` advances MSI's third
-version field independently to `0.1.7`, allowing installation upgrades for this new build.
+
+The app shows its display version, `version` in `app/build.gradle.kts`. The MSI carries its own
+install version, `installerVersion` in the same file, and names the file after it. Raise
+`installerVersion` for every MSI you publish, so that the new MSI upgrades the installed one, even
+when the display version stays the same. The current numbers are in
+[docs/development.md](../docs/development.md#app-releases).
 
 On a local Windows PC:
 
@@ -54,8 +61,8 @@ The ffmpeg LGPL notice ships with the install as `app/resources/common/THIRD-PAR
 
 Install form: **per-user** (`perUserInstall`) — it needs no administrator rights, and it is the same
 user scope the data (`%LOCALAPPDATA%\Recly`) and the launch-at-login key (`HKCU\…\Run`) live in.
-Launch at login is an app setting, not an MSI option (after installing, tray → Settings → "Launch
-Recly at login"). An upgrade replaces the previous install through `upgradeUuid`.
+Launch at login is an app setting, not an MSI option (after installing, tray → Settings →
+**Launch at login**). An upgrade replaces the previous install through `upgradeUuid`.
 
 ## Signing
 
@@ -70,7 +77,7 @@ still a build, and a build must not fail on a fork.
 In CI, putting in repository secrets of the same names turns the signing step on by itself.
 
 ```powershell
-pwsh windows/scripts/sign-msi.ps1 -Msi windows\app\build\compose\binaries\main\msi\Recly-0.1.0.msi
+pwsh windows/scripts/sign-msi.ps1 -Msi windows\app\build\compose\binaries\main\msi\Recly-<version>.msi
 ```
 
 ## SmartScreen check procedure (docs/20 S8 · N7 — **on hold: no Windows PC**)
@@ -82,8 +89,8 @@ docs/20 "Windows pending items" says as much.
    and the warning disappears, so checking on the machine that built it means nothing.
 2. Download the MSI with a browser. It has to be a **download**, not a File Explorer copy — what
    wakes SmartScreen is the Mark of the Web (the `Zone.Identifier` alternate data stream).
-   Check: `Get-Item .\Recly-0.1.0.msi -Stream Zone.Identifier`
-3. Signature check: `Get-AuthenticodeSignature .\Recly-0.1.0.msi | Format-List` → `Status: Valid`,
+   Check: `Get-Item .\Recly-<version>.msi -Stream Zone.Identifier`
+3. Signature check: `Get-AuthenticodeSignature .\Recly-<version>.msi | Format-List` → `Status: Valid`,
    the subject of `SignerCertificate` is ours, a timestamp present.
 4. Run it. Expected: **the blue "Windows protected your PC" window does not appear.**
    - If it does appear and says "Unknown publisher", it is not signed (back to 3).

@@ -6,8 +6,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Never attach recordings, transcripts, or workflow exports that contain API keys or
-        webhook secrets. Logs may contain file names — redact what you must.
+        Never attach recordings, transcripts, API keys, tunnel keys or OAuth tokens. A settings
+        export never contains keys, but logs may contain file names: redact what you must.
   - type: checkboxes
     id: preflight
     attributes:

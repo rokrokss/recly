@@ -1,5 +1,39 @@
 # Developing Recly
 
+## Prerequisites
+
+- **JDK 21** for everything Gradle builds: the shared core, the Android apps and the Windows shell.
+  The Gradle wrapper downloads Gradle itself.
+- **The Android SDK** with platform 36 and build-tools 36.0.0 (`compileSdk` and `buildToolsVersion`
+  in the Gradle files), for the Android apps and the core's Android target. `make test` needs it
+  too.
+- **Xcode 26 on macOS** for the Apple apps, which call iOS 26 and macOS 26 APIs. Their builds start
+  with `make core`, which runs Gradle, so they need the two items above as well.
+- **Go** for recly-events and for the copy of it the Mac app carries (`make mac-helper`).
+  `events/go.mod` asks for Go 1.27; a `go` from 1.21 on downloads that toolchain itself. Without
+  Go, `make mac` builds the Mac app without recly-events.
+- **Rust** 1.82 or later for the Windows capture helper (`rust-version` in
+  `windows/capture-helper/Cargo.toml`). Packaging the MSI also needs WiX 3, on Windows.
+- **Node.js with npm** for spec validation (`make spec`).
+
+The Makefile defaults `JAVA_HOME` and `ANDROID_HOME` to where Homebrew puts the JDK and the Android
+SDK on a Mac, and keeps them when they are already set. Set both where yours differ (below).
+
+### What builds where
+
+| | macOS | Windows | Linux |
+|---|---|---|---|
+| JVM unit tests (`make test`) | Yes | `make windows-test` runs in CI; the rest is untested | Untested |
+| Android APKs (`make apk`, `make wear-apk`) | Yes | Untested | Untested |
+| Apple apps | Yes | No | No |
+| Windows MSI and real WASAPI capture | No: the capture helper builds and tests with its Windows code left out (`make helper-test`) | Yes | No |
+| recly-events | Yes, and its release archives (`make events-release`) | Yes | Yes |
+
+"Untested" means the Makefile does not tie the target to a host, but neither the development Mac
+nor CI runs it there. CI runs the Windows shell tests, the capture helper and the MSI build on
+Windows for each `v*` tag, and the recly-events tests on all three systems for each change to
+`events/`.
+
 ## Build · test
 
 The `Makefile` wraps every command below with the flags that matter (JDK 21 and the Android SDK
@@ -16,7 +50,9 @@ make help        # the full list — IOS_SIM / WATCH_SIM override the simulator 
 ```
 
 What the targets run, if you need the commands themselves. Gradle needs JDK 21 and the Android
-SDK path:
+SDK path. The lines below are the Makefile's defaults, Homebrew's paths on a Mac; the Makefile
+keeps `JAVA_HOME` and `ANDROID_HOME` when they are already set, so set your own where they differ,
+in the environment or on the command line (`make test JAVA_HOME=…`):
 
 ```bash
 export JAVA_HOME=/opt/homebrew/opt/openjdk@21
@@ -65,8 +101,27 @@ cargo build --release                            # the real capture binary, on W
 cd spec && npm ci && npm run validate            # validate the examples against the JSON Schemas
 ```
 
-To cut a release: `make apk wear-apk`, then
-`gh release create v0.1.0 <phone.apk> <watch.apk> --target main --prerelease`.
+### App releases
+
+An app release is one GitHub release for every platform, tagged `v<version>-build.<n>` with the
+Apple build number as `<n>`, for example `v0.2.0-build.34`. The packages come from these targets:
+
+- macOS: `make mac-release`.
+- iPhone with the Apple Watch app: `make ios-archive` exports the App Store package to
+  `apple/build/dist/ios/`; `make ios-upload` uploads it to App Store Connect instead. Both need the
+  team: `RECLY_DEVELOPMENT_TEAM` in `apple/Config/Local.xcconfig`, or `RECLY_TEAM_ID`.
+- Android phone and Wear OS: `make android-release-apk` and `make aab`.
+- Windows: pushing the tag runs `.github/workflows/windows-release.yml`, which runs the capture
+  helper, recly-events and Windows shell tests, builds the MSI and the two skill ZIPs, and attaches
+  them to the release for the tag. If that release does not exist yet, the workflow creates it as a
+  pre-release with generated notes.
+
+The release carries `Recly-macOS-<version>-<build>.dmg`, `Recly-<installerVersion>.msi`,
+`Recly-Android-<version>-<build>.apk` and `.aab`, `Recly-WearOS-<version>-<build>.apk` and `.aab`
+(the `.aab` files are the Play upload bundles), `Recly-iOS-Watch-<version>-<build>.ipa` (the App
+Store upload package), `recly-notes.zip`, `recly-notion.zip`, `BUILDINFO.md`, `manifest.json` and
+`SHA256SUMS`. The build number differs per platform (below). The release body follows
+[Release notes](#release-notes).
 
 **Release signing (Android)**: Play App Signing holds the app signing key; this tree only ever
 sees the *upload* key. Create it once, outside the repository (`*.jks` is gitignored anyway):
@@ -106,13 +161,56 @@ run with `publish_release=true` set explicitly publishes to a GitHub release. Th
 settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
 `REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. The same job builds the
 `recly-events.exe` the MSI bundles, with the same client. See
-[`windows/README.md`](../windows/README.md) for details.
+[`windows/README.md`](https://github.com/rokrokss/recly/blob/main/windows/README.md) for details.
 
 The display version of the current release is `0.2.0` on every platform. The build is `34` for the
 Apple apps, the embedded Watch app and the widgets, `39` for Android and `1,000,039` for Wear OS.
 The Windows MSI install version is set apart from the display version (`installerVersion`): it is
 `0.2.0`. During `0.1.x` its third field had to keep rising — it reached `0.1.32`, above the lower
 `0.1.3` — and `0.2.0` is above all of those, so it upgrades every earlier MSI.
+
+#### Release notes
+
+Every app release body follows this template. Fill in the versions and build numbers, which differ
+per platform, and replace any notes the workflow generated.
+
+~~~markdown
+## What's new
+
+- …
+
+## Which file do I need
+
+| Platform | File |
+|---|---|
+| Mac (Apple silicon, macOS 14.4 or later) | `Recly-macOS-<version>-<build>.dmg` |
+| Windows 11 (x64) | `Recly-<installerVersion>.msi` (beta, unsigned: see the [install guide](https://recly.dev/install.html#windows)) |
+| Android phone (Android 14 or later) | [Google Play](https://play.google.com/store/apps/details?id=app.recly), or `Recly-Android-<version>-<build>.apk` |
+| Galaxy Watch (Wear OS 5 or later) | [Google Play](https://play.google.com/store/apps/details?id=app.recly), or `Recly-WearOS-<version>-<build>.apk` |
+| iPhone (iOS 17 or later) and Apple Watch (watchOS 10 or later) | [App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) |
+| Example skills for the Claude or ChatGPT app | `recly-notes.zip` and `recly-notion.zip` |
+
+The `.aab` files and the `.ipa` are the packages uploaded to Google Play and the App Store; you do
+not need them.
+
+[Install guide](https://recly.dev/install.html) · [Set-up guide](https://recly.dev/setup.html) ·
+[ChatGPT agent guide](https://recly.dev/agent.html)
+
+## Check a download
+
+On macOS or Linux, in the folder with your downloads and `SHA256SUMS` (it checks only the files
+you downloaded):
+
+```sh
+shasum -a 256 --ignore-missing -c SHA256SUMS
+```
+
+On Windows, run this in PowerShell and compare the hash with that file's line in `SHA256SUMS`:
+
+```powershell
+Get-FileHash .\Recly-<installerVersion>.msi -Algorithm SHA256
+```
+~~~
 
 ### recly-events releases
 
@@ -153,11 +251,11 @@ the four values — each app's issued ID and its **reversed client ID**
 (`com.googleusercontent.apps.{number}-{hash}`). Both `Info.plist` files read them as build
 settings, so nothing you fill in shows up in the tracked tree. The consent screen must carry
 exactly one scope:
-`drive.file` ([recly.md §6](recly.md#6-authentication-formerly-docs06)).
+`drive.file` ([recly.md §6](https://github.com/rokrokss/recly/blob/main/docs/recly.md#6-authentication-formerly-docs06)).
 
 ### Turning on iCloud
 
-iCloud is off in a checkout. While `RECLY_ICLOUD_CONTAINER` in `apple/Config/Recly.xcconfig` is empty, the app does not offer iCloud as a storage location ([recly.md §3 "Storage location"](recly.md#storage-location-adr-024)). To turn it on:
+iCloud is off in a checkout. While `RECLY_ICLOUD_CONTAINER` in `apple/Config/Recly.xcconfig` is empty, the app does not offer iCloud as a storage location ([recly.md §3 "Storage location"](https://github.com/rokrokss/recly/blob/main/docs/recly.md#storage-location-adr-024)). To turn it on:
 
 1. In Apple Developer, Certificates, Identifiers & Profiles → Identifiers → iCloud Containers, register `iCloud.app.recly` for the team.
 2. Turn on the iCloud capability for the App IDs `app.recly` and `app.recly.mac`, choose **Include CloudKit support** for compatibility, then assign that container under Edit. Turning it on with "Compatible with Xcode 5" puts only the old `TeamID.*`-style container in the profile and leaves out `iCloud.app.recly` (confirmed with an actual profile on 2026-10-02). The Mac app has so far only been signed with Developer ID, so the `app.recly.mac` App ID may not exist. If it does not, register it first under Identifiers → App IDs.

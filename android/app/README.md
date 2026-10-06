@@ -34,7 +34,7 @@ key (docs/11), so there is no separate client for the watch.
 
 ### (b) The Web client
 
-This is the value that goes into `GetGoogleIdOption.setServerClientId()`. Create it with type **Web
+This is the value that goes into `GetSignInWithGoogleOption.Builder()`. Create it with type **Web
 application** and copy the client ID (`...apps.googleusercontent.com`). No redirect URI is needed.
 
 > `google-services.json` is **not** downloaded. Firebase is not used, and Credential Manager and
@@ -64,6 +64,6 @@ After changing the value, run `:android:app:assembleDebug` again so the resource
 
 ## 3. Checking
 
-App → **Sign in with Google** → pick an account → consent to the Drive permission. Record a short
+Settings → **Connect Drive** → pick an account → consent to the Drive permission. Record a short
 clip and stop it: the upload job reaching `DONE` in the List tab is the proof the app can write to
 Drive (the auth half of S3).

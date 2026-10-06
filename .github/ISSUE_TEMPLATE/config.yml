@@ -1,5 +1,8 @@
 blank_issues_enabled: true
 contact_links:
+  - name: FAQ and guides
+    url: https://recly.dev/faq.html
+    about: Answers to common questions, and the install and set-up guides.
   - name: Security vulnerability
     url: https://github.com/rokrokss/recly/security/advisories/new
     about: Report privately. Never open a public issue for a vulnerability.

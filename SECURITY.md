@@ -6,8 +6,9 @@ Only the latest [GitHub release](https://github.com/rokrokss/recly/releases) is 
 land in the next release; older builds are not patched.
 
 Recly has no server. Reports therefore concern the client apps (Galaxy Watch, Android phone,
-Apple Watch, iPhone, macOS, Windows) and the workflow engine that runs on them — recording,
-storage and secret handling, Drive upload, transcription adapters, and webhook delivery.
+Apple Watch, iPhone, macOS, Windows) and what runs on them: recording, storage and secret
+handling, Google Drive and iCloud upload, local folders, and the transcription adapters. They also
+concern recly-events, the optional program that tells a ChatGPT agent about new transcripts.
 
 ## Reporting a vulnerability
 
@@ -20,8 +21,8 @@ Include:
 - the affected platform(s) and the Recly version (Settings → About, or the release tag),
 - steps to reproduce, and what an attacker gains.
 
-**Never attach recordings, transcripts, API keys, or webhook secrets.** Describe the problem
-instead; redact anything you must include.
+**Never attach recordings, transcripts, API keys, tunnel keys or OAuth tokens.** Describe the
+problem instead; redact anything you must include.
 
 ## What to expect
 

@@ -11,8 +11,11 @@ edit, live in your Notion.
 | [`recly-notes`](recly-notes/SKILL.md) | Finds a recording (the latest, or the one you name), reads its transcript and writes minutes, a decision log, interview or lecture notes, or a memo |
 | [`recly-notion`](recly-notion/SKILL.md) | Keeps those notes in a "Recly Recordings" database in your Notion, one page per recording, and finds them again later |
 
-Five files make up the plugin: the two `SKILL.md` files and the three files under `references/`.
-The same files serve every client below.
+Five files make up the plugin: `recly-notes/SKILL.md`, `recly-notes/references/drive-layout.md`,
+`recly-notes/references/templates.md`, `recly-notion/SKILL.md` and
+`recly-notion/references/database.md`. The same files serve every client below; the
+[latest release](https://github.com/rokrokss/recly/releases/latest) carries them as
+`recly-notes.zip` and `recly-notion.zip`.
 
 ## Coding agents (Claude Code, Codex, Cursor)
 
@@ -41,7 +44,9 @@ Do the setup once on the web; it follows your account to the phone.
 ## ChatGPT app (web, desktop, phone)
 
 1. Connect Google Drive and Notion under Settings → Apps.
-2. Create a project and upload the five files.
+2. Download `recly-notes.zip` and `recly-notion.zip` from the
+   [latest release](https://github.com/rokrokss/recly/releases/latest), unzip them, create a
+   project and upload the five files inside.
 3. Put one line in the project instructions: *"Follow the attached recly-notes and recly-notion
    SKILL.md files."*
 
@@ -54,9 +59,11 @@ Chat inside that project.
 
 ## Start on its own
 
-To have a ChatGPT dot or Work chat start as soon as a transcript lands, run
-[recly-events](../events/README.md): it tells your agent about each new transcript, and its
-subscription prompt can ask the agent to follow these skills for the recording it names.
+To have a ChatGPT dot or Work chat start as soon as a transcript lands, use recly-events: it
+tells your agent about each new transcript, and its subscription prompt can ask the agent to follow
+these skills for the recording it names. With the Recly Mac or Windows app, follow the
+[ChatGPT agent guide](https://recly.dev/agent.html); to run it yourself, follow
+[Running recly-events yourself](https://recly.dev/recly-events.html).
 
 ## Write your own
 
