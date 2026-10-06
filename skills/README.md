@@ -64,7 +64,7 @@ The examples are a starting point. Want another format, another language, or not
 other than Notion? Edit them, or write your own. That is the point.
 
 - **What your skill reads.** Each recording is a folder in your Drive, like
-  `recly/2026/2026-09/{base}/`. It holds the audio parts (`{base}_p001_mono.m4a`, ...),
+  `recly/memo/2026-10/{base}/`. It holds the audio parts (`{base}_p001_mono.m4a`, ...),
   `{base}.meta.json` ([schema](../spec/recording.meta.schema.json)) and, once transcribed,
   `{base}.transcript.txt` (plain text) and `{base}.transcript.json` (segments with start, end and
   speaker; [schema](../spec/transcript.schema.json)).

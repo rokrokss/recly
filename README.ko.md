@@ -45,7 +45,7 @@ ChatGPT 에이전트에게 전해지고, 에이전트가 [알아서 회의록을
   넘기고, 나머지는 폰이 합니다. 여섯 클라이언트(Galaxy Watch, Android, Apple Watch, iPhone, macOS,
   Windows)가 같은 방식으로 녹음하고 같은 처리 흐름을 사용하며, 데스크톱은 내 마이크와
   Zoom·Teams·Meet 상대방 소리를 트랙을 나눠 담습니다.
-- **저장소는 내 것뿐.** 녹음은 내 Google Drive의 `recly/2026/2026-09/` 같은 폴더로 갑니다. Google이
+- **저장소는 내 것뿐.** 녹음은 내 Google Drive의 `recly/memo/2026-10/` 같은 폴더로 갑니다. Google이
   제공하는 가장 좁은 권한(`drive.file`)만 쓰고, 업로드가 확인되기 전에는 원본을 지우지 않습니다. iPhone과
   Mac에서는 대신 내 iCloud를, iPhone·Mac·Windows·Android에서는 Obsidian 볼트 같은 내가 고른 로컬 폴더를 고를 수 있습니다. Recly는
   내 파일을 볼 수 없습니다. 볼 서버 자체가 없으니까요.

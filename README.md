@@ -47,7 +47,7 @@ recording, and the minutes show up in ChatGPT.
   (Galaxy Watch, Android, Apple Watch, iPhone, macOS, Windows) record the same way and run the same
   recording flow; desktops capture your mic and the other side of a Zoom, Teams or Meet call as
   separate tracks.
-- **Only your own storage.** Recordings go to a folder like `recly/2026/2026-09/` in
+- **Only your own storage.** Recordings go to a folder like `recly/memo/2026-10/` in
   your own Google Drive, using the narrowest permission Google offers (`drive.file`), and are never
   deleted before the upload is confirmed. On iPhone and Mac you can choose your own iCloud instead,
   and on iPhone, Mac, Windows and Android a local folder you pick, such as an Obsidian vault. Recly cannot
