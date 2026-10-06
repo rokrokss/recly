@@ -289,6 +289,10 @@
             <p>Stop recording, and once the transcript is in your Drive, your ChatGPT agent (a dot or a Work chat) starts on the minutes by itself, usually within a minute. <a href="https://github.com/rokrokss/recly/blob/main/events/README.md"><code>recly-events</code></a> sees the new transcript and sends the agent a signed <code>recording.transcribed</code> event through <a href="https://developers.openai.com/plugins/build/mcp-events">OpenAI's MCP Events</a>. The agent reads the transcript with ChatGPT's Google Drive app.</p>
           </article>
           <article class="card">
+            <h3>Built into the Mac and Windows apps</h3>
+            <p>In Settings → Agent connection, enter your OpenAI tunnel ID and key and turn on “Tell ChatGPT about new recordings”. The app runs recly-events on the Google Drive connection it already has: no second sign-in, no terminal. On a server or Linux, run recly-events yourself.</p>
+          </article>
+          <article class="card">
             <h3>Still no Recly server</h3>
             <p>recly-events runs on your own computer and reaches ChatGPT through your own OpenAI Secure MCP Tunnel, with no public address. It passes on the recording's name, title and Drive links, never the audio or what was said.</p>
           </article>

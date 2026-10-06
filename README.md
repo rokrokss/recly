@@ -151,9 +151,14 @@ and Drive links, never the audio or what was said.
 
 What you need: recordings stored in Google Drive (not iCloud or a local folder); a ChatGPT dot (at
 the time of writing, ChatGPT Pro or Business Premium, outside the EEA) or a Work chat on ChatGPT
-web; an OpenAI Platform account for the tunnel; and a computer that stays on. Run recly-events there,
-or turn it on in the Mac or Windows app under Settings → Agent connection. Setup is in
-[events/README.md](events/README.md).
+web; an OpenAI Platform account for the tunnel; and a computer that stays on.
+
+**On a Mac or Windows PC, it is built into the app** (0.2.0 and later). In Settings → Agent
+connection, enter your tunnel ID and key and turn on **Tell ChatGPT about new recordings**. It uses
+the Google Drive connection the app already has, so there is no second Google sign-in and no
+terminal, and it runs while the app runs. **Anywhere else** (a server, Linux, a computer without the
+Recly app), run recly-events yourself: it signs in to Google once, also on a server without a browser.
+Setup, adding the app to ChatGPT and the prompt for your agent are in [events/README.md](events/README.md).
 
 ### On request: example skills
 
