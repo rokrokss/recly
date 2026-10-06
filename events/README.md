@@ -72,22 +72,32 @@ sends the test event.
 
 ### 1. Get it
 
-Download the archive for your computer from the newest
-[`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true):
+Download the file for your computer from the newest
+[`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true) and
+check it against `SHA256SUMS` from the same release:
 
-| Computer | Archive |
+| Computer | File |
 |---|---|
-| Mac (Apple silicon or Intel) | `recly-events_<version>_darwin_universal.zip` — signed with Developer ID and notarized |
+| Mac (Apple silicon or Intel) | `recly-events_<version>_darwin_universal.pkg` — an installer, signed with Developer ID and notarized |
 | Linux | `recly-events_<version>_linux_amd64.tar.gz` or `…_linux_arm64.tar.gz` |
 | Windows | `recly-events_<version>_windows_amd64.zip` — not code-signed, and not yet tried on a Windows PC |
 
-Check it against `SHA256SUMS` from the same release, unpack it, and put `recly-events` where it
-will stay: `service install` records where the program is.
-
 ```sh
 shasum -a 256 -c SHA256SUMS --ignore-missing
-mkdir -p ~/.local/bin && cp recly-events_*/recly-events ~/.local/bin/
 ```
+
+- **Mac:** open the package and follow the installer, or run
+  `sudo installer -pkg recly-events_<version>_darwin_universal.pkg -target /`. It puts
+  `recly-events` in `/usr/local/bin`, which is on your `PATH`, and its licences in
+  `/usr/local/share/doc/recly-events`. If you set up an earlier copy from a `.zip` and ran
+  `service install`, the service still starts that copy: delete it, then run
+  `recly-events service install` again.
+- **Linux and Windows:** unpack it and put `recly-events` where it will stay: `service install`
+  records where the program is.
+
+  ```sh
+  mkdir -p ~/.local/bin && cp recly-events_*/recly-events ~/.local/bin/
+  ```
 
 Release builds carry Recly's own Google sign-in, so you need no Google Cloud project. The commands
 below assume `recly-events` is on your `PATH`.
@@ -308,7 +318,15 @@ disconnects every Recly app on every device as well.
    `serve`, or delete the Windows task).
 2. Delete its directory (see [Everyday use](#everyday-use)). Its Google sign-in and tunnel key go
    with it.
-3. Delete the tunnel and its key in OpenAI Platform, and the app in ChatGPT.
+3. Delete the program. On a Mac, where the package installed it:
+
+   ```sh
+   sudo rm /usr/local/bin/recly-events
+   sudo rm -r /usr/local/share/doc/recly-events
+   sudo pkgutil --forget dev.recly.events
+   ```
+
+4. Delete the tunnel and its key in OpenAI Platform, and the app in ChatGPT.
 
 ## Using a Google client of your own
 

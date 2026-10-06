@@ -118,8 +118,12 @@ The Windows MSI install version is set apart from the display version (`installe
 
 `recly-events` (`events/`) is released apart from the apps, under its own `events-vX.Y.Z` tags.
 `TAG=events-vX.Y.Z make events-release` on a Mac builds the archives into `events/dist/X.Y.Z/`:
-macOS as one universal binary signed with Developer ID and notarized (`NOTARY_PROFILE`, default
-`recly`), Linux amd64 and arm64, Windows amd64 without a code signature, and `SHA256SUMS`. Each archive carries `LICENSE`,
+macOS as an installer package (`.pkg`) that puts one universal binary in `/usr/local/bin`, the binary
+signed with a Developer ID Application certificate and the package with a Developer ID Installer
+certificate, both in the keychain, then notarized (`NOTARY_PROFILE`, default `recly`) and stapled;
+Linux amd64 and arm64, Windows amd64 without a code signature, and `SHA256SUMS`. A package, not a
+bare binary: a downloaded binary double-clicked in the Finder fails Gatekeeper however it is signed
+and notarized, and what an installer puts in place is not quarantined. Each archive carries `LICENSE`,
 `LICENSE-EXCEPTIONS.md` and `THIRD-PARTY-NOTICES.txt`, the licence and NOTICE files of every linked
 Go module (`events/scripts/notices.sh`). Recly's
 desktop OAuth client is compiled in from `local.properties`, as for the Windows app; the script

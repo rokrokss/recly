@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Builds the recly-events release archives on a Mac (docs/development.md "recly-events releases"):
-# macOS as one universal binary, signed with Developer ID and notarized; Linux amd64 and arm64;
-# Windows amd64, not code-signed; and SHA256SUMS. Recly's desktop OAuth client is compiled in by
-# build.sh, as for `make events`; it is never committed, and without it nothing is built.
+# macOS as an installer package holding one universal binary, the binary signed with Developer ID
+# Application and the package with Developer ID Installer, notarized and stapled; Linux amd64 and
+# arm64; Windows amd64, not code-signed; and SHA256SUMS. Recly's desktop OAuth client is compiled
+# in by build.sh, as for `make events`; it is never committed, and without it nothing is built.
 #
 #   TAG=events-v0.1.0 NOTARY_PROFILE=recly events/scripts/release.sh            # → events/dist/0.1.0/
 #   TAG=events-v0.1.0 NOTARY_PROFILE=recly UPLOAD=1 events/scripts/release.sh   # and a draft release
@@ -33,6 +34,12 @@ if [[ -z "$identity" ]]; then
   echo "release: no Developer ID Application identity in the keychain" >&2
   exit 1
 fi
+installer="$(security find-identity -v -p basic \
+  | sed -n 's/.*"\(Developer ID Installer:.*\)"$/\1/p' | head -1)"
+if [[ -z "$installer" ]]; then
+  echo "release: no Developer ID Installer identity in the keychain" >&2
+  exit 1
+fi
 
 out="events/dist/$version"
 work="$out/work"
@@ -54,8 +61,9 @@ stage() {
 echo "release: building recly-events $version from ${commit:0:7}"
 events/scripts/notices.sh > "$work/THIRD-PARTY-NOTICES.txt"
 
-# macOS: Apple silicon and Intel in one binary, hardened runtime, notarized. A bare binary cannot
-# be stapled; Gatekeeper finds the notarization online when a downloaded copy is first run.
+# macOS: Apple silicon and Intel in one binary, hardened runtime, in an installer package that is
+# notarized and stapled. A bare binary cannot be stapled, and a quarantined one double-clicked in
+# the Finder fails Gatekeeper however it is signed; what the package installs is not quarantined.
 build darwin arm64 "$work/darwin-arm64"
 build darwin amd64 "$work/darwin-amd64"
 mkdir -p "$work/darwin"
@@ -63,15 +71,23 @@ lipo -create -output "$work/darwin/recly-events" "$work/darwin-arm64" "$work/dar
 codesign --force --options runtime --timestamp --identifier dev.recly.events \
   --sign "$identity" "$work/darwin/recly-events"
 codesign --verify --strict --verbose=2 "$work/darwin/recly-events"
-mac="recly-events_${version}_darwin_universal"
-stage "$mac" "$work/darwin/recly-events"
-ditto -c -k --norsrc --keepParent "$work/$mac" "$out/$mac.zip"
-result="$(xcrun notarytool submit "$out/$mac.zip" --keychain-profile "$NOTARY_PROFILE" --wait 2>&1)" || true
+root="$work/pkgroot"
+mkdir -p "$root/usr/local/bin" "$root/usr/local/share/doc/recly-events"
+install -m 755 "$work/darwin/recly-events" "$root/usr/local/bin/"
+install -m 644 LICENSE LICENSE-EXCEPTIONS.md "$work/THIRD-PARTY-NOTICES.txt" \
+  "$root/usr/local/share/doc/recly-events/"
+pkg="$out/recly-events_${version}_darwin_universal.pkg"
+pkgbuild --root "$root" --identifier dev.recly.events --version "$version" --install-location / \
+  --sign "$installer" "$pkg"
+result="$(xcrun notarytool submit "$pkg" --keychain-profile "$NOTARY_PROFILE" --wait 2>&1)" || true
 echo "$result"
 if ! grep -q "status: Accepted" <<<"$result"; then
   echo "release: notarization was not accepted (xcrun notarytool log <id> --keychain-profile $NOTARY_PROFILE)" >&2
   exit 1
 fi
+xcrun stapler staple "$pkg"
+xcrun stapler validate "$pkg"
+spctl --assess --type install --verbose=2 "$pkg"
 
 # Linux
 for arch in amd64 arm64; do
@@ -87,7 +103,7 @@ build windows amd64 "$work/windows/recly-events.exe"
 stage "$name" "$work/windows/recly-events.exe"
 (cd "$work" && zip -qr "../$name.zip" "$name")
 
-(cd "$out" && shasum -a 256 ./*.zip ./*.tar.gz | sed 's# \./# #' > SHA256SUMS)
+(cd "$out" && shasum -a 256 ./*.pkg ./*.zip ./*.tar.gz | sed 's# \./# #' > SHA256SUMS)
 rm -rf "$work"
 echo "release: archives in $out"
 cat "$out/SHA256SUMS"
@@ -107,11 +123,11 @@ fi
 notes="recly-events $version tells your ChatGPT agent (a dot or a Work chat) when Recly finishes a transcript.
 Set it up with [events/README.md](https://github.com/rokrokss/recly/blob/$TAG/events/README.md).
 
-- macOS: one binary for Apple silicon and Intel, signed with Developer ID and notarized.
+- macOS: an installer package, signed with Developer ID, notarized and stapled. It puts one binary for Apple silicon and Intel in /usr/local/bin.
 - Linux: amd64 and arm64.
 - Windows: amd64, not code-signed and not yet tried on a Windows PC.
 
 Check a download: \`shasum -a 256 -c SHA256SUMS --ignore-missing\`"
 gh release create "$TAG" --draft --prerelease --latest=false --target "$commit" \
-  --title "recly-events $version" --notes "$notes" "$out"/*.zip "$out"/*.tar.gz "$out/SHA256SUMS"
+  --title "recly-events $version" --notes "$notes" "$out"/*.pkg "$out"/*.zip "$out"/*.tar.gz "$out/SHA256SUMS"
 echo "release: draft $TAG created; publish it with: gh release edit $TAG --draft=false"
