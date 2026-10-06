@@ -121,8 +121,19 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 .header-actions .lang-menu a:hover { background: var(--ground); }
 .header-actions .lang-menu a[aria-current="page"] { color: var(--accent); font-weight: 600; }
 
-@media (max-width: 960px) { .nav { display: none; } }
-@media (max-width: 420px) { .header-actions .gh { display: none; } }
+/* Below 960px the section and guide links move into a menu at the right end of the header. */
+.menu { display: none; position: relative; order: 3; }
+.menu summary { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--grid); border-radius: var(--r-node); color: var(--ink); cursor: pointer; list-style: none; user-select: none; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary svg { width: 16px; height: 16px; }
+.menu[open] summary { border-color: var(--ink); }
+.menu-panel { position: absolute; top: calc(100% + 8px); right: 0; display: grid; min-width: 232px; padding: 4px; background: var(--surface); border: 1px solid var(--grid); border-radius: var(--r-card); }
+.menu-panel a { display: block; padding: 9px 12px; border-radius: var(--r-node); color: var(--ink); font-size: 0.95rem; text-decoration: none; white-space: nowrap; }
+.menu-panel a:hover { background: var(--ground); }
+.nav a[aria-current="page"], .menu-panel a[aria-current="page"] { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 960px) { .nav { display: none; } .menu { display: block; } .header-actions { order: 2; } }
+@media (max-width: 420px) { .header-actions .gh { display: none; } .site-header .wrap { gap: 12px; } }
 
 /* ── Buttons, badges, kickers ────────────────────────────────────────────── */
 
@@ -274,6 +285,7 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .band .lede { color: var(--band-muted); }
 .band a { color: #78A9FF; }
 .gallery { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; }
+.gallery picture { display: block; }
 .gallery img { width: 100%; height: auto; border-radius: 14px; box-shadow: 0 0 0 1px var(--band-grid); }
 @media (max-width: 860px) {
   .gallery { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 12px; margin-right: calc(-1 * var(--gutter)); padding-right: var(--gutter); }
@@ -348,6 +360,12 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .dl p { margin: 0; color: var(--muted); font-size: 0.92rem; }
 .dl .actions { display: flex; margin-top: auto; }
 @media (max-width: 620px) { .downloads { grid-template-columns: 1fr; } }
+/* site.js moves the visitor's own platform to the front and labels it. */
+.dl.is-yours { border-color: var(--ink); }
+.dl .yours { margin: 0; color: var(--accent); font: 500 0.72rem/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+/* The stores' own badge artwork, never restyled: 40px tall, the App Store badge first. */
+.store-badge { display: inline-block; line-height: 0; border-radius: 7px; }
+.store-badge img { width: auto; height: 40px; }
 .release-line { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-top: 20px; color: var(--muted); font-size: 0.9rem; }
 
 /* ── Open source ─────────────────────────────────────────────────────────── */
@@ -418,6 +436,15 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .prose code { padding: 0.1em 0.35em; border: 1px solid var(--grid); border-radius: var(--r-badge); background: var(--ground); }
 .prose pre { padding: 16px 18px; border: 1px solid var(--grid); border-radius: var(--r-node); background: var(--ground); overflow-x: auto; line-height: 1.55; }
 .prose pre code { padding: 0; border: 0; background: none; font-size: 0.86rem; }
+/* site.js wraps each code block to give it a Copy button. */
+.prose .code-block { position: relative; margin: 0 0 1.1em; }
+.prose .code-block pre { margin: 0; }
+.code-block .copy { position: absolute; top: 8px; right: 8px; height: 28px; padding: 0 10px; font-size: 0.78rem; }
+@media (hover: hover) {
+  .code-block .copy { opacity: 0; transition: opacity 150ms ease-in-out; }
+  .code-block:hover .copy, .code-block .copy:focus-visible { opacity: 1; }
+}
+@media (hover: none) { .prose .code-block pre { padding-top: 44px; } }
 .prose blockquote { padding: 4px 0 4px 16px; border-left: 2px solid var(--accent); color: var(--muted); }
 .prose table { display: block; width: 100%; overflow-x: auto; border-collapse: collapse; font-size: 0.93rem; }
 .prose th, .prose td { padding: 10px 12px; border: 1px solid var(--grid); text-align: left; vertical-align: top; }

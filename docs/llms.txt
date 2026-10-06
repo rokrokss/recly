@@ -1,0 +1,20 @@
+# Recly
+
+> Open-source audio recorder for Galaxy Watch, Android, Apple Watch, iPhone, macOS and Windows. Recordings go to the user's own Google Drive (or iCloud on iPhone and Mac, or a local folder), transcription runs on the device or with the user's own API key, and the user's own AI agent writes the notes. There is no Recly server and no Recly account.
+
+The guides below are the Markdown sources of the pages on recly.dev. Each has a Korean twin at the same path with `.ko.md` (for example /install.ko.md).
+
+## Guides
+
+- [Install guide](https://recly.dev/install.md): the stores, the Mac and Windows downloads, sideloading the Android and watch apps, checking a download, updating and uninstalling
+- [Set-up guide](https://recly.dev/setup.md): where recordings go, how they are transcribed, permissions, recording and finding recordings
+- [Automatic minutes with a ChatGPT agent](https://recly.dev/agent.md): turn it on in the Recly Mac or Windows app so a ChatGPT agent writes the minutes for each new transcript
+- [Running recly-events yourself](https://recly.dev/recly-events.md): the same on a server, on Linux or on a computer without the Recly app
+- [FAQ](https://recly.dev/faq.md): cost, devices, accounts, where recordings go, on-device transcription, speakers, Windows, updates
+
+## Optional
+
+- [Privacy policy](https://recly.dev/policy/privacy-policy.md): every case where data leaves the device
+- [Example agent skills](https://github.com/rokrokss/recly/blob/main/skills/README.md): turning a transcript into notes, and keeping them in Notion
+- [Recording and transcript formats](https://github.com/rokrokss/recly/tree/main/spec): JSON Schemas for recording.meta.json and transcript.json
+- [Source code and design document](https://github.com/rokrokss/recly)

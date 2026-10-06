@@ -1,15 +1,28 @@
 <!DOCTYPE html>
-{%- if page.path contains '.ko.' -%}{%- assign ko = true -%}{%- else -%}{%- assign ko = false -%}{%- endif %}
+{%- if page.path contains '.ko.' -%}{%- assign ko = true -%}{%- else -%}{%- assign ko = false -%}{%- endif -%}
+{%- comment -%} The same page in the other language sits next to it: install.md ↔ install.ko.md. {%- endcomment -%}
+{%- assign other = nil -%}
+{%- if page.path contains '.md' -%}
+{%- if ko -%}{%- assign other_path = page.path | replace: '.ko.md', '.md' -%}{%- else -%}{%- assign other_path = page.path | replace: '.md', '.ko.md' -%}{%- endif -%}
+{%- assign other = site.pages | where: "path", other_path | first -%}
+{%- endif -%}
+{%- if ko -%}{%- assign en_url = other.url -%}{%- assign ko_url = page.url -%}{%- else -%}{%- assign en_url = page.url -%}{%- assign ko_url = other.url -%}{%- endif %}
 <html lang="{% if ko %}ko{% else %}en{% endif %}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   {% seo %}
+  {%- if other %}
+  <link rel="alternate" hreflang="en" href="{{ en_url | absolute_url }}">
+  <link rel="alternate" hreflang="ko" href="{{ ko_url | absolute_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ en_url | absolute_url }}">
+  {%- endif %}
   <meta name="theme-color" content="#F7F7F5" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0E0F12" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="/design/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/site.css?v=10">
+  <script src="/assets/site.js?v=4" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">{% if ko %}본문으로 건너뛰기{% else %}Skip to content{% endif %}</a>
@@ -17,22 +30,40 @@
 <header class="site-header">
   <div class="wrap">
     <a class="brand" href="{% if ko %}/ko/{% else %}/{% endif %}"><img src="/design/icon.svg" alt="" width="28" height="28">Recly</a>
-    <nav class="nav" aria-label="{% if ko %}사이트{% else %}Site{% endif %}">
+    {%- capture links -%}
       {%- if ko %}
       <a href="/ko/#how">동작 방식</a>
-      <a href="/install.ko.html">설치 안내</a>
-      <a href="/setup.ko.html">설정 안내</a>
-      <a href="/agent.ko.html">ChatGPT 에이전트</a>
-      <a href="/policy/privacy-policy.ko">개인정보처리방침</a>
+      <a href="/install.ko.html"{% if page.path == 'install.ko.md' %} aria-current="page"{% endif %}>설치 안내</a>
+      <a href="/setup.ko.html"{% if page.path == 'setup.ko.md' %} aria-current="page"{% endif %}>설정 안내</a>
+      <a href="/agent.ko.html"{% if page.path == 'agent.ko.md' %} aria-current="page"{% endif %}>ChatGPT 에이전트 안내</a>
+      <a href="/faq.ko.html"{% if page.path == 'faq.ko.md' %} aria-current="page"{% endif %}>자주 묻는 질문</a>
+      <a href="/policy/privacy-policy.ko"{% if page.path == 'policy/privacy-policy.ko.md' %} aria-current="page"{% endif %}>개인정보처리방침</a>
       {%- else %}
       <a href="/#how">How it works</a>
-      <a href="/install.html">Install guide</a>
-      <a href="/setup.html">Set-up guide</a>
-      <a href="/agent.html">ChatGPT agent</a>
-      <a href="/policy/privacy-policy">Privacy</a>
+      <a href="/install.html"{% if page.path == 'install.md' %} aria-current="page"{% endif %}>Install guide</a>
+      <a href="/setup.html"{% if page.path == 'setup.md' %} aria-current="page"{% endif %}>Set-up guide</a>
+      <a href="/agent.html"{% if page.path == 'agent.md' %} aria-current="page"{% endif %}>ChatGPT agent guide</a>
+      <a href="/faq.html"{% if page.path == 'faq.md' %} aria-current="page"{% endif %}>FAQ</a>
+      <a href="/policy/privacy-policy"{% if page.path == 'policy/privacy-policy.md' %} aria-current="page"{% endif %}>Privacy</a>
       {%- endif %}
+    {%- endcapture %}
+    <nav class="nav" aria-label="{% if ko %}사이트{% else %}Site{% endif %}">{{ links }}
     </nav>
+    <details class="menu">
+      <summary aria-label="{% if ko %}메뉴{% else %}Menu{% endif %}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></summary>
+      <nav class="menu-panel" aria-label="{% if ko %}사이트{% else %}Site{% endif %}">{{ links }}
+      </nav>
+    </details>
     <div class="header-actions">
+      {%- if other %}
+      <details class="lang">
+        <summary aria-label="{% if ko %}언어: 한국어{% else %}Language: English{% endif %}"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c1.8 1.9 2.7 4 2.7 6.5S9.8 12.6 8 14.5M8 1.5C6.2 3.4 5.3 5.5 5.3 8s.9 4.6 2.7 6.5"/></svg><span class="code">{% if ko %}KO{% else %}EN{% endif %}</span><svg class="chev" viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg></summary>
+        <ul class="lang-menu">
+          <li><a href="{{ en_url }}" hreflang="en" lang="en"{% unless ko %} aria-current="page"{% endunless %}>English</a></li>
+          <li><a href="{{ ko_url }}" hreflang="ko" lang="ko"{% if ko %} aria-current="page"{% endif %}>한국어</a></li>
+        </ul>
+      </details>
+      {%- endif %}
       <a class="gh" href="https://github.com/rokrokss/recly">GitHub</a>
       <a class="btn btn-primary" href="{% if ko %}/ko/{% else %}/{% endif %}#download">{% if ko %}다운로드{% else %}Download{% endif %}</a>
     </div>
@@ -41,7 +72,9 @@
 
 <main id="main" class="doc">
   <div class="wrap">
+    {%- unless page.hide_source %}
     <p class="doc-meta"><span>docs/{{ page.path }}</span><a href="https://github.com/rokrokss/recly/blob/main/docs/{{ page.path }}">{% if ko %}GitHub에서 보기{% else %}View on GitHub{% endif %}</a></p>
+    {%- endunless %}
     <article class="prose">
 {{ content }}
     </article>
