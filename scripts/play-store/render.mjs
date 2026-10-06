@@ -114,7 +114,7 @@ await withChrome(async (page) => {
   console.log('icon 512');
   // Not a Play graphic: the README's Clients row, from the same captures.
   for (const lang of ['en', 'ko']) {
-    await shoot(page, pageUrl('clients.html', `lang=${lang}`), 1800, 840, join(ROOT, 'docs/design/screenshots', lang, 'clients.png'), true);
+    await shoot(page, pageUrl('clients.html', `lang=${lang}`), 1600, 840, join(ROOT, 'docs/design/screenshots', lang, 'clients.png'), true);
     console.log(`${lang} README clients → docs/design/screenshots/${lang}/clients.png`);
   }
 });
