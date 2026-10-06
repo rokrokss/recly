@@ -1,0 +1,144 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  Google Play feature graphic, 1024×500, no alpha. ?lang=en|ko&variant=a|b.
+  a: the App Store header (dark ground, the watch recording, sound turning into a transcript),
+     with a round Wear OS watch in place of the Apple Watch.
+  b: Play's own advice — a coloured ground, no device, the message centred away from the edges.
+  Either can be the default; the other is a ready-made variant for a store listing experiment.
+-->
+<style>
+  :root {
+    --ground: #0E0F12; --ink: #F2F2F0; --muted: #9A9CA3; --record: #FA4D56; --accent: #4589FF;
+    --sans: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1024px; height: 500px; overflow: hidden; }
+  body { position: relative; font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  .layer { position: absolute; inset: 0; }
+  .glow { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+
+  /* a */
+  .a { background: var(--ground); }
+  .a .dots { background-image: radial-gradient(circle at 1px 1px, rgba(154,156,163,0.16) 1.2px, transparent 1.5px); background-size: 16px 16px; }
+  .a .copy { position: absolute; left: 64px; top: 140px; width: 440px; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; }
+  .mark { width: 40px; height: 40px; border-radius: 9px; background: #fff; display: grid; place-items: center; }
+  .mark i { width: 21px; height: 21px; border: 3px solid #111; border-radius: 2px; display: grid; place-items: center; }
+  .mark i::after { content: ""; width: 8px; height: 8px; background: #DA1E28; border-radius: 1px; }
+  .brand span { font-size: 24px; font-weight: 700; }
+  .a h1 { font-size: 50px; line-height: 1.04; font-weight: 800; letter-spacing: -1.6px; white-space: nowrap; }
+  .a h1 em { font-style: normal; color: var(--record); }
+  .a .sub { margin-top: 20px; font-size: 21px; line-height: 1.32; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .a .sub b { color: var(--ink); font-weight: 600; }
+  .rings i { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); border: 1.5px solid; }
+  .watch { position: absolute; left: 618px; top: 250px; transform: translate(-50%, -50%) scale(0.9); width: 230px; height: 230px; }
+  .watch .band { position: absolute; left: 50%; width: 128px; transform: translateX(-50%); background: linear-gradient(90deg, #1b1d22, #272a30 50%, #1b1d22); }
+  .watch .case { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(145deg, #4a4e57, #23252b 40%, #15161a 70%, #3a3d45);
+    box-shadow: 0 20px 50px rgba(0,0,0,0.65), inset 0 1px 2px rgba(255,255,255,0.22); }
+  .watch .crown { position: absolute; left: 226px; width: 10px; height: 30px; border-radius: 4px; background: repeating-linear-gradient(0deg, #5a5e67 0 2px, #34373e 2px 4px); }
+  .watch .screen { position: absolute; left: 12px; top: 12px; width: 206px; height: 206px; border-radius: 50%; background: #0C0D10; box-shadow: 0 0 0 5px #050506; }
+  .watch .time { position: absolute; left: 0; right: 0; top: 18px; text-align: center; font-size: 14px; color: #C8C8C8; font-weight: 500; }
+  .watch .timer { position: absolute; left: 0; right: 0; top: 44px; text-align: center; font-size: 46px; font-weight: 400; letter-spacing: 1px; color: #EEE; }
+  .watch .state { position: absolute; left: 0; right: 0; top: 102px; text-align: center; font-family: var(--mono); font-size: 13px; color: var(--record); }
+  .watch .btn { position: absolute; left: 75px; top: 126px; width: 56px; height: 56px; border-radius: 5px; background: var(--record); display: grid; place-items: center;
+    box-shadow: 0 0 30px rgba(250,77,86,0.55); }
+  .watch .btn::after { content: ""; width: 18px; height: 18px; border-radius: 2px; background: #0C0D10; }
+  .wave { position: absolute; left: 752px; top: 250px; display: flex; align-items: center; gap: 4px; }
+  .wave b { display: block; width: 5px; border-radius: 3px; }
+  .lines { position: absolute; left: 868px; top: 182px; width: 92px; }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 12px; color: var(--muted); border: 1px solid #2c2f36; border-radius: 3px; padding: 2px 7px; margin-bottom: 9px; }
+  .line { height: 10px; border-radius: 5px; background: linear-gradient(90deg, rgba(242,242,240,0.85), rgba(242,242,240,0.3)); margin-bottom: 9px; }
+
+  /* b */
+  .b { background: linear-gradient(135deg, #E0262F 0%, #C21C25 55%, #9E1720 100%); color: #fff; }
+  .b .grid { background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.16) 1.2px, transparent 1.5px); background-size: 16px 16px; }
+  .b .center { position: absolute; left: 0; right: 0; top: 112px; text-align: center; }
+  .b .word { font-size: 26px; font-weight: 700; letter-spacing: 0.5px; opacity: 0.92; margin-bottom: 14px; }
+  .b h1 { font-size: 72px; line-height: 1.02; font-weight: 800; letter-spacing: -2.4px; white-space: nowrap; }
+  .b .sub { margin-top: 18px; font-size: 26px; font-weight: 500; opacity: 0.88; white-space: nowrap; }
+  .b .flow { position: absolute; left: 0; right: 0; top: 352px; display: flex; justify-content: center; align-items: center; gap: 22px; }
+  .b .rec { width: 46px; height: 46px; border: 4px solid #fff; border-radius: 6px; display: grid; place-items: center; }
+  .b .rec::after { content: ""; width: 16px; height: 16px; background: #fff; border-radius: 2px; }
+  .b .bars { display: flex; align-items: center; gap: 5px; height: 60px; }
+  .b .bars i { display: block; width: 6px; border-radius: 3px; background: rgba(255,255,255,0.9); }
+  .b .arrow { font-family: var(--mono); font-size: 26px; opacity: 0.8; }
+  .b .txt { width: 150px; }
+  .b .txt i { display: block; height: 9px; border-radius: 5px; background: rgba(255,255,255,0.85); margin: 7px 0; }
+  .b .ai { font-family: var(--mono); font-size: 18px; border: 2px solid rgba(255,255,255,0.9); border-radius: 4px; padding: 6px 12px; white-space: nowrap; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const ko = q.get('lang') === 'ko';
+  const variant = q.get('variant') === 'b' ? 'b' : 'a';
+  document.documentElement.lang = ko ? 'ko' : 'en';
+  const T = ko ? {
+    h1a: '내 <em>AI</em>를 위한 녹음기.', suba: '워치를 탭해 녹음하고,<br><b>모든 녹음을 내 AI로 관리하세요.</b>',
+    h1b: '내 AI를 위한 녹음기', subb: '워치로 녹음하고, 휴대폰에서 전사하고, 내 Drive에 저장', ai: '→ 내 AI',
+  } : {
+    h1a: 'Record for <em>your AI</em>.', suba: 'Tap your watch to record.<br><b>Manage every recording with your AI.</b>',
+    h1b: 'Record for your AI', subb: 'Record on your watch, transcribe on your phone, save to your Drive.', ai: '→ your AI',
+  };
+  const html = [];
+  if (variant === 'a') {
+    const rings = [300, 380, 460, 540].map((d, i) => `<i style="left:618px;top:250px;width:${d}px;height:${d}px;border-color:rgba(250,77,86,${(0.22 - i * 0.05).toFixed(2)})"></i>`).join('');
+    const hs = [22, 46, 72, 52, 90, 62, 78, 46, 32, 20, 12];
+    const bars = hs.map((h, i) => { const t = i / (hs.length - 1), m = (a, b) => Math.round(a + (b - a) * t);
+      return `<b style="height:${h}px;background:rgb(${m(250,69)},${m(77,137)},${m(86,255)});opacity:${(1 - t * 0.55).toFixed(2)}"></b>`; }).join('');
+    html.push(`<div class="layer a"><div class="layer dots"></div>
+      <div class="glow" style="left:618px;top:250px;width:600px;height:600px;background:radial-gradient(closest-side, rgba(250,77,86,0.30), rgba(250,77,86,0.08) 50%, transparent 75%)"></div>
+      <div class="glow" style="left:900px;top:240px;width:380px;height:380px;background:radial-gradient(closest-side, rgba(69,137,255,0.18), transparent 70%)"></div>
+      <div class="rings">${rings}</div>
+      <div class="copy"><div class="brand"><div class="mark"><i></i></div><span>Recly</span></div>
+        <h1 id="h1">${T.h1a}</h1><p class="sub" id="sub">${T.suba}</p></div>
+      <div class="watch">
+        <div class="band" style="top:-120px;height:150px;border-radius:24px 24px 0 0"></div>
+        <div class="band" style="top:200px;height:150px;border-radius:0 0 24px 24px"></div>
+        <div class="case"></div><div class="crown" style="top:66px"></div><div class="crown" style="top:134px"></div>
+        <div class="screen"><div class="time">9:41</div><div class="timer">00:12</div>
+          <div class="state" id="state"></div><div class="btn"></div></div>
+      </div>
+      <div class="wave">${bars}</div>
+      <div class="lines"><div class="chip">00:00</div><div class="line" style="width:100%"></div><div class="line" style="width:86%"></div>
+        <div class="line" style="width:64%"></div><div class="chip" style="margin-top:6px">00:53</div><div class="line" style="width:94%"></div><div class="line" style="width:70%"></div></div>
+    </div>`);
+  } else {
+    const hs = [14, 26, 42, 30, 54, 38, 48, 28, 20, 34, 16];
+    html.push(`<div class="layer b"><div class="layer grid"></div>
+      <div class="glow" style="left:512px;top:250px;width:900px;height:620px;background:radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%)"></div>
+      <div class="center"><div class="word">Recly</div><h1 id="h1">${T.h1b}</h1><p class="sub" id="sub">${T.subb}</p></div>
+      <div class="flow"><div class="rec"></div><div class="bars">${hs.map(h => `<i style="height:${h}px"></i>`).join('')}</div>
+        <div class="arrow">→</div><div class="txt"><i style="width:100%"></i><i style="width:82%"></i><i style="width:60%"></i></div>
+        <div class="ai" id="ai">${T.ai}</div></div>
+    </div>`);
+  }
+  document.body.innerHTML = html.join('');
+  const state = document.getElementById('state'); if (state) state.textContent = ko ? '녹음 중' : 'Recording';
+  if (ko) {
+    document.getElementById('h1').style.letterSpacing = variant === 'a' ? '-2.6px' : '-3.4px';
+    const ai = document.getElementById('ai'); if (ai) ai.style.fontFamily = 'var(--sans)';
+  }
+
+  // Keep the copy clear of the edges: 64 px each side, and out of the bottom fifth.
+  const r = e => e.getBoundingClientRect();
+  const text = e => { const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect(); };
+  const out = [];
+  for (const id of ['h1', 'sub']) {
+    const b = text(document.getElementById(id));
+    if (b.left < 64 || b.right > 1024 - 64 || b.top < 40 || b.bottom > 400) out.push(`${id} ${[b.left, b.top, b.right, b.bottom].map(Math.round)}`);
+  }
+  if (variant === 'a') {
+    const copyRight = Math.max(text(document.getElementById('h1')).right, text(document.getElementById('sub')).right);
+    if (copyRight > r(document.querySelector('.watch .case')).left - 24) out.push(`copy ends ${Math.round(copyRight)}, watch starts ${Math.round(r(document.querySelector('.watch .case')).left)}`);
+    if (r(document.querySelector('.wave')).right > r(document.querySelector('.lines')).left - 8) out.push('waveform runs into the transcript');
+    if (r(document.querySelector('.lines')).right > 1024 - 56) out.push('transcript too close to the edge');
+  }
+  document.body.dataset.m = JSON.stringify({ out });
+</script>
+</body>
+</html>

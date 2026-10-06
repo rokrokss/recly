@@ -1,0 +1,162 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  Google Play phone screenshots, 1440×2560 (9:16). ?lang=en|ko&shot=1..5.
+  The screens are real captures of the Android and Wear OS apps (build/play-store-assets/captures/<lang>/,
+  README.md), framed the way the App Store set is: dot-grid ground, brand, headline, one device.
+-->
+<style>
+  :root {
+    --ground: #0E0F12; --ink: #F2F2F0; --muted: #9A9CA3; --record: #FA4D56;
+    --sans: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1440px; height: 2560px; overflow: hidden; background: var(--ground); }
+  body { position: relative; font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  .dots { position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(154,156,163,0.16) 2px, transparent 2.4px);
+    background-size: 40px 40px; }
+  .glow { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); pointer-events: none; }
+
+  .head { position: absolute; left: 0; right: 0; top: 104px; text-align: center; }
+  .brand { display: inline-flex; align-items: center; gap: 22px; margin-bottom: 40px; }
+  .mark { width: 76px; height: 76px; border-radius: 18px; background: #fff; display: grid; place-items: center; }
+  .mark i { width: 40px; height: 40px; border: 6px solid #111; border-radius: 4px; display: grid; place-items: center; }
+  .mark i::after { content: ""; width: 16px; height: 16px; background: #DA1E28; border-radius: 2px; }
+  .brand span { font-size: 50px; font-weight: 700; letter-spacing: -0.5px; }
+  h1 { font-size: 118px; line-height: 1.05; font-weight: 800; letter-spacing: -3.5px; white-space: nowrap; }
+  h1 em { font-style: normal; color: var(--record); }
+  .sub { margin-top: 30px; font-size: 52px; line-height: 1.3; font-weight: 500; color: var(--muted); white-space: nowrap; }
+
+  /* An Android phone with no maker's marks: even bezel, punch-hole camera, side keys. */
+  .phone { position: absolute; left: 50%; top: 492px; width: 930px; height: 2003px; transform: translateX(-50%);
+    border-radius: 118px; background: linear-gradient(150deg, #3a3d45, #1a1c21 30%, #15161a 70%, #2e3138);
+    box-shadow: 0 40px 120px rgba(0,0,0,0.6), inset 0 0 0 3px rgba(255,255,255,0.06); }
+  .phone .key { position: absolute; right: -9px; width: 10px; border-radius: 0 6px 6px 0; background: #2a2d33; }
+  .phone .screen { position: absolute; left: 26px; top: 26px; right: 26px; bottom: 26px; border-radius: 94px; overflow: hidden; background: #F7F7F5; }
+  .phone .screen img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .phone .cam { position: absolute; left: 50%; top: 32px; width: 34px; height: 34px; margin-left: -17px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 40%, #2b2e36, #050506 60%); box-shadow: 0 0 0 3px rgba(0,0,0,0.85); }
+
+  /* A round Wear OS watch with no maker's marks; the screen is the app's own capture. */
+  .watch { position: absolute; transform: translate(-50%, -50%); }
+  .watch .band { position: absolute; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #1b1d22, #272a30 50%, #1b1d22); }
+  .watch .band::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 5px, transparent 5px 12px); }
+  .watch .case { position: absolute; left: 0; top: 0; border-radius: 50%;
+    background: linear-gradient(145deg, #4a4e57, #23252b 40%, #15161a 70%, #3a3d45);
+    box-shadow: 0 50px 120px rgba(0,0,0,0.65), inset 0 2px 3px rgba(255,255,255,0.22); }
+  .watch .bezel { position: absolute; border-radius: 50%; background: #050506; }
+  .watch .face { position: absolute; border-radius: 50%; overflow: hidden; }
+  .watch .face img { display: block; width: 100%; height: 100%; }
+  .watch .crown { position: absolute; border-radius: 12px; background: repeating-linear-gradient(0deg, #5a5e67 0 5px, #34373e 5px 10px); }
+</style>
+</head>
+<body>
+  <div class="dots"></div>
+  <div id="glows"></div>
+  <div class="head">
+    <div class="brand"><div class="mark"><i></i></div><span>Recly</span></div>
+    <h1 id="h1"></h1>
+    <p class="sub" id="sub"></p>
+  </div>
+  <div id="device"></div>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const lang = q.get('lang') === 'ko' ? 'ko' : 'en';
+  const shot = Number(q.get('shot') || 1);
+  document.documentElement.lang = lang;
+
+  const COPY = {
+    en: {
+      1: ['Record for <em>your AI</em>', 'Tap the watch you already wear.'],
+      2: ['Transcribe on device', 'On 8 GB phones, or with a service you pick.'],
+      3: ['Saved to your Drive', 'No Recly account. No Recly server.'],
+      4: ['Record in one tap', 'Or from Quick Settings or a home screen widget.'],
+      5: ['Ready for <em>your AI</em>', 'Any AI that can read your Drive can make notes.'],
+    },
+    ko: {
+      1: ['내 <em>AI</em>를 위한 녹음기', '이미 차고 있는 시계를 탭해 녹음하세요'],
+      2: ['기기에서 바로 전사', 'RAM 8GB 휴대폰에서, 또는 고른 서비스로'],
+      3: ['내 Google 드라이브에 저장', 'Recly 계정도, Recly 서버도 없습니다'],
+      4: ['탭 한 번으로 녹음', '빠른 설정 타일이나 홈 화면 위젯에서도'],
+      5: ['내 <em>AI</em>가 바로 읽는 전사본', 'Drive를 읽는 AI라면 바로 노트로 만듭니다'],
+    },
+  };
+  const SCREEN = { 2: 'detail', 3: 'expand', 4: 'record', 5: 'list' };
+  const [h1, sub] = COPY[lang][shot];
+  document.getElementById('h1').innerHTML = h1;
+  document.getElementById('sub').textContent = sub;
+  if (lang === 'ko') {
+    document.getElementById('h1').style.letterSpacing = '-5px';
+    document.getElementById('sub').style.letterSpacing = '-1px';
+  }
+
+  const glow = (x, y, d, rgba) => {
+    const g = document.createElement('div'); g.className = 'glow';
+    Object.assign(g.style, { left: x + 'px', top: y + 'px', width: d + 'px', height: d + 'px',
+      background: `radial-gradient(closest-side, ${rgba}, transparent 72%)` });
+    document.getElementById('glows').appendChild(g);
+  };
+
+  const device = document.getElementById('device');
+  const img = name => `../../build/play-store-assets/captures/${lang}/${name}.png`;
+
+  function watch(cx, cy, d, src, topY, bottomY) {
+    // d: the case's diameter. Proportions from the 454 px round display: bezel 92 %, screen 88 %.
+    // The straps run from topY to bottomY on the page and fade out at both ends.
+    const w = document.createElement('div'); w.className = 'watch';
+    Object.assign(w.style, { left: cx + 'px', top: cy + 'px', width: d + 'px', height: d + 'px' });
+    const bandW = d * 0.54, top = cy - d / 2, upper = top + d * 0.2 - topY, lower = bottomY - (top + d * 0.8);
+    const fade = 'linear-gradient(to bottom, transparent, #000 45%)', fadeOut = 'linear-gradient(to top, transparent, #000 45%)';
+    w.innerHTML = `
+      <div class="band" style="top:${-upper + d * 0.2}px;width:${bandW}px;height:${upper}px;-webkit-mask-image:${fade}"></div>
+      <div class="band" style="top:${d * 0.8}px;width:${bandW}px;height:${lower}px;-webkit-mask-image:${fadeOut}"></div>
+      <div class="case" style="width:${d}px;height:${d}px"></div>
+      <div class="crown" style="left:${d - d * 0.015}px;top:${d * 0.28}px;width:${d * 0.045}px;height:${d * 0.13}px"></div>
+      <div class="crown" style="left:${d - d * 0.015}px;top:${d * 0.6}px;width:${d * 0.045}px;height:${d * 0.13}px"></div>
+      <div class="bezel" style="left:${d * 0.04}px;top:${d * 0.04}px;width:${d * 0.92}px;height:${d * 0.92}px"></div>
+      <div class="face" style="left:${d * 0.06}px;top:${d * 0.06}px;width:${d * 0.88}px;height:${d * 0.88}px"><img src="${src}"></div>`;
+    device.appendChild(w);
+    return w;
+  }
+
+  if (shot === 1) {
+    glow(720, 1500, 1600, 'rgba(250,77,86,0.24)');
+    for (const [d, a] of [[1000, 0.20], [1240, 0.14], [1480, 0.08]]) {
+      const ring = document.createElement('div'); ring.className = 'glow';
+      Object.assign(ring.style, { left: '720px', top: '1500px', width: d + 'px', height: d + 'px', border: `4px solid rgba(250,77,86,${a})` });
+      document.getElementById('glows').appendChild(ring);
+    }
+    watch(720, 1500, 800, img('wear-rec'), 520, 2560);
+  } else {
+    glow(720, 1500, 1700, shot === 4 ? 'rgba(250,77,86,0.16)' : 'rgba(69,137,255,0.12)');
+    device.innerHTML = `<div class="phone">
+      <div class="key" style="top:420px;height:150px"></div>
+      <div class="key" style="top:640px;height:250px"></div>
+      <div class="screen"><img src="${img(SCREEN[shot])}"></div>
+      <div class="cam"></div></div>`;
+  }
+
+  // What spills: copy wider than the canvas, or the headline block running into the device.
+  window.addEventListener('load', () => {
+    const r = e => e.getBoundingClientRect();
+    const text = e => { const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect(); };
+    const out = [];
+    for (const id of ['h1', 'sub']) {
+      const b = text(document.getElementById(id));
+      if (b.left < 72 || b.right > 1440 - 72) out.push(`${id} ${Math.round(b.left)}..${Math.round(b.right)}`);
+    }
+    const headBottom = r(document.getElementById('sub')).bottom;
+    const top = shot === 1 ? r(document.querySelector('.watch .case')).top : r(document.querySelector('.phone')).top;
+    if (headBottom > top - 24) out.push(`head ends ${Math.round(headBottom)}, device starts ${Math.round(top)}`);
+    const images = [...document.images];
+    if (images.some(i => !i.complete || i.naturalWidth === 0)) out.push('image missing');
+    document.body.dataset.m = JSON.stringify({ out, headBottom: Math.round(headBottom) });
+  });
+</script>
+</body>
+</html>
