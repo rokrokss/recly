@@ -16,7 +16,10 @@ struct AgentConnectionSection: View {
     @State private var changingTunnel = false
 
     /// The set-up guide: the OpenAI tunnel and key, the ChatGPT app, the subscription prompt.
-    static let guide = URL(string: "https://github.com/rokrokss/recly/blob/main/events/README.md#from-the-recly-mac-or-windows-app")!
+    /// The guide has a Korean page; every other app language gets the English one.
+    static var guide: URL {
+        URL(string: AppLanguage.resolvedCode == "ko" ? "https://recly.dev/agent.ko" : "https://recly.dev/agent")!
+    }
 
     var body: some View {
         VStack(spacing: 0) {

@@ -27,6 +27,7 @@ import app.recly.windows.helper.NetworkCost
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
+import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.APP_NAME
@@ -1760,7 +1761,8 @@ class ShellModel(
         }
     }
 
-    fun openAgentGuide() = open(AGENT_GUIDE_URL)
+    /** [language] is the one the window shows: the guide has a Korean page, every other language gets the English one. */
+    fun openAgentGuide(language: String) = open(if (language == StringTable.KOREAN) AGENT_GUIDE_URL_KO else AGENT_GUIDE_URL)
 
     private fun open(target: String) {
         runCatching {
@@ -1827,7 +1829,8 @@ class ShellModel(
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
         /** docs/14 "Agent connection": the set-up guide — the OpenAI tunnel, the ChatGPT app, the prompt. */
-        const val AGENT_GUIDE_URL = "https://github.com/rokrokss/recly/blob/main/events/README.md#from-the-recly-mac-or-windows-app"
+        const val AGENT_GUIDE_URL = "https://recly.dev/agent"
+        const val AGENT_GUIDE_URL_KO = "https://recly.dev/agent.ko"
 
         /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"

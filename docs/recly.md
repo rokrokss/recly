@@ -2699,7 +2699,8 @@ no program, and the switch says `Not in this build`.
 
 **The section (2026-10-06)**, top to bottom: the switch, one status line (only while the switch is on), the `OpenAI tunnel` row, the footnote
 (`Runs recly-events on this Mac. It reads only the names and links …`) and `Set-up guide`. The footnote and the guide stay after an agent subscribes:
-the subscription recly-events remembers can outlive the agent or the ChatGPT app, and a new tunnel or key needs the guide again. The switch only decides whether
+the subscription recly-events remembers can outlive the agent or the ChatGPT app, and a new tunnel or key needs the guide again. `Set-up guide` opens
+`https://recly.dev/agent` in the browser (`https://recly.dev/agent.ko` when the app is in Korean). The switch only decides whether
 recly-events runs: the tunnel row, the footnote and the guide are there with it off too, so it can be set up first and turned on last, or a tunnel changed
 without starting it; off, a saved tunnel starts nothing. There is no Google row: the copy the app runs reaches Drive through the app's own connection, the
 `Drive connected` row in the same pane. (A `Google sign-in` row — recly-events' own sign-in, compared with the upload account by `permissionId` — was
@@ -3200,7 +3201,7 @@ When the recording processing settings are saved and the destination has not bee
 
 Existing jobs and jobs received from the Watch stay waiting for permission without a popup, and are resolved by going from the list to Settings → Privacy. Permission can be withdrawn on the same screen. Withdrawal does not delete data already sent or API keys. Google Drive uses its own separate Google OAuth. This permission is also separate from the participant recording consent reminder (§12 · §13).
 
-**Policy pages the user opens.** Settings and the notices above open Recly's public privacy policy (English `https://recly.dev/policy/privacy-policy`, Korean `https://recly.dev/policy/privacy-policy.ko`) and the chosen provider's privacy policy in an external browser. `PrivacyLinks` manages the URL list (recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android opens only the same two addresses of the Recly policy, via Settings → `Privacy` → `Privacy Policy` → `Open` (the Korean one when the app is in Korean, `privacyPolicyUrl`; 2026-09-29) — Android has no transfer permission, so the `Allowed destinations` row exists only on iPhone. The website is visited only when the user taps a link. It is not an automatic request in the recording · job execution path.
+**Policy pages the user opens.** Settings and the notices above open Recly's public privacy policy (English `https://recly.dev/policy/privacy-policy`, Korean `https://recly.dev/policy/privacy-policy.ko`) and the chosen provider's privacy policy in an external browser. `PrivacyLinks` manages the URL list (recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android opens only the same two addresses of the Recly policy, via Settings → `Privacy` → `Privacy Policy` → `Open` (the Korean one when the app is in Korean, `privacyPolicyUrl`; 2026-09-29) — Android has no transfer permission, so the `Allowed destinations` row exists only on iPhone. The Mac and Windows `Set-up guide` under Agent connection opens `https://recly.dev/agent` (`/agent.ko` in Korean) the same way. The website is visited only when the user taps a link. It is not an automatic request in the recording · job execution path.
 
 ### §4 Transfer between paired devices — watch ↔ phone
 

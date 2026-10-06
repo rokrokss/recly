@@ -286,7 +286,7 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     AgentTunnel(agent, strings)
     SectionFootnote(strings[Str.AGENT_FOOTNOTE])
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
+        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) }, tone = ButtonTone.QUIET)
     }
 }
 
