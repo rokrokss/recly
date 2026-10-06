@@ -11,8 +11,7 @@ and your own [OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/g
 The agent then reads the transcript with ChatGPT's Google Drive app.
 
 This page sets it up from the app. To run recly-events on a server, on Linux or on a computer
-without the Recly app, follow [events/README.md](https://github.com/rokrokss/recly/blob/main/events/README.md)
-instead.
+without the Recly app, follow [Running recly-events yourself](recly-events.md) instead.
 
 ## What you need
 

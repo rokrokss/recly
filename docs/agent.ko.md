@@ -10,7 +10,7 @@ Work 채팅)가 보통 1분 안에 알아서 회의록을 쓰기 시작합니다
 알리고, 에이전트는 ChatGPT의 Google Drive 앱으로 녹취록을 읽습니다.
 
 이 페이지는 앱에서 설정하는 방법입니다. 서버, Linux, Recly 앱이 없는 컴퓨터에서 recly-events를 직접 돌리려면
-[events/README.md](https://github.com/rokrokss/recly/blob/main/events/README.md)(영어)를 따르세요.
+[recly-events 직접 실행하기](recly-events.ko.md)를 따르세요.
 
 ## 필요한 것
 
