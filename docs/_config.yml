@@ -30,9 +30,9 @@ exclude:
 # serves /policy/privacy-policy.ko from its .html file anyway.
 defaults:
   - scope: { path: "" }
-    values: { image: /assets/og.png }
+    values: { image: /assets/og.png?v=2 }
   - scope: { path: "*.ko.md" }
-    values: { lang: ko, locale: ko_KR }
+    values: { lang: ko, locale: ko_KR, image: /assets/og.ko.png }
   - scope: { path: "install.md" }
     values:
       title: Install guide
@@ -104,5 +104,6 @@ defaults:
       title: 개인정보처리방침
       lang: ko
       locale: ko_KR
+      image: /assets/og.ko.png
       description: >-
         Recly가 다루는 데이터, 그 데이터가 머무는 곳, 기기 밖으로 나가는 모든 경우. Recly에는 서버가 없습니다.

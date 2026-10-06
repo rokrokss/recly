@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  recly.dev link preview (og:image) and the GitHub social preview. ?lang=en|ko&variant=a|b|c&w=1200&h=630.
+  1200×630 is the og:image size; GitHub asks for 1280×640. render.sh draws both.
+  a: dark ground, the watch recording, its sound turning into a transcript (the Play feature graphic a).
+  b: the site's own light ground, the same watch.
+  c: the red ground of the Play feature graphic b, no device. This is the one in use (render.mjs).
+-->
+<style>
+  :root {
+    --ground: #0E0F12; --ink: #F2F2F0; --muted: #9A9CA3; --record: #FA4D56; --accent: #4589FF;
+    --paper: #F7F7F5; --paper-ink: #111111; --paper-muted: #5E5E5A; --paper-record: #DA1E28;
+    --sans: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { overflow: hidden; }
+  body { position: relative; font-family: var(--sans); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  .layer { position: absolute; inset: 0; }
+  .glow { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+  .rings i { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); border: 1.5px solid; }
+
+  .brand { display: flex; align-items: center; gap: 14px; margin-bottom: 30px; }
+  .mark { width: 46px; height: 46px; border-radius: 10px; background: #fff; display: grid; place-items: center; }
+  .mark i { width: 24px; height: 24px; border: 3.5px solid #111; border-radius: 2px; display: grid; place-items: center; }
+  .mark i::after { content: ""; width: 9px; height: 9px; background: #DA1E28; border-radius: 1px; }
+  .brand span { font-size: 28px; font-weight: 700; letter-spacing: -0.3px; }
+  h1 { font-weight: 800; white-space: nowrap; }
+  h1 em { font-style: normal; }
+  .meta { font-family: var(--mono); white-space: nowrap; }
+
+  /* The watch, recording: the same drawing as the Play feature graphic a. */
+  .watch { position: absolute; width: 230px; height: 230px; transform: translate(-50%, -50%) scale(var(--s, 1)); }
+  .watch .band { position: absolute; left: 50%; width: 128px; transform: translateX(-50%); background: linear-gradient(90deg, #1b1d22, #272a30 50%, #1b1d22); }
+  .watch .case { position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(145deg, #4a4e57, #23252b 40%, #15161a 70%, #3a3d45);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55), inset 0 1px 2px rgba(255,255,255,0.22); }
+  .watch .crown { position: absolute; left: 226px; width: 10px; height: 30px; border-radius: 4px; background: repeating-linear-gradient(0deg, #5a5e67 0 2px, #34373e 2px 4px); }
+  .watch .screen { position: absolute; left: 12px; top: 12px; width: 206px; height: 206px; border-radius: 50%; background: #0C0D10; box-shadow: 0 0 0 5px #050506; }
+  .watch .time { position: absolute; left: 0; right: 0; top: 18px; text-align: center; font-size: 14px; color: #C8C8C8; font-weight: 500; }
+  .watch .timer { position: absolute; left: 0; right: 0; top: 44px; text-align: center; font-size: 46px; font-weight: 400; letter-spacing: 1px; color: #EEE; }
+  .watch .state { position: absolute; left: 0; right: 0; top: 102px; text-align: center; font-family: var(--mono); font-size: 13px; color: var(--record); }
+  .watch .btn { position: absolute; left: 75px; top: 126px; width: 56px; height: 56px; border-radius: 5px; background: var(--record); display: grid; place-items: center;
+    box-shadow: 0 0 30px rgba(250,77,86,0.55); }
+  .watch .btn::after { content: ""; width: 18px; height: 18px; border-radius: 2px; background: #0C0D10; }
+  .wave { position: absolute; display: flex; align-items: center; gap: 4px; transform: translateY(-50%); }
+  .wave b { display: block; width: 5px; border-radius: 3px; }
+  .lines { position: absolute; width: 96px; transform: translateY(-50%); }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 12px; border: 1px solid; border-radius: 3px; padding: 2px 7px; margin-bottom: 9px; }
+  .line { height: 10px; border-radius: 5px; margin-bottom: 9px; }
+
+  /* a */
+  .a { background: var(--ground); color: var(--ink); }
+  .a .dots { background-image: radial-gradient(circle at 1px 1px, rgba(154,156,163,0.15) 1.2px, transparent 1.5px); background-size: 16px 16px; }
+  .a h1 em { color: var(--record); }
+  .a .meta { color: var(--muted); }
+  .a .chip { color: var(--muted); border-color: #2c2f36; }
+  .a .line { background: linear-gradient(90deg, rgba(242,242,240,0.85), rgba(242,242,240,0.3)); }
+
+  /* b */
+  .b { background: var(--paper); color: var(--paper-ink); }
+  .b .dots { background-image: radial-gradient(circle at 1px 1px, rgba(136,136,132,0.26) 1.2px, transparent 1.5px); background-size: 16px 16px; }
+  .b .brand .mark { background: #fff; box-shadow: 0 0 0 1.5px #111; }
+  .b h1 em { color: var(--paper-record); }
+  .b .meta { color: var(--paper-muted); }
+  .b .chip { color: var(--paper-muted); border-color: #D9D9D4; background: #fff; }
+  .b .line { background: linear-gradient(90deg, rgba(17,17,17,0.78), rgba(17,17,17,0.18)); }
+  .b .watch .case { box-shadow: 0 28px 60px rgba(17,17,17,0.28), inset 0 1px 2px rgba(255,255,255,0.22); }
+
+  /* c */
+  .c { background: linear-gradient(135deg, #E0262F 0%, #C21C25 55%, #9E1720 100%); color: #fff; }
+  .c .dots { background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.16) 1.2px, transparent 1.5px); background-size: 16px 16px; }
+  .c .center { position: absolute; left: 0; right: 0; text-align: center; }
+  .c .brand { justify-content: center; margin-bottom: 26px; }
+  .c .flow { position: absolute; left: 0; right: 0; display: flex; justify-content: center; align-items: center; gap: 24px; }
+  .c .rec { width: 52px; height: 52px; border: 4px solid #fff; border-radius: 7px; display: grid; place-items: center; }
+  .c .rec::after { content: ""; width: 18px; height: 18px; background: #fff; border-radius: 2px; }
+  .c .bars { display: flex; align-items: center; gap: 5px; height: 66px; }
+  .c .bars i { display: block; width: 6px; border-radius: 3px; background: rgba(255,255,255,0.9); }
+  .c .arrow { font-family: var(--mono); font-size: 28px; opacity: 0.8; }
+  .c .txt { width: 170px; }
+  .c .txt i { display: block; height: 10px; border-radius: 5px; background: rgba(255,255,255,0.85); margin: 8px 0; }
+  .c .ai { font-family: var(--mono); font-size: 20px; border: 2px solid rgba(255,255,255,0.9); border-radius: 4px; padding: 7px 13px; white-space: nowrap; }
+  .c .meta { opacity: 0.85; }
+</style>
+</head>
+<body>
+<script>
+  const q = new URLSearchParams(location.search);
+  const ko = q.get('lang') === 'ko';
+  const variant = ['a', 'b', 'c'].includes(q.get('variant')) ? q.get('variant') : 'a';
+  const W = +(q.get('w') || 1200), H = +(q.get('h') || 630);
+  document.documentElement.lang = ko ? 'ko' : 'en';
+  document.documentElement.style.width = document.body.style.width = W + 'px';
+  document.documentElement.style.height = document.body.style.height = H + 'px';
+
+  const T = ko ? {
+    h1: 'AI 녹음기는<br>이미 <em>손목</em>에<br>있습니다.', h1c: 'AI 녹음기는<br>이미 손목에 있습니다.',
+    meta: '오픈소스 · recly.dev', state: '녹음 중', ai: '→ 내 AI',
+  } : {
+    h1: 'Your AI recorder<br>is already<br>on your <em>wrist</em>.', h1c: 'Your AI recorder is<br>already on your wrist.',
+    meta: 'open source · recly.dev', state: 'Recording', ai: '→ your AI',
+  };
+  // Everything is laid out on a 1200×630 grid and scaled to the asked size about the centre.
+  const cx = W / 2, cy = H / 2, k = Math.min(W / 1200, H / 630);
+  const X = x => cx + (x - 600) * k, Y = y => cy + (y - 315) * k;
+
+  function watch(x, y, s) {
+    return `<div class="watch" style="left:${X(x)}px;top:${Y(y)}px;--s:${(s * k).toFixed(3)}">
+      <div class="band" style="top:-230px;height:260px;border-radius:24px 24px 0 0"></div>
+      <div class="band" style="top:200px;height:260px;border-radius:0 0 24px 24px"></div>
+      <div class="case"></div><div class="crown" style="top:66px"></div><div class="crown" style="top:134px"></div>
+      <div class="screen"><div class="time">9:41</div><div class="timer">00:12</div>
+        <div class="state">${T.state}</div><div class="btn"></div></div></div>`;
+  }
+  function sound(x, y, light) {
+    const hs = [22, 46, 72, 52, 90, 62, 78, 46, 32, 20, 12];
+    const bars = hs.map((h, i) => { const t = i / (hs.length - 1), m = (a, b) => Math.round(a + (b - a) * t);
+      const from = light ? [218, 30, 40] : [250, 77, 86], to = light ? [15, 98, 254] : [69, 137, 255];
+      return `<b style="height:${h * k}px;width:${5 * k}px;background:rgb(${m(from[0], to[0])},${m(from[1], to[1])},${m(from[2], to[2])});opacity:${(1 - t * 0.5).toFixed(2)}"></b>`; }).join('');
+    return `<div class="wave" style="left:${X(x)}px;top:${Y(y)}px;gap:${4 * k}px">${bars}</div>`;
+  }
+  function transcript(x, y) {
+    return `<div class="lines" style="left:${X(x)}px;top:${Y(y)}px;width:${96 * k}px"><div class="chip">00:00</div><div class="line" style="width:100%"></div><div class="line" style="width:84%"></div>
+      <div class="line" style="width:62%"></div><div class="chip" style="margin-top:6px">00:53</div><div class="line" style="width:94%"></div><div class="line" style="width:70%"></div></div>`;
+  }
+  function copy(x, y, size) {
+    return `<div class="copy" style="position:absolute;left:${X(x)}px;top:${Y(y)}px;transform-origin:0 0;transform:scale(${k})">
+      <div class="brand"><div class="mark"><i></i></div><span>Recly</span></div>
+      <h1 id="h1" style="font-size:${size}px;line-height:1.02;letter-spacing:${ko ? -2.2 : -2.4}px">${T.h1}</h1>
+      <p class="meta" id="meta" style="margin-top:30px;font-size:19px">${T.meta}</p></div>`;
+  }
+
+  let html = '';
+  if (variant === 'a' || variant === 'b') {
+    const light = variant === 'b';
+    const wx = 812, wy = 315;
+    const rings = [330, 430, 530, 630].map((d, i) => `<i style="left:${X(wx)}px;top:${Y(wy)}px;width:${d * k}px;height:${d * k}px;border-color:rgba(${light ? '218,30,40' : '250,77,86'},${((light ? 0.20 : 0.22) - i * 0.045).toFixed(3)})"></i>`).join('');
+    html = `<div class="layer ${variant}"><div class="layer dots"></div>
+      <div class="glow" style="left:${X(wx)}px;top:${Y(wy)}px;width:${700 * k}px;height:${700 * k}px;background:radial-gradient(closest-side, rgba(${light ? '218,30,40' : '250,77,86'},${light ? 0.12 : 0.30}), rgba(${light ? '218,30,40' : '250,77,86'},${light ? 0.03 : 0.08}) 50%, transparent 75%)"></div>
+      <div class="glow" style="left:${X(1090)}px;top:${Y(300)}px;width:${420 * k}px;height:${420 * k}px;background:radial-gradient(closest-side, rgba(${light ? '15,98,254' : '69,137,255'},${light ? 0.10 : 0.18}), transparent 70%)"></div>
+      <div class="rings">${rings}</div>
+      ${copy(76, 138, ko ? 70 : 66)}
+      ${watch(wx, wy, 1.1)}
+      ${sound(wx + 140, wy, light)}
+      ${transcript(wx + 244, wy)}
+    </div>`;
+  } else {
+    const hs = [16, 30, 48, 34, 62, 44, 54, 32, 22, 38, 18];
+    html = `<div class="layer c"><div class="layer dots"></div>
+      <div class="glow" style="left:${X(600)}px;top:${Y(315)}px;width:${1000 * k}px;height:${700 * k}px;background:radial-gradient(closest-side, rgba(255,255,255,0.10), transparent 70%)"></div>
+      <div class="center" style="top:${Y(112)}px;transform-origin:50% 0;transform:scale(${k})">
+        <div class="brand"><div class="mark"><i></i></div><span>Recly</span></div>
+        <h1 id="h1" style="font-size:${ko ? 74 : 70}px;line-height:1.04;letter-spacing:${ko ? -2.6 : -2.4}px">${T.h1c}</h1></div>
+      <div class="flow" style="top:${Y(430)}px;transform-origin:50% 0;transform:scale(${k})"><div class="rec"></div><div class="bars">${hs.map(h => `<i style="height:${h}px"></i>`).join('')}</div>
+        <div class="arrow">→</div><div class="txt"><i style="width:100%"></i><i style="width:82%"></i><i style="width:60%"></i></div>
+        <div class="ai">${T.ai}</div></div>
+      <p class="meta" id="meta" style="position:absolute;left:0;right:0;top:${Y(548)}px;text-align:center;font-size:${19 * k}px">${T.meta}</p>
+    </div>`;
+  }
+  document.body.innerHTML = html;
+  if (ko) document.querySelectorAll('.ai').forEach(e => e.style.fontFamily = 'var(--sans)');
+
+  // Keep the copy inside a 56 px margin and clear of the watch's sound.
+  const text = e => { const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect(); };
+  const out = [];
+  for (const id of ['h1', 'meta']) {
+    const b = text(document.getElementById(id)), m = 56 * k;
+    if (b.left < m || b.right > W - m || b.top < 40 * k || b.bottom > H - 40 * k) out.push(`${id} ${[b.left, b.top, b.right, b.bottom].map(Math.round)}`);
+  }
+  if (variant !== 'c') {
+    const copyRight = Math.max(text(document.getElementById('h1')).right, text(document.getElementById('meta')).right);
+    const caseLeft = document.querySelector('.watch .case').getBoundingClientRect().left;
+    if (copyRight > caseLeft - 24 * k) out.push(`copy ends ${Math.round(copyRight)}, watch starts ${Math.round(caseLeft)}`);
+    const wave = document.querySelector('.wave').getBoundingClientRect(), lines = document.querySelector('.lines').getBoundingClientRect();
+    if (wave.right > lines.left - 8 * k) out.push('the sound runs into the transcript');
+    if (lines.right > W - 40 * k) out.push('transcript too close to the edge');
+  }
+  document.body.dataset.m = JSON.stringify({ out });
+</script>
+</body>
+</html>
