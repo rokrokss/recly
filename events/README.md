@@ -55,8 +55,8 @@ There is no Google sign-in step: the app's copy uses the Google Drive connection
 has, handing it the app's short-lived Drive access token, so it needs no `google-token.json`.
 
 1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
-2. Enter the tunnel ID and key and choose **Save**, then turn the switch on. Google Drive must be
-   connected in the app.
+2. Enter the tunnel ID as **Tunnel ID** and the API key as **Tunnel key**, choose **Save**, then turn
+   the switch on. Google Drive must be connected in the app.
 3. When the line under the switch says **Add the app in ChatGPT and ask your agent to subscribe**, do
    [steps 5 and 6](#5-add-it-to-chatgpt) below.
 
@@ -166,13 +166,14 @@ status` should show `Tunnel: … ready` about 30 seconds after the start.
 
 Keep the server running for this step: ChatGPT talks to it while you create the app.
 
-1. In ChatGPT, open **Plugins** → **+** → **Create custom MCP server**.
+1. In ChatGPT, open [Plugins](https://chatgpt.com/plugins), choose **+** and add a custom MCP server.
 2. Name it, for example `Recly events`. Connection: **Tunnel**, and pick your tunnel. Authentication:
    **No authentication**.
    Use your personal workspace. The app has no sign-in of its own, and who else in a shared
    workspace could use it, and see your recording titles, has not been checked.
-3. Create it. The app's page should list the event `recording.transcribed` and the tools
-   `get_pending_events` and `acknowledge_events`.
+3. ChatGPT warns about the risk of a custom server: choose **I understand and want to continue**,
+   then **Create as a plugin**. The app's page should list the event `recording.transcribed` and the
+   tools `get_pending_events` and `acknowledge_events`.
 
 ### 6. Subscribe your agent
 

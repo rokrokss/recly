@@ -1827,7 +1827,7 @@ class ShellModel(
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
         /** docs/14 "Agent connection": the set-up guide — the OpenAI tunnel, the ChatGPT app, the prompt. */
-        const val AGENT_GUIDE_URL = "https://github.com/rokrokss/recly/blob/main/events/README.md"
+        const val AGENT_GUIDE_URL = "https://github.com/rokrokss/recly/blob/main/events/README.md#from-the-recly-mac-or-windows-app"
 
         /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"

@@ -154,7 +154,9 @@ the time of writing, ChatGPT Pro or Business Premium, outside the EEA) or a Work
 web; an OpenAI Platform account for the tunnel; and a computer that stays on.
 
 **On a Mac or Windows PC, it is built into the app** (0.2.0 and later). In Settings → Agent
-connection, enter your tunnel ID and key and turn on **Tell ChatGPT about new recordings**. It uses
+connection, enter your tunnel ID and its key, a restricted OpenAI API key
+([how to create both](events/README.md#2-create-an-openai-tunnel-and-its-key)), and turn on
+**Tell ChatGPT about new recordings**. It uses
 the Google Drive connection the app already has, so there is no second Google sign-in and no
 terminal, and it runs while the app runs. **Anywhere else** (a server, Linux, a computer without the
 Recly app), run recly-events yourself: it signs in to Google once, also on a server without a browser.

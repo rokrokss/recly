@@ -138,7 +138,8 @@ Recly의 파이프라인은 일부러 녹취록에서 끝납니다. 녹취록을
 ChatGPT Pro 또는 Business Premium, EEA 밖) 또는 ChatGPT 웹의 Work 채팅, 터널을 만들 OpenAI Platform 계정,
 켜 두는 컴퓨터 한 대.
 
-**Mac·Windows에서는 앱에 들어 있습니다**(0.2.0부터). 설정 → 에이전트 연결에서 터널 ID와 키를 넣고
+**Mac·Windows에서는 앱에 들어 있습니다**(0.2.0부터). 설정 → 에이전트 연결에서 터널 ID와 그 키(권한을
+제한한 OpenAI API 키, [만드는 법](events/README.md#2-create-an-openai-tunnel-and-its-key)(영어))를 넣고
 **ChatGPT에 새 녹음 전달하기**를 켜세요. 앱이 이미 가진 Google Drive 연결을 그대로 쓰므로 Google에 다시
 로그인하거나 터미널을 열 필요가 없고, 앱이 켜져 있는 동안 동작합니다. **그 밖의 곳**(서버, Linux, Recly
 앱이 없는 컴퓨터)에서는 recly-events를 직접 실행합니다. Google 로그인은 한 번이면 되고, 브라우저가 없는

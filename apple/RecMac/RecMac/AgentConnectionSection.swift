@@ -17,7 +17,7 @@ struct AgentConnectionSection: View {
     @State private var changingTunnel = false
 
     /// The set-up guide: the OpenAI tunnel and key, the ChatGPT app, the subscription prompt.
-    static let guide = URL(string: "https://github.com/rokrokss/recly/blob/main/events/README.md")!
+    static let guide = URL(string: "https://github.com/rokrokss/recly/blob/main/events/README.md#from-the-recly-mac-or-windows-app")!
 
     var body: some View {
         VStack(spacing: 0) {
