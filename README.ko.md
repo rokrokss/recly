@@ -135,7 +135,7 @@ Recly의 파이프라인은 일부러 녹취록에서 끝납니다. 녹취록을
 오디오나 대화 내용은 전하지 않습니다.
 
 필요한 것: Google Drive에 저장되는 녹음(iCloud나 로컬 폴더는 해당 없음), ChatGPT dot(이 글을 쓰는 시점에
-ChatGPT Pro 또는 Business Premium, EEA 밖) 또는 ChatGPT 웹의 Work 채팅, 터널을 만들 OpenAI Platform 계정,
+ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, 터널을 만들 OpenAI Platform 계정,
 켜 두는 컴퓨터 한 대.
 
 **Mac·Windows에서는 앱에 들어 있습니다**(0.2.0부터). 설정 → 에이전트 연결에서 터널 ID와 그 키(권한을

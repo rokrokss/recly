@@ -10,10 +10,12 @@ The phone and watch apps are on the stores:
 The watch cannot upload on its own — it hands recordings to the phone app, so **install both**.
 
 The Mac and Windows apps, and APKs of the Android apps for sideloading, are on
-[GitHub Releases](https://github.com/rokrokss/recly/releases), tagged `v<version>-build.<n>`. All
-of them are marked pre-release, so GitHub's "latest release" link does not reach them — open the
-Releases list and take the newest. Each release carries `SHA256SUMS`: with the files in one
-folder, `shasum -a 256 -c SHA256SUMS` checks them.
+[GitHub Releases](https://github.com/rokrokss/recly/releases), tagged `v<version>-build.<n>`. The
+newest app release is marked Latest, and [this link](https://github.com/rokrokss/recly/releases/latest)
+opens it; the `events-v…` releases next to it are recly-events, not the apps. Each release carries
+`SHA256SUMS`: with the files in one folder, `shasum -a 256 -c SHA256SUMS` checks them.
+
+Once Recly is installed, [set it up](setup.md): connect your storage and choose how to transcribe.
 
 ## Android phone
 

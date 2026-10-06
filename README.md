@@ -150,8 +150,8 @@ needs no public address and there is still no Recly server. It passes on the rec
 and Drive links, never the audio or what was said.
 
 What you need: recordings stored in Google Drive (not iCloud or a local folder); a ChatGPT dot (at
-the time of writing, ChatGPT Pro or Business Premium, outside the EEA) or a Work chat on ChatGPT
-web; an OpenAI Platform account for the tunnel; and a computer that stays on.
+the time of writing, ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland and the
+UK) or a Work chat on ChatGPT web; an OpenAI Platform account for the tunnel; and a computer that stays on.
 
 **On a Mac or Windows PC, it is built into the app** (0.2.0 and later). In Settings → Agent
 connection, enter your tunnel ID and its key, a restricted OpenAI API key

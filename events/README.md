@@ -36,7 +36,8 @@ Google and to OpenAI.
 - **Recly storing recordings in Google Drive.** Recordings kept in iCloud or a local folder are not
   seen.
 - **A ChatGPT agent that can subscribe to MCP events:** a dot or a Work chat on ChatGPT web. At the
-  time of writing dots need ChatGPT Pro or Business Premium and are not available in the EEA.
+  time of writing dots need ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland
+  and the UK.
 - **ChatGPT's Google Drive app**, connected to the Google account Recly uploads to.
 - **An OpenAI Platform account** to create the tunnel and its key, at
   [platform.openai.com](https://platform.openai.com).
