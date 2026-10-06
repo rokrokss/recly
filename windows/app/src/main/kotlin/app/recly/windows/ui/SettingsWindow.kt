@@ -257,8 +257,7 @@ private fun Startup(model: ShellModel, strings: Strings) {
  * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
  * go to Google Drive. It runs on this PC's own Drive connection, so the one thing it asks for is an
  * OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
- * off, and the set-up guide stays in view until an agent subscribes. On, one line under the switch says
- * how the server is.
+ * off, and the set-up guide is always there. On, one line under the switch says how the server is.
  */
 @Composable
 private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
@@ -285,11 +284,9 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     // Off, the phase says nothing: the line is there only while the switch is on.
     AgentStatus(agent, strings)
     AgentTunnel(agent, strings)
-    if (!agent.subscribed) {
-        SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-        Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
-            BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
-        }
+    SectionFootnote(strings[Str.AGENT_FOOTNOTE])
+    Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
+        BlueprintButton(strings[Str.AGENT_GUIDE], model::openAgentGuide, tone = ButtonTone.QUIET)
     }
 }
 

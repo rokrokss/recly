@@ -248,10 +248,6 @@ class AgentEvents(
     var tunnelKeySaved by mutableStateOf(false)
         private set
 
-    /** An agent is subscribed: the set-up guide has nothing left to say. */
-    var subscribed by mutableStateOf(false)
-        private set
-
     /** The last tunnel save failed (a bad ID, no key). */
     var saveFailed by mutableStateOf(false)
         private set
@@ -351,7 +347,6 @@ class AgentEvents(
         if (current != null) {
             tunnelId = current.tunnelId.orEmpty()
             tunnelKeySaved = current.tunnelKey
-            subscribed = current.subscription == AgentEventsSubscription.ACTIVE
         }
         when (AgentEventsAction.reconcile(enabled && driveStorage == true && driveConnected(), gaveUp, child != null, current)) {
             AgentEventsAction.START -> current?.let { startChild(runner, it.home) }

@@ -164,8 +164,6 @@ public final class AgentEventsController: ObservableObject {
     @Published public private(set) var tunnelId = ""
     /// A tunnel key is saved; the key itself is never read back.
     @Published public private(set) var tunnelKeySaved = false
-    /// An agent is subscribed: the set-up guide has nothing left to say.
-    @Published public private(set) var subscribed = false
     /// The last tunnel save failed (a bad ID, no key).
     @Published public private(set) var saveFailed = false
 
@@ -285,7 +283,6 @@ public final class AgentEventsController: ObservableObject {
         if let status {
             tunnelId = status.tunnelId ?? ""
             tunnelKeySaved = status.tunnelKey
-            subscribed = status.subscription == .active
         }
         let on = enabled && driveStorage == true && driveConnected?() == true
         switch AgentEventsAction.reconcile(enabled: on, gaveUp: gaveUp, childRunning: child != nil, status: status) {

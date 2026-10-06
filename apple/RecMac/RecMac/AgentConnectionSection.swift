@@ -5,8 +5,7 @@ import SwiftUI
 /// a ChatGPT agent hears about each new transcript. Off by default, and only where recordings go to
 /// Google Drive. It runs on this Mac's own Drive connection, so the one thing it asks for is an
 /// OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
-/// off, and the set-up guide stays in view until an agent subscribes. On, one line under the switch
-/// says how the server is.
+/// off, and the set-up guide is always there. On, one line under the switch says how the server is.
 struct AgentConnectionSection: View {
     @ObservedObject var agent: AgentEventsController
     @Environment(\.blueprint) private var blueprint
@@ -32,15 +31,13 @@ struct AgentConnectionSection: View {
                 // Off, the phase says nothing: the line is there only while the switch is on.
                 status
                 tunnelRow
-                if !agent.subscribed {
-                    SectionFootnote(loc("Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel."))
-                    HStack {
-                        BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(Self.guide) }
-                        Spacer(minLength: 0)
-                    }
-                    .padding(.horizontal, Space.m)
-                    .padding(.bottom, Space.s)
+                SectionFootnote(loc("Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel."))
+                HStack {
+                    BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(Self.guide) }
+                    Spacer(minLength: 0)
                 }
+                .padding(.horizontal, Space.m)
+                .padding(.bottom, Space.s)
             }
         }
         .onAppear {

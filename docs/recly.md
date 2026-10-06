@@ -2697,8 +2697,9 @@ The program keeps its own home directory (`~/Library/Application Support/recly-e
 `Contents/Resources/THIRD-PARTY-recly-events.txt`), and the `Embed recly-events` build phase signs it like the app, with the hardened runtime. A build made without Go has
 no program, and the switch says `Not in this build`.
 
-**The section (2026-10-06)**, top to bottom: the switch, one status line (only while the switch is on), the `OpenAI tunnel` row, and, only until an agent
-subscribes, the footnote (`Runs recly-events on this Mac. It reads only the names and links …`) and `Set-up guide`. The switch only decides whether
+**The section (2026-10-06)**, top to bottom: the switch, one status line (only while the switch is on), the `OpenAI tunnel` row, the footnote
+(`Runs recly-events on this Mac. It reads only the names and links …`) and `Set-up guide`. The footnote and the guide stay after an agent subscribes:
+the subscription recly-events remembers can outlive the agent or the ChatGPT app, and a new tunnel or key needs the guide again. The switch only decides whether
 recly-events runs: the tunnel row, the footnote and the guide are there with it off too, so it can be set up first and turned on last, or a tunnel changed
 without starting it; off, a saved tunnel starts nothing. There is no Google row: the copy the app runs reaches Drive through the app's own connection, the
 `Drive connected` row in the same pane. (A `Google sign-in` row — recly-events' own sign-in, compared with the upload account by `permissionId` — was
