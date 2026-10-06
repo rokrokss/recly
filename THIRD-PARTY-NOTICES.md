@@ -75,3 +75,21 @@ Media Foundation's AAC encoder will not produce (ADR-019). The same obligations 
 > downloaded [here](https://github.com/BtbN/FFmpeg-Builds/releases).
 
 FFmpeg's own licensing terms: <https://www.ffmpeg.org/legal.html>.
+
+## Store badges
+
+`docs/design/badges/` holds the App Store and Google Play badges that the README and recly.dev link
+to the stores with. They are the stores' own artwork, used as their guidelines allow, and are not
+covered by Recly's licence.
+
+- `app-store-en.svg`, `app-store-ko.svg`: Apple's "Download on the App Store" badge, black, as served
+  on 2026-10-06 by <https://toolbox.marketingtools.apple.com/api/badges/download-on-the-app-store/black/en-us>
+  (and `/ko-kr`). Guidelines: <https://developer.apple.com/app-store/marketing/guidelines/>.
+- `google-play-en.png`, `google-play-ko.png`: Google's "Get it on Google Play" badge, as served on
+  2026-10-06 by <https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png>
+  (and `ko_badge_web_generic.png`), with only the transparent padding cropped. Guidelines:
+  <https://partnermarketinghub.withgoogle.com/brands/google-play/google-play/lockups-icons-badges/>.
+
+Apple and the Apple logo are trademarks of Apple Inc., registered in the U.S. and other countries
+and regions. App Store is a service mark of Apple Inc. Google Play and the Google Play logo are
+trademarks of Google LLC.

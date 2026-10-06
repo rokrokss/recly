@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Recly — your AI recorder is already on your wrist</title>
-  <meta name="description" content="Skip the $159 AI recorder. Recly turns the Galaxy Watch or Apple Watch you already wear into one, transcribes on the device for free, and keeps the audio in your own Google Drive. Open source, no Recly server. On the App Store and Google Play.">
+  <meta name="description" content="Skip the $159 AI recorder. Recly turns the Galaxy Watch or Apple Watch you already wear into one, transcribes for free on a supported device, and keeps the audio in your own Google Drive. Open source, no Recly server. On the App Store and Google Play.">
   <meta name="apple-itunes-app" content="app-id=6809930443">
   <link rel="canonical" href="https://recly.dev/">
   <link rel="alternate" hreflang="en" href="https://recly.dev/">
@@ -25,8 +25,8 @@
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" href="/design/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
-  <link rel="stylesheet" href="/assets/site.css?v=9">
-  <script src="/assets/site.js?v=3" defer></script>
+  <link rel="stylesheet" href="/assets/site.css?v=10">
+  <script src="/assets/site.js?v=4" defer></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -42,6 +42,22 @@
       <a href="#skills">Notes</a>
       <a href="#open-source">Open source</a>
     </nav>
+    <details class="menu">
+      <summary aria-label="Menu"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M2 4h12M2 8h12M2 12h12"/></svg></summary>
+      <nav class="menu-panel" aria-label="Site">
+        <a href="#how">How it works</a>
+        <a href="#features">Why Recly</a>
+        <a href="#transcription">Transcription</a>
+        <a href="#privacy">Privacy</a>
+        <a href="#skills">Notes</a>
+        <a href="#open-source">Open source</a>
+        <a href="/install.html">Install guide</a>
+        <a href="/setup.html">Set-up guide</a>
+        <a href="/agent.html">ChatGPT agent guide</a>
+        <a href="/faq.html">FAQ</a>
+        <a href="/policy/privacy-policy">Privacy policy</a>
+      </nav>
+    </details>
     <div class="header-actions">
       <details class="lang">
         <summary aria-label="Language: English"><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c1.8 1.9 2.7 4 2.7 6.5S9.8 12.6 8 14.5M8 1.5C6.2 3.4 5.3 5.5 5.3 8s.9 4.6 2.7 6.5"/></svg><span class="code">EN</span><svg class="chev" viewBox="0 0 10 10" width="10" height="10" fill="none" stroke="currentColor" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4"/></svg></summary>
@@ -63,7 +79,7 @@
     <div>
       <p class="hero-meta"><span class="dot" aria-hidden="true"></span>Free · Open source · AGPL-3.0-or-later · <span>Now on the <a href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">App Store</a> and <a href="https://play.google.com/store/apps/details?id=app.recly">Google Play</a></span></p>
       <h1>Your AI recorder is already on your wrist.</h1>
-      <p class="lede">A Plaud costs $159 or more, plus a plan once the free 300 minutes a month run out. Recly turns the Galaxy Watch or Apple Watch you already wear into that recorder with one shortcut, transcribes on the device for free, and leaves the notes to the AI you already pay for. A ChatGPT agent starts on the minutes by itself, the moment the transcript lands.</p>
+      <p class="lede">A Plaud costs $159 or more, plus a plan once the free 300 minutes a month run out. Recly turns the Galaxy Watch or Apple Watch you already wear into that recorder with one shortcut, transcribes for free on a supported device, and leaves the notes to the AI you already pay for. A ChatGPT agent starts on the minutes by itself, the moment the transcript lands.</p>
       <div class="hero-actions">
         <a class="btn btn-primary" href="#download">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
@@ -79,7 +95,7 @@
       </ul>
     </div>
     <figure class="demo">
-      <video src="/design/demo.mp4" width="1920" height="1080" autoplay muted loop playsinline preload="auto" aria-label="Double-press the Galaxy Watch home key to start recording; the watch hands the recording to the phone, which uploads it to your Google Drive and transcribes it, and the transcript appears in the app and in your Drive folder"></video>
+      <video src="/design/demo.mp4" poster="/design/demo-poster.jpg" width="1920" height="1080" autoplay muted loop playsinline preload="auto" aria-label="Double-press the Galaxy Watch home key to start recording; the watch hands the recording to the phone, which uploads it to your Google Drive and transcribes it, and the transcript appears in the app and in your Drive folder"></video>
     </figure>
     <figure class="diagram">
       <img src="/design/flow.svg" width="1200" height="480" alt="Press record on your watch, phone, Mac or Windows PC → the phone or PC uploads to your Google Drive and transcribes with your own key → anything, with your own AI">
@@ -165,13 +181,13 @@
       </article>
       <article class="card">
         <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V18a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-8l-2-2.5H4a1 1 0 0 0-1 1z"/></svg></div>
-        <h3>Your Drive is the only storage</h3>
-        <p>Recordings go to a folder like <code>recly/memo/2026-10/</code> in your own Google Drive, through <code>drive.file</code>, the narrowest permission Google offers.</p>
+        <h3>Your storage, nobody else's</h3>
+        <p>Recordings go to a folder like <code>recly/memo/2026-10/</code> in your own Google Drive, through <code>drive.file</code>, the narrowest permission Google offers. iPhone and Mac can use your iCloud instead, and iPhone, Mac, Windows and Android phones a local folder you pick, such as an Obsidian vault.</p>
       </article>
       <article class="card">
         <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg></div>
         <h3>Nothing gets lost</h3>
-        <p>No network? Recordings wait and retry. The original is never deleted before Drive has confirmed the upload.</p>
+        <p>No network? Recordings wait and retry. The original is never deleted before the upload is confirmed.</p>
       </article>
       <article class="card">
         <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg></div>
@@ -195,10 +211,10 @@
       <p class="lede">Monospace for the data, square nodes for state, a single blue accent. Light and dark follow your system.</p>
     </div>
     <ul class="gallery">
-      <li><img src="/design/screenshots/en/01-record-for-your-ai.png" width="540" height="1173" loading="lazy" alt="Record for your AI: your recordings, your Drive, your choice of transcription"></li>
-      <li><img src="/design/screenshots/en/02-transcribe.png" width="540" height="1173" loading="lazy" alt="Transcribe on device: read along, then jump to any moment"></li>
-      <li><img src="/design/screenshots/en/03-drive.png" width="540" height="1173" loading="lazy" alt="Saved to your Drive: no Recly account, no Recly server"></li>
-      <li><img src="/design/screenshots/en/04-record.png" width="540" height="1173" loading="lazy" alt="Record in one tap on iPhone or Apple Watch"></li>
+      <li><picture><source srcset="/design/screenshots/en/01-record-for-your-ai.webp" type="image/webp"><img src="/design/screenshots/en/01-record-for-your-ai.png" width="540" height="1173" loading="lazy" alt="Record for your AI: your recordings, your Drive, your choice of transcription"></picture></li>
+      <li><picture><source srcset="/design/screenshots/en/02-transcribe.webp" type="image/webp"><img src="/design/screenshots/en/02-transcribe.png" width="540" height="1173" loading="lazy" alt="Transcribe on device: read along, then jump to any moment"></picture></li>
+      <li><picture><source srcset="/design/screenshots/en/03-drive.webp" type="image/webp"><img src="/design/screenshots/en/03-drive.png" width="540" height="1173" loading="lazy" alt="Saved to your Drive: no Recly account, no Recly server"></picture></li>
+      <li><picture><source srcset="/design/screenshots/en/04-record.webp" type="image/webp"><img src="/design/screenshots/en/04-record.png" width="540" height="1173" loading="lazy" alt="Record in one tap on iPhone or Apple Watch"></picture></li>
     </ul>
   </div>
 </section>
@@ -221,7 +237,7 @@
       </article>
       <article class="card">
         <h3>Off <span class="badge badge-soon">Upload only</span></h3>
-        <p>Keep the original upload to Drive and skip transcription entirely.</p>
+        <p>Keep the original upload and skip transcription entirely.</p>
       </article>
     </div>
     <div class="split">
@@ -230,8 +246,8 @@
         <table class="ledger">
           <thead><tr><th>Device</th><th>Engine</th><th>Needs</th></tr></thead>
           <tbody>
-            <tr><td>iPhone · Mac</td><td data-label="Engine">Apple's speech recognizer</td><td data-label="Needs">iOS or macOS 26, supported hardware and language assets</td></tr>
-            <tr><td>Android · Windows</td><td data-label="Engine">Qwen3-ASR 0.6B, open source</td><td data-label="Needs">64-bit, 6 GiB+ memory (an 8 GB phone in practice), a one-time ~1 GB download you start</td></tr>
+            <tr><td>iPhone · Mac</td><td data-label="Engine">Apple's speech recognizer</td><td data-label="Needs">iOS or macOS 26 or later, supported hardware and language assets</td></tr>
+            <tr><td>Android · Windows</td><td data-label="Engine">Qwen3-ASR 0.6B, open source</td><td data-label="Needs">64-bit, 6 GiB+ reported memory (an 8 GB device in practice), ~1 GB one-time download</td></tr>
             <tr><td>Watches</td><td data-label="Engine">—</td><td data-label="Needs">Record and hand off; the paired phone transcribes</td></tr>
           </tbody>
         </table>
@@ -252,7 +268,7 @@
     <div class="section-head">
       <p class="kicker"><b>06</b> Privacy</p>
       <h2>There is no Recly server to trust.</h2>
-      <p class="lede">The only places data can go are your Google Drive, the transcription provider you chose, and your own paired watch or phone. Automatic notes, if you set them up, add your own ChatGPT account.</p>
+      <p class="lede">Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on iPhone and Mac, or a local folder that stays on your device), to the transcription provider you chose with your own key, between your own paired watch and phone, and, if you turn on automatic minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, never the audio or what was said.</p>
     </div>
     <div class="stats">
       <div><span class="n">0</span><span class="t">Recly servers, databases or accounts</span></div>
@@ -263,10 +279,10 @@
       <thead><tr><th>Step</th><th>Where it happens</th><th>What leaves your device</th></tr></thead>
       <tbody>
         <tr><td>Recording</td><td data-label="Where it happens">Your watch, phone or desktop</td><td data-label="What leaves your device">Nothing. A watch hands the audio to your paired phone, and only there.</td></tr>
-        <tr><td>Storage</td><td data-label="Where it happens">Your Google Drive</td><td data-label="What leaves your device">The audio parts and a small metadata file, to your own account.</td></tr>
-        <tr><td>Transcription</td><td data-label="Where it happens">On device, or a provider you chose with your own key</td><td data-label="What leaves your device">On device: no audio to any speech service. External: the joined audio to the provider you selected. Results are written next to the recording in Drive.</td></tr>
-        <tr><td>Notes</td><td data-label="Where it happens">Your own AI agent</td><td data-label="What leaves your device">The agent reads the transcript from your Drive and writes wherever you keep notes (Notion, in the example skills). For automatic notes, recly-events tells your ChatGPT agent about each new transcript: its name, title and Drive links, never the audio or what was said.</td></tr>
-        <tr><td>Settings, API keys</td><td data-label="Where it happens">Your device</td><td data-label="What leaves your device">Nothing is synced. Export moves configuration only; keys are entered separately on each device.</td></tr>
+        <tr><td>Storage</td><td data-label="Where it happens">Your Google Drive (or your iCloud on iPhone and Mac, or a local folder you pick on iPhone, Mac, Windows and Android)</td><td data-label="What leaves your device">To Google Drive or iCloud: the audio parts and a small metadata file, to your own account. A local folder: nothing leaves the device.</td></tr>
+        <tr><td>Transcription</td><td data-label="Where it happens">On device, or a provider you chose with your own key</td><td data-label="What leaves your device">On device: no audio to any speech service. External: the joined audio to the provider you selected. Results are written next to the recording.</td></tr>
+        <tr><td>Notes</td><td data-label="Where it happens">Your own AI agent</td><td data-label="What leaves your device">The agent reads the transcript from your storage and writes wherever you keep notes (Notion, in the example skills). For automatic notes, recly-events tells your ChatGPT agent about each new transcript: its name, title and Drive links, never the audio or what was said.</td></tr>
+        <tr><td>Settings, API keys</td><td data-label="Where it happens">Your device</td><td data-label="What leaves your device">Nothing is synced. Settings file → Export settings moves configuration only; keys are entered separately on each device.</td></tr>
       </tbody>
     </table>
     <p class="fine">Every network path, with nothing left out, is in the <a href="/policy/privacy-policy">privacy policy</a>. Any change that adds a network call has to update that list first.</p>
@@ -278,7 +294,7 @@
     <div class="section-head">
       <p class="kicker"><b>07</b> Notes</p>
       <h2>Notes are your agent's job, not a paid tier.</h2>
-      <p class="lede">Recly's pipeline ends at the transcript on purpose, and hands it to the AI you already use. A ChatGPT agent starts on its own the moment a transcript lands; any agent writes notes when you ask, from two example skills you can change or replace. Drive stays the archive the app writes.</p>
+      <p class="lede">Recly's pipeline ends at the transcript on purpose, and hands it to the AI you already use. A ChatGPT agent starts on its own the moment a transcript lands; any agent writes notes when you ask, from two example skills you can change or replace. Your storage stays the archive the app writes.</p>
     </div>
     <div class="split">
       <div>
@@ -312,7 +328,7 @@
             <button class="btn btn-quiet" type="button" data-copy="cmd-subscribe" data-done="Copied ✓" data-fail="Copy failed">Copy</button>
           </div>
         </div>
-        <p class="fine">Change step 3 to whatever you want done with each recording; keep the others. You need recordings in Google Drive, a ChatGPT dot (Business Premium, or Pro outside the EEA, Switzerland and the UK, at the time of writing) or a Work chat on ChatGPT web, an OpenAI Platform account for the tunnel, and a computer that stays on. <a href="/agent.html">Set-up guide</a>.</p>
+        <p class="fine">Change step 3 to whatever you want done with each recording; keep the others. You need recordings stored in Google Drive; a ChatGPT dot (at the time of writing, ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT web; ChatGPT's Google Drive app, connected to the Google account Recly uploads to; an OpenAI Platform account for the tunnel and its key; and a computer that stays on. <a href="/agent.html">ChatGPT agent guide</a>.</p>
       </div>
     </div>
     <div class="split">
@@ -344,7 +360,7 @@
             <button class="btn btn-quiet" type="button" data-copy="cmd-plugin" data-done="Copied ✓" data-fail="Copy failed">Copy</button>
           </div>
         </div>
-        <p class="fine">Using the Claude or ChatGPT app? Upload <a data-asset="^recly-notes\.zip$" href="https://github.com/rokrokss/recly/releases">recly-notes.zip</a> and <a data-asset="^recly-notion\.zip$" href="https://github.com/rokrokss/recly/releases">recly-notion.zip</a>. Setup for each app is in <a href="https://github.com/rokrokss/recly/blob/main/skills/README.md">skills/README.md</a>.</p>
+        <p class="fine">In the Claude app, upload <a data-asset="^recly-notes\.zip$" href="https://github.com/rokrokss/recly/releases/latest">recly-notes.zip</a> and <a data-asset="^recly-notion\.zip$" href="https://github.com/rokrokss/recly/releases/latest">recly-notion.zip</a> from the <a href="https://github.com/rokrokss/recly/releases/latest">latest release</a> as skills. In the ChatGPT app, unzip them and upload the five files inside to a project. Setup for each app is in <a href="https://github.com/rokrokss/recly/blob/main/skills/README.md">skills/README.md</a>.</p>
         <ul class="prompts">
           <li>"Make minutes from the latest recording and put them in Notion."</li>
           <li>"What did we decide about pricing last week?"</li>
@@ -360,40 +376,40 @@
     <div class="section-head">
       <p class="kicker"><b>08</b> Download</p>
       <h2>Get Recly.</h2>
-      <p class="lede">The phone and watch apps are on the App Store and Google Play. The Mac and Windows apps are on GitHub Releases. The <a href="/install.html">install guide</a> walks through each platform, and the <a href="/setup.html">set-up guide</a> through the first settings.</p>
+      <p class="lede">The phone and watch apps are on the App Store and Google Play. The Mac and Windows apps are on GitHub Releases. The <a href="/install.html">install guide</a> walks through each platform, the <a href="/setup.html">set-up guide</a> through the first settings, and the <a href="/faq.html">FAQ</a> answers the first questions.</p>
     </div>
-    <div class="downloads">
-      <article class="dl">
-        <header><div><h3>Android · Galaxy Watch</h3><p class="req">Android&nbsp;14+ · Wear&nbsp;OS&nbsp;5+</p></div><span class="badge badge-ok">Google Play</span></header>
-        <p>The phone records, signs in to Google, uploads and transcribes. The watch records and hands off to the phone. Both install from Google Play, or sideload the APKs with the <a href="/install.html#android-phone">install guide</a>.</p>
-        <div class="actions">
-          <a class="btn btn-primary" href="https://play.google.com/store/apps/details?id=app.recly">Get it on Google Play</a>
-        </div>
-      </article>
-      <article class="dl">
+    <div class="downloads" data-yours-label="For this device">
+      <article class="dl" data-platform="ios">
         <header><div><h3>iPhone · Apple Watch</h3><p class="req">iOS&nbsp;17+ · watchOS&nbsp;10+</p></div><span class="badge badge-ok">App Store</span></header>
         <p>The iPhone records, signs in to Google, uploads and transcribes. The Apple Watch app comes with it and records in one tap.</p>
         <div class="actions">
-          <a class="btn btn-primary" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443">Download on the App Store</a>
+          <a class="store-badge" href="https://apps.apple.com/app/recly-record-for-your-ai/id6809930443"><img src="/design/badges/app-store-en.svg" width="120" height="40" alt="Download on the App Store"></a>
         </div>
       </article>
-      <article class="dl">
+      <article class="dl" data-platform="android">
+        <header><div><h3>Android · Galaxy Watch</h3><p class="req">Android&nbsp;14+ · Wear&nbsp;OS&nbsp;5+</p></div><span class="badge badge-ok">Google Play</span></header>
+        <p>The phone records, signs in to Google, uploads and transcribes. The watch records and hands off to the phone. Both install from Google Play, or sideload the APKs with the <a href="/install.html#android-phone">install guide</a>.</p>
+        <div class="actions">
+          <a class="store-badge" href="https://play.google.com/store/apps/details?id=app.recly"><img src="/design/badges/google-play-en.png" width="134" height="40" alt="Get it on Google Play"></a>
+        </div>
+      </article>
+      <article class="dl" data-platform="mac">
         <header><div><h3>macOS</h3><p class="req">macOS&nbsp;14.4+ · Apple&nbsp;Silicon</p></div><span class="badge badge-ok">Notarized</span></header>
         <p>Menu-bar app for meetings: your mic and the call's audio as separate tracks.</p>
         <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-macOS-.*\.dmg$" href="https://github.com/rokrokss/recly/releases">Download .dmg <span class="size"></span></a>
+          <a class="btn btn-primary" data-asset="^Recly-macOS-.*\.dmg$" href="https://github.com/rokrokss/recly/releases/latest">Download .dmg <span class="size"></span></a>
         </div>
       </article>
-      <article class="dl">
-        <header><div><h3>Windows</h3><p class="req">Windows&nbsp;11 · x64</p></div><span class="badge badge-soon">Unsigned</span></header>
-        <p>Tray app for meetings. SmartScreen will warn until the MSI is code-signed; the <a href="/install.html#windows">install guide</a> shows how to get past it.</p>
+      <article class="dl" data-platform="windows">
+        <header><div><h3>Windows</h3><p class="req">Windows&nbsp;11 · x64</p></div><span class="badge badge-soon">Beta · Unsigned</span></header>
+        <p>Tray app for meetings. Beta: not yet checked on a real Windows PC, so please report what you find in <a href="https://github.com/rokrokss/recly/issues">Issues</a>. The MSI is not code-signed, so SmartScreen warns; the <a href="/install.html#windows">install guide</a> shows how to get past it.</p>
         <div class="actions">
-          <a class="btn btn-primary" data-asset="^Recly-.*\.msi$" href="https://github.com/rokrokss/recly/releases">Download .msi <span class="size"></span></a>
+          <a class="btn btn-primary" data-asset="^Recly-.*\.msi$" href="https://github.com/rokrokss/recly/releases/latest">Download .msi <span class="size"></span></a>
         </div>
       </article>
     </div>
     <p class="release-line">
-      <span>Latest: <a data-version href="https://github.com/rokrokss/recly/releases">see Releases</a> · every release carries <code>SHA256SUMS</code> and <code>BUILDINFO.md</code></span>
+      <span>Latest app release: <a data-version href="https://github.com/rokrokss/recly/releases/latest">see Releases</a> · every app release carries <code>SHA256SUMS</code> and <code>BUILDINFO.md</code></span>
       <a href="https://github.com/rokrokss/recly/releases">All releases →</a>
     </p>
   </div>
@@ -409,6 +425,7 @@
       <ul class="links">
         <li><a href="https://github.com/rokrokss/recly"><span>Source code</span><small>rokrokss/recly on GitHub</small></a></li>
         <li><a href="https://github.com/rokrokss/recly/issues/new/choose"><span>Issues</span><small>Bugs, questions and ideas</small></a></li>
+        <li><a href="/faq.html"><span>FAQ</span><small>Common questions and terms</small></a></li>
         <li><a href="https://github.com/rokrokss/recly/blob/main/CONTRIBUTING.md"><span>Contributing</span><small>Conventions for changes</small></a></li>
         <li><a href="https://github.com/rokrokss/recly/blob/main/SECURITY.md"><span>Security</span><small>Report vulnerabilities privately</small></a></li>
         <li><a href="/development.html"><span>Development</span><small>Build and test every client</small></a></li>
@@ -453,7 +470,8 @@
           <li><a href="#download">Download</a></li>
           <li><a href="/install.html">Install guide</a></li>
           <li><a href="/setup.html">Set-up guide</a></li>
-          <li><a href="/agent.html">ChatGPT agent</a></li>
+          <li><a href="/agent.html">ChatGPT agent guide</a></li>
+          <li><a href="/faq.html">FAQ</a></li>
           <li><a href="/policy/privacy-policy">Privacy policy</a></li>
           <li><a href="/ko/" hreflang="ko" lang="ko">한국어</a></li>
         </ul>
@@ -480,6 +498,7 @@
     <div class="footer-base">
       <span>AGPL-3.0-or-later · "Recly" and the Recly logo are trademarks of the project.</span>
       <span>Contact <a href="mailto:q0115643@gmail.com">q0115643@gmail.com</a></span>
+      <span>Apple and the Apple logo are trademarks of Apple Inc., registered in the U.S. and other countries and regions. App Store is a service mark of Apple Inc. Google Play and the Google Play logo are trademarks of Google LLC.</span>
     </div>
   </div>
 </footer>
