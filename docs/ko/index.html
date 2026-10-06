@@ -84,6 +84,9 @@
     <figure class="diagram">
       <img src="/design/flow.ko.svg" width="1200" height="480" alt="워치·폰·Mac·Windows PC에서 녹음 → 폰이나 PC가 내 Google Drive에 올리고 내 키로 전사 → 그다음은 내 AI로 무엇이든">
     </figure>
+    <figure class="diagram">
+      <img src="/design/agent-flow.ko.svg" width="1200" height="480" loading="lazy" alt="녹취록이 내 Google Drive에 올라오면 내 컴퓨터의 recly-events가 10초 안에 찾아 OpenAI MCP Events로 내 ChatGPT 에이전트에게 서명된 recording.transcribed 이벤트를 보내고, 에이전트가 알아서 시작해 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을 씁니다">
+    </figure>
   </div>
 </section>
 
@@ -277,9 +280,6 @@
       <h2>노트는 유료 기능이 아니라 내 에이전트의 몫.</h2>
       <p class="lede">Recly의 파이프라인은 일부러 녹취록에서 끝나고, 녹취록을 이미 쓰는 AI에게 넘깁니다. ChatGPT 에이전트는 녹취록이 올라오는 순간 알아서 시작하고, 어떤 에이전트든 부탁하면 예시 스킬 두 개로 노트를 씁니다. 스킬은 고치거나 바꿔 쓰면 됩니다. Drive는 앱이 쓰는 원본 보관소입니다.</p>
     </div>
-    <figure class="diagram agent">
-      <img src="/design/agent-flow.ko.svg" width="1200" height="480" loading="lazy" alt="녹취록이 내 Google Drive에 올라오면 내 컴퓨터의 recly-events가 10초 안에 찾아 OpenAI MCP Events로 내 ChatGPT 에이전트에게 서명된 recording.transcribed 이벤트를 보내고, 에이전트가 알아서 시작해 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을 씁니다">
-    </figure>
     <div class="split">
       <div>
         <p class="sub">자동: ChatGPT와 함께</p>
