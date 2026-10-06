@@ -12,10 +12,21 @@ Work 채팅)가 보통 1분 안에 알아서 회의록을 쓰기 시작합니다
 이 페이지는 앱에서 설정하는 방법입니다. 서버, Linux, Recly 앱이 없는 컴퓨터에서 recly-events를 직접 돌리려면
 [recly-events 직접 실행하기](recly-events.ko.md)를 따르세요.
 
+## 용어
+
+| 용어 | 뜻 |
+|---|---|
+| dot | 한 번 만들어 두면 이벤트가 올 때 스스로 일을 시작하는 ChatGPT 에이전트. |
+| Work 채팅 | ChatGPT 웹의 Work 모드에서 여는 채팅. dot처럼 이벤트를 구독할 수 있습니다. |
+| MCP 이벤트 | 앱이 ChatGPT에 보내 에이전트를 깨우는 짧은 메시지. recly-events는 `recording.transcribed`를 보냅니다. |
+| Secure MCP Tunnel | 공개 주소 없이 ChatGPT가 내 컴퓨터의 recly-events에 닿게 하는 OpenAI의 중계. |
+| 터널 키 | 터널을 읽고 쓰는 권한만 있는 제한된 OpenAI API 키. |
+
 ## 필요한 것
 
 - **Recly Mac 또는 Windows 앱.** 녹음을 Google Drive에 저장하고, Google Drive가 연결되어 있어야 합니다.
-  iCloud나 로컬 폴더에 저장한 녹음은 보지 못합니다.
+  iCloud나 로컬 폴더에 저장한 녹음은 보지 못합니다. Windows 앱은 베타입니다. 아직 실제 Windows PC에서 확인하지
+  못했으니, 발견한 문제는 [Issues](https://github.com/rokrokss/recly/issues)에 알려 주세요.
 - **이벤트를 구독할 수 있는 ChatGPT 에이전트**: dot, 또는 ChatGPT 웹의 Work 채팅. 이 글을 쓰는 시점에 dot은
   ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro가 필요합니다.
 - **ChatGPT의 [Google Drive 앱](https://help.openai.com/en/articles/10929079-google-drive-app-and-setup-in-chatgpt)**.
@@ -53,8 +64,9 @@ OpenAI Platform 화면은 영어라서 버튼 이름도 영어로 적습니다.
 
 1. ChatGPT에서 [플러그인](https://chatgpt.com/plugins)을 열고 **+** → **맞춤형 MCP 서버 만들기**를 고릅니다.
 2. 이름은 예를 들어 `Recly events`로 짓습니다. 연결 방식은 **터널**을 고르고 내 터널을 선택합니다. 인증은 없음
-   (No authentication)으로 둡니다. 개인 워크스페이스에서 만드세요. 이 앱에는 자체 로그인이 없어서, 공유
-   워크스페이스의 다른 사람이 쓰거나 녹음 제목을 볼 수 있는지는 확인되지 않았습니다.
+   (No authentication)으로 둡니다. dot이나 Work 채팅이 있는 워크스페이스에 추가하세요. 이 앱에는 자체 로그인이
+   없어서, 공유 워크스페이스의 다른 사람이 쓰거나 녹음 제목을 볼 수 있는지는 확인되지 않았습니다. 개인
+   워크스페이스라면 이 문제를 따질 필요가 없습니다.
 3. ChatGPT가 맞춤형 서버의 위험을 경고하면 계속하겠다고 확인하고(I understand and want to continue) 플러그인으로
    만듭니다(Create as a plugin). 앱 페이지에 이벤트 `recording.transcribed`와 도구 `get_pending_events`,
    `acknowledge_events`가 보이면 됩니다.

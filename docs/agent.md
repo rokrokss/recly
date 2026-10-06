@@ -13,10 +13,22 @@ The agent then reads the transcript with ChatGPT's Google Drive app.
 This page sets it up from the app. To run recly-events on a server, on Linux or on a computer
 without the Recly app, follow [Running recly-events yourself](recly-events.md) instead.
 
+## Terms
+
+| Term | Meaning |
+|---|---|
+| dot | A ChatGPT agent you create once, which can start work by itself when an event arrives. |
+| Work chat | A chat in ChatGPT's Work mode on ChatGPT web. Like a dot, it can subscribe to events. |
+| MCP event | A short message an app sends to ChatGPT that starts your agent. recly-events sends `recording.transcribed`. |
+| Secure MCP Tunnel | OpenAI's relay that lets ChatGPT reach recly-events on your computer without a public address. |
+| Tunnel key | A restricted OpenAI API key that may only read and use your tunnels. |
+
 ## What you need
 
 - **The Recly Mac or Windows app**, storing recordings in Google Drive, with Google Drive connected.
-  Recordings in iCloud or a local folder are not seen.
+  Recordings in iCloud or a local folder are not seen. The Windows app is in beta: it has not yet
+  been checked on a real Windows PC, so please report what you find in
+  [Issues](https://github.com/rokrokss/recly/issues).
 - **A ChatGPT agent that can subscribe to events**: a dot, or a Work chat on ChatGPT web. At the
   time of writing, dots need ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland
   and the UK.
@@ -58,9 +70,9 @@ the next step: ChatGPT talks to it while you create the app.
 
 1. In ChatGPT, open [Plugins](https://chatgpt.com/plugins), choose **+** and add a custom MCP server.
 2. Name it, for example `Recly events`. Connection: **Tunnel**, and pick your tunnel.
-   Authentication: **No authentication**. Use your personal workspace: the app has no sign-in of
-   its own, and who else in a shared workspace could use it, and see your recording titles, has not
-   been checked.
+   Authentication: **No authentication**. Add it in the workspace your dot or Work chat lives in.
+   The app has no sign-in of its own, and who else in a shared workspace could use it, and see your
+   recording titles, has not been checked; a personal workspace avoids the question.
 3. ChatGPT warns about the risk of a custom server: choose **I understand and want to continue**,
    then **Create as a plugin**. The app's page should list the event `recording.transcribed` and the
    tools `get_pending_events` and `acknowledge_events`.

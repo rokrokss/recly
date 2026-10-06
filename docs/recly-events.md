@@ -12,6 +12,17 @@ It runs on that computer, listens on no network port, and makes only outgoing co
 Google and to OpenAI. It reads the names, IDs and links of new transcripts in your Drive, never
 what was said.
 
+## Terms
+
+| Term | Meaning |
+|---|---|
+| dot | A ChatGPT agent you create once, which can start work by itself when an event arrives. |
+| Work chat | A chat in ChatGPT's Work mode on ChatGPT web. Like a dot, it can subscribe to events. |
+| MCP event | A short message an app sends to ChatGPT that starts your agent. recly-events sends `recording.transcribed`. |
+| Secure MCP Tunnel | OpenAI's relay that lets ChatGPT reach recly-events on your computer without a public address. |
+| Tunnel key | A restricted OpenAI API key that may only read and use your tunnels. |
+| Linger | A systemd setting that keeps your user services running after you log out. |
+
 ## What you need
 
 - **Recly storing recordings in Google Drive.** Recordings in iCloud or a local folder are not seen.
@@ -23,6 +34,9 @@ what was said.
 - **An OpenAI Platform account** at [platform.openai.com](https://platform.openai.com), for the
   tunnel and its key.
 - **A computer that stays on.** While it sleeps nothing is lost: it catches up when it wakes.
+  recly-events has been run on macOS so far. On Linux (Ubuntu 24.04 in a container), the sign-in
+  without a browser and the systemd service have been tried, but not yet with a real Google account
+  and tunnel.
 
 ## 1. Install it
 
@@ -35,8 +49,13 @@ Download the file for your computer from the newest
 | Linux | `recly-events_<version>_linux_amd64.tar.gz` or `…_linux_arm64.tar.gz` |
 | Windows | `recly-events_<version>_windows_amd64.zip`, not code-signed and not yet tried on a Windows PC |
 
+**Beta.** recly-events for Windows is built and tested in CI but has not yet been checked on a real
+Windows PC. Please report what you find in [Issues](https://github.com/rokrokss/recly/issues).
+
 To check a download, put `SHA256SUMS` from the same release next to it and run
-`shasum -a 256 -c SHA256SUMS --ignore-missing`.
+`shasum -a 256 --ignore-missing -c SHA256SUMS`. In Windows PowerShell, run
+`Get-FileHash .\recly-events_<version>_windows_amd64.zip -Algorithm SHA256` and compare the hash with
+that file's line in `SHA256SUMS`.
 
 - **Mac:** open the `.pkg` and follow the installer; it asks for your password. It puts
   `recly-events` in `/usr/local/bin`, which is on your `PATH`, and its licences in
@@ -97,7 +116,10 @@ recly-events service install
   `sudo loginctl enable-linger $USER` if that is refused), so it keeps running after you log out and
   starts at boot; `service install` says so when it is needed.
 - **Windows:** `service install` is not supported. Create a Task Scheduler task that runs
-  `recly-events serve` at logon.
+  `recly-events serve` at logon. These steps have not yet been tried on a Windows PC: in Task
+  Scheduler, choose **Create Basic Task**, the trigger **When I log on** and the action
+  **Start a program**, then enter the full path of `recly-events.exe` under **Program/script** and
+  `serve` under **Add arguments**.
 
 Or run `recly-events serve` in a terminal and stop it with Ctrl-C. About 30 seconds after the start,
 `recly-events status` shows `Tunnel: … ready`.

@@ -26,7 +26,9 @@ The **Storage** section at the top offers:
 
 - **Google Drive.** Choose **Connect Drive** and sign in. Google asks to let Recly see only the files
   it creates (`drive.file`): Recly cannot see anything else in your Drive. You can record before
-  connecting; the recordings upload once you connect. The row then reads **Drive connected**.
+  connecting; the recordings upload once you connect. The row then shows the Google account, or
+  **Drive connected** where the app has no account name (Windows always), next to
+  **Disconnect Drive**.
 - **iCloud.** There is no button in the app. On an iPhone, open Settings → [your name] → iCloud →
   Drive, turn on **Sync this iPhone**, then turn on Recly under **Saved to iCloud** → **See All**. On
   a Mac, turn on **Sync this Mac**, then Recly under **Apps Syncing to iCloud Drive**; **Open iCloud
@@ -47,9 +49,10 @@ Under **Recording processing** → **Transcription**:
 - **On device.** No audio leaves the device and nothing is paid per minute. Download the speech model
   once: **Download model** in the settings, or on the **Transcribe on this device** card that appears
   on the Record tab, the Mac popover or the Windows tray popup. It is Apple's speech model on iPhone
-  and Mac, and Qwen3-ASR 0.6B (about 1 GB) on Android and Windows. On-device transcription does not
-  separate speakers, and it is offered only on iOS and macOS 26 or later, and on Android phones and
-  Windows PCs with at least 6 GB of memory.
+  and Mac, and Qwen3-ASR 0.6B on Android and Windows. On-device transcription does not separate
+  speakers. iPhone and Mac need iOS or macOS 26 or later, supported hardware and language assets.
+  Android phones and Windows PCs need a 64-bit device with at least 6 GiB of memory as the device
+  reports it, which in practice means an 8 GB phone or PC, and a one-time download of about 1 GB.
 - **External API.** The audio goes to a provider you choose, with your own key, at the provider's
   price. Pick the **Provider**, paste the **API key** and choose **Save key**; the row then reads
   **Saved on this device**. CLOVA Speech and Azure AI Speech also need an **Invoke URL**; RTZR takes
@@ -59,6 +62,31 @@ Under **Recording processing** → **Transcription**:
   - iPhone: ElevenLabs, CLOVA Speech, AssemblyAI, RTZR, OpenAI, Groq, Deepgram, Azure AI Speech. On
     saving a key, the iPhone asks once whether recordings may be sent to that provider.
 - **Off.** Recordings are uploaded and nothing is transcribed.
+
+### Where to get a key
+
+Each provider issues its key on the page below (checked 2026-10-06). Each page asks you to sign in
+or create an account first, and the provider bills that account at its own price.
+
+| Provider | Where to get the key |
+|---|---|
+| AssemblyAI | [Dashboard → API Keys](https://www.assemblyai.com/dashboard/api-keys) |
+| Azure AI Speech | In the Azure portal, your Speech or Foundry resource → **Keys and Endpoint**: **KEY 1** is the key and **Endpoint** is the Invoke URL ([guide](https://learn.microsoft.com/en-us/azure/ai-services/speech-service/fast-transcription-create)) |
+| CLOVA Speech | NAVER Cloud console → CLOVA Speech → Domain → **Launch Builder** → **Settings** → **Integration information**: the Secret Key is the key, next to the Invoke URL ([guide](https://guide.ncloud-docs.com/docs/en/clovaspeech-builder-long#check-api-call-information)) |
+| Daglo | [Developers console](https://developers.daglo.ai/console) → the token menu |
+| Deepgram | [Console](https://console.deepgram.com/) → your project's **Settings** → **API Keys** |
+| ElevenLabs | [API keys](https://elevenlabs.io/app/developers/api-keys) |
+| Gladia | [API keys](https://app.gladia.io/apikeys) |
+| Groq | [API keys](https://console.groq.com/keys) |
+| Mistral AI | [API keys](https://console.mistral.ai/api-keys) |
+| OpenAI | [API keys](https://platform.openai.com/api-keys) |
+| Rev AI | [Access token](https://www.rev.ai/access-token) |
+| RTZR | [Console](https://developers.rtzr.ai/console/): issue a client ID and secret, then enter them as `client ID:client secret` |
+| Speechmatics | [API keys](https://portal.speechmatics.com/settings/api-keys/) |
+| Together AI | [API keys](https://api.together.ai/settings/projects/~current/api-keys) |
+
+Keys from the separate EU data-residency accounts of ElevenLabs and Rev AI do not work: Recly calls
+their standard hosts.
 
 **Spoken language** sets the language of your recordings: **Automatic**, **Korean and English**
 for mixed speech, or one language. On-device transcription needs a language chosen.
@@ -131,6 +159,8 @@ check the values and save, then enter the key there. The storage choice stays pe
   optimisation for Galaxy Wearable. "Waiting to send" on the watch means the phone has not taken it
   yet.
 - **Uploads wait on mobile data**: **Upload on Wi-Fi only** is on in the phone's settings.
-- **No On device choice**: the device is below iOS or macOS 26, or has less than 6 GB of memory.
+- **No On device choice**: iPhone and Mac need iOS or macOS 26 or later and supported hardware;
+  Android phones and Windows PCs a 64-bit device with 6 GiB+ reported memory (an 8 GB device in
+  practice).
 - **Mac, "You are listening on the built-in speaker"**: use headphones, so the other side of a call
   stays off your microphone track.

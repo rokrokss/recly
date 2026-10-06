@@ -10,6 +10,17 @@ recly-events를 직접 실행합니다.
 recly-events는 그 컴퓨터에서 돌고, 네트워크 포트를 열지 않으며, Google과 OpenAI로 나가는 연결만 만듭니다. Drive에
 새로 생긴 녹취록의 이름, ID, 링크만 읽고 대화 내용은 읽지 않습니다.
 
+## 용어
+
+| 용어 | 뜻 |
+|---|---|
+| dot | 한 번 만들어 두면 이벤트가 올 때 스스로 일을 시작하는 ChatGPT 에이전트. |
+| Work 채팅 | ChatGPT 웹의 Work 모드에서 여는 채팅. dot처럼 이벤트를 구독할 수 있습니다. |
+| MCP 이벤트 | 앱이 ChatGPT에 보내 에이전트를 깨우는 짧은 메시지. recly-events는 `recording.transcribed`를 보냅니다. |
+| Secure MCP Tunnel | 공개 주소 없이 ChatGPT가 내 컴퓨터의 recly-events에 닿게 하는 OpenAI의 중계. |
+| 터널 키 | 터널을 읽고 쓰는 권한만 있는 제한된 OpenAI API 키. |
+| Linger | 로그아웃한 뒤에도 사용자 서비스를 계속 돌게 하는 systemd 설정. |
+
 ## 필요한 것
 
 - **Recly가 녹음을 Google Drive에 저장할 것.** iCloud나 로컬 폴더에 저장한 녹음은 보지 못합니다.
@@ -18,7 +29,9 @@ recly-events는 그 컴퓨터에서 돌고, 네트워크 포트를 열지 않으
 - **ChatGPT의 [Google Drive 앱](https://help.openai.com/en/articles/10929079-google-drive-app-and-setup-in-chatgpt)**.
   Recly가 업로드하는 Google 계정으로 연결되어 있어야 합니다.
 - **OpenAI Platform 계정**([platform.openai.com](https://platform.openai.com)). 터널과 키를 만들 때 씁니다.
-- **켜 두는 컴퓨터 한 대.** 잠자기 중에도 잃는 것은 없고, 깨어나면 밀린 것을 따라잡습니다.
+- **켜 두는 컴퓨터 한 대.** 잠자기 중에도 잃는 것은 없고, 깨어나면 밀린 것을 따라잡습니다. 지금까지 실제로
+  돌려 본 것은 macOS뿐입니다. Linux(컨테이너 안의 Ubuntu 24.04)에서는 브라우저 없는 로그인과 systemd 서비스까지
+  시험했지만, 실제 Google 계정과 터널로는 아직 시험하지 않았습니다.
 
 ## 1. 설치하기
 
@@ -31,8 +44,12 @@ recly-events는 그 컴퓨터에서 돌고, 네트워크 포트를 열지 않으
 | Linux | `recly-events_<버전>_linux_amd64.tar.gz` 또는 `…_linux_arm64.tar.gz` |
 | Windows | `recly-events_<버전>_windows_amd64.zip`. 코드 서명이 없고, 아직 Windows PC에서 시험하지 않았습니다 |
 
-받은 파일을 확인하려면 같은 릴리스의 `SHA256SUMS`를 옆에 두고 `shasum -a 256 -c SHA256SUMS --ignore-missing`을
-실행합니다.
+**베타.** Windows용 recly-events는 CI에서 빌드하고 테스트하지만 아직 실제 Windows PC에서 확인하지 못했습니다.
+발견한 문제는 [Issues](https://github.com/rokrokss/recly/issues)에 알려 주세요.
+
+받은 파일을 확인하려면 같은 릴리스의 `SHA256SUMS`를 옆에 두고 `shasum -a 256 --ignore-missing -c SHA256SUMS`를
+실행합니다. Windows PowerShell에서는 `Get-FileHash .\recly-events_<version>_windows_amd64.zip -Algorithm SHA256`을
+실행해 나온 해시를 `SHA256SUMS`의 그 파일 줄과 비교합니다.
 
 - **Mac:** `.pkg`를 열고 설치 프로그램을 따라가면 됩니다. 암호를 묻습니다. `recly-events`는 `PATH`에 들어 있는
   `/usr/local/bin`에, 라이선스 파일은 `/usr/local/share/doc/recly-events`에 설치됩니다. 명령줄로 설치하려면:
@@ -91,7 +108,10 @@ recly-events service install
   `sudo loginctl enable-linger $USER`). 그래야 로그아웃한 뒤에도 돌고 부팅할 때 시작합니다. 필요하면
   `service install`이 알려 줍니다.
 - **Windows:** `service install`을 지원하지 않습니다. 로그온할 때 `recly-events serve`를 실행하는 작업 스케줄러 작업을
-  만드세요.
+  만드세요. 아직 Windows PC에서 시험하지 않은 방법입니다. 작업 스케줄러에서 기본 작업 만들기(Create Basic Task)를
+  고르고, 트리거는 로그온할 때(When I log on), 동작은 프로그램 시작(Start a program)으로 정한 뒤,
+  프로그램/스크립트(Program/script)에 `recly-events.exe`의 전체 경로를, 인수 추가(Add arguments)에 `serve`를
+  넣습니다.
 
 또는 터미널에서 `recly-events serve`로 실행하고 Ctrl-C로 멈춥니다. 시작하고 30초쯤 지나면 `recly-events status`에
 `Tunnel: … ready`가 보입니다.
