@@ -4,6 +4,10 @@ Templates and scripts for the Google Play listing graphics. The app's screens in
 emulators holding demo recordings, not mock-ups. Captures and renders live in `build/play-store-assets/`
 (gitignored, like the App Store set in `build/app-store-assets/`).
 
+`clients.html` uses the same captures for the top-level README's Clients image, which `render.mjs` writes to
+`docs/design/screenshots/<lang>/clients.png` (committed). Its Apple Watch screen is
+`docs/design/screenshots/<lang>/apple-watch.png`.
+
 ## Upload map (Play Console → Grow users → Store presence → Main store listing)
 
 | Field | File in `build/play-store-assets/out/` | Spec it meets |

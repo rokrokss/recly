@@ -200,11 +200,7 @@ Claude 앱이나 ChatGPT 앱을 쓴다면 같은 파일 다섯 개가 거기서�
 여섯 클라이언트는 Kotlin Multiplatform 코어 하나를 공유합니다. 고정 녹음 처리 흐름, 재개 가능한 Drive
 업로드, 녹취 어댑터, 작업 큐가 거기 있습니다.
 
-<p align="center">
-  <img src="docs/design/screenshots/ko/galaxy-watch.png" height="170" alt="녹음 중인 Galaxy Watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/ko/android-phone.png" height="380" alt="Android 폰: 휴대전화와 Wear OS 시계에서 탭 한 번으로 녹음">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/ko/apple-watch.png" height="190" alt="녹음 대기 중인 Apple Watch">
-</p>
+<p align="center"><img src="docs/design/screenshots/ko/clients.png" width="100%" alt="녹음 중인 Galaxy Watch, Android 폰의 녹음 목록, 녹음 대기 중인 Apple Watch"></p>
 
 ## 프라이버시
 

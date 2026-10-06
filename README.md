@@ -219,11 +219,7 @@ Edit a skill, or copy one and [write your own](skills/README.md#write-your-own).
 All six share one Kotlin Multiplatform core: the fixed recording flow, resumable Drive uploads,
 transcription adapters and the job queue.
 
-<p align="center">
-  <img src="docs/design/screenshots/en/galaxy-watch.png" height="170" alt="Galaxy Watch, recording">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/en/android-phone.png" height="380" alt="Android phone: record in one tap on your phone or Wear OS watch">&nbsp;&nbsp;
-  <img src="docs/design/screenshots/en/apple-watch.png" height="190" alt="Apple Watch, ready to record">
-</p>
+<p align="center"><img src="docs/design/screenshots/en/clients.png" width="100%" alt="Galaxy Watch recording, the Android phone's list of recordings, and Apple Watch ready to record"></p>
 
 ## Privacy
 

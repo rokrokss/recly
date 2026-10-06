@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Renders the Google Play graphics (README.md) from screenshot.html, feature.html, docs/design/icon.svg
-// and the app captures in build/play-store-assets/captures/<lang>/, into build/play-store-assets/out/.
+// and the app captures in build/play-store-assets/captures/<lang>/, into build/play-store-assets/out/,
+// and the top-level README's Clients image from clients.html into docs/design/screenshots/<lang>/.
 // Usage: node scripts/play-store/render.mjs. Needs Google Chrome and ffmpeg.
 // Every page reports what spills in document.body.dataset.m; a spill stops the run.
 import { spawn, execFileSync } from 'node:child_process';
@@ -72,10 +73,12 @@ async function withChrome(fn) {
   }
 }
 
-// One page → one PNG. `alpha` keeps the alpha channel (the icon: Play asks for 32-bit PNG);
-// everything else is flattened to 24-bit RGB, which Play requires for screenshots and the feature graphic.
+// One page → one PNG. `alpha` keeps the alpha channel over a transparent page background (the icon, which Play
+// asks for as 32-bit PNG, and the README image's rounded corners); everything else is flattened to 24-bit RGB,
+// which Play requires for screenshots and the feature graphic.
 async function shoot(page, url, width, height, out, alpha = false) {
   await page.send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: false });
+  await page.send('Emulation.setDefaultBackgroundColorOverride', alpha ? { color: { r: 0, g: 0, b: 0, a: 0 } } : {});
   await page.send('Page.navigate', { url });
   for (let i = 0; i < 200 && (await evaluate(page, 'document.readyState').catch(() => '')) !== 'complete'; i++) await sleep(50);
   await evaluate(page, 'document.fonts.ready.then(() => true)');
@@ -109,6 +112,11 @@ await withChrome(async (page) => {
   // The SVG has a viewBox and no size, so it fills the 512 px viewport.
   await shoot(page, pathToFileURL(join(ROOT, 'docs/design/icon.svg')).href, 512, 512, join(OUT, 'icon-512.png'), true);
   console.log('icon 512');
+  // Not a Play graphic: the README's Clients row, from the same captures.
+  for (const lang of ['en', 'ko']) {
+    await shoot(page, pageUrl('clients.html', `lang=${lang}`), 1800, 840, join(ROOT, 'docs/design/screenshots', lang, 'clients.png'), true);
+    console.log(`${lang} README clients → docs/design/screenshots/${lang}/clients.png`);
+  }
 });
 
 // Wear OS: the app's own screens exactly as captured (1:1, 454 px), only flattened to 24-bit.

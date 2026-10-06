@@ -1,0 +1,110 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  The README's Clients row, 1800×840 with rounded corners: Galaxy Watch, Android phone and Apple Watch side by
+  side in the frames the Play screenshots use. ?lang=en|ko. Galaxy Watch and Android are the Play captures
+  (README.md); Apple Watch is docs/design/screenshots/<lang>/apple-watch.png.
+-->
+<style>
+  :root {
+    --ground: #0E0F12; --ink: #F2F2F0; --muted: #9A9CA3; --line: #2C2F36;
+    --sans: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, "Apple SD Gothic Neo", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* The card, not body, carries the ground: a body background would paint the whole canvas, corners included. */
+  html, body { width: 1800px; height: 840px; overflow: hidden; }
+  .card { position: relative; width: 1800px; height: 840px; overflow: hidden; border-radius: 36px; background: var(--ground);
+    font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  .dots { position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(154,156,163,0.16) 1.6px, transparent 2px); background-size: 28px 28px; }
+  .glow { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+  .abs { position: absolute; }
+
+  .band { position: absolute; transform: translateX(-50%); background: linear-gradient(90deg, #1b1d22, #272a30 50%, #1b1d22); }
+  .band::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 4px, transparent 4px 10px); }
+  .metal { background: linear-gradient(145deg, #4a4e57, #23252b 40%, #15161a 70%, #3a3d45);
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 2px 3px rgba(255,255,255,0.22); }
+  .crown { position: absolute; border-radius: 8px; background: repeating-linear-gradient(0deg, #5a5e67 0 4px, #34373e 4px 8px); }
+  img { display: block; width: 100%; height: 100%; }
+
+  .phone { left: 735px; top: 30px; width: 330px; height: 704px; border-radius: 50px; }
+  .phone .screen { position: absolute; left: 12px; top: 12px; right: 12px; bottom: 12px; border-radius: 42px; overflow: hidden; background: #F7F7F5; }
+  .phone .cam { position: absolute; left: 50%; top: 17px; width: 15px; height: 15px; margin-left: -7.5px; border-radius: 50%; background: #050506; }
+  .phone .key { position: absolute; right: -5px; width: 5px; border-radius: 0 3px 3px 0; background: #2a2d33; }
+
+  .gw { left: 255px; top: 225px; width: 330px; height: 330px; border-radius: 50%; }
+  .gw .bezel { position: absolute; inset: 13px; border-radius: 50%; background: #050506; }
+  .gw .face { position: absolute; inset: 20px; border-radius: 50%; overflow: hidden; }
+
+  .aw { left: 1230px; top: 210px; width: 300px; height: 360px; border-radius: 86px; }
+  .aw .face { position: absolute; left: 16px; top: 16px; right: 16px; bottom: 16px; border-radius: 70px; overflow: hidden; background: #000; }
+
+  .label { position: absolute; top: 764px; transform: translateX(-50%); font-family: var(--mono); font-size: 24px; color: var(--ink);
+    border: 2px solid var(--line); border-radius: 8px; padding: 6px 16px; background: rgba(22,24,29,0.9); white-space: nowrap; }
+  .label b { color: var(--muted); font-weight: 400; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="dots"></div>
+  <div class="glow" style="left:420px;top:390px;width:760px;height:760px;background:radial-gradient(closest-side, rgba(250,77,86,0.22), transparent 72%)"></div>
+  <div class="glow" style="left:900px;top:400px;width:900px;height:900px;background:radial-gradient(closest-side, rgba(69,137,255,0.14), transparent 70%)"></div>
+  <div class="glow" style="left:1380px;top:390px;width:700px;height:700px;background:radial-gradient(closest-side, rgba(250,77,86,0.14), transparent 72%)"></div>
+
+  <!-- Galaxy Watch -->
+  <div class="band" style="left:420px;top:30px;width:178px;height:230px;border-radius:26px 26px 0 0;-webkit-mask-image:linear-gradient(to bottom, transparent, #000 60%)"></div>
+  <div class="band" style="left:420px;top:510px;width:178px;height:230px;border-radius:0 0 26px 26px;-webkit-mask-image:linear-gradient(to top, transparent, #000 60%)"></div>
+  <div class="abs gw metal">
+    <div class="crown" style="left:322px;top:92px;width:15px;height:44px"></div>
+    <div class="crown" style="left:322px;top:196px;width:15px;height:44px"></div>
+    <div class="bezel"></div><div class="face"><img id="gw"></div>
+  </div>
+
+  <!-- Android phone -->
+  <div class="abs phone metal">
+    <div class="key" style="top:150px;height:56px"></div><div class="key" style="top:232px;height:96px"></div>
+    <div class="screen"><img id="phone"></div><div class="cam"></div>
+  </div>
+
+  <!-- Apple Watch -->
+  <div class="band" style="left:1380px;top:30px;width:196px;height:220px;border-radius:26px 26px 0 0;-webkit-mask-image:linear-gradient(to bottom, transparent, #000 60%)"></div>
+  <div class="band" style="left:1380px;top:520px;width:196px;height:220px;border-radius:0 0 26px 26px;-webkit-mask-image:linear-gradient(to top, transparent, #000 60%)"></div>
+  <div class="abs aw metal">
+    <div class="crown" style="left:296px;top:84px;width:18px;height:62px"></div>
+    <div class="abs" style="left:298px;top:176px;width:8px;height:84px;border-radius:0 4px 4px 0;background:#2a2d33"></div>
+    <div class="face"><img id="aw"></div>
+  </div>
+
+  <div class="label" style="left:420px" id="l1"></div>
+  <div class="label" style="left:900px" id="l2"></div>
+  <div class="label" style="left:1380px" id="l3"></div>
+</div>
+
+<script>
+  const ko = new URLSearchParams(location.search).get('lang') === 'ko';
+  const lang = ko ? 'ko' : 'en';
+  document.documentElement.lang = lang;
+  const captures = `../../build/play-store-assets/captures/${lang}`;
+  document.getElementById('gw').src = `${captures}/wear-rec.png`;
+  document.getElementById('phone').src = `${captures}/list.png`;
+  document.getElementById('aw').src = `../../docs/design/screenshots/${lang}/apple-watch.png`;
+  // The client names as the table above the image has them.
+  const L = ko ? ['Galaxy Watch <b>(Wear OS)</b>', 'Android 폰', 'Apple Watch'] : ['Galaxy Watch <b>(Wear OS)</b>', 'Android phone', 'Apple Watch'];
+  L.forEach((t, i) => { document.getElementById(`l${i + 1}`).innerHTML = t; });
+  if (ko) document.getElementById('l2').style.fontFamily = 'var(--sans)';
+
+  window.addEventListener('load', () => {
+    const out = [];
+    if ([...document.images].some(i => !i.complete || i.naturalWidth === 0)) out.push('image missing');
+    const boxes = [1, 2, 3].map(i => document.getElementById(`l${i}`).getBoundingClientRect());
+    if (boxes[0].right > boxes[1].left - 24 || boxes[1].right > boxes[2].left - 24) out.push('labels touch');
+    if (boxes.some(b => b.bottom > 840 - 20)) out.push('label too low');
+    document.body.dataset.m = JSON.stringify({ out });
+  });
+</script>
+</body>
+</html>
