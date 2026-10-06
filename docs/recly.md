@@ -576,7 +576,7 @@ The delete action on a list row. **One recording at a time**, and every time it 
   `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED` may be deleted, because the Job is deleted along with the recording.
 - **"Also delete from Drive"** is `files.delete`. **The folder id is read only from what the recording's `drive.upload` step left
   behind** — `output_json.folderId` (when the step finished or is parked), otherwise the resume state `state_json.folderId`.
-  **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/2026/2026-08`), so the folder is a parent shared by
+  **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/memo/2026-08`), so the folder is a parent shared by
   every other recording of that month, and deleting one recording must not delete it. If the call fails, the local deletion still goes ahead and
   leaves "Could not delete from Drive" — once the local copy is gone there is nothing left to retry from, so the user is also shown the Drive
   link.
@@ -683,7 +683,7 @@ DisconnectResult`, the core's job). The core has no means of calling revoke, so 
 
 ```
 My Drive/
-  {folder template result}/           e.g. recly/2026/2026-08/
+  {folder template result}/           e.g. recly/memo/2026-08/
     {base}/                           e.g. 20260826T010000Z_desktop_01J9ABCD/
       {base}_p001_mic.m4a
       {base}_p001_sys.m4a
@@ -837,7 +837,7 @@ subscribes to `recordings.observe()` (changes to the recording table), so adopti
 With no sign-in, the fetch is silently skipped (`skipped = "auth"`).
 
 **Premise**: under the `drive.file` scope, files created by different client IDs (the phone's Android client, the Mac's iOS client…) must be
-visible to each other within the same Cloud project. The code assumed this even before — it finds the month folder `recly/2026/2026-09` with
+visible to each other within the same Cloud project. The code assumed this even before — it finds the month folder `recly/memo/2026-09` with
 `findChild` and reuses it, so otherwise a folder with the same name would have been created again on every device. The official documentation does not state the unit,
 so **this is confirmed on a real account**: it holds if Drive has only one folder for the same month. If the files are not visible, this fetch just returns an empty
 list and breaks nothing, and the only alternative is the full `drive` scope, which conflicts with ADR-009.
@@ -1068,7 +1068,7 @@ webhook-signature: v1,{base64(HMAC-SHA256(secret, "{webhook-id}.{webhook-timesta
       { "part": 1, "track": "meta", "name": "20260826T010000Z_desktop_01J9ABCD.meta.json",
         "bytes": 2210, "sha256": "…", "drive": { "fileId": "…", "webViewLink": "…" } }
     ],
-    "folder": { "path": "recly/2026/2026-08/20260826T010000Z_desktop_01J9ABCD",
+    "folder": { "path": "recly/memo/2026-08/20260826T010000Z_desktop_01J9ABCD",
                 "drive": { "folderId": "1XyZ…", "webViewLink": "https://drive.google.com/drive/folders/1XyZ…" } },
     "workflow": { "id": "01J9ABCDEF0123456789ABCDEF", "name": "Meeting" },
     "device": { "id": "7c1e4b2a-…", "platform": "macos", "name": "MacBook Pro" }
@@ -3321,7 +3321,7 @@ originals and the automation themselves"**.
 |---|---|---|---|---|
 | 1 | Individual power users / developers who run n8n. They record solo voice memos, calls and lectures more than meetings | "The moment a recording ends, make it the input of the pipeline I have already built" | One signed webhook and one Drive folder. With a single "new item in folder" trigger, segments · tracks · metadata arrive together. The selling point is that the app does not offer to build the pipeline for you | **Almost none.** This persona is not a revenue source but **the basis of trust** (a reputation as an honest recorder, bug reports, workflow examples) |
 | 2 | Korean knowledge workers with many meetings. They need Korean meeting minutes, and keeping meeting audio resident in an outside SaaS is a burden | "Transcribe Korean meetings properly, but keep the audio and results in **my Drive**" | The same workflow wherever they record, a transcript as a file next to the original with `transcribe(clova\|rtzr)`, minutes through the agent they already use + `skills/recly-notes/`. No bot joins the meeting | **Yes.** But key issuance · billing setup is a barrier to entry (creating an app in the NAVER Cloud console and copying the `invokeUrl` back) |
-| 3 | Consultants · recruiters · researchers who spend most of the day on Zoom · Teams · Meet calls on macOS · Windows | "Without letting a bot in, split my voice from the other side's, and pile the originals up in my storage without deleting them" | mic/sys/mix three tracks, detect → confirm → record, the original kept as is in `recly/2026/2026-08/` | **Yes.** But this is the most competitive spot, and these people compare products on "summary quality". Recly's differentiator is not quality but **ownership** |
+| 3 | Consultants · recruiters · researchers who spend most of the day on Zoom · Teams · Meet calls on macOS · Windows | "Without letting a bot in, split my voice from the other side's, and pile the originals up in my storage without deleting them" | mic/sys/mix three tracks, detect → confirm → record, the original kept as is in `recly/memo/2026-08/` | **Yes.** But this is the most competitive spot, and these people compare products on "summary quality". Recly's differentiator is not quality but **ownership** |
 
 ### Competitor pricing
 
@@ -3405,7 +3405,7 @@ violation prints 400. `--fail-first 1` answers 500 to the first delivery of a gi
 | Target | Scenario |
 |---|---|
 | **Core** | `./gradlew :core:jvmTest` passes; example JSON round trip (parse → serialize) is structurally identical |
-| **Android phone** | 1 **Retired (2026-09-24)** ~~New install → two default workflows are created locally, and the one in use on this phone is Memo~~ → New install → the recording processing settings are ready with their defaults (§5 "Fixed processing settings"). 2 One-hour recording (screen off) → stop → enter title → within 30 seconds, 4 parts + meta in Drive `recly/2026/2026-08/{base}/`~~, one webhook received (signature verification passes)~~ (webhook part retired 2026-09-24). 3 Record in airplane mode → turn it off → automatic upload. 4 Force-quit the app during upload → WorkManager finishes it (no duplicate files in Drive). 5 **Retired (2026-09-24)** ~~webhook 500 → retry → success~~. 6 `MISSING_SECRET` on a device without the secret~~, and with `continue` the next step proceeds~~ (user `onError` retired 2026-09-24). 7 Under 30 seconds → `SKIPPED_SHORT`, and the row has no retry or upload button. 8 Rotate during the consent screen (activity re-creation) → authorization completes |
+| **Android phone** | 1 **Retired (2026-09-24)** ~~New install → two default workflows are created locally, and the one in use on this phone is Memo~~ → New install → the recording processing settings are ready with their defaults (§5 "Fixed processing settings"). 2 One-hour recording (screen off) → stop → enter title → within 30 seconds, 4 parts + meta in Drive `recly/memo/2026-08/{base}/`~~, one webhook received (signature verification passes)~~ (webhook part retired 2026-09-24). 3 Record in airplane mode → turn it off → automatic upload. 4 Force-quit the app during upload → WorkManager finishes it (no duplicate files in Drive). 5 **Retired (2026-09-24)** ~~webhook 500 → retry → success~~. 6 `MISSING_SECRET` on a device without the secret~~, and with `continue` the next step proceeds~~ (user `onError` retired 2026-09-24). 7 Under 30 seconds → `SKIPPED_SHORT`, and the row has no retry or upload button. 8 Rotate during the consent screen (activity re-creation) → authorization completes |
 | **Galaxy Watch** | 1 Tap the tile → recording starts immediately, the watch face chip shows, and it continues after the app is closed. 2 Two 20-minute recordings without the phone → connect the phone → both transferred · acked · deleted on the watch · uploaded to Drive from the phone. 3 BT drops during transfer → on reconnect, resumes from the un-acked parts, no duplicates on the phone. 4 **Retired (2026-09-24)** ~~Rename a workflow on the phone → reflected in the watch's choices~~ |
 | **macOS** | 1 **"One notice on joining Zoom"** → click → three-track recording → stop → mic/sys/mix + meta in Drive~~, webhook~~ (retired 2026-09-24). 2 Clap offset < 20 ms after a one-hour meeting. 3 **Retired (2026-09-24)** ~~A workflow made on the phone appears in the Mac editor and merges with two-way edits without conflicts~~. 4 Install the DMG on a new Mac → passes Gatekeeper → two permission prompts (microphone → system audio) |
 | **iPhone + Apple Watch** | 1 Action button → record → locked for 3 hours → stop → go to the home screen → upload completes while locked (background URLSession). 2 Watch 20-minute recordings × 2 → iPhone receives automatically · acks · runs. 3 Stop with Double Tap |
