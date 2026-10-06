@@ -1,6 +1,10 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="녹취록이 내 Google Drive에 올라옵니다. 켜 둔 내 컴퓨터의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, OpenAI MCP Events로 내 ChatGPT 에이전트에게 서명된 recording.transcribed 이벤트를 보냅니다. 에이전트는 알아서 시작해 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
-  <!-- Korean copy of agent-flow.svg, for README.ko.md and recly.dev/ko/. Only the text differs:
-       change the two together. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
+  <!-- README and recly.dev "Minutes that write themselves": what happens after a transcript lands,
+       when recly-events is running (events/README.md "How it works"). The event goes out to
+       ChatGPT as a signed HTTPS request (internal/webhook); ChatGPT's MCP calls come back through
+       the Secure MCP Tunnel that recly-events opens (internal/mcpserver/tunnel.go). Same palette,
+       fonts and node shapes as flow.svg. agent-flow.svg is the English original: change the two
+       together. -->
   <defs>
     <pattern id="dots" width="24" height="24" patternUnits="userSpaceOnUse">
       <circle cx="12" cy="12" r="1.6" fill="#888884" opacity="0.28"/>
@@ -11,8 +15,11 @@
     <marker id="arrow-rec" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
       <path d="M0,0 L10,5 L0,10 z" fill="#DA1E28"/>
     </marker>
+    <marker id="arrow-acc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#0F62FE"/>
+    </marker>
     <style>
-      .t  { font-family: -apple-system, "SF Pro Text", "Apple SD Gothic Neo", "Segoe UI", "Malgun Gothic", Roboto, "Noto Sans KR", "Helvetica Neue", Arial, sans-serif; fill: #111111; }
+      .t  { font-family: -apple-system, "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; fill: #111111; }
       .m  { font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace; font-size: 13px; fill: #111111; }
       .title { font-size: 18px; font-weight: 700; }
       .sub   { font-size: 14px; fill: #6B6B68; }
@@ -22,6 +29,7 @@
       .node  { fill: #FFFFFF; stroke: #111111; stroke-width: 2.5; }
       .wire  { fill: none; stroke: #111111; stroke-width: 2.5; marker-end: url(#arrow); }
       .event { fill: none; stroke: #DA1E28; stroke-width: 2.5; marker-end: url(#arrow-rec); }
+      .call  { fill: none; stroke: #0F62FE; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow-acc); }
       .read  { fill: none; stroke: #111111; stroke-width: 2; stroke-dasharray: 7 6; marker-end: url(#arrow); }
     </style>
   </defs>
@@ -29,47 +37,59 @@
   <rect width="1200" height="480" rx="20" fill="#F7F7F5"/>
   <rect width="1200" height="480" rx="20" fill="url(#dots)"/>
 
-  <!-- bands: every place on this path is the user's own -->
+  <!-- bands: the user's Drive, the user's computer, OpenAI between, the user's ChatGPT -->
   <g class="t band">
-    <line x1="40" y1="64" x2="290" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="40" y1="64" x2="250" y2="64" stroke="#111111" stroke-width="1.5"/>
     <line x1="40" y1="58" x2="40" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <line x1="290" y1="58" x2="290" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="92" y="52" width="146" height="24" fill="#F7F7F5"/>
-    <text x="165" y="69" text-anchor="middle">내 Google Drive</text>
+    <line x1="250" y1="58" x2="250" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <rect x="52" y="52" width="186" height="24" fill="#F7F7F5"/>
+    <text x="145" y="69" text-anchor="middle">내 Google Drive</text>
 
-    <line x1="460" y1="64" x2="710" y2="64" stroke="#111111" stroke-width="1.5"/>
-    <line x1="460" y1="58" x2="460" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <line x1="710" y1="58" x2="710" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="541" y="52" width="88" height="24" fill="#F7F7F5"/>
-    <text x="585" y="69" text-anchor="middle">내 컴퓨터</text>
+    <line x1="370" y1="64" x2="600" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="370" y1="58" x2="370" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <line x1="600" y1="58" x2="600" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <rect x="405" y="52" width="160" height="24" fill="#F7F7F5"/>
+    <text x="485" y="69" text-anchor="middle">내 컴퓨터</text>
 
-    <line x1="910" y1="64" x2="1160" y2="64" stroke="#111111" stroke-width="1.5"/>
-    <line x1="910" y1="58" x2="910" y2="70" stroke="#111111" stroke-width="1.5"/>
+    <line x1="616" y1="64" x2="892" y2="64" stroke="#0F62FE" stroke-width="1.5"/>
+    <line x1="616" y1="58" x2="616" y2="70" stroke="#0F62FE" stroke-width="1.5"/>
+    <line x1="892" y1="58" x2="892" y2="70" stroke="#0F62FE" stroke-width="1.5"/>
+    <rect x="672" y="52" width="164" height="24" fill="#F7F7F5"/>
+    <text x="754" y="69" text-anchor="middle" style="fill:#0F62FE">OpenAI를 거쳐</text>
+
+    <line x1="908" y1="64" x2="1160" y2="64" stroke="#111111" stroke-width="1.5"/>
+    <line x1="908" y1="58" x2="908" y2="70" stroke="#111111" stroke-width="1.5"/>
     <line x1="1160" y1="58" x2="1160" y2="70" stroke="#111111" stroke-width="1.5"/>
-    <rect x="982" y="52" width="106" height="24" fill="#F7F7F5"/>
-    <text x="1035" y="69" text-anchor="middle">내 ChatGPT</text>
+    <rect x="959" y="52" width="150" height="24" fill="#F7F7F5"/>
+    <text x="1034" y="69" text-anchor="middle">내 ChatGPT</text>
   </g>
+
+  <!-- the tunnel: recly-events opens it, so ChatGPT's calls reach a computer with no open port -->
+  <rect x="590" y="186" width="328" height="56" rx="28" fill="#E8F0FF" stroke="#0F62FE" stroke-width="2"/>
+  <text class="t band" x="754" y="207" text-anchor="middle" style="fill:#0F62FE">Secure MCP Tunnel</text>
+  <line class="call" x1="904" y1="225" x2="606" y2="225"/>
 
   <!-- wires: Drive → recly-events → the agent → the minutes, and the agent reading Drive itself -->
-  <line class="wire" x1="290" y1="175" x2="458" y2="175"/>
-  <line class="event" x1="710" y1="175" x2="908" y2="175"/>
-  <line class="wire" x1="1035" y1="250" x2="1035" y2="318"/>
-  <path class="read" d="M950,250 V296 H165 V253"/>
+  <line class="wire" x1="250" y1="175" x2="368" y2="175"/>
+  <line class="event" x1="600" y1="146" x2="906" y2="146"/>
+  <line class="wire" x1="1034" y1="250" x2="1034" y2="318"/>
+  <path class="read" d="M950,250 V296 H145 V253"/>
 
   <g class="t sub" text-anchor="middle">
-    <text x="375" y="163">10초마다</text>
-    <text x="375" y="199">이름과 링크만</text>
-    <text x="810" y="199">OpenAI MCP 이벤트</text>
+    <text x="310" y="163">10초마다</text>
+    <text x="310" y="199">이름과 링크만</text>
+    <text x="754" y="170">서명된 MCP 이벤트, ChatGPT로 바로</text>
+    <text x="754" y="262">에이전트가 되묻는 호출, 열린 포트 없이</text>
   </g>
-  <text class="m" x="810" y="163" text-anchor="middle">recording.transcribed</text>
+  <text class="m" x="754" y="134" text-anchor="middle" style="fill:#DA1E28">recording.transcribed</text>
 
-  <rect x="362" y="285" width="386" height="22" fill="#F7F7F5"/>
-  <text class="t sub" x="555" y="301" text-anchor="middle">에이전트가 ChatGPT의 Google Drive 앱으로 녹취록을 직접 읽음</text>
+  <rect x="262" y="285" width="384" height="22" fill="#F7F7F5"/>
+  <text class="t sub" x="454" y="301" text-anchor="middle">에이전트가 ChatGPT의 Google Drive 앱으로 녹취록을 직접 읽음</text>
 
   <!-- 1 · the transcript in Drive -->
   <g transform="translate(40,100)">
-    <rect width="250" height="150" rx="12" class="node"/>
-    <g transform="translate(81,14)">
+    <rect width="210" height="150" rx="12" class="node"/>
+    <g transform="translate(61,14)">
       <path d="M14,44 h34 a12,12 0 0 0 1,-24 a16,16 0 0 0 -31,-4 a11,11 0 0 0 -4,28 z" class="ink"/>
       <g transform="translate(52,6)">
         <path d="M0,0 h22 l12,12 v38 h-34 z" fill="#FFFFFF" class="ink"/>
@@ -79,14 +99,14 @@
         <line x1="8" y1="42" x2="19" y2="42" class="ink"/>
       </g>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">녹취록 도착</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">Recly가 내 Drive에 올림</text>
+    <text class="t title" x="105" y="98" text-anchor="middle">녹취록 도착</text>
+    <text class="t sub" x="105" y="124" text-anchor="middle">Recly가 내 Drive에 올림</text>
   </g>
 
   <!-- 2 · recly-events -->
-  <g transform="translate(460,100)">
-    <rect width="250" height="150" rx="12" class="node"/>
-    <g transform="translate(93,18)">
+  <g transform="translate(370,100)">
+    <rect width="230" height="150" rx="12" class="node"/>
+    <g transform="translate(83,18)">
       <rect x="0" y="0" width="64" height="40" rx="5" class="ink"/>
       <line x1="20" y1="52" x2="44" y2="52" class="ink"/>
       <line x1="32" y1="40" x2="32" y2="52" class="ink"/>
@@ -94,25 +114,25 @@
       <line x1="26" y1="27" x2="38" y2="27" class="ink"/>
       <circle cx="62" cy="2" r="7" fill="#DA1E28" stroke="#FFFFFF" stroke-width="2.5"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">recly-events가 발견</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">켜 둔 내 컴퓨터에서</text>
+    <text class="t title" x="115" y="98" text-anchor="middle">recly-events가 발견</text>
+    <text class="t sub" x="115" y="124" text-anchor="middle">Mac·Windows 앱 안에서</text>
   </g>
 
   <!-- 3 · the agent -->
-  <g transform="translate(910,100)">
-    <rect width="250" height="150" rx="12" fill="#FFFFFF" stroke="#DA1E28" stroke-width="2.5"/>
-    <g transform="translate(97,12)">
+  <g transform="translate(908,100)">
+    <rect width="252" height="150" rx="12" fill="#FFFFFF" stroke="#DA1E28" stroke-width="2.5"/>
+    <g transform="translate(98,12)">
       <path d="M28,0 c2,14 8,20 22,22 c-14,2 -20,8 -22,22 c-2,-14 -8,-20 -22,-22 c14,-2 20,-8 22,-22 z" fill="#DA1E28"/>
       <path d="M8,34 c1,7 4,10 11,11 c-7,1 -10,4 -11,11 c-1,-7 -4,-10 -11,-11 c7,-1 10,-4 11,-11 z" fill="#DA1E28"/>
     </g>
-    <text class="t title" x="125" y="98" text-anchor="middle">에이전트가 알아서 시작</text>
-    <text class="t sub" x="125" y="124" text-anchor="middle">dot이나 Work 채팅, 부탁 없이</text>
+    <text class="t title" x="126" y="98" text-anchor="middle">에이전트가 알아서 시작</text>
+    <text class="t sub" x="126" y="124" text-anchor="middle">dot이나 Work 채팅, 부탁 없이</text>
   </g>
 
   <!-- 4 · the minutes -->
-  <g transform="translate(910,320)">
-    <rect width="250" height="120" rx="12" class="node"/>
-    <g transform="translate(108,12)">
+  <g transform="translate(908,320)">
+    <rect width="252" height="120" rx="12" class="node"/>
+    <g transform="translate(109,12)">
       <path d="M0,0 h24 l10,10 v34 h-34 z" class="ink"/>
       <path d="M24,0 v10 h10" class="ink"/>
       <path d="M7,21 l3,3 l5,-6" fill="none" stroke="#DA1E28" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -120,12 +140,12 @@
       <path d="M7,33 l3,3 l5,-6" fill="none" stroke="#DA1E28" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
       <line x1="19" y1="33" x2="27" y2="33" class="ink"/>
     </g>
-    <text class="t title" x="125" y="82" text-anchor="middle">회의록 완성</text>
-    <text class="t sub" x="125" y="106" text-anchor="middle">또는 정해 둔 무엇이든</text>
+    <text class="t title" x="126" y="82" text-anchor="middle">회의록 완성</text>
+    <text class="t sub" x="126" y="106" text-anchor="middle">또는 정해 둔 무엇이든</text>
   </g>
 
   <g class="t note" text-anchor="middle">
-    <text x="455" y="384">recly-events는 이름과 링크만 전하고, 대화 내용은 전하지 않습니다.</text>
-    <text x="455" y="406">Recly 서버도 공개 주소도 없습니다. ChatGPT는 내 OpenAI 터널로 연결됩니다.</text>
+    <text x="454" y="384">recly-events는 이름과 링크만 전하고, 대화 내용은 전하지 않습니다.</text>
+    <text x="454" y="406">모든 연결은 밖으로, Google과 OpenAI로만 나갑니다. 공개 주소도 Recly 서버도 없습니다.</text>
   </g>
 </svg>

@@ -97,7 +97,7 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 }
 .site-header .wrap { display: flex; align-items: center; gap: 24px; height: 60px; }
 
-.brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; font-size: 1.05rem; text-decoration: none; }
+.brand { display: flex; flex: none; align-items: center; gap: 10px; color: var(--ink); font-weight: 700; font-size: 1.05rem; text-decoration: none; }
 .brand img { width: 28px; height: 28px; border-radius: 6px; }
 
 .nav { display: flex; gap: 22px; margin-right: auto; }
@@ -121,7 +121,7 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 .header-actions .lang-menu a:hover { background: var(--ground); }
 .header-actions .lang-menu a[aria-current="page"] { color: var(--accent); font-weight: 600; }
 
-/* Below 960px the section and guide links move into a menu at the right end of the header. */
+/* Below 1120px, where seven links no longer fit, they move into a menu at the right end of the header. */
 .menu { display: none; position: relative; order: 3; }
 .menu summary { display: grid; place-items: center; width: 36px; height: 36px; border: 1px solid var(--grid); border-radius: var(--r-node); color: var(--ink); cursor: pointer; list-style: none; user-select: none; }
 .menu summary::-webkit-details-marker { display: none; }
@@ -132,7 +132,7 @@ code, kbd, pre, .mono { font-family: var(--mono); font-size: 0.9em; }
 .menu-panel a:hover { background: var(--ground); }
 .nav a[aria-current="page"], .menu-panel a[aria-current="page"] { color: var(--accent); font-weight: 600; }
 
-@media (max-width: 960px) { .nav { display: none; } .menu { display: block; } .header-actions { order: 2; } }
+@media (max-width: 1120px) { .nav { display: none; } .menu { display: block; } .header-actions { order: 2; } }
 @media (max-width: 420px) { .header-actions .gh { display: none; } .site-header .wrap { gap: 12px; } }
 
 /* ── Buttons, badges, kickers ────────────────────────────────────────────── */
@@ -212,6 +212,10 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .hero-meta .dot { width: 8px; height: 8px; border-radius: 1px; background: var(--record); }
 .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 .platforms { display: flex; flex-wrap: wrap; gap: 6px; margin: 28px 0 0; padding: 0; list-style: none; }
+/* One line above the headline that points at the newest thing worth a look. */
+.news { display: inline-flex; align-items: center; gap: 10px; margin: 0 0 22px; padding: 5px 12px 5px 5px; border: 1px solid var(--grid); border-radius: var(--r-node); background: var(--surface); color: var(--ink); font-size: 0.9rem; line-height: 1.4; text-decoration: none; }
+.news b { flex: none; padding: 2px 7px; border-radius: var(--r-badge); background: var(--record); color: #FFFFFF; font: 600 0.7rem/1.4 var(--mono); letter-spacing: 0.06em; text-transform: uppercase; }
+.news:hover { border-color: var(--ink); text-decoration: none; }
 .platforms li { padding: 3px 8px; border: 1px solid var(--grid); border-radius: var(--r-badge); background: var(--surface); color: var(--muted); font: 0.78rem/1.4 var(--mono); }
 
 /* ── Nodes and connectors ────────────────────────────────────────────────── */
@@ -275,6 +279,15 @@ h3 { font-size: 1.1rem; font-weight: 650; letter-spacing: -0.01em; }
 .cards.stack { grid-template-columns: 1fr; }
 @media (max-width: 960px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) { .cards { grid-template-columns: 1fr; } }
+/* Automatic minutes: the diagram, then four cards, then how to turn it on. */
+.cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 24px 0 clamp(40px, 6vw, 64px); }
+@media (max-width: 1080px) { .cards.four { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px) { .cards.four { grid-template-columns: 1fr; } }
+/* Below 760px the wide diagram keeps a readable size and scrolls sideways inside its frame. */
+@media (max-width: 760px) {
+  .diagram.wide { overflow-x: auto; margin-right: calc(-1 * var(--gutter)); padding-right: var(--gutter); }
+  .diagram.wide img { width: 760px; max-width: none; }
+}
 
 /* ── Screens (dark band) ─────────────────────────────────────────────────── */
 

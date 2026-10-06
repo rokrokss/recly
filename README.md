@@ -8,7 +8,7 @@
 
 A Plaud-style AI notetaker, running on the watch and phone you already own.<br>Your Drive keeps the audio, your own key transcribes it, your own AI writes the notes.
 
-[App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) · [Google Play](https://play.google.com/store/apps/details?id=app.recly) · [Mac & Windows](#get-recly) · [Install guide](docs/install.md) · [FAQ](docs/faq.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
+[App Store](https://apps.apple.com/app/recly-record-for-your-ai/id6809930443) · [Google Play](https://play.google.com/store/apps/details?id=app.recly) · [Mac & Windows](#get-recly) · [Automatic minutes](#minutes-that-write-themselves) · [Install guide](docs/install.md) · [FAQ](docs/faq.md) · [Privacy](https://recly.dev/policy/privacy-policy) · [Issues](https://github.com/rokrokss/recly/issues) · [한국어](README.ko.md)
 
 [![License: AGPL-3.0-or-later](https://img.shields.io/badge/license-AGPL--3.0--or--later-0F62FE)](LICENSE)
 [![Latest release](https://img.shields.io/github/v/release/rokrokss/recly?label=release)](https://github.com/rokrokss/recly/releases)
@@ -25,6 +25,34 @@ transcription on a supported device or with **your own** API key, and keeps the 
 **your** Google Drive, iCloud or a folder you pick. There is no Recly server, no bot joining your
 call, and no monthly fee.
 
+## Minutes that write themselves
+
+Stop recording, and your ChatGPT agent writes the minutes by itself, usually within a minute. Every
+new transcript becomes an [MCP event](https://developers.openai.com/plugins/build/mcp-events): recly-events, built into the Recly Mac and Windows
+apps, sends `recording.transcribed` to your agent, a dot or a Work chat, and the agent reads the
+transcript and does what you asked for every recording: minutes, decisions and action items, a
+follow-up email to draft.
+
+<p align="center"><img src="docs/design/agent-flow.svg" width="100%" alt="A transcript lands in your Google Drive. recly-events, in the Recly Mac or Windows app, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript with ChatGPT's Google Drive app and writes the minutes, or whatever you asked for."></p>
+
+- **An event, not a prompt.** OpenAI's MCP Events let an app start your agent. `recording.transcribed`
+  reaches ChatGPT signed, and every new transcript starts a run of your agent.
+- **Through your own tunnel.** Your agent calls recly-events back through your own
+  [OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels). recly-events opens it from your side, so your computer needs
+  no public address and opens no port, and there is still no Recly server.
+- **Names and links, never what was said.** The event names the recording and links its files in
+  your Google Drive. The agent reads the transcript itself, with ChatGPT's Google Drive app.
+- **Nothing missed.** A computer that slept catches up when it wakes, and events your agent has not
+  picked up wait in an inbox for 30 days.
+
+**Turn it on** in the Mac or Windows app (0.2.0 and later), under Settings → Agent connection: the
+[ChatGPT agent guide](docs/agent.md) has the steps. On a server, Linux or a computer without the
+app, [run recly-events yourself](docs/recly-events.md). You need recordings stored in Google Drive;
+a ChatGPT dot (at the time of writing, ChatGPT Business Premium, or ChatGPT Pro outside the EEA,
+Switzerland and the UK) or a Work chat on ChatGPT web; ChatGPT's Google Drive app, connected to the
+Google account Recly uploads to; an OpenAI Platform account for the tunnel and its key; and a
+computer that stays on.
+
 ## Why Recly
 
 - **The recorder you already wear.** A double press of the Galaxy Watch's home key starts
@@ -35,11 +63,6 @@ call, and no monthly fee.
   Drive, through `drive.file`, the narrowest permission Google offers; or to your iCloud on iPhone
   and Mac; or to a local folder you pick, such as an Obsidian vault. The original is never deleted
   before the upload is confirmed, and Recly has no server that could see your files.
-- **Minutes that start themselves.** When a transcript lands in your Drive, your ChatGPT agent can
-  start the minutes by itself, with no prompt from you. The small program that tells it,
-  recly-events, is [built into the Mac and Windows apps](docs/agent.md) (or
-  [runs on your own computer](docs/recly-events.md)) and passes on the recording's name and Drive
-  links, never what was said.
 - **Files are the interface.** Transcripts are plain files next to the audio, in a
   [documented format](spec/) any agent, script or app can read. Transcribe on the device, with your
   own key (AssemblyAI, CLOVA, Deepgram, OpenAI, Azure and more, with speakers separated where the
@@ -126,34 +149,8 @@ Settings and transcript formats are documented in [`spec/`](spec/).
 
 Recly's pipeline ends at the transcript on purpose. Turning it into notes is something your
 existing AI subscription already does well, so instead of a metered feature Recly hands the
-transcript to your agent: on its own, the moment the transcript lands, or whenever you ask.
-
-### Automatic minutes with a ChatGPT agent
-
-Stop recording, and once the transcript is in your Google Drive, your ChatGPT agent starts on the
-minutes by itself, usually within a minute.
-
-<p align="center"><img src="docs/design/agent-flow.svg" width="100%" alt="A transcript lands in your Google Drive; recly-events on your computer sees it within 10 seconds and sends your ChatGPT agent a signed recording.transcribed event through OpenAI MCP Events; the agent starts by itself, reads the transcript with ChatGPT's Google Drive app and writes the minutes"></p>
-
-1. A Recly app uploads the transcript to your Google Drive.
-2. recly-events sees it within about 10 seconds and sends your agent a `recording.transcribed`
-   event, which starts the agent.
-3. The agent reads the transcript with ChatGPT's Google Drive app and does what you asked for every
-   recording: minutes, decisions and action items, a follow-up email to draft.
-
-You need recordings stored in Google Drive; a ChatGPT dot (at the time of writing, ChatGPT
-Business Premium, or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT
-web; ChatGPT's Google Drive app, connected to the Google account Recly uploads to; an OpenAI
-Platform account for the tunnel and its key; and a computer that stays on.
-
-recly-events reaches ChatGPT through your own
-[OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels), so it
-needs no public address, and it passes on the recording's name, title and Drive links, never the
-audio or what was said. On a Mac or Windows PC it is built into the app (0.2.0 and later): follow
-the [ChatGPT agent guide](docs/agent.md). On a server, Linux or a computer without the app,
-[run recly-events yourself](docs/recly-events.md).
-
-### On request: example skills
+transcript to your agent: on its own,
+[the moment the transcript lands](#minutes-that-write-themselves), or whenever you ask.
 
 For notes in another format, notes kept outside ChatGPT, or questions across past recordings, Recly
 ships two **example skills** for any agent: Claude, ChatGPT, Codex and others. Use them as they are,
