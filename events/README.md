@@ -177,8 +177,15 @@ Keep the server running for this step: ChatGPT talks to it while you create the 
 
 ### 6. Subscribe your agent
 
-In your dot, or a Work chat on ChatGPT web, with the `Recly events` app and the Google Drive app
-available, send something like this:
+The agent needs two apps: the `Recly events` app from step 5 and ChatGPT's Google Drive app.
+
+- **A dot** uses the same plugins as the rest of ChatGPT, so both are already its own. In the ChatGPT
+  mobile app, your dot's profile → **Customize** → **Plugins** lists them. If you have no dot yet,
+  create one in the ChatGPT desktop app or on ChatGPT web on a computer
+  ([OpenAI's guide](https://help.openai.com/en/articles/20001530-getting-started-with-your-dot)).
+- **A Work chat** on ChatGPT web needs both apps available in that chat.
+
+Then send this once, in your dot's conversation or the Work chat:
 
 ```text
 Subscribe to recording.transcribed from Recly events. Every time it fires:
@@ -190,7 +197,11 @@ Subscribe to recording.transcribed from Recly events. Every time it fires:
 ```
 
 Step 3 is only an example. Write whatever you want done with each recording; keep steps 1, 2 and 4.
-`recly-events status` shows the subscription once the agent has made it.
+If you named the app something other than `Recly events` in step 5, use that name in the first line.
+The minutes appear in the conversation where you sent this.
+
+Once the agent has subscribed, `recly-events status` shows the subscription, and in the Mac or
+Windows app the line under the switch says **Your subscribed agent hears about each new transcript**.
 
 ### 7. Test
 
