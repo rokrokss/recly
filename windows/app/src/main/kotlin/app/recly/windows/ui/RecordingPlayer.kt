@@ -550,12 +550,13 @@ class RecordingPlayer(
     }
 
     /**
-     * A new speed: what is playing of [selection] carries on from the same second at it, through the same
-     * re-spawn a scrub makes.
+     * A new speed: what is loaded of [selection] — playing or paused — carries on from the same second at it,
+     * through the same re-spawn a scrub makes; a paused decoder is already ahead at the old speed.
      */
     fun changeSpeed(selection: RecordingPlaylist.Selection, to: Float) {
+        if (to == speed) return
         speed = to
-        if (playing) seek(selection, positionSec)
+        seek(selection, positionSec)
     }
 
     /** The decode that could not read its parts, if the bar is still on the recording it was for. */
