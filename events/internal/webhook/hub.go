@@ -253,6 +253,21 @@ func (h *Hub) Pending(limit int) []state.InboxEvent {
 	return out
 }
 
+// Event returns the inbox event with the given ID, acknowledged or not.
+func (h *Hub) Event(id string) (state.InboxEvent, bool) {
+	var out state.InboxEvent
+	found := false
+	h.Store.View(func(s *state.State) {
+		for _, e := range s.Inbox {
+			if e.EventID == id {
+				out, found = *e, true
+				return
+			}
+		}
+	})
+	return out, found
+}
+
 // Acknowledge marks events processed; it returns how many were newly acknowledged and how
 // many remain pending.
 func (h *Hub) Acknowledge(ids []string) (acked, pending int, err error) {

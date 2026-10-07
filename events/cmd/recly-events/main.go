@@ -1,7 +1,11 @@
 // recly-events tells the user's ChatGPT agent (a dot or a Work chat) when Recly finishes a
-// transcript. It watches Google Drive for new Recly transcripts (metadata only), and publishes
-// a `recording.transcribed` MCP event to ChatGPT through an OpenAI Secure MCP Tunnel. Nothing
-// listens on the network; every connection it makes goes out.
+// transcript. It watches Google Drive for new Recly transcripts by their metadata, publishes a
+// `recording.transcribed` MCP event to ChatGPT through an OpenAI Secure MCP Tunnel, and reads a
+// transcript when the agent asks for it. Nothing listens on the network; every connection it
+// makes goes out.
+//
+// `recly-events mcp` is a separate, local MCP server on standard input and output for recordings
+// in folders on this computer: it makes no connection at all.
 package main
 
 import (
@@ -18,17 +22,20 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
 
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"golang.org/x/oauth2"
 	"golang.org/x/term"
 
 	"github.com/rokrokss/recly/events/internal/app"
 	"github.com/rokrokss/recly/events/internal/drive"
+	"github.com/rokrokss/recly/events/internal/library"
 	"github.com/rokrokss/recly/events/internal/mcpserver"
 	"github.com/rokrokss/recly/events/internal/state"
 	"github.com/rokrokss/recly/events/internal/webhook"
@@ -50,6 +57,7 @@ Usage:
   recly-events status [--json]
   recly-events test
   recly-events service install|uninstall
+  recly-events mcp --folder DIR [--folder DIR …] [--print-config]
   recly-events version
 
 Files live in %s (RECLY_EVENTS_HOME overrides it).
@@ -77,6 +85,8 @@ func main() {
 		err = cmdTest(home)
 	case "service":
 		err = cmdService(home, os.Args[2:])
+	case "mcp":
+		err = cmdMCP(ctx, os.Args[2:])
 	case "version":
 		fmt.Println(version)
 	default:
@@ -143,7 +153,7 @@ func cmdInit(ctx context.Context, home app.Home, args []string) error {
 		} else {
 			fmt.Println("Opening Google sign-in in your browser. Sign in with the account Recly uploads to.")
 			if cfg.GoogleClient == "file" {
-				fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow file metadata.")
+				fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow it to see your Drive files.")
 			}
 			fmt.Println("If no browser opens, stop with Ctrl-C and run init again with --no-browser.")
 			tok, err = drive.Login(ctx, oc, openBrowser)
@@ -296,7 +306,7 @@ func signInElsewhere(ctx context.Context, oc *oauth2.Config, ownClient bool) (*o
 	}
 	fmt.Printf("Open this address in a browser on any computer and sign in with the account Recly uploads to:\n\n%s\n\n", c.URL())
 	if ownClient {
-		fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow file metadata.")
+		fmt.Println("If Google says the app is not verified: Advanced → Go to (your app), then allow it to see your Drive files.")
 	}
 	fmt.Println("The browser then goes to a 127.0.0.1 page that does not load. Copy that page's whole address from the address bar and paste it here.")
 	for {
@@ -451,7 +461,8 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	}
 	log := logger(os.Stderr)
 	hub := &webhook.Hub{Store: store, Guard: &webhook.Guard{Hosts: cfg.AllowedCallbackHosts()}, Log: log}
-	handler := &mcpserver.Handler{Hub: hub, Log: log, Version: version}
+	tools := &library.Tools{Source: &drive.Source{API: api}}
+	handler := &mcpserver.Handler{Hub: hub, Tools: tools, Log: log, Version: version}
 	watcher := &drive.Watcher{
 		API: api, Store: store, Log: log, Every: time.Duration(cfg.PollInterval()) * time.Second,
 		Emit: func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
@@ -737,4 +748,63 @@ func cmdService(home app.Home, args []string) error {
 	default:
 		return errors.New("usage: recly-events service install|uninstall")
 	}
+}
+
+// ---------------------------------------------------------------- mcp
+
+type folderFlags []string
+
+func (f *folderFlags) String() string     { return strings.Join(*f, ", ") }
+func (f *folderFlags) Set(v string) error { *f = append(*f, v); return nil }
+
+// cmdMCP is the local MCP server for recordings in folders on this computer — a local folder Recly
+// stores recordings in, or the Mac's iCloud folder — on standard input and output, for agents on
+// this computer such as Claude Desktop, Claude Code and Codex. It needs no sign-in, sends nothing
+// anywhere, and never writes to the folders (docs/recly.md §15 §9).
+func cmdMCP(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("mcp", flag.ContinueOnError)
+	var folders folderFlags
+	fs.Var(&folders, "folder", "a folder Recly stores recordings in: a local folder, or the Mac's iCloud folder; repeat for more")
+	printConfig := fs.Bool("print-config", false, "print the mcpServers JSON that starts this server with these folders, and exit")
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+	if fs.NArg() > 0 || len(folders) == 0 {
+		return errors.New("usage: recly-events mcp --folder DIR [--folder DIR …] [--print-config]")
+	}
+	var roots []string
+	for _, f := range folders {
+		abs, err := filepath.Abs(f)
+		if err != nil {
+			return err
+		}
+		if info, err := os.Stat(abs); err != nil || !info.IsDir() {
+			return fmt.Errorf("--folder %s: not a folder", f)
+		}
+		roots = append(roots, abs)
+	}
+	if *printConfig {
+		exe, err := os.Executable()
+		if err != nil {
+			return err
+		}
+		mcpArgs := []string{"mcp"}
+		for _, r := range roots {
+			mcpArgs = append(mcpArgs, "--folder", r)
+		}
+		enc := json.NewEncoder(os.Stdout)
+		enc.SetEscapeHTML(false)
+		enc.SetIndent("", "  ")
+		type server struct {
+			Command string   `json:"command"`
+			Args    []string `json:"args"`
+		}
+		return enc.Encode(map[string]any{"mcpServers": map[string]server{"recly": {Command: exe, Args: mcpArgs}}})
+	}
+	folder := &library.Folder{Roots: roots}
+	err := mcpserver.ServeLocal(ctx, &library.Tools{Source: folder, Folder: folder}, version, &mcp.StdioTransport{})
+	if ctx.Err() != nil || errors.Is(err, io.EOF) {
+		return nil
+	}
+	return err
 }
