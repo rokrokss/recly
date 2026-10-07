@@ -123,6 +123,8 @@ public final class AppleAudioImporter: NSObject, AudioImporter {
 
         func append(_ buffer: CMSampleBuffer) async throws {
             while !input.isReadyForMoreMediaData {
+                // A writer that failed (a full disk) is never ready again.
+                if writer.status == .failed || writer.status == .cancelled { throw writer.error ?? CocoaError(.fileWriteUnknown) }
                 try await Task.sleep(nanoseconds: 2_000_000)
             }
             guard input.append(buffer) else { throw writer.error ?? CocoaError(.fileWriteUnknown) }

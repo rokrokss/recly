@@ -55,6 +55,8 @@ import os
 private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownloadCancelling, @unchecked Sendable {
     private let lock = NSLock()
     private var active: SpeechAnalyzer?
+    /// The speaker separation in flight, before [active] exists — [cancel] stops it too.
+    private var separating: Task<[SpeakerSeparation.Turn], Error>?
     /// docs/05 "Fixed processing settings": the system asset download in flight, kept so [__status] can say
     /// how far it has got — the request is `ProgressReporting` — and the shell can stop it.
     private var installing: Installing?
@@ -66,7 +68,8 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     }
 
     func cancel() {
-        let analyzer = lock.withLock { active }
+        let (analyzer, separation) = lock.withLock { (active, separating) }
+        separation?.cancel()
         if let analyzer { Task { await analyzer.cancelAndFinishNow() } }
     }
 
@@ -108,7 +111,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         }
         // Shared assets can already be installed without this app holding a locale reservation.
         _ = try await AssetInventory.reserve(locale: locale)
-        let turns = request.diarize ? await speakerTurns(request) : []
+        let turns = request.diarize ? try await speakerTurns(request) : []
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
         let analyzer = SpeechAnalyzer(modules: [module], options: .init(priority: .utility, modelRetention: .whileInUse))
         lock.withLock { active = analyzer }
@@ -151,7 +154,10 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
                 try Task.checkCancellation()
                 try await analyzer.finalizeAndFinishThroughEndOfInput()
                 try await reader.value
-                return LocalTranscriptionResult(segments: [], completed: !(await admission.paused))
+                let completed = !(await admission.paused)
+                // The transcription that needed the turns is over; a later one separates afresh.
+                if completed { try? FileManager.default.removeItem(at: SavedTurns.url(for: request)) }
+                return LocalTranscriptionResult(segments: [], completed: completed)
             } catch {
                 await analyzer.cancelAndFinishNow()
                 if await admission.paused { return LocalTranscriptionResult(segments: [], completed: false) }
@@ -164,17 +170,31 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
 
     /// docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": the turns of the
     /// whole file, from 0 s, before the first segment is checkpointed — so every segment gets its speaker on
-    /// the way out. A resumed run separates again, and its labels need not be the earlier run's. A failure
-    /// costs the speakers, never the transcript.
-    private func speakerTurns(_ request: LocalTranscriptionRequest) async -> [SpeakerTurn] {
+    /// the way out. Kept beside the input until the transcription completes, so a resumed run labels its
+    /// segments with the same speakers as the segments already checkpointed. A failure costs the speakers,
+    /// never the transcript; a cancel is a cancel.
+    private func speakerTurns(_ request: LocalTranscriptionRequest) async throws -> [SpeakerTurn] {
+        let speakers = request.expectedSpeakers.map { Int($0.int32Value) }
+        let saved = SavedTurns.url(for: request)
+        let bytes = (try? FileManager.default.attributesOfItem(atPath: request.path)[.size] as? Int) ?? -1
+        if let data = try? Data(contentsOf: saved), let kept = try? JSONDecoder().decode(SavedTurns.self, from: data),
+           kept.bytes == bytes, kept.speakers == speakers {
+            return kept.turns.map { SpeakerTurn(start: $0.start, end: $0.end, label: $0.label) }
+        }
+        let task = Task { try await SpeakerSeparation.turns(of: URL(fileURLWithPath: request.path), speakers: speakers) }
+        lock.withLock { separating = task }
+        defer { lock.withLock { separating = nil } }
         do {
-            let turns = try await SpeakerSeparation.turns(
-                of: URL(fileURLWithPath: request.path),
-                speakers: request.expectedSpeakers.map { Int($0.int32Value) }
-            )
+            let turns = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
+            // A cancel that came as the separation finished is still a cancel.
+            if task.isCancelled { throw CancellationError() }
+            if let data = try? JSONEncoder().encode(SavedTurns(bytes: bytes, speakers: speakers, turns: turns)) {
+                try? data.write(to: saved, options: .atomic)
+            }
             return turns.map { SpeakerTurn(start: $0.start, end: $0.end, label: $0.label) }
         } catch {
-            if !(error is CancellationError) { Self.logger.error("local.diarize.failed error=\(String(describing: error), privacy: .public)") }
+            if error is CancellationError || task.isCancelled { throw CancellationError() }
+            Self.logger.error("local.diarize.failed error=\(String(describing: error), privacy: .public)")
             return []
         }
     }
@@ -207,6 +227,20 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
             status: status, name: "apple-speech", revision: "speech-\(ProcessInfo.processInfo.operatingSystemVersionString)",
             supportsDiarization: status != .unsupported && SpeakerSeparation.available, supportsVocabulary: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
         )
+    }
+}
+
+/// The speaker turns of one transcription input, beside it: the core joins the same parts into the same
+/// bytes again on a resume (under a new modification time), so the size and the head count say whether
+/// they are still this input's.
+private struct SavedTurns: Codable {
+    let bytes: Int
+    let speakers: Int?
+    let turns: [SpeakerSeparation.Turn]
+
+    static func url(for request: LocalTranscriptionRequest) -> URL {
+        let input = URL(fileURLWithPath: request.path)
+        return input.deletingLastPathComponent().appendingPathComponent(".\(input.lastPathComponent).turns.json")
     }
 }
 
