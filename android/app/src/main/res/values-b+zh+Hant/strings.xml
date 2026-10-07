@@ -256,7 +256,6 @@
     <string name="model_prompt_body">裝置本機轉錄需要開源語音辨識模型 Qwen3-ASR（%1$s）。</string>
     <string name="action_not_now">稍後再說</string>
     <string name="processing_model_download">若要在此裝置上轉錄，需要下載一次此模型（%1$s）。</string>
-    <string name="processing_local_no_speakers">裝置本機轉錄不區分說話者。</string>
     <string name="processing_download">下載</string>
     <string name="processing_cellular_body">模型大小為 %1$s。</string>
     <string name="processing_cellular_title">要使用行動數據下載嗎？</string>

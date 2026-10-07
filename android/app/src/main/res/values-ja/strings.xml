@@ -256,7 +256,6 @@
     <string name="model_prompt_body">デバイス上の文字起こしには、オープンソースの音声認識モデル Qwen3-ASR（%1$s）が必要です。</string>
     <string name="action_not_now">後で</string>
     <string name="processing_model_download">このデバイスで文字起こしするには、このモデル（%1$s）を一度ダウンロードする必要があります。</string>
-    <string name="processing_local_no_speakers">デバイス上の文字起こしは話者を区別しません。</string>
     <string name="processing_download">ダウンロード</string>
     <string name="processing_cellular_body">モデルは%1$sです。</string>
     <string name="processing_cellular_title">モバイルデータでダウンロードしますか？</string>

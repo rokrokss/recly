@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Transkrypcja na urządzeniu wymaga Qwen3-ASR (%1$s) — modelu rozpoznawania mowy typu open source.</string>
     <string name="action_not_now">Nie teraz</string>
     <string name="processing_model_download">Aby transkrybować na tym urządzeniu, pobierz ten model jednorazowo (%1$s).</string>
-    <string name="processing_local_no_speakers">Transkrypcja na urządzeniu nie rozróżnia mówców.</string>
     <string name="processing_download">Pobierz</string>
     <string name="processing_cellular_body">Model ma rozmiar %1$s.</string>
     <string name="processing_cellular_title">Pobrać przez mobilną transmisję danych?</string>

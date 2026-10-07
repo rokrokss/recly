@@ -341,7 +341,6 @@
     <string name="model_prompt_body">On-device transcription needs Qwen3-ASR (%1$s), an open-source speech recognition model.</string>
     <string name="action_not_now">Not now</string>
     <string name="processing_model_download">To transcribe on this device, download this model once (%1$s).</string>
-    <string name="processing_local_no_speakers">On-device transcription does not separate speakers.</string>
     <string name="processing_download">Download</string>
     <string name="processing_cellular_body">The model is %1$s.</string>
     <string name="processing_cellular_title">Download over mobile data?</string>

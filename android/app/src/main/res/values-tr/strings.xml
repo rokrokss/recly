@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Cihaz üzerinde transkripsiyon için açık kaynaklı bir konuşma tanıma modeli olan Qwen3-ASR (%1$s) gerekir.</string>
     <string name="action_not_now">Şimdi değil</string>
     <string name="processing_model_download">Bu cihazda metne dönüştürmek için bu modeli bir kez indirin (%1$s).</string>
-    <string name="processing_local_no_speakers">Cihaz üzerinde transkripsiyon konuşmacıları ayırmaz.</string>
     <string name="processing_download">İndir</string>
     <string name="processing_cellular_body">Model boyutu: %1$s.</string>
     <string name="processing_cellular_title">Mobil veri ile indirilsin mi?</string>

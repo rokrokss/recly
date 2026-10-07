@@ -256,7 +256,6 @@
     <string name="model_prompt_body">رونویسی روی دستگاه به Qwen3-ASR (%1$s)، یک مدل متن‌باز تشخیص گفتار، نیاز دارد.</string>
     <string name="action_not_now">اکنون نه</string>
     <string name="processing_model_download">برای رونویسی در این دستگاه، این مدل را یک بار بارگیری کنید (%1$s).</string>
-    <string name="processing_local_no_speakers">رونویسی روی دستگاه گوینده‌ها را از هم جدا نمی‌کند.</string>
     <string name="processing_download">بارگیری</string>
     <string name="processing_cellular_body">حجم مدل %1$s است.</string>
     <string name="processing_cellular_title">با داده تلفن همراه بارگیری شود؟</string>

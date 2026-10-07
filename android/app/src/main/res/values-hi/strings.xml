@@ -256,7 +256,6 @@
     <string name="model_prompt_body">डिवाइस पर ट्रांसक्रिप्शन के लिए Qwen3-ASR (%1$s) चाहिए, जो एक ओपन-सोर्स स्पीच रिकग्निशन मॉडल है।</string>
     <string name="action_not_now">अभी नहीं</string>
     <string name="processing_model_download">इस डिवाइस पर ट्रांसक्रिप्शन के लिए यह मॉडल (%1$s) एक बार डाउनलोड करें।</string>
-    <string name="processing_local_no_speakers">डिवाइस पर ट्रांसक्रिप्शन वक्ताओं को अलग नहीं करता।</string>
     <string name="processing_download">डाउनलोड करें</string>
     <string name="processing_cellular_body">मॉडल का आकार %1$s है।</string>
     <string name="processing_cellular_title">मोबाइल डेटा से डाउनलोड करें?</string>

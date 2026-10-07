@@ -256,7 +256,6 @@
     <string name="model_prompt_body">ডিভাইসে ট্রান্সক্রিপশনের জন্য Qwen3-ASR (%1$s) প্রয়োজন, এটি একটি ওপেন-সোর্স স্পিচ রিকগনিশন মডেল।</string>
     <string name="action_not_now">এখন নয়</string>
     <string name="processing_model_download">এই ডিভাইসে ট্রান্সক্রাইব করতে এই মডেলটি একবার ডাউনলোড করুন (%1$s)।</string>
-    <string name="processing_local_no_speakers">ডিভাইসে ট্রান্সক্রিপশন বক্তাদের আলাদা করে না।</string>
     <string name="processing_download">ডাউনলোড করুন</string>
     <string name="processing_cellular_body">মডেলটির আকার %1$s।</string>
     <string name="processing_cellular_title">মোবাইল ডেটায় ডাউনলোড করবেন?</string>

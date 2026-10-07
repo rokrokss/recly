@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Для расшифровки на устройстве нужна Qwen3-ASR (%1$s) — модель распознавания речи с открытым исходным кодом.</string>
     <string name="action_not_now">Не сейчас</string>
     <string name="processing_model_download">Чтобы расшифровывать на этом устройстве, один раз загрузите эту модель (%1$s).</string>
-    <string name="processing_local_no_speakers">Расшифровка на устройстве не разделяет говорящих.</string>
     <string name="processing_download">Загрузить</string>
     <string name="processing_cellular_body">Размер модели — %1$s.</string>
     <string name="processing_cellular_title">Загрузить через мобильные данные?</string>

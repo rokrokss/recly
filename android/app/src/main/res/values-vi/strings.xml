@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Chép lời trên thiết bị cần Qwen3-ASR (%1$s), một mô hình nhận dạng giọng nói nguồn mở.</string>
     <string name="action_not_now">Để sau</string>
     <string name="processing_model_download">Để chép lời trên thiết bị này, hãy tải xuống mô hình này một lần (%1$s).</string>
-    <string name="processing_local_no_speakers">Chép lời trên thiết bị không phân biệt người nói.</string>
     <string name="processing_download">Tải xuống</string>
     <string name="processing_cellular_body">Mô hình có dung lượng %1$s.</string>
     <string name="processing_cellular_title">Tải xuống bằng dữ liệu di động?</string>

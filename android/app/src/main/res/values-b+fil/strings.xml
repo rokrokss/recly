@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Kailangan ng pag-transcribe sa device ang Qwen3-ASR (%1$s), isang open-source na modelo ng speech recognition.</string>
     <string name="action_not_now">Hindi ngayon</string>
     <string name="processing_model_download">Para mag-transcribe sa device na ito, i-download ang modelong ito nang isang beses (%1$s).</string>
-    <string name="processing_local_no_speakers">Hindi pinaghihiwalay ng pag-transcribe sa device ang mga nagsasalita.</string>
     <string name="processing_download">I-download</string>
     <string name="processing_cellular_body">%1$s ang laki ng modelo.</string>
     <string name="processing_cellular_title">I-download gamit ang mobile data?</string>

@@ -288,7 +288,6 @@
     <string name="model_prompt_body">기기 내 전사에는 오픈소스 음성 인식 모델 Qwen3-ASR(%1$s)이 필요합니다.</string>
     <string name="action_not_now">나중에</string>
     <string name="processing_model_download">이 기기에서 전사하려면 이 모델(%1$s)을 한 번 다운로드해야 합니다.</string>
-    <string name="processing_local_no_speakers">기기 내 전사에서는 화자를 구분하지 않습니다.</string>
     <string name="processing_download">다운로드</string>
     <string name="processing_cellular_body">모델은 %1$s입니다.</string>
     <string name="processing_cellular_title">모바일 데이터로 다운로드할까요?</string>

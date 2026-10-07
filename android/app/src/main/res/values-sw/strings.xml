@@ -256,7 +256,6 @@
     <string name="model_prompt_body">Unukuzi kwenye kifaa unahitaji Qwen3-ASR (%1$s), modeli ya chanzo huria ya utambuzi wa matamshi.</string>
     <string name="action_not_now">Si sasa</string>
     <string name="processing_model_download">Ili kunukuu kwenye kifaa hiki, pakua modeli hii mara moja (%1$s).</string>
-    <string name="processing_local_no_speakers">Unukuzi kwenye kifaa hautenganishi wazungumzaji.</string>
     <string name="processing_download">Pakua</string>
     <string name="processing_cellular_body">Ukubwa wa modeli: %1$s.</string>
     <string name="processing_cellular_title">Ungependa kupakua kupitia data ya simu?</string>

@@ -256,7 +256,6 @@
     <string name="model_prompt_body">A transcrição no dispositivo requer o Qwen3-ASR (%1$s), um modelo de reconhecimento de voz de código aberto.</string>
     <string name="action_not_now">Agora não</string>
     <string name="processing_model_download">Para transcrever neste dispositivo, transfira este modelo uma vez (%1$s).</string>
-    <string name="processing_local_no_speakers">A transcrição no dispositivo não separa os oradores.</string>
     <string name="processing_download">Transferir</string>
     <string name="processing_cellular_body">O modelo tem %1$s.</string>
     <string name="processing_cellular_title">Transferir através de dados móveis?</string>

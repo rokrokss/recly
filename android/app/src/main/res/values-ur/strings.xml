@@ -256,7 +256,6 @@
     <string name="model_prompt_body">آلے پر ٹرانسکرپشن کے لیے Qwen3-ASR (%1$s) درکار ہے، جو ایک اوپن سورس تقریر کی شناخت کا ماڈل ہے۔</string>
     <string name="action_not_now">ابھی نہیں</string>
     <string name="processing_model_download">اس آلے پر ٹرانسکرائب کرنے کے لیے یہ ماڈل ایک بار ڈاؤن لوڈ کریں (%1$s)۔</string>
-    <string name="processing_local_no_speakers">آلے پر ٹرانسکرپشن بولنے والوں کو الگ نہیں کرتا۔</string>
     <string name="processing_download">ڈاؤن لوڈ کریں</string>
     <string name="processing_cellular_body">ماڈل کا سائز %1$s ہے۔</string>
     <string name="processing_cellular_title">موبائل ڈیٹا پر ڈاؤن لوڈ کریں؟</string>

@@ -256,7 +256,6 @@
     <string name="model_prompt_body">การถอดเสียงในอุปกรณ์ต้องใช้ Qwen3-ASR (%1$s) ซึ่งเป็นโมเดลรู้จำเสียงพูดแบบโอเพนซอร์ส</string>
     <string name="action_not_now">ไม่ใช่ตอนนี้</string>
     <string name="processing_model_download">หากต้องการถอดเสียงในอุปกรณ์นี้ ให้ดาวน์โหลดโมเดลนี้หนึ่งครั้ง (%1$s)</string>
-    <string name="processing_local_no_speakers">การถอดเสียงในอุปกรณ์ไม่แยกผู้พูด</string>
     <string name="processing_download">ดาวน์โหลด</string>
     <string name="processing_cellular_body">โมเดลมีขนาด %1$s</string>
     <string name="processing_cellular_title">ดาวน์โหลดผ่านอินเทอร์เน็ตมือถือใช่ไหม?</string>

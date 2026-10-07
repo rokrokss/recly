@@ -256,7 +256,6 @@
     <string name="model_prompt_body">La transcription sur l’appareil nécessite Qwen3-ASR (%1$s), un modèle de reconnaissance vocale open source.</string>
     <string name="action_not_now">Plus tard</string>
     <string name="processing_model_download">Pour transcrire sur cet appareil, téléchargez ce modèle une fois (%1$s).</string>
-    <string name="processing_local_no_speakers">La transcription sur l’appareil ne distingue pas les locuteurs.</string>
     <string name="processing_download">Télécharger</string>
     <string name="processing_cellular_body">Le modèle fait %1$s.</string>
     <string name="processing_cellular_title">Télécharger avec les données mobiles ?</string>

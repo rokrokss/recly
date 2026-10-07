@@ -16,6 +16,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -123,8 +130,31 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                         }
                     }
                 }
+                // docs/09 "On-device speaker separation": the speaker models by name; once the speech model is here,
+                // their own download when they are not — with the speech model they come together.
                 if (state.localInstalled) {
-                    Text(stringResource(R.string.processing_local_no_speakers), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                    ProcessingRow(stringResource(R.string.speaker_model)) {
+                        Text(SPEAKER_MODEL_NAME, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
+                    }
+                    val speechHere = state.local?.status.let { it != null && it != LocalEngineStatus.MODEL_REQUIRED && it != LocalEngineStatus.UNSUPPORTED }
+                    if (speechHere && state.local?.supportsDiarization == false) {
+                        val download = state.download
+                        val reading = download.info ?: state.local
+                        if (download.active) ModelDownloadLines(download, reading)
+                        EndButtons {
+                            if (download.active) {
+                                BlueprintButton(stringResource(R.string.processing_cancel_download), model::cancelDownload, tone = ButtonTone.QUIET)
+                            } else {
+                                BlueprintButton(
+                                    stringResource(R.string.processing_download) + (reading?.modelBytes?.let { " (${modelSize(it)})" } ?: ""),
+                                    { metered(model::downloadModel) },
+                                    enabled = !state.busy && recorder == RecorderState.Idle,
+                                    modifier = Modifier.testTag("speaker-model-download"),
+                                )
+                            }
+                        }
+                    }
+                    Text(stringResource(R.string.speaker_model_sentences), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 }
             }
             if (draft.mode == TranscriptionMode.EXTERNAL) {
@@ -161,6 +191,21 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                 if (!languageSupported) {
                     Text(stringResource(R.string.processing_language_unsupported), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 }
+                // docs/09 "Vocabulary": after the spoken language, part of the draft like everything above.
+                Text(stringResource(R.string.vocabulary), style = MaterialTheme.typography.bodyMedium, color = blueprint.text,
+                    modifier = Modifier.padding(top = Space.s))
+                VocabularyEditor(draft.vocabulary) { terms -> model.edit { it.vocabulary = terms } }
+                val provider = SttProviders.displayName(draft.provider)
+                Text(
+                    when {
+                        draft.mode == TranscriptionMode.LOCAL && state.local?.supportsVocabulary == true -> stringResource(R.string.vocabulary_local)
+                        draft.mode == TranscriptionMode.LOCAL -> stringResource(R.string.vocabulary_local_unsupported)
+                        SttProviders.supportsVocabulary(draft.provider, draft.model.takeIf { draft.acceptsModel && it.isNotBlank() }, draft.language) ->
+                            stringResource(R.string.vocabulary_external, provider)
+                        else -> stringResource(R.string.vocabulary_unsupported, provider)
+                    },
+                    style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted,
+                )
             }
             state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
             // Only a draft with changes has anything to commit; the buttons appearing is the sign that it does.
@@ -192,6 +237,72 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
         }
     }
     HairLine()
+}
+
+/** What the speaker row names: the segmentation and embedding models, products and not translated. */
+private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"
+
+/**
+ * docs/09 "Vocabulary": the terms as chips with a remove each, and a field that adds one — Enter or Add, and
+ * one chip per line of a paste. A term past [VOCABULARY_ENTRY_MAX] characters, or one past [VOCABULARY_MAX],
+ * is not added and the limits are said in the warning tone; a repeat (ignoring case) is not added either.
+ */
+@Composable
+private fun VocabularyEditor(terms: List<String>, onChange: (List<String>) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var refused by remember { mutableStateOf(false) }
+    val add = {
+        val lines = text.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+        var next = terms
+        var over = false
+        lines.forEach { line ->
+            when {
+                line.length > VOCABULARY_ENTRY_MAX || next.size >= VOCABULARY_MAX -> over = true
+                next.none { it.equals(line, ignoreCase = true) } -> next = next + line
+            }
+        }
+        refused = over
+        if (next != terms) onChange(next)
+        if (!over) text = ""
+    }
+    if (terms.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+        terms.forEach { term -> VocabularyChip(term) { refused = false; onChange(terms - term) } }
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+        OutlinedTextField(
+            text,
+            { value ->
+                // A paste of several lines is several terms; a typed Enter is the same as Add.
+                if ('\n' in value) { text = value; add() } else text = value
+            },
+            placeholder = { Text(stringResource(R.string.vocabulary_placeholder)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { add() }),
+            modifier = Modifier.weight(1f).testTag("vocabulary-field"),
+        )
+        BlueprintButton(stringResource(R.string.vocabulary_add), { add() }, enabled = text.isNotBlank(), tone = ButtonTone.QUIET,
+            modifier = Modifier.testTag("vocabulary-add"))
+    }
+    if (refused) Text(stringResource(R.string.vocabulary_limits), style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
+}
+
+@Composable
+private fun VocabularyChip(term: String, onRemove: () -> Unit) {
+    val palette = blueprint
+    val remove = stringResource(R.string.vocabulary_remove, term)
+    Row(
+        Modifier.border(palette.line, palette.grid, androidx.compose.foundation.shape.RoundedCornerShape(app.recly.android.ui.theme.Radius.node))
+            .padding(start = Space.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(term, style = MaterialTheme.typography.labelLarge, color = palette.text)
+        Box(
+            Modifier.size(MinTouch).clickable(role = androidx.compose.ui.semantics.Role.Button, onClick = onRemove)
+                .semantics { contentDescription = remove },
+            contentAlignment = Alignment.Center,
+        ) { Text("×", style = MaterialTheme.typography.labelLarge, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics {}) }
+    }
 }
 
 /**
