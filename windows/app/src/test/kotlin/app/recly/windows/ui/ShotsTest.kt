@@ -149,6 +149,7 @@ class ShotsTest {
         shot("popup-importing-en", 520, 560, false) { TrayPopup(model, strings) {} }
 
         // The tray popup while a recording runs, before and after its Highlight.
+        val before = model.recents.map { it.id }.toSet()
         model.start()
         until { model.recording }
         delay(1_500)
@@ -156,6 +157,8 @@ class ShotsTest {
         shot("popup-highlighted-en", 520, 560, false, clicks = listOf(POPUP_HIGHLIGHT)) { TrayPopup(model, strings) {} }
         model.stop()
         until { !model.recording }
+        // The fake helper writes no audio here, so nothing of this take reached storage: Transcribe again cannot run.
+        val short = model.recents.first { it.id !in before }
 
         // The speaker models missing on a PC that has the speech model: files of the right sizes stand in for it.
         val models = File(dir, "data/models/${recly.core.transcribe.Qwen3Asr.DIRECTORY}")
@@ -173,6 +176,12 @@ class ShotsTest {
             java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
         }.getOrNull()
         println("SHOTS clipboard after Copy configuration:\n$copied")
+        model.openDetail(short)
+        until { model.detail?.loading == false }
+        shot("recordings-more-not-uploaded-en", 1000, 680, false, clicks = listOf(MORE)) { RecordingsWindow(model, strings) { it() } }
+        model.retranscribe(RetranscribeRequest(short.id, provider = null, language = recly.core.model.Language.EN, replacesEdits = false))
+        until { model.detail?.notice != null }
+        shot("recordings-retranscribe-refused-en", 1000, 680, false) { RecordingsWindow(model, strings) { it() } }
         model.shutdown()
     }
 
@@ -261,13 +270,13 @@ class ShotsTest {
         val EXPORT = Offset(890f, 38f)
         val MORE = Offset(966f, 38f)
         val SPEED = Offset(560f, 150f)
-        val BADGE = Offset(455f, 215f)
+        val BADGE = Offset(441f, 215f)
         val TICK = Offset(451f, 100f)
         val MORE_EDIT = Offset(835f, 86f)
         val EDIT_FIELD = Offset(700f, 250f)
-        val BADGE_CHANGE = Offset(548f, 275f)
+        val BADGE_CHANGE = Offset(534f, 275f)
         val SEARCH = Offset(150f, 103f)
-        val FLAG = Offset(415f, 215f)
+        val FLAG = Offset(408f, 215f)
         val FLAG_REMOVE = Offset(475f, 271f)
         val FIND_NEXT = Offset(900f, 210f)
         val POPUP_HIGHLIGHT = Offset(179f, 263f)
