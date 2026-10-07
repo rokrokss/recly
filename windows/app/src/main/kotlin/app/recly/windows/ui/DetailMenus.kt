@@ -162,6 +162,7 @@ internal fun MoreButton(
             val againBlocked = when {
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
                 detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
                 else -> null
             }
             MenuRow(

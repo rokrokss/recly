@@ -518,6 +518,15 @@ private fun Detail(
                 }
             },
         )
+        // Transcribe again that did not start says why, the way a refused edit does.
+        detail.notice?.let { notice ->
+            Text(
+                strings[notice],
+                modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s),
+                style = MaterialTheme.typography.bodySmall,
+                color = blueprint.warningInk,
+            )
+        }
     }
     // A take still being written to has nothing whole to play, and nothing to say about it either.
     if (!detail.loading && !detail.writing) {

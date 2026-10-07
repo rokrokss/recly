@@ -125,6 +125,10 @@ data class RecordingDetail(
     /** That job is a re-transcription (docs/10 "Re-transcription"), on this PC or with a provider. */
     val retranscribing: Boolean = false,
     val retranscribingLocal: Boolean = false,
+    /** Neither in storage yet nor another device's: there is no folder to transcribe again into. */
+    val notUploaded: Boolean = false,
+    /** Why Transcribe again did not start, said under the header for a moment. */
+    val notice: Str? = null,
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
     val find: String? = null,
     val findAtSec: Double? = null,
@@ -1151,11 +1155,14 @@ class ShellModel(
             .collect { open ->
                 val again = open.firstOrNull { it.retranscription }
                 val running = open.isNotEmpty() || graph.core.localTranscription.isRunning(recordingId)
+                // Asked again as its jobs change: a job that settles is where an upload has landed or not.
+                val uploaded = runCatching { graph.core.uploaded(recordingId) }.getOrDefault(true)
                 updateDetail(recordingId) {
                     it.copy(
                         transcribing = running,
                         retranscribing = again != null,
                         retranscribingLocal = again?.workflow?.steps?.any { step -> step is recly.core.model.Step.LocalTranscribe } == true,
+                        notUploaded = !uploaded,
                     )
                 }
             }
@@ -1258,13 +1265,20 @@ class ShellModel(
             val result = runCatching { graph.core.retranscribe(request.recordingId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.retranscribe.failed", error = it) }
                 .getOrNull()
-            when (result) {
-                is RetranscribeResult.Started -> runner?.jobsDue()
-                RetranscribeResult.Busy -> status = Str.DETAIL_TRANSCRIBING.message()
-                RetranscribeResult.NoAudio -> status = Str.PLAYER_NO_AUDIO.message()
-                RetranscribeResult.NoTranscriptionConfigured -> status = Str.DETAIL_TRANSCRIPTION_OFF.message()
-                RetranscribeResult.Unsupported, null -> Unit
-            }
+            val notice = when (result) {
+                is RetranscribeResult.Started -> {
+                    runner?.jobsDue()
+                    null
+                }
+                RetranscribeResult.Busy -> Str.DETAIL_TRANSCRIBING
+                RetranscribeResult.NoAudio -> Str.PLAYER_NO_AUDIO
+                RetranscribeResult.NoTranscriptionConfigured -> Str.DETAIL_TRANSCRIPTION_OFF
+                RetranscribeResult.Unsupported -> Str.DETAIL_NOT_UPLOADED
+                null -> null
+            } ?: return@launch
+            updateDetail(request.recordingId) { it.copy(notice = notice) }
+            delay(NOTICE_MS)
+            updateDetail(request.recordingId) { if (it.notice == notice) it.copy(notice = null) else it }
         }
     }
 
@@ -2150,6 +2164,8 @@ class ShellModel(
 
         /** How long the tray's line says a highlight was marked. */
         private const val HIGHLIGHT_LINE_MS = 2_000L
+        /** How long the detail says why Transcribe again did not start. */
+        private const val NOTICE_MS = 4_000L
 
         /** docs/10 "Search": the most recordings one search lists. */
         private const val SEARCH_LIMIT = 50
