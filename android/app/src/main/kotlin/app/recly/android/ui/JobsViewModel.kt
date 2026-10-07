@@ -253,6 +253,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(JobsUiState())
     val state: StateFlow<JobsUiState> = _state.asStateFlow()
 
+    /** docs/09 "Playback": this device's speed and Skip silence. Before `init`, which reads them. */
+    private val preferences = AppSettings(application)
+
     /** Everything the open detail is reading, as one thing to stop when the page goes. */
     private var detailJob: kotlinx.coroutines.Job? = null
     private var resultJob: kotlinx.coroutines.Job? = null
@@ -300,8 +303,6 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         pullRemote()
     }
-
-    private val preferences = AppSettings(application)
 
     /**
      * Whether a transcription of the open recording is queued or running, and whether it is a "Transcribe
