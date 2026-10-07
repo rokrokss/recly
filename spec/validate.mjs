@@ -49,9 +49,11 @@ const settingsCases = [
   ["vocabulary", true, settingsMut(c => c.settings.transcription.vocabulary = ["Recly", "민수", "CLOVA Speech"])],
   ["vocabulary entry untrimmed", false, settingsMut(c => c.settings.transcription.vocabulary = [" Recly"])],
   ["vocabulary entry empty", false, settingsMut(c => c.settings.transcription.vocabulary = [""])],
-  ["vocabulary entry over 60", false, settingsMut(c => c.settings.transcription.vocabulary = ["x".repeat(61)])],
+  ["vocabulary entry of 40", true, settingsMut(c => c.settings.transcription.vocabulary = ["x".repeat(40)])],
+  ["vocabulary entry over 40", false, settingsMut(c => c.settings.transcription.vocabulary = ["x".repeat(41)])],
   ["vocabulary entry with a line break", false, settingsMut(c => c.settings.transcription.vocabulary = ["a\nb"])],
-  ["vocabulary over 100 entries", false, settingsMut(c => c.settings.transcription.vocabulary = Array.from({ length: 101 }, (_, i) => `w${i}`))],
+  ["vocabulary of 50 entries", true, settingsMut(c => c.settings.transcription.vocabulary = Array.from({ length: 50 }, (_, i) => `w${i}`))],
+  ["vocabulary over 50 entries", false, settingsMut(c => c.settings.transcription.vocabulary = Array.from({ length: 51 }, (_, i) => `w${i}`))],
   ["vocabulary duplicate", false, settingsMut(c => c.settings.transcription.vocabulary = ["Recly", "Recly"])],
 ];
 for (const language of ["ko", "en", "ko-en", "auto", "ja", "zh-cn", "zh-tw", "es", "fr", "de", "pt", "ar", "hi", "ru", "it", "id", "tr", "vi", "th", "nl", "pl", "uk"]) {

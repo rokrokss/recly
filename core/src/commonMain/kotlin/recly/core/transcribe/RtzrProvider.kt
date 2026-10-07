@@ -7,6 +7,7 @@ import kotlin.time.ExperimentalTime
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
@@ -14,6 +15,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okio.Path
 import recly.core.drive.string
@@ -172,6 +174,13 @@ class RtzrProvider : SttProvider {
             ctx.speakersExpected?.let { putJsonObject("diarization") { put("spk_count", it) } }
         }
         put("use_word_timestamp", true)
+        // docs/08 "Vocabulary": keyword boosting is for Korean audio only, with the model's own rules.
+        val model = modelName(ctx)
+        if (Vocabulary.applies(NAME, model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.rtzr(ctx.vocabulary, model).takeIf { it.isNotEmpty() }?.let { terms ->
+                putJsonArray("keywords") { terms.forEach { add(it) } }
+            }
+        }
     }
 
     /** The step's own choice wins; otherwise the model that speaks the language that was asked for. */

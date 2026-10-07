@@ -75,6 +75,10 @@ class ElevenLabsProvider : SttProvider {
         // would land in the transcript as if someone had said them.
         add(field("timestamps_granularity", "word"))
         add(field("tag_audio_events", "false"))
+        // docs/08 "Vocabulary": one `keyterms` field per term.
+        if (Vocabulary.applies(NAME, model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.elevenLabs(ctx.vocabulary).forEach { add(field("keyterms", it)) }
+        }
     }
 
     private fun speakerCount(ctx: SttContext): Int? =

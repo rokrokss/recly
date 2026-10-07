@@ -14,6 +14,8 @@ data class LocalEngineInfo(
     val name: String,
     val revision: String,
     val supportsDiarization: Boolean = false,
+    /** Whether the engine reads [LocalTranscriptionRequest.vocabulary]; the settings say so when it does not. */
+    val supportsVocabulary: Boolean = false,
     val modelBytes: Long? = null,
     val progress: Double? = null,
     val downloading: Boolean = false,

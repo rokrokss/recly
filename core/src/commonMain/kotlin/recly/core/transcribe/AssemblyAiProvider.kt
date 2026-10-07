@@ -124,6 +124,12 @@ class AssemblyAiProvider : SttProvider {
         }
         put("speaker_labels", ctx.step.diarize)
         if (ctx.step.diarize) ctx.speakersExpected?.let { put("speakers_expected", it) }
+        // docs/08 "Vocabulary": `keyterms_prompt`, never the retired `word_boost` or the free-text `prompt`.
+        if (Vocabulary.applies(NAME, null, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.assemblyAi(ctx.vocabulary).takeIf { it.isNotEmpty() }?.let { terms ->
+                putJsonArray("keyterms_prompt") { terms.forEach { add(it) } }
+            }
+        }
     }
 
     /** docs/08: `ko-en` has no mixed-language code here, and Korean is the half that matters. */

@@ -141,6 +141,13 @@ class GladiaProvider : SttProvider {
             }
         }
         ctx.step.model?.let { put("model", it) }
+        // docs/08 "Vocabulary": replacement after the transcription, plain strings.
+        if (Vocabulary.applies(NAME, ctx.step.model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.gladia(ctx.vocabulary).takeIf { it.isNotEmpty() }?.let { terms ->
+                put("custom_vocabulary", true)
+                putJsonObject("custom_vocabulary_config") { putJsonArray("vocabulary") { terms.forEach { add(it) } } }
+            }
+        }
     }
 
     /** `context.participants` collapses the range (docs/08); a range of one number already is one. */

@@ -159,6 +159,14 @@ object SttProviders {
     }
 
     /**
+     * docs/08 "Vocabulary": whether [name] uses the vocabulary with [model] (null: the plan's default) and
+     * [language] — what the settings say "{provider} does not use a vocabulary" from. The plan asks the
+     * provider for speaker labels wherever it can, which decides OpenAI's default model.
+     */
+    fun supportsVocabulary(name: String, model: String?, language: recly.core.model.Language): Boolean =
+        Vocabulary.applies(name, model, language, supportsDiarization(name, model))
+
+    /**
      * What the settings show for [name]: the company's own spelling. Brand names are proper nouns and
      * are not translated; ids stay in data (transcripts, logs, the settings document).
      */

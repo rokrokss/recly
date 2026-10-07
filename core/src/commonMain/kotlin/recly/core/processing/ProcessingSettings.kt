@@ -83,8 +83,8 @@ data class ProcessingTranscription(
 )
 
 /** docs/05 "Fixed processing settings": the vocabulary list's limits. */
-const val VOCABULARY_MAX: Int = 100
-const val VOCABULARY_ENTRY_MAX: Int = 60
+const val VOCABULARY_MAX: Int = 50
+const val VOCABULARY_ENTRY_MAX: Int = 40
 
 @Serializable
 data class ProviderDetails(

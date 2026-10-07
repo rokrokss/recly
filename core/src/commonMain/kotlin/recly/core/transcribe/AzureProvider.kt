@@ -98,6 +98,12 @@ class AzureProvider : SttProvider {
                 put("maxSpeakers", (ctx.speakersExpected ?: ctx.step.speakers.max).coerceIn(MIN_SPEAKERS, MAX_SPEAKERS))
             }
         }
+        // docs/08 "Vocabulary": a phrase list, for a request with one locale.
+        if (Vocabulary.applies(NAME, null, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.azure(ctx.vocabulary).takeIf { it.isNotEmpty() }?.let { phrases ->
+                putJsonObject("phraseList") { putJsonArray("phrases") { phrases.forEach { add(it) } } }
+            }
+        }
     }
 
     /**

@@ -126,6 +126,15 @@ class OpenAiCompatProvider(private val profile: Profile) : SttProvider {
                 add(field("timestamp_granularities", "segment"))
             }
         }
+        // docs/08 "Vocabulary": a Whisper-style `prompt` everywhere but Mistral, whose `context_bias`
+        // is one field per term.
+        if (Vocabulary.applies(profile.provider, model, ctx.step.language, ctx.step.diarize)) {
+            if (profile == Profile.MISTRAL) {
+                Vocabulary.mistral(ctx.vocabulary).forEach { add(field("context_bias", it)) }
+            } else {
+                Vocabulary.prompt(ctx.vocabulary)?.let { add(field("prompt", it)) }
+            }
+        }
     }
 
     private fun field(name: String, value: String): HttpBody.Multipart.Part = HttpBody.Multipart.Part(

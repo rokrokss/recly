@@ -41,10 +41,10 @@
             "speakers": { "$ref": "#/$defs/speakers", "deprecated": true, "description": "Accepted for read compatibility. New recording plans use automatic speaker inference with the default range." },
             "vocabulary": {
               "type": "array",
-              "maxItems": 100,
+              "maxItems": 50,
               "uniqueItems": true,
-              "description": "Words and names the transcription should expect, sent with every recording to the local engine or the external provider. Each entry is trimmed and 1 to 60 characters, unique ignoring case, in the order entered. See docs/recly.md section 5.",
-              "items": { "type": "string", "minLength": 1, "maxLength": 60, "pattern": "^\\S(?:.*\\S)?$" }
+              "description": "Words and names the transcription should expect, sent with every recording to the local engine or the external provider. Each entry is trimmed and 1 to 40 characters, unique ignoring case, in the order entered. See docs/recly.md section 5.",
+              "items": { "type": "string", "minLength": 1, "maxLength": 40, "pattern": "^\\S(?:.*\\S)?$" }
             },
             "external": { "$ref": "#/$defs/external" },
             "providerDetails": {

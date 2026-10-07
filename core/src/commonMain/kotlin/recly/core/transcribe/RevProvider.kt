@@ -4,12 +4,15 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import okio.Path
 import recly.core.drive.string
 import recly.core.job.StepFailure
@@ -143,6 +146,12 @@ class RevProvider : SttProvider {
         put("language", languageCode(ctx.step.language))
         // This API takes no speaker count, and it diarizes unless it is told not to.
         put("skip_diarization", !ctx.step.diarize)
+        // docs/08 "Vocabulary": one inline list; a phrase Rev cannot use would fail the whole job.
+        if (Vocabulary.applies(NAME, ctx.step.model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.rev(ctx.vocabulary, ctx.step.language).takeIf { it.isNotEmpty() }?.let { phrases ->
+                putJsonArray("custom_vocabularies") { addJsonObject { putJsonArray("phrases") { phrases.forEach { add(it) } } } }
+            }
+        }
     }
 
     /**

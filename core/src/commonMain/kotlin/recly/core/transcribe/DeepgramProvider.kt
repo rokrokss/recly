@@ -84,6 +84,12 @@ class DeepgramProvider : SttProvider {
         // docs/15: out of the Model Improvement Program on every request — Deepgram then keeps the
         // audio and transcript only while processing it (developers.deepgram.com, checked 2026-09-26).
         add("mip_opt_out=true")
+        // docs/08 "Vocabulary": one repeated parameter per term, named after the model family.
+        if (Vocabulary.applies(NAME, model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.deepgram(ctx.vocabulary, model)?.let { (parameter, terms) ->
+                terms.forEach { add("$parameter=${recly.core.drive.urlEncode(it)}") }
+            }
+        }
     }.joinToString("&")
 
     /** docs/08: no mixed-language code, and `auto` is this provider's own detection. */

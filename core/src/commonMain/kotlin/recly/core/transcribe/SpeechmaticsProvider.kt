@@ -2,12 +2,14 @@ package recly.core.transcribe
 
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okio.Path
 import recly.core.drive.string
@@ -137,6 +139,12 @@ class SpeechmaticsProvider : SttProvider {
             put("diarization", if (ctx.step.diarize) "speaker" else "none")
             // `cmn` is written in Simplified unless asked otherwise (formatting docs, 2026-09-25).
             if (ctx.step.language == Language.ZH_TW) put("output_locale", "cmn-Hant")
+            // docs/08 "Vocabulary": the custom dictionary, words only — no `sounds_like`.
+            if (Vocabulary.applies(NAME, ctx.step.model, ctx.step.language, ctx.step.diarize)) {
+                Vocabulary.speechmatics(ctx.vocabulary).takeIf { it.isNotEmpty() }?.let { terms ->
+                    putJsonArray("additional_vocab") { terms.forEach { addJsonObject { put("content", it) } } }
+                }
+            }
         }
         // By default a file whose language cannot be told with confidence is rejected, and a
         // rejection is resubmitted; `allow` transcribes it in the best guess instead (batch API

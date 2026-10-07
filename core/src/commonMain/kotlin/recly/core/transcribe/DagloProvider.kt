@@ -2,12 +2,14 @@ package recly.core.transcribe
 
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okio.Path
 import recly.core.drive.string
@@ -105,6 +107,15 @@ class DagloProvider : SttProvider {
             // begin with, and a hint of one is diarization asked to find nobody.
             if (ctx.step.diarize) {
                 speakerCount(ctx)?.takeIf { it >= MIN_SPEAKER_HINT }?.let { put("speakerCountHint", it) }
+            }
+        }
+        // docs/08 "Vocabulary": keyword boosting, Korean only; the level is left at the provider's default.
+        if (Vocabulary.applies(NAME, ctx.step.model, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.daglo(ctx.vocabulary).takeIf { it.isNotEmpty() }?.let { keywords ->
+                putJsonObject("keywordBoost") {
+                    put("enable", true)
+                    putJsonArray("keywords") { keywords.forEach { add(it) } }
+                }
             }
         }
     }

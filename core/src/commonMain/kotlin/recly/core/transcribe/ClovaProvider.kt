@@ -3,12 +3,14 @@ package recly.core.transcribe
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import kotlinx.serialization.json.putJsonObject
 import okio.Path
 import recly.core.drive.string
@@ -113,6 +115,10 @@ class ClovaProvider : SttProvider {
                 put("speakerCountMin", (ctx.speakersExpected ?: ctx.step.speakers.min).coerceIn(1, MAX_SPEAKERS))
                 put("speakerCountMax", (ctx.speakersExpected ?: ctx.step.speakers.max).coerceIn(1, MAX_SPEAKERS))
             }
+        }
+        // docs/08 "Vocabulary": keyword boosting, in the shape of the reference's own example.
+        if (Vocabulary.applies(NAME, null, ctx.step.language, ctx.step.diarize)) {
+            Vocabulary.clova(ctx.vocabulary)?.let { words -> putJsonArray("boostings") { addJsonObject { put("words", words) } } }
         }
     }
 

@@ -95,6 +95,7 @@ internal class ProviderHarness {
         invokeUrl: String? = null,
         audioDurationSec: Double? = null,
         providerState: JsonObject? = null,
+        vocabulary: List<String> = emptyList(),
     ): SttContext = SttContext(
         step = Step.Transcribe(
             id = "stt",
@@ -105,6 +106,7 @@ internal class ProviderHarness {
             diarize = diarize,
             speakers = speakers,
             model = model,
+            vocabulary = vocabulary,
         ),
         apiKey = apiKey,
         speakersExpected = speakersExpected,
@@ -126,6 +128,20 @@ internal fun Recorded.multipartPart(name: String): String {
     val bodyAt = text.indexOf("\r\n\r\n", at) + 4
     val end = text.indexOf("\r\n--", bodyAt)
     return text.substring(bodyAt, if (end < 0) text.length else end)
+}
+
+/** Every `name="…"` section of a `multipart/form-data` body, in order — a list sent as a repeated field. */
+internal fun Recorded.multipartParts(name: String): List<String> {
+    val marker = "name=\"$name\""
+    val values = mutableListOf<String>()
+    var at = text.indexOf(marker)
+    while (at >= 0) {
+        val bodyAt = text.indexOf("\r\n\r\n", at) + 4
+        val end = text.indexOf("\r\n--", bodyAt)
+        values += text.substring(bodyAt, if (end < 0) text.length else end)
+        at = text.indexOf(marker, bodyAt)
+    }
+    return values
 }
 
 /** The part headers `name` was written with — `filename`, `Content-Type` and the rest. */
