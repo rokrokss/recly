@@ -232,6 +232,7 @@ public struct FindBar: View {
         }
         .padding(.horizontal, Space.s)
         .background(blueprint.palette.surface)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("find-bar")
     }
 
@@ -279,7 +280,8 @@ public struct SearchResultRow: View {
                         .foregroundStyle(blueprint.palette.text)
                         .lineLimit(2)
                     ForEach(Array(hit.snippets.prefix(2).enumerated()), id: \.offset) { _, snippet in
-                        Text(Self.marked(snippet.text, ranges: snippet.ranges, tint: blueprint.palette.text, background: blueprint.palette.accent.opacity(0.16)))
+                        let (text, ranges) = Self.around(snippet)
+                        Text(Self.marked(text, ranges: ranges, tint: blueprint.palette.text, background: blueprint.palette.accent.opacity(0.16)))
                             .font(blueprint.fonts.sans(TypeSize.small))
                             .foregroundStyle(blueprint.palette.textMuted)
                             .lineLimit(1)
@@ -306,6 +308,22 @@ public struct SearchResultRow: View {
     private var title: String {
         hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
     }
+
+    /// A snippet cut to start a few words before its first match, so the match is on the one line shown.
+    static func around(_ snippet: SearchSnippet) -> (String, [SearchRange]) {
+        let text = snippet.text
+        guard let first = snippet.ranges.first, first.offset > lead else { return (text, snippet.ranges) }
+        let utf16 = Array(text.utf16)
+        var start = Int(first.offset) - lead
+        // Back to the start of a word, so the line does not open in the middle of one.
+        while start > 0, utf16[start - 1] != 0x20 { start -= 1 }
+        guard start > 0 else { return (text, snippet.ranges) }
+        let rest = String(utf16CodeUnits: Array(utf16[start...]), count: utf16.count - start)
+        let shift = Int32(start) - 1
+        return ("…" + rest, snippet.ranges.map { SearchRange(offset: $0.offset - shift, length: $0.length) })
+    }
+
+    private static let lead = 24
 
     /// [text] with the core's ranges marked. The core counts in UTF-16 code units, as Kotlin strings do.
     static func marked(_ text: String, ranges: [SearchRange], tint: Color, background: Color?) -> AttributedString {

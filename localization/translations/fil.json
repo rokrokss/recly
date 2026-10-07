@@ -452,7 +452,6 @@
   "Copy configuration": "Kopyahin ang configuration",
   "Could not import this file": "Hindi ma-import ang file na ito",
   "Highlight": "I-highlight",
-  "Highlighted at {0}": "Na-highlight sa {0}",
   "Import audio": "Mag-import ng audio",
   "Import audio…": "Mag-import ng audio…",
   "Keyboard shortcut": "Shortcut sa keyboard",
@@ -519,5 +518,6 @@
   "on-device transcription": "pag-transcribe sa device",
   "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}.",
   "Import to Recly": "I-import sa Recly",
-  "Start or stop a recording.": "Simulan o ihinto ang recording."
+  "Start or stop a recording.": "Simulan o ihinto ang recording.",
+  "Highlight · {0}": "Highlight · {0}"
 }

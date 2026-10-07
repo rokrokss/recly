@@ -452,7 +452,6 @@
   "Copy configuration": "کپی پیکربندی",
   "Could not import this file": "این فایل وارد نشد",
   "Highlight": "علامت‌گذاری",
-  "Highlighted at {0}": "در {0} علامت گذاشته شد",
   "Import audio": "وارد کردن صدا",
   "Import audio…": "وارد کردن صدا…",
   "Keyboard shortcut": "میان‌بر صفحه‌کلید",
@@ -519,5 +518,6 @@
   "on-device transcription": "رونویسی روی دستگاه",
   "{0} does not use a vocabulary.": "ارائه‌دهنده {0} از واژگان استفاده نمی‌کند.",
   "Import to Recly": "وارد کردن به Recly",
-  "Start or stop a recording.": "شروع یا توقف ضبط."
+  "Start or stop a recording.": "شروع یا توقف ضبط.",
+  "Highlight · {0}": "علامت · {0}"
 }

@@ -1034,8 +1034,8 @@ public struct RecordingDetailView: View {
                 with: .color(x <= playhead ? blueprint.palette.accent : blueprint.palette.textMuted)
             )
         }
-        // docs/09 §1: each highlight a 2 pt accent line over the whole height with a 6×6 flag at the
-        // top, above the bars and under the playhead.
+        // docs/09 §1: each highlight a 2 pt accent line over the whole height with a 6×6 filled square
+        // at the top, above the bars and under the playhead.
         for mark in model.highlights where model.totalSec > 0 {
             let x = min(max(0, size.width * mark / model.totalSec), size.width - 2)
             context.fill(Path(CGRect(x: x, y: 0, width: 2, height: size.height)), with: .color(blueprint.palette.accent))

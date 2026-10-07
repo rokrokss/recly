@@ -452,7 +452,6 @@
   "Copy configuration": "Sao chép cấu hình",
   "Could not import this file": "Không thể nhập tệp này",
   "Highlight": "Đánh dấu",
-  "Highlighted at {0}": "Đã đánh dấu tại {0}",
   "Import audio": "Nhập âm thanh",
   "Import audio…": "Nhập âm thanh…",
   "Keyboard shortcut": "Phím tắt",
@@ -519,5 +518,6 @@
   "on-device transcription": "chép lời trên thiết bị",
   "{0} does not use a vocabulary.": "{0} không dùng từ vựng.",
   "Import to Recly": "Nhập vào Recly",
-  "Start or stop a recording.": "Bắt đầu hoặc dừng ghi âm."
+  "Start or stop a recording.": "Bắt đầu hoặc dừng ghi âm.",
+  "Highlight · {0}": "Điểm đánh dấu · {0}"
 }

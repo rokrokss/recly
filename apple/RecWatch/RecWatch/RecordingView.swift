@@ -54,7 +54,7 @@ struct RecordingView: View {
     @ViewBuilder
     private var statusLine: some View {
         if let at = model.highlightedAtSec {
-            Text(verbatim: RecKitStrings.localized("Highlighted at %@", LedgerFormat.clock(Int(at))))
+            HighlightNews(atSec: at)
                 .foregroundStyle(blueprint.palette.text)
         } else if !model.status.isEmpty {
             Text(verbatim: model.status)
@@ -93,13 +93,14 @@ struct RecordingView: View {
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Record"))
     }
 
-    /// The flag in the accent's outline: a mark at this moment of the recording.
+    /// The highlight square and the word, in the accent's outline: a mark at this moment of the recording.
     private var highlightButton: some View {
         Button { model.highlight() } label: {
-            Label {
+            HStack(spacing: Space.xs) {
+                RoundedRectangle(cornerRadius: Radius.badge)
+                    .fill(blueprint.palette.accent)
+                    .frame(width: 8, height: 8)
                 Text(verbatim: RecKitStrings.localized("Highlight"))
-            } icon: {
-                Image(systemName: "flag")
             }
             .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
             .foregroundStyle(blueprint.palette.accent)

@@ -452,7 +452,6 @@
   "Copy configuration": "نسخ التكوين",
   "Could not import this file": "تعذّر استيراد هذا الملف",
   "Highlight": "وضع علامة",
-  "Highlighted at {0}": "تم وضع علامة عند {0}",
   "Import audio": "استيراد صوت",
   "Import audio…": "استيراد صوت…",
   "Keyboard shortcut": "اختصار لوحة المفاتيح",
@@ -519,5 +518,6 @@
   "on-device transcription": "النسخ على الجهاز",
   "{0} does not use a vocabulary.": "لا يستخدم {0} قائمة مفردات.",
   "Import to Recly": "استيراد إلى Recly",
-  "Start or stop a recording.": "ابدأ تسجيلًا أو أوقفه."
+  "Start or stop a recording.": "ابدأ تسجيلًا أو أوقفه.",
+  "Highlight · {0}": "علامة · {0}"
 }

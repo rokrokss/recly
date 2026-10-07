@@ -452,7 +452,6 @@
   "Copy configuration": "Копировать конфигурацию",
   "Could not import this file": "Не удалось импортировать этот файл",
   "Highlight": "Отметить",
-  "Highlighted at {0}": "Отмечено: {0}",
   "Import audio": "Импортировать аудио",
   "Import audio…": "Импортировать аудио…",
   "Keyboard shortcut": "Сочетание клавиш",
@@ -519,5 +518,6 @@
   "on-device transcription": "расшифровка на устройстве",
   "{0} does not use a vocabulary.": "{0} не использует словарь.",
   "Import to Recly": "Импорт в Recly",
-  "Start or stop a recording.": "Начните или остановите запись."
+  "Start or stop a recording.": "Начните или остановите запись.",
+  "Highlight · {0}": "Отметка · {0}"
 }

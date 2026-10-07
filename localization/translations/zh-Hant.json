@@ -452,7 +452,6 @@
   "Copy configuration": "複製組態",
   "Could not import this file": "無法匯入此檔案",
   "Highlight": "標記",
-  "Highlighted at {0}": "已在{0}加上標記",
   "Import audio": "匯入音訊",
   "Import audio…": "匯入音訊…",
   "Keyboard shortcut": "鍵盤快速鍵",
@@ -519,5 +518,6 @@
   "on-device transcription": "裝置本機轉錄",
   "{0} does not use a vocabulary.": "{0}不使用詞彙表。",
   "Import to Recly": "匯入Recly",
-  "Start or stop a recording.": "開始或停止錄音。"
+  "Start or stop a recording.": "開始或停止錄音。",
+  "Highlight · {0}": "標記 · {0}"
 }

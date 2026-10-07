@@ -452,7 +452,6 @@
   "Copy configuration": "复制配置",
   "Could not import this file": "无法导入此文件",
   "Highlight": "标记",
-  "Highlighted at {0}": "已在{0}添加标记",
   "Import audio": "导入音频",
   "Import audio…": "导入音频…",
   "Keyboard shortcut": "键盘快捷键",
@@ -519,5 +518,6 @@
   "on-device transcription": "设备本地转录",
   "{0} does not use a vocabulary.": "{0}不使用词汇表。",
   "Import to Recly": "导入到Recly",
-  "Start or stop a recording.": "开始或停止录音。"
+  "Start or stop a recording.": "开始或停止录音。",
+  "Highlight · {0}": "标记 · {0}"
 }

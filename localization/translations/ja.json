@@ -452,7 +452,6 @@
   "Copy configuration": "構成をコピー",
   "Could not import this file": "このファイルを読み込めませんでした",
   "Highlight": "ハイライト",
-  "Highlighted at {0}": "{0}にハイライトを付けました",
   "Import audio": "音声を読み込む",
   "Import audio…": "音声を読み込む…",
   "Keyboard shortcut": "キーボードショートカット",
@@ -519,5 +518,6 @@
   "on-device transcription": "デバイス上の文字起こし",
   "{0} does not use a vocabulary.": "{0}は語彙を使用しません。",
   "Import to Recly": "Reclyに読み込む",
-  "Start or stop a recording.": "録音を開始または停止します。"
+  "Start or stop a recording.": "録音を開始または停止します。",
+  "Highlight · {0}": "ハイライト · {0}"
 }

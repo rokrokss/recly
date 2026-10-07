@@ -158,7 +158,7 @@ struct MenuPopover: View {
             .padding(.bottom, model.highlighted == nil ? 12 : Space.s)
             // The news of that moment, for two seconds — then the row is as it was.
             if let at = model.highlighted {
-                Text(RecKitStrings.localized("Highlighted at %@", at))
+                Text(RecKitStrings.localized("Highlight · %@", at))
                     .font(blueprint.fonts.monoSmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)

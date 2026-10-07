@@ -452,7 +452,6 @@
   "Copy configuration": "Kopiuj konfigurację",
   "Could not import this file": "Nie można zaimportować tego pliku",
   "Highlight": "Zaznacz",
-  "Highlighted at {0}": "Dodano znacznik w {0}",
   "Import audio": "Importuj audio",
   "Import audio…": "Importuj audio…",
   "Keyboard shortcut": "Skrót klawiszowy",
@@ -519,5 +518,6 @@
   "on-device transcription": "transkrypcja na urządzeniu",
   "{0} does not use a vocabulary.": "{0} nie korzysta ze słownika.",
   "Import to Recly": "Importuj do Recly",
-  "Start or stop a recording.": "Rozpocznij lub zatrzymaj nagrywanie."
+  "Start or stop a recording.": "Rozpocznij lub zatrzymaj nagrywanie.",
+  "Highlight · {0}": "Znacznik · {0}"
 }

@@ -452,7 +452,6 @@
   "Copy configuration": "Yapılandırmayı kopyala",
   "Could not import this file": "Bu dosya içe aktarılamadı",
   "Highlight": "İşaretle",
-  "Highlighted at {0}": "{0} konumu işaretlendi",
   "Import audio": "Ses içe aktar",
   "Import audio…": "Ses içe aktar…",
   "Keyboard shortcut": "Klavye kısayolu",
@@ -519,5 +518,6 @@
   "on-device transcription": "cihaz üzerinde transkripsiyon",
   "{0} does not use a vocabulary.": "{0} sözlük kullanmaz.",
   "Import to Recly": "Recly'ye aktar",
-  "Start or stop a recording.": "Kaydı başlatın veya durdurun."
+  "Start or stop a recording.": "Kaydı başlatın veya durdurun.",
+  "Highlight · {0}": "İşaret · {0}"
 }

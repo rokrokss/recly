@@ -435,9 +435,6 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// is the State node's and the timer's to say, so a working or waiting recorder leaves it empty
     /// (2026-09-29).
     var status: String {
-        if isRecording, let at = highlightedAtSec {
-            return RecKitStrings.localized("Highlighted at %@", LedgerFormat.clock(Int(at)))
-        }
         guard state == .idle, statusMessage != nil || !Self.quietNotes.contains(note) else { return "" }
         return RecorderStatusLine.text(state: state, note: note, message: statusMessage)
     }

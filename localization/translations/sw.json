@@ -452,7 +452,6 @@
   "Copy configuration": "Nakili usanidi",
   "Could not import this file": "Imeshindwa kuleta faili hii",
   "Highlight": "Weka alama",
-  "Highlighted at {0}": "Alama imewekwa kwenye {0}",
   "Import audio": "Leta sauti",
   "Import audio…": "Leta sauti…",
   "Keyboard shortcut": "Njia ya mkato ya kibodi",
@@ -519,5 +518,6 @@
   "on-device transcription": "unukuzi kwenye kifaa",
   "{0} does not use a vocabulary.": "{0} haitumii msamiati.",
   "Import to Recly": "Leta kwenye Recly",
-  "Start or stop a recording.": "Anza au simamisha kurekodi."
+  "Start or stop a recording.": "Anza au simamisha kurekodi.",
+  "Highlight · {0}": "Alama · {0}"
 }

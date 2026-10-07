@@ -205,7 +205,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     private func info(_ status: LocalEngineStatus, progress: Double? = nil, downloading: Bool = false) -> LocalEngineInfo {
         LocalEngineInfo(
             status: status, name: "apple-speech", revision: "speech-\(ProcessInfo.processInfo.operatingSystemVersionString)",
-            supportsDiarization: SpeakerSeparation.available, supportsVocabulary: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
+            supportsDiarization: status != .unsupported && SpeakerSeparation.available, supportsVocabulary: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
         )
     }
 }

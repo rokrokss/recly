@@ -134,9 +134,10 @@ struct TranscriptReader: View {
                     .accessibilityIdentifier("transcript-time-\(group.id)")
                 ForEach(marks, id: \.self) { mark in
                     HighlightMenu(atSec: mark, go: { onSeek(mark) }, remove: { onRemoveHighlight(mark) }) {
-                        Image(systemName: "flag.fill")
-                            .font(.system(size: 12))
-                            .foregroundStyle(blueprint.palette.accent)
+                        // docs/09 §1: the highlight square, 6×6 in the accent, on a finger-sized target.
+                        Rectangle()
+                            .fill(blueprint.palette.accent)
+                            .frame(width: 6, height: 6)
                             .frame(width: 28, height: minTouch)
                             .contentShape(Rectangle())
                     }

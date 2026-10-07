@@ -452,7 +452,6 @@
   "Copy configuration": "কনফিগারেশন কপি করুন",
   "Could not import this file": "এই ফাইলটি ইমপোর্ট করা যায়নি",
   "Highlight": "হাইলাইট করুন",
-  "Highlighted at {0}": "{0}-এ হাইলাইট করা হয়েছে",
   "Import audio": "অডিও ইমপোর্ট করুন",
   "Import audio…": "অডিও ইমপোর্ট করুন…",
   "Keyboard shortcut": "কিবোর্ড শর্টকাট",
@@ -519,5 +518,6 @@
   "on-device transcription": "ডিভাইসে ট্রান্সক্রিপশন",
   "{0} does not use a vocabulary.": "{0} শব্দভান্ডার ব্যবহার করে না।",
   "Import to Recly": "Recly-তে ইমপোর্ট করুন",
-  "Start or stop a recording.": "রেকর্ডিং শুরু করুন বা থামান।"
+  "Start or stop a recording.": "রেকর্ডিং শুরু করুন বা থামান।",
+  "Highlight · {0}": "হাইলাইট · {0}"
 }

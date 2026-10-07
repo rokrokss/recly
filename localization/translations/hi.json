@@ -452,7 +452,6 @@
   "Copy configuration": "कॉन्फ़िगरेशन कॉपी करें",
   "Could not import this file": "यह फ़ाइल इम्पोर्ट नहीं हो सकी",
   "Highlight": "हाइलाइट करें",
-  "Highlighted at {0}": "{0} पर हाइलाइट किया गया",
   "Import audio": "ऑडियो इम्पोर्ट करें",
   "Import audio…": "ऑडियो इम्पोर्ट करें…",
   "Keyboard shortcut": "कीबोर्ड शॉर्टकट",
@@ -519,5 +518,6 @@
   "on-device transcription": "डिवाइस पर ट्रांसक्रिप्शन",
   "{0} does not use a vocabulary.": "{0} शब्दावली का इस्तेमाल नहीं करता।",
   "Import to Recly": "Recly में इम्पोर्ट करें",
-  "Start or stop a recording.": "रिकॉर्डिंग शुरू या बंद करें।"
+  "Start or stop a recording.": "रिकॉर्डिंग शुरू या बंद करें।",
+  "Highlight · {0}": "हाइलाइट · {0}"
 }

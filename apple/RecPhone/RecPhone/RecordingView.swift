@@ -116,7 +116,14 @@ struct RecordingView: View {
                     }
                 // A space when there is nothing to say, so the line keeps its height and the node
                 // above it never moves.
-                Text(model.status.isEmpty ? " " : model.status)
+                // docs/09 §1: the news of a highlight, while recording, with its time in mono.
+                Group {
+                    if model.isRecording, let at = model.highlightedAtSec {
+                        HighlightNews(atSec: at)
+                    } else {
+                        Text(model.status.isEmpty ? " " : model.status)
+                    }
+                }
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                     // A refused start or an unfinished save is a sentence, not a word: it wraps
@@ -124,7 +131,7 @@ struct RecordingView: View {
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, Space.m)
                     .accessibilityIdentifier("status")
-                    .accessibilityHidden(model.status.isEmpty)
+                    .accessibilityHidden(model.status.isEmpty && model.highlightedAtSec == nil)
                 if model.microphoneDenied {
                     VStack(spacing: Space.s) {
                         Text("The microphone permission is required.")
@@ -239,8 +246,8 @@ struct RecordingView: View {
         .task(id: working) { await holdBusy() }
     }
 
-    /// docs/09 §1: a mark at this moment of the recording. Square, accent-bordered, a flag and no
-    /// words; the line under the record node says when.
+    /// docs/09 §1: a mark at this moment of the recording. Square, accent-bordered, the small filled
+    /// square every highlight is drawn with, and no words; the line under the record node says when.
     private var highlightNode: some View {
         Button {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -252,9 +259,9 @@ struct RecordingView: View {
                     .fill(marking ? blueprint.palette.accent : blueprint.palette.surface)
                 RoundedRectangle(cornerRadius: Radius.node)
                     .strokeBorder(blueprint.palette.accent, lineWidth: 1.5)
-                Image(systemName: "flag")
-                    .font(.system(size: 22, weight: .light))
-                    .foregroundStyle(marking ? blueprint.palette.onAccent : blueprint.palette.accent)
+                RoundedRectangle(cornerRadius: Radius.badge)
+                    .fill(marking ? blueprint.palette.onAccent : blueprint.palette.accent)
+                    .frame(width: 14, height: 14)
             }
             .frame(width: 56, height: 56)
             .contentShape(Rectangle())

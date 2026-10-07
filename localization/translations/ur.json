@@ -452,7 +452,6 @@
   "Copy configuration": "کنفیگریشن کاپی کریں",
   "Could not import this file": "یہ فائل درآمد نہیں ہو سکی",
   "Highlight": "ہائی لائٹ کریں",
-  "Highlighted at {0}": "{0} پر ہائی لائٹ کیا گیا",
   "Import audio": "آڈیو درآمد کریں",
   "Import audio…": "آڈیو درآمد کریں…",
   "Keyboard shortcut": "کی بورڈ شارٹ کٹ",
@@ -519,5 +518,6 @@
   "on-device transcription": "آلے پر ٹرانسکرپشن",
   "{0} does not use a vocabulary.": "فراہم کنندہ {0} ذخیرۂ الفاظ استعمال نہیں کرتا۔",
   "Import to Recly": "Recly میں درآمد کریں",
-  "Start or stop a recording.": "ریکارڈنگ شروع کریں یا روکیں۔"
+  "Start or stop a recording.": "ریکارڈنگ شروع کریں یا روکیں۔",
+  "Highlight · {0}": "ہائی لائٹ · {0}"
 }

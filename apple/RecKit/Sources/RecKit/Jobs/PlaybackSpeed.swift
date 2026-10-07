@@ -84,6 +84,8 @@ struct PlaybackSpeedChip: View {
                 .contentShape(Rectangle())
         }
         .menuIndicator(.hidden)
+        // The speeds in reading order, slowest first, wherever the menu opens.
+        .menuOrder(.fixed)
         .buttonStyle(.plain)
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Speed")))
