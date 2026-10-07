@@ -77,6 +77,14 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         sleep(1)
         shot("detail-highlight-speed-\(language)")
 
+        app.buttons["play-pause"].tap()
+        sleep(8)
+        shot("detail-following-\(language)")
+        app.scrollViews.firstMatch.swipeUp()
+        sleep(1)
+        shot("detail-back-to-playback-\(language)")
+        app.buttons["play-pause"].tap()
+
         let speaker = app.buttons["speaker-0"]
         if speaker.waitForExistence(timeout: 5) {
             speaker.tap()
@@ -114,7 +122,9 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         app.buttons[language == "ko" ? "다시 전사" : "Transcribe again"].tap()
         sleep(1)
         shot("detail-transcribe-again-\(language)")
-        app.buttons[language == "ko" ? "취소" : "Cancel"].firstMatch.tap()
+        app.buttons["retranscribe-confirm"].tap()
+        sleep(1)
+        shot("detail-transcribing-again-\(language)")
 
         app.buttons["detail-share"].tap()
         XCTAssertTrue(app.buttons["share-srt"].waitForExistence(timeout: 5))
@@ -150,7 +160,11 @@ final class CompetitiveFeaturesUITests: XCTestCase {
 
         let settingsApp = launch(language)
         settingsApp.tabBars.buttons[language == "ko" ? "설정" : "Settings"].tap()
+        let localField = settingsApp.textFields["vocabulary-field"]
+        for _ in 0..<6 where !localField.isHittable { settingsApp.swipeUp() }
+        shot("settings-local-vocabulary-\(language)")
         let external = settingsApp.buttons[language == "ko" ? "외부 API" : "External API"]
+        for _ in 0..<6 where !external.isHittable { settingsApp.swipeDown() }
         for _ in 0..<6 where !external.isHittable { settingsApp.swipeUp() }
         external.tap()
         let field = settingsApp.textFields["vocabulary-field"]
@@ -162,6 +176,10 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         settingsApp.swipeUp()
         sleep(1)
         shot("settings-vocabulary-\(language)")
+        settingsApp.buttons[language == "ko" ? "저장" : "Save"].firstMatch.tap()
+        if settingsApp.buttons["allow-and-save"].waitForExistence(timeout: 5) {
+            shot("settings-consent-\(language)")
+        }
     }
 
     /// docs/09 §10: the Record widget as the system's gallery offers it (the simulator's system language).

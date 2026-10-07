@@ -110,8 +110,10 @@ public final class RecordingPlayer: ObservableObject {
             buffering = false
             failed = true
         } else {
-            isPlaying = queue.playing
-            buffering = queue.buffering
+            // Only on a change: the detail asks five times a second, and a published value set to
+            // itself still redraws the whole page (and never lets it settle).
+            if isPlaying != queue.playing { isPlaying = queue.playing }
+            if buffering != queue.buffering { buffering = queue.buffering }
         }
     }
     /// Seconds from the start of the *recording*, not of the part being played.
