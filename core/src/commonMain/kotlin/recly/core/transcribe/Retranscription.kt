@@ -1,6 +1,7 @@
 package recly.core.transcribe
 
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import recly.core.drive.FolderMarker
@@ -66,16 +67,20 @@ internal class Retranscription(
         val replaced = jobs.list().filter { it.recordingId == recordingId && it.retranscription }
             .flatMap { jobs.steps(it.id) }.map { it.id }
         val job = jobs.enqueueRetranscription(recordingId, plan) ?: return RetranscribeResult.Busy
-        withContext(deps.io) {
-            replaced.forEach { id ->
-                deps.fileSystem.delete(record.dir / LocalTranscriptionService.resultName(id), mustExist = false)
-                deps.fileSystem.delete(record.dir / ".local-$id.json", mustExist = false)
+        // The job is queued now: a caller cancelled from here on would be told nothing started while
+        // it runs, so the rest is not cancellable.
+        withContext(NonCancellable) {
+            withContext(deps.io) {
+                replaced.forEach { id ->
+                    deps.fileSystem.delete(record.dir / LocalTranscriptionService.resultName(id), mustExist = false)
+                    deps.fileSystem.delete(record.dir / ".local-$id.json", mustExist = false)
+                }
             }
+            // From the start, not after the first step: the transcription is the long part, and the other
+            // devices' lists should say so while it runs (docs/03 "Recordings from other devices").
+            marker.mark(folderId, listOf(TranscribeRunner.TYPE))
+            deps.logger.log(Logger.Level.INFO, "rec.retranscribe", mapOf("recordingId" to recordingId, "jobId" to job.id))
         }
-        // From the start, not after the first step: the transcription is the long part, and the other
-        // devices' lists should say so while it runs (docs/03 "Recordings from other devices").
-        marker.mark(folderId, listOf(TranscribeRunner.TYPE))
-        deps.logger.log(Logger.Level.INFO, "rec.retranscribe", mapOf("recordingId" to recordingId, "jobId" to job.id))
         return RetranscribeResult.Started(job.id)
     }
 

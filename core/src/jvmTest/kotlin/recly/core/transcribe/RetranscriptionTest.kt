@@ -9,6 +9,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import recly.core.db.RecDatabase
 import recly.core.job.JobStatus
@@ -164,6 +165,21 @@ class RetranscriptionTest {
         assertTrue(f.core.jobs.retry(started.jobId))
         f.drain()
         assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+    }
+
+    @Test
+    fun `a request cancelled once its job is queued still answers that it started`() = runBlocking {
+        val meta = f.recordAndRun()
+        var result: RetranscribeResult? = null
+        lateinit var call: kotlinx.coroutines.Job
+        // Cancelled while the folder is told a transcription is coming — after the job was queued.
+        f.drive.before += { if (it.method == "PATCH" && "\"pending\"" in it.body.decodeToString()) call.cancel() }
+        call = launch { result = f.core.retranscribe(meta.recordingId) }
+        call.join()
+
+        val started = assertIs<RetranscribeResult.Started>(result)
+        assertTrue(f.core.jobs.list().single { it.id == started.jobId }.retranscription)
+        assertEquals("transcribe", f.drive.byName(MetaWriter.baseName(meta))!!.appProperties["pending"])
     }
 
     @Test
