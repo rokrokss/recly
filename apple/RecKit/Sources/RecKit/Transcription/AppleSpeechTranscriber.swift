@@ -112,7 +112,16 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         // Shared assets can already be installed without this app holding a locale reservation.
         _ = try await AssetInventory.reserve(locale: locale)
         let turns = request.diarize ? try await speakerTurns(request) : []
-        let module = SpeechTranscriber(locale: locale, preset: .transcription)
+        // With turns to cut at, each word's time too: a final result can run on across a change of speaker
+        // (two speakers in each of a 12- and a 17-second result, Korean, macOS 26.6). The designated initializer with the
+        // preset's options plus `.audioTimeRange`, which puts a `TimeRangeAttribute` (a `CMTimeRange`) on the
+        // result text's runs — developer.apple.com/documentation/speech/speechtranscriber/
+        // init(locale:transcriptionoptions:reportingoptions:attributeoptions:), …/resultattributeoption/audiotimerange,
+        // …/foundation/attributescopes/speechattributes/timerangeattribute, and the macOS 27 SDK's Speech
+        // swiftinterface (checked 2026-10-08).
+        let preset = SpeechTranscriber.Preset.transcription
+        let module = SpeechTranscriber(locale: locale, transcriptionOptions: preset.transcriptionOptions, reportingOptions: preset.reportingOptions,
+            attributeOptions: turns.isEmpty ? preset.attributeOptions : preset.attributeOptions.union([.audioTimeRange]))
         let analyzer = SpeechAnalyzer(modules: [module], options: .init(priority: .utility, modelRetention: .whileInUse))
         lock.withLock { active = analyzer }
         let admission = SpeechAdmission()
@@ -129,12 +138,24 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         let reader = Task {
             for try await result in module.results where result.isFinal {
                 try Task.checkCancellation()
-                var segment = SttSegment(start: result.range.start.seconds, end: result.range.end.seconds,
+                let segment = SttSegment(start: result.range.start.seconds, end: result.range.end.seconds,
                     speaker: nil, text: String(result.text.characters), words: nil)
-                // docs/10 "Shared rules for the shells": the speaker under this segment, decided as it is
+                guard !turns.isEmpty else {
+                    try await progress.checkpoint(segment: segment, completedThroughSec: result.range.end.seconds)
+                    continue
+                }
+                // docs/10 "Shared rules for the shells": the speakers under this result, decided as it is
                 // checkpointed — a checkpointed segment is never revisited.
-                if !turns.isEmpty { segment = SpeakerTurns.shared.assign(segments: [segment], turns: turns, nearestSec: SpeakerTurns.shared.NEAREST_SEC)[0] }
-                try await progress.checkpoint(segment: segment, completedThroughSec: result.range.end.seconds)
+                let runs = result.text.runs[\.audioTimeRange].map { time, range in
+                    SpeakerCut.Run(text: String(result.text[range].characters), start: time?.start.seconds, end: time?.end.seconds)
+                }
+                let pieces = SpeakerCut.segments(of: segment, runs: runs, turns: turns)
+                for (index, piece) in pieces.enumerated() {
+                    // Each piece is saved through its own end, or the core drops the ones after it; the last
+                    // through the result's, so a resume starts where it did before.
+                    let through = index == pieces.count - 1 ? max(piece.end, result.range.end.seconds) : piece.end
+                    try await progress.checkpoint(segment: piece, completedThroughSec: through)
+                }
             }
         }
         defer {
@@ -241,6 +262,67 @@ private struct SavedTurns: Codable {
     static func url(for request: LocalTranscriptionRequest) -> URL {
         let input = URL(fileURLWithPath: request.path)
         return input.deletingLastPathComponent().appendingPathComponent(".\(input.lastPathComponent).turns.json")
+    }
+}
+
+/// docs/10 "Shared rules for the shells": one final result of the transcriber as segments of one speaker each.
+/// Every timed run — a word, carrying its own leading space and punctuation — takes a speaker by
+/// `SpeakerTurns.assign`, and the result is cut where consecutive runs change speaker; a piece runs from its
+/// first word's start to its last word's end. A run with no time (or no letters) stays with the run before it,
+/// the one after it at the start; a result with no timed run at all is one segment with one speaker, as before.
+///
+/// The runs tile the result: a word's time starts where the word before it ended, the pause between them
+/// included. So when speech starts again after a pause inside a run — a turn that begins there with no turn
+/// running into it — the word is what follows, and starts there: a reply's first short word ("네,") would
+/// otherwise go to the speaker before, whose turn reaches into the pause.
+enum SpeakerCut {
+    struct Run {
+        let text: String
+        let start: Double?
+        let end: Double?
+    }
+
+    static func segments(of result: SttSegment, runs: [Run], turns: [SpeakerTurn]) -> [SttSegment] {
+        func assign(_ segments: [SttSegment]) -> [SttSegment] {
+            SpeakerTurns.shared.assign(segments: segments, turns: turns, nearestSec: SpeakerTurns.shared.NEAREST_SEC)
+        }
+        func timed(_ run: Run) -> SttSegment? {
+            guard let start = run.start, let end = run.end, start.isFinite, end.isFinite, end >= start,
+                  !run.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+            return SttSegment(start: start, end: end, speaker: nil, text: run.text, words: nil)
+        }
+        let words = runs.compactMap(timed)
+        guard !turns.isEmpty, !words.isEmpty else { return assign([result]) }
+        var onsets: [Double] = []
+        var reach = -Double.infinity
+        for turn in turns.sorted(by: { $0.start < $1.start }) {
+            if turn.start > reach { onsets.append(turn.start) }
+            reach = max(reach, turn.end)
+        }
+        var labelled = assign(words.map { word in
+            guard let onset = onsets.last(where: { $0 > word.start && $0 < word.end }) else { return word }
+            return SttSegment(start: onset, end: word.end, speaker: nil, text: word.text, words: nil)
+        }).makeIterator()
+        var pieces: [SttSegment] = []
+        var lead = ""
+        for run in runs {
+            guard timed(run) != nil, let word = labelled.next(), let speaker = word.speaker else {
+                if let last = pieces.last { pieces[pieces.count - 1] = last.with(text: last.text + run.text) } else { lead += run.text }
+                continue
+            }
+            if let last = pieces.last, last.speaker == speaker || word.end <= last.end {
+                pieces[pieces.count - 1] = last.with(text: last.text + run.text, end: max(last.end, word.end))
+            } else {
+                pieces.append(SttSegment(start: word.start, end: word.end, speaker: speaker, text: (pieces.isEmpty ? lead : "") + run.text, words: nil))
+            }
+        }
+        return pieces.map { $0.with(text: $0.text.trimmingCharacters(in: .whitespacesAndNewlines)) }
+    }
+}
+
+private extension SttSegment {
+    func with(text: String, end: Double? = nil) -> SttSegment {
+        SttSegment(start: start, end: end ?? self.end, speaker: speaker, text: text, words: nil)
     }
 }
 

@@ -1344,6 +1344,10 @@ The overall direction and the conditions for a real-device release follow the [f
   (thermal and power limits apply only to transcription, 2026-09-27). If the request ends and the model is still missing (except on cancel), `The model didn’t finish downloading. Try again.`
   is shown — if only the button came back, pressing it would look as if it did nothing.
   One file is fed to one analyzer, and PCM is read through a bounded buffer. Multiple recording parts are joined losslessly, and temporary files are cleaned up on success, failure or cancellation.
+  With speaker separation the transcriber also gives each word's time (`audioTimeRange`, 2026-10-08): a final result can run on across a
+  change of speaker (two speakers in each of a 12- and a 17-second result, Korean, macOS 26.6), so a result is cut where its words change speaker. Each word
+  takes the turn it overlaps longest (§10 "Shared rules for the shells", `assign`) — counted from where speech starts again when a pause falls
+  inside its time, since a word's time begins where the word before it ended. Timing stays per segment; without speaker separation nothing changes.
   At thermal state `serious` or above it waits/stops (relaxed 2026-09-27 — `fair` is common even while charging, and the user cannot guess why it stopped).
   Low Power Mode does not stop it. Confirmed segments are saved, so once the device cools, it resumes automatically at the next chance to run.
 - Local computation runs one at a time per device and yields when a new recording starts. A platform run expiry/cancellation also cancels the native analyzer.
