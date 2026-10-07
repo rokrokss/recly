@@ -198,7 +198,8 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
     var findRequest by remember { mutableIntStateOf(0) }
     Row(
         Modifier.fillMaxSize().background(blueprint.background)
-            .dragAndDropTarget(shouldStartDragAndDrop = { droppedFiles(it).isNotEmpty() }, target = drop)
+            // Only the kind of data while dragging: the file list itself is readable once it is dropped.
+            .dragAndDropTarget(shouldStartDragAndDrop = { carriesFiles(it) }, target = drop)
             // Ctrl+F: find in the transcript on show, or the list's search when there is none to find in.
             .onPreviewKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown || event.key != Key.F || !(event.isCtrlPressed || event.isMetaPressed)) {
@@ -1072,6 +1073,10 @@ private fun second(x: Float, width: Int, totalSec: Double): Double =
     if (width <= 0) 0.0 else (x / width).toDouble().coerceIn(0.0, 1.0) * totalSec
 
 private fun millis(seconds: Double): Long = (seconds * 1000).toLong()
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun carriesFiles(event: DragAndDropEvent): Boolean =
+    runCatching { event.awtTransferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor) }.getOrDefault(false)
 
 /** The files of a drop from the file manager; nothing for text or anything else. */
 @OptIn(ExperimentalComposeUiApi::class)
