@@ -65,6 +65,12 @@ data class ProcessingTranscription(
     /** Compatibility field; current preferences derive this from the engine/provider capability. */
     val diarize: Boolean = false,
     val speakers: Speakers = Speakers(),
+    /**
+     * Words and names the transcription should expect — local and external alike (docs/05 "Fixed processing
+     * settings"). Each trimmed, 1–[VOCABULARY_ENTRY_MAX] characters, unique ignoring case, in the order
+     * entered, at most [VOCABULARY_MAX].
+     */
+    val vocabulary: List<String> = emptyList(),
     /** Retained while another mode is selected, so switching off does not discard configuration. */
     val external: ExternalTranscription? = null,
     /**
@@ -75,6 +81,10 @@ data class ProcessingTranscription(
      */
     val providerDetails: Map<String, ProviderDetails> = emptyMap(),
 )
+
+/** docs/05 "Fixed processing settings": the vocabulary list's limits. */
+const val VOCABULARY_MAX: Int = 100
+const val VOCABULARY_ENTRY_MAX: Int = 60
 
 @Serializable
 data class ProviderDetails(

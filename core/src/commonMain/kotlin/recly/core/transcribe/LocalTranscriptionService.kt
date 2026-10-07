@@ -112,7 +112,11 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
         try {
         if (paths.size > 1 && !deps.fileSystem.exists(inputFile)) deps.audio.concat(paths, inputFile)
         val result = deps.localTranscription.transcribe(
-            LocalTranscriptionRequest(inputFile.toString(), step.language.wire, saved.completedThroughSec, diarize),
+            LocalTranscriptionRequest(
+                inputFile.toString(), step.language.wire, saved.completedThroughSec, diarize,
+                expectedSpeakers = ctx.recording.meta.context?.participants?.takeIf { diarize },
+                vocabulary = step.vocabulary,
+            ),
             object : LocalTranscriptionProgress {
                 override suspend fun checkpoint(segment: SttSegment, completedThroughSec: Double) {
                     currentCoroutineContext().ensureActive()

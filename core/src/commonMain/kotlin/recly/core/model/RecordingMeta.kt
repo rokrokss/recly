@@ -1,5 +1,9 @@
+@file:OptIn(ExperimentalSerializationApi::class)
+
 package recly.core.model
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -26,7 +30,37 @@ data class RecordingMeta(
     /** Where the recording went in the user's Drive; written by `drive.upload` once the folder is known (docs/03 "Metadata"). */
     val drive: DriveLocation? = null,
     val status: RecordingStatus,
+    /**
+     * Moments the user marked, on the recording's own axis — ascending, none within [Highlight.MERGE_SEC]
+     * of another, at most [Highlight.MAX] (docs/03 "Metadata"). Left out of the file while there are none.
+     */
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
+    val highlights: List<Highlight> = emptyList(),
 )
+
+/** One marked moment (docs/03 "Metadata"). */
+@Serializable
+data class Highlight(val atSec: Double) {
+    companion object {
+        /** Two marks closer than this are one. */
+        const val MERGE_SEC: Double = 1.0
+
+        const val MAX: Int = 500
+
+        /**
+         * The list a meta may hold: finite, not before the start, ascending, the first of any two within
+         * [MERGE_SEC] kept, and no more than [MAX].
+         */
+        fun normalize(atSecs: List<Double>): List<Highlight> {
+            val kept = mutableListOf<Double>()
+            for (at in atSecs.filter { it.isFinite() && it >= 0 }.sorted()) {
+                if (kept.size == MAX) break
+                if (kept.isEmpty() || at - kept.last() >= MERGE_SEC) kept += at
+            }
+            return kept.map(::Highlight)
+        }
+    }
+}
 
 /** The recording's own Drive folder (ADR-014) — the link an agent puts next to the notes it makes. */
 @Serializable

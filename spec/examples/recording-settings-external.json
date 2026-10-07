@@ -7,6 +7,7 @@
     "storage": { "folder": "recly/{{yyyy}}/{{yyyy}}-{{MM}}", "minDurationSec": 30, "provider": "icloud" },
     "transcription": {
       "mode": "external", "language": "ko-en",
+      "vocabulary": ["Recly", "CLOVA Speech", "민수"],
       "external": { "provider": "assemblyai", "secretRef": "assemblyai_key" },
       "providerDetails": {
         "clova": { "invokeUrl": "https://clovaspeech-gw.ncloud.com/external/v1/1234/0123456789abcdef" },

@@ -63,6 +63,11 @@
       "type": "string",
       "format": "date-time"
     },
+    "editedAt": {
+      "description": "When the user last changed this transcript's text, speaker names or segment speakers in the app. Absent on a transcript nobody edited. See docs/recly.md section 8 \"Editing\".",
+      "type": "string",
+      "format": "date-time"
+    },
     "durationSec": {
       "type": "number",
       "minimum": 0

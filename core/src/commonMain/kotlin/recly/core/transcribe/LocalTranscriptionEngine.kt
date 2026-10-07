@@ -19,11 +19,19 @@ data class LocalEngineInfo(
     val downloading: Boolean = false,
 )
 
+/**
+ * [diarize] asks for speaker labels; it is only ever true for an engine that reports
+ * [LocalEngineInfo.supportsDiarization]. [expectedSpeakers] is how many people the user said were in the
+ * room (`context.participants`, docs/03), or null when nobody said. [vocabulary] is the words and names the
+ * user listed (docs/05 "Fixed processing settings") — a hint the engine may use, or ignore.
+ */
 data class LocalTranscriptionRequest(
     val path: String,
     val language: String,
     val startTimeSec: Double = 0.0,
     val diarize: Boolean = false,
+    val expectedSpeakers: Int? = null,
+    val vocabulary: List<String> = emptyList(),
 )
 data class LocalTranscriptionResult(val segments: List<SttSegment>, val completed: Boolean = true)
 

@@ -72,6 +72,7 @@ object ProcessingSettingsParser {
             transcription.language !in TranscriptionLanguages.supported(external.provider, external.model)) {
             errors += "the selected provider or model does not support this language"
         }
+        errors += vocabularyErrors(transcription.vocabulary)
         if (external?.model != null && external.model.length !in 1..100) errors += "model must be 1..100 characters"
         external?.invokeUrl?.let { url -> if (!httpsUrl(url)) errors += "invokeUrl must be an absolute https URL" }
         transcription.providerDetails.forEach { (provider, details) ->
@@ -115,6 +116,26 @@ object ProcessingSettingsParser {
         if (model != null && (!SttProviders.acceptsModel(provider) || model.length !in 1..100)) return false
         return true
     }
+
+    /**
+     * docs/05 "Fixed processing settings": at most [VOCABULARY_MAX] entries, each already trimmed, one line,
+     * 1–[VOCABULARY_ENTRY_MAX] characters, none repeated ignoring case. Nothing is corrected here: an entry
+     * that breaks a rule is refused, and the message names its position rather than repeating it.
+     */
+    fun vocabularyErrors(vocabulary: List<String>): List<String> {
+        val errors = mutableListOf<String>()
+        if (vocabulary.size > VOCABULARY_MAX) errors += "vocabulary has more than $VOCABULARY_MAX entries"
+        vocabulary.forEachIndexed { index, entry ->
+            val characters = entry.count { !it.isLowSurrogate() }
+            if (entry != entry.trim() || characters !in 1..VOCABULARY_ENTRY_MAX || entry.any { it in LINE_BREAKS }) {
+                errors += "vocabulary entry ${index + 1} must be one trimmed line of 1..$VOCABULARY_ENTRY_MAX characters"
+            }
+        }
+        if (vocabulary.map { it.lowercase() }.toSet().size != vocabulary.size) errors += "vocabulary entries must differ ignoring case"
+        return errors
+    }
+
+    private val LINE_BREAKS = setOf('\n', '\r', '\u2028', '\u2029')
 
     private fun httpsUrl(url: String): Boolean = runCatching {
         url.startsWith("https://") && url.none(Char::isWhitespace) && Url(url).host.isNotEmpty()

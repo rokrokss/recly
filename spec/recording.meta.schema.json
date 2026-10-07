@@ -8,7 +8,7 @@
   "properties": {
     "schema": { "const": 1 },
     "recordingId": { "type": "string", "pattern": "^[0-7][0-9A-HJKMNP-TV-Z]{25}$" },
-    "source": { "type": "string", "enum": ["watch", "phone", "desktop"] },
+    "source": { "type": "string", "enum": ["watch", "phone", "desktop", "import"] },
     "platform": { "type": "string", "enum": ["wearos", "android", "watchos", "ios", "macos", "windows"] },
     "deviceId": { "type": "string", "minLength": 1 },
     "deviceName": { "type": "string", "maxLength": 80 },
@@ -44,7 +44,7 @@
         "properties": {
           "part": { "type": "integer", "minimum": 1 },
           "track": { "type": "string", "enum": ["mono", "mic", "sys", "mix"] },
-          "file": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_(watch|phone|desktop)_[0-9A-Z]{8}_p[0-9]{3}_(mono|mic|sys|mix)\\.m4a$" },
+          "file": { "type": "string", "pattern": "^[0-9]{8}T[0-9]{6}Z_(watch|phone|desktop|import)_[0-9A-Z]{8}_p[0-9]{3}_(mono|mic|sys|mix)\\.m4a$" },
           "bytes": { "type": "integer", "minimum": 0 },
           "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
           "startOffsetSec": { "type": "number", "minimum": 0 },
@@ -54,6 +54,19 @@
     },
     "gaps": { "$ref": "#/$defs/ranges" },
     "silenced": { "$ref": "#/$defs/ranges" },
+    "highlights": {
+      "description": "Moments the user marked, on the recording's own axis (the same one transcript segments use): ascending, no two within 1 second, at most 500. See docs/recly.md section 3 \"Metadata\".",
+      "type": "array",
+      "maxItems": 500,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["atSec"],
+        "properties": {
+          "atSec": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
     "context": {
       "type": "object",
       "additionalProperties": false,

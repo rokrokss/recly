@@ -11,6 +11,7 @@ const pairs = [
   ["recording.meta.schema.json", "examples/recording.meta.json"],
   ["transcript.schema.json", "examples/transcript.json"],
   ["transcript.schema.json", "examples/transcript-local.json"],
+  ["transcript.schema.json", "examples/transcript-edited.json"],
   ["recording-settings.schema.json", "examples/recording-settings.json"],
   ["recording-settings.schema.json", "examples/recording-settings-external.json"],
 ];
@@ -45,6 +46,13 @@ const settingsCases = [
   ["workflow folder dependency", false, settingsMut(c => c.settings.storage.folder = "recly/{{ workflowName }}")],
   ["title fallback dependency", false, settingsMut(c => c.settings.storage.folder = "recly/{{ title }}")],
   ["empty settings uses defaults", true, settingsMut(c => c.settings = {})],
+  ["vocabulary", true, settingsMut(c => c.settings.transcription.vocabulary = ["Recly", "민수", "CLOVA Speech"])],
+  ["vocabulary entry untrimmed", false, settingsMut(c => c.settings.transcription.vocabulary = [" Recly"])],
+  ["vocabulary entry empty", false, settingsMut(c => c.settings.transcription.vocabulary = [""])],
+  ["vocabulary entry over 60", false, settingsMut(c => c.settings.transcription.vocabulary = ["x".repeat(61)])],
+  ["vocabulary entry with a line break", false, settingsMut(c => c.settings.transcription.vocabulary = ["a\nb"])],
+  ["vocabulary over 100 entries", false, settingsMut(c => c.settings.transcription.vocabulary = Array.from({ length: 101 }, (_, i) => `w${i}`))],
+  ["vocabulary duplicate", false, settingsMut(c => c.settings.transcription.vocabulary = ["Recly", "Recly"])],
 ];
 for (const language of ["ko", "en", "ko-en", "auto", "ja", "zh-cn", "zh-tw", "es", "fr", "de", "pt", "ar", "hi", "ru", "it", "id", "tr", "vi", "th", "nl", "pl", "uk"]) {
   settingsCases.push([`language ${language}`, true, settingsMut(c => c.settings.transcription.language = language)]);
@@ -68,5 +76,30 @@ for (const [label, expected, change] of [
   const valid = transcriptSchema(change(structuredClone(localTranscript)));
   if (valid !== expected) { console.error(`FAIL transcript: ${label}`); failed++; }
   else console.log(`OK   transcript: ${label} -> valid=${valid}`);
+}
+const editedTranscript = load("examples/transcript-edited.json");
+for (const [label, expected, change] of [
+  ["edited v1 transcript", true, c => { const v1 = load("examples/transcript.json"); v1.editedAt = "2026-08-29T04:00:00.000Z"; v1.speakers[0].name = "Minsu"; return v1; }],
+  ["editedAt must be a date-time", false, c => { c.editedAt = "yesterday"; return c; }],
+  ["identified needs a speaker on every segment", false, c => { c.segments[1].speaker = ""; return c; }],
+]) {
+  const valid = transcriptSchema(change(structuredClone(editedTranscript)));
+  if (valid !== expected) { console.error(`FAIL transcript: ${label}`); failed++; }
+  else console.log(`OK   transcript: ${label} -> valid=${valid}`);
+}
+const metaAjv = new Ajv2020({ allErrors: true, strict: true });
+addFormats(metaAjv);
+const metaSchema = metaAjv.compile(load("recording.meta.schema.json"));
+const metaBase = load("examples/recording.meta.json");
+for (const [label, expected, change] of [
+  ["import source", true, c => { c.source = "import"; c.tracks = ["mono"]; c.parts = [{ ...c.parts[0], track: "mono", file: "20260826T010000Z_import_01J9ABCD_p001_mono.m4a" }]; delete c.context; return c; }],
+  ["unknown source", false, c => { c.source = "upload"; return c; }],
+  ["highlight before zero", false, c => { c.highlights = [{ atSec: -1 }]; return c; }],
+  ["highlight with an extra field", false, c => { c.highlights = [{ atSec: 1, note: "x" }]; return c; }],
+  ["more than 500 highlights", false, c => { c.highlights = Array.from({ length: 501 }, (_, i) => ({ atSec: i * 2 })); return c; }],
+]) {
+  const valid = metaSchema(change(structuredClone(metaBase)));
+  if (valid !== expected) { console.error(`FAIL meta: ${label}`); failed++; }
+  else console.log(`OK   meta: ${label} -> valid=${valid}`);
 }
 process.exit(failed ? 1 : 0);

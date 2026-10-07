@@ -1,0 +1,25 @@
+{
+  "schema": 2,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "track": "mono",
+  "language": "ko",
+  "provider": {
+    "name": "qwen3-asr",
+    "model": "0.6b-int8-2026-03-25"
+  },
+  "createdAt": "2026-08-29T03:10:00.000Z",
+  "editedAt": "2026-08-29T04:02:31.000Z",
+  "durationSec": 3612.4,
+  "speakers": [
+    { "id": "S1", "name": "민수" },
+    { "id": "S2", "name": null },
+    { "id": "S3", "name": "Ji-won" }
+  ],
+  "segments": [
+    { "start": 0.0, "end": 3.2, "speaker": "S1", "text": "시작하겠습니다." },
+    { "start": 3.6, "end": 9.1, "speaker": "S2", "text": "네, 지난주 액션 아이템부터 보시죠." },
+    { "start": 900.4, "end": 906.8, "speaker": "S3", "text": "두 번째 파트의 첫 발화입니다." }
+  ],
+  "speakerIdentification": "identified",
+  "timing": "segment"
+}

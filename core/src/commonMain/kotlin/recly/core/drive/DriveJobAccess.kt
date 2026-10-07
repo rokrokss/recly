@@ -90,6 +90,11 @@ internal class DriveJobAccess(private val deps: CoreDeps, private val store: Job
     }
 }
 
-/** A `drive.upload` step bound for Google Drive rather than iCloud or a local folder (docs/03 "Storage location"). */
+/**
+ * A step that writes to Google Drive rather than iCloud or a local folder (docs/03 "Storage location"): a
+ * `drive.upload` bound there, or a re-transcription's `transcript.publish` into a Drive folder (docs/10
+ * "Re-transcription") — that job uploads nothing, and still has to be this account's.
+ */
 internal val Step.uploadsToDrive: Boolean
-    get() = this is Step.DriveUpload && store == StorageKind.DRIVE
+    get() = (this is Step.DriveUpload && store == StorageKind.DRIVE) ||
+        (this is Step.TranscriptPublish && folderId?.let(StorageKind::ofId) == StorageKind.DRIVE)

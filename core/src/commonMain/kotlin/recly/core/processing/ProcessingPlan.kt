@@ -17,7 +17,8 @@ object ProcessingPlan {
                 val transcription = settings.transcription
                 when (transcription.mode) {
                     TranscriptionMode.LOCAL -> {
-                        add(Step.LocalTranscribe("transcribe", language = transcription.language, diarize = transcription.diarize))
+                        add(Step.LocalTranscribe("transcribe", language = transcription.language, diarize = transcription.diarize,
+                            vocabulary = transcription.vocabulary))
                         add(Step.TranscriptPublish("publish"))
                     }
                     TranscriptionMode.EXTERNAL -> {
@@ -25,7 +26,8 @@ object ProcessingPlan {
                         add(Step.Transcribe("transcribe", provider = external.provider, secretRef = external.secretRef,
                             invokeUrl = external.invokeUrl, model = external.model,
                             language = transcription.language,
-                            diarize = transcription.diarize, speakers = transcription.speakers))
+                            diarize = transcription.diarize, speakers = transcription.speakers,
+                            vocabulary = transcription.vocabulary))
                         add(Step.TranscriptPublish("publish"))
                     }
                     TranscriptionMode.OFF -> Unit

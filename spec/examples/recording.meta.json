@@ -23,6 +23,7 @@
   ],
   "gaps": [ { "startSec": 1800.0, "endSec": 1800.3, "reason": "segment_restart" } ],
   "silenced": [],
+  "highlights": [ { "atSec": 125.0 }, { "atSec": 1820.5 } ],
   "context": {
     "app": "us.zoom.xos",
     "participants": 3

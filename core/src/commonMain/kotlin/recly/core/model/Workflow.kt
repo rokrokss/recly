@@ -69,6 +69,8 @@ sealed class Step {
         val speakers: Speakers = Speakers(),
         /** Free-form; the provider validates it, not the core. */
         val model: String? = null,
+        /** Words and names to expect (docs/05 "Fixed processing settings"), handed to the provider's adapter. */
+        val vocabulary: List<String> = emptyList(),
     ) : Step()
 
     /** On-device transcription (docs/08); the fixed plan's `local` mode. */
@@ -80,15 +82,23 @@ sealed class Step {
         override val retry: Retry = Retry(),
         val language: Language = Language.KO,
         val diarize: Boolean = false,
+        /** Words and names to expect, handed to the on-device engine (docs/05 "Fixed processing settings"). */
+        val vocabulary: List<String> = emptyList(),
     ) : Step()
 
-    /** Publishes a durable local result. Retrying this step never invokes an ASR engine. */
+    /**
+     * Publishes a durable local result. Retrying this step never invokes an ASR engine.
+     *
+     * [folderId] is where to: null means the folder the job's own `drive.upload` made; a
+     * re-transcription, which uploads nothing, names the recording's folder here (docs/10 "Re-transcription").
+     */
     @Serializable
     @SerialName("transcript.publish")
     data class TranscriptPublish(
         override val id: String,
         override val onError: OnError = OnError.ABORT,
         override val retry: Retry = Retry(),
+        val folderId: String? = null,
     ) : Step()
 }
 
@@ -175,6 +185,10 @@ enum class Source {
 
     @SerialName("desktop")
     DESKTOP,
+
+    /** A file the user brought in from outside, transcoded into parts on this device (docs/03 "Naming rules"). */
+    @SerialName("import")
+    IMPORT,
 }
 
 @Serializable

@@ -16,6 +16,8 @@ data class Transcript(
     val language: String,
     val provider: TranscriptProvider,
     val createdAt: String,
+    /** Set by every edit made in the app — text, speaker names, segment speakers (docs/08 "Editing"). */
+    val editedAt: String? = null,
     val durationSec: Double,
     val speakers: List<TranscriptSpeaker>,
     val segments: List<TranscriptSegment>,
@@ -33,7 +35,7 @@ data class Transcript(
 @Serializable
 data class TranscriptProvider(val name: String, val model: String? = null, val jobRef: String? = null)
 
-/** [name] is always null in v1 — user labelling is a follow-up (docs/08). */
+/** [name] is what the user called the speaker, or null until somebody does (docs/08 "Editing"). */
 @Serializable
 data class TranscriptSpeaker(val id: String, val name: String? = null)
 

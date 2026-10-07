@@ -97,7 +97,14 @@ class SttContext(
      * seconds does not buy a new one each time (docs/08 provider table). Opaque to the runner.
      */
     var providerState: JsonObject? = null,
-)
+) {
+    /**
+     * The words and names the user listed (docs/05 "Fixed processing settings"), frozen into the step with
+     * the rest of the settings. Each adapter maps it onto its provider's own parameter, or ignores it
+     * where the provider has none (docs/08 "Vocabulary").
+     */
+    val vocabulary: List<String> get() = step.vocabulary
+}
 
 sealed interface PollResult {
     /** Still queued or running; the runner parks the job and comes back. */

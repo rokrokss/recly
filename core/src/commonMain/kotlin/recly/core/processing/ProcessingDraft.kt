@@ -19,6 +19,11 @@ data class ProcessingDraft(
     private val retainedExternal: ExternalTranscription?,
     /** Every provider's entries as typed, this one's included once it is left (docs/05 "Secrets"). */
     private var details: Map<String, ProviderDetails> = emptyMap(),
+    /**
+     * The words and names to expect, as entered (docs/05 "Fixed processing settings"). Saved trimmed and
+     * without blank entries; a duplicate or an over-long entry is the save's to refuse, not this to drop.
+     */
+    var vocabulary: List<String> = emptyList(),
 ) {
     fun snapshot(): ProcessingDraft = copy()
 
@@ -39,6 +44,7 @@ data class ProcessingDraft(
     fun settings(): ProcessingSettings = ProcessingSettings(
         storage = ProcessingStorage(folder, minimumSeconds.trim().ifEmpty { "0" }.toIntOrNull() ?: -1),
         transcription = ProcessingTranscription(mode = mode, language = language,
+            vocabulary = vocabulary.map { it.trim() }.filter { it.isNotEmpty() },
             external = if (mode == TranscriptionMode.EXTERNAL) ExternalTranscription(provider, secretRef,
                 invokeUrl.takeIf { it.isNotEmpty() }, model.takeIf { it.isNotEmpty() }) else retainedExternal,
             // A value that would not save is not remembered either: it is the one being fixed, not
@@ -76,7 +82,7 @@ data class ProcessingDraft(
             val t = settings.transcription
             return ProcessingDraft(settings.storage.folder, settings.storage.minDurationSec.toString(), t.mode,
                 t.language, t.external?.provider ?: "elevenlabs",
-                t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external, t.providerDetails)
+                t.external?.invokeUrl.orEmpty(), t.external?.model.orEmpty(), t.external, t.providerDetails, t.vocabulary)
         }
     }
 }
