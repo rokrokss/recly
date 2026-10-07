@@ -13,6 +13,7 @@ import app.recly.windows.auth.RevokeResult
 import app.recly.windows.auth.SignInResult
 import app.recly.windows.core.AppGraph
 import app.recly.windows.core.AppModule
+import app.recly.windows.core.FfmpegImporter
 import app.recly.windows.core.Host
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.detect.MeetingDetector
@@ -29,6 +30,7 @@ import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.UiMessage
+import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.APP_NAME
 import app.recly.windows.jobs.CoreJobQueue
@@ -41,6 +43,7 @@ import app.recly.windows.record.StopResult
 import app.recly.windows.record.WindowsRecorder
 import app.recly.windows.record.completeRecording
 import app.recly.windows.settings.AppTheme
+import app.recly.windows.settings.GlobalShortcut
 import app.recly.windows.settings.LaunchAtLogin
 import app.recly.windows.settings.LaunchAtLogins
 import app.recly.windows.settings.RecordingMode
@@ -65,7 +68,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Instant
 import okio.Path
 import recly.core.DisconnectResult
 import recly.core.job.Job
@@ -74,6 +80,14 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
 import recly.core.recording.DeleteResult
+import recly.core.recording.ExportFormat
+import recly.core.recording.ImportResult
+import recly.core.recording.SearchHit
+import recly.core.transcribe.EditResult
+import recly.core.transcribe.RetranscribeResult
+import recly.core.transcribe.TranscriptEdit
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import recly.core.recording.RecordingRecord
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
@@ -103,6 +117,26 @@ data class RecordingDetail(
     val fetchProgress: Float = 0f,
     /** docs/03 "Storage location": the trip is to the local folder this PC picked, not to Drive. */
     val folder: Boolean = false,
+    /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
+    val highlights: List<Double> = emptyList(),
+    /** A job of this recording has not settled: editing and transcribing again wait for it (docs/08 "Editing"). */
+    val transcribing: Boolean = false,
+    /** That job is a re-transcription (docs/10 "Re-transcription"), on this PC or with a provider. */
+    val retranscribing: Boolean = false,
+    val retranscribingLocal: Boolean = false,
+    /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
+    val find: String? = null,
+    val findAtSec: Double? = null,
+)
+
+/** docs/10 "Re-transcription": what the confirmation names — the method and the language — before it runs. */
+data class RetranscribeRequest(
+    val recordingId: String,
+    /** The provider's name, or null for on-device transcription. */
+    val provider: String?,
+    val language: recly.core.model.Language,
+    /** The transcript was edited or its speakers named, and the new one replaces that. */
+    val replacesEdits: Boolean,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -225,6 +259,20 @@ class ShellModel(
     /** docs/08 Result files: the window that shows what the transcribe step wrote. */
     var recordingsOpen: Boolean by mutableStateOf(false)
 
+    /** docs/08 "Editing": that window holds an edit with changes, so closing it asks first ([closeRecordings]). */
+    var editsPending: Boolean = false
+
+    var closeAsked: Boolean by mutableStateOf(false)
+        private set
+
+    fun closeRecordings() {
+        if (editsPending) closeAsked = true else recordingsOpen = false
+    }
+
+    fun closeAnswered() {
+        closeAsked = false
+    }
+
     /** The recording that window is showing, once one has been picked. */
     var detail: RecordingDetail? by mutableStateOf(null)
         private set
@@ -246,6 +294,15 @@ class ShellModel(
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
+    /** docs/14 "App": Ctrl+Alt+R from anywhere, and whether Windows gave it to this app. */
+    var shortcutOn: Boolean by mutableStateOf(settings.globalShortcut)
+        private set
+
+    var shortcutRefused: Boolean by mutableStateOf(false)
+        private set
+
+    private var shortcut: GlobalShortcut? = null
+
     /** docs/14 "Agent connection": recly-events, run while its switch is on. Null until [load]. */
     var agentEvents: AgentEvents? by mutableStateOf(null)
         private set
@@ -256,6 +313,17 @@ class ShellModel(
 
     /** docs/03: the recording the rename dialog is asking about, while it is up. */
     var renameRequest: RenameRequest? by mutableStateOf(null)
+        private set
+
+    /** docs/10 "Re-transcription": the confirmation, while it is up. */
+    var retranscribeRequest: RetranscribeRequest? by mutableStateOf(null)
+        private set
+
+    /** docs/09 "Screen principles": the detail player's speed and Skip silence, this PC's own. */
+    var playbackSpeed: Float by mutableStateOf(settings.playbackSpeed)
+        private set
+
+    var skipSilence: Boolean by mutableStateOf(settings.skipSilence)
         private set
 
     /** docs/03 "Disconnect": the warning dialog, and the counts it has to name, while it is up. */
@@ -532,6 +600,7 @@ class ShellModel(
         balloon = TrayAlertBalloon(logger, localization::current)
         launcher = LaunchAtLogins.create(logger)
         launchAtLogin = launcher.isEnabled()
+        shortcut = GlobalShortcut.create(logger)
         consentReminder = settings.consentReminder
         micAccess = MicrophoneAccess.create(logger).state()
         // docs/14 "Agent connection": off unless the user turned it on; a build without recly-events
@@ -674,6 +743,7 @@ class ShellModel(
         // Started last: the offer's whole point is the recording behind it, and an offer made
         // before the shell is ready is one that cannot be taken.
         detector?.start()
+        applyShortcut()
 
         ready = true
         status = when {
@@ -855,6 +925,7 @@ class ShellModel(
     /** Quit: a recording in flight is finalized and queued first — the crash path is not the exit. */
     suspend fun shutdown() {
         askTitle = false
+        shortcut?.unregister()
         agentEvents?.shutdown()
         detector?.stop()
         // A quit with the dialog still open is a skip: that recording is already finalized and
@@ -1060,6 +1131,145 @@ class ShellModel(
         }
     }
 
+    /**
+     * What the detail's menus and lines depend on besides the transcript: the highlights, which the audio
+     * observation does not follow, and whether a job of this recording — a re-transcription among them —
+     * is still in flight.
+     */
+    suspend fun followDetailState(recordingId: String) = coroutineScope {
+        val graph = graph ?: return@coroutineScope
+        launch {
+            graph.core.recordings.observe()
+                .map { graph.core.recordings.get(recordingId)?.meta?.highlights?.map { it.atSec }.orEmpty() }
+                .distinctUntilChanged()
+                .collect { highlights -> updateDetail(recordingId) { it.copy(highlights = highlights) } }
+        }
+        graph.core.jobs.observe()
+            .map { jobs -> jobs.filter { it.recordingId == recordingId && it.status !in SETTLED } }
+            .distinctUntilChanged()
+            .collect { open ->
+                val again = open.firstOrNull { it.retranscription }
+                val running = open.isNotEmpty() || graph.core.localTranscription.isRunning(recordingId)
+                updateDetail(recordingId) {
+                    it.copy(
+                        transcribing = running,
+                        retranscribing = again != null,
+                        retranscribingLocal = again?.workflow?.steps?.any { step -> step is recly.core.model.Step.LocalTranscribe } == true,
+                    )
+                }
+            }
+    }
+
+    // --- the detail's tools (docs/08 "Editing" · "Exports", docs/10 "Re-transcription" · "Search") ----------
+
+    /** The whole list at once, saved as it is changed — no Save button (docs/03 "Metadata"). */
+    fun setHighlights(recordingId: String, atSecs: List<Double>) {
+        val graph = graph ?: return
+        updateDetail(recordingId) { it.copy(highlights = atSecs.sorted()) }
+        scope.launch(graph.core.deps.io) { graph.core.setHighlights(recordingId, atSecs) }
+    }
+
+    /**
+     * docs/03 "Metadata": the moment the recording that is running has reached, marked from the tray. The
+     * clock is the popup's own, so what the line says is what the timer showed.
+     */
+    fun highlightNow() {
+        val graph = graph ?: return
+        val recordingId = recorder?.recordingId ?: return
+        val since = recordingSince ?: return
+        val atSec = (System.currentTimeMillis() - since) / 1000.0
+        scope.launch {
+            if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
+            // For two seconds, then the line is the recording's again.
+            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.elapsed((atSec * 1000).toLong()))
+            status = marked
+            delay(HIGHLIGHT_LINE_MS)
+            if (status == marked && recording) status = Str.STATUS_RECORDING.message()
+        }
+    }
+
+    /** docs/08 "Editing": an edit saved here at once and carried to the recording's folder by the core. */
+    suspend fun editTranscript(recordingId: String, edit: TranscriptEdit): EditResult {
+        val graph = graph ?: return EditResult.NoTranscript
+        return runCatching { graph.core.editTranscript(recordingId, edit) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.transcript.edit.failed", error = it) }
+            .getOrDefault(EditResult.Invalid("failed"))
+    }
+
+    /** docs/08 "Exports": one file of the recording, made by the core under a name for people; null when there is nothing. */
+    suspend fun exportFile(recordingId: String, format: ExportFormat): File? {
+        val graph = graph ?: return null
+        return runCatching { graph.core.exportFile(recordingId, format) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.export.failed", error = it) }
+            .getOrNull()?.let(::File)
+    }
+
+    /** That file, saved where the user says — the save dialog opens on the core's name for it. */
+    suspend fun saveExport(file: File) {
+        val target = fileDialog(FileDialog.SAVE, file.name) ?: return
+        runCatching { withContext(Dispatchers.IO) { file.copyTo(target, overwrite = true) } }
+            .onFailure { graph?.core?.deps?.logger?.log(Logger.Level.ERROR, "rec.export.save.failed", error = it) }
+    }
+
+    /** docs/10 "Search": titles and the transcripts on this PC. */
+    suspend fun search(query: String): List<SearchHit> {
+        val graph = graph ?: return emptyList()
+        return runCatching { graph.core.search(query, SEARCH_LIMIT) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.search.failed", error = it) }
+            .getOrDefault(emptyList())
+    }
+
+    /** A search result: the detail opens on its transcript hit with every match of [query] tinted. */
+    fun openSearchHit(hit: SearchHit, query: String) {
+        val title = hit.title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message()
+        openDetail(hit.recordingId, title, find = query, findAtSec = hit.snippets.firstOrNull()?.atSec)
+    }
+
+    /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
+    fun askToRetranscribe() {
+        val detail = detail ?: return
+        val summary = processing?.summary ?: return
+        val transcript = detail.transcript
+        retranscribeRequest = RetranscribeRequest(
+            recordingId = detail.recordingId,
+            provider = summary.external?.provider?.takeIf { summary.mode == recly.core.processing.TranscriptionMode.EXTERNAL }
+                ?.let(recly.core.transcribe.SttProviders::displayName),
+            language = summary.language,
+            replacesEdits = transcript != null && (transcript.editedAt != null || transcript.speakers.any { !it.name.isNullOrBlank() }),
+        )
+    }
+
+    fun cancelRetranscribe() {
+        retranscribeRequest = null
+    }
+
+    fun retranscribe(request: RetranscribeRequest) {
+        val graph = graph ?: return
+        retranscribeRequest = null
+        scope.launch {
+            val result = runCatching { graph.core.retranscribe(request.recordingId) }
+                .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.retranscribe.failed", error = it) }
+                .getOrNull()
+            when (result) {
+                is RetranscribeResult.Started -> runner?.jobsDue()
+                RetranscribeResult.Busy -> status = Str.DETAIL_TRANSCRIBING.message()
+                RetranscribeResult.NoAudio -> status = Str.PLAYER_NO_AUDIO.message()
+                RetranscribeResult.NoTranscriptionConfigured -> status = Str.DETAIL_TRANSCRIPTION_OFF.message()
+                RetranscribeResult.Unsupported, null -> Unit
+            }
+        }
+    }
+
+    fun changePlaybackSpeed(speed: Float) {
+        settings.playbackSpeed = speed
+        playbackSpeed = speed
+    }
+
+    fun toggleSkipSilence(enabled: Boolean) {
+        settings.skipSilence = enabled
+        skipSilence = enabled
+    }
+
     fun reloadDetailResults() {
         val id = detail?.recordingId ?: return
         scope.launch {
@@ -1074,24 +1284,28 @@ class ShellModel(
         }
     }
 
-    fun openDetail(item: RecentItem) {
+    fun openDetail(item: RecentItem) = openDetail(item.id, item.title)
+
+    private fun openDetail(recordingId: String, title: UiMessage, find: String? = null, findAtSec: Double? = null) {
         val graph = graph ?: return
-        detail = RecordingDetail(item.id, item.title)
+        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec)
         scope.launch {
-            val result = runCatching { graph.core.results(item.id) }
+            val result = runCatching { graph.core.results(recordingId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
                 .getOrNull()
             // The user may have picked another recording while Drive was answering.
-            if (detail?.recordingId != item.id) return@launch
+            if (detail?.recordingId != recordingId) return@launch
             // Out of `loading` before the fetch, because the player bar is where the fetch is said —
             // and the bar stays on `DECIDING` until the trip has been decided, so the seconds it
             // spends asking Drive are not seconds in which Play is offered.
             detail = RecordingDetail(
-                recordingId = item.id,
-                title = item.title,
+                recordingId = recordingId,
+                title = title,
                 loading = false,
                 transcript = result?.transcript,
                 availability = result?.availability ?: TranscriptAvailability.UNAVAILABLE,
+                find = find,
+                findAtSec = findAtSec,
             )
         }
     }
@@ -1567,6 +1781,58 @@ class ShellModel(
         needsAuth = false
     }
 
+    // --- importing (docs/03 "Naming rules") -----------------------------------------------------
+
+    /** Why the last import left nothing behind, for the recordings window's notice; the next import clears it. */
+    var importFailure: UiMessage? by mutableStateOf(null)
+        private set
+
+    /** Imports one after another, however many drops and picks arrive at once. */
+    private val importing = kotlinx.coroutines.sync.Mutex()
+
+    /** The tray's and the list header's Import audio…: the picker, then [importFiles]. */
+    fun chooseImport() {
+        if (graph == null) return
+        scope.launch { importFiles(filesDialog()) }
+    }
+
+    /**
+     * Files picked or dropped: each becomes a recording of this PC's, titled after its name, its row in the
+     * list from the start (`IMPORTING`) and its job queued once it is whole. The file's own time is its
+     * start. Nothing during a disconnect's clean-up, which walks the directory an import writes into.
+     */
+    fun importFiles(files: List<File>) {
+        val graph = graph ?: return
+        if (files.isEmpty()) return
+        importFailure = null
+        scope.launch {
+            importing.withLock {
+                for (file in files) {
+                    DisconnectGate.startBlocker()?.let {
+                        status = it
+                        return@withLock
+                    }
+                    val result = runCatching {
+                        graph.core.importAudio(file.path, file.name, Instant.fromEpochMilliseconds(file.lastModified()), FfmpegImporter(graph.core.deps.io))
+                    }.getOrElse {
+                        graph.core.deps.logger.log(Logger.Level.ERROR, "rec.import.failed", error = it)
+                        ImportResult.Failed(recly.core.message.CoreMessage.IMPORT_UNREADABLE.code(detail = it.message))
+                    }
+                    when (result) {
+                        is ImportResult.Imported -> {
+                            waveforms?.enqueue(result.recordingId)
+                            runner?.jobsDue()
+                        }
+                        is ImportResult.Failed -> {
+                            importFailure = coreMessage(result.reason)
+                            status = Str.IMPORT_FAILED.message()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // --- the speech model (docs/05) ------------------------------------------------------------
 
     /** Not while a capture is running or coming up: the download is for later, the recording is now. */
@@ -1598,6 +1864,31 @@ class ShellModel(
 
     fun toggleLaunchAtLogin(enabled: Boolean) {
         launchAtLogin = launcher.set(enabled)
+    }
+
+    fun toggleShortcut(enabled: Boolean) {
+        settings.globalShortcut = enabled
+        shortcutOn = enabled
+        applyShortcut()
+    }
+
+    /** On, it is (re)registered and may be refused; off, it is let go. The press is the tray's Start or Stop. */
+    private fun applyShortcut() {
+        val shortcut = shortcut ?: return
+        if (!shortcutOn) {
+            shortcut.unregister()
+            shortcutRefused = false
+            return
+        }
+        shortcutRefused = !shortcut.register {
+            scope.launch(Dispatchers.Main) {
+                when {
+                    transition != null -> Unit
+                    recording -> stop()
+                    ready && !helperMissing -> start()
+                }
+            }
+        }
     }
 
     fun toggleConsentReminder(enabled: Boolean) {
@@ -1725,6 +2016,13 @@ class ShellModel(
         }
     }
 
+    /** The import picker: any number of files, of any type — ffmpeg is what decides whether one has audio. */
+    private suspend fun filesDialog(): List<File> = withContext(Dispatchers.Main) {
+        val dialog = FileDialog(null as Frame?, APP_NAME, FileDialog.LOAD).apply { isMultipleMode = true }
+        dialog.isVisible = true
+        dialog.files.toList()
+    }
+
     private suspend fun fileDialog(mode: Int, name: String?): File? = withContext(Dispatchers.Main) {
         val dialog = FileDialog(null as Frame?, APP_NAME, mode)
         name?.let { dialog.file = it }
@@ -1760,6 +2058,20 @@ class ShellModel(
             throw e
         }
     }
+
+    /**
+     * docs/14 "Agent connection": the `mcpServers` entry that starts the bundled recly-events over this PC's
+     * local folder, as recly-events itself prints it. Null when there is no program, no folder, or no answer.
+     */
+    suspend fun localMcpConfiguration(): String? {
+        val program = AgentEventsProgram.locate() ?: return null
+        val folder = localFolder ?: return null
+        val (code, output) = ProcessRunner(program).run(listOf("mcp", "--print-config", "--folder", folder), timeout = MCP_CONFIG_TIMEOUT)
+        if (code != 0 || output.isBlank()) graph?.core?.deps?.logger?.log(Logger.Level.WARN, "shell.mcp.config.failed", mapOf("exit" to code))
+        return output.takeIf { code == 0 && it.isNotBlank() }
+    }
+
+    fun openMcpGuide(language: String) = open(if (language == StringTable.KOREAN) MCP_GUIDE_URL_KO else MCP_GUIDE_URL)
 
     /** [language] is the one the window shows: the guide has a Korean page, every other language gets the English one. */
     fun openAgentGuide(language: String) = open(if (language == StringTable.KOREAN) AGENT_GUIDE_URL_KO else AGENT_GUIDE_URL)
@@ -1825,12 +2137,27 @@ class ShellModel(
         val NEEDS_AUTH_NOTICE = Str.STATUS_SIGN_IN_NEEDED
         val TITLE_PROMPT = Str.STATUS_NAMING
 
+        /** The job states that are over: anything else may still write the transcript. */
+        private val SETTLED = setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
+
+        /** How long the tray's line says a highlight was marked. */
+        private const val HIGHLIGHT_LINE_MS = 2_000L
+
+        /** docs/10 "Search": the most recordings one search lists. */
+        private const val SEARCH_LIMIT = 50
+
         /** docs/03: Google's own page, which is the only place a failed revoke can be finished. */
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
 
         /** docs/14 "Agent connection": the set-up guide — the OpenAI tunnel, the ChatGPT app, the prompt. */
         const val AGENT_GUIDE_URL = "https://recly.dev/agent"
         const val AGENT_GUIDE_URL_KO = "https://recly.dev/agent.ko"
+
+        /** docs/mcp.md on the site: the local MCP server for Claude and Codex. */
+        const val MCP_GUIDE_URL = "https://recly.dev/mcp"
+        const val MCP_GUIDE_URL_KO = "https://recly.dev/mcp.ko"
+
+        private val MCP_CONFIG_TIMEOUT = 10.seconds
 
         /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"

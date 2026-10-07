@@ -435,7 +435,6 @@
   "Already running outside Recly": "Ya se está ejecutando fuera de Recly",
   "Stopped after repeated errors. Turn it off and on to try again.": "Se detuvo tras errores repetidos. Desactívalo y vuelve a activarlo para reintentar.",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Ejecuta recly-events en este Mac. Solo lee los nombres y enlaces de las nuevas transcripciones de tu Drive y avisa a tu agente de ChatGPT a través de tu propio túnel de OpenAI.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Ejecuta recly-events en este PC. Solo lee los nombres y enlaces de las nuevas transcripciones de tu Drive y avisa a tu agente de ChatGPT a través de tu propio túnel de OpenAI.",
   "The subscription ended. Ask your agent to subscribe again.": "La suscripción terminó. Pide a tu agente que se suscriba de nuevo.",
   "Add the app in ChatGPT and ask your agent to subscribe": "Añade la app en ChatGPT y pide a tu agente que se suscriba",
   "Change tunnel": "Cambiar túnel",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "Se perderán tus cambios en esta transcripción.",
   "on-device transcription": "la transcripción en el dispositivo",
   "{0} does not use a vocabulary.": "{0} no usa vocabulario.",
-  "Highlight · {0}": "Marcador · {0}"
+  "Highlight · {0}": "Marcador · {0}",
+  "Another app uses this shortcut.": "Otra app usa este atajo.",
+  "Copy configuration": "Copiar configuración",
+  "Export…": "Exportar…",
+  "Import audio…": "Importar audio…",
+  "Keyboard shortcut": "Atajo de teclado",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Permite que un agente de este equipo, como Claude Desktop, Claude Code o Codex, lea tus grabaciones y transcripciones. Nada sale de este equipo.",
+  "Local MCP server": "Servidor MCP local",
+  "Local agents": "Agentes locales",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Ejecuta recly-events en este PC. Avisa a tu agente de ChatGPT de cada nueva transcripción de tu Drive y, cuando el agente la pide, se la envía a través de tu propio túnel de OpenAI.",
+  "Speed": "Velocidad",
+  "This file format is not supported": "Este formato de archivo no es compatible",
+  "This file has no audio track": "Este archivo no tiene pista de audio"
 }

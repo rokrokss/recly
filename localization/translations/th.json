@@ -272,7 +272,6 @@
   "Run the self-test": "เรียกใช้การทดสอบตัวเอง",
   "Running…": "กำลังทำงาน…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "เรียกใช้ recly-events บน Mac เครื่องนี้ โดยจะอ่านเฉพาะชื่อและลิงก์ของข้อความถอดเสียงใหม่ใน Drive ของคุณ แล้วแจ้งเอเจนต์ ChatGPT ของคุณผ่านทันเนล OpenAI ของคุณเอง",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "เรียกใช้ recly-events บน PC เครื่องนี้ โดยจะอ่านเฉพาะชื่อและลิงก์ของข้อความถอดเสียงใหม่ใน Drive ของคุณ แล้วแจ้งเอเจนต์ ChatGPT ของคุณผ่านทันเนล OpenAI ของคุณเอง",
   "Save": "บันทึก",
   "Save key": "บันทึกคีย์",
   "Save the recording and quit": "เก็บการบันทึกเสียงไว้แล้วออก",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "การแก้ไขในข้อความถอดเสียงนี้จะหายไป",
   "on-device transcription": "การถอดเสียงในอุปกรณ์",
   "{0} does not use a vocabulary.": "{0} ไม่ใช้คำศัพท์เฉพาะ",
-  "Highlight · {0}": "ไฮไลต์ · {0}"
+  "Highlight · {0}": "ไฮไลต์ · {0}",
+  "Another app uses this shortcut.": "แอปอื่นใช้แป้นพิมพ์ลัดนี้อยู่",
+  "Copy configuration": "คัดลอกการกำหนดค่า",
+  "Export…": "ส่งออก…",
+  "Import audio…": "นำเข้าเสียง…",
+  "Keyboard shortcut": "แป้นพิมพ์ลัด",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "ให้เอเจนต์ในคอมพิวเตอร์นี้ เช่น Claude Desktop, Claude Code หรือ Codex อ่านการบันทึกเสียงและข้อความถอดเสียงของคุณได้ ไม่มีข้อมูลใดออกจากคอมพิวเตอร์นี้",
+  "Local MCP server": "เซิร์ฟเวอร์ MCP ในเครื่อง",
+  "Local agents": "เอเจนต์ในเครื่อง",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "เรียกใช้ recly-events บน PC เครื่องนี้ โดยจะแจ้งเอเจนต์ ChatGPT ของคุณเมื่อมีข้อความถอดเสียงใหม่ใน Drive ของคุณ และเมื่อเอเจนต์ขอ ก็จะส่งข้อความถอดเสียงนั้นให้ผ่านทันเนล OpenAI ของคุณเอง",
+  "Speed": "ความเร็ว",
+  "This file format is not supported": "ไม่รองรับรูปแบบไฟล์นี้",
+  "This file has no audio track": "ไฟล์นี้ไม่มีแทร็กเสียง"
 }

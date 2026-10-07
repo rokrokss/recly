@@ -129,6 +129,9 @@ class WindowsRecorder(
 
     val isRecording: Boolean get() = session != null
 
+    /** The recording that is running, for a highlight marked from the tray. */
+    val recordingId: String? get() = session?.recordingId
+
     /**
      * docs/09 screen principle 6: the levels of the recording that is running, oldest first — empty when
      * there is none. Read on every tick of the strip rather than pushed into the model: three

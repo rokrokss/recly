@@ -435,7 +435,6 @@
   "Already running outside Recly": "已在Recly之外執行",
   "Stopped after repeated errors. Turn it off and on to try again.": "因重複出錯已停止。關閉後再開啟即可重試。",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "在此Mac上執行recly-events。它只讀取Drive中新逐字稿的名稱和連結，並透過你自己的OpenAI通道通知ChatGPT代理。",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "在此電腦上執行recly-events。它只讀取Drive中新逐字稿的名稱和連結，並透過你自己的OpenAI通道通知ChatGPT代理。",
   "The subscription ended. Ask your agent to subscribe again.": "訂閱已結束。請讓你的代理重新訂閱。",
   "Add the app in ChatGPT and ask your agent to subscribe": "請在ChatGPT中新增應用程式，並讓你的代理訂閱",
   "Change tunnel": "更換通道",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "你對此逐字稿所做的修改將會遺失。",
   "on-device transcription": "裝置本機轉錄",
   "{0} does not use a vocabulary.": "{0}不使用詞彙表。",
-  "Highlight · {0}": "標記 · {0}"
+  "Highlight · {0}": "標記 · {0}",
+  "Another app uses this shortcut.": "其他應用程式正在使用此快速鍵。",
+  "Copy configuration": "複製組態",
+  "Export…": "匯出…",
+  "Import audio…": "匯入音訊…",
+  "Keyboard shortcut": "鍵盤快速鍵",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "讓此電腦上的代理（例如Claude Desktop、Claude Code或Codex）讀取你的錄音和逐字稿。資料不會離開此電腦。",
+  "Local MCP server": "本機MCP伺服器",
+  "Local agents": "本機代理",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "在此電腦上執行recly-events。Drive中每有新的逐字稿，它都會通知ChatGPT代理，並在代理要求時透過你自己的OpenAI通道傳送該逐字稿。",
+  "Speed": "播放速度",
+  "This file format is not supported": "不支援此檔案格式",
+  "This file has no audio track": "此檔案沒有音軌"
 }

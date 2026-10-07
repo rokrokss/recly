@@ -1,6 +1,10 @@
 package app.recly.windows.ui.component
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
+import app.recly.windows.ui.theme.Space
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -24,8 +28,8 @@ import app.recly.windows.ui.theme.mono
  */
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
-/** The code and its tone — what [LedgerRow] shows in its last column. */
-data class LedgerStatus(val code: String, val tone: BadgeTone, val label: String = code)
+/** The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the loader in front of the code. */
+data class LedgerStatus(val code: String, val tone: BadgeTone, val label: String = code, val busy: Boolean = false)
 
 /**
  * A square badge: 1dp of the tone (2dp in high contrast), the code in monospace, on the surface.
@@ -35,16 +39,22 @@ data class LedgerStatus(val code: String, val tone: BadgeTone, val label: String
 @Composable
 fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     val palette = blueprint
-    Text(
-        text = status.label,
+    Row(
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
             .padding(horizontal = BADGE_PAD, vertical = 3.dp),
-        style = mono.small,
-        color = status.tone.ink(),
-        maxLines = 1,
-        textAlign = TextAlign.Center,
-    )
+        horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (status.busy) BlueprintLoader(status.tone.ink())
+        Text(
+            text = status.label,
+            style = mono.small,
+            color = status.tone.ink(),
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 /** The badge's own inset either side of its code. */

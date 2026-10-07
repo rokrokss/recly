@@ -435,7 +435,6 @@
   "Already running outside Recly": "Recly के बाहर पहले से चल रहा है",
   "Stopped after repeated errors. Turn it off and on to try again.": "बार-बार त्रुटियों के बाद रुक गया। फिर से कोशिश करने के लिए बंद करके चालू करें।",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "इस Mac पर recly-events चलाता है। यह आपकी Drive में नई ट्रांसक्रिप्ट के केवल नाम और लिंक पढ़ता है और आपकी अपनी OpenAI टनल से आपके ChatGPT एजेंट को बताता है।",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "इस PC पर recly-events चलाता है। यह आपकी Drive में नई ट्रांसक्रिप्ट के केवल नाम और लिंक पढ़ता है और आपकी अपनी OpenAI टनल से आपके ChatGPT एजेंट को बताता है।",
   "The subscription ended. Ask your agent to subscribe again.": "सब्सक्रिप्शन समाप्त हो गया। अपने एजेंट से फिर से सब्सक्राइब करने को कहें।",
   "Add the app in ChatGPT and ask your agent to subscribe": "ChatGPT में ऐप जोड़ें और अपने एजेंट से सब्सक्राइब करने को कहें",
   "Change tunnel": "टनल बदलें",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "इस ट्रांसक्रिप्ट में किए गए आपके बदलाव खो जाएँगे।",
   "on-device transcription": "डिवाइस पर ट्रांसक्रिप्शन",
   "{0} does not use a vocabulary.": "{0} शब्दावली का इस्तेमाल नहीं करता।",
-  "Highlight · {0}": "हाइलाइट · {0}"
+  "Highlight · {0}": "हाइलाइट · {0}",
+  "Another app uses this shortcut.": "कोई दूसरा ऐप इस शॉर्टकट का इस्तेमाल कर रहा है।",
+  "Copy configuration": "कॉन्फ़िगरेशन कॉपी करें",
+  "Export…": "एक्सपोर्ट करें…",
+  "Import audio…": "ऑडियो इम्पोर्ट करें…",
+  "Keyboard shortcut": "कीबोर्ड शॉर्टकट",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "इस कंप्यूटर पर मौजूद किसी एजेंट, जैसे Claude Desktop, Claude Code या Codex, को आपकी रिकॉर्डिंग और ट्रांसक्रिप्ट पढ़ने देता है। कुछ भी इस कंप्यूटर से बाहर नहीं जाता।",
+  "Local MCP server": "लोकल MCP सर्वर",
+  "Local agents": "लोकल एजेंट",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "इस PC पर recly-events चलाता है। यह आपकी Drive में हर नई ट्रांसक्रिप्ट के बारे में आपके ChatGPT एजेंट को बताता है और एजेंट के माँगने पर आपकी अपनी OpenAI टनल से उसे ट्रांसक्रिप्ट भेजता है।",
+  "Speed": "स्पीड",
+  "This file format is not supported": "यह फ़ाइल फ़ॉर्मैट समर्थित नहीं है",
+  "This file has no audio track": "इस फ़ाइल में ऑडियो ट्रैक नहीं है"
 }

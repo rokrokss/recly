@@ -56,6 +56,7 @@ import app.recly.windows.ui.ByteFormat
 import app.recly.windows.ui.MeteredDownloadDialog
 import app.recly.windows.ui.RecordingsWindow
 import app.recly.windows.ui.RenameDialog
+import app.recly.windows.ui.RetranscribeDialog
 import app.recly.windows.ui.SettingsWindow
 import app.recly.windows.ui.ShellModel
 import app.recly.windows.ui.TrayEntry
@@ -164,11 +165,11 @@ fun main(args: Array<String>) {
         // docs/08 "Result files": what the transcribe step wrote, for the recordings the popup lists.
         if (model.recordingsOpen) {
             Window(
-                onCloseRequest = { model.recordingsOpen = false },
+                onCloseRequest = model::closeRecordings,
                 title = strings[Str.WINDOW_RECORDINGS],
                 state = rememberWindowState(width = RECORDINGS_WIDTH.dp, height = RECORDINGS_HEIGHT.dp),
             ) {
-                Themed(model, dev) { RecordingsWindow(model, strings) }
+                Themed(model, dev) { RecordingsWindow(model, strings, themed) }
             }
         }
 
@@ -220,6 +221,17 @@ fun main(args: Array<String>) {
                     onDownload = download::confirmMetered,
                 )
             }
+        }
+
+        // docs/10 "Re-transcription": asked from here like the rename, for the same reason.
+        model.retranscribeRequest?.let { request ->
+            RetranscribeDialog(
+                request = request,
+                strings = strings,
+                theme = themed,
+                onCancel = model::cancelRetranscribe,
+                onConfirm = model::retranscribe,
+            )
         }
 
         model.disconnectPrompt?.let { prompt ->

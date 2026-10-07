@@ -272,7 +272,6 @@
   "Run the self-test": "Öz testi çalıştır",
   "Running…": "Çalışıyor…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Bu Mac'te recly-events'i çalıştırır. Drive'ınızdaki yeni transkriptlerin yalnızca adlarını ve bağlantılarını okur ve kendi OpenAI tüneliniz üzerinden ChatGPT ajanınıza bildirir.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Bu bilgisayarda recly-events'i çalıştırır. Drive'ınızdaki yeni transkriptlerin yalnızca adlarını ve bağlantılarını okur ve kendi OpenAI tüneliniz üzerinden ChatGPT ajanınıza bildirir.",
   "Save": "Kaydet",
   "Save key": "Anahtarı kaydet",
   "Save the recording and quit": "Kaydı tamamla ve çık",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "Bu transkriptte yaptığınız düzenlemeler kaybolacak.",
   "on-device transcription": "cihaz üzerinde transkripsiyon",
   "{0} does not use a vocabulary.": "{0} sözlük kullanmaz.",
-  "Highlight · {0}": "İşaret · {0}"
+  "Highlight · {0}": "İşaret · {0}",
+  "Another app uses this shortcut.": "Bu kısayolu başka bir uygulama kullanıyor.",
+  "Copy configuration": "Yapılandırmayı kopyala",
+  "Export…": "Dışa aktar…",
+  "Import audio…": "Ses içe aktar…",
+  "Keyboard shortcut": "Klavye kısayolu",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Bu bilgisayardaki Claude Desktop, Claude Code veya Codex gibi bir ajanın kayıtlarınızı ve transkriptlerinizi okumasını sağlar. Hiçbir şey bu bilgisayardan çıkmaz.",
+  "Local MCP server": "Yerel MCP sunucusu",
+  "Local agents": "Yerel ajanlar",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Bu bilgisayarda recly-events'i çalıştırır. Drive'ınızdaki her yeni transkripti ChatGPT ajanınıza bildirir ve ajan istediğinde transkripti kendi OpenAI tüneliniz üzerinden ona gönderir.",
+  "Speed": "Hız",
+  "This file format is not supported": "Bu dosya biçimi desteklenmiyor",
+  "This file has no audio track": "Bu dosyada ses parçası yok"
 }

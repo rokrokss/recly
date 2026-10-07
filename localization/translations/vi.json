@@ -272,7 +272,6 @@
   "Run the self-test": "Chạy tự kiểm tra",
   "Running…": "Đang chạy…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Chạy recly-events trên máy Mac này. Công cụ này chỉ đọc tên và liên kết của các bản chép lời mới trong Drive của bạn, rồi báo cho tác nhân ChatGPT qua đường hầm OpenAI của riêng bạn.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Chạy recly-events trên PC này. Công cụ này chỉ đọc tên và liên kết của các bản chép lời mới trong Drive của bạn, rồi báo cho tác nhân ChatGPT qua đường hầm OpenAI của riêng bạn.",
   "Save": "Lưu",
   "Save key": "Lưu khóa",
   "Save the recording and quit": "Lưu bản ghi âm và thoát",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "Những chỉnh sửa của bạn trong bản chép lời này sẽ bị mất.",
   "on-device transcription": "chép lời trên thiết bị",
   "{0} does not use a vocabulary.": "{0} không dùng từ vựng.",
-  "Highlight · {0}": "Điểm đánh dấu · {0}"
+  "Highlight · {0}": "Điểm đánh dấu · {0}",
+  "Another app uses this shortcut.": "Một ứng dụng khác đang dùng phím tắt này.",
+  "Copy configuration": "Sao chép cấu hình",
+  "Export…": "Xuất…",
+  "Import audio…": "Nhập âm thanh…",
+  "Keyboard shortcut": "Phím tắt",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Cho phép tác nhân trên máy tính này, chẳng hạn Claude Desktop, Claude Code hoặc Codex, đọc các bản ghi âm và bản chép lời của bạn. Không có gì rời khỏi máy tính này.",
+  "Local MCP server": "Máy chủ MCP cục bộ",
+  "Local agents": "Tác nhân cục bộ",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Chạy recly-events trên PC này. Công cụ này báo cho tác nhân ChatGPT về mỗi bản chép lời mới trong Drive của bạn và, khi tác nhân yêu cầu, gửi bản chép lời đó qua đường hầm OpenAI của riêng bạn.",
+  "Speed": "Tốc độ",
+  "This file format is not supported": "Định dạng tệp này không được hỗ trợ",
+  "This file has no audio track": "Tệp này không có rãnh âm thanh"
 }

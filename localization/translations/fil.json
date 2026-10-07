@@ -272,7 +272,6 @@
   "Run the self-test": "Patakbuhin ang self-test",
   "Running…": "Tumatakbo…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Pinapatakbo ang recly-events sa Mac na ito. Binabasa lang nito ang mga pangalan at link ng mga bagong transcript sa iyong Drive at sinasabihan ang iyong ChatGPT agent sa pamamagitan ng sarili mong tunnel ng OpenAI.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Pinapatakbo ang recly-events sa PC na ito. Binabasa lang nito ang mga pangalan at link ng mga bagong transcript sa iyong Drive at sinasabihan ang iyong ChatGPT agent sa pamamagitan ng sarili mong tunnel ng OpenAI.",
   "Save": "I-save",
   "Save key": "I-save ang key",
   "Save the recording and quit": "I-save ang recording at umalis",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "Mawawala ang mga ginawa mong pagbabago sa transcript na ito.",
   "on-device transcription": "pag-transcribe sa device",
   "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}.",
-  "Highlight · {0}": "Highlight · {0}"
+  "Highlight · {0}": "Highlight · {0}",
+  "Another app uses this shortcut.": "Ginagamit ng ibang app ang shortcut na ito.",
+  "Copy configuration": "Kopyahin ang configuration",
+  "Export…": "I-export…",
+  "Import audio…": "Mag-import ng audio…",
+  "Keyboard shortcut": "Shortcut sa keyboard",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Pinapayagan ang isang agent sa computer na ito, gaya ng Claude Desktop, Claude Code o Codex, na basahin ang iyong mga recording at transcript. Walang lumalabas sa computer na ito.",
+  "Local MCP server": "Lokal na MCP server",
+  "Local agents": "Mga lokal na agent",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Pinapatakbo ang recly-events sa PC na ito. Sinasabihan nito ang iyong ChatGPT agent tungkol sa bawat bagong transcript sa iyong Drive at, kapag hiningi ng agent, ipinapadala nito ang transcript sa pamamagitan ng sarili mong tunnel ng OpenAI.",
+  "Speed": "Bilis",
+  "This file format is not supported": "Hindi sinusuportahan ang format ng file na ito",
+  "This file has no audio track": "Walang audio track ang file na ito"
 }

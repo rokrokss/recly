@@ -7,6 +7,7 @@ import kotlinx.coroutines.withContext
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 import recly.core.model.RecordingStatus
+import recly.core.model.Source
 import recly.core.platform.Logger
 import recly.core.recording.MetaWriter
 import recly.core.recording.RecordingRecord
@@ -57,6 +58,9 @@ class RecordingRecovery(private val core: ReclyCore) {
     }
 
     private suspend fun recoverOpen(open: RecordingRecord): Boolean {
+        // docs/03 "Naming rules": an import is the core's to drop when a killed process left it, never one
+        // to finalize — and left alone while this process is still importing it.
+        if (open.meta.source == Source.IMPORT) return core.dropAbandonedImport(open.id)
         // Markers first: a marked part is audio this app already knows the duration and hash of, so
         // it belongs in the meta — and once it is registered its file is not an unknown segment.
         val marked = registerMarked(open)

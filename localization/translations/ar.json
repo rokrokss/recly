@@ -435,7 +435,6 @@
   "Already running outside Recly": "يعمل بالفعل خارج Recly",
   "Stopped after repeated errors. Turn it off and on to try again.": "توقف بعد أخطاء متكررة. أوقفه ثم شغّله لإعادة المحاولة.",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "يشغّل recly-events على هذا الـMac. يقرأ فقط أسماء وروابط النصوص الجديدة في Drive ويبلغ وكيل ChatGPT عبر نفق OpenAI الخاص بك.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "يشغّل recly-events على هذا الكمبيوتر. يقرأ فقط أسماء وروابط النصوص الجديدة في Drive ويبلغ وكيل ChatGPT عبر نفق OpenAI الخاص بك.",
   "The subscription ended. Ask your agent to subscribe again.": "انتهى الاشتراك. اطلب من وكيلك الاشتراك مرة أخرى.",
   "Add the app in ChatGPT and ask your agent to subscribe": "أضف التطبيق في ChatGPT واطلب من وكيلك الاشتراك",
   "Change tunnel": "تغيير النفق",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "ستفقد تعديلاتك على هذا النص.",
   "on-device transcription": "النسخ على الجهاز",
   "{0} does not use a vocabulary.": "لا يستخدم {0} قائمة مفردات.",
-  "Highlight · {0}": "علامة · {0}"
+  "Highlight · {0}": "علامة · {0}",
+  "Another app uses this shortcut.": "يستخدم تطبيق آخر هذا الاختصار.",
+  "Copy configuration": "نسخ التكوين",
+  "Export…": "تصدير…",
+  "Import audio…": "استيراد صوت…",
+  "Keyboard shortcut": "اختصار لوحة المفاتيح",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "يتيح لوكيل على هذا الكمبيوتر، مثل Claude Desktop أو Claude Code أو Codex، قراءة تسجيلاتك ونصوصها. لا يغادر أي شيء هذا الكمبيوتر.",
+  "Local MCP server": "خادم MCP المحلي",
+  "Local agents": "الوكلاء المحليون",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "يشغّل recly-events على هذا الكمبيوتر. يبلغ وكيل ChatGPT بكل نص جديد في Drive، وعندما يطلبه الوكيل يرسل إليه النص عبر نفق OpenAI الخاص بك.",
+  "Speed": "السرعة",
+  "This file format is not supported": "تنسيق هذا الملف غير مدعوم",
+  "This file has no audio track": "لا يحتوي هذا الملف على مسار صوتي"
 }

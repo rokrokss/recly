@@ -149,12 +149,15 @@ fun BlueprintMenu(
     expanded: Boolean,
     onDismissRequest: () -> Unit,
     offset: IntOffset = IntOffset.Zero,
+    /** Which corner of the thing clicked the menu hangs from — the end for a button at a window's end. */
+    alignment: androidx.compose.ui.Alignment = androidx.compose.ui.Alignment.TopStart,
     content: @Composable () -> Unit,
 ) {
     if (!expanded) return
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     Popup(
+        alignment = alignment,
         offset = offset,
         onDismissRequest = onDismissRequest,
         properties = PopupProperties(focusable = true),

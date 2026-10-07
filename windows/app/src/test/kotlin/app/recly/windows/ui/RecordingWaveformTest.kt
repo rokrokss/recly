@@ -208,7 +208,7 @@ class RecordingWaveformTest {
      */
     @Test
     fun `preparing a selection fills the waveform`() {
-        val player = RecordingPlayer(spawn = { _, _ -> PcmProcess(pcm(List(8_000) { 16_384 })) })
+        val player = RecordingPlayer(spawn = { _, _, _ -> PcmProcess(pcm(List(8_000) { 16_384 })) })
 
         player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5)))
 
@@ -231,7 +231,7 @@ class RecordingWaveformTest {
     fun `a kept waveform that stands for the parts is drawn at once and nothing is decoded`() {
         val spawns = CopyOnWriteArrayList<Path>()
         val decoded = CopyOnWriteArrayList<FloatArray>()
-        val player = RecordingPlayer(spawn = { path, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
+        val player = RecordingPlayer(spawn = { path, _, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
         val kept = floatArrayOf(0.25f, 0.75f)
 
         player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5)), kept) { decoded += it }
@@ -248,7 +248,7 @@ class RecordingWaveformTest {
     fun `a kept waveform of another length is decoded again and the decode is kept`() {
         val spawns = CopyOnWriteArrayList<Path>()
         val decoded = CopyOnWriteArrayList<FloatArray>()
-        val player = RecordingPlayer(spawn = { path, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
+        val player = RecordingPlayer(spawn = { path, _, _ -> spawns += path; PcmProcess(pcm(List(8_000) { 16_384 })) })
 
         player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5)), floatArrayOf(0.1f, 0.2f, 0.3f)) { decoded += it }
 
@@ -263,7 +263,7 @@ class RecordingWaveformTest {
     @Test
     fun `while the parts decode the bar has its loader, not a baseline`() {
         val release = java.util.concurrent.CountDownLatch(1)
-        val player = RecordingPlayer(spawn = { _, _ -> PcmProcess(pcm(List(8_000) { 16_384 }), gate = release) })
+        val player = RecordingPlayer(spawn = { _, _, _ -> PcmProcess(pcm(List(8_000) { 16_384 }), gate = release) })
         val audio = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5))
 
         player.prepare(audio)
@@ -280,7 +280,7 @@ class RecordingWaveformTest {
     @Test
     fun `a decode that fails is not kept and does not load for ever`() {
         val decoded = CopyOnWriteArrayList<FloatArray>()
-        val player = RecordingPlayer(spawn = { _, _ -> PcmProcess(ByteArray(0), exit = 1) })
+        val player = RecordingPlayer(spawn = { _, _, _ -> PcmProcess(ByteArray(0), exit = 1) })
         val audio = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(0.5))
 
         player.prepare(audio) { decoded += it }

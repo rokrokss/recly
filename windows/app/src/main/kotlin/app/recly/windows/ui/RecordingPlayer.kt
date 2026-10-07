@@ -16,6 +16,8 @@ import okio.Path
 import recly.core.model.Part
 import recly.core.model.Track
 import recly.core.platform.Logger
+import recly.core.recording.SilenceRanges
+import recly.core.recording.SilentRange
 import recly.core.recording.WaveformPeaks
 
 /**
@@ -374,7 +376,8 @@ class RecordingPlayer(
      * ffmpeg is something a unit test has.
      */
     private val speaker: () -> SourceDataLine = { AudioSystem.getSourceDataLine(FORMAT) },
-    private val spawn: (Path, Double) -> Process = decoder(ffmpeg),
+    /** A part from a second into it, at a speed: 1 is as recorded. */
+    private val spawn: (Path, Double, Float) -> Process = { path, seekSec, speed -> decoder(ffmpeg, speed)(path, seekSec) },
     /**
      * How long [stop] waits for the decoding thread before saying it did not go. The default is the
      * one the shell runs on; a test pins the *answer* rather than the wall clock, and 2 s of real
@@ -411,6 +414,19 @@ class RecordingPlayer(
     /** A decode is running for the selection on show — the kept waveform did not stand for it. */
     var waveformDecoding: Boolean by mutableStateOf(false)
         private set
+
+    /**
+     * docs/09 "Screen principles": how fast the recording plays, pitch kept (ffmpeg's `atempo`). The clock
+     * stays on the recording's own seconds whatever it is.
+     */
+    var speed: Float by mutableStateOf(1f)
+        private set
+
+    /** Skip silence: playback jumps over the quiet stretches the core works out from [waveform]. */
+    @Volatile var skipSilence: Boolean = false
+
+    /** docs/10 "Shared rules for the shells": [waveform]'s silences, worked out once per waveform. */
+    @Volatile private var silences: List<SilentRange> = emptyList()
 
     /**
      * The player is one of three things, and both fields are read and written under this object's
@@ -487,10 +503,10 @@ class RecordingPlayer(
         prepared = selection
         waveformFailed = false
         if (cached != null && !selection.isEmpty && cached.size == RecordingWaveform.windows(selection)) {
-            waveform = cached
+            show(cached)
             return
         }
-        waveform = FloatArray(0)
+        show(FloatArray(0))
         if (selection.isEmpty) return
         waveformDecoding = true
         decoding = WaveformDecode(selection, onDecoded).also { it.start() }
@@ -523,9 +539,24 @@ class RecordingPlayer(
     @Synchronized
     private fun drew(decode: WaveformDecode, peaks: FloatArray): Boolean {
         if (decoding !== decode) return false
-        waveform = peaks
+        show(peaks)
         waveformDecoding = false
         return true
+    }
+
+    private fun show(peaks: FloatArray) {
+        waveform = peaks
+        silences = SilenceRanges.compute(peaks.toList())
+    }
+
+    /**
+     * A new speed: what is loaded of [selection] — playing or paused — carries on from the same second at it,
+     * through the same re-spawn a scrub makes; a paused decoder is already ahead at the old speed.
+     */
+    fun changeSpeed(selection: RecordingPlaylist.Selection, to: Float) {
+        if (to == speed) return
+        speed = to
+        seek(selection, positionSec)
     }
 
     /** The decode that could not read its parts, if the bar is still on the recording it was for. */
@@ -845,8 +876,17 @@ class RecordingPlayer(
                 var offsetSec = from.second
                 while (!cancelled) {
                     while (index < selection.paths.size && !cancelled) {
-                        decode(selection.paths[index], offsetSec, opened) { bytes ->
-                            at(this, position(selection.durations, index, offsetSec, bytes))
+                        val tempo = speed
+                        decode(selection.paths[index], offsetSec, tempo, opened) { bytes ->
+                            val second = position(selection.durations, index, offsetSec, bytes, tempo)
+                            // Inside a silence, playback goes on from its end; the clock says that second.
+                            val silent = if (skipSilence) silences.firstOrNull { second >= it.startSec && second < it.endSec } else null
+                            if (silent == null) {
+                                at(this, second)
+                            } else {
+                                jumpTo(target(selection.durations, silent.endSec))
+                                at(this, silent.endSec)
+                            }
                         }
                         // A part that ended because the playhead was dragged elsewhere is not a
                         // part that finished: the run carries on wherever the scrub put it instead.
@@ -898,8 +938,8 @@ class RecordingPlayer(
          * One part from [seekSec] into it, decoded straight into the speaker. [onBytes] is the PCM
          * handed over so far, which is the offset's own seconds and not the part's.
          */
-        private fun decode(path: Path, seekSec: Double, out: SourceDataLine, onBytes: (Long) -> Unit) {
-            val decoder = spawn(path, seekSec)
+        private fun decode(path: Path, seekSec: Double, tempo: Float, out: SourceDataLine, onBytes: (Long) -> Unit) {
+            val decoder = spawn(path, seekSec, tempo)
             process = decoder
             try {
                 decoder.outputStream.close()
@@ -1018,7 +1058,7 @@ class RecordingPlayer(
             try {
                 val peaks = RecordingWaveform.peaks(
                     selection,
-                    spawn,
+                    { path, seekSec -> spawn(path, seekSec, 1f) },
                     cancelled = { cancelled },
                     onProcess = { process = it },
                 )
@@ -1038,20 +1078,21 @@ class RecordingPlayer(
          * playback feeds the speaker from, and the waveform its peaks from (here and in
          * `WaveformPrecompute`).
          */
-        fun decoder(ffmpeg: String): (Path, Double) -> Process = { path, seekSec ->
+        fun decoder(ffmpeg: String, speed: Float = 1f): (Path, Double) -> Process = { path, seekSec ->
             ProcessBuilder(
-                ffmpeg,
-                "-v", "error",
-                "-nostdin",
-                // Before `-i`, which is ffmpeg's accurate input seek: it decodes from the keyframe
-                // before the second asked for and writes from that second, so what a scrub hears and
-                // what the clock says are the same instant.
-                "-ss", seekSec.toString(),
-                "-i", path.toString(),
-                "-f", "s16le",
-                "-ac", CHANNELS.toString(),
-                "-ar", RATE.toString(),
-                "-",
+                listOf(
+                    ffmpeg,
+                    "-v", "error",
+                    "-nostdin",
+                    // Before `-i`, which is ffmpeg's accurate input seek: it decodes from the keyframe
+                    // before the second asked for and writes from that second, so what a scrub hears and
+                    // what the clock says are the same instant.
+                    "-ss", seekSec.toString(),
+                    "-i", path.toString(),
+                ) +
+                    // `atempo` keeps the pitch; one filter covers the 0.5–2 range the speeds are in.
+                    (if (speed != 1f) listOf("-af", "atempo=$speed") else emptyList()) +
+                    listOf("-f", "s16le", "-ac", CHANNELS.toString(), "-ar", RATE.toString(), "-"),
             ).redirectError(ProcessBuilder.Redirect.DISCARD).start()
         }
 
@@ -1065,10 +1106,11 @@ class RecordingPlayer(
          * parts count in its seconds rather than in the decoder's — a part whose file is a few
          * frames longer than the row says must not walk the two apart.
          */
-        fun position(durations: List<Double>, finished: Int, offsetSec: Double, itemBytes: Long): Double =
+        fun position(durations: List<Double>, finished: Int, offsetSec: Double, itemBytes: Long, speed: Float = 1f): Double =
             durations.take(finished.coerceAtLeast(0)).sum() +
                 offsetSec.coerceAtLeast(0.0) +
-                itemBytes.coerceAtLeast(0) / BYTES_PER_SEC.toDouble()
+                // At a speed, a second of what the speaker heard is that many seconds of the recording.
+                itemBytes.coerceAtLeast(0) / BYTES_PER_SEC.toDouble() * speed
 
         /**
          * The other half of [position], and its inverse: which part a second of the recording is

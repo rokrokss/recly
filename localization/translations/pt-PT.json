@@ -272,7 +272,6 @@
   "Run the self-test": "Executar o autoteste",
   "Running…": "A executar…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Executa o recly-events neste Mac. Lê apenas os nomes e as ligações das novas transcrições no seu Drive e avisa o seu agente do ChatGPT através do seu próprio túnel da OpenAI.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Executa o recly-events neste PC. Lê apenas os nomes e as ligações das novas transcrições no seu Drive e avisa o seu agente do ChatGPT através do seu próprio túnel da OpenAI.",
   "Save": "Guardar",
   "Save key": "Guardar chave",
   "Save the recording and quit": "Guardar a gravação e sair",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "As alterações a esta transcrição serão perdidas.",
   "on-device transcription": "a transcrição no dispositivo",
   "{0} does not use a vocabulary.": "{0} não usa vocabulário.",
-  "Highlight · {0}": "Marcador · {0}"
+  "Highlight · {0}": "Marcador · {0}",
+  "Another app uses this shortcut.": "Outra app está a usar este atalho.",
+  "Copy configuration": "Copiar configuração",
+  "Export…": "Exportar…",
+  "Import audio…": "Importar áudio…",
+  "Keyboard shortcut": "Atalho de teclado",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Permite que um agente neste computador, como o Claude Desktop, o Claude Code ou o Codex, leia as suas gravações e transcrições. Nada sai deste computador.",
+  "Local MCP server": "Servidor MCP local",
+  "Local agents": "Agentes locais",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Executa o recly-events neste PC. Avisa o seu agente do ChatGPT de cada nova transcrição no seu Drive e, quando o agente a pede, envia-lhe a transcrição através do seu próprio túnel da OpenAI.",
+  "Speed": "Velocidade",
+  "This file format is not supported": "Este formato de ficheiro não é suportado",
+  "This file has no audio track": "Este ficheiro não tem faixa de áudio"
 }

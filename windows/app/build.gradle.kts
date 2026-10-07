@@ -122,6 +122,8 @@ tasks.test {
         "recly.localSpeech.prepare",
         "recly.localSpeech.language",
         "recly.localSpeech.expected",
+        // `ui/ShotsTest`, which renders the windows to PNGs only when given a directory.
+        "recly.shots",
     ).forEach { key -> System.getProperty(key)?.let { systemProperty(key, it) } }
 }
 

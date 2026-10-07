@@ -25,6 +25,9 @@ import recly.core.transcribe.LocalTranscriptionProgress
 import recly.core.transcribe.LocalTranscriptionRequest
 import recly.core.transcribe.LocalTranscriptionResult
 import recly.core.transcribe.Qwen3Asr
+import recly.core.transcribe.SpeakerDiarizationModels
+import recly.core.transcribe.SpeakerTurn
+import recly.core.transcribe.SpeakerTurns
 import recly.core.transcribe.SttSegment
 import recly.core.transcribe.UnavailableLocalTranscriptionEngine
 
@@ -34,15 +37,23 @@ import recly.core.transcribe.UnavailableLocalTranscriptionEngine
  * itself is the helper's. Silero VAD cuts the recording into speech; each piece is decoded and
  * checkpointed, which is also where a cancel and the resume position take effect. Windows has no
  * thermal signal to wait on, and it is not validated for heat on a real PC yet (docs/20).
+ *
+ * With the speaker models ([speakers]) the recording is diarized first and each piece of speech is cut
+ * where the speaker changes, so every decoded piece has one speaker; without them the transcript simply
+ * has none. The user's vocabulary goes into each piece's prompt as Qwen3-ASR hotwords.
  */
 class QwenSpeechEngine private constructor(
     private val store: LocalModelStore,
+    private val speakers: LocalModelStore,
     private val natives: Natives,
 ) : LocalTranscriptionEngine {
     @Volatile private var cancelled = false
 
     /** Whether [prepare] is downloading right now — what settings and the card show a percentage for. */
     @Volatile private var downloading = false
+
+    /** What the running [prepare] set out to fetch, so its percentage does not restart between the two. */
+    @Volatile private var fetching: List<LocalModelStore>? = null
 
     override fun cancel() { cancelled = true }
 
@@ -52,18 +63,35 @@ class QwenSpeechEngine private constructor(
         else -> LocalEngineStatus.READY
     })
 
-    /** Cancelling the caller stops the download between chunks; what is on disk stays for the resume. */
+    /**
+     * The speech model, then the speaker models — one download, from the same hosts. Cancelling the caller
+     * stops it between chunks; what is on disk stays for the resume. A speaker download that fails after
+     * the speech model arrived does not hold back the recordings that waited for the speech model: they
+     * transcribe without speakers, and the speaker row offers its own download again.
+     */
     override suspend fun prepare(language: String): LocalEngineInfo {
         if (Qwen3Asr.hint(language) != null) {
             downloading = true
+            fetching = missing()
             try {
+                val speechWasHere = store.installed()
                 store.install()
+                try {
+                    speakers.install()
+                } catch (e: kotlinx.coroutines.CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    if (speechWasHere) throw e
+                }
             } finally {
                 downloading = false
+                fetching = null
             }
         }
         return status(language)
     }
+
+    private fun missing(): List<LocalModelStore> = listOf(store, speakers).filter { !it.installed() }.ifEmpty { listOf(store, speakers) }
 
     override suspend fun transcribe(request: LocalTranscriptionRequest, progress: LocalTranscriptionProgress): LocalTranscriptionResult =
         withContext(Dispatchers.Default) {
@@ -71,6 +99,15 @@ class QwenSpeechEngine private constructor(
             if (hint == null || status(request.language).status != LocalEngineStatus.READY) return@withContext paused
             cancelled = false
             natives.load()
+            // The whole input from 0 s even on a resume: the turns have to be on the checkpoints' axis.
+            val turns = if (request.diarize && speakers.installed()) {
+                SpeakerDiarizer(speakers).turns(request.path, request.expectedSpeakers) { cancelled } ?: return@withContext paused
+            } else {
+                emptyList()
+            }
+            val labels = SpeakerLabels(turns)
+            // Commas separate hotwords, so one inside a term would split it in two.
+            val hotwords = request.vocabulary.map { it.replace(',', ' ').trim() }.filter { it.isNotEmpty() }.joinToString(",")
             val recognizer = OfflineRecognizer(recognizerConfig())
             val vad = Vad(vadConfig())
             try {
@@ -93,7 +130,7 @@ class QwenSpeechEngine private constructor(
                             val segment = vad.front()
                             vad.pop()
                             val start = request.startTimeSec + segment.start.toDouble() / SAMPLE_RATE
-                            if (!decode(recognizer, hint, segment.samples, start, progress)) return@withContext paused
+                            if (!speech(recognizer, hint, hotwords, segment.samples, start, turns, labels, progress)) return@withContext paused
                         }
                         if (chunk == null) break
                     }
@@ -105,9 +142,25 @@ class QwenSpeechEngine private constructor(
             LocalTranscriptionResult(emptyList(), completed = true)
         }
 
-    /** A speech segment in pieces the model's context holds; false once cancelled. */
+    /** A speech segment cut where the speaker changes ([SpeakerTurns.split]); false once cancelled. */
+    private suspend fun speech(
+        recognizer: OfflineRecognizer, hint: String, hotwords: String, samples: FloatArray, start: Double,
+        turns: List<SpeakerTurn>, labels: SpeakerLabels, progress: LocalTranscriptionProgress,
+    ): Boolean {
+        if (turns.isEmpty()) return decode(recognizer, hint, hotwords, samples, start, null, progress)
+        for (piece in SpeakerTurns.split(start, start + samples.size.toDouble() / SAMPLE_RATE, turns)) {
+            val from = ((piece.start - start) * SAMPLE_RATE).toInt().coerceIn(0, samples.size)
+            val to = ((piece.end - start) * SAMPLE_RATE).toInt().coerceIn(from, samples.size)
+            val speaker = labels.of(piece.label)
+            if (!decode(recognizer, hint, hotwords, samples.copyOfRange(from, to), start + from.toDouble() / SAMPLE_RATE, speaker, progress)) return false
+        }
+        return true
+    }
+
+    /** One speaker's speech in pieces the model's context holds; false once cancelled. */
     private suspend fun decode(
-        recognizer: OfflineRecognizer, hint: String, samples: FloatArray, start: Double, progress: LocalTranscriptionProgress,
+        recognizer: OfflineRecognizer, hint: String, hotwords: String, samples: FloatArray, start: Double, speaker: String?,
+        progress: LocalTranscriptionProgress,
     ): Boolean {
         if (samples.isEmpty()) return true
         val pieces = ceil(samples.size.toDouble() / MAX_PIECE_SAMPLES).toInt()
@@ -119,6 +172,8 @@ class QwenSpeechEngine private constructor(
             val stream = recognizer.createStream()
             val text = try {
                 if (hint.isNotEmpty()) stream.setOption("language", hint)
+                // Never `createStream(hotwords)`: on Qwen3-ASR that one exits the process.
+                if (hotwords.isNotEmpty()) stream.setOption("hotwords", hotwords)
                 stream.acceptWaveform(piece, SAMPLE_RATE)
                 recognizer.decode(stream)
                 recognizer.getResult(stream).text.trim()
@@ -127,7 +182,7 @@ class QwenSpeechEngine private constructor(
             }
             val pieceStart = start + from.toDouble() / SAMPLE_RATE
             val pieceEnd = pieceStart + piece.size.toDouble() / SAMPLE_RATE
-            if (text.isNotEmpty()) progress.checkpoint(SttSegment(pieceStart, pieceEnd, null, text, null), pieceEnd)
+            if (text.isNotEmpty()) progress.checkpoint(SttSegment(pieceStart, pieceEnd, speaker, text, null), pieceEnd)
         }
         return true
     }
@@ -167,15 +222,28 @@ class QwenSpeechEngine private constructor(
         .setDebug(false)
         .build()
 
-    /** The size and the share already on disk come from the store, so a restart still knows them. */
-    private fun info(status: LocalEngineStatus) = LocalEngineInfo(
-        status = status,
-        name = Qwen3Asr.NAME,
-        revision = Qwen3Asr.REVISION,
-        modelBytes = store.totalBytes,
-        progress = store.progress().takeIf { it > 0.0 && it < 1.0 },
-        downloading = downloading,
-    )
+    /**
+     * The size and the share already on disk come from the stores, so a restart still knows them — of what
+     * [prepare] still has to fetch: both models on a fresh PC, the speaker models alone once speech is here.
+     * The revision names the speaker models once they are here, so a checkpoint made without speakers is
+     * not resumed into a transcript that has them.
+     */
+    private fun info(status: LocalEngineStatus): LocalEngineInfo {
+        val separates = speakers.installed()
+        val missing = fetching ?: missing()
+        val bytes = missing.sumOf { it.totalBytes }
+        val present = missing.sumOf { it.progress() * it.totalBytes }
+        return LocalEngineInfo(
+            status = status,
+            name = Qwen3Asr.NAME,
+            revision = if (separates) "${Qwen3Asr.REVISION}+${SpeakerDiarizationModels.DIRECTORY}" else Qwen3Asr.REVISION,
+            supportsDiarization = separates,
+            supportsVocabulary = true,
+            modelBytes = bytes,
+            progress = (present / bytes).takeIf { it > 0.0 && it < 1.0 },
+            downloading = downloading,
+        )
+    }
 
     /**
      * The native half, copied out of its jar once into [dir]. sherpa-onnx's own loader would copy it
@@ -206,6 +274,9 @@ class QwenSpeechEngine private constructor(
             if (memory < MIN_MEMORY_BYTES || !bundled) return UnavailableLocalTranscriptionEngine()
             return QwenSpeechEngine(
                 LocalModelStore(transport, fileSystem, dataDir / "models" / Qwen3Asr.DIRECTORY, Qwen3Asr.files, io),
+                // A parent of its own: a store removes every other folder beside its own once it is whole.
+                LocalModelStore(transport, fileSystem, dataDir / "speaker-models" / SpeakerDiarizationModels.DIRECTORY,
+                    SpeakerDiarizationModels.files, io),
                 Natives(fileSystem, dataDir / "native" / Qwen3Asr.REVISION) { name ->
                     QwenSpeechEngine::class.java.classLoader.getResourceAsStream("$resources/$name")
                 },

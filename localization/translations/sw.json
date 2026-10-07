@@ -272,7 +272,6 @@
   "Run the self-test": "Endesha jaribio la kujipima",
   "Running…": "Inaendeshwa…",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Huendesha recly-events kwenye Mac hii. Husoma tu majina na viungo vya nakala mpya katika Drive yako na humjulisha wakala wako wa ChatGPT kupitia handaki lako la OpenAI.",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "Huendesha recly-events kwenye kompyuta hii. Husoma tu majina na viungo vya nakala mpya katika Drive yako na humjulisha wakala wako wa ChatGPT kupitia handaki lako la OpenAI.",
   "Save": "Hifadhi",
   "Save key": "Hifadhi ufunguo",
   "Save the recording and quit": "Hifadhi rekodi na utoke",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "Mabadiliko yako kwenye nakala hii yatapotea.",
   "on-device transcription": "unukuzi kwenye kifaa",
   "{0} does not use a vocabulary.": "{0} haitumii msamiati.",
-  "Highlight · {0}": "Alama · {0}"
+  "Highlight · {0}": "Alama · {0}",
+  "Another app uses this shortcut.": "Programu nyingine inatumia njia hii ya mkato.",
+  "Copy configuration": "Nakili usanidi",
+  "Export…": "Hamisha…",
+  "Import audio…": "Leta sauti…",
+  "Keyboard shortcut": "Njia ya mkato ya kibodi",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Huruhusu wakala kwenye kompyuta hii, kama Claude Desktop, Claude Code au Codex, kusoma rekodi na nakala zako. Hakuna kinachotoka kwenye kompyuta hii.",
+  "Local MCP server": "Seva ya MCP ya ndani",
+  "Local agents": "Mawakala wa ndani",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Huendesha recly-events kwenye kompyuta hii. Humjulisha wakala wako wa ChatGPT kuhusu kila nakala mpya katika Drive yako na, wakala anapoiomba, humtumia nakala hiyo kupitia handaki lako la OpenAI.",
+  "Speed": "Kasi",
+  "This file format is not supported": "Muundo wa faili hii hautumiki",
+  "This file has no audio track": "Faili hii haina wimbo wa sauti"
 }

@@ -267,6 +267,15 @@ class RecordingPlaylistTest {
         )
     }
 
+    /** At 1.5×, a second heard is a second and a half of the recording: the clock stays the recording's. */
+    @Test
+    fun `the clock counts the recording's seconds at any speed`() {
+        assertEquals(
+            12.0 + 3.0,
+            RecordingPlayer.position(listOf(300.0), finished = 0, offsetSec = 12.0, itemBytes = 2 * 32_000L, speed = 1.5f),
+        )
+    }
+
     /** The end of the last part is the whole recording, with nothing of a next one on the clock. */
     @Test
     fun `the clock at the end of a part is the parts behind it`() {
@@ -482,7 +491,7 @@ class RecordingPlaylistTest {
     @Test
     fun `a decoder failure ends playback and a second play retries`() {
         val spawns = java.util.concurrent.atomic.AtomicInteger()
-        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _, _ ->
             spawns.incrementAndGet()
             error("test decoder failure")
         })
@@ -498,7 +507,7 @@ class RecordingPlaylistTest {
     @Test
     fun `a nonzero decoder exit reports failure and retries on the next play`() {
         val spawns = AtomicInteger()
-        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _, _ ->
             spawns.incrementAndGet()
             FakeProcess(bytes = 0, exitCode = 183)
         })
@@ -514,7 +523,7 @@ class RecordingPlaylistTest {
     @Test
     fun `a failed middle part does not silently skip ahead to the next part`() {
         val spawns = AtomicInteger()
-        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _ ->
+        val player = RecordingPlayer(speaker = { FakeSpeaker() }, spawn = { _, _, _ ->
             if (spawns.incrementAndGet() == 1) FakeProcess(bytes = 3200) else FakeProcess(bytes = 0, exitCode = 1)
         })
         try {
@@ -549,7 +558,7 @@ class RecordingPlaylistTest {
         val spawned = AtomicReference<FakeProcess>()
         val player = RecordingPlayer(
             speaker = { speaker },
-            spawn = { _, _ -> FakeProcess().also(spawned::set) },
+            spawn = { _, _, _ -> FakeProcess().also(spawned::set) },
         )
 
         player.play(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0)))
@@ -578,7 +587,7 @@ class RecordingPlaylistTest {
     fun `two stops at once both return only once the decoder is gone`() {
         val speaker = FakeSpeaker()
         val spawned = AtomicReference<FakeProcess>()
-        val player = RecordingPlayer(speaker = { speaker }, spawn = { _, _ -> FakeProcess().also(spawned::set) })
+        val player = RecordingPlayer(speaker = { speaker }, spawn = { _, _, _ -> FakeProcess().also(spawned::set) })
         player.play(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0)))
         val decoder = await("nothing was decoded") { spawned.get() }
 
@@ -603,7 +612,7 @@ class RecordingPlaylistTest {
         val gate = CountDownLatch(1)
         val speaker = FakeSpeaker(closeGate = gate)
         val spawns = AtomicInteger()
-        val player = RecordingPlayer(speaker = { speaker }, spawn = { _, _ -> FakeProcess().also { spawns.incrementAndGet() } })
+        val player = RecordingPlayer(speaker = { speaker }, spawn = { _, _, _ -> FakeProcess().also { spawns.incrementAndGet() } })
         val selection = RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0))
         player.play(selection)
         await("nothing was decoded") { spawns.get().takeIf { it > 0 } }
@@ -630,7 +639,7 @@ class RecordingPlaylistTest {
         val spawned = AtomicReference<FakeProcess>()
         val player = RecordingPlayer(
             speaker = { speaker },
-            spawn = { _, _ -> FakeProcess().also(spawned::set) },
+            spawn = { _, _, _ -> FakeProcess().also(spawned::set) },
             teardownWaitMs = 50,
         )
         player.play(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0)))
@@ -697,7 +706,7 @@ class RecordingPlaylistTest {
         val processes = CopyOnWriteArrayList<FakeProcess>()
         val player = RecordingPlayer(
             speaker = { FakeSpeaker() },
-            spawn = { path, seekSec ->
+            spawn = { path, seekSec, _ ->
                 spawns += path to seekSec
                 FakeProcess().also(processes::add)
             },
@@ -726,7 +735,7 @@ class RecordingPlaylistTest {
     @Test
     fun `stop returns only once the waveform decoder and its thread are gone`() {
         val spawned = AtomicReference<FakeProcess>()
-        val player = RecordingPlayer(spawn = { _, _ -> FakeProcess().also(spawned::set) })
+        val player = RecordingPlayer(spawn = { _, _, _ -> FakeProcess().also(spawned::set) })
 
         player.prepare(RecordingPlaylist.Selection(listOf(dir / "p001_mono.m4a"), listOf(60.0)))
         val decoder = await("nothing was decoded for the waveform") { spawned.get() }
@@ -752,7 +761,7 @@ class RecordingPlaylistTest {
         val speaker = FakeSpeaker(holdsTheDrain = true)
         val player = RecordingPlayer(
             speaker = { speaker },
-            spawn = { path, seekSec ->
+            spawn = { path, seekSec, _ ->
                 spawns += path to seekSec
                 // A second of PCM and then the end of the part; what the seek starts plays on, so
                 // the run does not end underneath the assertions.
@@ -801,8 +810,8 @@ class RecordingPlaylistTest {
     )
 
     /** A decoder that never runs out, and the arguments it was asked for. */
-    private fun spawn(spawns: MutableList<Pair<Path, Double>>): (Path, Double) -> Process =
-        { path, seekSec ->
+    private fun spawn(spawns: MutableList<Pair<Path, Double>>): (Path, Double, Float) -> Process =
+        { path, seekSec, _ ->
             spawns += path to seekSec
             FakeProcess()
         }

@@ -435,7 +435,6 @@
   "Already running outside Recly": "Recly以外ですでに実行中です",
   "Stopped after repeated errors. Turn it off and on to try again.": "エラーが繰り返されたため停止しました。オフにしてからオンにすると再試行します。",
   "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "このMacでrecly-eventsを実行します。Drive内の新しい文字起こしの名前とリンクだけを読み取り、あなた自身のOpenAIトンネルを通じてChatGPTエージェントに知らせます。",
-  "Runs recly-events on this PC. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": "このPCでrecly-eventsを実行します。Drive内の新しい文字起こしの名前とリンクだけを読み取り、あなた自身のOpenAIトンネルを通じてChatGPTエージェントに知らせます。",
   "The subscription ended. Ask your agent to subscribe again.": "購読が終了しました。エージェントにもう一度購読するよう頼んでください。",
   "Add the app in ChatGPT and ask your agent to subscribe": "ChatGPTにアプリを追加して、エージェントに購読するよう頼んでください",
   "Change tunnel": "トンネルを変更",
@@ -509,5 +508,17 @@
   "Your edits to this transcript will be lost.": "この文字起こしの編集内容は失われます。",
   "on-device transcription": "デバイス上の文字起こし",
   "{0} does not use a vocabulary.": "{0}は語彙を使用しません。",
-  "Highlight · {0}": "ハイライト · {0}"
+  "Highlight · {0}": "ハイライト · {0}",
+  "Another app uses this shortcut.": "別のアプリがこのショートカットを使用しています。",
+  "Copy configuration": "構成をコピー",
+  "Export…": "書き出す…",
+  "Import audio…": "音声を読み込む…",
+  "Keyboard shortcut": "キーボードショートカット",
+  "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": "Claude Desktop、Claude Code、Codexなど、このコンピュータ上のエージェントが録音と文字起こしを読めるようにします。データはこのコンピュータの外に出ません。",
+  "Local MCP server": "ローカルMCPサーバー",
+  "Local agents": "ローカルエージェント",
+  "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "このPCでrecly-eventsを実行します。Drive内に新しい文字起こしができるたびにChatGPTエージェントに知らせ、エージェントから求められると、あなた自身のOpenAIトンネルを通じてその文字起こしを送ります。",
+  "Speed": "再生速度",
+  "This file format is not supported": "このファイル形式には対応していません",
+  "This file has no audio track": "このファイルには音声トラックがありません"
 }
