@@ -337,20 +337,20 @@ class ReclyCoreTest {
     }
 
     /**
-     * docs/03: a `RUNNING` job is reading the very files "Also delete the recordings" would delete, so that one
-     * recording — and the queue rows that run is written against — outlives the disconnect, and the
-     * result says which, so the screen can say so instead of losing it silently.
+     * docs/03: nothing of the queue is in flight inside the disconnect, so a job a killed run left
+     * `RUNNING` is reading nothing — "Also delete the recordings" takes that recording and its queue
+     * rows like the rest, and there is nobody to name as busy.
      */
     @Test
-    fun `disconnect keeps a recording whose job is running, and names it`() = runBlocking<Unit> {
-        val busy = testMeta(parts = listOf(testPart(testMeta(), 1)))
-        val busyDir = "/data/recordings/${MetaWriter.baseName(busy)}".toPath()
-        core.recordings.create(busy, busyDir)
-        seedFiles(fs, busyDir, busy)
-        core.recordings.finalize(busy.recordingId, START, durationSec = 900.0)
-        core.enqueue(busy.recordingId)
-        val busyJob = core.jobs.list().single()
-        queries.updateJobStatus(JobStatus.RUNNING.name, null, START.isoUtc(), busyJob.id)
+    fun `disconnect with the recordings box also takes a recording whose job was left running`() = runBlocking<Unit> {
+        val left = testMeta(parts = listOf(testPart(testMeta(), 1)))
+        val leftDir = "/data/recordings/${MetaWriter.baseName(left)}".toPath()
+        core.recordings.create(left, leftDir)
+        seedFiles(fs, leftDir, left)
+        core.recordings.finalize(left.recordingId, START, durationSec = 900.0)
+        core.enqueue(left.recordingId)
+        val leftJob = core.jobs.list().single()
+        queries.updateJobStatus(JobStatus.RUNNING.name, null, START.isoUtc(), leftJob.id)
 
         val idle = testMeta(recordingId = "01J9ZZZZZZ0123456789ABCDEF", startedAt = "2026-08-26T02:00:00.000Z")
         val idleMeta = idle.copy(parts = listOf(testPart(idle, 1)))
@@ -360,13 +360,13 @@ class ReclyCoreTest {
 
         val result = core.disconnect(alsoDeleteRecordings = true)
 
-        assertEquals(DisconnectResult(deletedRecordings = 1, busyRecordings = listOf(busy.recordingId)), result)
-        assertNotNull(core.recordings.get(busy.recordingId), "the busy recording stays")
-        assertTrue(fs.exists(busyDir / busy.parts.single().file))
-        assertEquals(listOf(busyJob.id), core.jobs.list().map { it.id }, "and so does the job that is reading it")
-        assertTrue(core.jobs.steps(busyJob.id).isNotEmpty())
+        assertEquals(DisconnectResult(deletedRecordings = 2, busyRecordings = emptyList()), result)
+        assertNull(core.recordings.get(left.recordingId))
+        assertFalse(fs.exists(leftDir))
+        assertEquals(emptyList(), core.jobs.list(), "and so does the job nothing was running")
+        assertEquals(emptyList(), core.jobs.steps(leftJob.id))
 
-        assertNull(core.recordings.get(idleMeta.recordingId), "the rest go")
+        assertNull(core.recordings.get(idleMeta.recordingId))
         assertFalse(fs.exists(idleDir))
         assertNull(deps.secureStore.get(SecureStore.TOKENS, "refresh"))
     }

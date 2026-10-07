@@ -74,6 +74,9 @@ class FakeDrive {
     /** Run just before a request is answered: the seam where "another device wrote" happens. */
     val before = mutableListOf<(Recorded) -> Unit>()
 
+    /** Awaited after [before]: the seam where a request hangs, as a stalled upload does. */
+    val hold = mutableListOf<suspend (Recorded) -> Unit>()
+
     private val sessions = LinkedHashMap<String, Session>()
     private val chunkCount = mutableMapOf<String, Int>()
     private val faults = mutableListOf<Fault>()
@@ -84,6 +87,7 @@ class FakeDrive {
     fun engine(): MockEngine = MockEngine { request ->
         val recorded = record(request)
         before.forEach { it(recorded) }
+        hold.forEach { it(recorded) }
         val expected = acceptedToken
         val fault = faults.firstOrNull { it.remaining > 0 && it.match(recorded) }
         val response = when {

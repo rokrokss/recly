@@ -328,10 +328,10 @@ class JobStore(
 
     /**
      * The executor's claim on a job: it goes `RUNNING` only if the row is still there, and the
-     * check and the write are one transaction. `RecordingRepository.delete` refuses a recording
-     * with a `RUNNING` job inside a transaction of its own, and SQLite has a single writer — so
-     * the two orders are the only two there are, and a recording can never be deleted out from
-     * under a run. Returns false when the job went with its recording since `selectDue`.
+     * check and the write are one transaction. `RecordingRepository.delete` removes the rows in a
+     * transaction of its own, and SQLite has a single writer — so a claim that comes second finds
+     * nothing, and a deletion that comes second has stopped the run first (`Executor.stopping`).
+     * Returns false when the job went with its recording since `selectDue`.
      */
     suspend fun claimRunning(jobId: String, now: Instant): Boolean = locked {
         db.transactionWithResult {

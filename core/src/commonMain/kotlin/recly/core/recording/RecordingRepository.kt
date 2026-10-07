@@ -113,8 +113,8 @@ data class RecordingRecord(
      * The Drive folder a ledger row can open (docs/03 "Recordings from other devices", docs/09 screen principle 2): the
      * link `drive.upload` wrote into `meta.json`, or the folder's canonical URL when only its id is
      * known — an adopted row was read out of that very folder, and one uploaded before the meta
-     * carried a link still names it. Not while another device is still uploading into it: the
-     * in-flight rows offer no actions.
+     * carried a link still names it. Not while another device is still uploading into it: that
+     * row offers no link until the upload is in.
      */
     val driveFolderUrl: String?
         get() = if (remoteUploading || storage == StorageKind.ICLOUD || storage == StorageKind.FOLDER) null
@@ -130,7 +130,10 @@ sealed interface DeleteResult {
      */
     data class Deleted(val driveDeleted: Boolean, val driveError: String? = null) : DeleteResult
 
-    /** A job of this recording is `RUNNING`: it is reading the very files this would delete. */
+    /**
+     * Nothing was deleted: an on-device transcription of the recording did not stop in time, or —
+     * with no executor to stop it ([RecordingRepository.executor]) — a job of it is `RUNNING`.
+     */
     data object Busy : DeleteResult
 
     data object NotFound : DeleteResult
@@ -159,6 +162,9 @@ class RecordingRepository(
     internal var beforeCapture: suspend (RecordingMeta) -> Unit = {}
     internal var afterCapture: suspend (String) -> Unit = {}
     internal var localTranscription: recly.core.transcribe.LocalTranscriptionService? = null
+
+    /** The queue that runs this device's jobs, which [delete] stops for the recording it deletes. */
+    internal var executor: recly.core.job.Executor? = null
 
     /** A complete on-device copy, independent of Drive authorization or job status. */
     @Throws(Throwable::class)
@@ -632,31 +638,39 @@ class RecordingRepository(
      * the local deletion — once the local copy is gone there is nothing left to retry from — and
      * says so through [DeleteResult.Deleted.driveError] instead.
      *
-     * A `RUNNING` job is reading the very files this would delete, so that is [DeleteResult.Busy]
-     * and nothing is touched. Every other status is deleted along with the recording.
+     * A job of the recording that is running right now — an upload — is stopped first
+     * (`Executor.stopping`): its run is cancelled, no new one starts while this runs, and so a
+     * `RUNNING` job goes with the recording like every other status. The dialog that asked has
+     * already said what audio exists only here; deleting it is the user's answer. Without an
+     * [executor] (the watch, a test of the repository alone) nothing can stop a run, and a
+     * `RUNNING` job is [DeleteResult.Busy] with nothing touched.
      *
      * Keeping the Drive folder leaves a folder that a pull would list and adopt back (docs/03 "Recordings from other devices"), so that choice is remembered ([ignored]) in the same transaction.
      *
-     * That check and every row deletion are one transaction, and `JobStore.claimRunning` is
-     * another: SQLite has a single writer, so one of the two commits first and the other sees it.
-     * Either the job is `RUNNING` and this is [DeleteResult.Busy], or the rows are gone and the
-     * claim finds nothing to run — never both. The files and Drive come after the commit, when
-     * nothing can still claim them — the files without leaving the locked pass, so that no
-     * cancellation can strand a directory the rows no longer name.
+     * Every row deletion is one transaction, and `JobStore.claimRunning` is another: SQLite has a
+     * single writer, so one of the two commits first and the other sees it — a claim that comes
+     * second finds nothing to run. The files and Drive come after the commit, when nothing can
+     * still claim them — the files without leaving the locked pass, so that no cancellation can
+     * strand a directory the rows no longer name.
      */
     suspend fun delete(recordingId: String, deleteDrive: Boolean): DeleteResult {
-        return localTranscription?.deleting(recordingId) { deleteInternal(recordingId, deleteDrive) }
-            ?: deleteInternal(recordingId, deleteDrive)
+        val executor = executor
+        val remove: suspend () -> DeleteResult = {
+            localTranscription?.deleting(recordingId) { deleteInternal(recordingId, deleteDrive, executor != null) }
+                ?: deleteInternal(recordingId, deleteDrive, executor != null)
+        }
+        return executor?.stopping(recordingId, remove) ?: remove()
     }
 
-    private suspend fun deleteInternal(recordingId: String, deleteDrive: Boolean): DeleteResult {
+    /** [stopped]: no run of the recording is in flight or can start (`Executor.stopping`). */
+    private suspend fun deleteInternal(recordingId: String, deleteDrive: Boolean, stopped: Boolean): DeleteResult {
         val removal = locked {
             val outcome = db.transactionWithResult {
                 val row = queries.selectRecordingById(recordingId).executeAsOneOrNull()
                     ?: return@transactionWithResult Removal.NotFound
                 val running = queries.selectJobsByRecording(recordingId).executeAsList()
                     .any { it.status == JobStatus.RUNNING.name }
-                if (running) return@transactionWithResult Removal.Busy
+                if (running && !stopped) return@transactionWithResult Removal.Busy
                 val folderId = driveFolderId(recordingId) ?: row.drive_folder_id
                 if (!deleteDrive && folderId != null) queries.kvSet(IGNORED_PREFIX + recordingId, folderId)
                 // A rename, highlights or an edit that never reached Drive go with the recording: pushed
