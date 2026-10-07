@@ -28,4 +28,6 @@
     <string name="info_battery_body">فون پر: ترتیبات ← بیٹری ← پس منظر کے استعمال کی حدود، اور Galaxy Wearable کو فہرست سے نکال دیں۔ آپٹیمائزیشن آن ہونے پر Bluetooth کنکشن ٹوٹ جاتا ہے اور ریکارڈنگز فون تک کبھی نہیں پہنچتیں۔</string>
     <string name="info_transfer_title">منتقلی</string>
     <string name="info_transfer_body">فون کی تصدیق تک ریکارڈنگ گھڑی پر رہتی ہے۔ فون قریب آنے پر یہ خود بخود منتقل ہو جاتی ہے، اور یہاں سے صرف وہی فائلیں حذف ہوتی ہیں جو پہنچ چکی ہوں۔</string>
+    <string name="highlight">ہائی لائٹ کریں</string>
+    <string name="highlighted_at">%1$s پر ہائی لائٹ کیا گیا</string>
 </resources>

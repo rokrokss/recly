@@ -40,4 +40,6 @@
     <string name="info_battery_body">On the phone: Settings → Battery → Background usage limits, and take Galaxy Wearable off the list. With optimisation on, the Bluetooth link drops and recordings never reach the phone.</string>
     <string name="info_transfer_title">Transfer</string>
     <string name="info_transfer_body">A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.</string>
+    <string name="highlight">Highlight</string>
+    <string name="highlighted_at">Highlighted at %1$s</string>
 </resources>

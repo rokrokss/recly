@@ -28,4 +28,6 @@
     <string name="info_battery_body">在手机上打开“设置→电池→后台使用限制”，将Galaxy Wearable移出列表。启用优化会导致蓝牙断开，录音无法传到手机。</string>
     <string name="info_transfer_title">传输</string>
     <string name="info_transfer_body">录音会保留在手表上，直到手机确认收到。手机靠近后会自动传输，手表只删除已成功传输的文件。</string>
+    <string name="highlight">标记</string>
+    <string name="highlighted_at">已在%1$s添加标记</string>
 </resources>

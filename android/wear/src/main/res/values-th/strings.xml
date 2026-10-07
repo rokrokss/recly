@@ -28,4 +28,6 @@
     <string name="info_battery_body">ในโทรศัพท์: การตั้งค่า → แบตเตอรี่ → ขีดจำกัดการใช้งานในพื้นหลัง แล้วนำ Galaxy Wearable ออกจากรายการ\nหากเปิดการเพิ่มประสิทธิภาพไว้ การเชื่อมต่อ Bluetooth จะหลุดและการบันทึกเสียงจะไปไม่ถึงโทรศัพท์</string>
     <string name="info_transfer_title">การถ่ายโอน</string>
     <string name="info_transfer_body">การบันทึกเสียงจะอยู่ในนาฬิกาจนกว่าโทรศัพท์จะยืนยันการรับ\nเมื่อโทรศัพท์อยู่ใกล้ จะถ่ายโอนไปเองโดยอัตโนมัติ และจะลบออกจากที่นี่เฉพาะไฟล์ที่ถ่ายโอนสำเร็จ</string>
+    <string name="highlight">ไฮไลต์</string>
+    <string name="highlighted_at">ไฮไลต์ที่ %1$s แล้ว</string>
 </resources>

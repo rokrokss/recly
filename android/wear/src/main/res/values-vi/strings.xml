@@ -28,4 +28,6 @@
     <string name="info_battery_body">Trên điện thoại: Cài đặt → Pin → Giới hạn sử dụng trong nền, rồi xóa Galaxy Wearable khỏi danh sách. Khi bật tối ưu hóa, kết nối Bluetooth sẽ bị ngắt và bản ghi âm sẽ không đến được điện thoại.</string>
     <string name="info_transfer_title">Chuyển dữ liệu</string>
     <string name="info_transfer_body">Bản ghi âm được giữ trên đồng hồ cho đến khi điện thoại xác nhận đã nhận. Khi điện thoại ở gần, bản ghi âm sẽ tự động được chuyển sang và chỉ những tệp đã chuyển xong mới bị xóa khỏi đây.</string>
+    <string name="highlight">Đánh dấu</string>
+    <string name="highlighted_at">Đã đánh dấu tại %1$s</string>
 </resources>

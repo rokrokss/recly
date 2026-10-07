@@ -28,4 +28,6 @@
     <string name="info_battery_body">Telefonda Ayarlar → Pil → Arka plan kullanım sınırları bölümünü açın ve Galaxy Wearable\'ı listeden çıkarın. Optimizasyon açıkken Bluetooth bağlantısı kopar ve kayıtlar telefona hiç ulaşmaz.</string>
     <string name="info_transfer_title">Aktarım</string>
     <string name="info_transfer_body">Kayıt, telefon aldığını onaylayana kadar saatte kalır. Telefon yakına geldiğinde kendiliğinden aktarılır ve burada yalnızca aktarılan dosyalar silinir.</string>
+    <string name="highlight">İşaretle</string>
+    <string name="highlighted_at">%1$s konumu işaretlendi</string>
 </resources>
