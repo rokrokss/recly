@@ -63,6 +63,8 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
     // the job on — a wait, worn in the warning tone like the model's, never FAILED.
     Str.STATE_WAITING_FOLDER to LedgerStatus("WAITING", BadgeTone.WARNING),
     Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL),
+    // docs/03 "Naming rules": a file being turned into parts — work in hand, with the loader turning.
+    Str.STATE_IMPORTING to LedgerStatus("IMPORTING", BadgeTone.ACCENT, busy = true),
 )
 
 /**
@@ -71,7 +73,11 @@ val LedgerStates: Map<Str, LedgerStatus> = mapOf(
  * of them is ever cut to fit.
  */
 fun ledgerBadgeLabels(strings: Strings): List<String> =
-    LedgerStates.keys.map { it.message().ledgerStatus(strings).label } + UNKNOWN_STATE
+    LedgerStates.keys.flatMap { key ->
+        val status = key.message().ledgerStatus(strings)
+        // Two spaces stand in for the loader a busy badge turns in front of its code — about its 12dp.
+        listOfNotNull(status.label, "  ${status.label}".takeIf { status.busy })
+    } + UNKNOWN_STATE
 
 /** The state as a badge. Anything the map does not know is still a code, never a blank cell. */
 fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {

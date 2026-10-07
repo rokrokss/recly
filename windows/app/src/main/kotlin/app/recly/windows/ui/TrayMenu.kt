@@ -62,6 +62,8 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
             add(TrayEntry.Item(strings[Str.TRAY_START_DETECTED], onClick = model::startDetected))
         }
     }
+    // docs/03 "Naming rules": a file from elsewhere becomes a recording of this PC's.
+    add(TrayEntry.Item(strings[Str.IMPORT_AUDIO], enabled = model.ready, onClick = model::chooseImport))
     add(TrayEntry.Separator)
 
     // docs/12: the quit finalizes and queues the recording that is running before it goes

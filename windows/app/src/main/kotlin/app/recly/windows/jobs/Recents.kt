@@ -87,7 +87,7 @@ data class RecentItem(
      */
     val deletable: Boolean
         get() = when ((state as? UiMessage.Res)?.key) {
-            Str.STATUS_RECORDING, Str.STATE_UPLOADING, Str.STATE_RECEIVING, Str.STATE_REMOTE_UPLOADING -> false
+            Str.STATUS_RECORDING, Str.STATE_UPLOADING, Str.STATE_RECEIVING, Str.STATE_REMOTE_UPLOADING, Str.STATE_IMPORTING -> false
             else -> true
         }
 }
@@ -187,6 +187,8 @@ object Recents {
         if ((record.remote || (job == null && record.driveSynced)) && TranscribeRunner.TYPE in record.remotePending) {
             return Str.STATE_REMOTE_TRANSCRIBING.message()
         }
+        // docs/03 "Naming rules": an import is `recording` until its parts are in, and it is not a capture.
+        if (record.importing) return Str.STATE_IMPORTING.message()
         if (record.meta.status == RecordingStatus.RECORDING) return Str.STATUS_RECORDING.message()
         // docs/03: another device recorded and uploaded it, and this PC read it out of Drive. There
         // is no job here, so "no workflow" would be the wrong answer — nothing was skipped. It is

@@ -13,6 +13,7 @@ import app.recly.windows.auth.RevokeResult
 import app.recly.windows.auth.SignInResult
 import app.recly.windows.core.AppGraph
 import app.recly.windows.core.AppModule
+import app.recly.windows.core.FfmpegImporter
 import app.recly.windows.core.Host
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.detect.MeetingDetector
@@ -29,6 +30,7 @@ import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.UiMessage
+import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.APP_NAME
 import app.recly.windows.jobs.CoreJobQueue
@@ -65,7 +67,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlin.time.Instant
 import okio.Path
 import recly.core.DisconnectResult
 import recly.core.job.Job
@@ -74,6 +78,7 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
 import recly.core.recording.DeleteResult
+import recly.core.recording.ImportResult
 import recly.core.recording.RecordingRecord
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscriptAvailability
@@ -1567,6 +1572,58 @@ class ShellModel(
         needsAuth = false
     }
 
+    // --- importing (docs/03 "Naming rules") -----------------------------------------------------
+
+    /** Why the last import left nothing behind, for the recordings window's notice; the next import clears it. */
+    var importFailure: UiMessage? by mutableStateOf(null)
+        private set
+
+    /** Imports one after another, however many drops and picks arrive at once. */
+    private val importing = kotlinx.coroutines.sync.Mutex()
+
+    /** The tray's and the list header's Import audio…: the picker, then [importFiles]. */
+    fun chooseImport() {
+        if (graph == null) return
+        scope.launch { importFiles(filesDialog()) }
+    }
+
+    /**
+     * Files picked or dropped: each becomes a recording of this PC's, titled after its name, its row in the
+     * list from the start (`IMPORTING`) and its job queued once it is whole. The file's own time is its
+     * start. Nothing during a disconnect's clean-up, which walks the directory an import writes into.
+     */
+    fun importFiles(files: List<File>) {
+        val graph = graph ?: return
+        if (files.isEmpty()) return
+        importFailure = null
+        scope.launch {
+            importing.withLock {
+                for (file in files) {
+                    DisconnectGate.startBlocker()?.let {
+                        status = it
+                        return@withLock
+                    }
+                    val result = runCatching {
+                        graph.core.importAudio(file.path, file.name, Instant.fromEpochMilliseconds(file.lastModified()), FfmpegImporter(graph.core.deps.io))
+                    }.getOrElse {
+                        graph.core.deps.logger.log(Logger.Level.ERROR, "rec.import.failed", error = it)
+                        ImportResult.Failed(recly.core.message.CoreMessage.IMPORT_UNREADABLE.code(detail = it.message))
+                    }
+                    when (result) {
+                        is ImportResult.Imported -> {
+                            waveforms?.enqueue(result.recordingId)
+                            runner?.jobsDue()
+                        }
+                        is ImportResult.Failed -> {
+                            importFailure = coreMessage(result.reason)
+                            status = Str.IMPORT_FAILED.message()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     // --- the speech model (docs/05) ------------------------------------------------------------
 
     /** Not while a capture is running or coming up: the download is for later, the recording is now. */
@@ -1723,6 +1780,13 @@ class ShellModel(
             require(chosen.length() <= 1_048_576) { "Settings file is too large" }
             chosen.readText()
         }
+    }
+
+    /** The import picker: any number of files, of any type — ffmpeg is what decides whether one has audio. */
+    private suspend fun filesDialog(): List<File> = withContext(Dispatchers.Main) {
+        val dialog = FileDialog(null as Frame?, APP_NAME, FileDialog.LOAD).apply { isMultipleMode = true }
+        dialog.isVisible = true
+        dialog.files.toList()
     }
 
     private suspend fun fileDialog(mode: Int, name: String?): File? = withContext(Dispatchers.Main) {

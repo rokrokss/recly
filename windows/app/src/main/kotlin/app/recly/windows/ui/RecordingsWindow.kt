@@ -1,6 +1,13 @@
 package app.recly.windows.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.draganddrop.dragAndDropTarget
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.draganddrop.DragAndDropEvent
+import androidx.compose.ui.draganddrop.DragAndDropTarget
+import androidx.compose.ui.draganddrop.awtTransferable
+import java.awt.datatransfer.DataFlavor
+import java.io.File
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -125,7 +132,20 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
             player.stop()
         }
     }
-    Row(Modifier.fillMaxSize().background(blueprint.background)) {
+    // docs/03 "Naming rules": audio and video dropped anywhere on the window are imported, one after another.
+    val drop = remember(model) {
+        object : DragAndDropTarget {
+            override fun onDrop(event: DragAndDropEvent): Boolean {
+                val files = droppedFiles(event)
+                model.importFiles(files)
+                return files.isNotEmpty()
+            }
+        }
+    }
+    Row(
+        Modifier.fillMaxSize().background(blueprint.background)
+            .dragAndDropTarget(shouldStartDragAndDrop = { droppedFiles(it).isNotEmpty() }, target = drop),
+    ) {
         Sidebar(model, strings, Modifier.width(SidebarWidth).fillMaxHeight())
         VerticalHairLine(Modifier.fillMaxHeight())
         Column(Modifier.weight(1f).fillMaxHeight()) {
@@ -156,8 +176,19 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
 private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
     LazyColumn(modifier.background(blueprint.surface)) {
         item {
-            ScreenHeader(title = strings[Str.WINDOW_RECORDINGS])
+            ScreenHeader(
+                title = strings[Str.WINDOW_RECORDINGS],
+                trailing = { BlueprintButton(strings[Str.IMPORT_AUDIO], model::chooseImport, tone = ButtonTone.QUIET, enabled = model.ready) },
+            )
             HairLine()
+            // The row is gone with the failed import, so the reason is said here, until the next import.
+            model.importFailure?.let { reason ->
+                Column(Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(strings[Str.IMPORT_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                    Text(reason.text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                }
+                HairLine()
+            }
         }
         items(model.recents, key = { it.id }) { item ->
             // The last loaded row is on screen, so the page after it is asked for.
@@ -703,6 +734,14 @@ private fun second(x: Float, width: Int, totalSec: Double): Double =
     if (width <= 0) 0.0 else (x / width).toDouble().coerceIn(0.0, 1.0) * totalSec
 
 private fun millis(seconds: Double): Long = (seconds * 1000).toLong()
+
+/** The files of a drop from the file manager; nothing for text or anything else. */
+@OptIn(ExperimentalComposeUiApi::class)
+private fun droppedFiles(event: DragAndDropEvent): List<File> = runCatching {
+    val transferable = event.awtTransferable
+    if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return@runCatching emptyList()
+    (transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>).filterIsInstance<File>().filter { it.isFile }
+}.getOrDefault(emptyList())
 
 internal fun TranscriptAvailability.message(): Str = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> Str.DETAIL_NOT_REQUESTED
