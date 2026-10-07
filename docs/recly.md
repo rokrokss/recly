@@ -2882,6 +2882,10 @@ With the built-in speakers the microphone's input node runs with voice processin
   opens `NSSavePanel` with the core's file name. The list header's import button (`Import audio…`, ⌘I — an `LSUIElement` app shows no menu bar, so
   there is no File menu to hold it) opens the system picker for audio and video, and audio or video files dropped on the list are imported the same
   way, one after another (§3 "Naming rules"); a failure is a notice above the list, `Could not import this file` and the core's reason.
+  A search field (`Search titles and transcripts`) sits above the list: while it has text the list shows `core.search`'s results (200 ms after the
+  last keystroke, at most 50) in place of the ledger, and a result opens the detail at its first transcript hit with the find bar. ⌘F focuses the
+  field and, with a recording open and a query in the field, also opens that transcript's find bar on the query. The detail's `⋯` (More) is in its
+  own header, as on the phone; only `Share` is in the window toolbar.
 - **Workflow editing window** — **retired (2026-09-24)**. For the record: the same features as on the phone. A SwiftUI form + `WorkflowInspector` (shared in RecKit). The desktop is the main
   stage for editing.
 
