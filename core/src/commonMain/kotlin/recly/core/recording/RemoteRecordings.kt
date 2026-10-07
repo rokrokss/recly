@@ -99,10 +99,13 @@ class RemoteRecordings(
     private val recordings: RecordingRepository,
     private val deps: CoreDeps,
     private val icloudChosen: suspend () -> Boolean = { false },
+    /** A transcript on this device was replaced by a newer one from its folder ([refreshTranscripts]). */
+    private val transcriptsChanged: () -> Unit = {},
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
     private val results = recly.core.transcribe.ResultFiles(api, deps)
+    private val writer = recly.core.transcribe.TranscriptWriter(deps)
 
     /** One push at a time: two renames in a row must reach Drive in that order, not the other. */
     private val pushing = Mutex()
@@ -322,6 +325,7 @@ class RemoteRecordings(
                     description = json.string("description"),
                     pending = properties.string(DriveFolderMarker.PENDING),
                     pendingAt = properties.string(DriveFolderMarker.PENDING_AT),
+                    transcriptAt = properties.string(TranscriptMarks.FOLDER_STAMP),
                 )
             }
             .sortedByDescending { it.createdTime }
@@ -464,8 +468,63 @@ class RemoteRecordings(
         pushTitles()
         pushMeta()
         pushTranscripts()
+        refreshTranscripts(folders, ::covered)
         return PullSummary(adopted, dropped, retitled)
     }
+
+    /**
+     * docs/08 "Editing", docs/10 "Search": the transcripts on this device kept up with their folders. A
+     * folder whose `transcriptAt` names a version newer than the copy here — edited or transcribed again
+     * on another device — has its `.transcript.json` read again; another device's recording whose
+     * transcript was never read here is read once, so a search finds it. At most [REFRESH_PER_PASS] files
+     * a pass, none while an edit of this device's is still on its way out, none while the other device
+     * is still transcribing. Never throws: what is not read now is read by a later pass, or when opened.
+     */
+    private suspend fun refreshTranscripts(folders: Map<String, List<Folder>>, covered: (String) -> Boolean) {
+        try {
+            val seen = recordings.transcriptSeen()
+            val editing = recordings.pendingTranscripts().keys
+            var fetched = 0
+            var changed = false
+            for (row in recordings.list(Int.MAX_VALUE)) {
+                if (fetched >= REFRESH_PER_PASS) break
+                val folderId = row.driveFolderId ?: continue
+                if (!covered(folderId) || row.remoteUploading || row.id in editing || TranscribeRunner.TYPE in row.remotePending) continue
+                val folder = folders[row.id]?.firstOrNull { it.id == folderId } ?: continue
+                val stamp = folder.transcriptAt
+                val last = seen[row.id]
+                val due = (stamp != null && stamp != last) || (stamp == null && last == null && row.remote)
+                if (!due) continue
+                val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(row.meta))
+                val local = localVersion(row.dir / name)
+                if (local != null && (stamp == null || local >= stamp)) {
+                    recordings.setTranscriptSeen(row.id, stamp ?: local)
+                    continue
+                }
+                fetched++
+                val file = api.findChild(folderId, name)
+                val transcript = file?.let {
+                    runCatching { recJson.decodeFromString<Transcript>(api.download(it.id).decodeToString()) }.getOrNull()
+                }?.takeIf { it.recordingId == row.id }
+                if (transcript != null) {
+                    writer.writeLocal(row, transcript, markdown = false)
+                    changed = true
+                    deps.logger.log(Logger.Level.INFO, "remote.transcript.read", mapOf("recordingId" to row.id))
+                }
+                recordings.setTranscriptSeen(row.id, stamp ?: transcript?.let(TranscriptMarks::version).orEmpty())
+            }
+            if (changed) transcriptsChanged()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(Logger.Level.WARN, "remote.transcript.read.failed", emptyMap(), e)
+        }
+    }
+
+    /** The version of the transcript copy at [path] — when it was last edited or made — or null when there is none. */
+    private fun localVersion(path: okio.Path): String? =
+        runCatching { recJson.decodeFromString<Transcript>(deps.fileSystem.read(path) { readUtf8() }) }
+            .getOrNull()?.let(TranscriptMarks::version)
 
     /**
      * The folder read back: its `meta.json` and the id of each part file. The three answers are
@@ -588,6 +647,8 @@ class RemoteRecordings(
         val description: String?,
         val pending: String?,
         val pendingAt: String?,
+        /** The version of the transcript in it (`appProperties.transcriptAt`, docs/08 "Result files"). */
+        val transcriptAt: String?,
     )
 
     private class Adoptable(val folder: Folder, val meta: RecordingMeta, val fileIds: Map<Pair<Int, Track>, String>)
@@ -618,6 +679,9 @@ class RemoteRecordings(
 
         /** How long a `pending` marker is believed — the longest provider result timeout (docs/08). */
         val MARKER_TTL: Duration = 8.hours
+
+        /** Transcript files one pull reads at most ([refreshTranscripts]): a new device catches up over a few passes. */
+        const val REFRESH_PER_PASS: Int = 10
 
         private const val META_SUFFIX = ".meta.json"
 

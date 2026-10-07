@@ -229,7 +229,19 @@ class ReclyCore(
         recordings,
         deps,
         icloudChosen = { processingSettings.storage() == StorageKind.ICLOUD },
+        transcriptsChanged = { resultChanges.value++ },
     )
+
+    private val searchIndex = recly.core.recording.RecordingSearch(recordings, deps)
+
+    /**
+     * docs/10 "Search": the recordings whose title or transcript holds [query], newest first, at most
+     * [limit] — case, Latin accents and full-width Latin ignored. Transcripts count once they are on
+     * this device: this device's own, and another device's once opened or cached by a pull. Runs off
+     * the caller's thread.
+     */
+    @Throws(Throwable::class)
+    suspend fun search(query: String, limit: Int): List<recly.core.recording.SearchHit> = searchIndex.search(query, limit)
 
     /**
      * docs/03 "Recordings from other devices": reads the recordings other devices uploaded into this device's list,
