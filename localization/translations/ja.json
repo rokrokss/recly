@@ -521,5 +521,7 @@
   "Save as…": "別名で保存…",
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "文字起こしのため、録音全体、言語・話者の設定、語彙をここに送信します。保存期間や学習への利用は、提供者とアカウント設定によって異なります。",
   "Import to Recly": "Reclyに読み込む",
-  "Start or stop a recording.": "録音を開始または停止します。"
+  "Start or stop a recording.": "録音を開始または停止します。",
+  "Not uploaded yet": "まだアップロードされていません",
+  "Open Recly to import.": "Reclyを開くと読み込みます。"
 }

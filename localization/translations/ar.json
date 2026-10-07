@@ -521,5 +521,7 @@
   "Save as…": "حفظ باسم…",
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "يُرسل التسجيل كاملًا مع إعدادات اللغة والمتحدثين والمفردات للنسخ. يعتمد الاحتفاظ والاستخدام للتدريب على المزوّد وإعدادات حسابك.",
   "Import to Recly": "استيراد إلى Recly",
-  "Start or stop a recording.": "ابدأ تسجيلًا أو أوقفه."
+  "Start or stop a recording.": "ابدأ تسجيلًا أو أوقفه.",
+  "Not uploaded yet": "لم يتم الرفع بعد",
+  "Open Recly to import.": "افتح Recly للاستيراد."
 }

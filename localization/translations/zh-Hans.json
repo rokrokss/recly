@@ -521,5 +521,7 @@
   "Save as…": "存储为…",
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "完整录音、语言和说话人设置以及您的词汇表将发送到此处进行转录。保留期限和训练用途取决于提供商及您的账号设置。",
   "Import to Recly": "导入到Recly",
-  "Start or stop a recording.": "开始或停止录音。"
+  "Start or stop a recording.": "开始或停止录音。",
+  "Not uploaded yet": "尚未上传",
+  "Open Recly to import.": "打开Recly即可导入。"
 }

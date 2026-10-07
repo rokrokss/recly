@@ -521,5 +521,7 @@
   "Save as…": "Speichern unter…",
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "Die gesamte Aufnahme, die Sprach- und Sprechereinstellungen und Ihr Vokabular werden zur Transkription hierhin gesendet. Speicherung und Training hängen vom Anbieter und Ihren Kontoeinstellungen ab.",
   "Import to Recly": "In Recly importieren",
-  "Start or stop a recording.": "Eine Aufnahme starten oder stoppen."
+  "Start or stop a recording.": "Eine Aufnahme starten oder stoppen.",
+  "Not uploaded yet": "Noch nicht hochgeladen",
+  "Open Recly to import.": "Zum Importieren Recly öffnen."
 }

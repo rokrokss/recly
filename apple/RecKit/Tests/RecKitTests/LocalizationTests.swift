@@ -34,6 +34,7 @@ final class LocalizationCatalogTests: XCTestCase {
         "RecPhone/RecPhone/AppShortcuts.xcstrings",
         "RecPhone/RecPhoneWidgets/Localizable.xcstrings",
         "RecPhone/RecPhoneShare/InfoPlist.xcstrings",
+        "RecPhone/RecPhoneShare/Localizable.xcstrings",
         "RecWatch/RecWatch/Localizable.xcstrings",
         "RecWatch/RecWatch/InfoPlist.xcstrings",
         "RecWatch/RecWatch/AppShortcuts.xcstrings",
