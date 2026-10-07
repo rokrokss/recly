@@ -85,6 +85,8 @@ internal fun TranscriptEditor(
     onSeek: (Double) -> Unit,
     onRenameSpeaker: (String) -> Unit,
     drive: Boolean,
+    /** False while the edit saves: the speakers wait for it. */
+    speakersEnabled: Boolean,
     strings: Strings,
     modifier: Modifier = Modifier,
 ) {
@@ -102,9 +104,9 @@ internal fun TranscriptEditor(
                         var menu by remember { mutableStateOf(false) }
                         Box {
                             if (speaker.isEmpty()) {
-                                BlueprintButton(strings[Str.SPEAKER_ADD], { draft.assign(index, null) }, tone = ButtonTone.QUIET)
+                                BlueprintButton(strings[Str.SPEAKER_ADD], { draft.assign(index, null) }, tone = ButtonTone.QUIET, enabled = speakersEnabled)
                             } else {
-                                SpeakerBadge(speaker, draft.nameOf(speaker)) { menu = true }
+                                SpeakerBadge(speaker, draft.nameOf(speaker), speakersEnabled) { menu = true }
                                 if (menu) SpeakerMenu(draft.people, speaker, { menu = false }, { onRenameSpeaker(speaker) }, { draft.assign(index, it) }, strings)
                             }
                         }

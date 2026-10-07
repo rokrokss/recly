@@ -218,7 +218,13 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
         Sidebar(
             model, strings, query, { query = it }, hits, searchFocus,
             onOpen = { item -> leave { model.openDetail(item) } },
-            onOpenHit = { hit -> leave { model.openSearchHit(hit, query.trim()) } },
+            onOpenHit = { hit ->
+                leave {
+                    // A hit in the title alone has nothing to find: no bar left open from before either.
+                    if (hit.snippets.isEmpty()) findOpen = false
+                    model.openSearchHit(hit, query.trim())
+                }
+            },
             modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
         )
         VerticalHairLine(Modifier.fillMaxHeight())
@@ -433,8 +439,12 @@ private fun Detail(
     var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
-    /** A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on. */
+    /**
+     * A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on.
+     * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
+     */
     fun saveInline(block: Int, edit: TranscriptEdit) {
+        if (InlineSave.SAVING in saving.values) return
         scope.launch {
             saving = saving + (block to InlineSave.SAVING)
             val saved = model.editTranscript(detail.recordingId, edit) is EditResult.Edited
@@ -508,6 +518,15 @@ private fun Detail(
                 }
             },
         )
+        // Transcribe again that did not start says why, the way a refused edit does.
+        detail.notice?.let { notice ->
+            Text(
+                strings[notice],
+                modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s),
+                style = MaterialTheme.typography.bodySmall,
+                color = blueprint.warningInk,
+            )
+        }
     }
     // A take still being written to has nothing whole to play, and nothing to say about it either.
     if (!detail.loading && !detail.writing) {
@@ -567,6 +586,7 @@ private fun Detail(
             onSeek = onSeek,
             onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
             drive = !detail.folder,
+            speakersEnabled = editSave == null,
             strings = strings,
             modifier = Modifier.fillMaxSize(),
         )

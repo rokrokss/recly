@@ -106,6 +106,8 @@ internal fun TranscriptReader(
     // The menus are drawn over the list, outside its selection: a popup inside a SelectionContainer does not
     // get the click that picks one of its rows.
     var menu by remember { mutableStateOf<GroupMenu?>(null) }
+    // One speaker change at a time: the badges wait while one saves.
+    val busy = InlineSave.SAVING in saving.values
     var origin by remember { mutableStateOf(Offset.Zero) }
     Box(modifier.onGloballyPositioned { origin = it.positionInRoot() }) {
         SelectionContainer(Modifier.fillMaxSize()) {
@@ -130,6 +132,7 @@ internal fun TranscriptReader(
                         onSpeakerMenu = { at -> menu = GroupMenu(index, at - origin, speaker = block.speaker) },
                         onHighlightMenu = { at, highlight -> menu = GroupMenu(index, at - origin, highlight = highlight) },
                         saving = saving[index],
+                        speakerEnabled = !busy,
                         strings = strings,
                     )
                 }
@@ -165,6 +168,7 @@ private fun Group(
     onSpeakerMenu: (Offset) -> Unit,
     onHighlightMenu: (Offset, Double) -> Unit,
     saving: InlineSave?,
+    speakerEnabled: Boolean,
     strings: Strings,
 ) {
     val palette = blueprint
@@ -183,7 +187,7 @@ private fun Group(
                 if (speaker.isNotEmpty()) {
                     var place by remember { mutableStateOf(Offset.Zero) }
                     Box(Modifier.onGloballyPositioned { place = it.positionInRoot() }) {
-                        SpeakerBadge(speaker, transcript.speakers.firstOrNull { it.id == speaker }?.name) { onSpeakerMenu(place) }
+                        SpeakerBadge(speaker, transcript.speakers.firstOrNull { it.id == speaker }?.name, speakerEnabled) { onSpeakerMenu(place) }
                     }
                 }
                 when (saving) {
@@ -197,14 +201,17 @@ private fun Group(
     }
 }
 
-/** The square after a group's time: it opens the highlight's menu, and a reader hears it as "Highlight 00:12:34". */
+/**
+ * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears
+ * it as "Highlight 00:12:34". Its target is only a gap wider than the square, so the square stays by the time.
+ */
 @Composable
 private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
     val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
     Box(
         Modifier
-            .size(28.dp)
+            .size(width = HIGHLIGHT_MARK + Space.xs * 2, height = 28.dp)
             .onGloballyPositioned { place = it.positionInRoot() }
             .clickable(role = Role.Button) { onMenu(place) }
             .semantics { contentDescription = label },

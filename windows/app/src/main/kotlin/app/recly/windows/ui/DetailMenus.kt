@@ -162,6 +162,7 @@ internal fun MoreButton(
             val againBlocked = when {
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
                 detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
                 else -> null
             }
             MenuRow(
@@ -203,13 +204,13 @@ internal val HIGHLIGHT_MARK = 6.dp
  * that opens the speaker menu. Speakers are told apart by this label alone.
  */
 @Composable
-internal fun SpeakerBadge(id: String, name: String?, onClick: () -> Unit) {
+internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
     Text(
         name ?: id,
         modifier = Modifier
             .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
-            .clickable(role = Role.Button, onClick = onClick)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = 6.dp, vertical = 2.dp),
         style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
         color = palette.textMuted,
