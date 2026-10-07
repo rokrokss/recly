@@ -70,6 +70,29 @@ class RetranscriptionTest {
     }
 
     @Test
+    fun `a folder stamp that does not land fails the publication, and its retry stamps the folder`() = runBlocking {
+        val meta = f.recordAndRun()
+        val base = MetaWriter.baseName(meta)
+        val first = f.drive.byName(base)!!.appProperties["transcriptAt"]
+        f.engine!!.text = "again"
+        val started = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        f.drive.failNext(500, times = 10) { it.method == "PATCH" && "transcriptAt" in it.body.decodeToString() }
+
+        f.drain()
+
+        assertEquals("again 1", recJson.decodeFromString<Transcript>(onDrive(TranscribeRunner.jsonFileName(base)).text).segments.first().text)
+        assertEquals(first, f.drive.byName(base)!!.appProperties["transcriptAt"], "the other devices were not told")
+        assertTrue(f.core.jobs.list().single { it.id == started.jobId }.status != JobStatus.DONE, "so the step is not done")
+
+        f.drive.clearFaults()
+        f.clock.advance(kotlin.time.Duration.parse("1h"))
+        f.drain()
+
+        assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+        assertEquals(f.core.results(meta.recordingId).transcript!!.createdAt, f.drive.byName(base)!!.appProperties["transcriptAt"])
+    }
+
+    @Test
     fun `a recording whose audio the sweep took is fetched back first, and the sweep waits for the job`() = runBlocking {
         val meta = f.recordAndRun()
         val part = f.dirOf(meta) / meta.parts.single().file

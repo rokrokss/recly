@@ -1872,8 +1872,10 @@ request: a new file in the `files.create` multipart upload, an existing one with
 (`PATCH …/upload/drive/v3/files/{id}?uploadType=multipart`, the metadata part `{"appProperties": …}` first and no `parents`, which an
 update cannot set; Drive "Upload file data" and `files.update`, checked 2026-10-07). A watcher such as recly-events can so tell a new
 transcript from a correction. The recording's folder carries `appProperties.transcriptAt`, the version of the newest transcript in it — its
-`editedAt`, else its `createdAt` — written after every publication and pushed edit (advisory: a failure is logged as
-`transcript.stamp.failed`); an iCloud folder keeps it in `{base}.folder.json`, a local folder keeps nothing. Each pull compares it with
+`editedAt`, else its `createdAt` — written after every publication and pushed edit. It is not advisory: without it the other devices keep
+the copy they have, so a publication whose stamp fails fails its step like a file write (the retry skips the files already there by md5
+and stamps again), and an edit whose stamp fails stays pending; an iCloud folder keeps it in `{base}.folder.json`, a local folder keeps
+nothing. Each pull compares it with
 the copy on this device and reads `.transcript.json` again when the folder's is newer — another device edited or transcribed it again —
 and reads it once for another device's recording that has never been read here, so a search finds it; at most 10 files a pass, none while
 an edit of this device's is still on its way out or the other device is still transcribing, and never over a newer copy here

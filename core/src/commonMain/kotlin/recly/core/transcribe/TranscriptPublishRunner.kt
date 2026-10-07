@@ -81,16 +81,11 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
     }
 
     /**
-     * Tells other devices the folder has a newer transcript ([TranscriptMarks.FOLDER_STAMP]). Advisory,
-     * like the pending marker: a failure is logged and the published files stand.
+     * Tells other devices the folder has a newer transcript ([TranscriptMarks.FOLDER_STAMP]). Not advisory:
+     * without it the other devices keep the copy they have, so a failure fails the step like the file
+     * writes do, and the retry skips the files already there (same md5) and stamps again.
      */
     private suspend fun stamp(folder: String, transcript: Transcript) {
-        try {
-            api.updateAppProperties(folder, mapOf(TranscriptMarks.FOLDER_STAMP to TranscriptMarks.version(transcript)))
-        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-            throw e
-        } catch (e: Throwable) {
-            deps.logger.log(recly.core.platform.Logger.Level.WARN, "transcript.stamp.failed", mapOf("folderId" to folder), e)
-        }
+        api.updateAppProperties(folder, mapOf(TranscriptMarks.FOLDER_STAMP to TranscriptMarks.version(transcript)))
     }
 }
