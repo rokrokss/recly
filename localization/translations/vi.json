@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Những chỉnh sửa của bạn sẽ bị thay thế.",
   "Your edits to this transcript will be lost.": "Những chỉnh sửa của bạn trong bản chép lời này sẽ bị mất.",
   "on-device transcription": "chép lời trên thiết bị",
-  "{0} does not use a vocabulary.": "{0} không dùng từ vựng."
+  "{0} does not use a vocabulary.": "{0} không dùng từ vựng.",
+  "Import to Recly": "Nhập vào Recly",
+  "Start or stop a recording.": "Bắt đầu hoặc dừng ghi âm."
 }

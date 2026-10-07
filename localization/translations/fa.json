@@ -517,5 +517,7 @@
   "Your edits are replaced.": "ویرایش‌های شما با رونوشت جدید جایگزین می‌شوند.",
   "Your edits to this transcript will be lost.": "ویرایش‌های شما در این رونوشت از بین می‌رود.",
   "on-device transcription": "رونویسی روی دستگاه",
-  "{0} does not use a vocabulary.": "ارائه‌دهنده {0} از واژگان استفاده نمی‌کند."
+  "{0} does not use a vocabulary.": "ارائه‌دهنده {0} از واژگان استفاده نمی‌کند.",
+  "Import to Recly": "وارد کردن به Recly",
+  "Start or stop a recording.": "شروع یا توقف ضبط."
 }

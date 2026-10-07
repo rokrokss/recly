@@ -1,6 +1,7 @@
 import ReclyCore
 import RecKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// docs/09 screen principle 2, on the phone: the recordings are a ledger. One row per recording — when
 /// (monospace), what, how long, and the state as a code — and the detail is behind the row rather
@@ -16,6 +17,11 @@ struct RecordingsView: View {
     /// docs/08 "Result files": the recording whose transcript is being read, as a page over the list —
     /// the ledger has no navigation stack to push onto (docs/09 screen principle 2).
     @State private var detail: RecordingDetailModel?
+    /// docs/10 "Search": what is typed in the search field, and what the core found for it.
+    @State private var query = ""
+    @State private var hits: [SearchHit] = []
+    /// docs/09 §7: the system picker for audio and video files is up.
+    @State private var importing = false
 
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
     /// status line, a RecKit label — and `Text(verbatim:)` carries no dependency on the language.
@@ -23,10 +29,46 @@ struct RecordingsView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
+        // docs/09 §6: the search field is the platform's own (`.searchable`), and it lives in a
+        // navigation bar — so the list has one, holding nothing but the field.
+        NavigationStack {
+            list
+                .navigationBarTitleDisplayMode(.inline)
+                .searchable(
+                    text: $query,
+                    placement: .navigationBarDrawer(displayMode: .always),
+                    prompt: Text(verbatim: RecKitStrings.localized("Search titles and transcripts"))
+                )
+        }
+        .task(id: query) {
+            // docs/10 "Search": 200 ms after the last keystroke.
+            let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !typed.isEmpty else { hits = []; return }
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            hits = await model.search(typed)
+        }
+    }
+
+    private var searching: Bool { !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+
+    private var list: some View {
         VStack(spacing: 0) {
             // docs/09 screen principle 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
-            ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents))
+            ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents), trailingAlignment: .trailing) {
+                // docs/09 §7: a file from elsewhere — audio, or a video's sound — as a recording of this phone.
+                Button { importing = true } label: {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(blueprint.fonts.sans(TypeSize.body))
+                        .foregroundStyle(blueprint.palette.textMuted)
+                        .frame(width: minTouch, height: minTouch)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!model.isReady)
+                .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Import audio")))
+                .accessibilityIdentifier("import-audio")
+            }
             // docs/10 "iPhone": a banner at the top of the list — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
@@ -38,6 +80,56 @@ struct RecordingsView: View {
                     .onTapGesture { model.dismissMessage() }
                     .accessibilityIdentifier("message")
             }
+            // docs/09 §7: a failed import leaves no row, so the list says it here — and why.
+            if let failure = model.importFailure {
+                Banner("\(RecKitStrings.localized("Could not import this file")) — \(CoreMessages.text(failure).sentence)", tone: .danger)
+                    .padding(.horizontal, Space.m)
+                    .padding(.bottom, Space.s)
+                    .onTapGesture { model.dismissImportFailure() }
+                    .accessibilityIdentifier("import-failure")
+            }
+            if searching {
+                results
+            } else {
+                ledger
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .dotGridBackground()
+        .fileImporter(isPresented: $importing, allowedContentTypes: [.audio, .movie], allowsMultipleSelection: true) { result in
+            if case .success(let urls) = result { model.importFiles(urls) }
+        }
+    }
+
+    /// docs/10 "Search" · docs/09 §6: the rows the search found, in place of the ledger while the field
+    /// has text; a row opens the detail on its first match.
+    private var results: some View {
+        VStack(spacing: 0) {
+            HairLine()
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(hits, id: \.recordingId) { hit in
+                        SearchResultRow(hit: hit) {
+                            detail = model.detail(for: hit, query: query.trimmingCharacters(in: .whitespacesAndNewlines))
+                        }
+                    }
+                    if hits.isEmpty {
+                        EmptyListMessage(
+                            title: RecKitStrings.localized("No recordings match"),
+                            hint: RecKitStrings.localized("Search looks in titles and in transcripts on this device.")
+                        )
+                    }
+                }
+            }
+            .scrollDismissesKeyboard(.immediately)
+        }
+        .sheet(item: $detail) { detail in
+            RecordingDetailView(model: detail) { self.detail = nil }
+        }
+    }
+
+    private var ledger: some View {
+        VStack(spacing: 0) {
             LedgerHeader(
                 time: loc("Time"),
                 title: loc("Title"),

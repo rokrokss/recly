@@ -17,6 +17,7 @@ import WidgetKit
 struct ReclyWidgets: WidgetBundle {
     var body: some Widget {
         RecordingLiveActivityWidget()
+        RecordWidget()
         if #available(iOS 18.0, *) {
             StartRecordingControl()
         }
@@ -129,5 +130,127 @@ struct StartRecordingControl: ControlWidget {
         }
         .displayName("Recly recording")
         .description("Opens Recly and starts a recording.")
+    }
+}
+
+/// docs/09 §10: the Home Screen and Lock Screen `Record` widget — a square record node, or while a
+/// recording runs its timer and a stop node. Both run the app's own intents: the start opens the app,
+/// where the audio session belongs, and the stop runs in the app's process.
+struct RecordWidget: Widget {
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: PhoneStatusStore.widgetKind, provider: RecordTimeline()) { entry in
+            RecordWidgetView(status: entry.status)
+                .environment(\.locale, entry.status.appLocale)
+                .containerBackground(for: .widget) { WidgetTokens.background }
+        }
+        .configurationDisplayName("Record")
+        .description("Start or stop a recording.")
+        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryRectangular])
+    }
+}
+
+struct RecordEntry: TimelineEntry {
+    let date: Date
+    let status: PhoneStatus
+}
+
+/// One entry, from the file the app last wrote; the app reloads the timeline at every start and stop.
+struct RecordTimeline: TimelineProvider {
+    func placeholder(in context: Context) -> RecordEntry { RecordEntry(date: .now, status: PhoneStatus()) }
+
+    func getSnapshot(in context: Context, completion: @escaping (RecordEntry) -> Void) {
+        completion(RecordEntry(date: .now, status: PhoneStatusStore.load()))
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<RecordEntry>) -> Void) {
+        completion(Timeline(entries: [RecordEntry(date: .now, status: PhoneStatusStore.load())], policy: .never))
+    }
+}
+
+struct RecordWidgetView: View {
+    let status: PhoneStatus
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            toggle {
+                ZStack {
+                    AccessoryWidgetBackground()
+                    if let startedAt = status.startedAt, status.recording {
+                        Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+                            .font(.system(.caption2, design: .monospaced))
+                            .multilineTextAlignment(.center)
+                            .minimumScaleFactor(0.6)
+                            .padding(4)
+                    } else {
+                        Image(systemName: "dot.square")
+                            .font(.title2)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(status.recording ? Text("Stop recording") : Text("Start recording"))
+        case .accessoryRectangular:
+            toggle {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: "Recly").font(.headline)
+                    if let startedAt = status.startedAt, status.recording {
+                        Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+                            .font(.system(.body, design: .monospaced))
+                    } else {
+                        Text("Record")
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(status.recording ? Text("Stop recording") : Text("Start recording"))
+        default:
+            small
+        }
+    }
+
+    /// docs/09 "Shape": the square record node of the dashboard; while recording, the clock over a
+    /// stop node in the same place.
+    private var small: some View {
+        VStack(spacing: 10) {
+            if let startedAt = status.startedAt, status.recording {
+                Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
+                    .font(.system(.title3, design: .monospaced))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+            } else {
+                Text(verbatim: "Recly")
+                    .font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            toggle {
+                ZStack {
+                    RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
+                        .fill(status.recording ? WidgetTokens.danger : Color.clear)
+                    RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
+                        .strokeBorder(WidgetTokens.danger, lineWidth: 3)
+                    RoundedRectangle(cornerRadius: WidgetTokens.Radius.badge)
+                        .fill(status.recording ? WidgetTokens.background : WidgetTokens.danger)
+                        .frame(width: 20, height: 20)
+                }
+                .frame(width: 64, height: 64)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(status.recording ? Text("Stop recording") : Text("Start recording"))
+        }
+    }
+
+    /// The stop while recording, the start otherwise — one label for either.
+    @ViewBuilder
+    private func toggle<Label: View>(@ViewBuilder label: () -> Label) -> some View {
+        let content = label()
+        if status.recording {
+            Button(intent: StopRecordingIntent()) { content }
+        } else {
+            Button(intent: StartRecordingIntent()) { content }
+        }
     }
 }

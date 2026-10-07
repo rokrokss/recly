@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Düzenlemeleriniz yeni transkriptle değiştirilecek.",
   "Your edits to this transcript will be lost.": "Bu transkriptte yaptığınız düzenlemeler kaybolacak.",
   "on-device transcription": "cihaz üzerinde transkripsiyon",
-  "{0} does not use a vocabulary.": "{0} sözlük kullanmaz."
+  "{0} does not use a vocabulary.": "{0} sözlük kullanmaz.",
+  "Import to Recly": "Recly'ye aktar",
+  "Start or stop a recording.": "Kaydı başlatın veya durdurun."
 }

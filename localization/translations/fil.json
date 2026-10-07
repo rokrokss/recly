@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Mapapalitan ang mga pagbabago mo.",
   "Your edits to this transcript will be lost.": "Mawawala ang mga ginawa mong pagbabago sa transcript na ito.",
   "on-device transcription": "pag-transcribe sa device",
-  "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}."
+  "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}.",
+  "Import to Recly": "I-import sa Recly",
+  "Start or stop a recording.": "Simulan o ihinto ang recording."
 }

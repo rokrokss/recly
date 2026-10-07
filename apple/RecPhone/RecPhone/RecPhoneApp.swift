@@ -42,7 +42,10 @@ struct RecPhoneApp: App {
                 .blueprint()
                 // docs/06: the consent web view comes back on the reversed-client-id scheme, and
                 // the SDK is the only thing that knows what to do with what it carries.
-                .onOpenURL { url in _ = GoogleAuth.handle(url) }
+                .onOpenURL { url in
+                    // docs/09 §7: the share extension's hand-over; anything else is the consent web view's.
+                    if url.scheme == "recly" { model.importInbox() } else { _ = GoogleAuth.handle(url) }
+                }
         }
     }
 }

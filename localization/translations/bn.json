@@ -517,5 +517,7 @@
   "Your edits are replaced.": "আপনার পরিবর্তনগুলো নতুন ট্রান্সক্রিপ্ট দিয়ে প্রতিস্থাপিত হবে।",
   "Your edits to this transcript will be lost.": "এই ট্রান্সক্রিপ্টে আপনার করা পরিবর্তন হারিয়ে যাবে।",
   "on-device transcription": "ডিভাইসে ট্রান্সক্রিপশন",
-  "{0} does not use a vocabulary.": "{0} শব্দভান্ডার ব্যবহার করে না।"
+  "{0} does not use a vocabulary.": "{0} শব্দভান্ডার ব্যবহার করে না।",
+  "Import to Recly": "Recly-তে ইমপোর্ট করুন",
+  "Start or stop a recording.": "রেকর্ডিং শুরু করুন বা থামান।"
 }

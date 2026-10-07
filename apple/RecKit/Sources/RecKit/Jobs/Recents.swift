@@ -128,7 +128,7 @@ public struct RecentItem: Identifiable, Sendable {
     public var canDelete: Bool { !Self.undeletable.contains(state) }
 
     private static let undeletable: Set<String> = [
-        "Recording", "Uploading", "Receiving from the watch", "Uploading on another device",
+        "Recording", "Importing", "Uploading", "Receiving from the watch", "Uploading on another device",
     ]
 
     /// docs/03: whether another device recorded this and this one only adopted the Drive folder —
@@ -282,6 +282,8 @@ public enum Recents {
         // docs/03 "Recordings from other devices": the folder is on Drive with no `meta.json` in it yet, so the
         // other device is still uploading. `RECORDING` again, and again not this device's.
         if record.remoteUploading { return "Uploading on another device" }
+        // docs/03 "Naming rules": an import is a `recording` row until its parts are all there.
+        if record.importing { return "Importing" }
         if record.meta.status == .recording { return "Recording" }
         // docs/03: another device recorded it and uploaded it; this one adopted the Drive folder and
         // has no job for it — but the recording itself is finished, and that is all the row has to

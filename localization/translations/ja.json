@@ -517,5 +517,7 @@
   "Your edits are replaced.": "編集内容は新しい文字起こしに置き換えられます。",
   "Your edits to this transcript will be lost.": "この文字起こしの編集内容は失われます。",
   "on-device transcription": "デバイス上の文字起こし",
-  "{0} does not use a vocabulary.": "{0}は語彙を使用しません。"
+  "{0} does not use a vocabulary.": "{0}は語彙を使用しません。",
+  "Import to Recly": "Reclyに読み込む",
+  "Start or stop a recording.": "録音を開始または停止します。"
 }

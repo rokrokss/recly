@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Vos modifications seront remplacées.",
   "Your edits to this transcript will be lost.": "Vos modifications de cette transcription seront perdues.",
   "on-device transcription": "la transcription sur l’appareil",
-  "{0} does not use a vocabulary.": "{0} n’utilise pas de vocabulaire."
+  "{0} does not use a vocabulary.": "{0} n’utilise pas de vocabulaire.",
+  "Import to Recly": "Importer dans Recly",
+  "Start or stop a recording.": "Démarrez ou arrêtez un enregistrement."
 }

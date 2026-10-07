@@ -517,5 +517,7 @@
   "Your edits are replaced.": "آپ کی ترامیم نئے ٹرانسکرپٹ سے بدل جائیں گی۔",
   "Your edits to this transcript will be lost.": "اس ٹرانسکرپٹ میں آپ کی ترامیم ضائع ہو جائیں گی۔",
   "on-device transcription": "آلے پر ٹرانسکرپشن",
-  "{0} does not use a vocabulary.": "فراہم کنندہ {0} ذخیرۂ الفاظ استعمال نہیں کرتا۔"
+  "{0} does not use a vocabulary.": "فراہم کنندہ {0} ذخیرۂ الفاظ استعمال نہیں کرتا۔",
+  "Import to Recly": "Recly میں درآمد کریں",
+  "Start or stop a recording.": "ریکارڈنگ شروع کریں یا روکیں۔"
 }

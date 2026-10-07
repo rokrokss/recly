@@ -25,6 +25,8 @@ struct RecordingView: View {
     @State private var busy = false
     /// When the recorder went to work, so the window can be measured from it. Nil while it is not.
     @State private var busyStartedAt: Date?
+    /// docs/09 §1: the Highlight node's 150 ms of accent after a tap.
+    @State private var marking = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -104,7 +106,14 @@ struct RecordingView: View {
             .frame(maxHeight: .infinity)
 
             VStack(spacing: 10) {
+                // docs/09 §1: the Highlight node beside the record node while recording — laid over
+                // its end side, so the record node stays centred and nothing moves when it appears.
                 recordNode
+                    .overlay(alignment: .trailing) {
+                        if model.isRecording {
+                            highlightNode.offset(x: 56 + Space.l)
+                        }
+                    }
                 // A space when there is nothing to say, so the line keeps its height and the node
                 // above it never moves.
                 Text(model.status.isEmpty ? " " : model.status)
@@ -228,6 +237,36 @@ struct RecordingView: View {
         .accessibilityIdentifier(model.canStop ? "stop" : "start")
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Start recording"))
         .task(id: working) { await holdBusy() }
+    }
+
+    /// docs/09 §1: a mark at this moment of the recording. Square, accent-bordered, a flag and no
+    /// words; the line under the record node says when.
+    private var highlightNode: some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            model.highlight()
+            marking = true
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: Radius.node)
+                    .fill(marking ? blueprint.palette.accent : blueprint.palette.surface)
+                RoundedRectangle(cornerRadius: Radius.node)
+                    .strokeBorder(blueprint.palette.accent, lineWidth: 1.5)
+                Image(systemName: "flag")
+                    .font(.system(size: 22, weight: .light))
+                    .foregroundStyle(marking ? blueprint.palette.onAccent : blueprint.palette.accent)
+            }
+            .frame(width: 56, height: 56)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Highlight")))
+        .accessibilityIdentifier("highlight")
+        .task(id: marking) {
+            guard marking else { return }
+            try? await Task.sleep(for: .milliseconds(150))
+            marking = false
+        }
     }
 
     /// Whether the recorder itself is between two states.

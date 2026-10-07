@@ -517,5 +517,7 @@
   "Your edits are replaced.": "你的修改将被新的转录文本替换。",
   "Your edits to this transcript will be lost.": "你对此转录文本所做的修改将会丢失。",
   "on-device transcription": "设备本地转录",
-  "{0} does not use a vocabulary.": "{0}不使用词汇表。"
+  "{0} does not use a vocabulary.": "{0}不使用词汇表。",
+  "Import to Recly": "导入到Recly",
+  "Start or stop a recording.": "开始或停止录音。"
 }

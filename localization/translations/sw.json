@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Nakala mpya itachukua nafasi ya mabadiliko yako.",
   "Your edits to this transcript will be lost.": "Mabadiliko yako kwenye nakala hii yatapotea.",
   "on-device transcription": "unukuzi kwenye kifaa",
-  "{0} does not use a vocabulary.": "{0} haitumii msamiati."
+  "{0} does not use a vocabulary.": "{0} haitumii msamiati.",
+  "Import to Recly": "Leta kwenye Recly",
+  "Start or stop a recording.": "Anza au simamisha kurekodi."
 }

@@ -517,5 +517,7 @@
   "Your edits are replaced.": "你的修改將由新的逐字稿取代。",
   "Your edits to this transcript will be lost.": "你對此逐字稿所做的修改將會遺失。",
   "on-device transcription": "裝置本機轉錄",
-  "{0} does not use a vocabulary.": "{0}不使用詞彙表。"
+  "{0} does not use a vocabulary.": "{0}不使用詞彙表。",
+  "Import to Recly": "匯入Recly",
+  "Start or stop a recording.": "開始或停止錄音。"
 }

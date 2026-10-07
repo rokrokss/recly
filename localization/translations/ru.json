@@ -517,5 +517,7 @@
   "Your edits are replaced.": "Ваши правки будут заменены.",
   "Your edits to this transcript will be lost.": "Изменения в этой расшифровке будут потеряны.",
   "on-device transcription": "расшифровка на устройстве",
-  "{0} does not use a vocabulary.": "{0} не использует словарь."
+  "{0} does not use a vocabulary.": "{0} не использует словарь.",
+  "Import to Recly": "Импорт в Recly",
+  "Start or stop a recording.": "Начните или остановите запись."
 }
