@@ -2,7 +2,21 @@
 package app.recly.windows.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Radius
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -75,7 +89,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                     ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
                 }
             }
-            if (model.localInstalled) Text(strings[Str.PROCESSING_LOCAL_SPEAKERS], style = MaterialTheme.typography.bodySmall)
+            if (model.localInstalled) SpeakerModel(model, strings, preparationAllowed)
         }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
             // A labelled row, as the other shells draw it: the dropdown alone said only its value.
@@ -95,6 +109,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                 BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
             }
             if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
+            Vocabulary(model, draft, strings)
         }
         model.message?.let { Text(it.text(strings)) }
         // docs/09: a form's buttons are end-aligned, the commit last — and only there while the draft has changes.
@@ -165,6 +180,98 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
         }
     }
 }
+/**
+ * docs/15 "Android · Windows local transcription models": the speaker models, under the speech model. They
+ * come with the speech model's own download; a PC that already has the speech model downloads them here,
+ * with the same lines and buttons. Without them the transcript arrives without speakers.
+ */
+@Composable
+private fun SpeakerModel(model: ProcessingViewModel, strings: Strings, preparationAllowed: Boolean) {
+    LabelledRow(strings[Str.PROCESSING_SPEAKER_MODEL]) {
+        Text(SPEAKER_MODEL_NAME, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
+    }
+    val info = model.download.info ?: model.local
+    if (model.local?.status == LocalEngineStatus.READY && info?.supportsDiarization == false) {
+        info.modelBytes?.let { bytes ->
+            Text(strings[Str.PROCESSING_MODEL_SIZE, ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))], style = MaterialTheme.typography.bodySmall)
+        }
+        ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
+    }
+    Text(strings[Str.PROCESSING_LOCAL_SPEAKERS], style = MaterialTheme.typography.bodySmall)
+}
+
+/**
+ * docs/05 "Fixed processing settings": the names and terms the transcription should expect, as chips — typed and
+ * added with Enter or Add, one per line when several lines are pasted. Part of the form's draft like
+ * every other field here. Under it, where the list goes or that it is not used.
+ */
+@Composable
+private fun Vocabulary(model: ProcessingViewModel, draft: ProcessingDraft, strings: Strings) {
+    var entry by remember { mutableStateOf("") }
+    var refused by remember { mutableStateOf(false) }
+    fun add(text: String) {
+        val terms = draft.vocabulary.toMutableList()
+        refused = false
+        text.lines().map { it.trim() }.filter { it.isNotEmpty() }.forEach { term ->
+            when {
+                terms.any { it.equals(term, ignoreCase = true) } -> Unit
+                term.length > VOCABULARY_ENTRY_MAX || terms.size >= VOCABULARY_MAX -> refused = true
+                else -> terms += term
+            }
+        }
+        if (terms != draft.vocabulary) model.edit { it.vocabulary = terms }
+        entry = ""
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.Bottom) {
+        BlueprintTextField(
+            value = entry,
+            onValueChange = { if ('\n' in it || '\r' in it) add(it) else entry = it },
+            label = strings[Str.VOCABULARY],
+            modifier = Modifier.weight(1f).onPreviewKeyEvent { event ->
+                (event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) add(entry) }
+            },
+            placeholder = strings[Str.VOCABULARY_PLACEHOLDER],
+            monospace = false,
+        )
+        BlueprintButton(strings[Str.VOCABULARY_ADD], { add(entry) }, tone = ButtonTone.QUIET, enabled = entry.isNotBlank())
+    }
+    // Left-aligned: a list of words reads from the start, unlike the form's buttons.
+    if (draft.vocabulary.isNotEmpty()) FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+        draft.vocabulary.forEach { term ->
+            TermChip(term, strings[Str.VOCABULARY_REMOVE, term]) { model.edit { it.vocabulary = it.vocabulary - term } }
+        }
+    }
+    if (refused) Text(strings[Str.VOCABULARY_LIMIT], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
+    val provider = SttProviders.displayName(draft.provider)
+    val note = when {
+        draft.mode == TranscriptionMode.LOCAL -> if (model.local?.supportsVocabulary == true) strings[Str.VOCABULARY_LOCAL] else strings[Str.VOCABULARY_LOCAL_UNSUPPORTED]
+        SttProviders.supportsVocabulary(draft.provider, draft.model.takeIf { it.isNotBlank() }, draft.language) -> strings[Str.VOCABULARY_EXTERNAL, provider]
+        else -> strings[Str.VOCABULARY_UNSUPPORTED, provider]
+    }
+    Text(note, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+}
+
+/** One term: its text, and a remove mark that a screen reader hears as "Remove {term}". */
+@Composable
+private fun TermChip(term: String, removeLabel: String, onRemove: () -> Unit) {
+    val palette = blueprint
+    Row(
+        Modifier.border(palette.line, palette.grid, RoundedCornerShape(Radius.node)).padding(start = Space.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(term, style = MaterialTheme.typography.labelLarge, color = palette.text)
+        Box(
+            Modifier.size(MinTouch).clickable(role = Role.Button, onClick = onRemove).semantics { contentDescription = removeLabel },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("×", style = MaterialTheme.typography.labelLarge, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics { })
+        }
+    }
+}
+
+/** The two speaker models by what they are; product names, not translated. */
+private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"
+
 /** A setting's name at the start and its control at the end — the settings table's row, inside the block. */
 @Composable
 private fun LabelledRow(label: String, trailing: @Composable () -> Unit) {
