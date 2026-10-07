@@ -380,7 +380,7 @@
     <string name="job_state_importing">가져오는 중</string>
     <string name="import_failed">이 파일을 가져오지 못했습니다</string>
     <string name="retranscribe_title">다시 전사할까요?</string>
-    <string name="retranscribe_body">%1$s · %2$s(으)로 전사합니다.</string>
+    <string name="retranscribe_body">%1$s · %2$s 설정으로 전사합니다.</string>
     <string name="retranscribe_edits">고친 내용은 새 전사본으로 바뀝니다.</string>
     <string name="retranscribe_local">기기 내 전사</string>
     <string name="retranscribe_confirm">전사</string>
