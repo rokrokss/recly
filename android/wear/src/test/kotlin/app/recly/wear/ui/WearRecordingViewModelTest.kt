@@ -14,6 +14,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -51,7 +52,11 @@ private class FakeRecorder : RecorderControl {
 
     val highlights: MutableList<Pair<String, Double>> = mutableListOf()
 
+    /** When set, a highlight write waits for it — a slow disk. */
+    var slowWrite: CompletableDeferred<Unit>? = null
+
     override suspend fun highlight(recordingId: String, atSec: Double): Boolean {
+        slowWrite?.await()
         if (highlights.any { it.first == recordingId && kotlin.math.abs(it.second - atSec) < 1.0 }) return false
         highlights += recordingId to atSec
         return true
@@ -317,6 +322,27 @@ class WearRecordingViewModelTest {
 
         vm.highlight(Instant.fromEpochMilliseconds(754_400))
         runCurrent()
+        assertNull(vm.state.value.highlightedSec)
+    }
+
+    @Test
+    fun `a slow highlight of a stopped recording is not news on the next one`() = runTest(dispatcher) {
+        val vm = viewModel()
+        val write = CompletableDeferred<Unit>()
+        recorder.slowWrite = write
+        recorder.recording("01J9")
+        runCurrent()
+
+        vm.highlight(Instant.fromEpochSeconds(754))
+        runCurrent()
+        recorder.idle()
+        runCurrent()
+        recorder.recording("01JA")
+        runCurrent()
+        write.complete(Unit)
+        runCurrent()
+
+        assertEquals(listOf("01J9" to 754.0), recorder.highlights)
         assertNull(vm.state.value.highlightedSec)
     }
 

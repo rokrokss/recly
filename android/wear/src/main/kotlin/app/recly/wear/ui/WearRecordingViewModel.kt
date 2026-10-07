@@ -127,6 +127,8 @@ class WearRecordingViewModel(
         val atSec = (now - recording.startedAt).inWholeMilliseconds / 1000.0
         viewModelScope.launch {
             if (!recorder.highlight(recording.recordingId, atSec)) return@launch
+            // A slow write may land after that recording stopped and another started: its time is not the new one's news.
+            if ((_state.value.recorder as? RecorderState.Recording)?.recordingId != recording.recordingId) return@launch
             val mark = ++marks
             _state.update { it.copy(highlightedSec = atSec.toLong()) }
             delay(HIGHLIGHT_NEWS_MS)
