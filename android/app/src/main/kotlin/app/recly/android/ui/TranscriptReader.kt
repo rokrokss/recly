@@ -171,8 +171,12 @@ internal fun TranscriptReader(
                         BlueprintButton(stamp, { onSeek(group.start) }, enabled = canSeek && group.start < seekableDurationSec,
                             modifier = Modifier.testTag("transcript-time-${group.index}").semantics { contentDescription = seekLabel },
                             tone = if (now) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true)
-                        // docs/09 "Highlights": right after the time, before the speaker.
-                        highlights.filter { it >= group.start && it < group.end.coerceAtLeast(group.start + 0.001) }.forEach { at ->
+                        // docs/09 "Highlights": right after the time, before the speaker. A group holds the marks from its
+                        // start to the next group's — the first one from 0 — so a mark in a pause, or before the first
+                        // words, is not lost.
+                        val from = if (group.index == 0) 0.0 else group.start
+                        val end = groups.getOrNull(group.index + 1)?.start ?: Double.POSITIVE_INFINITY
+                        highlights.filter { it >= from && it < end }.forEach { at ->
                             Box {
                                 HighlightMarker(at, onClick = { onHighlight(at) })
                                 if (highlightMenuFor == at) highlightMenu()

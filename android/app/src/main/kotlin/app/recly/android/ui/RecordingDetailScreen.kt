@@ -369,7 +369,7 @@ fun RecordingDetailScreen(
                                     onDismiss = { highlightMenu = null })
                             }
                         },
-                        onSpeaker = { if (savingGroup == null) speakerMenu = it },
+                        onSpeaker = { speakerMenu = it },
                         speakersEnabled = savingGroup == null,
                         speakerMenuFor = speakerMenu?.index,
                         speakerMenu = {
