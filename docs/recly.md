@@ -1936,7 +1936,8 @@ one cue per segment, the speaker's name or id in front when speakers were identi
 cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
 `mono`) joined into one `.m4a` by the shell's lossless `AudioTools.concat`, after any part the retention sweep took is fetched back. The
 file is named for people — `2026-08-26 Weekly meeting.srt`, the date in the recording's own time zone and without what file systems
-refuse, or the recording's `{base}` when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
+refuse, the title cut to 100 characters and to what fits in a 255-byte UTF-8 name, never inside a character, or the recording's `{base}`
+when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
 first export of a process removes every earlier one, each later one those older than an hour.
 
 ### Meta hint `context.participants`

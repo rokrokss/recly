@@ -89,12 +89,20 @@ internal class RecordingExport(
         private const val TITLE_CHARS = 100
 
         /**
+         * The longest file name, in UTF-8 bytes, that the file systems a share sheet writes to take (ext4,
+         * APFS; NTFS counts 255 UTF-16 units, which this never exceeds). A Korean character is 3 bytes.
+         */
+        private const val NAME_BYTES = 255
+
+        /**
          * `{yyyy-MM-dd} {title}.{extension}` with what no file system takes out of the title, or
-         * `{base}.{extension}` without one.
+         * `{base}.{extension}` without one. The title is cut to what fits in [NAME_BYTES] beside the date and
+         * the extension, never inside a character.
          */
         internal fun fileName(meta: recly.core.model.RecordingMeta, extension: String): String {
+            val budget = NAME_BYTES - "yyyy-MM-dd ".length - ".$extension".encodeToByteArray().size
             val title = meta.title?.map { if (it in FORBIDDEN || it.isISOControl()) ' ' else it }?.joinToString("")
-                ?.replace(Regex("\\s+"), " ")?.trim()?.trimEnd('.')?.take(TITLE_CHARS)?.trim()
+                ?.replace(Regex("\\s+"), " ")?.trim()?.trimEnd('.')?.let { prefix(it, TITLE_CHARS, budget) }?.trim()
                 ?.takeIf { it.isNotEmpty() }
                 ?: return "${MetaWriter.baseName(meta)}.$extension"
             val zone = runCatching { TimeZone.of(meta.timezone) }.getOrDefault(TimeZone.UTC)
@@ -104,5 +112,29 @@ internal class RecordingExport(
         }
 
         private const val FORBIDDEN = "\\/:*?\"<>|"
+
+        /**
+         * The longest prefix of [text] that is at most [chars] long and [bytes] in UTF-8, ending between two
+         * code points — a surrogate pair is kept or dropped whole.
+         */
+        private fun prefix(text: String, chars: Int, bytes: Int): String {
+            var used = 0
+            var end = 0
+            while (end < text.length) {
+                val c = text[end]
+                val pair = c.isHighSurrogate() && end + 1 < text.length && text[end + 1].isLowSurrogate()
+                val size = when {
+                    pair -> 4
+                    c.code < 0x80 -> 1
+                    c.code < 0x800 -> 2
+                    else -> 3
+                }
+                val next = end + if (pair) 2 else 1
+                if (next > chars || used + size > bytes) break
+                used += size
+                end = next
+            }
+            return text.substring(0, end)
+        }
     }
 }
