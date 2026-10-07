@@ -218,7 +218,13 @@ fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@C
         Sidebar(
             model, strings, query, { query = it }, hits, searchFocus,
             onOpen = { item -> leave { model.openDetail(item) } },
-            onOpenHit = { hit -> leave { model.openSearchHit(hit, query.trim()) } },
+            onOpenHit = { hit ->
+                leave {
+                    // A hit in the title alone has nothing to find: no bar left open from before either.
+                    if (hit.snippets.isEmpty()) findOpen = false
+                    model.openSearchHit(hit, query.trim())
+                }
+            },
             modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
         )
         VerticalHairLine(Modifier.fillMaxHeight())

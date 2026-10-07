@@ -1219,10 +1219,14 @@ class ShellModel(
             .getOrDefault(emptyList())
     }
 
-    /** A search result: the detail opens on its transcript hit with every match of [query] tinted. */
+    /**
+     * A search result: the detail opens on its transcript hit with every match of [query] tinted — or, for a
+     * hit in the title alone, as it opens from the list, with nothing to find.
+     */
     fun openSearchHit(hit: SearchHit, query: String) {
         val title = hit.title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message()
-        openDetail(hit.recordingId, title, find = query, findAtSec = hit.snippets.firstOrNull()?.atSec)
+        val first = hit.snippets.firstOrNull()
+        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec)
     }
 
     /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
