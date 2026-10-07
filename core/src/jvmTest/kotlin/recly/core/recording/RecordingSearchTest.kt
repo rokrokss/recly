@@ -41,6 +41,20 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a find bar finds in a text what the search found, at the text's own places`() {
+        fun found(text: String, query: String) = RecordingSearch.findRanges(text, query).map { text.substring(it.offset, it.offset + it.length) }
+
+        assertEquals(listOf("Résumé", "RESUME"), found("A Résumé, the RESUME", " resume "))
+        assertEquals(listOf("ＢＵＤＧＥＴ", "budget"), found("ＢＵＤＧＥＴ and budget", "Budget"))
+        assertEquals(listOf("abc"), found("x abc", "ＡＢＣ"))
+        assertEquals(listOf("회의록", "회의록"), found("회의록 정리, 다음 회의록", "회의록"))
+        assertEquals(listOf(SearchRange(0, 2), SearchRange(2, 2)), RecordingSearch.findRanges("aaaa", "aa"), "in order, not overlapping")
+        assertEquals(emptyList(), RecordingSearch.findRanges("anything", "   "))
+        assertEquals(emptyList(), RecordingSearch.findRanges("anything", ""))
+        assertEquals(emptyList(), RecordingSearch.findRanges("Résumé", "resumes"))
+    }
+
+    @Test
     fun `full-width Latin finds its ASCII, and a long segment is cut around the match`() = runBlocking {
         val meta = f.recordAndRun()
         val long = "x".repeat(200) + " the budget line " + "y".repeat(200)
@@ -76,6 +90,48 @@ class RecordingSearchTest {
         f.clock.advance(kotlin.time.Duration.parse("10m"))
         f.core.pullRemoteRecordings(force = true)
         assertEquals(1, f.drive.requests.count { it.query["alt"] == "media" && it.path.endsWith(f.drive.idOf(TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta)))!!) }, "read once")
+    }
+
+    @Test
+    fun `a transcript that could not be read is read again by the next pull`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000", transcript = { transcript(it.recordingId, "the quarterly budget") })
+        val fileId = f.drive.idOf(TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta)))!!
+        f.drive.failNext(500, times = 10) { it.query["alt"] == "media" && it.path.endsWith(fileId) }
+
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(emptyList(), f.core.search("budget", 10))
+
+        f.drive.clearFaults()
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(other.recordingId, f.core.search("budget", 10).single().recordingId)
+    }
+
+    @Test
+    fun `a folder that says it has a transcript is looked in again until it is there`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000", folderProperties = mapOf("transcriptAt" to "2026-08-29T03:10:00.000Z"))
+        val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta))
+        f.core.pullRemoteRecordings(force = true)
+
+        val late = transcript(other.recordingId, "late words")
+        f.drive.put(name, other.folderId, recJson.encodeToString(late).encodeToByteArray(), "application/json")
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+
+        assertEquals(other.recordingId, f.core.search("late", 10).single().recordingId)
+    }
+
+    @Test
+    fun `a folder with no transcript and no stamp is looked in once`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000")
+        val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta))
+        fun lookups() = f.drive.requests.count { name in it.query["q"].orEmpty() }
+
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(1, lookups())
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(1, lookups(), "a folder without a transcript costs a pass nothing after the first")
     }
 
     @Test

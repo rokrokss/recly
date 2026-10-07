@@ -1872,12 +1872,16 @@ request: a new file in the `files.create` multipart upload, an existing one with
 (`PATCH …/upload/drive/v3/files/{id}?uploadType=multipart`, the metadata part `{"appProperties": …}` first and no `parents`, which an
 update cannot set; Drive "Upload file data" and `files.update`, checked 2026-10-07). A watcher such as recly-events can so tell a new
 transcript from a correction. The recording's folder carries `appProperties.transcriptAt`, the version of the newest transcript in it — its
-`editedAt`, else its `createdAt` — written after every publication and pushed edit (advisory: a failure is logged as
-`transcript.stamp.failed`); an iCloud folder keeps it in `{base}.folder.json`, a local folder keeps nothing. Each pull compares it with
+`editedAt`, else its `createdAt` — written after every publication and pushed edit. It is not advisory: without it the other devices keep
+the copy they have, so a publication whose stamp fails fails its step like a file write (the retry skips the files already there by md5
+and stamps again), and an edit whose stamp fails stays pending; an iCloud folder keeps it in `{base}.folder.json`, a local folder keeps
+nothing. Each pull compares it with
 the copy on this device and reads `.transcript.json` again when the folder's is newer — another device edited or transcribed it again —
 and reads it once for another device's recording that has never been read here, so a search finds it; at most 10 files a pass, none while
 an edit of this device's is still on its way out or the other device is still transcribing, and never over a newer copy here
-(`RemoteRecordings.refreshTranscripts`).
+(`RemoteRecordings.refreshTranscripts`). A version counts as read only once it is written here — a download or a file that fails is
+tried again by a later pass, and so is a folder whose stamp names a transcript that is not in it yet; a folder with neither is looked in
+once.
 
 `transcript.json` schema: `spec/transcript.schema.json`.
 
@@ -1923,6 +1927,9 @@ recordings and other devices' alike. `TranscriptEdit` is one of four concrete cl
 - Saved here at once — `.transcript.json`, `.txt`, and the `.md` of a local folder — and `observeResults` emits it without touching the
   player. The folder's copies follow, marked `edited`, with the folder's `transcriptAt`: right away when they can, otherwise with the next
   pull (`transcript/pending/{recordingId}` in `kv`, cleared only by the write it stands for).
+- Edits run one at a time, from reading the transcript to marking it pending, under the lock a pull's refresh takes to write a transcript
+  it read from the folder (`RemoteRecordings.transcriptWrite`): two quick edits apply in order, the second on the first, and a refresh that
+  read the folder before an edit writes nothing while the edit is pending or the copy here is at least as new.
 - A publication that failed and is retried after an edit publishes the edited copy — the edit is of that very result (same `createdAt`). A
   re-transcription replaces edits: the shells ask first.
 
@@ -1934,7 +1941,8 @@ one cue per segment, the speaker's name or id in front when speakers were identi
 cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
 `mono`) joined into one `.m4a` by the shell's lossless `AudioTools.concat`, after any part the retention sweep took is fetched back. The
 file is named for people — `2026-08-26 Weekly meeting.srt`, the date in the recording's own time zone and without what file systems
-refuse, or the recording's `{base}` when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
+refuse, the title cut to 100 characters and to what fits in a 255-byte UTF-8 name, never inside a character, or the recording's `{base}`
+when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
 first export of a process removes every earlier one, each later one those older than an hour.
 
 ### Meta hint `context.participants`
@@ -2590,7 +2598,9 @@ and here. It works for this device's own recordings, uploaded and done, and for 
 - **Account and storage**: a `transcript.publish` into a Drive folder counts as Drive work (`uploadsToDrive`), so the job is bound to the
   verified Drive account, pauses on "Disconnect" and resumes only for the same account (§3 "Detaching from the account"); one into a local
   folder runs in the offline pass. The folder is told at once that a transcription is coming (`pending` marker), and when it is over.
-- `JobService.retry` of a failed re-transcription replans it with the current settings, like the recording's own job (§5).
+- `JobService.retry` of a failed re-transcription replans it with the current settings, like the recording's own job (§5). With
+  transcription off it answers false and the job stays as it is: it is never rerun on its old plan, which would send the audio to a
+  provider the user has turned off.
 - Publishing marks the files `transcribed` (§8 "Result files"), so recly-events announces a re-transcription and not an edit.
 
 ### Search
@@ -2602,7 +2612,8 @@ and the ideographic space — a character-for-character fold, so a match's place
 segment's start (`atSec`), its words (cut to 120 characters around the first match, with `…`) and the matches in them
 (`SearchRange(offset, length)`). It is a plain scan off the caller's thread: each transcript is read and folded once and kept in memory
 until its file's size or time changes. Another device's transcript is searchable once it is on this device — opened, or read by a pull
-(§8 "Result files").
+(§8 "Result files"). A shell's find bar in a transcript marks its matches with `RecordingSearch.findRanges(text, query)`, the same fold
+and phrase as `search`, so a recording the search found opens with the same matches.
 
 ### Shared rules for the shells
 
@@ -2737,10 +2748,10 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Disconnect (`ReclyCoreTest`) | deletion order, recordings and `recording` rows kept, `busyRecordings`, Drive `files.delete` not called |
 | Highlights (`HighlightsTest`) | marks while recording (one per second), survive the stop, pushed to Drive's meta after upload, pending offline then the next pull, other devices' recordings, a watch's marks arrive on the phone |
 | Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
-| Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next |
-| Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit |
+| Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next, no retry on the old plan with transcription off, a failed folder stamp fails and is retried, `Started` after a cancellation once queued |
+| Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit, concurrent edits all applied, a pull that read the folder before an edit does not write over it |
 | Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
-| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, pulled and refreshed transcripts, export names and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
+| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, `findRanges`, pulled and refreshed transcripts (a failed read is read again, a folder with no transcript once), export names (255-byte cut) and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
 
 So that the `spec/` schemas and the core's serialization models do not drift apart, the tests parse the example JSON →
 serialize it → compare its structure with the original.
@@ -3623,7 +3634,7 @@ connections:
 | Event delivery | the callback URL from `events/subscribe`, only when its host is in `callbackHosts` (default `connectors.api.openai.com`), port 443, public addresses only, no redirects | a Standard Webhooks-signed `recording.transcribed` event with the fields above | 2xx, 410 (ends the subscription) or a retry |
 
 - No audio, STT key or long-lived Recly credential passes through it. Transcript text does, on request only: when the agent calls `get_transcript`, recly-events downloads that transcript from Drive, keeps it in memory for that answer only, and sends it to the user's ChatGPT through the user's tunnel, marked as untrusted content (what people said, not instructions). The event delivery itself still carries names and links only, and nothing is read from Drive for it beyond metadata (2026-10-07). The copy a desktop app runs receives that app's short-lived Drive access token on standard input (`serve --drive-token-stdin`, §12 "Agent connection"), keeps only the latest in memory, sends it as the Bearer token on every Drive request (the first one waits up to 15 s for the first line), and never writes it to disk or logs it; the app's refresh token stays in its secure storage. `status --json` then reports `driveFromApp: true` in its `server` object, `recly-events status` prints `Google: the Recly app's own Drive connection`, and `serve.start` logs `driveFromApp` (2026-10-06). The agent therefore needs no Google Drive connector of its own (2026-10-07); a Work chat that has one can still open the files by the event's Drive IDs.
-- **An edit is not a new transcript** (2026-10-07). The apps mark each `{base}.transcript.txt` version they write with the appProperty `reclyTranscript`: `transcribed` from a transcription, `edited` when the user changed the text or a speaker's name. recly-events notes a version marked `edited` as seen without announcing it; any other version — a transcription run again, or one with no mark — is announced as before. The mark must be written in the same request as the content, or the change feed can show the new content with the old mark. Only Recly's own client sees appProperties, so with a client of the user's own an edit is announced.
+- **An edit is not a new transcript** (2026-10-07). The apps mark each `{base}.transcript.txt` version they write with the appProperty `reclyTranscript`: `transcribed` from a transcription, `edited` when the user changed the text or a speaker's name. recly-events notes a version marked `edited` as seen without announcing it when it already saw an earlier version of that file — the first version it sees is announced even if marked `edited`, since a transcript edited before the next poll shows up only that way (2026-10-07); any other version — a transcription run again, or one with no mark — is announced as before. The mark must be written in the same request as the content, or the change feed can show the new content with the old mark. Only Recly's own client sees appProperties, so with a client of the user's own an edit is announced.
 - "Disconnect" in any Recly app ends its Drive access on either path. The CLI's sign-in is a grant of Recly's Cloud project, so that revoke (§6) ends its token too and it asks to be signed in again; the copy a desktop app runs simply gets no more tokens from a disconnected app, and that app stops it. recly-events itself never revokes, which would disconnect every Recly device.
 - It reads no email, name or profile at all: the CLI's `init` check confirms Drive with `about?fields=user(permissionId)` and prints only that it is connected — Google's consent screen has just shown the account (2026-10-06).
 - Its home directory (`~/Library/Application Support/recly-events`, `$XDG_CONFIG_HOME/recly-events`, `%AppData%\recly-events`) is owner-only and holds the config, the CLI's Google client and token, the tunnel key, `state.json` (Drive cursor, subscriptions with their signing secrets, the event inbox including titles, the delivery queue) and logs (event IDs and outcomes, no titles).

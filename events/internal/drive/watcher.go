@@ -156,9 +156,9 @@ func version(f File) string {
 
 func (w *Watcher) announce(ctx context.Context, f File) error {
 	v := version(f)
-	seen := false
-	w.Store.View(func(s *state.State) { seen = s.Drive.Seen[f.ID] == v })
-	if seen {
+	prev, known := "", false
+	w.Store.View(func(s *state.State) { prev, known = s.Drive.Seen[f.ID] })
+	if known && prev == v {
 		return nil
 	}
 	// A recording with no recognized speech publishes an empty transcript; there is nothing for
@@ -168,9 +168,11 @@ func (w *Watcher) announce(ctx context.Context, f File) error {
 		return w.Store.Update(func(s *state.State) error { s.Drive.Seen[f.ID] = v; return nil })
 	}
 	// An edit in the app is the same recording, already announced: the version is noted, not
-	// announced. Only Recly's own client sees the mark; with a client of the user's own an edit is
-	// announced like a re-transcription.
-	if f.AppProperties[transcriptMark] == "edited" {
+	// announced. Only when an earlier version of this file was seen, though — a transcript edited
+	// before the first poll saw it shows up edited, and is the recording's only announcement. Only
+	// Recly's own client sees the mark; with a client of the user's own an edit is announced like a
+	// re-transcription.
+	if known && f.AppProperties[transcriptMark] == "edited" {
 		w.Log.Info("drive.transcript.edited", "file", f.ID)
 		return w.Store.Update(func(s *state.State) error { s.Drive.Seen[f.ID] = v; return nil })
 	}
@@ -230,9 +232,11 @@ func Describe(ctx context.Context, api *API, f File) (Recording, error) {
 	return rec, nil
 }
 
-// Latest returns the newest Recly transcript in Drive, for `recly-events test`.
+// Latest returns the newest Recly transcript in Drive, for `recly-events test`. Drive's `name
+// contains` matches a prefix only (see folderQuery), so the query asks for the text files whose
+// name starts with a year, and the name pattern picks the transcripts out.
 func Latest(ctx context.Context, api *API) (File, error) {
-	files, err := api.List(ctx, "name contains '.transcript.txt' and trashed = false", 50)
+	files, err := api.List(ctx, "mimeType = 'text/plain' and name contains '2' and trashed = false", 50)
 	if err != nil {
 		return File{}, err
 	}

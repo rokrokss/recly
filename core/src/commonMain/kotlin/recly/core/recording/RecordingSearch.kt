@@ -110,16 +110,6 @@ class RecordingSearch internal constructor(
         return SearchSnippet(segment.start, prefix + text.substring(from, to) + suffix, ranges)
     }
 
-    private fun ranges(haystack: String, needle: String): List<SearchRange> {
-        val found = mutableListOf<SearchRange>()
-        var at = haystack.indexOf(needle)
-        while (at >= 0) {
-            found += SearchRange(at, needle.length)
-            at = haystack.indexOf(needle, at + needle.length)
-        }
-        return found
-    }
-
     companion object {
         /** The most segments one hit shows. */
         const val SNIPPETS: Int = 3
@@ -127,6 +117,28 @@ class RecordingSearch internal constructor(
         private const val SNIPPET_CHARS = 120
         private const val LEAD_CHARS = 40
         private const val ELLIPSIS = "…"
+
+        /**
+         * docs/10 "Search": where [query] is in [text], matched exactly as [RecordingSearch.search] matches — one
+         * phrase, case, Latin accents and full-width Latin ignored — for a shell's find bar, so that a recording
+         * search found is found again in its transcript. Ranges are in [text]'s own characters, in order and not
+         * overlapping; none for a blank query.
+         */
+        fun findRanges(text: String, query: String): List<SearchRange> {
+            val needle = fold(query.trim())
+            if (needle.isEmpty()) return emptyList()
+            return ranges(fold(text), needle)
+        }
+
+        private fun ranges(haystack: String, needle: String): List<SearchRange> {
+            val found = mutableListOf<SearchRange>()
+            var at = haystack.indexOf(needle)
+            while (at >= 0) {
+                found += SearchRange(at, needle.length)
+                at = haystack.indexOf(needle, at + needle.length)
+            }
+            return found
+        }
 
         /**
          * One character for one character — so a match in the folded text is at the same place in the

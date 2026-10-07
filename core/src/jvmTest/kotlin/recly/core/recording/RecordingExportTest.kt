@@ -67,6 +67,28 @@ class RecordingExportTest {
     }
 
     @Test
+    fun `a long title is cut to what a file name holds in bytes, never inside a character`() {
+        val korean = testMeta(title = "회".repeat(100))
+        val name = RecordingExport.fileName(korean, "txt")
+        assertTrue(name.encodeToByteArray().size <= 255, "${name.encodeToByteArray().size} bytes")
+        assertEquals("2026-08-26 ${"회".repeat(80)}.txt", name, "80 characters of 3 bytes fill the 240 bytes beside the date and the extension")
+
+        assertEquals(
+            "2026-08-26 ${"회".repeat(79)}.txt", RecordingExport.fileName(testMeta(title = "회".repeat(79) + "😀"), "txt"),
+            "4 more bytes would pass 240: the pair goes whole",
+        )
+
+        val emoji = testMeta(title = "a".repeat(99) + "😀b")
+        assertEquals("2026-08-26 ${"a".repeat(99)}.m4a", RecordingExport.fileName(emoji, "m4a"), "the pair would end past 100 characters")
+        val fits = testMeta(title = "😀".repeat(70))
+        val cut = RecordingExport.fileName(fits, "srt")
+        assertTrue(cut.encodeToByteArray().size <= 255)
+        assertEquals("2026-08-26 ${"😀".repeat(50)}.srt", cut, "50 pairs are 100 characters and 200 bytes")
+
+        assertEquals("2026-08-26 ${"a".repeat(100)}.md", RecordingExport.fileName(testMeta(title = "a".repeat(120)), "md"))
+    }
+
+    @Test
     fun `a title no file system would take is made safe`() {
         val meta = testMeta(title = "  a<b>c*?  .. ", timezone = "Not/AZone")
 

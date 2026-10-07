@@ -9,6 +9,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import recly.core.db.RecDatabase
 import recly.core.job.JobStatus
@@ -70,6 +71,29 @@ class RetranscriptionTest {
     }
 
     @Test
+    fun `a folder stamp that does not land fails the publication, and its retry stamps the folder`() = runBlocking {
+        val meta = f.recordAndRun()
+        val base = MetaWriter.baseName(meta)
+        val first = f.drive.byName(base)!!.appProperties["transcriptAt"]
+        f.engine!!.text = "again"
+        val started = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        f.drive.failNext(500, times = 10) { it.method == "PATCH" && "transcriptAt" in it.body.decodeToString() }
+
+        f.drain()
+
+        assertEquals("again 1", recJson.decodeFromString<Transcript>(onDrive(TranscribeRunner.jsonFileName(base)).text).segments.first().text)
+        assertEquals(first, f.drive.byName(base)!!.appProperties["transcriptAt"], "the other devices were not told")
+        assertTrue(f.core.jobs.list().single { it.id == started.jobId }.status != JobStatus.DONE, "so the step is not done")
+
+        f.drive.clearFaults()
+        f.clock.advance(kotlin.time.Duration.parse("1h"))
+        f.drain()
+
+        assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+        assertEquals(f.core.results(meta.recordingId).transcript!!.createdAt, f.drive.byName(base)!!.appProperties["transcriptAt"])
+    }
+
+    @Test
     fun `a recording whose audio the sweep took is fetched back first, and the sweep waits for the job`() = runBlocking {
         val meta = f.recordAndRun()
         val part = f.dirOf(meta) / meta.parts.single().file
@@ -124,6 +148,38 @@ class RetranscriptionTest {
         settings { it.copy(transcription = it.transcription.copy(mode = TranscriptionMode.OFF)) }
 
         assertEquals(RetranscribeResult.NoTranscriptionConfigured, f.core.retranscribe(meta.recordingId))
+    }
+
+    @Test
+    fun `a failed re-transcription is not retried on its old plan once transcription is off`() = runBlocking {
+        val meta = f.recordAndRun()
+        val started = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        JobStore(RecDatabase(f.driver), f.deps).updateJob(started.jobId, JobStatus.FAILED, null, f.clock.now())
+        val before = assertIs<ProcessingSettingsState.Ready>(f.core.processingSettings.read()).document.settings
+        settings { it.copy(transcription = it.transcription.copy(mode = TranscriptionMode.OFF)) }
+
+        assertFalse(f.core.jobs.retry(started.jobId), "its old plan would send the audio to a provider turned off")
+        assertEquals(JobStatus.FAILED, f.core.jobs.list().single { it.id == started.jobId }.status)
+
+        settings { before }
+        assertTrue(f.core.jobs.retry(started.jobId))
+        f.drain()
+        assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+    }
+
+    @Test
+    fun `a request cancelled once its job is queued still answers that it started`() = runBlocking {
+        val meta = f.recordAndRun()
+        var result: RetranscribeResult? = null
+        lateinit var call: kotlinx.coroutines.Job
+        // Cancelled while the folder is told a transcription is coming — after the job was queued.
+        f.drive.before += { if (it.method == "PATCH" && "\"pending\"" in it.body.decodeToString()) call.cancel() }
+        call = launch { result = f.core.retranscribe(meta.recordingId) }
+        call.join()
+
+        val started = assertIs<RetranscribeResult.Started>(result)
+        assertTrue(f.core.jobs.list().single { it.id == started.jobId }.retranscription)
+        assertEquals("transcribe", f.drive.byName(MetaWriter.baseName(meta))!!.appProperties["pending"])
     }
 
     @Test

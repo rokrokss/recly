@@ -3,6 +3,7 @@ package drive
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -18,8 +19,7 @@ import (
 )
 
 // fakeDrive serves the Drive endpoints recly-events uses from in-memory data: the changes feed,
-// file metadata, queries by name (alone, joined by `or`, or `name contains` a suffix), paging, and
-// content (`alt=media`).
+// file metadata, queries (see matches), paging, and content (`alt=media`).
 type fakeDrive struct {
 	mu          sync.Mutex
 	start       string
@@ -31,13 +31,87 @@ type fakeDrive struct {
 	listCalls   []string
 }
 
-func (d *fakeDrive) matches(q string, f File) bool {
-	if strings.Contains(q, "mimeType = 'application/vnd.google-apps.folder'") && f.MimeType != "application/vnd.google-apps.folder" {
-		return false
+// matches evaluates the part of the Drive query language recly-events writes — terms joined by
+// `and`, a parenthesized group joined by `or` — the way Drive does. `name contains` matches a prefix
+// only: "The contains operator only performs prefix matching for a name term"
+// (https://developers.google.com/workspace/drive/api/guides/ref-search-terms, last updated
+// 2026-09-03, read 2026-10-07), so `name contains '.meta.json'` finds no Recly file. A term it does
+// not know is an error, answered 400 like Drive's "Invalid Value".
+func matches(q string, f File) (bool, error) {
+	for _, clause := range splitTop(q, " and ") {
+		ok := false
+		if strings.HasPrefix(clause, "(") && strings.HasSuffix(clause, ")") {
+			for _, term := range splitTop(clause[1:len(clause)-1], " or ") {
+				m, err := matchTerm(term, f)
+				if err != nil {
+					return false, err
+				}
+				ok = ok || m
+			}
+		} else {
+			m, err := matchTerm(clause, f)
+			if err != nil {
+				return false, err
+			}
+			ok = m
+		}
+		if !ok {
+			return false, nil
+		}
 	}
-	return strings.Contains(q, "name = '"+f.Name+"'") ||
-		(strings.Contains(q, "name contains '.transcript.txt'") && strings.HasSuffix(f.Name, ".transcript.txt")) ||
-		(strings.Contains(q, "name contains '.meta.json'") && strings.HasSuffix(f.Name, ".meta.json"))
+	return true, nil
+}
+
+func matchTerm(term string, f File) (bool, error) {
+	term = strings.TrimSpace(term)
+	if term == "trashed = false" {
+		return !f.Trashed, nil
+	}
+	if v, ok := strings.CutSuffix(term, " in parents"); ok {
+		return slices.Contains(f.Parents, unquote(v)), nil
+	}
+	for _, op := range []struct {
+		prefix string
+		match  func(string) bool
+	}{
+		{"name = ", func(v string) bool { return f.Name == v }},
+		{"name contains ", func(v string) bool { return strings.HasPrefix(f.Name, v) }},
+		{"mimeType = ", func(v string) bool { return f.MimeType == v }},
+	} {
+		if v, ok := strings.CutPrefix(term, op.prefix); ok {
+			return op.match(unquote(v)), nil
+		}
+	}
+	return false, fmt.Errorf("fake drive: unsupported query term %q", term)
+}
+
+// splitTop splits s at sep where sep is outside quotes and parentheses.
+func splitTop(s, sep string) []string {
+	var out []string
+	depth, quoted, from := 0, false, 0
+	for i := 0; i < len(s); i++ {
+		switch c := s[i]; {
+		case quoted && c == '\\':
+			i++
+		case c == '\'':
+			quoted = !quoted
+		case !quoted && c == '(':
+			depth++
+		case !quoted && c == ')':
+			depth--
+		case !quoted && depth == 0 && strings.HasPrefix(s[i:], sep):
+			out = append(out, s[from:i])
+			from = i + len(sep)
+			i += len(sep) - 1
+		}
+	}
+	return append(out, s[from:])
+}
+
+func unquote(v string) string {
+	v = strings.TrimSpace(v)
+	v = strings.TrimSuffix(strings.TrimPrefix(v, "'"), "'")
+	return strings.ReplaceAll(strings.ReplaceAll(v, `\'`, `'`), `\\`, `\`)
 }
 
 func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +127,12 @@ func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		d.listCalls = append(d.listCalls, q)
 		var out []File
 		for _, f := range d.files {
-			if d.matches(q, f) {
+			ok, err := matches(q, f)
+			if err != nil {
+				http.Error(w, `{"error":{"code":400,"message":"Invalid Value"}}`, http.StatusBadRequest)
+				return
+			}
+			if ok {
 				out = append(out, f)
 			}
 		}
@@ -125,7 +204,7 @@ func setup(t *testing.T) (*Watcher, *fakeDrive, *[]emitted, *state.Store) {
 }
 
 var txt = File{
-	ID: "txt1", Name: "20261001T064503Z_watch_01M3V3B6.transcript.txt", Parents: []string{"folder1"},
+	ID: "txt1", Name: "20261001T064503Z_watch_01M3V3B6.transcript.txt", MimeType: "text/plain", Parents: []string{"folder1"},
 	MD5: "aaa", WebViewLink: "https://drive.google.com/file/d/txt1/view",
 }
 
@@ -253,6 +332,25 @@ func TestEditedTranscriptIsNotAnnouncedAgain(t *testing.T) {
 	fd.pages["t3"] = ChangePage{NewStartPageToken: "t4", Changes: []Change{{FileID: "txt1", File: &again}, {FileID: "txt2", File: &unmarked}}}
 	if err := w.Poll(context.Background()); err != nil || len(*got) != 3 {
 		t.Fatalf("re-transcribed: %v %d", err, len(*got))
+	}
+}
+
+func TestTranscriptEditedBeforeFirstSeenIsAnnounced(t *testing.T) {
+	w, fd, got, _ := setup(t)
+	_ = w.Poll(context.Background())
+	// Transcribed and edited between two polls: the feed only shows the edited version.
+	edited := txt
+	edited.MD5, edited.AppProperties = "edit1", map[string]string{"reclyTranscript": "edited"}
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t2", Changes: []Change{{FileID: "txt1", File: &edited}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("first seen edited: %v %d", err, len(*got))
+	}
+	// A later edit of the same file is not announced again.
+	again := txt
+	again.MD5, again.AppProperties = "edit2", map[string]string{"reclyTranscript": "edited"}
+	fd.pages["t2"] = ChangePage{NewStartPageToken: "t3", Changes: []Change{{FileID: "txt1", File: &again}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("second edit: %v %d", err, len(*got))
 	}
 }
 

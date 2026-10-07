@@ -20,12 +20,19 @@ import (
 //
 // A file still being written — a JSON that does not parse, a transcript iCloud has not brought down
 // yet — counts as absent, and the recording is listed from what is there.
+//
+// Only regular files inside a root are read or handed out: a symbolic link named like a recording's
+// file is not one, and a path that leads out of the root through a link is refused (os.Root), so a
+// link cannot expose a file elsewhere on the computer.
 type Folder struct {
 	// Roots are absolute paths, searched in order; a recording found under two roots is listed once.
 	Roots []string
 }
 
 type folderRec struct {
+	// root is the root the recording was found under; dir is root joined with rel.
+	root        string
+	rel         string
 	dir         string
 	base        Base
 	meta        *Meta
@@ -72,7 +79,7 @@ func (f *Folder) scan(ctx context.Context) ([]folderRec, error) {
 			if !ok {
 				return nil
 			}
-			if r, ok := loadRec(path, base); ok && !seen[r.recordingID] {
+			if r, ok := loadRec(root, path, base); ok && !seen[r.recordingID] {
 				seen[r.recordingID] = true
 				out = append(out, r)
 			}
@@ -86,17 +93,23 @@ func (f *Folder) scan(ctx context.Context) ([]folderRec, error) {
 	return out, nil
 }
 
-func loadRec(dir string, base Base) (folderRec, bool) {
-	r := folderRec{dir: dir, base: base, recordingID: base.Name}
-	if b, err := readCapped(filepath.Join(dir, MetaName(base.Name)), MaxMetaBytes); err == nil {
+func loadRec(root, dir string, base Base) (folderRec, bool) {
+	rel, err := filepath.Rel(root, dir)
+	if err != nil {
+		return folderRec{}, false
+	}
+	r := folderRec{root: root, rel: rel, dir: dir, base: base, recordingID: base.Name}
+	if b, err := r.read(MetaName(base.Name), MaxMetaBytes); err == nil {
 		r.meta, _ = ParseMeta(b)
 	}
 	folderTitle := ""
-	if b, err := readCapped(filepath.Join(dir, FolderPropertiesName(base.Name)), MaxMetaBytes); err == nil {
+	if b, err := r.read(FolderPropertiesName(base.Name), MaxMetaBytes); err == nil {
 		folderTitle = FolderTitle(b)
 	}
-	r.hasJSON = isFile(filepath.Join(dir, TranscriptJSONName(base.Name)))
-	r.hasTxt = isFile(filepath.Join(dir, TranscriptTxtName(base.Name)))
+	_, err = r.stat(TranscriptJSONName(base.Name))
+	r.hasJSON = err == nil
+	_, err = r.stat(TranscriptTxtName(base.Name))
+	r.hasTxt = err == nil
 	if r.meta == nil && !r.hasJSON && !r.hasTxt {
 		return r, false // nothing readable yet: a recording still arriving
 	}
@@ -170,7 +183,7 @@ func (f *Folder) Transcript(ctx context.Context, id string) (*Transcript, error)
 // a transcript that is not there yet.
 func (r folderRec) transcript() (*Transcript, error) {
 	if r.hasJSON {
-		b, err := readCapped(filepath.Join(r.dir, TranscriptJSONName(r.base.Name)), MaxTranscriptBytes)
+		b, err := r.read(TranscriptJSONName(r.base.Name), MaxTranscriptBytes)
 		if errors.Is(err, ErrTooLarge) {
 			return nil, err
 		}
@@ -181,7 +194,7 @@ func (r folderRec) transcript() (*Transcript, error) {
 		}
 	}
 	if r.hasTxt {
-		b, err := readCapped(filepath.Join(r.dir, TranscriptTxtName(r.base.Name)), MaxTranscriptBytes)
+		b, err := r.read(TranscriptTxtName(r.base.Name), MaxTranscriptBytes)
 		if errors.Is(err, ErrTooLarge) {
 			return nil, err
 		}
@@ -293,8 +306,8 @@ func (f *Folder) AudioFiles(ctx context.Context, id string) (string, []AudioFile
 				continue // a meta names its parts by the naming rules, never by a path
 			}
 			path := filepath.Join(r.dir, p.File)
-			info, err := os.Stat(path)
-			if err != nil || !info.Mode().IsRegular() {
+			info, err := r.stat(p.File)
+			if err != nil {
 				missing++
 				continue
 			}
@@ -303,7 +316,7 @@ func (f *Folder) AudioFiles(ctx context.Context, id string) (string, []AudioFile
 		}
 		return r.recordingID, files, missing, nil
 	}
-	entries, err := os.ReadDir(r.dir)
+	entries, err := r.list()
 	if err != nil {
 		return "", nil, 0, err
 	}
@@ -326,14 +339,60 @@ func (f *Folder) AudioFiles(ctx context.Context, id string) (string, []AudioFile
 	return r.recordingID, files, 0, nil
 }
 
-func isFile(path string) bool {
-	info, err := os.Stat(path)
-	return err == nil && info.Mode().IsRegular()
+// errNotFile is a name in a recording's folder that is not a regular file: a folder, or a symbolic
+// link, which is never followed.
+var errNotFile = errors.New("not a regular file")
+
+// stat describes the regular file name in the recording's folder, without following a link.
+func (r folderRec) stat(name string) (fs.FileInfo, error) {
+	root, err := os.OpenRoot(r.root)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	return regular(root, filepath.Join(r.rel, name))
 }
 
-// readCapped reads a regular file of at most max bytes.
-func readCapped(path string, max int64) ([]byte, error) {
-	fh, err := os.Open(path)
+func regular(root *os.Root, rel string) (fs.FileInfo, error) {
+	info, err := root.Lstat(rel)
+	if err != nil {
+		return nil, err
+	}
+	if !info.Mode().IsRegular() {
+		return nil, errNotFile
+	}
+	return info, nil
+}
+
+// list reads the entries of the recording's folder, inside its root.
+func (r folderRec) list() ([]fs.DirEntry, error) {
+	root, err := os.OpenRoot(r.root)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	dir, err := root.Open(r.rel)
+	if err != nil {
+		return nil, err
+	}
+	defer dir.Close()
+	return dir.ReadDir(-1)
+}
+
+// read reads the regular file name in the recording's folder, of at most max bytes. The file opened
+// must be the one Lstat saw, so a link put in its place in between is not followed either.
+func (r folderRec) read(name string, max int64) ([]byte, error) {
+	root, err := os.OpenRoot(r.root)
+	if err != nil {
+		return nil, err
+	}
+	defer root.Close()
+	path := filepath.Join(r.rel, name)
+	seen, err := regular(root, path)
+	if err != nil {
+		return nil, err
+	}
+	fh, err := root.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -342,8 +401,8 @@ func readCapped(path string, max int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	if !info.Mode().IsRegular() {
-		return nil, errors.New("not a file")
+	if !os.SameFile(seen, info) {
+		return nil, errNotFile
 	}
 	if info.Size() > max {
 		return nil, fmt.Errorf("%w: %s is larger than %d bytes", ErrTooLarge, filepath.Base(path), max)

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -339,6 +340,67 @@ func TestAudioFilesOnlyNamedPartsInsideTheFolder(t *testing.T) {
 	}
 	if msg := callErr(t, tools, "get_audio_files", map[string]any{"recordingId": "nope"}); !strings.Contains(msg, "was found") {
 		t.Fatalf("unknown: %s", msg)
+	}
+}
+
+func TestSymbolicLinksAreNotFollowed(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("creating a symbolic link needs a privilege on Windows")
+	}
+	link := func(target, name string) {
+		t.Helper()
+		if err := os.Symlink(target, name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	outside := t.TempDir()
+	write(t, filepath.Join(outside, "secret.txt"), "[00:00:00] S1: secret\n")
+	write(t, filepath.Join(outside, "secret.json"), `{"recordingId":"`+idA+`","language":"en","speakers":[],"segments":[{"start":0,"end":1,"speaker":"","text":"secret"}]}`)
+	write(t, filepath.Join(outside, "secret.meta.json"), `{"recordingId":"`+idA+`","title":"secret"}`)
+	write(t, filepath.Join(outside, "secret.m4a"), "secret audio")
+	write(t, filepath.Join(outside, baseC, baseC+".transcript.txt"), "[00:00:00] S1: secret\n")
+	root := t.TempDir()
+	// A recording folder of links named like its files.
+	a := filepath.Join(root, baseA)
+	if err := os.MkdirAll(a, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	link(filepath.Join(outside, "secret.meta.json"), filepath.Join(a, baseA+".meta.json"))
+	link(filepath.Join(outside, "secret.json"), filepath.Join(a, baseA+".transcript.json"))
+	link(filepath.Join(outside, "secret.txt"), filepath.Join(a, baseA+".transcript.txt"))
+	// A real recording whose audio parts are links, named by its meta and not.
+	b := filepath.Join(root, baseB)
+	write(t, filepath.Join(b, baseB+".meta.json"), `{"recordingId":"`+idB+`","parts":[{"part":1,"track":"mono","file":"`+baseB+`_p001_mono.m4a","startOffsetSec":0}]}`)
+	write(t, filepath.Join(b, baseB+".transcript.txt"), "[00:00:01] S1: Budget first.\n")
+	link(filepath.Join(outside, "secret.m4a"), filepath.Join(b, baseB+"_p001_mono.m4a"))
+	d := filepath.Join(root, "20261006T000000Z_phone_01M8EEEE")
+	write(t, filepath.Join(d, "20261006T000000Z_phone_01M8EEEE.transcript.txt"), "[00:00:01] S1: Hello.\n")
+	link(filepath.Join(outside, "secret.m4a"), filepath.Join(d, "20261006T000000Z_phone_01M8EEEE_p001_mono.m4a"))
+	// A recording folder that is itself a link to one elsewhere.
+	link(filepath.Join(outside, baseC), filepath.Join(root, baseC))
+
+	tools := newTools(root)
+	got := call(t, tools, "list_recordings", map[string]any{"limit": 50})
+	recs := got["recordings"].([]any)
+	if len(recs) != 2 || recs[0].(map[string]any)["recordingId"] != "20261006T000000Z_phone_01M8EEEE" || recs[1].(map[string]any)["recordingId"] != idB {
+		t.Fatalf("listed %v", recs)
+	}
+	for _, id := range []string{baseA, baseC} {
+		if msg := callErr(t, tools, "get_transcript", map[string]any{"recordingId": id}); !strings.Contains(msg, "was found") {
+			t.Errorf("%s: %s", id, msg)
+		}
+	}
+	got = call(t, tools, "get_audio_files", map[string]any{"recordingId": idB})
+	if len(got["files"].([]any)) != 0 || got["missing"] != float64(1) {
+		t.Fatalf("linked part named by the meta = %v", got)
+	}
+	got = call(t, tools, "get_audio_files", map[string]any{"recordingId": "20261006T000000Z_phone_01M8EEEE"})
+	if len(got["files"].([]any)) != 0 {
+		t.Fatalf("linked part found by name = %v", got)
+	}
+	got = call(t, tools, "search_recordings", map[string]any{"query": "secret"})
+	if res := got["results"].([]any); len(res) != 0 {
+		t.Fatalf("search read through a link: %v", res)
 	}
 }
 

@@ -111,6 +111,16 @@ class RemoteRecordings(
     private val pushing = Mutex()
 
     /**
+     * docs/08 "Editing": one writer of the transcripts on this device at a time — an edit, from the read of
+     * the transcript to its pending mark ([transcriptWrite]), and a refresh's write of one it read from a
+     * folder — so each edit applies to the newest transcript, and a refresh never writes over an edit.
+     */
+    private val transcripts = Mutex()
+
+    /** [block] — `ReclyCore.editTranscript` — under the lock a refresh writes a transcript under. */
+    internal suspend fun <T> transcriptWrite(block: suspend () -> T): T = transcripts.withLock { block() }
+
+    /**
      * Never throws: a pull is a background courtesy, and what stopped it is in the summary and the
      * log. No account is the ordinary case on a device that has not signed in, and is logged at
      * `INFO` rather than as a failure.
@@ -189,18 +199,21 @@ class RemoteRecordings(
             val local = record.dir / TranscribeRunner.jsonFileName(base)
             // The recording's transcript went with a re-transcription since: nothing of the edit is left to send.
             if (!deps.fileSystem.exists(local)) return@push true
-            val json = deps.fileSystem.read(local) { readByteArray() }
+            // Under the lock the transcript's writers take: a file being read cannot be replaced on every system.
+            val json = recly.core.transcribe.resultFileMutex.withLock { deps.fileSystem.read(local) { readByteArray() } }
             val transcript = recJson.decodeFromString<Transcript>(json.decodeToString())
             val marks = TranscriptMarks.of(transcript)
-            results.write(record.dir, folderId, TranscribeRunner.jsonFileName(base), json, TranscribeRunner.JSON_MIME, marks)
+            // The editor wrote this device's copies; another edit may have since, so none is written back here.
+            results.write(record.dir, folderId, TranscribeRunner.jsonFileName(base), json, TranscribeRunner.JSON_MIME, marks, local = false)
             results.write(
                 record.dir, folderId, TranscribeRunner.textFileName(base),
-                TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME, marks,
+                TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME, marks, local = false,
             )
             if (StorageKind.ofId(folderId) == StorageKind.FOLDER) {
                 results.write(
                     record.dir, folderId, TranscribeRunner.markdownFileName(base),
                     TranscriptNormalizer.markdown(transcript, record.meta).encodeToByteArray(), TranscribeRunner.MARKDOWN_MIME,
+                    local = false,
                 )
             }
             val version = TranscriptMarks.version(transcript)
@@ -503,15 +516,35 @@ class RemoteRecordings(
                 }
                 fetched++
                 val file = api.findChild(folderId, name)
-                val transcript = file?.let {
-                    runCatching { recJson.decodeFromString<Transcript>(api.download(it.id).decodeToString()) }.getOrNull()
-                }?.takeIf { it.recordingId == row.id }
-                if (transcript != null) {
+                if (file == null) {
+                    // No transcript in a folder that names none: read once. One whose stamp names a version
+                    // has it on the way, and is looked in again.
+                    if (stamp == null) recordings.setTranscriptSeen(row.id, "")
+                    continue
+                }
+                // Seen only once it is here: what could not be read this time is read by a later pass.
+                val transcript = try {
+                    recJson.decodeFromString<Transcript>(api.download(file.id).decodeToString())
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    deps.logger.log(Logger.Level.WARN, "remote.transcript.read.failed", mapOf("recordingId" to row.id), e)
+                    continue
+                }
+                if (transcript.recordingId != row.id) continue
+                val written = transcripts.withLock {
+                    // An edit made here since the pass began is newer than what the folder had: it stays and
+                    // goes up. So does a copy here at least as new — the edit went up while this was read.
+                    val newer = localVersion(row.dir / name)?.let { it >= TranscriptMarks.version(transcript) } == true
+                    if (row.id in recordings.pendingTranscripts() || newer) return@withLock false
                     writer.writeLocal(row, transcript, markdown = false)
+                    recordings.setTranscriptSeen(row.id, stamp ?: TranscriptMarks.version(transcript))
+                    true
+                }
+                if (written) {
                     changed = true
                     deps.logger.log(Logger.Level.INFO, "remote.transcript.read", mapOf("recordingId" to row.id))
                 }
-                recordings.setTranscriptSeen(row.id, stamp ?: transcript?.let(TranscriptMarks::version).orEmpty())
             }
             if (changed) transcriptsChanged()
         } catch (e: CancellationException) {
@@ -522,9 +555,11 @@ class RemoteRecordings(
     }
 
     /** The version of the transcript copy at [path] — when it was last edited or made — or null when there is none. */
-    private fun localVersion(path: okio.Path): String? =
-        runCatching { recJson.decodeFromString<Transcript>(deps.fileSystem.read(path) { readUtf8() }) }
-            .getOrNull()?.let(TranscriptMarks::version)
+    private suspend fun localVersion(path: okio.Path): String? {
+        val text = recly.core.transcribe.resultFileMutex.withLock { runCatching { deps.fileSystem.read(path) { readUtf8() } }.getOrNull() }
+            ?: return null
+        return runCatching { recJson.decodeFromString<Transcript>(text) }.getOrNull()?.let(TranscriptMarks::version)
+    }
 
     /**
      * The folder read back: its `meta.json` and the id of each part file. The three answers are
