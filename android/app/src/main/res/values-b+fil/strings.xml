@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Wala pang transcript</string>
     <string name="detail_transcribing">Nagta-transcribe…</string>
     <string name="detail_transcription_off">Naka-off ang pag-transcribe sa Mga Setting</string>
+    <string name="detail_not_uploaded">Hindi pa na-upload</string>
     <string name="share_transcript">Transcript</string>
     <string name="share_transcript_format">Teksto · .txt</string>
     <string name="share_notes">Transcript para sa mga tala</string>

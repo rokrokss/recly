@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Henüz transkript yok</string>
     <string name="detail_transcribing">Metne dönüştürülüyor…</string>
     <string name="detail_transcription_off">Transkripsiyon Ayarlar\'da kapalı</string>
+    <string name="detail_not_uploaded">Henüz yüklenmedi</string>
     <string name="share_transcript">Transkript</string>
     <string name="share_transcript_format">Metin · .txt</string>
     <string name="share_notes">Notlar için transkript</string>

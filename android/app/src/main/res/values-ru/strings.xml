@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Расшифровки пока нет</string>
     <string name="detail_transcribing">Расшифровка…</string>
     <string name="detail_transcription_off">Расшифровка отключена в Настройках</string>
+    <string name="detail_not_uploaded">Ещё не загружено</string>
     <string name="share_transcript">Расшифровка</string>
     <string name="share_transcript_format">Текст · .txt</string>
     <string name="share_notes">Расшифровка для заметок</string>

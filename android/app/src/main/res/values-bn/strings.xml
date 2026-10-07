@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">এখনও কোনো ট্রান্সক্রিপ্ট নেই</string>
     <string name="detail_transcribing">ট্রান্সক্রাইব হচ্ছে…</string>
     <string name="detail_transcription_off">সেটিংসে ট্রান্সক্রিপশন বন্ধ আছে</string>
+    <string name="detail_not_uploaded">এখনও আপলোড হয়নি</string>
     <string name="share_transcript">ট্রান্সক্রিপ্ট</string>
     <string name="share_transcript_format">টেক্সট · .txt</string>
     <string name="share_notes">নোটের জন্য ট্রান্সক্রিপ্ট</string>

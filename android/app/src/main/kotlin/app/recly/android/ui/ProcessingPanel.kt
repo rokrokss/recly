@@ -105,54 +105,20 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                     // A language the model lacks has its own line below; this one is for the device.
                     !state.localInstalled || (state.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
                         Text(stringResource(R.string.core_local_transcription_unavailable), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                    state.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
-                        val download = state.download
-                        // The download's own reading moves while it runs; the partial bytes are the same disk either way.
-                        val reading = download.info ?: state.local
-                        reading?.modelBytes?.let { size ->
-                            Text(stringResource(R.string.processing_model_download, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                        }
-                        ModelDownloadLines(download, reading)
-                        // A footnote like the iPhone's: the button under it is the way on, and red is
-                        // kept for a failed recording (docs/09 "Red means only two things").
-                        download.error?.let { error ->
-                            Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                        }
-                        EndButtons {
-                            if (download.active) {
-                                BlueprintButton(stringResource(R.string.processing_cancel_download), model::cancelDownload, tone = ButtonTone.QUIET,
-                                    modifier = Modifier.testTag("model-cancel"))
-                            } else {
-                                // Not while recording, as on iPhone: the download is for later, the recording is now.
-                                BlueprintButton(modelDownloadLabel(reading), { metered(model::downloadModel) },
-                                    enabled = !state.busy && recorder == RecorderState.Idle, modifier = Modifier.testTag("model-download"))
-                            }
-                        }
-                    }
+                    // Not while recording, as on iPhone: the download is for later, the recording is now.
+                    state.local?.status == LocalEngineStatus.MODEL_REQUIRED ->
+                        ModelDownloadBlock(state, { metered(model::downloadModel) }, model::cancelDownload, recorder == RecorderState.Idle, "model")
                 }
                 // docs/09 "On-device speaker separation": the speaker models by name; once the speech model is here,
-                // their own download when they are not — with the speech model they come together.
+                // their own download when they are not, with the speech model's lines and buttons — with the speech
+                // model they come together.
                 if (state.localInstalled) {
                     ProcessingRow(stringResource(R.string.speaker_model)) {
                         Text(SPEAKER_MODEL_NAME, style = MaterialTheme.typography.bodyMedium, color = blueprint.textMuted)
                     }
                     val speechHere = state.local?.status.let { it != null && it != LocalEngineStatus.MODEL_REQUIRED && it != LocalEngineStatus.UNSUPPORTED }
                     if (speechHere && state.local?.supportsDiarization == false) {
-                        val download = state.download
-                        val reading = download.info ?: state.local
-                        if (download.active) ModelDownloadLines(download, reading)
-                        EndButtons {
-                            if (download.active) {
-                                BlueprintButton(stringResource(R.string.processing_cancel_download), model::cancelDownload, tone = ButtonTone.QUIET)
-                            } else {
-                                BlueprintButton(
-                                    stringResource(R.string.processing_download) + (reading?.modelBytes?.let { " (${modelSize(it)})" } ?: ""),
-                                    { metered(model::downloadModel) },
-                                    enabled = !state.busy && recorder == RecorderState.Idle,
-                                    modifier = Modifier.testTag("speaker-model-download"),
-                                )
-                            }
-                        }
+                        ModelDownloadBlock(state, { metered(model::downloadModel) }, model::cancelDownload, recorder == RecorderState.Idle, "speaker-model")
                     }
                     Text(stringResource(R.string.speaker_model_sentences), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 }
@@ -241,6 +207,36 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
 
 /** What the speaker row names: the segmentation and embedding models, products and not translated. */
 private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"
+
+/**
+ * A model download in Settings — the speech model's, and the speaker models' own when the speech model is
+ * already here: the size, the progress, a failure, and Download model / Resume download or Cancel download.
+ * [tag] names the buttons for tests (`{tag}-download`, `{tag}-cancel`).
+ */
+@Composable
+private fun ModelDownloadBlock(state: ProcessingUiState, onStart: () -> Unit, onCancel: () -> Unit, recorderIdle: Boolean, tag: String) {
+    val resources = LocalContext.current.resources
+    val download = state.download
+    // The download's own reading moves while it runs; the partial bytes are the same disk either way.
+    val reading = download.info ?: state.local
+    reading?.modelBytes?.let { size ->
+        Text(stringResource(R.string.processing_model_download, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+    }
+    ModelDownloadLines(download, reading)
+    // A footnote like the iPhone's: the button under it is the way on, and red is
+    // kept for a failed recording (docs/09 "Red means only two things").
+    download.error?.let { error ->
+        Text(coreMessage(CoreMessage.STEP_FAILED, error).text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+    }
+    EndButtons {
+        if (download.active) {
+            BlueprintButton(stringResource(R.string.processing_cancel_download), onCancel, tone = ButtonTone.QUIET,
+                modifier = Modifier.testTag("$tag-cancel"))
+        } else {
+            BlueprintButton(modelDownloadLabel(reading), onStart, enabled = !state.busy && recorderIdle, modifier = Modifier.testTag("$tag-download"))
+        }
+    }
+}
 
 /**
  * docs/09 "Vocabulary": the terms as chips with a remove each, and a field that adds one — Enter or Add, and

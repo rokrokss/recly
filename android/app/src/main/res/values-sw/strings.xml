@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Bado hakuna nakala</string>
     <string name="detail_transcribing">Inanukuu…</string>
     <string name="detail_transcription_off">Unukuzi umezimwa katika Mipangilio</string>
+    <string name="detail_not_uploaded">Bado haijapakiwa</string>
     <string name="share_transcript">Nakala</string>
     <string name="share_transcript_format">Maandishi · .txt</string>
     <string name="share_notes">Nakala kwa ajili ya madokezo</string>

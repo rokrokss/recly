@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">还没有转录文本</string>
     <string name="detail_transcribing">正在转录…</string>
     <string name="detail_transcription_off">已在“设置”中关闭转录</string>
+    <string name="detail_not_uploaded">尚未上传</string>
     <string name="share_transcript">转录文本</string>
     <string name="share_transcript_format">纯文本 · .txt</string>
     <string name="share_notes">笔记用转录文本</string>

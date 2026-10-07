@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">まだ文字起こしがありません</string>
     <string name="detail_transcribing">文字起こし中…</string>
     <string name="detail_transcription_off">設定で文字起こしがオフになっています</string>
+    <string name="detail_not_uploaded">まだアップロードされていません</string>
     <string name="share_transcript">文字起こし</string>
     <string name="share_transcript_format">テキスト · .txt</string>
     <string name="share_notes">ノート用の文字起こし</string>

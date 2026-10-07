@@ -397,6 +397,7 @@
     <string name="detail_no_transcript">No transcript yet</string>
     <string name="detail_transcribing">Transcribing…</string>
     <string name="detail_transcription_off">Transcription is off in Settings</string>
+    <string name="detail_not_uploaded">Not uploaded yet</string>
     <string name="share_transcript">Transcript</string>
     <string name="share_transcript_format">Text · .txt</string>
     <string name="share_notes">Transcript for notes</string>

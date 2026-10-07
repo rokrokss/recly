@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">尚無逐字稿</string>
     <string name="detail_transcribing">正在轉錄…</string>
     <string name="detail_transcription_off">已在「設定」中關閉轉錄</string>
+    <string name="detail_not_uploaded">尚未上傳</string>
     <string name="share_transcript">逐字稿</string>
     <string name="share_transcript_format">純文字 · .txt</string>
     <string name="share_notes">筆記用逐字稿</string>

@@ -46,14 +46,17 @@ internal class SpeakerSeparation(
         val blockSec = durationSec / count
         val done = load().toMutableList()
         if (done.size < count) {
-            val diarizer = OfflineSpeakerDiarization(null, OfflineSpeakerDiarizationConfig(
-                segmentation = OfflineSpeakerSegmentationModelConfig(OfflineSpeakerSegmentationPyannoteModelConfig(segmentation), numThreads = THREADS),
-                embedding = SpeakerEmbeddingExtractorConfig(embedding, numThreads = THREADS),
-                // A head count from the user fixes the number of clusters; without one the threshold decides.
-                clustering = FastClusteringConfig(numClusters = speakers?.takeIf { it > 0 } ?: -1, threshold = THRESHOLD),
-            ))
-            val extractor = if (count > 1) SpeakerEmbeddingExtractor(null, SpeakerEmbeddingExtractorConfig(embedding, numThreads = THREADS)) else null
+            // Both native models are made inside the try, so one that fails to load releases the other.
+            var diarizer: OfflineSpeakerDiarization? = null
+            var extractor: SpeakerEmbeddingExtractor? = null
             try {
+                val separate = OfflineSpeakerDiarization(null, OfflineSpeakerDiarizationConfig(
+                    segmentation = OfflineSpeakerSegmentationModelConfig(OfflineSpeakerSegmentationPyannoteModelConfig(segmentation), numThreads = THREADS),
+                    embedding = SpeakerEmbeddingExtractorConfig(embedding, numThreads = THREADS),
+                    // A head count from the user fixes the number of clusters; without one the threshold decides.
+                    clustering = FastClusteringConfig(numClusters = speakers?.takeIf { it > 0 } ?: -1, threshold = THRESHOLD),
+                )).also { diarizer = it }
+                val embed = if (count > 1) SpeakerEmbeddingExtractor(null, SpeakerEmbeddingExtractorConfig(embedding, numThreads = THREADS)).also { extractor = it } else null
                 PcmDecoder(path, done.size * blockSec).use { pcm ->
                     val reader = BlockReader(pcm)
                     for (index in done.size until count) {
@@ -63,15 +66,15 @@ internal class SpeakerSeparation(
                         val samples = reader.read((blockSec * SAMPLE_RATE).toInt(), toEnd = index == count - 1)
                         // Under a second there is nobody to tell apart, and the segmentation window would be all padding.
                         val turns = if (samples.size < SAMPLE_RATE) emptyList()
-                            else diarizer.process(samples).map { SpeakerTurn(offset + it.start, offset + it.end, it.speaker.toString()) }
-                        val centroids = extractor?.let { centroids(it, samples, offset, turns) }.orEmpty()
+                            else separate.process(samples).map { SpeakerTurn(offset + it.start, offset + it.end, it.speaker.toString()) }
+                        val centroids = embed?.let { centroids(it, samples, offset, turns) }.orEmpty()
                         done += Block(turns, centroids)
                         save(done)
                     }
                 }
             } finally {
                 extractor?.release()
-                diarizer.release()
+                diarizer?.release()
             }
         }
         if (count == 1) return done.single().turns

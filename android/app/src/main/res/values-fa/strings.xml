@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">هنوز رونوشتی نیست</string>
     <string name="detail_transcribing">در حال رونویسی…</string>
     <string name="detail_transcription_off">رونویسی در تنظیمات خاموش است</string>
+    <string name="detail_not_uploaded">هنوز بارگذاری نشده است</string>
     <string name="share_transcript">رونوشت</string>
     <string name="share_transcript_format">متن · .txt</string>
     <string name="share_notes">رونوشت برای یادداشت‌ها</string>
