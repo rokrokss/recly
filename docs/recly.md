@@ -590,8 +590,10 @@ The delete action on a list row. **One recording at a time**, and every time it 
   choose, so the two branches are not shown (Android · Apple 2026-09-29).
 - If there is audio that has not been uploaded yet (the retention rule is keeping it), the dialog says so first — `Audio not yet in Drive is deleted with it.` It does not say how many parts
   (2026-09-29: the part count is data the user does not see).
-- If there is a running (`RUNNING`) Job, deletion does not happen and is refused with "Try again after the run finishes".
-  `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED` may be deleted, because the Job is deleted along with the recording.
+- A running (`RUNNING`) Job — an upload in progress, or one stuck in it — does not hold the deletion back (2026-10-08): the core
+  stops that run first (core rule below), and the Job is deleted along with the recording, like `WAITING`/`NEEDS_AUTH`/`NEEDS_SPACE`/`FAILED`.
+  The dialog is the same one; while the upload has not finished, the audio exists only here, and the line above leads it.
+  Only a row still being written — recording, importing, receiving from the watch — has no Delete (§9 principle 2).
 - **"Also delete from Drive"** is `files.delete`. **The folder id is read only from what the recording's `drive.upload` step left
   behind** — `output_json.folderId` (when the step finished or is parked), otherwise the resume state `state_json.folderId`.
   **`drive_folder_cache` is not used**: that cache is keyed by the rendered *path* (`recly/memo/2026-08`), so the folder is a parent shared by
@@ -607,18 +609,27 @@ The delete action on a list row. **One recording at a time**, and every time it 
   it is that device's original and Job record, and Drive has no authority to delete it. "Delete local only" reaches no device.
 - **Deleting an adopted row** is a Drive deletion only. This device holds nothing but a cache, so "Delete local only" would be undone by the next
   fetch; the dialog does not offer that option, says "Recorded on another device. Deleting removes it from Drive and from every device.",
-  and then calls `delete(id, deleteDrive = true)`. The folder id is `recording.drive_folder_id`.
+  and then calls `delete(id, deleteDrive = true)`. The folder id is `recording.drive_folder_id`. The provisional row of a folder another
+  device is still uploading into is deleted the same way (2026-10-08): an abandoned upload's folder is simply gone, and a device that is
+  still uploading finds its folder gone at its next step (`drive.upload` re-resolves it) and uploads into a new one, so the recording comes back
+  once that upload is in.
 
 **Core rule** — `RecordingRepository.delete(recordingId, deleteDrive): DeleteResult`:
 
-- There are only three results. `Deleted(driveDeleted, driveError)` / `Busy` (there is a `RUNNING` Job, so **nothing is touched**) /
-  `NotFound`.
-- **Finding the row · the `RUNNING` check · reading the folder id · deleting from the four tables (`step_run` · `job` · `part` · `recording`) are one transaction.**
+- There are only three results. `Deleted(driveDeleted, driveError)` / `Busy` (**nothing is touched**: an on-device transcription of the recording did
+  not stop within 5 seconds, or — in a repository no executor is wired to, such as the watch's — a Job is `RUNNING`) / `NotFound`.
+- **A running Job is stopped first** (`Executor.stopping`, 2026-10-08). While the deletion runs, no Job of the recording is started; the run in flight
+  is cancelled and given 2 seconds to wind down (`job.stopped` with `settled`), and is not waited for beyond that — the iPhone's background upload
+  session answers a chunk only once it is sent (§13), and cancelling the coroutine does not reach it. Each Job runs as a coroutine of its own, so the
+  pass goes on with the next recording's Job rather than waiting behind one that no longer exists. A run let go of writes nothing when it wakes:
+  every store write goes through `withContext(io)`, which does not start for a cancelled coroutine, and those writes are `UPDATE … WHERE id` on rows
+  that are gone. A pass that is itself cancelled (WorkManager, a background task's expiry) still waits for its run, as before.
+- **Finding the row · reading the folder id · deleting from the four tables (`step_run` · `job` · `part` · `recording`) are one transaction.**
   The schema has neither FKs nor CASCADE, so the tables are deleted one at a time by name (`step_run` goes first because its query reaches
   in through the `job` rows that still exist). The directory is deleted right after the commit, inside the same lock section — this keeps a cancellation from
   slipping in between the commit and the file deletion and leaving a directory that no row points to.
-- SQLite's single writer separates this transaction from `JobStore.claimRunning`: one of the two commits first, so the outcome is either **"`Busy` because the Job
-  is `RUNNING`" or "nothing to claim because the row is already gone"**, never both.
+- SQLite's single writer separates this transaction from `JobStore.claimRunning`: a claim that commits second finds **nothing to claim because the row is
+  already gone**, and a deletion that commits second has already stopped the run and kept a new one from starting — never a run over files that are gone.
 - Drive `files.delete` is called after the commit. A failure is only reported as `Deleted.driveError`; it does not undo the local deletion.
 
 #### Detaching from the account — Sign out vs Disconnect
@@ -667,9 +678,9 @@ DisconnectResult`, the core's job). The core has no means of calling revoke, so 
 - **Only four things are deleted**: the `tokens` namespace, finished work records (`job` · `step_run`), the Drive folder cache, and the "Delete local only" records (`kv` `remote/ignored/*`, §3 "Recordings from other devices"). The recording processing settings and the `secrets`
   namespace are left as they are (table above).
 - **Resuming unfinished work (2026-09-21)**: applies to work that includes a Drive step. Step outputs · upload sessions · transcription request IDs · retry counts · wait times are kept. `job.drive_account_id` stores the identifier confirmed through Drive `about.get(fields=user(permissionId))`, and the state before the disconnect is kept in `disconnected_status`. With the same account, the previous state is restored and steps that succeeded are not run again. With a different account, the previous work keeps waiting as `NEEDS_AUTH` and sends no upload · transcription. If the account cannot be confirmed, nothing resumes. Work from a previous version whose account was never confirmed is restored only when the identifier of the existing Drive folder's owner matches; if there is no data to confirm the owner, it keeps waiting. Step records that a previous build already deleted cannot be restored.
-- **`DisconnectResult(deletedRecordings, busyRecordings)`.** The delete option is kept for the core API's compatibility, but the revocation UI of all four shells always calls with `alsoDeleteRecordings=false`. When an internal API uses the delete option, the ids of recordings that could not be deleted because of a `RUNNING` Job
-  go into `busyRecordings`. Those recordings and **their Job rows are kept**, and the screen says so —
-  pressing again after the Job finishes deletes them then.
+- **`DisconnectResult(deletedRecordings, busyRecordings)`.** The delete option is kept for the core API's compatibility, but the revocation UI of all four shells always calls with `alsoDeleteRecordings=false`. When an internal API uses the delete option, the ids of recordings the deletion answered `Busy` for
+  go into `busyRecordings` (nothing of the queue runs inside the disconnect, so a Job left `RUNNING` goes with its recording). Those recordings and **their Job rows are kept**, and the screen says so —
+  pressing again deletes them then.
 - **`DisconnectPhase` — `NONE` → `REVOKE_PENDING` → `REVOKED_CLEANUP_OWED` → `NONE`.** It is kept in the shell's settings store
   (the retry may happen in the next launch, and by then the token is already gone). The order is the point: `REVOKE_PENDING` is written **before
   calling** revoke (revoke deletes this device's credentials, so if it were written afterwards, it would be lost along with those credentials).
@@ -793,7 +804,7 @@ Properties of an adopted row:
   the upload step output's `folderWebViewLink`, otherwise `RecordingRecord.driveFolderUrl` (the meta's `drive.folderUrl`, and if that is also
   missing, the canonical URL built from the folder id, `https://drive.google.com/drive/folders/{id}`). Recordings this device uploaded take the same
   fallback, so they can be opened from the moment the folder exists. The exception is a placeholder row that another device is still uploading (§9 principle 2:
-  the two in-progress rows have no actions).
+  it has no link or retry until the upload is in; it can be deleted, "Retention · deletion" above).
 - **`uploaded()` is true.** It came from Drive, so by definition it is uploaded. The "parts not uploaded" in the delete warning is 0.
 - **Playback and transcripts come from Drive.** `AudioParts` downloads by `part.drive_file_id` instead of the upload output, and `RecordingResults`
   finds `{base}.transcript.json` in the folder by name (if another device transcribes later, it shows up the next time the recording is opened). Downloaded parts are
@@ -2088,14 +2099,16 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
    left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
    word** as this device's upload — the badge says what, not where) · `TRANSCRIBING` (another device is transcribing = `remotePending` with
-   `transcribe`). All three are accent. The first two have **no actions, like a row being recorded**
-   (no delete, retry or Drive link — deleting would pull the folder out from under someone else's upload), and `TRANSCRIBING` is like an adopted `DONE`
+   `transcribe`). All three are accent. `RECEIVING` has **no actions, like a row being recorded** (no delete, retry or Drive link — the transfer is
+   still writing it). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
+   which deletes the folder from Drive (§3 "Retention · deletion"). `TRANSCRIBING` is like an adopted `DONE`
    row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
    and shells that measure the badge column width measure these codes too. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Upload waiting`) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
    The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
    Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
    `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
-   `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording or uploading). On phones these
+   `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording, importing or receiving from the watch;
+   an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3 "Retention · deletion"). On phones these
    buttons are laid out in one flow from the row's title cell to the right edge, and `Delete` stands at the right end of the last line — if there is no room
    for it, at the right end of the next line (2026-09-29, Android `ActionFlow` · Apple `ActionFlowLayout`). Previously `Delete` stood apart in its own cell under the status badge,
    and the other buttons wrapped by its width. An expanded row stays expanded only while the user stays on that screen: on phones, tapping the list
@@ -2567,7 +2580,7 @@ The canonical rules are §3 Retention · deletion. The core exposes two calls.
 suspend fun RecordingRepository.delete(recordingId: String, deleteDrive: Boolean): DeleteResult
 sealed interface DeleteResult {
     data class Deleted(val driveDeleted: Boolean, val driveError: String? = null) : DeleteResult
-    data object Busy : DeleteResult      // a Job for this recording is RUNNING — nothing was deleted
+    data object Busy : DeleteResult      // nothing was deleted — an on-device transcription would not stop (unwired: a Job is RUNNING)
     data object NotFound : DeleteResult
 }
 
@@ -2729,6 +2742,8 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 - DB access is serialized with a per-store `Mutex` (so that read-modify-write sequences do not overlap even if the
   shell passes a multithreaded dispatcher; a guard for platforms where the SQLDelight driver is not thread-safe).
 - `runDueJobs` is not reentrant — `Mutex.tryLock`; if it is already running, it returns immediately.
+- Each Job of a pass runs as a coroutine detached from the pass (`Executor.run`), so deleting its recording can stop it without the pass waiting
+  for it (§3 "Retention · deletion"); a pass that is cancelled itself cancels its run and still waits for it.
 - **A pair of transitions that spans different stores happens inside one lock**, as with a value and its meta row
   (§5 `SecretSyncStore`).
 
@@ -2750,7 +2765,7 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Job snapshot (`JobSnapshotTest`) | an unknown step type isolates only that job as FAILED; no effect on the list, `selectDue` or `claimPurge` |
 | TransferReceiver | sha256 mismatch → nack; orphan parts without meta deleted after 24h |
 | Drive out of space (`DriveQuotaTest`) | 403 `storageQuotaExceeded` → `NEEDS_SPACE` (attempts unchanged, `next_run_at` null, `state_json` cleared), afterwards `runDueJobs` does not pick it again, completes after `retry()`; other 403s take the existing path |
-| Delete (`RecordingDeleteTest`) | the four tables deleted, `RUNNING` → `Busy`, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time |
+| Delete (`RecordingDeleteTest`, `DeleteDuringRunTest`) | the four tables deleted, `RUNNING` → `Busy` without an executor, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time; with the executor: an upload hanging in the transport is cancelled and its recording deleted while the same pass runs the next job, a run cancelling cannot reach is let go of and its late write refused, a Job left `RUNNING` by a killed run goes with its recording |
 | Recordings from other devices (`RemoteRecordingsTest`) | list folders → adopt (parts `deleted=1`+`drive_file_id`, `meta.json` written), sorted by start time, the second fetch makes 1 request, folders without meta are held back, own rows are not overwritten, only adopted rows whose folder vanished are deleted, two folders with the same id · move to a rerun folder (both the old folder vanishing and the new folder completing), rejects id mismatch · non-ULID · forged part file names, no account · throttle · fetch failure, "Delete local only" does not come back (+ the record is cleaned up when the folder vanishes, re-adoption after `clearIgnored`, via `drive_folder_id` even after the queue is emptied, `adopt` rejects inside the transaction), `uploaded` true · `enqueue`=`PartsPurged`, playback fetches by file id, sweep after 7 days, Drive deletion uses `drive_folder_id`, titles: rename→description+meta push, adopted rows too, pending on failure then the next fetch, description→applied to the row (pending wins), empty description ignored |
 | Disconnect (`ReclyCoreTest`) | deletion order, recordings and `recording` rows kept, `busyRecordings`, Drive `files.delete` not called |
 | Highlights (`HighlightsTest`) | marks while recording (one per second), survive the stop, pushed to Drive's meta after upload, pending offline then the next pull, other devices' recordings, a watch's marks arrive on the phone |
@@ -3617,7 +3632,7 @@ being visible in the UI.**
 **What disconnecting leaves behind.** When the revoke fails, **the grant still stands on Google's side** — the local cleanup has already finished, so
 the Google token and Jobs are gone from this device, but Recly stays in the Google account's app list. The app records that as a revoke debt
 and says so, with a link to the permissions page. If the local cleanup fails, `DisconnectPhase` stays at `REVOKED_CLEANUP_OWED` and is paid off
-on the next run, and sign-in is blocked in the meantime. A recording that could not be deleted because of a `RUNNING` Job remains together with that Job's rows.
+on the next run, and sign-in is blocked in the meantime. A recording the deletion answered `Busy` for remains together with its Job's rows.
 
 ### §8 Changes that must amend this section
 
