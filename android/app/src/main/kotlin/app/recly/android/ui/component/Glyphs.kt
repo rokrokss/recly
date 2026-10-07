@@ -23,7 +23,7 @@ import app.recly.android.ui.theme.blueprint
  * `close`, `upload_file`), drawn as thin geometric lines on a 24-unit grid like the tab bar's glyphs —
  * the app carries no icon font.
  */
-enum class Glyph { FLAG, SHARE, MORE, SEARCH, CLOSE, IMPORT }
+enum class Glyph { FLAG, SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY }
 
 @Composable
 fun GlyphIcon(glyph: Glyph, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
@@ -61,6 +61,22 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
         Glyph.CLOSE -> {
             drawLine(color, Offset(6f, 6f), Offset(18f, 18f), 1.5f)
             drawLine(color, Offset(18f, 6f), Offset(6f, 18f), 1.5f)
+        }
+        Glyph.DOCUMENT -> {
+            drawPath(Path().apply { moveTo(6f, 3f); lineTo(14f, 3f); lineTo(18f, 7f); lineTo(18f, 21f); lineTo(6f, 21f); close() }, color, style = line)
+            listOf(11f, 14f, 17f).forEach { drawLine(color, Offset(9f, it), Offset(15f, it), 1.5f) }
+        }
+        Glyph.SUBTITLES -> {
+            drawRoundRect(color, Offset(3f, 5f), androidx.compose.ui.geometry.Size(18f, 14f), androidx.compose.ui.geometry.CornerRadius(2f), style = line)
+            drawLine(color, Offset(6f, 12f), Offset(12f, 12f), 1.5f)
+            drawLine(color, Offset(6f, 15.5f), Offset(16f, 15.5f), 1.5f)
+        }
+        Glyph.AUDIO -> listOf(4f to 4f, 8f to 8f, 12f to 6f, 16f to 9f, 20f to 3f).forEach { (x, h) ->
+            drawLine(color, Offset(x, 12f - h), Offset(x, 12f + h), 1.5f)
+        }
+        Glyph.COPY -> {
+            drawPath(Path().apply { moveTo(15f, 2f); lineTo(3f, 2f); lineTo(3f, 17f) }, color, style = line)
+            drawRect(color, Offset(7f, 6f), androidx.compose.ui.geometry.Size(14f, 16f), style = line)
         }
         Glyph.IMPORT -> {
             drawPath(Path().apply { moveTo(6f, 3f); lineTo(14f, 3f); lineTo(18f, 7f); lineTo(18f, 21f); lineTo(6f, 21f); close() }, color, style = line)

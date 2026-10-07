@@ -2,6 +2,26 @@
 
 package app.recly.android.ui
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import app.recly.android.core.coreMessage
+import app.recly.android.ui.component.Glyph
+import app.recly.android.ui.component.GlyphButton
+import app.recly.android.ui.component.GlyphIcon
+import recly.core.recording.SearchHit
+import recly.core.recording.SearchRange
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -104,10 +124,17 @@ fun JobsScreen(
     modifier: Modifier = Modifier,
     /** Changes when the List tab is tapped again on the list: the ledger goes back to every row closed. */
     collapse: Int = 0,
+    /** docs/03 "Naming rules": the files the system picker returned, to import one after another. */
+    onImport: (List<Uri>) -> Unit = {},
+    onDismissImport: () -> Unit = {},
+    /** docs/09 "Search": the field's text, and a result's tap. */
+    onSearch: (String) -> Unit = {},
+    onOpenHit: (SearchHit) -> Unit = {},
 ) {
     val palette = blueprint
     var expanded by rememberSaveable(collapse) { mutableStateOf<String?>(null) }
     val metered = rememberMeteredGate(state.download.info?.modelBytes)
+    val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris -> onImport(uris) }
 
     state.confirmDelete?.let { request ->
         DeleteDialog(request = request, onCancel = onCancelDelete, onDelete = onDelete)
@@ -123,7 +150,14 @@ fun JobsScreen(
                 state.items.count { it.waiting() },
                 state.items.count { it.state.failing() },
             ),
+            // docs/09 "Import": at the header's end, the system picker for audio and video.
+            trailing = {
+                GlyphButton(Glyph.IMPORT, stringResource(R.string.import_audio), { picker.launch(arrayOf("audio/*", "video/*")) },
+                    Modifier.testTag("import"))
+            },
         )
+
+        SearchField(state.query, onSearch, Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s))
 
         AlertBanner(
             alerts = state.alerts,
@@ -142,6 +176,21 @@ fun JobsScreen(
                 onDismiss = onDismissMessage,
                 modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
             )
+        }
+        // docs/03 "Naming rules": a failed import leaves no row, so this is where it says why.
+        state.importFailure?.let { code ->
+            MessageBanner(
+                text = stringResource(R.string.import_failed) + "\n" + coreMessage(code).text(),
+                onDismiss = onDismissImport,
+                modifier = Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s),
+            )
+        }
+
+        // docs/09 "Search": the results take the ledger's place while the field has text.
+        if (state.query.isNotBlank()) {
+            HairLine()
+            SearchResults(state.hits, onOpenHit, Modifier.fillMaxWidth().weight(1f))
+            return@Column
         }
 
         if (state.loading || state.items.isEmpty()) {
@@ -851,5 +900,108 @@ private fun duration(seconds: Double): String {
         "%d:%02d:%02d".format(total / 3600, (total % 3600) / 60, total % 60)
     } else {
         "%02d:%02d".format(total / 60, total % 60)
+    }
+}
+
+/**
+ * docs/09 "Search": the field at the top of the list — the input border, a leading search glyph, and a clear
+ * at the end once there is something to clear.
+ */
+@Composable
+private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(Radius.node)
+    BasicTextField(
+        value = query,
+        onValueChange = onQuery,
+        singleLine = true,
+        textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
+        cursorBrush = SolidColor(palette.accent),
+        modifier = modifier
+            .fillMaxWidth()
+            .onFocusChanged { focused = it.isFocused }
+            .testTag("search-field"),
+        decorationBox = { field ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .defaultMinSize(minHeight = MinTouch)
+                    .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, shape)
+                    .background(palette.surface, shape)
+                    .padding(start = Space.s),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+            ) {
+                GlyphIcon(Glyph.SEARCH, palette.textMuted, size = 20.dp)
+                Box(Modifier.weight(1f)) {
+                    if (query.isEmpty()) Text(stringResource(R.string.search_placeholder), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
+                    field()
+                }
+                if (query.isNotEmpty()) GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear"))
+            }
+        },
+    )
+}
+
+/**
+ * docs/09 "Search": one row per recording found — when, the title with its matches tinted, up to two lines
+ * of the first transcript match, and that match's time at the end. A tap opens it there.
+ */
+@Composable
+private fun SearchResults(hits: List<SearchHit>?, onOpen: (SearchHit) -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    if (hits == null) {
+        Box(modifier)
+        return
+    }
+    if (hits.isEmpty()) {
+        Column(modifier.padding(Space.l), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(stringResource(R.string.search_empty), style = MaterialTheme.typography.bodyMedium, color = palette.text, textAlign = TextAlign.Center)
+            Text(stringResource(R.string.search_empty_hint), Modifier.padding(top = Space.xs), style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted, textAlign = TextAlign.Center)
+        }
+        return
+    }
+    val tint = palette.accent.copy(alpha = 0.16f)
+    LazyColumn(modifier.testTag("search-results")) {
+        items(hits, key = { it.recordingId }) { hit ->
+            val title = hit.title?.takeIf { it.isNotBlank() } ?: stringResource(R.string.jobs_untitled)
+            val snippet = hit.snippets.firstOrNull()
+            Column(Modifier.fillMaxWidth().background(palette.surface)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { onOpen(hit) }
+                        .padding(horizontal = Space.m, vertical = 12.dp)
+                        .testTag("hit-${hit.recordingId}"),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s),
+                ) {
+                    Column(Modifier.width(62.dp)) {
+                        Text(ledgerColumn(hit.startedAt, LEDGER_DATE), style = mono.small, color = palette.textMuted, maxLines = 1)
+                        Text(ledgerColumn(hit.startedAt, LEDGER_TIME), style = mono.small, color = palette.textMuted, maxLines = 1)
+                    }
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+                        Text(tinted(title, if (hit.title.isNullOrBlank()) emptyList() else hit.titleRanges, tint),
+                            style = MaterialTheme.typography.titleSmall, color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        snippet?.let {
+                            Text(tinted(it.text, it.ranges, tint), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
+                                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                    snippet?.let { Text(hms(it.atSec.toLong()), style = mono.small, color = palette.textMuted, maxLines = 1) }
+                }
+                HairLine()
+            }
+        }
+    }
+}
+
+/** [text] with [ranges] on the accent's 16 % — a match, in the body's own colour. */
+private fun tinted(text: String, ranges: List<SearchRange>, tint: Color): AnnotatedString = buildAnnotatedString {
+    append(text)
+    ranges.forEach { range ->
+        val end = (range.offset + range.length).coerceAtMost(text.length)
+        if (range.offset in 0 until end) addStyle(SpanStyle(background = tint), range.offset, end)
     }
 }

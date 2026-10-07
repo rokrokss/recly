@@ -296,7 +296,7 @@ internal fun TranscriptionMode.label(): Int = when (this) {
 }
 
 @Composable
-private fun transcriptionLanguageLabel(language: Language): String = when (language) {
+internal fun transcriptionLanguageLabel(language: Language): String = when (language) {
     Language.AUTO -> stringResource(R.string.processing_language_auto)
     Language.KO_EN -> stringResource(R.string.processing_language_mixed)
     else -> Locale.forLanguageTag(TranscriptionLanguages.localeTag(language)).let { it.getDisplayName(it) }

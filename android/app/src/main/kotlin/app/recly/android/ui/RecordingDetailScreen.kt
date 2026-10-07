@@ -69,6 +69,29 @@ import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.platform.LocalViewConfiguration
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.activity.compose.BackHandler
+import android.os.SystemClock
+import androidx.compose.ui.text.font.FontFamily
+import app.recly.android.ui.component.Glyph
+import app.recly.android.ui.component.GlyphButton
+import app.recly.android.ui.component.LoadingText
+import app.recly.android.ui.theme.doneBadgeMs
+import app.recly.android.ui.theme.processingHoldMs
+import kotlinx.coroutines.launch
+import recly.core.processing.ProcessingTranscription
+import recly.core.recording.ExportFormat
+import recly.core.recording.SilenceRanges
+import recly.core.recording.WaveformPeaks
+import recly.core.transcribe.EditResult
+import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptEdit
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -88,12 +111,30 @@ import kotlinx.coroutines.delay
 import recly.core.transcribe.TranscriptAvailability
 
 /**
+ * What the detail can do beyond reading — the More menu, Share, the editor, playback speed and the
+ * highlights — and this device's playback preferences. [MainActivity] builds it from [JobsViewModel].
+ */
+class DetailActions(
+    val playbackSpeed: Float = 1f,
+    val skipSilence: Boolean = false,
+    /** The saved processing settings' transcription: what "Transcribe again" runs, null while unread. */
+    val transcription: ProcessingTranscription? = null,
+    val onSpeed: (Float) -> Unit = {},
+    val onSkipSilence: (Boolean) -> Unit = {},
+    val onHighlights: (List<Double>) -> Unit = {},
+    val onExport: suspend (ExportFormat) -> String? = { null },
+    val onEdit: suspend (TranscriptEdit) -> EditResult = { EditResult.NoTranscript },
+    val onRetranscribe: () -> Unit = {},
+    val onCloseFind: () -> Unit = {},
+)
+
+/**
  * docs/08 "Result files", deliverable 3: what the transcribe step wrote, as the speaker turns it is made
  * of. Reading it is [JobsViewModel]'s: this draws what came back and knows nothing about where it
  * came from.
  *
  * It is a page behind a ledger row rather than a tab of its own (docs/09 screen principle 2), so the header
- * carries the way back.
+ * carries the way back — and, at its end, Share and More (docs/09 "Detail header and More menu").
  */
 @Composable
 fun RecordingDetailScreen(
@@ -102,6 +143,7 @@ fun RecordingDetailScreen(
     onRename: (String) -> Unit,
     onReload: () -> Unit,
     modifier: Modifier = Modifier,
+    actions: DetailActions = DetailActions(),
 ) {
     // One player per recording: opening another one releases the one this was playing, and so does
     // leaving the page. Nothing keeps playing behind a screen nobody is looking at.
@@ -122,6 +164,13 @@ fun RecordingDetailScreen(
     LaunchedEffect(player, detail.deviceRecording) {
         if (detail.deviceRecording) player.stop()
     }
+    // docs/09 "Playback": this device's speed, and the silences Skip silence jumps — worked out from the
+    // waveform's own peaks, the same on every shell.
+    LaunchedEffect(player, actions.playbackSpeed) { player.setSpeed(actions.playbackSpeed) }
+    val silences = remember(detail.waveform, actions.skipSilence) {
+        if (actions.skipSilence && detail.waveform.isNotEmpty()) SilenceRanges.compute(detail.waveform.asList(), WaveformPeaks.WINDOW_SEC) else emptyList()
+    }
+    LaunchedEffect(player, silences) { player.silences = silences }
 
     // docs/03 "Titles": whether the dialog that renames this recording is up. Keyed on the recording,
     // so a page that becomes another one is not left asking about the title of the one before it.
@@ -136,69 +185,247 @@ fun RecordingDetailScreen(
             onCancel = { renaming = false },
         )
     }
+    var sharing by remember(detail.recordingId) { mutableStateOf(false) }
+    if (sharing) ShareSheet(detail, actions.onExport, onDismiss = { sharing = false })
+    var askAgain by remember(detail.recordingId) { mutableStateOf(false) }
+    val transcription = actions.transcription
+    if (askAgain && transcription != null) {
+        val transcript = detail.transcript
+        RetranscribeDialog(
+            transcription,
+            edited = transcript != null && (transcript.editedAt != null || transcript.speakers.any { it.name != null }),
+            onConfirm = { askAgain = false; actions.onRetranscribe() },
+            onCancel = { askAgain = false },
+        )
+    }
+
+    // docs/09 "Editing and speakers": the editor's draft, while it is open.
+    var draft by remember(detail.recordingId) { mutableStateOf<EditDraft?>(null) }
+    var discarding by remember(detail.recordingId) { mutableStateOf(false) }
+    var saving by remember(detail.recordingId) { mutableStateOf(SavePhase.IDLE) }
+    val leaveEditor = { if (draft?.changed == true) discarding = true else draft = null }
+    BackHandler(enabled = draft != null) { leaveEditor() }
+    if (discarding) DiscardDialog(onKeep = { discarding = false }, onDiscard = { discarding = false; draft = null })
+    val scope = rememberCoroutineScope()
+    val save = save@{
+        val editing = draft ?: return@save
+        if (!editing.changed) {
+            draft = null
+            return@save
+        }
+        saving = SavePhase.SAVING
+        scope.launch {
+            val started = SystemClock.elapsedRealtime()
+            val result = actions.onEdit(editing.edit())
+            val work = SystemClock.elapsedRealtime() - started
+            delay(processingHoldMs(work))
+            if (result is EditResult.Edited) {
+                saving = SavePhase.DONE
+                delay(doneBadgeMs(work))
+                draft = null
+            }
+            saving = SavePhase.IDLE
+        }
+    }
+
+    // docs/09 "Transcript reader": following the playhead, until the user scrolls the transcript.
+    var following by remember(detail.recordingId) { mutableStateOf(true) }
+    LaunchedEffect(player.isPlaying) { if (!player.isPlaying) following = true }
+
+    // docs/09 "Search": the find bar of a detail opened from a search.
+    val transcript = detail.transcript
+    val groups = remember(transcript) { transcript?.let(::readerGroups).orEmpty() }
+    val matches = remember(groups, detail.find?.query) { detail.find?.let { findMatches(groups, it.query) }.orEmpty() }
+    var current by remember(detail.recordingId, matches) {
+        val at = detail.find?.atSec
+        val group = if (at == null) 0 else activeGroup(groups, at).coerceAtLeast(0)
+        mutableIntStateOf(matches.indexOfFirst { it.group >= group }.takeIf { it >= 0 } ?: if (matches.isEmpty()) -1 else 0)
+    }
+
+    // docs/09 "Editing and speakers": the reading page's speaker menu, its changes saved at once.
+    var speakerMenu by remember(detail.recordingId) { mutableStateOf<ReaderGroup?>(null) }
+    var speakerNaming by remember(detail.recordingId) { mutableStateOf<String?>(null) }
+    var savingGroup by remember(detail.recordingId) { mutableStateOf<Pair<Int, SavePhase>?>(null) }
+    val saveNow: (Int, TranscriptEdit) -> Unit = { group, edit ->
+        savingGroup = group to SavePhase.SAVING
+        scope.launch {
+            val started = SystemClock.elapsedRealtime()
+            val result = actions.onEdit(edit)
+            val work = SystemClock.elapsedRealtime() - started
+            delay(processingHoldMs(work))
+            if (result is EditResult.Edited) {
+                savingGroup = group to SavePhase.DONE
+                delay(doneBadgeMs(work))
+            }
+            savingGroup = null
+        }
+    }
+    speakerNaming?.let { id ->
+        SpeakerNameDialog(transcript?.speakers?.firstOrNull { it.id == id }?.name, onSave = { name ->
+            speakerNaming = null
+            speakerMenu?.let { saveNow(it.index, TranscriptEdit.RenameSpeaker(id, name)) }
+        }, onCancel = { speakerNaming = null })
+    }
+    var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
+    val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
+        detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
+    val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
 
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = modifier.fillMaxSize()) {
         // The title alone: the recording's id is the ledger's key, not something the user reads by.
-        if (!keyboardVisible) ScreenHeader(
-            title = detail.title ?: stringResource(R.string.jobs_untitled),
-            trailingAlignment = Alignment.TopEnd,
-            trailing = {
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                        if (!detail.loading) detail.transcript?.takeIf { transcript ->
-                            transcript.segments.any { it.text.isNotBlank() }
-                        }?.let { TranscriptCopyButton(it) }
-                        // Not while the recorder is still writing into this take: the core refuses to
-                        // rename one, and an action that does nothing is not one to offer. Not before
-                        // the load has said which of the two this is, either.
-                        if (!detail.loading && !detail.writing) {
-                            BlueprintButton(
-                                label = stringResource(R.string.detail_rename),
-                                onClick = { renaming = true },
-                                modifier = Modifier.testTag("detail-rename"),
-                                tone = ButtonTone.QUIET,
-                            )
+        if (!keyboardVisible) {
+            if (draft != null) {
+                ScreenHeader(title = stringResource(R.string.detail_edit))
+            } else ScreenHeader(
+                title = detail.title ?: stringResource(R.string.jobs_untitled),
+                trailingAlignment = Alignment.TopEnd,
+                trailing = {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
+                        if (!detail.loading) {
+                            GlyphButton(Glyph.SHARE, stringResource(R.string.detail_share), { sharing = true }, Modifier.testTag("detail-share"))
                         }
+                        // Not while the recorder is still writing into this take: the core refuses to
+                        // rename or edit one, and an action that does nothing is not one to offer. Not
+                        // before the load has said which of the two this is, either.
+                        if (!detail.loading && !detail.writing) {
+                            MoreButton(detail, transcription, player.positionSec, MoreActions(
+                                onRename = { renaming = true },
+                                onEdit = { transcript?.let { draft = EditDraft.of(it) } },
+                                onRetranscribe = { askAgain = true },
+                                onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
+                            ))
+                        }
+                        BlueprintButton(
+                            label = stringResource(R.string.action_close),
+                            onClick = onClose,
+                            modifier = Modifier.testTag("detail-close"),
+                            tone = ButtonTone.QUIET,
+                            minWidth = MinTouch,
+                        )
                     }
-                    BlueprintButton(
-                        label = stringResource(R.string.action_close),
-                        onClick = onClose,
-                        modifier = Modifier.testTag("detail-close"),
-                        tone = ButtonTone.QUIET,
-                        minWidth = MinTouch,
-                    )
-                }
-            },
-        )
+                },
+            )
+        }
         HairLine()
 
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            val editing = draft
             when {
+                editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
-                detail.transcript == null -> Notice(
+                transcript == null -> Notice(
                     stringResource(detail.availability.message()),
                     onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
                 )
-                detail.transcript.segments.none { it.text.isNotBlank() } ->
+                transcript.segments.none { it.text.isNotBlank() } ->
                     Notice(stringResource(R.string.detail_transcript_empty))
-                else -> TranscriptReader(
-                    transcript = detail.transcript,
-                    seekableDurationSec = detail.audio.totalSec,
-                    canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty && detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING,
-                    onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                else -> Column(Modifier.fillMaxSize()) {
+                    // docs/09 "Transcript reader": the old text stays while the new one is made.
+                    if (detail.retranscribing) {
+                        LoadingText(
+                            stringResource(if (detail.retranscribingLocally) R.string.processing_local_running else R.string.reader_transcribing_again),
+                            MaterialTheme.typography.bodySmall, blueprint.textMuted,
+                            Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("retranscribing"),
+                        )
+                        HairLine()
+                    }
+                    if (detail.find != null) {
+                        FindBar(current, matches.size,
+                            onPrevious = { if (matches.isNotEmpty()) current = (current - 1 + matches.size) % matches.size },
+                            onNext = { if (matches.isNotEmpty()) current = (current + 1) % matches.size },
+                            onClose = actions.onCloseFind)
+                    }
+                    TranscriptReader(
+                        transcript = transcript,
+                        seekableDurationSec = detail.audio.totalSec,
+                        canSeek = canSeek,
+                        onSeek = seek,
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        positionSec = player.positionSec,
+                        playing = player.isPlaying,
+                        highlights = detail.highlights,
+                        onHighlight = { highlightMenu = it },
+                        highlightMenuFor = highlightMenu,
+                        highlightMenu = {
+                            highlightMenu?.let { at ->
+                                HighlightMenu(at, onGo = { seek(at) }, onRemove = { actions.onHighlights(detail.highlights - at) },
+                                    onDismiss = { highlightMenu = null })
+                            }
+                        },
+                        onSpeaker = { speakerMenu = it },
+                        speakerMenuFor = speakerMenu?.index,
+                        speakerMenu = {
+                            speakerMenu?.let { group ->
+                                SpeakerMenu(transcript, group.speaker,
+                                    onRename = { speakerNaming = it },
+                                    onChange = { id -> saveNow(group.index, speakerChange(transcript, group.segments, id)) },
+                                    onDismiss = { if (speakerNaming == null) speakerMenu = null })
+                            }
+                        },
+                        savingGroup = savingGroup?.first,
+                        savingLabel = savingGroup?.second?.let { stringResource(if (it == SavePhase.DONE) R.string.action_done else R.string.edit_saving) },
+                        find = matches,
+                        findCurrent = current,
+                        following = following,
+                        onFollowChange = { following = it },
+                        startAt = detail.find?.atSec?.let { activeGroup(groups, it) },
+                    )
+                }
+            }
+            if (draft == null && player.isPlaying && !following) {
+                BackToPlayback({ following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = Space.s))
+            }
+        }
+
+        // docs/09 "Editing and speakers": the editor's footer and its answers sit under the fields, above
+        // the keyboard — the note says what a save does to the files in storage.
+        draft?.let { editing ->
+            HairLine()
+            Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+                verticalArrangement = Arrangement.spacedBy(Space.s)) {
+                Text(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent),
+                    style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+                    BlueprintButton(stringResource(R.string.action_cancel), { leaveEditor() }, tone = ButtonTone.QUIET, minWidth = MinTouch,
+                        enabled = saving == SavePhase.IDLE)
+                    BlueprintButton(
+                        label = when {
+                            saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
+                            !editing.changed -> stringResource(R.string.job_state_done)
+                            else -> stringResource(R.string.action_save)
+                        },
+                        onClick = save,
+                        tone = ButtonTone.PRIMARY,
+                        enabled = saving == SavePhase.IDLE,
+                        leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
+                        modifier = Modifier.testTag("edit-save"),
+                    )
+                }
             }
         }
 
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
         if (!keyboardVisible && !detail.loading && !detail.writing) {
             HairLine()
-            PlayerBar(detail, player)
+            PlayerBar(detail, player, actions)
         }
     }
+}
+
+/** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
+internal enum class SavePhase { IDLE, SAVING, DONE }
+
+/**
+ * "Change speaker for this line" on a reading group: every segment of it to [speakerId], or to a new
+ * speaker — which the core numbers `S{n+1}` on the first segment, and the rest then name.
+ */
+internal fun speakerChange(transcript: Transcript, segments: IntRange, speakerId: String?): TranscriptEdit {
+    val id = speakerId ?: "S${(transcript.speakers.mapNotNull { it.id.removePrefix("S").toIntOrNull() }.maxOrNull() ?: 0) + 1}"
+    return TranscriptEdit.Batch(segments.mapIndexed { i, segment ->
+        TranscriptEdit.SetSpeaker(segment, if (i == 0 && speakerId == null) null else id)
+    })
 }
 
 /**
@@ -247,12 +474,14 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
  * detail, with the primary action on the right, within reach while reading the transcript.
  */
 @Composable
-private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
+private fun PlayerBar(detail: DetailState, player: RecordingPlayer, actions: DetailActions) {
     val palette = blueprint
     // Where the finger is while it is on the waveform, and null the rest of the time. The playhead
     // and the clock follow it rather than the player: the seek happens when the finger lets go, and
     // a bar that only moved then would not be a scrub.
     var scrubSec by remember(detail.audio) { mutableStateOf<Double?>(null) }
+    // docs/09 "Highlights": the tick whose Go to / Remove menu is open.
+    var tickMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -274,18 +503,26 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer) {
                 WaveformSlot.LOADING -> WaveformLoader(label = stringResource(R.string.player_waveform_loading))
                 // No seek while this phone is recording, as the transcript's times allow none: the
                 // microphone is the recorder's, and the player was stopped for it.
-                WaveformSlot.WAVEFORM -> Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
-                    onScrub = { scrubSec = it }, onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) }, growIn = fetched)
+                WaveformSlot.WAVEFORM -> Box {
+                    Waveform(detail.audio, detail.waveform, scrubSec ?: player.positionSec,
+                        onScrub = { scrubSec = it }, onSeek = { if (!detail.deviceRecording) player.seek(detail.audio, it) }, growIn = fetched,
+                        highlights = detail.highlights, onHighlight = { tickMenu = it },
+                        onRemoveHighlight = { at -> actions.onHighlights(detail.highlights - at) })
+                    tickMenu?.let { at ->
+                        HighlightMenu(at, onGo = { if (!detail.deviceRecording) player.seek(detail.audio, at) },
+                            onRemove = { actions.onHighlights(detail.highlights - at) }, onDismiss = { tickMenu = null })
+                    }
+                }
             }
         }
         if (LocalConfiguration.current.screenHeightDp < 480 && shown) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { waveform() }
-                Box(Modifier.weight(2f)) { PlayerControls(detail, player, scrubSec) }
+                Box(Modifier.weight(2f)) { PlayerControls(detail, player, scrubSec, actions) }
             }
         } else {
             if (shown) waveform()
-            PlayerControls(detail, player, scrubSec)
+            PlayerControls(detail, player, scrubSec, actions)
         }
         if (player.failed) Text(stringResource(R.string.player_error), style = MaterialTheme.typography.bodyMedium, color = palette.danger)
     }
@@ -310,6 +547,10 @@ internal fun Waveform(
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
     growIn: Boolean = false,
+    /** docs/09 "Highlights": the marks, drawn as accent ticks with a flag cap; a tap near one opens its menu. */
+    highlights: List<Double> = emptyList(),
+    onHighlight: (Double) -> Unit = {},
+    onRemoveHighlight: (Double) -> Unit = {},
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -324,11 +565,16 @@ internal fun Waveform(
     // so it calls whatever the caller passed last — a seek refused since then stays refused.
     val scrub by rememberUpdatedState(onScrub)
     val seek by rememberUpdatedState(onSeek)
+    val marks by rememberUpdatedState(highlights)
+    val mark by rememberUpdatedState(onHighlight)
+    val slop = LocalViewConfiguration.current.touchSlop
+    val near = with(LocalDensity.current) { TICK_REACH.toPx() }
     // docs/09 Accessibility: the row reports itself as the recording's position, and a reader that cannot
     // see the shape moves the playhead by setting it — and hears where it is as the clock beside
     // it says it, because that is what the playhead is.
     val label = stringResource(R.string.player_position)
     val stamp = hms(positionSec.toLong())
+    Box(Modifier.fillMaxWidth()) {
     Canvas(
         modifier = Modifier
             .fillMaxWidth()
@@ -365,15 +611,20 @@ internal fun Waveform(
                     scrub(sec)
                     down.consume()
                     var pressed = true
+                    var moved = false
                     while (pressed) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
                         sec = second(change.position.x, size.width, totalSec)
                         scrub(sec)
                         change.consume()
                         pressed = change.pressed
+                        if (kotlin.math.abs(change.position.x - down.position.x) > slop) moved = true
                     }
-                    seek(sec)
+                    // A tap on a tick is a question about that mark, not a seek beside it.
+                    val tick = if (moved || totalSec <= 0) null else marks.minByOrNull { kotlin.math.abs(it / totalSec * size.width - down.position.x) }
+                        ?.takeIf { kotlin.math.abs(it / totalSec * size.width - down.position.x) <= near }
                     scrub(null)
+                    if (tick != null) mark(tick) else seek(sec)
                 }
             },
     ) {
@@ -410,13 +661,47 @@ internal fun Waveform(
                 size = Size(WaveformBar.toPx(), height),
             )
         }
+        // Above the bars, under the playhead: a 2dp tick over the whole height with a 6dp flag at its top.
+        if (totalSec > 0) highlights.forEach { at ->
+            val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TICK.toPx())
+            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TICK.toPx(), size.height))
+            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TICK_FLAG.toPx(), TICK_FLAG.toPx()))
+        }
         drawRect(
             color = palette.accent,
             topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
             size = Size(line, size.height),
         )
     }
+    // docs/09 "Highlights": each tick is an element of its own for a screen reader, with Go to and Remove.
+    if (totalSec > 0 && highlights.isNotEmpty()) {
+        val remove = stringResource(R.string.highlight_remove)
+        val goLabels = highlights.map { stringResource(R.string.transcript_seek, hms(it.toLong())) }
+        val names = highlights.map { stringResource(R.string.highlight_tick, hms(it.toLong())) }
+        BoxWithConstraints(Modifier.matchParentSize()) {
+            highlights.forEachIndexed { index, at ->
+                Box(
+                    Modifier
+                        .offset(x = maxWidth * (at / totalSec).toFloat() - TICK_REACH)
+                        .size(TICK_REACH * 2, MinTouch)
+                        .clearAndSetSemantics {
+                            contentDescription = names[index]
+                            customActions = listOf(
+                                CustomAccessibilityAction(goLabels[index]) { onSeek(at); true },
+                                CustomAccessibilityAction(remove) { onRemoveHighlight(at); true },
+                            )
+                        },
+                )
+            }
+        }
+    }
+    }
 }
+
+/** docs/09 "Highlights": the tick, its flag cap, and how near a tap must be to mean it. */
+private val TICK: Dp = 2.dp
+private val TICK_FLAG: Dp = 6.dp
+private val TICK_REACH: Dp = 12.dp
 
 /** What the player bar's waveform row holds (see [PlayerBar]). */
 internal enum class WaveformSlot {
@@ -557,7 +842,7 @@ private fun second(x: Float, width: Int, totalSec: Double): Double =
  * instead of them.
  */
 @Composable
-private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSec: Double?) {
+private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSec: Double?, actions: DetailActions) {
     val palette = blueprint
     when {
         // docs/03 ADR-017: where the clock is, because it is what the clock is instead of. No
@@ -590,6 +875,8 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
                 style = mono.bodySmall,
                 color = palette.textMuted,
             )
+            // docs/09 "Playback": speed and Skip silence, between the clock and Play.
+            SpeedChip(actions.playbackSpeed, actions.skipSilence, actions.onSpeed, actions.onSkipSilence)
             // Not while this phone is recording: that microphone belongs to the recorder, and
             // not while the trip to Drive is still being decided — what this page will play is
             // not settled yet. Nothing stands in its place; the clock alone says there is
