@@ -76,6 +76,7 @@ import okio.Path
 import recly.core.DisconnectResult
 import recly.core.job.Job
 import recly.core.job.JobStatus
+import recly.core.model.Highlight
 import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.processing.ProcessingSaveResult
@@ -1162,10 +1163,13 @@ class ShellModel(
 
     // --- the detail's tools (docs/08 "Editing" · "Exports", docs/10 "Re-transcription" · "Search") ----------
 
-    /** The whole list at once, saved as it is changed — no Save button (docs/03 "Metadata"). */
+    /**
+     * The whole list at once, saved as it is changed — no Save button (docs/03 "Metadata"). Shown as the core
+     * will keep it: a mark within a second of another, or past the limit, is not drawn for a moment first.
+     */
     fun setHighlights(recordingId: String, atSecs: List<Double>) {
         val graph = graph ?: return
-        updateDetail(recordingId) { it.copy(highlights = atSecs.sorted()) }
+        updateDetail(recordingId) { it.copy(highlights = Highlight.normalize(atSecs).map { mark -> mark.atSec }) }
         scope.launch(graph.core.deps.io) { graph.core.setHighlights(recordingId, atSecs) }
     }
 
