@@ -41,6 +41,7 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | FFmpeg (bundled `ffmpeg.exe` and its DLLs) | Windows | LGPL-2.1-or-later — see below | <https://ffmpeg.org/> |
 | sherpa-onnx (Android AAR, JVM jar and its native jar) | Android phone, Windows | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
 | ONNX Runtime (inside the sherpa-onnx AAR and native jar) | Android phone, Windows | MIT | <https://github.com/microsoft/onnxruntime> |
+| FluidAudio (on-device speaker diarization) | iPhone, macOS | Apache-2.0 | <https://github.com/FluidInference/FluidAudio> |
 | ajv, ajv-formats | `spec/` schema validation (development only, not shipped) | MIT | <https://github.com/ajv-validator/ajv> |
 | JUnit 4 | tests only, not shipped | EPL-1.0 | <https://github.com/junit-team/junit4> |
 
@@ -48,6 +49,18 @@ The on-device transcription model is **not shipped**: the Android and Windows ap
 when the user prepares it in Settings (docs/recly.md §15). It is Qwen3-ASR 0.6B as exported for
 sherpa-onnx (Apache-2.0, <https://huggingface.co/Qwen/Qwen3-ASR-0.6B>) with the Silero VAD (MIT,
 <https://github.com/snakers4/silero-vad>).
+
+The on-device speaker diarization models on Android and Windows are **not shipped** either: they are
+downloaded with the speech model (docs/recly.md §15). They are pyannote segmentation-3.0 (MIT,
+Copyright (c) 2022 CNRS, <https://huggingface.co/pyannote/segmentation-3.0>) as exported for sherpa-onnx, and
+the 3D-Speaker ERes2Net base speaker embedding model (Apache-2.0,
+<https://modelscope.cn/models/iic/speech_eres2net_base_sv_zh-cn_3dspeaker_16k>, <https://github.com/modelscope/3D-Speaker>).
+
+The iPhone and Mac apps **ship** FluidAudio's Core ML conversion of pyannote speaker-diarization-community-1
+(<https://huggingface.co/FluidInference/speaker-diarization-coreml>): the segmentation, filter-bank, embedding and
+PLDA models and their parameter files, licensed under CC-BY-4.0 (<https://creativecommons.org/licenses/by/4.0/>).
+Attribution: pyannote (<https://huggingface.co/pyannote/speaker-diarization-community-1>), WeSpeaker, BUT Speech@FIT
+(the PLDA parameters) and Fluid Inference. The files are modified from the originals: converted to Core ML.
 
 The two Google Maven artifacts marked proprietary are closed-source AARs. Each ships its own
 `third_party_licenses.txt` inside the archive, covering the open-source code Google embeds in them;
