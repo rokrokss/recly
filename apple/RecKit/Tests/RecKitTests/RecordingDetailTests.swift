@@ -339,7 +339,8 @@ final class RecordingDetailTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: status
+            status: status,
+            highlights: []
         )
         let directory = dataDirectory
             .appendingPathComponent("recordings", isDirectory: true)

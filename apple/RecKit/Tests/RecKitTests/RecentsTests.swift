@@ -186,7 +186,8 @@ final class RecentsRemoteTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: RecordingStatus.finalized
+            status: RecordingStatus.finalized,
+            highlights: []
         )
     }
 }
@@ -634,7 +635,8 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             silenced: [],
             context: nil,
             drive: nil,
-            status: status
+            status: status,
+            highlights: []
         )
     }
 }

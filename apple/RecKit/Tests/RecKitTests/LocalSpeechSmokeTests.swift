@@ -35,7 +35,7 @@ final class LocalSpeechSmokeTests: XCTestCase {
         let progress = SpeechSmokeProgress()
         let started = ProcessInfo.processInfo.systemUptime
         let result = try await engine.transcribe(
-            request: LocalTranscriptionRequest(path: path, language: language, startTimeSec: 0, diarize: false),
+            request: LocalTranscriptionRequest(path: path, language: language, startTimeSec: 0, diarize: false, expectedSpeakers: nil, vocabulary: []),
             progress: progress
         )
         let segments = progress.segments

@@ -36,7 +36,8 @@ final class TransferPrivacyTests: XCTestCase {
                 language: .auto,
                 diarize: false,
                 speakers: Speakers(min: 1, max: 8),
-                model: nil
+                model: nil,
+                vocabulary: []
             ))
         }
     }
