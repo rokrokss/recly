@@ -18,31 +18,33 @@ struct RecordingsWindow: View {
     @Environment(\.locale) private var locale
     /// Files are being dragged over the list.
     @State private var dropping = false
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         HSplitView {
             VStack(spacing: 0) {
                 ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)") {
                     // ux §7: an agent app shows no menu bar, so the list header's button carries ⌘I.
-                    if MenuModel.importer != nil {
-                        Button { pickFiles() } label: {
-                            Image(systemName: "square.and.arrow.down")
-                                .font(blueprint.fonts.sans(TypeSize.body))
-                                .foregroundStyle(blueprint.palette.textMuted)
-                                .frame(width: minTouch, height: minTouch)
-                                .contentShape(Rectangle())
-                        }
-                        .buttonStyle(.plain)
-                        .keyboardShortcut("i")
-                        .help(loc("Import audio…"))
-                        .accessibilityLabel(Text(verbatim: loc("Import audio")))
-                        .accessibilityIdentifier("import-audio")
+                    Button { pickFiles() } label: {
+                        Image(systemName: "square.and.arrow.down")
+                            .font(blueprint.fonts.sans(TypeSize.body))
+                            .foregroundStyle(blueprint.palette.textMuted)
+                            .frame(width: minTouch, height: minTouch)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                    .keyboardShortcut("i")
+                    .help(loc("Import audio…"))
+                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Import audio")))
+                    .accessibilityIdentifier("import-audio")
                 }
+                // ux §6: titles and transcripts, above the ledger.
+                ListSearchField(text: $menu.searchQuery, focus: $searchFocused)
                 HairLine()
                 if let failure = menu.importFailure {
                     Banner(
-                        ([loc("Could not import this file")] + (failure.isEmpty ? [] : [CoreMessages.text(failure).sentence]))
+                        ([RecKitStrings.localized("Could not import this file")]
+                            + (failure.isEmpty ? [] : [CoreMessages.text(failure).sentence]))
                             .joined(separator: "\n"),
                         tone: .danger
                     )
@@ -51,26 +53,10 @@ struct RecordingsWindow: View {
                 ScrollView {
                     // Lazy, so the page marker under the rows appears only when it is scrolled to.
                     LazyVStack(spacing: 0) {
-                        if menu.recents.isEmpty {
-                            if menu.recentsLoading {
-                                EmptyListMessage(title: loc("Loading…"))
-                            } else {
-                                EmptyListMessage(title: loc("No recordings yet"), hint: loc("Recordings you make appear here.")) {
-                                    BlueprintButton(loc("Start recording"), tone: .primary) { menu.start() }
-                                }
-                            }
-                        }
-                        ForEach(menu.recents) { item in
-                            row(item)
-                        }
-                        // docs/12 "Menu bar": the same paging as the popover's ledger — the next page
-                        // when the end comes into view, keyed on the count so a page that did not
-                        // push it out of view asks again.
-                        if !menu.recents.isEmpty {
-                            Color.clear
-                                .frame(height: 1)
-                                .id(menu.recents.count)
-                                .onAppear { Task { await menu.loadMoreRecents() } }
+                        if let hits = menu.searchHits {
+                            results(hits)
+                        } else {
+                            ledger
                         }
                     }
                 }
@@ -80,12 +66,24 @@ struct RecordingsWindow: View {
             // ux §7: audio and video files dropped on the list are imported, one row each.
             .dropDestination(for: URL.self) { urls, _ in
                 menu.importAudio(urls)
-                return MenuModel.importer != nil
+                return true
             } isTargeted: { dropping = $0 }
             .overlay {
-                if dropping, MenuModel.importer != nil {
+                if dropping {
                     Rectangle().strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line + 1)
                 }
+            }
+            // ux §2·§6: ⌘F is the search field's; with a recording open and a query in the field, its
+            // transcript's find bar opens on that query too.
+            .background {
+                Button("") {
+                    searchFocused = true
+                    let query = menu.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+                    if !query.isEmpty, let detail = menu.detail { detail.find = TranscriptFind(query: query, atSec: 0) }
+                }
+                .keyboardShortcut("f")
+                .opacity(0)
+                .accessibilityHidden(true)
             }
 
             Group {
@@ -106,7 +104,7 @@ struct RecordingsWindow: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 if let detail = menu.detail {
-                    ShareMenu(detail: detail) { await menu.export(detail.recordingId, $0) }
+                    ShareMenu(detail: detail)
                         .id(detail.recordingId)
                 }
             }
@@ -130,6 +128,45 @@ struct RecordingsWindow: View {
             } cancel: {
                 menu.cancelDelete()
             }
+        }
+    }
+
+    /// The ledger, a page at a time.
+    @ViewBuilder
+    private var ledger: some View {
+        if menu.recents.isEmpty {
+            if menu.recentsLoading {
+                EmptyListMessage(title: loc("Loading…"))
+            } else {
+                EmptyListMessage(title: loc("No recordings yet"), hint: loc("Recordings you make appear here.")) {
+                    BlueprintButton(loc("Start recording"), tone: .primary) { menu.start() }
+                }
+            }
+        }
+        ForEach(menu.recents) { item in
+            row(item)
+        }
+        // docs/12 "Menu bar": the same paging as the popover's ledger — the next page when the end
+        // comes into view, keyed on the count so a page that did not push it out of view asks again.
+        if !menu.recents.isEmpty {
+            Color.clear
+                .frame(height: 1)
+                .id(menu.recents.count)
+                .onAppear { Task { await menu.loadMoreRecents() } }
+        }
+    }
+
+    /// ux §6: what the search found, in place of the ledger while the field has text.
+    @ViewBuilder
+    private func results(_ hits: [SearchHit]) -> some View {
+        if hits.isEmpty {
+            EmptyListMessage(
+                title: RecKitStrings.localized("No recordings match"),
+                hint: RecKitStrings.localized("Search looks in titles and in transcripts on this device.")
+            )
+        }
+        ForEach(hits, id: \.recordingId) { hit in
+            SearchResultRow(hit: hit) { menu.showDetail(hit) }
         }
     }
 

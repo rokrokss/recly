@@ -144,7 +144,7 @@ struct MenuPopover: View {
                         .keyboardShortcut(".")
                     // docs/12 "Menu bar app": a moment of the running recording, marked for the minutes.
                     if model.isRecording {
-                        BlueprintButton(loc("Highlight")) { Task { await model.addHighlight() } }
+                        BlueprintButton(RecKitStrings.localized("Highlight")) { Task { await model.addHighlight() } }
                             .accessibilityIdentifier("highlight")
                     }
                 } else {
@@ -158,7 +158,7 @@ struct MenuPopover: View {
             .padding(.bottom, model.highlighted == nil ? 12 : Space.s)
             // The news of that moment, for two seconds — then the row is as it was.
             if let at = model.highlighted {
-                Text(AppStrings.localized("Highlighted at %@", at))
+                Text(RecKitStrings.localized("Highlighted at %@", at))
                     .font(blueprint.fonts.monoSmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)

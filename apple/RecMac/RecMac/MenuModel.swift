@@ -1056,15 +1056,56 @@ final class MenuModel: ObservableObject {
     /// docs/08 "Result files": the local copies if the steps ran on this Mac, and Drive's if they ran
     /// elsewhere — `core.results` decides which, and keeps what it downloads.
     func showDetail(_ item: RecentItem) {
+        showDetail(recordingId: item.id, title: item.titleLabel)
+    }
+
+    /// docs/10 "Search": a search result opens at its first transcript hit, with every match of the
+    /// query marked and the find bar over the transcript.
+    func showDetail(_ hit: SearchHit) {
+        showDetail(recordingId: hit.recordingId, title: hit.title ?? "")
+        detail?.find = TranscriptFind(query: searchQuery, atSec: hit.snippets.first?.atSec ?? 0)
+    }
+
+    private func showDetail(recordingId: String, title: String) {
         guard let core = bridge?.core else { return }
-        detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
+        let model = RecordingDetailModel(core: core, recordingId: recordingId, title: title, playbackGate: playbackGate)
+        // `Transcribe again` queues a job; the executor runs it now rather than at its next look.
+        model.jobsDue = { [weak self] in self?.runner?.jobsDue() }
+        detail = model
+    }
+
+    // MARK: - Search (docs/10 "Search", ux §6)
+
+    /// The Details window's search field. While it has text, the window lists [searchHits] in place of
+    /// the ledger.
+    @Published var searchQuery = "" {
+        didSet { if searchQuery != oldValue { scheduleSearch() } }
+    }
+    /// What `core.search` found for [searchQuery], newest first; nil while the field is empty.
+    @Published private(set) var searchHits: [SearchHit]?
+    private var searchTask: Task<Void, Never>?
+
+    /// 200 ms after the last keystroke, at most 50 recordings.
+    private func scheduleSearch() {
+        searchTask?.cancel()
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty, let core = bridge?.core else {
+            searchHits = nil
+            return
+        }
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(200))
+            guard !Task.isCancelled else { return }
+            let hits = (try? await core.search(query: query, limit: 50)) ?? []
+            guard !Task.isCancelled else { return }
+            searchHits = hits
+        }
     }
 
     // MARK: - Importing (docs/03 "Naming rules", ux §7)
 
-    /// The transcoder an import runs through — RecKit's, shared with the iPhone. Nil until RecKit has
-    /// one, and the Details window offers no import without it.
-    static let importer: (any AudioImporter)? = nil
+    /// The transcoder an import runs through — RecKit's, shared with the iPhone.
+    private let importer = AppleAudioImporter()
 
     /// The last import came to nothing: the core's reason code — empty when it gave none — for the
     /// Details window's notice, which says it in words where it is drawn (docs/07 rule 3). Cleared
@@ -1074,7 +1115,7 @@ final class MenuModel: ObservableObject {
     /// Audio and video files the user picked or dropped, imported one after another, each its own
     /// row (`IMPORTING`, then as any recording). Anything else that was dropped is left alone.
     func importAudio(_ urls: [URL]) {
-        guard let core = bridge?.core, let importer = Self.importer else { return }
+        guard let core = bridge?.core else { return }
         let files = urls.filter { UTType(filenameExtension: $0.pathExtension)?.conforms(to: .audiovisualContent) == true }
         guard !files.isEmpty else { return }
         importFailure = nil
@@ -1105,18 +1146,6 @@ final class MenuModel: ObservableObject {
                     importFailure = ""
                 }
             }
-        }
-    }
-
-    /// docs/08 "Exports": one file of the recording for the share picker or a save panel, named by the
-    /// core. Nil when there is nothing in that format.
-    func export(_ recordingId: String, _ format: ExportFormat) async -> String? {
-        guard let core = bridge?.core else { return nil }
-        do {
-            return try await core.exportFile(recordingId: recordingId, format: format)
-        } catch {
-            logger.error("shell.export.failed error=\(String(describing: error), privacy: .private)")
-            return nil
         }
     }
 
