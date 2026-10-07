@@ -297,6 +297,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             // docs/13 deliverable 2: `RecordingRecovery` before anything else at launch — before
             // anything can touch the directories a killed run left parts in.
             let recovered = await session.recoverIfIdle()
+            // docs/09 "Quick start": a run killed while recording left the widget's file saying so, and
+            // the state recovery settles in is already idle, so no transition would ever rewrite it.
+            publishStatus()
             // And before the first pill of this run: the last one's is still counting up.
             await activity.endStale()
             let download = ModelDownload(core: bridge.core)
@@ -600,11 +603,12 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         detail(id: item.id, title: item.titleLabel)
     }
 
-    /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search").
+    /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search") —
+    /// unless only the title matched, when there is nothing in the text to find.
     func detail(for hit: SearchHit, query: String) -> RecordingDetailModel? {
         let title = hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
         let detail = detail(id: hit.recordingId, title: title)
-        detail?.find = TranscriptFind(query: query, atSec: hit.snippets.first?.atSec ?? 0)
+        if let first = hit.snippets.first { detail?.find = TranscriptFind(query: query, atSec: first.atSec) }
         return detail
     }
 
@@ -678,17 +682,14 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         importFailure = nil
     }
 
-    /// docs/09 "Import": what the share extension left in the app group — imported when the app is
-    /// opened for it and whenever it comes to the front, so a file is never left behind.
+    /// docs/09 "Import": what the share extension left in the app group — imported when the app opens
+    /// and whenever it comes to the front, so a file is never left behind.
     func importInbox() {
-        // Claimed at once — moved out of the inbox — so a second activation does not import it again.
-        let claimed = ImportInbox.pending().compactMap { file -> URL? in
-            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("import-\(UUID().uuidString)", isDirectory: true)
-            let target = folder.appendingPathComponent(file.lastPathComponent)
-            guard (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)) != nil,
-                  (try? FileManager.default.moveItem(at: file, to: target)) != nil
-            else { return nil }
-            return target
+        // Claimed at once — its folder moved out of the inbox — so a second activation does not import it again.
+        let claimed = ImportInbox.pending().compactMap { folder -> URL? in
+            let target = FileManager.default.temporaryDirectory.appendingPathComponent("import-\(UUID().uuidString)", isDirectory: true)
+            guard (try? FileManager.default.moveItem(at: folder, to: target)) != nil else { return nil }
+            return (try? FileManager.default.contentsOfDirectory(at: target, includingPropertiesForKeys: nil))?.first
         }
         guard !claimed.isEmpty else { return }
         tab = .recordings

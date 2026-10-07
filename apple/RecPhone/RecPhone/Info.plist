@@ -74,13 +74,6 @@
 				<string>$(RECLY_PHONE_GID_REVERSED_CLIENT_ID)</string>
 			</array>
 		</dict>
-		<!-- docs/09 "Import": `Import to Recly` opens the app at recly://import to take the shared files in. -->
-		<dict>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>recly</string>
-			</array>
-		</dict>
 	</array>
 
 	<!--
