@@ -56,9 +56,12 @@ final class SpeakerCutTests: XCTestCase {
 /// The same through the production adapter: two voices taking turns, which Apple's Korean transcriber hands
 /// back as results of several speakers each (macOS 26.6), come out as segments of one speaker each. The voices
 /// are the system's own `say`, so the fixture is made here; a Mac without them, the Korean assets or the
-/// speaker models skips. REC_SPEECH_CUT_CLIPS (paths joined by `:`, speakers alternating) uses other clips.
+/// speaker models skips. Opt-in like the smoke tests — the ordinary suite runs no speech inference: pass
+/// REC_SPEECH_TEST=1, and optionally REC_SPEECH_CUT_CLIPS (paths joined by `:`, speakers alternating) for
+/// other clips, through TEST_RUNNER_.
 final class AppleSpeakerCutTests: XCTestCase {
     func testTwoSpeakersInOneResultAreCutAtTheirTurns() async throws {
+        try XCTSkipUnless(ProcessInfo.processInfo.environment["REC_SPEECH_TEST"] == "1", "set REC_SPEECH_TEST=1 to run local speech inference")
         guard #available(macOS 26, *) else { throw XCTSkip("on-device transcription needs macOS 26") }
         try XCTSkipUnless(SpeakerSeparation.available, "run apple/scripts/fetch-speaker-models.sh (make core)")
         let engine = LocalSpeechEngine.make()
