@@ -259,6 +259,20 @@ class ShellModel(
     /** docs/08 Result files: the window that shows what the transcribe step wrote. */
     var recordingsOpen: Boolean by mutableStateOf(false)
 
+    /** docs/08 "Editing": that window holds an edit with changes, so closing it asks first ([closeRecordings]). */
+    var editsPending: Boolean = false
+
+    var closeAsked: Boolean by mutableStateOf(false)
+        private set
+
+    fun closeRecordings() {
+        if (editsPending) closeAsked = true else recordingsOpen = false
+    }
+
+    fun closeAnswered() {
+        closeAsked = false
+    }
+
     /** The recording that window is showing, once one has been picked. */
     var detail: RecordingDetail? by mutableStateOf(null)
         private set
@@ -1179,19 +1193,19 @@ class ShellModel(
             .getOrDefault(EditResult.Invalid("failed"))
     }
 
-    /**
-     * docs/08 "Exports": one file of the recording, made by the core and then saved where the user says, under
-     * the name the core gave it. False when nothing was made or the dialog was closed.
-     */
-    suspend fun export(recordingId: String, format: ExportFormat): Boolean {
-        val graph = graph ?: return false
-        val made = runCatching { graph.core.exportFile(recordingId, format) }
+    /** docs/08 "Exports": one file of the recording, made by the core under a name for people; null when there is nothing. */
+    suspend fun exportFile(recordingId: String, format: ExportFormat): File? {
+        val graph = graph ?: return null
+        return runCatching { graph.core.exportFile(recordingId, format) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.export.failed", error = it) }
-            .getOrNull() ?: return false
-        val source = File(made)
-        val target = fileDialog(FileDialog.SAVE, source.name) ?: return false
-        withContext(Dispatchers.IO) { source.copyTo(target, overwrite = true) }
-        return true
+            .getOrNull()?.let(::File)
+    }
+
+    /** That file, saved where the user says — the save dialog opens on the core's name for it. */
+    suspend fun saveExport(file: File) {
+        val target = fileDialog(FileDialog.SAVE, file.name) ?: return
+        runCatching { withContext(Dispatchers.IO) { file.copyTo(target, overwrite = true) } }
+            .onFailure { graph?.core?.deps?.logger?.log(Logger.Level.ERROR, "rec.export.save.failed", error = it) }
     }
 
     /** docs/10 "Search": titles and the transcripts on this PC. */

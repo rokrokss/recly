@@ -1,6 +1,22 @@
 package app.recly.windows.ui
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.offset
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.input.key.isCtrlPressed
+import androidx.compose.ui.input.key.isMetaPressed
+import androidx.compose.ui.semantics.Role
+import app.recly.windows.ui.component.LoadingText
+import app.recly.windows.ui.component.SELECTION_MARK
+import kotlinx.coroutines.launch
+import recly.core.recording.SearchHit
+import recly.core.transcribe.EditResult
+import recly.core.transcribe.TranscriptDocument
+import recly.core.transcribe.TranscriptEdit
 import androidx.compose.foundation.draganddrop.dragAndDropTarget
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.draganddrop.DragAndDropEvent
@@ -103,7 +119,7 @@ import recly.core.transcribe.TranscriptAvailability
  * The shape is the editor's (docs/09 screen principle 4): a list down the side, the thing itself beside it.
  */
 @Composable
-fun RecordingsWindow(model: ShellModel, strings: Strings) {
+fun RecordingsWindow(model: ShellModel, strings: Strings, theme: @Composable (@Composable () -> Unit) -> Unit) {
     // One player for the window rather than for the detail: the pane keeps a single bar and the
     // model behind it is swapped per pick, and picking another row has to stop what is playing.
     val player = remember { RecordingPlayer(logger = { model.logger }) }
@@ -116,6 +132,11 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
     LaunchedEffect(model.detail?.recordingId, model.detail?.loading) {
         val detail = model.detail
         if (detail != null && !detail.loading) model.followDetailResults(detail.recordingId)
+    }
+    // The highlights and whether a transcription of the recording is in flight, beside the transcript.
+    LaunchedEffect(model.detail?.recordingId, model.detail?.loading) {
+        val detail = model.detail
+        if (detail != null && !detail.loading) model.followDetailState(detail.recordingId)
     }
     // docs/03 ADR-006: a desktop capture takes the system audio with it, so playback left running
     // under one would be *in* the recording — and a delete removes the very file it is reading.
@@ -142,11 +163,63 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
             }
         }
     }
+    // docs/08 "Editing": the editor's draft is the window's, so that leaving it — another recording, the window
+    // closing — asks first while it has changes.
+    var draft by remember { mutableStateOf<TranscriptDraft?>(null) }
+    var leaving by remember { mutableStateOf<(() -> Unit)?>(null) }
+    val leave: (() -> Unit) -> Unit = { then ->
+        if (draft?.edit != null) {
+            leaving = then
+        } else {
+            draft = null
+            then()
+        }
+    }
+    SideEffect { model.editsPending = draft?.edit != null }
+    LaunchedEffect(model.closeAsked) {
+        if (model.closeAsked) {
+            leaving = { model.recordingsOpen = false }
+            model.closeAnswered()
+        }
+    }
+    // docs/10 "Search": the list's query, its results 200 ms after the last key, and the detail's find bar.
+    var query by remember { mutableStateOf("") }
+    var hits by remember { mutableStateOf<List<SearchHit>?>(null) }
+    LaunchedEffect(query) {
+        if (query.isBlank()) {
+            hits = null
+            return@LaunchedEffect
+        }
+        delay(SEARCH_DEBOUNCE_MS)
+        hits = model.search(query.trim())
+    }
+    val searchFocus = remember { FocusRequester() }
+    var findOpen by remember { mutableStateOf(false) }
+    var findRequest by remember { mutableIntStateOf(0) }
     Row(
         Modifier.fillMaxSize().background(blueprint.background)
-            .dragAndDropTarget(shouldStartDragAndDrop = { droppedFiles(it).isNotEmpty() }, target = drop),
+            .dragAndDropTarget(shouldStartDragAndDrop = { droppedFiles(it).isNotEmpty() }, target = drop)
+            // Ctrl+F: find in the transcript on show, or the list's search when there is none to find in.
+            .onPreviewKeyEvent { event ->
+                if (event.type != KeyEventType.KeyDown || event.key != Key.F || !(event.isCtrlPressed || event.isMetaPressed)) {
+                    return@onPreviewKeyEvent false
+                }
+                val detail = model.detail
+                if (detail != null && detail.hasTranscript && draft == null) {
+                    findOpen = true
+                    findRequest++
+                } else {
+                    runCatching { searchFocus.requestFocus() }
+                }
+                true
+            },
     ) {
-        Sidebar(model, strings, Modifier.width(SidebarWidth).fillMaxHeight())
+        Sidebar(
+            model, strings, query, { query = it }, hits, searchFocus,
+            onOpen = { item -> leave { model.openDetail(item) } },
+            onOpenHit = { hit -> leave { model.openSearchHit(hit, query.trim()) } },
+            modifier = Modifier.width(SidebarWidth).fillMaxHeight(),
+        )
         VerticalHairLine(Modifier.fillMaxHeight())
         Column(Modifier.weight(1f).fillMaxHeight()) {
             val detail = model.detail
@@ -154,15 +227,33 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
                 Placeholder(strings[Str.DETAIL_PICK])
             } else {
                 Detail(
-                    detail, player, { model.recording }, { model.playbackBlocked }, model::askToRename, model::reloadDetailResults,
+                    model, detail, player,
                     waveforms = WaveformKeeping(
                         kept = { selection -> model.keptWaveform(detail.recordingId, selection) },
                         keep = { peaks -> model.keepWaveform(detail.recordingId, peaks) },
                     ),
+                    draft = draft,
+                    onDraft = { draft = it },
+                    onLeaveEditor = leave,
+                    findOpen = findOpen,
+                    onFindOpen = { findOpen = it },
+                    findRequest = findRequest,
+                    theme = theme,
                     strings = strings,
                 )
             }
         }
+    }
+    leaving?.let { then ->
+        DiscardEditsDialog(
+            strings, theme,
+            onKeep = { leaving = null },
+            onDiscard = {
+                leaving = null
+                draft = null
+                then()
+            },
+        )
     }
 }
 
@@ -173,7 +264,18 @@ fun RecordingsWindow(model: ShellModel, strings: Strings) {
  * was ever on screen, and the last one would ask for the next page the moment it arrived.
  */
 @Composable
-private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
+private fun Sidebar(
+    model: ShellModel,
+    strings: Strings,
+    query: String,
+    onQuery: (String) -> Unit,
+    /** The search's results while the field has text; null shows the ledger. */
+    hits: List<SearchHit>?,
+    searchFocus: FocusRequester,
+    onOpen: (RecentItem) -> Unit,
+    onOpenHit: (SearchHit) -> Unit,
+    modifier: Modifier,
+) {
     LazyColumn(modifier.background(blueprint.surface)) {
         item {
             ScreenHeader(
@@ -189,13 +291,41 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
                 }
                 HairLine()
             }
+            SearchField(
+                query, onQuery, strings[Str.SEARCH_PLACEHOLDER], strings[Str.TRANSCRIPT_CLEAR_SEARCH],
+                Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s), searchFocus,
+            )
+            HairLine()
+        }
+        if (query.isNotBlank()) {
+            val found = hits.orEmpty()
+            items(found, key = { "hit-${it.recordingId}" }) { hit -> SearchResultRow(hit, strings[Str.UNTITLED]) { onOpenHit(hit) } }
+            if (hits != null && found.isEmpty()) {
+                item {
+                    Column(
+                        Modifier.fillParentMaxSize().padding(Space.l),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(strings[Str.SEARCH_EMPTY], style = MaterialTheme.typography.bodyMedium, color = blueprint.text, textAlign = TextAlign.Center)
+                        Text(
+                            strings[Str.SEARCH_EMPTY_HINT],
+                            modifier = Modifier.padding(top = Space.xs),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = blueprint.textMuted,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
+            return@LazyColumn
         }
         items(model.recents, key = { it.id }) { item ->
             // The last loaded row is on screen, so the page after it is asked for.
             if (item.id == model.recents.last().id) {
                 LaunchedEffect(item.id) { model.loadMoreRecents() }
             }
-            RecordingRow(model, item, strings, selected = model.detail?.recordingId == item.id)
+            RecordingRow(model, item, strings, selected = model.detail?.recordingId == item.id) { onOpen(item) }
         }
         if (model.recents.isEmpty()) {
             item {
@@ -233,12 +363,12 @@ private fun Sidebar(model: ShellModel, strings: Strings, modifier: Modifier) {
 }
 
 @Composable
-private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, selected: Boolean) {
+private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, selected: Boolean, onOpen: () -> Unit) {
     val palette = blueprint
     SidebarRow(
         title = item.title.text(strings),
         selected = selected,
-        onOpen = { model.openDetail(item) },
+        onOpen = onOpen,
         // docs/03 "Deleting in the app": deleting a recording is not one of the things opening it should
         // be able to do by accident, which is why the button is out here. And never over one that
         // is being written to or uploaded ([RecentItem.deletable]).
@@ -276,67 +406,214 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
 
 @Composable
 private fun Detail(
+    model: ShellModel,
     detail: RecordingDetail,
     player: RecordingPlayer,
-    /**
-     * Whether this PC is recording: what the speaker may do while the microphone is taken. Asked
-     * rather than handed over, because the press asks it again — see [PlayerBar].
-     */
-    recording: () -> Boolean,
-    /**
-     * Whether anything else is in the way — a capture opening, a delete or a disconnect removing
-     * the files. Asked at the press for the same reason [recording] is ([PlaybackGate]).
-     */
-    blocked: () -> Boolean,
-    /** docs/03: the name is the one thing on this page the user can change, so it is changed here. */
-    onRename: () -> Unit,
-    onReload: () -> Unit,
     /** Where this recording's waveform is kept between opens ([WaveformPeaks.FILE]). */
     waveforms: WaveformKeeping,
+    /** docs/08 "Editing": the editor's draft while it is open, and how it is opened and left. */
+    draft: TranscriptDraft?,
+    onDraft: (TranscriptDraft?) -> Unit,
+    onLeaveEditor: (() -> Unit) -> Unit,
+    findOpen: Boolean,
+    onFindOpen: (Boolean) -> Unit,
+    /** Ctrl+F's count: each press puts the cursor back in the find field. */
+    findRequest: Int,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
     strings: Strings,
 ) {
-    ScreenHeader(
-        // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
-        title = detail.title.text(strings),
-        // Not while the take is still being written to: the core refuses to rename a recording that
-        // is still running, so offering it here would be offering nothing.
-        trailing = if (detail.loading || detail.writing) {
-            null
-        } else {
-            {
-                Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                    detail.transcript?.takeIf { detail.availability != TranscriptAvailability.EMPTY }
-                        ?.let { TranscriptCopyButton(it, strings) }
-                    BlueprintButton(strings[Str.DETAIL_RENAME], onRename, tone = ButtonTone.QUIET)
-                }
+    val scope = rememberCoroutineScope()
+    // Asked at the press rather than read once: a capture or a delete can begin between frames ([PlaybackGate]).
+    val canSeek = !detail.writing && !model.recording && !model.playbackBlocked && !detail.audio.isEmpty &&
+        detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
+    val onSeek: (Double) -> Unit = { if (!model.recording && !model.playbackBlocked) player.seek(detail.audio, it) }
+    // The speaker name being asked for, and what saving it does — on the transcript, or on the draft.
+    var naming by remember { mutableStateOf<Pair<String, (String) -> Unit>?>(null) }
+    var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
+    var editSave by remember { mutableStateOf<InlineSave?>(null) }
+    var editRefused by remember(draft) { mutableStateOf(false) }
+    /** A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on. */
+    fun saveInline(block: Int, edit: TranscriptEdit) {
+        scope.launch {
+            saving = saving + (block to InlineSave.SAVING)
+            val saved = model.editTranscript(detail.recordingId, edit) is EditResult.Edited
+            if (saved) {
+                saving = saving + (block to InlineSave.SAVED)
+                delay(SAVED_MS)
             }
-        },
-    )
+            saving = saving - block
+        }
+    }
+    if (draft != null) {
+        val changed = draft.edit != null
+        ScreenHeader(
+            title = strings[Str.DETAIL_EDIT],
+            trailing = {
+                Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                    if (changed) BlueprintButton(strings[Str.CANCEL], { onLeaveEditor {} }, tone = ButtonTone.QUIET, enabled = editSave == null)
+                    BlueprintButton(
+                        label = when (editSave) {
+                            InlineSave.SAVING -> strings[Str.EDIT_SAVING]
+                            InlineSave.SAVED -> SELECTION_MARK
+                            null -> strings[if (changed) Str.SAVE else Str.EDIT_DONE]
+                        },
+                        onClick = {
+                            val edit = draft.edit
+                            if (edit == null) {
+                                onDraft(null)
+                            } else {
+                                scope.launch {
+                                    editSave = InlineSave.SAVING
+                                    if (model.editTranscript(detail.recordingId, edit) is EditResult.Edited) {
+                                        editSave = InlineSave.SAVED
+                                        delay(SAVED_MS)
+                                        onDraft(null)
+                                    } else {
+                                        editRefused = true
+                                    }
+                                    editSave = null
+                                }
+                            }
+                        },
+                        tone = if (changed) ButtonTone.PRIMARY else ButtonTone.QUIET,
+                        enabled = editSave == null,
+                    )
+                }
+            },
+        )
+        // The core refuses an edit while a transcription of the recording is queued or running.
+        if (editRefused) {
+            Text(
+                strings[Str.DETAIL_TRANSCRIBING],
+                modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s),
+                style = MaterialTheme.typography.bodySmall,
+                color = blueprint.warningInk,
+            )
+        }
+    } else {
+        ScreenHeader(
+            // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
+            title = detail.title.text(strings),
+            // Not while the take is still being written to: the core refuses to rename a recording that
+            // is still running, and nothing of it is whole enough to export.
+            trailing = if (detail.loading || detail.writing) {
+                null
+            } else {
+                {
+                    Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                        ExportButton(model, detail, strings)
+                        MoreButton(model, detail, player.positionSec, { detail.transcript?.let { onDraft(TranscriptDraft(it)) } }, strings)
+                    }
+                }
+            },
+        )
+    }
     // A take still being written to has nothing whole to play, and nothing to say about it either.
     if (!detail.loading && !detail.writing) {
-        PlayerBar(detail, player, recording, blocked, waveforms, strings)
+        PlayerBar(model, detail, player, waveforms, strings)
         HairLine()
+    }
+    // docs/10 "Search": the query this detail was opened from search with, or what Ctrl+F is looking for.
+    val document = remember(detail.transcript) { detail.transcript?.let(::TranscriptDocument) }
+    var findQuery by remember(detail.recordingId) { mutableStateOf(detail.find.orEmpty()) }
+    LaunchedEffect(detail.recordingId, detail.find) {
+        detail.find?.let {
+            findQuery = it
+            onFindOpen(true)
+        }
+    }
+    val finding = findOpen && draft == null && document != null
+    val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
+    var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(matches) {
+        // The first match at or after the search hit the detail was opened on, or the first of all.
+        val from = detail.findAtSec?.let { at -> document?.blocks?.indexOfLast { it.start <= at } } ?: 0
+        currentMatch = if (matches.isEmpty()) null else matches.indexOfFirst { it.block >= from }.takeIf { it >= 0 } ?: 0
+    }
+    if (finding) {
+        val findFocus = remember { FocusRequester() }
+        LaunchedEffect(findRequest) { if (findRequest > 0) runCatching { findFocus.requestFocus() } }
+        FindBar(
+            query = findQuery,
+            onQuery = { findQuery = it },
+            count = matches.size,
+            current = currentMatch,
+            onPrevious = { currentMatch = ((currentMatch ?: 0) - 1 + matches.size) % matches.size },
+            onNext = { currentMatch = ((currentMatch ?: -1) + 1) % matches.size },
+            onClose = {
+                onFindOpen(false)
+                findQuery = ""
+            },
+            focus = findFocus,
+            strings = strings,
+        )
+        HairLine()
+    }
+    // docs/10 "Re-transcription": the old text stays readable under a line that says the new one is coming.
+    if (detail.retranscribing && draft == null && detail.hasTranscript) {
+        LoadingText(
+            strings[if (detail.retranscribingLocal) Str.PROCESSING_LOCAL_RUNNING else Str.TRANSCRIPT_TRANSCRIBING_AGAIN],
+            MaterialTheme.typography.bodySmall,
+            blueprint.textMuted,
+            Modifier.padding(horizontal = Space.m, vertical = Space.s),
+        )
     }
     when {
         detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
-        detail.transcript == null || detail.availability == TranscriptAvailability.EMPTY -> Column(
+        draft != null -> TranscriptEditor(
+            draft = draft,
+            canSeek = canSeek,
+            onSeek = onSeek,
+            onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
+            drive = !detail.folder,
+            strings = strings,
+            modifier = Modifier.fillMaxSize(),
+        )
+        !detail.hasTranscript -> Column(
             Modifier.fillMaxSize().padding(Space.l),
             verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(strings[detail.availability.message()], color = blueprint.textMuted)
             if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
-                BlueprintButton(strings[Str.RECENT_RETRY], onReload)
+                BlueprintButton(strings[Str.RECENT_RETRY], model::reloadDetailResults)
             }
         }
-        else -> TranscriptReader(
-            transcript = detail.transcript,
-                    seekableDurationSec = detail.audio.totalSec,
-            canSeek = !detail.writing && !recording() && !blocked() && !detail.audio.isEmpty && detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING,
-            onSeek = { if (!recording() && !blocked()) player.seek(detail.audio, it) },
-            strings = strings,
-            modifier = Modifier.fillMaxSize(),
-        )
+        else -> {
+            val transcript = detail.transcript!!
+            TranscriptReader(
+                transcript = transcript,
+                document = document!!,
+                canSeek = canSeek,
+                onSeek = onSeek,
+                positionSec = player.positionSec,
+                playing = player.playing,
+                highlights = detail.highlights,
+                onRemoveHighlight = { at -> model.setHighlights(detail.recordingId, detail.highlights - at) },
+                matches = matches,
+                currentMatch = currentMatch,
+                onChangeSpeaker = { block, range, speaker ->
+                    val target = speaker ?: nextSpeakerId(transcript.speakers.map { it.id })
+                    val speakers = transcript.segments.mapIndexed { index, segment -> if (index in range) target else segment.speaker }
+                    transcriptEdit(transcript, transcript.segments.map { it.text }, speakers)?.let { saveInline(block, it) }
+                },
+                onRenameSpeaker = { block, id ->
+                    naming = transcript.speakers.firstOrNull { it.id == id }?.name.orEmpty() to { name: String ->
+                        saveInline(block, TranscriptEdit.RenameSpeaker(id, name.trim().ifEmpty { null }))
+                    }
+                },
+                saving = saving,
+                strings = strings,
+                modifier = Modifier.fillMaxSize(),
+                seekableDurationSec = detail.audio.totalSec,
+            )
+        }
+    }
+    naming?.let { (initial, save) ->
+        SpeakerNameDialog(initial, strings, theme, onCancel = { naming = null }, onSave = { name ->
+            naming = null
+            save(name)
+        })
     }
 }
 
@@ -348,14 +625,19 @@ private fun Detail(
  */
 @Composable
 private fun PlayerBar(
+    model: ShellModel,
     detail: RecordingDetail,
     player: RecordingPlayer,
-    recording: () -> Boolean,
-    blocked: () -> Boolean,
     waveforms: WaveformKeeping,
     strings: Strings,
 ) {
     val palette = blueprint
+    // Asked again at the press, not only when the bar was drawn ([PlaybackGate]).
+    val recording = { model.recording }
+    val blocked = { model.playbackBlocked }
+    // This PC's speed and Skip silence: what is playing changes speed where it is.
+    LaunchedEffect(model.playbackSpeed, detail.audio) { player.changeSpeed(detail.audio, model.playbackSpeed) }
+    SideEffect { player.skipSilence = model.skipSilence }
     // Where the pointer is while it is on the waveform, and null the rest of the time. The playhead
     // and the clock follow it rather than the player: the seek happens when the drag ends, and a
     // bar that only moved then would not be a scrub.
@@ -406,6 +688,9 @@ private fun PlayerBar(
                 onSeek = { player.seek(detail.audio, it) },
                 growIn = fetched || decoded,
                 growMs = if (fetched) GROW_MS else GROW_DECODED_MS,
+                highlights = detail.highlights,
+                onRemoveHighlight = { at -> model.setHighlights(detail.recordingId, detail.highlights - at) },
+                strings = strings,
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
             // While the parts are coming back from Drive the row is already there, loading, so the
@@ -470,6 +755,13 @@ private fun PlayerBar(
                         "${LedgerFormat.elapsed(millis(positionSec))} / ${LedgerFormat.elapsed(millis(detail.audio.totalSec))}",
                         style = mono.small,
                         color = palette.textMuted,
+                    )
+                    SpeedChip(model.playbackSpeed, model.skipSilence, model::changePlaybackSpeed, model::toggleSkipSilence, strings)
+                    // docs/03 "Metadata": the moment the playhead is on, marked.
+                    BlueprintButton(
+                        strings[Str.HIGHLIGHT],
+                        { model.setHighlights(detail.recordingId, detail.highlights + player.positionSec) },
+                        tone = ButtonTone.QUIET,
                     )
                 }
 
@@ -578,6 +870,12 @@ private fun FetchProgress(fraction: Float, label: String, strings: Strings) {
 
 /** docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound. */
 private const val LOADER_BAND = 10
+
+/** docs/10 "Search": how long the list waits after the last key before it searches. */
+private const val SEARCH_DEBOUNCE_MS = 200L
+
+/** How long a check stays where a save finished. */
+private const val SAVED_MS = 1_200L
 private const val LOADER_FRAME_MS = 33L
 /** The ghost ticks' height, as a share of the row. */
 private const val LOADER_TICK = 0.3f
@@ -614,103 +912,143 @@ private fun Waveform(
     onSeek: (Double) -> Unit,
     growIn: Boolean = false,
     growMs: Int = GROW_MS,
+    /** docs/03 "Metadata": the marked moments, drawn as ticks that open their own menu. */
+    highlights: List<Double> = emptyList(),
+    onRemoveHighlight: (Double) -> Unit = {},
+    strings: Strings? = null,
 ) {
     val palette = blueprint
     val hair = palette.line
     val totalSec = audio.totalSec
-    var focused by remember { mutableStateOf(false) }
-    // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks.
-    val reveal = remember(audio) { Animatable(if (growIn) 0f else 1f) }
-    LaunchedEffect(audio, peaks.isNotEmpty()) {
-        if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
-    }
-    Canvas(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(MinTouch)
-            .testTag("waveform")
-            .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
-            .onFocusChanged { focused = it.isFocused }
-            .semantics {
-                contentDescription = label
-                progressBarRangeInfo =
-                    ProgressBarRangeInfo(positionSec.toFloat(), 0f..totalSec.toFloat().coerceAtLeast(0f))
-                setProgress { target ->
-                    onSeek(target.toDouble())
+    var tickMenu by remember(audio) { mutableStateOf<Double?>(null) }
+    BoxWithConstraints(Modifier.fillMaxWidth().height(MinTouch)) {
+        val width = maxWidth
+        var focused by remember { mutableStateOf(false) }
+        // The bars rise out of the centre line once, left first, when a recording back from Drive has its peaks.
+        val reveal = remember(audio) { Animatable(if (growIn) 0f else 1f) }
+        LaunchedEffect(audio, peaks.isNotEmpty()) {
+            if (peaks.isNotEmpty() && reveal.value < 1f) reveal.animateTo(1f, tween(growMs, easing = LinearEasing))
+        }
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(MinTouch)
+                .testTag("waveform")
+                .border(if (focused) 2.dp else 0.dp, if (focused) palette.accent else androidx.compose.ui.graphics.Color.Transparent)
+                .onFocusChanged { focused = it.isFocused }
+                .semantics {
+                    contentDescription = label
+                    progressBarRangeInfo =
+                        ProgressBarRangeInfo(positionSec.toFloat(), 0f..totalSec.toFloat().coerceAtLeast(0f))
+                    setProgress { target ->
+                        onSeek(target.toDouble())
+                        true
+                    }
+                }
+                // Before [focusable], so the row's own node sees the key before the focus system takes
+                // the arrows for moving between stops.
+                .onPreviewKeyEvent { event ->
+                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                    when (event.key) {
+                        Key.DirectionLeft -> onSeek(positionSec - WaveformStepSec)
+                        Key.DirectionRight -> onSeek(positionSec + WaveformStepSec)
+                        else -> return@onPreviewKeyEvent false
+                    }
                     true
                 }
-            }
-            // Before [focusable], so the row's own node sees the key before the focus system takes
-            // the arrows for moving between stops.
-            .onPreviewKeyEvent { event ->
-                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                when (event.key) {
-                    Key.DirectionLeft -> onSeek(positionSec - WaveformStepSec)
-                    Key.DirectionRight -> onSeek(positionSec + WaveformStepSec)
-                    else -> return@onPreviewKeyEvent false
-                }
-                true
-            }
-            .focusable()
-            // Keyed on the recording and not on its seconds: what a release seeks is the selection
-            // this gesture was composed with, and two recordings can be the same length.
-            .pointerInput(audio) {
-                awaitEachGesture {
-                    val down = awaitFirstDown(requireUnconsumed = false)
-                    var sec = second(down.position.x, size.width, totalSec)
-                    onScrub(sec)
-                    down.consume()
-                    var pressed = true
-                    while (pressed) {
-                        val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                        sec = second(change.position.x, size.width, totalSec)
+                .focusable()
+                // Keyed on the recording and not on its seconds: what a release seeks is the selection
+                // this gesture was composed with, and two recordings can be the same length.
+                .pointerInput(audio) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var sec = second(down.position.x, size.width, totalSec)
                         onScrub(sec)
-                        change.consume()
-                        pressed = change.pressed
+                        down.consume()
+                        var pressed = true
+                        while (pressed) {
+                            val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
+                            sec = second(change.position.x, size.width, totalSec)
+                            onScrub(sec)
+                            change.consume()
+                            pressed = change.pressed
+                        }
+                        onSeek(sec)
+                        onScrub(null)
                     }
-                    onSeek(sec)
-                    onScrub(null)
+                },
+        ) {
+            val playhead = if (totalSec > 0) (size.width * positionSec / totalSec).toFloat() else 0f
+            val step = WaveformStep.toPx()
+            val line = hair.toPx()
+            val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
+            // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
+            // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
+            // "Accessibility" asks 3:1 of a graphic, and the muted token faded out to hint at "not played
+            // yet" is under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
+            // so there is nothing here to special-case.
+            if (bins.isEmpty()) {
+                drawRect(
+                    color = palette.grid,
+                    topLeft = Offset(0f, (size.height - line) / 2),
+                    size = Size(size.width, line),
+                )
+            }
+            val shown = reveal.value
+            bins.forEachIndexed { index, bin ->
+                val x = index * step
+                // Left first: each bar starts a little after the one before it and rises in 40% of the time.
+                val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
+                val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
+                val rise = 1f - (1f - k) * (1f - k) * (1f - k)
+                // Silence is a tick rather than nothing, so the row reads as the whole recording.
+                val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
+                drawRect(
+                    color = if (x <= playhead) palette.accent else palette.textMuted,
+                    topLeft = Offset(x, (size.height - height) / 2),
+                    size = Size(WaveformBar.toPx(), height),
+                )
+            }
+            // Over the bars and under the playhead: a 2dp accent line the full height, with a flag at its top.
+            if (totalSec > 0) {
+                highlights.forEach { at ->
+                    val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TickWidth.toPx())
+                    drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickWidth.toPx(), size.height))
+                    drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickFlag.toPx(), TickFlag.toPx()))
                 }
-            },
-    ) {
-        val playhead = if (totalSec > 0) (size.width * positionSec / totalSec).toFloat() else 0f
-        val step = WaveformStep.toPx()
-        val line = hair.toPx()
-        val bins = RecordingWaveform.bins(peaks, (size.width / step).toInt())
-        // docs/09 "Lines": straight bars of one width on one gap, no caps and no gradient. Behind the
-        // playhead is the accent and ahead of it the muted colour, both at full opacity — docs/09
-        // "Accessibility" asks 3:1 of a graphic, and the muted token faded out to hint at "not played
-        // yet" is under 2:1 on the surface. The token promotes itself to the body colour in high contrast,
-        // so there is nothing here to special-case.
-        if (bins.isEmpty()) {
+            }
             drawRect(
-                color = palette.grid,
-                topLeft = Offset(0f, (size.height - line) / 2),
-                size = Size(size.width, line),
+                color = palette.accent,
+                topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
+                size = Size(line, size.height),
             )
         }
-        val shown = reveal.value
-        bins.forEachIndexed { index, bin ->
-            val x = index * step
-            // Left first: each bar starts a little after the one before it and rises in 40% of the time.
-            val start = GROW_SPREAD * index / maxOf(1, bins.size - 1)
-            val k = ((shown - start) / (1f - GROW_SPREAD)).coerceIn(0f, 1f)
-            val rise = 1f - (1f - k) * (1f - k) * (1f - k)
-            // Silence is a tick rather than nothing, so the row reads as the whole recording.
-            val height = maxOf(WaveformMinBar.toPx(), bin * size.height * rise)
-            drawRect(
-                color = if (x <= playhead) palette.accent else palette.textMuted,
-                topLeft = Offset(x, (size.height - height) / 2),
-                size = Size(WaveformBar.toPx(), height),
-            )
+        // Each tick is a target of its own (±12dp) that a reader hears as "Highlight 00:12:34".
+        if (totalSec > 0 && strings != null) {
+            highlights.forEach { at ->
+                val x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)
+                Box(
+                    Modifier
+                        .offset(x = x - TickTarget / 2)
+                        .width(TickTarget)
+                        .fillMaxHeight()
+                        .clickable(role = Role.Button) { tickMenu = at }
+                        .semantics { contentDescription = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed(millis(at))] },
+                )
+            }
+            tickMenu?.let { at ->
+                Box(Modifier.offset(x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)).fillMaxHeight()) {
+                    HighlightMenu(at, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
+                }
+            }
         }
-        drawRect(
-            color = palette.accent,
-            topLeft = Offset(playhead.coerceIn(0f, size.width - line), 0f),
-            size = Size(line, size.height),
-        )
     }
 }
+
+/** docs/03 "Metadata": a highlight's line on the waveform, its flag, and the reach of a click on it. */
+private val TickWidth: Dp = 2.dp
+private val TickFlag: Dp = 6.dp
+private val TickTarget: Dp = 24.dp
 
 /**
  * docs/09 screen principle 2 · "Spacing": the waveform row's own rhythm. A 2dp bar on a 1dp gap, so how many

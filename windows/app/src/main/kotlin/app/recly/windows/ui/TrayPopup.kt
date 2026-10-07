@@ -144,6 +144,8 @@ private fun Header(model: ShellModel, strings: Strings) {
                     onClick = model::stop,
                     tone = ButtonTone.DANGER,
                 )
+                // docs/03 "Metadata": the moment the timer is at, marked; the line under the ledger says when.
+                BlueprintButton(strings[Str.HIGHLIGHT], model::highlightNow, enabled = model.transition == null)
             } else {
                 ProcessingButton(
                     label = strings[Str.TRAY_START],

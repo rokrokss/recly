@@ -287,7 +287,7 @@ internal fun TranscriptionMode.label(): Str = when (this) {
     TranscriptionMode.OFF -> Str.PROCESSING_OFF
 }
 
-private fun transcriptionLanguageLabel(language: Language, strings: Strings): String = when (language) {
+internal fun transcriptionLanguageLabel(language: Language, strings: Strings): String = when (language) {
     Language.AUTO -> strings[Str.PROCESSING_LANGUAGE_AUTO]
     Language.KO_EN -> strings[Str.PROCESSING_LANGUAGE_MIXED]
     else -> Locale.forLanguageTag(TranscriptionLanguages.localeTag(language)).let { it.getDisplayName(it) }
