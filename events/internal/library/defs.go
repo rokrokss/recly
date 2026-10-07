@@ -103,7 +103,7 @@ func AudioFilesTool() map[string]any {
 	}
 }
 
-// LocalTools are the local server's tools, in the order tools/list gives them.
+// LocalTools are the local server's tools. The go-sdk server lists them by name, whatever this order.
 func LocalTools() []map[string]any {
 	return []map[string]any{ListRecordingsTool(), GetTranscriptTool(false), SearchRecordingsTool(), AudioFilesTool()}
 }
