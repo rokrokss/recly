@@ -52,12 +52,6 @@
             "value": "6+"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "6+"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -71,6 +65,78 @@
           }
         },
         "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "6+"
+          }
+        },
+        "th": {
           "stringUnit": {
             "state": "translated",
             "value": "6+"
@@ -129,12 +195,6 @@
             "value": "Über"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sobre"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -151,6 +211,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "О приложении"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sobre"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informazioni"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hakkında"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tungkol sa app"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অ্যাপ সম্পর্কে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعارف"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuhusu"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Giới thiệu"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "درباره"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เกี่ยวกับ"
           }
         }
       }
@@ -206,12 +338,6 @@
             "value": "Abbrechen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cancelar"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -228,6 +354,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отмена"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cancelar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Annulla"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anuluj"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İptal"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kanselahin"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "বাতিল করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منسوخ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghairi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hủy"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لغو"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยกเลิก"
           }
         }
       }
@@ -283,12 +481,6 @@
             "value": "Audioaufnahme"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Captura de áudio"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -305,6 +497,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Захват звука"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captura de áudio"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Captura de áudio"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acquisizione audio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przechwytywanie dźwięku"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ses yakalama"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pag-capture ng audio"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অডিও ক্যাপচার"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آڈیو کیپچر"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kunasa sauti"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط صدا"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสียง"
           }
         }
       }
@@ -360,12 +624,6 @@
             "value": "Einwilligungserinnerung"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lembrete de consentimento"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -382,6 +640,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Напоминание о согласии"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lembrete de consentimento"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lembrete de consentimento"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Promemoria consenso"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przypomnienie o zgodzie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onay hatırlatıcısı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paalala sa pagsang-ayon"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সম্মতির রিমাইন্ডার"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رضامندی کی یاد دہانی"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kikumbusho cha ridhaa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhắc về sự đồng ý"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یادآور رضایت"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การเตือนเรื่องความยินยอม"
           }
         }
       }
@@ -437,12 +767,6 @@
             "value": "Kernfehler"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erro do núcleo"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -459,6 +783,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ошибка ядра"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erro do núcleo"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erro do núcleo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Errore interno"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Błąd rdzenia"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çekirdek hatası"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Error sa core"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কোর ত্রুটি"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کور کی خرابی"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hitilafu ya kiini"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lỗi thành phần lõi"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خطای هسته"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้อผิดพลาดของคอร์"
           }
         }
       }
@@ -514,12 +910,6 @@
             "value": "Auftrag konnte nicht erstellt werden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível criar a tarefa"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -536,6 +926,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось создать задачу"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível criar a tarefa"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível criar a tarefa"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile creare l’attività"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można utworzyć zadania"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İş oluşturulamadı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi magawa ang gawain"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কাজটি তৈরি করা যায়নি"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کام نہیں بنایا جا سکا"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imeshindwa kuunda kazi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể tạo tác vụ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وظیفه ایجاد نشد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สร้างงานไม่ได้"
           }
         }
       }
@@ -591,12 +1053,6 @@
             "value": "Aufnahme konnte nicht verworfen werden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível descartar a gravação"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -613,6 +1069,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось удалить несохранённую запись"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível descartar a gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível descartar a gravação"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile scartare la registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można odrzucić nagrania"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt atılamadı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi ma-discard ang recording"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিংটি বাদ দেওয়া যায়নি"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ ضائع نہیں کی جا سکی"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imeshindwa kutupa rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể hủy bỏ bản ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط دور انداخته نشد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ทิ้งการบันทึกเสียงไม่ได้"
           }
         }
       }
@@ -668,12 +1196,6 @@
             "value": "Speichern nicht abgeschlossen; Wiederherstellung beim nächsten Start"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível concluir o salvamento; será recuperado na próxima execução"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -690,6 +1212,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось завершить сохранение; запись будет восстановлена при следующем запуске"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível concluir o salvamento; será recuperado na próxima execução"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível terminar de guardar — será recuperada na próxima execução"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvataggio non completato: verrà recuperato al prossimo avvio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można dokończyć zapisywania — nagranie zostanie odzyskane przy następnym uruchomieniu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydetme tamamlanamadı — bir sonraki çalıştırmada kurtarılacak"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi natapos ang pag-save — mababawi ito sa susunod na pagbukas"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেভ করা শেষ হয়নি; পরের বার চালু হলে পুনরুদ্ধার করা হবে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محفوظ کرنا مکمل نہیں ہو سکا — اگلی بار چلانے پر بحال ہو جائے گا"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imeshindwa kumaliza kuhifadhi — itarejeshwa programu itakapofunguliwa tena"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa lưu xong — sẽ khôi phục ở lần chạy sau"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ذخیره کامل نشد؛ در اجرای بعدی بازیابی می‌شود"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึกไม่เสร็จ จะกู้คืนเมื่อเปิดแอปครั้งถัดไป"
           }
         }
       }
@@ -745,12 +1339,6 @@
             "value": "Löschen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Excluir"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -767,6 +1355,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Удалить"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Excluir"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sil"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-delete"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মুছুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Futa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xóa"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حذف"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลบ"
           }
         }
       }
@@ -822,12 +1482,6 @@
             "value": "Gerät"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dispositivo"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -844,6 +1498,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Устройство"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispositivo"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispositivo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dispositivo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Urządzenie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cihaz"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Device"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ডিভাইস"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آلہ"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kifaa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thiết bị"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دستگاه"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อุปกรณ์"
           }
         }
       }
@@ -899,12 +1625,6 @@
             "value": "Haben Sie die Teilnehmenden über die Aufnahme informiert?"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você avisou os participantes sobre a gravação?"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -921,6 +1641,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Вы сообщили участникам о записи?"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Você avisou os participantes sobre a gravação?"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informou os participantes sobre a gravação?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hai avvisato i partecipanti della registrazione?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czy uczestnicy zostali poinformowani o nagrywaniu?"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Katılımcıları kayıt hakkında bilgilendirdiniz mi?"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinabihan mo ba ang mga kalahok tungkol sa pag-record?"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অংশগ্রহণকারীদের কি রেকর্ডিংয়ের কথা জানিয়েছেন?"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کیا آپ نے شرکاء کو ریکارڈنگ کے بارے میں بتایا؟"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je, umewaambia washiriki kwamba unarekodi?"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bạn đã báo cho người tham gia về việc ghi âm chưa?"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آیا شرکت‌کنندگان را از ضبط آگاه کرده‌اید؟"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คุณแจ้งผู้เข้าร่วมเรื่องการบันทึกเสียงแล้วหรือยัง?"
           }
         }
       }
@@ -976,12 +1768,6 @@
             "value": "Google-Zugriff widerrufen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Revogar acesso ao Google"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -998,6 +1784,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отозвать доступ к Google"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revogar acesso ao Google"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revogar acesso Google"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoca l’accesso Google"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cofnij dostęp Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google erişimini iptal et"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bawiin ang access sa Google"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google অ্যাক্সেস প্রত্যাহার করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google رسائی منسوخ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Batilisha ufikiaji wa Google"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu hồi quyền truy cập Google"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "لغو دسترسی Google"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิกถอนการเข้าถึงของ Google"
           }
         }
       }
@@ -1053,12 +1911,6 @@
             "value": "Nicht erneut fragen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não perguntar novamente"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1075,6 +1927,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Больше не спрашивать"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não perguntar novamente"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não perguntar novamente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non chiedere più"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie pytaj ponownie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bir daha sorma"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huwag nang itanong ulit"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আর জিজ্ঞেস করবেন না"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دوبارہ نہ پوچھیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usiulize tena"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không hỏi lại"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دیگر سؤال نشود"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่ต้องถามอีก"
           }
         }
       }
@@ -1130,12 +2054,6 @@
             "value": "Drive-Zugriff: nur von dieser App erstellte Dateien (drive.file)."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Acesso ao Drive: somente arquivos criados por este app (drive.file)."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1152,6 +2070,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Доступ к Drive: только файлы, созданные этим приложением (drive.file)."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acesso ao Drive: somente arquivos criados por este app (drive.file)."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acesso ao Drive: apenas os ficheiros criados por esta aplicação (drive.file)."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Accesso a Drive: solo i file creati da questa app (drive.file)."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp do Drive: tylko pliki utworzone przez tę aplikację (drive.file)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive erişimi: yalnızca bu uygulamanın oluşturduğu dosyalar (drive.file)."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access sa Drive: ang mga file lang na ginawa ng app na ito (drive.file)."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive অ্যাক্সেস: শুধু এই অ্যাপের তৈরি ফাইল (drive.file)।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive تک رسائی: صرف وہ فائلیں جو یہ ایپ بناتی ہے (drive.file)۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ufikiaji wa Drive: faili zinazoundwa na programu hii pekee (drive.file)."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quyền truy cập Drive: chỉ các tệp do ứng dụng này tạo (drive.file)."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دسترسی به Drive: فقط فایل‌هایی که این برنامه ایجاد می‌کند (drive.file)."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การเข้าถึง Drive: เฉพาะไฟล์ที่แอปนี้สร้าง (drive.file)"
           }
         }
       }
@@ -1207,12 +2197,6 @@
             "value": "Google Drive"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Google Drive"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1226,6 +2210,78 @@
           }
         },
         "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive"
+          }
+        },
+        "th": {
           "stringUnit": {
             "state": "translated",
             "value": "Google Drive"
@@ -1284,12 +2340,6 @@
             "value": "Informiert · Aufnahme starten"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Já avisei · Iniciar gravação"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1306,6 +2356,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сообщил · Начать запись"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Já avisei · Iniciar gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Já informei · Iniciar gravação"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Li ho avvisati · Avvia registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Poinformowano · Rozpocznij nagrywanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilgilendirdim · Kaydı başlat"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sinabihan ko na · Simulan ang pag-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "জানিয়েছি · রেকর্ডিং শুরু করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میں نے بتا دیا · ریکارڈنگ شروع کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nimewaambia · Anza kurekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tôi đã báo · Bắt đầu ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آگاه کردم · شروع ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แจ้งแล้ว · เริ่มบันทึกเสียง"
           }
         }
       }
@@ -1361,12 +2483,6 @@
             "value": "Dauer"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Duração"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1383,6 +2499,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Длительность"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duração"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Duração"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durata"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długość"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Süre"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haba"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "দৈর্ঘ্য"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دورانیہ"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muda"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thời lượng"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مدت"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ความยาว"
           }
         }
       }
@@ -1438,12 +2626,6 @@
             "value": "Liste"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lista"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1460,6 +2642,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Список"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elenco"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lista"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liste"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Listahan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "তালিকা"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فہرست"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orodha"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Danh sách"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فهرست"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รายการ"
           }
         }
       }
@@ -1515,12 +2769,6 @@
             "value": "Mikrofon"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Microfone"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1537,6 +2785,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Микрофон"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microfone"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microfone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Microfono"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikropono"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মাইক্রোফোন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مائیکروفون"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maikrofoni"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Micrô"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میکروفون"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไมโครโฟน"
           }
         }
       }
@@ -1592,12 +2912,6 @@
             "value": "Neu"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Novo"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1614,6 +2928,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Новый"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Novo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeni"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bago"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "নতুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نیا"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mpya"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mới"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جدید"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ใหม่"
           }
         }
       }
@@ -1669,12 +3055,6 @@
             "value": "Noch keine Aufnahmen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nenhuma gravação ainda"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1691,6 +3071,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Записей пока нет"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nenhuma gravação ainda"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ainda não há gravações"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ancora nessuna registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak nagrań"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Henüz kayıt yok"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wala pang recording"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এখনও কোনো রেকর্ডিং নেই"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابھی کوئی ریکارڈنگ نہیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bado hakuna rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa có bản ghi âm nào"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "هنوز ضبطی وجود ندارد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยังไม่มีการบันทึกเสียง"
           }
         }
       }
@@ -1746,12 +3198,6 @@
             "value": "Google-Berechtigungen verwalten"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gerenciar permissões do Google"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1768,6 +3214,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Управление разрешениями Google"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerenciar permissões do Google"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gerir permissões do Google"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gestisci autorizzazioni Google"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zarządzaj uprawnieniami Google"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google izinlerini yönet"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamahalaan ang mga pahintulot sa Google"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google অনুমতি ম্যানেজ করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google اجازتوں کا نظم کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dhibiti ruhusa za Google"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quản lý quyền truy cập Google"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مدیریت اجازه‌های Google"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "จัดการสิทธิ์ของ Google"
           }
         }
       }
@@ -1823,12 +3341,6 @@
             "value": "Einstellungen öffnen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir configurações"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1845,6 +3357,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Открыть настройки"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir configurações"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Definições"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Impostazioni"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Ustawienia"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar'ı aç"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buksan ang Mga Setting"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেটিংস খুলুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترتیبات کھولیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fungua Mipangilio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Cài đặt"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "باز کردن تنظیمات"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดการตั้งค่า"
           }
         }
       }
@@ -1900,12 +3484,6 @@
             "value": "Systemeinstellungen öffnen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir configurações do sistema"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1922,6 +3500,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Открыть системные настройки"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir configurações do sistema"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir Definições do Sistema"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri Impostazioni di Sistema"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz Ustawienia systemowe"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sistem Ayarları'nı aç"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buksan ang System Settings"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সিস্টেম সেটিংস খুলুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سسٹم ترتیبات کھولیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fungua Mipangilio ya Mfumo"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở Cài đặt hệ thống"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "باز کردن تنظیمات سیستم"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดการตั้งค่าระบบ"
           }
         }
       }
@@ -1977,12 +3627,6 @@
             "value": "In Drive öffnen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrir no Drive"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -1999,6 +3643,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Открыть в Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir no Drive"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrir no Drive"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri in Drive"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz na Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive'da aç"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Buksan sa Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive-এ খুলুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive میں کھولیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fungua kwenye Drive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mở trong Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "باز کردن در Drive"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เปิดใน Drive"
           }
         }
       }
@@ -2054,12 +3770,6 @@
             "value": "Open-Source-Hinweise"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avisos de código aberto"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2076,6 +3786,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Лицензии открытого ПО"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos de código aberto"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avisos de código aberto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Licenze open source"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje o oprogramowaniu open source"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açık kaynak bildirimleri"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga abiso sa open source"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ওপেন-সোর্স নোটিস"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اوپن سورس نوٹسز"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taarifa za chanzo huria"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thông báo nguồn mở"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اعلامیه‌های متن‌باز"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ประกาศเกี่ยวกับโอเพนซอร์ส"
           }
         }
       }
@@ -2131,12 +3913,6 @@
             "value": "Wird geöffnet"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abrindo"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2153,6 +3929,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Открытие"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abrindo"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A abrir"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apertura"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwieranie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Açılıyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Binubuksan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "খোলা হচ্ছে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کھل رہا ہے"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inafunguliwa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang mở"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در حال باز شدن"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังเปิด"
           }
         }
       }
@@ -2208,12 +4056,6 @@
             "value": "Personen im Raum"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pessoas na sala"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2230,6 +4072,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Людей в комнате"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pessoas na sala"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pessoas na sala"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Persone nella stanza"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Liczba osób w pomieszczeniu"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odadaki kişiler"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga tao sa kuwarto"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ঘরে উপস্থিত মানুষ"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کمرے میں لوگ"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Watu waliopo chumbani"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Số người trong phòng"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تعداد افراد حاضر در اتاق"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "จำนวนคนในห้อง"
           }
         }
       }
@@ -2285,12 +4199,6 @@
             "value": "Aufnehmen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gravar"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2307,6 +4215,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Записать"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravar"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registra"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagraj"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ড করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึกเสียง"
           }
         }
       }
@@ -2362,12 +4342,6 @@
             "value": "Aufnahme läuft"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gravando"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2384,6 +4358,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Идёт запись"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravando"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gravar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt yapılıyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagre-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ড হচ্ছে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ جاری"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inarekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در حال ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังบันทึกเสียง"
           }
         }
       }
@@ -2439,12 +4485,6 @@
             "value": "Aufnahmetitel"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título da gravação"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2461,6 +4501,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Название записи"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título da gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título da gravação"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titolo della registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł nagrania"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt başlığı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamagat ng recording"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিংয়ের শিরোনাম"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ کا عنوان"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kichwa cha rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề bản ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ชื่อการบันทึกเสียง"
           }
         }
       }
@@ -2516,12 +4628,6 @@
             "value": "Einwilligungsregeln nach Rechtsgebiet"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Regras de consentimento por jurisdição"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2538,6 +4644,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Правила согласия на запись по юрисдикциям"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regras de consentimento por jurisdição"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regras de consentimento de gravação por jurisdição"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Norme sul consenso alla registrazione per giurisdizione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zasady zgody na nagrywanie według jurysdykcji"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yargı bölgesine göre kayıt onayı kuralları"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga panuntunan sa pagsang-ayon sa pag-record ayon sa hurisdiksyon"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অঞ্চল অনুযায়ী রেকর্ডিং-সম্মতির নিয়ম"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دائرہ اختیار کے لحاظ سے ریکارڈنگ کی رضامندی کے قواعد"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sheria za ridhaa ya kurekodi kwa kila eneo la mamlaka"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quy định về sự đồng ý ghi âm theo khu vực pháp lý"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قوانین رضایت برای ضبط بر اساس حوزه قضایی"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กฎความยินยอมในการบันทึกเสียงตามภูมิภาค"
           }
         }
       }
@@ -2593,12 +4771,6 @@
             "value": "Aufnahmen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gravações"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2615,6 +4787,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Записи"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravações"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gravações"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrazioni"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrania"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıtlar"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Recording"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিং"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگز"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orodha ya rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط‌ها"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสียง"
           }
         }
       }
@@ -2670,12 +4914,6 @@
             "value": "Ihre Aufnahmen erscheinen hier."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Suas gravações aparecerão aqui."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2692,6 +4930,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Здесь появятся ваши записи."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suas gravações aparecerão aqui."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "As gravações que fizer aparecem aqui."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le tue registrazioni appariranno qui."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutaj pojawią się Twoje nagrania."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yaptığınız kayıtlar burada görünür."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lalabas dito ang mga recording na gagawin mo."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার করা রেকর্ডিং এখানে দেখা যাবে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ کی بنائی گئی ریکارڈنگز یہاں ظاہر ہوں گی۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rekodi zako zitaonekana hapa."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Các bản ghi âm của bạn sẽ hiển thị ở đây."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط‌های شما اینجا نمایش داده می‌شوند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสียงของคุณจะแสดงที่นี่"
           }
         }
       }
@@ -2747,12 +5057,6 @@
             "value": "Erneut versuchen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tentar novamente"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2769,6 +5073,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Повторить"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tentar novamente"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tentar novamente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yeniden dene"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subukang muli"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আবার চেষ্টা করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دوبارہ کوشش کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jaribu tena"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thử lại"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تلاش مجدد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ลองอีกครั้ง"
           }
         }
       }
@@ -2824,12 +5200,6 @@
             "value": "Speichern"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvar"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2846,6 +5216,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сохранить"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydet"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-save"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেভ করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محفوظ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hifadhi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ذخیره"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึก"
           }
         }
       }
@@ -2901,12 +5343,6 @@
             "value": "Wird gespeichert"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvando"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -2923,6 +5359,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Сохранение"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvando"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A guardar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvataggio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisywanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydediliyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sine-save"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেভ হচ্ছে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "محفوظ ہو رہا ہے"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inahifadhi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang lưu"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در حال ذخیره"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังบันทึก"
           }
         }
       }
@@ -2978,12 +5486,6 @@
             "value": "Einstellungen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Configurações"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3000,6 +5502,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Настройки"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Configurações"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Definições"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impostazioni"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ustawienia"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Setting"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সেটিংস"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترتیبات"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mipangilio"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cài đặt"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تنظیمات"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การตั้งค่า"
           }
         }
       }
@@ -3055,12 +5629,6 @@
             "value": "Google Drive verbinden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conectar ao Google Drive"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3077,6 +5645,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подключить Google Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar ao Google Drive"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ligar o Google Drive"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega Google Drive"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz z Google Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive'ı bağla"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikonekta ang Google Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive কানেক্ট করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive منسلک کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unganisha Google Drive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối Google Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصال Google Drive"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ Google Drive"
           }
         }
       }
@@ -3132,12 +5772,6 @@
             "value": "Google Drive verbinden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conectar ao Google Drive"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3154,6 +5788,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Подключить Google Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Conectar ao Google Drive"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ligar o Google Drive"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Collega Google Drive"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Połącz z Google Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive'ı bağla"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ikonekta ang Google Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive কানেক্ট করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google Drive منسلک کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unganisha Google Drive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kết nối Google Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصال Google Drive"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ Google Drive"
           }
         }
       }
@@ -3209,12 +5915,6 @@
             "value": "Abmelden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sair da conta"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3231,6 +5931,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Выйти из аккаунта"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sair da conta"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Terminar sessão"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esci dall’account"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyloguj się"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturumu kapat"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-sign out"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাইন-আউট করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سائن آؤٹ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondoka kwenye akaunti"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đăng xuất"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خروج از حساب"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ออกจากระบบ"
           }
         }
       }
@@ -3286,12 +6058,6 @@
             "value": "Drive nicht verbunden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Drive não conectado"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3308,6 +6074,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Drive не подключён"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive não conectado"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive não ligado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive non collegato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie połączono z Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive bağlı değil"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi nakakonekta ang Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive কানেক্ট করা নেই"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive منسلک نہیں ہے"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive haijaunganishwa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa kết nối Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصال Drive برقرار نیست"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่ได้เชื่อมต่อ Drive"
           }
         }
       }
@@ -3363,12 +6201,6 @@
             "value": "Überspringen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pular"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3385,6 +6217,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Пропустить"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pular"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ignorar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salta"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pomiń"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atla"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laktawan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এড়িয়ে যান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نظر انداز کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruka"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ qua"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رد شدن"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ข้าม"
           }
         }
       }
@@ -3440,12 +6344,6 @@
             "value": "Startet eine Aufnahme mit Recly."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Inicia uma gravação com o Recly."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3462,6 +6360,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Начинает запись с помощью Recly."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia uma gravação com o Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicie uma gravação com o Recly."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia una registrazione con Recly."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpoczyna nagrywanie w Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly ile kayıt başlatın."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magsimula ng recording gamit ang Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly দিয়ে একটি রেকর্ডিং শুরু করে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly سے ریکارڈنگ شروع کریں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anza kurekodi ukitumia Recly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi âm bằng Recly."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شروع ضبط با Recly."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มบันทึกเสียงด้วย Recly"
           }
         }
       }
@@ -3517,12 +6487,6 @@
             "value": "Aufnahme starten"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Iniciar gravação"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3539,6 +6503,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Начать запись"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpocznij nagrywanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydı başlat"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulan ang pag-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিং শুরু করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ شروع کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anza kurekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شروع ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มบันทึกเสียง"
           }
         }
       }
@@ -3594,12 +6630,6 @@
             "value": "Zustand"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estado"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3616,6 +6646,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Состояние"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stan"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kalagayan"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অবস্থা"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حالت"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hali ya sasa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tình trạng"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حالت"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สถานะ"
           }
         }
       }
@@ -3671,12 +6773,6 @@
             "value": "Status"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Status"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3693,6 +6789,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Статус"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durum"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Status"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "স্ট্যাটাস"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صورتحال"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hali"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Trạng thái"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وضعیت"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สถานะ"
           }
         }
       }
@@ -3748,12 +6916,6 @@
             "value": "Stoppen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3770,6 +6932,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Остановить"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durdur"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "থামান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "روکیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simamisha"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقف"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุด"
           }
         }
       }
@@ -3825,12 +7059,6 @@
             "value": "Aufnahme stoppen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar gravação"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3847,6 +7075,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Остановить запись"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar gravação"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompi registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj nagrywanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydı durdur"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto ang pag-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিং থামান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ روکیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simamisha kurekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقف ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุดบันทึกเสียง"
           }
         }
       }
@@ -3902,12 +7202,6 @@
             "value": "Stoppt die laufende Recly-Aufnahme."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Para a gravação em andamento no Recly."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -3924,6 +7218,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Останавливает текущую запись Recly."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para a gravação em andamento no Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pare a gravação do Recly em curso."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompe la registrazione Recly in corso."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymuje trwające nagrywanie Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam eden Recly kaydını durdurun."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto ang tumatakbong recording ng Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চলমান Recly রেকর্ডিং থামায়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جاری Recly ریکارڈنگ روکیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simamisha rekodi ya Recly inayoendelea."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng phiên ghi âm Recly đang diễn ra."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقف ضبط فعلی Recly."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุดการบันทึกเสียงของ Recly ที่กำลังทำงานอยู่"
           }
         }
       }
@@ -3979,12 +7345,6 @@
             "value": "Dieser App den Zugriff auf Ihr Google-Konto entziehen."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remova o acesso deste app à sua conta Google."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4001,6 +7361,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Отозвать у приложения доступ к вашему аккаунту Google."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remova o acesso deste app à sua conta Google."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retire o acesso desta aplicação à sua conta Google."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revoca a questa app l’accesso al tuo account Google."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odbierz tej aplikacji dostęp do konta Google."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu uygulamanın Google hesabınıza erişimini kaldırın."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bawiin ang access ng app na ito sa iyong Google account."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপনার Google অ্যাকাউন্টে এই অ্যাপের অ্যাক্সেস সরিয়ে দিন।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آپ کے Google اکاؤنٹ تک اس ایپ کی رسائی ختم کریں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ondoa ufikiaji wa programu hii kwenye akaunti yako ya Google."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thu hồi quyền truy cập của ứng dụng này vào tài khoản Google của bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دسترسی این برنامه به حساب Google خود را لغو کنید."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิกถอนการเข้าถึงบัญชี Google ของคุณจากแอปนี้"
           }
         }
       }
@@ -4056,12 +7488,6 @@
             "value": "Die Google-Client-ID ist noch nicht gesetzt (siehe README)."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O ID de cliente Google ainda não foi definido (consulte o README)."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4078,6 +7504,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "ID клиента Google ещё не задан (см. README)."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ID de cliente Google ainda não foi definido (consulte o README)."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ID de cliente Google ainda não está definido (consulte o README)."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’ID client Google non è ancora impostato (vedi il README)."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Identyfikator klienta Google nie jest jeszcze ustawiony (zobacz README)."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google istemci kimliği henüz ayarlanmadı (bkz. README)."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi pa naka-set ang Google client ID (tingnan ang README)."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google ক্লায়েন্ট আইডি এখনও সেট করা হয়নি (README দেখুন)।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Google کلائنٹ ID ابھی سیٹ نہیں ہے (README دیکھیں)۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kitambulisho cha mteja cha Google bado hakijawekwa (angalia README)."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chưa đặt ID máy khách Google (xem README)."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شناسه کلاینت Google هنوز تنظیم نشده است (README را ببینید)."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ยังไม่ได้ตั้งค่ารหัสไคลเอ็นต์ Google (ดู README)"
           }
         }
       }
@@ -4133,12 +7631,6 @@
             "value": "Mikrofonberechtigung erforderlich"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "É necessária permissão para o microfone"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4155,6 +7647,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Нужно разрешение на микрофон"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "É necessária permissão para o microfone"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A permissão do microfone é obrigatória."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "È necessaria l’autorizzazione per il microfono."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wymagane uprawnienie do mikrofonu."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mikrofon izni gerekli."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kinakailangan ang pahintulot sa mikropono."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মাইক্রোফোনের অনুমতি আবশ্যক।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مائیکروفون کی اجازت ضروری ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhusa ya maikrofoni inahitajika."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cần cấp quyền truy cập micrô."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اجازه میکروفون الزامی است."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ต้องได้รับอนุญาตให้ใช้ไมโครโฟน"
           }
         }
       }
@@ -4210,12 +7774,6 @@
             "value": "Die Aufnahme ist fehlgeschlagen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A gravação falhou"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4232,6 +7790,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ошибка записи"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gravação falhou"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A gravação falhou"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Registrazione non riuscita"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nagrywanie nie powiodło się"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kayıt başarısız oldu"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nabigo ang pag-record"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিং ব্যর্থ হয়েছে"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ ناکام ہو گئی"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurekodi kumeshindwa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ghi âm thất bại"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ضبط ناموفق بود"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสียงล้มเหลว"
           }
         }
       }
@@ -4287,12 +7917,6 @@
             "value": "Drive konnte nicht verbunden werden"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não foi possível conectar ao Drive"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4309,6 +7933,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Не удалось подключить Drive"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível conectar ao Drive"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Não foi possível ligar o Drive"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile collegare Drive"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można połączyć z Drive"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive bağlanamadı"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi maikonekta ang Drive"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive কানেক্ট করা যায়নি"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Drive منسلک نہیں ہو سکا"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imeshindwa kuunganisha Drive"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không thể kết nối Drive"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اتصال Drive انجام نشد"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ Drive ไม่ได้"
           }
         }
       }
@@ -4364,12 +8060,6 @@
             "value": "Zeit"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hora"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4386,6 +8076,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Время"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaman"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oras"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সময়"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وقت"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wakati"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thời gian"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "زمان"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เวลา"
           }
         }
       }
@@ -4441,12 +8203,6 @@
             "value": "Titel"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Título"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4463,6 +8219,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Название"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titolo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Başlık"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pamagat"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শিরোনাম"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kichwa"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiêu đề"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عنوان"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ชื่อ"
           }
         }
       }
@@ -4518,12 +8346,6 @@
             "value": "Unbekannt"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Desconhecido"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4540,6 +8362,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Неизвестно"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconhecido"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconhecido"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sconosciuto"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieznane"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilinmiyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hindi alam"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অজানা"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نامعلوم"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haijulikani"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Không rõ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نامشخص"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ไม่ทราบ"
           }
         }
       }
@@ -4595,12 +8489,6 @@
             "value": "Nur über WLAN hochladen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enviar somente por Wi-Fi"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4617,6 +8505,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Загружать только по Wi-Fi"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar somente por Wi-Fi"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carregar só com Wi-Fi"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carica solo con Wi-Fi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesyłaj tylko przez Wi-Fi"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yalnızca Wi-Fi ile yükle"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-upload sa Wi-Fi lang"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "শুধু Wi-Fi-তে আপলোড করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "صرف Wi-Fi پر اپ لوڈ کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pakia kupitia Wi-Fi pekee"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chỉ tải lên qua Wi-Fi"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بارگذاری فقط با Wi-Fi"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "อัปโหลดผ่าน Wi-Fi เท่านั้น"
           }
         }
       }
@@ -4672,12 +8632,6 @@
             "value": "Uploads"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Envios"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4694,6 +8648,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Загрузки"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envios"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carregamentos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caricamenti"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Przesyłanie plików"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yüklemeler"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga Upload"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "আপলোড"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اپ لوڈز"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upakiaji"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tải lên"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بارگذاری‌ها"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การอัปโหลด"
           }
         }
       }
@@ -4749,12 +8775,6 @@
             "value": "Wartend"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aguardando"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4771,6 +8791,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Ожидание"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aguardando"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Em espera"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In attesa"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oczekiwanie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekliyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naghihintay"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অপেক্ষায়"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منتظر"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inasubiri"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang chờ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در انتظار"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กำลังรอ"
           }
         }
       }
@@ -4826,12 +8918,6 @@
             "value": "Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.\n\nKorea: Gespräche, an denen Sie teilnehmen, dürfen aufgenommen werden; andere nicht.\nUSA: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA verlangen die Einwilligung aller Teilnehmenden.\nEU: Die DSGVO verlangt Information und eine Rechtsgrundlage; Dänemark verlangt ausdrückliche Einwilligung für geschäftliche Anrufe."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esta gravação não mostra nenhum aviso aos outros participantes. Informá-los é responsabilidade de quem grava.\n\nCoreia: você pode gravar uma conversa da qual participa (gravar uma da qual não participa é proibido).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem consentimento de todos.\nUE: o GDPR exige aviso e base legal; a Dinamarca exige consentimento explícito para chamadas comerciais."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -4848,6 +8934,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.\n\nКорея: можно записывать разговор, в котором вы участвуете; запись чужого разговора запрещена.\nСША: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA требуют согласия всех участников.\nЕС: GDPR требует уведомления и правового основания; Дания требует явного согласия для деловых звонков."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta gravação não mostra nenhum aviso aos outros participantes. Informá-los é responsabilidade de quem grava.\n\nCoreia: você pode gravar uma conversa da qual participa (gravar uma da qual não participa é proibido).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem consentimento de todos.\nUE: o GDPR exige aviso e base legal; a Dinamarca exige consentimento explícito para chamadas comerciais."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esta gravação não deixa nenhum sinal para as outras pessoas na reunião. Informá-las é da responsabilidade de quem grava.\n\nCoreia — pode gravar uma conversa em que participa (é proibido gravar uma em que não participa).\nEstados Unidos — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem o consentimento de todos os participantes.\nUE — o RGPD exige aviso e uma base legal, e a Dinamarca exige consentimento explícito para chamadas comerciais."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra.\n\nCorea: puoi registrare una conversazione a cui partecipi (è vietato registrarne una a cui non partecipi).\nStati Uniti: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA richiedono il consenso di tutti i partecipanti.\nUE: il GDPR richiede un’informativa e una base giuridica, e la Danimarca richiede il consenso esplicito per le chiamate di lavoro."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To nagrywanie nie daje innym uczestnikom spotkania żadnego sygnału. Poinformowanie ich należy do osoby, która nagrywa.\n\nKorea — możesz nagrywać rozmowę, w której uczestniczysz (nagrywanie rozmowy, w której nie uczestniczysz, jest zabronione).\nStany Zjednoczone — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA wymagają zgody wszystkich uczestników.\nUE — RODO wymaga poinformowania i podstawy prawnej, a Dania wymaga wyraźnej zgody w przypadku rozmów służbowych."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır.\n\nKore — katıldığınız bir konuşmayı kaydedebilirsiniz (katılmadığınız bir konuşmayı kaydetmek yasaktır).\nABD — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA eyaletlerinde tüm katılımcıların onayı gerekir.\nAB — GDPR bilgilendirme ve hukuki bir dayanak ister; Danimarka ise iş görüşmeleri için açık rıza şart koşar."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila.\n\nKorea — maaari mong i-record ang usapang kasali ka (bawal i-record ang usapang hindi ka kasali).\nEstados Unidos — kailangan ng pagsang-ayon ng bawat kalahok sa CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA.\nEU — hinihingi ng GDPR ang abiso at legal na batayan, at kailangan sa Denmark ang tahasang pagsang-ayon para sa mga tawag pangnegosyo."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "মিটিংয়ের অন্যরা এই রেকর্ডিংয়ের কোনো সংকেত পান না। তাদের জানানো রেকর্ডকারীর দায়িত্ব।\n\nকোরিয়া — আপনি যে কথোপকথনে অংশ নিচ্ছেন তা রেকর্ড করতে পারেন (যে কথোপকথনে আপনি নেই তা রেকর্ড করা নিষিদ্ধ)।\nযুক্তরাষ্ট্র — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA-তে প্রত্যেক অংশগ্রহণকারীর সম্মতি প্রয়োজন।\nEU — GDPR অবহিত করা ও আইনসম্মত ভিত্তি চায়, এবং ডেনমার্কে ব্যবসায়িক কলের জন্য স্পষ্ট সম্মতি আবশ্যক।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یہ ریکارڈنگ میٹنگ کے دوسرے لوگوں پر اپنا کوئی نشان ظاہر نہیں کرتی۔ انہیں بتانا ریکارڈ کرنے والے کی ذمہ داری ہے۔\n\nکوریا — آپ اس گفتگو کو ریکارڈ کر سکتے ہیں جس میں آپ شامل ہیں (جس گفتگو میں آپ شامل نہیں، اسے ریکارڈ کرنا ممنوع ہے)۔\nریاستہائے متحدہ — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA میں ہر شریک کی رضامندی درکار ہے۔\nیورپی یونین — GDPR اطلاع اور قانونی بنیاد کا تقاضا کرتا ہے، اور ڈنمارک کاروباری کالز کے لیے واضح رضامندی لازمی قرار دیتا ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi.\n\nKorea — unaweza kurekodi mazungumzo unayoshiriki (kurekodi mazungumzo usiyoshiriki ni marufuku).\nMarekani — majimbo ya CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yanahitaji ridhaa ya kila mshiriki.\nUmoja wa Ulaya — GDPR inahitaji taarifa na msingi halali, na Denmark inahitaji ridhaa ya wazi kwa simu za kibiashara."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ.\n\nHàn Quốc — bạn được ghi âm cuộc trò chuyện mà mình tham gia (cấm ghi âm cuộc trò chuyện mà bạn không tham gia).\nHoa Kỳ — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yêu cầu sự đồng ý của mọi người tham gia.\nEU — GDPR yêu cầu thông báo và cơ sở pháp lý, còn Đan Mạch yêu cầu sự đồng ý rõ ràng đối với cuộc gọi công việc."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند.\n\nکره — می‌توانید مکالمه‌ای را که خودتان در آن حضور دارید ضبط کنید (ضبط مکالمه‌ای که در آن حضور ندارید ممنوع است).\nایالات متحده — در ایالت‌های CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA رضایت همه شرکت‌کنندگان لازم است.\nاتحادیه اروپا — GDPR اطلاع‌رسانی و مبنای قانونی را لازم می‌داند و دانمارک برای تماس‌های تجاری رضایت صریح را الزامی کرده است."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ\n\nเกาหลี — คุณบันทึกเสียงการสนทนาที่คุณมีส่วนร่วมได้ (ห้ามบันทึกเสียงการสนทนาที่คุณไม่ได้มีส่วนร่วม)\nสหรัฐอเมริกา — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA กำหนดให้ต้องได้รับความยินยอมจากผู้เข้าร่วมทุกคน\nสหภาพยุโรป — GDPR กำหนดให้ต้องแจ้งให้ทราบและมีฐานทางกฎหมาย และเดนมาร์กกำหนดให้ต้องได้รับความยินยอมอย่างชัดแจ้งสำหรับการโทรทางธุรกิจ"
           }
         }
       }

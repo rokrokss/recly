@@ -40,9 +40,14 @@
     "android": "de"
   },
   {
-    "tag": "pt",
-    "name": "Português",
+    "tag": "pt-BR",
+    "name": "Português (Brasil)",
     "android": "pt"
+  },
+  {
+    "tag": "pt-PT",
+    "name": "Português (Portugal)",
+    "android": "pt-rPT"
   },
   {
     "tag": "ar",
@@ -58,5 +63,55 @@
     "tag": "ru",
     "name": "Русский",
     "android": "ru"
+  },
+  {
+    "tag": "it",
+    "name": "Italiano",
+    "android": "it"
+  },
+  {
+    "tag": "pl",
+    "name": "Polski",
+    "android": "pl"
+  },
+  {
+    "tag": "tr",
+    "name": "Türkçe",
+    "android": "tr"
+  },
+  {
+    "tag": "fil",
+    "name": "Filipino",
+    "android": "b+fil"
+  },
+  {
+    "tag": "bn",
+    "name": "বাংলা",
+    "android": "bn"
+  },
+  {
+    "tag": "ur",
+    "name": "اردو",
+    "android": "ur"
+  },
+  {
+    "tag": "sw",
+    "name": "Kiswahili",
+    "android": "sw"
+  },
+  {
+    "tag": "vi",
+    "name": "Tiếng Việt",
+    "android": "vi"
+  },
+  {
+    "tag": "fa",
+    "name": "فارسی",
+    "android": "fa"
+  },
+  {
+    "tag": "th",
+    "name": "ไทย",
+    "android": "th"
   }
 ]

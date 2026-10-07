@@ -86,7 +86,7 @@ class LanguageSettingTest {
      */
     @Test
     fun `the picker offers all shipped languages without the system sentinel`() {
-        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"), AppLanguage.choices.map { it.tag })
+        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt-BR", "pt-PT", "ar", "hi", "ru", "it", "pl", "tr", "fil", "bn", "ur", "sw", "vi", "fa", "th"), AppLanguage.choices.map { it.tag })
     }
 
     /** What the row says and the dialog marks: the locale the app's own words were resolved in. */
@@ -114,6 +114,11 @@ class LanguageSettingTest {
         assertEquals(AppLanguage.CHINESE_SIMPLIFIED, AppLanguage.of("zh-Hans-CN"))
         assertEquals(AppLanguage.CHINESE_SIMPLIFIED, AppLanguage.of("zh-Hans-HK"))
         assertEquals(AppLanguage.ARABIC, AppLanguage.of("ar-SA"))
+        assertEquals(AppLanguage.PORTUGUESE_BRAZIL, AppLanguage.of("pt"))
+        assertEquals(AppLanguage.PORTUGUESE_BRAZIL, AppLanguage.of("pt-BR"))
+        assertEquals(AppLanguage.PORTUGUESE_PORTUGAL, AppLanguage.of("pt-PT"))
+        assertEquals(AppLanguage.PORTUGUESE_PORTUGAL, AppLanguage.of("pt-AO"))
+        assertEquals(AppLanguage.FILIPINO, AppLanguage.of("fil-PH"))
         listOf("", "xx").forEach {
             assertEquals(AppLanguage.SYSTEM, AppLanguage.of(it), "tag '$it'")
         }

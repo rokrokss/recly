@@ -1532,16 +1532,18 @@ are fine, and a device that has not been used for a long time signs in again.
 
 ## 7. i18n (formerly docs/07)
 
-The UI supports **12 languages**: English (en), Korean (ko), Japanese (ja), Simplified Chinese (zh-Hans) · Traditional Chinese (zh-Hant),
-Spanish (es), French (fr), German (de), Portuguese (pt), Arabic (ar), Hindi (hi), Russian (ru).
+The UI supports **23 languages**: English (en), Korean (ko), Japanese (ja), Simplified Chinese (zh-Hans) · Traditional Chinese (zh-Hant),
+Spanish (es), French (fr), German (de), Brazilian Portuguese (pt-BR) · European Portuguese (pt-PT), Arabic (ar), Hindi (hi), Russian (ru),
+Italian (it), Polish (pl), Turkish (tr), Filipino (fil), Bengali (bn), Urdu (ur), Swahili (sw), Vietnamese (vi), Persian (fa), Thai (th).
 The default language follows the system language and can be changed inside the app (setting name **App language**). The transcription language is a
 separate setting from the UI language (§8). Its setting name is **Spoken language** — the language spoken in the recording, not a translation target.
 
 ### Rules
 
 1. **The base language is English** (the default value of the resource keys). Region tags are normalized to a supported language, and only an unsupported language falls back to English.
-   For Chinese, an explicit Hans/Hant script takes precedence; without one, TW/HK/MO map to Traditional and everything else to Simplified. Arabic gets an RTL layout.
-2. **Language setting values**: `system` (default) and the 12 language tags above. **It is a per-device setting and is not synchronized** (it does not go into
+   For Chinese, an explicit Hans/Hant script takes precedence; without one, TW/HK/MO map to Traditional and everything else to Simplified. For Portuguese, a bare `pt` and Brazil map to pt-BR and
+   every other region to pt-PT (CLDR). Arabic, Urdu and Persian get an RTL layout.
+2. **Language setting values**: `system` (default) and the 23 language tags above. **It is a per-device setting and is not synchronized** (it does not go into
    the recording processing settings). It is stored by platform convention (Android `LocaleManager.applicationLocales` + DataStore, Apple `UserDefaults`,
    Windows `java.util.prefs`). **The settings UI is one row that shows the current language as its value**, and on all 4 shells the list opens from the
    dropdown at the end of the row (value + `▾`, §9 principle 4) (2026-09-29; the phone used a dialog) — however many languages are added, the row stays one line. The list
@@ -1567,7 +1569,7 @@ separate setting from the UI language (§8). Its setting name is **Spoken langua
 7. **Dates, times and numbers use the platform locale formatters** — the pattern itself is a resource, so a Korean device reads "8월 28일 15:04"
    and an English device reads "Aug 28, 3:04 PM". File name timestamps (ISO) do not change.
 8. **Jurisdiction-specific consent notices** (§12) are per-language resources, but the links and the list of jurisdictions are shared.
-9. **Completeness tests**: each platform has a test that "every key exists in all 12 supported languages" and a check that "no Hangul literal remains
+9. **Completeness tests**: each platform has a test that "every key exists in all 23 supported languages" and a check that "no Hangul literal remains
    in UI source" (allow list: logs, tests, comments). RecKit additionally confirms by scanning that "every key a view draws is in the
    catalog" (it fails the day a key with a mismatched spelling, such as a curly apostrophe, is used).
 10. **Device name substitution rule**: the word a sentence uses when it refers to this device is fixed per shell — Android and iPhone use

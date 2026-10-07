@@ -436,7 +436,7 @@ final class AppLanguageTests: XCTestCase {
     /// docs/07 rule 2: the picker offers languages and not "follow the system" — a device that has
     /// never been given one is shown the language it followed the system to.
     func testThePickerOffersAllSupportedLanguagesAndNotTheSystemDefault() {
-        XCTAssertEqual(AppLanguage.Choice.choices.map(\.rawValue), ["en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"])
+        XCTAssertEqual(AppLanguage.Choice.choices.map(\.rawValue), ["en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt-BR", "pt-PT", "ar", "hi", "ru", "it", "pl", "tr", "fil", "bn", "ur", "sw", "vi", "fa", "th"])
     }
 
     /// What the row says and the picker marks, for a choice and for no choice at all.
@@ -449,6 +449,11 @@ final class AppLanguageTests: XCTestCase {
         XCTAssertEqual(AppLanguage.effective(.system, system: "zh-Hans-HK"), .zhHans)
         XCTAssertEqual(AppLanguage.effective(.system, system: "zh-Hans-CN"), .zhHans)
         XCTAssertEqual(AppLanguage.effective(.system, system: "ar-SA"), .ar)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "pt"), .ptBR)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "pt-BR"), .ptBR)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "pt-PT"), .ptPT)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "pt-AO"), .ptPT)
+        XCTAssertEqual(AppLanguage.effective(.system, system: "fil-PH"), .fil)
         XCTAssertEqual(AppLanguage.effective(.system, system: "xx"), .en)
         XCTAssertEqual(AppLanguage.effective(.system, system: nil), .en)
         XCTAssertEqual(AppLanguage.effective(.ko, system: "en"), .ko)

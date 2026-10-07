@@ -52,12 +52,6 @@
             "value": "Aufnahme mit ${applicationName} starten"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Iniciar gravação com ${applicationName}"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -74,6 +68,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Начать запись с ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação com ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Iniciar gravação com o ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia registrazione con ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpocznij nagrywanie w ${applicationName}"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} ile kaydı başlat"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simulan ang pag-record gamit ang ${applicationName}"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} দিয়ে রেকর্ডিং শুরু করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} سے ریکارڈنگ شروع کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anza kurekodi kwa ${applicationName}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi âm bằng ${applicationName}"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شروع ضبط با ${applicationName}"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มบันทึกเสียงด้วย ${applicationName}"
           }
         }
       }
@@ -129,12 +195,6 @@
             "value": "Aufnahme mit ${applicationName} stoppen"
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Parar gravação com ${applicationName}"
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -151,6 +211,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Остановить запись с ${applicationName}"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar gravação com ${applicationName}"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Parar gravação com o ${applicationName}"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompi registrazione con ${applicationName}"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymaj nagrywanie w ${applicationName}"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} ile kaydı durdur"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto ang pag-record gamit ang ${applicationName}"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} দিয়ে রেকর্ডিং থামান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "${applicationName} سے ریکارڈنگ روکیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simamisha kurekodi kwa ${applicationName}"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng ghi âm bằng ${applicationName}"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقف ضبط با ${applicationName}"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุดบันทึกเสียงด้วย ${applicationName}"
           }
         }
       }

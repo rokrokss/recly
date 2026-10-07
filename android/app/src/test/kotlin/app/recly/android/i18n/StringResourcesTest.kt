@@ -70,7 +70,7 @@ class StringResourcesTest {
             .getElementsByTagName("locale")
             .let { nodes -> (0 until nodes.length).map { (nodes.item(it) as Element).getAttribute("android:name") } }
 
-        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"), declared)
+        assertEquals(listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt-BR", "pt-PT", "ar", "hi", "ru", "it", "pl", "tr", "fil", "bn", "ur", "sw", "vi", "fa", "th"), declared)
     }
 
     private fun res(module: String, qualifier: String): File =
@@ -100,7 +100,7 @@ class StringResourcesTest {
         /** Unit tests run with the module directory as the working directory. */
         val MODULE_ROOT: File = File("..").canonicalFile
 
-        val QUALIFIERS = listOf("values-ko", "values-ja", "values-b+zh+Hans", "values-b+zh+Hant", "values-es", "values-fr", "values-de", "values-pt", "values-ar", "values-hi", "values-ru")
+        val QUALIFIERS = listOf("values-ko", "values-ja", "values-b+zh+Hans", "values-b+zh+Hant", "values-es", "values-fr", "values-de", "values-pt", "values-pt-rPT", "values-ar", "values-hi", "values-ru", "values-it", "values-pl", "values-tr", "values-b+fil", "values-bn", "values-ur", "values-sw", "values-vi", "values-fa", "values-th")
 
         val MODULES = listOf("app", "wear", "recording")
 

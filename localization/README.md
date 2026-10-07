@@ -1,7 +1,7 @@
 # App localization
 
 Recly ships the languages in `languages.json` on phones, watches and desktops. English is the source
-language; English and Korean keep their existing native resource files. The other ten languages
+language; English and Korean keep their existing native resource files. The other languages
 are maintained in `translations/<tag>.json` and generated into each platform's normal resources.
 App language and transcription language are separate settings. Transcription capabilities are
 owned by the shared core and the runtime speech engine, not by this directory.
@@ -19,6 +19,8 @@ file. Formatting arguments use `{0}`, `{1}`, etc. in these dictionaries; the gen
 source's exact native specifiers (`%@`, `%1$s`, `%1$d`). Preserve `${applicationName}` in App Shortcuts.
 Use actual JSON newline escapes for paragraphs. Android quoting and Java properties escaping are
 handled by the generator.
+Thai writes no sentence terminator, so its watch help bodies separate sentences with `\n`: the
+watch gives each sentence its own item (docs/recly.md §11 "Caveats", round screens).
 
 `unchanged.json` explicitly lists brands, technical labels, language autonyms and format-only
 messages. It is not a fallback for missing translations. Numeric plural messages use count-neutral

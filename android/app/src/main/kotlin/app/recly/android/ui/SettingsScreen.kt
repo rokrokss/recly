@@ -390,10 +390,21 @@ private fun AppLanguage.labelRes(): Int =
         AppLanguage.SPANISH -> R.string.settings_language_es
         AppLanguage.FRENCH -> R.string.settings_language_fr
         AppLanguage.GERMAN -> R.string.settings_language_de
-        AppLanguage.PORTUGUESE -> R.string.settings_language_pt
+        AppLanguage.PORTUGUESE_BRAZIL -> R.string.settings_language_pt_br
+        AppLanguage.PORTUGUESE_PORTUGAL -> R.string.settings_language_pt_pt
         AppLanguage.ARABIC -> R.string.settings_language_ar
         AppLanguage.HINDI -> R.string.settings_language_hi
         AppLanguage.RUSSIAN -> R.string.settings_language_ru
+        AppLanguage.ITALIAN -> R.string.settings_language_it
+        AppLanguage.POLISH -> R.string.settings_language_pl
+        AppLanguage.TURKISH -> R.string.settings_language_tr
+        AppLanguage.FILIPINO -> R.string.settings_language_fil
+        AppLanguage.BENGALI -> R.string.settings_language_bn
+        AppLanguage.URDU -> R.string.settings_language_ur
+        AppLanguage.SWAHILI -> R.string.settings_language_sw
+        AppLanguage.VIETNAMESE -> R.string.settings_language_vi
+        AppLanguage.PERSIAN -> R.string.settings_language_fa
+        AppLanguage.THAI -> R.string.settings_language_th
         AppLanguage.SYSTEM -> R.string.settings_language_en
     }
 

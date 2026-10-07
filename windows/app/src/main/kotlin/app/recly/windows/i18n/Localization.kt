@@ -20,10 +20,21 @@ enum class AppLanguage(val tag: String) {
     SPANISH("es"),
     FRENCH("fr"),
     GERMAN("de"),
-    PORTUGUESE("pt"),
+    PORTUGUESE_BRAZIL("pt-BR"),
+    PORTUGUESE_PORTUGAL("pt-PT"),
     ARABIC("ar"),
     HINDI("hi"),
     RUSSIAN("ru"),
+    ITALIAN("it"),
+    POLISH("pl"),
+    TURKISH("tr"),
+    FILIPINO("fil"),
+    BENGALI("bn"),
+    URDU("ur"),
+    SWAHILI("sw"),
+    VIETNAMESE("vi"),
+    PERSIAN("fa"),
+    THAI("th"),
 
     ;
 
@@ -39,6 +50,11 @@ enum class AppLanguage(val tag: String) {
                     else -> CHINESE_SIMPLIFIED
                 }
             }
+            if (normalized.substringBefore('-') == "pt") {
+                // CLDR: every region but Brazil reads Portugal's Portuguese; a bare "pt" is Brazil's.
+                val region = normalized.split('-').drop(1).takeWhile { it.length > 1 }.firstOrNull { it.length == 2 }
+                return if (region == null || region == "br") PORTUGUESE_BRAZIL else PORTUGUESE_PORTUGAL
+            }
             return entries.firstOrNull { it.tag.isNotEmpty() && (it.tag.lowercase() == normalized || it.tag == normalized.substringBefore('-')) } ?: SYSTEM
         }
 
@@ -49,7 +65,7 @@ enum class AppLanguage(val tag: String) {
          * on the entries because the system sentinel is never drawn.
          */
         val choices: List<Pair<AppLanguage, Str>> =
-            listOf(ENGLISH to Str.LANGUAGE_EN, KOREAN to Str.LANGUAGE_KO, JAPANESE to Str.LANGUAGE_JA, CHINESE_SIMPLIFIED to Str.LANGUAGE_ZH_HANS, CHINESE_TRADITIONAL to Str.LANGUAGE_ZH_HANT, SPANISH to Str.LANGUAGE_ES, FRENCH to Str.LANGUAGE_FR, GERMAN to Str.LANGUAGE_DE, PORTUGUESE to Str.LANGUAGE_PT, ARABIC to Str.LANGUAGE_AR, HINDI to Str.LANGUAGE_HI, RUSSIAN to Str.LANGUAGE_RU)
+            listOf(ENGLISH to Str.LANGUAGE_EN, KOREAN to Str.LANGUAGE_KO, JAPANESE to Str.LANGUAGE_JA, CHINESE_SIMPLIFIED to Str.LANGUAGE_ZH_HANS, CHINESE_TRADITIONAL to Str.LANGUAGE_ZH_HANT, SPANISH to Str.LANGUAGE_ES, FRENCH to Str.LANGUAGE_FR, GERMAN to Str.LANGUAGE_DE, PORTUGUESE_BRAZIL to Str.LANGUAGE_PT_BR, PORTUGUESE_PORTUGAL to Str.LANGUAGE_PT_PT, ARABIC to Str.LANGUAGE_AR, HINDI to Str.LANGUAGE_HI, RUSSIAN to Str.LANGUAGE_RU, ITALIAN to Str.LANGUAGE_IT, POLISH to Str.LANGUAGE_PL, TURKISH to Str.LANGUAGE_TR, FILIPINO to Str.LANGUAGE_FIL, BENGALI to Str.LANGUAGE_BN, URDU to Str.LANGUAGE_UR, SWAHILI to Str.LANGUAGE_SW, VIETNAMESE to Str.LANGUAGE_VI, PERSIAN to Str.LANGUAGE_FA, THAI to Str.LANGUAGE_TH)
     }
 }
 

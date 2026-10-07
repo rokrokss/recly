@@ -26,10 +26,21 @@ enum class AppLanguage(val tag: String) {
     SPANISH("es"),
     FRENCH("fr"),
     GERMAN("de"),
-    PORTUGUESE("pt"),
+    PORTUGUESE_BRAZIL("pt-BR"),
+    PORTUGUESE_PORTUGAL("pt-PT"),
     ARABIC("ar"),
     HINDI("hi"),
     RUSSIAN("ru"),
+    ITALIAN("it"),
+    POLISH("pl"),
+    TURKISH("tr"),
+    FILIPINO("fil"),
+    BENGALI("bn"),
+    URDU("ur"),
+    SWAHILI("sw"),
+    VIETNAMESE("vi"),
+    PERSIAN("fa"),
+    THAI("th"),
 
     ;
 
@@ -45,6 +56,11 @@ enum class AppLanguage(val tag: String) {
                     else -> CHINESE_SIMPLIFIED
                 }
             }
+            if (normalized.substringBefore('-') == "pt") {
+                // CLDR: every region but Brazil reads Portugal's Portuguese; a bare "pt" is Brazil's.
+                val region = normalized.split('-').drop(1).takeWhile { it.length > 1 }.firstOrNull { it.length == 2 }
+                return if (region == null || region == "br") PORTUGUESE_BRAZIL else PORTUGUESE_PORTUGAL
+            }
             return entries.firstOrNull { it.tag.isNotEmpty() && (it.tag.lowercase() == normalized || it.tag == normalized.substringBefore('-')) } ?: SYSTEM
         }
 
@@ -53,7 +69,7 @@ enum class AppLanguage(val tag: String) {
          * [SYSTEM] is not one of them — it is the store's "nothing chosen", and what the picker
          * then shows as chosen is [effective].
          */
-        val choices: List<AppLanguage> = listOf(ENGLISH, KOREAN, JAPANESE, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, SPANISH, FRENCH, GERMAN, PORTUGUESE, ARABIC, HINDI, RUSSIAN)
+        val choices: List<AppLanguage> = listOf(ENGLISH, KOREAN, JAPANESE, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, SPANISH, FRENCH, GERMAN, PORTUGUESE_BRAZIL, PORTUGUESE_PORTUGAL, ARABIC, HINDI, RUSSIAN, ITALIAN, POLISH, TURKISH, FILIPINO, BENGALI, URDU, SWAHILI, VIETNAMESE, PERSIAN, THAI)
 
         /**
          * The language the app is actually in. [locale] is the one the app's resources resolved to

@@ -266,7 +266,7 @@ private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> 
         highContrast = dev.highContrast ?: highContrastOf(systemContrast),
         tracked = strings.language != StringTable.KOREAN,
         content = {
-            CompositionLocalProvider(LocalLayoutDirection provides if (strings.language == "ar") LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
+            CompositionLocalProvider(LocalLayoutDirection provides if (strings.language in setOf("ar", "ur", "fa")) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
         },
     )
 }

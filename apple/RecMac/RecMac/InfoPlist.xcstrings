@@ -52,12 +52,6 @@
             "value": "Recly zeichnet andere Teilnehmende über Systemaudio sowie Ihr Mikrofon auf."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Recly grava os outros participantes pelo áudio do sistema, além do seu microfone."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -74,6 +68,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recly записывает других участников через системный звук, а также ваш микрофон."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava os outros participantes pelo áudio do sistema, além do seu microfone."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava os outros participantes através do áudio do sistema, além do seu microfone."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly registra gli altri partecipanti tramite l’audio di sistema, oltre al tuo microfono."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly nagrywa innych uczestników przez dźwięk systemowy, a także Twój mikrofon."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly, mikrofonunuzun yanı sıra diğer katılımcıları da sistem sesi üzerinden kaydeder."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nire-record ng Recly ang ibang kalahok sa pamamagitan ng audio ng system pati na rin ng iyong mikropono."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly আপনার মাইক্রোফোনের পাশাপাশি সিস্টেম অডিওর মাধ্যমে অন্য অংশগ্রহণকারীদেরও রেকর্ড করে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly آپ کے مائیکروفون کے ساتھ ساتھ سسٹم آڈیو کے ذریعے دیگر شرکاء کو بھی ریکارڈ کرتا ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly hurekodi washiriki wengine kupitia sauti ya mfumo pamoja na maikrofoni yako."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly ghi âm những người tham gia khác qua âm thanh hệ thống, cùng với micrô của bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "برنامه Recly علاوه بر میکروفون شما، صدای سایر شرکت‌کنندگان را از طریق صدای سیستم ضبط می‌کند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly บันทึกเสียงผู้เข้าร่วมคนอื่นผ่านเสียงระบบ นอกเหนือจากไมโครโฟนของคุณ"
           }
         }
       }
@@ -129,12 +195,6 @@
             "value": "Recly nimmt Besprechungen und Notizen zur Transkription auf."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Recly grava reuniões e notas para transcrição."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -151,6 +211,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recly записывает встречи и заметки для расшифровки."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas para transcrição."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas de voz para que possam ser transcritas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly registra riunioni e promemoria vocali per poterli trascrivere."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly nagrywa spotkania i notatki głosowe do transkrypcji."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly, toplantıları ve sesli notları metne dönüştürülebilmeleri için kaydeder."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nire-record ng Recly ang mga meeting at memo para ma-transcribe ang mga ito."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly মিটিং ও মেমো রেকর্ড করে, যাতে সেগুলোর ট্রান্সক্রিপশন করা যায়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly میٹنگز اور میموز ریکارڈ کرتا ہے تاکہ ان کا ٹرانسکرپشن ہو سکے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly hurekodi mikutano na madokezo ya sauti kwa ajili ya unukuzi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly ghi âm cuộc họp và ghi nhớ để có thể chép lời."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "برنامه Recly جلسه‌ها و یادداشت‌های صوتی را ضبط می‌کند تا رونویسی شوند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly บันทึกเสียงการประชุมและบันทึกช่วยจำเพื่อให้ถอดเสียงได้"
           }
         }
       }

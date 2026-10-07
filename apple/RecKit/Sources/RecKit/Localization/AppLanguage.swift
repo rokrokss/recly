@@ -21,17 +21,28 @@ public final class AppLanguage: ObservableObject {
         case es
         case fr
         case de
-        case pt
+        case ptBR = "pt-BR"
+        case ptPT = "pt-PT"
         case ar
         case hi
         case ru
+        case it
+        case pl
+        case tr
+        case fil
+        case bn
+        case ur
+        case sw
+        case vi
+        case fa
+        case th
 
         public var id: String { rawValue }
 
         /// docs/07 rule 2: what the picker offers, each under its own name and in the order of
         /// those names. [system] is not one of them — it is the store's "nothing chosen", and what
         /// the picker then shows as chosen is [AppLanguage.effective].
-        public static let choices: [Choice] = [.en, .ko, .ja, .zhHans, .zhHant, .es, .fr, .de, .pt, .ar, .hi, .ru]
+        public static let choices: [Choice] = [.en, .ko, .ja, .zhHans, .zhHant, .es, .fr, .de, .ptBR, .ptPT, .ar, .hi, .ru, .it, .pl, .tr, .fil, .bn, .ur, .sw, .vi, .fa, .th]
 
         /// The bare tag, or nil for [system] — which has no tag of its own to look anything up in.
         public var code: String? { self == .system ? nil : rawValue }
@@ -105,6 +116,11 @@ public final class AppLanguage: ObservableObject {
         if parts.first == "zh" {
             if parts.contains("hans") { return .zhHans }
             return parts.contains("hant") || parts.contains(where: { ["tw", "hk", "mo"].contains($0) }) ? .zhHant : .zhHans
+        }
+        if parts.first == "pt" {
+            // CLDR: every region but Brazil reads Portugal's Portuguese; a bare "pt" is Brazil's.
+            let region = parts.dropFirst().prefix { $0.count > 1 }.first { $0.count == 2 }
+            return region == nil || region == "br" ? .ptBR : .ptPT
         }
         return Choice.choices.first { $0.rawValue.lowercased() == tag || $0.rawValue == tag.components(separatedBy: "-")[0] } ?? .en
     }

@@ -55,7 +55,7 @@ class LocalizationTest {
     @Test
     fun `the picker offers all shipped languages without the system sentinel`() {
         assertEquals(
-            listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt", "ar", "hi", "ru"),
+            listOf("en", "ko", "ja", "zh-Hans", "zh-Hant", "es", "fr", "de", "pt-BR", "pt-PT", "ar", "hi", "ru", "it", "pl", "tr", "fil", "bn", "ur", "sw", "vi", "fa", "th"),
             AppLanguage.choices.map { it.first.tag },
         )
     }
@@ -68,6 +68,9 @@ class LocalizationTest {
         assertEquals(AppLanguage.JAPANESE, Localization(FakeSettings()) { "ja-JP" }.effective)
         assertEquals(AppLanguage.CHINESE_TRADITIONAL, Localization(FakeSettings()) { "zh-Hant-HK" }.effective)
         assertEquals(AppLanguage.ARABIC, Localization(FakeSettings()) { "ar-SA" }.effective)
+        assertEquals(AppLanguage.PORTUGUESE_BRAZIL, Localization(FakeSettings()) { "pt-BR" }.effective)
+        assertEquals(AppLanguage.PORTUGUESE_PORTUGAL, Localization(FakeSettings()) { "pt-PT" }.effective)
+        assertEquals(AppLanguage.PORTUGUESE_PORTUGAL, Localization(FakeSettings()) { "pt-AO" }.effective)
         assertEquals(AppLanguage.CHINESE_SIMPLIFIED, Localization(FakeSettings()) { "zh-Hans-HK" }.effective)
         assertEquals(
             AppLanguage.ENGLISH,

@@ -52,12 +52,6 @@
             "value": "Recly nimmt Besprechungen und Notizen zur Transkription auf."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Recly grava reuniões e notas para transcrição."
-          }
-        },
         "ar": {
           "stringUnit": {
             "state": "translated",
@@ -74,6 +68,78 @@
           "stringUnit": {
             "state": "translated",
             "value": "Recly записывает встречи и заметки для расшифровки."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas para transcrição."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O Recly grava reuniões e notas de voz para que possam ser transcritas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly registra riunioni e promemoria vocali per poterli trascrivere."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly nagrywa spotkania i notatki głosowe do transkrypcji."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly, toplantıları ve sesli notları metne dönüştürülebilmeleri için kaydeder."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nire-record ng Recly ang mga meeting at memo para ma-transcribe ang mga ito."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly মিটিং ও মেমো রেকর্ড করে, যাতে সেগুলোর ট্রান্সক্রিপশন করা যায়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly میٹنگز اور میموز ریکارڈ کرتا ہے تاکہ ان کا ٹرانسکرپشن ہو سکے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly hurekodi mikutano na madokezo ya sauti kwa ajili ya unukuzi."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly ghi âm cuộc họp và ghi nhớ để có thể chép lời."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "برنامه Recly جلسه‌ها و یادداشت‌های صوتی را ضبط می‌کند تا رونویسی شوند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly บันทึกเสียงการประชุมและบันทึกช่วยจำเพื่อให้ถอดเสียงได้"
           }
         }
       }

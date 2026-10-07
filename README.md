@@ -132,7 +132,8 @@ Elsewhere transcription starts off; choose an external provider with your own ke
 transcription does not separate speakers and never falls back to a cloud service.
 
 The interface supports English, Korean, Japanese, Simplified and Traditional Chinese, Spanish,
-French, German, Portuguese, Arabic, Hindi and Russian. Transcription offers 20 language choices,
+French, German, Brazilian and European Portuguese, Arabic, Hindi, Russian, Italian, Polish,
+Turkish, Filipino, Bengali, Urdu, Swahili, Vietnamese, Persian and Thai. Transcription offers 20 language choices,
 filtered by the provider or the device's speech engine. Desktop recordings always use meeting mode
 (microphone plus system audio), with automatic microphone selection.
 
