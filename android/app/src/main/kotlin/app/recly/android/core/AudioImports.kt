@@ -41,28 +41,51 @@ class AudioImports private constructor(private val context: Context) {
     fun import(uris: List<Uri>) {
         if (uris.isEmpty()) return
         _failure.value = null
-        // Mutex waiters are served in order, so the files arrive in the order they were given.
-        uris.forEach { uri -> scope.launch { queue.withLock { importOne(uri) } } }
+        // Every file is copied now, one after another, while the grants it came with still hold — a share's
+        // may end with the screen that received it. Only the transcoding waits its turn: each copy joins the
+        // queue as it lands, and the mutex serves its waiters in order.
+        scope.launch {
+            uris.forEach { uri ->
+                val staged = stage(uri) ?: return@forEach
+                scope.launch { queue.withLock { importOne(staged) } }
+            }
+        }
     }
 
     fun dismissFailure() {
         _failure.value = null
     }
 
+    /** A file copied into the cache, with the name its provider gave it. */
+    private class Staged(val copy: File, val name: String)
+
     /**
      * The core reads a path, and a picked or shared file is a `content:` URI whose grant may not outlast
-     * the screen that received it — so it is copied into the cache first, and the copy goes either way.
+     * the screen that received it — so it is copied into the cache, with its name, while the grant holds.
+     * Null when it could not be read, having said so.
      */
-    private suspend fun importOne(uri: Uri) {
-        val core = CoreModule.get(context).core
+    private suspend fun stage(uri: Uri): Staged? {
         val copy = File(context.cacheDir, "$IMPORTS/${UUID.randomUUID()}")
-        try {
+        return try {
             copy.parentFile!!.mkdirs()
             val name = displayName(uri)
             val opened = context.contentResolver.openInputStream(uri)
                 ?: throw java.io.FileNotFoundException(uri.toString())
             opened.use { input -> copy.outputStream().use { input.copyTo(it) } }
-            when (val result = core.importAudio(copy.path, name, null, AndroidAudioImporter(Dispatchers.Default))) {
+            Staged(copy, name)
+        } catch (e: Exception) {
+            CoreModule.get(context).core.deps.logger.log(Logger.Level.WARN, "rec.import.failed", mapOf("stage" to "copy"), e)
+            _failure.value = CoreMessage.IMPORT_UNREADABLE.code(detail = e.message ?: e::class.simpleName)
+            copy.delete()
+            null
+        }
+    }
+
+    /** One staged file into a recording; the copy goes either way. */
+    private suspend fun importOne(staged: Staged) {
+        val core = CoreModule.get(context).core
+        try {
+            when (val result = core.importAudio(staged.copy.path, staged.name, null, AndroidAudioImporter(Dispatchers.Default))) {
                 is ImportResult.Imported -> {
                     // Queued by the core like a stopped recording: the scheduler is woken the way the
                     // recorder's stop wakes it, and the waveform is drawn ahead of the first open.
@@ -74,10 +97,10 @@ class AudioImports private constructor(private val context: Context) {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            core.deps.logger.log(Logger.Level.WARN, "rec.import.failed", mapOf("stage" to "copy"), e)
+            core.deps.logger.log(Logger.Level.WARN, "rec.import.failed", mapOf("stage" to "import"), e)
             _failure.value = CoreMessage.IMPORT_UNREADABLE.code(detail = e.message ?: e::class.simpleName)
         } finally {
-            copy.delete()
+            staged.copy.delete()
         }
     }
 
