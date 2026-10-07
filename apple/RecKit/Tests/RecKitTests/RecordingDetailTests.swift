@@ -307,6 +307,26 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertEqual(model.title, "Meeting")
     }
 
+    /// docs/10 "Re-transcription": a recording that never reached its storage has nothing to transcribe
+    /// again from — the More menu says so, and so does a Transcribe again that was asked for anyway.
+    @MainActor
+    func testARecordingNotUploadedYetSaysSoRatherThanDoingNothing() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        let jobs = Task { await model.followJobs() }
+        addTeardownBlock { jobs.cancel(); await jobs.value }
+        for _ in 0..<100 {
+            if !model.uploaded { break }
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        XCTAssertFalse(model.uploaded)
+
+        await model.retranscribe()
+
+        XCTAssertEqual(model.retranscribeRefusal, "Not uploaded yet")
+    }
+
     /// A finalized recording and its directory, with no title of its own — the row a rename is
     /// about, minus the microphone that would otherwise have to make one.
     private func seed(_ bridge: CoreBridge, status: RecordingStatus = .finalized) async throws -> String {

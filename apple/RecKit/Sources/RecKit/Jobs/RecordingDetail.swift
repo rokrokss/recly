@@ -60,6 +60,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var saving: ProcessingState = .idle
     /// The current processing settings' transcription mode, for the More menu's reasons.
     @Published public private(set) var transcriptionOff = false
+    /// Whether the recording is in its storage — uploaded from here, or another device's row — which a
+    /// second transcription reads it from (docs/10 "Re-transcription").
+    @Published public private(set) var uploaded = true
+    /// Why the last `Transcribe again` did not start — its key — for a moment.
+    @Published public private(set) var retranscribeRefusal: String?
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -320,6 +325,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var retranscribeReason: String? {
         if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
         if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
+        if !uploaded { return RecKitStrings.localized("Not uploaded yet") }
         return nil
     }
 
@@ -328,6 +334,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         await refreshSettings()
         for await all in core.jobs.observe() {
             guard !Task.isCancelled else { return }
+            // An upload finishing is a job settling, so the answer is asked again with every change.
+            uploaded = (try? await core.uploaded(recordingId: recordingId))?.boolValue ?? uploaded
             let running = all.filter { $0.recordingId == recordingId && !Self.settled.contains($0.status) }
             transcriptionBusy = !running.isEmpty
             retranscribing = running.first { $0.retranscription }.map { job in
@@ -362,9 +370,25 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         do {
             let result = try await core.retranscribe(recordingId: recordingId)
             logger.info("detail.retranscribe result=\(String(describing: result), privacy: .public)")
-            jobsDue?()
+            // Never nothing: what stood in the way, in the More menu's own words.
+            switch onEnum(of: result) {
+            case .started: jobsDue?()
+            case .busy: refuse("Transcribing…")
+            case .noAudio: refuse("No audio on this device")
+            case .noTranscriptionConfigured: refuse("Transcription is off in Settings")
+            case .unsupported: refuse("Not uploaded yet")
+            }
         } catch {
             logger.error("detail.retranscribe.failed error=\(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// Kept as the key, so the line follows a language change while it stands.
+    private func refuse(_ key: String) {
+        retranscribeRefusal = key
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(3))
+            if self?.retranscribeRefusal == key { self?.retranscribeRefusal = nil }
         }
     }
 
@@ -373,6 +397,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @discardableResult
     public func edit(_ edits: [any TranscriptEdit]) async -> Bool {
         guard !edits.isEmpty else { return true }
+        // A second edit while one is saving would be written over the transcript the first one replaces.
+        guard saving != .processing else { return false }
         saving = .processing
         let edit: any TranscriptEdit = edits.count == 1 ? edits[0] : TranscriptEditBatch(edits: edits)
         do {
@@ -641,6 +667,15 @@ public struct RecordingDetailView: View {
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
+            } else if let refusal = model.retranscribeRefusal, draft == nil {
+                // docs/10 "Re-transcription": a Transcribe again that did not start says why.
+                Text(verbatim: loc(refusal))
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("retranscribe-refusal")
             }
             if model.loading {
                 notice(loc("Loading…"))
@@ -676,7 +711,8 @@ public struct RecordingDetailView: View {
                     playing: player.isPlaying,
                     highlights: model.highlights,
                     find: model.find,
-                    speakerActions: model.transcriptionBusy ? nil : TranscriptReader.SpeakerActions(
+                    // One edit at a time: while one is saving, the speaker menus wait for it.
+                    speakerActions: model.transcriptionBusy || model.saving == .processing ? nil : TranscriptReader.SpeakerActions(
                         rename: { id in
                             speakerName = transcript.speakers.first { $0.id == id }?.name ?? ""
                             renamingSpeaker = id

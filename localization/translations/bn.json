@@ -522,5 +522,6 @@
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "ট্রান্সক্রিপশনের জন্য পুরো রেকর্ডিং, ভাষা ও বক্তা সেটিংস এবং আপনার শব্দভান্ডার এখানে পাঠানো হয়। ডেটা রাখা ও প্রশিক্ষণে ব্যবহার প্রদানকারী এবং আপনার অ্যাকাউন্ট সেটিংসের উপর নির্ভর করে।",
   "Import to Recly": "Recly-তে ইমপোর্ট করুন",
   "Start or stop a recording.": "রেকর্ডিং শুরু করুন বা থামান।",
-  "Not uploaded yet": "এখনও আপলোড হয়নি"
+  "Not uploaded yet": "এখনও আপলোড হয়নি",
+  "Open Recly to import.": "ইমপোর্ট করতে Recly খুলুন।"
 }

@@ -522,5 +522,6 @@
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "کل ضبط به همراه تنظیمات زبان و گوینده و واژگان شما برای رونویسی به اینجا فرستاده می‌شود. نگهداری و آموزش به ارائه‌دهنده و تنظیمات حساب شما بستگی دارد.",
   "Import to Recly": "وارد کردن به Recly",
   "Start or stop a recording.": "شروع یا توقف ضبط.",
-  "Not uploaded yet": "هنوز بارگذاری نشده است"
+  "Not uploaded yet": "هنوز بارگذاری نشده است",
+  "Open Recly to import.": "برای وارد کردن، Recly را باز کنید."
 }

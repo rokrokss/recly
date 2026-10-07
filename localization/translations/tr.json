@@ -522,5 +522,6 @@
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "Kaydın tamamı, dil ve konuşmacı ayarları ve sözlüğünüz transkripsiyon için buraya gönderilir. Saklama ve model eğitimi, sağlayıcıya ve hesap ayarlarınıza bağlıdır.",
   "Import to Recly": "Recly'ye aktar",
   "Start or stop a recording.": "Kaydı başlatın veya durdurun.",
-  "Not uploaded yet": "Henüz yüklenmedi"
+  "Not uploaded yet": "Henüz yüklenmedi",
+  "Open Recly to import.": "İçe aktarmak için Recly'yi açın."
 }

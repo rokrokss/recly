@@ -522,5 +522,6 @@
   "The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings.": "ระบบจะส่งการบันทึกเสียงทั้งหมด การตั้งค่าภาษาและผู้พูด และคำศัพท์เฉพาะของคุณไปที่นี่เพื่อถอดเสียง การเก็บรักษาและการนำไปฝึกโมเดลขึ้นอยู่กับผู้ให้บริการและการตั้งค่าบัญชีของคุณ",
   "Import to Recly": "นำเข้าไปยัง Recly",
   "Start or stop a recording.": "เริ่มหรือหยุดบันทึกเสียง",
-  "Not uploaded yet": "ยังไม่ได้อัปโหลด"
+  "Not uploaded yet": "ยังไม่ได้อัปโหลด",
+  "Open Recly to import.": "เปิด Recly เพื่อนำเข้า"
 }

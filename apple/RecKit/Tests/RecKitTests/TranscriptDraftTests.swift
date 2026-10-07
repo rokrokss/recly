@@ -20,6 +20,14 @@ final class TranscriptDraftTests: XCTestCase {
         XCTAssertEqual(TranscriptMatch.all("RESUME", in: groups).count, 2)
     }
 
+    /// The core counts in UTF-16 code units, and so does the find bar: an emoji is two of them.
+    func testMatchesAreInUtf16Units() {
+        let groups = TranscriptGroup.make(transcript(["S1"], texts: ["👋 Résumé"]))
+        let match = TranscriptMatch.all("resume", in: groups).first
+        XCTAssertEqual(match?.offset, 3)
+        XCTAssertEqual(match?.length, 6)
+    }
+
     func testNewSpeakersOnAnUnidentifiedTranscriptBecomeTheCoresOwn() throws {
         let original = transcript(["", "", ""], texts: ["One", "Two", "Three"])
         let draft = TranscriptDraft(original)

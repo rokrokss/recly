@@ -14,7 +14,7 @@ public enum SpeakerSeparation {
 
     /// One stretch of one speaker, in seconds of the file it was asked about. [label] is the
     /// diarizer's own (`S1`, `S2`, …); the core renames them in order of appearance.
-    public struct Turn: Sendable, Equatable {
+    public struct Turn: Sendable, Equatable, Codable {
         public let start: Double
         public let end: Double
         public let label: String

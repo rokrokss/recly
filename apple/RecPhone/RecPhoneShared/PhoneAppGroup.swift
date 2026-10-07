@@ -44,7 +44,8 @@ enum PhoneStatusStore {
 enum ImportInbox {
     static var directory: URL? { PhoneAppGroup.container?.appendingPathComponent("Inbox", isDirectory: true) }
 
-    /// What is waiting, oldest first.
+    /// What is waiting, oldest first: a folder per file, the file under its own name inside — the share
+    /// extension's staging folders are hidden, so a file still being copied is not among them.
     static func pending() -> [URL] {
         guard let directory,
               let files = try? FileManager.default.contentsOfDirectory(
