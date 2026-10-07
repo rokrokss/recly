@@ -65,18 +65,9 @@ public struct TranscriptMatch: Equatable, Sendable {
         }
     }
 
-    /// Stands in for the core's `findRanges(text, query)` until it lands: the same answer from Foundation's
-    /// folding, in UTF-16 units.
+    /// docs/10 "Search": the core's matching, so a recording search found is found again here — UTF-16 units.
     private static func findRanges(_ text: String, _ query: String) -> [(offset: Int, length: Int)] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        var found: [(offset: Int, length: Int)] = []
-        var from = text.startIndex
-        while let range = text.range(of: needle, options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], range: from ..< text.endIndex) {
-            let offset = text.utf16.distance(from: text.startIndex, to: range.lowerBound)
-            found.append((offset, text.utf16.distance(from: range.lowerBound, to: range.upperBound)))
-            from = range.upperBound
-        }
-        return found
+        RecordingSearch.companion.findRanges(text: text, query: query).map { (Int($0.offset), Int($0.length)) }
     }
 }
 

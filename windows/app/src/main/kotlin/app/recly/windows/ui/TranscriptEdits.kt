@@ -1,6 +1,6 @@
 package app.recly.windows.ui
 
-import recly.core.recording.SearchRange
+import recly.core.recording.RecordingSearch
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptBlock
 import recly.core.transcribe.TranscriptEdit
@@ -68,13 +68,5 @@ internal data class FindMatch(val block: Int, val start: Int, val length: Int)
 
 /** docs/10 "Search": every occurrence of [query] in the blocks, folded as the search folds it, in reading order. */
 internal fun findMatches(blocks: List<TranscriptBlock>, query: String): List<FindMatch> =
-    blocks.flatMapIndexed { index, block -> findRanges(block.text, query).map { FindMatch(index, it.offset, it.length) } }
+    blocks.flatMapIndexed { index, block -> RecordingSearch.findRanges(block.text, query).map { FindMatch(index, it.offset, it.length) } }
 
-// TODO(cf-fix-core): the core's `findRanges(text, query)` once feat/cf-fix-core is merged; until then, case only.
-private fun findRanges(text: String, query: String): List<SearchRange> {
-    val term = query.trim()
-    if (term.isEmpty()) return emptyList()
-    return generateSequence(text.indexOf(term, ignoreCase = true).takeIf { it >= 0 }) { from ->
-        text.indexOf(term, from + term.length, ignoreCase = true).takeIf { it >= 0 }
-    }.map { SearchRange(it, term.length) }.toList()
-}

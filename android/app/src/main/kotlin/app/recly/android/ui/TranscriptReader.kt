@@ -35,7 +35,7 @@ import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
-import recly.core.recording.SearchRange
+import recly.core.recording.RecordingSearch
 import recly.core.transcribe.Transcript
 
 /**
@@ -76,19 +76,8 @@ internal fun activeGroup(groups: List<ReaderGroup>, positionSec: Double): Int = 
 internal data class FindMatch(val group: Int, val offset: Int, val length: Int)
 
 internal fun findMatches(groups: List<ReaderGroup>, query: String): List<FindMatch> =
-    groups.flatMap { group -> findRanges(group.text, query).map { FindMatch(group.index, it.offset, it.length) } }
+    groups.flatMap { group -> RecordingSearch.findRanges(group.text, query).map { FindMatch(group.index, it.offset, it.length) } }
 
-/**
- * Stand-in for the core's `findRanges(text, query)` (docs/10 "Search": case, Latin accents and full width
- * folded), which lands with feat/cf-fix-core; until that merge only case is ignored here.
- */
-private fun findRanges(text: String, query: String): List<SearchRange> {
-    val term = query.trim()
-    if (term.isEmpty()) return emptyList()
-    return generateSequence(text.indexOf(term, ignoreCase = true).takeIf { it >= 0 }) { from ->
-        text.indexOf(term, from + term.length, ignoreCase = true).takeIf { it >= 0 }
-    }.map { SearchRange(it, term.length) }.toList()
-}
 
 /** The speaker a group header shows: the name the user gave, or the id. */
 internal fun speakerLabel(transcript: Transcript, id: String): String =
