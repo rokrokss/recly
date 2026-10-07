@@ -234,16 +234,24 @@ func Describe(ctx context.Context, api *API, f File) (Recording, error) {
 
 // Latest returns the newest Recly transcript in Drive, for `recly-events test`. Drive's `name
 // contains` matches a prefix only (see folderQuery), so the query asks for the text files whose
-// name starts with a year, and the name pattern picks the transcripts out.
+// name starts with a digit, page after page, and the name pattern picks the transcripts out.
 func Latest(ctx context.Context, api *API) (File, error) {
-	files, err := api.List(ctx, "mimeType = 'text/plain' and name contains '2' and trashed = false", 50)
-	if err != nil {
-		return File{}, err
-	}
-	for _, f := range files {
-		if transcriptName.MatchString(f.Name) {
-			return f, nil
+	query := "mimeType = 'text/plain' and " + digitPrefix + " and trashed = false"
+	cursor := ""
+	for page := 0; page < scanPages; page++ {
+		files, next, err := api.ListPage(ctx, query, "createdTime desc", 100, cursor)
+		if err != nil {
+			return File{}, err
 		}
+		for _, f := range files {
+			if transcriptName.MatchString(f.Name) {
+				return f, nil
+			}
+		}
+		if next == "" {
+			break
+		}
+		cursor = next
 	}
 	return File{}, errors.New("no Recly transcript found in Google Drive")
 }

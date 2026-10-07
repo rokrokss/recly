@@ -387,3 +387,17 @@ func TestLatestFindsNewestTranscript(t *testing.T) {
 		t.Fatalf("latest = %+v %v", f, err)
 	}
 }
+
+// A Drive with more date-named text files than one page still finds the transcript behind them.
+func TestLatestPagesPastOtherTextFiles(t *testing.T) {
+	w, fd, _, _ := setup(t)
+	for i := range 150 {
+		id := fmt.Sprintf("note%03d", i)
+		fd.files[id] = File{ID: id, Name: fmt.Sprintf("2026 note %03d.txt", i), MimeType: "text/plain"}
+	}
+	fd.files["txt1"] = txt
+	f, err := Latest(context.Background(), w.API)
+	if err != nil || f.ID != "txt1" {
+		t.Fatalf("latest = %+v %v", f, err)
+	}
+}

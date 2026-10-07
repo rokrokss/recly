@@ -153,3 +153,31 @@ func TestDownloadRefusesOversizedFiles(t *testing.T) {
 		t.Fatalf("download: %d %v", len(b), err)
 	}
 }
+
+// An import keeps its file's own date, so a base name can start with any year.
+func TestSourceListsAnImportFromAnotherCentury(t *testing.T) {
+	src, fd := setupSource(t)
+	const base, id = "19991231T235959Z_import_01M9QXD0", "01M9QXD0ZZZZZZZZZZZZZZZZZZ"
+	fd.files["fOld"] = File{ID: "fOld", Name: base, MimeType: "application/vnd.google-apps.folder"}
+	fd.files["metaOld"] = File{ID: "metaOld", Name: base + ".meta.json", Parents: []string{"fOld"}}
+	fd.content["metaOld"] = `{"recordingId":"` + id + `","title":"Tape"}`
+	ctx := context.Background()
+	var found bool
+	cursor := ""
+	for range 5 {
+		page, next, err := src.Recordings(ctx, 10, cursor)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, r := range page {
+			found = found || r.RecordingID == id
+		}
+		if next == "" {
+			break
+		}
+		cursor = next
+	}
+	if !found {
+		t.Fatal("the 1999 import was not listed")
+	}
+}

@@ -6,6 +6,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
 import java.io.File
+import java.io.InputStream
 import java.util.UUID
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -41,12 +42,15 @@ class AudioImports private constructor(private val context: Context) {
     fun import(uris: List<Uri>) {
         if (uris.isEmpty()) return
         _failure.value = null
-        // Every file is copied now, one after another, while the grants it came with still hold — a share's
-        // may end with the screen that received it. Only the transcoding waits its turn: each copy joins the
-        // queue as it lands, and the mutex serves its waiters in order.
+        // Every file is opened here, before this returns, while the grants it came with still hold — a share's may
+        // end with the screen that received it, and a stream already open outlives it. The copies are made in the
+        // background, one after another; only the transcoding waits its turn: each copy joins the queue as it
+        // lands, and the mutex serves its waiters in order.
+        val opened = uris.map { runCatching { open(it) } }
         scope.launch {
-            uris.forEach { uri ->
-                val staged = stage(uri) ?: return@forEach
+            opened.forEach { result ->
+                val source = result.getOrElse { failed(it); return@forEach }
+                val staged = stage(source) ?: return@forEach
                 scope.launch { queue.withLock { importOne(staged) } }
             }
         }
@@ -56,29 +60,37 @@ class AudioImports private constructor(private val context: Context) {
         _failure.value = null
     }
 
+    /** A picked or shared file, opened while its grant holds, with the name its provider gave it. */
+    private class Source(val input: InputStream, val name: String)
+
     /** A file copied into the cache, with the name its provider gave it. */
     private class Staged(val copy: File, val name: String)
 
+    private fun open(uri: Uri): Source {
+        val input = context.contentResolver.openInputStream(uri) ?: throw java.io.FileNotFoundException(uri.toString())
+        return Source(input, displayName(uri))
+    }
+
     /**
-     * The core reads a path, and a picked or shared file is a `content:` URI whose grant may not outlast
-     * the screen that received it — so it is copied into the cache, with its name, while the grant holds.
-     * Null when it could not be read, having said so.
+     * The core reads a path, and a picked or shared file is a `content:` URI — so it is copied into the cache,
+     * from the stream [open] took while the grant held. Null when it could not be read, having said so.
      */
-    private suspend fun stage(uri: Uri): Staged? {
+    private suspend fun stage(source: Source): Staged? {
         val copy = File(context.cacheDir, "$IMPORTS/${UUID.randomUUID()}")
         return try {
             copy.parentFile!!.mkdirs()
-            val name = displayName(uri)
-            val opened = context.contentResolver.openInputStream(uri)
-                ?: throw java.io.FileNotFoundException(uri.toString())
-            opened.use { input -> copy.outputStream().use { input.copyTo(it) } }
-            Staged(copy, name)
+            source.input.use { input -> copy.outputStream().use { input.copyTo(it) } }
+            Staged(copy, source.name)
         } catch (e: Exception) {
-            CoreModule.get(context).core.deps.logger.log(Logger.Level.WARN, "rec.import.failed", mapOf("stage" to "copy"), e)
-            _failure.value = CoreMessage.IMPORT_UNREADABLE.code(detail = e.message ?: e::class.simpleName)
+            failed(e)
             copy.delete()
             null
         }
+    }
+
+    private suspend fun failed(e: Throwable) {
+        CoreModule.get(context).core.deps.logger.log(Logger.Level.WARN, "rec.import.failed", mapOf("stage" to "copy"), e)
+        _failure.value = CoreMessage.IMPORT_UNREADABLE.code(detail = e.message ?: e::class.simpleName)
     }
 
     /** One staged file into a recording; the copy goes either way. */
