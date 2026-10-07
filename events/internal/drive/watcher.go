@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/rokrokss/recly/events/internal/library"
 	"github.com/rokrokss/recly/events/internal/state"
 )
 
@@ -17,7 +18,12 @@ import (
 // base = `{yyyyMMdd}T{HHmmss}Z_{source}_{first 8 of recordingId}` (docs/recly.md §3
 // "Naming rules", core MetaWriter.baseName). Recly always writes it; the folder a user
 // configured does not matter.
-var transcriptName = regexp.MustCompile(`^((\d{8}T\d{6}Z)_(watch|phone|desktop)_([0-9A-Z]{8}))\.transcript\.txt$`)
+var transcriptName = regexp.MustCompile(`^(` + library.BasePattern + `)\.transcript\.txt$`)
+
+// transcriptMark is the appProperties key the Recly apps put on each `.transcript.txt` version they
+// write: `transcribed` by a transcription, `edited` when the user changed the text or a speaker's
+// name in the app.
+const transcriptMark = "reclyTranscript"
 
 // Recording is the event data: where the transcript is, never what it says.
 type Recording struct {
@@ -159,6 +165,13 @@ func (w *Watcher) announce(ctx context.Context, f File) error {
 	// the agent to read. A re-transcription that finds speech changes the version and is announced.
 	if f.Size == "0" {
 		w.Log.Info("drive.transcript.empty", "file", f.ID)
+		return w.Store.Update(func(s *state.State) error { s.Drive.Seen[f.ID] = v; return nil })
+	}
+	// An edit in the app is the same recording, already announced: the version is noted, not
+	// announced. Only Recly's own client sees the mark; with a client of the user's own an edit is
+	// announced like a re-transcription.
+	if f.AppProperties[transcriptMark] == "edited" {
+		w.Log.Info("drive.transcript.edited", "file", f.ID)
 		return w.Store.Update(func(s *state.State) error { s.Drive.Seen[f.ID] = v; return nil })
 	}
 	rec, err := Describe(ctx, w.API, f)

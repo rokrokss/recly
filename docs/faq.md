@@ -46,8 +46,8 @@ recordings stored in Google Drive. See [where recordings go](setup.md#2-choose-w
 Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on
 iPhone and Mac, or a local folder that stays on your device), to the transcription provider you
 chose with your own key, between your own paired watch and phone, and, if you turn on automatic
-minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, never
-the audio or what was said. In Google Drive, Recly asks only for `drive.file`, so it sees only the
+minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, and its
+transcript when the agent asks for it; never the audio. In Google Drive, Recly asks only for `drive.file`, so it sees only the
 files it created. Nothing goes to the Recly developer, and the
 [privacy policy](https://recly.dev/policy/privacy-policy) lists every path.
 
@@ -84,12 +84,12 @@ the provider separate speakers. See [how to transcribe](setup.md#3-choose-how-to
 Yes, with a ChatGPT agent. When a transcript lands in your Google Drive, the Recly Mac or Windows
 app tells your agent, and the agent writes the minutes by itself, usually within a minute. You need
 recordings stored in Google Drive; a ChatGPT dot (at the time of writing, ChatGPT Business Premium,
-or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT web; ChatGPT's
-Google Drive app, connected to the Google account Recly uploads to; an OpenAI Platform account for
-the tunnel and its key; and a computer that stays on. Follow the [ChatGPT agent guide](agent.md),
+or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT web; an OpenAI
+Platform account for the tunnel and its key; and a computer that stays on. Follow the [ChatGPT agent guide](agent.md),
 or [run recly-events yourself](recly-events.md) on a server or on Linux. With other agents, the
 [example skills](https://github.com/rokrokss/recly/blob/main/skills/README.md) write notes when you
-ask.
+ask, and for recordings in a local folder or iCloud, Claude and Codex read them through the
+[local MCP server](mcp.md).
 
 ## Does Recly record without telling anyone?
 

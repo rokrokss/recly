@@ -40,7 +40,8 @@ Google Drive에 저장되어야 합니다. [녹음을 둘 곳 고르기](setup.k
 
 Recly에는 서버가 없습니다. 데이터는 고른 저장소(내 Google Drive, iPhone·Mac에서는 내 iCloud, 또는 기기 안에 머무는
 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 켰다면 OpenAI를 거쳐 내 ChatGPT
-에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크뿐이고, 오디오나 말한 내용은 가지 않습니다.
+에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크와, 에이전트가 요청할 때의 녹취록이고, 오디오는
+가지 않습니다.
 Google Drive에서 Recly는 `drive.file` 권한만 요청하므로 자기가 만든 파일만 봅니다. Recly 개발자에게 가는 것은 없으며,
 모든 경로는 [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)에 있습니다.
 
@@ -74,11 +75,11 @@ Android와 Windows에서는 Qwen3-ASR 0.6B를 씁니다. Android 폰과 Windows 
 
 네, ChatGPT 에이전트로 됩니다. 녹취록이 내 Google Drive에 올라오면 Recly Mac·Windows 앱이 에이전트에게 알리고,
 에이전트가 보통 1분 안에 알아서 회의록을 씁니다. 필요한 것: Google Drive에 저장되는 녹음, ChatGPT dot(이 글을 쓰는
-시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, Recly가
-업로드하는 Google 계정으로 연결한 ChatGPT의 Google Drive 앱, 터널과 키를 만들 OpenAI Platform 계정, 그리고 켜 둔
-컴퓨터. [ChatGPT 에이전트 안내](agent.ko.md)를 따르거나, 서버나 Linux에서는
-[recly-events를 직접 실행](recly-events.ko.md)하세요. 다른 에이전트에서는
-[예시 스킬](https://github.com/rokrokss/recly/blob/main/skills/README.md)(영어)이 부탁할 때 노트를 씁니다.
+시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, 터널과
+키를 만들 OpenAI Platform 계정, 그리고 켜 둔 컴퓨터. [ChatGPT 에이전트 안내](agent.ko.md)를 따르거나, 서버나
+Linux에서는 [recly-events를 직접 실행](recly-events.ko.md)하세요. 다른 에이전트에서는
+[예시 스킬](https://github.com/rokrokss/recly/blob/main/skills/README.md)(영어)이 부탁할 때 노트를 쓰고, 로컬
+폴더나 iCloud의 녹음은 Claude와 Codex가 [로컬 MCP 서버](mcp.ko.md)로 읽습니다.
 
 ## Recly는 아무에게도 알리지 않고 녹음하나요?
 

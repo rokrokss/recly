@@ -31,15 +31,15 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 내 에이전트(dot이나 Work 채팅)에게 보내면, 에이전트가 녹취록을 읽고 녹음마다 하라고 정해 둔 일을 합니다. 회의록,
 결정 사항과 할 일, 후속 메일 초안 같은 것들입니다.
 
-<p align="center"><img src="docs/design/agent-flow.ko.svg" width="100%" alt="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 ChatGPT의 Google Drive 앱으로 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다."></p>
+<p align="center"><img src="docs/design/agent-flow.ko.svg" width="100%" alt="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다."></p>
 
 - **프롬프트가 아니라 이벤트.** OpenAI의 MCP Events는 앱이 에이전트를 깨울 수 있게 합니다.
   `recording.transcribed`는 서명된 채 ChatGPT에 닿고, 새 녹취록마다 에이전트가 한 번씩 일합니다.
 - **내 터널을 거쳐.** 에이전트는 내 [OpenAI Secure MCP Tunnel](https://developers.openai.com/api/docs/guides/secure-mcp-tunnels)로 recly-events에 되묻습니다. 터널은
   recly-events가 내 쪽에서 열기 때문에 내 컴퓨터에는 공개 주소도 열린 포트도 필요 없고, Recly 서버도 여전히
   없습니다.
-- **이름과 링크만, 대화 내용은 빼고.** 이벤트에는 녹음 이름과 내 Google Drive 속 파일 링크만 담깁니다. 녹취록은
-  에이전트가 ChatGPT의 Google Drive 앱으로 직접 읽습니다.
+- **녹취록은 에이전트가 요청할 때만.** 이벤트에는 녹음 이름, 제목, Google Drive 링크만 담깁니다. 녹취록은
+  에이전트가 필요할 때 `get_transcript`로 내 터널을 거쳐 읽습니다. ChatGPT의 Google Drive 앱은 필요 없습니다.
 - **놓치는 것 없이.** 잠들었던 컴퓨터는 깨어나면 그사이의 녹취록을 따라잡고, 에이전트가 아직 가져가지 않은
   이벤트는 30일 동안 우편함에 남습니다.
 
@@ -47,8 +47,7 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 [ChatGPT 에이전트 안내](docs/agent.ko.md)에 있습니다. 서버, Linux, 앱이 없는 컴퓨터에서는
 [recly-events를 직접 실행하세요](docs/recly-events.ko.md). 필요한 것: Google Drive에 저장되는 녹음, ChatGPT
 dot(이 글을 쓰는 시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work
-채팅, Recly가 업로드하는 Google 계정으로 연결한 ChatGPT의 Google Drive 앱, 터널과 키를 만들 OpenAI Platform 계정,
-그리고 켜 둔 컴퓨터.
+채팅, 터널과 키를 만들 OpenAI Platform 계정, 그리고 켜 둔 컴퓨터.
 
 ## 왜 Recly인가
 
@@ -71,7 +70,7 @@ dot(이 글을 쓰는 시점에 ChatGPT Business Premium, 또는 EEA·스위스�
 | 녹음 | 내 워치·폰·데스크톱 | 없음. 워치는 짝 지은 내 폰으로만 오디오를 넘깁니다. |
 | 저장 | 내 Google Drive(iPhone·Mac은 내 iCloud, iPhone·Mac·Windows·Android는 고른 로컬 폴더도 가능) | Google Drive나 iCloud: 오디오 파트와 작은 메타데이터 파일, 내 계정으로. 로컬 폴더: 기기를 떠나는 것 없음. |
 | 녹취 | 기기 안, 또는 내가 고른 업체(내 키로) | 기기 안: 음성 인식 서비스로 가는 오디오 없음. 외부: 합친 오디오가 고른 업체로 갑니다. 결과는 녹음 옆에 기록됩니다. |
-| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 저장소에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). 자동 회의록을 켜면 recly-events가 새 녹취록마다 OpenAI를 거쳐 내 ChatGPT 에이전트에게 알립니다. 녹음 이름, 제목, Drive 링크만 보내고 오디오나 대화 내용은 보내지 않습니다. |
+| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 저장소에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). 자동 회의록을 켜면 recly-events가 새 녹취록마다 OpenAI를 거쳐 내 ChatGPT 에이전트에게 알립니다. 녹음 이름, 제목, Drive 링크를 보내고, 녹취록은 에이전트가 요청할 때만 보냅니다. 오디오는 보내지 않습니다. |
 | 처리 설정, API 키 | 기기 안 | 동기화하지 않습니다. **설정 파일** → **설정 내보내기**에는 키 값이 포함되지 않아 기기마다 별도로 입력합니다. |
 
 네트워크로 나가는 경로 전부를 하나도 빼지 않고 적은 문서가 [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)입니다.
@@ -166,6 +165,9 @@ npx skills add rokrokss/recly            # Agent Skills를 지원하는 어떤 �
 대해 뭘 결정했지?"*. 다른 양식이 필요하거나 Notion이 아닌 곳에 노트를 두고 싶다면 스킬을 고치거나, 하나를
 복사해 [직접 만드세요](skills/README.md#write-your-own). 그게 이 구조의 요점입니다.
 
+로컬 폴더나 Mac의 iCloud에 있는 녹음은 `recly-events mcp`로 같은 컴퓨터의 Claude Desktop, Claude Code, Codex가
+목록 보기·검색·읽기를 할 수 있습니다. 로그인도 네트워크도 없습니다. 설정: [로컬 MCP 서버](docs/mcp.ko.md).
+
 ## 클라이언트
 
 | 클라이언트 | 만든 것 | 하는 일 |
@@ -186,8 +188,8 @@ npx skills add rokrokss/recly            # Agent Skills를 지원하는 어떤 �
 
 Recly에는 서버가 없습니다. 데이터는 고른 저장소(내 Google Drive, iPhone·Mac에서는 내 iCloud, 또는 기기 안에
 머무는 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 켰다면 OpenAI를 거쳐
-내 ChatGPT 에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크뿐이고, 오디오나 말한 내용은
-가지 않습니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를 전부 나열하고,
+내 ChatGPT 에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크와, 에이전트가 요청할 때의
+녹취록이고, 오디오는 가지 않습니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를 전부 나열하고,
 [docs/recly.md §15](docs/recly.md#15-privacy--data-flows-formerly-docs15)가 그 뒤의 엔지니어링 계약입니다.
 네트워크 호출을 추가하는 변경은 그 절을 먼저 고쳐야 합니다.
 

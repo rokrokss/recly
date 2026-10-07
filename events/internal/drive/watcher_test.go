@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"
+	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -15,14 +17,27 @@ import (
 	"github.com/rokrokss/recly/events/internal/state"
 )
 
-// fakeDrive serves the four endpoints the watcher uses from in-memory data.
+// fakeDrive serves the Drive endpoints recly-events uses from in-memory data: the changes feed,
+// file metadata, queries by name (alone, joined by `or`, or `name contains` a suffix), paging, and
+// content (`alt=media`).
 type fakeDrive struct {
-	mu        sync.Mutex
-	start     string
-	pages     map[string]ChangePage
-	files     map[string]File
-	failGet   bool
-	listCalls []string
+	mu          sync.Mutex
+	start       string
+	pages       map[string]ChangePage
+	files       map[string]File
+	content     map[string]string
+	failGet     bool
+	failContent int
+	listCalls   []string
+}
+
+func (d *fakeDrive) matches(q string, f File) bool {
+	if strings.Contains(q, "mimeType = 'application/vnd.google-apps.folder'") && f.MimeType != "application/vnd.google-apps.folder" {
+		return false
+	}
+	return strings.Contains(q, "name = '"+f.Name+"'") ||
+		(strings.Contains(q, "name contains '.transcript.txt'") && strings.HasSuffix(f.Name, ".transcript.txt")) ||
+		(strings.Contains(q, "name contains '.meta.json'") && strings.HasSuffix(f.Name, ".meta.json"))
 }
 
 func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -38,11 +53,30 @@ func (d *fakeDrive) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		d.listCalls = append(d.listCalls, q)
 		var out []File
 		for _, f := range d.files {
-			if strings.Contains(q, "name = '"+f.Name+"'") || (strings.Contains(q, "name contains '.transcript.txt'") && strings.HasSuffix(f.Name, ".transcript.txt")) {
+			if d.matches(q, f) {
 				out = append(out, f)
 			}
 		}
-		_ = json.NewEncoder(w).Encode(map[string]any{"files": out})
+		// Every order the code asks for (name, createdTime) is newest first for these names.
+		slices.SortFunc(out, func(a, b File) int { return strings.Compare(b.Name, a.Name) })
+		from, _ := strconv.Atoi(r.URL.Query().Get("pageToken"))
+		size, _ := strconv.Atoi(r.URL.Query().Get("pageSize"))
+		res := map[string]any{"files": out[min(from, len(out)):]}
+		if size > 0 && from+size < len(out) {
+			res["files"], res["nextPageToken"] = out[from:from+size], strconv.Itoa(from+size)
+		}
+		_ = json.NewEncoder(w).Encode(res)
+	case strings.HasPrefix(r.URL.Path, "/files/") && r.URL.Query().Get("alt") == "media":
+		if d.failContent != 0 {
+			http.Error(w, `{"error":{"errors":[{"reason":"insufficientPermissions"}],"message":"Request had insufficient authentication scopes."}}`, d.failContent)
+			return
+		}
+		c, ok := d.content[strings.TrimPrefix(r.URL.Path, "/files/")]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = io.WriteString(w, c)
 	case strings.HasPrefix(r.URL.Path, "/files/"):
 		if d.failGet {
 			http.Error(w, `{"error":"backend"}`, http.StatusServiceUnavailable)
@@ -70,7 +104,7 @@ func setup(t *testing.T) (*Watcher, *fakeDrive, *[]emitted, *state.Store) {
 		start: "t1",
 		pages: map[string]ChangePage{},
 		files: map[string]File{
-			"folder1": {ID: "folder1", Name: "20261001T064503Z_watch_01M3V3B6", Description: "Weekly sync", WebViewLink: "https://drive.google.com/drive/folders/folder1",
+			"folder1": {ID: "folder1", Name: "20261001T064503Z_watch_01M3V3B6", MimeType: "application/vnd.google-apps.folder", Description: "Weekly sync", WebViewLink: "https://drive.google.com/drive/folders/folder1",
 				AppProperties: map[string]string{"recordingId": "01M3V3B6P5NF6ZM7X1QDFERRWT"}},
 			"json1": {ID: "json1", Name: "20261001T064503Z_watch_01M3V3B6.transcript.json", Parents: []string{"folder1"}},
 		},
@@ -187,6 +221,48 @@ func TestSkipsEmptyTranscriptUntilItHasContent(t *testing.T) {
 	fd.pages["t2"] = ChangePage{NewStartPageToken: "t3", Changes: []Change{{FileID: "txt1", File: &filled}}}
 	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
 		t.Fatalf("re-transcribed transcript: %v %d", err, len(*got))
+	}
+}
+
+func TestEditedTranscriptIsNotAnnouncedAgain(t *testing.T) {
+	w, fd, got, store := setup(t)
+	_ = w.Poll(context.Background())
+	first := txt
+	first.AppProperties = map[string]string{"reclyTranscript": "transcribed"}
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t2", Changes: []Change{{FileID: "txt1", File: &first}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("transcribed: %v %d", err, len(*got))
+	}
+	// The user renames a speaker in the app: a new version marked edited is noted, not announced.
+	edited := txt
+	edited.MD5, edited.AppProperties = "edit1", map[string]string{"reclyTranscript": "edited"}
+	fd.pages["t2"] = ChangePage{NewStartPageToken: "t3", Changes: []Change{{FileID: "txt1", File: &edited}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("edited: %v %d", err, len(*got))
+	}
+	store.View(func(s *state.State) {
+		if s.Drive.Seen["txt1"] != "edit1" {
+			t.Fatalf("seen = %v", s.Drive.Seen)
+		}
+	})
+	// Transcribing it again is announced, as is a version with no mark at all.
+	again := txt
+	again.MD5, again.AppProperties = "again", map[string]string{"reclyTranscript": "transcribed"}
+	unmarked := txt
+	unmarked.ID, unmarked.MD5 = "txt2", "other"
+	fd.pages["t3"] = ChangePage{NewStartPageToken: "t4", Changes: []Change{{FileID: "txt1", File: &again}, {FileID: "txt2", File: &unmarked}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 3 {
+		t.Fatalf("re-transcribed: %v %d", err, len(*got))
+	}
+}
+
+func TestAnnouncesImportedRecordings(t *testing.T) {
+	w, fd, got, _ := setup(t)
+	_ = w.Poll(context.Background())
+	imported := File{ID: "imp", Name: "20261003T100000Z_import_01M5BBBB.transcript.txt", MD5: "i"}
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t2", Changes: []Change{{File: &imported}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 || (*got)[0].rec.Device != "import" {
+		t.Fatalf("import: %v %+v", err, *got)
 	}
 }
 
