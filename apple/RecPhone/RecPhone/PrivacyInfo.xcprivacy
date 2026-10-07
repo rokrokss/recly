@@ -6,7 +6,8 @@
   developer-operated server alone does not establish that no data is collected under Apple's
   definition. The required-reason APIs below are the ones RecKit and this shell call:
   `UserDefaults` for device-local settings, file modification dates for the recorder's own part
-  files inside the container, and `ProcessInfo.systemUptime` for elapsed time in-app.
+  files inside the container and the date of a file picked for import, and `ProcessInfo.systemUptime`
+  for elapsed time in-app.
 -->
 <plist version="1.0">
 <dict>
@@ -32,6 +33,8 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>C617.1</string>
+				<!-- docs/09 "Import": the date of a file the user picked to import, which the recording starts at. -->
+				<string>3B52.1</string>
 			</array>
 		</dict>
 		<dict>

@@ -161,7 +161,8 @@ final class ICloudStorageTests: XCTestCase {
                 silenced: [],
                 context: nil,
                 drive: nil,
-                status: .finalized
+                status: .finalized,
+                highlights: []
             ),
             dir: OkioPath.companion.toPath("/tmp/recly-tests", normalize: false),
             driveFolderId: folder,

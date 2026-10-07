@@ -2886,6 +2886,8 @@ use the same mutex and the same staleness rule.
         → private aggregate that contains no physical device → IOProc, verified input rate)
 ```
 
+With the built-in speakers the microphone's input node runs with voice processing ("Echo" below); the rest of the pipeline is the same.
+
 - The three `TrackWriter`s share the same start time and the same segment boundaries (900 s). Part numbers match across tracks.
 - The microphone and system callbacks copy the buffer and the host timestamp of its first sample, then return immediately. Conversion and AAC writing
   happen on separate serial queues, and pending audio is capped at 2 seconds per queue. The microphone is processed 0.6 seconds late to absorb
@@ -2901,8 +2903,19 @@ use the same mutex and the same staleness rule.
   Only Recly's AudioUnit is bound; the OS default input and output and the meeting app's device and mute settings are not changed.
   AirPods input is supported, and the built-in microphone is not forced automatically during a call. A recording the user started continues independently of the meeting app's
   mute. No microphone picker UI is exposed; during recording only the current input device's name is shown as status. The guidance for restoring microphone permission stays.
-- **Echo**: both tracks are saved without AEC. If the output device is the built-in speaker, a one-line warning at start ("With headphones the other side
-  does not bleed into your own track.").
+- **Echo** (2026-10-07): when the default output device is the built-in speakers at the start of a recording (built-in transport with the `ispk` data
+  source, or none — the headphone jack is built in too, `hdpn`), the microphone goes through Apple's voice processing
+  (`AVAudioInputNode.setVoiceProcessingEnabled(true)`), which takes what the output device plays out of the microphone (AVAudioIONode.h). Other apps'
+  audio — the meeting — is ducked as little as the API allows (`voiceProcessingOtherAudioDuckingConfiguration`, advanced ducking off, level `.min`, macOS 14),
+  and the engine's mixer renders silence so the voice-processing unit has an output to render. With headphones or any other output it stays off, and the
+  microphone is recorded as before. There is no setting and no warning (the one-line built-in-speaker warning and the hidden `voiceProcessing` default were
+  removed). The decision is made once per recording, in `MicrophoneInput.authorize()`; a mid-recording output change does not flip it. The
+  voice-processing unit runs on the system's default input and output and cannot be pinned to an input-only device such as the built-in microphone, so it
+  is used only when the automatically selected microphone is the default input — a meeting app's other microphone keeps the plain, pinned engine
+  ("Microphone selection" stays as it is). When the system refuses it — enabling it fails, or the engine will not start with it — the start is retried
+  on the plain microphone and `capture-diagnostics.json` records `voice_processing_refused`; its `format` event carries `voice_processing` when it ran.
+  The `sys` tap and the `mix` track are unchanged: the tap excludes Recly's own process, whose output is that silence. Not verified by listening, and the
+  effect of the minimum ducking on what the tap records is not measured (§20).
 - Recording rules: on stop or input restart, `AVAudioConverter` is drained with `.endOfStream` before the segment is closed (preserving the tail frames of 48 kHz
   input); if a closed segment cannot be read back, it is not registered and stays `.pending`, holding back
   finalize; recovery quarantines an unreadable tail as `.corrupt` and deletes a recording with no readable part (§3);
@@ -2952,6 +2965,25 @@ use the same mutex and the same staleness rule.
   2026-09-04).
 - **Runner**: the app process calls `runDueJobs()` (a) right after a Job is created (b) on a 5-minute timer (c) when the network returns (`NWPathMonitor`)
   (d) as the `nextRunAt` follow-up. Launch at login via `SMAppService`.
+- **Highlight** (2026-10-07): while recording, the popover's command row has `Highlight` right after `Stop recording`; it calls
+  `recordings.addHighlight(id, recordedSec)` (the recording's own clock, a second mark within 1 s ignored) and the line under the row says
+  `Highlighted at 00:12:34` for 2 seconds.
+- **Quick start** (2026-10-07): App Intents `Start recording`, `Stop recording` and `Add Highlight`, with App Shortcuts phrases like the iPhone's
+  (`Start recording with Recly`, `Recly start recording`, `Stop recording with Recly`, `Add a highlight with Recly`; `AppShortcuts.xcstrings`).
+  They run in the app's process on the menu's own model, waiting up to 10 s for the core to open when the intent launched the app; a start still asks the
+  consent question (M8). **⌥⌘R** starts and stops a recording from any app: a Carbon `RegisterEventHotKey` with `kEventHotKeyExclusive`, so a combination
+  another app has registered is refused rather than shared. Settings → Capture → `Keyboard shortcut` shows `⌥⌘R` beside its switch (on by default,
+  `globalShortcut` in this Mac's defaults); a refusal is the warning-tone line `Another app uses this shortcut.`
+- **Details window** (2026-10-07): the toolbar's `Share` menu lists `Transcript` (`.txt`), `Transcript for notes` (`.md`), `Subtitles` (`.srt`),
+  `Subtitles for the web` (`.vtt`) and `Audio` (`.m4a`) — each disabled with its reason when there is nothing in that format — then `Copy all` and
+  `Save as…`. A format calls `exportFile` (the button shows `Preparing…` meanwhile) and opens `NSSharingServicePicker` under the button; `Save as…`
+  opens `NSSavePanel` with the core's file name. The list header's import button (`Import audio…`, ⌘I — an `LSUIElement` app shows no menu bar, so
+  there is no File menu to hold it) opens the system picker for audio and video, and audio or video files dropped on the list are imported the same
+  way, one after another (§3 "Naming rules"); a failure is a notice above the list, `Could not import this file` and the core's reason.
+  A search field (`Search titles and transcripts`) sits above the list: while it has text the list shows `core.search`'s results (200 ms after the
+  last keystroke, at most 50) in place of the ledger, and a result opens the detail at its first transcript hit with the find bar. ⌘F focuses the
+  field and, with a recording open and a query in the field, also opens that transcript's find bar on the query. The detail's `⋯` (More) is in its
+  own header, as on the phone; only `Share` is in the window toolbar.
 - **Workflow editing window** — **retired (2026-09-24)**. For the record: the same features as on the phone. A SwiftUI form + `WorkflowInspector` (shared in RecKit). The desktop is the main
   stage for editing.
 
@@ -2972,7 +3004,8 @@ The program keeps its own home directory (`~/Library/Application Support/recly-e
 no program, and the switch says `Not in this build`.
 
 **The section (2026-10-06)**, top to bottom: the switch, one status line (only while the switch is on), the `OpenAI tunnel` row, the footnote
-(`Runs recly-events on this Mac. It reads only the names and links …`) and `Set-up guide`. The footnote and the guide stay after an agent subscribes:
+(`Runs recly-events on this Mac. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the
+transcript through your own OpenAI tunnel.` — 2026-10-07, since the agent can read transcripts) and `Set-up guide`. The footnote and the guide stay after an agent subscribes:
 the subscription recly-events remembers can outlive the agent or the ChatGPT app, and a new tunnel or key needs the guide again. `Set-up guide` opens
 `https://recly.dev/agent` in the browser (`https://recly.dev/agent.ko` when the app is in Korean). The switch only decides whether
 recly-events runs: the tunnel row, the footnote and the guide are there with it off too, so it can be set up first and turned on last, or a tunnel changed
@@ -2995,6 +3028,12 @@ retired the same day.)
 - **Google Drive storage only**: recly-events can see nothing in iCloud or a local folder, so with either as the storage location (§3 "Storage location") the
   switch is disabled with the subtitle `Works only when recordings are stored in Google Drive` (in the place and shape of `Not in this build`), nothing below it
   is shown, and the app does not run recly-events. The switch keeps its own setting, which takes effect again when the storage goes back to Google Drive.
+- **Local agents** (2026-10-07): in place of the rows that need Drive, the block `Local agents` → `Local MCP server`, with the line `Lets an agent on this
+  computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.` and the end-aligned
+  `Set-up guide` (`https://recly.dev/mcp`, `/mcp.ko` in Korean) and `Copy configuration`. The latter runs the bundled program as
+  `recly-events mcp --print-config --folder <root>` — the root is the iCloud folder's `Documents` or the picked local folder — and puts what it prints
+  on the clipboard (`✓ Copied`); it is disabled while that folder cannot be reached. There is no switch: nothing runs until an agent starts the server
+  (§15 §9 "`recly-events mcp` is not a path"). A build without the program shows neither.
 
 ### Tasks
 
@@ -3007,7 +3046,7 @@ retired the same day.)
 | M5 | Auth (AppAuth macOS) + `BackgroundTransport` + runner hookup |
 | M6 | Meeting detection + notifications |
 | M7 | **Retired (2026-09-24)** — **workflow editing window** + workflow export/import in settings (§5): `NSSavePanel` (default name `recly-workflows.json`) · `NSOpenPanel`, import applies after a replace confirmation, a note that keys are not included in the file |
-| M8 | Consent reminder (once at the first recording, can be turned off in settings) + jurisdiction notices + speaker warning. The reminder asks before the *first* recording, and if "Do not ask again" is chosen, it can be turned back on in settings |
+| M8 | Consent reminder (once at the first recording, can be turned off in settings) + jurisdiction notices (the speaker warning was removed with voice processing, 2026-10-07). The reminder asks before the *first* recording, and if "Do not ask again" is chosen, it can be turned back on in settings |
 | M9 | Distribution: Developer ID signing, hardened runtime, notarytool, DMG (`apple/scripts/release-mac.sh`). There is no Sparkle auto-update |
 
 ### Consent reminder · jurisdiction notices
@@ -3053,7 +3092,8 @@ This section is not macOS-only — the reminders on Windows · Android · iPhone
 ### Open issues
 
 - Unconfirmed whether the tap works in the App Store sandbox → direct distribution. If it is verified later, App Store in parallel.
-- Echo when the built-in speaker is used. Make it an option depending on the results of the `setVoiceProcessingEnabled` experiment.
+- Echo with the built-in speakers: voice processing is on automatically ("Echo"); how much of the other side it removes, and what the minimum ducking does to
+  the `sys` track, are still to be heard on a real meeting.
 
 ---
 
@@ -3817,4 +3857,4 @@ These are what remain for people, not code, to decide.
 | **Privacy policy publication** | All implementation prerequisites are met. What remains: ① finalizing the per-provider retention policy URLs in the §15 §3 table (until they are final, the app notice carries no link either), ② a public contact email, ③ the legal review above. All three are human work |
 | **Watch slice size criterion** | The original criterion was "watchOS slice < 20 MB", but after applying SKIE the pre-strip static slice is 20.1–21.8 MB, over that line. The actual app after linking · stripping is 13 MB, so there is room within the 75 MB budget. A decision is needed: rewrite the criterion as "linked watch app size", or shrink the watch source set to bring the slice back |
 | **iCloud real-device acceptance** | From 0.1.2 (build 32, 2026-10-02) the builds ship with iCloud on (§3 "Storage location"; the container · App ID · Mac Developer ID profile · `Local.xcconfig` are in place). What remains is checking upload · completion · other-device listing · playback · deletion on a real iPhone · Mac with the same Apple ID, and fixing the statement in the App Store submission documents (`app-review.md` · `app-store-metadata.en.txt` · `app-store-copy.md`) that only Drive is used |
-| **macOS echo (AEC)** | With the built-in speakers, the other side's voice mixes into the mic track. For now there is only a one-line warning at start; whether to make it an option is decided by the results of a `setVoiceProcessingEnabled` experiment |
+| **macOS echo (AEC)** | **Decided (2026-10-07)**: voice processing turns on automatically with the built-in speakers, with no setting and no warning (§12 "Echo"). What remains is listening to a real meeting |

@@ -1,6 +1,7 @@
 #if os(iOS) || os(macOS)
 import Foundation
 import ReclyCore
+import RecKitSpeakers
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -59,7 +60,7 @@ public final class ProcessingSettingsModel: ObservableObject {
         busy = true; defer { busy = false }
         do {
             if draft.mode == .external {
-                let step = Step.Transcribe(id: "transcribe", onError: .abort, retry: Retry(maxAttempts: 5, initialDelaySec: 30, maxDelaySec: 3600), provider: draft.provider, secretRef: draft.secretRef, invokeUrl: draft.invokeUrl.isEmpty ? nil : draft.invokeUrl, language: draft.language, diarize: draft.settings().transcription.diarize, speakers: Speakers(min: 1, max: 8), model: draft.model.isEmpty ? nil : draft.model)
+                let step = Step.Transcribe(id: "transcribe", onError: .abort, retry: Retry(maxAttempts: 5, initialDelaySec: 30, maxDelaySec: 3600), provider: draft.provider, secretRef: draft.secretRef, invokeUrl: draft.invokeUrl.isEmpty ? nil : draft.invokeUrl, language: draft.language, diarize: draft.settings().transcription.diarize, speakers: Speakers(min: 1, max: 8), model: draft.model.isEmpty ? nil : draft.model, vocabulary: draft.settings().transcription.vocabulary)
                 _ = try await core.deps.transcriptionPolicy.refresh()
                 if let issue = core.deps.transcriptionPolicy.issue(step: step, endpoint: nil) { message = .core(issue.code(arg: nil, detail: nil)); return }
                 // Empty where no permission is required (every shell but the iPhone's).
@@ -211,7 +212,18 @@ public struct ProcessingSettingsView: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     if let message = download.message { SectionFootnote(message.text) }
-                    SectionFootnote(loc("On-device transcription does not separate speakers."))
+                    // docs/09 "On-device speaker separation": the diarization models ship with the app, so
+                    // the row is a name and nothing to do.
+                    if model.local?.supportsDiarization == true {
+                        SectionRow(title: loc("Speaker model")) {
+                            Text(verbatim: SpeakerSeparation.modelName)
+                                .font(blueprint.fonts.bodySmall)
+                                .foregroundStyle(blueprint.palette.textMuted)
+                        }
+                        SectionFootnote(loc("Speakers are separated on this device."))
+                    } else {
+                        SectionFootnote(loc("On-device transcription does not separate speakers."))
+                    }
                 }
                 if draft.mode == .external {
                     // docs/09 principle 4: a settings row, "Provider … ElevenLabs", like Language below.
@@ -247,6 +259,8 @@ public struct ProcessingSettingsView: View {
                         #endif
                     }
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
+                    // docs/09 "Vocabulary": after the language, part of the same draft (Cancel · Save).
+                    VocabularyEditor(terms: field(\.vocabulary), description: vocabularyDescription(draft))
                 }
                 if let message = model.message { SectionFootnote(message.text) }
                 // docs/09 screen principle 8: Cancel · Save only appear when there is something to save.
@@ -328,11 +342,19 @@ public struct ProcessingSettingsView: View {
             }
         }
     }
-    private func speechLanguageTitle(_ language: Language) -> String {
-        if language == .auto { return loc("Automatic") }
-        if language == .koEn { return loc("Korean and English") }
-        let tag = TranscriptionLanguages.shared.localeTag(language: language)
-        return Locale(identifier: tag).localizedString(forIdentifier: tag) ?? tag
+    private func speechLanguageTitle(_ language: Language) -> String { SpeechLanguageName.title(language) }
+    /// docs/09 "Vocabulary": who reads the vocabulary — the provider, with the audio, or this device — or
+    /// that nobody does.
+    private func vocabularyDescription(_ draft: ProcessingDraft) -> String {
+        if draft.mode == .local {
+            return loc(model.local?.supportsVocabulary == true
+                ? "Names and terms to spell correctly, used on this device."
+                : "On-device transcription does not use a vocabulary.")
+        }
+        let name = SttProviders.shared.displayName(name: draft.provider)
+        return SttProviders.shared.supportsVocabulary(name: draft.provider, model: draft.model.isEmpty ? nil : draft.model, language: draft.language)
+            ? RecKitStrings.localized("Names and terms to spell correctly. They are sent with the audio to %@.", name)
+            : RecKitStrings.localized("%@ does not use a vocabulary.", name)
     }
     private func field<Value>(_ path: ReferenceWritableKeyPath<ProcessingDraft, Value>) -> Binding<Value> {
         Binding(get: { model.draft![keyPath: path] }, set: { value in model.edit { $0[keyPath: path] = value } })

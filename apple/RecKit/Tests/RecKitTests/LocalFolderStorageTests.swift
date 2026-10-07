@@ -142,7 +142,8 @@ final class LocalFolderStorageTests: XCTestCase {
                 silenced: [],
                 context: nil,
                 drive: nil,
-                status: .finalized
+                status: .finalized,
+                highlights: []
             ),
             dir: OkioPath.companion.toPath(dir, normalize: false),
             driveFolderId: folder,

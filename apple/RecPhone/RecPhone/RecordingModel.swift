@@ -4,6 +4,7 @@ import ReclyCore
 import RecKit
 import SwiftUI
 import WatchConnectivity
+import WidgetKit
 
 /// docs/13: the phone's four tabs. Named so that a screen can send the user to another one — the
 /// Mac opens a window for that, and a phone switches tabs.
@@ -94,8 +95,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published var tab: PhoneTab = .record {
         // The line under the record button is news from the last start or stop; it does not wait
         // on the tab for the user to come back to it.
-        didSet { if tab != .record, state == .idle { note = "Waiting" } }
+        didSet {
+            if tab != .record, state == .idle { note = "Waiting" }
+            if tab != .record { highlightedAtSec = nil }
+        }
     }
+    /// docs/09 "Highlights": the moment the last Highlight marked, while recording — news for the line under
+    /// the record node until the next event or a tab switch.
+    @Published private(set) var highlightedAtSec: Double?
+    /// docs/03 "Naming rules": why the last import left nothing behind — a core code, said under
+    /// `Could not import this file` in the list.
+    @Published private(set) var importFailure: String?
 
     /// A recording that has ended and has not been named yet.
     struct Naming: Identifiable, Equatable {
@@ -202,6 +212,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     /// Where that tap waits while there is no screen to take it to (docs/10).
     private let alertRouter = AlertRouter<JobAlert>()
     private var ticker: Timer?
+    /// The recording being made, for the marks the Highlight node puts on it.
+    private var recordingId: String?
     /// When the recording on screen began — the Live Activity counts up from it.
     private var startedAt: Date?
     /// The one load. Everything an intent can reach waits for it: the app may have been launched
@@ -354,6 +366,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             observeBecomingActive()
             deviceId = bridge.deps.device.deviceId
             isReady = true
+            importInbox()
             note = "Waiting"
             // The device id and the container path are the user's; counts are what the line is for
             // (as on macOS).
@@ -477,6 +490,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // `nil` means the session was not idle — a second tap, or a stop still finishing.
                 // The state it published already says so; there is nothing to tell the user.
                 guard let recordingId = try await session.start() else { return }
+                self.recordingId = recordingId
                 startedAt = Date()
                 microphoneDenied = false
                 await updateActivity()
@@ -583,8 +597,102 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     /// docs/08 Result files: the detail screen of one recent recording.
     func detail(for item: RecentItem) -> RecordingDetailModel? {
+        detail(id: item.id, title: item.titleLabel)
+    }
+
+    /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search").
+    func detail(for hit: SearchHit, query: String) -> RecordingDetailModel? {
+        let title = hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
+        let detail = detail(id: hit.recordingId, title: title)
+        detail?.find = TranscriptFind(query: query, atSec: hit.snippets.first?.atSec ?? 0)
+        return detail
+    }
+
+    private func detail(id: String, title: String) -> RecordingDetailModel? {
         guard let core = bridge?.core else { return nil }
-        return RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
+        let detail = RecordingDetailModel(core: core, recordingId: id, title: title, playbackGate: playbackGate)
+        // Transcribe again queues a job: the executor runs it now rather than at its next timer.
+        detail.jobsDue = { [weak self] in
+            self?.runner?.jobsDue()
+            self?.background.schedule()
+        }
+        return detail
+    }
+
+    /// docs/09 "Highlights": a mark at the recorder's own clock — what has been written, not the wall clock.
+    func highlight() {
+        guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
+        let at = recorder.recordedSec
+        Task {
+            guard (try? await core.recordings.addHighlight(recordingId: id, atSec: at))?.boolValue == true else { return }
+            highlightedAtSec = at
+            logger.info("shell.highlight id=\(id, privacy: .public) atSec=\(at, privacy: .public)")
+        }
+    }
+
+    /// docs/10 "Search": titles and the transcripts on this phone, newest first.
+    func search(_ query: String) async -> [SearchHit] {
+        guard let core = bridge?.core else { return [] }
+        return (try? await core.search(query: query, limit: 50)) ?? []
+    }
+
+    /// docs/03 "Naming rules" · docs/09 "Import": picked or shared files, one after another, each its own
+    /// recording — the row says `IMPORTING` while the file is made into parts.
+    func importFiles(_ urls: [URL], removeAfter: Bool = false) {
+        guard let core = bridge?.core else { return }
+        importFailure = nil
+        Task {
+            for url in urls {
+                let scoped = url.startAccessingSecurityScopedResource()
+                defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+                // The file's own date, when it has one: a voice memo from last week starts last week.
+                let date = (try? url.resourceValues(forKeys: [.creationDateKey]))?.creationDate
+                do {
+                    let result = try await core.importAudio(
+                        sourcePath: url.path,
+                        displayName: url.lastPathComponent,
+                        startedAt: date.map { KotlinInstant.companion.fromEpochMilliseconds(epochMilliseconds: Int64($0.timeIntervalSince1970 * 1000)) },
+                        importer: AppleAudioImporter()
+                    )
+                    switch onEnum(of: result) {
+                    case .imported(let imported):
+                        waveforms?.enqueue(recordingId: imported.recordingId)
+                        runner?.jobsDue()
+                        background.schedule()
+                        logger.info("shell.import id=\(imported.recordingId, privacy: .public)")
+                    case .failed(let failed):
+                        importFailure = failed.reason
+                        logger.error("shell.import.failed reason=\(failed.reason, privacy: .public)")
+                    }
+                } catch {
+                    importFailure = CoreMessage.importUnreadable.code(arg: nil, detail: nil)
+                    logger.error("shell.import.failed error=\(String(describing: error), privacy: .private)")
+                }
+                // A file the share extension handed over is the app's copy, gone once read.
+                if removeAfter { try? FileManager.default.removeItem(at: url.deletingLastPathComponent()) }
+            }
+        }
+    }
+
+    func dismissImportFailure() {
+        importFailure = nil
+    }
+
+    /// docs/09 "Import": what the share extension left in the app group — imported when the app is
+    /// opened for it and whenever it comes to the front, so a file is never left behind.
+    func importInbox() {
+        // Claimed at once — moved out of the inbox — so a second activation does not import it again.
+        let claimed = ImportInbox.pending().compactMap { file -> URL? in
+            let folder = FileManager.default.temporaryDirectory.appendingPathComponent("import-\(UUID().uuidString)", isDirectory: true)
+            let target = folder.appendingPathComponent(file.lastPathComponent)
+            guard (try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)) != nil,
+                  (try? FileManager.default.moveItem(at: file, to: target)) != nil
+            else { return nil }
+            return target
+        }
+        guard !claimed.isEmpty else { return }
+        tab = .recordings
+        importFiles(claimed, removeAfter: true)
     }
 
     /// docs/08 AUTH_REJECTED: the key is entered in the recording processing settings, so that is
@@ -666,8 +774,22 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         if !isRecording, wasRecording {
             stopTicking()
             startedAt = nil
+            recordingId = nil
+            highlightedAtSec = nil
         }
         Task { await updateActivity() }
+        if isRecording != wasRecording { publishStatus() }
+    }
+
+    /// docs/09 "Quick start": the Home and Lock Screen widgets are drawn by another process from the app group,
+    /// so every start and stop writes the file and asks WidgetKit to redraw them.
+    private func publishStatus() {
+        PhoneStatusStore.save(PhoneStatus(
+            recording: isRecording,
+            startedAt: isRecording ? (startedAt ?? Date()) : nil,
+            language: AppLanguage.current.code ?? ""
+        ))
+        WidgetCenter.shared.reloadTimelines(ofKind: PhoneStatusStore.widgetKind)
     }
 
     private func updateActivity() async {
@@ -753,6 +875,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // Whatever relaunch a latched upload finish belonged to, it ended here: nobody came
                 // for it with a system completion handler (docs/13 I4).
                 self.transport.clearEarlyFinish()
+                // docs/09 "Import": files the share extension handed over while the app was away.
+                self.importInbox()
             }
         }
     }
@@ -774,6 +898,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // set exactly when `isSupported()` was true.
                 if self.watchReceiver != nil { self.publishLanguageToWatch() }
                 Task { await self.updateActivity() }
+                self.publishStatus()
                 // A job alert already standing in Notification Center was painted once and is still
                 // in the old language; posting it again under the same identifier replaces it.
                 Task { await self.alertNotifier.relocalize() }

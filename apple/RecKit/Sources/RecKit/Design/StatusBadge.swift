@@ -45,7 +45,7 @@ public struct LedgerStatus: Equatable, Sendable {
     /// Every code [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
     /// measured against, so the widest of them fits at full size.
     public static let ledgerCodes = [
-        "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "REC", "RETRY", "DONE", "FAILED",
+        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "REC", "RETRY", "DONE", "FAILED",
         "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN",
     ]
 
@@ -61,6 +61,8 @@ public struct LedgerStatus: Equatable, Sendable {
         // the accent's whole meaning here. They come first because two of them are `RECORDING` rows
         // and would otherwise read as `REC` (see [Recents.stateLabel], which orders them the same).
         case "Receiving from the watch": return LedgerStatus(code: "RECEIVING", tone: .accent)
+        // docs/03 "Naming rules": a picked file still being made into parts.
+        case "Importing": return LedgerStatus(code: "IMPORTING", tone: .accent)
         case "Uploading on another device": return LedgerStatus(code: "UPLOADING", tone: .accent)
         case "Transcription pending", "Waiting for the device to cool down": return LedgerStatus(code: "PENDING", tone: .neutral)
         case "Transcribing on another device", "Transcribing on this device":
@@ -144,7 +146,11 @@ public struct StatusBadge: View {
     }
 
     public var body: some View {
-        Text(verbatim: status.label)
+        HStack(spacing: Space.xs) {
+            // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink.
+            if status.code == "IMPORTING" { BlueprintLoader(color: status.tone.ink(blueprint.palette)) }
+            Text(verbatim: status.label)
+        }
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
             .lineLimit(1)

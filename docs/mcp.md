@@ -28,6 +28,9 @@ Any folder above the recordings works; the folder template does not matter.
 
 ## 1. Print the configuration
 
+**Mac with the Recly app:** Settings → Agent connection → Local agents → **Copy configuration** copies
+it for the folder Recly stores recordings in. Otherwise:
+
 ```sh
 recly-events mcp --print-config --folder ~/Notes/Recly
 ```

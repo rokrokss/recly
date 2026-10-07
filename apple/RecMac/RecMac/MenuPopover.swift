@@ -142,6 +142,11 @@ struct MenuPopover: View {
                 if model.canStop {
                     BlueprintButton(loc("Stop recording"), tone: .danger) { model.stop() }
                         .keyboardShortcut(".")
+                    // docs/12 "Menu bar app": a moment of the running recording, marked for the minutes.
+                    if model.isRecording {
+                        BlueprintButton(RecKitStrings.localized("Highlight")) { Task { await model.addHighlight() } }
+                            .accessibilityIdentifier("highlight")
+                    }
                 } else {
                     BlueprintButton(loc("Start recording"), tone: .primary) { model.start() }
                         .disabled(!model.isReady)
@@ -149,7 +154,17 @@ struct MenuPopover: View {
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 12)
+            .padding(.top, 12)
+            .padding(.bottom, model.highlighted == nil ? 12 : Space.s)
+            // The news of that moment, for two seconds — then the row is as it was.
+            if let at = model.highlighted {
+                Text(RecKitStrings.localized("Highlight · %@", at))
+                    .font(blueprint.fonts.monoSmall)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Space.m)
+                    .padding(.bottom, 12)
+            }
         }
         .background(.ultraThinMaterial)
     }
@@ -448,6 +463,8 @@ struct SettingsPane: View {
             // docs/12 M8: the reminder is on by default and this is where it goes off — and back
             // on, which the alert's own "Do not ask again" cannot do.
             SwitchRow(title: loc("Consent check before recording"), isOn: $model.consentReminder)
+            // docs/12 "Menu bar app": ⌥⌘R starts and stops a recording from any app.
+            ShortcutRow(isOn: $model.shortcutEnabled, refused: model.shortcutRefused)
 
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).
@@ -455,7 +472,9 @@ struct SettingsPane: View {
                 ProcessingSettingsView(model: processing, settingsFile: false)
             }
 
-            AgentConnectionSection(agent: model.agentEvents)
+            AgentConnectionSection(
+                agent: model.agentEvents, storage: model.storage, copyConfiguration: { await model.copyMCPConfiguration() }
+            )
 
             // docs/09 screen principle 4: the settings file is a utility, so it comes after the
             // features, Agent connection included (2026-10-06).

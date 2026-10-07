@@ -66,6 +66,12 @@ public actor RecordingRecovery {
         // died in: it closes when the watch's meta lands, or goes with the receiver's 24-hour
         // orphan purge (docs/03 "Watch → phone transfer contract"). (The Android `RecordingRecovery` does the same.)
         if try await core.transfer.receiving(recordingId: record.id).boolValue { return false }
+        // An import is the core's to complete or drop, never a recording this process died in: its
+        // parts arrive all at once, so finalizing what is here would upload half a file (docs/03).
+        // (The Android `RecordingRecovery` does the same.)
+        if record.meta.source == Source.`import` {
+            return try await core.dropAbandonedImport(recordingId: record.id).boolValue
+        }
         guard let reconciled = try await reconciler.reconcile(recordingId: record.id) else { return false }
 
         if reconciled.files == 0 {

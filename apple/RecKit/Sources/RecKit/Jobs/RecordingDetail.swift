@@ -2,6 +2,11 @@ import Foundation
 import os
 import ReclyCore
 import SwiftUI
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 /// docs/08 "Result files", deliverable 3: what the `transcribe` step wrote for one recording. The local
 /// copy if the step ran on this device, and Drive's if it ran on another — `core.results` decides
@@ -37,6 +42,26 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var driveFetch = DriveFetch.deciding
     /// How much of that trip is done, 0 to 1, by the bytes of the parts it brings back.
     @Published public private(set) var fetchProgress: Double = 0
+    /// docs/09 "Highlights": the moments marked on this recording, ascending — ticks on the waveform, squares
+    /// in the text.
+    @Published public private(set) var highlights: [Double] = []
+    /// docs/09 "Transcript reader": the paragraphs of [transcript], with the segments each is made of.
+    @Published public private(set) var groups: [TranscriptGroup] = []
+    /// A job of this recording has not settled: the transcript may be rewritten under an edit, so
+    /// editing and a second transcription wait (docs/08 "Editing").
+    @Published public private(set) var transcriptionBusy = false
+    /// docs/10 "Re-transcription": one is running — its line says where.
+    @Published public private(set) var retranscribing: Retranscribing?
+    /// docs/09 "Playback": the stretches Skip silence jumps, from the waveform's peaks.
+    @Published public private(set) var silences: [SilentRange] = []
+    /// docs/10 "Search": the find the page was opened with, or that ⌘F started; nil when there is none.
+    @Published public var find: TranscriptFind?
+    /// An edit on its way to the core: `Saving…`, then ✓ for a moment.
+    @Published public private(set) var saving: ProcessingState = .idle
+    /// The current processing settings' transcription mode, for the More menu's reasons.
+    @Published public private(set) var transcriptionOff = false
+
+    public enum Retranscribing: Sendable { case external, local }
 
     /// What the player bar has to say while the parts are on their way back, and after.
     public enum DriveFetch: Equatable, Sendable {
@@ -138,6 +163,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             guard !Task.isCancelled else { return }
             waveform = saved
             waveformPending = false
+            silences = Self.silences(saved)
             return
         }
         waveform = []
@@ -145,6 +171,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         guard !Task.isCancelled else { return }
         waveform = peaks ?? []
         waveformPending = false
+        silences = Self.silences(waveform)
         // Kept for the next open, beside the parts: nothing decodes this recording again.
         if let peaks, !peaks.isEmpty {
             try? await core.recordings.saveWaveform(recordingId: recordingId, peaks: peaks.map { KotlinFloat(float: $0) })
@@ -157,10 +184,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
                 ? core.retryResults(recordingId: recordingId)
                 : core.results(recordingId: recordingId))
             guard !Task.isCancelled else { return }
-            if transcript != result.transcript {
-                transcript = result.transcript
-                document = result.transcript.map { TranscriptDocument(transcript: $0) }
-            }
+            adopt(result.transcript)
             availability = result.availability
         } catch {
             guard !Task.isCancelled else { return }
@@ -171,12 +195,16 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public func followResults() async {
         for await result in core.observeResults(recordingId: recordingId) {
             guard !Task.isCancelled else { return }
-            if transcript != result.transcript {
-                transcript = result.transcript
-                document = result.transcript.map { TranscriptDocument(transcript: $0) }
-            }
+            adopt(result.transcript)
             availability = result.availability
         }
+    }
+
+    private func adopt(_ next: Transcript?) {
+        guard transcript != next else { return }
+        transcript = next
+        document = next.map { TranscriptDocument(transcript: $0) }
+        groups = next.map(TranscriptGroup.make) ?? []
     }
 
     /// Recording state is independent of result changes and slow audio downloads.
@@ -184,6 +212,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         for await _ in core.recordings.observe() {
             guard !Task.isCancelled else { return }
             deviceRecording = (try? await somethingIsBeingRecorded()) ?? deviceRecording
+            if let record = try? await core.recordings.get(id: recordingId) {
+                highlights = record.meta.highlights.map(\.atSec)
+            }
         }
     }
 
@@ -230,6 +261,160 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
+    // MARK: - Highlights, Share, editing and Transcribe again (docs/09 "Detail header and More menu")
+
+    /// The shell's executor, poked when this page queues a job (a re-transcription) so it runs now.
+    public var jobsDue: (() -> Void)?
+
+    /// docs/09 "Highlights": a mark at [sec] — the More menu's, or the desktop's Highlight button.
+    public func addHighlight(atSec sec: Double) async {
+        await setHighlights(highlights + [sec])
+    }
+
+    public func removeHighlight(_ sec: Double) async {
+        await setHighlights(highlights.filter { $0 != sec })
+    }
+
+    /// Saved at once, here and in the recording's folder; the list as the core kept it comes back.
+    private func setHighlights(_ next: [Double]) async {
+        guard (try? await core.setHighlights(recordingId: recordingId, atSecs: next.map { KotlinDouble(double: $0) }))?.boolValue == true
+        else { return }
+        if let record = try? await core.recordings.get(id: recordingId) {
+            highlights = record.meta.highlights.map(\.atSec)
+        }
+    }
+
+    /// docs/08 "Exports": the file for the share sheet, or nil when there is nothing in that format.
+    public func export(_ format: ShareFormat) async -> URL? {
+        do {
+            guard let path = try await core.exportFile(recordingId: recordingId, format: format.export) else { return nil }
+            return URL(fileURLWithPath: path)
+        } catch {
+            logger.error("detail.export.failed error=\(String(describing: error), privacy: .private)")
+            return nil
+        }
+    }
+
+    /// No audio here and none to fetch — the same answer the player bar's `No audio on this device` is.
+    public var audioUnavailable: Bool { !hasAudio && driveFetch == .idle }
+
+    /// `Copy all`: the text with its times, as the `.txt` has it.
+    public func copyAll() {
+        guard let text = document?.plainText else { return }
+        #if os(iOS)
+        UIPasteboard.general.string = text
+        #elseif os(macOS)
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        #endif
+    }
+
+    /// Why `Edit transcript` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
+    public var editReason: String? {
+        if transcript == nil { return RecKitStrings.localized("No transcript yet") }
+        if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
+        return nil
+    }
+
+    /// Why `Transcribe again` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
+    public var retranscribeReason: String? {
+        if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
+        if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
+        return nil
+    }
+
+    /// The jobs of this recording, for the menu's reasons and the `Transcribing again…` line.
+    public func followJobs() async {
+        await refreshSettings()
+        for await all in core.jobs.observe() {
+            guard !Task.isCancelled else { return }
+            let running = all.filter { $0.recordingId == recordingId && !Self.settled.contains($0.status) }
+            transcriptionBusy = !running.isEmpty
+            retranscribing = running.first { $0.retranscription }.map { job in
+                job.workflow?.steps.contains { $0 is Step.LocalTranscribe } == true ? .local : .external
+            }
+        }
+    }
+
+    private static let settled: Set<JobStatus> = [.done, .failed, .skippedShort]
+
+    @discardableResult
+    private func refreshSettings() async -> ProcessingTranscription? {
+        guard let state = try? await core.initializeProcessing() else { return nil }
+        let transcription = state.document.settings.transcription
+        transcriptionOff = transcription.mode == .off
+        return transcription
+    }
+
+    /// docs/10 "Re-transcription": the confirmation's one line, from the settings as they are now —
+    /// `With AssemblyAI · Korean.`, and what it costs when the transcript holds the user's own work.
+    public func retranscribeLine() async -> String? {
+        guard let transcription = await refreshSettings(), transcription.mode != .off else { return nil }
+        let method = transcription.mode == .external
+            ? SttProviders.shared.displayName(name: transcription.external?.provider ?? "")
+            : RecKitStrings.localized("on-device transcription")
+        var line = RecKitStrings.localized("With %1$@ · %2$@.", method, SpeechLanguageName.title(transcription.language))
+        if transcript?.hasEdits == true { line += " " + RecKitStrings.localized("Your edits are replaced.") }
+        return line
+    }
+
+    public func retranscribe() async {
+        do {
+            let result = try await core.retranscribe(recordingId: recordingId)
+            logger.info("detail.retranscribe result=\(String(describing: result), privacy: .public)")
+            jobsDue?()
+        } catch {
+            logger.error("detail.retranscribe.failed error=\(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// docs/08 "Editing": [edits] saved as one, here at once and in the recording's folder after.
+    /// `Saving…` while it goes, ✓ for a moment after; false when the core refused it.
+    @discardableResult
+    public func edit(_ edits: [any TranscriptEdit]) async -> Bool {
+        guard !edits.isEmpty else { return true }
+        saving = .processing
+        let edit: any TranscriptEdit = edits.count == 1 ? edits[0] : TranscriptEditBatch(edits: edits)
+        do {
+            if case .edited(let edited) = onEnum(of: try await core.editTranscript(recordingId: recordingId, edit: edit)) {
+                adopt(edited.transcript)
+                saving = .done
+                Task { [weak self] in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    if self?.saving == .done { self?.saving = .idle }
+                }
+                return true
+            }
+        } catch {
+            logger.error("detail.edit.failed error=\(String(describing: error), privacy: .private)")
+        }
+        saving = .failed
+        return false
+    }
+
+    /// docs/09 "Editing and speakers": a speaker's name from the speaker menu; empty takes it away and the id
+    /// shows again.
+    public func renameSpeaker(_ id: String, to name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        await edit([TranscriptEditRenameSpeaker(speakerId: id, name: trimmed.isEmpty ? nil : trimmed)])
+    }
+
+    /// docs/09 "Editing and speakers": every segment of a line to speaker [id], or to a new one — `S{n+1}`,
+    /// the core's own rule, which the first segment makes and the rest then name.
+    public func changeSpeaker(segments: [Int], to id: String?) async {
+        guard let first = segments.first, let transcript else { return }
+        let target = id ?? "S\((transcript.speakers.compactMap { $0.id.hasPrefix("S") ? Int($0.id.dropFirst()) : nil }.max() ?? 0) + 1)"
+        var edits: [any TranscriptEdit] = [TranscriptEditSetSpeaker(segmentIndex: Int32(first), speakerId: id)]
+        edits += segments.dropFirst().map { TranscriptEditSetSpeaker(segmentIndex: Int32($0), speakerId: target) }
+        await edit(edits)
+    }
+
+    /// The silences of a recording's peaks, which Skip silence jumps.
+    private static func silences(_ peaks: [Float]) -> [SilentRange] {
+        guard !peaks.isEmpty else { return [] }
+        return SilenceRanges.shared.compute(peaks: peaks.map { KotlinFloat(float: $0) }, windowSec: WaveformPeaks.shared.WINDOW_SEC)
+    }
+
     /// The parts of this recording that are still on this device.
     private func localAudio(record: RecordingRecord?) -> RecordingPlaylist.Selection {
         audioRecord = record
@@ -242,6 +427,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
         writing = record.meta.status == RecordingStatus.recording
         givenTitle = record.meta.title ?? ""
+        highlights = record.meta.highlights.map(\.atSec)
         let track = RecordingPlaylist.playedTrack(tracks: record.meta.tracks)
         playedParts = record.meta.parts.filter { $0.track == track }
         directory = record.dir.url
@@ -353,6 +539,18 @@ public struct RecordingDetailView: View {
     /// grow in once, where the loader stood, starting at [growStart].
     @State private var fetched = false
     @State private var growStart: Date?
+    /// docs/09 "Share / export" (phones): the Share sheet is up.
+    @State private var sharing = false
+    /// docs/09 "Editing and speakers": the editor's draft while the page is in edit mode, nil while it is
+    /// reading.
+    @State private var draft: TranscriptDraft?
+    /// `Discard your changes?` is up.
+    @State private var discarding = false
+    /// docs/10 "Re-transcription": the confirmation's line while it is up.
+    @State private var retranscribeLine: String?
+    /// The speaker whose name the dialog is asking for, in reading mode.
+    @State private var renamingSpeaker: String?
+    @State private var speakerName = ""
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -369,28 +567,46 @@ public struct RecordingDetailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: model.title, trailingAlignment: .trailing) {
-                HStack(spacing: Space.s) {
-                    if !model.loading, model.availability != .empty, let document = model.document {
-                        TranscriptCopyButton(document: document)
-                            .id(model.recordingId)
-                    }
-                    // docs/03: the name is the user's to change, from the page that carries it. Not
-                    // while the recording is still being written — the core refuses a rename then, and
-                    // an action that could only fail is one the page should not be offering. Not
-                    // before the load has said which of the two this is, either.
-                    if !model.loading, !model.writing {
-                        BlueprintButton(loc("Rename"), tone: .quiet) { renaming = true }
-                            .accessibilityIdentifier("detail-rename")
-                    }
-                    if let onClose {
-                        // Leaving the page stops what it was playing: the sheet is gone but this view
-                        // is not torn down synchronously with it.
-                        BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) {
-                            player.stop()
-                            onClose()
+            ScreenHeader(title: draft == nil ? model.title : RecKitStrings.localized("Edit transcript"), trailingAlignment: .trailing) {
+                HStack(spacing: Space.xs) {
+                    if let draft {
+                        // docs/09 "Editing and speakers": the desktop's Cancel · Save are in the header; the
+                        // phone's sit under the fields, above the keyboard.
+                        #if !os(iOS)
+                        EditorButtons(changed: draft.changed, saving: model.saving == .processing, cancel: leaveEditor, save: saveDraft)
+                        #endif
+                    } else {
+                        #if os(iOS)
+                        // docs/09 "Share / export": Share opens the sheet of formats. The Mac's is in its
+                        // window toolbar.
+                        if !model.loading {
+                            Button { sharing = true } label: { HeaderIcon(systemName: "square.and.arrow.up") }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(Text(verbatim: loc("Share")))
+                                .accessibilityIdentifier("detail-share")
                         }
-                        .accessibilityIdentifier("detail-close")
+                        #endif
+                        // docs/09 "Detail header and More menu": Rename, Edit transcript, Transcribe again
+                        // and Add highlight.
+                        if !model.loading {
+                            DetailMoreMenu(
+                                model: model,
+                                positionSec: positionSec,
+                                rename: { renaming = true },
+                                edit: { if let transcript = model.transcript { draft = TranscriptDraft(transcript) } },
+                                transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
+                                addHighlight: { Task { await model.addHighlight(atSec: positionSec) } }
+                            )
+                        }
+                        if let onClose {
+                            // Leaving the page stops what it was playing: the sheet is gone but this view
+                            // is not torn down synchronously with it.
+                            BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) {
+                                player.stop()
+                                onClose()
+                            }
+                            .accessibilityIdentifier("detail-close")
+                        }
                     }
                 }
             }
@@ -401,8 +617,43 @@ public struct RecordingDetailView: View {
                 HairLine()
             }
             #endif
+            // docs/09 "Transcript reader": a transcription of this recording again, while the old text stays
+            // readable.
+            if let again = model.retranscribing, draft == nil {
+                LoadingText(
+                    text: loc(again == .local ? "Transcribing on this device" : "Transcribing again…"),
+                    font: blueprint.fonts.sans(TypeSize.small),
+                    color: blueprint.palette.textMuted
+                )
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("retranscribing")
+            } else if model.saving == .processing, draft == nil {
+                LoadingText(text: loc("Saving…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else if model.saving == .done, draft == nil {
+                Text(verbatim: BlueprintChip.selectionMark)
+                    .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
+                    .foregroundStyle(blueprint.palette.success)
+                    .padding(.horizontal, Space.m)
+                    .padding(.top, Space.s)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if model.loading {
                 notice(loc("Loading…"))
+            } else if let draft {
+                TranscriptEditor(
+                    draft: draft,
+                    canSeek: canSeek,
+                    drive: !model.icloud && !model.folder,
+                    saving: model.saving == .processing,
+                    onSeek: { seek(toSec: $0) },
+                    cancel: leaveEditor,
+                    save: saveDraft
+                )
             } else if model.transcript == nil || model.availability == .empty {
                 VStack(spacing: Space.s) {
                     Text(verbatim: model.transcriptMessage)
@@ -415,11 +666,28 @@ public struct RecordingDetailView: View {
                 }
                 .padding(Space.l)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let document = model.document {
-                TranscriptReader(document: document, seekableDurationSec: model.totalSec,
-                    canSeek: !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching,
-                    onSeek: { seek(toSec: $0) })
-                    .id(model.recordingId)
+            } else if let transcript = model.transcript {
+                TranscriptReader(
+                    transcript: transcript,
+                    groups: model.groups,
+                    seekableDurationSec: model.totalSec,
+                    canSeek: canSeek,
+                    positionSec: player.positionSec,
+                    playing: player.isPlaying,
+                    highlights: model.highlights,
+                    find: model.find,
+                    speakerActions: model.transcriptionBusy ? nil : TranscriptReader.SpeakerActions(
+                        rename: { id in
+                            speakerName = transcript.speakers.first { $0.id == id }?.name ?? ""
+                            renamingSpeaker = id
+                        },
+                        change: { segments, id in Task { await model.changeSpeaker(segments: segments, to: id) } }
+                    ),
+                    onSeek: { seek(toSec: $0) },
+                    onRemoveHighlight: { mark in Task { await model.removeHighlight(mark) } },
+                    onCloseFind: { model.find = nil }
+                )
+                .id(model.recordingId)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -442,6 +710,46 @@ public struct RecordingDetailView: View {
                 renaming = false
             }
         }
+        // docs/10 "Re-transcription": what it will be done with, and what it replaces.
+        .blueprintDialogOverlay(isPresented: Binding(get: { retranscribeLine != nil }, set: { if !$0 { retranscribeLine = nil } })) {
+            BlueprintDialog(title: loc("Transcribe again?")) {
+                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { retranscribeLine = nil }
+                BlueprintButton(loc("Transcribe"), tone: .primary) {
+                    retranscribeLine = nil
+                    Task { await model.retranscribe() }
+                }
+                .accessibilityIdentifier("retranscribe-confirm")
+            } content: {
+                BlueprintDialogText(retranscribeLine ?? "")
+            }
+        }
+        // docs/09 "Editing and speakers": leaving the editor with changes in it.
+        .blueprintDialogOverlay(isPresented: $discarding) {
+            BlueprintDialog(title: loc("Discard your changes?")) {
+                BlueprintButton(loc("Keep editing"), tone: .quiet) { discarding = false }
+                BlueprintButton(loc("Discard"), tone: .accent) {
+                    discarding = false
+                    draft = nil
+                }
+                .accessibilityIdentifier("discard-edits")
+            } content: {
+                BlueprintDialogText(loc("Your edits to this transcript will be lost."))
+            }
+        }
+        .blueprintDialogOverlay(isPresented: Binding(get: { renamingSpeaker != nil }, set: { if !$0 { renamingSpeaker = nil } })) {
+            SpeakerNameDialog(name: $speakerName) {
+                if let id = renamingSpeaker {
+                    let name = speakerName
+                    Task { await model.renameSpeaker(id, to: name) }
+                }
+                renamingSpeaker = nil
+            } cancel: {
+                renamingSpeaker = nil
+            }
+        }
+        #if os(iOS)
+        .sheet(isPresented: $sharing) { DetailShareSheet(model: model) }
+        #endif
         // The identity of the *model*, not of the recording: the Mac keeps one view here and hands
         // it a new model on every pick — including a second pick of the row already open — and a
         // plain `.task` runs once for the view, leaving every model after the first on "Loading…".
@@ -452,12 +760,15 @@ public struct RecordingDetailView: View {
             // across that swap would put one recording's new name on another.
             player.stop()
             renaming = false
+            draft = nil
             await model.load()
             guard !Task.isCancelled else { return }
             player.load(model.audio)
             await model.followAudio()
         }
         .task(id: ObjectIdentifier(model)) { await model.followCapture() }
+        .task(id: ObjectIdentifier(model)) { await model.followJobs() }
+        .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         .onChange(of: model.deviceRecording) { _, active in if active { player.stop() } }
         .onChange(of: model.audio) { _, audio in player.load(audio) }
         // Results can arrive while the audio or waveform is still loading. Start after the
@@ -579,6 +890,24 @@ public struct RecordingDetailView: View {
             return .handled
         }
         #endif
+        // docs/09 "Highlights": a tap within 12 pt of a tick opens its menu — Go to, Remove — and a screen
+        // reader finds each tick as an element of its own with the same two actions.
+        .overlay {
+            GeometryReader { geometry in
+                ForEach(model.highlights, id: \.self) { mark in
+                    HighlightMenu(atSec: mark, go: { seek(toSec: mark) }, remove: { Task { await model.removeHighlight(mark) } }) {
+                        Color.clear
+                            .frame(width: 24, height: geometry.size.height)
+                            .contentShape(Rectangle())
+                    }
+                    .position(
+                        x: model.totalSec > 0 ? geometry.size.width * mark / model.totalSec : 0,
+                        y: geometry.size.height / 2
+                    )
+                    .accessibilityIdentifier("highlight-tick")
+                }
+            }
+        }
     }
 
     /// docs/09 "Motion": the waveform row while the recording comes back from Drive, or while its peaks
@@ -711,6 +1040,13 @@ public struct RecordingDetailView: View {
                 with: .color(x <= playhead ? blueprint.palette.accent : blueprint.palette.textMuted)
             )
         }
+        // docs/09 "Highlights": each highlight a 2 pt accent line over the whole height with a 6×6 filled
+        // square at the top, above the bars and under the playhead.
+        for mark in model.highlights where model.totalSec > 0 {
+            let x = min(max(0, size.width * mark / model.totalSec), size.width - 2)
+            context.fill(Path(CGRect(x: x, y: 0, width: 2, height: size.height)), with: .color(blueprint.palette.accent))
+            context.fill(Path(CGRect(x: x, y: 0, width: 6, height: 6)), with: .color(blueprint.palette.accent))
+        }
         context.fill(
             Path(CGRect(
                 x: min(max(0, playhead), size.width - blueprint.line),
@@ -749,6 +1085,8 @@ public struct RecordingDetailView: View {
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 Spacer(minLength: Space.s)
+                // docs/09 "Playback": the speed between the clock and Play.
+                PlaybackSpeedChip(player: player)
                 #endif
                 // Not while this device is recording: on the phone that session belongs to the
                 // recorder (see `RecordingPlayer`), and the Mac says the same thing so that the
@@ -779,6 +1117,12 @@ public struct RecordingDetailView: View {
                 Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
+                // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
+                PlaybackSpeedChip(player: player)
+                BlueprintButton(loc("Highlight"), tone: .quiet) {
+                    Task { await model.addHighlight(atSec: positionSec) }
+                }
+                .accessibilityIdentifier("detail-highlight")
                 #endif
             } else if model.driveFetch == .idle {
                 // docs/03: nothing of this recording ever reached Drive, and what was here is gone
@@ -808,6 +1152,20 @@ public struct RecordingDetailView: View {
     /// Where the bar says it is: the finger while there is one on the waveform, and the player the
     /// rest of the time.
     private var positionSec: Double { scrubSec ?? player.positionSec }
+
+    private var canSeek: Bool {
+        !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching
+    }
+
+    /// Cancel or Done: straight back to reading when nothing changed, else the question first.
+    private func leaveEditor() {
+        if draft?.changed == true { discarding = true } else { draft = nil }
+    }
+
+    private func saveDraft() {
+        guard let draft else { return }
+        Task { if await model.edit(draft.edits) { self.draft = nil } }
+    }
 
     /// Where in the recording a point of the row is. The row is the whole recording end to end, so
     /// this is the one piece of arithmetic the scrub is.

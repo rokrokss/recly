@@ -159,6 +159,11 @@ public enum RecKitStrings {
     public nonisolated static func localized(_ key: String, _ argument: String) -> String {
         String(format: localized(key), locale: AppLanguage.locale, arguments: [argument])
     }
+
+    /// Two arguments, numbered (`%1$@`, `%2$@`) so a language can put them the other way round.
+    public nonisolated static func localized(_ key: String, _ first: String, _ second: String) -> String {
+        String(format: localized(key), locale: AppLanguage.locale, arguments: [first, second])
+    }
 }
 
 /// The same two ends over the *app's* own catalog, for the surfaces SwiftUI's `\.locale` does not

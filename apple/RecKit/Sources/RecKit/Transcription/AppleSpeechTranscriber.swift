@@ -47,6 +47,8 @@ public enum LocalSpeechEngine {
 import AVFoundation
 import Speech
 import CoreMedia
+import RecKitSpeakers
+import os
 
 /// One native long-file session, with final-segment checkpoints and bounded PCM buffering.
 @available(iOS 26, macOS 26, *)
@@ -106,6 +108,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         }
         // Shared assets can already be installed without this app holding a locale reservation.
         _ = try await AssetInventory.reserve(locale: locale)
+        let turns = request.diarize ? await speakerTurns(request) : []
         let module = SpeechTranscriber(locale: locale, preset: .transcription)
         let analyzer = SpeechAnalyzer(modules: [module], options: .init(priority: .utility, modelRetention: .whileInUse))
         lock.withLock { active = analyzer }
@@ -123,8 +126,11 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         let reader = Task {
             for try await result in module.results where result.isFinal {
                 try Task.checkCancellation()
-                let segment = SttSegment(start: result.range.start.seconds, end: result.range.end.seconds,
+                var segment = SttSegment(start: result.range.start.seconds, end: result.range.end.seconds,
                     speaker: nil, text: String(result.text.characters), words: nil)
+                // docs/10 "Shared rules for the shells": the speaker under this segment, decided as it is
+                // checkpointed — a checkpointed segment is never revisited.
+                if !turns.isEmpty { segment = SpeakerTurns.shared.assign(segments: [segment], turns: turns, nearestSec: SpeakerTurns.shared.NEAREST_SEC)[0] }
                 try await progress.checkpoint(segment: segment, completedThroughSec: result.range.end.seconds)
             }
         }
@@ -156,6 +162,25 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         }
     }
 
+    /// docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": the turns of the
+    /// whole file, from 0 s, before the first segment is checkpointed — so every segment gets its speaker on
+    /// the way out. A resumed run separates again, and its labels need not be the earlier run's. A failure
+    /// costs the speakers, never the transcript.
+    private func speakerTurns(_ request: LocalTranscriptionRequest) async -> [SpeakerTurn] {
+        do {
+            let turns = try await SpeakerSeparation.turns(
+                of: URL(fileURLWithPath: request.path),
+                speakers: request.expectedSpeakers.map { Int($0.int32Value) }
+            )
+            return turns.map { SpeakerTurn(start: $0.start, end: $0.end, label: $0.label) }
+        } catch {
+            if !(error is CancellationError) { Self.logger.error("local.diarize.failed error=\(String(describing: error), privacy: .public)") }
+            return []
+        }
+    }
+
+    private static let logger = Logger(subsystem: CoreBridge.appName, category: "transcribe")
+
     /// docs/05 "Fixed processing settings": transcribe unless the device is really hot. `.serious` is where Apple
     /// says the system itself cuts performance and apps should stop CPU work; `.fair` is routine while
     /// charging, and a user would never guess it is why nothing was transcribed. Low Power Mode does
@@ -180,7 +205,7 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
     private func info(_ status: LocalEngineStatus, progress: Double? = nil, downloading: Bool = false) -> LocalEngineInfo {
         LocalEngineInfo(
             status: status, name: "apple-speech", revision: "speech-\(ProcessInfo.processInfo.operatingSystemVersionString)",
-            supportsDiarization: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
+            supportsDiarization: status != .unsupported && SpeakerSeparation.available, supportsVocabulary: false, modelBytes: nil, progress: progress.map { KotlinDouble(double: $0) }, downloading: downloading
         )
     }
 }

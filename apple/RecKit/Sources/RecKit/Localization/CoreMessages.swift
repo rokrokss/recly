@@ -65,6 +65,9 @@ public enum CoreMessages {
         case .unsupportedAudio: return "The provider would not accept this audio."
         case .noInputTrack: return "This recording has no mono or mix track to transcribe."
         case .resultTimeout: return "The provider did not finish in time. It will submit again."
+        // docs/03 "Naming rules": why an import left nothing behind — the Android shell's words.
+        case .importUnsupported: return "This file has no audio that can be imported."
+        case .importUnreadable: return "The file could not be opened."
         case .stale: return "The document changed while this was open"
         }
     }
@@ -74,7 +77,7 @@ public enum CoreMessages {
         switch message {
         case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .providerNotOffered, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .icloudUnavailable, .icloudStorageFull, .icloudUploading, .folderUnavailable, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
-             .noInputTrack, .resultTimeout:
+             .noInputTrack, .resultTimeout, .importUnsupported, .importUnreadable:
             return false
         default:
             return true

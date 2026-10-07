@@ -42,6 +42,8 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | sherpa-onnx (Android AAR, JVM jar and its native jar) | Android phone, Windows | Apache-2.0 | <https://github.com/k2-fsa/sherpa-onnx> |
 | ONNX Runtime (inside the sherpa-onnx AAR and native jar) | Android phone, Windows | MIT | <https://github.com/microsoft/onnxruntime> |
 | FluidAudio (on-device speaker diarization) | iPhone, macOS | Apache-2.0 | <https://github.com/FluidInference/FluidAudio> |
+| NemoTextProcessing (text-processing-rs, a static library FluidAudio links) | iPhone, macOS | Apache-2.0 | <https://github.com/FluidInference/text-processing-rs> |
+| fastcluster (inside FluidAudio) | iPhone, macOS | BSD-2-Clause | <https://github.com/fastcluster/fastcluster> |
 | ajv, ajv-formats | `spec/` schema validation (development only, not shipped) | MIT | <https://github.com/ajv-validator/ajv> |
 | JUnit 4 | tests only, not shipped | EPL-1.0 | <https://github.com/junit-team/junit4> |
 

@@ -287,6 +287,292 @@
         }
       }
     },
+    "Add Highlight": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Highlight"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "하이라이트 추가"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ハイライトを追加"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加标记"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "加上標記"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Añadir marcador"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajouter un repère"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markierung hinzufügen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar marcador"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adicionar marcador"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إضافة علامة"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "हाइलाइट जोड़ें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Добавить отметку"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiungi marcatore"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj znacznik"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "İşaret ekle"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magdagdag ng highlight"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "হাইলাইট যোগ করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ہائی لائٹ شامل کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ongeza alama"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thêm điểm đánh dấu"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "افزودن علامت"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เพิ่มไฮไลต์"
+          }
+        }
+      }
+    },
+    "Another app uses this shortcut.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Another app uses this shortcut."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 앱이 이 단축키를 쓰고 있습니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別のアプリがこのショートカットを使用しています。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他应用正在使用此快捷键。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "其他應用程式正在使用此快速鍵。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otra app usa este atajo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Une autre app utilise ce raccourci."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eine andere App verwendet dieses Tastenkürzel."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outro app usa este atalho."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Outra app está a usar este atalho."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم تطبيق آخر هذا الاختصار."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कोई दूसरा ऐप इस शॉर्टकट का इस्तेमाल कर रहा है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Это сочетание клавиш использует другое приложение."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un’altra app usa questa scorciatoia."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inna aplikacja używa tego skrótu."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu kısayolu başka bir uygulama kullanıyor."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ginagamit ng ibang app ang shortcut na ito."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অন্য একটি অ্যাপ এই শর্টকাট ব্যবহার করছে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کوئی اور ایپ یہ شارٹ کٹ استعمال کر رہی ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programu nyingine inatumia njia hii ya mkato."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Một ứng dụng khác đang dùng phím tắt này."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "برنامه دیگری از این میان‌بر استفاده می‌کند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แอปอื่นใช้แป้นพิมพ์ลัดนี้อยู่"
+          }
+        }
+      }
+    },
     "Are you in a meeting?": {
       "extractionState": "manual",
       "localizations": {
@@ -1427,6 +1713,149 @@
           "stringUnit": {
             "state": "translated",
             "value": "ดำเนินการต่อ"
+          }
+        }
+      }
+    },
+    "Copy configuration": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copy configuration"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "설정 복사"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "構成をコピー"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "复制配置"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "複製組態"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar configuración"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copier la configuration"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Konfiguration kopieren"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar configuração"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copiar configuração"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "نسخ التكوين"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कॉन्फ़िगरेशन कॉपी करें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Копировать конфигурацию"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copia configurazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopiuj konfigurację"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yapılandırmayı kopyala"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kopyahin ang configuration"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কনফিগারেশন কপি করুন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کنفیگریشن کاپی کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nakili usanidi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sao chép cấu hình"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کپی پیکربندی"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "คัดลอกการกำหนดค่า"
           }
         }
       }
@@ -2861,149 +3290,6 @@
         }
       }
     },
-    "Do not show again": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Do not show again"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "다시 보지 않기"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "次回から表示しない"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不再显示"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "不再顯示"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No volver a mostrar"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ne plus afficher"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nicht erneut anzeigen"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "عدم الإظهار مجددًا"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "फिर न दिखाएँ"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Больше не показывать"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não mostrar novamente"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Não mostrar novamente"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Non mostrare più"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie pokazuj ponownie"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bir daha gösterme"
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Huwag nang ipakita ulit"
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "আর দেখাবেন না"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "دوبارہ نہ دکھائیں"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usionyeshe tena"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Không hiển thị lại"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "دیگر نشان داده نشود"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ไม่ต้องแสดงอีก"
-          }
-        }
-      }
-    },
     "End the recording?": {
       "extractionState": "manual",
       "localizations": {
@@ -3719,6 +4005,292 @@
         }
       }
     },
+    "Import audio…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import audio…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "오디오 가져오기…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "音声を読み込む…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "导入音频…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "匯入音訊…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar audio…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importer de l’audio…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Audio importieren…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar áudio…"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar áudio…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "استيراد صوت…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ऑडियो इम्पोर्ट करें…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Импортировать аудио…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa audio…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj audio…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ses içe aktar…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mag-import ng audio…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অডিও ইমপোর্ট করুন…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "آڈیو درآمد کریں…"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leta sauti…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nhập âm thanh…"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "وارد کردن صدا…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "นำเข้าเสียง…"
+          }
+        }
+      }
+    },
+    "Keyboard shortcut": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keyboard shortcut"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "키보드 단축키"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キーボードショートカット"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "键盘快捷键"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "鍵盤快速鍵"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atajo de teclado"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raccourci clavier"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tastenkürzel"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atalho de teclado"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Atalho de teclado"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اختصار لوحة المفاتيح"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कीबोर्ड शॉर्टकट"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сочетание клавиш"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scorciatoia da tastiera"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrót klawiszowy"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klavye kısayolu"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut sa keyboard"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কিবোর্ড শর্টকাট"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "کی بورڈ شارٹ کٹ"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Njia ya mkato ya kibodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Phím tắt"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "میان‌بر صفحه‌کلید"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "แป้นพิมพ์ลัด"
+          }
+        }
+      }
+    },
     "Launch at login": {
       "extractionState": "manual",
       "localizations": {
@@ -4001,6 +4573,435 @@
           "stringUnit": {
             "state": "translated",
             "value": "ความยาว"
+          }
+        }
+      }
+    },
+    "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop, Claude Code, Codex 같은 이 컴퓨터의 에이전트가 녹음과 전사본을 읽게 합니다. 이 컴퓨터 밖으로 나가는 것은 없습니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Desktop、Claude Code、Codexなど、このコンピュータ上のエージェントが録音と文字起こしを読めるようにします。データはこのコンピュータの外に出ません。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "让此电脑上的智能体（如Claude Desktop、Claude Code或Codex）读取你的录音和转录文本。数据不会离开此电脑。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讓此電腦上的代理（例如Claude Desktop、Claude Code或Codex）讀取你的錄音和逐字稿。資料不會離開此電腦。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que un agente de este equipo, como Claude Desktop, Claude Code o Codex, lea tus grabaciones y transcripciones. Nada sale de este equipo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permet à un agent de cet ordinateur, comme Claude Desktop, Claude Code ou Codex, de lire vos enregistrements et transcriptions. Rien ne quitte cet ordinateur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ermöglicht einem Agenten auf diesem Computer, etwa Claude Desktop, Claude Code oder Codex, Ihre Aufnahmen und Transkripte zu lesen. Nichts verlässt diesen Computer."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que um agente neste computador, como Claude Desktop, Claude Code ou Codex, leia suas gravações e transcrições. Nada sai deste computador."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite que um agente neste computador, como o Claude Desktop, o Claude Code ou o Codex, leia as suas gravações e transcrições. Nada sai deste computador."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يتيح لوكيل على هذا الكمبيوتر، مثل Claude Desktop أو Claude Code أو Codex، قراءة تسجيلاتك ونصوصها. لا يغادر أي شيء هذا الكمبيوتر."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस कंप्यूटर पर मौजूद किसी एजेंट, जैसे Claude Desktop, Claude Code या Codex, को आपकी रिकॉर्डिंग और ट्रांसक्रिप्ट पढ़ने देता है। कुछ भी इस कंप्यूटर से बाहर नहीं जाता।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позволяет агенту на этом компьютере, например Claude Desktop, Claude Code или Codex, читать ваши записи и расшифровки. Ничто не покидает этот компьютер."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consente a un agente su questo computer, come Claude Desktop, Claude Code o Codex, di leggere le tue registrazioni e trascrizioni. Nulla esce da questo computer."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pozwala agentowi na tym komputerze, np. Claude Desktop, Claude Code lub Codex, odczytywać Twoje nagrania i transkrypcje. Nic nie opuszcza tego komputera."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu bilgisayardaki Claude Desktop, Claude Code veya Codex gibi bir ajanın kayıtlarınızı ve transkriptlerinizi okumasını sağlar. Hiçbir şey bu bilgisayardan çıkmaz."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinapayagan ang isang agent sa computer na ito, gaya ng Claude Desktop, Claude Code o Codex, na basahin ang iyong mga recording at transcript. Walang lumalabas sa computer na ito."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই কম্পিউটারের কোনো এজেন্টকে, যেমন Claude Desktop, Claude Code বা Codex, আপনার রেকর্ডিং ও ট্রান্সক্রিপ্ট পড়তে দেয়। কিছুই এই কম্পিউটারের বাইরে যায় না।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اس کمپیوٹر پر کسی ایجنٹ، جیسے Claude Desktop، Claude Code یا Codex، کو آپ کی ریکارڈنگز اور ٹرانسکرپٹس پڑھنے دیتا ہے۔ کچھ بھی اس کمپیوٹر سے باہر نہیں جاتا۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huruhusu wakala kwenye kompyuta hii, kama Claude Desktop, Claude Code au Codex, kusoma rekodi na nakala zako. Hakuna kinachotoka kwenye kompyuta hii."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cho phép tác nhân trên máy tính này, chẳng hạn Claude Desktop, Claude Code hoặc Codex, đọc các bản ghi âm và bản chép lời của bạn. Không có gì rời khỏi máy tính này."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "به عاملی در این رایانه، مانند Claude Desktop، Claude Code یا Codex، اجازه می‌دهد ضبط‌ها و رونوشت‌های شما را بخواند. چیزی از این رایانه خارج نمی‌شود."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ให้เอเจนต์ในคอมพิวเตอร์นี้ เช่น Claude Desktop, Claude Code หรือ Codex อ่านการบันทึกเสียงและข้อความถอดเสียงของคุณได้ ไม่มีข้อมูลใดออกจากคอมพิวเตอร์นี้"
+          }
+        }
+      }
+    },
+    "Local agents": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local agents"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로컬 에이전트"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカルエージェント"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地智能体"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本機代理"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agentes locales"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agents locaux"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokale Agenten"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agentes locais"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agentes locais"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوكلاء المحليون"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लोकल एजेंट"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальные агенты"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agenti locali"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Agenci lokalni"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel ajanlar"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mga lokal na agent"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "লোকাল এজেন্ট"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقامی ایجنٹس"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mawakala wa ndani"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tác nhân cục bộ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "عامل‌های محلی"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เอเจนต์ในเครื่อง"
+          }
+        }
+      }
+    },
+    "Local MCP server": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Local MCP server"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로컬 MCP 서버"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ローカルMCPサーバー"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地MCP服务器"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本機MCP伺服器"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor MCP local"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serveur MCP local"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokaler MCP-Server"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor MCP local"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Servidor MCP local"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خادم MCP المحلي"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "लोकल MCP सर्वर"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Локальный MCP-сервер"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Server MCP locale"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokalny serwer MCP"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Yerel MCP sunucusu"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lokal na MCP server"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "লোকাল MCP সার্ভার"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "مقامی MCP سرور"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seva ya MCP ya ndani"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máy chủ MCP cục bộ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سرور MCP محلی"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เซิร์ฟเวอร์ MCP ในเครื่อง"
           }
         }
       }
@@ -7294,6 +8295,149 @@
         }
       }
     },
+    "Runs recly-events on this Mac. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Runs recly-events on this Mac. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 Mac에서 recly-events를 실행합니다. Drive에 새 전사본이 생기면 ChatGPT 에이전트에게 알리고, 에이전트가 요청하면 내 OpenAI 터널로 전사본을 보냅니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このMacでrecly-eventsを実行します。Drive内に新しい文字起こしができるたびにChatGPTエージェントに知らせ、エージェントから求められると、あなた自身のOpenAIトンネルを通じてその文字起こしを送ります。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此Mac上运行recly-events。Drive中每有新的转录文本，它都会通知ChatGPT智能体，并在智能体请求时通过你自己的OpenAI隧道发送该转录文本。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此Mac上執行recly-events。Drive中每有新的逐字稿，它都會通知ChatGPT代理，並在代理要求時透過你自己的OpenAI通道傳送該逐字稿。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejecuta recly-events en este Mac. Avisa a tu agente de ChatGPT de cada nueva transcripción de tu Drive y, cuando el agente la pide, se la envía a través de tu propio túnel de OpenAI."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exécute recly-events sur ce Mac. Il prévient votre agent ChatGPT de chaque nouvelle transcription de votre Drive et, quand l’agent la demande, la lui envoie via votre propre tunnel OpenAI."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Führt recly-events auf diesem Mac aus. Es informiert Ihren ChatGPT-Agenten über jedes neue Transkript in Ihrem Drive und sendet ihm das Transkript über Ihren eigenen OpenAI-Tunnel, wenn der Agent es anfordert."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Executa o recly-events neste Mac. Ele avisa seu agente do ChatGPT sobre cada nova transcrição no seu Drive e, quando o agente pede, envia a transcrição pelo seu próprio túnel da OpenAI."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Executa o recly-events neste Mac. Avisa o seu agente do ChatGPT de cada nova transcrição no seu Drive e, quando o agente a pede, envia-lhe a transcrição através do seu próprio túnel da OpenAI."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يشغّل recly-events على هذا الـMac. يبلغ وكيل ChatGPT بكل نص جديد في Drive، وعندما يطلبه الوكيل يرسل إليه النص عبر نفق OpenAI الخاص بك."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस Mac पर recly-events चलाता है। यह आपकी Drive में हर नई ट्रांसक्रिप्ट के बारे में आपके ChatGPT एजेंट को बताता है और एजेंट के माँगने पर आपकी अपनी OpenAI टनल से उसे ट्रांसक्रिप्ट भेजता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Запускает recly-events на этом Mac. Сообщает вашему агенту ChatGPT о каждой новой расшифровке в вашем Drive и по запросу агента отправляет ему расшифровку через ваш собственный туннель OpenAI."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esegue recly-events su questo Mac. Avvisa il tuo agente ChatGPT di ogni nuova trascrizione nel tuo Drive e, quando l’agente la chiede, gliela invia tramite il tuo tunnel OpenAI personale."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchamia recly-events na tym Macu. Powiadamia Twojego agenta ChatGPT o każdej nowej transkrypcji na Twoim Drive, a gdy agent o nią poprosi, wysyła mu ją przez Twój własny tunel OpenAI."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu Mac'te recly-events'i çalıştırır. Drive'ınızdaki her yeni transkripti ChatGPT ajanınıza bildirir ve ajan istediğinde transkripti kendi OpenAI tüneliniz üzerinden ona gönderir."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pinapatakbo ang recly-events sa Mac na ito. Sinasabihan nito ang iyong ChatGPT agent tungkol sa bawat bagong transcript sa iyong Drive at, kapag hiningi ng agent, ipinapadala nito ang transcript sa pamamagitan ng sarili mong tunnel ng OpenAI."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই Mac-এ recly-events চালায়। এটি আপনার Drive-এ প্রতিটি নতুন ট্রান্সক্রিপ্টের কথা আপনার ChatGPT এজেন্টকে জানায় এবং এজেন্ট চাইলে আপনার নিজের OpenAI টানেলের মাধ্যমে তাকে ট্রান্সক্রিপ্টটি পাঠায়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اس Mac پر recly-events چلاتا ہے۔ یہ آپ کے Drive میں ہر نئے ٹرانسکرپٹ کے بارے میں آپ کے ChatGPT ایجنٹ کو بتاتا ہے اور ایجنٹ کے مانگنے پر آپ کے اپنے OpenAI ٹنل کے ذریعے اسے ٹرانسکرپٹ بھیجتا ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Huendesha recly-events kwenye Mac hii. Humjulisha wakala wako wa ChatGPT kuhusu kila nakala mpya katika Drive yako na, wakala anapoiomba, humtumia nakala hiyo kupitia handaki lako la OpenAI."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chạy recly-events trên máy Mac này. Công cụ này báo cho tác nhân ChatGPT về mỗi bản chép lời mới trong Drive của bạn và, khi tác nhân yêu cầu, gửi bản chép lời đó qua đường hầm OpenAI của riêng bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ابزار recly-events را روی این Mac اجرا می‌کند. این ابزار درباره هر رونوشت جدید در Drive شما به عامل ChatGPT شما اطلاع می‌دهد و وقتی عامل درخواست کند، رونوشت را از طریق تونل OpenAI خودتان برایش می‌فرستد."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เรียกใช้ recly-events บน Mac เครื่องนี้ โดยจะแจ้งเอเจนต์ ChatGPT ของคุณเมื่อมีข้อความถอดเสียงใหม่ใน Drive ของคุณ และเมื่อเอเจนต์ขอ ก็จะส่งข้อความถอดเสียงนั้นให้ผ่านทันเนล OpenAI ของคุณเอง"
+          }
+        }
+      }
+    },
     "Save": {
       "extractionState": "manual",
       "localizations": {
@@ -7433,6 +8577,149 @@
           "stringUnit": {
             "state": "translated",
             "value": "บันทึก"
+          }
+        }
+      }
+    },
+    "Save as…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Save as…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 이름으로 저장…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "別名で保存…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "存储为…"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "儲存為…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar como…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enregistrer sous…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Speichern unter…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salvar como…"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Guardar como…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حفظ باسم…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस रूप में सहेजें…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сохранить как…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Salva con nome…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisz jako…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Farklı kaydet…"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-save bilang…"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অন্য নামে সেভ করুন…"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بطور محفوظ کریں…"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hifadhi kama…"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lưu thành…"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ذخیره با نام…"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "บันทึกเป็น…"
           }
         }
       }
@@ -8724,6 +10011,149 @@
         }
       }
     },
+    "Start a recording with Recly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start a recording with Recly."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly로 녹음을 시작합니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyで録音を開始します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用Recly开始录音。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用Recly開始錄音。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia una grabación con Recly."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lance un enregistrement avec Recly."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startet eine Aufnahme mit Recly."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicia uma gravação com o Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicie uma gravação com o Recly."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يبدأ تسجيلًا باستخدام Recly."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly से रिकॉर्डिंग शुरू करता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Начинает запись с помощью Recly."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvia una registrazione con Recly."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rozpoczyna nagrywanie w Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly ile kayıt başlatın."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Magsimula ng recording gamit ang Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly দিয়ে একটি রেকর্ডিং শুরু করে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly سے ریکارڈنگ شروع کریں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anza kurekodi ukitumia Recly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bắt đầu ghi âm bằng Recly."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "شروع ضبط با Recly."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เริ่มบันทึกเสียงด้วย Recly"
+          }
+        }
+      }
+    },
     "Start recording": {
       "extractionState": "manual",
       "localizations": {
@@ -9435,6 +10865,149 @@
           "stringUnit": {
             "state": "translated",
             "value": "หยุดบันทึกเสียง"
+          }
+        }
+      }
+    },
+    "Stop the Recly recording that is running.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stop the Recly recording that is running."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "진행 중인 Recly 녹음을 정지합니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyで実行中の録音を停止します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止正在进行的Recly录音。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "停止正在進行的Recly錄音。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detiene la grabación de Recly en curso."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrête l’enregistrement Recly en cours."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stoppt die laufende Recly-Aufnahme."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Para a gravação em andamento no Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pare a gravação do Recly em curso."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يوقف تسجيل Recly الجاري."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "चल रही Recly रिकॉर्डिंग बंद करता है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Останавливает текущую запись Recly."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interrompe la registrazione Recly in corso."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zatrzymuje trwające nagrywanie Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Devam eden Recly kaydını durdurun."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ihinto ang tumatakbong recording ng Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "চলমান Recly রেকর্ডিং থামায়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "جاری Recly ریکارڈنگ روکیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Simamisha rekodi ya Recly inayoendelea."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dừng phiên ghi âm Recly đang diễn ra."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توقف ضبط فعلی Recly."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "หยุดการบันทึกเสียงของ Recly ที่กำลังทำงานอยู่"
           }
         }
       }
@@ -11870,292 +13443,6 @@
         }
       }
     },
-    "With headphones the other side does not bleed into your own track.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "With headphones the other side does not bleed into your own track."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "헤드폰을 쓰면 상대 목소리가 내 트랙에 섞이지 않습니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ヘッドホンを使うと相手の声が自分のトラックに混ざりません。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用耳机可避免对方声音混入您的音轨。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "使用耳機可避免對方聲音混入您的音軌。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con auriculares, la voz del otro lado no se filtra a tu pista."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Avec un casque, la voix distante ne se mélange pas à votre piste."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit Kopfhörern gelangt die Gegenseite nicht in Ihre eigene Spur."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "باستخدام سماعات الرأس لا يتسرّب صوت الطرف الآخر إلى مسارك."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "हेडफ़ोन से सामने वाले की आवाज़ आपके ट्रैक में नहीं घुलती।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "С наушниками голос собеседника не попадает в вашу дорожку."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Com fones, a voz do outro lado não vaza para sua faixa."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Com auscultadores, o outro lado não passa para a sua própria faixa."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Con le cuffie, l’audio degli altri non finisce nella tua traccia."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ze słuchawkami głos drugiej strony nie przenika do Twojej ścieżki."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kulaklık kullanırsanız karşı tarafın sesi kendi kanalınıza karışmaz."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Kapag may headphones, hindi pumapasok ang boses ng kabilang panig sa sarili mong track."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "হেডফোন ব্যবহার করলে অপর পক্ষের আওয়াজ আপনার নিজের ট্র্যাকে মিশে যায় না।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ہیڈ فونز کے ساتھ دوسری طرف کی آواز آپ کے اپنے ٹریک میں شامل نہیں ہوتی۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ukitumia vipokea sauti vya kichwani, sauti ya upande mwingine haiingii kwenye mkondo wako wa sauti."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Khi dùng tai nghe, âm thanh của phía bên kia sẽ không lẫn vào rãnh của bạn."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "با هدفون، صدای طرف مقابل به مسیر صوتی خودتان نشت نمی‌کند."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "เมื่อใช้หูฟัง เสียงของอีกฝ่ายจะไม่รั่วเข้ามาในแทร็กของคุณ"
-          }
-        }
-      }
-    },
-    "You are listening on the built-in speaker": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "You are listening on the built-in speaker"
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "내장 스피커로 듣고 있습니다"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "内蔵スピーカーで再生しています"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在使用内置扬声器"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "正在使用內建揚聲器"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estás usando el altavoz integrado"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Vous utilisez le haut-parleur intégré"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sie hören über den eingebauten Lautsprecher"
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "تستمع عبر مكبّر الصوت المدمج"
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "आप अंतर्निर्मित स्पीकर पर सुन रहे हैं"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Вы слушаете через встроенный динамик"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Você está usando o alto-falante integrado"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Está a ouvir pelo altifalante integrado"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Stai ascoltando dall’altoparlante integrato"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Słuchasz przez wbudowany głośnik"
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dahili hoparlörden dinliyorsunuz"
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nakikinig ka sa built-in na speaker"
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "আপনি বিল্ট-ইন স্পিকারে শুনছেন"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "آپ بلٹ ان اسپیکر پر سن رہے ہیں"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unasikiliza kupitia spika iliyojengewa ndani"
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bạn đang nghe bằng loa tích hợp"
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "در حال گوش دادن با بلندگوی داخلی هستید"
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "คุณกำลังฟังผ่านลำโพงในตัว"
-          }
-        }
-      }
-    },
     "consent.body": {
       "extractionState": "manual",
       "localizations": {
@@ -13153,149 +14440,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "ไม่มีในบิลด์นี้"
-          }
-        }
-      }
-    },
-    "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "이 Mac에서 recly-events를 실행합니다. Drive에 새로 생긴 전사 결과의 이름과 링크만 읽고, 내 OpenAI 터널로 ChatGPT 에이전트에게 알립니다."
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "このMacでrecly-eventsを実行します。Drive内の新しい文字起こしの名前とリンクだけを読み取り、あなた自身のOpenAIトンネルを通じてChatGPTエージェントに知らせます。"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在此Mac上运行recly-events。它只读取Drive中新转录文本的名称和链接，并通过你自己的OpenAI隧道通知ChatGPT智能体。"
-          }
-        },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在此Mac上執行recly-events。它只讀取Drive中新逐字稿的名稱和連結，並透過你自己的OpenAI通道通知ChatGPT代理。"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ejecuta recly-events en este Mac. Solo lee los nombres y enlaces de las nuevas transcripciones de tu Drive y avisa a tu agente de ChatGPT a través de tu propio túnel de OpenAI."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Exécute recly-events sur ce Mac. Il lit seulement les noms et les liens des nouvelles transcriptions de votre Drive et prévient votre agent ChatGPT via votre propre tunnel OpenAI."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Führt recly-events auf diesem Mac aus. Es liest nur die Namen und Links neuer Transkripte in Ihrem Drive und informiert Ihren ChatGPT-Agenten über Ihren eigenen OpenAI-Tunnel."
-          }
-        },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يشغّل recly-events على هذا الـMac. يقرأ فقط أسماء وروابط النصوص الجديدة في Drive ويبلغ وكيل ChatGPT عبر نفق OpenAI الخاص بك."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "इस Mac पर recly-events चलाता है। यह आपकी Drive में नई ट्रांसक्रिप्ट के केवल नाम और लिंक पढ़ता है और आपकी अपनी OpenAI टनल से आपके ChatGPT एजेंट को बताता है।"
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Запускает recly-events на этом Mac. Читает только названия и ссылки новых расшифровок в вашем Drive и сообщает вашему агенту ChatGPT через ваш собственный туннель OpenAI."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Executa o recly-events neste Mac. Ele lê apenas os nomes e links das novas transcrições no seu Drive e avisa seu agente do ChatGPT pelo seu próprio túnel da OpenAI."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Executa o recly-events neste Mac. Lê apenas os nomes e as ligações das novas transcrições no seu Drive e avisa o seu agente do ChatGPT através do seu próprio túnel da OpenAI."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esegue recly-events su questo Mac. Legge solo i nomi e i link delle nuove trascrizioni nel tuo Drive e avvisa il tuo agente ChatGPT tramite il tuo tunnel OpenAI personale."
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uruchamia recly-events na tym Macu. Odczytuje tylko nazwy i linki nowych transkrypcji na Twoim Drive i powiadamia Twojego agenta ChatGPT przez Twój własny tunel OpenAI."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bu Mac'te recly-events'i çalıştırır. Drive'ınızdaki yeni transkriptlerin yalnızca adlarını ve bağlantılarını okur ve kendi OpenAI tüneliniz üzerinden ChatGPT ajanınıza bildirir."
-          }
-        },
-        "fil": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pinapatakbo ang recly-events sa Mac na ito. Binabasa lang nito ang mga pangalan at link ng mga bagong transcript sa iyong Drive at sinasabihan ang iyong ChatGPT agent sa pamamagitan ng sarili mong tunnel ng OpenAI."
-          }
-        },
-        "bn": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "এই Mac-এ recly-events চালায়। এটি আপনার Drive-এ নতুন ট্রান্সক্রিপ্টের শুধু নাম ও লিঙ্ক পড়ে এবং আপনার নিজের OpenAI টানেলের মাধ্যমে আপনার ChatGPT এজেন্টকে জানায়।"
-          }
-        },
-        "ur": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "اس Mac پر recly-events چلاتا ہے۔ یہ آپ کے Drive میں نئے ٹرانسکرپٹس کے صرف نام اور لنکس پڑھتا ہے اور آپ کے اپنے OpenAI ٹنل کے ذریعے آپ کے ChatGPT ایجنٹ کو بتاتا ہے۔"
-          }
-        },
-        "sw": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Huendesha recly-events kwenye Mac hii. Husoma tu majina na viungo vya nakala mpya katika Drive yako na humjulisha wakala wako wa ChatGPT kupitia handaki lako la OpenAI."
-          }
-        },
-        "vi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Chạy recly-events trên máy Mac này. Công cụ này chỉ đọc tên và liên kết của các bản chép lời mới trong Drive của bạn, rồi báo cho tác nhân ChatGPT qua đường hầm OpenAI của riêng bạn."
-          }
-        },
-        "fa": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ابزار recly-events را روی این Mac اجرا می‌کند. این ابزار فقط نام و پیوند رونوشت‌های جدید را در Drive شما می‌خواند و از طریق تونل OpenAI خودتان به عامل ChatGPT شما اطلاع می‌دهد."
-          }
-        },
-        "th": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "เรียกใช้ recly-events บน Mac เครื่องนี้ โดยจะอ่านเฉพาะชื่อและลิงก์ของข้อความถอดเสียงใหม่ใน Drive ของคุณ แล้วแจ้งเอเจนต์ ChatGPT ของคุณผ่านทันเนล OpenAI ของคุณเอง"
           }
         }
       }

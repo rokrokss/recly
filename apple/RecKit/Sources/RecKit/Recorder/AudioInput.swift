@@ -112,10 +112,6 @@ final class MicrophoneInput: AudioInput {
     /// uncatchable `NSException` when the two disagree. Seen with AirPods, whose rate moves between
     /// 24 and 48 kHz as they leave and enter the call profile.
     private var engine = AVAudioEngine()
-    /// docs/12 "Echo": off by default and only ever turned on by an explicit flag. Apple's voice
-    /// processing is tuned for telephony — it narrows the band and gates hard — so paying that for
-    /// echo the user can avoid with headphones is the wrong default (M4-L3 deliverable 4).
-    private let voiceProcessing: Bool
     private var tapped = false
     private var configurationObserver: NSObjectProtocol?
     private let delivery = AudioDeliveryQueue(label: "app.recly.recorder.microphone", delaySec: 0.6)
@@ -126,15 +122,16 @@ final class MicrophoneInput: AudioInput {
     private var routeError: Error?
     private var inputListener: AudioObjectPropertyListenerBlock?
     private let listenerQueue = DispatchQueue(label: "app.recly.mac.recorder.devices")
+    /// docs/12 "Echo": whether this recording's microphone goes through Apple's voice processing —
+    /// decided at its start ([authorize]) from where the sound comes out, and off for the rest of the
+    /// recording once the system refused it.
+    private var voiceProcessing = false
     #endif
 
     var onConfigurationChange: ((String) -> Void)?
     /// Never called here — see the protocol. `IOSAudioInput` is the one that has interruptions.
     var onSilence: ((Bool) -> Void)?
 
-    init(voiceProcessing: Bool = false) {
-        self.voiceProcessing = voiceProcessing
-    }
 
     var format: AVAudioFormat? {
         refreshIfIdle()
@@ -164,6 +161,9 @@ final class MicrophoneInput: AudioInput {
         try await Self.requireMicrophone()
         #if os(macOS)
         route.beginSession()
+        // docs/12 "Echo": the built-in speakers play the other side straight into the microphone;
+        // headphones and other outputs do not, and keep the unprocessed microphone.
+        voiceProcessing = SystemAudioDevice.defaultOutput()?.isBuiltInSpeaker == true
         #endif
     }
 
@@ -179,26 +179,41 @@ final class MicrophoneInput: AudioInput {
         guard let format = currentFormat else {
             throw RecorderError("the default input device reports no usable format")
         }
-        // The check `installTap` makes, made here so it is an error and not an abort: the node's
-        // format against the hardware's. A fresh engine keeps them together; this is for the case
-        // where the device changed in the moment between the two.
-        let hardware = engine.inputNode.inputFormat(forBus: 0)
-        guard format.sampleRate == hardware.sampleRate, format.channelCount == hardware.channelCount else {
-            throw RecorderError(
-                "the input format moved under the tap (\(format.sampleRate) Hz/\(format.channelCount)ch"
-                    + " against \(hardware.sampleRate) Hz/\(hardware.channelCount)ch)"
-            )
+        do {
+            // The check `installTap` makes, made here so it is an error and not an abort: the node's
+            // format against the hardware's. A fresh engine keeps them together; this is for the case
+            // where the device changed in the moment between the two.
+            let hardware = engine.inputNode.inputFormat(forBus: 0)
+            guard format.sampleRate == hardware.sampleRate, format.channelCount == hardware.channelCount else {
+                throw RecorderError(
+                    "the input format moved under the tap (\(format.sampleRate) Hz/\(format.channelCount)ch"
+                        + " against \(hardware.sampleRate) Hz/\(hardware.channelCount)ch)"
+                )
+            }
+            delivery.start(onBuffer)
+            engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [delivery] buffer, when in
+                let time = when.isHostTimeValid ? AVAudioTime.seconds(forHostTime: when.hostTime) : nil
+                delivery.submit(CapturedAudio(buffer, hostTimeSec: time))
+            }
+            tapped = true
+            engine.prepare()
+            try engine.start()
+        } catch {
+            #if os(macOS)
+            // docs/12 "Echo": a voice-processing engine the system will not run is not a recording
+            // lost. The recorder retries the start, and the retry opens the plain microphone.
+            if engine.inputNode.isVoiceProcessingEnabled {
+                voiceProcessing = false
+                onDiagnostic?(CaptureDiagnostic(event: "voice_processing_refused", source: "mic", detail: "\(error)"))
+            }
+            #endif
+            throw error
         }
-        delivery.start(onBuffer)
-        engine.inputNode.installTap(onBus: 0, bufferSize: 4096, format: format) { [delivery] buffer, when in
-            let time = when.isHostTimeValid ? AVAudioTime.seconds(forHostTime: when.hostTime) : nil
-            delivery.submit(CapturedAudio(buffer, hostTimeSec: time))
-        }
-        tapped = true
-        engine.prepare()
-        try engine.start()
         observeConfigurationChanges()
-        onDiagnostic?(CaptureDiagnostic(event: "format", source: "mic", device: deviceName, rateHz: format.sampleRate))
+        onDiagnostic?(CaptureDiagnostic(
+            event: "format", source: "mic", device: deviceName,
+            detail: engine.inputNode.isVoiceProcessingEnabled ? "voice_processing" : nil, rateHz: format.sampleRate
+        ))
     }
 
     func stop() {
@@ -217,16 +232,18 @@ final class MicrophoneInput: AudioInput {
     /// A stopped engine is thrown away rather than reused, so the format read next — by the
     /// recorder building its converter, and by [start] installing the tap — is the device's now.
     /// Voice processing goes on here, before any format is read: turning it on reconfigures the
-    /// input node, which changes the format the tap then has to be installed with. `false` is
-    /// already the engine's state, so saying it out loud would only be a chance to be wrong.
+    /// input node, which changes the format the tap then has to be installed with.
     private func refreshIfIdle() {
         guard !engine.isRunning else { return }
         engine = AVAudioEngine()
-        if voiceProcessing { try? engine.inputNode.setVoiceProcessingEnabled(true) }
         #if os(macOS)
         routeError = nil
         guard let device = route.resolve(initial: route.name == nil) else {
             routeError = RecorderError("the selected microphone is temporarily unavailable")
+            return
+        }
+        if voiceProcessing, enableVoiceProcessing(for: device) {
+            route.bind(device)
             return
         }
         guard let unit = engine.inputNode.audioUnit else {
@@ -245,6 +262,37 @@ final class MicrophoneInput: AudioInput {
         route.bind(device)
         #endif
     }
+
+    #if os(macOS)
+    /// docs/12 "Echo": Apple's voice processing takes what the output device plays out of the
+    /// microphone (AVAudioIONode.h). Its unit runs on the system's default input and output and is
+    /// not pinned to a device — it refuses an input-only one such as the built-in microphone — so it
+    /// is used only when the microphone this recording picked is the default input. Otherwise, or
+    /// when the system refuses it, the engine stays the plain one and the pinned device is kept
+    /// (docs/12 "Microphone selection").
+    private func enableVoiceProcessing(for device: MicrophoneDevice) -> Bool {
+        let defaultInput: AudioDeviceID? = CoreAudioProperty.value(
+            of: AudioObjectID(kAudioObjectSystemObject), selector: kAudioHardwarePropertyDefaultInputDevice
+        )
+        guard device.audioID == defaultInput else { return false }
+        do {
+            try engine.inputNode.setVoiceProcessingEnabled(true)
+        } catch {
+            voiceProcessing = false
+            onDiagnostic?(CaptureDiagnostic(event: "voice_processing_refused", source: "mic", detail: "\(error)"))
+            engine = AVAudioEngine()
+            return false
+        }
+        // The other apps' sound — the meeting itself — is turned down as little as the API allows.
+        engine.inputNode.voiceProcessingOtherAudioDuckingConfiguration = .init(
+            enableAdvancedDucking: false, duckingLevel: .min
+        )
+        // The unit renders its output every cycle, and with nothing to render it fails each one. A
+        // silent mixer is its source; the recording itself only taps the input.
+        engine.mainMixerNode.outputVolume = 0
+        return true
+    }
+    #endif
 
     /// docs/12 "Permissions": `NSMicrophoneUsageDescription` is what makes the prompt possible; a refusal
     /// is not an error the app can retry its way out of, so it comes back as its own kind and the

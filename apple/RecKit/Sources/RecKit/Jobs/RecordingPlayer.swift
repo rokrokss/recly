@@ -110,12 +110,33 @@ public final class RecordingPlayer: ObservableObject {
             buffering = false
             failed = true
         } else {
-            isPlaying = queue.playing
-            buffering = queue.buffering
+            // Only on a change: the detail asks five times a second, and a published value set to
+            // itself still redraws the whole page (and never lets it settle).
+            if isPlaying != queue.playing { isPlaying = queue.playing }
+            if buffering != queue.buffering { buffering = queue.buffering }
         }
     }
     /// Seconds from the start of the *recording*, not of the part being played.
     @Published public private(set) var positionSec: Double = 0
+    /// docs/09 "Playback": this device's speed and Skip silence, kept across recordings.
+    @Published public private(set) var rate = PlaybackPreferences.rate
+    @Published public private(set) var skipSilence = PlaybackPreferences.skipSilence
+    /// The quiet stretches Skip silence jumps over (`SilenceRanges`), on the recording's own axis.
+    public var silences: [SilentRange] = []
+    /// The end of the stretch last jumped, so the tick does not seek again while that seek lands.
+    private var skippedTo: Double?
+
+    public func setRate(_ rate: Double) {
+        self.rate = rate
+        PlaybackPreferences.rate = rate
+        queue?.setRate(rate)
+    }
+
+    public func setSkipSilence(_ on: Bool) {
+        skipSilence = on
+        PlaybackPreferences.skipSilence = on
+        skippedTo = nil
+    }
 
     /// How often the playhead is moved while playing: 30 steps a second, so the bar slides rather
     /// than steps. Finer would be redraws no screen this runs on can show.
@@ -150,7 +171,7 @@ public final class RecordingPlayer: ObservableObject {
     public func play() {
         guard !captureBlocked, !selection.isEmpty else { return }
         failed = false
-        (queue ?? makeQueue()).play()
+        (queue ?? makeQueue()).play(rate: rate)
         refreshStatus()
     }
 
@@ -196,6 +217,7 @@ public final class RecordingPlayer: ObservableObject {
     public func seek(toSec sec: Double) {
         guard !captureBlocked, !selection.isEmpty else { return }
         let sec = min(max(0, sec), selection.totalSec)
+        skippedTo = nil
         let target = Self.target(durations: selection.durations, sec: sec)
         // Ahead of the next tick, which does not come at all while the player is paused: the bar
         // is showing the second the finger let go of.
@@ -209,7 +231,7 @@ public final class RecordingPlayer: ObservableObject {
             queue.seek(toSec: target.offsetSec)
             // Emptying the queue drops the rate with it, so a player that was going has to be
             // started again — the session it is already holding makes that no more than a `play()`.
-            if isPlaying { queue.play() }
+            if isPlaying { queue.play(rate: rate) }
             return
         }
         queue.seek(toSec: target.offsetSec)
@@ -269,6 +291,16 @@ public final class RecordingPlayer: ObservableObject {
             finished: selection.urls.count - remaining,
             itemSec: itemSec
         )
+        // docs/09 "Playback": over a silence to its end; the clock shows the real position all along.
+        guard skipSilence, isPlaying, let next = Self.silenceEnd(silences, at: positionSec), next != skippedTo else { return }
+        seek(toSec: next)
+        skippedTo = next
+    }
+
+    /// The end of the silence [sec] is in, or nil when it is in none — or so near its end that the
+    /// jump would be nothing.
+    nonisolated static func silenceEnd(_ silences: [SilentRange], at sec: Double) -> Double? {
+        silences.first { sec >= $0.startSec && sec < $0.endSec - 0.1 }?.endSec
     }
 }
 
@@ -294,7 +326,7 @@ private final class Queue {
     #endif
 
     init(urls: [URL], tick: @escaping (Double, Int) -> Void, ended: @escaping () -> Void) {
-        let items = urls.map { AVPlayerItem(url: $0) }
+        let items = urls.map(Self.item)
         let player = AVQueuePlayer(items: items)
         player.actionAtItemEnd = .advance
         self.player = player
@@ -330,7 +362,7 @@ private final class Queue {
     /// reporting through it, so the clock does not blink either.
     func reload(urls: [URL]) {
         player.removeAllItems()
-        let items = urls.map { AVPlayerItem(url: $0) }
+        let items = urls.map(Self.item)
         observeFailures(items)
         for item in items { player.insert(item, after: nil) }
         observeEnd(of: items.last)
@@ -347,11 +379,25 @@ private final class Queue {
         )
     }
 
-    func play() {
+    func play(rate: Double) {
         do {
             try activateSession()
+            player.defaultRate = Float(rate)
             player.play()
         } catch { playbackFailed = true }
+    }
+
+    /// docs/09 "Playback": the new speed at once while playing, and from the next Play otherwise.
+    func setRate(_ rate: Double) {
+        player.defaultRate = Float(rate)
+        if player.rate != 0 { player.rate = Float(rate) }
+    }
+
+    /// Speech at another speed keeps its pitch: the time-domain algorithm is the one made for voice.
+    private static func item(_ url: URL) -> AVPlayerItem {
+        let item = AVPlayerItem(url: url)
+        item.audioTimePitchAlgorithm = .timeDomain
+        return item
     }
 
     func pause() {
