@@ -85,7 +85,8 @@ final class CompetitiveFeaturesUITests: XCTestCase {
             app.buttons[language == "ko" ? "화자 이름 바꾸기" : "Rename speaker"].tap()
             let field = app.textFields["speaker-name-field"]
             XCTAssertTrue(field.waitForExistence(timeout: 5))
-            field.typeText("Minsu")
+            // The field starts with the name there is; replace it.
+            field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 20) + "Minsu")
             shot("detail-speaker-name-\(language)")
             app.buttons["speaker-name-save"].tap()
             sleep(2)
@@ -161,6 +162,38 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         settingsApp.swipeUp()
         sleep(1)
         shot("settings-vocabulary-\(language)")
+    }
+
+    /// docs/09 §10: the Record widget as the system's gallery offers it (the simulator's system language).
+    func testRecordWidgetInGallery() {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        XCUIDevice.shared.press(.home)
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).press(forDuration: 2.5)
+        sleep(1)
+        let edit = springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Edit", "편집"])).firstMatch
+        if !edit.waitForExistence(timeout: 5) { print(springboard.debugDescription) }
+        XCTAssertTrue(edit.exists)
+        edit.tap()
+        let add = springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Add Widget", "위젯 추가"])).firstMatch
+        XCTAssertTrue(add.waitForExistence(timeout: 5))
+        add.tap()
+        let search = springboard.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        search.typeText("Recly")
+        sleep(2)
+        shot("widget-gallery-search")
+        let recly = springboard.cells.matching(NSPredicate(format: "label CONTAINS %@", "Recly")).firstMatch
+        if recly.waitForExistence(timeout: 5) {
+            recly.tap()
+        } else {
+            springboard.staticTexts["Recly"].firstMatch.tap()
+        }
+        sleep(2)
+        shot("widget-gallery-record-small")
+        springboard.swipeLeft()
+        sleep(1)
+        shot("widget-gallery-record-next")
     }
 
     private func shot(_ name: String) {
