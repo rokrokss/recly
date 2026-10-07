@@ -134,14 +134,15 @@ struct TranscriptReader: View {
                     .accessibilityIdentifier("transcript-time-\(group.id)")
                 ForEach(marks, id: \.self) { mark in
                     HighlightMenu(atSec: mark, go: { onSeek(mark) }, remove: { onRemoveHighlight(mark) }) {
-                        // docs/09 "Highlights": the highlight square, 6×6 in the accent, on a finger-sized
-                        // target.
+                        // docs/09 "Highlights": the highlight square, 6×6 in the accent, right after the time
+                        // and centred with it; its target reaches into the gaps on either side.
                         Rectangle()
                             .fill(blueprint.palette.accent)
                             .frame(width: 6, height: 6)
-                            .frame(width: 28, height: minTouch)
+                            .frame(width: 6 + 2 * Space.s, height: minTouch)
                             .contentShape(Rectangle())
                     }
+                    .padding(.horizontal, -Space.xs)
                     .accessibilityIdentifier("transcript-highlight")
                 }
                 if !transcript.speakers.isEmpty, !group.speaker.isEmpty {
@@ -179,9 +180,13 @@ struct TranscriptReader: View {
     /// The paragraph with the find's matches on the accent, the current one stronger.
     private func marked(_ group: TranscriptGroup) -> AttributedString {
         var text = AttributedString(group.text)
+        let utf16 = group.text.utf16
         for (index, match) in matches.enumerated() where match.group == group.id {
-            guard let from = AttributedString.Index(match.range.lowerBound, within: text),
-                  let to = AttributedString.Index(match.range.upperBound, within: text) else { continue }
+            guard match.offset >= 0, match.length > 0, match.offset + match.length <= utf16.count else { continue }
+            let start = String.Index(utf16Offset: match.offset, in: group.text)
+            let end = String.Index(utf16Offset: match.offset + match.length, in: group.text)
+            guard let from = AttributedString.Index(start, within: text),
+                  let to = AttributedString.Index(end, within: text) else { continue }
             text[from ..< to].backgroundColor = blueprint.palette.accent.opacity(index == matchIndex ? 0.36 : 0.16)
         }
         return text

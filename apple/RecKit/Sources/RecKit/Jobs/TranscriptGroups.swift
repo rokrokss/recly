@@ -50,24 +50,33 @@ public struct TranscriptGroup: Identifiable, Equatable, Sendable {
     }
 }
 
-/// docs/10 "Search" · docs/09 find bar: every place [query] occurs in the groups, in reading order —
-/// case, Latin accents and width ignored, as the core's search folds them.
+/// docs/10 "Search" · docs/09 find bar: every place [query] occurs in the groups, in reading order — found
+/// the way the core's search finds them, so the find bar counts what the search row promised.
 public struct TranscriptMatch: Equatable, Sendable {
     public let group: Int
-    public let range: Swift.Range<String.Index>
+    /// In UTF-16 code units of the group's text, as the core counts.
+    public let offset: Int
+    public let length: Int
 
     public static func all(_ query: String, in groups: [TranscriptGroup]) -> [TranscriptMatch] {
-        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !needle.isEmpty else { return [] }
-        var matches: [TranscriptMatch] = []
-        for group in groups {
-            var from = group.text.startIndex
-            while let found = group.text.range(of: needle, options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], range: from ..< group.text.endIndex) {
-                matches.append(TranscriptMatch(group: group.id, range: found))
-                from = found.upperBound
-            }
+        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return [] }
+        return groups.flatMap { group in
+            findRanges(group.text, query).map { TranscriptMatch(group: group.id, offset: $0.offset, length: $0.length) }
         }
-        return matches
+    }
+
+    /// Stands in for the core's `findRanges(text, query)` until it lands: the same answer from Foundation's
+    /// folding, in UTF-16 units.
+    private static func findRanges(_ text: String, _ query: String) -> [(offset: Int, length: Int)] {
+        let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        var found: [(offset: Int, length: Int)] = []
+        var from = text.startIndex
+        while let range = text.range(of: needle, options: [.caseInsensitive, .diacriticInsensitive, .widthInsensitive], range: from ..< text.endIndex) {
+            let offset = text.utf16.distance(from: text.startIndex, to: range.lowerBound)
+            found.append((offset, text.utf16.distance(from: range.lowerBound, to: range.upperBound)))
+            from = range.upperBound
+        }
+        return found
     }
 }
 
