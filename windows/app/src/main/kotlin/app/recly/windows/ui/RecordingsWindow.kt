@@ -1009,12 +1009,13 @@ private fun Waveform(
                     size = Size(WaveformBar.toPx(), height),
                 )
             }
-            // Over the bars and under the playhead: a 2dp accent line the full height, with a flag at its top.
+            // Over the bars and under the playhead: a 2dp accent line the full height, capped with the mark's square.
             if (totalSec > 0) {
                 highlights.forEach { at ->
                     val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TickWidth.toPx())
                     drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickWidth.toPx(), size.height))
-                    drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TickFlag.toPx(), TickFlag.toPx()))
+                    val cap = HIGHLIGHT_MARK.toPx()
+                    drawRect(palette.accent, topLeft = Offset(x + (TickWidth.toPx() - cap) / 2, 0f), size = Size(cap, cap))
                 }
             }
             drawRect(
@@ -1045,9 +1046,8 @@ private fun Waveform(
     }
 }
 
-/** docs/03 "Metadata": a highlight's line on the waveform, its flag, and the reach of a click on it. */
+/** docs/03 "Metadata": a highlight's line on the waveform, and the reach of a click on it. */
 private val TickWidth: Dp = 2.dp
-private val TickFlag: Dp = 6.dp
 private val TickTarget: Dp = 24.dp
 
 /**

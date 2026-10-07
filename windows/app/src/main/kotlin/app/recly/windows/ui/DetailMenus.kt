@@ -1,6 +1,5 @@
 package app.recly.windows.ui
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -28,9 +27,6 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -193,15 +189,14 @@ internal fun HighlightMenu(atSec: Double, onDismiss: () -> Unit, onGoTo: () -> U
     } }
 }
 
-/** The flag a highlighted moment wears: a pole and a square flag, in the accent. */
+/** docs/03 "Metadata": a highlighted moment's mark — a small filled accent square, Blueprint's record-square motif. */
 @Composable
-internal fun FlagGlyph(modifier: Modifier = Modifier, color: Color = blueprint.accent) {
-    Canvas(modifier.size(12.dp).clearAndSetSemantics { }) {
-        val pole = 1.5.dp.toPx()
-        drawRect(color, topLeft = Offset(2.dp.toPx(), 0f), size = Size(pole, size.height))
-        drawRect(color, topLeft = Offset(2.dp.toPx(), 0f), size = Size(8.dp.toPx(), 6.dp.toPx()))
-    }
+internal fun HighlightMark(modifier: Modifier = Modifier) {
+    Box(modifier.size(HIGHLIGHT_MARK).background(blueprint.accent).clearAndSetSemantics { })
 }
+
+/** The mark's side, on the waveform's ticks and beside a group's time alike. */
+internal val HIGHLIGHT_MARK = 6.dp
 
 /**
  * docs/08 "Editing": who says a group — the name the user gave, or the id in monospace — as a quiet badge

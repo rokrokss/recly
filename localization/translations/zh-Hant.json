@@ -464,7 +464,6 @@
   "Export…": "匯出…",
   "Highlight": "標記",
   "Highlight {0}": "標記{0}",
-  "Highlighted at {0}": "已在{0}加上標記",
   "Import audio…": "匯入音訊…",
   "Importing": "正在匯入",
   "Keep editing": "繼續編輯",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "你的修改將由新的逐字稿取代。",
   "Your edits to this transcript will be lost.": "你對此逐字稿所做的修改將會遺失。",
   "on-device transcription": "裝置本機轉錄",
-  "{0} does not use a vocabulary.": "{0}不使用詞彙表。"
+  "{0} does not use a vocabulary.": "{0}不使用詞彙表。",
+  "Highlight · {0}": "標記 · {0}"
 }

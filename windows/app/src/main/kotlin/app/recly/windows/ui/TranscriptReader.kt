@@ -37,6 +37,7 @@ import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptDocument
 
@@ -51,7 +52,7 @@ private data class GroupMenu(val block: Int, val at: Offset, val speaker: String
  * While playing, the group under the playhead wears an accent bar on its start edge and an accent time,
  * and the list keeps it in its upper third — until the user scrolls, when following pauses and
  * `Back to playback` brings it back. A group's speaker is a badge that opens the speaker menu; a group
- * with a highlight in it has a flag after its time. Find matches are tinted, the current one more.
+ * with a highlight in it has a small accent square after its time. Find matches are tinted, the current one more.
  */
 @Composable
 internal fun TranscriptReader(
@@ -85,24 +86,22 @@ internal fun TranscriptReader(
     LaunchedEffect(list) {
         snapshotFlow { list.isScrollInProgress }.filter { it }.collect { if (!moving && playing) following = false }
     }
-    LaunchedEffect(active, following) {
-        val index = active ?: return@LaunchedEffect
-        if (!following) return@LaunchedEffect
+    /** The group at [index] in the upper third of the list, 200 ms there, as a move of the reader's own. */
+    suspend fun bringUp(index: Int) {
         moving = true
         try {
-            list.animateScrollToItem(index, -list.layoutInfo.viewportSize.height / 3)
+            val height = snapshotFlow { list.layoutInfo.viewportSize.height }.first { it > 0 }
+            list.animateScrollToItem(index, -height / 3)
         } finally {
             moving = false
         }
     }
+    LaunchedEffect(active, following) {
+        val index = active ?: return@LaunchedEffect
+        if (following) bringUp(index)
+    }
     LaunchedEffect(currentMatch) {
-        val match = currentMatch?.let { matches.getOrNull(it) } ?: return@LaunchedEffect
-        moving = true
-        try {
-            list.animateScrollToItem(match.block, -list.layoutInfo.viewportSize.height / 3)
-        } finally {
-            moving = false
-        }
+        currentMatch?.let { matches.getOrNull(it) }?.let { bringUp(it.block) }
     }
     // The menus are drawn over the list, outside its selection: a popup inside a SelectionContainer does not
     // get the click that picks one of its rows.
@@ -198,7 +197,7 @@ private fun Group(
     }
 }
 
-/** The flag after a group's time: it opens the highlight's menu, and a reader hears it as "Highlight 00:12:34". */
+/** The square after a group's time: it opens the highlight's menu, and a reader hears it as "Highlight 00:12:34". */
 @Composable
 private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
@@ -210,7 +209,7 @@ private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> U
             .clickable(role = Role.Button) { onMenu(place) }
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
-    ) { FlagGlyph() }
+    ) { HighlightMark() }
 }
 
 /** docs/09 "Screen principles": the pill that takes the list back to where playback is. */

@@ -2,6 +2,7 @@
 
 package app.recly.windows.ui
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
@@ -51,8 +52,10 @@ class ShotsTest {
         val settings = FakeSettings(localFolder = folder.path, consentReminder = false)
         val model = ShellModel(localization = Localization(settings) { "en" })
         model.load(dataDirectory = File(dir, "data").path.toPath(), helperCommand = FakeHelperCommand.command())
-        model.selectStorage(StorageKind.FOLDER)
-        until { model.storage == StorageKind.FOLDER }
+        until {
+            model.selectStorage(StorageKind.FOLDER)
+            model.storage == StorageKind.FOLDER
+        }
         model.useLocalFolder(folder.path)
         val processing = model.processing!!
         until { processing.draft != null }
@@ -110,6 +113,25 @@ class ShotsTest {
             shot("settings-$lang", 640, 2700, ko) { SettingsWindow(model, strings) }
         }
 
+        // Skip silence on, in the dark; and the reader following playback, then scrolled away from it.
+        model.selectLanguage(AppLanguage.ENGLISH)
+        model.toggleSkipSilence(true)
+        shot("recordings-dark-skip-en", 1000, 680, false, dark = true) { RecordingsWindow(model, model.localization.current) { it() } }
+        model.toggleSkipSilence(false)
+        val transcript = model.detail!!.transcript!!.let { short ->
+            short.copy(segments = (0 until 10).flatMap { k -> short.segments.map { it.copy(start = it.start + k * 40, end = it.end + k * 40) } })
+        }
+        val reader: @Composable () -> Unit = {
+            TranscriptReader(
+                transcript, recly.core.transcribe.TranscriptDocument(transcript), canSeek = true, onSeek = {}, positionSec = 182.0, playing = true,
+                highlights = listOf(8.0, 27.5), onRemoveHighlight = {}, matches = emptyList(), currentMatch = null,
+                onChangeSpeaker = { _, _, _ -> }, onRenameSpeaker = { _, _ -> }, saving = mapOf(2 to InlineSave.SAVING),
+                strings = model.localization.current, modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+            )
+        }
+        shot("reader-follow-en", 700, 420, false) { reader() }
+        shot("reader-scrolled-en", 700, 420, false, scroll = Offset(300f, 300f)) { reader() }
+
         // An import ffmpeg cannot read leaves a notice; a long one is IMPORTING while it runs.
         model.selectLanguage(AppLanguage.ENGLISH)
         processing.edit { it.selectTranscriptionMode(TranscriptionMode.OFF, "en") }
@@ -146,7 +168,11 @@ class ShotsTest {
         processing.refreshLocal()
         model.modelDownload?.refresh()
         delay(500)
-        shot("settings-speaker-download-en", 640, 2700, false) { SettingsWindow(model, strings) }
+        shot("settings-speaker-download-en", 640, 2700, false, clicks = listOf(MCP_COPY)) { SettingsWindow(model, strings) }
+        val copied = runCatching {
+            java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
+        }.getOrNull()
+        println("SHOTS clipboard after Copy configuration:\n$copied")
         model.shutdown()
     }
 
@@ -175,10 +201,13 @@ class ShotsTest {
         ko: Boolean,
         clicks: List<Offset> = emptyList(),
         typed: String = "",
+        dark: Boolean = false,
+        /** A wheel turn at this point (dp), after the clicks. */
+        scroll: Offset? = null,
         content: @Composable () -> Unit,
     ) {
         val scene = ImageComposeScene(width * SCALE, height * SCALE, Density(SCALE.toFloat())) {
-            ReclyDesktopTheme(dark = false, highContrast = false, tracked = !ko) { content() }
+            ReclyDesktopTheme(dark = dark, highContrast = false, tracked = !ko) { content() }
         }
         try {
             settle(scene)
@@ -195,6 +224,12 @@ class ShotsTest {
                 scene.sendKeyEvent(androidx.compose.ui.input.key.KeyEvent(Key.Unknown, KeyEventType.Unknown, codePoint = char.code, nativeEvent = key))
             }
             if (typed.isNotEmpty()) settle(scene)
+            scroll?.let { at ->
+                val px = Offset(at.x * SCALE, at.y * SCALE)
+                scene.sendPointerEvent(PointerEventType.Move, px)
+                repeat(3) { scene.sendPointerEvent(PointerEventType.Scroll, px, scrollDelta = Offset(0f, 2f)) }
+                settle(scene)
+            }
             val image = scene.render(System.nanoTime())
             File(out, "$name.png").writeBytes(image.encodeToData(EncodedImageFormat.PNG)!!.bytes)
         } finally {
@@ -235,6 +270,7 @@ class ShotsTest {
         val FLAG = Offset(415f, 215f)
         val FLAG_REMOVE = Offset(475f, 271f)
         val FIND_NEXT = Offset(900f, 210f)
-        val POPUP_HIGHLIGHT = Offset(150f, 200f)
+        val POPUP_HIGHLIGHT = Offset(179f, 263f)
+        val MCP_COPY = Offset(549f, 1806f)
     }
 }

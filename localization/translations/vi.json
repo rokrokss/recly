@@ -464,7 +464,6 @@
   "Export…": "Xuất…",
   "Highlight": "Đánh dấu",
   "Highlight {0}": "Điểm đánh dấu {0}",
-  "Highlighted at {0}": "Đã đánh dấu tại {0}",
   "Import audio…": "Nhập âm thanh…",
   "Importing": "Đang nhập",
   "Keep editing": "Tiếp tục sửa",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "Những chỉnh sửa của bạn sẽ bị thay thế.",
   "Your edits to this transcript will be lost.": "Những chỉnh sửa của bạn trong bản chép lời này sẽ bị mất.",
   "on-device transcription": "chép lời trên thiết bị",
-  "{0} does not use a vocabulary.": "{0} không dùng từ vựng."
+  "{0} does not use a vocabulary.": "{0} không dùng từ vựng.",
+  "Highlight · {0}": "Điểm đánh dấu · {0}"
 }

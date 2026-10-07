@@ -464,7 +464,6 @@
   "Export…": "書き出す…",
   "Highlight": "ハイライト",
   "Highlight {0}": "ハイライト {0}",
-  "Highlighted at {0}": "{0}にハイライトを付けました",
   "Import audio…": "音声を読み込む…",
   "Importing": "読み込み中",
   "Keep editing": "編集を続ける",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "編集内容は新しい文字起こしに置き換えられます。",
   "Your edits to this transcript will be lost.": "この文字起こしの編集内容は失われます。",
   "on-device transcription": "デバイス上の文字起こし",
-  "{0} does not use a vocabulary.": "{0}は語彙を使用しません。"
+  "{0} does not use a vocabulary.": "{0}は語彙を使用しません。",
+  "Highlight · {0}": "ハイライト · {0}"
 }

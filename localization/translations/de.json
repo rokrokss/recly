@@ -464,7 +464,6 @@
   "Export…": "Exportieren…",
   "Highlight": "Markieren",
   "Highlight {0}": "Markierung {0}",
-  "Highlighted at {0}": "Markiert bei {0}",
   "Import audio…": "Audio importieren…",
   "Importing": "Wird importiert",
   "Keep editing": "Weiter bearbeiten",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "Ihre Änderungen werden ersetzt.",
   "Your edits to this transcript will be lost.": "Ihre Änderungen an diesem Transkript gehen verloren.",
   "on-device transcription": "Transkription auf dem Gerät",
-  "{0} does not use a vocabulary.": "{0} verwendet kein Vokabular."
+  "{0} does not use a vocabulary.": "{0} verwendet kein Vokabular.",
+  "Highlight · {0}": "Markierung · {0}"
 }

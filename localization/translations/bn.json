@@ -464,7 +464,6 @@
   "Export…": "এক্সপোর্ট করুন…",
   "Highlight": "হাইলাইট করুন",
   "Highlight {0}": "হাইলাইট {0}",
-  "Highlighted at {0}": "{0}-এ হাইলাইট করা হয়েছে",
   "Import audio…": "অডিও ইমপোর্ট করুন…",
   "Importing": "ইমপোর্ট হচ্ছে",
   "Keep editing": "সম্পাদনা চালিয়ে যান",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "আপনার পরিবর্তনগুলো নতুন ট্রান্সক্রিপ্ট দিয়ে প্রতিস্থাপিত হবে।",
   "Your edits to this transcript will be lost.": "এই ট্রান্সক্রিপ্টে আপনার করা পরিবর্তন হারিয়ে যাবে।",
   "on-device transcription": "ডিভাইসে ট্রান্সক্রিপশন",
-  "{0} does not use a vocabulary.": "{0} শব্দভান্ডার ব্যবহার করে না।"
+  "{0} does not use a vocabulary.": "{0} শব্দভান্ডার ব্যবহার করে না।",
+  "Highlight · {0}": "হাইলাইট · {0}"
 }

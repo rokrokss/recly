@@ -464,7 +464,6 @@
   "Export…": "ส่งออก…",
   "Highlight": "ไฮไลต์",
   "Highlight {0}": "ไฮไลต์ {0}",
-  "Highlighted at {0}": "ไฮไลต์ที่ {0} แล้ว",
   "Import audio…": "นำเข้าเสียง…",
   "Importing": "กำลังนำเข้า",
   "Keep editing": "แก้ไขต่อ",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "การแก้ไขของคุณจะถูกแทนที่ด้วยข้อความถอดเสียงใหม่",
   "Your edits to this transcript will be lost.": "การแก้ไขในข้อความถอดเสียงนี้จะหายไป",
   "on-device transcription": "การถอดเสียงในอุปกรณ์",
-  "{0} does not use a vocabulary.": "{0} ไม่ใช้คำศัพท์เฉพาะ"
+  "{0} does not use a vocabulary.": "{0} ไม่ใช้คำศัพท์เฉพาะ",
+  "Highlight · {0}": "ไฮไลต์ · {0}"
 }

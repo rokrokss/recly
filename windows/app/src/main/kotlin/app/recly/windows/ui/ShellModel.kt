@@ -1179,9 +1179,12 @@ class ShellModel(
         val since = recordingSince ?: return
         val atSec = (System.currentTimeMillis() - since) / 1000.0
         scope.launch {
-            if (graph.core.recordings.addHighlight(recordingId, atSec)) {
-                status = Str.HIGHLIGHT_MARKED.message(LedgerFormat.elapsed((atSec * 1000).toLong()))
-            }
+            if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
+            // For two seconds, then the line is the recording's again.
+            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.elapsed((atSec * 1000).toLong()))
+            status = marked
+            delay(HIGHLIGHT_LINE_MS)
+            if (status == marked && recording) status = Str.STATUS_RECORDING.message()
         }
     }
 
@@ -2136,6 +2139,9 @@ class ShellModel(
 
         /** The job states that are over: anything else may still write the transcript. */
         private val SETTLED = setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
+
+        /** How long the tray's line says a highlight was marked. */
+        private const val HIGHLIGHT_LINE_MS = 2_000L
 
         /** docs/10 "Search": the most recordings one search lists. */
         private const val SEARCH_LIMIT = 50

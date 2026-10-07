@@ -464,7 +464,6 @@
   "Export…": "I-export…",
   "Highlight": "I-highlight",
   "Highlight {0}": "Highlight sa {0}",
-  "Highlighted at {0}": "Na-highlight sa {0}",
   "Import audio…": "Mag-import ng audio…",
   "Importing": "Ini-import",
   "Keep editing": "Ituloy ang pag-edit",
@@ -518,5 +517,6 @@
   "Your edits are replaced.": "Mapapalitan ang mga pagbabago mo.",
   "Your edits to this transcript will be lost.": "Mawawala ang mga ginawa mong pagbabago sa transcript na ito.",
   "on-device transcription": "pag-transcribe sa device",
-  "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}."
+  "{0} does not use a vocabulary.": "Hindi gumagamit ng bokabularyo ang {0}.",
+  "Highlight · {0}": "Highlight · {0}"
 }
