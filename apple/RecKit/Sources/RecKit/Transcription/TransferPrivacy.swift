@@ -74,7 +74,7 @@ public struct TransferDisclosureList: View {
                     Text(verbatim: target.endpoint)
                         .font(blueprint.fonts.monoSmall)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: loc("The full recording and language and speaker settings are sent here for transcription. Retention and training depend on the provider and your account settings."))
+                    Text(verbatim: loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)
                     // The list's text colour would turn a plain `Link` into body text; this one reads as a link.

@@ -258,6 +258,8 @@ public struct ProcessingSettingsView: View {
                         #endif
                     }
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
+                    // docs/09 §11: after the language, part of the same draft (Cancel · Save).
+                    VocabularyEditor(terms: field(\.vocabulary), description: vocabularyDescription(draft))
                 }
                 if let message = model.message { SectionFootnote(message.text) }
                 // docs/09 screen principle 8: Cancel · Save only appear when there is something to save.
@@ -339,16 +341,33 @@ public struct ProcessingSettingsView: View {
             }
         }
     }
-    private func speechLanguageTitle(_ language: Language) -> String {
-        if language == .auto { return loc("Automatic") }
-        if language == .koEn { return loc("Korean and English") }
-        let tag = TranscriptionLanguages.shared.localeTag(language: language)
-        return Locale(identifier: tag).localizedString(forIdentifier: tag) ?? tag
+    private func speechLanguageTitle(_ language: Language) -> String { SpeechLanguageName.title(language) }
+    /// docs/09 §11: who reads the vocabulary — the provider, with the audio, or this device — or that nobody does.
+    private func vocabularyDescription(_ draft: ProcessingDraft) -> String {
+        if draft.mode == .local {
+            return loc(model.local?.supportsVocabulary == true
+                ? "Names and terms to spell correctly, used on this device."
+                : "On-device transcription does not use a vocabulary.")
+        }
+        let name = SttProviders.shared.displayName(name: draft.provider)
+        return SttProviders.shared.supportsVocabulary(name: draft.provider, model: draft.model.isEmpty ? nil : draft.model, language: draft.language)
+            ? RecKitStrings.localized("Names and terms to spell correctly. They are sent with the audio to %@.", name)
+            : RecKitStrings.localized("%@ does not use a vocabulary.", name)
     }
     private func field<Value>(_ path: ReferenceWritableKeyPath<ProcessingDraft, Value>) -> Binding<Value> {
         Binding(get: { model.draft![keyPath: path] }, set: { value in model.edit { $0[keyPath: path] = value } })
     }
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// A spoken language as the settings name it — and the Transcribe again confirmation after them.
+enum SpeechLanguageName {
+    static func title(_ language: Language) -> String {
+        if language == .auto { return RecKitStrings.localized("Automatic") }
+        if language == .koEn { return RecKitStrings.localized("Korean and English") }
+        let tag = TranscriptionLanguages.shared.localeTag(language: language)
+        return Locale(identifier: tag).localizedString(forIdentifier: tag) ?? tag
+    }
 }
 
 /// docs/09 screen principle 4: the settings file as a section of its own, for a shell that shows it
