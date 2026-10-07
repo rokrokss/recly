@@ -93,6 +93,48 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a transcript that could not be read is read again by the next pull`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000", transcript = { transcript(it.recordingId, "the quarterly budget") })
+        val fileId = f.drive.idOf(TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta)))!!
+        f.drive.failNext(500, times = 10) { it.query["alt"] == "media" && it.path.endsWith(fileId) }
+
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(emptyList(), f.core.search("budget", 10))
+
+        f.drive.clearFaults()
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(other.recordingId, f.core.search("budget", 10).single().recordingId)
+    }
+
+    @Test
+    fun `a folder that says it has a transcript is looked in again until it is there`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000", folderProperties = mapOf("transcriptAt" to "2026-08-29T03:10:00.000Z"))
+        val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta))
+        f.core.pullRemoteRecordings(force = true)
+
+        val late = transcript(other.recordingId, "late words")
+        f.drive.put(name, other.folderId, recJson.encodeToString(late).encodeToByteArray(), "application/json")
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+
+        assertEquals(other.recordingId, f.core.search("late", 10).single().recordingId)
+    }
+
+    @Test
+    fun `a folder with no transcript and no stamp is looked in once`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000")
+        val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta))
+        fun lookups() = f.drive.requests.count { name in it.query["q"].orEmpty() }
+
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(1, lookups())
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+        assertEquals(1, lookups(), "a folder without a transcript costs a pass nothing after the first")
+    }
+
+    @Test
     fun `a transcript changed on another device is read again when its folder says so`() = runBlocking {
         val other = f.otherDevice(
             "01J9PH0NE10000000000000000",

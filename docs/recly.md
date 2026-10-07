@@ -1879,7 +1879,9 @@ nothing. Each pull compares it with
 the copy on this device and reads `.transcript.json` again when the folder's is newer — another device edited or transcribed it again —
 and reads it once for another device's recording that has never been read here, so a search finds it; at most 10 files a pass, none while
 an edit of this device's is still on its way out or the other device is still transcribing, and never over a newer copy here
-(`RemoteRecordings.refreshTranscripts`).
+(`RemoteRecordings.refreshTranscripts`). A version counts as read only once it is written here — a download or a file that fails is
+tried again by a later pass, and so is a folder whose stamp names a transcript that is not in it yet; a folder with neither is looked in
+once.
 
 `transcript.json` schema: `spec/transcript.schema.json`.
 
@@ -1925,6 +1927,9 @@ recordings and other devices' alike. `TranscriptEdit` is one of four concrete cl
 - Saved here at once — `.transcript.json`, `.txt`, and the `.md` of a local folder — and `observeResults` emits it without touching the
   player. The folder's copies follow, marked `edited`, with the folder's `transcriptAt`: right away when they can, otherwise with the next
   pull (`transcript/pending/{recordingId}` in `kv`, cleared only by the write it stands for).
+- Edits run one at a time, from reading the transcript to marking it pending, under the lock a pull's refresh takes to write a transcript
+  it read from the folder (`RemoteRecordings.transcriptWrite`): two quick edits apply in order, the second on the first, and a refresh that
+  read the folder before an edit writes nothing while the edit is pending or the copy here is at least as new.
 - A publication that failed and is retried after an edit publishes the edited copy — the edit is of that very result (same `createdAt`). A
   re-transcription replaces edits: the shells ask first.
 

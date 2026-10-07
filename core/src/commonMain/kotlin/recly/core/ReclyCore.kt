@@ -331,7 +331,12 @@ class ReclyCore(
      * edit. [observeResults] emits the edited transcript.
      */
     @Throws(Throwable::class)
-    suspend fun editTranscript(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
+    suspend fun editTranscript(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult =
+        // One edit at a time, and none while a pull writes a transcript it read: each edit applies to the
+        // newest transcript, and a pull never writes over one (docs/08 "Editing").
+        remote.transcriptWrite { applyEdit(recordingId, edit) }
+
+    private suspend fun applyEdit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
         val record = recordings.get(recordingId) ?: return recly.core.transcribe.EditResult.NoTranscript
         val unsettled = jobs.list().any {
             it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)

@@ -33,10 +33,17 @@ internal class ResultFiles(private val api: CloudFiles, private val deps: CoreDe
         mimeType: String,
         /** Set on the Drive file with its content ([TranscriptMarks]); the other storages keep none. */
         appProperties: Map<String, String> = emptyMap(),
+        /**
+         * False when [content] was read from the copy in [dir], which may be newer by now — an edit's push
+         * (docs/08 "Editing") must not write an older version back over the next edit.
+         */
+        local: Boolean = true,
     ): ResultFile {
-        resultFileMutex.withLock {
-            deps.fileSystem.createDirectories(dir)
-            deps.fileSystem.write(dir / name) { write(content) }
+        if (local) {
+            resultFileMutex.withLock {
+                deps.fileSystem.createDirectories(dir)
+                deps.fileSystem.write(dir / name) { write(content) }
+            }
         }
 
         val md5 = content.toByteString().md5().hex()

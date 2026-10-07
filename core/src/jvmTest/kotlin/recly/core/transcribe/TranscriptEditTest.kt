@@ -16,6 +16,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
@@ -199,6 +200,80 @@ class TranscriptEditTest {
 
         assertEquals(emptyMap(), f.core.recordings.pendingTranscripts())
         assertTrue("offline" in driveText(TranscribeRunner.textFileName(MetaWriter.baseName(meta))).first)
+    }
+
+    /** Another device edited it, and the user edits it here while a pull is reading the other device's version. */
+    private suspend fun editDuringPull(push: Boolean): CoreFixture.OtherDevice {
+        val other = f.otherDevice(
+            "01J9PH0NE10000000000000000",
+            transcript = { meta -> sample(meta.recordingId) },
+            folderProperties = mapOf("transcriptAt" to "2026-08-29T03:10:00.000Z"),
+        )
+        f.core.pullRemoteRecordings(force = true)
+        val name = TranscribeRunner.jsonFileName(MetaWriter.baseName(other.meta))
+        val theirs = sample(other.recordingId).copy(
+            segments = listOf(TranscriptSegment(0.0, 1.0, "S1", "their edit")), editedAt = "2026-08-30T00:00:00.000Z",
+        )
+        f.drive.overwrite(f.drive.idOf(name)!!, recJson.encodeToString(theirs).encodeToByteArray())
+        f.drive.files.getValue(other.folderId).appProperties += mapOf("transcriptAt" to "2026-08-30T00:00:00.000Z")
+        f.clock.advance(kotlin.time.Duration.parse("10d"))
+        if (!push) f.drive.failNext(500, times = 10) { it.query["uploadType"] == "multipart" }
+        var edited = false
+        f.drive.before += { request ->
+            if (!edited && request.query["alt"] == "media" && request.path.endsWith(f.drive.idOf(name)!!)) {
+                edited = true
+                runBlocking {
+                    assertIs<EditResult.Edited>(f.core.editTranscript(other.recordingId, TranscriptEdit.SetText(0, "mine")))
+                    f.core.awaitPushes()
+                }
+                // The pull's answer was on its way before the push landed: it still carries their version.
+                if (push) f.drive.overwrite(f.drive.idOf(name)!!, recJson.encodeToString(theirs).encodeToByteArray())
+            }
+        }
+        f.core.pullRemoteRecordings(force = true)
+        assertTrue(edited)
+        return other
+    }
+
+    @Test
+    fun `a pull that read the folder before an edit does not write over it while it waits to go up`() = runBlocking {
+        val other = editDuringPull(push = false)
+        assertEquals("mine", f.core.results(other.recordingId).transcript!!.segments.single().text)
+
+        f.drive.clearFaults()
+        f.clock.advance(kotlin.time.Duration.parse("10m"))
+        f.core.pullRemoteRecordings(force = true)
+
+        assertEquals(emptyMap(), f.core.recordings.pendingTranscripts())
+        assertEquals("mine", f.core.results(other.recordingId).transcript!!.segments.single().text)
+        assertEquals("[00:00:00] S1: mine\n", driveText(TranscribeRunner.textFileName(MetaWriter.baseName(other.meta))).first)
+    }
+
+    @Test
+    fun `a pull that read the folder before an edit does not write over it once it went up`() = runBlocking {
+        val other = editDuringPull(push = true)
+
+        assertEquals(emptyMap(), f.core.recordings.pendingTranscripts())
+        assertEquals("mine", f.core.results(other.recordingId).transcript!!.segments.single().text)
+        assertEquals("[00:00:00] S1: mine\n", driveText(TranscribeRunner.textFileName(MetaWriter.baseName(other.meta))).first)
+    }
+
+    @Test
+    fun `edits made at the same time are all applied, one after another`() = runBlocking {
+        val segments = 24
+        val other = f.otherDevice("01J9PH0NE10000000000000000", transcript = { meta ->
+            sample(meta.recordingId).copy(segments = (0 until segments).map { TranscriptSegment(it.toDouble(), it + 1.0, "S1", "line $it") })
+        })
+        f.core.pullRemoteRecordings(force = true)
+
+        (0 until segments).map { index ->
+            launch(Dispatchers.Default) {
+                assertIs<EditResult.Edited>(f.core.editTranscript(other.recordingId, TranscriptEdit.SetText(index, "edited $index")))
+            }
+        }.joinAll()
+        f.core.awaitPushes()
+
+        assertEquals((0 until segments).map { "edited $it" }, f.core.results(other.recordingId).transcript!!.segments.map { it.text })
     }
 
     /** The retry of a failed publication sends the edit made since, not the result it failed to send. */
