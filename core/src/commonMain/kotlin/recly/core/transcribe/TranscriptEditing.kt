@@ -58,11 +58,10 @@ object TranscriptEdits {
         val edited = applyOne(transcript, edit)
         if (edited == transcript) return transcript
         val used = edited.segments.map { it.speaker }.toSet()
-        return edited.copy(
-            // Who no longer says anything is no longer in the list.
-            speakers = edited.speakers.filter { it.id in used },
-            editedAt = editedAt,
-        )
+        // Who no longer says anything is no longer in the list — unless nobody says anything at all: a
+        // transcript with no segments still names its one speaker (docs/08 "Result files").
+        val speakers = edited.speakers.filter { it.id in used }.takeIf { it.isNotEmpty() || edited.segments.isNotEmpty() }
+        return edited.copy(speakers = speakers ?: edited.speakers, editedAt = editedAt)
     }
 
     private fun applyOne(transcript: Transcript, edit: TranscriptEdit): Transcript = when (edit) {

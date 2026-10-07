@@ -137,6 +137,19 @@ class TranscriptEditTest {
     }
 
     @Test
+    fun `a transcript with no segments keeps its one speaker through a rename`() {
+        val empty = Transcript(
+            recordingId = CoreFixture.ID, track = Track.MONO, language = "ko", provider = TranscriptProvider("assemblyai"),
+            createdAt = "2026-08-29T03:10:00.000Z", durationSec = 10.0, speakers = listOf(TranscriptSpeaker("S1")), segments = emptyList(),
+        )
+
+        val renamed = TranscriptEdits.apply(empty, TranscriptEdit.RenameSpeaker("S1", "Minsu"), "2026-08-29T04:00:00.000Z")
+
+        assertEquals(listOf(TranscriptSpeaker("S1", "Minsu")), renamed.speakers)
+        assertSchemaValid(renamed)
+    }
+
+    @Test
     fun `an edit that does not fit the transcript saves nothing`() = runBlocking {
         val meta = f.recordAndRun()
         val before = f.core.results(meta.recordingId).transcript

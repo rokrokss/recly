@@ -1,6 +1,7 @@
 package recly.core.transcribe
 
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonObject
 import recly.core.drive.FolderMarker
 import recly.core.drive.string
@@ -61,7 +62,16 @@ internal class Retranscription(
         // Asked again, atomically, by the enqueue; this one only spares a download that would be refused.
         if (jobs.list().any { it.recordingId == recordingId && it.status !in SETTLED }) return RetranscribeResult.Busy
         if (!audioHere(record)) return RetranscribeResult.NoAudio
+        // The durable results and checkpoints of the re-transcription this one replaces, named by its step runs.
+        val replaced = jobs.list().filter { it.recordingId == recordingId && it.retranscription }
+            .flatMap { jobs.steps(it.id) }.map { it.id }
         val job = jobs.enqueueRetranscription(recordingId, plan) ?: return RetranscribeResult.Busy
+        withContext(deps.io) {
+            replaced.forEach { id ->
+                deps.fileSystem.delete(record.dir / LocalTranscriptionService.resultName(id), mustExist = false)
+                deps.fileSystem.delete(record.dir / ".local-$id.json", mustExist = false)
+            }
+        }
         // From the start, not after the first step: the transcription is the long part, and the other
         // devices' lists should say so while it runs (docs/03 "Recordings from other devices").
         marker.mark(folderId, listOf(TranscribeRunner.TYPE))

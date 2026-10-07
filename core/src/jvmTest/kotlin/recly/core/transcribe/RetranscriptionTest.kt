@@ -132,7 +132,11 @@ class RetranscriptionTest {
         val first = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
         f.drain()
 
+        val firstResults = f.core.jobs.steps(first.jobId).map { f.dirOf(meta) / LocalTranscriptionService.resultName(it.id) }
+        assertTrue(firstResults.any { f.fs.exists(it) })
+
         val second = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        assertTrue(firstResults.none { f.fs.exists(it) }, "the replaced job's durable result goes with it")
 
         val ids = f.core.jobs.list().filter { it.recordingId == meta.recordingId }.map { it.id }
         assertEquals(2, ids.size, "the recording's own job and one re-transcription")
