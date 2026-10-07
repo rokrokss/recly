@@ -70,3 +70,7 @@ for slice in ios-arm64 ios-arm64-simulator macos-arm64 watchos-arm64_arm64_32 wa
 done
 
 echo "build-core: $staged"
+
+# The other build input the package needs that is not checked in: the diarization models the
+# RecKitSpeakers target copies into the iPhone and Mac apps.
+"$repo_root/apple/scripts/fetch-speaker-models.sh"

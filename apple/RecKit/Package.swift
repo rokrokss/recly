@@ -24,6 +24,9 @@ let package = Package(
         // Drive-only OAuth plus the legacy keychain reader for migration (docs/06).
         .package(url: "https://github.com/openid/AppAuth-iOS.git", from: "2.1.0"),
         .package(url: "https://github.com/google/GTMAppAuth.git", from: "5.0.0"),
+        // docs/recly.md §15: on-device speaker diarization on the iPhone and Mac. Exact, because the
+        // models `fetch-speaker-models.sh` pins are the ones this release's loader reads.
+        .package(url: "https://github.com/FluidInference/FluidAudio.git", exact: "0.17.5"),
     ],
     targets: [
         .binaryTarget(
@@ -46,11 +49,24 @@ let package = Package(
                     package: "GTMAppAuth",
                     condition: .when(platforms: [.macOS, .iOS])
                 ),
+                // FluidAudio has no watchOS, and the watch transcribes nothing.
+                .target(name: "RecKitSpeakers", condition: .when(platforms: [.macOS, .iOS])),
             ],
             path: "Sources/RecKit",
             // The shared catalog (docs/07): RecKit hands the shells keys, and this is where the
             // sentences they resolve to live.
             resources: [.process("Resources")]
+        ),
+        // docs/recly.md §15 "On-device speaker diarization": FluidAudio and the Core ML models it runs,
+        // in a target of their own so the ~21 MB of models reach the iPhone and Mac apps and never the
+        // watch's. The models are fetched by `apple/scripts/fetch-speaker-models.sh` (`make core`).
+        .target(
+            name: "RecKitSpeakers",
+            dependencies: [
+                .product(name: "FluidAudio", package: "FluidAudio", condition: .when(platforms: [.macOS, .iOS])),
+            ],
+            path: "Sources/RecKitSpeakers",
+            resources: [.copy("Models")]
         ),
         // No XCTest of its own: it is a fake the bundles hand the core, and a target that linked
         // XCTest could not be linked into anything but a test bundle.
@@ -64,7 +80,11 @@ let package = Package(
         // Flags; here it is the xctest bundle.
         .testTarget(
             name: "RecKitTests",
-            dependencies: ["RecKit", "RecKitTestSupport"],
+            dependencies: [
+                "RecKit",
+                "RecKitTestSupport",
+                .target(name: "RecKitSpeakers", condition: .when(platforms: [.macOS, .iOS])),
+            ],
             path: "Tests/RecKitTests",
             linkerSettings: [.linkedLibrary("sqlite3")]
         ),

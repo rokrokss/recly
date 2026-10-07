@@ -179,7 +179,10 @@ struct SettingsView: View {
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
-                mono("AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
+                mono("AppAuth · GTMAppAuth · FluidAudio · Kotlin · Ktor · NemoTextProcessing · SQLDelight — Apache-2.0")
+                mono("fastcluster — BSD-2-Clause")
+                // docs/recly.md §15: the diarization models the app ships, and the attribution CC-BY-4.0 asks for.
+                mono("pyannote community-1 (pyannote · WeSpeaker · BUT Speech@FIT · Fluid Inference, converted to Core ML) — CC-BY-4.0")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)

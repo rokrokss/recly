@@ -1,6 +1,7 @@
 #if os(iOS) || os(macOS)
 import Foundation
 import ReclyCore
+import RecKitSpeakers
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -211,7 +212,17 @@ public struct ProcessingSettingsView: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     if let message = download.message { SectionFootnote(message.text) }
-                    SectionFootnote(loc("On-device transcription does not separate speakers."))
+                    // docs/recly.md §15: the diarization models ship with the app, so the row is a name and nothing to do.
+                    if model.local?.supportsDiarization == true {
+                        SectionRow(title: loc("Speaker model")) {
+                            Text(verbatim: SpeakerSeparation.modelName)
+                                .font(blueprint.fonts.bodySmall)
+                                .foregroundStyle(blueprint.palette.textMuted)
+                        }
+                        SectionFootnote(loc("Speakers are separated on this device."))
+                    } else {
+                        SectionFootnote(loc("On-device transcription does not separate speakers."))
+                    }
                 }
                 if draft.mode == .external {
                     // docs/09 principle 4: a settings row, "Provider … ElevenLabs", like Language below.

@@ -1,5 +1,5 @@
 {
-  "originHash" : "8ad52599e8f58462612901c79c5ae513994249e9f2411f61aba5a367ef22953d",
+  "originHash" : "4b2a129b09d684a6abc74fc7b83826869220733b8bc520c70424d223e66edc61",
   "pins" : [
     {
       "identity" : "appauth-ios",
@@ -8,6 +8,15 @@
       "state" : {
         "revision" : "a7caeda164dc5108bf4649472b28a5af65dc6f33",
         "version" : "2.1.0"
+      }
+    },
+    {
+      "identity" : "fluidaudio",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/FluidInference/FluidAudio.git",
+      "state" : {
+        "revision" : "0b1f46289fe27d95b5e66ad8be46e64f5ee02ae7",
+        "version" : "0.17.5"
       }
     },
     {
