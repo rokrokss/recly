@@ -29,7 +29,9 @@ const (
 	// can be any year — so the folders whose name starts with a digit hold every recording; ParseBase
 	// picks them out from the folder template's own (`2026-10`) and the user's.
 	folderQuery = "mimeType = 'application/vnd.google-apps.folder' and " + digitPrefix + " and trashed = false"
-	// digitPrefix matches a name that starts with a digit.
+	// digitPrefix matches a name that starts with a digit: `or` terms grouped in parentheses, as the
+	// search-files guide's own example does (https://developers.google.com/workspace/drive/api/guides/search-files,
+	// last updated 2026-09-09, read 2026-10-08).
 	digitPrefix = "(name contains '0' or name contains '1' or name contains '2' or name contains '3' or name contains '4' or " +
 		"name contains '5' or name contains '6' or name contains '7' or name contains '8' or name contains '9')"
 	// scanPages bounds the search for a recordingId: 10 pages of 1000 folders.

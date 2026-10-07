@@ -2170,7 +2170,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists `Rename` · `Edit transcript` · `Transcribe again` ·
      `Add highlight at 00:12:34` (the playhead). An item that cannot run now stays in the menu, disabled, with the reason as its second line —
      `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
-     reached the storage); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
+     reached the storage; `Transcribing…` wins while a job runs); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
      reason for a few seconds under the header; nothing is silently ignored (2026-10-08).
    - **Share / export**: on phones `Share` opens a bottom sheet titled `Share`, one row per format (icon · label · format): `Transcript`
      (`Text · .txt`), `Transcript for notes` (`Markdown · .md`), `Subtitles` (`SubRip · .srt`), `Subtitles for the web` (`WebVTT · .vtt`), `Audio`
@@ -2267,7 +2267,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **On-device speaker separation** (2026-10-07, §15 "Android · Windows local transcription models"): in local mode, iPhone and Mac show the value-only
      row `Speaker model` → `pyannote community-1` (secondary text, no box — the models are bundled) and `Speakers are separated on this device.`; Android and
      Windows show `Speaker model` → `pyannote 3.0 · ERes2Net` with the speech model's states — a fresh download fetches both and its size is the sum, and a
-     device that already has the speech model gets the speaker row's own `Download (N MB)` — and `Speakers are separated on this device, sentence by
+     device that already has the speech model gets the speaker row's own block in the speech row's pattern — `The model is 41 MB.` and `Download model`
+     (`Resume download` · progress) — and `Speakers are separated on this device, sentence by
      sentence.` (Qwen3-ASR gives segment times only, so a change of speaker inside one sentence is not split). These replace
      `On-device transcription does not separate speakers.` wherever the engine separates speakers. A missing speaker model never blocks a transcription
      — the transcript arrives without speakers — and a download starts only from the user's tap. The head count asked after stop (`People in the room`)

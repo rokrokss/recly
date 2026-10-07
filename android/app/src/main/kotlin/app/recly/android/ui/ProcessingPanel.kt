@@ -118,7 +118,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                     }
                     val speechHere = state.local?.status.let { it != null && it != LocalEngineStatus.MODEL_REQUIRED && it != LocalEngineStatus.UNSUPPORTED }
                     if (speechHere && state.local?.supportsDiarization == false) {
-                        ModelDownloadBlock(state, { metered(model::downloadModel) }, model::cancelDownload, recorder == RecorderState.Idle, "speaker-model")
+                        ModelDownloadBlock(state, { metered(model::downloadModel) }, model::cancelDownload, recorder == RecorderState.Idle, "speaker-model",
+                            sizeLine = R.string.processing_cellular_body)
                     }
                     Text(stringResource(R.string.speaker_model_sentences), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 }
@@ -211,16 +212,24 @@ private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"
 /**
  * A model download in Settings — the speech model's, and the speaker models' own when the speech model is
  * already here: the size, the progress, a failure, and Download model / Resume download or Cancel download.
- * [tag] names the buttons for tests (`{tag}-download`, `{tag}-cancel`).
+ * [tag] names the buttons for tests (`{tag}-download`, `{tag}-cancel`). [sizeLine] says the size: the speech model's
+ * says transcription needs it; the speaker models' only how big they are — transcription runs without them.
  */
 @Composable
-private fun ModelDownloadBlock(state: ProcessingUiState, onStart: () -> Unit, onCancel: () -> Unit, recorderIdle: Boolean, tag: String) {
+private fun ModelDownloadBlock(
+    state: ProcessingUiState,
+    onStart: () -> Unit,
+    onCancel: () -> Unit,
+    recorderIdle: Boolean,
+    tag: String,
+    sizeLine: Int = R.string.processing_model_download,
+) {
     val resources = LocalContext.current.resources
     val download = state.download
     // The download's own reading moves while it runs; the partial bytes are the same disk either way.
     val reading = download.info ?: state.local
     reading?.modelBytes?.let { size ->
-        Text(stringResource(R.string.processing_model_download, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        Text(stringResource(sizeLine, modelSize(size)), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
     }
     ModelDownloadLines(download, reading)
     // A footnote like the iPhone's: the button under it is the way on, and red is
