@@ -214,6 +214,47 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         shot("widget-gallery-record-next")
     }
 
+    /// docs/09 §10: the Record widget on the Home Screen during a recording, and its stop node stopping it.
+    func testRecordWidgetStopsTheRecording() {
+        let app = launch("en")
+        let start = app.buttons["start"]
+        XCTAssertTrue(start.waitForExistence(timeout: 30))
+        start.tap()
+        if app.buttons["consent-confirm"].waitForExistence(timeout: 3) { app.buttons["consent-confirm"].tap() }
+        XCTAssertTrue(app.buttons["highlight"].waitForExistence(timeout: 15))
+
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        XCUIDevice.shared.press(.home)
+        let stop = springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Stop recording", "녹음 정지"])).firstMatch
+        if !stop.waitForExistence(timeout: 3) {
+            springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.65)).press(forDuration: 2.5)
+            sleep(1)
+            springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Edit", "편집"])).firstMatch.tap()
+            springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Add Widget", "위젯 추가"])).firstMatch.tap()
+            let search = springboard.searchFields.firstMatch
+            XCTAssertTrue(search.waitForExistence(timeout: 10))
+            search.tap()
+            search.typeText("Recly")
+            sleep(2)
+            springboard.cells.matching(NSPredicate(format: "label CONTAINS %@", "Recly")).firstMatch.tap()
+            sleep(2)
+            let add = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "Add Widget", "위젯 추가"))
+            add.element(boundBy: add.count - 1).tap()
+            sleep(2)
+            springboard.descendants(matching: .any).matching(NSPredicate(format: "label IN %@", ["Done", "완료"])).firstMatch.tap()
+            sleep(2)
+        }
+        shot("widget-home-recording")
+        XCTAssertTrue(stop.waitForExistence(timeout: 10))
+        stop.tap()
+        sleep(4)
+        shot("widget-home-after-stop")
+        app.activate()
+        sleep(2)
+        shot("widget-app-after-stop")
+        XCTAssertFalse(app.buttons["highlight"].exists, "the widget's stop did not stop the recording")
+    }
+
     private func shot(_ name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name
