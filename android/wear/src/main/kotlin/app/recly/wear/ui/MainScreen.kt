@@ -2,12 +2,14 @@
 
 package app.recly.wear.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -131,7 +133,20 @@ private fun RecordScreen(
                     // watch's own script — a Hangul line stands taller than a Latin or empty one, and
                     // the node would hop when something came back to say.
                     val line = statusLine(state)
-                    Text(
+                    if (line != null && state.message == null && state.canStop && state.highlightedSec != null) {
+                        // The mark's line is said on one line, smaller where it must be: its two seconds
+                        // should not move the stop node, and a Korean sentence must not break inside a word.
+                        BasicText(
+                            text = line.first,
+                            style = WearBlueprint.small.copy(color = line.second, textAlign = TextAlign.Center),
+                            maxLines = 1,
+                            autoSize = TextAutoSize.StepBased(
+                                minFontSize = WearBlueprint.small.fontSize * HIGHLIGHT_MIN_SCALE,
+                                maxFontSize = WearBlueprint.small.fontSize,
+                                stepSize = 0.5.sp,
+                            ),
+                        )
+                    } else Text(
                         text = line?.first ?: stringResource(R.string.recording_active),
                         modifier = if (line == null) Modifier.clearAndSetSemantics {} else Modifier,
                         style = WearBlueprint.small,
@@ -142,10 +157,17 @@ private fun RecordScreen(
 
                     Spacer(Modifier.height(10.dp))
                     RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
-                    // docs/03 "Metadata": below the stop node, only while it records.
-                    if (state.canStop) {
-                        Spacer(Modifier.height(8.dp))
-                        HighlightButton(onHighlight)
+                    // docs/03 "Metadata": below the stop node, only while it records — the node slides up
+                    // to make room, the way the phone's record node slides aside.
+                    AnimatedVisibility(
+                        visible = state.canStop,
+                        enter = expandVertically(tween(MOTION_MS)),
+                        exit = shrinkVertically(tween(MOTION_MS)),
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Spacer(Modifier.height(8.dp))
+                            HighlightButton(onHighlight)
+                        }
                     }
                 }
             }
@@ -179,7 +201,7 @@ private fun statusLine(state: WearUiState): Pair<String, Color>? {
     val highlighted = state.highlightedSec
     return when {
         message != null -> message.text() to WearBlueprint.textMuted
-        highlighted != null && state.canStop -> stringResource(R.string.highlighted_at, stamp(highlighted)) to WearBlueprint.accent
+        highlighted != null && state.canStop -> stringResource(R.string.highlight_status, stamp(highlighted)) to WearBlueprint.accent
         state.recorder is RecorderState.Recording -> stringResource(R.string.recording_active) to WearBlueprint.danger
         state.recorder == RecorderState.Starting -> stringResource(R.string.recording_busy) to WearBlueprint.textMuted
         state.recorder == RecorderState.Stopping -> stringResource(R.string.recording_stopping) to WearBlueprint.textMuted
@@ -209,32 +231,26 @@ private fun FitToWatch(content: @Composable () -> Unit) {
 /** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
 private const val DRAWN_FOR_WIDTH_DP = 227f
 
+/** docs/09 "Motion": the standard 200 ms; the system's own animation scale switches it off. */
+private const val MOTION_MS = 200
+
+/** How far the mark's line may shrink to stay on one line. */
+private const val HIGHLIGHT_MIN_SCALE = 0.7f
+
 /** The mark's time as every shell writes it, `00:12:34`. */
 private fun stamp(seconds: Long): String = "%02d:%02d:%02d".format(seconds / 3600, (seconds % 3600) / 60, seconds % 60)
 
-/** docs/03 "Metadata": the accent-outlined flag and its word, under the stop node. */
+/** docs/03 "Metadata": the accent outline, a small filled accent square and the word, under the stop node. */
 @Composable
 private fun HighlightButton(onClick: () -> Unit) {
     CompactButton(
         onClick = onClick,
         shape = RoundedCornerShape(WearBlueprint.radius),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = WearBlueprint.accent, iconColor = WearBlueprint.accent),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = WearBlueprint.accent),
         border = BorderStroke(WearBlueprint.line, WearBlueprint.accent),
-        icon = { FlagGlyph(Modifier.size(ButtonDefaults.ExtraSmallIconSize)) },
+        icon = { Box(Modifier.size(8.dp).background(WearBlueprint.accent, RoundedCornerShape(2.dp))) },
         label = { Text(text = stringResource(R.string.highlight), maxLines = 1) },
     )
-}
-
-/** Material Symbols' `flag`, as thin lines (docs/09 "Icons") — the watch carries no icon font. */
-@Composable
-private fun FlagGlyph(modifier: Modifier) {
-    Canvas(modifier.clearAndSetSemantics {}) {
-        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
-            drawLine(WearBlueprint.accent, Offset(6f, 3f), Offset(6f, 21f), 2f)
-            drawPath(Path().apply { moveTo(6f, 4f); lineTo(19f, 4f); lineTo(16f, 8.5f); lineTo(19f, 13f); lineTo(6f, 13f) },
-                WearBlueprint.accent, style = Stroke(2f))
-        }
-    }
 }
 
 /** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */

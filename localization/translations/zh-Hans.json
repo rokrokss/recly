@@ -462,7 +462,6 @@
   "Edit transcript": "编辑转录文本",
   "Highlight": "标记",
   "Highlight {0}": "标记{0}",
-  "Highlighted at {0}": "已在{0}添加标记",
   "Import audio": "导入音频",
   "Importing": "正在导入",
   "Keep editing": "继续编辑",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "你的修改将被新的转录文本替换。",
   "Your edits to this transcript will be lost.": "你对此转录文本所做的修改将会丢失。",
   "on-device transcription": "设备本地转录",
-  "{0} does not use a vocabulary.": "{0}不使用词汇表。"
+  "{0} does not use a vocabulary.": "{0}不使用词汇表。",
+  "Highlight · {0}": "标记 · {0}"
 }

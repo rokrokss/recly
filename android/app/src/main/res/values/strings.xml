@@ -386,7 +386,7 @@
     <string name="processing_language_unsupported">This language is not supported by the selected transcription method.</string>
     <!-- Competitive features (2026-10-07): highlights, share, editing, search, import, playback, vocabulary. -->
     <string name="highlight">Highlight</string>
-    <string name="highlighted_at">Highlighted at %1$s</string>
+    <string name="highlight_status">Highlight · %1$s</string>
     <string name="highlight_tick">Highlight %1$s</string>
     <string name="highlight_remove">Remove highlight</string>
     <string name="highlight_add_at">Add highlight at %1$s</string>

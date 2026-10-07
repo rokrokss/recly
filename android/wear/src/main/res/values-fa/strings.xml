@@ -29,5 +29,5 @@
     <string name="info_transfer_title">انتقال</string>
     <string name="info_transfer_body">ضبط تا زمانی که تلفن دریافت آن را تأیید کند روی ساعت می‌ماند. وقتی تلفن نزدیک باشد، به‌طور خودکار منتقل می‌شود و فقط فایل‌هایی که رسیده‌اند از اینجا حذف می‌شوند.</string>
     <string name="highlight">علامت‌گذاری</string>
-    <string name="highlighted_at">در %1$s علامت گذاشته شد</string>
+    <string name="highlight_status">علامت · %1$s</string>
 </resources>

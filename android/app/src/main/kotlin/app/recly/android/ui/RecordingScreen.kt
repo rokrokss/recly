@@ -9,13 +9,6 @@ import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import android.view.HapticFeedbackConstants
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.graphics.Color
@@ -23,10 +16,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import app.recly.android.ui.component.Glyph
-import app.recly.android.ui.component.GlyphIcon
-import app.recly.android.ui.theme.LocalReduceMotion
-import app.recly.android.ui.theme.Motion
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,6 +27,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -228,18 +218,11 @@ fun RecordingSection(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
-            // docs/03 "Metadata": while recording, the Highlight node beside the record node. The pair stays
-            // centred, so the record node slides to make room rather than the screen growing a row.
-            val reduce = LocalReduceMotion.current
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            // docs/03 "Metadata": while recording, the Highlight node 24 to the end side of the record node,
+            // which stays exactly where it is — the new node takes no room from it.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 RecordNode(recorder = recorder, busy = busy, onStart = begin, onStop = onStop)
-                AnimatedVisibility(
-                    visible = recording,
-                    enter = if (reduce) EnterTransition.None else expandHorizontally(tween(Motion.STANDARD_MS, easing = Motion.Standard), Alignment.Start),
-                    exit = if (reduce) ExitTransition.None else shrinkHorizontally(tween(Motion.STANDARD_MS, easing = Motion.Standard), Alignment.Start),
-                ) {
-                    HighlightNode(onClick = onHighlight, modifier = Modifier.padding(start = Space.m))
-                }
+                if (recording) HighlightNode(onClick = onHighlight, modifier = Modifier.offset(x = HIGHLIGHT_OFFSET))
             }
             // One line, however many things there are to say (`map` is inline, so the lookups are
             // allowed to be composable; `joinToString`'s transform would not be). While recording it
@@ -251,7 +234,7 @@ fun RecordingSection(
             val stamp = hms(highlighted?.sec ?: 0)
             val blank = highlighted == null && said.isEmpty()
             Text(
-                if (highlighted != null || blank) monoStamp(stringResource(R.string.highlighted_at, stamp), stamp, mono.bodySmall)
+                if (highlighted != null || blank) monoStamp(stringResource(R.string.highlight_status, stamp), stamp, mono.bodySmall)
                 else AnnotatedString(said),
                 modifier = Modifier.padding(horizontal = Space.m).testTag("status")
                     .then(if (blank) Modifier.clearAndSetSemantics {} else Modifier),
@@ -389,9 +372,9 @@ private fun RecordNode(recorder: RecorderState, busy: Boolean, onStart: () -> Un
 }
 
 /**
- * docs/03 "Metadata": the square that marks a moment of the recording — the record node's size class
- * (56dp), an accent outline and a flag, no words. A tap fills it with the accent for 150 ms, with no
- * fade either way, and the phone gives a light tick.
+ * docs/03 "Metadata": the square that marks a moment of the recording — 56dp, an accent outline around a
+ * filled accent square (the record node's own motif), no words. A tap fills it with the accent for
+ * 150 ms, with no fade either way, and the phone gives a light tick.
  */
 @Composable
 private fun HighlightNode(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -420,11 +403,14 @@ private fun HighlightNode(onClick: () -> Unit, modifier: Modifier = Modifier) {
             .testTag("highlight"),
         contentAlignment = Alignment.Center,
     ) {
-        GlyphIcon(Glyph.FLAG, if (lit) palette.onAccent else palette.accent)
+        Box(Modifier.size(14.dp).background(if (lit) palette.onAccent else palette.accent, RoundedCornerShape(Radius.badge)))
     }
 }
 
 private const val HIGHLIGHT_FLASH_MS = 150L
+
+/** From the record node's centre to the Highlight node's: half of each (72, 56) and the 24 between them. */
+private val HIGHLIGHT_OFFSET = 36.dp + 24.dp + 28.dp
 
 /** [text] with the one [stamp] in it set in [style] — a time inside a sentence is still data (docs/09). */
 internal fun monoStamp(text: String, stamp: String, style: TextStyle): AnnotatedString = buildAnnotatedString {

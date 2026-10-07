@@ -462,7 +462,6 @@
   "Edit transcript": "ٹرانسکرپٹ میں ترمیم کریں",
   "Highlight": "ہائی لائٹ کریں",
   "Highlight {0}": "ہائی لائٹ {0}",
-  "Highlighted at {0}": "{0} پر ہائی لائٹ کیا گیا",
   "Import audio": "آڈیو درآمد کریں",
   "Importing": "درآمد ہو رہا ہے",
   "Keep editing": "ترمیم جاری رکھیں",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "آپ کی ترامیم نئے ٹرانسکرپٹ سے بدل جائیں گی۔",
   "Your edits to this transcript will be lost.": "اس ٹرانسکرپٹ میں آپ کی ترامیم ضائع ہو جائیں گی۔",
   "on-device transcription": "آلے پر ٹرانسکرپشن",
-  "{0} does not use a vocabulary.": "فراہم کنندہ {0} ذخیرۂ الفاظ استعمال نہیں کرتا۔"
+  "{0} does not use a vocabulary.": "فراہم کنندہ {0} ذخیرۂ الفاظ استعمال نہیں کرتا۔",
+  "Highlight · {0}": "ہائی لائٹ · {0}"
 }

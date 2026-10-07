@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Uhamishaji</string>
     <string name="info_transfer_body">Rekodi hubaki kwenye saa hadi simu ithibitishe kuipokea. Huhamishwa yenyewe simu ikiwa karibu, na faili zilizofika pekee ndizo zinazofutwa hapa.</string>
     <string name="highlight">Weka alama</string>
-    <string name="highlighted_at">Alama imewekwa kwenye %1$s</string>
+    <string name="highlight_status">Alama · %1$s</string>
 </resources>

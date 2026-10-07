@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Chuyển dữ liệu</string>
     <string name="info_transfer_body">Bản ghi âm được giữ trên đồng hồ cho đến khi điện thoại xác nhận đã nhận. Khi điện thoại ở gần, bản ghi âm sẽ tự động được chuyển sang và chỉ những tệp đã chuyển xong mới bị xóa khỏi đây.</string>
     <string name="highlight">Đánh dấu</string>
-    <string name="highlighted_at">Đã đánh dấu tại %1$s</string>
+    <string name="highlight_status">Điểm đánh dấu · %1$s</string>
 </resources>

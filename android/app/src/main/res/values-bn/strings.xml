@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">কোরিয়ান ও ইংরেজি</string>
     <string name="processing_language_unsupported">বেছে নেওয়া ট্রান্সক্রিপশন পদ্ধতি এই ভাষা সমর্থন করে না।</string>
     <string name="highlight">হাইলাইট করুন</string>
-    <string name="highlighted_at">%1$s-এ হাইলাইট করা হয়েছে</string>
+    <string name="highlight_status">হাইলাইট · %1$s</string>
     <string name="highlight_tick">হাইলাইট %1$s</string>
     <string name="highlight_remove">হাইলাইট সরান</string>
     <string name="highlight_add_at">%1$s-এ হাইলাইট যোগ করুন</string>

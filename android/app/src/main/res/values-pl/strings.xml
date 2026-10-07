@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Koreański i angielski</string>
     <string name="processing_language_unsupported">Wybrana metoda transkrypcji nie obsługuje tego języka.</string>
     <string name="highlight">Zaznacz</string>
-    <string name="highlighted_at">Dodano znacznik w %1$s</string>
+    <string name="highlight_status">Znacznik · %1$s</string>
     <string name="highlight_tick">Znacznik %1$s</string>
     <string name="highlight_remove">Usuń znacznik</string>
     <string name="highlight_add_at">Dodaj znacznik w %1$s</string>

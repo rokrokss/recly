@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Trasferimento</string>
     <string name="info_transfer_body">La registrazione resta sull’orologio finché il telefono non ne conferma la ricezione. Il trasferimento avviene da solo quando il telefono è vicino, e qui vengono eliminati solo i file che sono arrivati.</string>
     <string name="highlight">Segna</string>
-    <string name="highlighted_at">Marcatore aggiunto a %1$s</string>
+    <string name="highlight_status">Marcatore · %1$s</string>
 </resources>

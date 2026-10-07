@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Передача</string>
     <string name="info_transfer_body">Запись остаётся на часах до подтверждения приёма телефоном. Когда телефон рядом, передача происходит автоматически; здесь удаляются только доставленные файлы.</string>
     <string name="highlight">Отметить</string>
-    <string name="highlighted_at">Отмечено: %1$s</string>
+    <string name="highlight_status">Отметка · %1$s</string>
 </resources>

@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">韩语和英语</string>
     <string name="processing_language_unsupported">所选转录方式不支持此语言。</string>
     <string name="highlight">标记</string>
-    <string name="highlighted_at">已在%1$s添加标记</string>
+    <string name="highlight_status">标记 · %1$s</string>
     <string name="highlight_tick">标记%1$s</string>
     <string name="highlight_remove">移除标记</string>
     <string name="highlight_add_at">在%1$s添加标记</string>

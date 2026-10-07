@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Корейский и английский</string>
     <string name="processing_language_unsupported">Выбранный способ расшифровки не поддерживает этот язык.</string>
     <string name="highlight">Отметить</string>
-    <string name="highlighted_at">Отмечено: %1$s</string>
+    <string name="highlight_status">Отметка · %1$s</string>
     <string name="highlight_tick">Отметка %1$s</string>
     <string name="highlight_remove">Удалить отметку</string>
     <string name="highlight_add_at">Добавить отметку на %1$s</string>

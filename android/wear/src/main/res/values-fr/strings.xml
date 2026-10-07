@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Transfert</string>
     <string name="info_transfer_body">L’enregistrement reste sur la montre jusqu’à confirmation du téléphone. Le transfert est automatique quand le téléphone est proche ; seuls les fichiers reçus sont supprimés ici.</string>
     <string name="highlight">Marquer</string>
-    <string name="highlighted_at">Repère ajouté à %1$s</string>
+    <string name="highlight_status">Repère · %1$s</string>
 </resources>

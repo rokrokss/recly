@@ -19,11 +19,11 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.blueprint
 
 /**
- * docs/09 "Icons": the Material Symbols this screen set names (`flag`, `share`, `more_horiz`, `search`,
+ * docs/09 "Icons": the Material Symbols this screen set names (`share`, `more_horiz`, `search`,
  * `close`, `upload_file`), drawn as thin geometric lines on a 24-unit grid like the tab bar's glyphs —
  * the app carries no icon font.
  */
-enum class Glyph { FLAG, SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY }
+enum class Glyph { SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY }
 
 @Composable
 fun GlyphIcon(glyph: Glyph, color: Color, modifier: Modifier = Modifier, size: Dp = 24.dp) {
@@ -44,10 +44,6 @@ fun GlyphButton(glyph: Glyph, label: String, onClick: () -> Unit, modifier: Modi
 private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
     val line = Stroke(1.5f)
     when (glyph) {
-        Glyph.FLAG -> {
-            drawLine(color, Offset(6f, 3f), Offset(6f, 21f), 1.5f)
-            drawPath(Path().apply { moveTo(6f, 4f); lineTo(19f, 4f); lineTo(16f, 8.5f); lineTo(19f, 13f); lineTo(6f, 13f) }, color, style = line)
-        }
         Glyph.SHARE -> {
             listOf(Offset(18f, 5f), Offset(6f, 12f), Offset(18f, 19f)).forEach { drawCircle(color, 2.5f, it, style = line) }
             drawLine(color, Offset(8.2f, 10.8f), Offset(15.8f, 6.2f), 1.5f)

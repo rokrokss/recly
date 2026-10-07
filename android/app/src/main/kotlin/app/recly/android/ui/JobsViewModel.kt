@@ -310,7 +310,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
      */
     private suspend fun transcribing(core: ReclyCore, jobs: List<Job>, recordingId: String): Transcribing {
         val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
-        val again = unsettled.filter { it.retranscription }.maxByOrNull { it.createdAt }
+        // Said only while it is on its way: one parked for the model, a consent or Drive is the list's to explain.
+        val again = unsettled.filter { it.retranscription && it.status in IN_FLIGHT }.maxByOrNull { it.createdAt }
         return Transcribing(
             running = unsettled.isNotEmpty() || core.localTranscription.isRunning(recordingId),
             again = again != null,
@@ -831,6 +832,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         const val SEARCH_LIMIT = 50
         const val SEARCH_DEBOUNCE_MS = 200L
         val SETTLED = setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
+        val IN_FLIGHT = setOf(JobStatus.PENDING, JobStatus.RUNNING, JobStatus.WAITING)
     }
 
 }

@@ -462,7 +462,6 @@
   "Edit transcript": "Transkripti düzenle",
   "Highlight": "İşaretle",
   "Highlight {0}": "İşaret {0}",
-  "Highlighted at {0}": "{0} konumu işaretlendi",
   "Import audio": "Ses içe aktar",
   "Importing": "İçe aktarılıyor",
   "Keep editing": "Düzenlemeye devam et",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "Düzenlemeleriniz yeni transkriptle değiştirilecek.",
   "Your edits to this transcript will be lost.": "Bu transkriptte yaptığınız düzenlemeler kaybolacak.",
   "on-device transcription": "cihaz üzerinde transkripsiyon",
-  "{0} does not use a vocabulary.": "{0} sözlük kullanmaz."
+  "{0} does not use a vocabulary.": "{0} sözlük kullanmaz.",
+  "Highlight · {0}": "İşaret · {0}"
 }

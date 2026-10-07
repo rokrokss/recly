@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Tiếng Hàn và tiếng Anh</string>
     <string name="processing_language_unsupported">Phương thức chép lời đã chọn không hỗ trợ ngôn ngữ này.</string>
     <string name="highlight">Đánh dấu</string>
-    <string name="highlighted_at">Đã đánh dấu tại %1$s</string>
+    <string name="highlight_status">Điểm đánh dấu · %1$s</string>
     <string name="highlight_tick">Điểm đánh dấu %1$s</string>
     <string name="highlight_remove">Xóa điểm đánh dấu</string>
     <string name="highlight_add_at">Thêm điểm đánh dấu tại %1$s</string>

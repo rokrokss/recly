@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Envio</string>
     <string name="info_transfer_body">A gravação fica no relógio até o telemóvel confirmar a receção. É enviada automaticamente quando o telemóvel está perto, e só os ficheiros recebidos são eliminados aqui.</string>
     <string name="highlight">Marcar</string>
-    <string name="highlighted_at">Marcado em %1$s</string>
+    <string name="highlight_status">Marcador · %1$s</string>
 </resources>

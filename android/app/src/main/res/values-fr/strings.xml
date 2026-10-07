@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Coréen et anglais</string>
     <string name="processing_language_unsupported">La méthode de transcription choisie ne prend pas en charge cette langue.</string>
     <string name="highlight">Marquer</string>
-    <string name="highlighted_at">Repère ajouté à %1$s</string>
+    <string name="highlight_status">Repère · %1$s</string>
     <string name="highlight_tick">Repère %1$s</string>
     <string name="highlight_remove">Supprimer le repère</string>
     <string name="highlight_add_at">Ajouter un repère à %1$s</string>

@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Korece ve İngilizce</string>
     <string name="processing_language_unsupported">Bu dil, seçilen transkripsiyon yöntemi tarafından desteklenmiyor.</string>
     <string name="highlight">İşaretle</string>
-    <string name="highlighted_at">%1$s konumu işaretlendi</string>
+    <string name="highlight_status">İşaret · %1$s</string>
     <string name="highlight_tick">İşaret %1$s</string>
     <string name="highlight_remove">İşareti kaldır</string>
     <string name="highlight_add_at">%1$s konumuna işaret ekle</string>

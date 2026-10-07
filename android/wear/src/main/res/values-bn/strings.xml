@@ -29,5 +29,5 @@
     <string name="info_transfer_title">ট্রান্সফার</string>
     <string name="info_transfer_body">ফোন নিশ্চিত না করা পর্যন্ত রেকর্ডিং ঘড়িতে থাকে। ফোন কাছে এলে নিজে থেকেই ট্রান্সফার হয়, আর শুধু পৌঁছে যাওয়া ফাইলগুলোই এখান থেকে মোছা হয়।</string>
     <string name="highlight">হাইলাইট করুন</string>
-    <string name="highlighted_at">%1$s-এ হাইলাইট করা হয়েছে</string>
+    <string name="highlight_status">হাইলাইট · %1$s</string>
 </resources>

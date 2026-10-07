@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Transferência</string>
     <string name="info_transfer_body">A gravação fica no relógio até o telefone confirmar o recebimento. A transferência é automática quando o telefone está perto, e só os arquivos recebidos são apagados aqui.</string>
     <string name="highlight">Marcar</string>
-    <string name="highlighted_at">Marcado em %1$s</string>
+    <string name="highlight_status">Marcador · %1$s</string>
 </resources>

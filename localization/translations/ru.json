@@ -462,7 +462,6 @@
   "Edit transcript": "Изменить расшифровку",
   "Highlight": "Отметить",
   "Highlight {0}": "Отметка {0}",
-  "Highlighted at {0}": "Отмечено: {0}",
   "Import audio": "Импортировать аудио",
   "Importing": "Импорт",
   "Keep editing": "Продолжить редактирование",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "Ваши правки будут заменены.",
   "Your edits to this transcript will be lost.": "Изменения в этой расшифровке будут потеряны.",
   "on-device transcription": "расшифровка на устройстве",
-  "{0} does not use a vocabulary.": "{0} не использует словарь."
+  "{0} does not use a vocabulary.": "{0} не использует словарь.",
+  "Highlight · {0}": "Отметка · {0}"
 }

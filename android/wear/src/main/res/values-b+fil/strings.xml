@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Paglilipat</string>
     <string name="info_transfer_body">Nananatili ang recording sa relo hanggang kumpirmahin ito ng telepono. Kusa itong naililipat kapag malapit na ang telepono, at ang mga file lang na nailipat ang dine-delete dito.</string>
     <string name="highlight">I-highlight</string>
-    <string name="highlighted_at">Na-highlight sa %1$s</string>
+    <string name="highlight_status">Highlight · %1$s</string>
 </resources>

@@ -29,5 +29,5 @@
     <string name="info_transfer_title">Übertragung</string>
     <string name="info_transfer_body">Die Aufnahme bleibt auf der Uhr, bis das Telefon den Empfang bestätigt. In der Nähe erfolgt die Übertragung automatisch. Nur erfolgreich übertragene Dateien werden hier gelöscht.</string>
     <string name="highlight">Markieren</string>
-    <string name="highlighted_at">Markiert bei %1$s</string>
+    <string name="highlight_status">Markierung · %1$s</string>
 </resources>

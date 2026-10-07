@@ -29,5 +29,5 @@
     <string name="info_transfer_title">転送</string>
     <string name="info_transfer_body">スマートフォンが受信を確認するまで録音はウォッチに残ります。近づくと自動で転送され、届いたファイルだけがここから削除されます。</string>
     <string name="highlight">ハイライト</string>
-    <string name="highlighted_at">%1$sにハイライトを付けました</string>
+    <string name="highlight_status">ハイライト · %1$s</string>
 </resources>

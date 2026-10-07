@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Coreano e inglese</string>
     <string name="processing_language_unsupported">Il metodo di trascrizione selezionato non supporta questa lingua.</string>
     <string name="highlight">Segna</string>
-    <string name="highlighted_at">Marcatore aggiunto a %1$s</string>
+    <string name="highlight_status">Marcatore · %1$s</string>
     <string name="highlight_tick">Marcatore %1$s</string>
     <string name="highlight_remove">Rimuovi marcatore</string>
     <string name="highlight_add_at">Aggiungi marcatore a %1$s</string>

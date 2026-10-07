@@ -332,7 +332,7 @@
     <string name="processing_language_mixed">한국어·영어 혼용</string>
     <string name="processing_language_unsupported">선택한 전사 방식에서 지원하지 않는 언어입니다.</string>
     <string name="highlight">하이라이트</string>
-    <string name="highlighted_at">%1$s에 하이라이트를 표시했습니다</string>
+    <string name="highlight_status">하이라이트 · %1$s</string>
     <string name="highlight_tick">하이라이트 %1$s</string>
     <string name="highlight_remove">하이라이트 삭제</string>
     <string name="highlight_add_at">%1$s에 하이라이트 추가</string>

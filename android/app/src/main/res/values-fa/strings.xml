@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">کره‌ای و انگلیسی</string>
     <string name="processing_language_unsupported">روش رونویسی انتخاب‌شده از این زبان پشتیبانی نمی‌کند.</string>
     <string name="highlight">علامت‌گذاری</string>
-    <string name="highlighted_at">در %1$s علامت گذاشته شد</string>
+    <string name="highlight_status">علامت · %1$s</string>
     <string name="highlight_tick">علامت %1$s</string>
     <string name="highlight_remove">حذف علامت</string>
     <string name="highlight_add_at">افزودن علامت در %1$s</string>

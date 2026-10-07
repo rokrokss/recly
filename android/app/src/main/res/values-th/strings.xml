@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">ภาษาเกาหลีและภาษาอังกฤษ</string>
     <string name="processing_language_unsupported">วิธีถอดเสียงที่เลือกไม่รองรับภาษานี้</string>
     <string name="highlight">ไฮไลต์</string>
-    <string name="highlighted_at">ไฮไลต์ที่ %1$s แล้ว</string>
+    <string name="highlight_status">ไฮไลต์ · %1$s</string>
     <string name="highlight_tick">ไฮไลต์ %1$s</string>
     <string name="highlight_remove">ลบไฮไลต์</string>
     <string name="highlight_add_at">เพิ่มไฮไลต์ที่ %1$s</string>

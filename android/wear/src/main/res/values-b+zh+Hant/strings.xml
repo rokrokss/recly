@@ -29,5 +29,5 @@
     <string name="info_transfer_title">傳輸</string>
     <string name="info_transfer_body">錄音會保留在手錶上，直到手機確認收到。手機靠近後會自動傳輸，手錶只刪除已成功傳輸的檔案。</string>
     <string name="highlight">標記</string>
-    <string name="highlighted_at">已在%1$s加上標記</string>
+    <string name="highlight_status">標記 · %1$s</string>
 </resources>

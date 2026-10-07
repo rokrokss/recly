@@ -462,7 +462,6 @@
   "Edit transcript": "Hariri nakala",
   "Highlight": "Weka alama",
   "Highlight {0}": "Alama {0}",
-  "Highlighted at {0}": "Alama imewekwa kwenye {0}",
   "Import audio": "Leta sauti",
   "Importing": "Inaleta",
   "Keep editing": "Endelea kuhariri",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "Nakala mpya itachukua nafasi ya mabadiliko yako.",
   "Your edits to this transcript will be lost.": "Mabadiliko yako kwenye nakala hii yatapotea.",
   "on-device transcription": "unukuzi kwenye kifaa",
-  "{0} does not use a vocabulary.": "{0} haitumii msamiati."
+  "{0} does not use a vocabulary.": "{0} haitumii msamiati.",
+  "Highlight · {0}": "Alama · {0}"
 }

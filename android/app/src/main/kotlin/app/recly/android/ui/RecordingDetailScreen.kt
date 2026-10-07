@@ -548,7 +548,7 @@ internal fun Waveform(
     onScrub: (Double?) -> Unit,
     onSeek: (Double) -> Unit,
     growIn: Boolean = false,
-    /** docs/09 "Highlights": the marks, drawn as accent ticks with a flag cap; a tap near one opens its menu. */
+    /** docs/09 "Highlights": the marks, drawn as accent ticks with a square cap; a tap near one opens its menu. */
     highlights: List<Double> = emptyList(),
     onHighlight: (Double) -> Unit = {},
     onRemoveHighlight: (Double) -> Unit = {},
@@ -662,11 +662,12 @@ internal fun Waveform(
                 size = Size(WaveformBar.toPx(), height),
             )
         }
-        // Above the bars, under the playhead: a 2dp tick over the whole height with a 6dp flag at its top.
+        // Above the bars, under the playhead: a 2dp tick over the whole height with a 6dp square cap at its top.
         if (totalSec > 0) highlights.forEach { at ->
             val x = (size.width * at / totalSec).toFloat().coerceIn(0f, size.width - TICK.toPx())
             drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TICK.toPx(), size.height))
-            drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(TICK_FLAG.toPx(), TICK_FLAG.toPx()))
+            val cap = TICK_CAP.toPx()
+            drawRect(palette.accent, topLeft = Offset((x + TICK.toPx() / 2 - cap / 2).coerceIn(0f, size.width - cap), 0f), size = Size(cap, cap))
         }
         drawRect(
             color = palette.accent,
@@ -699,9 +700,9 @@ internal fun Waveform(
     }
 }
 
-/** docs/09 "Highlights": the tick, its flag cap, and how near a tap must be to mean it. */
+/** docs/09 "Highlights": the tick, its square cap, and how near a tap must be to mean it. */
 private val TICK: Dp = 2.dp
-private val TICK_FLAG: Dp = 6.dp
+private val TICK_CAP: Dp = 6.dp
 private val TICK_REACH: Dp = 12.dp
 
 /** What the player bar's waveform row holds (see [PlayerBar]). */

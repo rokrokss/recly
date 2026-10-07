@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">الكورية والإنجليزية</string>
     <string name="processing_language_unsupported">طريقة النسخ المحددة لا تدعم هذه اللغة.</string>
     <string name="highlight">وضع علامة</string>
-    <string name="highlighted_at">تم وضع علامة عند %1$s</string>
+    <string name="highlight_status">علامة · %1$s</string>
     <string name="highlight_tick">علامة %1$s</string>
     <string name="highlight_remove">إزالة العلامة</string>
     <string name="highlight_add_at">إضافة علامة عند %1$s</string>

@@ -41,5 +41,5 @@
     <string name="info_transfer_title">Transfer</string>
     <string name="info_transfer_body">A recording stays on the watch until the phone confirms it. It moves across on its own once the phone is near, and only the files that made it are deleted here.</string>
     <string name="highlight">Highlight</string>
-    <string name="highlighted_at">Highlighted at %1$s</string>
+    <string name="highlight_status">Highlight · %1$s</string>
 </resources>

@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Korean at Ingles</string>
     <string name="processing_language_unsupported">Hindi sinusuportahan ng napiling paraan ng pag-transcribe ang wikang ito.</string>
     <string name="highlight">I-highlight</string>
-    <string name="highlighted_at">Na-highlight sa %1$s</string>
+    <string name="highlight_status">Highlight · %1$s</string>
     <string name="highlight_tick">Highlight sa %1$s</string>
     <string name="highlight_remove">Alisin ang highlight</string>
     <string name="highlight_add_at">Magdagdag ng highlight sa %1$s</string>

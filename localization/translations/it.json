@@ -462,7 +462,6 @@
   "Edit transcript": "Modifica trascrizione",
   "Highlight": "Segna",
   "Highlight {0}": "Marcatore {0}",
-  "Highlighted at {0}": "Marcatore aggiunto a {0}",
   "Import audio": "Importa audio",
   "Importing": "Importazione",
   "Keep editing": "Continua a modificare",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "Le tue modifiche verranno sostituite.",
   "Your edits to this transcript will be lost.": "Le modifiche a questa trascrizione andranno perse.",
   "on-device transcription": "la trascrizione sul dispositivo",
-  "{0} does not use a vocabulary.": "{0} non usa un vocabolario."
+  "{0} does not use a vocabulary.": "{0} non usa un vocabolario.",
+  "Highlight · {0}": "Marcatore · {0}"
 }

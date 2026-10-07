@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">کوریائی اور انگریزی</string>
     <string name="processing_language_unsupported">منتخب کردہ ٹرانسکرپشن کا طریقہ اس زبان کو سپورٹ نہیں کرتا۔</string>
     <string name="highlight">ہائی لائٹ کریں</string>
-    <string name="highlighted_at">%1$s پر ہائی لائٹ کیا گیا</string>
+    <string name="highlight_status">ہائی لائٹ · %1$s</string>
     <string name="highlight_tick">ہائی لائٹ %1$s</string>
     <string name="highlight_remove">ہائی لائٹ ہٹائیں</string>
     <string name="highlight_add_at">%1$s پر ہائی لائٹ شامل کریں</string>

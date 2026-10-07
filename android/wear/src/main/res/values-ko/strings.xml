@@ -31,5 +31,5 @@
     <string name="info_transfer_title">전송</string>
     <string name="info_transfer_body">녹음은 폰이 확인해 줄 때까지 워치에 남습니다. 폰이 가까워지면 자동으로 넘어가고, 넘어간 파일만 워치에서 지워집니다.</string>
     <string name="highlight">하이라이트</string>
-    <string name="highlighted_at">%1$s에 하이라이트를 표시했습니다</string>
+    <string name="highlight_status">하이라이트 · %1$s</string>
 </resources>

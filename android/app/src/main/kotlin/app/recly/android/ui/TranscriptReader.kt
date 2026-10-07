@@ -30,8 +30,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
-import app.recly.android.ui.component.Glyph
-import app.recly.android.ui.component.GlyphIcon
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
@@ -92,7 +91,7 @@ internal fun speakerLabel(transcript: Transcript, id: String): String =
 
 /**
  * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek), its speaker
- * badge and — where a highlight falls in it — a flag. While the recording plays, the group under the
+ * badge and — where a highlight falls in it — a small accent square. While the recording plays, the group under the
  * playhead carries an accent bar and an accent time, and the list keeps it in the upper third; a scroll
  * by the user stops that until [onFollow] is pressed again. With [find] the matches are tinted and the
  * current one is brought into view.
@@ -172,7 +171,7 @@ internal fun TranscriptReader(
                         }
                         highlights.filter { it >= group.start && it < group.end.coerceAtLeast(group.start + 0.001) }.forEach { at ->
                             Box {
-                                HighlightFlag(at, onClick = { onHighlight(at) })
+                                HighlightMarker(at, onClick = { onHighlight(at) })
                                 if (highlightMenuFor == at) highlightMenu()
                             }
                         }
@@ -217,18 +216,18 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
     }
 }
 
-/** A highlight inside a group: the accent flag after its time; a tap opens Go to / Remove. */
+/** A highlight inside a group: a 6dp filled accent square after its time; a tap opens Go to / Remove. */
 @Composable
-internal fun HighlightFlag(atSec: Double, onClick: () -> Unit) {
+internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
     val label = stringResource(R.string.highlight_tick, hms(atSec.toLong()))
     Box(
         Modifier
-            .size(48.dp, 48.dp)
+            .size(MinTouch)
             .clickable(role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        GlyphIcon(Glyph.FLAG, blueprint.accent, size = 12.dp)
+        Box(Modifier.size(6.dp).background(blueprint.accent))
     }
 }
 

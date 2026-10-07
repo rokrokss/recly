@@ -462,7 +462,6 @@
   "Edit transcript": "ویرایش رونوشت",
   "Highlight": "علامت‌گذاری",
   "Highlight {0}": "علامت {0}",
-  "Highlighted at {0}": "در {0} علامت گذاشته شد",
   "Import audio": "وارد کردن صدا",
   "Importing": "در حال وارد کردن",
   "Keep editing": "ادامه ویرایش",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "ویرایش‌های شما با رونوشت جدید جایگزین می‌شوند.",
   "Your edits to this transcript will be lost.": "ویرایش‌های شما در این رونوشت از بین می‌رود.",
   "on-device transcription": "رونویسی روی دستگاه",
-  "{0} does not use a vocabulary.": "ارائه‌دهنده {0} از واژگان استفاده نمی‌کند."
+  "{0} does not use a vocabulary.": "ارائه‌دهنده {0} از واژگان استفاده نمی‌کند.",
+  "Highlight · {0}": "علامت · {0}"
 }

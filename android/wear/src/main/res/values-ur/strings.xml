@@ -29,5 +29,5 @@
     <string name="info_transfer_title">منتقلی</string>
     <string name="info_transfer_body">فون کی تصدیق تک ریکارڈنگ گھڑی پر رہتی ہے۔ فون قریب آنے پر یہ خود بخود منتقل ہو جاتی ہے، اور یہاں سے صرف وہی فائلیں حذف ہوتی ہیں جو پہنچ چکی ہوں۔</string>
     <string name="highlight">ہائی لائٹ کریں</string>
-    <string name="highlighted_at">%1$s پر ہائی لائٹ کیا گیا</string>
+    <string name="highlight_status">ہائی لائٹ · %1$s</string>
 </resources>

@@ -293,7 +293,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
     }
 }
 
-/** docs/09 "Highlights": what a tick or a flag offers — go there, or take the mark away (not red: no recording is deleted). */
+/** docs/09 "Highlights": what a tick or a square marker offers — go there, or take the mark away (not red: no recording is deleted). */
 @Composable
 internal fun HighlightMenu(atSec: Double, onGo: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
     BlueprintMenu(onDismissRequest = onDismiss) {

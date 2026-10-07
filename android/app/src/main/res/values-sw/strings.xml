@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Kikorea na Kiingereza</string>
     <string name="processing_language_unsupported">Njia ya unukuzi uliyochagua haitumii lugha hii.</string>
     <string name="highlight">Weka alama</string>
-    <string name="highlighted_at">Alama imewekwa kwenye %1$s</string>
+    <string name="highlight_status">Alama · %1$s</string>
     <string name="highlight_tick">Alama %1$s</string>
     <string name="highlight_remove">Ondoa alama</string>
     <string name="highlight_add_at">Ongeza alama kwenye %1$s</string>

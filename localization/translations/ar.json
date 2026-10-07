@@ -462,7 +462,6 @@
   "Edit transcript": "تعديل النص",
   "Highlight": "وضع علامة",
   "Highlight {0}": "علامة {0}",
-  "Highlighted at {0}": "تم وضع علامة عند {0}",
   "Import audio": "استيراد صوت",
   "Importing": "جارٍ الاستيراد",
   "Keep editing": "متابعة التعديل",
@@ -510,5 +509,6 @@
   "Your edits are replaced.": "سيحل النص الجديد محل تعديلاتك.",
   "Your edits to this transcript will be lost.": "ستفقد تعديلاتك على هذا النص.",
   "on-device transcription": "النسخ على الجهاز",
-  "{0} does not use a vocabulary.": "لا يستخدم {0} قائمة مفردات."
+  "{0} does not use a vocabulary.": "لا يستخدم {0} قائمة مفردات.",
+  "Highlight · {0}": "علامة · {0}"
 }

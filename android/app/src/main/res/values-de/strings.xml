@@ -300,7 +300,7 @@
     <string name="processing_language_mixed">Koreanisch und Englisch</string>
     <string name="processing_language_unsupported">Die gewählte Transkriptionsmethode unterstützt diese Sprache nicht.</string>
     <string name="highlight">Markieren</string>
-    <string name="highlighted_at">Markiert bei %1$s</string>
+    <string name="highlight_status">Markierung · %1$s</string>
     <string name="highlight_tick">Markierung %1$s</string>
     <string name="highlight_remove">Markierung entfernen</string>
     <string name="highlight_add_at">Markierung bei %1$s hinzufügen</string>
