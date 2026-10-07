@@ -1,7 +1,5 @@
 # Automatic minutes with a ChatGPT agent
 
-[한국어](agent.ko.md)
-
 Stop recording, and once the transcript is in your Google Drive, your ChatGPT agent (a
 [dot](https://help.openai.com/en/articles/20001530-getting-started-with-your-dot) or a Work chat)
 starts on the minutes by itself, usually within a minute. The Recly Mac and Windows apps (0.2.0 and

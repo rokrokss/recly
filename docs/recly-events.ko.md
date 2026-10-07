@@ -1,7 +1,5 @@
 # recly-events 직접 실행하기
 
-[English](recly-events.md)
-
 서버, Linux, Recly 앱이 없는 컴퓨터용입니다. Recly Mac·Windows 앱은 recly-events를 대신 실행하므로, 그 앱을 쓴다면
 [ChatGPT 에이전트로 자동 회의록](agent.ko.md)을 따르세요.
 

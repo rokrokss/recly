@@ -1,7 +1,5 @@
 # Setting up Recly
 
-[한국어](setup.ko.md)
-
 Once Recly is [installed](install.md), it records right away. Settings decide two things: where
 recordings go, and how they are transcribed. Out of the box they go to Google Drive, in
 `recly/memo/<year>-<month>`, and are transcribed on the device where the device can, otherwise not

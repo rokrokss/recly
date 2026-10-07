@@ -1,7 +1,5 @@
 # Recly 설치 안내
 
-[English](install.md)
-
 폰과 워치 앱은 스토어에 있습니다.
 
 - **Android 폰과 Galaxy Watch**: [Google Play](https://play.google.com/store/apps/details?id=app.recly).

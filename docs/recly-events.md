@@ -1,7 +1,5 @@
 # Running recly-events yourself
 
-[한국어](recly-events.ko.md)
-
 For a server, Linux, or a computer without the Recly app. The Recly Mac and Windows apps run
 recly-events for you: with one of them, follow [Automatic minutes with a ChatGPT agent](agent.md)
 instead.

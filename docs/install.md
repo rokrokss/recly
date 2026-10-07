@@ -1,7 +1,5 @@
 # Installing Recly
 
-[한국어](install.ko.md)
-
 The phone and watch apps are on the stores:
 
 - **Android phone and Galaxy Watch**: [Google Play](https://play.google.com/store/apps/details?id=app.recly).
