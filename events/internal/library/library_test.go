@@ -351,6 +351,13 @@ func TestLocalOnlyToolsNeedAFolder(t *testing.T) {
 	}
 }
 
+func TestMarshalKeepsMarkersReadable(t *testing.T) {
+	b, err := Marshal(map[string]string{"t": "<<<x>>> & 예"})
+	if err != nil || string(b) != `{"t":"<<<x>>> & 예"}` {
+		t.Fatalf("marshal = %s %v", b, err)
+	}
+}
+
 func TestParseBaseAcceptsImport(t *testing.T) {
 	b, ok := ParseBase(baseC)
 	if !ok || b.Source != "import" || b.Prefix != "01M5BBBB" || StartedAtOf(b) != "2026-10-03T10:00:00Z" {

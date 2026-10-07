@@ -1,6 +1,7 @@
 package library
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -297,6 +298,18 @@ func describe(err error, id string) error {
 	default:
 		return &ToolError{Message: "reading the recordings failed: " + err.Error()}
 	}
+}
+
+// Marshal is json.Marshal without HTML escaping, so the markers read as <<< and >>> in a tool's text
+// content as well.
+func Marshal(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
 func nullable(s string) *string {

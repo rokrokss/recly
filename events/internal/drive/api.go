@@ -9,9 +9,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/rokrokss/recly/events/internal/library"
 )
 
-// API is the handful of Drive v3 calls recly-events makes, all metadata-only.
+// API is the handful of Drive v3 calls recly-events makes: metadata, and the content of a
+// recording's meta and transcript when the agent asks for them (Source).
 type API struct {
 	Client *http.Client
 	// Base defaults to https://www.googleapis.com/drive/v3. Tests point it at a fake.
@@ -22,6 +25,7 @@ type API struct {
 type File struct {
 	ID          string   `json:"id"`
 	Name        string   `json:"name"`
+	MimeType    string   `json:"mimeType"`
 	Description string   `json:"description"`
 	Parents     []string `json:"parents"`
 	Trashed     bool     `json:"trashed"`
@@ -30,7 +34,8 @@ type File struct {
 	Modified    string   `json:"modifiedTime"`
 	WebViewLink string   `json:"webViewLink"`
 	// AppProperties are visible only to clients of the project that wrote them: Recly's own
-	// client sees the recordingId Recly puts on each recording folder.
+	// client sees the recordingId Recly puts on each recording folder, and the mark the app puts on
+	// each transcript version it writes.
 	AppProperties map[string]string `json:"appProperties"`
 }
 
@@ -63,25 +68,45 @@ func (a *API) base() string {
 	return "https://www.googleapis.com/drive/v3"
 }
 
-func (a *API) get(ctx context.Context, path string, q url.Values, out any) error {
+// fetch GETs path and returns the body, refusing one longer than limit.
+func (a *API) fetch(ctx context.Context, path string, q url.Values, limit int64) ([]byte, error) {
 	u := a.base() + path
 	if len(q) > 0 {
 		u += "?" + q.Encode()
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	resp, err := a.Client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
-	b, _ := io.ReadAll(io.LimitReader(resp.Body, 4<<20))
+	b, err := io.ReadAll(io.LimitReader(resp.Body, limit+1))
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return &StatusError{Status: resp.StatusCode, Body: strings.TrimSpace(string(b[:min(len(b), 300)]))}
+		return nil, &StatusError{Status: resp.StatusCode, Body: strings.TrimSpace(string(b[:min(len(b), 300)]))}
+	}
+	if err != nil {
+		return nil, err
+	}
+	if int64(len(b)) > limit {
+		return nil, fmt.Errorf("%w: more than %d bytes", library.ErrTooLarge, limit)
+	}
+	return b, nil
+}
+
+func (a *API) get(ctx context.Context, path string, q url.Values, out any) error {
+	b, err := a.fetch(ctx, path, q, 4<<20)
+	if err != nil {
+		return err
 	}
 	return json.Unmarshal(b, out)
+}
+
+// Download returns a file's content, refusing one longer than limit.
+func (a *API) Download(ctx context.Context, id string, limit int64) ([]byte, error) {
+	return a.fetch(ctx, "/files/"+url.PathEscape(id), url.Values{"alt": {"media"}}, limit)
 }
 
 // StartPageToken returns the current end of the changes feed.
@@ -95,7 +120,7 @@ func (a *API) StartPageToken(ctx context.Context) (string, error) {
 	return out.StartPageToken, nil
 }
 
-const fileFields = "id,name,description,parents,trashed,md5Checksum,size,modifiedTime,webViewLink,appProperties"
+const fileFields = "id,name,mimeType,description,parents,trashed,md5Checksum,size,modifiedTime,webViewLink,appProperties"
 
 // Changes returns one page of changes after token.
 func (a *API) Changes(ctx context.Context, token string) (ChangePage, error) {
@@ -118,16 +143,28 @@ func (a *API) Get(ctx context.Context, id string) (File, error) {
 
 // List returns the files matching a Drive query, newest first.
 func (a *API) List(ctx context.Context, query string, pageSize int) ([]File, error) {
+	files, _, err := a.ListPage(ctx, query, "createdTime desc", pageSize, "")
+	return files, err
+}
+
+// ListPage returns one page of the files matching a Drive query, in orderBy order, and the token
+// of the next page ("" after the last).
+func (a *API) ListPage(ctx context.Context, query, orderBy string, pageSize int, pageToken string) ([]File, string, error) {
 	var out struct {
-		Files []File `json:"files"`
+		Files         []File `json:"files"`
+		NextPageToken string `json:"nextPageToken"`
 	}
 	q := url.Values{
 		"q":        {query},
 		"pageSize": {fmt.Sprint(pageSize)},
-		"orderBy":  {"createdTime desc"},
-		"fields":   {"files(" + fileFields + ")"},
+		"orderBy":  {orderBy},
+		"fields":   {"nextPageToken,files(" + fileFields + ")"},
 	}
-	return out.Files, a.get(ctx, "/files", q, &out)
+	if pageToken != "" {
+		q.Set("pageToken", pageToken)
+	}
+	err := a.get(ctx, "/files", q, &out)
+	return out.Files, out.NextPageToken, err
 }
 
 // AccountID returns the signed-in account's opaque Drive identifier: `init` confirms Drive with it,

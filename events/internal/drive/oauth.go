@@ -1,6 +1,6 @@
-// Package drive finds new Recly transcripts in the user's Google Drive. It reads metadata
-// only — names, folders, IDs and links, never file contents. The agent reads the transcript
-// itself through its own Google Drive connector.
+// Package drive finds new Recly transcripts in the user's Google Drive by their metadata — names,
+// folders, IDs and links — and reads a recording's meta and transcript only when the agent asks
+// for them through the read tools (Source).
 package drive
 
 import (
@@ -27,9 +27,10 @@ const (
 	// with: under drive.file, Drive shows a client of Recly's Google Cloud project only the
 	// files Recly's apps created (docs/recly.md §6), which is exactly what is watched.
 	ScopeRecly = "https://www.googleapis.com/auth/drive.file"
-	// ScopeMetadata goes with a client from the user's own Google Cloud project, which cannot
-	// see Recly's files under drive.file.
-	ScopeMetadata = "https://www.googleapis.com/auth/drive.metadata.readonly"
+	// ScopeReadonly goes with a client from the user's own Google Cloud project, which cannot see
+	// Recly's files under drive.file. Read-only, but every file: the agent reads transcripts
+	// through get_transcript, so names alone are not enough.
+	ScopeReadonly = "https://www.googleapis.com/auth/drive.readonly"
 )
 
 // ReclyClient is Recly's desktop OAuth client, compiled in at build time.
@@ -51,7 +52,7 @@ func LoadClient(path string) (*oauth2.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := google.ConfigFromJSON(b, ScopeMetadata)
+	cfg, err := google.ConfigFromJSON(b, ScopeReadonly)
 	if err != nil {
 		return nil, fmt.Errorf("%s is not a Google OAuth client file: %w", path, err)
 	}

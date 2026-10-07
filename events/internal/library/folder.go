@@ -161,7 +161,7 @@ func (f *Folder) Transcript(ctx context.Context, id string) (*Transcript, error)
 	if err != nil {
 		return nil, err
 	}
-	t.RecordingID = recordingIDOf(r.recordingID, t.RecordingID, r.base.Name)
+	t.RecordingID = RecordingIDOf(r.recordingID, t.RecordingID, r.base.Name)
 	t.Title, t.StartedAt, t.Highlights = r.title, StartedAtOf(r.base), r.meta.HighlightTimes()
 	return t, nil
 }
@@ -192,8 +192,9 @@ func (r folderRec) transcript() (*Transcript, error) {
 	return nil, ErrNoTranscript
 }
 
-// recordingIDOf is the first candidate that is a recording ID, else the base name.
-func recordingIDOf(candidates ...string) string {
+// RecordingIDOf is the first candidate that is a recording ID, else the last candidate (the base
+// name).
+func RecordingIDOf(candidates ...string) string {
 	for _, c := range candidates {
 		if IsRecordingID(c) {
 			return c
