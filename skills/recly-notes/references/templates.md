@@ -17,6 +17,8 @@ Contents: shared rules · minutes · decision-log · interview · lecture · mem
 - Misheard names and terms stay as transcribed; flag them (`"Q3 리포트"(?)`) rather than guess.
 - Gaps and silenced intervals from `meta.json` become one line ("audio missing 00:30:00–00:30:20")
   only if something was clearly lost.
+- `highlights` in `meta.json` are moments the user marked: make sure what was said around each one
+  is in the notes, with its `[HH:MM:SS]`.
 
 ## minutes (default)
 

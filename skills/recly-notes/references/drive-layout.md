@@ -27,7 +27,7 @@ base = {yyyyMMdd}T{HHmmss}Z_{source}_{first 8 chars of recordingId}
 ```
 
 - The time is `startedAt` in **UTC**, so sorting names descending sorts recordings newest first.
-- `source` is `watch`, `phone`, or `desktop`.
+- `source` is `watch`, `phone`, `desktop`, or `import` (a file the user imported).
 - Names never contain the title or device name. The title lives in `meta.json` and in the Drive
   folder's `description` (the folder description wins if the two differ — it is updated on rename).
 
@@ -45,6 +45,7 @@ base = {yyyyMMdd}T{HHmmss}Z_{source}_{first 8 chars of recordingId}
 | `context.app` | optional bundle id of the meeting app (desktop only), e.g. `us.zoom.xos` |
 | `drive.folderId`, `drive.folderUrl` | the recording's own Drive folder, written once the upload knew it; absent on recordings uploaded before this field existed and on iCloud recordings |
 | `gaps`, `silenced` | intervals with no audio (mic taken by another app, segment restart) — explains holes in the transcript |
+| `highlights` | optional; moments the user marked while recording or later, `[{ "atSec": 125.0 }]` from the start — what the user thought mattered |
 | `status` | `recording` → `finalized` |
 
 ## The transcript files
@@ -57,8 +58,9 @@ changes or a segment passes 60 seconds:
 [00:00:03] S2: 네, 지난주 액션 아이템부터 볼까요.
 ```
 
-Speakers are normalized to `S1`, `S2`, … in order of first appearance. Names are never in the
-file. Legacy v1 transcripts without diarization may use `S1` for everything; this does not prove
+Speakers are normalized to `S1`, `S2`, … in order of first appearance. A speaker the user named in
+the app is written by that name instead (`[00:00:03] Minsu: …`; the `.json` has it as `speakers[].name`,
+and `editedAt` when the user corrected the transcript). Legacy v1 transcripts without diarization may use `S1` for everything; this does not prove
 a single participant. Local v2 with `speakerIdentification: unavailable` instead has `speakers: []`
 and empty segment speakers. Its text lines are `[HH:MM:SS] text`. Never fabricate labels or owners.
 The v2 `timing` field declares segment or word precision.

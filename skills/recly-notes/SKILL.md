@@ -72,15 +72,18 @@ Folder and file names, `meta.json` fields, and what an incomplete folder looks l
 ## Read it
 
 - `{base}.transcript.txt` is one turn per line: `[HH:MM:SS] S1: text`. Speakers are `S1`, `S2`, …
-  in order of first appearance when speaker identification is available; there are no names.
+  in order of first appearance when speaker identification is available — or the name the user gave
+  that speaker in the app (`[HH:MM:SS] Minsu: text`); use names as they are.
   Local v2 transcripts may instead have `[HH:MM:SS] text`, `speakerIdentification: unavailable`,
   `speakers: []`, and empty segment speakers. Do not invent speaker labels, a speaker count, or
   action owners from these. Use "unassigned" unless the words explicitly name an owner.
 - If only `{base}.transcript.json` is there, read its `segments` (`start` seconds, `speaker`,
   `text`) and treat them the same way; render a timestamp as `[HH:MM:SS]` from `start`.
 - `{base}.meta.json` gives the title (may be absent), `startedAt`, `timezone`, `durationSec`,
-  `source` (`watch`/`phone`/`desktop`), `deviceName`, `context.participants` (head count,
-  optional), `context.app` (the meeting app on desktop, optional) and `drive.folderUrl` (the
+  `source` (`watch`/`phone`/`desktop`/`import` — a file the user brought in), `deviceName`,
+  `context.participants` (head count, optional), `context.app` (the meeting app on desktop,
+  optional), `highlights` (moments the user marked, `atSec` from the start — give them weight in
+  the notes, optional) and `drive.folderUrl` (the
   recording's Drive folder, optional; an iCloud recording has no `drive` field). In iCloud the
   title can also be in `{base}.folder.json` — see `references/drive-layout.md`.
 - The transcript is speech-to-text output: names and technical terms may be misheard. Do not

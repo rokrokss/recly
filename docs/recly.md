@@ -78,7 +78,7 @@ the current rule.
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
 | ADR-005 | Shells: Android/Wear are Kotlin + Compose, iOS · watchOS · macOS are SwiftUI + KMP XCFramework, Windows is Compose Desktop (JVM) + a Rust capture helper |
-| ADR-006 | Audio is AAC-LC `.m4a`, 16 kHz mono 32 kbps, nominal 900-second segments. Mobile and watch have one track, `mono`; desktop has three tracks, `mic` · `sys` · `mix` |
+| ADR-006 | Audio is AAC-LC `.m4a`, 16 kHz mono 32 kbps, nominal 900-second segments. Mobile and watch have one track, `mono`; desktop has three tracks, `mic` · `sys` · `mix`. A file the user imports is transcoded on the device into the same format, one `mono` track (2026-10-07, §3 "Naming rules") |
 | ADR-007 | Workflow definitions are a single **device-local document**, with no backend and no sync. Moving them between devices is the settings export/import (§5) — the file format is the document serialization as is (retired 2026-09-24) |
 | ADR-008 | Workflow JSON carries only the secret's **name** (`secretRef`); the value is in each device's secure storage. On a device without the value, that step fails with `MISSING_SECRET`. Values are not synchronized and never go into an export file — keys are entered on each device. (2026-09-24: workflow JSON retired — the same rule applies to `secretRef` in the recording processing settings) |
 | ADR-009 | The only OAuth scope is `drive.file`, and the consent screen is in Production. The full `drive` scope is never requested |
@@ -231,6 +231,9 @@ in):
 - `transfer` — helpers for watch→phone receiver-side verification and ack (sending is a platform API, so it is in the
   shell)
 - `disconnect(alsoDeleteRecordings)` — the local-cleanup half of disconnecting
+- (2026-10-07) `recordings.addHighlight` · `setHighlights` (§3 "Metadata"), `importAudio` · `dropAbandonedImport` (§3 "Naming rules"),
+  `retranscribe` (§10 "Re-transcription"), `editTranscript` (§8 "Editing"), `exportFile` (§8 "Exports"), `search` (§10 "Search"), and the
+  pure rules every shell applies the same way — `SpeakerTurns`, `SilenceRanges` (§10 "Shared rules for the shells")
 
 The shells have only audio capture, transfer APIs, the scheduler and the UI. **Workflow semantics never live in a shell.**
 
@@ -461,6 +464,19 @@ Examples:
 - File names contain no user strings such as the title or the device name (for path safety and machine parsing). The title goes into the meta and into the Drive folder's
   `description`.
 - Watch recordings use `_watch_`, matching `"source": "watch"` in the meta.
+- **Imports use `_import_`**, matching `"source": "import"` (2026-10-07): an audio or video file the user picked, which the shell
+  transcodes into ADR-006 parts on this device (`platform` is this device's, one `mono` track). `ReclyCore.importAudio(sourcePath,
+  displayName, startedAt, importer)` names it after the file without its extension, starts it at the file's own date when the shell
+  passes one (else now — the `recordingId` carries the same instant, §1 "Identifiers · time"), and queues the fixed plan once it is
+  complete; afterwards it is a recording like any other. While the shell's `AudioImporter` transcodes, the row is in the list with
+  `status: recording` and no parts (`RecordingRecord.importing`; the shells show `IMPORTING`), and the parts are written to
+  `{dataDir}/import-tmp/{recordingId}/` — beside the recordings, so nothing that scans a recording directory meets half of them. Only
+  when every part is there are they moved in, registered and finalized in one locked pass. **An import is whole or not there**: a
+  failure or a cancellation deletes the row and every file and answers `ImportResult.Failed` with `IMPORT_UNSUPPORTED` (no audio the
+  platform can decode) or `IMPORT_UNREADABLE` (the file could not be read), the platform's words as the detail; nothing is kept for
+  a failed import. A row a killed process left behind is never finalized by a recorder's crash recovery: recovery hands a
+  `source: import` row that still says `recording` to `ReclyCore.dropAbandonedImport`, which drops it unless this process is
+  importing it right now.
 
 ### Metadata
 
@@ -493,6 +509,7 @@ After `stop`, `status: finalized`.
   ],
   "gaps": [ { "startSec": 1800.0, "endSec": 1800.3, "reason": "segment_restart" } ],
   "silenced": [ { "startSec": 120.0, "endSec": 125.5, "reason": "mic_taken" } ],
+  "highlights": [ { "atSec": 125.0 }, { "atSec": 1820.5 } ],
   "context": {
     "app": "us.zoom.xos",
     "participants": 3
@@ -507,7 +524,7 @@ After `stop`, `status: finalized`.
 
 | Field | Notes |
 |---|---|
-| `source` | `watch` · `phone` · `desktop` — matches the workflow trigger |
+| `source` | `watch` · `phone` · `desktop` · `import` (§3 "Naming rules") |
 | `platform` | `wearos` · `android` · `watchos` · `ios` · `macos` · `windows` |
 | `title` | Optional. Entered by the user after stop in the phone and desktop shells, or absent (on the watch it is always absent because there is no input UI — it can be added later on the phone). It can be changed at any time on the detail screen and spreads to every device through the Drive folder's `description` (§3 "Recordings from other devices" — Titles) |
 | `parts` | The part list. `parts[].sha256` is computed right after a segment is finalized and is used to verify transfer and upload. `startOffsetSec` is the reference for the recording's timeline |
@@ -515,6 +532,7 @@ After `stop`, `status: finalized`.
 | `silenced` | Spans where the microphone was taken away, such as Android `isClientSilenced` or an Apple interruption. **Known limitation**: on Android, if stop is delayed (when unregistered parts are left over and handed to recovery), this span stays only in the log and does not go into the meta |
 | `context` | Optional. `app` is the bundle id of the detected meeting app, desktop only. `participants` (integer, head count including the user) is filled from the selection in the dialog after stop — the speaker-count hint for `transcribe` (§8). **There is no `context.calendar`** — calendar reading was removed from the whole product |
 | `drive` | Optional. This recording's Drive folder `folderId` · `folderUrl` (`webViewLink`). Right after `drive.upload` creates or finds the folder, and **before** it uploads the meta, it writes them to the row and to the local `meta.json` (`RecordingRepository.setDriveFolder`), so the copy in Drive and the devices that adopted it have the same values. Agent skills use it as the "Recording" link on the Notion page (2026-09-05). Absent before upload, or for a folder whose link was not received. Absent for iCloud recordings — there is no web link (§3 "Storage location") |
+| `highlights` | Optional (2026-10-07). Moments the user marked — `{ "atSec": … }`, on the recording's own axis (the one transcript segments use), ascending, no two within 1 second, at most 500; left out of the file while there are none. Marked while recording from the recorder, a watch, a tile, the desktop popover or an App Intent through `recordings.addHighlight(recordingId, atSec)` — one locked write of the row and `meta.json`, callable from any thread, a second mark within 1 second of one already there ignored. Edited later, as a whole list, with `ReclyCore.setHighlights(recordingId, atSecs)`, for this device's recordings and other devices' alike: written here at once and carried to the folder's `meta.json` the way a title is (§3 "Titles" — pending as `meta/pending/{recordingId}` in `kv` until it lands, retried by every pull; a local folder's `.transcript.md` is written again with it). A watch's marks travel in the meta it sends (§3 "Watch → phone transfer contract"). **Known limitation**: other devices that already adopted the recording keep the highlights they read; a later write of the meta by any device (a rename, highlights) leaves that device's list. Agents should weigh them — they are what the user thought mattered |
 | `status` | `recording` → `finalized` → (watch) `transferred` |
 
 The participant options are `2 · 3 · 4 · 5 · 6+ · Unknown`, and the default is "Unknown" (unknown) — if the user picks nothing, the field is omitted.
@@ -992,7 +1010,8 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
 - The watch only **records** part acks and keeps the files; only after receiving `ack-meta ok:true` does it delete the parts · meta · directory · local row
   (if a later part or the meta gets a fatal nack, the parts acked earlier must still be there for resending · recovery to be possible).
   A `SHA256_MISMATCH` nack resends that part once; the second time it is fatal.
-- The phone registers the recording in `recordings` and creates the Job when it receives the meta. The `recordingId` in the meta body must match the one in the path
+- The phone files the meta the watch sent as it is — every field, the highlights marked on the watch among them (2026-10-07) — and
+  registers the recording in `recordings` and creates the Job when it receives the meta. The `recordingId` in the meta body must match the one in the path
   (mismatch → `RECORDING_ID_MISMATCH` nack, no core call), and **`ack-meta ok:true` is sent only after enqueue and waking the runner
   have finished** — if something fails before that, it does not ack and leaves it to the watch's resend (`acceptMeta` · `enqueue` are idempotent).
   If 24 hours pass with only parts and no meta, the orphan parts are deleted.
@@ -1252,7 +1271,20 @@ The overall direction and the conditions for a real-device release follow the [f
   and infers the speaker count with the default range. A stored past `diarize=false` or speaker-count hint does not constrain a new plan.
   Groq and explicitly chosen non-diarizing OpenAI models use plain transcription. If the OpenAI model is left empty, the existing adapter's
   diarization-capable default model is used. An explicitly set model, provider or key is never replaced automatically.
-  Local checks `supportsDiarization` at run time and reflects it in the actual request, and Apple SpeechTranscriber, which does not support it, still transcribes.
+  Local checks `supportsDiarization` at run time and reflects it in the actual request (`LocalTranscriptionRequest.diarize`), together with
+  the head count the user gave (`expectedSpeakers` = `context.participants`, or null); an engine without diarization still transcribes.
+  An engine that diarizes puts its own label on every segment, and the core renames them `S1, S2, …` in order of appearance and marks the
+  transcript `identified` only when every segment has one (§8 "Result files", §10 "Shared rules for the shells").
+- **Vocabulary** (2026-10-07): `transcription.vocabulary`, words and names the transcription should expect — at most 50, each trimmed and
+  1–40 characters on one line, unique ignoring case, in the order entered. One list for local and external modes. The form trims and drops
+  blank entries (`ProcessingDraft.vocabulary`); a duplicate, an over-long entry or an entry with a line break is refused on save and import,
+  and the error names its position, never its text. It is frozen into the plan like the other transcription settings (`vocabulary` on the
+  `transcribe` / `local.transcribe` step), so a recording keeps the list it started with and a manual retry or a re-transcription takes the
+  current one. What each provider receives of it is §8 "Vocabulary"; the settings show "{provider} does not use a vocabulary" where
+  `SttProviders.supportsVocabulary(provider, model, language)` is false, and the same for an on-device engine whose
+  `LocalEngineInfo.supportsVocabulary` is false (Apple `SpeechTranscriber` has no vocabulary input).
+- **Re-transcription** (2026-10-07) runs with the settings as they are when it is asked for — mode, provider, model, language, vocabulary
+  (§10 "Re-transcription").
 - If no settings are stored, `initialize()` creates the **Ready** state with the defaults (local transcription, memo folder `recly/memo/{{yyyy}}-{{MM}}`).
   It does not inspect old workflow documents or device pointers — there is no migration or review (`NeedsReview`) state.
   On builds and devices where the shell did not pass a local engine (`LocalTranscriptionEngine.installed == false`: Apple below OS 26, Android · Windows with less than
@@ -1283,7 +1315,8 @@ The overall direction and the conditions for a real-device release follow the [f
 - The local settings have the same shape in all 4 shells (2026-09-26): a `Speech recognition model` row with the model name (Apple `Apple Speech`, Android · Windows
   `Qwen3-ASR 0.6B` — product names, so not translated); if the model is missing, `To transcribe on this device, download this model once (about 1GB).`
   (Apple leaves out the size because it cannot know it) and a `Download model` button; while downloading, the §9 square loader and `Downloading model…`;
-  and `On-device transcription does not separate speakers.` Once downloaded, the notice and the button disappear and only the name row remains.
+  and `On-device transcription does not separate speakers.` (only where the engine reports no `supportsDiarization`, 2026-10-07). Once
+  downloaded, the notice and the button disappear and only the name row remains.
   `Download model` cannot be pressed while a recording is starting, in progress or ending. On a metered connection (mobile data), Android asks first
   (`Download over mobile data?` — Cancel · `Download on Wi-Fi` · Download), and Windows asks when the capture helper's `--network-cost`
   answers metered (`Download over a metered connection?`; if unknown, it does not ask).
@@ -1324,7 +1357,8 @@ The overall direction and the conditions for a real-device release follow the [f
   an update that changes only the runtime uses the same folder, and when a new model has been fully downloaded, the previous revision's folder is deleted.
   Silero VAD cuts the recording into speech segments, and segments are split into pieces of 20 seconds or less for decoding — for input beyond the model's context,
   sherpa-onnx returns empty text instead of an error. Confirmed segments are saved per piece, so cancel, resume and waiting take effect at piece boundaries.
-  Timing is per segment and there is no diarization. It runs on 2 CPU threads. Android waits at thermal state `SEVERE` or above (battery saver
+  Timing is per segment; speakers come from sherpa-onnx's `OfflineSpeakerDiarization` where the engine reports `supportsDiarization`
+  (the models are §15 "Android · Windows local transcription models"). It runs on 2 CPU threads. Android waits at thermal state `SEVERE` or above (battery saver
   does not stop it, 2026-09-27); Windows has no thermal signal to wait on. Languages are chosen only from those this model knows (Ukrainian excluded; they are passed to the prompt by their English
   names). Windows extracts the native libraries from the jar into `{dataDir}/native/{revision}/` and uses them from there — the sherpa-onnx default
   loader extracts into a new temporary folder on every run, and a loaded DLL cannot be deleted. That folder is user-writable, so on every load
@@ -1332,8 +1366,8 @@ The overall direction and the conditions for a real-device release follow the [f
   ABIs (`arm64-v8a` · `x86_64`) and leaves out the C · C++ API libraries that JNI does not use — in a 32-bit process
   the local engine is not created. Inference runs inside the app process and stops when capture starts.
   **Real-device heat, long recordings and accuracy have not been verified** (§20). There is no automatic fallback to heavy CPU inference or an external API.
-- Local transcription v2 states `speakerIdentification` and `timing` explicitly. Without diarization support it writes `speakers=[]`, `speaker=""`, and
-  it does not present the result as having identified a single speaker. Reading v1 external API results and existing files is kept.
+- Local transcription v2 states `speakerIdentification` and `timing` explicitly. Without diarization — or with a segment the engine left
+  unlabelled — it writes `speakers=[]`, `speaker=""`, and it does not present the result as having identified a single speaker. Reading v1 external API results and existing files is kept.
 
 ### Secrets
 
@@ -1661,13 +1695,15 @@ job** (phone · Mac · Windows), and there is no server. The device calls the ST
 | `language` | `ko` | `ko` \| `en` \| `ko-en` \| `auto`. A value the provider cannot accept is mapped by the adapter to the closest value |
 | `diarize` | `true` | Whether to request speaker diarization |
 | `speakers.min` / `speakers.max` | 1 / 10 | Speaker count hint. If the meta `context.participants` is present, it **overrides** them with `min = max = participants` (information from the time of recording is more accurate than the workflow default). The upper bound is 10 people, so `6+` means the whole range above it |
+| `vocabulary` | `[]` | The words and names of the processing settings (§5 "Fixed processing settings"), frozen with the plan. What reaches the provider is §8 "Vocabulary" |
 | `model` | provider default | Provider-specific model name. A free string; the provider does the validation. `clova` · `assemblyai` · `azure` · `rev`, which have a fixed model or no model to choose, do not read this value (`SttProviders.acceptsModel`), so the fixed processing plan does not send it and the settings screen hides the input field. When the provider is changed on the settings screen, the model and `invokeUrl` are filled with the values remembered for that provider (empty if there are none; placeholder text for the address format of a required provider) — so that another provider's name or address does not carry over (§5 `providerDetails`) |
 
 Input track: `mono` if the recording's `tracks` has `mono`, otherwise `mix`. If neither exists, the step is
 `FAILED(NO_INPUT_TRACK)` (non-retryable).
 
 Precondition: `drive.upload` must come **before** this step (`TranscribeNeedsUpload`) — because the folder the result files go into is that
-step's output.
+step's output. A re-transcription uploads nothing, so its `transcript.publish` names the recording's folder itself (`folderId`, §10
+"Re-transcription").
 
 Output: `{ transcript: { jsonFileId, txtFileId, language, speakerCount, durationSec, provider, model }, files: [ … ] }`
 — `files[]` is the `name/bytes/sha256/drive{fileId,webViewLink}` of the result files (json · txt) (the shape the webhook payload
@@ -1733,6 +1769,35 @@ reject first a recording that a higher plan would accept. Such limits, and the l
 | `daglo` | Audio 4 hours | Yes |
 | `rtzr` | File 4 hours (2 GB) — file STT documentation, 2026-09-25 | Yes |
 
+#### Vocabulary
+
+2026-10-07. The list of §5 "Fixed processing settings" travels on the request each adapter already sends — no new endpoint — in the field
+that provider documents, with that provider's caps, **verified against each API reference on 2026-10-07**. The rule is that a vocabulary
+never costs a transcription: where the field is not documented for the model or the language, or a combination could fail a request that
+works without it, nothing is sent (`Vocabulary.applies`; the settings read it through `SttProviders.supportsVocabulary`). Terms are kept in
+the order entered; what a provider would refuse is dropped, never cut. Nothing is sent for an empty list.
+
+| provider | Field | What is sent | Nothing is sent for |
+|---|---|---|---|
+| `assemblyai` | `keyterms_prompt`, JSON array | ≤ 200 terms (Universal-2's ceiling) of ≤ 6 words and ≤ 50 characters | languages outside Universal-3.5 Pro's set — `ko`, `ru`, `id`, `th`, `pl`, `uk` — and `ko-en`, `auto`: they run on Universal-2, where the effect is not documented. Never `word_boost` or `prompt` |
+| `deepgram` | `keyterm` (Nova-3) or `keywords` (Nova-2, Nova, Enhanced, Base), one repeated query parameter per term | `keyterm`: terms up to an estimated 400 tokens — over 500 fails the whole request; `keywords`: single words, ≤ 100, no intensifier. Never both | `auto` (`detect_language` with keyterms is not documented); other models |
+| `openai` | `prompt` | the terms joined with ", " up to an estimated 200 tokens (Whisper reads 224) — `whisper-1`, `gpt-4o-transcribe`, `gpt-4o-mini-transcribe` | `gpt-4o-transcribe-diarize`, the plan's default when it diarizes: it takes no prompt |
+| `groq` · `together` | `prompt` | the same | a model that is not Whisper |
+| `mistral` | `context_bias`, one repeated multipart field per term | ≤ 100; spaces become `_` and commas go (item pattern `^[^,\s]+$`) | any language but `en` (context biasing is "experimental" elsewhere). Its combination with `timestamp_granularities` is undocumented, like the `language` one Recly already sends |
+| `elevenlabs` | `keyterms`, one repeated multipart field per term | ≤ 100 (more adds a 20-second minimum bill), under 50 characters, ≤ 5 words, none of `<>{}[]\` | a model that is not `scribe_v2` |
+| `clova` | `params.boostings` | one entry `{"words": "a, b, …"}` — the reference's own example — commas taken out of the terms, one-character terms left out (one syllable is not boosted) | `ko-en` (`enko` is not named) and the languages keyword boosting does not cover ("Korean and English only") |
+| `rtzr` | `config.keywords` | ≤ 500 of ≤ 20 characters: complete Hangul syllables only on `sommers`, Hangul · Latin · digits on `whisper` | anything but Korean audio |
+| `azure` | `definition.phraseList.phrases` | ≤ 2,000 | `ko-en` and `auto` — no locale, the multilingual model, where a phrase list is not documented |
+| `daglo` | `sttConfig.keywordBoost {enable, keywords}` | every term; the boost level is left at its default | anything but `ko-KR` (Korean, and `auto`, which this adapter sends as Korean) — add-on features are Korean only |
+| `speechmatics` | `transcription_config.additional_vocab [{content}]` | ≤ 1,000 of ≤ 6 words, no `sounds_like`; `auto` included | an `operating_point` other than `enhanced` / `standard` |
+| `rev` | `options.custom_vocabularies [{phrases}]` | ≤ 500 without digits, ≤ 12 words, no word over 34 characters, Basic Latin for English and Latin letters for `es` · `fr` · `de` · `pt` | any other language — a list Rev cannot use fails the whole job, and Korean is not documented |
+| `gladia` | `custom_vocabulary: true` + `custom_vocabulary_config.vocabulary` | ≤ 500 plain strings (Gladia replaces close matches after transcribing; it is not biasing) | — |
+
+Some providers bill the field as an add-on (pricing pages, 2026-10-07): AssemblyAI keyterms +$0.05 per hour, Deepgram keyterm prompting
+$0.0013 per minute pay-as-you-go, ElevenLabs keyterms a surcharge on the transcription. On the device, the Android and Windows Qwen3-ASR
+engine may hand the list to sherpa-onnx as its `hotwords` stream option (shell work, `LocalEngineInfo.supportsVocabulary`); Apple
+`SpeechTranscriber` has no vocabulary input. Sources: each provider's API reference, feature guide and pricing page, checked on 2026-10-07.
+
 ### Audio preparation (remux)
 
 `CoreDeps.audio.concat(parts: List<File>, out: File)` — the shell implements it. It joins the parts of the same track in part-number order
@@ -1795,11 +1860,24 @@ screen; kept regardless of the part deletion rules).
 | File | Contents |
 |---|---|
 | `{base}.transcript.json` | The schema below. The canonical copy for machines |
-| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text`. A line break when the speaker changes or a segment passes 60 seconds |
-| `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt`, then the lines of `.txt`, each its own paragraph. A rename rewrites it together with `meta.json` |
+| `{base}.transcript.txt` | For people and agents. One line = `[HH:MM:SS] S1: text` — or `[HH:MM:SS] Minsu: text` once the user named that speaker (2026-10-07, §8 "Editing"); a segment without a speaker has no label. A line break when the speaker changes or a segment passes 60 seconds. It carries no highlights: agents parse these lines, and the marks are in `meta.json` |
+| `{base}.transcript.md` | **Local folder only** (§3 "Storage location"), for notes apps such as Obsidian that open only Markdown (2026-10-03). Front matter `title` (only when there is one; a JSON string, which YAML reads as a double-quoted scalar) · `recordingId` · `startedAt` · `highlights` (2026-10-07, when the recording has any: their clock times as quoted strings — YAML 1.1 reads a bare `00:02:05` as a number), then a `## Highlights` list — each clock time with the words of the segment being spoken then — and the lines of `.txt`, each its own paragraph. A rename, an edit and new highlights rewrite it |
 
 Drive writes follow the same idempotency rule as `drive.upload` (same name + same md5 is skipped; otherwise it is **overwritten** — after a rerun the latest
 result is canonical).
+
+**What a version is** (2026-10-07). On Drive the `.json` and `.txt` files carry `appProperties.reclyTranscript` — `transcribed` when a
+transcription wrote them (the first one or a re-transcription), `edited` when the user's edit did — set with the content in the same
+request: a new file in the `files.create` multipart upload, an existing one with the multipart form of `files.update` on the upload URI
+(`PATCH …/upload/drive/v3/files/{id}?uploadType=multipart`, the metadata part `{"appProperties": …}` first and no `parents`, which an
+update cannot set; Drive "Upload file data" and `files.update`, checked 2026-10-07). A watcher such as recly-events can so tell a new
+transcript from a correction. The recording's folder carries `appProperties.transcriptAt`, the version of the newest transcript in it — its
+`editedAt`, else its `createdAt` — written after every publication and pushed edit (advisory: a failure is logged as
+`transcript.stamp.failed`); an iCloud folder keeps it in `{base}.folder.json`, a local folder keeps nothing. Each pull compares it with
+the copy on this device and reads `.transcript.json` again when the folder's is newer — another device edited or transcribed it again —
+and reads it once for another device's recording that has never been read here, so a search finds it; at most 10 files a pass, none while
+an edit of this device's is still on its way out or the other device is still transcribing, and never over a newer copy here
+(`RemoteRecordings.refreshTranscripts`).
 
 `transcript.json` schema: `spec/transcript.schema.json`.
 
@@ -1820,9 +1898,44 @@ result is canonical).
 }
 ```
 
-- Speaker ids are normalized from the provider labels to `S1, S2, …` in order of appearance. `name` is always `null` (user labeling comes later).
+- Speaker ids are normalized from the provider labels to `S1, S2, …` in order of appearance — an on-device engine's labels too (2026-10-07,
+  §5 "Fixed processing settings"). `name` is `null` until the user names the speaker (§8 "Editing").
 - `words` is included when the provider gives it and omitted otherwise. `start/end` are seconds (decimal), on the **recording timeline**.
 - With `diarize: false`, `speakers` is the single `[{"id":"S1"}]`, and every segment is `S1`.
+- `editedAt` is there once the user has edited the transcript (§8 "Editing").
+
+### Editing
+
+2026-10-07. `ReclyCore.editTranscript(recordingId, edit): EditResult` changes the transcript the detail screen shows, for this device's
+recordings and other devices' alike. `TranscriptEdit` is one of four concrete classes:
+
+| Edit | Effect |
+|---|---|
+| `SetText(segmentIndex, text)` | The segment's words, trimmed. Its `words` (timings) are dropped — they no longer match |
+| `SetSpeaker(segmentIndex, speakerId)` | Who says it: an id the transcript has, or with `speakerId` null a new speaker `S{n+1}` after the highest id there is. On a transcript nobody was identified in (`speakerIdentification: unavailable`) the first speaker given is given to **every** segment and the transcript becomes `identified` — the schema allows no mix of named and unnamed segments — and the editor then splits the others off |
+| `RenameSpeaker(speakerId, name)` | What the speaker is called, at most 100 characters; null or blank clears it, and the id shows again |
+| `Batch(edits)` | The edits in order, all or nothing, so the editor saves once |
+
+- An edit stamps `editedAt`; a speaker no segment uses any more leaves the list; an edit that changes nothing writes nothing.
+- It is refused with `EditResult.Busy` while a job of the recording is queued, running or waiting, or the on-device engine is working on it:
+  that transcription would write over the edit. A job that has settled — done or failed — does not block it. `Invalid(reason)` is an edit
+  that names a segment or speaker the transcript does not have; `NoTranscript` is a recording with none.
+- Saved here at once — `.transcript.json`, `.txt`, and the `.md` of a local folder — and `observeResults` emits it without touching the
+  player. The folder's copies follow, marked `edited`, with the folder's `transcriptAt`: right away when they can, otherwise with the next
+  pull (`transcript/pending/{recordingId}` in `kv`, cleared only by the write it stands for).
+- A publication that failed and is retried after an edit publishes the edited copy — the edit is of that very result (same `createdAt`). A
+  re-transcription replaces edits: the shells ask first.
+
+### Exports
+
+2026-10-07. `ReclyCore.exportFile(recordingId, format): String?` writes one file for a share sheet and returns its path, or null when there
+is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above, highlights included), `SRT` and `VTT` —
+one cue per segment, the speaker's name or id in front when speakers were identified; a segment longer than 7 seconds or 84 characters is
+cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
+`mono`) joined into one `.m4a` by the shell's lossless `AudioTools.concat`, after any part the retention sweep took is fetched back. The
+file is named for people — `2026-08-26 Weekly meeting.srt`, the date in the recording's own time zone and without what file systems
+refuse, or the recording's `{base}` when it has no title — in a directory of its own under `{dataDir}/exports/`. Exports are a cache: the
+first export of a process removes every earlier one, each later one those older than an hour.
 
 ### Meta hint `context.participants`
 
@@ -1840,8 +1953,8 @@ succeeded.
 
 ### What is not included
 
-Local speaker diarization, identifying "me" by transcribing mic/sys separately, editing and saving speaker names, entering the participant count
-on the watch. There is no Gemini adapter either — its speaker diarization works only through the prompt and its timestamps cannot be trusted, so it cannot keep the
+Identifying "me" by transcribing mic/sys separately, entering the participant count on the watch, and recognizing a speaker from one
+recording to the next. (On-device diarization, speaker names and transcript editing were added on 2026-10-07.) There is no Gemini adapter either — its speaker diarization works only through the prompt and its timestamps cannot be trusted, so it cannot keep the
 `start/end` contract of `transcript.json`. The adapter interface is the same, so adding a provider means adding one adapter.
 
 ---
@@ -2143,12 +2256,14 @@ recly.core
   model/        Workflow, Step, Trigger, RecordingMeta, Part, Job, StepRun, DeviceInfo   — 1:1 with spec
   ids/          Ulid
   workflow/     WorkflowParser · WorkflowValidator · Template · WorkflowSelector · WorkflowMutator
-  recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5)
+  recording/    RecordingRepository · MetaWriter · PartHasher (sha256 + md5) · AudioImport · RecordingSearch · RecordingExport ·
+                SilenceRanges
   job/          JobService · Executor · StepRunner · Backoff · JobStore
   drive/        DriveApi · ResumableUploadPlanner · FolderResolver · AppData
   storage/      CloudFiles · CloudStorage (picks the storage by id) · ICloudFiles · UbiquityContainer · FolderFiles · LocalFolder (PathFolder) · StorageKind
   webhook/      Signer · PayloadBuilder · WebhookRunner   — retired (2026-09-24)
-  transcribe/   SttProvider adapters · TranscribeRunner
+  transcribe/   SttProvider adapters · Vocabulary · TranscribeRunner · TranscriptPublishRunner · Retranscription ·
+                TranscriptEditing · SpeakerTurns · SpeakerDiarizationModels
   sync/         WorkflowSync (pull/push/merge)
   secrets/      SecretsRepository · SecretSync · SecretSyncStore
   transfer/     TransferReceiver (receiver-side verification · ack helpers)
@@ -2354,6 +2469,59 @@ Without the option, recording files and `recording`/`part` rows remain, and **Dr
 does not revoke the grant** — it is a platform SDK call and therefore the shell's job; the `DisconnectPhase`, revoke
 debt and `DisconnectGate` the shell must honor are in §3.
 
+### Re-transcription
+
+2026-10-07. `ReclyCore.retranscribe(recordingId): RetranscribeResult` transcribes a finished recording again with the processing settings
+as they are now — mode, provider, model, language, vocabulary — and publishes the result over the transcript in the recording's folder
+and here. It works for this device's own recordings, uploaded and done, and for other devices' (ADR-023).
+
+- **The plan** is a second fixed plan, `ProcessingPlan.retranscription` with the job id `ProcessingPlan.RETRANSCRIBE_ID`: the `transcribe`
+  or `local.transcribe` step of the current settings and a `transcript.publish` that names the recording's folder (`folderId`) — the row's
+  `drive_folder_id`, else what its upload step reported. Nothing is uploaded again. A recording has at most one such job besides its own;
+  a new request replaces the earlier one once it has settled. Its `Job.retranscription` is true, and being the newest job of the
+  recording it is the one a list shows while it runs (`TRANSCRIBING` and so on) — until the new transcript lands, the previous one stays
+  readable here and in the folder; nothing is deleted at the start.
+- **The audio** — the parts the transcription reads, `mono` else `mix` — is fetched first the way playback fetches it (`AudioParts`): a part
+  the retention sweep took comes back from the folder by its upload's file id, another device's by the row's file ids. While the job has not
+  settled, the sweep keeps the parts (it needs every job of the recording done); afterwards another device's recording ages by its file
+  clock again.
+- **Results**: `Started(jobId)`; `Busy` — a job of the recording has not settled (`DONE`, `FAILED`, `SKIPPED_SHORT`), checked again in the
+  enqueue's transaction; `NoAudio` — not here and not fetchable; `NoTranscriptionConfigured` — transcription is off; `Unsupported` — not a
+  finished recording with a folder: still recording, importing, arriving from the watch, being uploaded elsewhere, never uploaded, or no
+  such recording.
+- **Account and storage**: a `transcript.publish` into a Drive folder counts as Drive work (`uploadsToDrive`), so the job is bound to the
+  verified Drive account, pauses on "Disconnect" and resumes only for the same account (§3 "Detaching from the account"); one into a local
+  folder runs in the offline pass. The folder is told at once that a transcription is coming (`pending` marker), and when it is over.
+- `JobService.retry` of a failed re-transcription replans it with the current settings, like the recording's own job (§5).
+- Publishing marks the files `transcribed` (§8 "Result files"), so recly-events announces a re-transcription and not an edit.
+
+### Search
+
+2026-10-07. `ReclyCore.search(query, limit): List<SearchHit>` finds the recordings whose title — every row of the list — or transcript
+held on this device holds `query` as one phrase, newest first. Case is ignored, and so are the accents of Latin letters, full-width Latin
+and the ideographic space — a character-for-character fold, so a match's place in the folded text is its place in the original.
+`SearchHit` carries `recordingId`, `title`, `startedAt`, `matchesInTitle` with `titleRanges`, and up to three `SearchSnippet`s — a
+segment's start (`atSec`), its words (cut to 120 characters around the first match, with `…`) and the matches in them
+(`SearchRange(offset, length)`). It is a plain scan off the caller's thread: each transcript is read and folded once and kept in memory
+until its file's size or time changes. Another device's transcript is searchable once it is on this device — opened, or read by a pull
+(§8 "Result files").
+
+### Shared rules for the shells
+
+2026-10-07. Pure functions the four shells call so that they behave the same:
+
+- **`SpeakerTurns`** — an on-device diarizer's turns meet the transcription. `assign(segments, turns)` gives each segment the label that
+  overlaps it longest; with no overlap the nearest turn within 1 second; failing that the previous segment's (the next one's for the
+  first), a tie going to the previous speaker — so no segment is left without a label while there are turns. `split(start, end, turns)` cuts
+  one piece of speech at speaker changes, for an engine that diarizes first and decodes each single-speaker piece (pieces under a second join
+  their longer neighbour). `link(blocks, threshold)` links the speakers of a long recording diarized in 10–20 minute blocks: by the cosine
+  similarity of their embedding centroids, greedily, ≥ 0.6 by default (Recly's starting value, to be tuned), never merging two speakers of
+  one block. The diarizer runs on the same joined input as the transcription, from 0 s, so both share one time axis.
+- **`SilenceRanges.compute(peaks, windowSec)`** — what "Skip silence" jumps over in playback, from the waveform peaks (`WaveformPeaks`,
+  0.25 s windows). A window is silent below 6 dB above the recording's quiet level (twice the 8th percentile of its non-zero peaks), capped
+  at 12 dB under its loud level (a quarter of the 95th percentile) so that a recording that never pauses skips nothing, and never below
+  about −45 dBFS. Runs of 1 second or more come back 0.25 s shorter at both ends, so speech onsets are kept.
+
 ### Failures the user can fix, and their notices
 
 "Failures that heal if you wait" (5xx, network, 429) are retried quietly. The ones below are failures that **clear only
@@ -2469,6 +2637,12 @@ for 1 week — if the session in `state_json` is older than 7 days, restart.
 | Delete (`RecordingDeleteTest`) | the four tables deleted, `RUNNING` → `Busy`, local data is deleted even if `deleteDrive` fails and `driveError` is set, delete vs `claimRunning` race, cancellation at commit time |
 | Recordings from other devices (`RemoteRecordingsTest`) | list folders → adopt (parts `deleted=1`+`drive_file_id`, `meta.json` written), sorted by start time, the second fetch makes 1 request, folders without meta are held back, own rows are not overwritten, only adopted rows whose folder vanished are deleted, two folders with the same id · move to a rerun folder (both the old folder vanishing and the new folder completing), rejects id mismatch · non-ULID · forged part file names, no account · throttle · fetch failure, "Delete local only" does not come back (+ the record is cleaned up when the folder vanishes, re-adoption after `clearIgnored`, via `drive_folder_id` even after the queue is emptied, `adopt` rejects inside the transaction), `uploaded` true · `enqueue`=`PartsPurged`, playback fetches by file id, sweep after 7 days, Drive deletion uses `drive_folder_id`, titles: rename→description+meta push, adopted rows too, pending on failure then the next fetch, description→applied to the row (pending wins), empty description ignored |
 | Disconnect (`ReclyCoreTest`) | deletion order, recordings and `recording` rows kept, `busyRecordings`, Drive `files.delete` not called |
+| Highlights (`HighlightsTest`) | marks while recording (one per second), survive the stop, pushed to Drive's meta after upload, pending offline then the next pull, other devices' recordings, a watch's marks arrive on the phone |
+| Import (`AudioImportTest`) | the importing row, staging, parts named and finalized at once, the plan queued; unreadable · unsupported · cancelled leave nothing; recovery leaves an import in progress alone and drops an abandoned one |
+| Re-transcription (`RetranscriptionTest`) | current settings and vocabulary, old transcript kept until the new one, marks, a swept recording fetched back and kept while the job waits, another device's recording, `Busy` · `Unsupported` · `NoTranscriptionConfigured`, one job replaced by the next |
+| Editing (`TranscriptEditTest`, `TranscriptMarksTest`) | text, reassignment, new and renamed speakers, an unidentified transcript, schema validity, `Busy`, `Invalid`, observed edits, Drive `edited` marks in one multipart `files.update` (the fake refuses `parents` and over-long properties), pending offline, a retried publication keeps the edit |
+| Vocabulary (`VocabularyTest`, `VocabularySettingsTest`) | the exact field each adapter sends and where it sends none, token budgets, setting limits, freezing and re-runs |
+| Search · export · shared rules (`RecordingSearchTest`, `RecordingExportTest`, `SpeakerTurnsTest`, `SilenceRangesTest`, `TranscriptRenderTest`) | folding and snippets, pulled and refreshed transcripts, export names and cleanup, turn assignment · splitting · block linking, silences, `.txt` · `.md` · SRT · VTT |
 
 So that the `spec/` schemas and the core's serialization models do not drift apart, the tests parse the example JSON →
 serialize it → compare its structure with the original.
@@ -3000,6 +3174,8 @@ links open in the browser only when the user taps them (end of §3). Webhooks (�
 
 - When the user requests a model download (Settings, a waiting recording · banner, the first-run card), the Apple Speech `AssetInventory` system service downloads the language model.
   It is a system asset download managed by Apple; the app does not configure a separate server address or pass an API key.
+- On-device speaker diarization on iPhone and Mac (2026-10-07) uses FluidAudio's Core ML models **bundled in the app** — no download and no
+  network request; FluidAudio's own model downloader is not used.
 - `SpeechTranscriber` processing uses the device's audio file/PCM and finalized results. Choosing local transcription
   does not by itself send audio to an external STT, and the default flow's Drive upload of the original and results stays a separate step.
 - No model · unsupported platform · unsupported language are states that need the user to act in settings. A wait for OS run time is shown as an ordinary wait.
@@ -3019,6 +3195,12 @@ links open in the browser only when the user taps them (end of §3). Webhooks (�
   the HTTP client's User-Agent and the requested file. Files are pinned by commit, size and SHA-256, so if a file changes on the host side, it is not installed.
 - Transcription itself happens on the device, and audio does not leave through this path. The Drive upload of the original and results stays a separate step.
 - On Windows the sherpa-onnx native library ships inside the app (jar); it is not downloaded.
+- **Speaker diarization models** (2026-10-07): two more files from the same two hosts, through the same download (ranged GETs, size and SHA-256
+  pinned, core `SpeakerDiarizationModels.files`): pyannote segmentation-3.0 (MIT), `https://huggingface.co/csukuangfj/sherpa-onnx-pyannote-segmentation-3-0/resolve/9403a6902bb58e3d5ae8c7e77c3422de279db2e0/model.int8.onnx`
+  (1,540,506 bytes, SHA-256 `d582f4b4c6b48205de7e0643c57df0df5615a3c176189be3fc461e9d18827b5d`), and the 3D-Speaker ERes2Net base speaker
+  embedding (Apache-2.0), `https://huggingface.co/csukuangfj/speaker-embedding-models/resolve/0743f301363dec56491a490f6d6cbc9d67f9a3bf/3dspeaker_speech_eres2net_base_sv_zh-cn_3dspeaker_16k.onnx`
+  (39,593,761 bytes, SHA-256 `1a331345f04805badbb495c775a6ddffcdd1a732567d5ec8b3d5749e3c7a5e4b`); both redirect to `*.cdn.hf.co` like the speech model
+  (checked 2026-10-07). No new host. Diarization runs on the device like the transcription; nothing of the recording goes out on this path.
 
 ### China mainland App Store
 
@@ -3062,7 +3244,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 |---|---|---|
 | Original recording (`.m4a` parts) | §3 Local storage path | The Drive upload step uploads it to the user's Drive (§1), or copies it into the local folder the user picked (§1c). If external API transcription was chosen, one file of the concatenated track goes to that provider (§3). **Recordings made on the watch first move to the paired phone** (§4) |
 | `meta.json` | Same folder | The upload step uploads it alongside. The watch's moves to the phone together with the parts |
-| Transcription result files | Same folder (local copy) | Written alongside into the Drive recording folder |
+| Transcription result files | Same folder (local copy) | Written alongside into the Drive recording folder — the user's edits too (§8 "Editing"). Exports for a share sheet are written to `{dataDir}/exports/` and leave only where the user sends them |
 | Job · step state, retry budget, upload session offsets | Local SQLite (`rec.db`) | **Never leaves** (principle 2) |
 | `deviceId` (a new UUID v4 per install) | Secure storage / on macOS `{dataDir}/device.id` | Carried in `deviceId` of the `meta.json` uploaded to Drive (§1). Does not leave any other way |
 | Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
@@ -3074,9 +3256,9 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 |---|---|
 | Scope | Only `drive.file` (ADR-009). Non-sensitive. **The full `drive` scope is not requested** — the app cannot read the user's other files that it did not create |
 | What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, and, if transcription is on (local or external API), `{base}.transcript.json/.txt` |
-| Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` in `appProperties` |
+| Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` · the `pending` marker · `transcriptAt` (the version of the newest transcript, 2026-10-07) in `appProperties`; `reclyTranscript` (`transcribed` / `edited`) in the `appProperties` of the `.transcript.json/.txt` files (§8 "Result files") |
 | appDataFolder | **Not used.** Recording processing settings and secret values both exist only on the device (§5), and the only way to move them between devices is a settings export/import that the user does by hand |
-| What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested |
+| What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested. The list's pull (§3 "Recordings from other devices") also reads `{base}.transcript.json` of the account's recordings — once for another device's recording never read here, and again when the folder's `transcriptAt` says a newer one is there; at most 10 files a pass (2026-10-07, §8 "Result files") |
 | Who sees it | The user, and people the user has shared the folder with. **Recly has no server that can access these files** — the OAuth refresh token exists only in the device's secure storage; the short-lived access tokens it yields are used only for Google API calls on the device (including, while Agent connection is on, by the recly-events copy the desktop app runs, §9) and are never sent to Recly |
 | Control | Disconnect at any time in Google account settings (<https://myaccount.google.com/permissions>). The in-app "Disconnect" is also in all four shells (§3) — one action does both the grant revoke (Android `AuthorizationClient.revokeAccess`, Apple · Windows `oauth2.googleapis.com/revoke`) and the local cleanup of `ReclyCore.disconnect` |
 
@@ -3105,7 +3287,7 @@ None of it is sent to Recly (there is no server to receive it). It is a local va
 | Item | Details |
 |---|---|
 | When | Only recordings on an iPhone · Mac where iCloud was chosen as the storage location in settings (§3 "Storage location"). Does not apply to Android · Windows · the watches |
-| What is uploaded | Same as Drive — inside `{folder template}/{base}/` in the app's iCloud Drive folder ("Recly" in the Files app · Finder): the part `.m4a` files, `{base}.meta.json`, `{base}.transcript.json/.txt` if transcription is on, and the folder attributes file `{base}.folder.json` (title · recording id · progress markers) |
+| What is uploaded | Same as Drive — inside `{folder template}/{base}/` in the app's iCloud Drive folder ("Recly" in the Files app · Finder): the part `.m4a` files, `{base}.meta.json`, `{base}.transcript.json/.txt` if transcription is on, and the folder attributes file `{base}.folder.json` (title · recording id · progress markers · the transcript version `transcriptAt`) |
 | Who sends it | **The app makes no network request.** The app writes files into the device's iCloud container, and Apple's system service uploads them. The user's iCloud account and Apple's terms and policies apply, and for accounts with Advanced Data Protection turned on, iCloud Drive is end-to-end encrypted (Apple) |
 | Who sees it | The user, and the user's devices signed in with the same Apple ID. **Recly cannot access it** — it has neither a server nor any permission to this data |
 | Control | Switch the app's storage location back to Drive (later recordings only), turn off Recly's iCloud use in system settings, delete the folder in the Files app · Finder, delete Recly's data in iCloud storage management |
@@ -3153,6 +3335,7 @@ processing settings and enters their own API key (§5 "Fixed processing settings
 |---|---|---|
 | **The whole audio** (one file of the `mono` or `mix` track with the parts concatenated) | The STT service the user chose as `provider` | When the `transcribe` step runs |
 | Speaker count hint, language setting | The same request | Same |
+| **Vocabulary** — the words and names in the processing settings (2026-10-07) | The same request, in the field that provider documents, filtered per provider (§8 "Vocabulary"); nothing where it is not documented | Same, when the list is not empty |
 
 - The call goes **directly from the device to the provider**. There is no intermediate server, relay or callback URL. Recly cannot see the contents of this request.
 - Authentication is **the user's key**. Billing also goes to the user's account.
@@ -3172,7 +3355,7 @@ processing settings and enters their own API key (§5 "Fixed processing settings
 
 #### Provider retention policies — checked against official documents on 2026-09-26
 
-All fourteen receive the same thing — **one file of the concatenated audio track** and the **language · diarization options** carried in that request (the table above in §3).
+All fourteen receive the same thing — **one file of the concatenated audio track** and the **language · diarization options** carried in that request, with the user's **vocabulary** where that provider takes one (the table above in §3).
 What differs is what that provider does next. These are the defaults for the API products.
 
 | provider | Training · retention defaults (summary) | Official link |
