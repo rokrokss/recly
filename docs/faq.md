@@ -84,12 +84,12 @@ the provider separate speakers. See [how to transcribe](setup.md#3-choose-how-to
 Yes, with a ChatGPT agent. When a transcript lands in your Google Drive, the Recly Mac or Windows
 app tells your agent, and the agent writes the minutes by itself, usually within a minute. You need
 recordings stored in Google Drive; a ChatGPT dot (at the time of writing, ChatGPT Business Premium,
-or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT web; ChatGPT's
-Google Drive app, connected to the Google account Recly uploads to; an OpenAI Platform account for
-the tunnel and its key; and a computer that stays on. Follow the [ChatGPT agent guide](agent.md),
+or ChatGPT Pro outside the EEA, Switzerland and the UK) or a Work chat on ChatGPT web; an OpenAI
+Platform account for the tunnel and its key; and a computer that stays on. Follow the [ChatGPT agent guide](agent.md),
 or [run recly-events yourself](recly-events.md) on a server or on Linux. With other agents, the
 [example skills](https://github.com/rokrokss/recly/blob/main/skills/README.md) write notes when you
-ask.
+ask, and for recordings in a local folder or iCloud, Claude and Codex read them through the
+[local MCP server](mcp.md).
 
 ## Does Recly record without telling anyone?
 

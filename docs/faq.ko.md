@@ -74,11 +74,11 @@ Android와 Windows에서는 Qwen3-ASR 0.6B를 씁니다. Android 폰과 Windows 
 
 네, ChatGPT 에이전트로 됩니다. 녹취록이 내 Google Drive에 올라오면 Recly Mac·Windows 앱이 에이전트에게 알리고,
 에이전트가 보통 1분 안에 알아서 회의록을 씁니다. 필요한 것: Google Drive에 저장되는 녹음, ChatGPT dot(이 글을 쓰는
-시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, Recly가
-업로드하는 Google 계정으로 연결한 ChatGPT의 Google Drive 앱, 터널과 키를 만들 OpenAI Platform 계정, 그리고 켜 둔
-컴퓨터. [ChatGPT 에이전트 안내](agent.ko.md)를 따르거나, 서버나 Linux에서는
-[recly-events를 직접 실행](recly-events.ko.md)하세요. 다른 에이전트에서는
-[예시 스킬](https://github.com/rokrokss/recly/blob/main/skills/README.md)(영어)이 부탁할 때 노트를 씁니다.
+시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, 터널과
+키를 만들 OpenAI Platform 계정, 그리고 켜 둔 컴퓨터. [ChatGPT 에이전트 안내](agent.ko.md)를 따르거나, 서버나
+Linux에서는 [recly-events를 직접 실행](recly-events.ko.md)하세요. 다른 에이전트에서는
+[예시 스킬](https://github.com/rokrokss/recly/blob/main/skills/README.md)(영어)이 부탁할 때 노트를 쓰고, 로컬
+폴더나 iCloud의 녹음은 Claude와 Codex가 [로컬 MCP 서버](mcp.ko.md)로 읽습니다.
 
 ## Recly는 아무에게도 알리지 않고 녹음하나요?
 
