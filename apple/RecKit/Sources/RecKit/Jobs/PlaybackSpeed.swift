@@ -1,6 +1,8 @@
+import Foundation
 #if os(iOS) || os(macOS)
 import ReclyCore
 import SwiftUI
+#endif
 
 /// docs/09 "Playback": how fast the detail plays and whether it jumps the silences — this device's
 /// preferences, kept here and never synced.
@@ -32,6 +34,8 @@ public enum PlaybackPreferences {
     private static let rateKey = "playbackRate"
     private static let skipKey = "playbackSkipSilence"
 }
+
+#if os(iOS) || os(macOS)
 
 /// docs/09 "Playback": the one quiet control for both — the speed in mono, a small accent dot at its
 /// top-end corner while silences are skipped, and a menu of the speeds with the switch under them.

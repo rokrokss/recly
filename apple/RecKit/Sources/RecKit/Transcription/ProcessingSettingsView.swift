@@ -360,16 +360,6 @@ public struct ProcessingSettingsView: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// A spoken language as the settings name it — and the Transcribe again confirmation after them.
-enum SpeechLanguageName {
-    static func title(_ language: Language) -> String {
-        if language == .auto { return RecKitStrings.localized("Automatic") }
-        if language == .koEn { return RecKitStrings.localized("Korean and English") }
-        let tag = TranscriptionLanguages.shared.localeTag(language: language)
-        return Locale(identifier: tag).localizedString(forIdentifier: tag) ?? tag
-    }
-}
-
 /// docs/09 screen principle 4: the settings file as a section of its own, for a shell that shows it
 /// after the sections below Recording processing — the Mac, under Agent connection.
 public struct ProcessingSettingsFileSection: View {

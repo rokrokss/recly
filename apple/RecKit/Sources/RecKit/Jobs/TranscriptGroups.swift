@@ -84,3 +84,13 @@ extension Transcript {
         editedAt != nil || speakers.contains { !($0.name ?? "").trimmingCharacters(in: .whitespaces).isEmpty }
     }
 }
+
+/// A spoken language as the settings name it — and the Transcribe again confirmation after them.
+enum SpeechLanguageName {
+    static func title(_ language: Language) -> String {
+        if language == .auto { return RecKitStrings.localized("Automatic") }
+        if language == .koEn { return RecKitStrings.localized("Korean and English") }
+        let tag = TranscriptionLanguages.shared.localeTag(language: language)
+        return Locale(identifier: tag).localizedString(forIdentifier: tag) ?? tag
+    }
+}

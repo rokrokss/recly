@@ -36,6 +36,8 @@ struct TranscriptReader: View {
     @State private var matches: [TranscriptMatch] = []
 
     var body: some View {
+        // Once per pass, not per paragraph: the body is drawn on every playback tick.
+        let active = playing ? activeGroup : nil
         VStack(spacing: 0) {
             if find != nil {
                 FindBar(
@@ -50,7 +52,7 @@ struct TranscriptReader: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: Space.s) {
                         ForEach(groups) { group in
-                            row(group, active: playing && group.id == activeGroup)
+                            row(group, active: group.id == active)
                                 .id(group.id)
                         }
                     }
@@ -122,7 +124,7 @@ struct TranscriptReader: View {
 
     private func row(_ group: TranscriptGroup, active: Bool) -> some View {
         let stamp = LedgerFormat.clock(Int(group.start))
-        let end = groups.first { $0.id == group.id + 1 }?.start ?? .infinity
+        let end = groups.indices.contains(group.id + 1) ? groups[group.id + 1].start : .infinity
         let marks = highlights.filter { $0 >= group.start && $0 < end }
         return VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
@@ -184,17 +186,6 @@ struct TranscriptReader: View {
     }
 }
 
-/// docs/10 "Search": what the detail was opened with from a search — the query, and where its row's hit was.
-public struct TranscriptFind: Equatable, Sendable {
-    public let query: String
-    public let atSec: Double
-
-    public init(query: String, atSec: Double) {
-        self.query = query
-        self.atSec = atSec
-    }
-}
-
 /// A scroll the user made, as against one this view made: the phase on the systems that report it,
 /// a drag elsewhere.
 private struct UserScroll: ViewModifier {
@@ -211,3 +202,14 @@ private struct UserScroll: ViewModifier {
     }
 }
 #endif
+
+/// docs/10 "Search": what the detail was opened with from a search — the query, and where its row's hit was.
+public struct TranscriptFind: Equatable, Sendable {
+    public let query: String
+    public let atSec: Double
+
+    public init(query: String, atSec: Double) {
+        self.query = query
+        self.atSec = atSec
+    }
+}

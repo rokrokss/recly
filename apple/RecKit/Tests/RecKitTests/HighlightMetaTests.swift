@@ -39,7 +39,8 @@ final class HighlightMetaTests: XCTestCase {
         XCTAssertFalse(repeated.boolValue, "a second mark within a second is the same mark")
         guard case .finalized = await recorder.stop(title: nil) else { return XCTFail("the stop did not finalize") }
 
-        let record = try XCTUnwrap(try await bridge.core.recordings.get(id: recordingId))
+        let row = try await bridge.core.recordings.get(id: recordingId)
+        let record = try XCTUnwrap(row)
         XCTAssertEqual(record.meta.highlights.map(\.atSec), [1.5])
         let file = record.dir.url.appendingPathComponent(MetaWriter.shared.metaFileName(base: MetaWriter.shared.baseName(meta: record.meta)))
         let json = try JSONSerialization.jsonObject(with: Data(contentsOf: file)) as? [String: Any]

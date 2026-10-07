@@ -1,8 +1,9 @@
-#if os(iOS) || os(macOS)
 import ReclyCore
+#if os(iOS) || os(macOS)
 import SwiftUI
 #if os(iOS)
 import UIKit
+#endif
 #endif
 
 /// docs/08 "Exports": what the detail's Share offers, in the order the sheet lists them.
@@ -52,6 +53,8 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
         }
     }
 }
+
+#if os(iOS) || os(macOS)
 
 /// The detail header's icon buttons (docs/09 §2): an SF Symbol in the quiet ink, a 44pt target.
 struct HeaderIcon: View {
