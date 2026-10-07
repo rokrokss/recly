@@ -169,7 +169,13 @@ class ICloudFiles(
             stored + (APP_PROPERTIES to JsonObject(merged))
         }
 
-    override suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile {
+    /** A file in the iCloud folder keeps no properties of its own; only a folder has its property file. */
+    override suspend fun updateMedia(
+        fileId: String,
+        bytes: ByteArray,
+        mimeType: String,
+        appProperties: Map<String, String>,
+    ): DriveFile {
         ready()
         val path = pathOf(fileId)
         put(path, bytes)

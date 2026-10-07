@@ -7,6 +7,27 @@ import recly.core.model.Workflow
 object ProcessingPlan {
     const val ID = "00000000000000000000REC100"
 
+    /**
+     * The job id of a re-transcription (docs/10 "Re-transcription"): a recording has at most one besides
+     * its own [ID] job, and each new request replaces it.
+     */
+    const val RETRANSCRIBE_ID = "00000000000000000000REC101"
+
+    /** Both plans keep a durable local result before publishing it (`TranscriptCache`). */
+    fun isFixed(workflowId: String): Boolean = workflowId == ID || workflowId == RETRANSCRIBE_ID
+
+    /**
+     * Transcription and publication again, with the current [document] — its mode, provider, language
+     * and vocabulary — into [folderId], the recording's folder, which already holds its audio. Null with
+     * transcription off.
+     */
+    fun retranscription(document: ProcessingSettingsDocument, folderId: String): Workflow? {
+        val steps = compile(document).steps.filter { it !is Step.DriveUpload }
+            .map { if (it is Step.TranscriptPublish) it.copy(folderId = folderId) else it }
+        if (steps.isEmpty()) return null
+        return Workflow(id = RETRANSCRIBE_ID, name = "Transcribe again", updatedAt = document.updatedAt, steps = steps)
+    }
+
     fun compile(document: ProcessingSettingsDocument): Workflow {
         val settings = document.settings.forNewRecordings()
         return Workflow(

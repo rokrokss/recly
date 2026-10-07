@@ -179,24 +179,33 @@ class DriveApi(
 
     /** One request, metadata and media together — worth it only for the small files (docs/10). */
     override suspend fun multipartUpload(meta: DriveFileMeta, bytes: ByteArray): DriveFile {
-        val boundary = "rec_${random.nextLong().toULong().toString(16)}"
-        val body = Buffer()
-            .writeUtf8("--$boundary\r\nContent-Type: ${ResumableUploadPlanner.JSON_TYPE}\r\n\r\n")
-            .writeUtf8(meta.toJson().toString())
-            .writeUtf8("\r\n--$boundary\r\nContent-Type: ${meta.mimeType}\r\n\r\n")
-            .write(bytes)
-            .writeUtf8("\r\n--$boundary--")
-            .readByteArray()
+        val (body, type) = multipart(meta.toJson(), meta.mimeType, bytes)
         val result = send("drive.multipartUpload") { token ->
             HttpPlan(
                 method = "POST",
                 url = "${ResumableUploadPlanner.UPLOAD_URL}?uploadType=multipart" +
                     "&fields=${urlEncode(ResumableUploadPlanner.FILE_FIELDS)}",
                 headers = mapOf("Authorization" to "Bearer $token"),
-                body = HttpBody.Bytes(body, "multipart/related; boundary=$boundary"),
+                body = HttpBody.Bytes(body, type),
             )
         }
         return file("drive.multipartUpload", result)
+    }
+
+    /**
+     * `multipart/related`: the metadata part first, as `application/json; charset=UTF-8`, then the media
+     * (Drive "Upload file data", multipart upload, checked 2026-10-07).
+     */
+    private fun multipart(metadata: JsonObject, mimeType: String, bytes: ByteArray): Pair<ByteArray, String> {
+        val boundary = "rec_${random.nextLong().toULong().toString(16)}"
+        val body = Buffer()
+            .writeUtf8("--$boundary\r\nContent-Type: ${ResumableUploadPlanner.JSON_TYPE}\r\n\r\n")
+            .writeUtf8(metadata.toString())
+            .writeUtf8("\r\n--$boundary\r\nContent-Type: $mimeType\r\n\r\n")
+            .write(bytes)
+            .writeUtf8("\r\n--$boundary--")
+            .readByteArray()
+        return body to "multipart/related; boundary=$boundary"
     }
 
     /** The folder's `description` — where a recording's title lives on Drive (ADR-014). */
@@ -230,16 +239,39 @@ class DriveApi(
         }
     }
 
-    /** Replaces an existing file's content, leaving its id and parents alone. */
-    override suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile {
+    /**
+     * Replaces an existing file's content, leaving its id and parents alone: `files.update` on the upload
+     * URI. With [appProperties] it is the multipart form, so the content and the properties change in one
+     * request — the metadata part carries only `appProperties` (an update cannot set `parents`), which
+     * Drive merges into the file's (docs/08 "Result files"; Drive `files.update`, checked 2026-10-07).
+     */
+    override suspend fun updateMedia(
+        fileId: String,
+        bytes: ByteArray,
+        mimeType: String,
+        appProperties: Map<String, String>,
+    ): DriveFile {
         val result = send("drive.updateMedia") { token ->
-            HttpPlan(
-                method = "PATCH",
-                url = "${ResumableUploadPlanner.UPLOAD_URL}/$fileId?uploadType=media" +
-                    "&fields=${urlEncode(ResumableUploadPlanner.FILE_FIELDS)}",
-                headers = mapOf("Authorization" to "Bearer $token"),
-                body = HttpBody.Bytes(bytes, mimeType),
-            )
+            val url = "${ResumableUploadPlanner.UPLOAD_URL}/$fileId?fields=${urlEncode(ResumableUploadPlanner.FILE_FIELDS)}"
+            if (appProperties.isEmpty()) {
+                HttpPlan(
+                    method = "PATCH",
+                    url = "$url&uploadType=media",
+                    headers = mapOf("Authorization" to "Bearer $token"),
+                    body = HttpBody.Bytes(bytes, mimeType),
+                )
+            } else {
+                val metadata = buildJsonObject {
+                    putJsonObject("appProperties") { appProperties.forEach { (key, value) -> put(key, value) } }
+                }
+                val (body, type) = multipart(metadata, mimeType, bytes)
+                HttpPlan(
+                    method = "PATCH",
+                    url = "$url&uploadType=multipart",
+                    headers = mapOf("Authorization" to "Bearer $token"),
+                    body = HttpBody.Bytes(body, type),
+                )
+            }
         }
         return file("drive.updateMedia", result)
     }

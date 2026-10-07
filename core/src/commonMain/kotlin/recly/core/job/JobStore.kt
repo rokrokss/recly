@@ -70,38 +70,62 @@ class JobStore(
             if (parts.isNotEmpty() && parts.all { it.deleted == 1L }) {
                 return@transactionWithResult null
             }
-            val jobId = Ulid.generate(fixed(now))
-            queries.insertJob(
+            insert(recordingId, workflow, now, status)
+        }
+    }
+
+    /**
+     * docs/10 "Re-transcription": a new job of [plan] for a finished recording — whatever its parts, which
+     * the caller has made sure are here. Null, and nothing written, while any job of the recording has
+     * not settled (`DONE`, `FAILED`, `SKIPPED_SHORT`): it may be writing the very transcript this would
+     * replace. An earlier re-transcription of the recording, settled, is replaced — one job per
+     * `(recording, workflow)` still holds, and the newest job is the one a list shows.
+     */
+    suspend fun enqueueRetranscription(recordingId: String, plan: Workflow, now: Instant): Job? = locked {
+        db.transactionWithResult {
+            val jobs = queries.selectJobsByRecording(recordingId).executeAsList()
+            if (jobs.any { it.status !in SETTLED }) return@transactionWithResult null
+            jobs.filter { it.workflow_id == plan.id }.forEach {
+                queries.deleteStepRunsByJob(it.id)
+                queries.deleteJobById(it.id)
+            }
+            insert(recordingId, plan, now, JobStatus.PENDING)
+        }
+    }
+
+    /** The job row and one `PENDING` step row per step; bound to the verified Drive account when it writes there. */
+    private fun insert(recordingId: String, workflow: Workflow, now: Instant, status: JobStatus): Job {
+        val jobId = Ulid.generate(fixed(now))
+        queries.insertJob(
+            jobId,
+            recordingId,
+            workflow.id,
+            recJson.encodeToString(workflow),
+            status.name,
+            now.isoUtc(),
+            now.isoUtc(),
+            null,
+        )
+        if (workflow.steps.any { it.uploadsToDrive }) {
+            queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()?.let {
+                queries.bindJobDriveAccount(it, jobId)
+            }
+        }
+        workflow.steps.forEachIndexed { index, step ->
+            queries.insertStepRun(
+                Ulid.generate(fixed(now)),
                 jobId,
-                recordingId,
-                workflow.id,
-                recJson.encodeToString(workflow),
-                status.name,
-                now.isoUtc(),
-                now.isoUtc(),
+                step.id,
+                index.toLong(),
+                StepStatus.PENDING.name,
+                0,
+                null,
+                null,
+                null,
                 null,
             )
-            if (workflow.steps.any { it.uploadsToDrive }) {
-                queries.kvGet(DRIVE_ACCOUNT).executeAsOneOrNull()?.let {
-                    queries.bindJobDriveAccount(it, jobId)
-                }
-            }
-            workflow.steps.forEachIndexed { index, step ->
-                queries.insertStepRun(
-                    Ulid.generate(fixed(now)),
-                    jobId,
-                    step.id,
-                    index.toLong(),
-                    StepStatus.PENDING.name,
-                    0,
-                    null,
-                    null,
-                    null,
-                    null,
-                )
-            }
-            job(jobId)!!
         }
+        return job(jobId)!!
     }
 
     suspend fun get(jobId: String): Job? = locked { job(jobId) }
@@ -220,7 +244,13 @@ class JobStore(
             // every part before the row existed, and what is on disk is a fetched cache. Only the
             // file clock ages it.
             val adopted = queries.selectRecordingById(recordingId).executeAsOneOrNull()?.remote == 1L
-            if (!(adopted && jobs.isEmpty())) retainReason(jobs, parts)?.let { return@transactionWithResult it }
+            // A re-transcription of it (docs/10) needs the parts while it runs and uploads nothing, so once
+            // it is done the file clock is the rule again.
+            if (adopted) {
+                if (jobs.any { it.status != JobStatus.DONE.name }) return@transactionWithResult PurgeClaim.OTHER_JOBS_PENDING
+            } else {
+                retainReason(jobs, parts)?.let { return@transactionWithResult it }
+            }
             val live = parts.filter { it.deleted == 0L }
             val latestUpdate = jobs.maxOfOrNull { Instant.parse(it.updated_at) } ?: Instant.DISTANT_PAST
             if (!oldEnough(live.map { it.file_ }, latestUpdate)) {
@@ -512,6 +542,9 @@ class JobStore(
     private companion object {
         const val DRIVE_ACCOUNT = "jobs.drive.account"
         const val DRIVE_CONNECTED = "jobs.drive.connected"
+
+        /** The statuses a job does nothing more in on its own. */
+        val SETTLED = setOf(JobStatus.DONE.name, JobStatus.FAILED.name, JobStatus.SKIPPED_SHORT.name)
     }
 
     private fun writeStep(step: StepRun) {

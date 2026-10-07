@@ -187,6 +187,8 @@ class ReclyCore(
 
     private val driveJobAccess = recly.core.drive.DriveJobAccess(deps, jobStore)
 
+    private val folderMarker = DriveFolderMarker(storage, deps)
+
     val jobs: JobService =
         JobService(
             deps,
@@ -197,12 +199,15 @@ class ReclyCore(
                 jobStore,
                 recordings,
                 defaultRunners(db, deps, localTranscription),
-                marker = DriveFolderMarker(storage, deps),
+                marker = folderMarker,
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
                 requireAccess = { driveJobAccess.requireAccess(it) },
             ),
-            planForRerun = { recordingId -> ProcessingPlan.compile(processingSettings.refreeze(recordingId)) },
+            planForRerun = { job ->
+                if (job.retranscription) retranscription.plan(job.recordingId)
+                else ProcessingPlan.compile(processingSettings.refreeze(job.recordingId))
+            },
         )
 
     private val driveStore: DriveStore = DriveStore(db, deps)
@@ -210,6 +215,10 @@ class ReclyCore(
     private val results: RecordingResults = RecordingResults(storage, deps)
 
     private val audio: AudioParts = AudioParts(storage, recordings, deps)
+
+    private val retranscription = recly.core.transcribe.Retranscription(
+        deps, recordings, jobs, processingSettings, audio, folderMarker, ::outputs,
+    )
 
     private val remote: RemoteRecordings = RemoteRecordings(
         storage,
@@ -300,6 +309,17 @@ class ReclyCore(
     }.distinctUntilChanged().catch {
         emit(RecordingResult(availability = TranscriptAvailability.UNAVAILABLE))
     }
+
+    /**
+     * docs/10 "Re-transcription": transcribes a finished recording again with the processing settings as they
+     * are now — mode, provider, language, vocabulary — and publishes the result over the transcript in
+     * the recording's folder and here. This device's own recordings and other devices' alike; the audio
+     * is fetched back first when it is not here. Edits to the transcript are replaced: the shell asks
+     * before calling. Progress is the job's, flagged [recly.core.job.Job.retranscription].
+     */
+    @Throws(Throwable::class)
+    suspend fun retranscribe(recordingId: String): recly.core.transcribe.RetranscribeResult =
+        retranscription.start(recordingId)
 
     /**
      * The audio of one recording, for the detail screen to play: the `mix` track if it has one and

@@ -118,7 +118,13 @@ class FolderFiles(
     /** The pending marker is for another device's list, and a local folder is in none. */
     override suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) = Unit
 
-    override suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile {
+    /** A file in a local folder keeps no properties: nothing lists it. */
+    override suspend fun updateMedia(
+        fileId: String,
+        bytes: ByteArray,
+        mimeType: String,
+        appProperties: Map<String, String>,
+    ): DriveFile {
         ready()
         val path = pathOf(fileId)
         put(path, bytes)

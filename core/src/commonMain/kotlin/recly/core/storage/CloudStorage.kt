@@ -71,8 +71,12 @@ class CloudStorage(
     override suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>) =
         at(fileId).updateAppProperties(fileId, appProperties)
 
-    override suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile =
-        at(fileId).updateMedia(fileId, bytes, mimeType)
+    override suspend fun updateMedia(
+        fileId: String,
+        bytes: ByteArray,
+        mimeType: String,
+        appProperties: Map<String, String>,
+    ): DriveFile = at(fileId).updateMedia(fileId, bytes, mimeType, appProperties)
 
     override suspend fun uploadResumable(
         meta: DriveFileMeta,

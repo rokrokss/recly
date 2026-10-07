@@ -39,7 +39,13 @@ data class Job(
     val nextRunAt: Instant?,
     /** A [recly.core.message.CoreMessage] code, for the row the list draws. */
     val snapshotError: String? = null,
-)
+) {
+    /**
+     * A re-transcription of a finished recording (docs/10 "Re-transcription") rather than the recording's
+     * own job. While it has not settled, the recording's previous transcript is still the one on screen.
+     */
+    val retranscription: Boolean get() = workflowId == recly.core.processing.ProcessingPlan.RETRANSCRIBE_ID
+}
 
 /**
  * [state] is the step's own resume point (Drive session URI and offset); [output] is what later

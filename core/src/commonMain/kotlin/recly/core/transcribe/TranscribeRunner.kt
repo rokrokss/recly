@@ -53,7 +53,7 @@ class TranscribeRunner(
     private val results = ResultFiles(api, deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome {
-        if (ctx.workflow.id == recly.core.processing.ProcessingPlan.ID && TranscriptCache.read(ctx) != null) {
+        if (recly.core.processing.ProcessingPlan.isFixed(ctx.workflow.id) && TranscriptCache.read(ctx) != null) {
             return StepOutcome.Done(TranscriptCache.output(ctx))
         }
         val step = ctx.step as? Step.Transcribe
@@ -184,7 +184,7 @@ class TranscribeRunner(
             language = result.language ?: step.language.wire,
         )
         val base = MetaWriter.baseName(meta)
-        if (ctx.workflow.id == recly.core.processing.ProcessingPlan.ID) {
+        if (recly.core.processing.ProcessingPlan.isFixed(ctx.workflow.id)) {
             TranscriptCache.write(ctx, transcript)
             return TranscriptCache.output(ctx)
         }
@@ -195,6 +195,7 @@ class TranscribeRunner(
             name = jsonFileName(base),
             content = recJson.encodeToString(transcript).encodeToByteArray(),
             mimeType = JSON_MIME,
+            appProperties = TranscriptMarks.of(transcript),
         )
         val text = results.write(
             dir = ctx.recording.dir,
@@ -202,6 +203,7 @@ class TranscribeRunner(
             name = textFileName(base),
             content = TranscriptNormalizer.text(transcript).encodeToByteArray(),
             mimeType = TEXT_MIME,
+            appProperties = TranscriptMarks.of(transcript),
         )
         deps.logger.log(
             Logger.Level.INFO,

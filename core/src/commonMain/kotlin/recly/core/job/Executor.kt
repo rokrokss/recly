@@ -124,7 +124,9 @@ class Executor(
     private fun offline(step: Step, workflow: Workflow): Boolean = when (step) {
         is Step.LocalTranscribe -> true
         is Step.DriveUpload -> step.store == StorageKind.FOLDER
-        is Step.TranscriptPublish -> workflow.steps.any { it is Step.DriveUpload && it.store == StorageKind.FOLDER }
+        is Step.TranscriptPublish -> (step.folderId?.let(StorageKind::ofId) ?: workflow.steps.firstNotNullOfOrNull {
+            (it as? Step.DriveUpload)?.store
+        }) == StorageKind.FOLDER
         else -> false
     }
 
@@ -234,15 +236,20 @@ class Executor(
             val folders = store.stepsOf(job.id)
                 .filter { it.stepId in uploads }
                 .mapNotNull { it.output?.string("folderId") }
-                .toSet()
+                .toSet() + listOfNotNull(namedFolder(workflow))
             for (folderId in folders) send(folderId, emptyList())
             return
         }
-        val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId") ?: return
+        val folderId = workflow.priorOutput(prior, DriveUploadRunner.TYPE)?.string("folderId")
+            ?: namedFolder(workflow) ?: return
         send(folderId, workflow.steps.dropWhile { it.id != after }.drop(1).map {
             if (it is Step.LocalTranscribe || it is Step.TranscriptPublish) "transcribe" else it.type
         }.distinct())
     }
+
+    /** The folder a re-transcription publishes into, which its plan names since it uploads nothing (docs/10). */
+    private fun namedFolder(workflow: Workflow): String? =
+        workflow.steps.firstNotNullOfOrNull { (it as? Step.TranscriptPublish)?.folderId }
 
     private suspend fun send(folderId: String, pending: List<String>) {
         if (lastMark == folderId to pending) return

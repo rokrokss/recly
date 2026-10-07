@@ -31,6 +31,8 @@ internal class ResultFiles(private val api: CloudFiles, private val deps: CoreDe
         name: String,
         content: ByteArray,
         mimeType: String,
+        /** Set on the Drive file with its content ([TranscriptMarks]); the other storages keep none. */
+        appProperties: Map<String, String> = emptyMap(),
     ): ResultFile {
         resultFileMutex.withLock {
             deps.fileSystem.createDirectories(dir)
@@ -46,8 +48,8 @@ internal class ResultFiles(private val api: CloudFiles, private val deps: CoreDe
                 same
             }
 
-            existing.isNotEmpty() -> api.updateMedia(existing.first().id, content, mimeType)
-            else -> api.multipartUpload(DriveFileMeta(name, listOf(folderId), mimeType), content)
+            existing.isNotEmpty() -> api.updateMedia(existing.first().id, content, mimeType, appProperties)
+            else -> api.multipartUpload(DriveFileMeta(name, listOf(folderId), mimeType, appProperties), content)
         }
         return ResultFile(
             name = name,
@@ -57,6 +59,25 @@ internal class ResultFiles(private val api: CloudFiles, private val deps: CoreDe
             webViewLink = file.webViewLink,
         )
     }
+}
+
+/**
+ * docs/08 "Result files": what Recly writes beside a transcript on Drive. The `.transcript.json` and
+ * `.transcript.txt` files say which kind of version they hold — [TRANSCRIBED] by a transcription, the
+ * first or a re-run, [EDITED] by the user's edit — so a watcher such as recly-events can tell a new
+ * transcript from a correction. The recording's folder carries [FOLDER_STAMP], the version of the
+ * newest transcript in it (its `editedAt`, else its `createdAt`), so other devices know when the copy
+ * they hold is old without opening the folder.
+ */
+object TranscriptMarks {
+    const val KEY: String = "reclyTranscript"
+    const val TRANSCRIBED: String = "transcribed"
+    const val EDITED: String = "edited"
+    const val FOLDER_STAMP: String = "transcriptAt"
+
+    fun of(transcript: Transcript): Map<String, String> = mapOf(KEY to if (transcript.editedAt != null) EDITED else TRANSCRIBED)
+
+    fun version(transcript: Transcript): String = transcript.editedAt ?: transcript.createdAt
 }
 
 /** One written result file, in the shape of a `drive.upload` output's `files[]`. */

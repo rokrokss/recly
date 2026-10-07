@@ -5,6 +5,7 @@ import recly.core.drive.DriveUploadRunner
 import recly.core.drive.string
 import recly.core.job.*
 import recly.core.message.CoreMessage
+import recly.core.model.Step
 import recly.core.model.recJson
 import recly.core.platform.CoreDeps
 import recly.core.recording.MetaWriter
@@ -20,7 +21,8 @@ import recly.core.storage.StorageUnavailableException
  */
 class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
     override val type = "transcript.publish"
-    private val files = ResultFiles(CloudStorage.of(deps), deps)
+    private val api = CloudStorage.of(deps)
+    private val files = ResultFiles(api, deps)
 
     override suspend fun run(ctx: StepContext): StepOutcome = try {
         publish(ctx)
@@ -29,23 +31,28 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
     }
 
     private suspend fun publish(ctx: StepContext): StepOutcome {
-        val folder = ctx.priorOutput(DriveUploadRunner.TYPE)?.string("folderId")
+        // A re-transcription uploads nothing: its plan names the recording's folder (docs/10 "Re-transcription").
+        val folder = (ctx.step as? Step.TranscriptPublish)?.folderId
+            ?: ctx.priorOutput(DriveUploadRunner.TYPE)?.string("folderId")
             ?: throw StepFailure(false, CoreMessage.STEP_FAILED.code("missing upload destination"))
         val base = MetaWriter.baseName(ctx.recording.meta)
         val jsonName = TranscribeRunner.jsonFileName(base)
         val resultName = ctx.prior.values.mapNotNull { it.json.string("resultFile") }.lastOrNull()
             ?: throw StepFailure(false, CoreMessage.STEP_FAILED.code("missing durable transcript"))
         require(resultName.matches(Regex("\\.result-[0-9A-Z]+\\.json")))
-        val json = deps.fileSystem.read(ctx.recording.dir / resultName) { readByteArray() }
-        val transcript = recJson.decodeFromString<Transcript>(json.decodeToString())
-        require(transcript.recordingId == ctx.recording.id)
-        val published = files.write(ctx.recording.dir, folder, jsonName, json, TranscribeRunner.JSON_MIME)
+        val result = recJson.decodeFromString<Transcript>(deps.fileSystem.read(ctx.recording.dir / resultName) { readUtf8() })
+        require(result.recordingId == ctx.recording.id)
+        val transcript = editedSince(ctx, jsonName, result) ?: result
+        val json = recJson.encodeToString(transcript).encodeToByteArray()
+        val marks = TranscriptMarks.of(transcript)
+        val published = files.write(ctx.recording.dir, folder, jsonName, json, TranscribeRunner.JSON_MIME, marks)
         val text = files.write(ctx.recording.dir, folder, TranscribeRunner.textFileName(base),
-            TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME)
+            TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME, marks)
         val markdown = if (StorageKind.ofId(folder) != StorageKind.FOLDER) null else files.write(
             ctx.recording.dir, folder, TranscribeRunner.markdownFileName(base),
             TranscriptNormalizer.markdown(transcript, ctx.recording.meta).encodeToByteArray(), TranscribeRunner.MARKDOWN_MIME,
         )
+        stamp(folder, transcript)
         return StepOutcome.Done(StepOutput(buildJsonObject {
             putJsonObject("transcript") {
                 put("jsonFileId", published.fileId); put("txtFileId", text.fileId)
@@ -59,5 +66,31 @@ class TranscriptPublishRunner(private val deps: CoreDeps) : StepRunner {
                 markdown?.let { add(it.toJson("transcript")) }
             }
         }))
+    }
+
+    /**
+     * The local copy when the user edited this very result before it went out — a publish that failed
+     * and was retried after the edit (docs/08 "Editing"). The transcription wrote the local copy when it
+     * finished, so an edit of an older transcript never matches: the new result replaces it.
+     */
+    private fun editedSince(ctx: StepContext, jsonName: String, result: Transcript): Transcript? {
+        val path = ctx.recording.dir / jsonName
+        if (!deps.fileSystem.exists(path)) return null
+        val local = runCatching { recJson.decodeFromString<Transcript>(deps.fileSystem.read(path) { readUtf8() }) }.getOrNull()
+        return local?.takeIf { it.editedAt != null && it.createdAt == result.createdAt && it.recordingId == result.recordingId }
+    }
+
+    /**
+     * Tells other devices the folder has a newer transcript ([TranscriptMarks.FOLDER_STAMP]). Advisory,
+     * like the pending marker: a failure is logged and the published files stand.
+     */
+    private suspend fun stamp(folder: String, transcript: Transcript) {
+        try {
+            api.updateAppProperties(folder, mapOf(TranscriptMarks.FOLDER_STAMP to TranscriptMarks.version(transcript)))
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(recly.core.platform.Logger.Level.WARN, "transcript.stamp.failed", mapOf("folderId" to folder), e)
+        }
     }
 }

@@ -77,8 +77,17 @@ interface CloudFiles {
     /** Merges keys into a folder's `appProperties`; the ones it was made with stay. */
     suspend fun updateAppProperties(fileId: String, appProperties: Map<String, String>)
 
-    /** Replaces an existing file's content, leaving its id and parents alone. */
-    suspend fun updateMedia(fileId: String, bytes: ByteArray, mimeType: String): DriveFile
+    /**
+     * Replaces an existing file's content, leaving its id and parents alone. [appProperties] are merged
+     * into the file's own in the same write (Drive; the other storages keep none on a file) — so a
+     * reader never sees the new content under the old properties.
+     */
+    suspend fun updateMedia(
+        fileId: String,
+        bytes: ByteArray,
+        mimeType: String,
+        appProperties: Map<String, String> = emptyMap(),
+    ): DriveFile
 
     suspend fun uploadResumable(
         meta: DriveFileMeta,

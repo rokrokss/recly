@@ -168,9 +168,40 @@ class FakeDrive {
             val meta = multipartMeta(r)
             if (unknownParent(meta)) {
                 respond("""{"error":"parent not found"}""", HttpStatusCode.NotFound)
+            } else if (badProperties(meta.appProperties) != null) {
+                respond(badProperties(meta.appProperties)!!, HttpStatusCode.BadRequest)
             } else {
                 val id = create(meta, multipartContent(r))
                 json(fileJson(id, files.getValue(id)))
+            }
+        }
+
+        // `files.update` with content and metadata in one request (Drive "Upload file data", checked
+        // 2026-10-07): the metadata part first, as JSON; it may not name `parents` — an update moves a
+        // file with `addParents`/`removeParents` instead — and its `appProperties` merge like a PATCH's.
+        r.method == "PATCH" && r.path.startsWith("/upload/drive/v3/files/") && r.uploadType == "multipart" -> {
+            val id = r.path.substringAfterLast('/')
+            val entry = files[id]
+            val metadata = multipartMetadata(r)
+            when {
+                entry == null -> respond("", HttpStatusCode.NotFound)
+                metadata == null -> respond("""{"error":"malformed multipart body"}""", HttpStatusCode.BadRequest)
+                "parents" in metadata -> respond(
+                    """{"error":{"errors":[{"reason":"fieldNotWritable"}],"message":"The resource body includes fields which are not directly writable."}}""",
+                    HttpStatusCode.Forbidden,
+                )
+                else -> {
+                    val properties = (metadata["appProperties"] as? JsonObject)
+                        ?.mapValues { (_, value) -> (value as JsonPrimitive).content }.orEmpty()
+                    val bad = badProperties(entry.appProperties + properties)
+                    if (bad != null) {
+                        respond(bad, HttpStatusCode.BadRequest)
+                    } else {
+                        entry.appProperties = entry.appProperties + properties
+                        overwrite(id, multipartContent(r))
+                        json(fileJson(id, entry))
+                    }
+                }
             }
         }
 
@@ -362,6 +393,30 @@ class FakeDrive {
             """"trashed":${id in trashed},"md5Checksum":"$md5","appProperties":{$properties},$description""" +
             """"createdTime":"${entry.createdTime}","headRevisionId":"${entry.headRevisionId}",""" +
             """"webViewLink":"$link","version":"${entry.version}","owners":[{"permissionId":"${entry.ownerAccountId}"}]}"""
+    }
+
+    /**
+     * Drive's limits on custom properties ("Add custom file properties", checked 2026-10-07): at most 30
+     * private ones per app on a file, and 124 bytes per property, key and value together in UTF-8.
+     */
+    private fun badProperties(properties: Map<String, String>): String? = when {
+        properties.size > 30 -> """{"error":"too many appProperties"}"""
+        properties.any { (k, v) -> (k + v).encodeToByteArray().size > 124 } -> """{"error":"appProperty over 124 bytes"}"""
+        else -> null
+    }
+
+    /**
+     * The metadata part of a multipart request, or null when the body is not `multipart/related` with
+     * a JSON part first — which is what Drive requires of it.
+     */
+    private fun multipartMetadata(r: Recorded): JsonObject? {
+        if (r.contentType?.startsWith("multipart/related") != true || boundary(r).isEmpty()) return null
+        val head = r.body.decodeToString().substringBefore("\r\n\r\n")
+        if (!head.startsWith("--${boundary(r)}\r\nContent-Type: application/json")) return null
+        val body = r.body
+        val start = body.indexOfSub(BLANK, 0) + BLANK.size
+        val end = body.indexOfSub(separator(r), start)
+        return runCatching { Json.parseToJsonElement(body.copyOfRange(start, end).decodeToString()) as JsonObject }.getOrNull()
     }
 
     /** `--B\r\nContent-Type: …\r\n\r\n{json}\r\n--B\r\nContent-Type: …\r\n\r\n{bytes}\r\n--B--`. */
