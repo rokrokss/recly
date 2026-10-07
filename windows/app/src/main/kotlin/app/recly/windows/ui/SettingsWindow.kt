@@ -23,6 +23,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.AnnotatedString
+import app.recly.windows.settings.GlobalShortcut
+import app.recly.windows.ui.component.SwitchTrack
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.agent.AgentEvents
@@ -212,6 +221,7 @@ private fun Capture(model: ShellModel, strings: Strings) {
         checked = model.consentReminder,
         onCheckedChange = model::toggleConsentReminder,
     )
+    Shortcut(model, strings)
     // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while this is off — and
     // a row that only says where the switch is leaves the user to find it. Its own row rather than a
     // line under the reminder, because it has something to be done about it: the page itself, which
@@ -236,6 +246,26 @@ private fun Capture(model: ShellModel, strings: Strings) {
             // deliverable 3: `--self-test`, from the one place a packaged app can offer it.
             if (!model.helperMissing) {
                 BlueprintButton(strings[Str.SETTINGS_SELF_TEST], model::runSelfTest)
+            }
+        },
+    )
+}
+
+/**
+ * docs/14 "App": the keyboard shortcut, its keys in monospace beside the switch. Refused by Windows, the row
+ * says so in the warning tone — the switch stays on, and turning it off and on asks again.
+ */
+@Composable
+private fun Shortcut(model: ShellModel, strings: Strings) {
+    TableRow(
+        title = strings[Str.SETTINGS_SHORTCUT],
+        modifier = Modifier.toggleable(value = model.shortcutOn, role = Role.Switch, onValueChange = model::toggleShortcut),
+        subtitle = strings[Str.SETTINGS_SHORTCUT_TAKEN].takeIf { model.shortcutOn && model.shortcutRefused },
+        subtitleColor = blueprint.warningInk,
+        trailing = {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                Text(GlobalShortcut.LABEL, style = mono.small, color = blueprint.textMuted)
+                SwitchTrack(checked = model.shortcutOn)
             }
         },
     )
@@ -280,6 +310,8 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
         onCheckedChange = agent::toggle,
         enabled = note == null,
     )
+    // docs/14 "Agent connection": recordings in a local folder are for agents on this PC instead.
+    if (model.storage == StorageKind.FOLDER && agent.phase != AgentEventsPhase.Unavailable) LocalAgents(model, strings)
     if (note != null) return
     // Off, the phase says nothing: the line is there only while the switch is on.
     AgentStatus(agent, strings)
@@ -288,6 +320,40 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
         BlueprintButton(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) }, tone = ButtonTone.QUIET)
     }
+}
+
+/**
+ * The local MCP server: recly-events run by the agent itself over this PC's local folder, so there is no
+ * switch — nothing runs until an agent starts it. The configuration is what recly-events prints for the
+ * folder, copied for pasting into the agent's settings.
+ */
+@Composable
+private fun LocalAgents(model: ShellModel, strings: Strings) {
+    val clipboard = LocalClipboardManager.current
+    val scope = rememberCoroutineScope()
+    var copied by remember { mutableStateOf(false) }
+    LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
+    Section(strings[Str.LOCAL_AGENTS])
+    TableRow(title = strings[Str.LOCAL_MCP], subtitle = strings[Str.LOCAL_MCP_BODY])
+    Row(
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+    ) {
+        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, tone = ButtonTone.QUIET)
+        BlueprintButton(
+            if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.LOCAL_MCP_COPY],
+            {
+                scope.launch {
+                    model.localMcpConfiguration()?.let {
+                        clipboard.setText(AnnotatedString(it))
+                        copied = true
+                    }
+                }
+            },
+            enabled = model.localFolder != null,
+        )
+    }
+    HairLine()
 }
 
 /**
@@ -472,6 +538,8 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
     }
     HairLine()
 }
+
+private const val COPIED_MS = 3_000L
 
 private fun system(): String =
     "${System.getProperty("os.name")} ${System.getProperty("os.version")}"
