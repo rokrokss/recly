@@ -77,6 +77,18 @@ defaults:
       description: >-
         서버, Linux, Recly 앱이 없는 컴퓨터에서 recly-events를 직접 실행해 ChatGPT 에이전트가 새 녹취록마다
         알림을 받게 하기.
+  - scope: { path: "mcp.md" }
+    values:
+      title: Local MCP server
+      description: >-
+        Let Claude Desktop, Claude Code or Codex list, search and read the Recly recordings in a
+        local folder or in iCloud on a Mac, with recly-events mcp: no sign-in, no network.
+  - scope: { path: "mcp.ko.md" }
+    values:
+      title: 로컬 MCP 서버
+      description: >-
+        recly-events mcp로 로컬 폴더나 Mac iCloud의 Recly 녹음을 Claude Desktop, Claude Code, Codex가 목록 보기·검색·
+        읽기. 로그인도 네트워크도 없습니다.
   - scope: { path: "faq.md" }
     values:
       description: >-
