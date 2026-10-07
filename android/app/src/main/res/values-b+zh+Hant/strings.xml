@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">供應商無法接受此音訊。</string>
     <string name="core_no_input_track">此錄音沒有可轉錄的單聲道或混音軌道。</string>
     <string name="core_result_timeout">供應商未在規定時間內完成，將重新提交。</string>
+    <string name="core_import_unsupported">此檔案中沒有可匯入的音訊。</string>
+    <string name="core_import_unreadable">無法開啟該檔案。</string>
     <string name="core_stale">文件在開啟期間已發生變更</string>
     <string name="tile_label">Recly錄音</string>
     <string name="tile_idle">閒置</string>

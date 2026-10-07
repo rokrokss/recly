@@ -408,6 +408,10 @@ enum class Str {
     /** The detail's waveform row while its parts are decoded into a shape — what a reader hears. */
     PLAYER_WAVEFORM_LOADING,
 
+    // docs/03 "Naming rules": an import that left nothing behind, and why.
+    CORE_IMPORT_UNSUPPORTED,
+    CORE_IMPORT_UNREADABLE,
+
     CORE_STALE,
     ;
 

@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Sağlayıcı bu sesi kabul etmedi.</string>
     <string name="core_no_input_track">Bu kayıtta metne dönüştürülecek mono veya miks kanal yok.</string>
     <string name="core_result_timeout">Sağlayıcı zamanında tamamlayamadı. Yeniden gönderilecek.</string>
+    <string name="core_import_unsupported">Bu dosyada içe aktarılabilecek ses yok.</string>
+    <string name="core_import_unreadable">Dosya açılamadı.</string>
     <string name="core_stale">Bu açıkken belge değişti</string>
     <string name="tile_label">Recly kaydı</string>
     <string name="tile_idle">Hazır</string>

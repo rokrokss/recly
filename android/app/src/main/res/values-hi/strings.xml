@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">प्रदाता ने यह ऑडियो स्वीकार नहीं किया।</string>
     <string name="core_no_input_track">इस रिकॉर्डिंग में ट्रांसक्रिप्शन के लिए मोनो या मिक्स ट्रैक नहीं है।</string>
     <string name="core_result_timeout">प्रदाता समय पर पूरा नहीं कर सका। फिर सबमिट होगा।</string>
+    <string name="core_import_unsupported">इस फ़ाइल में आयात करने लायक कोई ऑडियो नहीं है।</string>
+    <string name="core_import_unreadable">फ़ाइल नहीं खोली जा सकी।</string>
     <string name="core_stale">खुले रहने के दौरान दस्तावेज़ बदल गया</string>
     <string name="tile_label">Recly रिकॉर्डिंग</string>
     <string name="tile_idle">निष्क्रिय</string>

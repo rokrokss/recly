@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">ผู้ให้บริการไม่ยอมรับเสียงนี้</string>
     <string name="core_no_input_track">การบันทึกเสียงนี้ไม่มีแทร็กโมโนหรือแทร็กมิกซ์สำหรับถอดเสียง</string>
     <string name="core_result_timeout">ผู้ให้บริการทำงานไม่เสร็จทันเวลา ระบบจะส่งอีกครั้ง</string>
+    <string name="core_import_unsupported">ไฟล์นี้ไม่มีเสียงที่นำเข้าได้</string>
+    <string name="core_import_unreadable">เปิดไฟล์ไม่ได้</string>
     <string name="core_stale">เอกสารมีการเปลี่ยนแปลงระหว่างที่เปิดอยู่</string>
     <string name="tile_label">การบันทึกเสียง Recly</string>
     <string name="tile_idle">พร้อม</string>

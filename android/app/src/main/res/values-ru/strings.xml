@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Провайдер не принял это аудио.</string>
     <string name="core_no_input_track">В записи нет моно- или смешанной дорожки для расшифровки.</string>
     <string name="core_result_timeout">Провайдер не завершил вовремя. Запрос будет отправлен снова.</string>
+    <string name="core_import_unsupported">В этом файле нет аудио, которое можно импортировать.</string>
+    <string name="core_import_unreadable">Не удалось открыть файл.</string>
     <string name="core_stale">Документ изменился, пока был открыт</string>
     <string name="tile_label">Запись Recly</string>
     <string name="tile_idle">Ожидание</string>

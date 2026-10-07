@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Der Anbieter hat dieses Audio nicht akzeptiert.</string>
     <string name="core_no_input_track">Diese Aufnahme hat keine Mono- oder Mischspur zur Transkription.</string>
     <string name="core_result_timeout">Der Anbieter wurde nicht rechtzeitig fertig. Die Anfrage wird erneut gesendet.</string>
+    <string name="core_import_unsupported">Diese Datei enthält kein Audio, das importiert werden kann.</string>
+    <string name="core_import_unreadable">Die Datei konnte nicht geöffnet werden.</string>
     <string name="core_stale">Das Dokument wurde während der Bearbeitung geändert</string>
     <string name="tile_label">Recly-Aufnahme</string>
     <string name="tile_idle">Bereit</string>

@@ -96,6 +96,13 @@ data class RecordingRecord(
     val receiving: Boolean get() = !remote && meta.source == Source.WATCH && meta.status == RecordingStatus.RECORDING
 
     /**
+     * A file the user picked is still being transcoded into this recording (docs/03 "Naming rules",
+     * `source: import`): the row is there, its parts are not yet — they arrive all at once when the import
+     * completes, or the row goes if it fails.
+     */
+    val importing: Boolean get() = !remote && meta.source == Source.IMPORT && meta.status == RecordingStatus.RECORDING
+
+    /**
      * Another device is still uploading (docs/03 "Recordings from other devices"): its folder is on Drive with no
      * `meta.json` in it yet — the meta goes up last — so what this row carries is the placeholder a
      * pull built out of the folder's name.
@@ -734,6 +741,34 @@ class RecordingRepository(
         val meta = record.meta.copy(parts = parts)
         db.transaction {
             insertPart(recordingId, part)
+            writeMeta(meta)
+        }
+        MetaWriter.write(deps.fileSystem, record.dir, meta)
+    }
+
+    /**
+     * The end of an import (docs/03 "Naming rules"): every transcoded part moved in from where it was
+     * staged under its part name, registered, and the recording finalized — one locked pass, so no scan
+     * of the directory ever sees some of the parts of an import that is not complete.
+     */
+    internal suspend fun completeImport(
+        recordingId: String,
+        staged: List<Pair<Path, Part>>,
+        endedAt: Instant,
+        durationSec: Double,
+    ): Unit = locked {
+        val record = requireRecord(recordingId)
+        require(record.importing) { "'$recordingId' is not an import in progress" }
+        deps.fileSystem.createDirectories(record.dir)
+        staged.forEach { (from, part) -> deps.fileSystem.atomicMove(from, record.dir / part.file) }
+        val meta = record.meta.copy(
+            parts = staged.map { it.second },
+            endedAt = endedAt.isoUtc(),
+            durationSec = durationSec,
+            status = RecordingStatus.FINALIZED,
+        )
+        db.transaction {
+            meta.parts.forEach { insertPart(recordingId, it) }
             writeMeta(meta)
         }
         MetaWriter.write(deps.fileSystem, record.dir, meta)

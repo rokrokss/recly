@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">প্রদানকারী এই অডিও গ্রহণ করেনি।</string>
     <string name="core_no_input_track">এই রেকর্ডিংয়ে ট্রান্সক্রাইব করার মতো কোনো মোনো বা মিক্স ট্র্যাক নেই।</string>
     <string name="core_result_timeout">প্রদানকারী সময়মতো শেষ করতে পারেনি। আবার জমা দেওয়া হবে।</string>
+    <string name="core_import_unsupported">এই ফাইলে আমদানি করার মতো কোনো অডিও নেই।</string>
+    <string name="core_import_unreadable">ফাইলটি খোলা যায়নি।</string>
     <string name="core_stale">এটি খোলা থাকার সময় ডকুমেন্টটি পরিবর্তিত হয়েছে</string>
     <string name="tile_label">Recly রেকর্ডিং</string>
     <string name="tile_idle">প্রস্তুত</string>

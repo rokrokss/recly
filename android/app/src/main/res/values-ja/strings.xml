@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">提供者がこの音声を受け付けませんでした。</string>
     <string name="core_no_input_track">この録音には文字起こし用のモノラルまたはミックストラックがありません。</string>
     <string name="core_result_timeout">提供者の処理が時間内に終わりませんでした。再送信します。</string>
+    <string name="core_import_unsupported">このファイルには読み込めるオーディオがありません。</string>
+    <string name="core_import_unreadable">ファイルを開けませんでした。</string>
     <string name="core_stale">開いている間にドキュメントが変更されました</string>
     <string name="tile_label">Reclyの録音</string>
     <string name="tile_idle">待機中</string>

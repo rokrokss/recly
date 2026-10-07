@@ -42,6 +42,8 @@ object CoreMessages {
         CoreMessage.UNSUPPORTED_AUDIO -> Str.CORE_UNSUPPORTED_AUDIO
         CoreMessage.NO_INPUT_TRACK -> Str.CORE_NO_INPUT_TRACK
         CoreMessage.RESULT_TIMEOUT -> Str.CORE_RESULT_TIMEOUT
+        CoreMessage.IMPORT_UNSUPPORTED -> Str.CORE_IMPORT_UNSUPPORTED
+        CoreMessage.IMPORT_UNREADABLE -> Str.CORE_IMPORT_UNREADABLE
         CoreMessage.STALE -> Str.CORE_STALE
     }
 
@@ -66,6 +68,8 @@ object CoreMessages {
         CoreMessage.ICLOUD_UPLOADING,
         CoreMessage.FOLDER_UNAVAILABLE,
         CoreMessage.SIGN_IN_CANCELLED,
+        CoreMessage.IMPORT_UNSUPPORTED,
+        CoreMessage.IMPORT_UNREADABLE,
         CoreMessage.STALE,
         // docs/08 "Errors": what to do about it is the whole sentence, and the provider's own line is
         // the code's detail — shown under it, never inside it.

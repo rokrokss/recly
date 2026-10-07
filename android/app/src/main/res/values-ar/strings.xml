@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">لم يقبل المزوّد هذا الصوت.</string>
     <string name="core_no_input_track">لا يحتوي هذا التسجيل على مسار أحادي أو ممزوج للنسخ.</string>
     <string name="core_result_timeout">لم ينتهِ المزوّد في الوقت المحدد. سيُعاد الإرسال.</string>
+    <string name="core_import_unsupported">لا يحتوي هذا الملف على صوت يمكن استيراده.</string>
+    <string name="core_import_unreadable">تعذّر فتح الملف.</string>
     <string name="core_stale">تغيّر المستند أثناء فتحه</string>
     <string name="tile_label">تسجيل Recly</string>
     <string name="tile_idle">خامل</string>

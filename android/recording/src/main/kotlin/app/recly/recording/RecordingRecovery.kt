@@ -9,6 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import recly.core.ReclyCore
 import recly.core.job.JobStatus
 import recly.core.model.RecordingStatus
+import recly.core.model.Source
 import recly.core.platform.Logger
 import recly.core.recording.RecordingRecord
 
@@ -55,6 +56,9 @@ class RecordingRecovery internal constructor(
         // died in: it closes when the watch's meta lands, or goes with the receiver's 24-hour
         // orphan purge (docs/03 "Watch → phone transfer contract").
         if (core.transfer.receiving(record.id)) return false
+        // An import is the core's to complete or drop, never a recording this process died in: its
+        // parts arrive all at once, so finalizing what is here would upload half a file (docs/03).
+        if (record.meta.source == Source.IMPORT) return core.dropAbandonedImport(record.id)
         val reconciled = reconciler.reconcile(record.id) ?: return false
 
         if (reconciled.files == 0) {

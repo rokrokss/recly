@@ -180,7 +180,10 @@ class ReclyCore(
         recordings.beforeCapture = { meta ->
             if (meta.source != Source.WATCH) {
                 processingSettings.capture(meta.recordingId)
-                if (meta.status == RecordingStatus.RECORDING) localTranscription.captureStarted(meta.recordingId)
+                // An import is transcoded, not captured: it does not hold the on-device engine back.
+                if (meta.status == RecordingStatus.RECORDING && meta.source != Source.IMPORT) {
+                    localTranscription.captureStarted(meta.recordingId)
+                }
             }
         }
         recordings.afterCapture = { localTranscription.captureEnded(it) }
@@ -345,6 +348,31 @@ class ReclyCore(
     }.distinctUntilChanged().catch {
         emit(RecordingResult(availability = TranscriptAvailability.UNAVAILABLE))
     }
+
+    private val audioImport = recly.core.recording.AudioImport(deps, recordings) { enqueue(it) }
+
+    /**
+     * docs/03 "Naming rules": makes a recording of a file the user picked — audio or video — titled after
+     * its name without the extension, started at [startedAt] (the file's own date, when the shell has
+     * one) or now. While [importer] transcodes, the row is in the list ([recly.core.recording.RecordingRecord.importing],
+     * `recordings.observe()`); once every part is there the recording is finalized and its fixed plan
+     * queued, like any other. A failure leaves nothing behind and says why ([recly.core.recording.ImportResult.Failed]).
+     */
+    @Throws(Throwable::class)
+    suspend fun importAudio(
+        sourcePath: String,
+        displayName: String,
+        startedAt: Instant?,
+        importer: recly.core.recording.AudioImporter,
+    ): recly.core.recording.ImportResult = audioImport.import(sourcePath, displayName, startedAt, importer)
+
+    /**
+     * For a recorder's crash recovery, before it touches a row with `source: import` still `recording`:
+     * true when it was left by a killed process and is now gone with its files; false while this process
+     * is importing it — leave it alone. Recovery never finalizes an import (docs/03 "Naming rules").
+     */
+    @Throws(Throwable::class)
+    suspend fun dropAbandonedImport(recordingId: String): Boolean = audioImport.dropAbandoned(recordingId)
 
     /**
      * docs/10 "Re-transcription": transcribes a finished recording again with the processing settings as they

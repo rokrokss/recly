@@ -122,6 +122,15 @@ enum class CoreMessage {
      */
     RESULT_TIMEOUT,
 
+    /**
+     * docs/03 "Naming rules": a file picked for import holds no audio the platform can decode — a document, an
+     * image, a protected track. Nothing was kept. Detail: what the platform said, when it said anything.
+     */
+    IMPORT_UNSUPPORTED,
+
+    /** The same for a file that could not be read at all — gone, refused, broken. Detail: the platform's error. */
+    IMPORT_UNREADABLE,
+
     /** Something changed the settings while they were open here — a second window, or an import. */
     STALE,
     ;

@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Dostawca nie przyjął tego audio.</string>
     <string name="core_no_input_track">To nagranie nie ma ścieżki mono ani zmiksowanej do transkrypcji.</string>
     <string name="core_result_timeout">Dostawca nie zakończył na czas. Żądanie zostanie wysłane ponownie.</string>
+    <string name="core_import_unsupported">Ten plik nie zawiera dźwięku, który można zaimportować.</string>
+    <string name="core_import_unreadable">Nie można otworzyć pliku.</string>
     <string name="core_stale">Dokument zmienił się, gdy był otwarty</string>
     <string name="tile_label">Nagrywanie Recly</string>
     <string name="tile_idle">W gotowości</string>

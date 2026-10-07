@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Hindi tinanggap ng provider ang audio na ito.</string>
     <string name="core_no_input_track">Walang mono o mix na track ang recording na ito na ita-transcribe.</string>
     <string name="core_result_timeout">Hindi natapos ng provider sa takdang oras. Ipapadala itong muli.</string>
+    <string name="core_import_unsupported">Walang audio sa file na ito na maaaring i-import.</string>
+    <string name="core_import_unreadable">Hindi mabuksan ang file.</string>
     <string name="core_stale">Nagbago ang dokumento habang nakabukas ito</string>
     <string name="tile_label">Recording ng Recly</string>
     <string name="tile_idle">Handa</string>

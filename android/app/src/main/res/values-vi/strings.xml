@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Nhà cung cấp không chấp nhận âm thanh này.</string>
     <string name="core_no_input_track">Bản ghi âm này không có rãnh mono hoặc rãnh trộn để chép lời.</string>
     <string name="core_result_timeout">Nhà cung cấp không xử lý xong kịp thời. Ứng dụng sẽ gửi lại.</string>
+    <string name="core_import_unsupported">Tệp này không có âm thanh nào có thể nhập.</string>
+    <string name="core_import_unreadable">Không thể mở tệp.</string>
     <string name="core_stale">Tài liệu đã thay đổi trong khi đang mở</string>
     <string name="tile_label">Ghi âm Recly</string>
     <string name="tile_idle">Sẵn sàng</string>

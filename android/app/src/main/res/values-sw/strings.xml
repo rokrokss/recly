@@ -110,6 +110,8 @@
     <string name="core_unsupported_audio">Mtoa huduma hakukubali sauti hii.</string>
     <string name="core_no_input_track">Rekodi hii haina mkondo wa sauti wa mono au mchanganyiko wa kunukuu.</string>
     <string name="core_result_timeout">Mtoa huduma hakumaliza kwa wakati. Itatumwa tena.</string>
+    <string name="core_import_unsupported">Faili hili halina sauti inayoweza kuingizwa.</string>
+    <string name="core_import_unreadable">Faili haikuweza kufunguliwa.</string>
     <string name="core_stale">Hati imebadilika ilipokuwa imefunguliwa</string>
     <string name="tile_label">Rekodi ya Recly</string>
     <string name="tile_idle">Tayari</string>
