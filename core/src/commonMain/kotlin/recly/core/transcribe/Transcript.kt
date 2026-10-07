@@ -105,9 +105,12 @@ object TranscriptNormalizer {
 
     /**
      * `[HH:MM:SS] S1: text`, one line per speaker turn — but never longer than [LINE_SEC] of
-     * speech, so a monologue is still readable and an LLM sees timestamps throughout (docs/08).
+     * speech, so a monologue is still readable and an LLM sees timestamps throughout (docs/08). A
+     * speaker the user named is written by that name instead of the id (`[00:00:01] Minsu: text`).
+     * Highlights stay out of it: agents parse these lines, and the marks are in `meta.json`.
      */
     fun text(transcript: Transcript): String = buildString {
+        val labels = labels(transcript)
         var lineSpeaker: String? = null
         var lineStart = 0.0
         transcript.segments.forEach { segment ->
@@ -117,7 +120,7 @@ object TranscriptNormalizer {
                 lineSpeaker = segment.speaker
                 lineStart = segment.start
                 append("[${clock(segment.start)}] ")
-                if (segment.speaker.isNotEmpty()) append("${segment.speaker}: ")
+                if (segment.speaker.isNotEmpty()) append("${labels[segment.speaker] ?: segment.speaker}: ")
             } else {
                 append(' ')
             }
@@ -131,19 +134,118 @@ object TranscriptNormalizer {
      * runs lines together unless a blank line parts them — under front matter with the recording's
      * title, id and start, so a notes app such as Obsidian opens it as a note. The title is a JSON
      * string, which YAML reads as a double-quoted scalar whatever it holds.
+     *
+     * A recording with highlights (docs/03 "Metadata") also lists them: their clock times in the front
+     * matter, and a "Highlights" section before the lines — each time with the words being said then.
      */
     fun markdown(transcript: Transcript, meta: RecordingMeta): String = buildString {
         append("---\n")
         meta.title?.takeIf { it.isNotBlank() }?.let { append("title: ").append(recJson.encodeToString(it)).append('\n') }
         append("recordingId: ").append(meta.recordingId).append('\n')
         append("startedAt: ").append(meta.startedAt).append('\n')
+        if (meta.highlights.isNotEmpty()) {
+            // Quoted: YAML 1.1 reads a bare 00:02:05 as a base-60 number.
+            append("highlights:\n")
+            meta.highlights.forEach { append("  - \"").append(clock(it.atSec)).append("\"\n") }
+        }
         append("---\n")
+        if (meta.highlights.isNotEmpty()) {
+            append("\n## Highlights\n\n")
+            meta.highlights.forEach { highlight ->
+                append("- ").append(clock(highlight.atSec))
+                spokenAt(transcript, highlight.atSec)?.let { append(" — ").append(it) }
+                append('\n')
+            }
+        }
         val lines = text(transcript).trimEnd('\n')
         if (lines.isNotEmpty()) append('\n').append(lines.replace("\n", "\n\n")).append('\n')
     }
 
+    /**
+     * SubRip subtitles for the share sheet (docs/08 "Exports"): one cue per segment, the speaker's name or
+     * id in front when speakers were identified. A segment longer than [CUE_SEC] or [CUE_CHARS] is cut
+     * at its word timings when it has them, and stays one cue when it does not.
+     */
+    fun srt(transcript: Transcript): String = buildString {
+        cues(transcript).forEachIndexed { index, cue ->
+            append(index + 1).append('\n')
+            append(cueTime(cue.start, ',')).append(" --> ").append(cueTime(cue.end, ',')).append('\n')
+            append(cue.text).append("\n\n")
+        }
+    }
+
+    /** WebVTT, the same cues as [srt]. */
+    fun vtt(transcript: Transcript): String = buildString {
+        append("WEBVTT\n\n")
+        cues(transcript).forEach { cue ->
+            append(cueTime(cue.start, '.')).append(" --> ").append(cueTime(cue.end, '.')).append('\n')
+            append(cue.text).append("\n\n")
+        }
+    }
+
+    /** What each speaker id is written as: the name the user gave it, else the id. */
+    private fun labels(transcript: Transcript): Map<String, String> =
+        transcript.speakers.associate { it.id to (it.name?.trim()?.takeIf(String::isNotEmpty) ?: it.id) }
+
+    /** The words of the segment playing at [atSec], or of the last one before it. */
+    private fun spokenAt(transcript: Transcript, atSec: Double): String? {
+        val spoken = transcript.segments.filter { it.text.isNotBlank() }
+        val segment = spoken.firstOrNull { atSec >= it.start && atSec < it.end }
+            ?: spoken.lastOrNull { it.start <= atSec }
+            ?: return null
+        return segment.text.trim()
+    }
+
+    private class Cue(val start: Double, val end: Double, val text: String)
+
+    private fun cues(transcript: Transcript): List<Cue> {
+        val labels = labels(transcript)
+        val identified = transcript.speakers.isNotEmpty()
+        return transcript.segments.filter { it.text.isNotBlank() }.flatMap { segment ->
+            val prefix = if (identified && segment.speaker.isNotEmpty()) "${labels[segment.speaker] ?: segment.speaker}: " else ""
+            pieces(segment).map { (start, end, text) -> Cue(start, maxOf(start, end), prefix + text) }
+        }
+    }
+
+    /** One segment as cue-sized pieces, cut between words where it has word timings. */
+    private fun pieces(segment: TranscriptSegment): List<Triple<Double, Double, String>> {
+        val text = segment.text.trim()
+        val words = segment.words?.filter { it.text.isNotBlank() }.orEmpty()
+        if (words.isEmpty() || (segment.end - segment.start <= CUE_SEC && text.length <= CUE_CHARS)) {
+            return listOf(Triple(segment.start, segment.end, text))
+        }
+        // A segment written without spaces (Japanese, Chinese) is joined back the same way.
+        val separator = if (' ' in text) " " else ""
+        val pieces = mutableListOf<Triple<Double, Double, String>>()
+        var start = words.first().start
+        var end = start
+        val line = StringBuilder()
+        for (word in words) {
+            val next = word.text.trim()
+            val longer = line.length + separator.length + next.length > CUE_CHARS || word.end - start > CUE_SEC
+            if (line.isNotEmpty() && longer) {
+                pieces += Triple(start, end, line.toString())
+                line.clear()
+                start = word.start
+            }
+            if (line.isNotEmpty()) line.append(separator)
+            line.append(next)
+            end = word.end
+        }
+        if (line.isNotEmpty()) pieces += Triple(start, end, line.toString())
+        return pieces
+    }
+
+    /** `01:02:03,456` (SubRip) or `01:02:03.456` (WebVTT); hours are not wrapped. */
+    private fun cueTime(seconds: Double, decimal: Char): String {
+        val millis = round(seconds.coerceAtLeast(0.0) * 1000).toLong()
+        val clock = listOf(millis / 3_600_000, (millis % 3_600_000) / 60_000, (millis % 60_000) / 1000)
+            .joinToString(":") { it.toString().padStart(2, '0') }
+        return clock + decimal + (millis % 1000).toString().padStart(3, '0')
+    }
+
     /** `01:02:03` — hours are not wrapped at 24, a recording is not a clock. */
-    private fun clock(seconds: Double): String {
+    internal fun clock(seconds: Double): String {
         val total = seconds.toLong().coerceAtLeast(0)
         return listOf(total / 3600, (total % 3600) / 60, total % 60)
             .joinToString(":") { it.toString().padStart(2, '0') }
@@ -174,4 +276,8 @@ object TranscriptNormalizer {
 
     private const val FIRST_SPEAKER = "S1"
     private const val LINE_SEC = 60.0
+
+    /** The longest cue the subtitle exports make out of a segment with word timings. */
+    private const val CUE_SEC = 7.0
+    private const val CUE_CHARS = 84
 }
