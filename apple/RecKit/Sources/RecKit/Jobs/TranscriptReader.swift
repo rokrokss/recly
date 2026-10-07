@@ -2,10 +2,10 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/09 §4 "Reading mode": the transcript as paragraphs under the recording. While it plays, the
+/// docs/09 "Transcript reader": the transcript as paragraphs under the recording. While it plays, the
 /// paragraph under the playhead wears a 2 pt accent bar and an accent time, and the list keeps it in
 /// the upper third — until the user scrolls, when `Back to playback` takes them back. Speakers are
-/// told apart by their label alone; highlights are a flag after the time; a find (from search, or
+/// told apart by their label alone; a highlight is a small square after the time; a find (from search, or
 /// ⌘F on the Mac) tints every match.
 struct TranscriptReader: View {
     let transcript: Transcript
@@ -134,14 +134,15 @@ struct TranscriptReader: View {
                     .accessibilityIdentifier("transcript-time-\(group.id)")
                 ForEach(marks, id: \.self) { mark in
                     HighlightMenu(atSec: mark, go: { onSeek(mark) }, remove: { onRemoveHighlight(mark) }) {
-                        // docs/09 §1: the highlight square, 6×6 in the accent, on a finger-sized target.
+                        // docs/09 "Highlights": the highlight square, 6×6 in the accent, on a finger-sized
+                        // target.
                         Rectangle()
                             .fill(blueprint.palette.accent)
                             .frame(width: 6, height: 6)
                             .frame(width: 28, height: minTouch)
                             .contentShape(Rectangle())
                     }
-                    .accessibilityIdentifier("transcript-flag")
+                    .accessibilityIdentifier("transcript-highlight")
                 }
                 if !transcript.speakers.isEmpty, !group.speaker.isEmpty {
                     let label = transcript.label(of: group.speaker)

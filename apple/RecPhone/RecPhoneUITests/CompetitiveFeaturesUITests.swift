@@ -1,9 +1,9 @@
 import XCTest
 
-/// docs/09 §1–§11 on the phone, driven end to end for the lane's screenshots: Highlight while recording,
-/// the detail's More, Share, speed, highlights, edit mode and speaker menu, search, and the vocabulary
-/// row. Expects a recording titled `1-Weekly meeting` with a transcript on the simulator (the lane's
-/// seed: an imported file and its transcript); every step saves a screenshot as an attachment.
+/// docs/09 "Screen principles" on the phone, driven end to end for the lane's screenshots: Highlight while
+/// recording, the detail's More, Share, speed, highlights, edit mode and speaker menu, search, and the
+/// vocabulary row. Expects a recording titled `1-Weekly meeting` with a transcript on the simulator (the
+/// lane's seed: an imported file and its transcript); every step saves a screenshot as an attachment.
 final class CompetitiveFeaturesUITests: XCTestCase {
     override func setUp() {
         continueAfterFailure = false
@@ -182,7 +182,8 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         }
     }
 
-    /// docs/09 §10: the Record widget as the system's gallery offers it (the simulator's system language).
+    /// docs/09 "Quick start": the Record widget as the system's gallery offers it (the simulator's system
+    /// language).
     func testRecordWidgetInGallery() {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         XCUIDevice.shared.press(.home)
@@ -214,7 +215,8 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         shot("widget-gallery-record-next")
     }
 
-    /// docs/09 §10: the Record widget on the Home Screen during a recording, and its stop node stopping it.
+    /// docs/09 "Quick start": the Record widget on the Home Screen during a recording, and its stop node
+    /// stopping it.
     func testRecordWidgetStopsTheRecording() {
         let app = launch("en")
         let start = app.buttons["start"]

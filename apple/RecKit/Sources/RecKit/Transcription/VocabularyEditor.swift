@@ -2,7 +2,7 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/05 "Fixed processing settings" · docs/09 §11: the names and terms the transcription should
+/// docs/05 "Fixed processing settings" · docs/09 "Vocabulary": the names and terms the transcription should
 /// spell correctly, as chips in the processing settings draft — a field that adds one per line, a ×
 /// on each to take it out. Saved with the rest of the draft (Cancel · Save).
 struct VocabularyEditor: View {

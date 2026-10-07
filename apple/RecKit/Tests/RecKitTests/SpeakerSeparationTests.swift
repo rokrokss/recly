@@ -3,9 +3,9 @@ import AVFoundation
 import RecKitSpeakers
 import XCTest
 
-/// docs/recly.md §15 "On-device speaker diarization": the bundled models load with no network, and two
-/// plainly different voices come back as two speakers. The voices are the system's own `say`, so the
-/// fixture is made here rather than checked in; a Mac without them skips.
+/// docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": the bundled models
+/// load with no network, and two plainly different voices come back as two speakers. The voices are the
+/// system's own `say`, so the fixture is made here rather than checked in; a Mac without them skips.
 final class SpeakerSeparationTests: XCTestCase {
     func testTwoVoicesAreTwoSpeakers() async throws {
         XCTAssertTrue(SpeakerSeparation.available, "run apple/scripts/fetch-speaker-models.sh (make core)")

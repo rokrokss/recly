@@ -25,7 +25,7 @@ struct RecordingView: View {
     @State private var busy = false
     /// When the recorder went to work, so the window can be measured from it. Nil while it is not.
     @State private var busyStartedAt: Date?
-    /// docs/09 §1: the Highlight node's 150 ms of accent after a tap.
+    /// docs/09 "Highlights": the Highlight node's 150 ms of accent after a tap.
     @State private var marking = false
 
     var body: some View {
@@ -106,7 +106,7 @@ struct RecordingView: View {
             .frame(maxHeight: .infinity)
 
             VStack(spacing: 10) {
-                // docs/09 §1: the Highlight node beside the record node while recording — laid over
+                // docs/09 "Highlights": the Highlight node beside the record node while recording — laid over
                 // its end side, so the record node stays centred and nothing moves when it appears.
                 recordNode
                     .overlay(alignment: .trailing) {
@@ -116,7 +116,7 @@ struct RecordingView: View {
                     }
                 // A space when there is nothing to say, so the line keeps its height and the node
                 // above it never moves.
-                // docs/09 §1: the news of a highlight, while recording, with its time in mono.
+                // docs/09 "Highlights": the news of a highlight, while recording, with its time in mono.
                 Group {
                     if model.isRecording, let at = model.highlightedAtSec {
                         HighlightNews(atSec: at)
@@ -246,7 +246,7 @@ struct RecordingView: View {
         .task(id: working) { await holdBusy() }
     }
 
-    /// docs/09 §1: a mark at this moment of the recording. Square, accent-bordered, the small filled
+    /// docs/09 "Highlights": a mark at this moment of the recording. Square, accent-bordered, the small filled
     /// square every highlight is drawn with, and no words; the line under the record node says when.
     private var highlightNode: some View {
         Button {

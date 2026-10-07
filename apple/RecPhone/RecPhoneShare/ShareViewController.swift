@@ -1,7 +1,7 @@
 import UIKit
 import UniformTypeIdentifiers
 
-/// docs/09 §7: `Import to Recly` in the share sheet of other apps — the audio or video files shared are
+/// docs/09 "Import": `Import to Recly` in the share sheet of other apps — the audio or video files shared are
 /// copied into the app group's inbox and the app is opened to import them. Nothing else happens here:
 /// the extension links no RecKit and no core, and the app imports whatever the inbox holds whenever it
 /// comes to the front, so a file is not lost if the open below does not happen.

@@ -56,7 +56,8 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
 
 #if os(iOS) || os(macOS)
 
-/// The detail header's icon buttons (docs/09 §2): an SF Symbol in the quiet ink, a 44pt target.
+/// The detail header's icon buttons (docs/09 "Detail header and More menu"): an SF Symbol in the quiet ink, a
+/// 44pt target.
 struct HeaderIcon: View {
     let systemName: String
     @Environment(\.blueprint) private var blueprint
@@ -71,7 +72,8 @@ struct HeaderIcon: View {
     }
 }
 
-/// One item of a menu that can say why it is off: the reason is the item's second line (docs/09 §2).
+/// One item of a menu that can say why it is off: the reason is the item's second line (docs/09 "Detail
+/// header and More menu").
 struct ReasonedMenuItem: View {
     let title: String
     let reason: String?
@@ -86,8 +88,8 @@ struct ReasonedMenuItem: View {
     }
 }
 
-/// docs/09 §2: the detail's More menu — Rename · Edit transcript · Transcribe again · Add highlight — with
-/// the ones that cannot run now shown off, and why.
+/// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
+/// again · Add highlight — with the ones that cannot run now shown off, and why.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
@@ -118,7 +120,7 @@ struct DetailMoreMenu: View {
     }
 }
 
-/// docs/09 §1: a marked moment's two actions, from its tick on the waveform or its flag in the
+/// docs/09 "Highlights": a marked moment's two actions, from its tick on the waveform or its square in the
 /// transcript. Removing one is not deleting a recording, so it is not red.
 struct HighlightMenu<Label: View>: View {
     let atSec: Double
@@ -141,8 +143,8 @@ struct HighlightMenu<Label: View>: View {
     }
 }
 
-/// docs/09 §4: who is speaking, as a quiet badge — the name when the user gave one, else the id in mono.
-/// Told apart by the label only: no speaker has a colour (2026-10-02).
+/// docs/09 "Transcript reader": who is speaking, as a quiet badge — the name when the user gave one, else the
+/// id in mono. Told apart by the label only: no speaker has a colour (2026-10-02).
 struct SpeakerBadge: View {
     let text: String
     let mono: Bool
@@ -163,7 +165,8 @@ struct SpeakerBadge: View {
     }
 }
 
-/// docs/09 §5: the speaker menu — rename the speaker, or move this line to another one, or to a new one.
+/// docs/09 "Editing and speakers": the speaker menu — rename the speaker, or move this line to another one,
+/// or to a new one.
 struct SpeakerMenu<Label: View>: View {
     let transcript: Transcript
     let current: String
@@ -190,7 +193,7 @@ struct SpeakerMenu<Label: View>: View {
     }
 }
 
-/// docs/10 "Search" · docs/09 §6: the find bar over the transcript — where this match is among them, and
+/// docs/10 "Search" · docs/09 "Search": the find bar over the transcript — where this match is among them, and
 /// the way to the one before and after it. Moving between matches scrolls the text, not the playhead.
 public struct FindBar: View {
     private let index: Int
@@ -250,7 +253,7 @@ public struct FindBar: View {
     }
 }
 
-/// docs/10 "Search" · docs/09 §6: one recording a search found — when, the title with its matches in the
+/// docs/10 "Search" · docs/09 "Search": one recording a search found — when, the title with its matches in the
 /// accent, up to two lines of transcript with the matches marked, and the moment of the first.
 /// The phone's list and the Mac's window list draw the same row.
 public struct SearchResultRow: View {
@@ -342,8 +345,8 @@ public struct SearchResultRow: View {
     }
 }
 
-/// docs/08 "Exports" · docs/09 §3 (phones): the Share sheet — one row per format, and Copy all. A file
-/// row asks the core for the file, says `Preparing…` while it does (joining the audio takes a moment),
+/// docs/08 "Exports" · docs/09 "Share / export" (phones): the Share sheet — one row per format, and Copy all.
+/// A file row asks the core for the file, says `Preparing…` while it does (joining the audio takes a moment),
 /// then hands it to the system share sheet.
 #if os(iOS)
 struct DetailShareSheet: View {

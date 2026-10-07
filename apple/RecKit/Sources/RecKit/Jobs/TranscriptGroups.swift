@@ -1,10 +1,10 @@
 import Foundation
 import ReclyCore
 
-/// One paragraph of the reader (docs/09 "Detail"): consecutive segments of one speaker, cut where the
-/// core's `TranscriptDocument` cuts its blocks — a new speaker, a minute of speech, or 1 200
-/// characters — but carrying the segments it is made of, which the speaker menu and the editor act
-/// on and the block does not say.
+/// One paragraph of the reader (docs/09 "Transcript reader"): consecutive segments of one speaker, cut where
+/// the core's `TranscriptDocument` cuts its blocks — a new speaker, a minute of speech, or 1 200 characters —
+/// but carrying the segments it is made of, which the speaker menu and the editor act on and the block does
+/// not say.
 public struct TranscriptGroup: Identifiable, Equatable, Sendable {
     public let id: Int
     public let start: Double

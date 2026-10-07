@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  docs/09 §7 · §10: the app group the app shares with its extensions — the Record widget's state and
+  docs/09 "Import" · "Quick start": the app group the app shares with its extensions — the Record widget's state and
   the share extension's inbox (PhoneAppGroup). RecPhone-iCloud.entitlements carries the same group
   beside iCloud for the builds Local.xcconfig signs with it.
 -->

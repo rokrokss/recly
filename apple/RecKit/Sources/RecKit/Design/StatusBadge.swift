@@ -147,7 +147,7 @@ public struct StatusBadge: View {
 
     public var body: some View {
         HStack(spacing: Space.xs) {
-            // docs/09 §7: an import is work with no percentage — the one loader, in the badge's ink.
+            // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink.
             if status.code == "IMPORTING" { BlueprintLoader(color: status.tone.ink(blueprint.palette)) }
             Text(verbatim: status.label)
         }

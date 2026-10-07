@@ -2,9 +2,10 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/08 "Editing" · docs/09 §4–§5: the reader's paragraphs keep the segments they are made of, and the
-/// editor's draft becomes edits the core applies to the transcript the user sees in the draft — checked
-/// against `TranscriptEdits.apply` itself, so a change of the core's numbering rule fails here.
+/// docs/08 "Editing" · docs/09 "Transcript reader" · "Editing and speakers": the reader's paragraphs keep the
+/// segments they are made of, and the editor's draft becomes edits the core applies to the transcript the
+/// user sees in the draft — checked against `TranscriptEdits.apply` itself, so a change of the core's
+/// numbering rule fails here.
 @MainActor
 final class TranscriptDraftTests: XCTestCase {
     func testGroupsCutAtASpeakerChangeAndKeepTheirSegments() {

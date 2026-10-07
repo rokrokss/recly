@@ -181,7 +181,8 @@ struct SettingsView: View {
                     .foregroundStyle(blueprint.palette.textMuted)
                 mono("AppAuth · GTMAppAuth · FluidAudio · Kotlin · Ktor · NemoTextProcessing · SQLDelight — Apache-2.0")
                 mono("fastcluster — BSD-2-Clause")
-                // docs/recly.md §15: the diarization models the app ships, and the attribution CC-BY-4.0 asks for.
+                // docs/09 "On-device speaker separation": the diarization models the app ships, and the
+                // attribution CC-BY-4.0 asks for.
                 mono("pyannote community-1 (pyannote · WeSpeaker · BUT Speech@FIT · Fluid Inference, converted to Core ML) — CC-BY-4.0")
             }
             .frame(maxWidth: .infinity, alignment: .leading)

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// docs/09 §1: the news of a highlight just made — `Highlight · 00:12:34`, the time in mono — on the line
-/// under the record control, wherever a recording is made.
+/// docs/09 "Highlights": the news of a highlight just made — `Highlight · 00:12:34`, the time in mono — on
+/// the line under the record control, wherever a recording is made.
 public struct HighlightNews: View {
     private let atSec: Double
     @Environment(\.blueprint) private var blueprint

@@ -3,10 +3,11 @@ import CoreML
 import FluidAudio
 import Foundation
 
-/// docs/recly.md §15 "On-device speaker diarization": who speaks when in a recording, worked out on this
-/// device by FluidAudio's offline diarizer (pyannote speaker-diarization-community-1) from the Core ML
-/// models this target ships. Nothing is downloaded: the models are loaded from the bundle by hand, so
-/// FluidAudio's own downloader is never reached, and its offline switch is on besides.
+/// docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": who speaks when in a
+/// recording, worked out on this device by FluidAudio's offline diarizer (pyannote
+/// speaker-diarization-community-1) from the Core ML models this target ships. Nothing is downloaded: the
+/// models are loaded from the bundle by hand, so FluidAudio's own downloader is never reached, and its
+/// offline switch is on besides.
 public enum SpeakerSeparation {
     /// What the settings call the model — a name, not translated (docs/09 principle 4).
     public static let modelName = "pyannote community-1"

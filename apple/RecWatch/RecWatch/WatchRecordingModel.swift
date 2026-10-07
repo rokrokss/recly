@@ -29,7 +29,7 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
     @Published private(set) var waiting = 0
     /// A refusal is not something the app can retry its way out of; the screen says so.
     @Published private(set) var microphoneDenied = false
-    /// docs/09 §1: the moment the last Highlight marked — the status line says it for 2 s.
+    /// docs/09 "Highlights": the moment the last Highlight marked — the status line says it for 2 s.
     @Published private(set) var highlightedAtSec: Double?
 
     private let logger = Logger(subsystem: CoreBridge.appName, category: "shell")
@@ -159,7 +159,8 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         Task { await finish() }
     }
 
-    /// docs/09 §1: a mark at the recorder's own clock — the button below the stop square, or Double Tap.
+    /// docs/09 "Highlights": a mark at the recorder's own clock — the button below the stop square, or Double
+    /// Tap.
     func highlight() {
         guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
         let at = recorder.recordedSec

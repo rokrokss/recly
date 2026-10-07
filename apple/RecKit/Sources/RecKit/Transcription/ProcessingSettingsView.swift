@@ -212,7 +212,8 @@ public struct ProcessingSettingsView: View {
                             .frame(maxWidth: .infinity, alignment: .trailing)
                     }
                     if let message = download.message { SectionFootnote(message.text) }
-                    // docs/recly.md §15: the diarization models ship with the app, so the row is a name and nothing to do.
+                    // docs/09 "On-device speaker separation": the diarization models ship with the app, so
+                    // the row is a name and nothing to do.
                     if model.local?.supportsDiarization == true {
                         SectionRow(title: loc("Speaker model")) {
                             Text(verbatim: SpeakerSeparation.modelName)
@@ -258,7 +259,7 @@ public struct ProcessingSettingsView: View {
                         #endif
                     }
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
-                    // docs/09 §11: after the language, part of the same draft (Cancel · Save).
+                    // docs/09 "Vocabulary": after the language, part of the same draft (Cancel · Save).
                     VocabularyEditor(terms: field(\.vocabulary), description: vocabularyDescription(draft))
                 }
                 if let message = model.message { SectionFootnote(message.text) }
@@ -342,7 +343,8 @@ public struct ProcessingSettingsView: View {
         }
     }
     private func speechLanguageTitle(_ language: Language) -> String { SpeechLanguageName.title(language) }
-    /// docs/09 §11: who reads the vocabulary — the provider, with the audio, or this device — or that nobody does.
+    /// docs/09 "Vocabulary": who reads the vocabulary — the provider, with the audio, or this device — or
+    /// that nobody does.
     private func vocabularyDescription(_ draft: ProcessingDraft) -> String {
         if draft.mode == .local {
             return loc(model.local?.supportsVocabulary == true

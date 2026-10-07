@@ -20,7 +20,7 @@ struct RecordingsView: View {
     /// docs/10 "Search": what is typed in the search field, and what the core found for it.
     @State private var query = ""
     @State private var hits: [SearchHit] = []
-    /// docs/09 §7: the system picker for audio and video files is up.
+    /// docs/09 "Import": the system picker for audio and video files is up.
     @State private var importing = false
 
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
@@ -29,7 +29,7 @@ struct RecordingsView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
-        // docs/09 §6: the search field is the platform's own (`.searchable`), and it lives in a
+        // docs/09 "Search": the search field is the platform's own (`.searchable`), and it lives in a
         // navigation bar — so the list has one, holding nothing but the field.
         NavigationStack {
             list
@@ -56,7 +56,8 @@ struct RecordingsView: View {
             // docs/09 screen principle 2: how many rows, and how many of them are waiting on something or
             // have stopped — the count on its own is a number with nothing to do (Recents.summary).
             ScreenHeader(title: loc("Recordings"), meta: Recents.summary(model.recents), trailingAlignment: .trailing) {
-                // docs/09 §7: a file from elsewhere — audio, or a video's sound — as a recording of this phone.
+                // docs/09 "Import": a file from elsewhere — audio, or a video's sound — as a recording of
+                // this phone.
                 Button { importing = true } label: {
                     Image(systemName: "square.and.arrow.down")
                         .font(blueprint.fonts.sans(TypeSize.body))
@@ -80,7 +81,7 @@ struct RecordingsView: View {
                     .onTapGesture { model.dismissMessage() }
                     .accessibilityIdentifier("message")
             }
-            // docs/09 §7: a failed import leaves no row, so the list says it here — and why.
+            // docs/09 "Import": a failed import leaves no row, so the list says it here — and why.
             if let failure = model.importFailure {
                 Banner("\(RecKitStrings.localized("Could not import this file")) — \(CoreMessages.text(failure).sentence)", tone: .danger)
                     .padding(.horizontal, Space.m)
@@ -101,7 +102,7 @@ struct RecordingsView: View {
         }
     }
 
-    /// docs/10 "Search" · docs/09 §6: the rows the search found, in place of the ledger while the field
+    /// docs/10 "Search" · docs/09 "Search": the rows the search found, in place of the ledger while the field
     /// has text; a row opens the detail on its first match.
     private var results: some View {
         VStack(spacing: 0) {
@@ -142,7 +143,8 @@ struct RecordingsView: View {
                         row(item)
                     }
                     if model.recents.isEmpty {
-                        // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
+                        // docs/09 screen principle 8: no button here — the tab bar right below already says
+                        // Record.
                         EmptyListMessage(
                             title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
                             hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")

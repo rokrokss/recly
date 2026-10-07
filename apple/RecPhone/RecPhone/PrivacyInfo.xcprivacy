@@ -33,7 +33,7 @@
 			<key>NSPrivacyAccessedAPITypeReasons</key>
 			<array>
 				<string>C617.1</string>
-				<!-- docs/09 §7: the date of a file the user picked to import, which the recording starts at. -->
+				<!-- docs/09 "Import": the date of a file the user picked to import, which the recording starts at. -->
 				<string>3B52.1</string>
 			</array>
 		</dict>

@@ -16,7 +16,7 @@ RECLY_MAC_GID_REVERSED_CLIENT_ID = com.googleusercontent.apps.GIDClientID
 // RECLY_MAC_PROFILE names that profile: the Mac target reads it, as it reads RECLY_MAC_ENTITLEMENTS,
 // because the target's own setting would hide a PROVISIONING_PROFILE_SPECIFIER set here.
 RECLY_ICLOUD_CONTAINER =
-// docs/09 §7 · §10: the app group alone; the iCloud entitlements carry it too.
+// docs/09 "Import" · "Quick start": the app group alone; the iCloud entitlements carry it too.
 RECLY_PHONE_ENTITLEMENTS = RecPhone/RecPhone.entitlements
 RECLY_MAC_ENTITLEMENTS = RecMac/RecMac.entitlements
 RECLY_MAC_PROFILE =

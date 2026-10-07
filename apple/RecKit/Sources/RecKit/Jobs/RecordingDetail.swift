@@ -42,9 +42,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var driveFetch = DriveFetch.deciding
     /// How much of that trip is done, 0 to 1, by the bytes of the parts it brings back.
     @Published public private(set) var fetchProgress: Double = 0
-    /// docs/09 §1: the moments marked on this recording, ascending — ticks on the waveform, flags in the text.
+    /// docs/09 "Highlights": the moments marked on this recording, ascending — ticks on the waveform, squares
+    /// in the text.
     @Published public private(set) var highlights: [Double] = []
-    /// docs/09 §4: the paragraphs of [transcript], with the segments each is made of.
+    /// docs/09 "Transcript reader": the paragraphs of [transcript], with the segments each is made of.
     @Published public private(set) var groups: [TranscriptGroup] = []
     /// A job of this recording has not settled: the transcript may be rewritten under an edit, so
     /// editing and a second transcription wait (docs/08 "Editing").
@@ -260,12 +261,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    // MARK: - Highlights, Share, editing and Transcribe again (docs/09 §1–§8)
+    // MARK: - Highlights, Share, editing and Transcribe again (docs/09 "Detail header and More menu")
 
     /// The shell's executor, poked when this page queues a job (a re-transcription) so it runs now.
     public var jobsDue: (() -> Void)?
 
-    /// docs/09 §1: a mark at [sec] — the More menu's, or the desktop's Highlight button.
+    /// docs/09 "Highlights": a mark at [sec] — the More menu's, or the desktop's Highlight button.
     public func addHighlight(atSec sec: Double) async {
         await setHighlights(highlights + [sec])
     }
@@ -308,14 +309,14 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         #endif
     }
 
-    /// Why `Edit transcript` cannot run now, or nil when it can (docs/09 §2).
+    /// Why `Edit transcript` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var editReason: String? {
         if transcript == nil { return RecKitStrings.localized("No transcript yet") }
         if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
         return nil
     }
 
-    /// Why `Transcribe again` cannot run now, or nil when it can (docs/09 §2).
+    /// Why `Transcribe again` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var retranscribeReason: String? {
         if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
         if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
@@ -391,14 +392,15 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return false
     }
 
-    /// docs/09 §5: a speaker's name from the speaker menu; empty takes it away and the id shows again.
+    /// docs/09 "Editing and speakers": a speaker's name from the speaker menu; empty takes it away and the id
+    /// shows again.
     public func renameSpeaker(_ id: String, to name: String) async {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         await edit([TranscriptEditRenameSpeaker(speakerId: id, name: trimmed.isEmpty ? nil : trimmed)])
     }
 
-    /// docs/09 §5: every segment of a line to speaker [id], or to a new one — `S{n+1}`, the core's own
-    /// rule, which the first segment makes and the rest then name.
+    /// docs/09 "Editing and speakers": every segment of a line to speaker [id], or to a new one — `S{n+1}`,
+    /// the core's own rule, which the first segment makes and the rest then name.
     public func changeSpeaker(segments: [Int], to id: String?) async {
         guard let first = segments.first, let transcript else { return }
         let target = id ?? "S\((transcript.speakers.compactMap { $0.id.hasPrefix("S") ? Int($0.id.dropFirst()) : nil }.max() ?? 0) + 1)"
@@ -537,9 +539,10 @@ public struct RecordingDetailView: View {
     /// grow in once, where the loader stood, starting at [growStart].
     @State private var fetched = false
     @State private var growStart: Date?
-    /// docs/09 §3 (phones): the Share sheet is up.
+    /// docs/09 "Share / export" (phones): the Share sheet is up.
     @State private var sharing = false
-    /// docs/09 §5: the editor's draft while the page is in edit mode, nil while it is reading.
+    /// docs/09 "Editing and speakers": the editor's draft while the page is in edit mode, nil while it is
+    /// reading.
     @State private var draft: TranscriptDraft?
     /// `Discard your changes?` is up.
     @State private var discarding = false
@@ -567,14 +570,15 @@ public struct RecordingDetailView: View {
             ScreenHeader(title: draft == nil ? model.title : RecKitStrings.localized("Edit transcript"), trailingAlignment: .trailing) {
                 HStack(spacing: Space.xs) {
                     if let draft {
-                        // docs/09 §5: the desktop's Cancel · Save are in the header; the phone's sit
-                        // under the fields, above the keyboard.
+                        // docs/09 "Editing and speakers": the desktop's Cancel · Save are in the header; the
+                        // phone's sit under the fields, above the keyboard.
                         #if !os(iOS)
                         EditorButtons(changed: draft.changed, saving: model.saving == .processing, cancel: leaveEditor, save: saveDraft)
                         #endif
                     } else {
                         #if os(iOS)
-                        // docs/09 §3: Share opens the sheet of formats. The Mac's is in its window toolbar.
+                        // docs/09 "Share / export": Share opens the sheet of formats. The Mac's is in its
+                        // window toolbar.
                         if !model.loading {
                             Button { sharing = true } label: { HeaderIcon(systemName: "square.and.arrow.up") }
                                 .buttonStyle(.plain)
@@ -582,7 +586,8 @@ public struct RecordingDetailView: View {
                                 .accessibilityIdentifier("detail-share")
                         }
                         #endif
-                        // docs/09 §2: Rename, Edit transcript, Transcribe again and Add highlight.
+                        // docs/09 "Detail header and More menu": Rename, Edit transcript, Transcribe again
+                        // and Add highlight.
                         if !model.loading {
                             DetailMoreMenu(
                                 model: model,
@@ -612,7 +617,8 @@ public struct RecordingDetailView: View {
                 HairLine()
             }
             #endif
-            // docs/09 §4: a transcription of this recording again, while the old text stays readable.
+            // docs/09 "Transcript reader": a transcription of this recording again, while the old text stays
+            // readable.
             if let again = model.retranscribing, draft == nil {
                 LoadingText(
                     text: loc(again == .local ? "Transcribing on this device" : "Transcribing again…"),
@@ -717,7 +723,7 @@ public struct RecordingDetailView: View {
                 BlueprintDialogText(retranscribeLine ?? "")
             }
         }
-        // docs/09 §5: leaving the editor with changes in it.
+        // docs/09 "Editing and speakers": leaving the editor with changes in it.
         .blueprintDialogOverlay(isPresented: $discarding) {
             BlueprintDialog(title: loc("Discard your changes?")) {
                 BlueprintButton(loc("Keep editing"), tone: .quiet) { discarding = false }
@@ -884,8 +890,8 @@ public struct RecordingDetailView: View {
             return .handled
         }
         #endif
-        // docs/09 §1: a tap within 12 pt of a tick opens its menu — Go to, Remove — and a screen reader
-        // finds each tick as an element of its own with the same two actions.
+        // docs/09 "Highlights": a tap within 12 pt of a tick opens its menu — Go to, Remove — and a screen
+        // reader finds each tick as an element of its own with the same two actions.
         .overlay {
             GeometryReader { geometry in
                 ForEach(model.highlights, id: \.self) { mark in
@@ -1034,8 +1040,8 @@ public struct RecordingDetailView: View {
                 with: .color(x <= playhead ? blueprint.palette.accent : blueprint.palette.textMuted)
             )
         }
-        // docs/09 §1: each highlight a 2 pt accent line over the whole height with a 6×6 filled square
-        // at the top, above the bars and under the playhead.
+        // docs/09 "Highlights": each highlight a 2 pt accent line over the whole height with a 6×6 filled
+        // square at the top, above the bars and under the playhead.
         for mark in model.highlights where model.totalSec > 0 {
             let x = min(max(0, size.width * mark / model.totalSec), size.width - 2)
             context.fill(Path(CGRect(x: x, y: 0, width: 2, height: size.height)), with: .color(blueprint.palette.accent))
@@ -1079,7 +1085,7 @@ public struct RecordingDetailView: View {
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 Spacer(minLength: Space.s)
-                // docs/09 §9: the speed between the clock and Play.
+                // docs/09 "Playback": the speed between the clock and Play.
                 PlaybackSpeedChip(player: player)
                 #endif
                 // Not while this device is recording: on the phone that session belongs to the
@@ -1111,7 +1117,7 @@ public struct RecordingDetailView: View {
                 Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
-                // docs/09 §9 · §1 (desktop): the speed, and a mark at the playhead.
+                // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
                 PlaybackSpeedChip(player: player)
                 BlueprintButton(loc("Highlight"), tone: .quiet) {
                     Task { await model.addHighlight(atSec: positionSec) }

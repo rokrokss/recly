@@ -31,7 +31,7 @@ struct RecordingView: View {
 
             button
 
-            // docs/09 §1: below the stop square while recording; Double Tap is this button's now.
+            // docs/09 "Highlights": below the stop square while recording; Double Tap is this button's now.
             if model.isRecording {
                 highlightButton
             }
@@ -118,10 +118,10 @@ struct RecordingView: View {
     }
 }
 
-/// docs/09 §1 (2026-10-07): Double Tap marks a highlight — it used to stop, and Stop stays on the square.
-/// `handGestureShortcut` is watchOS 11 API and RecKit's floor is 10, so on watchOS 10 the button is
-/// only a button — and the gesture is armed only while recording, so a double tap on the idle screen
-/// does nothing.
+/// docs/09 "Highlights" (2026-10-07): Double Tap marks a highlight — it used to stop, and Stop stays on the
+/// square. `handGestureShortcut` is watchOS 11 API and RecKit's floor is 10, so on watchOS 10 the button is
+/// only a button — and the gesture is armed only while recording, so a double tap on the idle screen does
+/// nothing.
 private struct DoubleTapHighlight: ViewModifier {
     let armed: Bool
 

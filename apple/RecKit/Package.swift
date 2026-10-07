@@ -24,7 +24,7 @@ let package = Package(
         // Drive-only OAuth plus the legacy keychain reader for migration (docs/06).
         .package(url: "https://github.com/openid/AppAuth-iOS.git", from: "2.1.0"),
         .package(url: "https://github.com/google/GTMAppAuth.git", from: "5.0.0"),
-        // docs/recly.md §15: on-device speaker diarization on the iPhone and Mac. Exact, because the
+        // docs/09 "On-device speaker separation": speaker diarization on the iPhone and Mac. Exact, because the
         // models `fetch-speaker-models.sh` pins are the ones this release's loader reads.
         .package(url: "https://github.com/FluidInference/FluidAudio.git", exact: "0.17.5"),
     ],
@@ -57,9 +57,10 @@ let package = Package(
             // sentences they resolve to live.
             resources: [.process("Resources")]
         ),
-        // docs/recly.md §15 "On-device speaker diarization": FluidAudio and the Core ML models it runs,
-        // in a target of their own so the ~21 MB of models reach the iPhone and Mac apps and never the
-        // watch's. The models are fetched by `apple/scripts/fetch-speaker-models.sh` (`make core`).
+        // docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": FluidAudio and
+        // the Core ML models it runs, in a target of their own so the ~21 MB of models reach the iPhone and
+        // Mac apps and never the watch's. The models are fetched by `apple/scripts/fetch-speaker-models.sh`
+        // (`make core`).
         .target(
             name: "RecKitSpeakers",
             dependencies: [

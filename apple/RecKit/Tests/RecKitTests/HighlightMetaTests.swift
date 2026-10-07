@@ -4,10 +4,10 @@ import ReclyCore
 import XCTest
 @testable import RecKit
 
-/// docs/09 §1 · docs/03 "Watch → phone transfer contract": a highlight marked while recording is in the
-/// recording's `meta.json` once the stop has finalized it — the file the watch sends to the phone
-/// last, which is the only way its marks reach the phone. `WCSession.transferFile` itself cannot run
-/// in a simulator, so this is the end of the path that can be checked here.
+/// docs/09 "Highlights" · docs/03 "Watch → phone transfer contract": a highlight marked while recording is in
+/// the recording's `meta.json` once the stop has finalized it — the file the watch sends to the phone last,
+/// which is the only way its marks reach the phone. `WCSession.transferFile` itself cannot run in a
+/// simulator, so this is the end of the path that can be checked here.
 final class HighlightMetaTests: XCTestCase {
     private var dataDirectory: URL!
 

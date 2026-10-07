@@ -1,7 +1,7 @@
 import Foundation
 
-/// docs/13 "Display" · docs/09 §7 · §10: the one app group the phone app shares with its extensions —
-/// the Home and Lock Screen widgets read whether a recording is running from it, and the share
+/// docs/13 "Display" · docs/09 "Import" · "Quick start": the one app group the phone app shares with its
+/// extensions — the Home and Lock Screen widgets read whether a recording is running from it, and the share
 /// extension leaves imported files in it. Foundation only: the extensions link no RecKit and no core.
 enum PhoneAppGroup {
     static let identifier = "group.app.recly"
@@ -40,7 +40,7 @@ enum PhoneStatusStore {
     }
 }
 
-/// docs/09 §7: files `Import to Recly` copied out of another app, waiting for the app to import them.
+/// docs/09 "Import": files `Import to Recly` copied out of another app, waiting for the app to import them.
 enum ImportInbox {
     static var directory: URL? { PhoneAppGroup.container?.appendingPathComponent("Inbox", isDirectory: true) }
 

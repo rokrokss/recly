@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# docs/recly.md §15 "On-device speaker diarization": the Core ML models the iPhone and Mac apps ship
-# for FluidAudio's offline diarizer — pyannote speaker-diarization-community-1 as converted by Fluid
-# Inference (CC-BY-4.0, THIRD-PARTY-NOTICES.md). Fetched at build time into the RecKitSpeakers target,
-# where Package.swift copies them into the app; the apps never download them. Not checked in, like the
-# XCFramework `build-core.sh` stages: ~21 MB of weights stay out of the repository's history.
+# docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": the Core ML models the
+# iPhone and Mac apps ship for FluidAudio's offline diarizer — pyannote speaker-diarization-community-1 as
+# converted by Fluid Inference (CC-BY-4.0, THIRD-PARTY-NOTICES.md). Fetched at build time into the
+# RecKitSpeakers target, where Package.swift copies them into the app; the apps never download them. Not
+# checked in, like the XCFramework `build-core.sh` stages: ~21 MB of weights stay out of the repository's
+# history.
 #
 # Pinned to one Hugging Face commit, every file by size and SHA-256. A file already there with the
 # right hash is kept, so a second run costs nothing and needs no network.

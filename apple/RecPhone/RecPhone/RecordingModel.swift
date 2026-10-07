@@ -100,8 +100,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             if tab != .record { highlightedAtSec = nil }
         }
     }
-    /// docs/09 §1: the moment the last Highlight marked, while recording — news for the line under the
-    /// record node until the next event or a tab switch.
+    /// docs/09 "Highlights": the moment the last Highlight marked, while recording — news for the line under
+    /// the record node until the next event or a tab switch.
     @Published private(set) var highlightedAtSec: Double?
     /// docs/03 "Naming rules": why the last import left nothing behind — a core code, said under
     /// `Could not import this file` in the list.
@@ -619,7 +619,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return detail
     }
 
-    /// docs/09 §1: a mark at the recorder's own clock — what has been written, not the wall clock.
+    /// docs/09 "Highlights": a mark at the recorder's own clock — what has been written, not the wall clock.
     func highlight() {
         guard isRecording, let id = recordingId, let core = bridge?.core, let recorder else { return }
         let at = recorder.recordedSec
@@ -636,7 +636,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         return (try? await core.search(query: query, limit: 50)) ?? []
     }
 
-    /// docs/03 "Naming rules" · docs/09 §7: picked or shared files, one after another, each its own
+    /// docs/03 "Naming rules" · docs/09 "Import": picked or shared files, one after another, each its own
     /// recording — the row says `IMPORTING` while the file is made into parts.
     func importFiles(_ urls: [URL], removeAfter: Bool = false) {
         guard let core = bridge?.core else { return }
@@ -678,7 +678,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         importFailure = nil
     }
 
-    /// docs/09 §7: what the share extension left in the app group — imported when the app is
+    /// docs/09 "Import": what the share extension left in the app group — imported when the app is
     /// opened for it and whenever it comes to the front, so a file is never left behind.
     func importInbox() {
         // Claimed at once — moved out of the inbox — so a second activation does not import it again.
@@ -781,7 +781,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         if isRecording != wasRecording { publishStatus() }
     }
 
-    /// docs/09 §10: the Home and Lock Screen widgets are drawn by another process from the app group,
+    /// docs/09 "Quick start": the Home and Lock Screen widgets are drawn by another process from the app group,
     /// so every start and stop writes the file and asks WidgetKit to redraw them.
     private func publishStatus() {
         PhoneStatusStore.save(PhoneStatus(
@@ -875,7 +875,7 @@ final class RecordingModel: ObservableObject, RecordingCommands {
                 // Whatever relaunch a latched upload finish belonged to, it ended here: nobody came
                 // for it with a system completion handler (docs/13 I4).
                 self.transport.clearEarlyFinish()
-                // docs/09 §7: files the share extension handed over while the app was away.
+                // docs/09 "Import": files the share extension handed over while the app was away.
                 self.importInbox()
             }
         }

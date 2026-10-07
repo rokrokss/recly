@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  docs/09 §7: the share extension — offered for audio and video, one or more files. Its name in the
+  docs/09 "Import": the share extension — offered for audio and video, one or more files. Its name in the
   share sheet is CFBundleDisplayName, translated in InfoPlist.xcstrings.
 -->
 <plist version="1.0">

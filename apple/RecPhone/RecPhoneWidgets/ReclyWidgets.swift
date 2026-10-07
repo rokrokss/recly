@@ -133,7 +133,7 @@ struct StartRecordingControl: ControlWidget {
     }
 }
 
-/// docs/09 §10: the Home Screen and Lock Screen `Record` widget — a square record node, or while a
+/// docs/09 "Quick start": the Home Screen and Lock Screen `Record` widget — a square record node, or while a
 /// recording runs its timer and a stop node. Both run the app's own intents: the start opens the app,
 /// where the audio session belongs, and the stop runs in the app's process.
 struct RecordWidget: Widget {

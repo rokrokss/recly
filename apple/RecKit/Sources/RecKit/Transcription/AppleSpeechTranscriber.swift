@@ -162,10 +162,10 @@ private final class AppleSpeechTranscriber: LocalTranscriptionEngine, ModelDownl
         }
     }
 
-    /// docs/recly.md §15 "On-device speaker diarization": the turns of the whole file, from 0 s, before the
-    /// first segment is checkpointed — so every segment gets its speaker on the way out. A resumed
-    /// run separates again, and its labels need not be the earlier run's. A failure costs the
-    /// speakers, never the transcript.
+    /// docs/09 "On-device speaker separation" · §15 "Apple on-device speech model assets": the turns of the
+    /// whole file, from 0 s, before the first segment is checkpointed — so every segment gets its speaker on
+    /// the way out. A resumed run separates again, and its labels need not be the earlier run's. A failure
+    /// costs the speakers, never the transcript.
     private func speakerTurns(_ request: LocalTranscriptionRequest) async -> [SpeakerTurn] {
         do {
             let turns = try await SpeakerSeparation.turns(

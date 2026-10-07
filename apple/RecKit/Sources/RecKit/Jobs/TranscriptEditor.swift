@@ -2,8 +2,8 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/08 "Editing" · docs/09 §5: what the editor holds until Save — the words of every segment, who
-/// says each, and what the speakers are called — and the one batch of edits that makes the saved
+/// docs/08 "Editing" · docs/09 "Editing and speakers": what the editor holds until Save — the words of every
+/// segment, who says each, and what the speakers are called — and the one batch of edits that makes the saved
 /// transcript of it.
 @MainActor
 final class TranscriptDraft: ObservableObject {
@@ -95,7 +95,7 @@ final class TranscriptDraft: ObservableObject {
     }
 }
 
-/// docs/09 §5 "Edit mode": one plain field per segment, each with its time (a seek — the player stays
+/// docs/09 "Edit mode": one plain field per segment, each with its time (a seek — the player stays
 /// usable) and its speaker. The phone's Cancel · Save sit under the fields, above the keyboard.
 struct TranscriptEditor: View {
     @ObservedObject var draft: TranscriptDraft
@@ -187,7 +187,7 @@ struct TranscriptEditor: View {
     }
 }
 
-/// The editor's `Cancel` · `Save` — `Done` alone while nothing has changed (docs/09 §5).
+/// The editor's `Cancel` · `Save` — `Done` alone while nothing has changed (docs/09 "Editing and speakers").
 struct EditorButtons: View {
     let changed: Bool
     let saving: Bool
@@ -242,7 +242,8 @@ private struct DraftSpeakerMenu<Label: View>: View {
     }
 }
 
-/// docs/09 §5: `Speaker name` — the name, prefilled; an empty one takes the name away and the id shows again.
+/// docs/09 "Editing and speakers": `Speaker name` — the name, prefilled; an empty one takes the name away and
+/// the id shows again.
 struct SpeakerNameDialog: View {
     @Binding var name: String
     let save: () -> Void

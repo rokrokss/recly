@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- docs/09 §7: the app group the shared files are handed to the app through (PhoneAppGroup). -->
+<!-- docs/09 "Import": the app group the shared files are handed to the app through (PhoneAppGroup). -->
 <plist version="1.0">
 <dict>
 	<key>com.apple.security.application-groups</key>
