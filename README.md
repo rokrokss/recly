@@ -64,9 +64,15 @@ and its key; and a computer that stays on.
   and Mac; or to a local folder you pick, such as an Obsidian vault. The original is never deleted
   before the upload is confirmed, and Recly has no server that could see your files.
 - **Files are the interface.** Transcripts are plain files next to the audio, in a
-  [documented format](spec/) any agent, script or app can read. Transcribe on the device, with your
-  own key (AssemblyAI, CLOVA, Deepgram, OpenAI, Azure and more, with speakers separated where the
-  provider can), or not at all. Notes are your agent's job, not a paid tier.
+  [documented format](spec/) any agent, script or app can read. Transcribe on the device or with your
+  own key (AssemblyAI, CLOVA, Deepgram, OpenAI, Azure and more), with speakers separated on the device
+  or by a provider that can, or not at all. Notes are your agent's job, not a paid tier.
+- **Mark it, fix it, find it.** Tap **Highlight** while recording, on the phone, either watch or the
+  desktop, and the moment goes into the recording's files for your agent. Afterwards, fix a word,
+  name the speakers, transcribe again with your current settings, search every title and
+  transcript, or share the transcript as `.txt`, `.md`, `.srt` or `.vtt` and the audio as `.m4a`.
+  A vocabulary of names and terms helps them come out spelled right, and audio or video files from
+  elsewhere can be imported as recordings.
 - **Nothing covert.** Recording is always visible. Desktops detect a meeting, ask, and only then
   record. No analytics, no crash reporting, no update pings.
 
@@ -76,7 +82,7 @@ and its key; and a computer that stays on.
 |---|---|---|
 | Recording | Your watch, phone or desktop | Nothing. A watch hands the audio to your paired phone, and only there. |
 | Storage | Your Google Drive (or your iCloud on iPhone and Mac, or a local folder you pick on iPhone, Mac, Windows and Android) | To Google Drive or iCloud: the audio parts and a small metadata file, to your own account. A local folder: nothing leaves the device. |
-| Transcription | On device, or a provider you chose with your own key | On device: no audio goes to a speech service. External: the joined audio goes to the provider you selected. Results are written next to the recording. |
+| Transcription | On device, or a provider you chose with your own key | On device: no audio goes to a speech service. External: the joined audio goes to the provider you selected, with your vocabulary if you set one. Results are written next to the recording. |
 | Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your storage and writes the notes wherever you keep them (Notion, in the example skills). If you turn on automatic minutes, recly-events tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, and the transcript when the agent asks for it; never the audio. |
 | Processing settings and API keys | Your device | Nothing is synced. **Settings file** → **Export settings** moves configuration only; enter keys separately on each device. |
 
@@ -116,8 +122,9 @@ Windows PC. Please report what you find in [Issues](https://github.com/rokrokss/
 <p align="center"><img src="docs/design/flow.svg" width="100%" alt="Press record on your watch, phone, Mac or Windows PC → the phone or PC uploads to your Google Drive and transcribes with your own key → anything, with your own AI"></p>
 
 1. **Record.** Tap Record on the watch (a Galaxy Watch can bind it to a double press of the home
-   key), the menu-bar icon on a Mac, or the tray icon on Windows. Desktops notice when a meeting
-   app opens your mic and ask whether to record.
+   key), the menu-bar icon on a Mac or the tray icon on Windows, or press ⌥⌘R (Mac) or Ctrl+Alt+R
+   (Windows) from any app. Desktops notice when a meeting app opens your mic and ask whether to
+   record. **Highlight** marks a moment while you record (Double Tap on an Apple Watch).
 2. **Upload.** When you stop, the recording goes to your storage as it is: Google Drive, or the
    iCloud or local folder you chose. Watches hand off to the phone first. If the network is down, it
    waits and retries. The original is never deleted before the upload is confirmed.
@@ -129,7 +136,9 @@ New installs transcribe on the device where it can: with Apple's speech recogniz
 Mac, and with the open-source Qwen3-ASR 0.6B model on Android and Windows, a one-time download of
 about 1 GB that starts only when you ask. The requirements are in the [table above](#get-recly).
 Elsewhere transcription starts off; choose an external provider with your own key. On-device
-transcription does not separate speakers and never falls back to a cloud service.
+transcription separates speakers too, with models bundled in the iPhone and Mac apps and, on Android
+and Windows, about 41 MB more in the same download (there, sentence by sentence). It never falls
+back to a cloud service.
 
 The interface supports English, Korean, Japanese, Simplified and Traditional Chinese, Spanish,
 French, German, Brazilian and European Portuguese, Arabic, Hindi, Russian, Italian, Polish,
