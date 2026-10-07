@@ -75,7 +75,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                     ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
                 }
             }
-            if (model.localInstalled) Text(strings[Str.PROCESSING_LOCAL_NO_SPEAKERS], style = MaterialTheme.typography.bodySmall)
+            if (model.localInstalled) Text(strings[Str.PROCESSING_LOCAL_SPEAKERS], style = MaterialTheme.typography.bodySmall)
         }
         if (draft.mode == TranscriptionMode.EXTERNAL) {
             // A labelled row, as the other shells draw it: the dropdown alone said only its value.
