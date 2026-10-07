@@ -1347,6 +1347,9 @@ The overall direction and the conditions for a real-device release follow the [f
   At thermal state `serious` or above it waits/stops (relaxed 2026-09-27 — `fair` is common even while charging, and the user cannot guess why it stopped).
   Low Power Mode does not stop it. Confirmed segments are saved, so once the device cools, it resumes automatically at the next chance to run.
 - Local computation runs one at a time per device and yields when a new recording starts. A platform run expiry/cancellation also cancels the native analyzer.
+  Exception (2026-10-08): on Android and Windows, sherpa-onnx's speaker separation cannot be interrupted inside a block — the library ignores its
+  progress callback's return value — so a cancellation waits for the block in progress (up to 20 minutes of audio, a few minutes of CPU) and takes
+  effect at the next block boundary or PCM chunk.
   The local-only pass does not run Drive authentication, network requests or result publishing — except the upload and transcript steps bound for a
   local folder (§3 "Storage location"), which write to the device and make no request, so they need no connection and ignore Wi-Fi only. The Wi-Fi
   constraint on network uploads stays as is.
@@ -2148,7 +2151,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
    the rule above: the original stays the main content, the transcript a layer beside it, and nothing is offered on the user's behalf.
    - **Import**: phones put an `Import` icon button at the end of the list header (accessibility `Import audio`), which opens the system picker for audio
-     and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`). The Mac's
+     and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`, which only saves the file into the app group's inbox, says `Open Recly to import.` and closes — it does
+     not open the app; Recly imports the inbox when it next opens or becomes active). The Mac's
      Details list header has `Import audio…` (⌘I — a menu-bar app has no File menu) and takes dropped files; Windows has `Import audio…` in the Details list
      header and the tray menu, and takes files dropped on the window. The recording appears at once as a ledger row in `IMPORTING` (accent + the square
      loader), titled with the file name without its extension, and then goes on like any recording — no title dialog. A failure says
@@ -2165,7 +2169,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists `Rename` · `Edit transcript` · `Transcribe again` ·
      `Add highlight at 00:12:34` (the playhead). An item that cannot run now stays in the menu, disabled, with the reason as its second line —
-     `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `No audio on this device` — so the menu says why instead of hiding it.
+     `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
+     reached the storage); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
+     reason for a few seconds under the header; nothing is silently ignored (2026-10-08).
    - **Share / export**: on phones `Share` opens a bottom sheet titled `Share`, one row per format (icon · label · format): `Transcript`
      (`Text · .txt`), `Transcript for notes` (`Markdown · .md`), `Subtitles` (`SubRip · .srt`), `Subtitles for the web` (`WebVTT · .vtt`), `Audio`
      (`M4A`), then `Copy all`. A file row calls `exportFile` and shows `LoadingText` `Preparing…` in its trailing area until the system share sheet
