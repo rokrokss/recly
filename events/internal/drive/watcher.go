@@ -230,9 +230,11 @@ func Describe(ctx context.Context, api *API, f File) (Recording, error) {
 	return rec, nil
 }
 
-// Latest returns the newest Recly transcript in Drive, for `recly-events test`.
+// Latest returns the newest Recly transcript in Drive, for `recly-events test`. Drive's `name
+// contains` matches a prefix only (see folderQuery), so the query asks for the text files whose
+// name starts with a year, and the name pattern picks the transcripts out.
 func Latest(ctx context.Context, api *API) (File, error) {
-	files, err := api.List(ctx, "name contains '.transcript.txt' and trashed = false", 50)
+	files, err := api.List(ctx, "mimeType = 'text/plain' and name contains '2' and trashed = false", 50)
 	if err != nil {
 		return File{}, err
 	}

@@ -14,16 +14,22 @@ import (
 // (docs/recly.md §15 §9). A recording's `{base}.meta.json` and transcript are downloaded only when
 // the agent calls one of them; nothing is cached.
 //
-// It finds recordings by file name, which every client can query: the folder's appProperties,
-// where Recly keeps the recordingId, are visible only to Recly's own client.
+// It finds recordings by their `{base}/` folders' names, which every client can query: the folder's
+// appProperties, where Recly keeps the recordingId, are visible only to Recly's own client.
 type Source struct {
 	API *API
 }
 
 const (
-	metaQuery  = "name contains '.meta.json' and trashed = false"
-	folderMIME = "application/vnd.google-apps.folder"
-	// scanPages bounds the search for a recordingId: 10 pages of 1000 meta files.
+	// folderQuery finds the recording folders. Drive's `name contains` matches a prefix only — "The
+	// contains operator only performs prefix matching for a name term"
+	// (https://developers.google.com/workspace/drive/api/guides/ref-search-terms, last updated
+	// 2026-09-03, read 2026-10-07) — so a suffix such as '.meta.json' finds nothing. Every base name
+	// starts with its year (docs/recly.md §3 "Naming rules"), so the folders whose name starts with
+	// '2' hold every recording; ParseBase picks them out from the folder template's own (`2026-10`)
+	// and the user's.
+	folderQuery = "mimeType = 'application/vnd.google-apps.folder' and name contains '2' and trashed = false"
+	// scanPages bounds the search for a recordingId: 10 pages of 1000 folders.
 	scanPages = 10
 	// orChunk keeps a query of names joined by `or` well inside Drive's URL limit.
 	orChunk = 20
@@ -32,10 +38,11 @@ const (
 // errOther says a base name holds a different recording than the one asked for.
 var errOther = errors.New("another recording")
 
-// Recordings lists recordings by their meta files, newest first: a base name starts with the start
-// time, so Drive's name order is the start order. The cursor is Drive's page token.
+// Recordings lists recordings by their folders, newest first: a base name starts with the start
+// time, so Drive's name order is the start order. A folder whose `{base}.meta.json` is not there is
+// an upload still going (docs/recly.md §3), and is not listed yet. The cursor is Drive's page token.
 func (s *Source) Recordings(ctx context.Context, limit int, cursor string) ([]library.Recording, string, error) {
-	files, next, err := s.API.ListPage(ctx, metaQuery, "name desc", limit, cursor)
+	folders, next, err := s.API.ListPage(ctx, folderQuery, "name desc", limit, cursor)
 	if err != nil {
 		var se *StatusError
 		if cursor != "" && errors.As(err, &se) && se.Status == 400 {
@@ -44,19 +51,54 @@ func (s *Source) Recordings(ctx context.Context, limit int, cursor string) ([]li
 		return nil, "", explain(err)
 	}
 	type item struct {
-		base library.Base
-		file File
-		meta *library.Meta
+		base   library.Base
+		folder File
+		file   File
+		meta   *library.Meta
+	}
+	var candidates []item
+	var metaNames, transcriptNames []string
+	for _, f := range folders {
+		b, ok := library.ParseBase(f.Name)
+		if !ok {
+			continue
+		}
+		candidates = append(candidates, item{base: b, folder: f})
+		metaNames = append(metaNames, library.MetaName(b.Name))
+		transcriptNames = append(transcriptNames, library.TranscriptTxtName(b.Name))
+	}
+	metas, err := s.byName(ctx, metaNames)
+	if err != nil {
+		return nil, "", explain(err)
+	}
+	transcripts, err := s.byName(ctx, transcriptNames)
+	if err != nil {
+		return nil, "", explain(err)
+	}
+	metaIn := map[string]File{}
+	for _, m := range metas {
+		for _, p := range m.Parents {
+			if _, dup := metaIn[p]; !dup {
+				metaIn[p] = m
+			}
+		}
+	}
+	withTranscript := map[string]bool{}
+	for _, t := range transcripts {
+		for _, p := range t.Parents {
+			withTranscript[p] = true
+		}
 	}
 	var items []item
 	seen := map[string]bool{}
-	for _, f := range files {
-		b, ok := library.ParseBase(strings.TrimSuffix(f.Name, ".meta.json"))
-		if !ok || f.Name != library.MetaName(b.Name) || len(f.Parents) == 0 || seen[b.Name] {
+	for _, it := range candidates {
+		m, ok := metaIn[it.folder.ID]
+		if !ok || m.Name != library.MetaName(it.base.Name) || seen[it.base.Name] {
 			continue
 		}
-		seen[b.Name] = true
-		items = append(items, item{base: b, file: f})
+		seen[it.base.Name] = true
+		it.file = m
+		items = append(items, it)
 	}
 	err = parallel(ctx, len(items), func(ctx context.Context, i int) error {
 		body, err := s.API.Download(ctx, items[i].file.ID, library.MaxMetaBytes)
@@ -69,35 +111,11 @@ func (s *Source) Recordings(ctx context.Context, limit int, cursor string) ([]li
 	if err != nil {
 		return nil, "", explain(err)
 	}
-	var folderNames, transcriptNames []string
-	for _, it := range items {
-		folderNames = append(folderNames, it.base.Name)
-		transcriptNames = append(transcriptNames, library.TranscriptTxtName(it.base.Name))
-	}
-	folders, err := s.byName(ctx, folderNames, true)
-	if err != nil {
-		return nil, "", explain(err)
-	}
-	transcripts, err := s.byName(ctx, transcriptNames, false)
-	if err != nil {
-		return nil, "", explain(err)
-	}
-	withTranscript := map[string]bool{}
-	for _, t := range transcripts {
-		for _, p := range t.Parents {
-			withTranscript[p] = true
-		}
-	}
-	byID := map[string]File{}
-	for _, f := range folders {
-		byID[f.ID] = f
-	}
 	out := []library.Recording{}
 	for _, it := range items {
-		folderID := it.file.Parents[0]
-		folder := byID[folderID]
+		folder := it.folder
 		rec := library.Recording{
-			StartedAt: library.StartedAtOf(it.base), Source: it.base.Source, HasTranscript: withTranscript[folderID],
+			StartedAt: library.StartedAtOf(it.base), Source: it.base.Source, HasTranscript: withTranscript[folder.ID],
 		}
 		metaID, metaTitle := "", ""
 		if it.meta != nil {
@@ -112,8 +130,8 @@ func (s *Source) Recordings(ctx context.Context, limit int, cursor string) ([]li
 	return out, next, nil
 }
 
-// byName returns the files (or folders) with any of the names.
-func (s *Source) byName(ctx context.Context, names []string, folders bool) ([]File, error) {
+// byName returns the files with any of the names.
+func (s *Source) byName(ctx context.Context, names []string) ([]File, error) {
 	var out []File
 	for start := 0; start < len(names); start += orChunk {
 		var terms []string
@@ -121,9 +139,6 @@ func (s *Source) byName(ctx context.Context, names []string, folders bool) ([]Fi
 			terms = append(terms, "name = "+quote(n))
 		}
 		q := "(" + strings.Join(terms, " or ") + ") and trashed = false"
-		if folders {
-			q += " and mimeType = " + quote(folderMIME)
-		}
 		files, err := s.API.List(ctx, q, 1000)
 		if err != nil {
 			return nil, err
@@ -133,8 +148,8 @@ func (s *Source) byName(ctx context.Context, names []string, folders bool) ([]Fi
 	return out, nil
 }
 
-// Transcript finds a recording by its base name, or by its recordingId through the meta files whose
-// base name starts the same way, and reads its transcript.
+// Transcript finds a recording by its base name, or by its recordingId through the recording
+// folders whose base name ends the same way, and reads its transcript.
 func (s *Source) Transcript(ctx context.Context, id string) (*library.Transcript, error) {
 	if b, ok := library.ParseBase(id); ok {
 		t, err := s.transcript(ctx, b, "")
@@ -146,13 +161,13 @@ func (s *Source) Transcript(ctx context.Context, id string) (*library.Transcript
 	prefix := id[:8]
 	token := ""
 	for range scanPages {
-		files, next, err := s.API.ListPage(ctx, metaQuery, "name desc", 1000, token)
+		folders, next, err := s.API.ListPage(ctx, folderQuery, "name desc", 1000, token)
 		if err != nil {
 			return nil, explain(err)
 		}
-		for _, f := range files {
-			b, ok := library.ParseBase(strings.TrimSuffix(f.Name, ".meta.json"))
-			if !ok || b.Prefix != prefix || f.Name != library.MetaName(b.Name) {
+		for _, f := range folders {
+			b, ok := library.ParseBase(f.Name)
+			if !ok || b.Prefix != prefix {
 				continue
 			}
 			t, err := s.transcript(ctx, b, id)

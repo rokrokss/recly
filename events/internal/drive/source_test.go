@@ -39,6 +39,12 @@ func setupSource(t *testing.T) (*Source, *fakeDrive) {
 			"metaC": {ID: "metaC", Name: baseC + ".meta.json", Parents: []string{"fC"}},
 			// Another app's file that a client of the user's own also sees.
 			"other": {ID: "other", Name: "notes.meta.json", Parents: []string{"root"}},
+			// The newest folder is an upload still going: no meta yet, so not listed.
+			"fUp":     {ID: "fUp", Name: "20261009T000000Z_phone_01M8UPLD", MimeType: folder},
+			"partUp":  {ID: "partUp", Name: "20261009T000000Z_phone_01M8UPLD_p001_mono.m4a", Parents: []string{"fUp"}},
+			"recly":   {ID: "recly", Name: "Recly", MimeType: folder},
+			"month":   {ID: "month", Name: "2026-10", MimeType: folder, Parents: []string{"recly"}},
+			"notMeta": {ID: "notMeta", Name: "2026 budget.meta.json", Parents: []string{"root"}},
 		},
 		content: map[string]string{
 			"metaA": `{"recordingId":"` + idA + `","title":"Old title","durationSec":95.5,"highlights":[{"atSec":12.5}]}`,
@@ -61,12 +67,12 @@ func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 	if err != nil || next == "" {
 		t.Fatalf("page 1: %v %q", err, next)
 	}
-	// The first page held another app's file too, which is not a recording.
+	// The first page held a folder still being uploaded into, which is not listed yet.
 	if len(page) != 1 || page[0].RecordingID != idC || page[0].Title != nil || page[0].HasTranscript || page[0].Source != "phone" {
 		t.Fatalf("page 1 = %+v", page)
 	}
 	page, next, err = src.Recordings(ctx, 2, next)
-	if err != nil || next != "" || len(page) != 2 {
+	if err != nil || next == "" || len(page) != 2 {
 		t.Fatalf("page 2: %v %q %+v", err, next, page)
 	}
 	b, a := page[0], page[1]
@@ -75,6 +81,11 @@ func TestSourceListsRecordingsNewestFirstByPage(t *testing.T) {
 	}
 	if a.RecordingID != idA || *a.Title != "Weekly sync" || *a.DurationSec != 95.5 || a.HighlightCount != 1 || !a.HasTranscript {
 		t.Fatalf("A = %+v", a)
+	}
+	// The folder template's own folder starts with the year too; it is not a recording.
+	page, next, err = src.Recordings(ctx, 2, next)
+	if err != nil || next != "" || len(page) != 0 {
+		t.Fatalf("page 3: %v %q %+v", err, next, page)
 	}
 }
 
