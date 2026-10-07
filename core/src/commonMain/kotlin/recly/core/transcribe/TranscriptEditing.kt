@@ -48,7 +48,7 @@ sealed interface EditResult {
 /** docs/08 "Editing": the rules of an edit, on the transcript alone. */
 object TranscriptEdits {
     /** The longest name a speaker can be given. */
-    const val NAME_MAX: Int = 100
+    const val SPEAKER_NAME_MAX: Int = 100
 
     /**
      * [transcript] with [edit] applied and [editedAt] stamped — or the transcript as it was, unstamped,
@@ -75,7 +75,7 @@ object TranscriptEdits {
         is TranscriptEdit.SetSpeaker -> setSpeaker(transcript, edit)
         is TranscriptEdit.RenameSpeaker -> {
             val name = edit.name?.trim()?.takeIf { it.isNotEmpty() }
-            require(name == null || name.length <= NAME_MAX) { "a speaker name is at most $NAME_MAX characters" }
+            require(name == null || name.length <= SPEAKER_NAME_MAX) { "a speaker name is at most $SPEAKER_NAME_MAX characters" }
             require(transcript.speakers.any { it.id == edit.speakerId }) { "no speaker ${edit.speakerId}" }
             transcript.copy(speakers = transcript.speakers.map { if (it.id == edit.speakerId) it.copy(name = name) else it })
         }
