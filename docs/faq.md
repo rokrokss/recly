@@ -73,11 +73,31 @@ practice means an 8 GB phone or PC, and a one-time download of about 1 GB. The w
 transcription to their phone, and other devices can use an external provider. See
 [how to transcribe](setup.md#3-choose-how-to-transcribe).
 
-## Does it tell speakers apart?
+## Are speakers separated on my device?
 
-With an external provider, speakers are separated automatically where the provider can. On-device
-transcription does not separate speakers. After you stop, the **People in the room** you enter help
-the provider separate speakers. See [how to transcribe](setup.md#3-choose-how-to-transcribe).
+Yes. iPhone and Mac separate speakers with a model inside the app. Android phones and Windows PCs
+separate them sentence by sentence, with a speaker model of about 41 MB that downloads with the
+speech model; without it, transcripts arrive without speakers. With an external provider, speakers
+are separated where the provider can. The **People in the room** you enter after you stop helps
+either way, and in a recording's **Details** you can name the speakers or move a line to another
+one. See [how to transcribe](setup.md#3-choose-how-to-transcribe).
+
+## What is a highlight and where does it go?
+
+A moment you mark while recording: **Highlight** on the phone, on either watch (or Double Tap on an
+Apple Watch with watchOS 11 or later), in the Mac popover or the Windows tray popup. Add or remove
+highlights later in a recording's **Details**. They are saved in the recording's `….meta.json` next
+to the audio, and in the `.md` transcript of a local folder, but not in the `.txt` transcript. The
+ChatGPT agent and the [local MCP server](mcp.md) see them with the transcript, so your agent can weigh
+what you marked. See [mark a moment](setup.md#mark-a-moment).
+
+## What files can I import?
+
+Audio and video files the device can decode: what Android's, Apple's or, on Windows, the bundled
+ffmpeg's decoders open. Recly keeps only the sound, converted to its own format, as a recording of
+this device that uploads and is transcribed like any other; a video's picture is not kept. A file
+with no audio, or one the device cannot decode, such as a copy-protected track, is refused with
+**Could not import this file**. See [import audio](setup.md#import-audio).
 
 ## Can my AI write the notes by itself?
 
@@ -90,6 +110,15 @@ or [run recly-events yourself](recly-events.md) on a server or on Linux. With ot
 [example skills](https://github.com/rokrokss/recly/blob/main/skills/README.md) write notes when you
 ask, and for recordings in a local folder or iCloud, Claude and Codex read them through the
 [local MCP server](mcp.md).
+
+## Does editing a transcript start my agent again?
+
+No. Fixing the text or naming a speaker rewrites the transcript files in your storage, and
+recly-events, which runs the automatic minutes, does not announce an edit as a new transcript.
+**Transcribe again** does start your agent: a new transcription is announced like the first one. One
+exception: recly-events run with
+[a Google client of your own](https://github.com/rokrokss/recly/blob/main/events/README.md#using-a-google-client-of-your-own)
+cannot tell an edit apart, and announces it too.
 
 ## Does Recly record without telling anyone?
 
