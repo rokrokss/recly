@@ -27,9 +27,11 @@ import recly.core.transcribe.SpeakerTurns
 internal class SpeakerDiarizer(private val store: LocalModelStore) {
 
     /**
-     * The turns, labelled `"0"`, `"1"`, …; null when [cancelled] stopped it between blocks. [expectedSpeakers]
-     * is used as a fixed count only for a recording diarized in one call, and only when it is a count:
-     * a block may hold fewer of the people than the room did, and "6+" is a floor.
+     * The turns, labelled `"0"`, `"1"`, …; null when [cancelled] stopped it between chunks of the decoding or
+     * between blocks. A block's own native call runs to its end: sherpa-onnx (v1.13.8) calls its progress
+     * callback only while embedding and ignores what it returns, so there is no stopping it inside one.
+     * [expectedSpeakers] is used as a fixed count only for a recording diarized in one call, and only when it
+     * is a count: a block may hold fewer of the people than the room did, and "6+" is a floor.
      */
     suspend fun turns(path: String, expectedSpeakers: Int?, cancelled: () -> Boolean): List<SpeakerTurn>? {
         val blocks = mutableListOf<Pair<List<SpeakerTurn>, List<FloatArray>>>()
@@ -59,6 +61,12 @@ internal class SpeakerDiarizer(private val store: LocalModelStore) {
             }
             PcmDecoder(path, 0.0).use { pcm ->
                 while (!stopped) {
+                    // Between chunks too, not only between blocks: a block is up to 20 minutes of audio to decode.
+                    currentCoroutineContext().ensureActive()
+                    if (cancelled()) {
+                        stopped = true
+                        break
+                    }
                     val chunk = pcm.read() ?: break
                     for ((start, samples) in cutter.add(chunk)) if (!stopped) diarize(start, samples, last = false)
                 }
