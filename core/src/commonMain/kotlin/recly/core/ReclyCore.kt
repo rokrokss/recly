@@ -55,6 +55,7 @@ import recly.core.model.RecordingStatus
 import recly.core.model.isoUtc
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 /**
  * The shell opens the database: only it knows the file path and which SQLDelight driver its
@@ -285,7 +286,7 @@ class ReclyCore(
     /**
      * docs/03 "Metadata": the highlight editor's save — the whole list, for this device's recordings and
      * another device's alike. Written locally at once (`recordings.observe()` shows it) and carried to
-     * the folder's `meta.json` right away when it can be, otherwise by the next job pass, the way
+     * the folder's `meta.json` in the background right away when it can be, otherwise by the next job pass, the way
      * [rename] carries a title. While recording, marks go through `recordings.addHighlight` instead.
      * Returns false when there is nothing to write to. Never throws.
      */
@@ -298,7 +299,7 @@ class ReclyCore(
             deps.logger.log(Logger.Level.WARN, "rec.highlights.failed", mapOf("recordingId" to recordingId), e)
             false
         }
-        if (written) remote.pushMeta()
+        if (written) pushes.launch { remote.pushMeta() }
         return written
     }
 
@@ -324,7 +325,7 @@ class ReclyCore(
 
     /**
      * docs/08 "Editing": changes the transcript of one recording — its text, who says what, what the
-     * speakers are called — and saves it here at once, then in the recording's folder (Drive marks it
+     * speakers are called — and saves it here at once, then in the background in the recording's folder (Drive marks it
      * `edited`), now or with the next job pass. Works for other devices' recordings too. Refused while a
      * transcription of the recording is queued or running ([EditResult.Busy]): it would write over the
      * edit. [observeResults] emits the edited transcript.
@@ -347,8 +348,17 @@ class ReclyCore(
         recordings.transcriptPending(recordingId)
         resultChanges.value++
         deps.logger.log(Logger.Level.INFO, "rec.transcript.edited", mapOf("recordingId" to recordingId))
-        remote.pushTranscripts()
+        // The edit is saved once it is on disk; storage gets it in the background (or by the next pass).
+        pushes.launch { remote.pushTranscripts() }
         return recly.core.transcribe.EditResult.Edited(edited)
+    }
+
+    /** Where an edit's push to storage runs, so the screen that saved it does not wait for the network. */
+    private val pushes = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.Default)
+
+    /** Tests: wait for the background pushes [editTranscript] and [setHighlights] started. */
+    internal suspend fun awaitPushes() {
+        pushes.coroutineContext[kotlinx.coroutines.Job]?.children?.toList()?.forEach { it.join() }
     }
 
     /** Bumped when a transcript changes on disk with no job or row to say so — an edit, a pull's refresh. */

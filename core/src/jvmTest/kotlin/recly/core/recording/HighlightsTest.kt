@@ -61,6 +61,7 @@ class HighlightsTest {
         val meta = f.recordAndRun(title = "Weekly")
 
         assertTrue(f.core.setHighlights(meta.recordingId, listOf(30.0, 5.0, 5.4)))
+        f.core.awaitPushes()
 
         assertEquals(listOf(5.0, 30.0), metaOnDrive(meta).highlights.map { it.atSec })
         assertEquals(emptyMap(), f.core.recordings.pendingMeta())
@@ -72,6 +73,7 @@ class HighlightsTest {
         f.drive.failNext(500) { it.uploadType == "media" }
 
         assertTrue(f.core.setHighlights(meta.recordingId, listOf(1.0)))
+        f.core.awaitPushes()
         assertEquals(setOf(meta.recordingId), f.core.recordings.pendingMeta().keys)
         assertEquals(emptyList(), metaOnDrive(meta).highlights)
 
@@ -87,6 +89,7 @@ class HighlightsTest {
         f.core.pullRemoteRecordings(force = true)
 
         assertTrue(f.core.setHighlights(other.recordingId, listOf(42.0)))
+        f.core.awaitPushes()
 
         val onDrive = recJson.decodeFromString<RecordingMeta>(
             f.drive.files.getValue(f.drive.idOf(MetaWriter.metaFileName(MetaWriter.baseName(other.meta)))!!).content.decodeToString(),

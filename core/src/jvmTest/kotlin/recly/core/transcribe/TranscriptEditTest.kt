@@ -178,6 +178,8 @@ class TranscriptEditTest {
 
         assertIs<EditResult.Edited>(f.core.editTranscript(other.recordingId, TranscriptEdit.RenameSpeaker("S1", "Minsu")))
 
+        f.core.awaitPushes()
+
         val base = MetaWriter.baseName(other.meta)
         assertEquals("[00:00:00] Minsu: theirs\n", driveText(TranscribeRunner.textFileName(base)).first)
         assertEquals(other.folderId, f.drive.files.entries.single { it.value.name == TranscribeRunner.textFileName(base) }.value.parents.single())
@@ -189,6 +191,8 @@ class TranscriptEditTest {
         f.drive.failNext(500) { it.query["uploadType"] == "multipart" }
 
         assertIs<EditResult.Edited>(f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "offline")))
+
+        f.core.awaitPushes()
         assertEquals(setOf(meta.recordingId), f.core.recordings.pendingTranscripts().keys)
 
         f.core.pullRemoteRecordings(force = true)
@@ -209,6 +213,8 @@ class TranscriptEditTest {
         assertEquals(JobStatus.FAILED, job.status)
 
         assertIs<EditResult.Edited>(f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "kept")))
+
+        f.core.awaitPushes()
         f.core.jobs.retry(job.id)
         f.drain()
 
