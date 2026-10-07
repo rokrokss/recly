@@ -518,7 +518,5 @@
   "Local MCP server": "本機MCP伺服器",
   "Local agents": "本機代理",
   "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "在此電腦上執行recly-events。Drive中每有新的逐字稿，它都會通知ChatGPT代理，並在代理要求時透過你自己的OpenAI通道傳送該逐字稿。",
-  "Speed": "播放速度",
-  "This file format is not supported": "不支援此檔案格式",
-  "This file has no audio track": "此檔案沒有音軌"
+  "Speed": "播放速度"
 }

@@ -518,7 +518,5 @@
   "Local MCP server": "مقامی MCP سرور",
   "Local agents": "مقامی ایجنٹس",
   "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "اس PC پر recly-events چلاتا ہے۔ یہ آپ کے Drive میں ہر نئے ٹرانسکرپٹ کے بارے میں آپ کے ChatGPT ایجنٹ کو بتاتا ہے اور ایجنٹ کے مانگنے پر آپ کے اپنے OpenAI ٹنل کے ذریعے اسے ٹرانسکرپٹ بھیجتا ہے۔",
-  "Speed": "رفتار",
-  "This file format is not supported": "یہ فائل فارمیٹ سپورٹ نہیں ہے",
-  "This file has no audio track": "اس فائل میں کوئی آڈیو ٹریک نہیں"
+  "Speed": "رفتار"
 }

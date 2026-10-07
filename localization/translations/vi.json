@@ -518,7 +518,5 @@
   "Local MCP server": "Máy chủ MCP cục bộ",
   "Local agents": "Tác nhân cục bộ",
   "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Chạy recly-events trên PC này. Công cụ này báo cho tác nhân ChatGPT về mỗi bản chép lời mới trong Drive của bạn và, khi tác nhân yêu cầu, gửi bản chép lời đó qua đường hầm OpenAI của riêng bạn.",
-  "Speed": "Tốc độ",
-  "This file format is not supported": "Định dạng tệp này không được hỗ trợ",
-  "This file has no audio track": "Tệp này không có rãnh âm thanh"
+  "Speed": "Tốc độ"
 }

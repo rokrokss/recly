@@ -518,7 +518,5 @@
   "Local MCP server": "Seva ya MCP ya ndani",
   "Local agents": "Mawakala wa ndani",
   "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Huendesha recly-events kwenye kompyuta hii. Humjulisha wakala wako wa ChatGPT kuhusu kila nakala mpya katika Drive yako na, wakala anapoiomba, humtumia nakala hiyo kupitia handaki lako la OpenAI.",
-  "Speed": "Kasi",
-  "This file format is not supported": "Muundo wa faili hii hautumiki",
-  "This file has no audio track": "Faili hii haina wimbo wa sauti"
+  "Speed": "Kasi"
 }

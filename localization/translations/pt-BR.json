@@ -518,7 +518,5 @@
   "Local MCP server": "Servidor MCP local",
   "Local agents": "Agentes locais",
   "Runs recly-events on this PC. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel.": "Executa o recly-events neste PC. Ele avisa seu agente do ChatGPT sobre cada nova transcrição no seu Drive e, quando o agente pede, envia a transcrição pelo seu próprio túnel da OpenAI.",
-  "Speed": "Velocidade",
-  "This file format is not supported": "Este formato de arquivo não é compatível",
-  "This file has no audio track": "Este arquivo não tem faixa de áudio"
+  "Speed": "Velocidade"
 }
