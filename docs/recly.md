@@ -2003,6 +2003,8 @@ The principle in one line: **intent, not decoration**.
   at most 800ms). **With `reduce motion`, "instant transition + text status only"** — what is turned off is the *transition*; the text
   status itself, such as "…" and "✓", stays.
 - **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light).
+  **No flag icon anywhere** (2026-10-07, user decision): a highlight is Blueprint's record-square motif — a small filled accent square —
+  wherever it is shown or made (screen principles 1, 2, 6, 7).
 
 ### App icon
 
@@ -2061,6 +2063,13 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
      loader) (2026-09-04). If a job on this device is running, `UPLOADING` wins, and while recording, `REC` beats both.
      Desktop has nothing to receive, so it is unchanged.
+   - The **highlight node** (phones, 2026-10-07, §3 "Metadata"): while recording, a second square node — 56, radius 4, 1.5 accent border, a filled
+     14 accent square inside, no text; accessibility name `Highlight` — stands 24 to the end side of the record node, vertically centred with it. The record
+     node stays exactly centred, and idle shows nothing. A tap marks the moment (`recordings.addHighlight`): a light haptic, the node filled accent for
+     150 ms (instant with reduce motion), and `Highlight · 00:12:34` (mono time) on the line below the record node, under that line's rule above.
+   - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
+     Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
+     opening the app where iOS requires it, like the Control. Gallery name `Record`, description `Start or stop a recording.`
 2. **List = ledger**: row = `time (mono) · title · length · status code · progress`. In all four shells, regardless of language, the time column is
    **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
    The status is a text badge (both color and text), and the failure reason is a translated message key.
@@ -2101,8 +2110,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    120dp on Android, and on Android the button is at least 48dp tall. The playback area does not cover the body. The audio download failure notice is
    shown below the mobile playback controls, which keeps the button right-aligned.
    **macOS and Windows keep the existing top playback area and the desktop window and split layouts.**
-   All four shells offer transcript text selection, copy all and seeking by utterance time. The transcript search button and input field are not shown.
-   Copy all is a text-less copy icon on the right of the detail header, immediately left of `Rename`. Its accessibility name is
+   All four shells offer transcript text selection, copy all and seeking by utterance time, and search titles and transcripts (**Search** below,
+   2026-10-07 — until then no transcript search button or field was shown).
+   Copy all is a row of **Share** (below, 2026-10-07; until then a text-less copy icon left of `Rename` in the header). Its accessibility name is
    `Copy all`, and after copying, a check mark and the accessibility name `Copied` signal completion. It copies the whole original text with the times.
    Seeking by time is disabled while recording and while audio is being checked or downloaded, and times outside the range of audio actually held are disabled too. Copy is offered whether or not there is audio.
    Utterance groups are cached when the result changes, and long utterances from the same speaker are also split, starting at the next segment, at a 60-second or 1,200-character
@@ -2120,13 +2130,69 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    files are not downloaded again. An empty transcript offers a notice to play the recording. While playback is preparing or buffering, no separate notice text
    is added, so the player height and the position of the surrounding content do not change. Real playback failures are shown on screen and retried on the next
    playback request. Windows also shows ffmpeg's abnormal exit and exit-wait timeout as failures, excluding exits caused by the user's
-   stop or seek. The detail header has only the title, and internal IDs are not shown (2026-09-29 — they are not information for the user
-   to read).
+   stop or seek. The detail header has the title and, at its end, `Share` and `More` (**Detail header and More menu** below, 2026-10-07); internal IDs
+   are not shown (2026-09-29 — they are not information for the user to read).
    The list's first read shows a loading notice, and a truly empty list shows a notice that this is where recordings collect (desktop windows also show a start recording button, §9 screen principle 8).
    Delete in the recordings list is fixed at the right of the action area, and its right border lines up with the right border of the `DONE` badge in the status column
    above. The remaining actions, such as open, retry and details, wrap in the space on the left. The same rule applies to the mobile list and to the expanded list
    in the desktop menu and tray.
    (2026-09-03: the parts table in rows was removed — part numbers, tracks, bytes and sha are not shown to the user)
+   The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
+   the rule above: the original stays the main content, the transcript a layer beside it, and nothing is offered on the user's behalf.
+   - **Import**: phones put an `Import` icon button at the end of the list header (accessibility `Import audio`), which opens the system picker for audio
+     and video; the share sheet reaches it too (Android lists `Recly` for audio and video, iPhone has the share extension `Import to Recly`). The Mac's
+     Details list header has `Import audio…` (⌘I — a menu-bar app has no File menu) and takes dropped files; Windows has `Import audio…` in the Details list
+     header and the tray menu, and takes files dropped on the window. The recording appears at once as a ledger row in `IMPORTING` (accent + the square
+     loader), titled with the file name without its extension, and then goes on like any recording — no title dialog. A failure says
+     `Could not import this file` with the core's reason, on the row or, without one, as a notice. Several files are imported one after another, each
+     its own row.
+   - **Search**: phones put a field at the top of the list (Android a Blueprint field, `inputBorder`, radius 4, a leading search icon and a trailing
+     clear `×`; iPhone `.searchable` in the navigation bar), the Mac and Windows Details windows above their list; the popover and tray ledgers have none.
+     Placeholder `Search titles and transcripts`, 200 ms after the last keystroke, at most 50 results. While the field has text the results replace the
+     ledger: the time column · the title with its matches tinted · up to two snippet lines (secondary; a match's background is the accent at 16 %) · the
+     mono time of the first transcript hit at the row end. A result opens the detail at that hit, every match tinted, with the **find bar** at the top of
+     the transcript — `‹  2 / 7  ›` and a close `×`; the arrows move between matches and do not seek; closing it removes the tints. Phones get the find
+     bar only from search; on the desktops ⌘F / Ctrl+F also opens it for the open transcript, or else focuses the list's field. No results: the centred
+     `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
+   - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
+     keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists `Rename` · `Edit transcript` · `Transcribe again` ·
+     `Add highlight at 00:12:34` (the playhead). An item that cannot run now stays in the menu, disabled, with the reason as its second line —
+     `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `No audio on this device` — so the menu says why instead of hiding it.
+   - **Share / export**: on phones `Share` opens a bottom sheet titled `Share`, one row per format (icon · label · format): `Transcript`
+     (`Text · .txt`), `Transcript for notes` (`Markdown · .md`), `Subtitles` (`SubRip · .srt`), `Subtitles for the web` (`WebVTT · .vtt`), `Audio`
+     (`M4A`), then `Copy all`. A file row calls `exportFile` and shows `LoadingText` `Preparing…` in its trailing area until the system share sheet
+     opens with the file. Rows that need a transcript are disabled with `No transcript yet`, `Audio` with `No audio on this device`. The Mac's toolbar
+     `Share` menu has the same formats (`NSSharingServicePicker` under the button), `Copy all` and `Save as…` (`NSSavePanel`, the core's file name);
+     Windows' `Export…` has the five formats, each a save dialog with the core's file name, and `Copy all`.
+   - **Transcript reader**: while playing, the utterance group under the playhead gets a 2 px accent bar on its start edge and an accent time button;
+     the text stays the body color and no other row is dimmed. The list keeps the active group in its upper third (200 ms, instant with reduce motion).
+     If the user scrolls during playback, following pauses and a **`Back to playback`** pill (accent outline, radius 8, height 32, centred above the
+     player) appears; tapping it scrolls back and follows again, and it goes away when playback stops. **Speaker badges**: each group header shows its
+     speaker as a quiet badge (radius 2, secondary border) — the name the user gave (sans) or the id `S1` (mono) — and tapping it opens the speaker menu,
+     in reading mode too. A transcript without speakers shows no badge, and there is no legend: speakers are told apart by label only, with **no speaker
+     colours** — not on the waveform bars, not as tinted rows (2026-10-02 user decision, restated 2026-10-07). While a re-transcription runs, the old text
+     stays under a one-line status, the square loader and `Transcribing again…` (external) or `Transcribing on this device` (local), until the new
+     transcript replaces it (the reading position goes back to the top only if the user had not scrolled).
+   - **Highlights**: on the waveform, a 2 px accent line over the full height with a 6×6 filled accent square on top, above the bars and under the
+     playhead; a tap or click within 12 px seeks there. In the transcript, the group that holds a highlight shows a 6×6 filled accent square right after
+     its time button, vertically centred with it. Both open `Go to 00:12:34` · `Remove highlight`, and screen readers get each tick as an element
+     `Highlight 00:12:34` with those two actions. More's `Add highlight at …` marks the playhead (disabled while no audio is ready); the desktops also
+     have a `Highlight` button in the playback bar. Changes save at once (`setHighlights`) — there is no Save button.
+   - **Editing and speakers**: the speaker menu (from a badge) has `Rename speaker` and `Change speaker for this line` → every speaker by name or id,
+     and `New speaker`. `Rename speaker` is a dialog — `Speaker name`, the field `Name` prefilled, `Cancel` · `Save`; an empty name clears it and the id
+     shows again. Changes from the menu save at once (`editTranscript`, inline `Saving…` → `✓`). **Edit mode** (More → `Edit transcript`) turns the
+     transcript into one plain text field per segment, finer than the reading groups, each with its time button (it seeks; the player stays usable) and
+     its speaker badge (the menu acts on the draft; a transcript without speakers offers `Add speaker` on each line). The header reads `Edit transcript`
+     with end-aligned `Cancel` · `Save` (`Save` accent; `Done` alone while nothing changed); on phones they sit below the content, above the keyboard, as
+     in principle 3. `Save` → `Saving…` → `✓` → reading mode. Leaving with changes asks `Discard your changes?` / `Your edits to this transcript will be
+     lost.` with `Keep editing` · `Discard`. Editing is unavailable while a transcription job of the recording runs (reason `Transcribing…`). The
+     editor's footer (secondary, 12) says `Saving updates the transcript files in your storage. It does not start your agent again.` — with iCloud or a
+     local folder only its first sentence, because the agent line is about recly-events on Drive (§15 §9).
+   - **Playback**: one quiet chip shows the speed (`1×`, mono) and opens a menu — `0.75×` `1×` `1.25×` `1.5×` `1.75×` `2×` (`✓` on the current one) and
+     a toggle row `Skip silence`. With skip silence on, the chip carries a small accent dot at its top-end corner (accessibility value
+     `Speed 1.5×, skip silence on`). Pitch is preserved, and both are this device's preferences, not synced. Skip silence seeks over the core's
+     `SilenceRanges` (§10 "Shared rules for the shells"); the clock always shows the real position in the recording. Phones: the waveform, then
+     elapsed / total (start) · the speed chip · Play (end, ≥ 120). Desktop: Play · elapsed / total · the speed chip · `Highlight`.
 3. **Workflow editor = node graph** — **retired (2026-09-24)**: the user workflow editor and list were removed. The sentences about the editor and
    list are a record; the general layout rules at the end (from "iPhone supports portrait and left/right landscape") and the unsaved key
    input rule remain valid. Record: trigger (device) → step nodes → end. Nodes are square, connectors straight, and the selected node has an
@@ -2178,13 +2244,40 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
    buttons — they are nothing to draw attention to. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
    Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
+   - **Vocabulary** (2026-10-07, §5 "Fixed processing settings"): a `Vocabulary` row right after `Spoken language` in all four shells, edited as chips — a
+     field (`Add a name or term`) where Enter/Return or `Add` adds a chip, a remove `×` on each chip (accessibility `Remove {term}`), one chip per line of a
+     paste. Past 50 terms or 40 characters an inline warning-tone line says `Up to 50 terms, 40 characters each.` The description under it says where the
+     list goes: `Names and terms to spell correctly. They are sent with the audio to {provider}.` (external), `Names and terms to spell correctly, used on
+     this device.` (local), or `{provider} does not use a vocabulary.` / `On-device transcription does not use a vocabulary.` — the list is kept. It is part
+     of the processing draft, so `Cancel` · `Save` appear when it changes (principle 8).
+   - **On-device speaker separation** (2026-10-07, §15 "Android · Windows local transcription models"): in local mode, iPhone and Mac show the value-only
+     row `Speaker model` → `pyannote community-1` (secondary text, no box — the models are bundled) and `Speakers are separated on this device.`; Android and
+     Windows show `Speaker model` → `pyannote 3.0 · ERes2Net` with the speech model's states — a fresh download fetches both and its size is the sum, and a
+     device that already has the speech model gets the speaker row's own `Download (N MB)` — and `Speakers are separated on this device, sentence by
+     sentence.` (Qwen3-ASR gives segment times only, so a change of speaker inside one sentence is not split). These replace
+     `On-device transcription does not separate speakers.` wherever the engine separates speakers. A missing speaker model never blocks a transcription
+     — the transcript arrives without speakers — and a download starts only from the user's tap. The head count asked after stop (`People in the room`)
+     is the speaker-count hint.
+   - **Keyboard shortcut** (2026-10-07): Settings → Capture has a `Keyboard shortcut` row with its combination in mono — `⌥⌘R` on the Mac, `Ctrl+Alt+R` on
+     Windows — and a switch, on by default; the combination starts and stops a recording from any app. When the system refuses it because another app
+     holds it, the row's second line says `Another app uses this shortcut.` in the warning tone.
+   - **Local agents** (Mac · Windows, 2026-10-07, §15 §9): in Agent connection, the block `Local agents` → `Local MCP server` appears **only when this
+     device stores recordings in iCloud or a local folder**, where the Drive-only rows cannot work: the line `Lets an agent on this computer, such as Claude
+     Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.` and the end-aligned `Set-up guide` · `Copy
+     configuration` (it runs `recly-events mcp --print-config --folder <root>` and copies what it prints, `✓ Copied`). No switch: nothing runs until an
+     agent starts it.
 5. **Notifications · dialogs**: **title + one-line description + at most 2 buttons.** The processing state is inline (the button changes to "Saving…"), and on completion
-   a badge. A two-way question does not get a third option.
+   a badge. A two-way question does not get a third option. The detail's dialogs of 2026-10-07 keep this shape: `Transcribe again?` with one line built
+   from the current settings — `With AssemblyAI · Korean.` or `With on-device transcription · Korean.`, plus ` Your edits are replaced.` when the transcript
+   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`).
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
+   While recording, the command row of the popover and the tray has a `Highlight` text button right after Stop (2026-10-07, text only), and the line
+   under it says `Highlight · 00:12:34` for 2 seconds. The Mac also has the App Intents `Start recording` · `Stop recording` · `Add Highlight` and, like
+   Windows, the keyboard shortcut of principle 4.
 7. **Watch**: mono timer + square start/stop, **one-line status**, recordings still waiting to transfer — while the transfer pass is finding the phone and handing over files,
    the same recordings are spoken as `Sending` (2026-09-04; tiles and complications follow the same rule).
    Waiting and sending are two questions the user asks about the same recordings, and only the transfer pass knows which one applies.
@@ -2194,6 +2287,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    and the number does not change what they do (2026-10-05, both watches, tiles and complications included). The line says one thing, in this order: what a stop had to report
    (a failure, a deferred save), what the recorder is doing, transfers the phone refused (Wear), then recordings still on the watch. Idle with nothing
    left, it is blank and keeps its height, because the hollow button already says the watch is ready. A stop that went as asked is not announced.
+   While recording, both watches have a `Highlight` text button below the stop square, the small filled accent square (8) before its text, in an accent
+   outline (2026-10-07). On Apple Watch, Double Tap marks a highlight (watchOS 11 and later; it used to stop — Stop stays on the square); the Galaxy Watch
+   has no gesture. The status line says `Highlight · 00:12:34` for 2 seconds, then goes back to its rule.
 8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
    - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
      settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing
@@ -2208,6 +2304,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - In the command row of the menu bar popover and the tray, the primary actions (start/stop · settings) are at the start, and secondary actions and quit at the end.
    - When dialog buttons do not fit on one line, they stack at full width and keep their order (primary action last).
    - Exception: the expanded actions of a ledger row pin only delete to the end, as in principle 2, and the rest wrap from the start.
+   - A menu item that cannot run now is not hidden: it stays, disabled, with its reason as the item's second line (More, Share; 2026-10-07).
 
 ### Accessibility
 
@@ -2216,7 +2313,8 @@ and the default motion and light/dark behavior is the only behavior.** The only 
 the user (it is a preference, not an accessibility toggle), and high contrast and motion are still decided only by the system. **Every state is color + text** — nothing says anything by color alone.
 **Red means only two things (2026-09-26)**: in states, only failure (`FAILED` and its reason), and in actions, only irreversible deletion (`Delete` for a recording or an API key, the confirm button of a delete
 confirmation dialog). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
-warning tone as the badge or a dimmed color, and never red. **Korean does not break lines inside a word**: Android sets `WordBreak.Phrase` in the `LineBreak` of the app Typography
+warning tone as the badge or a dimmed color, and never red. `Remove highlight` and `Discard` (an edit) are not red either: they delete no recording (2026-10-07).
+**Speakers are told apart by their label only** — no speaker colours anywhere (2026-10-02, restated 2026-10-07; screen principle 2 "Transcript reader"). **Korean does not break lines inside a word**: Android sets `WordBreak.Phrase` in the `LineBreak` of the app Typography
 (the Compose default turns off Android 15+'s phrase-based line breaking for Korean), Windows (Compose Desktop)
 has the string table insert U+2060 between Hangul syllables inside a word when the UI language is Korean (user text is left as is), and on Apple the default is already word-based.
 **Size notation** in every shell uses decimal units: whole MB below 1,000 MB (`988 MB`), and GB with one decimal place from there up (`1.2 GB`). Tab order and
@@ -3136,6 +3234,7 @@ The development machine is macOS, so the Windows-only parts sit behind interface
 | Running apps · window titles | process table + `EnumWindows` | always empty → stood in for by `RECLY_DETECT_PROCESSES` |
 | Microphone "Let desktop apps access your microphone" | registry | always `UNKNOWN` (no guidance text appears) |
 | Meeting notifications | tray balloon | same API — shows up in the macOS Notification Center |
+| Keyboard shortcut `Ctrl+Alt+R` | `RegisterHotKey` on a thread of its own (`WindowsHotKey`, JNA) | `NoGlobalShortcut` — the settings row and its switch are there, and the keys do nothing |
 
 ### Tasks
 
