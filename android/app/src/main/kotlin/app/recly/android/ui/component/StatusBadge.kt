@@ -1,6 +1,9 @@
 package app.recly.android.ui.component
 
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
@@ -22,8 +25,11 @@ import app.recly.android.ui.theme.mono
  */
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
-/** The code and its tone — what [LedgerRow] shows in its last column. */
-data class LedgerStatus(val code: String, val tone: BadgeTone)
+/**
+ * The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the square loader
+ * beside the code, for work running with no percentage to show (`IMPORTING`).
+ */
+data class LedgerStatus(val code: String, val tone: BadgeTone, val busy: Boolean = false)
 
 /**
  * A square badge: 1dp of the tone, the code in monospace, on the surface.
@@ -33,16 +39,22 @@ data class LedgerStatus(val code: String, val tone: BadgeTone)
 @Composable
 fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     val palette = blueprint
-    Text(
-        text = badgeLabel(status.code),
+    Row(
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
             .padding(horizontal = BADGE_PAD, vertical = Space.xs),
-        style = mono.small,
-        color = status.tone.ink(),
-        maxLines = 1,
-        textAlign = TextAlign.Center,
-    )
+        horizontalArrangement = Arrangement.spacedBy(Space.xs),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (status.busy) BlueprintLoader(status.tone.ink())
+        Text(
+            text = badgeLabel(status.code),
+            style = mono.small,
+            color = status.tone.ink(),
+            maxLines = 1,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 /** What the badge puts between its border and its letters, on each side. */

@@ -361,6 +361,7 @@ private fun RecordTab(
         onOpenProcessing = onOpenProcessing,
         onStart = onStart,
         onStop = model::stop,
+        onHighlight = model::highlight,
         onMicDenied = model::micDenied,
         onMicGranted = model::micGranted,
         onConsumeAutoStart = model::consumeAutoStart,

@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.time.ExperimentalTime::class)
+
 package app.recly.wear.ui
 
 import android.Manifest
@@ -52,6 +54,7 @@ class MainActivity : ComponentActivity() {
                 state = state,
                 onStart = ::startRecording,
                 onStop = viewModel::stop,
+                onHighlight = { viewModel.highlight() },
             )
         }
         consumeAutoStart(intent)

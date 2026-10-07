@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import app.recly.android.ui.DisconnectPhase
@@ -72,6 +73,21 @@ class AppSettings(private val context: Context) {
      */
     val localFolder: Flow<String?> = context.store.data.map { it[LOCAL_FOLDER] }
 
+    /**
+     * docs/09 "Playback": the detail player's speed and Skip silence — this device's preferences, kept
+     * across recordings and never synced.
+     */
+    val playbackSpeed: Flow<Float> = context.store.data.map { it[PLAYBACK_SPEED] ?: 1f }
+    val skipSilence: Flow<Boolean> = context.store.data.map { it[SKIP_SILENCE] ?: false }
+
+    suspend fun setPlaybackSpeed(value: Float) {
+        context.store.edit { it[PLAYBACK_SPEED] = value }
+    }
+
+    suspend fun setSkipSilence(value: Boolean) {
+        context.store.edit { it[SKIP_SILENCE] = value }
+    }
+
     suspend fun setWifiOnly(value: Boolean) {
         context.store.edit { it[WIFI_ONLY] = value }
     }
@@ -121,5 +137,7 @@ class AppSettings(private val context: Context) {
         val CONSENT_ASKED = booleanPreferencesKey("consent_asked")
         val MODEL_PROMPT_DISMISSED = booleanPreferencesKey("model_prompt_dismissed")
         val LOCAL_FOLDER = stringPreferencesKey("local_folder")
+        val PLAYBACK_SPEED = floatPreferencesKey("playback_speed")
+        val SKIP_SILENCE = booleanPreferencesKey("skip_silence")
     }
 }

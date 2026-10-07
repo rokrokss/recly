@@ -3,6 +3,11 @@
 package app.recly.wear.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -63,6 +68,7 @@ fun MainScreen(
     state: WearUiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onHighlight: () -> Unit,
 ) {
     ReclyWearTheme {
         AppScaffold {
@@ -74,6 +80,7 @@ fun MainScreen(
                     state = state,
                     onStart = onStart,
                     onStop = onStop,
+                    onHighlight = onHighlight,
                     onInfo = { informing = true },
                 )
             }
@@ -86,6 +93,7 @@ private fun RecordScreen(
     state: WearUiState,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onHighlight: () -> Unit,
     onInfo: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -134,6 +142,11 @@ private fun RecordScreen(
 
                     Spacer(Modifier.height(10.dp))
                     RecordNode(recording = state.canStop, busy = state.busy, onClick = if (state.canStop) onStop else onStart)
+                    // docs/03 "Metadata": below the stop node, only while it records.
+                    if (state.canStop) {
+                        Spacer(Modifier.height(8.dp))
+                        HighlightButton(onHighlight)
+                    }
                 }
             }
             FitToWatch {
@@ -163,8 +176,10 @@ private fun RecordScreen(
 @Composable
 private fun statusLine(state: WearUiState): Pair<String, Color>? {
     val message = state.message
+    val highlighted = state.highlightedSec
     return when {
         message != null -> message.text() to WearBlueprint.textMuted
+        highlighted != null && state.canStop -> stringResource(R.string.highlighted_at, stamp(highlighted)) to WearBlueprint.accent
         state.recorder is RecorderState.Recording -> stringResource(R.string.recording_active) to WearBlueprint.danger
         state.recorder == RecorderState.Starting -> stringResource(R.string.recording_busy) to WearBlueprint.textMuted
         state.recorder == RecorderState.Stopping -> stringResource(R.string.recording_stopping) to WearBlueprint.textMuted
@@ -193,6 +208,34 @@ private fun FitToWatch(content: @Composable () -> Unit) {
 
 /** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
 private const val DRAWN_FOR_WIDTH_DP = 227f
+
+/** The mark's time as every shell writes it, `00:12:34`. */
+private fun stamp(seconds: Long): String = "%02d:%02d:%02d".format(seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+
+/** docs/03 "Metadata": the accent-outlined flag and its word, under the stop node. */
+@Composable
+private fun HighlightButton(onClick: () -> Unit) {
+    CompactButton(
+        onClick = onClick,
+        shape = RoundedCornerShape(WearBlueprint.radius),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = WearBlueprint.accent, iconColor = WearBlueprint.accent),
+        border = BorderStroke(WearBlueprint.line, WearBlueprint.accent),
+        icon = { FlagGlyph(Modifier.size(ButtonDefaults.ExtraSmallIconSize)) },
+        label = { Text(text = stringResource(R.string.highlight), maxLines = 1) },
+    )
+}
+
+/** Material Symbols' `flag`, as thin lines (docs/09 "Icons") — the watch carries no icon font. */
+@Composable
+private fun FlagGlyph(modifier: Modifier) {
+    Canvas(modifier.clearAndSetSemantics {}) {
+        scale(size.width / 24f, size.height / 24f, pivot = Offset.Zero) {
+            drawLine(WearBlueprint.accent, Offset(6f, 3f), Offset(6f, 21f), 2f)
+            drawPath(Path().apply { moveTo(6f, 4f); lineTo(19f, 4f); lineTo(16f, 8.5f); lineTo(19f, 13f); lineTo(6f, 13f) },
+                WearBlueprint.accent, style = Stroke(2f))
+        }
+    }
+}
 
 /** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */
 @Composable

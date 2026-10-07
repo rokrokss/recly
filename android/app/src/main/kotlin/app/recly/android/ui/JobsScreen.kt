@@ -390,7 +390,7 @@ private fun ExpandedRow(
                 // this device's to make due.
                 // A recording waiting for the model has its download first in the row, above.
                 ItemState.NEEDS_CONSENT, ItemState.NEEDS_MODEL, ItemState.PENDING, ItemState.NO_JOB, ItemState.SKIPPED_SHORT,
-                ItemState.RECORDING, ItemState.RUNNING, ItemState.DONE,
+                ItemState.RECORDING, ItemState.IMPORTING, ItemState.RUNNING, ItemState.DONE,
                 ItemState.RECEIVING, ItemState.REMOTE_UPLOADING, ItemState.REMOTE_TRANSCRIBING,
                 -> Unit
             }
@@ -678,6 +678,7 @@ private fun DeleteDialog(
  */
 fun ItemState.badge(): LedgerStatus = when (this) {
     ItemState.RECORDING -> LedgerStatus("REC", BadgeTone.DANGER)
+    ItemState.IMPORTING -> LedgerStatus("IMPORTING", BadgeTone.ACCENT, busy = true)
     // docs/03 "Recordings from other devices": a code says what is happening, not where — an upload on another
     // device is the same word as one of this phone's own.
     ItemState.RECEIVING -> LedgerStatus("RECEIVING", BadgeTone.ACCENT)
@@ -739,7 +740,7 @@ internal val BADGE_CODES: List<String> =
 fun ItemState.waiting(): Boolean =
     this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NEEDS_AUTH ||
         this == ItemState.NEEDS_CONSENT || this == ItemState.NEEDS_MODEL ||
-        this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
+        this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING || this == ItemState.IMPORTING
 
 /**
  * The row's own count: a transcription on this device — queued, running, or held back for heat —
@@ -753,7 +754,7 @@ fun JobItem.waiting(): Boolean = localPending || state.waiting()
  * another device's upload (docs/03 "Recordings from other devices").
  */
 fun ItemState.inFlight(): Boolean =
-    this == ItemState.RECORDING || this == ItemState.RUNNING ||
+    this == ItemState.RECORDING || this == ItemState.IMPORTING || this == ItemState.RUNNING ||
         this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
 
 /**
@@ -787,6 +788,7 @@ private fun label(item: JobItem): String = if (item.localPending) stringResource
     }
 ) else when (item.state) {
     ItemState.RECORDING -> stringResource(R.string.job_state_recording)
+    ItemState.IMPORTING -> stringResource(R.string.job_state_importing)
     ItemState.RECEIVING -> stringResource(R.string.job_state_receiving)
     ItemState.REMOTE_UPLOADING -> stringResource(R.string.job_state_remote_uploading)
     ItemState.REMOTE_TRANSCRIBING -> stringResource(R.string.job_state_remote_transcribing)

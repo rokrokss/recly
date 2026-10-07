@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 import recly.core.job.JobStatus
@@ -71,7 +72,15 @@ data class RecordingUiState(
     val modelPrompt: LocalEngineInfo? = null,
     /** The speech model download the card shows and starts. */
     val download: ModelDownloadState = ModelDownloadState(),
+    /**
+     * docs/03 "Metadata": the moment the Highlight node last marked, while that is still the news under
+     * the record node — the next event replaces it, and leaving the tab clears it.
+     */
+    val highlighted: Highlighted? = null,
 )
+
+/** A mark the core kept: [sec] into [recordingId], which is only news while that recording runs. */
+data class Highlighted(val recordingId: String, val sec: Long)
 
 /**
  * The recording screen's half of `MainActivity`. It owns the title prompt;
@@ -153,7 +162,7 @@ class RecordingViewModel @JvmOverloads constructor(
      * someone who had already turned it off.
      */
     fun start() {
-        _state.update { it.copy(messages = emptyList()) }
+        _state.update { it.copy(messages = emptyList(), highlighted = null) }
         // Asked before the reminder as well as after it: a disconnect that is running would only
         // have to refuse the answer, and a question whose answer cannot count is not worth asking.
         if (refusedByDisconnect()) return
@@ -204,6 +213,21 @@ class RecordingViewModel @JvmOverloads constructor(
     fun stop() = RecorderService.stop(getApplication(), title = null, enqueue = false)
 
     /**
+     * docs/03 "Metadata": marks this moment of the recording that is running. The core takes a second mark
+     * within a second of the last as the same one, and only a mark it kept is news.
+     */
+    fun highlight() {
+        val recording = recorder.value as? RecorderState.Recording ?: return
+        val atSec = (kotlin.time.Clock.System.now() - recording.startedAt).inWholeMilliseconds / 1000.0
+        viewModelScope.launch {
+            val core = core()
+            if (withContext(core.deps.io) { core.recordings.addHighlight(recording.recordingId, atSec) }) {
+                _state.update { it.copy(highlighted = Highlighted(recording.recordingId, atSec.toLong())) }
+            }
+        }
+    }
+
+    /**
      * docs/11 A9. A while-in-use foreground service may only be started from something the user can
      * see, so the tile, the widget and the launcher shortcut all open this activity and land here
      * rather than touching `RecorderService` themselves. The flag lives on the ViewModel, not on the
@@ -233,7 +257,7 @@ class RecordingViewModel @JvmOverloads constructor(
     fun dropAutoStart() = _state.update { it.copy(autoStart = null) }
 
     /** What the last start or stop said is about that moment; coming back to the tab later is not it. */
-    fun clearMessages() = _state.update { it.copy(messages = emptyList()) }
+    fun clearMessages() = _state.update { it.copy(messages = emptyList(), highlighted = null) }
 
     // The refusal is said once, by the red line and its Open Settings button under the node; the
     // status line above them stays empty rather than say it again.

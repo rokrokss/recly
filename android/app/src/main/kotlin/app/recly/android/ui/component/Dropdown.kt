@@ -48,6 +48,7 @@ import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
+import app.recly.android.ui.theme.mono
 
 /**
  * docs/09 "Shape": one of a set of choices that is expected to grow — the app language, the provider,
@@ -133,7 +134,7 @@ fun <T> BlueprintDropdown(
  * a list taller than [MENU_MAX_HEIGHT] scrolls instead of running off the screen.
  */
 @Composable
-private fun BlueprintMenu(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+fun BlueprintMenu(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     val density = LocalDensity.current
@@ -168,7 +169,7 @@ private fun BlueprintMenu(onDismissRequest: () -> Unit, content: @Composable () 
  * hears "<label>, radio button, selected" — the same fact the chips put in their semantics.
  */
 @Composable
-private fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit) {
+fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace: Boolean = false) {
     val palette = blueprint
     val ink = if (selected) palette.accent else palette.text
     Row(
@@ -189,7 +190,27 @@ private fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit) {
             color = if (selected) ink else Color.Transparent,
             modifier = Modifier.clearAndSetSemantics { },
         )
-        Text(label, style = MaterialTheme.typography.bodyMedium, color = ink)
+        Text(label, style = if (monospace) mono.bodySmall else MaterialTheme.typography.bodyMedium, color = ink)
+    }
+}
+
+/**
+ * One action of a [BlueprintMenu]: its words and, for one that cannot run now, why — the reason is the
+ * item's second line, so a disabled item is never a riddle (the detail's More menu).
+ */
+@Composable
+fun MenuAction(label: String, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = MinTouch)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.m, vertical = Space.xs),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = if (enabled) palette.text else palette.textMuted)
+        reason?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
     }
 }
 
