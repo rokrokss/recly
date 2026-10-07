@@ -30,12 +30,12 @@ import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
-import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.LocalReduceMotion
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import recly.core.recording.SearchRange
 import recly.core.transcribe.Transcript
 
 /**
@@ -72,17 +72,22 @@ internal fun readerGroups(transcript: Transcript): List<ReaderGroup> = buildList
 /** The group the playhead is in: the last one that starts at or before it. */
 internal fun activeGroup(groups: List<ReaderGroup>, positionSec: Double): Int = groups.indexOfLast { it.start <= positionSec }
 
-/** Where [query] occurs in the groups' text, ignoring case — the find bar's matches, in reading order. */
+/** Where [query] occurs in the groups' text, folded the way the search folds it — the find bar's matches, in reading order. */
 internal data class FindMatch(val group: Int, val offset: Int, val length: Int)
 
-internal fun findMatches(groups: List<ReaderGroup>, query: String): List<FindMatch> {
+internal fun findMatches(groups: List<ReaderGroup>, query: String): List<FindMatch> =
+    groups.flatMap { group -> findRanges(group.text, query).map { FindMatch(group.index, it.offset, it.length) } }
+
+/**
+ * Stand-in for the core's `findRanges(text, query)` (docs/10 "Search": case, Latin accents and full width
+ * folded), which lands with feat/cf-fix-core; until that merge only case is ignored here.
+ */
+private fun findRanges(text: String, query: String): List<SearchRange> {
     val term = query.trim()
     if (term.isEmpty()) return emptyList()
-    return groups.flatMap { group ->
-        generateSequence(group.text.indexOf(term, ignoreCase = true).takeIf { it >= 0 }) { from ->
-            group.text.indexOf(term, from + term.length, ignoreCase = true).takeIf { it >= 0 }
-        }.map { FindMatch(group.index, it, term.length) }.toList()
-    }
+    return generateSequence(text.indexOf(term, ignoreCase = true).takeIf { it >= 0 }) { from ->
+        text.indexOf(term, from + term.length, ignoreCase = true).takeIf { it >= 0 }
+    }.map { SearchRange(it, term.length) }.toList()
 }
 
 /** The speaker a group header shows: the name the user gave, or the id. */
@@ -108,6 +113,8 @@ internal fun TranscriptReader(
     highlights: List<Double> = emptyList(),
     onHighlight: (Double) -> Unit = {},
     onSpeaker: (ReaderGroup) -> Unit = {},
+    /** False while a speaker change saves: the badges wait for it rather than start a second one. */
+    speakersEnabled: Boolean = true,
     /** The group whose speaker menu is open, and the menu — drawn beside its badge so it opens there. */
     speakerMenuFor: Int? = null,
     speakerMenu: @Composable () -> Unit = {},
@@ -164,16 +171,17 @@ internal fun TranscriptReader(
                         BlueprintButton(stamp, { onSeek(group.start) }, enabled = canSeek && group.start < seekableDurationSec,
                             modifier = Modifier.testTag("transcript-time-${group.index}").semantics { contentDescription = seekLabel },
                             tone = if (now) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true)
-                        if (group.speaker.isNotEmpty()) Box {
-                            SpeakerBadge(speakerLabel(transcript, group.speaker), named = transcript.speakers.any { it.id == group.speaker && it.name != null },
-                                onClick = { onSpeaker(group) }, modifier = Modifier.testTag("transcript-speaker-${group.index}"))
-                            if (speakerMenuFor == group.index) speakerMenu()
-                        }
+                        // docs/09 "Highlights": right after the time, before the speaker.
                         highlights.filter { it >= group.start && it < group.end.coerceAtLeast(group.start + 0.001) }.forEach { at ->
                             Box {
                                 HighlightMarker(at, onClick = { onHighlight(at) })
                                 if (highlightMenuFor == at) highlightMenu()
                             }
+                        }
+                        if (group.speaker.isNotEmpty()) Box {
+                            SpeakerBadge(speakerLabel(transcript, group.speaker), named = transcript.speakers.any { it.id == group.speaker && it.name != null },
+                                onClick = { onSpeaker(group) }, enabled = speakersEnabled, modifier = Modifier.testTag("transcript-speaker-${group.index}"))
+                            if (speakerMenuFor == group.index) speakerMenu()
                         }
                         if (savingGroup == group.index && savingLabel != null) {
                             Text(savingLabel, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
@@ -196,18 +204,18 @@ internal fun TranscriptReader(
  * monospace. A tap opens the speaker menu.
  */
 @Composable
-internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {
+internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val palette = blueprint
     Box(
         modifier
             .defaultMinSize(minHeight = 48.dp)
-            .clickable(role = Role.Button, onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
             modifier = Modifier
-                .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
+                .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
                 .padding(horizontal = Space.s, vertical = 2.dp),
             style = if (named) MaterialTheme.typography.labelLarge else mono.small,
             color = palette.textMuted,
@@ -216,19 +224,22 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
     }
 }
 
-/** A highlight inside a group: a 6dp filled accent square after its time; a tap opens Go to / Remove. */
+/**
+ * A highlight inside a group: a 6dp filled accent square right after its time; a tap opens Go to / Remove.
+ * The row lays out only the square, so it sits beside the time with no gap; Compose's minimum touch target
+ * still takes a tap within 48dp of it that lands on nothing else.
+ */
 @Composable
 internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
     val label = stringResource(R.string.highlight_tick, hms(atSec.toLong()))
     Box(
         Modifier
-            .size(MinTouch)
+            .size(6.dp)
+            .background(blueprint.accent)
             .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(Modifier.size(6.dp).background(blueprint.accent))
-    }
+            .semantics { contentDescription = label }
+            .testTag("transcript-highlight"),
+    )
 }
 
 /** docs/09 "Transcript reader": following paused by a scroll — the way back to the playhead. */

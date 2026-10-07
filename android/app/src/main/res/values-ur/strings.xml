@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">ابھی کوئی ٹرانسکرپٹ نہیں</string>
     <string name="detail_transcribing">ٹرانسکرائب ہو رہا ہے…</string>
     <string name="detail_transcription_off">ترتیبات میں ٹرانسکرپشن بند ہے</string>
+    <string name="detail_not_uploaded">ابھی اپ لوڈ نہیں ہوا</string>
     <string name="share_transcript">ٹرانسکرپٹ</string>
     <string name="share_transcript_format">متن · .txt</string>
     <string name="share_notes">نوٹس کے لیے ٹرانسکرپٹ</string>

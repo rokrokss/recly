@@ -104,6 +104,8 @@ internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscript
                 modifier = Modifier.testTag("more-edit"))
             val againReason = when {
                 transcription == null || transcription.mode == TranscriptionMode.OFF -> stringResource(R.string.detail_transcription_off)
+                // Before the job's own reason: a job of a recording not uploaded yet is still uploading it.
+                !detail.uploaded -> stringResource(R.string.detail_not_uploaded)
                 detail.transcribing -> transcribing
                 else -> null
             }

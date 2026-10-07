@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.contentOrNull
@@ -223,6 +224,11 @@ data class DetailState(
     val retranscribing: Boolean = false,
     /** …and it runs on this device rather than at a provider. */
     val retranscribingLocally: Boolean = false,
+    /**
+     * Its storage holds every part, or it is another device's recording — what "Transcribe again" reads from
+     * (docs/10 "Re-transcription"); until then the More menu says `Not uploaded yet`.
+     */
+    val uploaded: Boolean = false,
     /** Set when the detail was opened from a search hit (docs/09 "Search"). */
     val find: FindRequest? = null,
 )
@@ -306,7 +312,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * Whether a transcription of the open recording is queued or running, and whether it is a "Transcribe
-     * again" — what the detail's More menu and its one-line status say (docs/10 "Re-transcription").
+     * again" — what the detail's More menu and its one-line status say (docs/10 "Re-transcription") — and
+     * whether it is uploaded yet, which a job settling may have just made it.
      */
     private suspend fun transcribing(core: ReclyCore, jobs: List<Job>, recordingId: String): Transcribing {
         val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
@@ -316,11 +323,13 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             running = unsettled.isNotEmpty() || core.localTranscription.isRunning(recordingId),
             again = again != null,
             locally = again?.workflow?.steps?.any { it is Step.LocalTranscribe } == true,
+            uploaded = core.recordings.get(recordingId)?.remote == true || driveHasEveryPart(core, recordingId),
         )
     }
 
-    private data class Transcribing(val running: Boolean, val again: Boolean, val locally: Boolean) {
-        fun applyTo(detail: DetailState) = detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally)
+    private data class Transcribing(val running: Boolean, val again: Boolean, val locally: Boolean, val uploaded: Boolean) {
+        fun applyTo(detail: DetailState) =
+            detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally, uploaded = uploaded)
     }
 
     /** docs/09 "Playback": this device's preferences, so every recording plays at the speed last chosen. */
@@ -358,13 +367,17 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    /** A search hit opens its recording at the first transcript match, with every match tinted (docs/09 "Search"). */
+    /**
+     * A search hit opens its recording at the first transcript match, with every match tinted (docs/09 "Search").
+     * A hit in the title alone opens the reading page: there is nothing in the transcript to find.
+     */
     fun openHit(hit: SearchHit) {
         val query = _state.value.query.trim()
+        val find = hit.snippets.firstOrNull()?.let { FindRequest(query, it.atSec) }
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
-            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, FindRequest(query, hit.snippets.firstOrNull()?.atSec))
+            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find)
         }
     }
 
@@ -404,14 +417,15 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * docs/10 "Re-transcription": the settings as they are now, after the user said yes. The list and the
-     * detail follow the job it queues.
+     * detail follow the job it queues; a refusal is the page's to say. It runs on here even if that page
+     * goes: the core's start is several writes that belong together.
      */
-    fun retranscribe(recordingId: String) = launch {
+    suspend fun retranscribe(recordingId: String): recly.core.transcribe.RetranscribeResult = viewModelScope.async {
         val core = core()
-        if (withContext(core.deps.io) { core.retranscribe(recordingId) } is recly.core.transcribe.RetranscribeResult.Started) {
-            scheduler().onJobsDue(expedited = true)
+        withContext(core.deps.io) { core.retranscribe(recordingId) }.also {
+            if (it is recly.core.transcribe.RetranscribeResult.Started) scheduler().onJobsDue(expedited = true)
         }
-    }
+    }.await()
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
     fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)

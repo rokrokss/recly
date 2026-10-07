@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">لا يوجد نص بعد</string>
     <string name="detail_transcribing">جارٍ النسخ…</string>
     <string name="detail_transcription_off">النسخ مُعطَّل في الإعدادات</string>
+    <string name="detail_not_uploaded">لم يتم الرفع بعد</string>
     <string name="share_transcript">النص</string>
     <string name="share_transcript_format">نص عادي · .txt</string>
     <string name="share_notes">نص للملاحظات</string>

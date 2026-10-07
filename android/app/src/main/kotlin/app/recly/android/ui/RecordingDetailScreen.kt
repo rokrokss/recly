@@ -90,6 +90,7 @@ import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
 import recly.core.recording.WaveformPeaks
 import recly.core.transcribe.EditResult
+import recly.core.transcribe.RetranscribeResult
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptEdit
 import androidx.compose.ui.text.style.TextAlign
@@ -124,7 +125,7 @@ class DetailActions(
     val onHighlights: (List<Double>) -> Unit = {},
     val onExport: suspend (ExportFormat) -> String? = { null },
     val onEdit: suspend (TranscriptEdit) -> EditResult = { EditResult.NoTranscript },
-    val onRetranscribe: () -> Unit = {},
+    val onRetranscribe: suspend () -> RetranscribeResult? = { null },
     val onCloseFind: () -> Unit = {},
 )
 
@@ -188,13 +189,20 @@ fun RecordingDetailScreen(
     var sharing by remember(detail.recordingId) { mutableStateOf(false) }
     if (sharing) ShareSheet(detail, actions.onExport, onDismiss = { sharing = false })
     var askAgain by remember(detail.recordingId) { mutableStateOf(false) }
+    // Why a "Transcribe again" the core refused did not start, for a moment under the header.
+    var refusal by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
+    LaunchedEffect(refusal) { if (refusal != null) { delay(REFUSAL_MS); refusal = null } }
+    val scope = rememberCoroutineScope()
     val transcription = actions.transcription
     if (askAgain && transcription != null) {
         val transcript = detail.transcript
         RetranscribeDialog(
             transcription,
             edited = transcript != null && (transcript.editedAt != null || transcript.speakers.any { it.name != null }),
-            onConfirm = { askAgain = false; actions.onRetranscribe() },
+            onConfirm = {
+                askAgain = false
+                scope.launch { refusal = actions.onRetranscribe()?.let(::retranscribeRefusal) }
+            },
             onCancel = { askAgain = false },
         )
     }
@@ -206,7 +214,6 @@ fun RecordingDetailScreen(
     val leaveEditor = { if (draft?.changed == true) discarding = true else draft = null }
     BackHandler(enabled = draft != null) { leaveEditor() }
     if (discarding) DiscardDialog(onKeep = { discarding = false }, onDiscard = { discarding = false; draft = null })
-    val scope = rememberCoroutineScope()
     val save = save@{
         val editing = draft ?: return@save
         if (!editing.changed) {
@@ -247,7 +254,9 @@ fun RecordingDetailScreen(
     // The speaker being named, and the group whose badge asked — where `Saving…` is said.
     var speakerNaming by remember(detail.recordingId) { mutableStateOf<Pair<String, Int>?>(null) }
     var savingGroup by remember(detail.recordingId) { mutableStateOf<Pair<Int, SavePhase>?>(null) }
-    val saveNow: (Int, TranscriptEdit) -> Unit = { group, edit ->
+    // One change at a time: an edit is read-modify-write, so the speaker actions wait until this one has saved.
+    val saveNow: (Int, TranscriptEdit) -> Unit = saveNow@{ group, edit ->
+        if (savingGroup != null) return@saveNow
         savingGroup = group to SavePhase.SAVING
         scope.launch {
             val started = SystemClock.elapsedRealtime()
@@ -309,6 +318,11 @@ fun RecordingDetailScreen(
             )
         }
         HairLine()
+        refusal?.let {
+            Text(stringResource(it), Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s).testTag("detail-refusal"),
+                style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            HairLine()
+        }
 
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -355,7 +369,8 @@ fun RecordingDetailScreen(
                                     onDismiss = { highlightMenu = null })
                             }
                         },
-                        onSpeaker = { speakerMenu = it },
+                        onSpeaker = { if (savingGroup == null) speakerMenu = it },
+                        speakersEnabled = savingGroup == null,
                         speakerMenuFor = speakerMenu?.index,
                         speakerMenu = {
                             speakerMenu?.let { group ->
@@ -417,6 +432,18 @@ fun RecordingDetailScreen(
 
 /** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
 internal enum class SavePhase { IDLE, SAVING, DONE }
+
+/** docs/09 "Detail header and More menu": a refused "Transcribe again" in the menu's own reasons; null when it started. */
+internal fun retranscribeRefusal(result: RetranscribeResult): Int? = when (result) {
+    is RetranscribeResult.Started -> null
+    RetranscribeResult.Busy -> R.string.detail_transcribing
+    RetranscribeResult.NoAudio -> R.string.player_no_audio
+    RetranscribeResult.NoTranscriptionConfigured -> R.string.detail_transcription_off
+    RetranscribeResult.Unsupported -> R.string.detail_not_uploaded
+}
+
+/** How long a refusal stays under the header. */
+private const val REFUSAL_MS = 4_000L
 
 /**
  * "Change speaker for this line" on a reading group: every segment of it to [speakerId], or to a new

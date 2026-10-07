@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">ยังไม่มีข้อความถอดเสียง</string>
     <string name="detail_transcribing">กำลังถอดเสียง…</string>
     <string name="detail_transcription_off">ปิดการถอดเสียงไว้ในการตั้งค่า</string>
+    <string name="detail_not_uploaded">ยังไม่ได้อัปโหลด</string>
     <string name="share_transcript">ข้อความถอดเสียง</string>
     <string name="share_transcript_format">ข้อความ · .txt</string>
     <string name="share_notes">ข้อความถอดเสียงสำหรับโน้ต</string>

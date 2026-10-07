@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Chưa có bản chép lời</string>
     <string name="detail_transcribing">Đang chép lời…</string>
     <string name="detail_transcription_off">Chép lời đang tắt trong Cài đặt</string>
+    <string name="detail_not_uploaded">Chưa tải lên</string>
     <string name="share_transcript">Bản chép lời</string>
     <string name="share_transcript_format">Văn bản · .txt</string>
     <string name="share_notes">Bản chép lời cho ghi chú</string>

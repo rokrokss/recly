@@ -311,6 +311,7 @@
     <string name="detail_no_transcript">Aún no hay transcripción</string>
     <string name="detail_transcribing">Transcribiendo…</string>
     <string name="detail_transcription_off">La transcripción está desactivada en Ajustes</string>
+    <string name="detail_not_uploaded">Aún no se ha subido</string>
     <string name="share_transcript">Transcripción</string>
     <string name="share_transcript_format">Texto · .txt</string>
     <string name="share_notes">Transcripción para notas</string>
