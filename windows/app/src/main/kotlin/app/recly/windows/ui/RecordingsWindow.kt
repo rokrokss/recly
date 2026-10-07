@@ -439,8 +439,12 @@ private fun Detail(
     var saving by remember(detail.recordingId) { mutableStateOf(mapOf<Int, InlineSave>()) }
     var editSave by remember { mutableStateOf<InlineSave?>(null) }
     var editRefused by remember(draft) { mutableStateOf(false) }
-    /** A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on. */
+    /**
+     * A reading-mode change, saved at once with `Saving…` and then a check beside the group it was made on.
+     * One at a time: while one saves, the speaker badges do not open ([TranscriptReader]'s `saving`).
+     */
     fun saveInline(block: Int, edit: TranscriptEdit) {
+        if (InlineSave.SAVING in saving.values) return
         scope.launch {
             saving = saving + (block to InlineSave.SAVING)
             val saved = model.editTranscript(detail.recordingId, edit) is EditResult.Edited
