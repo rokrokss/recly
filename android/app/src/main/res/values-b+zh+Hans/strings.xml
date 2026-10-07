@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">你的修改将被新的转录文本替换。</string>
     <string name="retranscribe_local">设备本地转录</string>
     <string name="retranscribe_confirm">转录</string>
-    <string name="playback_speed">播放速度</string>
     <string name="playback_speed_value">播放速度%1$s</string>
     <string name="playback_speed_skip">播放速度%1$s，已开启跳过静音</string>
     <string name="playback_skip_silence">跳过静音</string>

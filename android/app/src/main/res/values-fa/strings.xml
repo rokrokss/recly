@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">ویرایش‌های شما با رونوشت جدید جایگزین می‌شوند.</string>
     <string name="retranscribe_local">رونویسی روی دستگاه</string>
     <string name="retranscribe_confirm">رونویسی</string>
-    <string name="playback_speed">سرعت</string>
     <string name="playback_speed_value">سرعت %1$s</string>
     <string name="playback_speed_skip">سرعت %1$s، رد شدن از سکوت روشن</string>
     <string name="playback_skip_silence">رد شدن از سکوت</string>

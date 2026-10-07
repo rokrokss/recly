@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">سيحل النص الجديد محل تعديلاتك.</string>
     <string name="retranscribe_local">النسخ على الجهاز</string>
     <string name="retranscribe_confirm">بدء النسخ</string>
-    <string name="playback_speed">السرعة</string>
     <string name="playback_speed_value">السرعة %1$s</string>
     <string name="playback_speed_skip">السرعة %1$s، تخطي الصمت مفعّل</string>
     <string name="playback_skip_silence">تخطي الصمت</string>

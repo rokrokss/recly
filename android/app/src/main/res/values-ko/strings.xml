@@ -383,7 +383,6 @@
     <string name="retranscribe_edits">고친 내용은 새 전사본으로 바뀝니다.</string>
     <string name="retranscribe_local">기기 내 전사</string>
     <string name="retranscribe_confirm">전사</string>
-    <string name="playback_speed">속도</string>
     <string name="playback_speed_value">속도 %1$s</string>
     <string name="playback_speed_skip">속도 %1$s, 무음 건너뛰기 켬</string>
     <string name="playback_skip_silence">무음 건너뛰기</string>

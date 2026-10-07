@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">Những chỉnh sửa của bạn sẽ bị thay thế.</string>
     <string name="retranscribe_local">chép lời trên thiết bị</string>
     <string name="retranscribe_confirm">Chép lời</string>
-    <string name="playback_speed">Tốc độ</string>
     <string name="playback_speed_value">Tốc độ %1$s</string>
     <string name="playback_speed_skip">Tốc độ %1$s, đang bật bỏ qua khoảng lặng</string>
     <string name="playback_skip_silence">Bỏ qua khoảng lặng</string>

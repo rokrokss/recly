@@ -489,7 +489,6 @@
   "Speaker model": "話者識別モデル",
   "Speaker name": "話者の名前",
   "Speakers are separated on this device, sentence by sentence.": "このデバイスで文ごとに話者を区別します。",
-  "Speed": "再生速度",
   "Speed {0}": "再生速度 {0}",
   "Speed {0}, skip silence on": "再生速度 {0}、無音スキップ オン",
   "Subtitles": "字幕",

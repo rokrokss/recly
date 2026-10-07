@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">Nakala mpya itachukua nafasi ya mabadiliko yako.</string>
     <string name="retranscribe_local">unukuzi kwenye kifaa</string>
     <string name="retranscribe_confirm">Nukuu</string>
-    <string name="playback_speed">Kasi</string>
     <string name="playback_speed_value">Kasi %1$s</string>
     <string name="playback_speed_skip">Kasi %1$s, kuruka ukimya kumewashwa</string>
     <string name="playback_skip_silence">Ruka ukimya</string>

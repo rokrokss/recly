@@ -489,7 +489,6 @@
   "Speaker model": "Modell zur Sprechertrennung",
   "Speaker name": "Sprechername",
   "Speakers are separated on this device, sentence by sentence.": "Sprecher werden auf diesem Gerät satzweise getrennt.",
-  "Speed": "Geschwindigkeit",
   "Speed {0}": "Geschwindigkeit {0}",
   "Speed {0}, skip silence on": "Geschwindigkeit {0}, Stille überspringen an",
   "Subtitles": "Untertitel",

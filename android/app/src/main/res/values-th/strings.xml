@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">การแก้ไขของคุณจะถูกแทนที่ด้วยข้อความถอดเสียงใหม่</string>
     <string name="retranscribe_local">การถอดเสียงในอุปกรณ์</string>
     <string name="retranscribe_confirm">ถอดเสียง</string>
-    <string name="playback_speed">ความเร็ว</string>
     <string name="playback_speed_value">ความเร็ว %1$s</string>
     <string name="playback_speed_skip">ความเร็ว %1$s เปิดข้ามช่วงเงียบอยู่</string>
     <string name="playback_skip_silence">ข้ามช่วงเงียบ</string>

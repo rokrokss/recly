@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">Le tue modifiche verranno sostituite.</string>
     <string name="retranscribe_local">la trascrizione sul dispositivo</string>
     <string name="retranscribe_confirm">Trascrivi</string>
-    <string name="playback_speed">Velocità</string>
     <string name="playback_speed_value">Velocità %1$s</string>
     <string name="playback_speed_skip">Velocità %1$s, salta silenzi attivo</string>
     <string name="playback_skip_silence">Salta silenzi</string>

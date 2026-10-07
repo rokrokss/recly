@@ -83,7 +83,7 @@ object CoreModule {
                 if (locale.language == "zh") app.recly.android.settings.AppLanguage.effective(locale).tag
                 else locale.toLanguageTag()
             },
-            localTranscription = QwenSpeechEngine.make(context, transport),
+            localTranscription = QwenSpeechEngine.make(context, transport, logger),
             localFolder = folder,
         )
 

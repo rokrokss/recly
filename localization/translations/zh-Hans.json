@@ -489,7 +489,6 @@
   "Speaker model": "说话人分离模型",
   "Speaker name": "说话人名称",
   "Speakers are separated on this device, sentence by sentence.": "在此设备上逐句区分说话人。",
-  "Speed": "播放速度",
   "Speed {0}": "播放速度{0}",
   "Speed {0}, skip silence on": "播放速度{0}，已开启跳过静音",
   "Subtitles": "字幕",

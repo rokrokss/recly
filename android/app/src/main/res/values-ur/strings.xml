@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">آپ کی ترامیم نئے ٹرانسکرپٹ سے بدل جائیں گی۔</string>
     <string name="retranscribe_local">آلے پر ٹرانسکرپشن</string>
     <string name="retranscribe_confirm">ٹرانسکرائب کریں</string>
-    <string name="playback_speed">رفتار</string>
     <string name="playback_speed_value">رفتار %1$s</string>
     <string name="playback_speed_skip">رفتار %1$s، خاموشی چھوڑنا آن</string>
     <string name="playback_skip_silence">خاموشی چھوڑیں</string>

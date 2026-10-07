@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">আপনার পরিবর্তনগুলো নতুন ট্রান্সক্রিপ্ট দিয়ে প্রতিস্থাপিত হবে।</string>
     <string name="retranscribe_local">ডিভাইসে ট্রান্সক্রিপশন</string>
     <string name="retranscribe_confirm">ট্রান্সক্রাইব করুন</string>
-    <string name="playback_speed">গতি</string>
     <string name="playback_speed_value">গতি %1$s</string>
     <string name="playback_speed_skip">গতি %1$s, নীরবতা এড়ানো চালু</string>
     <string name="playback_skip_silence">নীরবতা এড়িয়ে যান</string>

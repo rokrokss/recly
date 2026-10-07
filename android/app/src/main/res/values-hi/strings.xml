@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">आपके बदलाव नई ट्रांसक्रिप्ट से बदल जाएँगे।</string>
     <string name="retranscribe_local">डिवाइस पर ट्रांसक्रिप्शन</string>
     <string name="retranscribe_confirm">ट्रांसक्राइब करें</string>
-    <string name="playback_speed">स्पीड</string>
     <string name="playback_speed_value">स्पीड %1$s</string>
     <string name="playback_speed_skip">स्पीड %1$s, खामोशी छोड़ना चालू</string>
     <string name="playback_skip_silence">खामोशी छोड़ें</string>

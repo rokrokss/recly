@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">Ваши правки будут заменены.</string>
     <string name="retranscribe_local">расшифровка на устройстве</string>
     <string name="retranscribe_confirm">Расшифровать</string>
-    <string name="playback_speed">Скорость</string>
     <string name="playback_speed_value">Скорость %1$s</string>
     <string name="playback_speed_skip">Скорость %1$s, пропуск тишины включён</string>
     <string name="playback_skip_silence">Пропускать тишину</string>

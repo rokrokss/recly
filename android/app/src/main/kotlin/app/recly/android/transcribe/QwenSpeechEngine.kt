@@ -20,6 +20,8 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path.Companion.toPath
+import kotlin.coroutines.cancellation.CancellationException
+import recly.core.platform.Logger
 import recly.core.platform.Transport
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.LocalEngineStatus
@@ -53,6 +55,7 @@ class QwenSpeechEngine private constructor(
     private val speakers: LocalModelStore,
     private val speakerDir: okio.Path,
     private val turnsDir: File,
+    private val logger: Logger,
 ) : LocalTranscriptionEngine {
     @Volatile private var cancelled = false
     /** Downloads in flight: `prepare` is the download, and `status` says whether one is running. */
@@ -88,7 +91,18 @@ class QwenSpeechEngine private constructor(
             cancelled = false
             // Diarized first, from 0 s on the same input; a missing speaker model never holds the transcript up.
             val separation = if (request.diarize && speakers.installed()) separation(request.path) else null
-            val turns = separation?.let { it.turns(request.path, request.expectedSpeakers) { !cancelled && admitted() } ?: return@withContext paused }
+            val turns = separation?.let {
+                try {
+                    it.turns(request.path, request.expectedSpeakers) { !cancelled && admitted() } ?: return@withContext paused
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    // A diarizer that fails — a model it refuses, a block too big for memory — costs the
+                    // speakers, never the transcript. A native crash is beyond this net.
+                    logger.log(Logger.Level.WARN, "local.diarization.failed", error = e)
+                    null
+                }
+            }
             val hotwords = hotwords(request.vocabulary)
             val recognizer = OfflineRecognizer(config = recognizerConfig())
             val vad = Vad(config = vadConfig())
@@ -241,8 +255,8 @@ class QwenSpeechEngine private constructor(
 
     /** The diarizer for [path], its finished blocks kept under a name of the input's own. */
     private fun separation(path: String): SpeakerSeparation {
-        val input = File(path)
-        val key = "${path.hashCode().toUInt()}-${input.length()}-${input.lastModified()}"
+        // Not by its time: a joined input is made again after a pause, the same bytes under the same name.
+        val key = "${path.hashCode().toUInt()}-${File(path).length()}"
         return SpeakerSeparation(
             (speakerDir / SpeakerDiarizationModels.SEGMENTATION).toString(),
             (speakerDir / SpeakerDiarizationModels.EMBEDDING).toString(),
@@ -281,7 +295,7 @@ class QwenSpeechEngine private constructor(
          * The placeholder on a phone without the memory for the model, or in a 32-bit process, whose
          * ABIs the APK leaves sherpa-onnx out of (build.gradle.kts `packaging`): `local` is then never offered.
          */
-        fun make(context: Context, transport: Transport): LocalTranscriptionEngine {
+        fun make(context: Context, transport: Transport, logger: Logger): LocalTranscriptionEngine {
             if (!Process.is64Bit()) return UnavailableLocalTranscriptionEngine()
             val memory = ActivityManager.MemoryInfo()
             context.getSystemService(ActivityManager::class.java).getMemoryInfo(memory)
@@ -296,6 +310,7 @@ class QwenSpeechEngine private constructor(
                 LocalModelStore(transport, FileSystem.SYSTEM, speakerDir, SpeakerDiarizationModels.files, Dispatchers.IO),
                 speakerDir,
                 File(context.noBackupFilesDir, "speaker-turns"),
+                logger,
             )
         }
     }

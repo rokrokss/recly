@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">Mapapalitan ang mga pagbabago mo.</string>
     <string name="retranscribe_local">pag-transcribe sa device</string>
     <string name="retranscribe_confirm">I-transcribe</string>
-    <string name="playback_speed">Bilis</string>
     <string name="playback_speed_value">Bilis %1$s</string>
     <string name="playback_speed_skip">Bilis %1$s, naka-on ang paglaktaw sa katahimikan</string>
     <string name="playback_skip_silence">Laktawan ang katahimikan</string>

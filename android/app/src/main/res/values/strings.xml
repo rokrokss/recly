@@ -437,7 +437,6 @@
     <string name="retranscribe_edits">Your edits are replaced.</string>
     <string name="retranscribe_local">on-device transcription</string>
     <string name="retranscribe_confirm">Transcribe</string>
-    <string name="playback_speed">Speed</string>
     <string name="playback_speed_value">Speed %1$s</string>
     <string name="playback_speed_skip">Speed %1$s, skip silence on</string>
     <string name="playback_skip_silence">Skip silence</string>

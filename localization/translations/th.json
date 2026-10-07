@@ -489,7 +489,6 @@
   "Speaker model": "โมเดลแยกผู้พูด",
   "Speaker name": "ชื่อผู้พูด",
   "Speakers are separated on this device, sentence by sentence.": "แยกผู้พูดทีละประโยคในอุปกรณ์นี้",
-  "Speed": "ความเร็ว",
   "Speed {0}": "ความเร็ว {0}",
   "Speed {0}, skip silence on": "ความเร็ว {0} เปิดข้ามช่วงเงียบอยู่",
   "Subtitles": "คำบรรยาย",

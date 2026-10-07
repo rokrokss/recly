@@ -351,7 +351,6 @@
     <string name="retranscribe_edits">編集内容は新しい文字起こしに置き換えられます。</string>
     <string name="retranscribe_local">デバイス上の文字起こし</string>
     <string name="retranscribe_confirm">文字起こしする</string>
-    <string name="playback_speed">再生速度</string>
     <string name="playback_speed_value">再生速度 %1$s</string>
     <string name="playback_speed_skip">再生速度 %1$s、無音スキップ オン</string>
     <string name="playback_skip_silence">無音をスキップ</string>
