@@ -41,6 +41,20 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a find bar finds in a text what the search found, at the text's own places`() {
+        fun found(text: String, query: String) = RecordingSearch.findRanges(text, query).map { text.substring(it.offset, it.offset + it.length) }
+
+        assertEquals(listOf("Résumé", "RESUME"), found("A Résumé, the RESUME", " resume "))
+        assertEquals(listOf("ＢＵＤＧＥＴ", "budget"), found("ＢＵＤＧＥＴ and budget", "Budget"))
+        assertEquals(listOf("abc"), found("x abc", "ＡＢＣ"))
+        assertEquals(listOf("회의록", "회의록"), found("회의록 정리, 다음 회의록", "회의록"))
+        assertEquals(listOf(SearchRange(0, 2), SearchRange(2, 2)), RecordingSearch.findRanges("aaaa", "aa"), "in order, not overlapping")
+        assertEquals(emptyList(), RecordingSearch.findRanges("anything", "   "))
+        assertEquals(emptyList(), RecordingSearch.findRanges("anything", ""))
+        assertEquals(emptyList(), RecordingSearch.findRanges("Résumé", "resumes"))
+    }
+
+    @Test
     fun `full-width Latin finds its ASCII, and a long segment is cut around the match`() = runBlocking {
         val meta = f.recordAndRun()
         val long = "x".repeat(200) + " the budget line " + "y".repeat(200)

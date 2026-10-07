@@ -2607,7 +2607,8 @@ and the ideographic space — a character-for-character fold, so a match's place
 segment's start (`atSec`), its words (cut to 120 characters around the first match, with `…`) and the matches in them
 (`SearchRange(offset, length)`). It is a plain scan off the caller's thread: each transcript is read and folded once and kept in memory
 until its file's size or time changes. Another device's transcript is searchable once it is on this device — opened, or read by a pull
-(§8 "Result files").
+(§8 "Result files"). A shell's find bar in a transcript marks its matches with `RecordingSearch.findRanges(text, query)`, the same fold
+and phrase as `search`, so a recording the search found opens with the same matches.
 
 ### Shared rules for the shells
 
