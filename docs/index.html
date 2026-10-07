@@ -211,7 +211,7 @@
       <li>
         <span class="step">03 · Transcribe</span>
         <h3>On device, or your key</h3>
-        <p>After the original is safe, the transcript is written back next to it. Speakers are separated when the provider supports it.</p>
+        <p>After the original is safe, the transcript is written back next to it. Speakers are separated on the device, or by a provider that supports it.</p>
         <code>transcript.json</code>
       </li>
       <li>
@@ -261,6 +261,21 @@
         <h3>Nothing covert</h3>
         <p>Recording is always visible, and there is no bot joining your call. No analytics, no crash reporting, no update pings.</p>
       </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11v3M7 9v7M10 11v3M17 10v5M20 11v3"/><path d="M13.5 8v13"/><rect x="12" y="3" width="3" height="3" rx=".5"/></svg></div>
+        <h3>Mark what matters</h3>
+        <p>Tap Highlight while recording, on the phone, either watch or the desktop. The marks go into the recording's files, so your agent sees what you thought mattered.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h12M4 10h8M4 14h5"/><path d="M13 20v-2.5l6.5-6.5 2.5 2.5-6.5 6.5z"/></svg></div>
+        <h3>Fix it afterwards</h3>
+        <p>Correct a word, name the speakers, or transcribe again with your current settings. A vocabulary of names and terms helps them come out right.</p>
+      </article>
+      <article class="card">
+        <div class="glyph"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5"/></svg></div>
+        <h3>Find it, share it</h3>
+        <p>Search every title and transcript. Share a transcript as <code>.txt</code>, <code>.md</code>, <code>.srt</code> or <code>.vtt</code>, or the audio as <code>.m4a</code>, and import audio or video from elsewhere.</p>
+      </article>
     </div>
   </div>
 </section>
@@ -291,7 +306,7 @@
     <div class="modes">
       <article class="card">
         <h3>On device <span class="badge badge-ok">Default</span></h3>
-        <p>New installs start here wherever the device has an engine. No audio goes to a speech service. It does not separate speakers.</p>
+        <p>New installs start here wherever the device has an engine. No audio goes to a speech service, and speakers are separated here too.</p>
       </article>
       <article class="card">
         <h3>External API <span class="badge">Your key</span></h3>
@@ -308,8 +323,8 @@
         <table class="ledger">
           <thead><tr><th>Device</th><th>Engine</th><th>Needs</th></tr></thead>
           <tbody>
-            <tr><td>iPhone · Mac</td><td data-label="Engine">Apple's speech recognizer</td><td data-label="Needs">iOS or macOS 26 or later, supported hardware and language assets</td></tr>
-            <tr><td>Android · Windows</td><td data-label="Engine">Qwen3-ASR 0.6B, open source</td><td data-label="Needs">64-bit, 6 GiB+ reported memory (an 8 GB device in practice), ~1 GB one-time download</td></tr>
+            <tr><td>iPhone · Mac</td><td data-label="Engine">Apple's speech recognizer, with a speaker model inside the app</td><td data-label="Needs">iOS or macOS 26 or later, supported hardware and language assets</td></tr>
+            <tr><td>Android · Windows</td><td data-label="Engine">Qwen3-ASR 0.6B and a speaker model (sentence by sentence), open source</td><td data-label="Needs">64-bit, 6 GiB+ reported memory (an 8 GB device in practice), ~1 GB one-time download</td></tr>
             <tr><td>Watches</td><td data-label="Engine">—</td><td data-label="Needs">Record and hand off; the paired phone transcribes</td></tr>
           </tbody>
         </table>
