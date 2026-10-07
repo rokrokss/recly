@@ -25,13 +25,22 @@ public struct SystemAudioDevice: Sendable {
             return nil
         }
         let transport: UInt32 = CoreAudioProperty.value(of: id, selector: kAudioDevicePropertyTransportType) ?? 0
+        // The headphone jack is built in too ("External Headphones", data source `hdpn`); only the
+        // speakers' data source is `ispk`. A built-in output with no data source is a speaker.
+        var source = CoreAudioProperty.address(kAudioDevicePropertyDataSource, scope: kAudioObjectPropertyScopeOutput)
+        var dataSource: UInt32 = 0
+        var size = UInt32(MemoryLayout<UInt32>.size)
+        let hasSource = AudioObjectGetPropertyData(id, &source, 0, nil, &size, &dataSource) == noErr
         return SystemAudioDevice(
             name: CoreAudioProperty.string(of: id, selector: kAudioObjectPropertyName) ?? uid,
-            isBuiltInSpeaker: transport == kAudioDeviceTransportTypeBuiltIn,
+            isBuiltInSpeaker: transport == kAudioDeviceTransportTypeBuiltIn && (!hasSource || dataSource == Self.internalSpeaker),
             id: id,
             uid: uid
         )
     }
+
+    /// `'ispk'`, the built-in speakers' `kAudioDevicePropertyDataSource`.
+    private static let internalSpeaker: UInt32 = 0x6973_706B
 
     /// The output device's own rate, used to detect route changes. The aggregate input stream can
     /// have a different rate; its virtual format is what describes the captured samples.

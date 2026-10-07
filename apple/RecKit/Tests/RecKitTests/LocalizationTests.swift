@@ -28,6 +28,7 @@ final class LocalizationCatalogTests: XCTestCase {
         "RecKit/Sources/RecKit/Resources/Localizable.xcstrings",
         "RecMac/RecMac/Localizable.xcstrings",
         "RecMac/RecMac/InfoPlist.xcstrings",
+        "RecMac/RecMac/AppShortcuts.xcstrings",
         "RecPhone/RecPhone/Localizable.xcstrings",
         "RecPhone/RecPhone/InfoPlist.xcstrings",
         "RecPhone/RecPhone/AppShortcuts.xcstrings",

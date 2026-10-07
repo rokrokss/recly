@@ -28,6 +28,9 @@
 
 ## 1. 설정 출력하기
 
+**Recly 앱이 있는 Mac:** 설정 → 에이전트 연결 → 로컬 에이전트 → **설정 복사**가 Recly가 녹음을 저장하는 폴더의
+설정을 복사합니다. 그 밖에는:
+
 ```sh
 recly-events mcp --print-config --folder ~/Notes/Recly
 ```

@@ -162,5 +162,3 @@ check the values and save, then enter the key there. The storage choice stays pe
 - **No On device choice**: iPhone and Mac need iOS or macOS 26 or later and supported hardware;
   Android phones and Windows PCs a 64-bit device with 6 GiB+ reported memory (an 8 GB device in
   practice).
-- **Mac, "You are listening on the built-in speaker"**: use headphones, so the other side of a call
-  stays off your microphone track.

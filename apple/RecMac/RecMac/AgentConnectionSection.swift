@@ -6,8 +6,15 @@ import SwiftUI
 /// Google Drive. It runs on this Mac's own Drive connection, so the one thing it asks for is an
 /// OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
 /// off, and the set-up guide is always there. On, one line under the switch says how the server is.
+///
+/// With recordings in iCloud or a local folder the switch cannot be turned, and the block under it is
+/// the local MCP server instead: the configuration an agent on this Mac starts recly-events with.
 struct AgentConnectionSection: View {
     @ObservedObject var agent: AgentEventsController
+    /// Where recordings go, for the local MCP block; nil before the core is open.
+    var storage: StorageChoice?
+    /// Runs `recly-events mcp --print-config` for the storage folder and copies what it prints.
+    var copyConfiguration: () async -> Bool = { false }
     @Environment(\.blueprint) private var blueprint
     @Environment(\.openURL) private var openURL
     @State private var tunnelId = ""
@@ -19,6 +26,11 @@ struct AgentConnectionSection: View {
     /// The guide has a Korean page; every other app language gets the English one.
     static var guide: URL {
         URL(string: AppLanguage.resolvedCode == "ko" ? "https://recly.dev/agent.ko" : "https://recly.dev/agent")!
+    }
+
+    /// The local MCP server's guide: Claude Desktop, Claude Code and Codex. Korean as [guide] is.
+    static var mcpGuide: URL {
+        URL(string: AppLanguage.resolvedCode == "ko" ? "https://recly.dev/mcp.ko" : "https://recly.dev/mcp")!
     }
 
     var body: some View {
@@ -34,13 +46,16 @@ struct AgentConnectionSection: View {
                 // Off, the phase says nothing: the line is there only while the switch is on.
                 status
                 tunnelRow
-                SectionFootnote(loc("Runs recly-events on this Mac. It reads only the names and links of new transcripts in your Drive and tells your ChatGPT agent through your own OpenAI tunnel."))
+                SectionFootnote(loc("Runs recly-events on this Mac. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel."))
                 HStack {
                     BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(Self.guide) }
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.bottom, Space.s)
+            }
+            if agent.phase == .notDrive, let storage {
+                LocalMCPBlock(storage: storage, copy: copyConfiguration)
             }
         }
         .onAppear {
@@ -169,5 +184,51 @@ struct AgentConnectionSection: View {
         SectionBlock {
             LoadingText(text: text, font: blueprint.fonts.bodySmall, color: blueprint.palette.text)
         }
+    }
+}
+
+/// docs/12 "Agent connection": recly-events' local MCP server, for an agent on this Mac, while the
+/// recordings are in iCloud or a local folder. Nothing runs until an agent starts it, so there is no
+/// switch — only the configuration to give it, and the guide that says where it goes.
+private struct LocalMCPBlock: View {
+    @ObservedObject var storage: StorageChoice
+    let copy: () async -> Bool
+    @Environment(\.blueprint) private var blueprint
+    @Environment(\.openURL) private var openURL
+    /// `Copy configuration` worked: `✓ Copied` for a few seconds.
+    @State private var copied = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            SectionHeader(loc("Local agents")).padding(.horizontal, Space.m)
+            SectionBlock {
+                Text(verbatim: loc("Local MCP server"))
+                    .font(blueprint.fonts.bodySmall)
+                    .foregroundStyle(blueprint.palette.text)
+                SectionFootnote(loc("Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer."))
+                HStack(spacing: Space.s) {
+                    Spacer(minLength: 0)
+                    BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(AgentConnectionSection.mcpGuide) }
+                    BlueprintButton(
+                        copied ? RecKitStrings.localized("Copied") : loc("Copy configuration"),
+                        leading: copied ? BlueprintChip.selectionMark : nil
+                    ) {
+                        Task { copied = await copy() }
+                    }
+                    .disabled(!reachable || copied)
+                }
+            }
+        }
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(3))
+            copied = false
+        }
+    }
+
+    /// The server lists the folder it is given, so a folder this Mac cannot reach has nothing to copy.
+    private var reachable: Bool {
+        if storage.selected == .icloud { return storage.icloud == .available }
+        return storage.selected == .folder && storage.folder == .available
     }
 }

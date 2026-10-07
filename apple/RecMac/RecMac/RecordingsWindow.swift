@@ -1,6 +1,8 @@
+import AppKit
 import RecKit
 import ReclyCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// docs/08 "Result files", deliverable 3: the recent recordings and what the `transcribe` step wrote for
 /// the one that is picked. A window of its own for the same reason the editor is one — `LSUIElement`
@@ -14,12 +16,38 @@ struct RecordingsWindow: View {
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
     @Environment(\.locale) private var locale
+    /// Files are being dragged over the list.
+    @State private var dropping = false
 
     var body: some View {
         HSplitView {
             VStack(spacing: 0) {
-                ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)")
+                ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)") {
+                    // ux §7: an agent app shows no menu bar, so the list header's button carries ⌘I.
+                    if MenuModel.importer != nil {
+                        Button { pickFiles() } label: {
+                            Image(systemName: "square.and.arrow.down")
+                                .font(blueprint.fonts.sans(TypeSize.body))
+                                .foregroundStyle(blueprint.palette.textMuted)
+                                .frame(width: minTouch, height: minTouch)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .keyboardShortcut("i")
+                        .help(loc("Import audio…"))
+                        .accessibilityLabel(Text(verbatim: loc("Import audio")))
+                        .accessibilityIdentifier("import-audio")
+                    }
+                }
                 HairLine()
+                if let failure = menu.importFailure {
+                    Banner(
+                        ([loc("Could not import this file")] + (failure.isEmpty ? [] : [CoreMessages.text(failure).sentence]))
+                            .joined(separator: "\n"),
+                        tone: .danger
+                    )
+                    .padding(Space.s)
+                }
                 ScrollView {
                     // Lazy, so the page marker under the rows appears only when it is scrolled to.
                     LazyVStack(spacing: 0) {
@@ -49,6 +77,16 @@ struct RecordingsWindow: View {
             }
             .frame(minWidth: 300)
             .dotGridBackground()
+            // ux §7: audio and video files dropped on the list are imported, one row each.
+            .dropDestination(for: URL.self) { urls, _ in
+                menu.importAudio(urls)
+                return MenuModel.importer != nil
+            } isTargeted: { dropping = $0 }
+            .overlay {
+                if dropping, MenuModel.importer != nil {
+                    Rectangle().strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line + 1)
+                }
+            }
 
             Group {
                 if let detail = menu.detail {
@@ -64,6 +102,15 @@ struct RecordingsWindow: View {
             .frame(minWidth: 380, maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 720, minHeight: 420)
+        // ux §2–3: the picked recording's `Share` in the window's toolbar, at its end.
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                if let detail = menu.detail {
+                    ShareMenu(detail: detail) { await menu.export(detail.recordingId, $0) }
+                        .id(detail.recordingId)
+                }
+            }
+        }
         // docs/03: the window opening is this Mac asking Drive what the other devices have uploaded
         // since it last looked. The rows it adopts arrive on the model's recordings observation, so
         // nothing here waits for it.
@@ -84,6 +131,16 @@ struct RecordingsWindow: View {
                 menu.cancelDelete()
             }
         }
+    }
+
+    /// The system's picker for audio and video, several at once.
+    private func pickFiles() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.audiovisualContent]
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK else { return }
+        menu.importAudio(panel.urls)
     }
 
     /// docs/09 screen principle 2: the same ledger row the popover and the phone draw — one accessibility

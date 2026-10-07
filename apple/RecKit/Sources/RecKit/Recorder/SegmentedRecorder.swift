@@ -145,12 +145,11 @@ public final class SegmentedRecorder {
         core: ReclyCore_,
         segmentSec: Int = SegmentedRecorder.defaultSegmentSec,
         source: Source = Source.desktop,
-        voiceProcessing: Bool = false,
         onError: @escaping (RecorderError) -> Void
     ) {
         #if os(macOS)
         let systemInput = ProcessTapCapture()
-        let input: AudioInput = MicrophoneInput(voiceProcessing: voiceProcessing)
+        let input: AudioInput = MicrophoneInput()
         #else
         let systemInput: (any SystemAudioInput)? = nil
         // docs/13: the phone's and the watch's microphone is the engine plus the session around it —

@@ -302,8 +302,7 @@ public extension CoreBridge {
 
     /// ADR-006's 900 seconds unless a shorter one was handed in on the command line
     /// (`xcrun simctl launch … -segmentSec 20`, which lands in `NSArgumentDomain`) — the smoke runs
-    /// of docs/lanes M5-L2·M5-L4 need several boundaries in a couple of minutes, and RecMac's
-    /// `voiceProcessing` is the same kind of unlisted default.
+    /// of docs/lanes M5-L2·M5-L4 need several boundaries in a couple of minutes.
     ///
     /// It is read as a default argument of the models' initialisers, so it belongs to no actor —
     /// which a plain `struct` extension already is.

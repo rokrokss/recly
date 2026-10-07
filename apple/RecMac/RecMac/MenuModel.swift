@@ -5,6 +5,7 @@ import ReclyCore
 import RecKit
 import ServiceManagement
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// One `CoreBridge` for the life of the process (docs/01), built on first launch of the menu, plus
 /// the one recorder that owns the microphone. Everything the menu shows is published from here.
@@ -212,12 +213,8 @@ final class MenuModel: ObservableObject {
         do {
             let bridge = try await CoreBridge.make(tokenProvider: tokens)
             self.bridge = bridge
-            let recorder = SegmentedRecorder(
-                core: bridge.core,
-                // docs/12 "Echo": Apple's voice processing is telephony-tuned and narrows the band,
-                // so it is a flag and nothing else — off unless someone has deliberately set it.
-                voiceProcessing: Defaults.voiceProcessing
-            ) { [weak self] error in
+            // docs/12 "Echo": the microphone decides voice processing itself, at each start.
+            let recorder = SegmentedRecorder(core: bridge.core) { [weak self] error in
                 self?.captureFailed(error)
             }
             self.recorder = recorder
@@ -302,6 +299,7 @@ final class MenuModel: ObservableObject {
             // button starts a recording, and a button that cannot is worse than no notification —
             // so a tap that arrived before now was kept, and is served here.
             meetingRouter.connect { [weak self] action in self?.act(on: action) }
+            applyShortcut()
             // The device id identifies this install and the data directory carries the user's home
             // directory — neither belongs in a log anyone can read off the machine. Counts are what
             // the line is actually for.
@@ -428,8 +426,8 @@ final class MenuModel: ObservableObject {
             logger.info("shell.recording.start.refused reason=disconnecting")
             return
         }
-        // docs/12 M8: before the recording, unlike the speaker warning — telling the participants
-        // after the fact is not telling them, and this is the one prompt the user can answer "no" to.
+        // docs/12 M8: before the recording — telling the participants after the fact is not
+        // telling them, and this is the one prompt the user can answer "no" to.
         guard askAboutConsentIfNeeded(mode: mode) else { return }
         Task {
             do {
@@ -457,10 +455,6 @@ final class MenuModel: ObservableObject {
                 // docs/12 "End detection" is about *this* recording, and only a meeting has one: a
                 // microphone-only memo's own idle microphone is not a meeting that has ended.
                 detector.recordingChanged(mode == .meeting)
-                // After the recording is running, not before: the warning is about how the audio
-                // will come out, and a modal in front of the start would cost the user the opening
-                // of their meeting while they read it.
-                warnAboutTheSpeakerIfNeeded(mode: mode)
             } catch let error as RecorderError where error.kind == .microphoneDenied {
                 note = "The microphone permission is needed"
                 presentMicrophoneDenied()
@@ -642,6 +636,66 @@ final class MenuModel: ObservableObject {
         switch action {
         case .start: start()
         case .stop: stop()
+        }
+    }
+
+    // MARK: - Quick start and highlights (docs/12 "Menu bar app")
+
+    /// ⌥⌘R from any app, on unless the user turned it off in Settings → Capture.
+    @Published var shortcutEnabled: Bool = Defaults.shortcut {
+        didSet {
+            Defaults.shortcut = shortcutEnabled
+            applyShortcut()
+        }
+    }
+    /// The system refused ⌥⌘R: another app holds it.
+    @Published private(set) var shortcutRefused = false
+    private lazy var shortcut = GlobalShortcut { [weak self] in self?.toggleRecording() }
+
+    private func applyShortcut() {
+        shortcutRefused = !shortcut.set(enabled: shortcutEnabled)
+        if shortcutRefused { logger.info("shell.shortcut.refused") }
+    }
+
+    /// An App Intent can launch the app; it waits for the core to open — at most ten seconds — rather
+    /// than be dropped by a start that refuses before [isReady].
+    func whenReady() async {
+        var waited = 0
+        while !isReady, waited < 100 {
+            try? await Task.sleep(for: .milliseconds(100))
+            waited += 1
+        }
+    }
+
+    /// The shortcut's one action: a stop while something is recording or opening, a start otherwise.
+    func toggleRecording() {
+        if canStop { stop() } else if isIdle { start() }
+    }
+
+    /// The moment the user marked, in the running recording's own time — the popover's `Highlight`,
+    /// and the `Add Highlight` App Intent. Nil when nothing is recording or the mark was not added (a
+    /// second one within a second is ignored).
+    @discardableResult
+    func addHighlight() async -> String? {
+        guard case .recording(let recordingId) = state, let recorder, let core = bridge?.core else { return nil }
+        let atSec = recorder.recordedSec
+        guard (try? await core.recordings.addHighlight(recordingId: recordingId, atSec: atSec).boolValue) == true else {
+            return nil
+        }
+        logger.info("shell.highlight id=\(recordingId, privacy: .public)")
+        let at = LedgerFormat.clock(Int(atSec))
+        highlighted = at
+        return at
+    }
+
+    /// The time of the last highlight, while the popover says so (two seconds, as on the watches).
+    @Published private(set) var highlighted: String? {
+        didSet {
+            guard let highlighted else { return }
+            Task { [weak self] in
+                try? await Task.sleep(for: .seconds(2))
+                if self?.highlighted == highlighted { self?.highlighted = nil }
+            }
         }
     }
 
@@ -1006,6 +1060,66 @@ final class MenuModel: ObservableObject {
         detail = RecordingDetailModel(core: core, recordingId: item.id, title: item.titleLabel, playbackGate: playbackGate)
     }
 
+    // MARK: - Importing (docs/03 "Naming rules", ux §7)
+
+    /// The transcoder an import runs through — RecKit's, shared with the iPhone. Nil until RecKit has
+    /// one, and the Details window offers no import without it.
+    static let importer: (any AudioImporter)? = nil
+
+    /// The last import came to nothing: the core's reason code — empty when it gave none — for the
+    /// Details window's notice, which says it in words where it is drawn (docs/07 rule 3). Cleared
+    /// by the next import.
+    @Published private(set) var importFailure: String?
+
+    /// Audio and video files the user picked or dropped, imported one after another, each its own
+    /// row (`IMPORTING`, then as any recording). Anything else that was dropped is left alone.
+    func importAudio(_ urls: [URL]) {
+        guard let core = bridge?.core, let importer = Self.importer else { return }
+        let files = urls.filter { UTType(filenameExtension: $0.pathExtension)?.conforms(to: .audiovisualContent) == true }
+        guard !files.isEmpty else { return }
+        importFailure = nil
+        Task {
+            for file in files {
+                // The file's own date when it has one; the core uses now otherwise.
+                let created = (try? file.resourceValues(forKeys: [.creationDateKey]))?.creationDate
+                let startedAt = created.map {
+                    KotlinInstant.companion.fromEpochMilliseconds(epochMilliseconds: Int64($0.timeIntervalSince1970 * 1000))
+                }
+                do {
+                    let result = try await core.importAudio(
+                        sourcePath: file.path,
+                        displayName: file.deletingPathExtension().lastPathComponent,
+                        startedAt: startedAt,
+                        importer: importer
+                    )
+                    if let imported = result as? ImportResultImported {
+                        logger.info("shell.import.ok id=\(imported.recordingId, privacy: .public)")
+                        runner?.jobsDue()
+                        waveforms?.enqueue(recordingId: imported.recordingId)
+                    } else if let failed = result as? ImportResultFailed {
+                        logger.info("shell.import.failed reason=\(failed.reason, privacy: .public)")
+                        importFailure = failed.reason
+                    }
+                } catch {
+                    logger.error("shell.import.failed error=\(String(describing: error), privacy: .private)")
+                    importFailure = ""
+                }
+            }
+        }
+    }
+
+    /// docs/08 "Exports": one file of the recording for the share picker or a save panel, named by the
+    /// core. Nil when there is nothing in that format.
+    func export(_ recordingId: String, _ format: ExportFormat) async -> String? {
+        guard let core = bridge?.core else { return nil }
+        do {
+            return try await core.exportFile(recordingId: recordingId, format: format)
+        } catch {
+            logger.error("shell.export.failed error=\(String(describing: error), privacy: .private)")
+            return nil
+        }
+    }
+
     /// A popover button's window (docs/09 trend 2): the action reports its own outcome, so a retry
     /// that could not be made due shows no ✓. [action] is moved *before* the `Task`, not inside it:
     /// the button reads it the moment it is clicked, and a hop to the next main-actor turn would
@@ -1016,6 +1130,45 @@ final class MenuModel: ObservableObject {
             let succeeded = await work()
             action = succeeded ? .done : .failed
         }
+    }
+
+    // MARK: - Local MCP server (docs/12 "Agent connection")
+
+    /// `recly-events mcp --print-config --folder <root>` for the folder recordings go to — the iCloud
+    /// folder or the picked local folder — onto the clipboard, for an agent on this Mac to start the
+    /// server with. False when there is no folder or the program refused it.
+    func copyMCPConfiguration() async -> Bool {
+        guard let executable = Bundle.main.url(forAuxiliaryExecutable: "recly-events"),
+              let root = await recordingsRoot()
+        else { return false }
+        let printed: Data? = await Task.detached {
+            let process = Process()
+            process.executableURL = executable
+            process.arguments = ["mcp", "--print-config", "--folder", root]
+            let out = Pipe()
+            process.standardOutput = out
+            process.standardError = FileHandle.nullDevice
+            guard (try? process.run()) != nil else { return nil }
+            let data = out.fileHandleForReading.readDataToEndOfFile()
+            process.waitUntilExit()
+            return process.terminationStatus == 0 ? data : nil
+        }.value
+        guard let printed, let text = String(data: printed, encoding: .utf8) else {
+            logger.error("agent.mcp.config.failed")
+            return false
+        }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
+        logger.info("agent.mcp.config.copied")
+        return true
+    }
+
+    /// The top of the folder new recordings go to, when it is on this Mac's disk.
+    private func recordingsRoot() async -> String? {
+        guard let core = bridge?.core, let kind = try? await core.processingSettings.storage() else { return nil }
+        if kind == .folder { return LocalFolderPath.current }
+        if kind == .icloud { return await (core.deps.ubiquity as? ICloudContainer)?.folderURL("")?.path }
+        return nil
     }
 
     // MARK: - Launch at login (docs/12 "Runner")
@@ -1143,26 +1296,6 @@ final class MenuModel: ObservableObject {
         return field
     }
 
-    /// docs/12 "Echo": with headphones the problem does not exist, and with the built-in speaker the
-    /// microphone records the other side of the call back into the `mic` track. v1 has no AEC, so
-    /// the honest thing is to say so — once, and only while it is true.
-    private func warnAboutTheSpeakerIfNeeded(mode: RecordingMode) {
-        guard mode == .meeting, !Defaults.speakerWarningSuppressed,
-              SystemAudioDevice.defaultOutput()?.isBuiltInSpeaker == true
-        else { return }
-        let alert = NSAlert()
-        alert.messageText = AppStrings.localized("You are listening on the built-in speaker")
-        alert.informativeText = AppStrings.localized(
-            "With headphones the other side does not bleed into your own track."
-        )
-        alert.addButton(withTitle: AppStrings.localized("OK"))
-        alert.addButton(withTitle: AppStrings.localized("Do not show again"))
-        NSApp.activate(ignoringOtherApps: true)
-        if alert.runModal() == .alertSecondButtonReturn {
-            Defaults.speakerWarningSuppressed = true
-        }
-    }
-
     /// docs/12 deliverable 1: there is no API to ask whether the tap is allowed, so a refusal is
     /// only ever discovered by trying. The two things worth offering are the pane that can undo it
     /// and the recording the user can still have right now.
@@ -1267,22 +1400,16 @@ enum SettingsSurface {
 }
 
 /// The shell's settings, in one place. `UserDefaults` and not the core: none of them is worth
-/// syncing between machines — which output device is in front of *this* user and whether they have
-/// read the speaker warning are facts about one Mac.
+/// syncing between machines — whether this user wants the consent question or the first-run card
+/// are facts about one Mac.
 ///
 /// The two a disconnect leaves behind are not here: they are written *before* the credentials they
 /// are about are deleted and read back by the same rules on the phone, so they live in RecKit
 /// ([DisconnectDefaults]).
 private enum Defaults {
-    private static let speakerKey = "speakerWarningSuppressed"
-    private static let voiceProcessingKey = "voiceProcessing"
     private static let consentReminderKey = "consentReminder"
     private static let modelPromptDismissedKey = "modelPromptDismissed"
-
-    static var speakerWarningSuppressed: Bool {
-        get { UserDefaults.standard.bool(forKey: speakerKey) }
-        set { UserDefaults.standard.set(newValue, forKey: speakerKey) }
-    }
+    private static let shortcutKey = "globalShortcut"
 
     /// docs/12 M8: on until the user turns it off — the one default here that is not `false`, so it
     /// is the absence of the key and not its value that has to be read.
@@ -1291,11 +1418,10 @@ private enum Defaults {
         set { UserDefaults.standard.set(newValue, forKey: consentReminderKey) }
     }
 
-    /// docs/12 M4-L3 deliverable 4: an option flag and nothing more — off unless it was written by
-    /// hand (`defaults write app.recly.mac voiceProcessing -bool YES`). There is no menu item for it,
-    /// because v1's answer to echo is headphones.
-    static var voiceProcessing: Bool {
-        UserDefaults.standard.bool(forKey: voiceProcessingKey)
+    /// docs/12 "Menu bar app": ⌥⌘R, on until the user turns it off.
+    static var shortcut: Bool {
+        get { UserDefaults.standard.object(forKey: shortcutKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: shortcutKey) }
     }
 
     /// docs/05 "Fixed processing settings": "Not now" on the first-run model card.
