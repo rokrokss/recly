@@ -35,6 +35,7 @@ import recly.core.storage.StorageKind
 import recly.core.storage.StorageUnavailableException
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptMarks
 import recly.core.transcribe.TranscriptNormalizer
 import kotlinx.serialization.json.JsonObject
 
@@ -101,6 +102,7 @@ class RemoteRecordings(
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
+    private val results = recly.core.transcribe.ResultFiles(api, deps)
 
     /** One push at a time: two renames in a row must reach Drive in that order, not the other. */
     private val pushing = Mutex()
@@ -170,6 +172,38 @@ class RemoteRecordings(
     suspend fun pushMeta(): Unit = pushing.withLock {
         push(recordings.pendingMeta(), "remote.meta.pushed", "remote.meta.push.failed", recordings::metaPushed) { record, folderId, _ ->
             pushMetaFile(record, folderId)
+        }
+    }
+
+    /**
+     * docs/08 "Editing": a transcript edited here, carried to the recording's folder — `.json` and `.txt`
+     * marked `edited` ([TranscriptMarks]), a local folder's `.md` written again — and the folder's
+     * `transcriptAt` moved on, so the other devices take the edit in at their next pull.
+     */
+    suspend fun pushTranscripts(): Unit = pushing.withLock {
+        push(recordings.pendingTranscripts(), "remote.transcript.pushed", "remote.transcript.push.failed", recordings::transcriptPushed) { record, folderId, _ ->
+            val base = MetaWriter.baseName(record.meta)
+            val local = record.dir / TranscribeRunner.jsonFileName(base)
+            // The recording's transcript went with a re-transcription since: nothing of the edit is left to send.
+            if (!deps.fileSystem.exists(local)) return@push true
+            val json = deps.fileSystem.read(local) { readByteArray() }
+            val transcript = recJson.decodeFromString<Transcript>(json.decodeToString())
+            val marks = TranscriptMarks.of(transcript)
+            results.write(record.dir, folderId, TranscribeRunner.jsonFileName(base), json, TranscribeRunner.JSON_MIME, marks)
+            results.write(
+                record.dir, folderId, TranscribeRunner.textFileName(base),
+                TranscriptNormalizer.text(transcript).encodeToByteArray(), TranscribeRunner.TEXT_MIME, marks,
+            )
+            if (StorageKind.ofId(folderId) == StorageKind.FOLDER) {
+                results.write(
+                    record.dir, folderId, TranscribeRunner.markdownFileName(base),
+                    TranscriptNormalizer.markdown(transcript, record.meta).encodeToByteArray(), TranscribeRunner.MARKDOWN_MIME,
+                )
+            }
+            val version = TranscriptMarks.version(transcript)
+            api.updateAppProperties(folderId, mapOf(TranscriptMarks.FOLDER_STAMP to version))
+            recordings.setTranscriptSeen(record.id, version)
+            true
         }
     }
 
@@ -429,6 +463,7 @@ class RemoteRecordings(
         }
         pushTitles()
         pushMeta()
+        pushTranscripts()
         return PullSummary(adopted, dropped, retitled)
     }
 

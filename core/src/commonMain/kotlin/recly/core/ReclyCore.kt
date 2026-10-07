@@ -52,6 +52,7 @@ import recly.core.storage.CloudStorage
 import recly.core.storage.StorageKind
 import recly.core.model.Source
 import recly.core.model.RecordingStatus
+import recly.core.model.isoUtc
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
 
@@ -292,13 +293,48 @@ class ReclyCore(
         return result.copy(availability = missingTranscriptAvailability(record, related, related.flatMap { jobs.steps(it.id) }))
     }
 
+    /**
+     * docs/08 "Editing": changes the transcript of one recording — its text, who says what, what the
+     * speakers are called — and saves it here at once, then in the recording's folder (Drive marks it
+     * `edited`), now or with the next job pass. Works for other devices' recordings too. Refused while a
+     * transcription of the recording is queued or running ([EditResult.Busy]): it would write over the
+     * edit. [observeResults] emits the edited transcript.
+     */
+    @Throws(Throwable::class)
+    suspend fun editTranscript(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
+        val record = recordings.get(recordingId) ?: return recly.core.transcribe.EditResult.NoTranscript
+        val unsettled = jobs.list().any {
+            it.recordingId == recordingId && it.status !in setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
+        }
+        if (unsettled || localTranscription.isRunning(recordingId)) return recly.core.transcribe.EditResult.Busy
+        val current = results(recordingId).transcript ?: return recly.core.transcribe.EditResult.NoTranscript
+        val edited = try {
+            recly.core.transcribe.TranscriptEdits.apply(current, edit, deps.clock.now().isoUtc())
+        } catch (e: IllegalArgumentException) {
+            return recly.core.transcribe.EditResult.Invalid(e.message ?: "invalid edit")
+        }
+        if (edited == current) return recly.core.transcribe.EditResult.Edited(current)
+        transcriptWriter.writeLocal(record, edited, markdown = record.storage == StorageKind.FOLDER)
+        recordings.transcriptPending(recordingId)
+        resultChanges.value++
+        deps.logger.log(Logger.Level.INFO, "rec.transcript.edited", mapOf("recordingId" to recordingId))
+        remote.pushTranscripts()
+        return recly.core.transcribe.EditResult.Edited(edited)
+    }
+
+    /** Bumped when a transcript changes on disk with no job or row to say so — an edit, a pull's refresh. */
+    private val resultChanges = kotlinx.coroutines.flow.MutableStateFlow(0L)
+
+    private val transcriptWriter = recly.core.transcribe.TranscriptWriter(deps)
+
     /** Only result data changes: shells keep their player and reading position while collecting. */
     fun observeResults(recordingId: String): Flow<RecordingResult> = combine(
         jobs.observe().map { all -> all.filter { it.recordingId == recordingId } }.distinctUntilChanged(),
         jobs.observeSteps(recordingId).distinctUntilChanged(),
         recordings.observe().map { recordings.get(recordingId) }.distinctUntilChanged(),
         localTranscription.changes,
-    ) { _, _, _, _ -> Unit }.map {
+        resultChanges,
+    ) { _, _, _, _, _ -> Unit }.map {
         try {
             results(recordingId)
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
