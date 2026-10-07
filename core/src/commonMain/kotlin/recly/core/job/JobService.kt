@@ -114,6 +114,9 @@ class JobService(
                 // A fixed-plan job reruns with the settings the user has now — a replaced key, a
                 // corrected address or another provider — not with what was frozen when it began.
                 val plan = if (ProcessingPlan.isFixed(job.workflowId)) planForRerun?.invoke(job) else null
+                // A re-transcription with nothing to run now — transcription turned off — is not
+                // rerun on its old plan: that would send the audio to a provider the user turned off.
+                if (plan == null && job.retranscription && planForRerun != null) return false
                 if (plan != null) store.replanForRerun(jobId, plan, now) else store.resetForRerun(jobId, now)
                 true
             }

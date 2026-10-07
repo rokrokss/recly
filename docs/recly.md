@@ -2590,7 +2590,9 @@ and here. It works for this device's own recordings, uploaded and done, and for 
 - **Account and storage**: a `transcript.publish` into a Drive folder counts as Drive work (`uploadsToDrive`), so the job is bound to the
   verified Drive account, pauses on "Disconnect" and resumes only for the same account (§3 "Detaching from the account"); one into a local
   folder runs in the offline pass. The folder is told at once that a transcription is coming (`pending` marker), and when it is over.
-- `JobService.retry` of a failed re-transcription replans it with the current settings, like the recording's own job (§5).
+- `JobService.retry` of a failed re-transcription replans it with the current settings, like the recording's own job (§5). With
+  transcription off it answers false and the job stays as it is: it is never rerun on its old plan, which would send the audio to a
+  provider the user has turned off.
 - Publishing marks the files `transcribed` (§8 "Result files"), so recly-events announces a re-transcription and not an edit.
 
 ### Search

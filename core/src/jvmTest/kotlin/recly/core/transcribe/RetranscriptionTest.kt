@@ -127,6 +127,23 @@ class RetranscriptionTest {
     }
 
     @Test
+    fun `a failed re-transcription is not retried on its old plan once transcription is off`() = runBlocking {
+        val meta = f.recordAndRun()
+        val started = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
+        JobStore(RecDatabase(f.driver), f.deps).updateJob(started.jobId, JobStatus.FAILED, null, f.clock.now())
+        val before = assertIs<ProcessingSettingsState.Ready>(f.core.processingSettings.read()).document.settings
+        settings { it.copy(transcription = it.transcription.copy(mode = TranscriptionMode.OFF)) }
+
+        assertFalse(f.core.jobs.retry(started.jobId), "its old plan would send the audio to a provider turned off")
+        assertEquals(JobStatus.FAILED, f.core.jobs.list().single { it.id == started.jobId }.status)
+
+        settings { before }
+        assertTrue(f.core.jobs.retry(started.jobId))
+        f.drain()
+        assertEquals(JobStatus.DONE, f.core.jobs.list().single { it.id == started.jobId }.status)
+    }
+
+    @Test
     fun `a second request replaces the first one once it has settled`() = runBlocking {
         val meta = f.recordAndRun()
         val first = assertIs<RetranscribeResult.Started>(f.core.retranscribe(meta.recordingId))
