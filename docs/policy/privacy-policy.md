@@ -1,5 +1,7 @@
 # Recly Privacy Policy
 
+[한국어](privacy-policy.ko.md)
+
 **Effective date: 2026-10-06**
 **Contact: q0115643@gmail.com**
 

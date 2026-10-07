@@ -1,5 +1,7 @@
 # Frequently asked questions
 
+[한국어](faq.ko.md)
+
 Short answers, each with a link to the guide that has the detail. The [terms](#terms) at the end
 explain the words they use.
 

@@ -1,5 +1,7 @@
 # ChatGPT 에이전트로 자동 회의록
 
+[English](agent.md)
+
 녹음을 멈추고 녹취록이 내 Google Drive에 올라오면, 내 ChatGPT 에이전트([dot](https://help.openai.com/en/articles/20001530-getting-started-with-your-dot)이나
 Work 채팅)가 보통 1분 안에 알아서 회의록을 쓰기 시작합니다. Recly Mac·Windows 앱(0.2.0부터)은 앱에 들어 있는
 작은 프로그램 `recly-events`로 이 일을 합니다. 새 녹취록을 찾아

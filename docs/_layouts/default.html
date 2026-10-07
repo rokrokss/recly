@@ -6,7 +6,9 @@
 {%- if ko -%}{%- assign other_path = page.path | replace: '.ko.md', '.md' -%}{%- else -%}{%- assign other_path = page.path | replace: '.md', '.ko.md' -%}{%- endif -%}
 {%- assign other = site.pages | where: "path", other_path | first -%}
 {%- endif -%}
-{%- if ko -%}{%- assign en_url = other.url -%}{%- assign ko_url = page.url -%}{%- else -%}{%- assign en_url = page.url -%}{%- assign ko_url = other.url -%}{%- endif %}
+{%- if ko -%}{%- assign en_url = other.url -%}{%- assign ko_url = page.url -%}{%- else -%}{%- assign en_url = page.url -%}{%- assign ko_url = other.url -%}{%- endif -%}
+{%- comment -%} Under its title the Markdown links its twin for readers on GitHub; here the header switcher does that, so the page drops the link. {%- endcomment -%}
+{%- capture twin_link -%}<p><a href="{{ other.url | relative_url }}">{% if ko %}English{% else %}한국어{% endif %}</a></p>{%- endcapture %}
 <html lang="{% if ko %}ko{% else %}en{% endif %}">
 <head>
   <meta charset="utf-8">
@@ -76,7 +78,7 @@
     <p class="doc-meta"><span>docs/{{ page.path }}</span><a href="https://github.com/rokrokss/recly/blob/main/docs/{{ page.path }}">{% if ko %}GitHub에서 보기{% else %}View on GitHub{% endif %}</a></p>
     {%- endunless %}
     <article class="prose">
-{{ content }}
+{{ content | remove_first: twin_link }}
     </article>
   </div>
 </main>
