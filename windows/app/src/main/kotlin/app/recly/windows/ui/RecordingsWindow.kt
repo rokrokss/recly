@@ -586,6 +586,7 @@ private fun Detail(
             onSeek = onSeek,
             onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
             drive = !detail.folder,
+            speakersEnabled = editSave == null,
             strings = strings,
             modifier = Modifier.fillMaxSize(),
         )
