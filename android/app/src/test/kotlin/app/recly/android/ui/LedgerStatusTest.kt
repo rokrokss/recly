@@ -57,22 +57,22 @@ class LedgerStatusTest {
     }
 
     /**
-     * docs/09 screen principle 2: a recording something is doing to it right now offers nothing — deleting
-     * one would pull the file out from under a recorder, a transfer or another device's upload.
-     * A recording another device is transcribing has arrived and is a finished row like any other.
+     * docs/09 screen principle 2: only a recording whose file is still being written — by the recorder, an
+     * import or a transfer — withholds Delete. An upload, this device's or another's, offers it:
+     * the core stops the upload first, and another device's folder goes from Drive. A recording
+     * another device is transcribing has arrived and is a finished row like any other.
      */
     @Test
-    fun `a recording in flight elsewhere offers no row action`() {
+    fun `only a recording still being written withholds Delete`() {
         assertTrue(ItemState.RECEIVING.inFlight())
-        assertTrue(ItemState.REMOTE_UPLOADING.inFlight())
+        assertFalse(ItemState.REMOTE_UPLOADING.inFlight())
+        assertFalse(ItemState.RUNNING.inFlight())
         assertFalse(ItemState.REMOTE_TRANSCRIBING.inFlight())
         assertEquals(
             listOf(
                 ItemState.RECORDING,
                 ItemState.IMPORTING,
                 ItemState.RECEIVING,
-                ItemState.REMOTE_UPLOADING,
-                ItemState.RUNNING,
             ),
             ItemState.entries.filter { it.inFlight() },
         )
@@ -162,8 +162,8 @@ class LedgerStatusTest {
 
     /**
      * docs/05 "Fixed processing settings": a transcription on this device is waited for whatever the job's
-     * status says while it runs — and it is not an upload, so it neither holds back Delete nor
-     * lends the Record screen `UPLOADING` (the iPhone's `RecentItem.canDelete`, `Recents.uploading`).
+     * status says while it runs — it does not hold back Delete, and it is not an upload, so it does
+     * not lend the Record screen `UPLOADING` (the iPhone's `RecentItem.canDelete`, `Recents.uploading`).
      */
     @Test
     fun `a transcription on this device is waited for and can be deleted`() {
@@ -173,7 +173,7 @@ class LedgerStatusTest {
             assertFalse(local.inFlight(), "$state")
         }
         assertFalse(uploading(listOf(item(ItemState.RUNNING, localPending = true))))
-        assertTrue(item(ItemState.RUNNING).inFlight(), "an upload keeps its recording")
+        assertFalse(item(ItemState.RUNNING).inFlight(), "an upload is stopped, not waited for")
         assertFalse(item(ItemState.RUNNING).waiting())
     }
 

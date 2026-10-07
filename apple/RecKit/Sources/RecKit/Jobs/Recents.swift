@@ -121,14 +121,15 @@ public struct RecentItem: Identifiable, Sendable {
     ]
 
     /// docs/09 screen principle 2: whether "delete" is a thing to offer. A recording being written to right
-    /// now is not one to delete — the core refuses it anyway, and offering the button would be
-    /// offering a refusal — and neither is one still arriving from the watch. A recording another
-    /// device is uploading is not this device's to delete at all: the folder would go out from
-    /// under that upload (docs/03 "Recordings from other devices").
+    /// now is not one to delete — the recorder or the import still has the file open — and neither
+    /// is one still arriving from the watch. An upload is: the core stops it first (docs/03
+    /// "Deleting in the app"), and a row stuck in "Uploading" has to be one the user can remove. So
+    /// is another device's upload: the dialog says the folder goes from Drive, and that device
+    /// starts its upload again in a new folder (docs/03 "Recordings from other devices").
     public var canDelete: Bool { !Self.undeletable.contains(state) }
 
     private static let undeletable: Set<String> = [
-        "Recording", "Importing", "Uploading", "Receiving from the watch", "Uploading on another device",
+        "Recording", "Importing", "Receiving from the watch",
     ]
 
     /// docs/03: whether another device recorded this and this one only adopted the Drive folder —

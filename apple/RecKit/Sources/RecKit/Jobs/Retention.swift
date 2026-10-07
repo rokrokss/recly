@@ -123,8 +123,8 @@ public struct DeleteRequest: Identifiable, Equatable, Sendable {
 /// the recording and the two put their sentences in different places.
 public enum RecordingDeletion {
     public enum Outcome: Equatable, Sendable {
-        /// docs/03: a recording being written to or uploaded right now is not one to delete, and
-        /// the core refuses it.
+        /// docs/03: nothing was deleted — the core could not stop what is working on the recording
+        /// (an on-device transcription that would not let go in time).
         case busy
         /// Gone from here. [driveError] is what Drive refused with, when the user asked for the
         /// folder too and Drive would not — the local deletion is not undone by it.

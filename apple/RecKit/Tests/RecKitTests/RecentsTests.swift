@@ -411,6 +411,18 @@ final class RecentItemActionsTests: XCTestCase {
         }
     }
 
+    /// docs/09 screen principle 2: Delete is held back only while something still has the file open — the
+    /// recorder, an import, a transfer from the watch. An upload, here or on another device, is
+    /// stopped by the core and offers it like any other row.
+    func testDeleteIsWithheldOnlyWhileTheFileIsStillBeingWritten() {
+        for state in ["Recording", "Importing", "Receiving from the watch"] {
+            XCTAssertFalse(item(state: state).canDelete, "\(state) offers a delete")
+        }
+        for state in ["Uploading", "Uploading on another device", "Uploading to iCloud", "Waiting", "Done", "Failed"] {
+            XCTAssertTrue(item(state: state).canDelete, "\(state) withholds a delete")
+        }
+    }
+
     /// There is no job, so `jobs.retry` has nothing to take.
     func testARecordingWithNoJobOffersNoRetry() {
         XCTAssertFalse(item(state: "Done", jobId: nil).canRetry)
@@ -519,13 +531,13 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
         XCTAssertEqual(badge(finished), LedgerStatus(code: "DONE", tone: .success))
     }
 
-    /// docs/09 screen principle 2: a row nothing can be done to. The delete would pull the folder out from
-    /// under the transfer or the other device's upload, and there is no job of this device's to
-    /// retry or link to Drive.
-    func testAReceivingOrRemotelyUploadingRowOffersNothing() {
+    /// docs/09 screen principle 2: there is no job of this device's to retry or link to Drive. A row still
+    /// arriving from the watch offers no delete either — the transfer is still writing it — while
+    /// another device's upload does: the dialog takes its folder from Drive.
+    func testAReceivingOrRemotelyUploadingRowOffersNoRetryOrLink() {
         for state in ["Receiving from the watch", "Uploading on another device"] {
             let item = self.item(state: state)
-            XCTAssertFalse(item.canDelete, "\(state) offers a delete")
+            XCTAssertEqual(item.canDelete, state == "Uploading on another device", "\(state)")
             XCTAssertFalse(item.canRetry, "\(state) offers a retry")
             XCTAssertNil(item.link, "\(state) has no job and so no upload step to link")
             // docs/09 screen principle 2: no length yet, and the ledger says so with its own placeholder

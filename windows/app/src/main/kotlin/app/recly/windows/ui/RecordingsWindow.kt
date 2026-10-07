@@ -378,7 +378,7 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
         onOpen = onOpen,
         // docs/03 "Deleting in the app": deleting a recording is not one of the things opening it should
         // be able to do by accident, which is why the button is out here. And never over one that
-        // is being written to or uploaded ([RecentItem.deletable]).
+        // is still being written ([RecentItem.deletable]).
         controls = {
             // Waiting for the speech model: the row's one action is the download.
             if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) {
