@@ -30,4 +30,6 @@
     <string name="info_battery_body">폰 설정 → 배터리 → 백그라운드 사용 제한에서 Galaxy Wearable을 제외하세요. 최적화가 켜져 있으면 블루투스 연결이 끊겨 녹음이 폰으로 넘어가지 않습니다.</string>
     <string name="info_transfer_title">전송</string>
     <string name="info_transfer_body">녹음은 폰이 확인해 줄 때까지 워치에 남습니다. 폰이 가까워지면 자동으로 넘어가고, 넘어간 파일만 워치에서 지워집니다.</string>
+    <string name="highlight">하이라이트</string>
+    <string name="highlight_status">하이라이트 · %1$s</string>
 </resources>

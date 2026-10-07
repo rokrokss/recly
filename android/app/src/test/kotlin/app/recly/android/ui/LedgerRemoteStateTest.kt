@@ -50,6 +50,14 @@ class LedgerRemoteStateTest {
         assertEquals(ItemState.RECORDING, stateOf(record, job = null))
     }
 
+    /** docs/03 "Naming rules": a file being imported is `status = recording` too, and is not one. */
+    @Test
+    fun `a file being imported is IMPORTING`() {
+        val record = record(source = Source.IMPORT, status = RecordingStatus.RECORDING)
+
+        assertEquals(ItemState.IMPORTING, stateOf(record, job = null))
+    }
+
     /** The provisional row a pull opens for a folder with no `meta.json` in it yet. */
     @Test
     fun `a folder another device is still uploading is UPLOADING`() {

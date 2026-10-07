@@ -28,4 +28,6 @@
     <string name="info_battery_body">Na telefonie: Ustawienia → Bateria → Limity użycia w tle — usuń Galaxy Wearable z listy. Przy włączonej optymalizacji połączenie Bluetooth się zrywa i nagrania nigdy nie docierają do telefonu.</string>
     <string name="info_transfer_title">Przekazywanie</string>
     <string name="info_transfer_body">Nagranie zostaje na zegarku, dopóki telefon nie potwierdzi odbioru. Gdy telefon jest w pobliżu, przekazywanie odbywa się samo, a tutaj usuwane są tylko pliki, które dotarły.</string>
+    <string name="highlight">Zaznacz</string>
+    <string name="highlight_status">Znacznik · %1$s</string>
 </resources>

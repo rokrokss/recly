@@ -28,4 +28,6 @@
     <string name="info_battery_body">ফোনে: সেটিংস → ব্যাটারি → ব্যাকগ্রাউন্ড ব্যবহারের সীমা-তে গিয়ে তালিকা থেকে Galaxy Wearable সরিয়ে দিন। অপ্টিমাইজেশন চালু থাকলে Bluetooth কানেকশন কেটে যায় এবং রেকর্ডিং কখনও ফোনে পৌঁছায় না।</string>
     <string name="info_transfer_title">ট্রান্সফার</string>
     <string name="info_transfer_body">ফোন নিশ্চিত না করা পর্যন্ত রেকর্ডিং ঘড়িতে থাকে। ফোন কাছে এলে নিজে থেকেই ট্রান্সফার হয়, আর শুধু পৌঁছে যাওয়া ফাইলগুলোই এখান থেকে মোছা হয়।</string>
+    <string name="highlight">হাইলাইট করুন</string>
+    <string name="highlight_status">হাইলাইট · %1$s</string>
 </resources>

@@ -28,4 +28,6 @@
     <string name="info_battery_body">No telemóvel: Definições → Bateria → Limites de utilização em segundo plano, e retire o Galaxy Wearable da lista. Com a otimização ativa, a ligação Bluetooth cai e as gravações nunca chegam ao telemóvel.</string>
     <string name="info_transfer_title">Envio</string>
     <string name="info_transfer_body">A gravação fica no relógio até o telemóvel confirmar a receção. É enviada automaticamente quando o telemóvel está perto, e só os ficheiros recebidos são eliminados aqui.</string>
+    <string name="highlight">Marcar</string>
+    <string name="highlight_status">Marcador · %1$s</string>
 </resources>

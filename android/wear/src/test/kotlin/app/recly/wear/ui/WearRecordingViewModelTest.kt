@@ -49,6 +49,14 @@ private class FakeRecorder : RecorderControl {
         _state.value = RecorderState.Stopping
     }
 
+    val highlights: MutableList<Pair<String, Double>> = mutableListOf()
+
+    override suspend fun highlight(recordingId: String, atSec: Double): Boolean {
+        if (highlights.any { it.first == recordingId && kotlin.math.abs(it.second - atSec) < 1.0 }) return false
+        highlights += recordingId to atSec
+        return true
+    }
+
     fun recording(id: String = "01J9") {
         _state.value = RecorderState.Recording(id, Instant.fromEpochSeconds(0))
     }
@@ -290,5 +298,35 @@ class WearRecordingViewModelTest {
         // The next start clears it: a stale refusal over a running recording would be a lie.
         vm.start()
         assertNull(vm.state.value.message)
+    }
+
+    @Test
+    fun `a highlight is said for two seconds, and a repeat is not news`() = runTest(dispatcher) {
+        val vm = viewModel()
+        recorder.recording("01J9")
+        runCurrent()
+
+        vm.highlight(Instant.fromEpochSeconds(754))
+        runCurrent()
+        assertEquals(listOf("01J9" to 754.0), recorder.highlights)
+        assertEquals(754L, vm.state.value.highlightedSec)
+
+        dispatcher.scheduler.advanceTimeBy(HIGHLIGHT_NEWS_MS + 1)
+        runCurrent()
+        assertNull(vm.state.value.highlightedSec)
+
+        vm.highlight(Instant.fromEpochMilliseconds(754_400))
+        runCurrent()
+        assertNull(vm.state.value.highlightedSec)
+    }
+
+    @Test
+    fun `nothing is marked while the watch is not recording`() = runTest(dispatcher) {
+        val vm = viewModel()
+        runCurrent()
+
+        vm.highlight(Instant.fromEpochSeconds(5))
+        runCurrent()
+        assertEquals(emptyList(), recorder.highlights)
     }
 }

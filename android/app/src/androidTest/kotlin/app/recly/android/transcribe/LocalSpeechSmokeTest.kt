@@ -42,7 +42,7 @@ class LocalSpeechSmokeTest {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val audio = context.getExternalFilesDir(null)!!.resolve(arguments.getString("localSpeechAudio")!!).absolutePath
         val language = arguments.getString("localSpeechLanguage") ?: "ko"
-        val engine = QwenSpeechEngine.make(context, KtorTransport())
+        val engine = QwenSpeechEngine.make(context, KtorTransport(), app.recly.android.core.AndroidLogger())
         assertTrue(engine is QwenSpeechEngine, "this device should qualify for the engine")
 
         val initial = engine.status(language).status

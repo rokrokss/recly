@@ -28,4 +28,6 @@
     <string name="info_battery_body">En el teléfono: Ajustes → Batería → Límites de uso en segundo plano. Quita Galaxy Wearable de la lista. La optimización corta el enlace Bluetooth e impide que lleguen las grabaciones.</string>
     <string name="info_transfer_title">Transferencia</string>
     <string name="info_transfer_body">La grabación permanece en el reloj hasta que el teléfono confirma su recepción. Se transfiere automáticamente cuando el teléfono está cerca y solo se eliminan aquí los archivos recibidos.</string>
+    <string name="highlight">Marcar</string>
+    <string name="highlight_status">Marcador · %1$s</string>
 </resources>

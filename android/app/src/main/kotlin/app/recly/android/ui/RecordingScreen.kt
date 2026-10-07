@@ -8,6 +8,14 @@ import android.content.pm.PackageManager
 import android.os.SystemClock
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import android.view.HapticFeedbackConstants
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,6 +27,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -94,6 +103,8 @@ fun RecordingSection(
     onOpenProcessing: () -> Unit,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    /** docs/03 "Metadata": the Highlight node's tap, while recording. */
+    onHighlight: () -> Unit,
     onMicDenied: () -> Unit,
     /** The permission is there again — the refusal in [RecordingUiState.micRefused] is over. */
     onMicGranted: () -> Unit,
@@ -207,14 +218,28 @@ fun RecordingSection(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
-            RecordNode(recorder = recorder, busy = busy, onStart = begin, onStop = onStop)
+            // docs/03 "Metadata": while recording, the Highlight node 24 to the end side of the record node,
+            // which stays exactly where it is — the new node takes no room from it.
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                RecordNode(recorder = recorder, busy = busy, onStart = begin, onStop = onStop)
+                if (recording) HighlightNode(onClick = onHighlight, modifier = Modifier.offset(x = HIGHLIGHT_OFFSET))
+            }
             // One line, however many things there are to say (`map` is inline, so the lookups are
-            // allowed to be composable; `joinToString`'s transform would not be).
+            // allowed to be composable; `joinToString`'s transform would not be). While recording it
+            // says only what the Highlight node just marked, its time in monospace.
+            val highlighted = state.highlighted?.takeIf { (recorder as? RecorderState.Recording)?.recordingId == it.recordingId }
+            val said = statusLine(recorder, state.messages).map { it.text() }.joinToString(" · ")
+            // Blank, the line holds an unseen sentence of the app's own script, so a Hangul line arriving —
+            // taller than an empty one — does not move the nodes above it (the watch's own rule).
+            val stamp = hms(highlighted?.sec ?: 0)
+            val blank = highlighted == null && said.isEmpty()
             Text(
-                statusLine(recorder, state.messages).map { it.text() }.joinToString(" · "),
-                modifier = Modifier.padding(horizontal = Space.m).testTag("status"),
+                if (highlighted != null || blank) monoStamp(stringResource(R.string.highlight_status, stamp), stamp, mono.bodySmall)
+                else AnnotatedString(said),
+                modifier = Modifier.padding(horizontal = Space.m).testTag("status")
+                    .then(if (blank) Modifier.clearAndSetSemantics {} else Modifier),
                 style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
+                color = if (blank) Color.Transparent else palette.textMuted,
                 textAlign = TextAlign.Center,
             )
             // docs/13 deliverable 1: a refusal is not something the app can retry its way out of —
@@ -344,6 +369,55 @@ private fun RecordNode(recorder: RecorderState, busy: Boolean, onStart: () -> Un
             )
         }
     }
+}
+
+/**
+ * docs/03 "Metadata": the square that marks a moment of the recording — 56dp, an accent outline around a
+ * filled accent square (the record node's own motif), no words. A tap fills it with the accent for
+ * 150 ms, with no fade either way, and the phone gives a light tick.
+ */
+@Composable
+private fun HighlightNode(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    val view = LocalView.current
+    var flash by remember { mutableStateOf(0) }
+    var lit by remember { mutableStateOf(false) }
+    LaunchedEffect(flash) {
+        if (flash == 0) return@LaunchedEffect
+        lit = true
+        delay(HIGHLIGHT_FLASH_MS)
+        lit = false
+    }
+    val label = stringResource(R.string.highlight)
+    Box(
+        modifier = modifier
+            .size(56.dp)
+            .border(1.5.dp, palette.accent, RoundedCornerShape(Radius.node))
+            .background(if (lit) palette.accent else palette.surface, RoundedCornerShape(Radius.node))
+            .clickable(role = Role.Button) {
+                view.performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                flash++
+                onClick()
+            }
+            .semantics { contentDescription = label }
+            .testTag("highlight"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(14.dp).background(if (lit) palette.onAccent else palette.accent, RoundedCornerShape(Radius.badge)))
+    }
+}
+
+private const val HIGHLIGHT_FLASH_MS = 150L
+
+/** From the record node's centre to the Highlight node's: half of each (72, 56) and the 24 between them. */
+private val HIGHLIGHT_OFFSET = 36.dp + 24.dp + 28.dp
+
+/** [text] with the one [stamp] in it set in [style] — a time inside a sentence is still data (docs/09). */
+internal fun monoStamp(text: String, stamp: String, style: TextStyle): AnnotatedString = buildAnnotatedString {
+    append(text)
+    val at = text.indexOf(stamp)
+    // The face only: a size or line height of its own would make the line taller and move the nodes above it.
+    if (at >= 0) addStyle(SpanStyle(fontFamily = style.fontFamily), at, at + stamp.length)
 }
 
 /**

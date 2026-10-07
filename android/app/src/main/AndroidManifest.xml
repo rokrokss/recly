@@ -28,6 +28,23 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- docs/03 "Naming rules": Recly in other apps' share sheets for audio and video, and as an
+                 app that opens them — each file shared or opened becomes an imported recording. -->
+            <intent-filter android:label="@string/app_name">
+                <action android:name="android.intent.action.SEND" />
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter android:label="@string/app_name">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="content" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+
             <!-- docs/11 A9: the static "start recording" shortcut. -->
             <meta-data
                 android:name="android.app.shortcuts"
@@ -81,6 +98,17 @@
                 android:name="android.appwidget.provider"
                 android:resource="@xml/rec_widget_info" />
         </receiver>
+
+        <!-- docs/08 "Exports": the exported files a share sheet reads (res/xml/exports.xml). -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.exports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/exports" />
+        </provider>
 
         <!-- WorkManager's foreground service, typed for the model download (`ModelDownloadWorker`). -->
         <service

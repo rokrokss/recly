@@ -28,4 +28,6 @@
     <string name="info_battery_body">على الهاتف: الإعدادات ← البطارية ← حدود الاستخدام في الخلفية. أزل Galaxy Wearable من القائمة. يقطع التحسين اتصال Bluetooth ويمنع وصول التسجيلات.</string>
     <string name="info_transfer_title">النقل</string>
     <string name="info_transfer_body">يبقى التسجيل على الساعة حتى يؤكد الهاتف استلامه. يُنقل تلقائيًا عندما يقترب الهاتف، ولا تُحذف هنا إلا الملفات التي وصلت.</string>
+    <string name="highlight">وضع علامة</string>
+    <string name="highlight_status">علامة · %1$s</string>
 </resources>

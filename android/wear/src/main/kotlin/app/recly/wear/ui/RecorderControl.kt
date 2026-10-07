@@ -4,6 +4,9 @@ import android.content.Context
 import app.recly.recording.RecorderEvent
 import app.recly.recording.RecorderService
 import app.recly.recording.RecorderState
+import app.recly.wear.core.CoreModule
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -19,6 +22,9 @@ interface RecorderControl {
     fun start()
 
     fun stop()
+
+    /** docs/03 "Metadata": marks [atSec] of [recordingId]; false when the core took it as a repeat. */
+    suspend fun highlight(recordingId: String, atSec: Double): Boolean
 }
 
 /**
@@ -36,4 +42,10 @@ class ServiceRecorderControl(private val context: Context) : RecorderControl {
     override fun start() = RecorderService.start(context)
 
     override fun stop() = RecorderService.stop(context, title = null)
+
+    // Into the watch's own meta, which goes to the phone with the recording (docs/03 "Watch → phone
+    // transfer contract") — the phone files the marks it carries.
+    override suspend fun highlight(recordingId: String, atSec: Double): Boolean = withContext(Dispatchers.IO) {
+        CoreModule.get(context).recordings.addHighlight(recordingId, atSec)
+    }
 }

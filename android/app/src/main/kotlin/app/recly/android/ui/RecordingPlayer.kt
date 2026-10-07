@@ -12,6 +12,8 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.PlaybackException
+import androidx.media3.common.PlaybackParameters
+import recly.core.recording.SilentRange
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import java.io.File
@@ -42,6 +44,12 @@ class RecordingPlayer(context: Context) {
     /** Seconds from the start of the *recording*, not of the part being played. */
     var positionSec by mutableDoubleStateOf(0.0)
         private set
+
+    /**
+     * docs/09 "Playback": the quiet stretches Skip silence jumps over while playing, on the recording's own
+     * axis — empty with Skip silence off. The clock still says where in the recording it is.
+     */
+    var silences: List<SilentRange> = emptyList()
 
     private var selection = RecordingPlaylist.Selection.EMPTY
 
@@ -133,6 +141,11 @@ class RecordingPlayer(context: Context) {
         player.prepare()
     }
 
+    /** docs/09 "Playback": faster or slower, with the pitch kept — ExoPlayer stretches time, not the voice. */
+    fun setSpeed(speed: Float) {
+        player.playbackParameters = PlaybackParameters(speed)
+    }
+
     fun pause() {
         player.pause()
         isPlaying = false
@@ -148,6 +161,8 @@ class RecordingPlayer(context: Context) {
      * nothing plays that the caller has not just [load]ed.
      */
     fun stop() {
+        // A finished playlist keeps "play when ready", and the next seek's queue would start playing.
+        player.playWhenReady = false
         player.stop()
         player.clearMediaItems()
         selection = RecordingPlaylist.Selection.EMPTY
@@ -172,6 +187,9 @@ class RecordingPlayer(context: Context) {
             finished = player.currentMediaItemIndex,
             itemSec = player.currentPosition / 1000.0,
         )
+        // Inside a silence: on to where it ends, which the core already left a little short of the speech.
+        val quiet = silences.firstOrNull { it.endSec > positionSec } ?: return
+        if (quiet.startSec <= positionSec && quiet.endSec - positionSec > SKIP_MIN_SEC) seek(selection, quiet.endSec)
     }
 
     /** The player is gone after this. Nothing else may be called on it. */
@@ -188,6 +206,9 @@ class RecordingPlayer(context: Context) {
          * (docs/09 "Motion"). Finer would be redraws no screen this runs on can show.
          */
         const val TICK_MS: Long = 33
+
+        /** Less silence than this left is not worth a seek's glitch. */
+        private const val SKIP_MIN_SEC = 0.1
 
         /**
          * Which part a second of the recording is in, and how far into it — the item and the offset

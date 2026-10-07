@@ -28,4 +28,6 @@
     <string name="info_battery_body">На телефоне: Настройки → Батарея → Ограничения в фоновом режиме. Уберите Galaxy Wearable из списка. Оптимизация разрывает Bluetooth-соединение, и записи не доходят до телефона.</string>
     <string name="info_transfer_title">Передача</string>
     <string name="info_transfer_body">Запись остаётся на часах до подтверждения приёма телефоном. Когда телефон рядом, передача происходит автоматически; здесь удаляются только доставленные файлы.</string>
+    <string name="highlight">Отметить</string>
+    <string name="highlight_status">Отметка · %1$s</string>
 </resources>

@@ -28,4 +28,6 @@
     <string name="info_battery_body">Kwenye simu: Mipangilio → Betri → Vikomo vya matumizi ya chinichini, kisha uondoe Galaxy Wearable kwenye orodha. Uboreshaji ukiwa umewashwa, muunganisho wa Bluetooth hukatika na rekodi hazifiki kwenye simu.</string>
     <string name="info_transfer_title">Uhamishaji</string>
     <string name="info_transfer_body">Rekodi hubaki kwenye saa hadi simu ithibitishe kuipokea. Huhamishwa yenyewe simu ikiwa karibu, na faili zilizofika pekee ndizo zinazofutwa hapa.</string>
+    <string name="highlight">Weka alama</string>
+    <string name="highlight_status">Alama · %1$s</string>
 </resources>

@@ -8,6 +8,8 @@ import androidx.lifecycle.viewModelScope
 import app.recly.android.R
 import app.recly.android.core.CoreModule
 import app.recly.android.core.UiMessage
+import app.recly.android.core.AudioImports
+import app.recly.android.settings.AppSettings
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.work.JobScheduler
 import app.recly.android.work.ModelDownload
@@ -23,6 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -39,6 +43,8 @@ import recly.core.model.RecordingStatus
 import recly.core.platform.Logger
 import recly.core.recording.DeleteResult
 import recly.core.recording.RecordingRecord
+import recly.core.recording.SearchHit
+import recly.core.processing.ProcessingTranscription
 import recly.core.storage.StorageKind
 import recly.core.transcribe.TranscribeRunner
 import recly.core.transcribe.TranscriptAvailability
@@ -87,6 +93,9 @@ data class JobItem(
 enum class ItemState {
     /** The row is still open — the recorder is writing into it. */
     RECORDING,
+
+    /** docs/03 "Naming rules": a file the user picked is being transcoded into this recording's parts. */
+    IMPORTING,
 
     /** docs/03 "Watch → phone transfer contract": the watch is handing this recording over to this phone now. */
     RECEIVING,
@@ -155,7 +164,20 @@ data class JobsUiState(
     val refreshing: Boolean = false,
     /** The speech model download, for the banner and the rows that wait for it. */
     val download: ModelDownloadState = ModelDownloadState(),
+    /** docs/09 "Playback": this device's speed and Skip silence, for every recording's player. */
+    val playbackSpeed: Float = 1f,
+    val skipSilence: Boolean = false,
+    /** The saved processing settings' transcription — what "Transcribe again" would run, and whether it is off. */
+    val transcription: ProcessingTranscription? = null,
+    /** docs/09 "Search": the list's search field, and what it found — null while the field is empty. */
+    val query: String = "",
+    val hits: List<SearchHit>? = null,
+    /** docs/03 "Naming rules": why the last import failed, as a `CoreMessage` code, until it is put away. */
+    val importFailure: String? = null,
 )
+
+/** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
+data class FindRequest(val query: String, val atSec: Double?)
 
 /** The recording detail screen (docs/08 deliverable 3). */
 data class DetailState(
@@ -193,6 +215,16 @@ data class DetailState(
     val fetchProgress: Float = 0f,
     /** The parts come back from the local folder rather than Drive (docs/03 "Storage location"). */
     val folder: Boolean = false,
+    /** docs/03 "Metadata": the marked moments, in seconds of the recording. */
+    val highlights: List<Double> = emptyList(),
+    /** A transcription of this recording is queued or running: nothing may edit the transcript under it. */
+    val transcribing: Boolean = false,
+    /** That transcription is a "Transcribe again" (docs/10 "Re-transcription") — the old text stays meanwhile. */
+    val retranscribing: Boolean = false,
+    /** …and it runs on this device rather than at a provider. */
+    val retranscribingLocally: Boolean = false,
+    /** Set when the detail was opened from a search hit (docs/09 "Search"). */
+    val find: FindRequest? = null,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -221,6 +253,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     private val _state = MutableStateFlow(JobsUiState())
     val state: StateFlow<JobsUiState> = _state.asStateFlow()
 
+    /** docs/09 "Playback": this device's speed and Skip silence. Before `init`, which reads them. */
+    private val preferences = AppSettings(application)
+
     /** Everything the open detail is reading, as one thing to stop when the page goes. */
     private var detailJob: kotlinx.coroutines.Job? = null
     private var resultJob: kotlinx.coroutines.Job? = null
@@ -238,6 +273,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             ) { jobs, recorder, _ -> jobs to recorder }
                 .collect { (jobs, recorder) ->
                     val items = items(core, jobs)
+                    val open = _state.value.detail?.recordingId
+                    val busy = open?.let { transcribing(core, jobs, it) }
                     val alerts = queueAlerts(jobs) { id -> core.jobs.steps(id) }
                     _state.update {
                         it.copy(
@@ -246,7 +283,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                             alerts = alerts,
                             // The open detail's Play goes away for as long as the recorder holds
                             // the microphone, wherever the recording was started from.
-                            detail = it.detail?.copy(deviceRecording = capturing(recorder)),
+                            detail = it.detail?.copy(deviceRecording = capturing(recorder))
+                                ?.let { detail -> busy?.takeIf { detail.recordingId == open }?.applyTo(detail) ?: detail },
                         )
                     }
                 }
@@ -254,7 +292,125 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             ModelDownload.get(getApplication()).state.collect { download -> _state.update { it.copy(download = download) } }
         }
+        viewModelScope.launch {
+            core().processingSettings.observe().collect { stored ->
+                val transcription = (stored as? recly.core.processing.ProcessingSettingsState.Ready)?.document?.settings?.transcription
+                _state.update { it.copy(transcription = transcription) }
+            }
+        }
+        viewModelScope.launch { preferences.playbackSpeed.collect { speed -> _state.update { it.copy(playbackSpeed = speed) } } }
+        viewModelScope.launch { preferences.skipSilence.collect { skip -> _state.update { it.copy(skipSilence = skip) } } }
+        viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
         pullRemote()
+    }
+
+    /**
+     * Whether a transcription of the open recording is queued or running, and whether it is a "Transcribe
+     * again" — what the detail's More menu and its one-line status say (docs/10 "Re-transcription").
+     */
+    private suspend fun transcribing(core: ReclyCore, jobs: List<Job>, recordingId: String): Transcribing {
+        val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
+        // Said only while it is on its way: one parked for the model, a consent or Drive is the list's to explain.
+        val again = unsettled.filter { it.retranscription && it.status in IN_FLIGHT }.maxByOrNull { it.createdAt }
+        return Transcribing(
+            running = unsettled.isNotEmpty() || core.localTranscription.isRunning(recordingId),
+            again = again != null,
+            locally = again?.workflow?.steps?.any { it is Step.LocalTranscribe } == true,
+        )
+    }
+
+    private data class Transcribing(val running: Boolean, val again: Boolean, val locally: Boolean) {
+        fun applyTo(detail: DetailState) = detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally)
+    }
+
+    /** docs/09 "Playback": this device's preferences, so every recording plays at the speed last chosen. */
+    fun setPlaybackSpeed(speed: Float) = launch { preferences.setPlaybackSpeed(speed) }
+
+    fun setSkipSilence(on: Boolean) = launch { preferences.setSkipSilence(on) }
+
+    /** docs/03 "Naming rules": files picked or shared into Recly, each its own row, one after another. */
+    fun importAudio(uris: List<android.net.Uri>) = AudioImports.get(getApplication()).import(uris)
+
+    fun dismissImportFailure() = AudioImports.get(getApplication()).dismissFailure()
+
+    private var searchJob: kotlinx.coroutines.Job? = null
+
+    /**
+     * docs/09 "Search": what the list's field holds. The core is asked 200 ms after the last keystroke, and
+     * an empty field brings the ledger back.
+     */
+    fun search(query: String) {
+        _state.update { it.copy(query = query, hits = if (query.isBlank()) null else it.hits) }
+        searchJob?.cancel()
+        if (query.isBlank()) return
+        searchJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(SEARCH_DEBOUNCE_MS)
+            val core = core()
+            val hits = try {
+                withContext(core.deps.io) { core.search(query.trim(), SEARCH_LIMIT) }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                core.deps.logger.log(Logger.Level.WARN, "search.failed", error = e)
+                emptyList()
+            }
+            _state.update { if (it.query == query) it.copy(hits = hits) else it }
+        }
+    }
+
+    /** A search hit opens its recording at the first transcript match, with every match tinted (docs/09 "Search"). */
+    fun openHit(hit: SearchHit) {
+        val query = _state.value.query.trim()
+        detailJob?.cancel()
+        resultJob?.cancel()
+        detailJob = viewModelScope.launch {
+            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, FindRequest(query, hit.snippets.firstOrNull()?.atSec))
+        }
+    }
+
+    /** The find bar's close: the tints go, and the page is the reading page again. */
+    fun closeFind() {
+        val id = _state.value.detail?.recordingId ?: return
+        updateDetail(id) { it.copy(find = null) }
+    }
+
+    /**
+     * docs/03 "Metadata": the detail's highlight editor — the whole list, saved at once, no Save button.
+     * The page follows on `recordings.observe()`.
+     */
+    fun setHighlights(recordingId: String, atSecs: List<Double>) = launch {
+        val core = core()
+        withContext(core.deps.io) { core.setHighlights(recordingId, atSecs) }
+    }
+
+    /** docs/08 "Exports": the file a share sheet gets, or null when there is nothing in that format. */
+    suspend fun export(recordingId: String, format: recly.core.recording.ExportFormat): String? {
+        val core = core()
+        return try {
+            withContext(core.deps.io) { core.exportFile(recordingId, format) }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            core.deps.logger.log(Logger.Level.WARN, "detail.export.failed", mapOf("format" to format.name), e)
+            null
+        }
+    }
+
+    /** docs/08 "Editing": one change or a batch of them, saved at once; the page follows on `observeResults`. */
+    suspend fun edit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
+        val core = core()
+        return withContext(core.deps.io) { core.editTranscript(recordingId, edit) }
+    }
+
+    /**
+     * docs/10 "Re-transcription": the settings as they are now, after the user said yes. The list and the
+     * detail follow the job it queues.
+     */
+    fun retranscribe(recordingId: String) = launch {
+        val core = core()
+        if (withContext(core.deps.io) { core.retranscribe(recordingId) } is recly.core.transcribe.RetranscribeResult.Started) {
+            scheduler().onJobsDue(expedited = true)
+        }
     }
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
@@ -399,17 +555,19 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
     }
 
-    private suspend fun openDetail(recordingId: String, title: String?) {
+    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null) {
+        val core = core()
+        val busy = transcribing(core, core.jobs.list(), recordingId)
         _state.update {
             it.copy(
-                detail = DetailState(
+                detail = busy.applyTo(DetailState(
                     recordingId = recordingId,
                     title = title,
                     deviceRecording = capturing(RecorderService.state.value),
-                ),
+                    find = find,
+                )),
             )
         }
-        val core = core()
         val result = try {
             core.results(recordingId)
         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -419,6 +577,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
         updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
         resultJob = viewModelScope.launch {
+            launch {
+                core.recordings.observe().map { core.recordings.get(recordingId)?.meta?.highlights.orEmpty() }
+                    .distinctUntilChanged()
+                    .collect { marks -> updateDetail(recordingId) { it.copy(highlights = marks.map { mark -> mark.atSec }) } }
+            }
             core.observeResults(recordingId).collect { next ->
                 updateDetail(recordingId) { it.copy(transcript = next.transcript, availability = next.availability) }
             }
@@ -666,6 +829,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     private companion object {
         /** Deep enough for months of daily recordings, shallow enough to join in one pass. */
         const val LIMIT = 100
+        const val SEARCH_LIMIT = 50
+        const val SEARCH_DEBOUNCE_MS = 200L
+        val SETTLED = setOf(JobStatus.DONE, JobStatus.FAILED, JobStatus.SKIPPED_SHORT)
+        val IN_FLIGHT = setOf(JobStatus.PENDING, JobStatus.RUNNING, JobStatus.WAITING)
     }
 
 }
@@ -682,6 +849,7 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
     // `status = recording` and would show as `REC`.
     record.receiving -> ItemState.RECEIVING
     record.remoteUploading -> ItemState.REMOTE_UPLOADING
+    record.importing -> ItemState.IMPORTING
     // A marker that names only `webhook` is not something to say: what is left is a request this
     // phone will never see the answer to, and the recording itself is done.
     (record.remote || (job == null && record.driveSynced)) && TranscribeRunner.TYPE in record.remotePending -> ItemState.REMOTE_TRANSCRIBING

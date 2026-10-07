@@ -69,6 +69,7 @@ class LedgerStatusTest {
         assertEquals(
             listOf(
                 ItemState.RECORDING,
+                ItemState.IMPORTING,
                 ItemState.RECEIVING,
                 ItemState.REMOTE_UPLOADING,
                 ItemState.RUNNING,
@@ -120,6 +121,14 @@ class LedgerStatusTest {
         ItemState.entries.forEach { assertTrue(it.badge().code in BADGE_CODES, "$it") }
     }
 
+    /** docs/03 "Naming rules": an import being transcoded — accent, the square loader, and nothing to do to it yet. */
+    @Test
+    fun `an import is its own row state, busy and in flight`() {
+        assertEquals(LedgerStatus("IMPORTING", BadgeTone.ACCENT, busy = true), ItemState.IMPORTING.badge())
+        assertTrue(ItemState.IMPORTING.inFlight())
+        assertTrue(ItemState.IMPORTING.waiting())
+    }
+
     /** docs/10 "Drive out of space": its own code, not a FAILED it would be mistaken for. */
     @Test
     fun `out of Drive space is its own row state`() {
@@ -133,7 +142,7 @@ class LedgerStatusTest {
         ItemState.entries.forEach { state ->
             assertTrue(!(state.waiting() && state.failing()), "$state is counted twice")
         }
-        assertEquals(7, ItemState.entries.count { it.waiting() })
+        assertEquals(8, ItemState.entries.count { it.waiting() })
         assertFalse(ItemState.NO_JOB.waiting())
         assertEquals(3, ItemState.entries.count { it.failing() })
     }

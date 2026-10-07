@@ -93,11 +93,15 @@ class MainActivity : ComponentActivity() {
      */
     private val fixRequest = mutableStateOf<AlertReason?>(null)
 
+    /** docs/03 "Naming rules": files shared into Recly or opened with it, until the List tab has taken them. */
+    private val importRequest = mutableStateOf(0)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Only a fresh launch: a rotation or a restore redelivers the same intent, and one tap on a
         // tile must not become two recordings.
         if (savedInstanceState == null) consumeAutoStart(intent)
+        if (savedInstanceState == null) consumeImport(intent)
         // The fix is consumed on every launch, restored or not: the tap happened once, and a
         // process killed between it and this line would otherwise leave the user with the app open
         // and nothing having happened. The notification itself stays up until the queue says the
@@ -187,6 +191,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
+                // A file shared into Recly lands on the list, where its IMPORTING row appears.
+                LaunchedEffect(importRequest.value) {
+                    if (importRequest.value > 0) tab = Tab.JOBS
+                }
+
                 LaunchedEffect(fixRequest.value) {
                     val reason = fixRequest.value ?: return@LaunchedEffect
                     fixRequest.value = null
@@ -267,6 +276,7 @@ class MainActivity : ComponentActivity() {
         setIntent(intent)
         consumeAutoStart(intent)
         consumeFix(intent)
+        consumeImport(intent)
     }
 
     /** docs/11 A5 trigger (b): coming back to the app is as good a reason to run the queue as any. */
@@ -291,6 +301,23 @@ class MainActivity : ComponentActivity() {
         intent.removeExtra(EXTRA_AUTO_START)
         intent.removeExtra(EXTRA_REQUESTED_AT)
         recordingModel.requestAutoStart(requestedAt)
+    }
+
+    /**
+     * docs/03 "Naming rules": `SEND`, `SEND_MULTIPLE` or `VIEW` of audio or video. Spent once, like the
+     * auto-start: the intent comes back on recreation, and one share is one import.
+     */
+    private fun consumeImport(intent: Intent) {
+        val uris = when (intent.action) {
+            Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java))
+            Intent.ACTION_SEND_MULTIPLE -> intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java).orEmpty()
+            Intent.ACTION_VIEW -> listOfNotNull(intent.data)
+            else -> return
+        }
+        intent.action = Intent.ACTION_MAIN
+        if (uris.isEmpty()) return
+        jobsModel.importAudio(uris)
+        importRequest.value++
     }
 
     private fun consumeFix(intent: Intent) {
@@ -361,6 +388,7 @@ private fun RecordTab(
         onOpenProcessing = onOpenProcessing,
         onStart = onStart,
         onStop = model::stop,
+        onHighlight = model::highlight,
         onMicDenied = model::micDenied,
         onMicGranted = model::micGranted,
         onConsumeAutoStart = model::consumeAutoStart,
@@ -402,6 +430,18 @@ private fun JobsTab(
             onRename = { title -> model.rename(detail.recordingId, title) },
             onReload = model::reloadDetail,
             modifier = modifier,
+            actions = DetailActions(
+                playbackSpeed = state.playbackSpeed,
+                skipSilence = state.skipSilence,
+                transcription = state.transcription,
+                onSpeed = model::setPlaybackSpeed,
+                onSkipSilence = model::setSkipSilence,
+                onHighlights = { model.setHighlights(detail.recordingId, it) },
+                onExport = { model.export(detail.recordingId, it) },
+                onEdit = { model.edit(detail.recordingId, it) },
+                onRetranscribe = { model.retranscribe(detail.recordingId) },
+                onCloseFind = model::closeFind,
+            ),
         )
     } else {
         JobsScreen(
@@ -419,6 +459,10 @@ private fun JobsTab(
             onDismissMessage = model::dismissMessage,
             modifier = modifier,
             collapse = collapse,
+            onImport = model::importAudio,
+            onDismissImport = model::dismissImportFailure,
+            onSearch = model::search,
+            onOpenHit = model::openHit,
         )
     }
 }

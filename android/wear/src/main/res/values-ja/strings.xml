@@ -28,4 +28,6 @@
     <string name="info_battery_body">スマートフォンの「設定→バッテリー→バックグラウンド使用制限」でGalaxy Wearableを対象から外してください。最適化が有効だとBluetooth接続が切れ、録音が届きません。</string>
     <string name="info_transfer_title">転送</string>
     <string name="info_transfer_body">スマートフォンが受信を確認するまで録音はウォッチに残ります。近づくと自動で転送され、届いたファイルだけがここから削除されます。</string>
+    <string name="highlight">ハイライト</string>
+    <string name="highlight_status">ハイライト · %1$s</string>
 </resources>

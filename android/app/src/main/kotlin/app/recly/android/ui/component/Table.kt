@@ -41,10 +41,12 @@ fun ScreenHeader(
     meta: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     trailingAlignment: Alignment = Alignment.TopStart,
+    /** False for a trailing that is one icon: it always fits beside the title, so it never takes a row. */
+    stackable: Boolean = true,
 ) {
     val compact = LocalConfiguration.current.screenHeightDp < 480
     BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = if (compact) Space.s else Space.m)) {
-        val stacked = maxWidth < 400.dp || (maxWidth < 560.dp && LocalDensity.current.fontScale > 1.3f)
+        val stacked = stackable && (maxWidth < 400.dp || (maxWidth < 560.dp && LocalDensity.current.fontScale > 1.3f))
         val heading: @Composable () -> Unit = {
             Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,

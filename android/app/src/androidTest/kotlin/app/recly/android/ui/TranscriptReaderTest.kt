@@ -1,6 +1,5 @@
 package app.recly.android.ui
 
-import android.content.ClipboardManager
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.*
 import androidx.compose.ui.input.InputMode
@@ -14,10 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.test.platform.app.InstrumentationRegistry
 import app.recly.android.ui.theme.ReclyTheme
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import recly.core.model.Track
@@ -74,41 +71,30 @@ class TranscriptReaderTest {
         ui.runOnIdle { assertEquals(0.0, position) }
     }
 
-    @Test fun seekAndHeaderCopyKeepTheCompleteTranscript() {
+    @Test fun seekReachesTheLastPassage() {
         var target = -1.0
         ui.setContent { ReclyTheme {
-            Column {
-                TranscriptCopyButton(transcript)
-                TranscriptReader(transcript, true, { target = it }, Modifier.fillMaxSize())
-            }
+            TranscriptReader(transcript, true, { target = it }, Modifier.fillMaxSize())
         } }
         ui.onNodeWithTag("transcript-text-119").assertDoesNotExist()
-        ui.onNodeWithTag("transcript-search-toggle").assertDoesNotExist()
-        ui.onNodeWithTag("transcript-search").assertDoesNotExist()
         ui.onNodeWithTag("transcript-passages").performScrollToNode(hasTestTag("transcript-text-119"))
         ui.onNodeWithTag("transcript-text-119").assertIsDisplayed()
         ui.onNodeWithTag("transcript-time-119").performClick()
         ui.runOnIdle { assertEquals(7140.0, target) }
-        ui.onNodeWithTag("transcript-copy").performClick()
-        ui.runOnIdle {
-            val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val clipboard = context.getSystemService(ClipboardManager::class.java)
-            val copied = clipboard.primaryClip!!.getItemAt(0).text.toString()
-            assertTrue(copied.contains("Passage number 0"))
-            assertTrue(copied.contains("Passage number 119"))
-        }
     }
 
-    @Test fun missingAudioDisablesSeekingButKeepsHeaderCopyAvailable() {
+    @Test fun missingAudioDisablesSeekingButKeepsTheText() {
         ui.setContent { ReclyTheme {
-            Column {
-                TranscriptCopyButton(transcript)
-                TranscriptReader(transcript, false, {}, Modifier.fillMaxSize())
-            }
+            TranscriptReader(transcript, false, {}, Modifier.fillMaxSize())
         } }
         ui.onNodeWithTag("transcript-time-0").assertIsNotEnabled()
-        ui.onNodeWithTag("transcript-copy").assertIsEnabled()
-        ui.onNodeWithTag("transcript-search-toggle").assertDoesNotExist()
         ui.onNodeWithTag("transcript-text-0").assertIsDisplayed()
+    }
+
+    /** docs/09 "Transcript reader": a speaker is a badge, its name when it has one. */
+    @Test fun speakersAreBadges() {
+        val named = transcript.copy(speakers = listOf(TranscriptSpeaker("S1", "Mina")))
+        ui.setContent { ReclyTheme { TranscriptReader(named, true, {}, Modifier.fillMaxSize()) } }
+        ui.onNodeWithTag("transcript-speaker-0").assertTextEquals("Mina")
     }
 }

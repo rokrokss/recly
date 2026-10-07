@@ -28,4 +28,6 @@
     <string name="info_battery_body">Auf dem Telefon: Einstellungen → Akku → Grenzen der Hintergrundnutzung. Entfernen Sie Galaxy Wearable aus der Liste. Die Optimierung trennt Bluetooth und verhindert die Übertragung der Aufnahmen.</string>
     <string name="info_transfer_title">Übertragung</string>
     <string name="info_transfer_body">Die Aufnahme bleibt auf der Uhr, bis das Telefon den Empfang bestätigt. In der Nähe erfolgt die Übertragung automatisch. Nur erfolgreich übertragene Dateien werden hier gelöscht.</string>
+    <string name="highlight">Markieren</string>
+    <string name="highlight_status">Markierung · %1$s</string>
 </resources>
