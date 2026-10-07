@@ -8,10 +8,18 @@ import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.async
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import recly.core.transcribe.StorefrontUnavailableException
 import recly.core.drive.DriveUploadRunner
@@ -65,6 +73,20 @@ class Executor(
      * not write the same value again for its DONE. Reset per job; runs are serialized by [mutex]. */
     private var lastMark: Pair<String, List<String>>? = null
 
+    /**
+     * The run in flight and the recordings being deleted ([stopping]), under a lock of their own
+     * rather than [mutex]: "Disconnect" deletes recordings inside [quiesced], which holds [mutex]
+     * for the whole of it.
+     */
+    private val runs = Mutex()
+    private var current: Run? = null
+    private val deleting = mutableListOf<String>()
+
+    /** One job's run ([run]). [stopped] is set by [stopping], under [runs], when the run is let go. */
+    private class Run(val job: Job, val task: Deferred<Unit>, val done: CompletableDeferred<Unit>) {
+        var stopped = false
+    }
+
     /** One job at a time, oldest first (docs/10 "Concurrency"). Re-entrant calls return immediately —
      * a scheduler that fires while a run is in flight must not double-run a step. */
     suspend fun runDueJobs(now: Instant = deps.clock.now()): RunSummary = runFiltered(now, false)
@@ -82,7 +104,7 @@ class Executor(
                 if (disconnecting) break
                 currentCoroutineContext().ensureActive()
                 if (localOnly && !isLocalNext(job)) continue
-                runJob(job, now, localOnly)
+                run(job, now, localOnly)
                 ran += job.id
             }
             return RunSummary(jobIds = ran)
@@ -110,6 +132,80 @@ class Executor(
         }
     }
 
+    /**
+     * docs/03 "Deleting in the app": [body] — the deletion of [recordingId] — with no run of that
+     * recording left to write anything. A run in flight is cancelled and let go of: the deletion
+     * gives it [STOP_GRACE] to wind down, and does not wait for a step that cancelling does not
+     * reach ([run]). For as long as [body] runs no job of the recording is started, so the rows it
+     * deletes are nobody's, `RUNNING` or not.
+     */
+    internal suspend fun <T> stopping(recordingId: String, body: suspend () -> T): T {
+        val run = runs.withLock {
+            deleting += recordingId
+            current?.takeIf { it.job.recordingId == recordingId }?.also {
+                it.stopped = true
+                it.task.cancel()
+                it.done.complete(Unit)
+            }
+        }
+        try {
+            if (run != null) {
+                val settled = withTimeoutOrNull(STOP_GRACE) { run.task.join() } != null
+                deps.logger.log(
+                    Level.INFO,
+                    "job.stopped",
+                    mapOf("jobId" to run.job.id, "recordingId" to recordingId, "settled" to settled),
+                )
+            }
+            return body()
+        } finally {
+            withContext(NonCancellable) { runs.withLock { deleting -= recordingId } }
+        }
+    }
+
+    /**
+     * [runJob] as a coroutine of its own rather than a part of the pass, so that deleting the
+     * recording ([stopping]) stops it without stopping the pass — and without the pass waiting for
+     * it. A step can be suspended where cancelling does not reach: the iPhone's background upload
+     * session answers a chunk only once it is sent (docs/13 I4), and a pass that waited for that
+     * would hold every other recording's job behind one that no longer exists.
+     *
+     * A run let go of does nothing once it wakes up. It is cancelled; every row it would write goes
+     * through `withContext(deps.io)` (JobStore, RecordingRepository), which does not start for a
+     * cancelled coroutine; and those writes are `UPDATE … WHERE id`, so even one already under way
+     * cannot bring a deleted row back. The resumable upload saves its state after every chunk
+     * (`DriveApi.uploadResumable`), so it stops at the first chunk that comes back.
+     *
+     * Everything else is as it was: a failure of the run comes out of the pass, and a pass that is
+     * itself cancelled (WorkManager, a background task's expiry) cancels the run and returns only
+     * once the run has, leaving the job row `RUNNING` for [JobStore.recoverRunning].
+     */
+    private suspend fun run(job: Job, now: Instant, localOnly: Boolean) {
+        val task = CoroutineScope(currentCoroutineContext().minusKey(kotlinx.coroutines.Job))
+            .async(start = CoroutineStart.LAZY) { runJob(job, now, localOnly) }
+        val done = CompletableDeferred<Unit>()
+        task.invokeOnCompletion { done.complete(Unit) }
+        val run = Run(job, task, done)
+        val admitted = runs.withLock { (job.recordingId !in deleting).also { if (it) current = run } }
+        if (!admitted) {
+            task.cancel()
+            return
+        }
+        try {
+            task.start()
+            try {
+                done.await()
+            } catch (e: CancellationException) {
+                task.cancel()
+                withContext(NonCancellable) { done.await() }
+                throw e
+            }
+        } finally {
+            withContext(NonCancellable) { runs.withLock { if (current === run) current = null } }
+        }
+        if (!run.stopped) task.await()
+    }
+
     internal suspend fun isLocalNext(job: Job): Boolean {
         val run = store.stepsOf(job.id).firstOrNull { it.status !in setOf(StepStatus.SUCCEEDED, StepStatus.SKIPPED) } ?: return false
         val workflow = job.workflow ?: return false
@@ -135,9 +231,8 @@ class Executor(
         // it is rather than parked in RUNNING: a snapshot this build cannot decode has nothing to
         // run against, and the list already shows it as failed (docs/10 "job snapshot").
         val workflow = job.workflow ?: return
-        // The claim before the work, and transactional: "Delete recording" refuses a recording whose job is
-        // RUNNING in a transaction of its own, so between the two of them a run and a deletion of
-        // what it reads cannot both happen. A job the deletion won is simply gone.
+        // The claim before the work, and transactional: a job the deletion of its recording won is
+        // simply gone. A deletion that comes later stops this run first ([stopping]).
         if (!store.claimRunning(job.id, deps.clock.now())) return
         val recording = recordings.get(job.recordingId)
         if (recording == null) {
@@ -502,4 +597,8 @@ class Executor(
         data object Stop : Outcome
     }
 
+    private companion object {
+        /** How long a deletion waits for the run it stopped to wind down before it goes on regardless. */
+        val STOP_GRACE = 2.seconds
+    }
 }

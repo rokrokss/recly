@@ -166,8 +166,8 @@ class RecentsTest {
         assertEquals(Str.STATE_REMOTE_UPLOADING.message(), item.state)
         assertEquals("UPLOADING", item.state.ledgerStatus().code)
         assertEquals(BadgeTone.ACCENT, item.state.ledgerStatus().tone)
-        // Deleting it would pull the folder out from under the upload that is filling it.
-        assertFalse(item.deletable)
+        // Deletable: the dialog takes the folder from Drive, and that device uploads into a new one.
+        assertTrue(item.deletable)
         assertFalse(retryable(item.jobStatus, transcribing = item.waitingMinutes != null))
         assertNull(item.link)
         assertNull(item.durationSec)
@@ -382,14 +382,14 @@ class RecentsTest {
     }
 
     /**
-     * docs/09 screen principle 2 "Delete (except while recording or uploading)": the two rows that do not offer a Delete, in both
-     * of the surfaces that draw them. The core refuses the delete anyway, and a button that only
-     * ever produces a refusal is not one to draw.
+     * docs/09 screen principle 2 "Delete (except while recording, importing or receiving)": a recording
+     * still being written does not offer a Delete, in both of the surfaces that draw them. An
+     * upload does — the core stops it first.
      */
     @Test
-    fun `a recording being written to or uploaded is not one to delete`() {
+    fun `a recording being written to is not one to delete, and one being uploaded is`() {
         assertFalse(Recents.item(record(status = RecordingStatus.RECORDING), null, emptyList()).deletable)
-        assertFalse(Recents.item(record(), job("running", JobStatus.RUNNING), emptyList()).deletable)
+        assertTrue(Recents.item(record(), job("running", JobStatus.RUNNING), emptyList()).deletable)
         assertTrue(Recents.item(record(), job("done", JobStatus.DONE), emptyList()).deletable)
         assertTrue(Recents.item(record(), job("failed", JobStatus.FAILED), emptyList()).deletable)
     }

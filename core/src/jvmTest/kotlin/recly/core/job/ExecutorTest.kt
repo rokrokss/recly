@@ -127,7 +127,10 @@ internal class Fixture(
     val consents = recly.core.privacy.TransferConsents(db, deps)
     val recordings = RecordingRepository(db, deps)
     val store = JobStore(db, deps)
-    val service = JobService(deps, store, recordings, executorWith(runners, random))
+
+    /** The queue's executor, wired to [recordings] as `ReclyCore` wires it: a deletion stops its run. */
+    val executor = executorWith(runners, random).also { recordings.executor = it }
+    val service = JobService(deps, store, recordings, executor)
 
     /** A fresh executor over the same database — what a process restart looks like. */
     fun executorWith(runners: List<StepRunner>, random: Random = Random(42)): Executor =

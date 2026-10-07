@@ -208,7 +208,7 @@ class ReclyCore(
                 transferConsents = transferConsents,
                 prepare = { driveJobAccess.prepare() },
                 requireAccess = { driveJobAccess.requireAccess(it) },
-            ),
+            ).also { recordings.executor = it },
             planForRerun = { job ->
                 if (job.retranscription) retranscription.plan(job.recordingId)
                 else ProcessingPlan.compile(processingSettings.refreeze(job.recordingId))
@@ -562,8 +562,8 @@ class ReclyCore(
         localTranscription.cancelAll()
         remote.disconnected {
             // The recordings first, and one at a time through the transactional [RecordingRepository
-            // .delete]: a recording whose job is RUNNING refuses, and its queue rows have to survive
-            // this so the run it is in the middle of still has something to write to.
+            // .delete]. Nothing of the queue is in flight in here, so a job left RUNNING goes with its
+            // recording; one an on-device transcription would not let go of is Busy and stays.
             var deleted = 0
             val busy = mutableListOf<String>()
             if (alsoDeleteRecordings) {
@@ -604,9 +604,9 @@ class ReclyCore(
 }
 
 /**
- * What "Disconnect" (docs/03) managed. [busyRecordings] are the ones a `RUNNING` job would not let
- * go of: they and their queue rows are still here, and the screen has to say so — disconnecting
- * again once the job has finished takes them.
+ * What "Disconnect" (docs/03) managed. [busyRecordings] are the ones the deletion answered
+ * [DeleteResult.Busy][recly.core.recording.DeleteResult.Busy] for: they and their queue rows are
+ * still here, and the screen has to say so — disconnecting again takes them.
  */
 data class DisconnectResult(
     val deletedRecordings: Int,

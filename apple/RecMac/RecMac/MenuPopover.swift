@@ -392,8 +392,8 @@ struct MenuPopover: View {
                 .accessibilityIdentifier("open-detail")
             }
             Spacer(minLength: 0)
-            // docs/03: a recording being written to, arriving from the watch, or uploaded right now
-            // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
+            // docs/03: a recording being written to, imported, or arriving from the watch is not one
+            // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
             //
             // The question is asked here, over the ledger it is about, the way the disconnect and
             // the import are: sending the user to another window to answer "delete this?" is the

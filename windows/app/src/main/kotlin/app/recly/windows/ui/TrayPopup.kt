@@ -427,7 +427,7 @@ private fun RecentRow(
                     )
                 }
                 // docs/03 "Deleting in the app": the dialog asks about Drive; this only opens it. Never
-                // over a recording that is being written to or uploaded ([RecentItem.deletable]).
+                // over a recording that is still being written ([RecentItem.deletable]).
                 if (item.deletable) {
                     LedgerAction(statusWidth) {
                         BlueprintButton(

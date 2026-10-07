@@ -300,8 +300,8 @@ struct RecordingsView: View {
                 detail = model.detail(for: item)
             }
                 .accessibilityIdentifier("open-detail")
-            // docs/03: a recording being written to, arriving from the watch, or uploaded right now
-            // — here or on the device that made it — is not one to delete ([RecentItem.canDelete]).
+            // docs/03: a recording being written to, imported, or arriving from the watch is not one
+            // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
             if item.canDelete {
                 BlueprintButton(loc("Delete"), tone: .danger, minWidth: minTouch) { model.confirmDelete(item) }
                     .accessibilityIdentifier("delete")

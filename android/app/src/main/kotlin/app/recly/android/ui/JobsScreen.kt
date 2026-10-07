@@ -378,7 +378,7 @@ private fun ExpandedRow(
             }
         }
 
-        // docs/09 screen principle 2: Delete ends the last line; a recording in flight has none to offer.
+        // docs/09 screen principle 2: Delete ends the last line; a recording still being written has none to offer.
         ActionFlow(
             modifier = Modifier.fillMaxWidth(),
             trailing = if (item.inFlight()) {
@@ -806,17 +806,17 @@ fun ItemState.waiting(): Boolean =
 fun JobItem.waiting(): Boolean = localPending || state.waiting()
 
 /**
- * docs/09 screen principle 2: a recording something is doing to it right now, so there is nothing on the
- * row to offer. Deleting one would be pulling the file out from under a recorder, a transfer or
- * another device's upload (docs/03 "Recordings from other devices").
+ * docs/09 screen principle 2: a recording whose file is still being written — by the recorder, an
+ * import or a transfer from the watch — so there is no Delete on the row. An upload is not one:
+ * the core stops it before deleting (docs/03 "Deleting in the app"), and neither is another
+ * device's, whose folder the dialog takes from Drive (docs/03 "Recordings from other devices").
  */
 fun ItemState.inFlight(): Boolean =
-    this == ItemState.RECORDING || this == ItemState.IMPORTING || this == ItemState.RUNNING ||
-        this == ItemState.RECEIVING || this == ItemState.REMOTE_UPLOADING
+    this == ItemState.RECORDING || this == ItemState.IMPORTING || this == ItemState.RECEIVING
 
 /**
- * The row's own answer: a transcription on this device is not an upload, and deleting its
- * recording is something the core does for it — it stops the transcription first
+ * The row's own answer: a transcription on this device is not a file being written, and deleting
+ * its recording is something the core does for it — it stops the transcription first
  * (`LocalTranscriptionService.deleting`). The iPhone offers Delete there too (`RecentItem.canDelete`).
  */
 fun JobItem.inFlight(): Boolean = !localPending && state.inFlight()
