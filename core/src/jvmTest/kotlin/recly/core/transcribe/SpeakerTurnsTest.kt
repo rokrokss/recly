@@ -3,7 +3,7 @@ package recly.core.transcribe
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-/** docs/08 "Speaker diarization on the device": the merging rules every shell shares. */
+/** docs/10 "Shared rules for the shells": the merging rules every shell shares. */
 class SpeakerTurnsTest {
     private fun segment(start: Double, end: Double) = SttSegment(start, end, null, "t")
 

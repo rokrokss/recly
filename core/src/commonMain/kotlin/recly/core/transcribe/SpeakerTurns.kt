@@ -8,7 +8,7 @@ import kotlin.math.sqrt
 data class SpeakerTurn(val start: Double, val end: Double, val label: String)
 
 /**
- * docs/08 "Speaker diarization on the device": how a diarizer's turns meet the transcription, the same on
+ * docs/10 "Shared rules for the shells": how a diarizer's turns meet the transcription, the same on
  * every shell. The labels stay the diarizer's own (`"0"`, `"S1"`, …); the core renames them `S1, S2, …`
  * in order of appearance when it writes the transcript, and marks it identified only when every segment
  * has one — which is why nothing here leaves a segment without a label while there are turns at all.
