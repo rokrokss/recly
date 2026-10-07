@@ -156,40 +156,74 @@ class RemoteRecordings(
      * Never throws: what did not land stays pending for the next pass.
      */
     suspend fun pushTitles(): Unit = pushing.withLock {
-        for ((recordingId, title) in recordings.pendingTitles()) {
+        push(recordings.pendingTitles(), "remote.title.pushed", "remote.title.push.failed", recordings::titlePushed) { record, folderId, title ->
+            api.updateDescription(folderId, title)
+            pushMetaFile(record, folderId)
+        }
+    }
+
+    /**
+     * The same for a `meta.json` changed after it went up — the highlights (docs/03 "Metadata"): the file
+     * in the folder is overwritten with this device's, and a local folder's Markdown transcript, which
+     * lists them, is written again. Like a rename, two devices changing it leave the later write.
+     */
+    suspend fun pushMeta(): Unit = pushing.withLock {
+        push(recordings.pendingMeta(), "remote.meta.pushed", "remote.meta.push.failed", recordings::metaPushed) { record, folderId, _ ->
+            pushMetaFile(record, folderId)
+        }
+    }
+
+    /**
+     * One kind of pending write, for every recording that has one: [write] it into the recording's
+     * folder, then [done] with the value it was pending with. A folder that is not known, or has no
+     * `meta.json` yet, is not ready for it; a folder that is gone takes the write with it.
+     */
+    private suspend fun push(
+        pending: Map<String, String>,
+        pushed: String,
+        failed: String,
+        done: suspend (String, String) -> Unit,
+        write: suspend (RecordingRecord, String, String) -> Boolean,
+    ) {
+        for ((recordingId, value) in pending) {
             val record = recordings.get(recordingId) ?: continue
             val folderId = record.driveFolderId ?: continue
             try {
-                api.updateDescription(folderId, title)
-                val name = MetaWriter.metaFileName(MetaWriter.baseName(record.meta))
-                val metaFile = api.findChild(folderId, name) ?: continue
-                api.updateMedia(metaFile.id, recJson.encodeToString(record.meta).encodeToByteArray(), META_MIME)
-                if (StorageKind.ofId(folderId) == StorageKind.FOLDER) retitleMarkdown(record, folderId)
-                recordings.titlePushed(recordingId, title)
-                deps.logger.log(Logger.Level.INFO, "remote.title.pushed", mapOf("recordingId" to recordingId))
+                if (!write(record, folderId, value)) continue
+                done(recordingId, value)
+                deps.logger.log(Logger.Level.INFO, pushed, mapOf("recordingId" to recordingId))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: DriveNotFound) {
                 // The folder went — deleted elsewhere; nothing to tell, and the pull will drop or
                 // keep the row on its own terms.
-                recordings.titlePushed(recordingId, title)
+                done(recordingId, value)
             } catch (e: AuthRequiredException) {
                 return
             } catch (e: StorageUnavailableException) {
-                // iCloud is not usable from here right now; the rename waits for the next pass.
+                // iCloud or the local folder is not usable from here right now; the write waits for the next pass.
                 continue
             } catch (e: Throwable) {
-                deps.logger.log(Logger.Level.WARN, "remote.title.push.failed", mapOf("recordingId" to recordingId), e)
+                deps.logger.log(Logger.Level.WARN, failed, mapOf("recordingId" to recordingId), e)
                 return
             }
         }
     }
 
+    /** False while the folder has no `meta.json` yet: an upload in flight will write one, and the next pass fixes it. */
+    private suspend fun pushMetaFile(record: RecordingRecord, folderId: String): Boolean {
+        val name = MetaWriter.metaFileName(MetaWriter.baseName(record.meta))
+        val metaFile = api.findChild(folderId, name) ?: return false
+        api.updateMedia(metaFile.id, recJson.encodeToString(record.meta).encodeToByteArray(), META_MIME)
+        if (StorageKind.ofId(folderId) == StorageKind.FOLDER) rewriteMarkdown(record, folderId)
+        return true
+    }
+
     /**
-     * The Markdown transcript in a local folder carries the title in its front matter (docs/08 "Result
-     * files"), so a rename writes it again from the local transcript — when both are there.
+     * The Markdown transcript in a local folder carries the title and the highlights (docs/08 "Result
+     * files"), so a rename or new highlights write it again from the local transcript — when both are there.
      */
-    private suspend fun retitleMarkdown(record: RecordingRecord, folderId: String) {
+    private suspend fun rewriteMarkdown(record: RecordingRecord, folderId: String) {
         val base = MetaWriter.baseName(record.meta)
         val markdown = api.findChild(folderId, TranscribeRunner.markdownFileName(base)) ?: return
         val local = record.dir / TranscribeRunner.jsonFileName(base)
@@ -394,6 +428,7 @@ class RemoteRecordings(
             if (recordings.applyTitle(recordingId, title)) retitled++
         }
         pushTitles()
+        pushMeta()
         return PullSummary(adopted, dropped, retitled)
     }
 
