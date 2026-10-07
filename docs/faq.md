@@ -46,8 +46,8 @@ recordings stored in Google Drive. See [where recordings go](setup.md#2-choose-w
 Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on
 iPhone and Mac, or a local folder that stays on your device), to the transcription provider you
 chose with your own key, between your own paired watch and phone, and, if you turn on automatic
-minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, never
-the audio or what was said. In Google Drive, Recly asks only for `drive.file`, so it sees only the
+minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, and its
+transcript when the agent asks for it; never the audio. In Google Drive, Recly asks only for `drive.file`, so it sees only the
 files it created. Nothing goes to the Recly developer, and the
 [privacy policy](https://recly.dev/policy/privacy-policy) lists every path.
 
