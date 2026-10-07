@@ -274,8 +274,9 @@ Restart after changing it: `launchctl kickstart -k gui/$(id -u)/dev.recly.events
 - **No empty transcripts.** A recording in which no speech was recognized gets an empty transcript,
   which is not announced.
 - **No edits.** Changing a transcript's text or a speaker's name in a Recly app rewrites it with the
-  mark `reclyTranscript=edited` in its appProperties; that version is not announced. Only Recly's
-  own Google client sees the mark: with [a client of your own](#using-a-google-client-of-your-own),
+  mark `reclyTranscript=edited` in its appProperties; that version is not announced when an earlier
+  version of the transcript was seen, and a transcript edited before recly-events first saw it is
+  announced once. Only Recly's own Google client sees the mark: with [a client of your own](#using-a-google-client-of-your-own),
   an edit is announced like a new transcription.
 - **Every subscription gets every event.** A delivery that fails is retried with growing waits for
   up to 24 hours; an answer of 410 ends that subscription. The inbox keeps unacknowledged events

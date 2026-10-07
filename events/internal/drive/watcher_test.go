@@ -335,6 +335,25 @@ func TestEditedTranscriptIsNotAnnouncedAgain(t *testing.T) {
 	}
 }
 
+func TestTranscriptEditedBeforeFirstSeenIsAnnounced(t *testing.T) {
+	w, fd, got, _ := setup(t)
+	_ = w.Poll(context.Background())
+	// Transcribed and edited between two polls: the feed only shows the edited version.
+	edited := txt
+	edited.MD5, edited.AppProperties = "edit1", map[string]string{"reclyTranscript": "edited"}
+	fd.pages["t1"] = ChangePage{NewStartPageToken: "t2", Changes: []Change{{FileID: "txt1", File: &edited}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("first seen edited: %v %d", err, len(*got))
+	}
+	// A later edit of the same file is not announced again.
+	again := txt
+	again.MD5, again.AppProperties = "edit2", map[string]string{"reclyTranscript": "edited"}
+	fd.pages["t2"] = ChangePage{NewStartPageToken: "t3", Changes: []Change{{FileID: "txt1", File: &again}}}
+	if err := w.Poll(context.Background()); err != nil || len(*got) != 1 {
+		t.Fatalf("second edit: %v %d", err, len(*got))
+	}
+}
+
 func TestAnnouncesImportedRecordings(t *testing.T) {
 	w, fd, got, _ := setup(t)
 	_ = w.Poll(context.Background())
