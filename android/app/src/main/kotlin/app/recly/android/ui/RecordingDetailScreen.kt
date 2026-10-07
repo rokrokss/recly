@@ -244,7 +244,8 @@ fun RecordingDetailScreen(
 
     // docs/09 "Editing and speakers": the reading page's speaker menu, its changes saved at once.
     var speakerMenu by remember(detail.recordingId) { mutableStateOf<ReaderGroup?>(null) }
-    var speakerNaming by remember(detail.recordingId) { mutableStateOf<String?>(null) }
+    // The speaker being named, and the group whose badge asked — where `Saving…` is said.
+    var speakerNaming by remember(detail.recordingId) { mutableStateOf<Pair<String, Int>?>(null) }
     var savingGroup by remember(detail.recordingId) { mutableStateOf<Pair<Int, SavePhase>?>(null) }
     val saveNow: (Int, TranscriptEdit) -> Unit = { group, edit ->
         savingGroup = group to SavePhase.SAVING
@@ -260,10 +261,10 @@ fun RecordingDetailScreen(
             savingGroup = null
         }
     }
-    speakerNaming?.let { id ->
+    speakerNaming?.let { (id, group) ->
         SpeakerNameDialog(transcript?.speakers?.firstOrNull { it.id == id }?.name, onSave = { name ->
             speakerNaming = null
-            speakerMenu?.let { saveNow(it.index, TranscriptEdit.RenameSpeaker(id, name)) }
+            saveNow(group, TranscriptEdit.RenameSpeaker(id, name))
         }, onCancel = { speakerNaming = null })
     }
     var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
@@ -359,9 +360,9 @@ fun RecordingDetailScreen(
                         speakerMenu = {
                             speakerMenu?.let { group ->
                                 SpeakerMenu(transcript, group.speaker,
-                                    onRename = { speakerNaming = it },
+                                    onRename = { speakerNaming = it to group.index },
                                     onChange = { id -> saveNow(group.index, speakerChange(transcript, group.segments, id)) },
-                                    onDismiss = { if (speakerNaming == null) speakerMenu = null })
+                                    onDismiss = { speakerMenu = null })
                             }
                         },
                         savingGroup = savingGroup?.first,

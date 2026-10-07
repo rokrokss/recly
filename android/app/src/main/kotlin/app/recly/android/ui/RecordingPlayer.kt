@@ -161,6 +161,8 @@ class RecordingPlayer(context: Context) {
      * nothing plays that the caller has not just [load]ed.
      */
     fun stop() {
+        // A finished playlist keeps "play when ready", and the next seek's queue would start playing.
+        player.playWhenReady = false
         player.stop()
         player.clearMediaItems()
         selection = RecordingPlaylist.Selection.EMPTY

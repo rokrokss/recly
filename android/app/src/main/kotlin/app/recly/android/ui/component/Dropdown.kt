@@ -49,6 +49,7 @@ import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import androidx.compose.ui.text.AnnotatedString
 
 /**
  * docs/09 "Shape": one of a set of choices that is expected to grow — the app language, the provider,
@@ -134,7 +135,7 @@ fun <T> BlueprintDropdown(
  * a list taller than [MENU_MAX_HEIGHT] scrolls instead of running off the screen.
  */
 @Composable
-fun BlueprintMenu(onDismissRequest: () -> Unit, content: @Composable () -> Unit) {
+fun BlueprintMenu(onDismissRequest: () -> Unit, maxHeight: Dp = MENU_MAX_HEIGHT, content: @Composable () -> Unit) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
     val density = LocalDensity.current
@@ -156,7 +157,7 @@ fun BlueprintMenu(onDismissRequest: () -> Unit, content: @Composable () -> Unit)
                 .border(palette.line, palette.grid, shape)
                 .background(palette.surface, shape)
                 .padding(vertical = Space.xs)
-                .heightIn(max = MENU_MAX_HEIGHT)
+                .heightIn(max = maxHeight)
                 .verticalScroll(rememberScrollState()),
         ) {
             content()
@@ -199,7 +200,12 @@ fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace
  * item's second line, so a disabled item is never a riddle (the detail's More menu).
  */
 @Composable
-fun MenuAction(label: String, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) {
+fun MenuAction(label: String, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) =
+    MenuAction(AnnotatedString(label), onClick, enabled, reason, modifier)
+
+/** The same, for a label with data in it — a time in monospace. */
+@Composable
+fun MenuAction(label: AnnotatedString, onClick: () -> Unit, enabled: Boolean = true, reason: String? = null, modifier: Modifier = Modifier) {
     val palette = blueprint
     Column(
         modifier = modifier

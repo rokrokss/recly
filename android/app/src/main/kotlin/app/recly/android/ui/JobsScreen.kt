@@ -40,6 +40,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -155,6 +157,7 @@ fun JobsScreen(
                 GlyphButton(Glyph.IMPORT, stringResource(R.string.import_audio), { picker.launch(arrayOf("audio/*", "video/*")) },
                     Modifier.testTag("import"))
             },
+            stackable = false,
         )
 
         SearchField(state.query, onSearch, Modifier.padding(start = Space.m, end = Space.m, bottom = Space.s))
@@ -265,7 +268,12 @@ fun JobsScreen(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxWidth().weight(1f),
                 ) {
-                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                    // A row that arrives on top while the list is at its top — an import — is shown, not
+                    // left above the first row the list was anchored on.
+                    val ledger = rememberLazyListState()
+                    val newest = state.items.firstOrNull()?.recordingId
+                    LaunchedEffect(newest) { if (ledger.firstVisibleItemIndex <= 1) ledger.scrollToItem(0) }
+                    LazyColumn(modifier = Modifier.fillMaxSize(), state = ledger) {
                         items(state.items, key = { it.recordingId }) { item ->
                             val open = expanded == item.recordingId
                             LedgerRow(
@@ -982,10 +990,10 @@ private fun SearchResults(hits: List<SearchHit>?, onOpen: (SearchHit) -> Unit, m
                         Text(ledgerColumn(hit.startedAt, LEDGER_TIME), style = mono.small, color = palette.textMuted, maxLines = 1)
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
-                        Text(tinted(title, if (hit.title.isNullOrBlank()) emptyList() else hit.titleRanges, tint),
+                        Text(tinted(title, if (hit.title.isNullOrBlank()) emptyList() else hit.titleRanges, tint, palette.text),
                             style = MaterialTheme.typography.titleSmall, color = palette.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         snippet?.let {
-                            Text(tinted(it.text, it.ranges, tint), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
+                            Text(tinted(it.text, it.ranges, tint, palette.text), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
@@ -997,11 +1005,11 @@ private fun SearchResults(hits: List<SearchHit>?, onOpen: (SearchHit) -> Unit, m
     }
 }
 
-/** [text] with [ranges] on the accent's 16 % — a match, in the body's own colour. */
-private fun tinted(text: String, ranges: List<SearchRange>, tint: Color): AnnotatedString = buildAnnotatedString {
+/** [text] with [ranges] on the accent's 16 % — a match, in the body colour [ink] even inside a quieter line. */
+private fun tinted(text: String, ranges: List<SearchRange>, tint: Color, ink: Color): AnnotatedString = buildAnnotatedString {
     append(text)
     ranges.forEach { range ->
         val end = (range.offset + range.length).coerceAtMost(text.length)
-        if (range.offset in 0 until end) addStyle(SpanStyle(background = tint), range.offset, end)
+        if (range.offset in 0 until end) addStyle(SpanStyle(background = tint, color = ink), range.offset, end)
     }
 }

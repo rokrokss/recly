@@ -110,7 +110,8 @@ internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscript
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
             val noAudio = detail.audio.isEmpty
-            MenuAction(stringResource(R.string.highlight_add_at, hms(playheadSec.toLong())), pick(actions.onAddHighlight), enabled = !noAudio,
+            val stamp = hms(playheadSec.toLong())
+            MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight), enabled = !noAudio,
                 reason = if (noAudio) stringResource(R.string.player_no_audio) else null, modifier = Modifier.testTag("more-highlight"))
         }
     }
@@ -271,7 +272,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 Box(Modifier.align(Alignment.TopEnd).offset((-4).dp, 4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(Radius.badge)))
             }
         }
-        if (open) BlueprintMenu(onDismissRequest = { open = false }) {
+        // Tall enough for the six speeds and the switch together: the switch is the one line that must not scroll away.
+        if (open) BlueprintMenu(onDismissRequest = { open = false }, maxHeight = 400.dp) {
             PLAYBACK_SPEEDS.forEach { option ->
                 MenuOption(speedLabel(option), option == speed, onSelect = { open = false; if (option != speed) onSpeed(option) }, monospace = true)
             }
@@ -295,7 +297,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
 @Composable
 internal fun HighlightMenu(atSec: Double, onGo: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
     BlueprintMenu(onDismissRequest = onDismiss) {
-        MenuAction(stringResource(R.string.transcript_seek, hms(atSec.toLong())), { onDismiss(); onGo() }, modifier = Modifier.testTag("highlight-go"))
+        val stamp = hms(atSec.toLong())
+        MenuAction(monoStamp(stringResource(R.string.transcript_seek, stamp), stamp, mono.bodySmall), { onDismiss(); onGo() }, modifier = Modifier.testTag("highlight-go"))
         MenuAction(stringResource(R.string.highlight_remove), { onDismiss(); onRemove() }, modifier = Modifier.testTag("highlight-remove"))
     }
 }

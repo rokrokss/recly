@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import app.recly.android.work.WaveformPrecompute
+import app.recly.android.work.WorkScheduler
 import recly.core.message.CoreMessage
 import recly.core.platform.Logger
 import recly.core.recording.ImportResult
@@ -61,7 +63,12 @@ class AudioImports private constructor(private val context: Context) {
                 ?: throw java.io.FileNotFoundException(uri.toString())
             opened.use { input -> copy.outputStream().use { input.copyTo(it) } }
             when (val result = core.importAudio(copy.path, name, null, AndroidAudioImporter(Dispatchers.Default))) {
-                is ImportResult.Imported -> Unit
+                is ImportResult.Imported -> {
+                    // Queued by the core like a stopped recording: the scheduler is woken the way the
+                    // recorder's stop wakes it, and the waveform is drawn ahead of the first open.
+                    WorkScheduler(context).onJobsDue()
+                    WaveformPrecompute.request(core, result.recordingId)
+                }
                 is ImportResult.Failed -> _failure.value = result.reason
             }
         } catch (e: CancellationException) {

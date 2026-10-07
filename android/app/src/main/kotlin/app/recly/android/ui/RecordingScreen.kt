@@ -18,6 +18,9 @@ import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import app.recly.android.ui.component.Glyph
@@ -242,12 +245,18 @@ fun RecordingSection(
             // allowed to be composable; `joinToString`'s transform would not be). While recording it
             // says only what the Highlight node just marked, its time in monospace.
             val highlighted = state.highlighted?.takeIf { (recorder as? RecorderState.Recording)?.recordingId == it.recordingId }
+            val said = statusLine(recorder, state.messages).map { it.text() }.joinToString(" · ")
+            // Blank, the line holds an unseen sentence of the app's own script, so a Hangul line arriving —
+            // taller than an empty one — does not move the nodes above it (the watch's own rule).
+            val stamp = hms(highlighted?.sec ?: 0)
+            val blank = highlighted == null && said.isEmpty()
             Text(
-                if (highlighted != null) monoStamp(stringResource(R.string.highlighted_at, hms(highlighted.sec)), hms(highlighted.sec), mono.bodySmall)
-                else AnnotatedString(statusLine(recorder, state.messages).map { it.text() }.joinToString(" · ")),
-                modifier = Modifier.padding(horizontal = Space.m).testTag("status"),
+                if (highlighted != null || blank) monoStamp(stringResource(R.string.highlighted_at, stamp), stamp, mono.bodySmall)
+                else AnnotatedString(said),
+                modifier = Modifier.padding(horizontal = Space.m).testTag("status")
+                    .then(if (blank) Modifier.clearAndSetSemantics {} else Modifier),
                 style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted,
+                color = if (blank) Color.Transparent else palette.textMuted,
                 textAlign = TextAlign.Center,
             )
             // docs/13 deliverable 1: a refusal is not something the app can retry its way out of —
@@ -421,7 +430,8 @@ private const val HIGHLIGHT_FLASH_MS = 150L
 internal fun monoStamp(text: String, stamp: String, style: TextStyle): AnnotatedString = buildAnnotatedString {
     append(text)
     val at = text.indexOf(stamp)
-    if (at >= 0) addStyle(style.toSpanStyle(), at, at + stamp.length)
+    // The face only: a size or line height of its own would make the line taller and move the nodes above it.
+    if (at >= 0) addStyle(SpanStyle(fontFamily = style.fontFamily), at, at + stamp.length)
 }
 
 /**
