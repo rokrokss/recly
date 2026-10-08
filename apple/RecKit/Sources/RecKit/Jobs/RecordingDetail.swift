@@ -353,7 +353,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var retranscribeReason: String? {
         if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
         if transcriptionBusy { return busyReason }
-        if !uploaded { return RecKitStrings.localized("Not uploaded yet") }
+        if !uploaded { return RecKitStrings.localized(waitingForDrive ? "Waiting for Drive" : "Not uploaded yet") }
         return nil
     }
 
