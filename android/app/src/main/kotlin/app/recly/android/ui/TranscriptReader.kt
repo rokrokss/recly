@@ -222,24 +222,22 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
 }
 
 /**
- * A highlight inside a group: a 6dp filled accent square right after its time; a tap opens Go to / Remove.
- * The row lays out only the square, so it sits beside the time with no gap — but what takes the tap is a
- * 48dp square centred on it ([MinTouch]), which reaches past the row's own 6dp slot (docs/09 "Accessibility").
+ * A highlight inside a group: a 6dp filled accent square after its time; a tap opens Go to / Remove. The
+ * square stands in the middle of its own 48dp target ([MinTouch], docs/09 "Accessibility"), laid out
+ * as such: a target that only reached past a 6dp slot would take the taps meant for the time beside it.
  */
 @Composable
 internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
     val label = stringResource(R.string.highlight_tick, hms(atSec.toLong()))
-    Box(Modifier.size(6.dp), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .requiredSize(MinTouch)
-                .clickable(role = Role.Button, onClick = onClick)
-                .semantics { contentDescription = label }
-                .testTag("transcript-highlight"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(Modifier.size(6.dp).background(blueprint.accent))
-        }
+    Box(
+        Modifier
+            .size(MinTouch)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label }
+            .testTag("transcript-highlight"),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(6.dp).background(blueprint.accent))
     }
 }
 

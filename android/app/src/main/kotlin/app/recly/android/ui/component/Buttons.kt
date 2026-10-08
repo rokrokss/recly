@@ -32,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
 import app.recly.android.R
 import app.recly.android.ui.theme.ButtonMinWidth
@@ -193,10 +194,9 @@ fun BlueprintChip(
         Box(contentAlignment = Alignment.Center) {
             Text("$SELECTION_MARK $label", style = style, color = Color.Transparent, maxLines = 1,
                 modifier = Modifier.clearAndSetSemantics {})
-            Row {
-                if (selected) Text("$SELECTION_MARK ", style = style, color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics {})
-                Text(label, style = style, color = ink, maxLines = 1)
-            }
+            // One line of text, so the mark sits on the label's own baseline; a reader hears the label.
+            Text(if (selected) "$SELECTION_MARK $label" else label, style = style, color = ink, maxLines = 1,
+                modifier = Modifier.clearAndSetSemantics { contentDescription = label })
         }
     }
 }
