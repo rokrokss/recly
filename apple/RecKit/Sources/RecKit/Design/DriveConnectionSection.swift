@@ -45,8 +45,10 @@ public struct DriveConnectionSection: View {
         }
         if connected || pending || disconnecting {
             SectionRow(title: account ?? loc(disconnecting ? "Google Drive" : connected ? "Drive connected" : "Drive connection needs attention")) {
+                // 2026-10-08 §10: quiet, not red — red is for irreversible deletion and the recording
+                // state, and a disconnect asks first and can be undone by connecting again.
                 BlueprintButton(loc(disconnecting ? "Disconnecting…" : "Disconnect Drive"),
-                                tone: .danger, action: disconnect)
+                                tone: .quiet, action: disconnect)
                     .disabled(disconnecting)
                     .accessibilityIdentifier("disconnect")
             }

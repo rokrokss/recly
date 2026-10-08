@@ -28,7 +28,8 @@ final class LocalFolderStorageTests: XCTestCase {
         let state = Recents.stateLabel(record: record(), job: job(.waiting), lastError: unavailable)
 
         XCTAssertEqual(state, "Waiting for the local folder")
-        XCTAssertEqual(LedgerStatus.forRecent(state: state), LedgerStatus(code: "WAITING", tone: .warning))
+        XCTAssertEqual(LedgerStatus.forRecent(state: state), LedgerStatus(code: "WAITING", tone: .warning, word: "Waiting for folder"))
+        XCTAssertEqual(LedgerStatus.forRecent(state: state).label, "Waiting for folder")
         let waiting = item(state: state, lastError: unavailable)
         XCTAssertEqual(
             waiting.reason?.sentence,

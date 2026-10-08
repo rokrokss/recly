@@ -1,3 +1,4 @@
+import ReclyCore
 import SwiftUI
 
 /// One node of the recording dashboard: a label and the value under it (docs/09 screen principle 1).
@@ -63,11 +64,43 @@ public struct StateNode: View {
         .overlay {
             RoundedRectangle(cornerRadius: Radius.node)
                 .strokeBorder(
-                    spec.active ? blueprint.palette.text : blueprint.palette.grid,
+                    // 2026-10-08 §12: a quiet node still clears 3:1 against the page, light and dark —
+                    // the input border's level, not the decorative grid's.
+                    spec.active ? blueprint.palette.text : blueprint.palette.inputBorder,
                     lineWidth: blueprint.line
                 )
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// 2026-10-08 §1b·§1c: what the dashboard's Device and State nodes say, as words rather than as the
+/// codes the core and the logs use. Shared by the phone's Record screen and the Mac's popover, so the
+/// two say the same thing.
+public enum StateNodeWords {
+    /// The recorder's own state.
+    public static func recorder(_ state: RecorderState) -> String {
+        switch state {
+        case .idle: return RecKitStrings.localized("Ready")
+        case .starting: return RecKitStrings.localized("Starting")
+        case .recording: return RecKitStrings.localized("Recording")
+        case .stopping: return RecKitStrings.localized("Saving")
+        }
+    }
+
+    /// The app at work while the recorder is idle: a job of its own uploading.
+    public static var uploading: String { RecKitStrings.localized("Uploading") }
+
+    /// The app at work while the recorder is idle: a recording arriving from the watch.
+    public static var receiving: String { RecKitStrings.localized("Receiving") }
+
+    /// The Device node: which kind of device this is.
+    public static func device(_ source: Source) -> String {
+        switch source {
+        case .phone: return RecKitStrings.localized("Phone")
+        case .desktop: return RecKitStrings.localized("Desktop")
+        default: return source.name.lowercased()
+        }
     }
 }
 

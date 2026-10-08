@@ -77,11 +77,31 @@ final class LedgerFormatTests: XCTestCase {
         XCTAssertEqual(LedgerFormat.clock(-5), "00:00:00")
     }
 
-    /// The ledger's length column keeps the shape Android and Windows write in it: minutes under
-    /// the hour, the hour unpadded past it, and the placeholder for a length that is not in yet.
-    func testTheLengthColumnKeepsItsShortShape() {
+    /// 2026-10-08 §3: the ledger's length column is `MM:SS` under the hour and `HH:MM:SS` from it, and
+    /// the placeholder for a length that is not in yet.
+    func testTheLengthColumnIsMinutesUnderTheHourAndHoursFromIt() {
         XCTAssertEqual(LedgerFormat.length(250.9), "04:10")
-        XCTAssertEqual(LedgerFormat.length(3753), "1:02:33")
+        XCTAssertEqual(LedgerFormat.length(3753), "01:02:33")
         XCTAssertEqual(LedgerFormat.length(nil), LedgerFormat.noLength)
+    }
+
+    /// 2026-10-08 §3: a live timer follows the time itself — `00:12` … `59:59`, then `01:00:00`.
+    func testALiveTimerGrowsItsHoursAtTheHour() {
+        XCTAssertEqual(LedgerFormat.elapsed(0), "00:00")
+        XCTAssertEqual(LedgerFormat.elapsed(12), "00:12")
+        XCTAssertEqual(LedgerFormat.elapsed(3599), "59:59")
+        XCTAssertEqual(LedgerFormat.elapsed(3600), "01:00:00")
+        XCTAssertEqual(LedgerFormat.elapsed(25 * 3600 + 3), "25:00:03")
+        XCTAssertEqual(LedgerFormat.elapsed(-5), "00:00")
+    }
+
+    /// 2026-10-08 §3: inside one recording every time takes the shape the recording's length takes,
+    /// so they are one width; with no length known, the time shapes itself.
+    func testTimesInsideARecordingAreShapedByItsLength() {
+        XCTAssertEqual(LedgerFormat.stamp(75, total: 600), "01:15")
+        XCTAssertEqual(LedgerFormat.stamp(75, total: 3700), "00:01:15")
+        XCTAssertEqual(LedgerFormat.stamp(3650, total: 3700), "01:00:50")
+        XCTAssertEqual(LedgerFormat.stamp(75, total: nil), "01:15")
+        XCTAssertEqual(LedgerFormat.stamp(75, total: 0), "01:15")
     }
 }

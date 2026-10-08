@@ -99,6 +99,8 @@ final class TranscriptDraft: ObservableObject {
 /// usable) and its speaker. The phone's Cancel · Save sit under the fields, above the keyboard.
 struct TranscriptEditor: View {
     @ObservedObject var draft: TranscriptDraft
+    /// The recording's whole length, which shapes every time drawn here (2026-10-08 §3).
+    let lengthSec: Double?
     let canSeek: Bool
     /// The storage the files are rewritten in: the agent line is about Drive only.
     let drive: Bool
@@ -138,6 +140,11 @@ struct TranscriptEditor: View {
             .background(blueprint.palette.surface)
             #endif
         }
+        #if os(iOS)
+        // 2026-10-08 §9: the page is a sheet the user can swipe away — but not with changes in it, which
+        // only leave through Cancel and its `Discard your changes?`.
+        .interactiveDismissDisabled(draft.changed)
+        #endif
         .blueprintDialogOverlay(isPresented: Binding(get: { renaming != nil }, set: { if !$0 { renaming = nil } })) {
             SpeakerNameDialog(name: $typedName) {
                 if let id = renaming { draft.rename(id, typedName) }
@@ -149,13 +156,13 @@ struct TranscriptEditor: View {
     }
 
     private func row(_ index: Int, _ segment: TranscriptSegment) -> some View {
-        let stamp = LedgerFormat.clock(Int(segment.start))
+        let stamp = LedgerFormat.stamp(Int(segment.start), total: lengthSec)
         let speaker = draft.speakers[index]
         return VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
                 BlueprintButton(stamp, tone: .quiet, mono: true) { onSeek(segment.start) }
                     .disabled(!canSeek)
-                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", stamp)))
+                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(segment.start)))))
                 DraftSpeakerMenu(draft: draft, index: index) {
                     typedName = draft.names[$0] ?? ""
                     renaming = $0

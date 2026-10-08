@@ -68,8 +68,9 @@ struct PlaybackSpeedChip: View {
                 .padding(.horizontal, Space.s)
                 .frame(minWidth: minTouch, minHeight: minTouch)
                 .overlay {
+                    // 2026-10-08 §12: a dropdown box clears 3:1 against the page, light and dark.
                     RoundedRectangle(cornerRadius: Radius.node)
-                        .strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+                        .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
                         .padding(.vertical, 6)
                 }
                 .overlay(alignment: .topTrailing) {

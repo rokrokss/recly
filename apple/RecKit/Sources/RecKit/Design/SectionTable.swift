@@ -12,23 +12,48 @@ public struct ScreenHeader<Trailing: View>: View {
     private let meta: String?
     private let trailing: Trailing
     private let trailingAlignment: HorizontalAlignment
+    private let oneRow: Bool
 
-    public init(title: String, meta: String? = nil, trailingAlignment: HorizontalAlignment = .leading, @ViewBuilder trailing: () -> Trailing) {
+    /// - Parameter oneRow: the title and the trailing controls stay on one row, the title cut to one
+    ///   line rather than the controls wrapping under it — a header whose controls are icons
+    ///   (2026-10-08 §9).
+    public init(
+        title: String,
+        meta: String? = nil,
+        trailingAlignment: HorizontalAlignment = .leading,
+        oneRow: Bool = false,
+        @ViewBuilder trailing: () -> Trailing
+    ) {
         self.title = title
         self.meta = meta
         self.trailing = trailing()
         self.trailingAlignment = trailingAlignment
+        self.oneRow = oneRow
     }
 
     public var body: some View {
+        if oneRow {
+            HStack(spacing: Space.s) {
+                heading(lines: 1)
+                trailing.fixedSize(horizontal: true, vertical: false)
+            }
+            .padding(.horizontal, Space.m)
+            .padding(.top, Space.m)
+            .padding(.bottom, 12)
+        } else {
+            wrapping
+        }
+    }
+
+    private var wrapping: some View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
-                heading.fixedSize(horizontal: true, vertical: false)
+                heading(lines: 3).fixedSize(horizontal: true, vertical: false)
                 Spacer(minLength: 0)
                 trailing.fixedSize(horizontal: true, vertical: false)
             }
             VStack(alignment: .leading, spacing: Space.s) {
-                heading
+                heading(lines: 3)
                 FlowLayout(alignment: trailingAlignment) { trailing }
                     .frame(maxWidth: .infinity, alignment: Alignment(horizontal: trailingAlignment, vertical: .center))
             }
@@ -37,12 +62,12 @@ public struct ScreenHeader<Trailing: View>: View {
         .padding(.top, Space.m)
         .padding(.bottom, 12)
     }
-    private var heading: some View {
+    private func heading(lines: Int) -> some View {
             VStack(alignment: .leading, spacing: Space.xs) {
                 Text(verbatim: title)
                     .font(blueprint.fonts.sans(TypeSize.body, weight: .semibold))
                     .foregroundStyle(blueprint.palette.text)
-                    .lineLimit(3)
+                    .lineLimit(lines)
                 if let meta {
                     Text(verbatim: meta)
                         .font(blueprint.fonts.monoSmall)
