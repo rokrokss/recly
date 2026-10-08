@@ -160,8 +160,9 @@ public struct DisconnectDialog: View {
     public var body: some View {
         BlueprintDialog(title: loc("Disconnect Recly from Google?")) {
             BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { cancel() }
-            // 2026-10-08 §10: quiet like the settings' own Disconnect — nothing is deleted here.
-            BlueprintButton(loc("Disconnect"), tone: .quiet) { confirm(false) }
+            // 2026-10-08 §10: the dialog's answer, filled in the accent on every shell — not red, as
+            // nothing is deleted here. The settings row's own Disconnect stays quiet.
+            BlueprintButton(loc("Disconnect"), tone: .primary) { confirm(false) }
                 .disabled(!prompt.canConfirm)
                 .accessibilityIdentifier("disconnect-confirm")
         } content: {

@@ -25306,13 +25306,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Uploads waiting: %@"
+            "value": "Waiting for Drive: %@"
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "업로드 대기 %@건"
+            "value": "Drive 연결 대기 %@건"
           }
         },
         "ja": {
