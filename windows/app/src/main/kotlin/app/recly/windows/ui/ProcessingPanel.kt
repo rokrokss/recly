@@ -36,6 +36,7 @@ import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.model.Language
+import recly.core.storage.StorageKind
 import recly.core.workflow.*
 
 @Composable
@@ -60,7 +61,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
-        StorageFolder(draft.folder, { v -> model.edit { it.folder = v } }, strings)
+        // Only for recordings kept in a local folder (2026-10-09): Drive always files them a folder a month.
+        if (showsFolderChoice(model.stored)) StorageFolder(draft.folder, { v -> model.edit { it.folder = v } }, strings)
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
         SectionHeader(strings[Str.PROCESSING_TRANSCRIPTION])
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -272,9 +274,18 @@ private fun TermChip(term: String, removeLabel: String, onRemove: () -> Unit) {
 }
 
 /**
- * docs/05 "Fixed processing settings": the Drive folder template as two chips (2026-10-08) — a folder a month, or
- * one folder — left-aligned as desktop chips are, with the folder today's recording would go to under them in
- * monospace. The stored value stays the template; any other than [SINGLE_FOLDER] reads as Monthly and is
+ * Whether the panel offers the folder choice: only when this PC keeps its recordings in a local folder, as the
+ * stored settings say (2026-10-09, user decision) — Google Drive always uses a folder a month
+ * ([ProcessingStorage.uploadFolder]). The storage chips save a new revision that the panel reads back
+ * ([ProcessingViewModel.storageChanged]), so the row comes and goes with them.
+ */
+internal fun showsFolderChoice(stored: ProcessingSettingsState): Boolean =
+    (stored as? ProcessingSettingsState.Ready)?.document?.settings?.storage?.provider == StorageKind.FOLDER
+
+/**
+ * docs/05 "Fixed processing settings": the local folder's folder template as two chips (2026-10-08) — a folder a
+ * month, or one folder — left-aligned as desktop chips are, with the folder today's recording would go to under
+ * them in monospace. The stored value stays the template; any other than [SINGLE_FOLDER] reads as Monthly and is
  * rewritten only when a chip is tapped, so an unrelated Save never changes a custom one.
  */
 @Composable
