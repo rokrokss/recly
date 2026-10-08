@@ -376,7 +376,7 @@
     <string name="node_state_ready">準備完了</string>
     <string name="node_state_starting">起動中</string>
     <string name="node_state_saving">保存中</string>
-    <string name="node_device_phone">スマートフォン</string>
+    <string name="node_device_phone">スマホ</string>
     <string name="detail_waiting_drive">Drive待ちです。アップロードと文字起こしにはDriveに接続してください。</string>
     <string name="processing_folder_monthly">月ごとのフォルダ</string>
     <string name="processing_folder_single">1つのフォルダ</string>
