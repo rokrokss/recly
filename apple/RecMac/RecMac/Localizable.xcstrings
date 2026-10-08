@@ -13449,13 +13449,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.\n\nKorea — you may record a conversation you are part of (recording one you are not is prohibited).\nUnited States — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA need every participant's consent.\nEU — the GDPR asks for notice and a lawful basis, and Denmark requires explicit consent for business calls."
+            "value": "This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다."
+            "value": "이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다."
           }
         },
         "ja": {
@@ -16585,6 +16585,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "แจ้ง ChatGPT เมื่อมีการบันทึกเสียงใหม่"
+          }
+        }
+      }
+    },
+    "Discard recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard recording"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음 버리기"
           }
         }
       }

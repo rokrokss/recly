@@ -82,15 +82,15 @@ struct MenuPopover: View {
 
     private var header: some View {
         VStack(spacing: 0) {
-            ScreenHeader(
-                title: "Recly",
-                meta: "\(Source.desktop.name.lowercased()) · \(model.deviceId.prefix(8))"
-            )
+            // 2026-10-08 §2: the app's name and nothing under it — the device id is in Settings → About.
+            ScreenHeader(title: "Recly")
             StateNodeRow(specs).padding(.horizontal, Space.m)
+            // 2026-10-08 §12: a capture finding its way back is a wait, not a failure — the warning
+            // tone; red stays for deletion and for the recording state.
             if model.isRecording, model.microphoneRecovering {
                 Text(verbatim: loc("Reconnecting microphone…"))
                     .font(blueprint.fonts.monoSmall)
-                    .foregroundStyle(blueprint.palette.danger)
+                    .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
@@ -107,7 +107,7 @@ struct MenuPopover: View {
                     ? "System audio unavailable. Microphone recording continues."
                     : "Reconnecting system audio…"))
                     .font(blueprint.fonts.monoSmall)
-                    .foregroundStyle(blueprint.palette.danger)
+                    .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
@@ -126,14 +126,18 @@ struct MenuPopover: View {
             // full-width mono clock Windows and the iPhone draw, not a readout tucked in beside
             // the buttons. docs/09 screen principle 6 puts the track being written directly under it: the
             // answer to "is it hearing me" that a clock alone cannot give.
-            if model.isRecording {
+            // 2026-10-08 §4: and while the recording is being saved, at its final length — the
+            // waveform goes with the capture.
+            if model.isRecording || (model.state == .stopping && !model.elapsed.isEmpty) {
                 VStack(spacing: Space.s) {
-                    MonoTimer(model.elapsed, color: blueprint.palette.danger)
+                    MonoTimer(model.elapsed, color: model.isRecording ? blueprint.palette.danger : nil)
                         .frame(maxWidth: .infinity)
                         .accessibilityIdentifier("elapsed")
-                    LiveWaveformView(peaks: model.livePeaks)
-                        .frame(maxWidth: .infinity)
-                        .accessibilityIdentifier("live-waveform")
+                    if model.isRecording {
+                        LiveWaveformView(peaks: model.livePeaks)
+                            .frame(maxWidth: .infinity)
+                            .accessibilityIdentifier("live-waveform")
+                    }
                 }
                 .padding(.horizontal, Space.m)
                 .padding(.top, Space.s)
@@ -171,41 +175,32 @@ struct MenuPopover: View {
 
     private var specs: [NodeSpec] {
         [
-            NodeSpec(label: loc("Device"), value: Source.desktop.name.lowercased()),
+            NodeSpec(label: loc("Device"), value: StateNodeWords.device(.desktop)),
             NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
             stateNode,
         ]
     }
 
-    /// The recorder's own state comes first; `REC` is never displaced. While it is idle and a job in
-    /// the ledger is running, the node says `UPLOADING` with a turning loader instead of `IDLE` —
+    /// The recorder's own state comes first; `Recording` is never displaced. While it is idle and a job
+    /// in the ledger is running, the node says `Uploading` with a turning loader instead of `Ready` —
     /// otherwise nothing above the list says the app is doing anything at all.
     private var stateNode: NodeSpec {
         if model.state == .idle, Recents.uploading(model.recents) {
             return NodeSpec(
                 label: loc("State"),
-                value: "UPLOADING",
+                value: StateNodeWords.uploading,
                 valueColor: blueprint.palette.accent,
                 active: true,
                 busy: true
             )
         }
+        // 2026-10-08 §1b: a word, in monospace, and never colour alone.
         return NodeSpec(
             label: loc("State"),
-            value: stateCode,
+            value: StateNodeWords.recorder(model.state),
             valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
             active: model.isRecording
         )
-    }
-
-    /// docs/09: state is a code, in monospace, and never colour alone.
-    private var stateCode: String {
-        switch model.state {
-        case .idle: return "IDLE"
-        case .starting: return "STARTING"
-        case .recording: return "REC"
-        case .stopping: return "STOPPING"
-        }
     }
 
     private var footer: some View {

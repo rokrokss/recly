@@ -23,15 +23,22 @@ struct ShareMenu: View {
                 .disabled(reason(format) != nil)
             }
             Divider()
-            Button(RecKitStrings.localized("Copy all")) {
+            // 2026-10-08 §12: an item that is off says why, on its second line.
+            Button {
                 detail.copyAll()
                 copied = true
+            } label: {
+                Text(verbatim: RecKitStrings.localized("Copy all"))
+                if detail.document == nil { Text(verbatim: RecKitStrings.localized("No transcript yet")) }
             }
             .disabled(detail.document == nil)
             Menu(loc("Save as…")) {
                 ForEach(ShareFormat.allCases) { format in
-                    Button(format.title) { save(format) }
-                        .disabled(reason(format) != nil)
+                    Button { save(format) } label: {
+                        Text(verbatim: format.title)
+                        if let reason = reason(format) { Text(verbatim: reason) }
+                    }
+                    .disabled(reason(format) != nil)
                 }
             }
         } label: {

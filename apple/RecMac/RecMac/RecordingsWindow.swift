@@ -195,11 +195,13 @@ struct RecordingsWindow: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: "",
+            // 2026-10-08 §8: the transcript's first words under the title, when this Mac has them.
+            subtitle: item.preview ?? "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
                 title: item.titleLabel,
+                preview: item.preview,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
                 state: item.stateLabel

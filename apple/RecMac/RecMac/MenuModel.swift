@@ -571,6 +571,9 @@ final class MenuModel: ObservableObject {
             capturedProcessingProvider = processing?.providerSummary
             startTicking()
         }
+        // 2026-10-08 §4: the clock keeps the recording's length while it is saved, and is back to
+        // nothing only once the recorder is idle again.
+        if next == .idle { elapsed = "" }
         if !isRecording, wasRecording {
             stopTicking()
             capturedOutputDevice = nil
@@ -683,7 +686,8 @@ final class MenuModel: ObservableObject {
             return nil
         }
         logger.info("shell.highlight id=\(recordingId, privacy: .public)")
-        let at = LedgerFormat.clock(Int(atSec))
+        // 2026-10-08 §3: in the running timer's shape.
+        let at = LedgerFormat.elapsed(Int(atSec))
         highlighted = at
         return at
     }
@@ -1072,6 +1076,8 @@ final class MenuModel: ObservableObject {
         let model = RecordingDetailModel(core: core, recordingId: recordingId, title: title, playbackGate: playbackGate)
         // `Transcribe again` queues a job; the executor runs it now rather than at its next look.
         model.jobsDue = { [weak self] in self?.runner?.jobsDue() }
+        // 2026-10-08 §7: a recording waiting for Drive offers the connection on its own page.
+        model.connectDrive = { [weak self] in self?.signIn() }
         detail = model
     }
 
@@ -1232,10 +1238,10 @@ final class MenuModel: ObservableObject {
         self.ticker = ticker
     }
 
+    /// The clock stops where the recording did; [adopt] clears it once the save is over.
     private func stopTicking() {
         ticker?.invalidate()
         ticker = nil
-        elapsed = ""
     }
 
     private func tick() {
@@ -1248,7 +1254,7 @@ final class MenuModel: ObservableObject {
         microphoneRecovering = recorder?.microphoneRecovering ?? false
         captureHealth = recorder?.systemCaptureHealth ?? .healthy
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
-        elapsed = LedgerFormat.clock(total)
+        elapsed = LedgerFormat.elapsed(total)
     }
 
     /// docs/09 screen principle 6: the levels behind the live strip, asked for ten times a second by the
@@ -1289,9 +1295,8 @@ final class MenuModel: ObservableObject {
         guard mode == .meeting, consentReminder else { return true }
         let alert = NSAlert()
         alert.messageText = AppStrings.localized("Did you tell the participants about the recording?")
-        // docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app tries
-        // to guess: the three lines are what the user needs to know that the question is not
-        // rhetorical.
+        // docs/research/02 §Consent · law. The reminder and nothing else (2026-10-08 §11): the rules
+        // by jurisdiction are behind the link under it, not in the question.
         alert.informativeText = AppStrings.localized("consent.body")
         alert.addButton(withTitle: AppStrings.localized("I told them · Start recording"))
         alert.addButton(withTitle: AppStrings.localized("Cancel"))
