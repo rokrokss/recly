@@ -181,8 +181,8 @@ recording.**
   and in the Mac and Windows **Details** windows.
 - **In your storage**: one folder per recording, for example
   `recly/memo/2026-10/20261006T010000Z_phone_01J9ABCD/`, holding the audio in parts of about 15
-  minutes, `….meta.json`, and with transcription `….transcript.txt` and `….transcript.json`. Change the
-  folder pattern under **Recording processing** → **Storage folder**.
+  minutes, `….meta.json`, and with transcription `….transcript.txt` and `….transcript.json`. Choose
+  **Monthly folders** or **One folder** (`recly/memo/`) under **Recording processing** → **Storage folder**.
 
 | In **Details** | What it does |
 |---|---|
