@@ -332,9 +332,6 @@ public enum Recents {
         case .waiting where message == .folderUnavailable: return "Waiting for the local folder"
         case .waiting: return "Retry pending"
         case .done: return "Done"
-        // 2026-10-08 §7: a job that stopped only because Drive is not connected waits for Drive, as a
-        // parked one does — the remedy is the connection, not a retry of a failure.
-        case .failed where JobAlerts.waitsForDrive(status: .failed, lastError: lastError): return "Sign-in needed"
         case .failed: return "Failed"
         case .needsConsent: return "Transfer permission needed"
         // docs/05 "Fixed processing settings": a wait for the on-device model, not a failure — the download

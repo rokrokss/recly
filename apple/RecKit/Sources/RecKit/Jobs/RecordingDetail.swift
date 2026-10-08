@@ -383,7 +383,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             let mine = all.filter { $0.recordingId == recordingId }
             let running = mine.filter { !Self.settled.contains($0.status) }
             transcriptionBusy = !running.isEmpty
-            waitingForDrive = await Self.waitsForDrive(mine) { [core] in try await core.jobs.steps(jobId: $0) }
+            waitingForDrive = Self.waitsForDrive(mine)
             retranscribing = running.first { $0.retranscription }.map { job in
                 job.workflow?.steps.contains { $0 is Step.LocalTranscribe } == true ? .local : .external
             }
@@ -392,15 +392,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     private static let settled: Set<JobStatus> = [.done, .failed, .skippedShort]
 
-    /// Whether the newest job of the recording — the one the list's row reads — is held up only by
-    /// Drive not being connected ([JobAlerts.waitsForDrive]).
-    static func waitsForDrive(_ jobs: [ReclyCore.Job], steps: (String) async throws -> [StepRun]) async -> Bool {
-        guard let newest = jobs.max(by: { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }) else {
-            return false
-        }
-        if newest.status == .needsAuth { return true }
-        guard newest.status == .failed, let runs = try? await steps(newest.id) else { return false }
-        return JobAlerts.waitsForDrive(status: .failed, lastError: JobAlerts.blockingError(steps: runs))
+    /// Whether the newest job of the recording — the one the list's row reads — waits for a Drive
+    /// connection (`NEEDS_AUTH`, 2026-10-08 §7).
+    static func waitsForDrive(_ jobs: [ReclyCore.Job]) -> Bool {
+        jobs.max(by: { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() })?.status == .needsAuth
     }
 
     @discardableResult

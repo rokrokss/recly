@@ -83,36 +83,16 @@ final class UxDecisionsTests: XCTestCase {
 
     // MARK: - §7: a job held up only by Drive
 
-    func testAFailureThatOnlyWantsDriveReadsAsAWaitForDrive() {
-        let needsAuth = CoreMessage.needsAuth.code(arg: nil, detail: nil)
-        let reauth = CoreMessage.driveReauth.code(arg: nil, detail: nil)
-        let spent = CoreMessage.retryBudgetSpent.code(arg: needsAuth, detail: nil)
-        let record = LocalFolderStorageTests.record()
-        for code in [needsAuth, reauth, spent] {
-            XCTAssertEqual(Recents.stateLabel(record: record, job: job(.failed), lastError: code), "Sign-in needed", code)
-            XCTAssertEqual(JobAlerts.reason(status: .failed, lastError: code), .needsAuth, code)
-            XCTAssertTrue(JobAlerts.waitsForDrive(status: .failed, lastError: code), code)
-        }
+    func testAWaitForDriveIsNeverTheRedOfAFailure() {
+        XCTAssertEqual(Recents.stateLabel(record: LocalFolderStorageTests.record(), job: job(.needsAuth), lastError: nil), "Sign-in needed")
         XCTAssertEqual(LedgerStatus.forRecent(state: "Sign-in needed").tone, .neutral, "never the red of a failure")
-        XCTAssertTrue(JobAlerts.waitsForDrive(status: .needsAuth, lastError: nil))
-    }
-
-    func testAnyOtherFailureIsStillAFailure() {
-        let other = CoreMessage.providerError.code(arg: nil, detail: nil)
-        XCTAssertEqual(Recents.stateLabel(record: LocalFolderStorageTests.record(), job: job(.failed), lastError: other), "Failed")
-        XCTAssertFalse(JobAlerts.waitsForDrive(status: .failed, lastError: other))
-        XCTAssertFalse(JobAlerts.waitsForDrive(status: .failed, lastError: nil))
-        XCTAssertFalse(JobAlerts.waitsForDrive(status: .waiting, lastError: CoreMessage.needsAuth.code(arg: nil, detail: nil)))
     }
 
     @MainActor
-    func testTheDetailWaitsForDriveOffTheNewestJob() async {
-        let parked = await RecordingDetailModel.waitsForDrive([job(.needsAuth)]) { _ in [] }
-        XCTAssertTrue(parked)
-        let done = await RecordingDetailModel.waitsForDrive([job(.done)]) { _ in [] }
-        XCTAssertFalse(done)
-        let none = await RecordingDetailModel.waitsForDrive([]) { _ in [] }
-        XCTAssertFalse(none)
+    func testTheDetailWaitsForDriveOffTheNewestJob() {
+        XCTAssertTrue(RecordingDetailModel.waitsForDrive([job(.needsAuth)]))
+        XCTAssertFalse(RecordingDetailModel.waitsForDrive([job(.done)]))
+        XCTAssertFalse(RecordingDetailModel.waitsForDrive([]))
     }
 
     // MARK: - §10: the folder
