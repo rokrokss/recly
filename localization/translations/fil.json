@@ -401,13 +401,11 @@
   "Unknown": "Hindi alam",
   "Untitled": "Walang pamagat",
   "Upload on Wi-Fi only": "Mag-upload sa Wi-Fi lang",
-  "Upload waiting": "Naghihintay ang pag-upload",
   "Uploading": "Ina-upload",
   "Uploading on another device": "Ina-upload sa ibang device",
   "Uploading to Drive": "Ina-upload sa Drive",
   "Uploading to iCloud": "Ina-upload sa iCloud",
   "Uploads": "Mga Upload",
-  "Uploads waiting: {0}": "Mga upload na naghihintay: {0}",
   "Waiting": "Naghihintay",
   "Waiting for Wi-Fi": "Naghihintay ng Wi-Fi",
   "Waiting for iCloud": "Naghihintay sa iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "I-discard ang recording",
   "Monthly folders": "Buwanang folder",
   "One folder": "Iisang folder",
-  "Still recording": "Nagre-record pa"
+  "Still recording": "Nagre-record pa",
+  "Waiting for Drive: {0}": "Naghihintay sa Drive: {0}"
 }

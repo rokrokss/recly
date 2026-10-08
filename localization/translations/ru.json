@@ -319,12 +319,10 @@
   "Unknown": "Неизвестно",
   "Untitled": "Без названия",
   "Upload on Wi-Fi only": "Загружать только по Wi-Fi",
-  "Upload waiting": "Ожидание загрузки",
   "Uploading": "Загрузка",
   "Uploading on another device": "Загрузка на другом устройстве",
   "Uploading to Drive": "Загрузка в Drive",
   "Uploads": "Загрузки",
-  "Uploads waiting: {0}": "Ожидающие загрузки: {0}",
   "Waiting": "Ожидание",
   "Waiting for the transcription result — {0} min elapsed": "Ожидание расшифровки; прошло {0} мин",
   "Waiting to verify your App Store region before continuing transcription.": "Ожидание проверки региона App Store перед продолжением расшифровки.",
@@ -541,5 +539,6 @@
   "Discard recording": "Удалить запись",
   "Monthly folders": "Папки по месяцам",
   "One folder": "Одна папка",
-  "Still recording": "Запись ещё идёт"
+  "Still recording": "Запись ещё идёт",
+  "Waiting for Drive: {0}": "Ожидание Drive: {0}"
 }

@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Wartet auf den lokalen Ordner</string>
     <string name="job_state_done">Fertig</string>
     <string name="job_state_failed">Fehlgeschlagen</string>
-    <string name="job_state_needs_auth">Upload wartet</string>
+    <string name="job_state_needs_auth">Wartet auf Drive</string>
     <string name="job_state_skipped_short">Zu kurz</string>
     <string name="retry_soon">bald</string>
     <string name="retry_in_seconds">in %1$d Sek.</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Ein Schlüssel fehlt auf diesem Telefon</string>
     <string name="alert_auth_rejected">Der Anbieter hat den Schlüssel abgelehnt</string>
     <string name="alert_quota">Anbieterkontingent erschöpft. Limits und Abrechnung prüfen</string>
-    <string name="alert_uploads_waiting">Wartende Uploads: %1$d</string>
+    <string name="alert_uploads_waiting">Wartet auf Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Wartende Aufnahmen: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Die externe Transkription sendet die gesamte Aufnahme an %1$s.\nSpeicherdauer und Nutzung für Training bestimmt dessen Richtlinie. Recly kontrolliert dies nicht.\nLesen Sie die Richtlinie des Anbieters vor der Nutzung.</string>
     <string name="settings_consent_reminder">Einwilligungserinnerung</string>
     <string name="consent_question">Haben Sie die Teilnehmenden über die Aufnahme informiert?</string>
-    <string name="consent_body">Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.\n\nKorea: Gespräche, an denen Sie teilnehmen, dürfen aufgenommen werden; andere nicht.\nUSA: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA verlangen die Einwilligung aller Teilnehmenden.\nEU: Die DSGVO verlangt Information und eine Rechtsgrundlage; Dänemark verlangt ausdrückliche Einwilligung für geschäftliche Anrufe.</string>
+    <string name="consent_body">Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.</string>
     <string name="consent_confirm">Informiert · Aufnahme starten</string>
     <string name="consent_suppress">Nicht erneut fragen</string>
     <string name="consent_link">Einwilligungsregeln nach Rechtsgebiet</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Drive verbinden</string>
     <string name="drive_attention">Drive-Verbindung benötigt Aufmerksamkeit</string>
     <string name="drive_optional">Lokal aufnehmen. Zum Hochladen Drive verbinden.</string>
-    <string name="drive_pending">Upload wartet</string>
+    <string name="drive_pending">Wartet auf Drive</string>
     <string name="core_local_transcription_unavailable">Lokale Transkription ist auf diesem Gerät nicht verfügbar. Wählen Sie eine andere Methode.</string>
     <string name="core_local_model_required">Das Spracherkennungsmodell ist noch nicht heruntergeladen.</string>
     <string name="core_local_diarization_unavailable">Diese lokale Engine unterstützt keine Sprechererkennung. Deaktivieren Sie sie oder wählen Sie eine externe API.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Die Transkription auf dem Gerät verwendet kein Vokabular.</string>
     <string name="speaker_model">Modell zur Sprechertrennung</string>
     <string name="speaker_model_sentences">Sprecher werden auf diesem Gerät satzweise getrennt.</string>
+    <string name="badge_retrying">Wiederholung</string>
+    <string name="badge_receiving">Wird empfangen</string>
+    <string name="badge_transcribing">Wird transkribiert</string>
+    <string name="badge_needs_permission">Erlaubnis nötig</string>
+    <string name="badge_waiting_model">Wartet auf Modell</string>
+    <string name="badge_storage_full">Speicher voll</string>
+    <string name="badge_waiting_folder">Wartet auf Ordner</string>
+    <string name="node_state_ready">Bereit</string>
+    <string name="node_state_starting">Wird gestartet</string>
+    <string name="node_state_saving">Wird gespeichert</string>
+    <string name="node_device_phone">Smartphone</string>
+    <string name="detail_waiting_drive">Wartet auf Drive. Verbinden Sie Drive, um hochzuladen und zu transkribieren.</string>
+    <string name="processing_folder_monthly">Monatsordner</string>
+    <string name="processing_folder_single">Ein Ordner</string>
+    <string name="recording_title_discard">Aufnahme verwerfen</string>
 </resources>

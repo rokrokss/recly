@@ -319,12 +319,10 @@
   "Unknown": "Desconhecido",
   "Untitled": "Sem título",
   "Upload on Wi-Fi only": "Enviar somente por Wi-Fi",
-  "Upload waiting": "Envio em espera",
   "Uploading": "Enviando",
   "Uploading on another device": "Enviando em outro dispositivo",
   "Uploading to Drive": "Enviando ao Drive",
   "Uploads": "Envios",
-  "Uploads waiting: {0}": "Envios em espera: {0}",
   "Waiting": "Aguardando",
   "Waiting for the transcription result — {0} min elapsed": "Aguardando a transcrição; {0} min decorridos",
   "Waiting to verify your App Store region before continuing transcription.": "Aguardando a verificação da região da App Store para continuar a transcrição.",
@@ -541,5 +539,6 @@
   "Discard recording": "Descartar gravação",
   "Monthly folders": "Pastas mensais",
   "One folder": "Uma pasta",
-  "Still recording": "Ainda gravando"
+  "Still recording": "Ainda gravando",
+  "Waiting for Drive: {0}": "Aguardando o Drive: {0}"
 }

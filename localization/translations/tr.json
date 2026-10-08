@@ -401,13 +401,11 @@
   "Unknown": "Bilinmiyor",
   "Untitled": "Adsız",
   "Upload on Wi-Fi only": "Yalnızca Wi-Fi ile yükle",
-  "Upload waiting": "Yükleme bekliyor",
   "Uploading": "Yükleniyor",
   "Uploading on another device": "Başka bir cihazda yükleniyor",
   "Uploading to Drive": "Drive'a yükleniyor",
   "Uploading to iCloud": "iCloud'a yükleniyor",
   "Uploads": "Yüklemeler",
-  "Uploads waiting: {0}": "Bekleyen yüklemeler: {0}",
   "Waiting": "Bekliyor",
   "Waiting for Wi-Fi": "Wi-Fi bekleniyor",
   "Waiting for iCloud": "iCloud bekleniyor",
@@ -541,5 +539,6 @@
   "Discard recording": "Kaydı at",
   "Monthly folders": "Aylık klasörler",
   "One folder": "Tek klasör",
-  "Still recording": "Kayıt sürüyor"
+  "Still recording": "Kayıt sürüyor",
+  "Waiting for Drive: {0}": "Drive bekleniyor: {0}"
 }

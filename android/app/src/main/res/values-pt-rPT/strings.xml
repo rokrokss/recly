@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">À espera da pasta local</string>
     <string name="job_state_done">Concluído</string>
     <string name="job_state_failed">Falhou</string>
-    <string name="job_state_needs_auth">Carregamento em espera</string>
+    <string name="job_state_needs_auth">À espera do Drive</string>
     <string name="job_state_skipped_short">Demasiado curta</string>
     <string name="retry_soon">em breve</string>
     <string name="retry_in_seconds">dentro de %1$d s</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Falta uma chave neste telemóvel</string>
     <string name="alert_auth_rejected">O fornecedor rejeitou a chave</string>
     <string name="alert_quota">O fornecedor esgotou a quota — verifique os limites e a faturação</string>
-    <string name="alert_uploads_waiting">Carregamentos em espera: %1$d</string>
+    <string name="alert_uploads_waiting">À espera do Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Gravações em espera: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">A transcrição externa envia a gravação completa para %1$s.\nO tempo de conservação e o eventual uso para treino dependem da política desse fornecedor — o Recly não os controla.\nLeia a política do fornecedor antes de o utilizar.</string>
     <string name="settings_consent_reminder">Lembrete de consentimento</string>
     <string name="consent_question">Informou os participantes sobre a gravação?</string>
-    <string name="consent_body">Esta gravação não deixa nenhum sinal para as outras pessoas na reunião. Informá-las é da responsabilidade de quem grava.\n\nCoreia — pode gravar uma conversa em que participa (é proibido gravar uma em que não participa).\nEstados Unidos — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem o consentimento de todos os participantes.\nUE — o RGPD exige aviso e uma base legal, e a Dinamarca exige consentimento explícito para chamadas comerciais.</string>
+    <string name="consent_body">Esta gravação não deixa nenhum sinal para as outras pessoas na reunião. Informá-las é da responsabilidade de quem grava.</string>
     <string name="consent_confirm">Já informei · Iniciar gravação</string>
     <string name="consent_suppress">Não perguntar novamente</string>
     <string name="consent_link">Regras de consentimento de gravação por jurisdição</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Ligar o Drive</string>
     <string name="drive_attention">A ligação ao Drive requer atenção</string>
     <string name="drive_optional">Grave localmente. Ligue o Drive para carregar.</string>
-    <string name="drive_pending">Carregamento em espera</string>
+    <string name="drive_pending">À espera do Drive</string>
     <string name="core_local_transcription_unavailable">A transcrição local não está disponível neste dispositivo. Escolha outro método de transcrição.</string>
     <string name="core_local_model_required">O modelo de reconhecimento de voz ainda não foi transferido.</string>
     <string name="core_local_diarization_unavailable">Este motor local não suporta a identificação de oradores. Desative-a ou escolha uma API externa.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">A transcrição no dispositivo não usa vocabulário.</string>
     <string name="speaker_model">Modelo de separação de oradores</string>
     <string name="speaker_model_sentences">Os oradores são separados neste dispositivo, frase a frase.</string>
+    <string name="badge_retrying">Nova tentativa</string>
+    <string name="badge_receiving">A receber</string>
+    <string name="badge_transcribing">A transcrever</string>
+    <string name="badge_needs_permission">Precisa de permissão</string>
+    <string name="badge_waiting_model">À espera do modelo</string>
+    <string name="badge_storage_full">Armazenamento cheio</string>
+    <string name="badge_waiting_folder">À espera da pasta</string>
+    <string name="node_state_ready">Pronto</string>
+    <string name="node_state_starting">A iniciar</string>
+    <string name="node_state_saving">A guardar</string>
+    <string name="node_device_phone">Telemóvel</string>
+    <string name="detail_waiting_drive">À espera do Drive. Ligue o Drive para carregar e transcrever.</string>
+    <string name="processing_folder_monthly">Pastas mensais</string>
+    <string name="processing_folder_single">Uma pasta</string>
+    <string name="recording_title_discard">Descartar gravação</string>
 </resources>

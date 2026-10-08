@@ -401,13 +401,11 @@
   "Unknown": "Sconosciuto",
   "Untitled": "Senza titolo",
   "Upload on Wi-Fi only": "Carica solo con Wi-Fi",
-  "Upload waiting": "Caricamento in attesa",
   "Uploading": "Caricamento",
   "Uploading on another device": "Caricamento su un altro dispositivo",
   "Uploading to Drive": "Caricamento su Drive",
   "Uploading to iCloud": "Caricamento su iCloud",
   "Uploads": "Caricamenti",
-  "Uploads waiting: {0}": "Caricamenti in attesa: {0}",
   "Waiting": "In attesa",
   "Waiting for Wi-Fi": "In attesa del Wi-Fi",
   "Waiting for iCloud": "In attesa di iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "Scarta registrazione",
   "Monthly folders": "Cartelle mensili",
   "One folder": "Una cartella",
-  "Still recording": "Registrazione in corso"
+  "Still recording": "Registrazione in corso",
+  "Waiting for Drive: {0}": "In attesa di Drive: {0}"
 }

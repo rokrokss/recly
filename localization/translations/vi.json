@@ -401,13 +401,11 @@
   "Unknown": "Không rõ",
   "Untitled": "Không có tiêu đề",
   "Upload on Wi-Fi only": "Chỉ tải lên qua Wi-Fi",
-  "Upload waiting": "Chờ tải lên",
   "Uploading": "Đang tải lên",
   "Uploading on another device": "Đang tải lên trên thiết bị khác",
   "Uploading to Drive": "Đang tải lên Drive",
   "Uploading to iCloud": "Đang tải lên iCloud",
   "Uploads": "Tải lên",
-  "Uploads waiting: {0}": "Đang chờ tải lên: {0}",
   "Waiting": "Đang chờ",
   "Waiting for Wi-Fi": "Đang chờ Wi-Fi",
   "Waiting for iCloud": "Đang chờ iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "Bỏ bản ghi âm",
   "Monthly folders": "Thư mục theo tháng",
   "One folder": "Một thư mục",
-  "Still recording": "Vẫn đang ghi âm"
+  "Still recording": "Vẫn đang ghi âm",
+  "Waiting for Drive: {0}": "Đang chờ Drive: {0}"
 }

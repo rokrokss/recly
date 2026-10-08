@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Naghihintay sa lokal na folder</string>
     <string name="job_state_done">Tapos na</string>
     <string name="job_state_failed">Nabigo</string>
-    <string name="job_state_needs_auth">Naghihintay ang pag-upload</string>
+    <string name="job_state_needs_auth">Naghihintay sa Drive</string>
     <string name="job_state_skipped_short">Masyadong maikli</string>
     <string name="retry_soon">maya-maya</string>
     <string name="retry_in_seconds">sa loob ng %1$d seg</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Isang key na wala sa teleponong ito</string>
     <string name="alert_auth_rejected">Tinanggihan ng provider ang key</string>
     <string name="alert_quota">Ubos na ang quota ng provider — suriin ang mga limitasyon at billing nito</string>
-    <string name="alert_uploads_waiting">Mga upload na naghihintay: %1$d</string>
+    <string name="alert_uploads_waiting">Naghihintay sa Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Mga recording na naghihintay: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Ipinapadala ng external na pag-transcribe ang buong recording sa %1$s.\nKung gaano katagal nila ito itatago, at kung gagamitin nila ito sa training, ay nakasalalay sa sariling patakaran ng provider — hindi ito kontrolado ng Recly.\nBasahin ang patakaran ng provider bago ito gamitin.</string>
     <string name="settings_consent_reminder">Paalala sa pagsang-ayon</string>
     <string name="consent_question">Sinabihan mo ba ang mga kalahok tungkol sa pag-record?</string>
-    <string name="consent_body">Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila.\n\nKorea — maaari mong i-record ang usapang kasali ka (bawal i-record ang usapang hindi ka kasali).\nEstados Unidos — kailangan ng pagsang-ayon ng bawat kalahok sa CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA.\nEU — hinihingi ng GDPR ang abiso at legal na batayan, at kailangan sa Denmark ang tahasang pagsang-ayon para sa mga tawag pangnegosyo.</string>
+    <string name="consent_body">Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila.</string>
     <string name="consent_confirm">Sinabihan ko na · Simulan ang pag-record</string>
     <string name="consent_suppress">Huwag nang itanong ulit</string>
     <string name="consent_link">Mga panuntunan sa pagsang-ayon sa pag-record ayon sa hurisdiksyon</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Ikonekta ang Drive</string>
     <string name="drive_attention">Kailangang asikasuhin ang koneksyon sa Drive</string>
     <string name="drive_optional">Mag-record nang lokal. Ikonekta ang Drive para mag-upload.</string>
-    <string name="drive_pending">Naghihintay ang pag-upload</string>
+    <string name="drive_pending">Naghihintay sa Drive</string>
     <string name="core_local_transcription_unavailable">Hindi available ang lokal na pag-transcribe sa device na ito. Pumili ng ibang paraan ng pag-transcribe.</string>
     <string name="core_local_model_required">Hindi pa na-download ang modelo ng speech recognition.</string>
     <string name="core_local_diarization_unavailable">Hindi sinusuportahan ng lokal na engine na ito ang pagkilala sa nagsasalita. I-off ito o pumili ng external na API.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Hindi gumagamit ng bokabularyo ang pag-transcribe sa device.</string>
     <string name="speaker_model">Modelo sa paghihiwalay ng nagsasalita</string>
     <string name="speaker_model_sentences">Pinaghihiwalay ang mga nagsasalita sa device na ito, bawat pangungusap.</string>
+    <string name="badge_retrying">Susubukan muli</string>
+    <string name="badge_receiving">Tumatanggap</string>
+    <string name="badge_transcribing">Nagta-transcribe</string>
+    <string name="badge_needs_permission">Kailangan ng pahintulot</string>
+    <string name="badge_waiting_model">Naghihintay sa modelo</string>
+    <string name="badge_storage_full">Puno na ang storage</string>
+    <string name="badge_waiting_folder">Naghihintay sa folder</string>
+    <string name="node_state_ready">Handa</string>
+    <string name="node_state_starting">Sinisimulan</string>
+    <string name="node_state_saving">Sine-save</string>
+    <string name="node_device_phone">Telepono</string>
+    <string name="detail_waiting_drive">Naghihintay sa Drive. Ikonekta ang Drive para mag-upload at mag-transcribe.</string>
+    <string name="processing_folder_monthly">Buwanang folder</string>
+    <string name="processing_folder_single">Iisang folder</string>
+    <string name="recording_title_discard">I-discard ang recording</string>
 </resources>

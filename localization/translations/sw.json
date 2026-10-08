@@ -401,13 +401,11 @@
   "Unknown": "Haijulikani",
   "Untitled": "Bila jina",
   "Upload on Wi-Fi only": "Pakia kupitia Wi-Fi pekee",
-  "Upload waiting": "Upakiaji unasubiri",
   "Uploading": "Inapakia",
   "Uploading on another device": "Inapakia kwenye kifaa kingine",
   "Uploading to Drive": "Inapakia kwenye Drive",
   "Uploading to iCloud": "Inapakia kwenye iCloud",
   "Uploads": "Upakiaji",
-  "Uploads waiting: {0}": "Upakiaji unaosubiri: {0}",
   "Waiting": "Inasubiri",
   "Waiting for Wi-Fi": "Inasubiri Wi-Fi",
   "Waiting for iCloud": "Inasubiri iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "Tupa rekodi",
   "Monthly folders": "Folda za kila mwezi",
   "One folder": "Folda moja",
-  "Still recording": "Bado inarekodi"
+  "Still recording": "Bado inarekodi",
+  "Waiting for Drive: {0}": "Inasubiri Drive: {0}"
 }

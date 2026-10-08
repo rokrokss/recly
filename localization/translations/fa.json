@@ -401,13 +401,11 @@
   "Unknown": "نامشخص",
   "Untitled": "بدون عنوان",
   "Upload on Wi-Fi only": "بارگذاری فقط با Wi-Fi",
-  "Upload waiting": "بارگذاری در انتظار",
   "Uploading": "در حال بارگذاری",
   "Uploading on another device": "در حال بارگذاری در دستگاه دیگر",
   "Uploading to Drive": "در حال بارگذاری در Drive",
   "Uploading to iCloud": "در حال بارگذاری در iCloud",
   "Uploads": "بارگذاری‌ها",
-  "Uploads waiting: {0}": "بارگذاری‌های در انتظار: {0}",
   "Waiting": "در انتظار",
   "Waiting for Wi-Fi": "در انتظار Wi-Fi",
   "Waiting for iCloud": "در انتظار iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "دور ریختن ضبط",
   "Monthly folders": "پوشه‌های ماهانه",
   "One folder": "یک پوشه",
-  "Still recording": "هنوز در حال ضبط"
+  "Still recording": "هنوز در حال ضبط",
+  "Waiting for Drive: {0}": "در انتظار Drive: {0}"
 }

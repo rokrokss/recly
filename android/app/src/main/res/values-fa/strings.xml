@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">در انتظار پوشه محلی</string>
     <string name="job_state_done">تمام</string>
     <string name="job_state_failed">ناموفق</string>
-    <string name="job_state_needs_auth">بارگذاری در انتظار</string>
+    <string name="job_state_needs_auth">در انتظار Drive</string>
     <string name="job_state_skipped_short">خیلی کوتاه</string>
     <string name="retry_soon">به‌زودی</string>
     <string name="retry_in_seconds">%1$d ثانیه دیگر</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">کلید لازم در این تلفن موجود نیست</string>
     <string name="alert_auth_rejected">ارائه‌دهنده کلید را رد کرد</string>
     <string name="alert_quota">سهمیه ارائه‌دهنده تمام شده است؛ محدودیت‌ها و صورت‌حساب آن را بررسی کنید</string>
-    <string name="alert_uploads_waiting">بارگذاری‌های در انتظار: %1$d</string>
+    <string name="alert_uploads_waiting">در انتظار Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">%1$d ضبط در انتظار است.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">رونویسی خارجی کل ضبط را به %1$s می‌فرستد.\nمدت نگهداری آن و استفاده از آن برای آموزش، به خط‌مشی خود آن ارائه‌دهنده بستگی دارد؛ Recly کنترلی بر آن ندارد.\nپیش از استفاده، خط‌مشی ارائه‌دهنده را بخوانید.</string>
     <string name="settings_consent_reminder">یادآور رضایت</string>
     <string name="consent_question">آیا شرکت‌کنندگان را از ضبط آگاه کرده‌اید؟</string>
-    <string name="consent_body">این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند.\n\nکره — می‌توانید مکالمه‌ای را که خودتان در آن حضور دارید ضبط کنید (ضبط مکالمه‌ای که در آن حضور ندارید ممنوع است).\nایالات متحده — در ایالت‌های CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA رضایت همه شرکت‌کنندگان لازم است.\nاتحادیه اروپا — GDPR اطلاع‌رسانی و مبنای قانونی را لازم می‌داند و دانمارک برای تماس‌های تجاری رضایت صریح را الزامی کرده است.</string>
+    <string name="consent_body">این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند.</string>
     <string name="consent_confirm">آگاه کردم · شروع ضبط</string>
     <string name="consent_suppress">دیگر سؤال نشود</string>
     <string name="consent_link">قوانین رضایت برای ضبط بر اساس حوزه قضایی</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">اتصال Drive</string>
     <string name="drive_attention">اتصال Drive نیاز به بررسی دارد</string>
     <string name="drive_optional">به‌صورت محلی ضبط کنید. برای بارگذاری، Drive را متصل کنید.</string>
-    <string name="drive_pending">بارگذاری در انتظار</string>
+    <string name="drive_pending">در انتظار Drive</string>
     <string name="core_local_transcription_unavailable">رونویسی محلی در این دستگاه در دسترس نیست. روش رونویسی دیگری انتخاب کنید.</string>
     <string name="core_local_model_required">مدل تشخیص گفتار هنوز بارگیری نشده است.</string>
     <string name="core_local_diarization_unavailable">این موتور محلی از تشخیص گوینده پشتیبانی نمی‌کند. آن را خاموش کنید یا یک API خارجی انتخاب کنید.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">رونویسی روی دستگاه از واژگان استفاده نمی‌کند.</string>
     <string name="speaker_model">مدل جداسازی گوینده‌ها</string>
     <string name="speaker_model_sentences">گوینده‌ها در این دستگاه جمله‌به‌جمله از هم جدا می‌شوند.</string>
+    <string name="badge_retrying">تلاش مجدد</string>
+    <string name="badge_receiving">در حال دریافت</string>
+    <string name="badge_transcribing">در حال رونویسی</string>
+    <string name="badge_needs_permission">اجازه لازم است</string>
+    <string name="badge_waiting_model">در انتظار مدل</string>
+    <string name="badge_storage_full">فضای ذخیره‌سازی پر است</string>
+    <string name="badge_waiting_folder">در انتظار پوشه</string>
+    <string name="node_state_ready">آماده</string>
+    <string name="node_state_starting">در حال راه‌اندازی</string>
+    <string name="node_state_saving">در حال ذخیره</string>
+    <string name="node_device_phone">تلفن</string>
+    <string name="detail_waiting_drive">در انتظار Drive. برای بارگذاری و رونویسی، Drive را متصل کنید.</string>
+    <string name="processing_folder_monthly">پوشه‌های ماهانه</string>
+    <string name="processing_folder_single">یک پوشه</string>
+    <string name="recording_title_discard">دور ریختن ضبط</string>
 </resources>

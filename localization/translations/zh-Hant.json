@@ -319,12 +319,10 @@
   "Unknown": "未知",
   "Untitled": "未命名",
   "Upload on Wi-Fi only": "僅透過Wi-Fi上傳",
-  "Upload waiting": "等待上傳",
   "Uploading": "上傳中",
   "Uploading on another device": "正在其他裝置上上傳",
   "Uploading to Drive": "正在上傳至Drive",
   "Uploads": "上傳",
-  "Uploads waiting: {0}": "等待上傳：{0}",
   "Waiting": "等待中",
   "Waiting for the transcription result — {0} min elapsed": "正在等待轉錄結果，已用時{0}分鐘",
   "Waiting to verify your App Store region before continuing transcription.": "正在等待驗證App Store地區，以繼續轉錄。",
@@ -541,5 +539,6 @@
   "Discard recording": "捨棄錄音",
   "Monthly folders": "按月資料夾",
   "One folder": "單一資料夾",
-  "Still recording": "仍在錄音"
+  "Still recording": "仍在錄音",
+  "Waiting for Drive: {0}": "等待Drive：{0}"
 }

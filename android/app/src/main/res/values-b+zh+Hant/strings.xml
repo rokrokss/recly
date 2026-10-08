@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">等待本機資料夾</string>
     <string name="job_state_done">完成</string>
     <string name="job_state_failed">失敗</string>
-    <string name="job_state_needs_auth">等待上傳</string>
+    <string name="job_state_needs_auth">等待Drive</string>
     <string name="job_state_skipped_short">時長過短</string>
     <string name="retry_soon">即將</string>
     <string name="retry_in_seconds">%1$d秒後</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">此手機上沒有此金鑰</string>
     <string name="alert_auth_rejected">供應商拒絕了金鑰</string>
     <string name="alert_quota">供應商配額用盡，請檢查限額和帳單</string>
-    <string name="alert_uploads_waiting">等待上傳：%1$d</string>
+    <string name="alert_uploads_waiting">等待Drive：%1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">%1$d筆錄音正在等待。</item>
     </plurals>
     <string name="provider_disclosure_transcribe">外部轉錄會將完整錄音傳送給%1$s。\n保留期限以及是否用於訓練由供應商政策決定，Recly無法控制。\n使用前請閱讀供應商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
     <string name="consent_question">您已告知參與者將進行錄音嗎？</string>
-    <string name="consent_body">此錄音不會向會議中的其他人顯示任何提示。告知參與者是錄音者的責任。\n\n韓國：可以錄製自己參與的對話（禁止錄製自己未參與的對話）。\n美國：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有參與者同意。\n歐盟：GDPR要求告知並具備合法依據；丹麥要求商務通話取得明確同意。</string>
+    <string name="consent_body">此錄音不會向會議中的其他人顯示任何提示。告知參與者是錄音者的責任。</string>
     <string name="consent_confirm">已告知·開始錄音</string>
     <string name="consent_suppress">不再詢問</string>
     <string name="consent_link">各司法管轄區的錄音同意規定</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">連接Drive</string>
     <string name="drive_attention">Drive連線需要處理</string>
     <string name="drive_optional">本機錄音。連接Drive後即可上傳。</string>
-    <string name="drive_pending">等待上傳</string>
+    <string name="drive_pending">等待Drive</string>
     <string name="core_local_transcription_unavailable">此裝置不支援本機轉錄，請選擇其他轉錄方式。</string>
     <string name="core_local_model_required">尚未下載語音辨識模型。</string>
     <string name="core_local_diarization_unavailable">此本機引擎不支援說話者識別。請關閉該功能或選擇外部API。</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">裝置本機轉錄不使用詞彙表。</string>
     <string name="speaker_model">說話者分離模型</string>
     <string name="speaker_model_sentences">在此裝置上逐句區分說話者。</string>
+    <string name="badge_retrying">等待重試</string>
+    <string name="badge_receiving">接收中</string>
+    <string name="badge_transcribing">轉錄中</string>
+    <string name="badge_needs_permission">需要權限</string>
+    <string name="badge_waiting_model">等待模型</string>
+    <string name="badge_storage_full">儲存空間已滿</string>
+    <string name="badge_waiting_folder">等待資料夾</string>
+    <string name="node_state_ready">就緒</string>
+    <string name="node_state_starting">正在啟動</string>
+    <string name="node_state_saving">儲存中</string>
+    <string name="node_device_phone">手機</string>
+    <string name="detail_waiting_drive">等待Drive。連接Drive後即可上傳並轉錄。</string>
+    <string name="processing_folder_monthly">按月資料夾</string>
+    <string name="processing_folder_single">單一資料夾</string>
+    <string name="recording_title_discard">捨棄錄音</string>
 </resources>

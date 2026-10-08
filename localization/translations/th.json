@@ -401,13 +401,11 @@
   "Unknown": "ไม่ทราบ",
   "Untitled": "ไม่มีชื่อ",
   "Upload on Wi-Fi only": "อัปโหลดผ่าน Wi-Fi เท่านั้น",
-  "Upload waiting": "รออัปโหลด",
   "Uploading": "กำลังอัปโหลด",
   "Uploading on another device": "กำลังอัปโหลดในอุปกรณ์อื่น",
   "Uploading to Drive": "กำลังอัปโหลดไปยัง Drive",
   "Uploading to iCloud": "กำลังอัปโหลดไปยัง iCloud",
   "Uploads": "การอัปโหลด",
-  "Uploads waiting: {0}": "การอัปโหลดที่รออยู่: {0}",
   "Waiting": "กำลังรอ",
   "Waiting for Wi-Fi": "กำลังรอ Wi-Fi",
   "Waiting for iCloud": "กำลังรอ iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "ละทิ้งการบันทึก",
   "Monthly folders": "โฟลเดอร์รายเดือน",
   "One folder": "โฟลเดอร์เดียว",
-  "Still recording": "ยังบันทึกอยู่"
+  "Still recording": "ยังบันทึกอยู่",
+  "Waiting for Drive: {0}": "กำลังรอ Drive: {0}"
 }

@@ -401,13 +401,11 @@
   "Unknown": "অজানা",
   "Untitled": "শিরোনামহীন",
   "Upload on Wi-Fi only": "শুধু Wi-Fi-তে আপলোড করুন",
-  "Upload waiting": "আপলোডের অপেক্ষায়",
   "Uploading": "আপলোড হচ্ছে",
   "Uploading on another device": "অন্য ডিভাইসে আপলোড হচ্ছে",
   "Uploading to Drive": "Drive-এ আপলোড হচ্ছে",
   "Uploading to iCloud": "iCloud-এ আপলোড হচ্ছে",
   "Uploads": "আপলোড",
-  "Uploads waiting: {0}": "অপেক্ষমাণ আপলোড: {0}",
   "Waiting": "অপেক্ষায়",
   "Waiting for Wi-Fi": "Wi-Fi-এর অপেক্ষায়",
   "Waiting for iCloud": "iCloud-এর অপেক্ষায়",
@@ -541,5 +539,6 @@
   "Discard recording": "রেকর্ডিং বাদ দিন",
   "Monthly folders": "মাসিক ফোল্ডার",
   "One folder": "একটি ফোল্ডার",
-  "Still recording": "এখনও রেকর্ড হচ্ছে"
+  "Still recording": "এখনও রেকর্ড হচ্ছে",
+  "Waiting for Drive: {0}": "Drive-এর অপেক্ষায়: {0}"
 }

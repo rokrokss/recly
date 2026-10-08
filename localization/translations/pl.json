@@ -401,13 +401,11 @@
   "Unknown": "Nieznane",
   "Untitled": "Bez tytułu",
   "Upload on Wi-Fi only": "Przesyłaj tylko przez Wi-Fi",
-  "Upload waiting": "Przesyłanie oczekuje",
   "Uploading": "Przesyłanie",
   "Uploading on another device": "Trwa przesyłanie na innym urządzeniu",
   "Uploading to Drive": "Przesyłanie na Drive",
   "Uploading to iCloud": "Przesyłanie do iCloud",
   "Uploads": "Przesyłanie plików",
-  "Uploads waiting: {0}": "Pliki oczekujące na przesłanie: {0}",
   "Waiting": "Oczekiwanie",
   "Waiting for Wi-Fi": "Oczekiwanie na Wi-Fi",
   "Waiting for iCloud": "Oczekiwanie na iCloud",
@@ -541,5 +539,6 @@
   "Discard recording": "Odrzuć nagranie",
   "Monthly folders": "Foldery miesięczne",
   "One folder": "Jeden folder",
-  "Still recording": "Nagrywanie trwa"
+  "Still recording": "Nagrywanie trwa",
+  "Waiting for Drive: {0}": "Oczekiwanie na Drive: {0}"
 }

@@ -319,12 +319,10 @@
   "Unknown": "अज्ञात",
   "Untitled": "बिना शीर्षक",
   "Upload on Wi-Fi only": "केवल Wi-Fi से अपलोड करें",
-  "Upload waiting": "अपलोड की प्रतीक्षा",
   "Uploading": "अपलोड हो रहा है",
   "Uploading on another device": "दूसरे डिवाइस पर अपलोड जारी",
   "Uploading to Drive": "Drive पर अपलोड जारी",
   "Uploads": "अपलोड",
-  "Uploads waiting: {0}": "प्रतीक्षारत अपलोड: {0}",
   "Waiting": "प्रतीक्षा में",
   "Waiting for the transcription result — {0} min elapsed": "ट्रांसक्रिप्शन परिणाम की प्रतीक्षा; {0} मिनट बीते",
   "Waiting to verify your App Store region before continuing transcription.": "ट्रांसक्रिप्शन जारी रखने से पहले App Store क्षेत्र की पुष्टि की प्रतीक्षा।",
@@ -541,5 +539,6 @@
   "Discard recording": "रिकॉर्डिंग छोड़ें",
   "Monthly folders": "मासिक फ़ोल्डर",
   "One folder": "एक फ़ोल्डर",
-  "Still recording": "अभी रिकॉर्डिंग जारी है"
+  "Still recording": "अभी रिकॉर्डिंग जारी है",
+  "Waiting for Drive: {0}": "Drive की प्रतीक्षा: {0}"
 }

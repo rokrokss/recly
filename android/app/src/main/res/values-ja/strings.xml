@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">ローカルフォルダ待ち</string>
     <string name="job_state_done">完了</string>
     <string name="job_state_failed">失敗</string>
-    <string name="job_state_needs_auth">アップロード待ち</string>
+    <string name="job_state_needs_auth">Drive待ち</string>
     <string name="job_state_skipped_short">短すぎます</string>
     <string name="retry_soon">まもなく</string>
     <string name="retry_in_seconds">%1$d秒後</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">このスマートフォンにキーがありません</string>
     <string name="alert_auth_rejected">提供者がキーを拒否しました</string>
     <string name="alert_quota">提供者の利用枠に達しました。上限と請求を確認してください</string>
-    <string name="alert_uploads_waiting">アップロード待ち：%1$d</string>
+    <string name="alert_uploads_waiting">Drive待ち：%1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">録音%1$d件が待機中です。</item>
     </plurals>
     <string name="provider_disclosure_transcribe">外部の文字起こしでは、録音全体を%1$sに送信します。\n保存期間や学習への利用は提供者のポリシーによって決まり、Reclyは管理できません。\n使用前に提供者のポリシーをお読みください。</string>
     <string name="settings_consent_reminder">同意のリマインダー</string>
     <string name="consent_question">参加者に録音することを伝えましたか？</string>
-    <string name="consent_body">この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。\n\n韓国：自分が参加する会話は録音できます（参加していない会話の録音は禁止）。\n米国：CA・CT・FL・HI・IL・MD・MA・MT・NH・OR・PA・WAでは全参加者の同意が必要です。\nEU：GDPRでは通知と適法な根拠が必要です。デンマークでは業務通話の明示的な同意が必要です。</string>
+    <string name="consent_body">この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。</string>
     <string name="consent_confirm">伝えました・録音開始</string>
     <string name="consent_suppress">次回から確認しない</string>
     <string name="consent_link">地域別の録音同意ルール</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Driveに接続</string>
     <string name="drive_attention">Drive接続の確認が必要です</string>
     <string name="drive_optional">ローカルに録音します。アップロードにはDriveに接続してください。</string>
-    <string name="drive_pending">アップロード待ち</string>
+    <string name="drive_pending">Drive待ち</string>
     <string name="core_local_transcription_unavailable">このデバイスではローカル文字起こしを利用できません。別の方法を選択してください。</string>
     <string name="core_local_model_required">音声認識モデルはまだダウンロードされていません。</string>
     <string name="core_local_diarization_unavailable">このローカルエンジンは話者識別に対応していません。無効にするか、外部APIを選択してください。</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">デバイス上の文字起こしは語彙を使用しません。</string>
     <string name="speaker_model">話者識別モデル</string>
     <string name="speaker_model_sentences">このデバイスで文ごとに話者を区別します。</string>
+    <string name="badge_retrying">再試行待ち</string>
+    <string name="badge_receiving">受信中</string>
+    <string name="badge_transcribing">文字起こし中</string>
+    <string name="badge_needs_permission">許可が必要</string>
+    <string name="badge_waiting_model">モデル待ち</string>
+    <string name="badge_storage_full">容量不足</string>
+    <string name="badge_waiting_folder">フォルダ待ち</string>
+    <string name="node_state_ready">準備完了</string>
+    <string name="node_state_starting">起動中</string>
+    <string name="node_state_saving">保存中</string>
+    <string name="node_device_phone">スマートフォン</string>
+    <string name="detail_waiting_drive">Drive待ちです。アップロードと文字起こしにはDriveに接続してください。</string>
+    <string name="processing_folder_monthly">月ごとのフォルダ</string>
+    <string name="processing_folder_single">1つのフォルダ</string>
+    <string name="recording_title_discard">録音を破棄</string>
 </resources>

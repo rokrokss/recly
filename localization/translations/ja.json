@@ -319,12 +319,10 @@
   "Unknown": "不明",
   "Untitled": "無題",
   "Upload on Wi-Fi only": "Wi-Fiでのみアップロード",
-  "Upload waiting": "アップロード待ち",
   "Uploading": "アップロード中",
   "Uploading on another device": "別のデバイスでアップロード中",
   "Uploading to Drive": "Driveにアップロード中",
   "Uploads": "アップロード",
-  "Uploads waiting: {0}": "アップロード待ち：{0}",
   "Waiting": "待機中",
   "Waiting for the transcription result — {0} min elapsed": "文字起こし結果を待っています・{0}分経過",
   "Waiting to verify your App Store region before continuing transcription.": "文字起こしを続ける前に、App Storeの地域を確認しています。",
@@ -541,5 +539,6 @@
   "Discard recording": "録音を破棄",
   "Monthly folders": "月ごとのフォルダ",
   "One folder": "1つのフォルダ",
-  "Still recording": "まだ録音中"
+  "Still recording": "まだ録音中",
+  "Waiting for Drive: {0}": "Drive待ち：{0}"
 }

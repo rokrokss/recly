@@ -401,13 +401,11 @@
   "Unknown": "نامعلوم",
   "Untitled": "بلا عنوان",
   "Upload on Wi-Fi only": "صرف Wi-Fi پر اپ لوڈ کریں",
-  "Upload waiting": "اپ لوڈ منتظر",
   "Uploading": "اپ لوڈ ہو رہا ہے",
   "Uploading on another device": "دوسرے آلے پر اپ لوڈ ہو رہا ہے",
   "Uploading to Drive": "Drive پر اپ لوڈ ہو رہا ہے",
   "Uploading to iCloud": "iCloud پر اپ لوڈ ہو رہا ہے",
   "Uploads": "اپ لوڈز",
-  "Uploads waiting: {0}": "منتظر اپ لوڈز: {0}",
   "Waiting": "منتظر",
   "Waiting for Wi-Fi": "Wi-Fi کا انتظار",
   "Waiting for iCloud": "iCloud کا انتظار",
@@ -541,5 +539,6 @@
   "Discard recording": "ریکارڈنگ رد کریں",
   "Monthly folders": "ماہانہ فولڈرز",
   "One folder": "ایک فولڈر",
-  "Still recording": "ابھی ریکارڈنگ جاری ہے"
+  "Still recording": "ابھی ریکارڈنگ جاری ہے",
+  "Waiting for Drive: {0}": "Drive کا انتظار: {0}"
 }

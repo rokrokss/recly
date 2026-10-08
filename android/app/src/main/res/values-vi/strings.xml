@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Đang chờ thư mục cục bộ</string>
     <string name="job_state_done">Xong</string>
     <string name="job_state_failed">Thất bại</string>
-    <string name="job_state_needs_auth">Chờ tải lên</string>
+    <string name="job_state_needs_auth">Đang chờ Drive</string>
     <string name="job_state_skipped_short">Quá ngắn</string>
     <string name="retry_soon">trong giây lát</string>
     <string name="retry_in_seconds">sau %1$d giây</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Thiếu khóa trên điện thoại này</string>
     <string name="alert_auth_rejected">Nhà cung cấp đã từ chối khóa</string>
     <string name="alert_quota">Nhà cung cấp đã hết hạn mức — hãy kiểm tra giới hạn và thanh toán</string>
-    <string name="alert_uploads_waiting">Đang chờ tải lên: %1$d</string>
+    <string name="alert_uploads_waiting">Đang chờ Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">%1$d bản ghi âm đang chờ.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Chép lời bên ngoài sẽ gửi toàn bộ bản ghi âm đến %1$s.\nThời gian lưu giữ và việc có dùng để huấn luyện hay không là do chính sách riêng của nhà cung cấp đó — Recly không kiểm soát.\nHãy đọc chính sách của nhà cung cấp trước khi sử dụng.</string>
     <string name="settings_consent_reminder">Nhắc về sự đồng ý</string>
     <string name="consent_question">Bạn đã báo cho người tham gia về việc ghi âm chưa?</string>
-    <string name="consent_body">Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ.\n\nHàn Quốc — bạn được ghi âm cuộc trò chuyện mà mình tham gia (cấm ghi âm cuộc trò chuyện mà bạn không tham gia).\nHoa Kỳ — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yêu cầu sự đồng ý của mọi người tham gia.\nEU — GDPR yêu cầu thông báo và cơ sở pháp lý, còn Đan Mạch yêu cầu sự đồng ý rõ ràng đối với cuộc gọi công việc.</string>
+    <string name="consent_body">Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ.</string>
     <string name="consent_confirm">Tôi đã báo · Bắt đầu ghi âm</string>
     <string name="consent_suppress">Không hỏi lại</string>
     <string name="consent_link">Quy định về sự đồng ý ghi âm theo khu vực pháp lý</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Kết nối Drive</string>
     <string name="drive_attention">Kết nối Drive cần được kiểm tra</string>
     <string name="drive_optional">Ghi âm cục bộ. Kết nối Drive để tải lên.</string>
-    <string name="drive_pending">Chờ tải lên</string>
+    <string name="drive_pending">Đang chờ Drive</string>
     <string name="core_local_transcription_unavailable">Không thể chép lời cục bộ trên thiết bị này. Hãy chọn phương thức chép lời khác.</string>
     <string name="core_local_model_required">Chưa tải xuống mô hình nhận dạng giọng nói.</string>
     <string name="core_local_diarization_unavailable">Công cụ cục bộ này không hỗ trợ nhận dạng người nói. Hãy tắt tùy chọn này hoặc chọn API bên ngoài.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Chép lời trên thiết bị không dùng từ vựng.</string>
     <string name="speaker_model">Mô hình phân biệt người nói</string>
     <string name="speaker_model_sentences">Người nói được phân biệt trên thiết bị này theo từng câu.</string>
+    <string name="badge_retrying">Chờ thử lại</string>
+    <string name="badge_receiving">Đang nhận</string>
+    <string name="badge_transcribing">Đang chép lời</string>
+    <string name="badge_needs_permission">Cần cấp quyền</string>
+    <string name="badge_waiting_model">Đang chờ mô hình</string>
+    <string name="badge_storage_full">Hết dung lượng</string>
+    <string name="badge_waiting_folder">Đang chờ thư mục</string>
+    <string name="node_state_ready">Sẵn sàng</string>
+    <string name="node_state_starting">Đang khởi động</string>
+    <string name="node_state_saving">Đang lưu</string>
+    <string name="node_device_phone">Điện thoại</string>
+    <string name="detail_waiting_drive">Đang chờ Drive. Kết nối Drive để tải lên và chép lời.</string>
+    <string name="processing_folder_monthly">Thư mục theo tháng</string>
+    <string name="processing_folder_single">Một thư mục</string>
+    <string name="recording_title_discard">Bỏ bản ghi âm</string>
 </resources>

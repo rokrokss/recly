@@ -319,12 +319,10 @@
   "Unknown": "غير معروف",
   "Untitled": "بلا عنوان",
   "Upload on Wi-Fi only": "الرفع عبر Wi-Fi فقط",
-  "Upload waiting": "الرفع قيد الانتظار",
   "Uploading": "جارٍ الرفع",
   "Uploading on another device": "جارٍ الرفع على جهاز آخر",
   "Uploading to Drive": "جارٍ الرفع إلى Drive",
   "Uploads": "عمليات الرفع",
-  "Uploads waiting: {0}": "عمليات الرفع المنتظرة: {0}",
   "Waiting": "قيد الانتظار",
   "Waiting for the transcription result — {0} min elapsed": "بانتظار نتيجة النسخ؛ مضت {0} دقيقة",
   "Waiting to verify your App Store region before continuing transcription.": "بانتظار التحقق من منطقة App Store قبل متابعة النسخ.",
@@ -541,5 +539,6 @@
   "Discard recording": "تجاهل التسجيل",
   "Monthly folders": "مجلدات شهرية",
   "One folder": "مجلد واحد",
-  "Still recording": "التسجيل مستمر"
+  "Still recording": "التسجيل مستمر",
+  "Waiting for Drive: {0}": "في انتظار Drive: {0}"
 }
