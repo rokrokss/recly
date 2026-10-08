@@ -127,6 +127,8 @@ class DetailActions(
     val onEdit: suspend (TranscriptEdit) -> EditResult = { EditResult.NoTranscript },
     val onRetranscribe: suspend () -> RetranscribeResult? = { null },
     val onCloseFind: () -> Unit = {},
+    /** The page of a recording whose upload waits for Drive offers the connection itself (UX decisions of 2026-10-08). */
+    val onConnectDrive: () -> Unit = {},
 )
 
 /**
@@ -134,13 +136,13 @@ class DetailActions(
  * of. Reading it is [JobsViewModel]'s: this draws what came back and knows nothing about where it
  * came from.
  *
- * It is a page behind a ledger row rather than a tab of its own (docs/09 screen principle 2), so the header
- * carries the way back — and, at its end, Share and More (docs/09 "Detail header and More menu").
+ * It is a page behind a ledger row rather than a tab of its own (docs/09 screen principle 2). The way back
+ * is the system's Back and the List tab tapped again, so the header is the title and, at its end, Share
+ * and More on the same row (docs/09 "Detail header and More menu").
  */
 @Composable
 fun RecordingDetailScreen(
     detail: DetailState,
-    onClose: () -> Unit,
     onRename: (String) -> Unit,
     onReload: () -> Unit,
     modifier: Modifier = Modifier,
@@ -281,6 +283,8 @@ fun RecordingDetailScreen(
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
 
+    // docs/09 "Typography": every time on this page takes its format from the recording's own length.
+    val scale = recordingScale(detail)
     val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = modifier.fillMaxSize()) {
         // The title alone: the recording's id is the ledger's key, not something the user reads by.
@@ -289,7 +293,9 @@ fun RecordingDetailScreen(
                 ScreenHeader(title = stringResource(R.string.detail_edit))
             } else ScreenHeader(
                 title = detail.title ?: stringResource(R.string.jobs_untitled),
-                trailingAlignment = Alignment.TopEnd,
+                // One row: the title on one line, the two icons at its end (UX decisions of 2026-10-08).
+                stackable = false,
+                singleLine = true,
                 trailing = {
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                         if (!detail.loading) {
@@ -306,13 +312,6 @@ fun RecordingDetailScreen(
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
                             ))
                         }
-                        BlueprintButton(
-                            label = stringResource(R.string.action_close),
-                            onClick = onClose,
-                            modifier = Modifier.testTag("detail-close"),
-                            tone = ButtonTone.QUIET,
-                            minWidth = MinTouch,
-                        )
                     }
                 },
             )
@@ -328,8 +327,14 @@ fun RecordingDetailScreen(
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             val editing = draft
             when {
-                editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec)
+                editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec,
+                    scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
+                // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
+                transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
+                    stringResource(R.string.detail_waiting_drive),
+                    action = stringResource(R.string.drive_connect) to actions.onConnectDrive,
+                )
                 transcript == null -> Notice(
                     stringResource(detail.availability.message()),
                     onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
@@ -354,6 +359,7 @@ fun RecordingDetailScreen(
                     }
                     TranscriptReader(
                         transcript = transcript,
+                        scaleSec = scale,
                         seekableDurationSec = detail.audio.totalSec,
                         canSeek = canSeek,
                         onSeek = seek,
@@ -365,7 +371,7 @@ fun RecordingDetailScreen(
                         highlightMenuFor = highlightMenu,
                         highlightMenu = {
                             highlightMenu?.let { at ->
-                                HighlightMenu(at, onGo = { seek(at) }, onRemove = { actions.onHighlights(detail.highlights - at) },
+                                HighlightMenu(at, scale, onGo = { seek(at) }, onRemove = { actions.onHighlights(detail.highlights - at) },
                                     onDismiss = { highlightMenu = null })
                             }
                         },
@@ -404,8 +410,11 @@ fun RecordingDetailScreen(
                 Text(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent),
                     style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                 FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-                    BlueprintButton(stringResource(R.string.action_cancel), { leaveEditor() }, tone = ButtonTone.QUIET, minWidth = MinTouch,
-                        enabled = saving == SavePhase.IDLE)
+                    // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
+                    if (editing.changed || saving != SavePhase.IDLE) {
+                        BlueprintButton(stringResource(R.string.action_cancel), { leaveEditor() }, tone = ButtonTone.QUIET, minWidth = MinTouch,
+                            enabled = saving == SavePhase.IDLE)
+                    }
                     BlueprintButton(
                         label = when {
                             saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
@@ -537,7 +546,7 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer, actions: Det
                         highlights = detail.highlights, onHighlight = { tickMenu = it },
                         onRemoveHighlight = { at -> actions.onHighlights(detail.highlights - at) })
                     tickMenu?.let { at ->
-                        HighlightMenu(at, onGo = { if (!detail.deviceRecording) player.seek(detail.audio, at) },
+                        HighlightMenu(at, recordingScale(detail), onGo = { if (!detail.deviceRecording) player.seek(detail.audio, at) },
                             onRemove = { actions.onHighlights(detail.highlights - at) }, onDismiss = { tickMenu = null })
                     }
                 }
@@ -898,8 +907,9 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
         ) {
             // docs/07 rule 4: a clock is a stamp, not a sentence. The finger while there is one on
             // the waveform, and the player the rest of the time — the two are the same playhead.
+            val scale = recordingScale(detail)
             Text(
-                "${hms((scrubSec ?: player.positionSec).toLong())} / ${hms(detail.audio.totalSec.toLong())}",
+                "${clock((scrubSec ?: player.positionSec).toLong(), scale)} / ${clock(detail.audio.totalSec.toLong(), scale)}",
                 modifier = Modifier.weight(1f),
                 style = mono.bodySmall,
                 color = palette.textMuted,
@@ -971,9 +981,12 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
 /** docs/03 "Storage location": the trip back is to wherever the recording was copied — Drive, or the local folder. */
 private fun fetchingLabel(folder: Boolean): Int = if (folder) R.string.player_fetching_folder else R.string.player_fetching
 
-/** The whole page, when there is one line to say and nothing to read. */
+/**
+ * The whole page, when there is one line to say and nothing to read — and, under it and centred, the one
+ * button that carries the recording on when there is one (docs/09 screen principle 8).
+ */
 @Composable
-private fun Notice(text: String, onRetry: (() -> Unit)? = null) {
+private fun Notice(text: String, onRetry: (() -> Unit)? = null, action: Pair<String, () -> Unit>? = null) {
     Column(
         modifier = Modifier.fillMaxSize().padding(Space.l),
         verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
@@ -986,8 +999,19 @@ private fun Notice(text: String, onRetry: (() -> Unit)? = null) {
             textAlign = TextAlign.Center,
         )
         onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
+        action?.let { (label, onClick) -> BlueprintButton(label, onClick, modifier = Modifier.testTag("detail-connect-drive")) }
     }
 }
+
+/** What the transcript says while the upload waits for Drive: the step has not run, or stopped on that wait. */
+private val DRIVE_WAITS = setOf(TranscriptAvailability.PARKED, TranscriptAvailability.PENDING, TranscriptAvailability.FAILED)
+
+/**
+ * The length every time on a recording's page is formatted by ([clock]): its own `meta.json` length,
+ * the parts on this phone where that is not known, and null — each time by itself — when neither is.
+ */
+internal fun recordingScale(detail: DetailState): Long? =
+    (detail.durationSec ?: detail.audio.totalSec.takeIf { it > 0 })?.toLong()
 
 internal fun TranscriptAvailability.message(): Int = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> R.string.detail_not_requested

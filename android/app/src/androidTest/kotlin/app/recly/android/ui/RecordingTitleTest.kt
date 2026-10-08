@@ -61,7 +61,7 @@ class RecordingTitleTest {
         val (otherId, otherDirectory) = createRecording()
         openPrompt(id)
         ui.onNodeWithText(app.getString(R.string.recording_title_skip)).assertDoesNotExist()
-        ui.onNodeWithText(app.getString(R.string.action_cancel)).performClick()
+        ui.onNodeWithText(app.getString(R.string.recording_title_discard)).performClick()
         ui.runOnIdle { model.saveTitle("late save"); model.cancelTitle() }
         ui.waitUntil(10_000) {
             runBlocking { CoreModule.get(app).core.recordings.get(id) == null }

@@ -88,7 +88,6 @@ import app.recly.recording.RecorderState
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.delay
-import recly.core.model.Source
 
 /** docs/09 screen principle 1: the recording screen is a dashboard — three state nodes, a monospace timer
  * and one square node that starts and stops it. Everything slower than a tap — the service, the
@@ -145,12 +144,9 @@ fun RecordingSection(
     BoxWithConstraints(modifier.fillMaxSize()) {
     val scrollDashboard = maxHeight < 520.dp || LocalDensity.current.fontScale > 1.3f
     Column(Modifier.fillMaxSize().then(if (scrollDashboard) Modifier.verticalScroll(rememberScrollState()) else Modifier)) {
-        ScreenHeader(
-            title = stringResource(R.string.app_name),
-            // The header is one line: the source and enough of the device id to tell two phones
-            // apart. The whole id is in Settings → About, where it is the point.
-            meta = "${Source.PHONE.name.lowercase()} · ${rememberDeviceId().take(8)}",
-        )
+        // The app's name alone (UX decisions of 2026-10-08): the device id is in Settings → About,
+        // where it is the point, and nothing takes the line it had here.
+        ScreenHeader(title = stringResource(R.string.app_name))
         prompt()
         Box(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
             // docs/09 screen principle 1: the transcription node is the only one on this screen that takes
@@ -161,9 +157,9 @@ fun RecordingSection(
                 nodes = listOf(
                     NodeSpec(
                         label = stringResource(R.string.node_device),
-                        // docs/07 rule 4: the source is a code the document carries, not a word —
-                        // the same `phone` the header's meta and the other three shells show.
-                        value = Source.PHONE.name.lowercase(),
+                        // What this device is, in a word of the app's language (UX decisions of
+                        // 2026-10-08) — the `phone` code stays in the document, not on the screen.
+                        value = stringResource(R.string.node_device_phone),
                     ),
                     NodeSpec(
                         label = stringResource(R.string.processing_transcription),
@@ -177,8 +173,8 @@ fun RecordingSection(
                         // docs/09 screen principle 1: with nothing to record, the node borrows the ledger's
                         // own `UPLOADING` — or its `RECEIVING`, a recording coming in from the
                         // watch (docs/03) — because that is the only thing happening and this
-                        // screen is where the user is ([ledgerCode]).
-                        value = borrowed ?: recorder.code(),
+                        // screen is where the user is ([ledgerCode]). The code is said as its word.
+                        value = stringResource(borrowed?.let(::nodeWord) ?: recorder.word()),
                         valueColor = when {
                             recording -> palette.danger
                             borrowed != null -> palette.accent
@@ -198,7 +194,8 @@ fun RecordingSection(
             verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            MonoTimer(hms(elapsed))
+            // docs/09 "Typography": a live timer follows the time itself — `00:12` … `59:59` → `01:00:00`.
+            MonoTimer(clock(elapsed))
             // docs/09 screen principle 6: while it records, the track being written, so the microphone is
             // something the screen shows rather than something it claims. Nothing while idle —
             // an empty strip would be a recording with no sound in it.
@@ -231,7 +228,7 @@ fun RecordingSection(
             val said = statusLine(recorder, state.messages).map { it.text() }.joinToString(" · ")
             // Blank, the line holds an unseen sentence of the app's own script, so a Hangul line arriving —
             // taller than an empty one — does not move the nodes above it (the watch's own rule).
-            val stamp = hms(highlighted?.sec ?: 0)
+            val stamp = clock(highlighted?.sec ?: 0)
             val blank = highlighted == null && said.isEmpty()
             Text(
                 if (highlighted != null || blank) monoStamp(stringResource(R.string.highlight_status, stamp), stamp, mono.bodySmall)
@@ -471,12 +468,21 @@ fun ledgerCode(items: List<JobItem>): String? = when {
     else -> null
 }
 
-/** docs/09: state is a code, in monospace, and never colour alone. */
-private fun RecorderState.code(): String = when (this) {
-    RecorderState.Idle -> "IDLE"
-    RecorderState.Starting -> "STARTING"
-    is RecorderState.Recording -> "REC"
-    RecorderState.Stopping -> "STOPPING"
+/**
+ * docs/09: state is a word in monospace, never colour alone — the recorder's `IDLE`, `STARTING`, `REC`
+ * and `STOPPING` said in the app's language (UX decisions of 2026-10-08).
+ */
+private fun RecorderState.word(): Int = when (this) {
+    RecorderState.Idle -> R.string.node_state_ready
+    RecorderState.Starting -> R.string.node_state_starting
+    is RecorderState.Recording -> R.string.job_state_recording
+    RecorderState.Stopping -> R.string.node_state_saving
+}
+
+/** The word for a code the node borrows from the ledger ([ledgerCode]). */
+private fun nodeWord(code: String): Int = when (code) {
+    "RECEIVING" -> R.string.badge_receiving
+    else -> R.string.job_state_running
 }
 
 private fun RecorderState.actionLabel(): Int = when (this) {
@@ -589,11 +595,14 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit) {
         title = stringResource(R.string.recording_title_prompt),
         onDismissRequest = onCancel,
         actions = {
+            // docs/03 "Titles": the second answer throws the recording that just ended away — said
+            // so, in the red of an irreversible delete (user decision, 2026-10-08).
             BlueprintButton(
-                label = stringResource(R.string.action_cancel),
+                label = stringResource(R.string.recording_title_discard),
                 onClick = onCancel,
-                tone = ButtonTone.QUIET,
+                tone = ButtonTone.DANGER,
                 minWidth = MinTouch,
+                modifier = Modifier.testTag("title-discard"),
             )
             BlueprintButton(
                 label = stringResource(R.string.recording_title_save),
@@ -641,9 +650,25 @@ private fun participantLabel(choice: Int?): String = when (choice) {
     else -> choice.toString()
 }
 
-/** Ticks once a second while recording and not at all otherwise. */
+/**
+ * Ticks once a second while recording. While the recording is being saved it holds the length it
+ * ended at, and only an idle recorder goes back to `00:00` (UX decisions of 2026-10-08).
+ */
 @Composable
 private fun elapsedSeconds(recorder: RecorderState): Long {
+    // Not state: what the stop is measured from, kept across the step from Recording to Stopping,
+    // which carries no start of its own.
+    val seen = remember { SeenStart() }
+    when (recorder) {
+        is RecorderState.Recording -> seen.startedAt = recorder.startedAt
+        RecorderState.Idle -> seen.startedAt = null
+        RecorderState.Starting, RecorderState.Stopping -> Unit
+    }
+    if (recorder == RecorderState.Stopping) {
+        return remember(seen.startedAt) {
+            seen.startedAt?.let { (Clock.System.now() - it).inWholeSeconds.coerceAtLeast(0) } ?: 0
+        }
+    }
     if (recorder !is RecorderState.Recording) return 0
     var seconds by remember(recorder.recordingId) { mutableStateOf(elapsedSec(recorder)) }
     LaunchedEffect(recorder.recordingId) {
@@ -653,6 +678,10 @@ private fun elapsedSeconds(recorder: RecorderState): Long {
         }
     }
     return seconds
+}
+
+private class SeenStart {
+    var startedAt: kotlin.time.Instant? = null
 }
 
 private fun elapsedSec(recorder: RecorderState.Recording): Long =

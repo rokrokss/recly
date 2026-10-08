@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.annotation.StringRes
 import androidx.compose.ui.res.stringResource
 import app.recly.android.R
 import androidx.compose.ui.Modifier
@@ -20,7 +21,7 @@ import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 
 /**
- * docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the code is the text,
+ * docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the word is the text,
  * and a reader who sees neither hue gets the same answer from the letters.
  */
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
@@ -32,7 +33,7 @@ enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 data class LedgerStatus(val code: String, val tone: BadgeTone, val busy: Boolean = false)
 
 /**
- * A square badge: 1dp of the tone, the code in monospace, on the surface.
+ * A square badge: 1dp of the tone, the state's word ([badgeLabel]) in monospace, on the surface.
  * The letters are drawn in an ink that clears WCAG AA on both the surface and the page — which for
  * amber is not the same colour as the border (see `BlueprintColors.warningInk`).
  */
@@ -61,11 +62,10 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
 private val BADGE_PAD = Space.s
 
 /**
- * How wide the ledger's status column has to be for none of [codes] to be clipped. `NEEDS_AUTH` is
- * ten characters of monospace and `UPLOADING` nine, and neither fitted the 76dp this column used to
- * be — at a font scale of 1.3 not even `NEEDS_AUTH`'s first eight did. So the column is the widest
- * code the ledger can show, measured in the style the badge draws, plus what the badge adds around
- * it: no code is ever ellipsed, in any language, at any scale.
+ * How wide the ledger's status column has to be for none of [codes] to be clipped. The column is the
+ * widest word the ledger can show *in the current language* — what each code is drawn as — measured
+ * in the style the badge draws, plus what the badge adds around it: no state is ever ellipsed, in any
+ * language, at any scale.
  */
 @Composable
 fun statusColumnWidth(codes: List<String>): Dp =
@@ -91,6 +91,31 @@ fun BadgeTone.ink(): Color = when (this) {
 private fun BadgeTone.line(): Color =
     if (this == BadgeTone.WARNING) blueprint.warning else ink()
 
+/**
+ * UX decisions of 2026-10-08: the badge says the state in a word of the app's language. The code stays
+ * what the screens, the tests and the logs hold; a code with no word of its own (a banner's failure
+ * reason) is still drawn as the code.
+ */
 @Composable
-private fun badgeLabel(code: String): String =
-    if (code == "NEEDS_AUTH") stringResource(R.string.drive_pending) else code
+internal fun badgeLabel(code: String): String = badgeWord(code)?.let { stringResource(it) } ?: code
+
+/** The word a badge [code] is drawn as, or null for a code the table has no word for. */
+@StringRes
+internal fun badgeWord(code: String): Int? = when (code) {
+    "DONE" -> R.string.job_state_done
+    "FAILED" -> R.string.job_state_failed
+    "RETRY" -> R.string.badge_retrying
+    "PENDING" -> R.string.job_state_pending
+    "UPLOADING" -> R.string.job_state_running
+    "RECEIVING" -> R.string.badge_receiving
+    "TRANSCRIBING" -> R.string.badge_transcribing
+    "IMPORTING" -> R.string.job_state_importing
+    "REC" -> R.string.job_state_recording
+    "NEEDS_AUTH" -> R.string.drive_pending
+    "NEEDS_CONSENT" -> R.string.badge_needs_permission
+    "NEEDS_MODEL" -> R.string.badge_waiting_model
+    "NEEDS_SPACE", "NO_SPACE" -> R.string.badge_storage_full
+    "SKIPPED" -> R.string.job_state_skipped_short
+    "WAITING_FOLDER" -> R.string.badge_waiting_folder
+    else -> null
+}

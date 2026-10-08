@@ -31,6 +31,7 @@ import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.theme.LocalReduceMotion
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -96,6 +97,8 @@ internal fun TranscriptReader(
     canSeek: Boolean,
     onSeek: (Double) -> Unit,
     modifier: Modifier = Modifier,
+    /** The recording's length, which picks the format of every time button ([clock]). */
+    scaleSec: Long? = null,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
     positionSec: Double = 0.0,
     playing: Boolean = false,
@@ -154,8 +157,9 @@ internal fun TranscriptReader(
                             if (now) drawRect(palette.accent, topLeft = Offset(-Space.s.toPx(), 0f), size = Size(2.dp.toPx(), size.height))
                         },
                 ) {
-                    val stamp = hms(group.start.toLong())
-                    val seekLabel = stringResource(R.string.transcript_seek, stamp)
+                    val stamp = clock(group.start.toLong(), scaleSec)
+                    // Spoken text keeps its one format (UX decisions of 2026-10-08).
+                    val seekLabel = stringResource(R.string.transcript_seek, hms(group.start.toLong()))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.xs), itemVerticalAlignment = Alignment.CenterVertically) {
                         BlueprintButton(stamp, { onSeek(group.start) }, enabled = canSeek && group.start < seekableDurationSec,
                             modifier = Modifier.testTag("transcript-time-${group.index}").semantics { contentDescription = seekLabel },
@@ -219,37 +223,50 @@ internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, mo
 
 /**
  * A highlight inside a group: a 6dp filled accent square right after its time; a tap opens Go to / Remove.
- * The row lays out only the square, so it sits beside the time with no gap; Compose's minimum touch target
- * still takes a tap within 48dp of it that lands on nothing else.
+ * The row lays out only the square, so it sits beside the time with no gap — but what takes the tap is a
+ * 48dp square centred on it ([MinTouch]), which reaches past the row's own 6dp slot (docs/09 "Accessibility").
  */
 @Composable
 internal fun HighlightMarker(atSec: Double, onClick: () -> Unit) {
     val label = stringResource(R.string.highlight_tick, hms(atSec.toLong()))
-    Box(
-        Modifier
-            .size(6.dp)
-            .background(blueprint.accent)
-            .clickable(role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label }
-            .testTag("transcript-highlight"),
-    )
+    Box(Modifier.size(6.dp), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .requiredSize(MinTouch)
+                .clickable(role = Role.Button, onClick = onClick)
+                .semantics { contentDescription = label }
+                .testTag("transcript-highlight"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(6.dp).background(blueprint.accent))
+        }
+    }
 }
 
-/** docs/09 "Transcript reader": following paused by a scroll — the way back to the playhead. */
+/**
+ * docs/09 "Transcript reader": following paused by a scroll — the way back to the playhead. A 32dp pill to
+ * look at, inside a 48dp target ([MinTouch]) that takes the tap (docs/09 "Accessibility").
+ */
 @Composable
 internal fun BackToPlayback(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.card)
     Box(
         modifier
-            .height(32.dp)
-            .background(palette.surface, shape)
-            .border(palette.line, palette.accent, shape)
+            .heightIn(min = MinTouch)
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.m)
             .testTag("back-to-playback"),
         contentAlignment = Alignment.Center,
     ) {
-        Text(stringResource(R.string.reader_back_to_playback), style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        Box(
+            Modifier
+                .height(32.dp)
+                .background(palette.surface, shape)
+                .border(palette.line, palette.accent, shape)
+                .padding(horizontal = Space.m),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.reader_back_to_playback), style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        }
     }
 }

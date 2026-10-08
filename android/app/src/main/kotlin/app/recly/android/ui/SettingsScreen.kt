@@ -140,9 +140,10 @@ fun SettingsScreen(
                 // closed — is not connected, and the row says so with the way to connect, as the
                 // iPhone's does. Only a disconnect still owed keeps the disconnect row without one.
                 TableRow(title = main.email ?: stringResource(if (main.disconnecting) R.string.settings_account else R.string.drive_attention), trailing = {
+                    // Quiet, not red: red is a deletion or the recording (UX decisions of 2026-10-08).
                     BlueprintButton(
                         stringResource(if (main.disconnecting) R.string.drive_disconnecting else R.string.drive_disconnect),
-                        onClick = onAskToDisconnect, tone = ButtonTone.DANGER,
+                        onClick = onAskToDisconnect, tone = ButtonTone.QUIET,
                         enabled = !main.busy && !main.disconnecting, modifier = Modifier.testTag("disconnect"))
                 })
             } else {
@@ -150,9 +151,10 @@ fun SettingsScreen(
                     title = stringResource(R.string.signed_out),
                     subtitle = stringResource(R.string.drive_optional),
                     trailing = {
+                        // An accent outline, as on the iPhone; the filled button is the Record tab's model card.
                         ProcessingButton(label = stringResource(R.string.drive_connect),
                             state = main.action, onClick = onSignIn,
-                            tone = ButtonTone.PRIMARY,
+                            tone = ButtonTone.ACCENT,
                             enabled = !main.busy && !main.loading && signInBlocker == null)
                     },
                 )
@@ -338,10 +340,11 @@ private fun DisconnectDialog(
                 tone = ButtonTone.QUIET,
                 minWidth = MinTouch,
             )
+            // Not red: nothing is deleted — recordings and settings stay (UX decisions of 2026-10-08).
             BlueprintButton(
                 label = stringResource(R.string.settings_disconnect),
                 onClick = { onConfirm(false) },
-                tone = ButtonTone.DANGER,
+                tone = ButtonTone.PRIMARY,
                 enabled = prompt.canConfirm,
                 modifier = Modifier.testTag("disconnect-confirm"),
             )

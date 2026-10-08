@@ -86,7 +86,7 @@
     <string name="job_state_waiting_folder">Waiting for the local folder</string>
     <string name="job_state_done">Done</string>
     <string name="job_state_failed">Failed</string>
-    <string name="job_state_needs_auth">Upload waiting</string>
+    <string name="job_state_needs_auth">Waiting for Drive</string>
     <string name="job_state_skipped_short">Too short</string>
     <string name="retry_soon">soon</string>
     <string name="retry_in_seconds">in %1$d s</string>
@@ -287,7 +287,7 @@
          word in both languages (ConsentTextTest holds the two together). -->
     <string name="settings_consent_reminder">Consent reminder</string>
     <string name="consent_question">Did you tell the participants about the recording?</string>
-    <string name="consent_body">This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.\n\nKorea — you may record a conversation you are part of (recording one you are not is prohibited).\nUnited States — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA need every participant\'s consent.\nEU — the GDPR asks for notice and a lawful basis, and Denmark requires explicit consent for business calls.</string>
+    <string name="consent_body">This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.</string>
     <string name="consent_confirm">I told them · Start recording</string>
     <string name="consent_suppress">Do not ask again</string>
     <string name="consent_link">Recording-consent rules by jurisdiction</string>
@@ -318,7 +318,7 @@
     <string name="drive_connect">Connect Drive</string>
     <string name="drive_attention">Drive connection needs attention</string>
     <string name="drive_optional">Record locally. Connect Drive to upload.</string>
-    <string name="drive_pending">Upload waiting</string>
+    <string name="drive_pending">Waiting for Drive</string>
     <string name="core_local_transcription_unavailable">Local transcription is unavailable on this device. Choose another transcription method.</string>
     <string name="core_local_model_required">The speech recognition model isn\'t downloaded yet.</string>
     <string name="core_local_diarization_unavailable">This local engine does not support speaker identification. Turn it off or choose an external API.</string>
@@ -452,4 +452,23 @@
     <string name="vocabulary_local_unsupported">On-device transcription does not use a vocabulary.</string>
     <string name="speaker_model">Speaker model</string>
     <string name="speaker_model_sentences">Speakers are separated on this device, sentence by sentence.</string>
+    <!-- UX decisions of 2026-10-08: the ledger's badges and the record screen's nodes say words, not codes. -->
+    <string name="badge_retrying">Retrying</string>
+    <string name="badge_receiving">Receiving</string>
+    <string name="badge_transcribing">Transcribing</string>
+    <string name="badge_needs_permission">Needs permission</string>
+    <string name="badge_waiting_model">Waiting for model</string>
+    <string name="badge_storage_full">Storage full</string>
+    <string name="badge_waiting_folder">Waiting for folder</string>
+    <string name="node_state_ready">Ready</string>
+    <string name="node_state_starting">Starting</string>
+    <string name="node_state_saving">Saving</string>
+    <string name="node_device_phone">Phone</string>
+    <!-- The detail of a recording whose upload waits for Drive: the fix is here, not in the list. -->
+    <string name="detail_waiting_drive">Waiting for Drive. Connect Drive to upload and transcribe.</string>
+    <!-- docs/05: the Drive folder template as two choices. -->
+    <string name="processing_folder_monthly">Monthly folders</string>
+    <string name="processing_folder_single">One folder</string>
+    <!-- The naming sheet's second answer discards the recording that just ended (docs/03 "Titles"). -->
+    <string name="recording_title_discard">Discard recording</string>
 </resources>

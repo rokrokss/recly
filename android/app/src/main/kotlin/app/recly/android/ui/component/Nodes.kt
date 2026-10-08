@@ -56,7 +56,8 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
         modifier = modifier
             .border(
                 width = palette.line,
-                color = if (spec.active) palette.text else palette.grid,
+                // Quiet, but still the 3:1 a control's edge needs on the page (UX decisions of 2026-10-08).
+                color = if (spec.active) palette.text else palette.inputBorder,
                 shape = RoundedCornerShape(Radius.node),
             )
             .background(palette.surface, RoundedCornerShape(Radius.node))

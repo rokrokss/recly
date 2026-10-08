@@ -5,6 +5,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
@@ -66,7 +74,9 @@ fun BlueprintButton(
         !enabled -> palette.grid
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
-        else -> palette.grid
+        // docs/09 "Accessibility": a control's edge is 3:1 against the page, light and dark — the
+        // input border's level, not the grid's (UX decisions of 2026-10-08).
+        else -> palette.inputBorder
     }
     val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
 
@@ -76,7 +86,15 @@ fun BlueprintButton(
             // alone left the two-letter template variables (`MM`, `dd`) a target some 30dp wide.
             .defaultMinSize(minWidth = minWidth, minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
-            .border(palette.line, edge, RoundedCornerShape(Radius.node))
+            // A disabled button is dashed, as on Windows: a shape is the cue that survives high contrast,
+            // which promotes the muted ink and the grid to the body colour.
+            .then(
+                if (enabled) {
+                    Modifier.border(palette.line, edge, RoundedCornerShape(Radius.node))
+                } else {
+                    Modifier.dashedBorder(palette.line, edge, Radius.node)
+                },
+            )
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
             .padding(horizontal = Space.s, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
@@ -98,6 +116,26 @@ fun BlueprintButton(
         )
     }
 }
+
+/**
+ * The same square outline as `Modifier.border`, dashed — Windows' own. Compose has no dashed border, so
+ * it is one stroked round-rect inset by half its width: a stroke is centred on its path.
+ */
+internal fun Modifier.dashedBorder(width: Dp, color: Color, radius: Dp): Modifier = drawBehind {
+    val stroke = width.toPx()
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(stroke / 2f, stroke / 2f),
+        size = Size(size.width - stroke, size.height - stroke),
+        cornerRadius = CornerRadius(radius.toPx()),
+        style = Stroke(width = stroke, pathEffect = PathEffect.dashPathEffect(floatArrayOf(DASH.toPx(), DASH.toPx()))),
+    )
+}
+
+private val DASH: Dp = 3.dp
+
+/** What marks a chosen thing — a chip, the open list's line — as the other shells' chips and menus do. */
+const val SELECTION_MARK: String = "✓"
 
 /**
  * docs/09 "Shape": a choice, as a square bordered box rather than Material's pill. `FilterChip` is
@@ -149,12 +187,17 @@ fun BlueprintChip(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            label,
-            style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
-            color = ink,
-            maxLines = 1,
-        )
+        val style = if (monospace) mono.small else MaterialTheme.typography.labelLarge
+        // UX decisions of 2026-10-08: a chosen chip says so with `✓` as well as its border. The chip is
+        // as wide as it is with the mark either way, so choosing one does not move its neighbours.
+        Box(contentAlignment = Alignment.Center) {
+            Text("$SELECTION_MARK $label", style = style, color = Color.Transparent, maxLines = 1,
+                modifier = Modifier.clearAndSetSemantics {})
+            Row {
+                if (selected) Text("$SELECTION_MARK ", style = style, color = ink, maxLines = 1, modifier = Modifier.clearAndSetSemantics {})
+                Text(label, style = style, color = ink, maxLines = 1)
+            }
+        }
     }
 }
 

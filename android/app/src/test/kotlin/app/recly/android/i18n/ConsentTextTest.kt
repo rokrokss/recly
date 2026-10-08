@@ -7,7 +7,7 @@ import kotlin.test.assertTrue
 import org.w3c.dom.Element
 
 /**
- * Lane P1 deliverable 7: the recording-consent reminder is the Mac's, "same question · same body ·
+ * Lane P1 deliverable 7: the recording-consent reminder is the Mac's, "same question · same reminder ·
  * same jurisdiction link · same `Do not ask again`" — in both languages, because since I18N-L2 the
  * Mac says all of it in two. A user with a Mac and a phone is being told about the same law by the
  * same product, and a rewording on either side fails here, which is the only place it could be
@@ -31,6 +31,20 @@ class ConsentTextTest {
                     "$locale/$key is not in the Mac's own wording: $value",
                 )
             }
+        }
+    }
+
+    /**
+     * UX decisions of 2026-10-08: the dialog says the reminder alone — the recording shows nothing to the
+     * other side and telling them is the recorder's job. The jurisdictions are behind the link below,
+     * not in the dialog. The Mac's body is checked by `contains` above, so this is what holds the
+     * phone's to the one paragraph.
+     */
+    @Test
+    fun `the body is the reminder alone`() {
+        LOCALES.forEach { locale ->
+            val body = strings(locale).getValue("consent_body")
+            assertTrue('\n' !in body, "$locale/consent_body still carries more than the reminder: $body")
         }
     }
 

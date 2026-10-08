@@ -43,6 +43,8 @@ fun ScreenHeader(
     trailingAlignment: Alignment = Alignment.TopStart,
     /** False for a trailing that is one icon: it always fits beside the title, so it never takes a row. */
     stackable: Boolean = true,
+    /** The title on one line, ellipsized — a header whose trailing icons must stay on the title's row. */
+    singleLine: Boolean = false,
 ) {
     val compact = LocalConfiguration.current.screenHeightDp < 480
     BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = if (compact) Space.s else Space.m)) {
@@ -50,7 +52,7 @@ fun ScreenHeader(
         val heading: @Composable () -> Unit = {
             Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                 Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
-                    maxLines = if (compact) 1 else 3, overflow = TextOverflow.Ellipsis)
+                    maxLines = if (compact || singleLine) 1 else 3, overflow = TextOverflow.Ellipsis)
                 meta?.let { value ->
                     SelectionContainer { Text(value, style = mono.small, color = blueprint.textMuted, maxLines = if (compact) 1 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis) }
                 }
