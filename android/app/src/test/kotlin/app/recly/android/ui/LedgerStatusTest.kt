@@ -27,6 +27,30 @@ class LedgerStatusTest {
     }
 
     /**
+     * UX decisions of 2026-10-08: the badge says every code the ledger can show as a word of the app's
+     * language — none falls through to the code itself.
+     */
+    @Test
+    fun `every code the ledger can show has a word`() {
+        BADGE_CODES.forEach { code ->
+            assertTrue(app.recly.android.ui.component.badgeWord(code) != null, "$code has no word")
+        }
+        assertEquals(app.recly.android.R.string.drive_pending, app.recly.android.ui.component.badgeWord("NEEDS_AUTH"))
+    }
+
+    /** docs/03 "Storage location": a wait for the folder is its own word, in the warning a retry wait is. */
+    @Test
+    fun `a job waiting for the local folder says so`() {
+        val waiting = JobItem(
+            recordingId = "r", jobId = "j", title = null, startedAt = "2026-10-08T00:00:00Z", durationSec = 1.0,
+            state = ItemState.WAITING, error = CoreMessage.FOLDER_UNAVAILABLE.code(), waitingMinutes = null, link = null, nextRunAt = null,
+        )
+
+        assertEquals(LedgerStatus("WAITING_FOLDER", BadgeTone.WARNING), waiting.badge())
+        assertEquals(ItemState.WAITING.badge(), waiting.copy(error = null).badge())
+    }
+
+    /**
      * docs/03 "Recordings from other devices": a code says what is happening, not where — an upload another device
      * is running is the same word as one of this phone's own. A finalized recording with no job
      * history also shares the completed state. Other states must remain distinct.

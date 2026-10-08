@@ -20,7 +20,7 @@ import app.recly.android.ui.theme.blueprint
 
 /**
  * docs/09 "Icons": the Material Symbols this screen set names (`share`, `more_horiz`, `search`,
- * `close`, `upload_file`), drawn as thin geometric lines on a 24-unit grid like the tab bar's glyphs —
+ * `close`, `download`), drawn as thin geometric lines on a 24-unit grid like the tab bar's glyphs —
  * the app carries no icon font.
  */
 enum class Glyph { SHARE, MORE, SEARCH, CLOSE, IMPORT, DOCUMENT, SUBTITLES, AUDIO, COPY }
@@ -74,10 +74,11 @@ private fun DrawScope.drawGlyph(glyph: Glyph, color: Color) {
             drawPath(Path().apply { moveTo(15f, 2f); lineTo(3f, 2f); lineTo(3f, 17f) }, color, style = line)
             drawRect(color, Offset(7f, 6f), androidx.compose.ui.geometry.Size(14f, 16f), style = line)
         }
+        // Material Symbols' `download`: an arrow down into an open tray.
         Glyph.IMPORT -> {
-            drawPath(Path().apply { moveTo(6f, 3f); lineTo(14f, 3f); lineTo(18f, 7f); lineTo(18f, 21f); lineTo(6f, 21f); close() }, color, style = line)
-            drawLine(color, Offset(12f, 18f), Offset(12f, 10f), 1.5f)
-            drawPath(Path().apply { moveTo(9f, 13f); lineTo(12f, 10f); lineTo(15f, 13f) }, color, style = line)
+            drawLine(color, Offset(12f, 4f), Offset(12f, 15f), 1.5f)
+            drawPath(Path().apply { moveTo(7.5f, 10.5f); lineTo(12f, 15f); lineTo(16.5f, 10.5f) }, color, style = line)
+            drawPath(Path().apply { moveTo(5f, 15f); lineTo(5f, 20f); lineTo(19f, 20f); lineTo(19f, 15f) }, color, style = line)
         }
     }
 }

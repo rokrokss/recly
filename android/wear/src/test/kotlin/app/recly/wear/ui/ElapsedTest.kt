@@ -13,11 +13,14 @@ class ElapsedTest {
         assertEquals("59:59", formatElapsed(3599))
     }
 
-    /** docs/20 S1 measures a three-hour recording; the hour cannot roll over silently. */
+    /**
+     * docs/20 S1 measures a three-hour recording; the hour cannot roll over silently. From an hour it is
+     * `HH:MM:SS`, as on every shell (UX decisions of 2026-10-08).
+     */
     @Test
-    fun `past an hour the hour appears, un-padded`() {
-        assertEquals("1:00:00", formatElapsed(3600))
-        assertEquals("3:00:01", formatElapsed(10801))
+    fun `from an hour the hour appears, padded`() {
+        assertEquals("01:00:00", formatElapsed(3600))
+        assertEquals("03:00:01", formatElapsed(10801))
         assertEquals("12:34:56", formatElapsed(45296))
     }
 

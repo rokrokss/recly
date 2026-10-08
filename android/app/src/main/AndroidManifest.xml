@@ -6,6 +6,9 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- docs/05 "Fixed processing settings": the speech model download runs as WorkManager foreground work. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
+    <!-- Android 16 Live Updates: the recording notification is promoted (RecorderService). A normal,
+         non-runtime permission; the phone's alone — the watch draws its own recording notification. -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
 
     <application
         android:name=".RecApp"

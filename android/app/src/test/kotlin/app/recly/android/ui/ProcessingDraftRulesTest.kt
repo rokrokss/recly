@@ -95,4 +95,35 @@ class ProcessingDraftRulesTest {
 
     /** The contract's own example (spec/examples); unit tests run with `android/app` as the working directory. */
     private fun example(): String = File("../../spec/examples/recording-settings.json").readText()
+
+    /** UX decisions of 2026-10-08: the folder template as two chips, and the path under them. */
+    @Test
+    fun `only the one-folder template is One folder`() {
+        assertEquals(true, folderIsSingle("recly/memo"))
+        assertEquals(false, folderIsSingle("recly/memo/{{yyyy}}-{{MM}}"))
+        assertEquals(false, folderIsSingle("work/{{yyyy}}"), "a template written elsewhere shows as monthly")
+    }
+
+    @Test
+    fun `a chip leaves its own template, and the chosen chip leaves the draft alone`() {
+        assertEquals("recly/memo", folderAfterTap("recly/memo/{{yyyy}}-{{MM}}", single = true))
+        assertEquals("recly/memo/{{yyyy}}-{{MM}}", folderAfterTap("recly/memo", single = false))
+        assertNull(folderAfterTap("work/{{yyyy}}", single = false), "a custom template is kept until the other chip is chosen")
+        assertNull(folderAfterTap("recly/memo", single = true))
+    }
+
+    @Test
+    fun `the preview is today's folder`() {
+        val now = java.time.LocalDateTime.of(2026, 10, 8, 9, 5)
+
+        assertEquals("recly/memo/2026-10", folderPreview("recly/memo/{{yyyy}}-{{MM}}", now))
+        assertEquals("recly/memo", folderPreview("recly/memo", now))
+        assertEquals("x/{{title}}", folderPreview("x/{{title}}", now), "a template that needs a recording is shown as written")
+    }
+
+    /** The settings default is the Monthly chip's template, so a fresh install shows Monthly chosen. */
+    @Test
+    fun `the default folder is the monthly template`() {
+        assertEquals(FOLDER_MONTHLY, ProcessingSettings().storage.folder)
+    }
 }

@@ -88,7 +88,7 @@ fun <T> BlueprintDropdown(
             modifier = Modifier
                 // docs/09 "Accessibility": the label is small, the target is not — in both directions.
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-                .border(palette.line, palette.grid, shape)
+                .border(palette.line, palette.inputBorder, shape)
                 .clickable(role = Role.Button) { expanded = true }
                 // One element, deliberately (the iOS dropdown's own rule): the value and the mark are
                 // two texts, and a reader walking them would say the value and then "down-pointing
@@ -252,9 +252,6 @@ internal class MenuPosition(private val gap: Int, private val margin: Int = 0) :
  * line of text and grows with it (docs/09 "Fluid typography"), as it does on the PC and the Apple shells.
  */
 const val DROPDOWN_MARK: String = "▾"
-
-/** What marks the chosen line of the open list — the ✓ the other shells' chips and menus wear. */
-private const val SELECTION_MARK: String = "✓"
 
 private val MENU_MIN_WIDTH: Dp = 200.dp
 

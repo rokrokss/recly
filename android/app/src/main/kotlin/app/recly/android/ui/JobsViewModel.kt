@@ -175,6 +175,11 @@ data class JobsUiState(
     val hits: List<SearchHit>? = null,
     /** docs/03 "Naming rules": why the last import failed, as a `CoreMessage` code, until it is put away. */
     val importFailure: String? = null,
+    /**
+     * The first words of each row's transcript held on this device, by recording id (UX decisions of
+     * 2026-10-08) — the line under a row's title. A row without one is not in the map.
+     */
+    val previews: Map<String, String> = emptyMap(),
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -231,6 +236,15 @@ data class DetailState(
     val uploaded: Boolean = false,
     /** Set when the detail was opened from a search hit (docs/09 "Search"). */
     val find: FindRequest? = null,
+    /** The recording's own length (`meta.json`): what picks the format of every time on its page. */
+    val durationSec: Double? = null,
+    /**
+     * Why the More menu's Edit transcript and Transcribe again wait while [transcribing] (UX decisions
+     * of 2026-10-08): `Transcribing…` only while a transcription of it is really queued or running.
+     */
+    val busyReason: Int = R.string.detail_transcribing,
+    /** Its upload waits for a Drive connection, and the page offers the connection itself. */
+    val waitingForDrive: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -279,6 +293,10 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             ) { jobs, recorder, _ -> jobs to recorder }
                 .collect { (jobs, recorder) ->
                     val items = items(core, jobs)
+                    // Asked again on every change of a job or a recording — a transcript arrives with
+                    // its job's step, and a pull's — and cheap when nothing changed: the core reads a
+                    // file again only when its size or time has.
+                    val previews = previews(core, items)
                     val open = _state.value.detail?.recordingId
                     val busy = open?.let { transcribing(core, jobs, it) }
                     val alerts = queueAlerts(jobs) { id -> core.jobs.steps(id) }
@@ -287,6 +305,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                             loading = false,
                             items = items,
                             alerts = alerts,
+                            previews = previews,
                             // The open detail's Play goes away for as long as the recorder holds
                             // the microphone, wherever the recording was started from.
                             detail = it.detail?.copy(deviceRecording = capturing(recorder))
@@ -319,17 +338,38 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
         // Said only while it is on its way: one parked for the model, a consent or Drive is the list's to explain.
         val again = unsettled.filter { it.retranscription && it.status in IN_FLIGHT }.maxByOrNull { it.createdAt }
+        val localRunning = core.localTranscription.isRunning(recordingId)
+        val uploaded = core.recordings.get(recordingId)?.remote == true || driveHasEveryPart(core, recordingId)
+        val drive = unsettled.any { it.status == JobStatus.NEEDS_AUTH }
+        // The set of jobs that disable the menu is unchanged; only what the menu says about them is.
+        val reason = when {
+            localRunning || unsettled.any { it.status in IN_FLIGHT && transcribesNext(it, core.jobs.steps(it.id)) } ->
+                R.string.detail_transcribing
+            drive -> R.string.drive_pending
+            !uploaded -> R.string.detail_not_uploaded
+            else -> unsettled.firstNotNullOfOrNull { parkedWord(it.status) } ?: R.string.detail_transcribing
+        }
         return Transcribing(
-            running = unsettled.isNotEmpty() || core.localTranscription.isRunning(recordingId),
+            running = unsettled.isNotEmpty() || localRunning,
             again = again != null,
             locally = again?.workflow?.steps?.any { it is Step.LocalTranscribe } == true,
-            uploaded = core.recordings.get(recordingId)?.remote == true || driveHasEveryPart(core, recordingId),
+            uploaded = uploaded,
+            reason = reason,
+            drive = drive,
         )
     }
 
-    private data class Transcribing(val running: Boolean, val again: Boolean, val locally: Boolean, val uploaded: Boolean) {
+    private data class Transcribing(
+        val running: Boolean,
+        val again: Boolean,
+        val locally: Boolean,
+        val uploaded: Boolean,
+        val reason: Int,
+        val drive: Boolean,
+    ) {
         fun applyTo(detail: DetailState) =
-            detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally, uploaded = uploaded)
+            detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally, uploaded = uploaded,
+                busyReason = reason, waitingForDrive = drive)
     }
 
     /** docs/09 "Playback": this device's preferences, so every recording plays at the speed last chosen. */
@@ -412,7 +452,22 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     /** docs/08 "Editing": one change or a batch of them, saved at once; the page follows on `observeResults`. */
     suspend fun edit(recordingId: String, edit: recly.core.transcribe.TranscriptEdit): recly.core.transcribe.EditResult {
         val core = core()
-        return withContext(core.deps.io) { core.editTranscript(recordingId, edit) }
+        return withContext(core.deps.io) { core.editTranscript(recordingId, edit) }.also {
+            // An edit touches no job, so the row's first words are asked for here.
+            val items = _state.value.items
+            val previews = previews(core, items)
+            _state.update { state -> state.copy(previews = previews) }
+        }
+    }
+
+    /** The rows' first words; a failure is a list without them, never a list that does not load. */
+    private suspend fun previews(core: ReclyCore, items: List<JobItem>): Map<String, String> = try {
+        core.previews(items.map { it.recordingId })
+    } catch (e: kotlinx.coroutines.CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        core.deps.logger.log(Logger.Level.WARN, "list.previews.failed", error = e)
+        emptyMap()
     }
 
     /**
@@ -610,7 +665,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 it.copy(loading = false, audio = audio, waveform = if (same) it.waveform else FloatArray(0),
                     waveformLoading = !same && !audio.isEmpty,
                     writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING,
-                    folder = record?.storage == StorageKind.FOLDER)
+                    folder = record?.storage == StorageKind.FOLDER, durationSec = record?.meta?.durationSec)
             }
             fetchFromDrive(core, recordingId, record, audio)
             decodeWaveform(core, recordingId)
@@ -886,6 +941,25 @@ internal fun stateOf(record: RecordingRecord, job: Job?): ItemState = when {
         JobStatus.NEEDS_SPACE -> ItemState.NEEDS_SPACE
         JobStatus.SKIPPED_SHORT -> ItemState.SKIPPED_SHORT
     }
+}
+
+/**
+ * Whether the step [job] runs next is a transcription — the one case the detail's More menu says
+ * `Transcribing…` for (UX decisions of 2026-10-08). An upload still ahead of it is not one: that
+ * recording is not uploaded yet, and the menu says so instead.
+ */
+internal fun transcribesNext(job: Job, steps: List<StepRun>): Boolean {
+    val next = steps.sortedBy { it.ordinal }.firstOrNull { it.status != StepStatus.SUCCEEDED && it.status != StepStatus.SKIPPED }
+    val step = if (next != null) job.workflow?.steps?.find { it.id == next.stepId } else if (steps.isEmpty()) job.workflow?.steps?.firstOrNull() else null
+    return step is Step.Transcribe || step is Step.LocalTranscribe
+}
+
+/** A job parked on something other than Drive, in its badge's own word. */
+internal fun parkedWord(status: JobStatus): Int? = when (status) {
+    JobStatus.NEEDS_MODEL -> R.string.badge_waiting_model
+    JobStatus.NEEDS_CONSENT -> R.string.badge_needs_permission
+    JobStatus.NEEDS_SPACE -> R.string.badge_storage_full
+    else -> null
 }
 
 /**

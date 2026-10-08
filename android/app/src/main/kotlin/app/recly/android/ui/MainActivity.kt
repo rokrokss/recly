@@ -252,6 +252,7 @@ class MainActivity : ComponentActivity() {
                             // that is where "check the key" has to land.
                             onCheckKey = { tab = Tab.SETTINGS },
                             onFix = { alert -> goFix(alert.reason) },
+                            onConnectDrive = { fixAuth() },
                             modifier = content,
                             collapse = listTaps,
                         )
@@ -419,6 +420,7 @@ private fun JobsTab(
     model: JobsViewModel,
     onCheckKey: () -> Unit,
     onFix: (JobAlert) -> Unit,
+    onConnectDrive: () -> Unit,
     modifier: Modifier,
     collapse: Int,
 ) {
@@ -426,7 +428,6 @@ private fun JobsTab(
     if (detail != null) {
         RecordingDetailScreen(
             detail = detail,
-            onClose = model::closeDetail,
             onRename = { title -> model.rename(detail.recordingId, title) },
             onReload = model::reloadDetail,
             modifier = modifier,
@@ -441,6 +442,7 @@ private fun JobsTab(
                 onEdit = { model.edit(detail.recordingId, it) },
                 onRetranscribe = { model.retranscribe(detail.recordingId) },
                 onCloseFind = model::closeFind,
+                onConnectDrive = onConnectDrive,
             ),
         )
     } else {

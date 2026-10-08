@@ -10,6 +10,8 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import androidx.core.app.NotificationCompat
+import androidx.core.graphics.drawable.IconCompat
 import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -213,16 +215,27 @@ class RecorderService : Service() {
             PendingIntent.FLAG_IMMUTABLE,
         )
         host().recordingNotification(NOTIFICATION_ID, CHANNEL_ID, stop)?.let { return it }
-        return Notification.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_rec_notification)
             .setContentTitle(getString(R.string.rec_notification_title))
             // The platform ticks the elapsed time for us; updating the notification once a second
-            // for three hours would not.
+            // for three hours would not. From the recording's own start when there is one, so a
+            // redraw (a language change) does not send the clock back to zero.
             .setUsesChronometer(true)
-            .setWhen(System.currentTimeMillis())
+            .setShowWhen(true)
+            .setWhen(
+                (_state.value as? RecorderState.Recording)?.startedAt?.toEpochMilliseconds() ?: System.currentTimeMillis(),
+            )
             .setOngoing(true)
             .setContentIntent(open)
-            .addAction(Notification.Action.Builder(null, getString(R.string.rec_notification_stop), stop).build())
+            .addAction(NotificationCompat.Action.Builder(null as IconCompat?, getString(R.string.rec_notification_stop), stop).build())
+            // Android 16 Live Updates (UX decisions of 2026-10-08; developer.android.com "Live Updates",
+            // 2026-10-07): a promoted ongoing notification — standard style, a title, not colorized,
+            // on a channel above IMPORTANCE_MIN — puts the elapsed time in a status bar chip and at the
+            // top of the lock screen. The phone's manifest holds POST_PROMOTED_NOTIFICATIONS; older
+            // versions ignore the request and keep the notification as it was. The watch draws its
+            // own ([RecorderHost.recordingNotification]) and never reaches this.
+            .setRequestPromotedOngoing(true)
             .build()
     }
 
