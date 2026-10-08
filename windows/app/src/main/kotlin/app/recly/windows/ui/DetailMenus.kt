@@ -127,6 +127,8 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
             EXPORTS.forEach { (format, label, kind) ->
                 val audio = format == ExportFormat.AUDIO
                 val reason = when {
+                    // Nothing of a take still being written is whole enough to export.
+                    audio && detail.writing -> Str.DETAIL_STILL_RECORDING
                     audio && !detail.audioReachable -> Str.PLAYER_NO_AUDIO
                     !audio && !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                     else -> null
@@ -159,6 +161,8 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
                     open = false
                 },
                 enabled = detail.hasTranscript && preparing == null,
+                // A disabled item says why (2026-10-08).
+                secondary = if (detail.hasTranscript) null else strings[Str.DETAIL_NO_TRANSCRIPT],
             )
         } }
     }
@@ -190,11 +194,18 @@ internal fun MoreButton(
         BlueprintButton(
             MORE_MARK,
             { open = true },
-            modifier = Modifier.semantics { contentDescription = strings[Str.DETAIL_MORE] },
+            // As wide as it is tall: a single mark is not a 44 target on its own.
+            modifier = Modifier.defaultMinSize(minWidth = MinTouch).semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
         )
         BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd) { MenuColumn {
-            MenuRow(strings[Str.DETAIL_RENAME], { open = false; model.askToRename() }, enabled = !detail.writing)
+            // The core refuses to rename a take still being written, and the item says so.
+            MenuRow(
+                strings[Str.DETAIL_RENAME],
+                { open = false; model.askToRename() },
+                enabled = !detail.writing,
+                secondary = if (detail.writing) strings[Str.DETAIL_STILL_RECORDING] else null,
+            )
             val editBlocked = when {
                 !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                 detail.transcribing -> detail.busyReason
@@ -202,6 +213,7 @@ internal fun MoreButton(
             }
             MenuRow(strings[Str.DETAIL_EDIT], { open = false; onEdit() }, enabled = editBlocked == null, secondary = editBlocked?.let { strings[it] })
             val againBlocked = when {
+                detail.writing -> Str.DETAIL_STILL_RECORDING
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
                 detail.transcribing -> detail.busyReason
                 detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
@@ -210,14 +222,20 @@ internal fun MoreButton(
             MenuRow(
                 strings[Str.DETAIL_RETRANSCRIBE],
                 { open = false; model.askToRetranscribe() },
-                enabled = againBlocked == null && !detail.writing,
+                enabled = againBlocked == null,
                 secondary = againBlocked?.let { strings[it] },
             )
+            // The playhead is the player's, and a take still being written has no player yet.
+            val highlightBlocked = when {
+                detail.writing -> Str.DETAIL_STILL_RECORDING
+                detail.audio.isEmpty -> Str.PLAYER_NO_AUDIO
+                else -> null
+            }
             MenuRow(
                 strings[Str.HIGHLIGHT_ADD_AT, stamp],
                 { open = false; model.setHighlights(detail.recordingId, detail.highlights + positionSec) },
-                enabled = !detail.audio.isEmpty,
-                secondary = if (detail.audio.isEmpty) strings[Str.PLAYER_NO_AUDIO] else null,
+                enabled = highlightBlocked == null,
+                secondary = highlightBlocked?.let { strings[it] },
             )
         } }
     }
@@ -256,16 +274,23 @@ internal val HIGHLIGHT_MARK = 6.dp
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
-    Text(
-        name ?: id,
-        modifier = Modifier
-            .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
-        color = palette.textMuted,
-        maxLines = 1,
-    )
+    // The badge is about 20 tall; what takes the click is the 44 around it (2026-10-08), the badge at its start.
+    Box(
+        Modifier
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            name ?: id,
+            modifier = Modifier
+                .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
+            color = palette.textMuted,
+            maxLines = 1,
+        )
+    }
 }
 
 /**
@@ -384,7 +409,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
         Box(
             Modifier
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-                .border(palette.line, palette.grid, RoundedCornerShape(Radius.node))
+                // A quiet control's edge is the input border, 3:1 against the page in light and dark.
+                .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                 .clickable(role = Role.Button) { open = true }
                 .semantics {
                     contentDescription = strings[Str.PLAYER_SPEED]

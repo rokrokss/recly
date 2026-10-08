@@ -511,6 +511,8 @@ enum class Str {
     /** docs/05 "Fixed processing settings": the Drive folder template as two choices (2026-10-08). */
     PROCESSING_FOLDER_MONTHLY,
     PROCESSING_FOLDER_SINGLE,
+    /** Why Rename, Transcribe again and the audio export wait while the take is still being written. */
+    DETAIL_STILL_RECORDING,
 
     CORE_STALE,
     ;

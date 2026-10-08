@@ -16,6 +16,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -31,6 +35,9 @@ import app.recly.windows.ui.theme.blueprint
  * different apps.
  */
 val SidebarWidth: Dp = 300.dp
+
+/** The selected row's start-edge bar. */
+private val SELECTED_BAR: Dp = 2.dp
 
 /** The detail half with nothing picked: one quiet line, centred, and no chrome around it. */
 @Composable
@@ -58,7 +65,20 @@ fun SidebarRow(
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = blueprint
-    Column(Modifier.fillMaxWidth().background(if (selected) palette.background else palette.surface)) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(if (selected) palette.background else palette.surface)
+            // The row on show says so by a shape as well as a tint (2026-10-08): a 2dp accent bar on its start
+            // edge, as the transcript's active group wears.
+            .drawBehind {
+                if (selected) {
+                    val bar = SELECTED_BAR.toPx()
+                    val x = if (layoutDirection == LayoutDirection.Rtl) size.width - bar else 0f
+                    drawRect(palette.accent, topLeft = Offset(x, 0f), size = Size(bar, size.height))
+                }
+            },
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

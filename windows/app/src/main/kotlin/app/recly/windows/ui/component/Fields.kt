@@ -165,7 +165,8 @@ fun BlueprintMenu(
         Column(
             modifier = Modifier
                 .widthIn(min = MENU_MIN_WIDTH)
-                .border(palette.line, palette.grid, shape)
+                // The same edge as the dropdown box it opens from (docs/09 principle 4).
+                .border(palette.line, palette.inputBorder, shape)
                 .background(palette.surface, shape)
                 .padding(vertical = Space.xs)
                 // A list that outgrows the window (languages, workflows) scrolls instead of

@@ -510,9 +510,10 @@ private fun Detail(
         ScreenHeader(
             // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
             title = detail.title.text(strings),
-            // Not while the take is still being written to: the core refuses to rename a recording that
-            // is still running, and nothing of it is whole enough to export.
-            trailing = if (detail.loading || detail.writing) {
+            // While the take is still being written to, the menus are there with what waits for it disabled
+            // and saying `Still recording` (2026-10-08) — the core refuses to rename a recording that is still
+            // running, and nothing of it is whole enough to export.
+            trailing = if (detail.loading) {
                 null
             } else {
                 {

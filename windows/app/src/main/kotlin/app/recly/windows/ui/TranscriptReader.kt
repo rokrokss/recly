@@ -34,6 +34,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
@@ -208,37 +209,48 @@ private fun Group(
 
 /**
  * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears
- * it as "Highlight 00:12:34". Its target is only a gap wider than the square, so the square stays by the time.
+ * it as "Highlight 00:12:34".
  */
 @Composable
 private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
     val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
+    // A 44 target (2026-10-08) with the square at its start, so the square stays by the time.
     Box(
         Modifier
-            .size(width = HIGHLIGHT_MARK + Space.xs * 2, height = 28.dp)
+            .size(MinTouch)
             .onGloballyPositioned { place = it.positionInRoot() }
             .clickable(role = Role.Button) { onMenu(place) }
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
+            .semantics { contentDescription = label }
+            .padding(start = Space.xs),
+        contentAlignment = Alignment.CenterStart,
     ) { HighlightMark() }
 }
 
-/** docs/09 "Screen principles": the pill that takes the list back to where playback is. */
+/**
+ * docs/09 "Screen principles": the pill that takes the list back to where playback is — 32 tall to look at, and
+ * a 44 target around it (2026-10-08).
+ */
 @Composable
 private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Unit) {
     val palette = blueprint
     val shape = RoundedCornerShape(8.dp)
     Box(
         modifier
-            .height(32.dp)
-            .background(palette.surface, shape)
-            .border(palette.line, palette.accent, shape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.m),
+            .defaultMinSize(minHeight = MinTouch)
+            .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        Box(
+            Modifier
+                .height(32.dp)
+                .background(palette.surface, shape)
+                .border(palette.line, palette.accent, shape)
+                .padding(horizontal = Space.m),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        }
     }
 }
 
