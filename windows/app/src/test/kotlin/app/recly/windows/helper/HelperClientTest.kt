@@ -48,6 +48,21 @@ class HelperClientTest {
         }
     }
 
+    /**
+     * A close that comes before the open — detection handing the microphone to a recording while its own
+     * helper was still being started — leaves nothing running and the stream ended, so whoever waits on it
+     * is not left waiting for good. The command does not exist: spawning it would throw.
+     */
+    @Test
+    fun `a client closed before it opens starts nothing and ends its stream`() = runBlocking {
+        coroutineScope {
+            val client = HelperClient(listOf("/nonexistent/recly-capture-helper"), Dispatchers.IO, SilentLogger)
+            client.close()
+            client.open(this)
+            assertTrue(client.events.isClosedForReceive)
+        }
+    }
+
     @Test
     fun `a helper that dies closes the stream after the parts it managed to report`() = runBlocking {
         coroutineScope {

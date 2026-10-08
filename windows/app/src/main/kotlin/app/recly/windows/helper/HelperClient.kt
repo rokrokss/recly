@@ -32,6 +32,13 @@ class HelperClient(
     private var process: Process? = null
     private var stdin: BufferedWriter? = null
 
+    /**
+     * Set by [close]. A close that lands while [open] is still spawning the process found nothing to close;
+     * the open that finishes after it ends the process it started, so whoever waits on [events] is not left
+     * waiting on a helper nobody will ever stop (a start right as detection opens its helper).
+     */
+    @Volatile private var closed = false
+
     /** Closed when the helper's stdout ends — see the class comment. */
     val events: ReceiveChannel<HelperEvent> get() = channel
 
@@ -40,12 +47,21 @@ class HelperClient(
      * until the helper's stdout ends, which is after the last `part_done` of a stop.
      */
     suspend fun open(scope: CoroutineScope) {
+        if (closed) {
+            channel.close()
+            return
+        }
         val started = withContext(io) {
             ProcessBuilder(command).redirectErrorStream(false).start()
         }
         process = started
         stdin = started.outputStream.bufferedWriter()
         logger.log(Logger.Level.INFO, "helper.spawn", mapOf("command" to command.first()))
+        // Closed while it was spawning: end it at once; its stdout ending closes [events] through the reader.
+        if (closed) {
+            runCatching { stdin?.close() }
+            started.destroyForcibly()
+        }
         scope.launch(io) { read(started) }
         scope.launch(io) { drainStderr(started) }
     }
@@ -66,6 +82,7 @@ class HelperClient(
 
     /** Closes stdin (the helper's own cue to exit), then gives it [graceMs] before killing it. */
     suspend fun close(graceMs: Long = GRACE_MS) = withContext(io) {
+        closed = true
         runCatching { stdin?.close() }
         val running = process ?: return@withContext
         if (!running.waitFor(graceMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
