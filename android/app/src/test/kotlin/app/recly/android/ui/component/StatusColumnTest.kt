@@ -29,4 +29,14 @@ class StatusColumnTest {
     fun `an empty ledger still leaves room for the badge`() {
         assertEquals(18.dp, statusColumn(widest = 0.dp, line = 1.dp))
     }
+
+    /**
+     * UX decisions of 2026-10-08: the column stops at the width `TRANSCRIBING` needed, so the title is
+     * never narrower than it was with codes; a wider word wraps inside its badge instead.
+     */
+    @Test
+    fun `the column stops at the cap and narrower words keep their own width`() {
+        assertEquals(118.dp, statusColumn(widest = 130.dp, line = 1.dp, cap = 100.dp))
+        assertEquals(98.dp, statusColumn(widest = 80.dp, line = 1.dp, cap = 100.dp))
+    }
 }

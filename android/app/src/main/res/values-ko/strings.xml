@@ -223,7 +223,7 @@
     <string name="alert_missing_secret">이 폰에 없는 키가 있습니다</string>
     <string name="alert_auth_rejected">업체가 키를 거절했습니다</string>
     <string name="alert_quota">업체 할당량이 찼습니다 — 한도와 결제를 확인하세요</string>
-    <string name="alert_uploads_waiting">업로드 대기 %1$d건</string>
+    <string name="alert_uploads_waiting">Drive 연결 대기 %1$d건</string>
     <plurals name="alert_waiting">
         <item quantity="other">녹음 %1$d건이 기다리는 중입니다.</item>
     </plurals>
