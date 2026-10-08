@@ -2884,7 +2884,7 @@ android/
 | A9 | Entry points: Quick Settings tile, home widget (start/stop), app shortcuts. When starting from a tile or widget, the FGS background-start exception is either **used or given up** — it never fails silently |
 | A10 | Settings: Google Drive connection state and disconnect action, language, Wi-Fi only, consent reminder, **log export** |
 | A11 | Play listing: Wear OS form factor included, screenshots, Data safety form ("No data collected") |
-| A12 | Live Update (2026-10-08): on Android 16+ the recording notification is promoted, so the status bar chip and the lock screen show the elapsed time (chronometer); not colorized, a standard style, the times in §9 "Time format". Older versions keep the plain ongoing notification |
+| A12 | Live Update (2026-10-08): the recording notification asks to be promoted (`NotificationCompat.Builder.setRequestPromotedOngoing(true)`, androidx.core 1.18; the normal permission `android.permission.POST_PROMOTED_NOTIFICATIONS` in the phone app's manifest only), so on Android 16 QPR1+ the status bar chip and the lock screen show the elapsed time (chronometer from the recording's start, `setWhen`); not colorized, a standard style, IMPORTANCE_LOW. The chip's clock is the system's. Older versions keep the plain ongoing notification. Checked on API 36.0 only: the extra is set, the promotion itself needs a 36.1 device (2026-10-08) |
 
 ### Watch `:android:wear`
 
