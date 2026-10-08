@@ -148,6 +148,10 @@ public struct RecentItem: Identifiable, Sendable {
     /// waiting on — the model its "Download model" fetches. Nil for every other job.
     public let localLanguage: String?
 
+    /// 2026-10-08 §8: the first words of the transcript this device holds for the recording, for the
+    /// line under the title in the phone's list and the Mac's Details list. Nil when there is none.
+    public let preview: String?
+
     /// Whether the job is waiting for the speech model, which is what the row's download is for.
     public var waitingForModel: Bool { state == "Waiting for speech model" }
 
@@ -173,7 +177,8 @@ public struct RecentItem: Identifiable, Sendable {
         durationSec: Double? = nil,
         remote: Bool = false,
         alert: AlertReason? = nil,
-        localLanguage: String? = nil
+        localLanguage: String? = nil,
+        preview: String? = nil
     ) {
         self.id = id
         self.jobId = jobId
@@ -190,8 +195,10 @@ public struct RecentItem: Identifiable, Sendable {
         self.remote = remote
         self.alert = alert
         self.localLanguage = localLanguage
+        self.preview = preview
     }
 }
+
 
 /// The join the core does not do: jobs are one table, the recordings they are about another, and
 /// the Drive link is in a third. Both Apple shells draw the same rows, so they read them the same
@@ -206,7 +213,9 @@ public enum Recents {
         let byRecording = Dictionary(grouping: jobs, by: \.recordingId)
         let now = core.deps.clock.now()
         var items: [RecentItem] = []
-        for record in try await core.recordings.list(limit: limit) {
+        let records = try await core.recordings.list(limit: limit)
+        let previews = await Self.previews(core: core, recordingIds: records.map(\.id))
+        for record in records {
             // The newest job is the one the user last asked for.
             let job = byRecording[record.id]?
                 .max { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }
@@ -243,11 +252,21 @@ public enum Recents {
                     durationSec: record.meta.durationSec?.doubleValue,
                     remote: record.remote,
                     alert: job.flatMap { JobAlerts.reason(status: $0.status, lastError: error) },
-                    localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil }
+                    localLanguage: job.flatMap { $0.status == .needsModel ? localLanguage(job: $0, steps: steps) : nil },
+                    preview: previews[record.id]
                 )
             )
         }
         return items
+    }
+
+    /// 2026-10-08 §8: the rows' first words — the core's, for each transcript held on this device, a
+    /// recording with none absent — asked for the rows read here and read again with them, so a
+    /// transcription that finishes, or one done again, reaches the line with the next reading. A
+    /// failure is no lines rather than no list.
+    static func previews(core: ReclyCore_, recordingIds: [String]) async -> [String: String] {
+        guard !recordingIds.isEmpty else { return [:] }
+        return (try? await core.previews(recordingIds: recordingIds)) ?? [:]
     }
 
     /// A local transcription that is not running is either queued or held back for heat — the one
@@ -313,6 +332,9 @@ public enum Recents {
         case .waiting where message == .folderUnavailable: return "Waiting for the local folder"
         case .waiting: return "Retry pending"
         case .done: return "Done"
+        // 2026-10-08 §7: a job that stopped only because Drive is not connected waits for Drive, as a
+        // parked one does — the remedy is the connection, not a retry of a failure.
+        case .failed where JobAlerts.waitsForDrive(status: .failed, lastError: lastError): return "Sign-in needed"
         case .failed: return "Failed"
         case .needsConsent: return "Transfer permission needed"
         // docs/05 "Fixed processing settings": a wait for the on-device model, not a failure — the download
@@ -348,7 +370,7 @@ public enum Recents {
     /// device is still uploading, are both work the user is waiting on — the header counts them the
     /// way it counts a queued job. One another device is transcribing is not: the recording itself
     /// is in, and the header's number is about recordings. `Sign-in needed` is a wait too: its badge
-    /// says "Upload waiting", and it goes on by itself once Drive is connected.
+    /// says "Waiting for Drive", and it goes on by itself once Drive is connected.
     private static let waiting: Set<String> = [
         "Transcribing on this device", "Transcription pending", "Waiting for the device to cool down",
         "Waiting", "Retry pending", "Transfer permission needed", "Waiting for speech model",

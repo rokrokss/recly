@@ -204,8 +204,20 @@ public enum JobAlerts {
         }
     }
 
+    /// 2026-10-08 §7: whether a job is held up only by Drive not being connected — parked as
+    /// `NEEDS_AUTH`, or a `FAILED` job whose blocking code is a Drive sign-in one (on its own, or as
+    /// the failure that spent the retries). The remedy is the same — connect Drive — so it reads the
+    /// same everywhere: the `NEEDS_AUTH` badge in the warning tone, never a red failure.
+    public static func waitsForDrive(status: JobStatus, lastError: String?) -> Bool {
+        if status == .needsAuth { return true }
+        guard status == .failed, let lastError, let ref = CoreMessageRef.companion.parse(code: lastError) else { return false }
+        let message = ref.message == .retryBudgetSpent ? spentOn(ref) : ref.message
+        return message == .needsAuth || message == .driveReauth || message == .driveConsentRequired
+    }
+
     private static func terminalReason(_ lastError: String?) -> AlertReason? {
         guard let lastError, let ref = CoreMessageRef.companion.parse(code: lastError) else { return nil }
+        if waitsForDrive(status: .failed, lastError: lastError) { return .needsAuth }
         switch ref.message {
         case .localTranscriptionUnavailable: return .localUnavailable
         case .localDiarizationUnavailable: return .localDiarization

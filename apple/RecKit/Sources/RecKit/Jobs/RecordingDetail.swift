@@ -65,6 +65,12 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var uploaded = true
     /// Why the last `Transcribe again` did not start — its key — for a moment.
     @Published public private(set) var retranscribeRefusal: String?
+    /// 2026-10-08 §7: a job of this recording is held up only because Drive is not connected — what
+    /// the page says instead of sending the user back to the list, and the More menu's reason.
+    @Published public private(set) var waitingForDrive = false
+    /// docs/03: the recording's whole length as its meta has it — what every time on this page is
+    /// shaped by (2026-10-08 §3). Nil until it is read, and for a recording still being written.
+    @Published public private(set) var metaLengthSec: Double?
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -83,6 +89,19 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var playlist: [URL] { audio.urls }
     public var totalSec: Double { audio.totalSec }
     public var hasAudio: Bool { !audio.isEmpty }
+
+    /// 2026-10-08 §3: the length that picks the shape of every time on this page — `MM:SS` or
+    /// `HH:MM:SS` — so they are all one width: the meta's, else the audio's here, else none (and a
+    /// time is then shaped by itself).
+    public var lengthSec: Double? {
+        if let metaLengthSec, metaLengthSec > 0 { return metaLengthSec }
+        return totalSec > 0 ? totalSec : nil
+    }
+
+    /// One moment of this recording, as this page draws it.
+    public func stamp(_ sec: Double) -> String {
+        LedgerFormat.stamp(Int(max(0, sec)), total: lengthSec)
+    }
 
     public let recordingId: String
     public let playbackGate: RecordingPlaybackGate?
@@ -234,6 +253,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     public var transcriptMessage: String {
+        // 2026-10-08 §7: waiting for Drive is said here with its fix under it, rather than as "check
+        // the list".
+        if waitingForDrive, availability == .parked || availability == .failed || availability == .pending {
+            return RecKitStrings.localized("Waiting for Drive. Connect Drive to upload and transcribe.")
+        }
         let key: String
         switch availability {
         case .notRequested: key = "This recording has no transcription step to run."
@@ -270,6 +294,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// The shell's executor, poked when this page queues a job (a re-transcription) so it runs now.
     public var jobsDue: (() -> Void)?
+
+    /// 2026-10-08 §7: the shell's own Connect Drive (the settings' and the banner's), for a recording
+    /// waiting for Drive. Nil where the shell offers none, and then the page shows no button.
+    public var connectDrive: (() -> Void)?
 
     /// docs/09 "Highlights": a mark at [sec] — the More menu's, or the desktop's Highlight button.
     public func addHighlight(atSec sec: Double) async {
@@ -317,16 +345,32 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// Why `Edit transcript` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var editReason: String? {
         if transcript == nil { return RecKitStrings.localized("No transcript yet") }
-        if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
+        if transcriptionBusy { return busyReason }
         return nil
     }
 
     /// Why `Transcribe again` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var retranscribeReason: String? {
         if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
-        if transcriptionBusy { return RecKitStrings.localized("Transcribing…") }
-        if !uploaded { return RecKitStrings.localized("Not uploaded yet") }
+        if transcriptionBusy { return busyReason }
+        if !uploaded { return RecKitStrings.localized(waitingForDrive ? "Waiting for Drive" : "Not uploaded yet") }
         return nil
+    }
+
+    /// 2026-10-08 §7: what a job of this recording that has not settled is doing — the same items stay
+    /// off while it lasts (docs/08 "Editing"), only the words are what it really is. The transcription
+    /// comes after the upload in every plan, so a job past the upload is transcribing (or queued to);
+    /// one before it is waiting for Drive, or simply not uploaded yet.
+    var busyReason: String {
+        if waitingForDrive { return RecKitStrings.localized("Waiting for Drive") }
+        if !uploaded { return RecKitStrings.localized("Not uploaded yet") }
+        return RecKitStrings.localized("Transcribing…")
+    }
+
+    /// Why `Rename` cannot run now, or nil when it can: a take still being written has no name to give
+    /// yet (2026-10-08 §12 — a disabled item always says why).
+    public var renameReason: String? {
+        writing ? RecKitStrings.localized("Still recording") : nil
     }
 
     /// The jobs of this recording, for the menu's reasons and the `Transcribing again…` line.
@@ -336,8 +380,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             guard !Task.isCancelled else { return }
             // An upload finishing is a job settling, so the answer is asked again with every change.
             uploaded = (try? await core.uploaded(recordingId: recordingId))?.boolValue ?? uploaded
-            let running = all.filter { $0.recordingId == recordingId && !Self.settled.contains($0.status) }
+            let mine = all.filter { $0.recordingId == recordingId }
+            let running = mine.filter { !Self.settled.contains($0.status) }
             transcriptionBusy = !running.isEmpty
+            waitingForDrive = await Self.waitsForDrive(mine) { [core] in try await core.jobs.steps(jobId: $0) }
             retranscribing = running.first { $0.retranscription }.map { job in
                 job.workflow?.steps.contains { $0 is Step.LocalTranscribe } == true ? .local : .external
             }
@@ -345,6 +391,17 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     private static let settled: Set<JobStatus> = [.done, .failed, .skippedShort]
+
+    /// Whether the newest job of the recording — the one the list's row reads — is held up only by
+    /// Drive not being connected ([JobAlerts.waitsForDrive]).
+    static func waitsForDrive(_ jobs: [ReclyCore.Job], steps: (String) async throws -> [StepRun]) async -> Bool {
+        guard let newest = jobs.max(by: { $0.createdAt.toEpochMilliseconds() < $1.createdAt.toEpochMilliseconds() }) else {
+            return false
+        }
+        if newest.status == .needsAuth { return true }
+        guard newest.status == .failed, let runs = try? await steps(newest.id) else { return false }
+        return JobAlerts.waitsForDrive(status: .failed, lastError: JobAlerts.blockingError(steps: runs))
+    }
 
     @discardableResult
     private func refreshSettings() async -> ProcessingTranscription? {
@@ -446,12 +503,14 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         audioRecord = record
         guard let record else {
             writing = false
+            metaLengthSec = nil
             givenTitle = ""
             playedParts = []
             directory = nil
             return .empty
         }
         writing = record.meta.status == RecordingStatus.recording
+        metaLengthSec = record.meta.durationSec?.doubleValue
         givenTitle = record.meta.title ?? ""
         highlights = record.meta.highlights.map(\.atSec)
         let track = RecordingPlaylist.playedTrack(tracks: record.meta.tracks)
@@ -593,7 +652,7 @@ public struct RecordingDetailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: draft == nil ? model.title : RecKitStrings.localized("Edit transcript"), trailingAlignment: .trailing) {
+            ScreenHeader(title: draft == nil ? model.title : RecKitStrings.localized("Edit transcript"), trailingAlignment: .trailing, oneRow: Self.oneRowHeader) {
                 HStack(spacing: Space.xs) {
                     if let draft {
                         // docs/09 "Editing and speakers": the desktop's Cancel · Save are in the header; the
@@ -626,12 +685,15 @@ public struct RecordingDetailView: View {
                         }
                         if let onClose {
                             // Leaving the page stops what it was playing: the sheet is gone but this view
-                            // is not torn down synchronously with it.
-                            BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) {
+                            // is not torn down synchronously with it. 2026-10-08 §9: an icon in the row
+                            // Share and More are in, as quiet as they are, rather than a bordered word.
+                            Button {
                                 player.stop()
                                 onClose()
-                            }
-                            .accessibilityIdentifier("detail-close")
+                            } label: { HeaderIcon(systemName: "xmark") }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel(Text(verbatim: loc("Close")))
+                                .accessibilityIdentifier("detail-close")
                         }
                     }
                 }
@@ -682,6 +744,7 @@ public struct RecordingDetailView: View {
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
+                    lengthSec: model.lengthSec,
                     canSeek: canSeek,
                     drive: !model.icloud && !model.folder,
                     saving: model.saving == .processing,
@@ -695,8 +758,13 @@ public struct RecordingDetailView: View {
                         .font(blueprint.fonts.bodySmall)
                         .foregroundStyle(blueprint.palette.textMuted)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("transcript-message")
                     if model.availability == .unavailable {
                         BlueprintButton(loc("Retry")) { Task { await model.reloadResults() } }
+                    } else if model.transcript == nil, model.waitingForDrive, let connect = model.connectDrive {
+                        // 2026-10-08 §7 · docs/09 screen principle 8: the one way out, where the user is.
+                        BlueprintButton(loc("Connect Drive"), action: connect)
+                            .accessibilityIdentifier("detail-connect-drive")
                     }
                 }
                 .padding(Space.l)
@@ -706,6 +774,7 @@ public struct RecordingDetailView: View {
                     transcript: transcript,
                     groups: model.groups,
                     seekableDurationSec: model.totalSec,
+                    lengthSec: model.lengthSec,
                     canSeek: canSeek,
                     positionSec: player.positionSec,
                     playing: player.isPlaying,
@@ -931,7 +1000,7 @@ public struct RecordingDetailView: View {
         .overlay {
             GeometryReader { geometry in
                 ForEach(model.highlights, id: \.self) { mark in
-                    HighlightMenu(atSec: mark, go: { seek(toSec: mark) }, remove: { Task { await model.removeHighlight(mark) } }) {
+                    HighlightMenu(atSec: mark, stamp: model.stamp(mark), go: { seek(toSec: mark) }, remove: { Task { await model.removeHighlight(mark) } }) {
                         Color.clear
                             .frame(width: 24, height: geometry.size.height)
                             .contentShape(Rectangle())
@@ -1025,6 +1094,14 @@ public struct RecordingDetailView: View {
         }
     }
 
+    /// 2026-10-08 §9: the phone's header is one row — title, Share, More and Close — with the title
+    /// giving way. The Mac's pane keeps the header that wraps its buttons under a long title.
+    #if os(iOS)
+    private static let oneRowHeader = true
+    #else
+    private static let oneRowHeader = false
+    #endif
+
     /// docs/09: a tenth of the row's width at a time, slow enough to read as work and not as sound.
     private static let loaderBand = 10
     /// The ghost ticks' height, as a share of the row.
@@ -1117,7 +1194,7 @@ public struct RecordingDetailView: View {
                 #endif
             } else if model.hasAudio {
                 #if os(iOS)
-                Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
+                Text(verbatim: "\(model.stamp(positionSec)) / \(model.stamp(model.totalSec))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 Spacer(minLength: Space.s)
@@ -1150,7 +1227,7 @@ public struct RecordingDetailView: View {
                 }
                 // docs/07 rule 4: a clock is a stamp, not a sentence.
                 #if !os(iOS)
-                Text(verbatim: "\(LedgerFormat.clock(Int(positionSec))) / \(LedgerFormat.clock(Int(model.totalSec)))")
+                Text(verbatim: "\(model.stamp(positionSec)) / \(model.stamp(model.totalSec))")
                     .font(blueprint.fonts.monoBodySmall)
                     .foregroundStyle(blueprint.palette.textMuted)
                 // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.

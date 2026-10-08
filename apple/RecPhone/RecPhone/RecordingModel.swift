@@ -265,6 +265,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
 
     /// docs/13 I2: open the core, finish whatever the last run left behind, then offer to record.
     private func load() async {
+        // docs/09 "Quick start": no recording outlives the process that made it, so whatever the widget's
+        // file says from a run that was killed, this one is idle — said before anything can fail to
+        // open, and said again below once recovery has settled.
+        publishStatus()
         do {
             let bridge = try await CoreBridge.make(
                 dataDirectory: dataDirectory,
@@ -615,6 +619,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     private func detail(id: String, title: String) -> RecordingDetailModel? {
         guard let core = bridge?.core else { return nil }
         let detail = RecordingDetailModel(core: core, recordingId: id, title: title, playbackGate: playbackGate)
+        // 2026-10-08 §7: a recording waiting for Drive offers the connection on its own page.
+        detail.connectDrive = { [weak self] in self?.signIn() }
         // Transcribe again queues a job: the executor runs it now rather than at its next timer.
         detail.jobsDue = { [weak self] in
             self?.runner?.jobsDue()
@@ -778,8 +784,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             recordingId = nil
             highlightedAtSec = nil
         }
+        // 2026-10-08 §4: the timer keeps the recording's length while it is saved, and goes back to
+        // `00:00` only once the recorder is idle again.
+        if next == .idle { elapsed = "" }
         Task { await updateActivity() }
-        if isRecording != wasRecording { publishStatus() }
+        // docs/09 "Quick start": on every move back to idle as well, not only when "recording" flips — a
+        // widget left saying "recording" is a timer counting up over an idle app.
+        if isRecording != wasRecording || next == .idle { publishStatus() }
     }
 
     /// docs/09 "Quick start": the Home and Lock Screen widgets are drawn by another process from the app group,
@@ -806,17 +817,17 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         self.ticker = ticker
     }
 
+    /// The clock stops where the recording did; [adopt] clears it once the save is over.
     private func stopTicking() {
         ticker?.invalidate()
         ticker = nil
-        elapsed = ""
     }
 
     /// Audio actually written, which is what the recorder counts — a device change that cost three
     /// seconds is not three seconds of recording.
     private func tick() {
         let total = Int((recorder?.recordedSec ?? 0).rounded(.down))
-        elapsed = LedgerFormat.clock(total)
+        elapsed = LedgerFormat.elapsed(total)
         // docs/13 "renewed at the 8-hour limit", checked here rather than from a timer of its own.
         Task { await activity.refreshIfNeeded() }
     }

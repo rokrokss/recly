@@ -65,7 +65,7 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         app.buttons["detail-more"].tap()
         sleep(1)
         shot("detail-more-menu-\(language)")
-        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", language == "ko" ? "00:00:00에" : "Add highlight at")).firstMatch.tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", language == "ko" ? "00:00에" : "Add highlight at")).firstMatch.tap()
         sleep(1)
 
         app.buttons["playback-speed"].tap()
@@ -138,7 +138,7 @@ final class CompetitiveFeaturesUITests: XCTestCase {
     private func searchAndSettings(_ language: String) {
         let app = launch(language)
         app.tabBars.buttons[language == "ko" ? "목록" : "List"].tap()
-        let search = app.searchFields.firstMatch
+        let search = app.textFields["list-search"]
         XCTAssertTrue(search.waitForExistence(timeout: 20))
         shot("list-\(language)")
         search.tap()
@@ -152,7 +152,8 @@ final class CompetitiveFeaturesUITests: XCTestCase {
         sleep(3)
         shot("search-find-bar-\(language)")
         app.buttons["detail-close"].tap()
-        search.buttons.firstMatch.exists ? search.buttons.firstMatch.tap() : ()
+        app.buttons["list-search-clear"].exists ? app.buttons["list-search-clear"].tap() : ()
+        search.tap()
         search.typeText("zzzz")
         sleep(1)
         shot("search-no-results-\(language)")

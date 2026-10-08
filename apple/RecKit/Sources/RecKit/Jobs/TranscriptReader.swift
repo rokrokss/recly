@@ -11,6 +11,8 @@ struct TranscriptReader: View {
     let transcript: Transcript
     let groups: [TranscriptGroup]
     let seekableDurationSec: Double
+    /// The recording's whole length, which shapes every time drawn here (2026-10-08 §3).
+    let lengthSec: Double?
     let canSeek: Bool
     let positionSec: Double
     let playing: Bool
@@ -123,23 +125,23 @@ struct TranscriptReader: View {
     }
 
     private func row(_ group: TranscriptGroup, active: Bool) -> some View {
-        let stamp = LedgerFormat.clock(Int(group.start))
+        let stamp = LedgerFormat.stamp(Int(group.start), total: lengthSec)
         let end = groups.indices.contains(group.id + 1) ? groups[group.id + 1].start : .infinity
         let marks = highlights.filter { $0 >= group.start && $0 < end }
         return VStack(alignment: .leading, spacing: Space.xs) {
             HStack(spacing: Space.xs) {
                 BlueprintButton(stamp, tone: active ? .accent : .quiet, mono: true) { onSeek(group.start) }
                     .disabled(!canSeek || group.start >= seekableDurationSec)
-                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", stamp)))
+                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(group.start)))))
                     .accessibilityIdentifier("transcript-time-\(group.id)")
                 ForEach(marks, id: \.self) { mark in
-                    HighlightMenu(atSec: mark, go: { onSeek(mark) }, remove: { onRemoveHighlight(mark) }) {
+                    HighlightMenu(atSec: mark, stamp: LedgerFormat.stamp(Int(mark), total: lengthSec), go: { onSeek(mark) }, remove: { onRemoveHighlight(mark) }) {
                         // docs/09 "Highlights": the highlight square, 6×6 in the accent, right after the time
-                        // and centred with it; its target reaches into the gaps on either side.
+                        // and centred with it; its target is a whole 44pt square (2026-10-08 §12).
                         Rectangle()
                             .fill(blueprint.palette.accent)
                             .frame(width: 6, height: 6)
-                            .frame(width: 6 + 2 * Space.s, height: minTouch)
+                            .frame(width: minTouch, height: minTouch)
                             .contentShape(Rectangle())
                     }
                     .padding(.horizontal, -Space.xs)

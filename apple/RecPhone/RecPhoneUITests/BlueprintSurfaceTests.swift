@@ -43,12 +43,13 @@ final class BlueprintSurfaceTests: XCTestCase {
             confirm.waitForExistence(timeout: 30),
             "no consent reminder before the first recording"
         )
-        // docs/12: the question, the jurisdictions, the link and the box, all of them the Mac's.
+        // docs/12: the question, the reminder, the link and the box, all of them the Mac's. The
+        // jurisdictions are behind the link, not in the dialog (2026-10-08 §11).
         let body = app.staticTexts["consent-body"]
         XCTAssertTrue(body.exists)
         // `BlueprintCheckRow` announces itself as the switch it is, not as a button.
         XCTAssertTrue(app.switches["consent-suppress"].exists)
-        XCTAssertTrue(body.label.contains("Korea"), body.label)
+        XCTAssertFalse(body.label.contains("Korea"), body.label)
         attach("consent reminder")
 
         app.buttons["Cancel"].firstMatch.tap()

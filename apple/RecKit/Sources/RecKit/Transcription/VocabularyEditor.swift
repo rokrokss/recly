@@ -71,7 +71,8 @@ struct VocabularyEditor: View {
                 Text(verbatim: "×")
                     .font(blueprint.fonts.sans(TypeSize.bodySmall))
                     .foregroundStyle(blueprint.palette.textMuted)
-                    .frame(minWidth: 28, minHeight: minTouch)
+                    // 2026-10-08 §12: a 44pt target in both directions, as every chip's is.
+                    .frame(minWidth: minTouch, minHeight: minTouch)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

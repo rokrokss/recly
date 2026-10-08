@@ -50,34 +50,49 @@ public enum LedgerFormat {
         )
     }
 
-    /// `42:10`, or `1:02:33` past the hour — what Android and Windows write in the same column.
+    /// `42:10`, or `01:02:33` past the hour — [elapsed]'s shape, which is what Android and Windows
+    /// write in the same column.
     public static func length(_ seconds: Double?) -> String {
         guard let seconds, seconds >= 0 else { return noLength }
         return elapsed(Int(seconds.rounded(.down)))
     }
 
-    /// docs/09 "Typography": `00:12:34` — the record timer, the detail's playback clock and a transcript
-    /// turn's stamp. Fixed width, because a timer that reflows is a distraction; the hours are not
-    /// wrapped at 24, because a recording is not a clock.
+    /// `00:12:34` whatever the length — what a screen reader is told (the waveform's position, a
+    /// highlight's name). The UX decisions of 2026-10-08 §3 leave spoken text as it was; what is
+    /// drawn goes through [elapsed] or [stamp].
     public static func clock(_ seconds: Int) -> String {
         let total = max(0, seconds)
         return String(format: "%02d:%02d:%02d", total / 3600, (total / 60) % 60, total % 60)
     }
 
-    /// [length]'s shape, and the watch's timer: a watch does not have the width for `00:` in front
-    /// of a short memo (Wear's `formatElapsed` is the same).
+    /// docs/09 "Typography" (2026-10-08 §3): `MM:SS` under an hour and `HH:MM:SS` from one — the live
+    /// timers (record screen, menu bar, watches, the `Highlight · …` line while recording) and the
+    /// ledger's length column. The hours are not wrapped at 24, because a recording is not a clock.
     public static func elapsed(_ seconds: Int) -> String {
-        seconds >= 3600
-            ? String(format: "%d:%02d:%02d", seconds / 3600, (seconds / 60) % 60, seconds % 60)
-            : String(format: "%02d:%02d", seconds / 60, seconds % 60)
+        let total = max(0, seconds)
+        return total >= 3600
+            ? String(format: "%02d:%02d:%02d", total / 3600, (total / 60) % 60, total % 60)
+            : String(format: "%02d:%02d", total / 60, total % 60)
+    }
+
+    /// 2026-10-08 §3: a moment inside one recording's screen — the playback clock, a transcript time, a
+    /// highlight and its menu — in the shape the recording's whole length takes, so every time on
+    /// that screen is one width. A recording whose length is not known uses the time itself.
+    public static func stamp(_ seconds: Int, total: Double?) -> String {
+        guard let total, total > 0 else { return elapsed(seconds) }
+        return Int(total.rounded(.down)) >= 3600 || seconds >= 3600 ? clock(seconds) : elapsed(seconds)
     }
 
     /// docs/09 screen principle 2: the row is one accessibility element, and this is the sentence it says —
     /// the state in words rather than as the code the badge draws.
-    public static func announce(title: String, at: String, length: String, state: String) -> String {
-        UiMessage.key(
+    ///
+    /// - Parameter preview: the transcript's first words the row draws under its title (2026-10-08 §8),
+    ///   said right after the title, as they are seen.
+    public static func announce(title: String, preview: String? = nil, at: String, length: String, state: String) -> String {
+        let heading = preview.map { "\(title), \($0)" } ?? title
+        return UiMessage.key(
             "%1$@, recorded %2$@, length %3$@, %4$@",
-            args: [.verbatim(title), .verbatim(at), .verbatim(length), .verbatim(state)]
+            args: [.verbatim(heading), .verbatim(at), .verbatim(length), .verbatim(state)]
         ).text
     }
 

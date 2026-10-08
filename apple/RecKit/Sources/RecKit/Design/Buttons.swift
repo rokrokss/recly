@@ -75,13 +75,22 @@ public struct BlueprintButton: View {
             .frame(minWidth: minWidth, maxWidth: fillsWidth ? .infinity : nil, minHeight: minTouch)
             .background(fill, in: RoundedRectangle(cornerRadius: Radius.node))
             .overlay {
+                // 2026-10-08 §12: a disabled button is dashed as well as muted — the shape survives
+                // high contrast, where the muted ink and the grid are both promoted to the body
+                // colour and a live quiet button would look the same (Windows' `dashedBorder`).
                 RoundedRectangle(cornerRadius: Radius.node)
-                    .strokeBorder(edge, lineWidth: blueprint.line)
+                    .strokeBorder(
+                        edge,
+                        style: StrokeStyle(lineWidth: blueprint.line, dash: isEnabled ? [] : BlueprintButton.dash)
+                    )
             }
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
+
+    /// The disabled border's dash and gap, Windows' 3 and 3.
+    static let dash: [CGFloat] = [3, 3]
 
     private var ink: Color {
         guard isEnabled else { return blueprint.palette.textMuted }
@@ -98,7 +107,8 @@ public struct BlueprintButton: View {
         switch tone {
         case .primary, .accent: return blueprint.palette.accent
         case .danger: return blueprint.palette.danger
-        case .quiet: return blueprint.palette.grid
+        // 2026-10-08 §12: 3:1 against the page in light and dark, as an input's border is.
+        case .quiet: return blueprint.palette.inputBorder
         }
     }
 
@@ -113,7 +123,7 @@ private struct ButtonFillsWidthKey: EnvironmentKey {
 
 extension EnvironmentValues {
     /// docs/09 screen principle 8: a dialog's answers that no longer fit on one row stack full width.
-    var blueprintButtonFillsWidth: Bool {
+    public var blueprintButtonFillsWidth: Bool {
         get { self[ButtonFillsWidthKey.self] }
         set { self[ButtonFillsWidthKey.self] = newValue }
     }
@@ -213,7 +223,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
         .frame(minHeight: minTouch)
         .overlay {
             RoundedRectangle(cornerRadius: Radius.node)
-                .strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+                .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
         }
         .contentShape(Rectangle())
     }

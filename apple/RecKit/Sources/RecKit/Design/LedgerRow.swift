@@ -7,8 +7,8 @@ private enum Column {
 }
 
 /// The status column: as wide as the widest badge the ledger can show, measured at the type size
-/// in use rather than guessed — so every code fits at full size and none is shrunk (the header and
-/// every row measure the same set, so they line up).
+/// and in the language in use rather than guessed — so every word fits at full size and none is
+/// shrunk (the header and every row measure the same set, so they line up).
 private struct StatusColumn<Content: View>: View {
     private let content: Content
 
@@ -18,8 +18,8 @@ private struct StatusColumn<Content: View>: View {
 
     var body: some View {
         ZStack {
-            ForEach(LedgerStatus.ledgerCodes, id: \.self) { code in
-                StatusBadge(LedgerStatus(code: code, tone: .neutral)).hidden()
+            ForEach(LedgerStatus.ledgerStatuses.indices, id: \.self) { index in
+                StatusBadge(LedgerStatus.ledgerStatuses[index]).hidden()
             }
             content
         }
@@ -209,8 +209,11 @@ public struct LedgerRow<Trailing: View>: View {
         HStack(spacing: 10) {
             when.frame(width: Column.time, alignment: .leading)
             what.frame(maxWidth: .infinity, alignment: .leading)
+            // At least the column's width, and wider for a recording past the hour (`01:02:33`)
+            // rather than cut: the row's title gives way, and the right edges still line up.
             howLong
-                .frame(width: Column.length, alignment: .trailing)
+                .fixedSize()
+                .frame(minWidth: Column.length, alignment: .trailing)
             StatusColumn {
                 StatusBadge(status)
                     .background {
