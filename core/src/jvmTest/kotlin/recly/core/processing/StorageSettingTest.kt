@@ -98,6 +98,16 @@ class StorageSettingTest {
         assertEquals(StorageKind.DRIVE, upload(repository.recordingSnapshot(RECORDING_ID)!!).store)
     }
 
+    @Test
+    fun `only a local folder keeps its own folder template, Drive and iCloud go to a folder a month`() {
+        fun folderFor(kind: StorageKind) = upload(ProcessingSettingsDocument(revision = 1, updatedAt = "2026-10-09T00:00:00.000Z",
+            updatedBy = "test", settings = ProcessingSettings(storage = ProcessingStorage(folder = "recly/memo", provider = kind)))).folder
+
+        assertEquals("recly/memo", folderFor(StorageKind.FOLDER))
+        assertEquals(ProcessingStorage.DEFAULT_FOLDER, folderFor(StorageKind.DRIVE))
+        assertEquals(ProcessingStorage.DEFAULT_FOLDER, folderFor(StorageKind.ICLOUD))
+    }
+
     private fun upload(document: ProcessingSettingsDocument): Step.DriveUpload =
         ProcessingPlan.compile(document).steps.filterIsInstance<Step.DriveUpload>().single()
 
