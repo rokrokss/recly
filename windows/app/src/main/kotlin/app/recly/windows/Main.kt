@@ -396,12 +396,14 @@ private fun TitlePrompt(
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = strings[Str.RECORDING_TITLE],
-        // Dismissing the title prompt discards this take, just like its Cancel button.
+        // Dismissing the title prompt discards this take, just like its Discard recording button.
         onDismissRequest = model::cancelTitle,
         theme = themed,
         height = TITLE_HEIGHT.dp,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], model::cancelTitle, tone = ButtonTone.QUIET)
+            // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
+            // that cannot be undone (2026-10-08).
+            BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER)
             BlueprintButton(
                 label = strings[Str.SAVE],
                 onClick = { model.saveTitle(title, participants) },

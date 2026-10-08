@@ -504,6 +504,8 @@ enum class Str {
     NODE_NO_HELPER,
     NODE_NAMING,
     NODE_DESKTOP,
+    /** docs/03 "Titles": the naming sheet's second button, which deletes the take that just ended. */
+    RECORDING_DISCARD,
 
     CORE_STALE,
     ;
