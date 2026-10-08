@@ -188,23 +188,47 @@ public struct BadgeButton: View {
 public struct StatusBadge: View {
     @Environment(\.blueprint) private var blueprint
     private let status: LedgerStatus
+    private let wraps: Bool
+    /// The text in place of the status's word — only the ledger's measure of its cap uses it.
+    private let verbatim: String?
 
-    public init(_ status: LedgerStatus) {
+    /// - Parameter wraps: take the width the ledger's status column gives it and wrap the word onto
+    ///   further lines, centred, when the word is wider than that (2026-10-08 badge column rule).
+    ///   Elsewhere the badge is its own width on one line.
+    public init(_ status: LedgerStatus, wraps: Bool = false) {
         self.status = status
+        self.wraps = wraps
+        verbatim = nil
+    }
+
+    /// A badge-sized piece of text, for measuring: the ledger's status column is capped at what the
+    /// old code `TRANSCRIBING` took.
+    init(measuring text: String) {
+        status = LedgerStatus(code: text, tone: .neutral)
+        wraps = false
+        verbatim = text
     }
 
     public var body: some View {
-        HStack(spacing: Space.xs) {
+        let words = HStack(spacing: Space.xs) {
             // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink.
             if status.code == "IMPORTING" { BlueprintLoader(color: status.tone.ink(blueprint.palette)) }
-            Text(verbatim: status.label)
+            Text(verbatim: verbatim ?? status.label)
         }
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
-            .lineLimit(1)
-            // A word that is truncated or shrunk is not read any more: the badge is always its own
-            // width, and the ledger's status column is measured to the widest one.
-            .fixedSize()
+            .multilineTextAlignment(.center)
+        return Group {
+            if wraps {
+                // A word wider than the column goes onto a second line rather than being cut or
+                // shrunk: every letter is still read, at full size. Its own line limit, because the
+                // ledger row puts its columns on one line each.
+                words.lineLimit(nil).fixedSize(horizontal: false, vertical: true)
+            } else {
+                // A word that is truncated or shrunk is not read any more: the badge is its own width.
+                words.lineLimit(1).fixedSize()
+            }
+        }
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .overlay {
