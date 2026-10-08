@@ -358,6 +358,7 @@ it (validation error `TranscribeNeedsUpload`).
 ### Template variables
 
 > **2026-09-24**: The folder in the recording processing settings (`storage.folder`) cannot use `title` or `workflowName` (§5 "Fixed processing settings").
+> **2026-10-09**: `storage.folder` applies only to a local folder; Google Drive and iCloud always use `recly/memo/{{yyyy}}-{{MM}}` (§9 principle 4).
 
 Only the names below are allowed inside `{{ }}`. An unknown variable is a validation error.
 
@@ -2298,9 +2299,11 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    space is added equally to each chip's own width — no chip gets narrower than its own width. If they do not fit on one line, they wrap, and each line is filled (Android
    `FillRow`, Apple `FillLayout`). In desktop windows the three words would stretch to the panel edge, so they stay left-aligned.
    The Drive connection status also uses the common settings row. On the right is a single quiet `Disconnect` button (2026-10-08: no longer red — disconnecting deletes no recording), and one confirmation dialog,
-   whose confirm button is the primary one, completes it. The Drive folder is two chips, `Monthly folders` (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved
-   path in mono under them; the stored value is still the template, and a value set elsewhere shows as Monthly and is left untouched until a chip is
-   tapped (2026-10-08). Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
+   whose confirm button is the primary one, completes it. Google Drive and iCloud store recordings in a folder a
+   month (`recly/memo/{{yyyy}}-{{MM}}`) and show no folder setting; only with a **local folder** is the folder a choice — two chips, `Monthly folders`
+   (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved path in mono under them, shown only while the storage is
+   the local folder (2026-10-09, user decision; the core's `ProcessingStorage.uploadFolder()`). The stored value is still the template, and a value
+   set elsewhere shows as Monthly and is left untouched until a chip is tapped. Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
    The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
    buttons — they are nothing to draw attention to. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
    Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
