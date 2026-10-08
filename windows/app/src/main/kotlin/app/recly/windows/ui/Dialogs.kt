@@ -133,10 +133,11 @@ fun DisconnectDialog(
         height = DISCONNECT_HEIGHT,
         actions = {
             BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            // Quiet, not red (2026-10-08): nothing is deleted, and Drive can be connected again.
             BlueprintButton(
                 label = strings[Str.SETTINGS_DISCONNECT],
                 onClick = { onConfirm(false) },
-                tone = ButtonTone.DANGER,
+                tone = ButtonTone.QUIET,
                 enabled = prompt.canConfirm,
             )
         },

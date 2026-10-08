@@ -508,6 +508,9 @@ enum class Str {
     RECORDING_DISCARD,
     /** The detail of a recording whose upload waits for the Drive connection (2026-10-08). */
     DETAIL_WAITING_DRIVE,
+    /** docs/05 "Fixed processing settings": the Drive folder template as two choices (2026-10-08). */
+    PROCESSING_FOLDER_MONTHLY,
+    PROCESSING_FOLDER_SINGLE,
 
     CORE_STALE,
     ;
