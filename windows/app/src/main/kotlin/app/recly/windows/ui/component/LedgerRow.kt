@@ -36,9 +36,15 @@ import app.recly.windows.ui.theme.mono
 private val TIME_COLUMN = 68.dp
 
 /**
- * Wide enough for `1:02:33`, the longest thing [app.recly.windows.ui.LedgerFormat.length] mints.
+ * At least this wide, and as wide as `01:02:33` — the longest thing [app.recly.windows.ui.LedgerFormat.length]
+ * mints — in the column's own type ([lengthColumnWidth]).
  */
 private val LENGTH_COLUMN = 52.dp
+
+/** The length column, measured against the widest length the ledger can write. */
+@Composable
+private fun lengthColumnWidth(): Dp =
+    maxOf(LENGTH_COLUMN, textColumnWidth(listOf(app.recly.windows.ui.LedgerFormat.LONGEST_LENGTH), mono.small))
 
 /**
  * Aligns an expanded row's action with the right edge of the column's centered DONE badge. [status]
@@ -104,7 +110,7 @@ fun LedgerHeader(
         ) {
             Heading(time, Modifier.width(TIME_COLUMN))
             Heading(title, Modifier.weight(1f))
-            Heading(length, Modifier.width(LENGTH_COLUMN), TextAlign.End)
+            Heading(length, Modifier.width(lengthColumnWidth()), TextAlign.End)
             Heading(status, Modifier.width(statusWidth), TextAlign.Center)
         }
         HairLine()
@@ -186,7 +192,7 @@ fun LedgerRow(
             // clock faces is read down, not across (the Mac's `howLong`).
             Text(
                 length,
-                modifier = Modifier.width(LENGTH_COLUMN).clearAndSetSemantics {},
+                modifier = Modifier.width(lengthColumnWidth()).clearAndSetSemantics {},
                 style = mono.small,
                 color = palette.text,
                 textAlign = TextAlign.End,

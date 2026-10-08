@@ -73,6 +73,8 @@ internal fun TranscriptReader(
     strings: Strings,
     modifier: Modifier = Modifier,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
+    /** The recording's length, which picks the format of every time drawn here ([LedgerFormat.clock]). */
+    spanSec: Double? = transcript.durationSec,
 ) {
     val blocks = document.blocks
     val ranges = remember(transcript) { blockSegments(transcript, blocks) }
@@ -134,6 +136,7 @@ internal fun TranscriptReader(
                         saving = saving[index],
                         speakerEnabled = !busy,
                         strings = strings,
+                        spanSec = spanSec,
                     )
                 }
             }
@@ -147,7 +150,7 @@ internal fun TranscriptReader(
                 open.speaker?.let { speaker ->
                     SpeakerMenu(transcript.speakers, speaker, close, { onRenameSpeaker(open.block, speaker) }, { onChangeSpeaker(open.block, ranges[open.block], it) }, strings)
                 }
-                open.highlight?.let { at -> HighlightMenu(at, close, { onSeek(at) }, { onRemoveHighlight(at) }, strings) }
+                open.highlight?.let { at -> HighlightMenu(at, spanSec, close, { onSeek(at) }, { onRemoveHighlight(at) }, strings) }
             }
         }
     }
@@ -170,14 +173,16 @@ private fun Group(
     saving: InlineSave?,
     speakerEnabled: Boolean,
     strings: Strings,
+    spanSec: Double?,
 ) {
     val palette = blueprint
-    val stamp = LedgerFormat.elapsed((start * 1000).toLong())
+    val stamp = LedgerFormat.clock(start, spanSec)
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Box(Modifier.width(2.dp).fillMaxHeight().background(if (isActive) palette.accent else Color.Transparent))
         Column(Modifier.padding(start = Space.m - 2.dp, end = Space.m)) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
-                val seekLabel = strings[Str.TRANSCRIPT_SEEK, stamp]
+                // What a screen reader hears is unchanged: hours always said.
+                val seekLabel = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((start * 1000).toLong())]
                 BlueprintButton(
                     stamp, { onSeek(start) }, enabled = canSeek,
                     modifier = Modifier.testTag("transcript-time-$index").semantics { contentDescription = seekLabel },

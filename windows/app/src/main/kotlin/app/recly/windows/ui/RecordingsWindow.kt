@@ -306,7 +306,11 @@ private fun Sidebar(
         }
         if (query.isNotBlank()) {
             val found = hits.orEmpty()
-            items(found, key = { "hit-${it.recordingId}" }) { hit -> SearchResultRow(hit, strings[Str.UNTITLED]) { onOpenHit(hit) } }
+            items(found, key = { "hit-${it.recordingId}" }) { hit ->
+                // The hit's time is drawn in the format the recording's own length picks, when the list knows it.
+                val length = model.recents.firstOrNull { it.id == hit.recordingId }?.durationSec
+                SearchResultRow(hit, strings[Str.UNTITLED], length) { onOpenHit(hit) }
+            }
             if (hits != null && found.isEmpty()) {
                 item {
                     Column(
@@ -587,6 +591,7 @@ private fun Detail(
             onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
             drive = !detail.folder,
             speakersEnabled = editSave == null,
+            spanSec = detail.spanSec,
             strings = strings,
             modifier = Modifier.fillMaxSize(),
         )
@@ -627,6 +632,7 @@ private fun Detail(
                 strings = strings,
                 modifier = Modifier.fillMaxSize(),
                 seekableDurationSec = detail.audio.totalSec,
+                spanSec = detail.spanSec,
             )
         }
     }
@@ -712,6 +718,7 @@ private fun PlayerBar(
                 highlights = detail.highlights,
                 onRemoveHighlight = { at -> model.setHighlights(detail.recordingId, detail.highlights - at) },
                 strings = strings,
+                spanSec = detail.spanSec,
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
             // While the parts are coming back from Drive the row is already there, loading, so the
@@ -773,7 +780,7 @@ private fun PlayerBar(
                     }
                     // docs/07 rule 4: a clock is a stamp, not a sentence.
                     Text(
-                        "${LedgerFormat.elapsed(millis(positionSec))} / ${LedgerFormat.elapsed(millis(detail.audio.totalSec))}",
+                        "${LedgerFormat.clock(positionSec, detail.spanSec)} / ${LedgerFormat.clock(detail.audio.totalSec, detail.spanSec)}",
                         style = mono.small,
                         color = palette.textMuted,
                     )
@@ -937,6 +944,8 @@ private fun Waveform(
     highlights: List<Double> = emptyList(),
     onRemoveHighlight: (Double) -> Unit = {},
     strings: Strings? = null,
+    /** The recording's length, for the format of the times its menus draw ([LedgerFormat.clock]). */
+    spanSec: Double? = null,
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -1060,7 +1069,7 @@ private fun Waveform(
             }
             tickMenu?.let { at ->
                 Box(Modifier.offset(x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)).fillMaxHeight()) {
-                    HighlightMenu(at, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
+                    HighlightMenu(at, spanSec ?: totalSec, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
                 }
             }
         }

@@ -207,6 +207,24 @@ class LedgerStatusTest {
     }
 
     /**
+     * The UX decisions of 2026-10-08: a drawn time is `MM:SS` under an hour and `HH:MM:SS` from one. A live
+     * timer follows itself; inside one recording, the recording's length picks, so every time there has one
+     * width; a recording of unknown length uses the time itself.
+     */
+    @Test
+    fun `a drawn time is minutes under the hour and hours from it`() {
+        assertEquals("00:12", LedgerFormat.clock(12_000))
+        assertEquals("59:59", LedgerFormat.clock(3_599_999))
+        assertEquals("01:00:00", LedgerFormat.clock(3_600_000))
+        assertEquals("00:00", LedgerFormat.clock(-5_000))
+        // Inside a recording an hour long, the first seconds already carry the hours.
+        assertEquals("00:00:12", LedgerFormat.clock(12.0, totalSec = 3_700.0))
+        assertEquals("02:03", LedgerFormat.clock(123.0, totalSec = 600.0))
+        assertEquals("02:03", LedgerFormat.clock(123.0, totalSec = null))
+        assertEquals("01:02:03", LedgerFormat.clock(3_723.0, totalSec = null))
+    }
+
+    /**
      * docs/09 screen principle 2: the length column, in the shape the phone and the Mac write it — and the
      * placeholder all three use for a recording that has no length yet, which is a cell that says
      * "not in yet" rather than one that lost its value.
@@ -215,7 +233,8 @@ class LedgerStatusTest {
     fun `the length column is minutes, hours past the hour, and a placeholder until finalized`() {
         assertEquals("00:00", LedgerFormat.length(0.0))
         assertEquals("42:10", LedgerFormat.length(2_530.0))
-        assertEquals("1:02:03", LedgerFormat.length(3_723.4))
+        assertEquals("01:02:03", LedgerFormat.length(3_723.4))
+        assertEquals(LedgerFormat.LONGEST_LENGTH.length, LedgerFormat.length(3_723.4).length)
         assertEquals(LedgerFormat.NO_LENGTH, LedgerFormat.length(null))
         assertEquals(LedgerFormat.NO_LENGTH, LedgerFormat.length(-1.0))
     }

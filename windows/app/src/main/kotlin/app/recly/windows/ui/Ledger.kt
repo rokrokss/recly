@@ -173,9 +173,9 @@ object LedgerFormat {
         format(startedAt, DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM, FormatStyle.SHORT).withLocale(locale))
 
     /**
-     * docs/09: `00:12:34` — the recording timer from the moment the recorder said it had started,
-     * and a transcript turn's offset from the start of the recording. Hours are not wrapped at 24;
-     * a recording is not a clock.
+     * `00:12:34`, hours always written — what a screen reader is told about a moment of a recording
+     * (a transcript time, a highlight). The UX decisions of 2026-10-08 changed what is *drawn* ([clock])
+     * and left what is spoken as it was. Hours are not wrapped at 24; a recording is not a clock.
      */
     fun elapsed(millis: Long): String {
         val seconds = (millis / 1000).coerceAtLeast(0)
@@ -183,21 +183,41 @@ object LedgerFormat {
     }
 
     /**
-     * docs/09 screen principle 2: the ledger's length column — `42:10`, or `1:02:33` past the hour, which is
-     * what the phone and the Mac write in the same column (`LedgerFormat.length`, `duration`).
+     * A time as it is drawn (the UX decisions of 2026-10-08): `MM:SS` under an hour, `HH:MM:SS` from one.
+     * [spanMillis] picks the format — inside one recording's screen it is that recording's whole length,
+     * so every time there has one width; a live timer passes none and follows its own time
+     * (`59:59` → `01:00:00`).
+     */
+    fun clock(millis: Long, spanMillis: Long? = null): String {
+        val seconds = (millis / 1000).coerceAtLeast(0)
+        val span = maxOf(seconds, (spanMillis ?: 0) / 1000)
+        return if (span >= HOUR) {
+            "%02d:%02d:%02d".format(seconds / HOUR, (seconds / 60) % 60, seconds % 60)
+        } else {
+            "%02d:%02d".format(seconds / 60, seconds % 60)
+        }
+    }
+
+    /** [clock] for a moment [atSec] of a recording [totalSec] long — null when its length is not known. */
+    fun clock(atSec: Double, totalSec: Double?): String =
+        clock((atSec * 1000).toLong(), totalSec?.takeIf { it > 0 }?.let { (it * 1000).toLong() })
+
+    /**
+     * docs/09 screen principle 2: the ledger's length column — `42:10`, or `01:02:33` from the hour (2026-10-08),
+     * the same rule as every other drawn time ([clock]).
      *
      * A recording that has not been finalized has no length yet, and [NO_LENGTH] is what says so: a
      * blank cell reads like a value that went missing rather than like one that is not in yet.
      */
     fun length(seconds: Double?): String {
         if (seconds == null || seconds < 0) return NO_LENGTH
-        val total = seconds.toLong()
-        return if (total >= 3600) {
-            "%d:%02d:%02d".format(total / 3600, (total % 3600) / 60, total % 60)
-        } else {
-            "%02d:%02d".format(total / 60, total % 60)
-        }
+        return clock(seconds.toLong() * 1000)
     }
+
+    /** The widest thing [length] writes, which the column is measured against. */
+    const val LONGEST_LENGTH: String = "00:00:00"
+
+    private const val HOUR = 3600L
 
     /** The same three shells write it the same way — it is a clock face, not a sentence. */
     const val NO_LENGTH: String = "--:--"

@@ -63,6 +63,13 @@ import recly.core.transcribe.TranscriptSpeaker
 internal val RecordingDetail.hasTranscript: Boolean
     get() = transcript != null && availability != TranscriptAvailability.EMPTY
 
+/**
+ * The recording's whole length, which picks the format of every time drawn on its screen so they all have one
+ * width (2026-10-08): the meta's, the audio's, or the transcript's; null when none of them knows.
+ */
+internal val RecordingDetail.spanSec: Double?
+    get() = lengthSec?.takeIf { it > 0 } ?: audio.totalSec.takeIf { it > 0 } ?: transcript?.durationSec?.takeIf { it > 0 }
+
 /** Whether the audio is here, or still may be: only a settled trip that brought nothing back means none. */
 private val RecordingDetail.audioReachable: Boolean
     get() = !audio.isEmpty || driveFetch == DriveFetch.DECIDING || driveFetch == DriveFetch.FETCHING
@@ -143,7 +150,7 @@ internal fun MoreButton(
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
-    val stamp = LedgerFormat.elapsed((positionSec * 1000).toLong())
+    val stamp = LedgerFormat.clock(positionSec, detail.spanSec)
     Box {
         BlueprintButton(
             MORE_MARK,
@@ -183,9 +190,17 @@ internal fun MoreButton(
 
 /** docs/03 "Metadata": a highlight's own menu — go there, or take it away (not red: no recording is deleted). */
 @Composable
-internal fun HighlightMenu(atSec: Double, onDismiss: () -> Unit, onGoTo: () -> Unit, onRemove: () -> Unit, strings: Strings) {
+internal fun HighlightMenu(
+    atSec: Double,
+    /** The recording's length, for the time's format ([LedgerFormat.clock]). */
+    totalSec: Double?,
+    onDismiss: () -> Unit,
+    onGoTo: () -> Unit,
+    onRemove: () -> Unit,
+    strings: Strings,
+) {
     BlueprintMenu(true, onDismiss) { MenuColumn {
-        MenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((atSec * 1000).toLong())], { onDismiss(); onGoTo() })
+        MenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.clock(atSec, totalSec)], { onDismiss(); onGoTo() })
         MenuRow(strings[Str.HIGHLIGHT_REMOVE], { onDismiss(); onRemove() })
     } }
 }

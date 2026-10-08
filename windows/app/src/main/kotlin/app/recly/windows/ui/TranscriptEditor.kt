@@ -89,17 +89,21 @@ internal fun TranscriptEditor(
     speakersEnabled: Boolean,
     strings: Strings,
     modifier: Modifier = Modifier,
+    /** The recording's length, which picks the format of the times ([LedgerFormat.clock]). */
+    spanSec: Double? = draft.original.durationSec,
 ) {
     val palette = blueprint
     Column(modifier) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
             items(draft.original.segments.indices.toList(), key = { it }) { index ->
                 val segment = draft.original.segments[index]
-                val stamp = LedgerFormat.elapsed((segment.start * 1000).toLong())
+                val stamp = LedgerFormat.clock(segment.start, spanSec)
+                // What a screen reader hears is unchanged: hours always said.
+                val spoken = LedgerFormat.elapsed((segment.start * 1000).toLong())
                 Column(Modifier.padding(horizontal = Space.m), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
                         BlueprintButton(stamp, { onSeek(segment.start) }, enabled = canSeek, tone = ButtonTone.QUIET, monospace = true,
-                            modifier = Modifier.semantics { contentDescription = strings[Str.TRANSCRIPT_SEEK, stamp] })
+                            modifier = Modifier.semantics { contentDescription = strings[Str.TRANSCRIPT_SEEK, spoken] })
                         val speaker = draft.speakers[index]
                         var menu by remember { mutableStateOf(false) }
                         Box {
@@ -116,7 +120,7 @@ internal fun TranscriptEditor(
                         onValueChange = { draft.texts[index] = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .semantics { contentDescription = stamp }
+                            .semantics { contentDescription = spoken }
                             .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                             .background(palette.surface, RoundedCornerShape(Radius.node))
                             .padding(horizontal = Space.s, vertical = Space.s),

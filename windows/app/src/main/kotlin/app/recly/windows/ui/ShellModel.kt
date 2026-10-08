@@ -120,6 +120,8 @@ data class RecordingDetail(
     val folder: Boolean = false,
     /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
+    /** The recording's whole length as its meta records it, which picks how its times are drawn (2026-10-08). */
+    val lengthSec: Double? = null,
     /** A job of this recording has not settled: editing and transcribing again wait for it (docs/08 "Editing"). */
     val transcribing: Boolean = false,
     /** That job is a re-transcription (docs/10 "Re-transcription"), on this PC or with a provider. */
@@ -387,6 +389,14 @@ class ShellModel(
      * recorder's own state callback, so a popup opened ten minutes in still shows ten minutes.
      */
     var recordingSince: Long? by mutableStateOf(null)
+        private set
+
+    /**
+     * When the recording that is being saved stopped: while the stop files its parts, the popup's timer
+     * holds the recording's final length rather than dropping to nothing (2026-10-08), and both go once
+     * the recorder is idle again ([stop]).
+     */
+    var recordingEndedAt: Long? by mutableStateOf(null)
         private set
 
     /**
@@ -670,8 +680,20 @@ class ShellModel(
             },
             onState = { isRecording ->
                 recording = isRecording
-                // The popup's timer counts from here rather than from when the popup was opened.
-                recordingSince = if (isRecording) System.currentTimeMillis() else null
+                // The popup's timer counts from here rather than from when the popup was opened — and,
+                // while a stop saves, holds where it ended until the recorder is idle again.
+                when {
+                    isRecording -> {
+                        recordingSince = System.currentTimeMillis()
+                        recordingEndedAt = null
+                    }
+                    transition == Transition.STOPPING && recordingSince != null ->
+                        recordingEndedAt = System.currentTimeMillis()
+                    else -> {
+                        recordingSince = null
+                        recordingEndedAt = null
+                    }
+                }
                 // `STARTING` is over the moment the capture is up. The other half — `STOPPING` —
                 // outlives this callback, because a stop publishes it before it waits for the
                 // trailing parts, and the node has to say so for the whole of that wait ([stop]).
@@ -923,6 +945,11 @@ class ShellModel(
                 if (result is StopResult.Deferred) status = Str.STATUS_DEFERRED.message()
             } finally {
                 transition = null
+                // Idle again: the held length goes with `STOPPING`.
+                if (!recording) {
+                    recordingSince = null
+                    recordingEndedAt = null
+                }
             }
         }
     }
@@ -1130,7 +1157,8 @@ class ShellModel(
             } ?: RecordingPlaylist.Selection.EMPTY
             updateDetail(recordingId) {
                 it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
-                    driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER)
+                    driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER,
+                    lengthSec = record?.meta?.durationSec)
             }
             fetchFromDrive(graph, recordingId, record, local)
         }
@@ -1186,13 +1214,14 @@ class ShellModel(
      */
     fun highlightNow() {
         val graph = graph ?: return
+        if (!recording) return
         val recordingId = recorder?.recordingId ?: return
         val since = recordingSince ?: return
         val atSec = (System.currentTimeMillis() - since) / 1000.0
         scope.launch {
             if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
             // For two seconds, then the line is the recording's again.
-            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.elapsed((atSec * 1000).toLong()))
+            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.clock((atSec * 1000).toLong()))
             status = marked
             delay(HIGHLIGHT_LINE_MS)
             if (status == marked && recording) status = Str.STATUS_RECORDING.message()

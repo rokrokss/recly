@@ -109,8 +109,9 @@ private fun Header(model: ShellModel, strings: Strings) {
             ),
             modifier = Modifier.padding(horizontal = Space.m),
         )
-        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard.
-        model.recordingSince?.let { Elapsed(it) }
+        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard — and while it saves,
+        // the recording's final length stays on it until the recorder is idle (2026-10-08).
+        model.recordingSince?.let { Elapsed(it, model.recordingEndedAt) }
         // docs/09 screen principle 6: and under it the track being written, so the capture is visible as
         // well as counted. The levels are the helper's own write path (`HelperEvent.Level`).
         if (model.recording) {
@@ -166,18 +167,21 @@ private fun Header(model: ShellModel, strings: Strings) {
     }
 }
 
-/** docs/09 "Typography": `00:12:34`, counted from the moment the recorder said it had started. */
+/**
+ * docs/09 "Typography": `12:34`, or `01:02:03` from the hour (2026-10-08), counted from the moment the recorder
+ * said it had started — and stopped at [until], the moment it ended, while the stop saves.
+ */
 @Composable
-private fun Elapsed(since: Long) {
+private fun Elapsed(since: Long, until: Long?) {
     var now by remember(since) { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(since) {
-        while (true) {
+    LaunchedEffect(since, until) {
+        while (until == null) {
             now = System.currentTimeMillis()
             delay(TICK_MS)
         }
     }
     MonoTimer(
-        text = LedgerFormat.elapsed(now - since),
+        text = LedgerFormat.clock((until ?: now) - since),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
         color = blueprint.danger,
     )
