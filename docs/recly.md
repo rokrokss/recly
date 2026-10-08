@@ -825,8 +825,9 @@ so they cannot be read from the queue.
 
 #### Titles
 
-Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a `Cancel` button just to its left.
-`Cancel` (including back navigation and closing the popup) is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
+Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a red `Discard recording` button just to its left
+(2026-10-08, user decision: it read `Cancel`, which did not say that it deletes). `Discard recording` (including back navigation and closing the popup)
+is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
 of the one pending recording ID, and does not create a Job or wake the workflow. Only one of save · cancel can take
 that recording, so a save action that arrives late after a cancel does not start an upload. Other recordings and Drive are not
 touched, and a refused · failed deletion is shown as an error. The placeholder of the title field is the existing translation `Untitled`.
@@ -2326,8 +2327,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 5. **Notifications · dialogs**: **title + one-line description + at most 2 buttons.** The processing state is inline (the button changes to "Saving…"), and on completion
    a badge. A two-way question does not get a third option. The detail's dialogs of 2026-10-07 keep this shape: `Transcribe again?` with one line built
    from the current settings — `With AssemblyAI · Korean.` or `With on-device transcription · Korean.`, plus ` Your edits are replaced.` when the transcript
-   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`). The title sheet after Stop has `Skip` · `Save` — `Skip`
-   keeps the recording untitled (2026-10-08; it read `Cancel`).
+   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`). The title sheet after Stop has `Discard recording` · `Save` — the red
+   `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision).
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
