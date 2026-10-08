@@ -30,12 +30,9 @@ struct RecordingView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(
-                title: "Recly",
-                // The header is one line: the source and enough of the device id to tell two
-                // phones apart. The whole id is in Settings → About, where it is the point.
-                meta: "\(Source.phone.name.lowercased()) · \(model.deviceId.prefix(8))"
-            )
+            // 2026-10-08 §2: the app's name and nothing under it — the device id is in Settings → About,
+            // where it is the point.
+            ScreenHeader(title: "Recly")
             // docs/05 "Fixed processing settings": the first-run card, at the top of the Record tab, for a
             // phone set to transcribe on device that has no speech model yet.
             if let download = model.modelDownload {
@@ -92,7 +89,8 @@ struct RecordingView: View {
             nodes.padding(.horizontal, Space.m)
 
             VStack(spacing: 12) {
-                MonoTimer(model.isRecording ? model.elapsed : LedgerFormat.clock(0))
+                // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
+                MonoTimer(model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed)
                     .accessibilityIdentifier("elapsed")
                 // docs/09 screen principle 6: the same strip the menu bar draws, under the timer — what is
                 // being written, while it is being written. Nothing stands in for it when idle:
@@ -159,20 +157,20 @@ struct RecordingView: View {
 
     private var specs: [NodeSpec] {
         [
-            NodeSpec(label: loc("Device"), value: Source.phone.name.lowercased()),
+            NodeSpec(label: loc("Device"), value: StateNodeWords.device(.phone)),
             NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
             stateNode,
         ]
     }
 
-    /// The recorder's own state comes first; `REC` is never displaced. While it is idle and the
+    /// The recorder's own state comes first; `Recording` is never displaced. While it is idle and the
     /// ledger has work in it, the node says what that work is with a turning loader instead of
-    /// `IDLE` — otherwise nothing above the list says the app is doing anything at all.
+    /// `Ready` — otherwise nothing above the list says the app is doing anything at all.
     private var stateNode: NodeSpec {
-        if model.state == .idle, let busyCode {
+        if model.state == .idle, let busyWord {
             return NodeSpec(
                 label: loc("State"),
-                value: busyCode,
+                value: busyWord,
                 valueColor: blueprint.palette.accent,
                 active: true,
                 busy: true
@@ -180,7 +178,7 @@ struct RecordingView: View {
         }
         return NodeSpec(
             label: loc("State"),
-            value: stateCode,
+            value: StateNodeWords.recorder(model.state),
             valueColor: model.isRecording ? blueprint.palette.danger : blueprint.palette.textMuted,
             active: model.isRecording
         )
@@ -192,20 +190,12 @@ struct RecordingView: View {
     /// is *doing*, and an upload it is running is more that than a transfer it is being handed.
     /// docs/03 "Watch → phone transfer contract": the transfer is worth saying at all because the ledger row is
     /// otherwise the only sign of it.
-    private var busyCode: String? {
-        if Recents.uploading(model.recents) { return "UPLOADING" }
-        if Recents.receiving(model.recents) { return "RECEIVING" }
+    ///
+    /// 2026-10-08 §1b: a word, in monospace, and never colour alone.
+    private var busyWord: String? {
+        if Recents.uploading(model.recents) { return StateNodeWords.uploading }
+        if Recents.receiving(model.recents) { return StateNodeWords.receiving }
         return nil
-    }
-
-    /// docs/09: state is a code, in monospace, and never colour alone.
-    private var stateCode: String {
-        switch model.state {
-        case .idle: return "IDLE"
-        case .starting: return "STARTING"
-        case .recording: return "REC"
-        case .stopping: return "STOPPING"
-        }
     }
 
     // MARK: - The record node
@@ -355,9 +345,8 @@ private struct ConsentDialog: View {
             }
             .accessibilityIdentifier("consent-confirm")
         } content: {
-            // docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app
-            // tries to guess: the three lines are what the user needs to know that the question is
-            // not rhetorical.
+            // docs/research/02 §Consent · law. The reminder and nothing else (2026-10-08 §11): the
+            // rules by jurisdiction are behind the link under it, not in the question.
             BlueprintDialogText(loc("consent.body"))
                 .accessibilityIdentifier("consent-body")
             // A link and not a third button, for the same reason as on the Mac: the question the
@@ -417,11 +406,18 @@ private struct NamingSheet: View {
                     }
                     .accessibilityIdentifier("participants")
                 }
-                HStack(spacing: Space.s) {
-                    Spacer(minLength: 0)
-                    BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { onCancel() }
-                    BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave() }
-                        .accessibilityIdentifier("saveTitle")
+                // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
+                // says so, in the red of every other irreversible delete. Side by side while both fit;
+                // stacked full width when they do not (docs/09 screen principle 8).
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: Space.s) {
+                        Spacer(minLength: 0)
+                        answers
+                    }
+                    VStack(spacing: Space.s) {
+                        answers
+                    }
+                    .environment(\.blueprintButtonFillsWidth, true)
                 }
             }
             .padding(Space.m)
@@ -429,6 +425,13 @@ private struct NamingSheet: View {
         }
         .dotGridBackground()
         .presentationDetents([.medium])
+    }
+
+    @ViewBuilder private var answers: some View {
+        BlueprintButton(loc("Discard recording"), tone: .danger, minWidth: minTouch) { onCancel() }
+            .accessibilityIdentifier("discardRecording")
+        BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave() }
+            .accessibilityIdentifier("saveTitle")
     }
 
     /// docs/07 rule 4: a count is a number, not a sentence — only "unknown" and "6+" are words.

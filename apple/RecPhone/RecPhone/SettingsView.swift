@@ -17,7 +17,11 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        NavigationStack {
+        // 2026-10-08 §12: the title is the screen's own header, above the scroll rather than a bar
+        // over it — the other two tabs' header, and nothing scrolls under it.
+        VStack(spacing: 0) {
+            ScreenHeader(title: AppStrings.localized("Settings"))
+            HairLine()
             ScrollView {
                 VStack(spacing: 0) {
                     account
@@ -35,11 +39,9 @@ struct SettingsView: View {
                 }
                 .padding(.bottom, Space.l)
             }
-            .frame(maxWidth: .infinity)
-            .dotGridBackground()
-            .navigationTitle(AppStrings.localized("Settings"))
-            .navigationBarTitleDisplayMode(.inline)
         }
+        .frame(maxWidth: .infinity)
+        .dotGridBackground()
         .sheet(isPresented: $model.privacyPresented) {
             if let privacy = model.transferPrivacy {
                 NavigationStack {
