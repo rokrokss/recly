@@ -5,6 +5,7 @@ package app.recly.android.ui
 import app.recly.android.R
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -208,13 +209,25 @@ class JobAlertsTest {
         assertEquals(R.string.drive_connect, FixSurface.SIGN_IN.label)
     }
 
-    /** The banner's code for a wait on the model is the job's own status, as the row's badge is. */
+    /**
+     * The banner's badge is the job's own status, as the row's badge is: a wait on the model is
+     * `NEEDS_MODEL`, and every reason a FAILED job stopped on is `FAILED` — "Failed", never the reason's
+     * code (UX decisions of 2026-10-08, as the Apple shells draw it).
+     */
     @Test
     fun `the banner codes are the states the core and the rows use`() {
         assertEquals("NEEDS_MODEL", AlertReason.LOCAL_MODEL_REQUIRED.code)
         assertEquals(ItemState.NEEDS_MODEL.badge().code, AlertReason.LOCAL_MODEL_REQUIRED.code)
-        AlertReason.entries.filter { it != AlertReason.LOCAL_MODEL_REQUIRED }.forEach { reason ->
-            assertEquals(reason.name, reason.code)
+        assertEquals("NEEDS_AUTH", AlertReason.NEEDS_AUTH.code)
+        assertEquals("NEEDS_SPACE", AlertReason.NEEDS_SPACE.code)
+        listOf(
+            AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE, AlertReason.LOCAL_DIARIZATION_UNAVAILABLE,
+            AlertReason.MISSING_SECRET, AlertReason.AUTH_REJECTED, AlertReason.QUOTA,
+        ).forEach { reason ->
+            assertEquals(ItemState.FAILED.badge().code, reason.code, "$reason")
+        }
+        AlertReason.entries.forEach { reason ->
+            assertNotNull(app.recly.android.ui.component.badgeWord(reason.code), "$reason's badge has no word")
         }
     }
 

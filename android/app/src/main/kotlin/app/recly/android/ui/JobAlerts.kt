@@ -37,10 +37,15 @@ enum class AlertReason(
     ;
 
     /**
-     * docs/09 screen principle 2: the banner row's badge is the state as a code. A wait on the model is the
-     * job's own status, as on the iPhone — the long message code squeezed the line.
+     * docs/09 screen principle 2: the banner row's badge is the job's own state, as on the iPhone — a wait
+     * on the model is `NEEDS_MODEL`, and a reason a FAILED job stopped on is that job's `FAILED`
+     * ("Failed"), not the reason's own code (UX decisions of 2026-10-08). The sentence beside it says why.
      */
-    val code: String get() = if (this == LOCAL_MODEL_REQUIRED) "NEEDS_MODEL" else name
+    val code: String get() = when (this) {
+        LOCAL_MODEL_REQUIRED -> "NEEDS_MODEL"
+        NEEDS_AUTH, NEEDS_SPACE -> name
+        LOCAL_TRANSCRIPTION_UNAVAILABLE, LOCAL_DIARIZATION_UNAVAILABLE, MISSING_SECRET, AUTH_REJECTED, QUOTA -> "FAILED"
+    }
 }
 
 /**

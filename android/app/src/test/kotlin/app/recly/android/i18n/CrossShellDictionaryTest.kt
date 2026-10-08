@@ -208,15 +208,14 @@ class CrossShellDictionaryTest {
                 reckit = "Sign in again to carry on",
             ),
             // UX decisions of 2026-10-08: the badge's word, "Waiting for Drive", is what the status says
-            // everywhere. The other shells are reworded in their own lanes of the same day.
+            // everywhere. Windows draws it from `drive.pending` (`status.sign.in.needed` is drawn nowhere).
             Line(
                 what = "the NEEDS_AUTH status",
                 en = "Waiting for Drive",
                 ko = "Drive 연결 대기",
                 android = "job_state_needs_auth",
-                windows = "status.sign.in.needed",
+                windows = "drive.pending",
                 reckit = "Sign-in needed",
-                pending = setOf("windows", "RecKit"),
             ),
             // docs/03 "Recordings from other devices" · docs/09 screen principle 2: the three "somewhere else" statuses.
             Line(
@@ -712,14 +711,13 @@ class CrossShellDictionaryTest {
                 phone = "The recording failed",
             ),
             // The tab is "List"; the screen is what is in it — in Korean the tab's own word, so it is not
-            // the Record tab's 녹음 (UX decisions of 2026-10-08). The iPhone is reworded in its own lane.
+            // the Record tab's 녹음 (UX decisions of 2026-10-08).
             Line(
                 what = "the recordings screen's title",
                 en = "Recordings",
                 ko = "목록",
                 android = "jobs_title",
                 phone = "Recordings",
-                pending = setOf("RecPhone"),
             ),
             // docs/09 "Accessibility": what a screen reader is told a ledger row is. Everything the row
             // draws, as one sentence — and the date and the length inside it are locale-formatted,

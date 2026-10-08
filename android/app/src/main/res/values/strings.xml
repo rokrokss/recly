@@ -273,7 +273,7 @@
     <string name="alert_missing_secret">A key this phone does not have</string>
     <string name="alert_auth_rejected">The provider rejected the key</string>
     <string name="alert_quota">The provider is out of quota — check its limits and billing</string>
-    <string name="alert_uploads_waiting">Uploads waiting: %1$d</string>
+    <string name="alert_uploads_waiting">Waiting for Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="one">%1$d recording is waiting.</item>
         <item quantity="other">%1$d recordings are waiting.</item>
