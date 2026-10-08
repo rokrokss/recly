@@ -151,6 +151,21 @@ class LedgerStatusTest {
         // The banner over the ledger says the same words for the same waits.
         assertEquals("Waiting for model", AlertReason.LOCAL_MODEL_REQUIRED.badge().worded(en).label)
         assertEquals("Storage full", AlertReason.NEEDS_SPACE.badge().worded(en).label)
+        // A job the queue gave up on says `Failed`, whatever the reason the banner names; the tone stays the banner's.
+        listOf(
+            AlertReason.MISSING_SECRET, AlertReason.AUTH_REJECTED, AlertReason.QUOTA,
+            AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE, AlertReason.LOCAL_DIARIZATION_UNAVAILABLE,
+        ).forEach { reason ->
+            assertEquals("Failed", reason.badge().worded(en).label, reason.name)
+            assertEquals("실패", reason.badge().worded(ko).label.plain(), reason.name)
+            assertEquals(BadgeTone.WARNING, reason.badge().tone, reason.name)
+        }
+        // The NEEDS_AUTH sentence is the badge's words too.
+        assertEquals("Waiting for Drive", en[Str.STATUS_SIGN_IN_NEEDED])
+        assertEquals("Drive 연결 대기", ko[Str.STATUS_SIGN_IN_NEEDED].plain())
+        // And the banner's count of them.
+        assertEquals("Waiting for Drive: 2", en[Str.ALERT_UPLOADS_WAITING, 2])
+        assertEquals("Drive 연결 대기 2건", ko[Str.ALERT_UPLOADS_WAITING, 2].plain())
     }
 
     /** docs/09: red is failure. A job that is waiting says why in its badge's warning tone. */
