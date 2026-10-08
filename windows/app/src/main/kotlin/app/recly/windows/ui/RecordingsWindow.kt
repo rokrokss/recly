@@ -90,6 +90,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -100,6 +101,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.Placeholder
+import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
 import app.recly.windows.ui.component.SidebarWidth
@@ -306,7 +308,11 @@ private fun Sidebar(
         }
         if (query.isNotBlank()) {
             val found = hits.orEmpty()
-            items(found, key = { "hit-${it.recordingId}" }) { hit -> SearchResultRow(hit, strings[Str.UNTITLED]) { onOpenHit(hit) } }
+            items(found, key = { "hit-${it.recordingId}" }) { hit ->
+                // The hit's time is drawn in the format the recording's own length picks, when the list knows it.
+                val length = model.recents.firstOrNull { it.id == hit.recordingId }?.durationSec
+                SearchResultRow(hit, strings[Str.UNTITLED], length) { onOpenHit(hit) }
+            }
             if (hits != null && found.isEmpty()) {
                 item {
                     Column(
@@ -394,6 +400,17 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             }
         },
     ) {
+        // The transcript's first words, under the title (2026-10-08): one quiet line, and nothing at all — no
+        // reserved space — for a recording with no transcript here. Read after the title, as the row's label is.
+        model.previews[item.id]?.let { preview ->
+            Text(
+                preview,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.CenterVertically,
@@ -505,9 +522,10 @@ private fun Detail(
         ScreenHeader(
             // The title alone: the recording's id is not something the user reads (docs/09 screen principle 2).
             title = detail.title.text(strings),
-            // Not while the take is still being written to: the core refuses to rename a recording that
-            // is still running, and nothing of it is whole enough to export.
-            trailing = if (detail.loading || detail.writing) {
+            // While the take is still being written to, the menus are there with what waits for it disabled
+            // and saying `Still recording` (2026-10-08) — the core refuses to rename a recording that is still
+            // running, and nothing of it is whole enough to export.
+            trailing = if (detail.loading) {
                 null
             } else {
                 {
@@ -587,6 +605,7 @@ private fun Detail(
             onRenameSpeaker = { id -> naming = draft.nameOf(id).orEmpty() to { name: String -> draft.rename(id, name) } },
             drive = !detail.folder,
             speakersEnabled = editSave == null,
+            spanSec = detail.spanSec,
             strings = strings,
             modifier = Modifier.fillMaxSize(),
         )
@@ -595,6 +614,19 @@ private fun Detail(
             verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // A transcript waiting on the Drive connection says so, and the fix is right here rather than
+            // in the list (2026-10-08): the Settings' own Connect Drive, centred under the line (principle 8).
+            if (detail.waitsForDrive && detail.availability.waits) {
+                Text(strings[Str.DETAIL_WAITING_DRIVE], color = blueprint.textMuted, textAlign = TextAlign.Center)
+                ProcessingButton(
+                    label = strings[Str.SIGN_IN],
+                    state = model.action,
+                    strings = strings,
+                    onClick = model::signIn,
+                    enabled = model.clientConfigured && DisconnectGuard.signInBlocker(model.disconnectPhase.owed) == null,
+                )
+                return@Column
+            }
             Text(strings[detail.availability.message()], color = blueprint.textMuted)
             if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
                 BlueprintButton(strings[Str.RECENT_RETRY], model::reloadDetailResults)
@@ -627,6 +659,7 @@ private fun Detail(
                 strings = strings,
                 modifier = Modifier.fillMaxSize(),
                 seekableDurationSec = detail.audio.totalSec,
+                spanSec = detail.spanSec,
             )
         }
     }
@@ -712,6 +745,7 @@ private fun PlayerBar(
                 highlights = detail.highlights,
                 onRemoveHighlight = { at -> model.setHighlights(detail.recordingId, detail.highlights - at) },
                 strings = strings,
+                spanSec = detail.spanSec,
             )
         } else if (detail.driveFetch == DriveFetch.FETCHING) {
             // While the parts are coming back from Drive the row is already there, loading, so the
@@ -773,7 +807,7 @@ private fun PlayerBar(
                     }
                     // docs/07 rule 4: a clock is a stamp, not a sentence.
                     Text(
-                        "${LedgerFormat.elapsed(millis(positionSec))} / ${LedgerFormat.elapsed(millis(detail.audio.totalSec))}",
+                        "${LedgerFormat.clock(positionSec, detail.spanSec)} / ${LedgerFormat.clock(detail.audio.totalSec, detail.spanSec)}",
                         style = mono.small,
                         color = palette.textMuted,
                     )
@@ -937,6 +971,8 @@ private fun Waveform(
     highlights: List<Double> = emptyList(),
     onRemoveHighlight: (Double) -> Unit = {},
     strings: Strings? = null,
+    /** The recording's length, for the format of the times its menus draw ([LedgerFormat.clock]). */
+    spanSec: Double? = null,
 ) {
     val palette = blueprint
     val hair = palette.line
@@ -1060,7 +1096,7 @@ private fun Waveform(
             }
             tickMenu?.let { at ->
                 Box(Modifier.offset(x = width * (at / totalSec).toFloat().coerceIn(0f, 1f)).fillMaxHeight()) {
-                    HighlightMenu(at, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
+                    HighlightMenu(at, spanSec ?: totalSec, { tickMenu = null }, { onSeek(at) }, { onRemoveHighlight(at) }, strings)
                 }
             }
         }
@@ -1105,6 +1141,10 @@ private fun droppedFiles(event: DragAndDropEvent): List<File> = runCatching {
     if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return@runCatching emptyList()
     (transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>).filterIsInstance<File>().filter { it.isFile }
 }.getOrDefault(emptyList())
+
+/** The transcript is still to come — the sentences that say it is waiting, as against a failure or nothing to wait for. */
+private val TranscriptAvailability.waits: Boolean
+    get() = this == TranscriptAvailability.PENDING || this == TranscriptAvailability.PARKED
 
 internal fun TranscriptAvailability.message(): Str = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> Str.DETAIL_NOT_REQUESTED

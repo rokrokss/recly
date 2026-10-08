@@ -70,7 +70,8 @@ struct ReclyShortcuts: AppShortcutsProvider {
                 "Add a highlight with \(.applicationName)",
             ],
             shortTitle: "Add Highlight",
-            systemImageName: "flag"
+            // docs/09 "Highlights": the filled square every highlight is drawn with — never a flag.
+            systemImageName: "square.inset.filled"
         )
     }
 }

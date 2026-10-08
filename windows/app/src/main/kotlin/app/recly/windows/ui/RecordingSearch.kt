@@ -105,7 +105,7 @@ internal fun SearchField(
  * the matches tinted, and the time of the first transcript hit at the end.
  */
 @Composable
-internal fun SearchResultRow(hit: SearchHit, untitled: String, onOpen: () -> Unit) {
+internal fun SearchResultRow(hit: SearchHit, untitled: String, totalSec: Double?, onOpen: () -> Unit) {
     val palette = blueprint
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
         Row(
@@ -130,7 +130,7 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, onOpen: () -> Uni
                 }
             }
             hit.snippets.firstOrNull()?.let {
-                Text(LedgerFormat.elapsed((it.atSec * 1000).toLong()), style = mono.small, color = palette.textMuted, maxLines = 1)
+                Text(LedgerFormat.clock(it.atSec, totalSec), style = mono.small, color = palette.textMuted, maxLines = 1)
             }
         }
         HairLine()

@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">กำลังรอโฟลเดอร์ในเครื่อง</string>
     <string name="job_state_done">เสร็จสิ้น</string>
     <string name="job_state_failed">ล้มเหลว</string>
-    <string name="job_state_needs_auth">รออัปโหลด</string>
+    <string name="job_state_needs_auth">กำลังรอ Drive</string>
     <string name="job_state_skipped_short">สั้นเกินไป</string>
     <string name="retry_soon">อีกสักครู่</string>
     <string name="retry_in_seconds">ในอีก %1$d วินาที</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">โทรศัพท์เครื่องนี้ไม่มีคีย์</string>
     <string name="alert_auth_rejected">ผู้ให้บริการปฏิเสธคีย์</string>
     <string name="alert_quota">ผู้ให้บริการใช้โควตาหมดแล้ว ตรวจสอบขีดจำกัดและการเรียกเก็บเงิน</string>
-    <string name="alert_uploads_waiting">การอัปโหลดที่รออยู่: %1$d</string>
+    <string name="alert_uploads_waiting">กำลังรอ Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">การบันทึกเสียง %1$d รายการกำลังรอ</item>
     </plurals>
     <string name="provider_disclosure_transcribe">การถอดเสียงภายนอกจะส่งการบันทึกเสียงทั้งหมดไปยัง %1$s\nระยะเวลาการเก็บรักษาและการนำไปใช้ฝึกโมเดลเป็นไปตามนโยบายของผู้ให้บริการรายนั้น Recly ไม่ได้เป็นผู้ควบคุม\nโปรดอ่านนโยบายของผู้ให้บริการก่อนใช้งาน</string>
     <string name="settings_consent_reminder">การเตือนเรื่องความยินยอม</string>
     <string name="consent_question">คุณแจ้งผู้เข้าร่วมเรื่องการบันทึกเสียงแล้วหรือยัง?</string>
-    <string name="consent_body">การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ\n\nเกาหลี — คุณบันทึกเสียงการสนทนาที่คุณมีส่วนร่วมได้ (ห้ามบันทึกเสียงการสนทนาที่คุณไม่ได้มีส่วนร่วม)\nสหรัฐอเมริกา — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA กำหนดให้ต้องได้รับความยินยอมจากผู้เข้าร่วมทุกคน\nสหภาพยุโรป — GDPR กำหนดให้ต้องแจ้งให้ทราบและมีฐานทางกฎหมาย และเดนมาร์กกำหนดให้ต้องได้รับความยินยอมอย่างชัดแจ้งสำหรับการโทรทางธุรกิจ</string>
+    <string name="consent_body">การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ</string>
     <string name="consent_confirm">แจ้งแล้ว · เริ่มบันทึกเสียง</string>
     <string name="consent_suppress">ไม่ต้องถามอีก</string>
     <string name="consent_link">กฎความยินยอมในการบันทึกเสียงตามภูมิภาค</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">เชื่อมต่อ Drive</string>
     <string name="drive_attention">การเชื่อมต่อ Drive ต้องได้รับการตรวจสอบ</string>
     <string name="drive_optional">บันทึกเสียงในเครื่อง เชื่อมต่อ Drive เพื่ออัปโหลด</string>
-    <string name="drive_pending">รออัปโหลด</string>
+    <string name="drive_pending">กำลังรอ Drive</string>
     <string name="core_local_transcription_unavailable">การถอดเสียงในเครื่องใช้ไม่ได้บนอุปกรณ์นี้ เลือกวิธีถอดเสียงอื่น</string>
     <string name="core_local_model_required">ยังไม่ได้ดาวน์โหลดโมเดลรู้จำเสียงพูด</string>
     <string name="core_local_diarization_unavailable">เอนจินในเครื่องนี้ไม่รองรับการระบุผู้พูด ปิดการระบุผู้พูดหรือเลือก API ภายนอก</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">การถอดเสียงในอุปกรณ์ไม่ใช้คำศัพท์เฉพาะ</string>
     <string name="speaker_model">โมเดลแยกผู้พูด</string>
     <string name="speaker_model_sentences">แยกผู้พูดทีละประโยคในอุปกรณ์นี้</string>
+    <string name="badge_retrying">รอลองอีกครั้ง</string>
+    <string name="badge_receiving">กำลังรับ</string>
+    <string name="badge_transcribing">กำลังถอดเสียง</string>
+    <string name="badge_needs_permission">ต้องได้รับอนุญาต</string>
+    <string name="badge_waiting_model">กำลังรอโมเดล</string>
+    <string name="badge_storage_full">พื้นที่เต็ม</string>
+    <string name="badge_waiting_folder">กำลังรอโฟลเดอร์</string>
+    <string name="node_state_ready">พร้อม</string>
+    <string name="node_state_starting">กำลังเริ่ม</string>
+    <string name="node_state_saving">กำลังบันทึก</string>
+    <string name="node_device_phone">โทรศัพท์</string>
+    <string name="detail_waiting_drive">กำลังรอ Drive เชื่อมต่อ Drive เพื่ออัปโหลดและถอดเสียง</string>
+    <string name="processing_folder_monthly">โฟลเดอร์รายเดือน</string>
+    <string name="processing_folder_single">โฟลเดอร์เดียว</string>
+    <string name="recording_title_discard">ละทิ้งการบันทึก</string>
 </resources>

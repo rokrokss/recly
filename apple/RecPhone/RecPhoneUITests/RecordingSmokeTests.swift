@@ -63,7 +63,7 @@ final class RecordingSmokeTests: XCTestCase {
         let elapsed = app.staticTexts["elapsed"]
         XCTAssertTrue(elapsed.waitForExistence(timeout: 15))
         XCTAssertTrue(
-            NSPredicate(format: "label >= %@", "00:00:16").expect(on: elapsed, in: self, timeout: 30),
+            NSPredicate(format: "label >= %@", "00:16").expect(on: elapsed, in: self, timeout: 30),
             "the recording did not keep going: \(elapsed.label)"
         )
         add(screenshot(named: "recording"))

@@ -120,6 +120,8 @@ data class RecordingDetail(
     val folder: Boolean = false,
     /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
+    /** The recording's whole length as its meta records it, which picks how its times are drawn (2026-10-08). */
+    val lengthSec: Double? = null,
     /** A job of this recording has not settled: editing and transcribing again wait for it (docs/08 "Editing"). */
     val transcribing: Boolean = false,
     /** That job is a re-transcription (docs/10 "Re-transcription"), on this PC or with a provider. */
@@ -127,6 +129,14 @@ data class RecordingDetail(
     val retranscribingLocal: Boolean = false,
     /** Neither in storage yet nor another device's: there is no folder to transcribe again into. */
     val notUploaded: Boolean = false,
+    /** An unsettled job of this recording waits for the Drive connection (`NEEDS_AUTH`). */
+    val waitsForDrive: Boolean = false,
+    /**
+     * Why Edit transcript and Transcribe again wait while [transcribing] (2026-10-08): `Transcribing…` only
+     * while a transcription of it is really queued or running, `Waiting for Drive` for a job parked on the
+     * connection, `Not uploaded yet` for any other upload still to happen.
+     */
+    val busyReason: Str = Str.DETAIL_TRANSCRIBING,
     /** Why Transcribe again did not start, said under the header for a moment. */
     val notice: Str? = null,
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
@@ -243,6 +253,14 @@ class ShellModel(
      * fold the list back up under a user who had scrolled down it.
      */
     private var recentsLimit = Recents.PAGE
+    /**
+     * The first words of each transcript this PC holds, by recording id, for the Details list's rows (2026-10-08) —
+     * asked of the core for the rows the ledger has read, and again whenever those rows or a transcript change.
+     * A recording with no transcript here is not in it.
+     */
+    var previews: Map<String, String> by mutableStateOf(emptyMap())
+        private set
+
     /** Whether a [loadMoreRecents] is already reading, so scrolling does not ask twice for a page. */
     private var loadingMoreRecents = false
     /**
@@ -387,6 +405,14 @@ class ShellModel(
      * recorder's own state callback, so a popup opened ten minutes in still shows ten minutes.
      */
     var recordingSince: Long? by mutableStateOf(null)
+        private set
+
+    /**
+     * When the recording that is being saved stopped: while the stop files its parts, the popup's timer
+     * holds the recording's final length rather than dropping to nothing (2026-10-08), and both go once
+     * the recorder is idle again ([stop]).
+     */
+    var recordingEndedAt: Long? by mutableStateOf(null)
         private set
 
     /**
@@ -670,8 +696,20 @@ class ShellModel(
             },
             onState = { isRecording ->
                 recording = isRecording
-                // The popup's timer counts from here rather than from when the popup was opened.
-                recordingSince = if (isRecording) System.currentTimeMillis() else null
+                // The popup's timer counts from here rather than from when the popup was opened — and,
+                // while a stop saves, holds where it ended until the recorder is idle again.
+                when {
+                    isRecording -> {
+                        recordingSince = System.currentTimeMillis()
+                        recordingEndedAt = null
+                    }
+                    transition == Transition.STOPPING && recordingSince != null ->
+                        recordingEndedAt = System.currentTimeMillis()
+                    else -> {
+                        recordingSince = null
+                        recordingEndedAt = null
+                    }
+                }
                 // `STARTING` is over the moment the capture is up. The other half — `STOPPING` —
                 // outlives this callback, because a stop publishes it before it waits for the
                 // trailing parts, and the node has to say so for the whole of that wait ([stop]).
@@ -923,6 +961,11 @@ class ShellModel(
                 if (result is StopResult.Deferred) status = Str.STATUS_DEFERRED.message()
             } finally {
                 transition = null
+                // Idle again: the held length goes with `STOPPING`.
+                if (!recording) {
+                    recordingSince = null
+                    recordingEndedAt = null
+                }
             }
         }
     }
@@ -1049,6 +1092,17 @@ class ShellModel(
                 graph.core.deps.logger.log(Logger.Level.ERROR, "shell.recents.failed", error = it)
             }
         recentsLoading = false
+        // A job that moved is where a transcript arrives, so the rows' first words are read again with it.
+        refreshPreviews()
+    }
+
+    /** [previews] for the rows the ledger has read, through the core's search cache. */
+    private suspend fun refreshPreviews() {
+        val graph = graph ?: return
+        val ids = recents.map { it.id }
+        runCatching { graph.core.previews(ids) }
+            .onSuccess { previews = it }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.previews.failed", error = it) }
     }
 
     /**
@@ -1122,6 +1176,8 @@ class ShellModel(
         launch {
             graph.core.observeResults(recordingId).collect { result ->
                 updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+                // A transcript read from Drive for this detail is now one this PC holds: its row says its first words.
+                if (result.transcript != null) refreshPreviews()
             }
         }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
@@ -1130,7 +1186,8 @@ class ShellModel(
             } ?: RecordingPlaylist.Selection.EMPTY
             updateDetail(recordingId) {
                 it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
-                    driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER)
+                    driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER,
+                    lengthSec = record?.meta?.durationSec)
             }
             fetchFromDrive(graph, recordingId, record, local)
         }
@@ -1154,15 +1211,22 @@ class ShellModel(
             .distinctUntilChanged()
             .collect { open ->
                 val again = open.firstOrNull { it.retranscription }
-                val running = open.isNotEmpty() || graph.core.localTranscription.isRunning(recordingId)
+                val localRunning = graph.core.localTranscription.isRunning(recordingId)
+                val running = open.isNotEmpty() || localRunning
                 // Asked again as its jobs change: a job that settles is where an upload has landed or not.
                 val uploaded = runCatching { graph.core.uploaded(recordingId) }.getOrDefault(true)
+                val transcribingNow = localRunning || open.any { job ->
+                    transcriptionInFlight(job, runCatching { graph.core.jobs.steps(job.id) }.getOrDefault(emptyList()))
+                }
+                val waitsForDrive = open.any { it.status == JobStatus.NEEDS_AUTH }
                 updateDetail(recordingId) {
                     it.copy(
                         transcribing = running,
                         retranscribing = again != null,
                         retranscribingLocal = again?.workflow?.steps?.any { step -> step is recly.core.model.Step.LocalTranscribe } == true,
                         notUploaded = !uploaded,
+                        waitsForDrive = waitsForDrive,
+                        busyReason = busyReason(transcribingNow, waitsForDrive, uploaded),
                     )
                 }
             }
@@ -1186,13 +1250,14 @@ class ShellModel(
      */
     fun highlightNow() {
         val graph = graph ?: return
+        if (!recording) return
         val recordingId = recorder?.recordingId ?: return
         val since = recordingSince ?: return
         val atSec = (System.currentTimeMillis() - since) / 1000.0
         scope.launch {
             if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
             // For two seconds, then the line is the recording's again.
-            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.elapsed((atSec * 1000).toLong()))
+            val marked = Str.HIGHLIGHT_MARKED.message(LedgerFormat.clock((atSec * 1000).toLong()))
             status = marked
             delay(HIGHLIGHT_LINE_MS)
             if (status == marked && recording) status = Str.STATUS_RECORDING.message()
@@ -1205,6 +1270,8 @@ class ShellModel(
         return runCatching { graph.core.editTranscript(recordingId, edit) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.transcript.edit.failed", error = it) }
             .getOrDefault(EditResult.Invalid("failed"))
+            // The row's first words follow the edit.
+            .also { if (it is EditResult.Edited) refreshPreviews() }
     }
 
     /** docs/08 "Exports": one file of the recording, made by the core under a name for people; null when there is nothing. */
@@ -1270,7 +1337,8 @@ class ShellModel(
                     runner?.jobsDue()
                     null
                 }
-                RetranscribeResult.Busy -> Str.DETAIL_TRANSCRIBING
+                // The same reason More gives for it.
+                RetranscribeResult.Busy -> detail?.takeIf { it.recordingId == request.recordingId }?.busyReason ?: Str.DETAIL_TRANSCRIBING
                 RetranscribeResult.NoAudio -> Str.PLAYER_NO_AUDIO
                 RetranscribeResult.NoTranscriptionConfigured -> Str.DETAIL_TRANSCRIPTION_OFF
                 RetranscribeResult.Unsupported -> Str.DETAIL_NOT_UPLOADED

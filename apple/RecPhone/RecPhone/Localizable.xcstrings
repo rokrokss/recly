@@ -4732,7 +4732,7 @@
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "녹음"
+            "value": "목록"
           }
         },
         "ja": {
@@ -8873,139 +8873,282 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records.\n\nKorea — you may record a conversation you are part of (recording one you are not is prohibited).\nUnited States — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA need every participant's consent.\nEU — the GDPR asks for notice and a lawful basis, and Denmark requires explicit consent for business calls."
+            "value": "This recording leaves no sign of itself for the other people in the meeting. Telling them is the responsibility of whoever records."
           }
         },
         "ko": {
           "stringUnit": {
             "state": "translated",
-            "value": "이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다."
+            "value": "이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다."
           }
         },
         "ja": {
           "stringUnit": {
             "state": "translated",
-            "value": "この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。\n\n韓国：自分が参加する会話は録音できます（参加していない会話の録音は禁止）。\n米国：CA・CT・FL・HI・IL・MD・MA・MT・NH・OR・PA・WAでは全参加者の同意が必要です。\nEU：GDPRでは通知と適法な根拠が必要です。デンマークでは業務通話の明示的な同意が必要です。"
+            "value": "この録音は会議の他の参加者に通知されません。録音する人が責任を持って伝えてください。"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "此录音不会向会议中的其他人显示任何提示。告知参与者是录音者的责任。\n\n韩国：可以录制自己参与的对话（禁止录制自己未参与的对话）。\n美国：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有参与者同意。\n欧盟：GDPR要求告知并具备合法依据；丹麦要求商务通话取得明确同意。"
+            "value": "此录音不会向会议中的其他人显示任何提示。告知参与者是录音者的责任。"
           }
         },
         "zh-Hant": {
           "stringUnit": {
             "state": "translated",
-            "value": "此錄音不會向會議中的其他人顯示任何提示。告知參與者是錄音者的責任。\n\n韓國：可以錄製自己參與的對話（禁止錄製自己未參與的對話）。\n美國：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有參與者同意。\n歐盟：GDPR要求告知並具備合法依據；丹麥要求商務通話取得明確同意。"
+            "value": "此錄音不會向會議中的其他人顯示任何提示。告知參與者是錄音者的責任。"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta grabación no muestra ningún aviso a los demás participantes. Informarles es responsabilidad de quien graba.\n\nCorea: puedes grabar una conversación en la que participas (está prohibido grabar una en la que no participas).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA requieren el consentimiento de todos.\nUE: el RGPD exige informar y contar con una base jurídica; Dinamarca exige consentimiento explícito para llamadas de negocios."
+            "value": "Esta grabación no muestra ningún aviso a los demás participantes. Informarles es responsabilidad de quien graba."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Cet enregistrement n’affiche aucun signe aux autres participants. La personne qui enregistre doit les prévenir.\n\nCorée : vous pouvez enregistrer une conversation à laquelle vous participez (sinon, c’est interdit).\nÉtats-Unis : CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigent le consentement de tous les participants.\nUE : le RGPD exige une information et une base légale ; le Danemark exige un consentement explicite pour les appels professionnels."
+            "value": "Cet enregistrement n’affiche aucun signe aux autres participants. La personne qui enregistre doit les prévenir."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren.\n\nKorea: Gespräche, an denen Sie teilnehmen, dürfen aufgenommen werden; andere nicht.\nUSA: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA verlangen die Einwilligung aller Teilnehmenden.\nEU: Die DSGVO verlangt Information und eine Rechtsgrundlage; Dänemark verlangt ausdrückliche Einwilligung für geschäftliche Anrufe."
+            "value": "Andere Teilnehmende sehen keinen Hinweis auf diese Aufnahme. Die aufnehmende Person muss sie informieren."
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "لا يظهر هذا التسجيل أي إشارة للمشاركين الآخرين. إبلاغهم مسؤولية من يسجّل.\n\nكوريا: يجوز تسجيل محادثة تشارك فيها، ويُحظر تسجيل محادثة لا تشارك فيها.\nالولايات المتحدة: تتطلب CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA موافقة جميع المشاركين.\nالاتحاد الأوروبي: تتطلب GDPR إخطارًا وأساسًا قانونيًا، وتتطلب الدنمارك موافقة صريحة للمكالمات التجارية."
+            "value": "لا يظهر هذا التسجيل أي إشارة للمشاركين الآخرين. إبلاغهم مسؤولية من يسجّل."
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "यह रिकॉर्डिंग मीटिंग के अन्य लोगों को कोई संकेत नहीं देती। उन्हें बताना रिकॉर्ड करने वाले की ज़िम्मेदारी है।\n\nकोरिया: आप उस बातचीत को रिकॉर्ड कर सकते हैं जिसमें आप शामिल हैं; अन्य बातचीत रिकॉर्ड करना प्रतिबंधित है।\nअमेरिका: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA में सभी प्रतिभागियों की सहमति चाहिए।\nEU: GDPR सूचना और वैध आधार माँगता है; डेनमार्क में व्यावसायिक कॉल के लिए स्पष्ट सहमति आवश्यक है।"
+            "value": "यह रिकॉर्डिंग मीटिंग के अन्य लोगों को कोई संकेत नहीं देती। उन्हें बताना रिकॉर्ड करने वाले की ज़िम्मेदारी है।"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.\n\nКорея: можно записывать разговор, в котором вы участвуете; запись чужого разговора запрещена.\nСША: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA требуют согласия всех участников.\nЕС: GDPR требует уведомления и правового основания; Дания требует явного согласия для деловых звонков."
+            "value": "Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает."
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta gravação não mostra nenhum aviso aos outros participantes. Informá-los é responsabilidade de quem grava.\n\nCoreia: você pode gravar uma conversa da qual participa (gravar uma da qual não participa é proibido).\nEstados Unidos: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem consentimento de todos.\nUE: o GDPR exige aviso e base legal; a Dinamarca exige consentimento explícito para chamadas comerciais."
+            "value": "Esta gravação não mostra nenhum aviso aos outros participantes. Informá-los é responsabilidade de quem grava."
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Esta gravação não deixa nenhum sinal para as outras pessoas na reunião. Informá-las é da responsabilidade de quem grava.\n\nCoreia — pode gravar uma conversa em que participa (é proibido gravar uma em que não participa).\nEstados Unidos — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigem o consentimento de todos os participantes.\nUE — o RGPD exige aviso e uma base legal, e a Dinamarca exige consentimento explícito para chamadas comerciais."
+            "value": "Esta gravação não deixa nenhum sinal para as outras pessoas na reunião. Informá-las é da responsabilidade de quem grava."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra.\n\nCorea: puoi registrare una conversazione a cui partecipi (è vietato registrarne una a cui non partecipi).\nStati Uniti: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA richiedono il consenso di tutti i partecipanti.\nUE: il GDPR richiede un’informativa e una base giuridica, e la Danimarca richiede il consenso esplicito per le chiamate di lavoro."
+            "value": "Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "To nagrywanie nie daje innym uczestnikom spotkania żadnego sygnału. Poinformowanie ich należy do osoby, która nagrywa.\n\nKorea — możesz nagrywać rozmowę, w której uczestniczysz (nagrywanie rozmowy, w której nie uczestniczysz, jest zabronione).\nStany Zjednoczone — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA wymagają zgody wszystkich uczestników.\nUE — RODO wymaga poinformowania i podstawy prawnej, a Dania wymaga wyraźnej zgody w przypadku rozmów służbowych."
+            "value": "To nagrywanie nie daje innym uczestnikom spotkania żadnego sygnału. Poinformowanie ich należy do osoby, która nagrywa."
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır.\n\nKore — katıldığınız bir konuşmayı kaydedebilirsiniz (katılmadığınız bir konuşmayı kaydetmek yasaktır).\nABD — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA eyaletlerinde tüm katılımcıların onayı gerekir.\nAB — GDPR bilgilendirme ve hukuki bir dayanak ister; Danimarka ise iş görüşmeleri için açık rıza şart koşar."
+            "value": "Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır."
           }
         },
         "fil": {
           "stringUnit": {
             "state": "translated",
-            "value": "Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila.\n\nKorea — maaari mong i-record ang usapang kasali ka (bawal i-record ang usapang hindi ka kasali).\nEstados Unidos — kailangan ng pagsang-ayon ng bawat kalahok sa CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA.\nEU — hinihingi ng GDPR ang abiso at legal na batayan, at kailangan sa Denmark ang tahasang pagsang-ayon para sa mga tawag pangnegosyo."
+            "value": "Walang makikitang palatandaan ng recording na ito ang ibang tao sa meeting. Responsibilidad ng nagre-record na sabihan sila."
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "মিটিংয়ের অন্যরা এই রেকর্ডিংয়ের কোনো সংকেত পান না। তাদের জানানো রেকর্ডকারীর দায়িত্ব।\n\nকোরিয়া — আপনি যে কথোপকথনে অংশ নিচ্ছেন তা রেকর্ড করতে পারেন (যে কথোপকথনে আপনি নেই তা রেকর্ড করা নিষিদ্ধ)।\nযুক্তরাষ্ট্র — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA-তে প্রত্যেক অংশগ্রহণকারীর সম্মতি প্রয়োজন।\nEU — GDPR অবহিত করা ও আইনসম্মত ভিত্তি চায়, এবং ডেনমার্কে ব্যবসায়িক কলের জন্য স্পষ্ট সম্মতি আবশ্যক।"
+            "value": "মিটিংয়ের অন্যরা এই রেকর্ডিংয়ের কোনো সংকেত পান না। তাদের জানানো রেকর্ডকারীর দায়িত্ব।"
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "یہ ریکارڈنگ میٹنگ کے دوسرے لوگوں پر اپنا کوئی نشان ظاہر نہیں کرتی۔ انہیں بتانا ریکارڈ کرنے والے کی ذمہ داری ہے۔\n\nکوریا — آپ اس گفتگو کو ریکارڈ کر سکتے ہیں جس میں آپ شامل ہیں (جس گفتگو میں آپ شامل نہیں، اسے ریکارڈ کرنا ممنوع ہے)۔\nریاستہائے متحدہ — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA میں ہر شریک کی رضامندی درکار ہے۔\nیورپی یونین — GDPR اطلاع اور قانونی بنیاد کا تقاضا کرتا ہے، اور ڈنمارک کاروباری کالز کے لیے واضح رضامندی لازمی قرار دیتا ہے۔"
+            "value": "یہ ریکارڈنگ میٹنگ کے دوسرے لوگوں پر اپنا کوئی نشان ظاہر نہیں کرتی۔ انہیں بتانا ریکارڈ کرنے والے کی ذمہ داری ہے۔"
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi.\n\nKorea — unaweza kurekodi mazungumzo unayoshiriki (kurekodi mazungumzo usiyoshiriki ni marufuku).\nMarekani — majimbo ya CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yanahitaji ridhaa ya kila mshiriki.\nUmoja wa Ulaya — GDPR inahitaji taarifa na msingi halali, na Denmark inahitaji ridhaa ya wazi kwa simu za kibiashara."
+            "value": "Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi."
           }
         },
         "vi": {
           "stringUnit": {
             "state": "translated",
-            "value": "Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ.\n\nHàn Quốc — bạn được ghi âm cuộc trò chuyện mà mình tham gia (cấm ghi âm cuộc trò chuyện mà bạn không tham gia).\nHoa Kỳ — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yêu cầu sự đồng ý của mọi người tham gia.\nEU — GDPR yêu cầu thông báo và cơ sở pháp lý, còn Đan Mạch yêu cầu sự đồng ý rõ ràng đối với cuộc gọi công việc."
+            "value": "Việc ghi âm này không hiển thị dấu hiệu nào cho những người khác trong cuộc họp. Người ghi âm có trách nhiệm thông báo cho họ."
           }
         },
         "fa": {
           "stringUnit": {
             "state": "translated",
-            "value": "این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند.\n\nکره — می‌توانید مکالمه‌ای را که خودتان در آن حضور دارید ضبط کنید (ضبط مکالمه‌ای که در آن حضور ندارید ممنوع است).\nایالات متحده — در ایالت‌های CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA رضایت همه شرکت‌کنندگان لازم است.\nاتحادیه اروپا — GDPR اطلاع‌رسانی و مبنای قانونی را لازم می‌داند و دانمارک برای تماس‌های تجاری رضایت صریح را الزامی کرده است."
+            "value": "این ضبط هیچ نشانه‌ای از خود به دیگر افراد حاضر در جلسه نشان نمی‌دهد. آگاه کردن آن‌ها بر عهده کسی است که ضبط می‌کند."
           }
         },
         "th": {
           "stringUnit": {
             "state": "translated",
-            "value": "การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ\n\nเกาหลี — คุณบันทึกเสียงการสนทนาที่คุณมีส่วนร่วมได้ (ห้ามบันทึกเสียงการสนทนาที่คุณไม่ได้มีส่วนร่วม)\nสหรัฐอเมริกา — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA กำหนดให้ต้องได้รับความยินยอมจากผู้เข้าร่วมทุกคน\nสหภาพยุโรป — GDPR กำหนดให้ต้องแจ้งให้ทราบและมีฐานทางกฎหมาย และเดนมาร์กกำหนดให้ต้องได้รับความยินยอมอย่างชัดแจ้งสำหรับการโทรทางธุรกิจ"
+            "value": "การบันทึกเสียงนี้ไม่แสดงสัญญาณใดๆ ให้ผู้อื่นในการประชุมรู้ ผู้บันทึกเสียงมีหน้าที่แจ้งให้ผู้อื่นทราบ"
+          }
+        }
+      }
+    },
+    "Discard recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard recording"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "녹음 버리기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "録音を破棄"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "放弃录音"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "捨棄錄音"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar grabación"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer l’enregistrement"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aufnahme verwerfen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar gravação"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar gravação"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تجاهل التسجيل"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "रिकॉर्डिंग छोड़ें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Удалить запись"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scarta registrazione"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzuć nagranie"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kaydı at"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I-discard ang recording"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "রেকর্ডিং বাদ দিন"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ریکارڈنگ رد کریں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tupa rekodi"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bỏ bản ghi âm"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "دور ریختن ضبط"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ละทิ้งการบันทึก"
           }
         }
       }

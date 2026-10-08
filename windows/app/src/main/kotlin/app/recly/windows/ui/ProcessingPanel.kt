@@ -27,13 +27,16 @@ import app.recly.windows.i18n.*
 import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
+import app.recly.windows.ui.theme.mono
 import recly.core.processing.*
+import java.time.LocalDateTime
 import java.util.Locale
 import recly.core.transcribe.SttProviders
 import recly.core.transcribe.LocalEngineStatus
 import recly.core.transcribe.Qwen3Asr
 import recly.core.transcribe.TranscriptionLanguages
 import recly.core.model.Language
+import recly.core.storage.StorageKind
 import recly.core.workflow.*
 
 @Composable
@@ -58,7 +61,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
-        BlueprintTextField(draft.folder, { v -> model.edit { it.folder = v } }, strings[Str.PROCESSING_STORAGE])
+        // Only for recordings kept in a local folder (2026-10-09): Drive always files them a folder a month.
+        if (showsFolderChoice(model.stored)) StorageFolder(draft.folder, { v -> model.edit { it.folder = v } }, strings)
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
         SectionHeader(strings[Str.PROCESSING_TRANSCRIPTION])
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -268,6 +272,57 @@ private fun TermChip(term: String, removeLabel: String, onRemove: () -> Unit) {
         }
     }
 }
+
+/**
+ * Whether the panel offers the folder choice: only when this PC keeps its recordings in a local folder, as the
+ * stored settings say (2026-10-09, user decision) — Google Drive always uses a folder a month
+ * ([ProcessingStorage.uploadFolder]). The storage chips save a new revision that the panel reads back
+ * ([ProcessingViewModel.storageChanged]), so the row comes and goes with them.
+ */
+internal fun showsFolderChoice(stored: ProcessingSettingsState): Boolean =
+    (stored as? ProcessingSettingsState.Ready)?.document?.settings?.storage?.provider == StorageKind.FOLDER
+
+/**
+ * docs/05 "Fixed processing settings": the local folder's folder template as two chips (2026-10-08) — a folder a
+ * month, or one folder — left-aligned as desktop chips are, with the folder today's recording would go to under
+ * them in monospace. The stored value stays the template; any other than [SINGLE_FOLDER] reads as Monthly and is
+ * rewritten only when a chip is tapped, so an unrelated Save never changes a custom one.
+ */
+@Composable
+private fun StorageFolder(folder: String, onFolder: (String) -> Unit, strings: Strings) {
+    val single = folder == SINGLE_FOLDER
+    Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+        Text(strings[Str.PROCESSING_STORAGE], style = MaterialTheme.typography.labelSmall, color = blueprint.textMuted)
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
+            BlueprintChip(strings[Str.PROCESSING_FOLDER_MONTHLY], !single, { if (folder != MONTHLY_FOLDER) onFolder(MONTHLY_FOLDER) })
+            BlueprintChip(strings[Str.PROCESSING_FOLDER_SINGLE], single, { if (!single) onFolder(SINGLE_FOLDER) })
+        }
+        Text(folderPreview(folder), style = mono.small, color = blueprint.textMuted)
+    }
+}
+
+/** The two templates the chips write; [MONTHLY_FOLDER] is the processing settings' default. */
+internal const val MONTHLY_FOLDER = "recly/memo/{{yyyy}}-{{MM}}"
+internal const val SINGLE_FOLDER = "recly/memo"
+
+/**
+ * Where a recording made [today] goes under [template]: its date filled in (`recly/memo/2026-10`). A template
+ * that names something only a recording has — its title — is shown as it stands.
+ */
+internal fun folderPreview(template: String, today: LocalDateTime = LocalDateTime.now()): String = runCatching {
+    Template.render(
+        template,
+        TemplateContext(
+            mapOf(
+                "yyyy" to "%04d".format(today.year),
+                "MM" to "%02d".format(today.monthValue),
+                "dd" to "%02d".format(today.dayOfMonth),
+                "HH" to "%02d".format(today.hour),
+                "mm" to "%02d".format(today.minute),
+            ),
+        ),
+    )
+}.getOrDefault(template)
 
 /** The two speaker models by what they are; product names, not translated. */
 private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"

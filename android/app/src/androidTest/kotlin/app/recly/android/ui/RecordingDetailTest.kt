@@ -28,7 +28,7 @@ class RecordingDetailTest {
         loading = false, transcript = transcript, driveFetch = DriveFetch.IDLE, uploaded = uploaded)
 
     @Test fun transcribeAgainWaitsForTheUpload() {
-        ui.setContent { ReclyTheme { RecordingDetailScreen(detail(uploaded = false), {}, {}, {}, actions = DetailActions(transcription = external)) } }
+        ui.setContent { ReclyTheme { RecordingDetailScreen(detail(uploaded = false), {}, {}, actions = DetailActions(transcription = external)) } }
         ui.onNodeWithTag("detail-more").performClick()
         ui.onNodeWithTag("more-retranscribe").assertIsNotEnabled()
         ui.onNodeWithText(context.getString(R.string.detail_not_uploaded), useUnmergedTree = true).assertIsDisplayed()
@@ -36,7 +36,7 @@ class RecordingDetailTest {
 
     @Test fun aRefusedTranscribeAgainSaysWhy() {
         ui.setContent { ReclyTheme {
-            RecordingDetailScreen(detail(), {}, {}, {}, actions = DetailActions(transcription = external, onRetranscribe = { RetranscribeResult.NoAudio }))
+            RecordingDetailScreen(detail(), {}, {}, actions = DetailActions(transcription = external, onRetranscribe = { RetranscribeResult.NoAudio }))
         } }
         ui.onNodeWithTag("detail-more").performClick()
         ui.onNodeWithTag("more-retranscribe").assertIsEnabled().performClick()
@@ -49,7 +49,7 @@ class RecordingDetailTest {
         val saved = CompletableDeferred<EditResult>()
         var edits = 0
         ui.setContent { ReclyTheme {
-            RecordingDetailScreen(detail(), {}, {}, {}, actions = DetailActions(onEdit = { edits++; saved.await() }))
+            RecordingDetailScreen(detail(), {}, {}, actions = DetailActions(onEdit = { edits++; saved.await() }))
         } }
         ui.onNodeWithTag("transcript-speaker-0").performClick()
         ui.onNodeWithTag("speaker-change").performClick()

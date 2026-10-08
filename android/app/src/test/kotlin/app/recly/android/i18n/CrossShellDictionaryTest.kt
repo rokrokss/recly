@@ -207,12 +207,14 @@ class CrossShellDictionaryTest {
                 windows = "core.needs.auth",
                 reckit = "Sign in again to carry on",
             ),
+            // UX decisions of 2026-10-08: the badge's word, "Waiting for Drive", is what the status says
+            // everywhere. Windows draws it from `drive.pending` (`status.sign.in.needed` is drawn nowhere).
             Line(
                 what = "the NEEDS_AUTH status",
-                en = "Upload waiting",
-                ko = "업로드 대기",
+                en = "Waiting for Drive",
+                ko = "Drive 연결 대기",
                 android = "job_state_needs_auth",
-                windows = "status.sign.in.needed",
+                windows = "drive.pending",
                 reckit = "Sign-in needed",
             ),
             // docs/03 "Recordings from other devices" · docs/09 screen principle 2: the three "somewhere else" statuses.
@@ -708,11 +710,12 @@ class CrossShellDictionaryTest {
                 android = "recording_failed",
                 phone = "The recording failed",
             ),
-            // The tab is "List"; the screen is what is in it.
+            // The tab is "List"; the screen is what is in it — in Korean the tab's own word, so it is not
+            // the Record tab's 녹음 (UX decisions of 2026-10-08).
             Line(
                 what = "the recordings screen's title",
                 en = "Recordings",
-                ko = "녹음",
+                ko = "목록",
                 android = "jobs_title",
                 phone = "Recordings",
             ),

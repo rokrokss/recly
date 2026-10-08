@@ -259,6 +259,15 @@ class ReclyCore(
     suspend fun search(query: String, limit: Int): List<recly.core.recording.SearchHit> = searchIndex.search(query, limit)
 
     /**
+     * The first words of the transcripts held on this device, for the list rows on screen: by recording id,
+     * at most 120 characters, cut at a word where possible and ended with `…`. A recording without a
+     * transcript here is not in the map. Reads through [search]'s cache (docs/10 "Search"), off the caller's
+     * thread; ask again when a recording's jobs or transcript change.
+     */
+    @Throws(Throwable::class)
+    suspend fun previews(recordingIds: List<String>): Map<String, String> = searchIndex.previews(recordingIds)
+
+    /**
      * docs/03 "Recordings from other devices": reads the recordings other devices uploaded into this device's list,
      * and drops the ones they have since deleted. Every job pass does this too ([runDueJobs]); a
      * ledger that has just come on screen calls it itself, with [force] to skip the pass throttle.

@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Yerel klasör bekleniyor</string>
     <string name="job_state_done">Bitti</string>
     <string name="job_state_failed">Başarısız</string>
-    <string name="job_state_needs_auth">Yükleme bekliyor</string>
+    <string name="job_state_needs_auth">Drive bekleniyor</string>
     <string name="job_state_skipped_short">Çok kısa</string>
     <string name="retry_soon">yakında</string>
     <string name="retry_in_seconds">%1$d sn sonra</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Bu telefonda bir anahtar eksik</string>
     <string name="alert_auth_rejected">Sağlayıcı anahtarı reddetti</string>
     <string name="alert_quota">Sağlayıcının kotası doldu — limitlerini ve faturalandırmayı kontrol edin</string>
-    <string name="alert_uploads_waiting">Bekleyen yüklemeler: %1$d</string>
+    <string name="alert_uploads_waiting">Drive bekleniyor: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Bekleyen kayıtlar: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Harici transkripsiyon, kaydın tamamını %1$s sağlayıcısına gönderir.\nKaydın ne kadar süre saklanacağı ve model eğitiminde kullanılıp kullanılmayacağı o sağlayıcının kendi politikasına bağlıdır — Recly bunu denetlemez.\nKullanmadan önce sağlayıcının politikasını okuyun.</string>
     <string name="settings_consent_reminder">Onay hatırlatıcısı</string>
     <string name="consent_question">Katılımcıları kayıt hakkında bilgilendirdiniz mi?</string>
-    <string name="consent_body">Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır.\n\nKore — katıldığınız bir konuşmayı kaydedebilirsiniz (katılmadığınız bir konuşmayı kaydetmek yasaktır).\nABD — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA eyaletlerinde tüm katılımcıların onayı gerekir.\nAB — GDPR bilgilendirme ve hukuki bir dayanak ister; Danimarka ise iş görüşmeleri için açık rıza şart koşar.</string>
+    <string name="consent_body">Bu kayıt, toplantıdaki diğer kişilere kendini belli etmez. Onları bilgilendirmek, kaydı yapan kişinin sorumluluğundadır.</string>
     <string name="consent_confirm">Bilgilendirdim · Kaydı başlat</string>
     <string name="consent_suppress">Bir daha sorma</string>
     <string name="consent_link">Yargı bölgesine göre kayıt onayı kuralları</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Drive\'ı bağla</string>
     <string name="drive_attention">Drive bağlantısı dikkat gerektiriyor</string>
     <string name="drive_optional">Yerel olarak kayıt yapın. Yüklemek için Drive\'ı bağlayın.</string>
-    <string name="drive_pending">Yükleme bekliyor</string>
+    <string name="drive_pending">Drive bekleniyor</string>
     <string name="core_local_transcription_unavailable">Yerel transkripsiyon bu cihazda kullanılamıyor. Başka bir transkripsiyon yöntemi seçin.</string>
     <string name="core_local_model_required">Konuşma tanıma modeli henüz indirilmedi.</string>
     <string name="core_local_diarization_unavailable">Bu yerel motor konuşmacı tanımlamayı desteklemiyor. Bu özelliği kapatın veya harici bir API seçin.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Cihaz üzerinde transkripsiyon sözlük kullanmaz.</string>
     <string name="speaker_model">Konuşmacı ayırma modeli</string>
     <string name="speaker_model_sentences">Konuşmacılar bu cihazda cümle cümle ayrılır.</string>
+    <string name="badge_retrying">Yeniden denenecek</string>
+    <string name="badge_receiving">Alınıyor</string>
+    <string name="badge_transcribing">Metne dönüştürülüyor</string>
+    <string name="badge_needs_permission">İzin gerekiyor</string>
+    <string name="badge_waiting_model">Model bekleniyor</string>
+    <string name="badge_storage_full">Depolama dolu</string>
+    <string name="badge_waiting_folder">Klasör bekleniyor</string>
+    <string name="node_state_ready">Hazır</string>
+    <string name="node_state_starting">Başlatılıyor</string>
+    <string name="node_state_saving">Kaydediliyor</string>
+    <string name="node_device_phone">Telefon</string>
+    <string name="detail_waiting_drive">Drive bekleniyor. Yüklemek ve metne dönüştürmek için Drive\'ı bağlayın.</string>
+    <string name="processing_folder_monthly">Aylık klasörler</string>
+    <string name="processing_folder_single">Tek klasör</string>
+    <string name="recording_title_discard">Kaydı at</string>
 </resources>

@@ -490,6 +490,30 @@ enum class Str {
     LOCAL_MCP_BODY,
     LOCAL_MCP_COPY,
 
+    // The UX decisions of 2026-10-08: the badges and the State node say words, not codes.
+    BADGE_RETRY,
+    BADGE_RECEIVING,
+    BADGE_TRANSCRIBING,
+    BADGE_NEEDS_CONSENT,
+    BADGE_NEEDS_MODEL,
+    BADGE_STORAGE_FULL,
+    BADGE_WAITING_FOLDER,
+    BADGE_UNKNOWN,
+    NODE_READY,
+    NODE_STARTING,
+    NODE_NO_HELPER,
+    NODE_NAMING,
+    NODE_DESKTOP,
+    /** docs/03 "Titles": the naming sheet's second button, which deletes the take that just ended. */
+    RECORDING_DISCARD,
+    /** The detail of a recording whose upload waits for the Drive connection (2026-10-08). */
+    DETAIL_WAITING_DRIVE,
+    /** docs/05 "Fixed processing settings": the Drive folder template as two choices (2026-10-08). */
+    PROCESSING_FOLDER_MONTHLY,
+    PROCESSING_FOLDER_SINGLE,
+    /** Why Rename, Transcribe again and the audio export wait while the take is still being written. */
+    DETAIL_STILL_RECORDING,
+
     CORE_STALE,
     ;
 

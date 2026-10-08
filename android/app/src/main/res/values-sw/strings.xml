@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Inasubiri folda ya ndani</string>
     <string name="job_state_done">Imekamilika</string>
     <string name="job_state_failed">Imeshindwa</string>
-    <string name="job_state_needs_auth">Upakiaji unasubiri</string>
+    <string name="job_state_needs_auth">Inasubiri Drive</string>
     <string name="job_state_skipped_short">Fupi mno</string>
     <string name="retry_soon">hivi karibuni</string>
     <string name="retry_in_seconds">baada ya sekunde %1$d</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Ufunguo haupo kwenye simu hii</string>
     <string name="alert_auth_rejected">Mtoa huduma amekataa ufunguo</string>
     <string name="alert_quota">Mtoa huduma amefikia kikomo cha mgao — kagua vikomo na malipo yake</string>
-    <string name="alert_uploads_waiting">Upakiaji unaosubiri: %1$d</string>
+    <string name="alert_uploads_waiting">Inasubiri Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Rekodi zinazosubiri: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Unukuzi wa nje hutuma rekodi nzima kwa %1$s.\nMuda wa kuihifadhi, na iwapo itatumiwa kufunza modeli, hutegemea sera ya mtoa huduma huyo — Recly haidhibiti hilo.\nSoma sera ya mtoa huduma kabla ya kuitumia.</string>
     <string name="settings_consent_reminder">Kikumbusho cha ridhaa</string>
     <string name="consent_question">Je, umewaambia washiriki kwamba unarekodi?</string>
-    <string name="consent_body">Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi.\n\nKorea — unaweza kurekodi mazungumzo unayoshiriki (kurekodi mazungumzo usiyoshiriki ni marufuku).\nMarekani — majimbo ya CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA yanahitaji ridhaa ya kila mshiriki.\nUmoja wa Ulaya — GDPR inahitaji taarifa na msingi halali, na Denmark inahitaji ridhaa ya wazi kwa simu za kibiashara.</string>
+    <string name="consent_body">Wengine kwenye mkutano hawataona ishara yoyote ya rekodi hii. Kuwaarifu ni jukumu la anayerekodi.</string>
     <string name="consent_confirm">Nimewaambia · Anza kurekodi</string>
     <string name="consent_suppress">Usiulize tena</string>
     <string name="consent_link">Sheria za ridhaa ya kurekodi kwa kila eneo la mamlaka</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Unganisha Drive</string>
     <string name="drive_attention">Muunganisho wa Drive unahitaji kushughulikiwa</string>
     <string name="drive_optional">Rekodi kwenye kifaa. Unganisha Drive ili upakie.</string>
-    <string name="drive_pending">Upakiaji unasubiri</string>
+    <string name="drive_pending">Inasubiri Drive</string>
     <string name="core_local_transcription_unavailable">Unukuzi wa ndani haupatikani kwenye kifaa hiki. Chagua njia nyingine ya unukuzi.</string>
     <string name="core_local_model_required">Modeli ya utambuzi wa matamshi bado haijapakuliwa.</string>
     <string name="core_local_diarization_unavailable">Injini hii ya ndani haitumii utambuzi wa wazungumzaji. Zima kipengele hicho au uchague API ya nje.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Unukuzi kwenye kifaa hautumii msamiati.</string>
     <string name="speaker_model">Modeli ya kutenganisha wazungumzaji</string>
     <string name="speaker_model_sentences">Wazungumzaji hutenganishwa kwenye kifaa hiki, sentensi kwa sentensi.</string>
+    <string name="badge_retrying">Itajaribu tena</string>
+    <string name="badge_receiving">Inapokea</string>
+    <string name="badge_transcribing">Inanukuu</string>
+    <string name="badge_needs_permission">Inahitaji ruhusa</string>
+    <string name="badge_waiting_model">Inasubiri modeli</string>
+    <string name="badge_storage_full">Hifadhi imejaa</string>
+    <string name="badge_waiting_folder">Inasubiri folda</string>
+    <string name="node_state_ready">Tayari</string>
+    <string name="node_state_starting">Inaanzishwa</string>
+    <string name="node_state_saving">Inahifadhi</string>
+    <string name="node_device_phone">Simu</string>
+    <string name="detail_waiting_drive">Inasubiri Drive. Unganisha Drive ili kupakia na kunukuu.</string>
+    <string name="processing_folder_monthly">Folda za kila mwezi</string>
+    <string name="processing_folder_single">Folda moja</string>
+    <string name="recording_title_discard">Tupa rekodi</string>
 </resources>

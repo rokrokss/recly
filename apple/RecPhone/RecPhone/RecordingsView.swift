@@ -22,6 +22,7 @@ struct RecordingsView: View {
     @State private var hits: [SearchHit] = []
     /// docs/09 "Import": the system picker for audio and video files is up.
     @State private var importing = false
+    @FocusState private var searchFocused: Bool
 
     /// docs/07 rule 3: this view draws strings that were resolved outside SwiftUI — a model's
     /// status line, a RecKit label — and `Text(verbatim:)` carries no dependency on the language.
@@ -29,24 +30,14 @@ struct RecordingsView: View {
     @Environment(\.locale) private var locale
 
     var body: some View {
-        // docs/09 "Search": the search field is the platform's own (`.searchable`), and it lives in a
-        // navigation bar — so the list has one, holding nothing but the field.
-        NavigationStack {
-            list
-                .navigationBarTitleDisplayMode(.inline)
-                .searchable(
-                    text: $query,
-                    placement: .navigationBarDrawer(displayMode: .always),
-                    prompt: Text(verbatim: RecKitStrings.localized("Search titles and transcripts"))
-                )
-        }
-        .task(id: query) {
-            // docs/10 "Search": 200 ms after the last keystroke.
-            let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !typed.isEmpty else { hits = []; return }
-            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
-            hits = await model.search(typed)
-        }
+        list
+            .task(id: query) {
+                // docs/10 "Search": 200 ms after the last keystroke.
+                let typed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !typed.isEmpty else { hits = []; return }
+                do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+                hits = await model.search(typed)
+            }
     }
 
     private var searching: Bool { !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -70,6 +61,9 @@ struct RecordingsView: View {
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Import audio")))
                 .accessibilityIdentifier("import-audio")
             }
+            // docs/09 "Search" · 2026-10-08 §12: under the title and its count line, above the ledger —
+            // the order Android draws, and the Mac's Details window's own field.
+            ListSearchField(text: $query, focus: $searchFocused)
             // docs/10 "iPhone": a banner at the top of the list — one row per
             // reason however many jobs are behind it, and the row is the way to the screen that
             // fixes it.
@@ -137,30 +131,45 @@ struct RecordingsView: View {
                 length: loc("Length"),
                 status: loc("Status")
             )
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(model.recents) { item in
-                        row(item)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(model.recents) { item in
+                            row(item)
+                        }
+                        if model.recents.isEmpty {
+                            // docs/09 screen principle 8: no button here — the tab bar right below already says
+                            // Record.
+                            EmptyListMessage(
+                                title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
+                                hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
+                            )
+                        }
                     }
-                    if model.recents.isEmpty {
-                        // docs/09 screen principle 8: no button here — the tab bar right below already says
-                        // Record.
-                        EmptyListMessage(
-                            title: loc(model.recentsLoading ? "Loading…" : "No recordings yet"),
-                            hint: model.recentsLoading ? nil : loc("Recordings you make appear here.")
-                        )
+                }
+                // docs/03: a pull-to-refresh is the user asking for everything, this device's list and
+                // what the other devices have put in Drive — so the pull is awaited here and the list
+                // is read after it, or the gesture would end before its own answer arrived.
+                .refreshable {
+                    await model.pullRemoteRecordings()
+                    await model.refreshRecents()
+                }
+                .scrollDismissesKeyboard(.immediately)
+                // 2026-10-08 §12: an opened row's actions are brought into view rather than left under
+                // the tab bar — as little scroll as that takes, once the expansion has its height.
+                .task(id: expanded) {
+                    guard let id = expanded else { return }
+                    do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+                    withAnimation(Motion.standardAnimation(reduceMotion: blueprint.reduceMotion)) {
+                        proxy.scrollTo(Self.expansionID(id), anchor: nil)
                     }
                 }
             }
-            // docs/03: a pull-to-refresh is the user asking for everything, this device's list and
-            // what the other devices have put in Drive — so the pull is awaited here and the list
-            // is read after it, or the gesture would end before its own answer arrived.
-            .refreshable {
-                await model.pullRemoteRecordings()
-                await model.refreshRecents()
-            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // 2026-10-08 badge column rule: the status column no wider than the old codes took, so a
+        // phone's title column keeps its width; a longer word wraps inside its badge.
+        .environment(\.ledgerStatusCapped, true)
         .dotGridBackground()
         .onChange(of: collapse) { expanded = nil }
         .task { await model.refreshRecents() }
@@ -195,11 +204,13 @@ struct RecordingsView: View {
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
             title: item.titleLabel,
-            subtitle: "",
+            // 2026-10-08 §8: the transcript's first words under the title, when this phone has them.
+            subtitle: item.preview ?? "",
             length: length,
             status: item.badge,
             announce: LedgerFormat.announce(
                 title: item.titleLabel,
+                preview: item.preview,
                 at: LedgerFormat.startedAt(item.startedAt),
                 length: length,
                 state: item.stateLabel
@@ -218,8 +229,11 @@ struct RecordingsView: View {
         .accessibilityIdentifier("state")
         if expanded == item.id {
             expansion(item)
+                .id(Self.expansionID(item.id))
         }
     }
+
+    private static func expansionID(_ id: String) -> String { "expansion-\(id)" }
 
     /// docs/09 screen principle 2: what is behind the row — where the recording stands, and the two or three
     /// things the user can do about it.

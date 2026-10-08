@@ -22,7 +22,8 @@
             "folder": {
               "type": "string", "minLength": 1, "maxLength": 200,
               "pattern": "^(?![\\s\\S]*\\{\\{\\s*(workflowName|title)\\s*\\}\\})[\\s\\S]*$",
-              "default": "recly/memo/{{yyyy}}-{{MM}}"
+              "default": "recly/memo/{{yyyy}}-{{MM}}",
+              "description": "The folder template new recordings go under when provider is folder. Google Drive and iCloud always use recly/memo/{{yyyy}}-{{MM}}. See docs/recly.md section 9, screen principle 4."
             },
             "minDurationSec": { "type": "integer", "minimum": 0, "maximum": 2147483647, "default": 0 },
             "provider": {

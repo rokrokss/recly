@@ -40,7 +40,11 @@ data class ProcessingSettings(
 
 @Serializable
 data class ProcessingStorage(
-    val folder: String = "recly/memo/{{yyyy}}-{{MM}}",
+    /**
+     * docs/05 "Fixed processing settings" (2026-10-09, user decision): the folder template a local folder
+     * stores recordings under. Google Drive and iCloud always use [DEFAULT_FOLDER] — see [uploadFolder].
+     */
+    val folder: String = DEFAULT_FOLDER,
     val minDurationSec: Int = 0,
     /**
      * docs/03 "Storage location": Google Drive, the app's iCloud folder (iPhone and Mac only, ADR-024) or a
@@ -49,7 +53,14 @@ data class ProcessingStorage(
      * keep the one this device has, since the choice is about this device's accounts.
      */
     val provider: recly.core.storage.StorageKind = recly.core.storage.StorageKind.DRIVE,
-)
+) {
+    /** The folder new recordings go to: [folder] in a local folder, a folder a month everywhere else. */
+    fun uploadFolder(): String = if (provider == recly.core.storage.StorageKind.FOLDER) folder else DEFAULT_FOLDER
+
+    companion object {
+        const val DEFAULT_FOLDER: String = "recly/memo/{{yyyy}}-{{MM}}"
+    }
+}
 
 @Serializable
 enum class TranscriptionMode {

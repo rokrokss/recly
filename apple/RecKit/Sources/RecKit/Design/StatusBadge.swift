@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the code is the
+/// docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the word is the
 /// text, and a reader who sees neither hue gets the same answer from the letters.
 public enum BadgeTone: Sendable {
     case neutral
@@ -31,26 +31,73 @@ public enum BadgeTone: Sendable {
     public func edge(_ palette: BlueprintPalette) -> Color { palette.color(edgeToken) }
 }
 
-/// The code and its tone — what [LedgerRow] shows in its last column.
+/// The state and its tone — what [LedgerRow] shows in its last column. The code is the core's and the
+/// logs' word and never shown; the badge draws [label], the code as a translated word (2026-10-08 §1a).
 public struct LedgerStatus: Equatable, Sendable {
     public let code: String
-    public var label: String { code == "NEEDS_AUTH" ? RecKitStrings.localized("Drive pending") : code }
     public let tone: BadgeTone
+    /// The catalog key of the word, where one code is more than one word (`WAITING`: iCloud or the
+    /// local folder). Nil reads the word off the code.
+    private let word: String?
 
-    public init(code: String, tone: BadgeTone) {
+    public init(code: String, tone: BadgeTone, word: String? = nil) {
         self.code = code
         self.tone = tone
+        self.word = word
     }
 
-    /// Every code [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
-    /// measured against, so the widest of them fits at full size.
-    public static let ledgerCodes = [
-        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "REC", "RETRY", "DONE", "FAILED",
-        "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN",
+    /// The word the badge draws, read where it is drawn so a language change reaches a badge already
+    /// on screen (docs/07 rule 3). A code the table below does not name is shown as it stands.
+    public var label: String {
+        guard let key = word ?? Self.words[code] else { return code }
+        return RecKitStrings.localized(key)
+    }
+
+    /// 2026-10-08 §1a: one word per code, in RecKit's catalog. `ICLOUD_STORAGE_FULL` and `NEEDS_SPACE`
+    /// are the banner's codes for the ledger's `NO_SPACE`; the banner's failure codes (a missing key, a
+    /// refused key, a quota) are failures, so they say so.
+    static let words: [String: String] = [
+        "DONE": "Done",
+        "FAILED": "Failed",
+        "RETRY": "Retrying",
+        "PENDING": "Waiting",
+        "UPLOADING": "Uploading",
+        "RECEIVING": "Receiving",
+        "TRANSCRIBING": "Transcribing",
+        "IMPORTING": "Importing",
+        "REC": "Recording",
+        "NEEDS_AUTH": "Waiting for Drive",
+        "NEEDS_CONSENT": "Needs permission",
+        "NEEDS_MODEL": "Waiting for model",
+        "NEEDS_SPACE": "Storage full",
+        "NO_SPACE": "Storage full",
+        "ICLOUD_STORAGE_FULL": "Storage full",
+        "SKIPPED": "Too short",
+        "WAITING": "Waiting for iCloud",
+        "UNKNOWN": "Unknown",
+        "MISSING_SECRET": "Failed",
+        "AUTH_REJECTED": "Failed",
+        "QUOTA": "Failed",
+        "LOCAL_TRANSCRIPTION_UNAVAILABLE": "Failed",
+        "LOCAL_DIARIZATION_UNAVAILABLE": "Failed",
     ]
 
-    /// docs/09 screen principle 2: the badge is the state as a code, and the code is the same word the core
-    /// and the logs use. What it *means* is [RecentItem.stateLabel], which is what VoiceOver hears.
+    /// Every badge [forRecent] and [RecentItem.badge] can mint — what the ledger's status column is
+    /// measured against, in the language on screen, so the widest of the words fits at full size.
+    public static let ledgerStatuses: [LedgerStatus] = [
+        "IMPORTING", "RECEIVING", "UPLOADING", "PENDING", "TRANSCRIBING", "REC", "RETRY", "DONE", "FAILED",
+        "NEEDS_CONSENT", "NEEDS_MODEL", "NEEDS_AUTH", "NO_SPACE", "SKIPPED", "UNKNOWN", "WAITING",
+    ].map { LedgerStatus(code: $0, tone: .neutral) } + [waitingForFolder]
+
+    /// The codes of [ledgerStatuses].
+    public static var ledgerCodes: [String] { ledgerStatuses.map(\.code) }
+
+    /// docs/03 "Storage location": a local folder that cannot be reached waits the way iCloud does — the
+    /// same code, its own word.
+    static let waitingForFolder = LedgerStatus(code: "WAITING", tone: .neutral, word: "Waiting for folder")
+
+    /// docs/09 screen principle 2: the badge is the state in one word, minted from the code the core and
+    /// the logs use. What it *means* is [RecentItem.stateLabel], which is what VoiceOver hears.
     ///
     /// Keyed on the docs/07 key `Recents.stateLabel` produced, so the two cannot drift: a state the
     /// core grows without a code here shows as `UNKNOWN` rather than as nothing.
@@ -81,7 +128,8 @@ public struct LedgerStatus: Equatable, Sendable {
         case "No space in Drive", "No space in iCloud": return LedgerStatus(code: "NO_SPACE", tone: .warning)
         // docs/03 "Storage location": iCloud is uploading on its own schedule — in flight, like a running upload.
         case "Uploading to iCloud": return LedgerStatus(code: "UPLOADING", tone: .accent)
-        case "Waiting for iCloud", "Waiting for the local folder": return LedgerStatus(code: "WAITING", tone: .warning)
+        case "Waiting for iCloud": return LedgerStatus(code: "WAITING", tone: .warning)
+        case "Waiting for the local folder": return LedgerStatus(code: "WAITING", tone: .warning, word: "Waiting for folder")
         case "Too short": return LedgerStatus(code: "SKIPPED", tone: .neutral)
         default: return LedgerStatus(code: "UNKNOWN", tone: .neutral)
         }
@@ -136,27 +184,51 @@ public struct BadgeButton: View {
     }
 }
 
-/// A square badge: 1pt of the tone (2pt in high contrast), the code in monospace, on the surface.
+/// A square badge: 1pt of the tone (2pt in high contrast), the state's word in monospace, on the surface.
 public struct StatusBadge: View {
     @Environment(\.blueprint) private var blueprint
     private let status: LedgerStatus
+    private let wraps: Bool
+    /// The text in place of the status's word — only the ledger's measure of its cap uses it.
+    private let verbatim: String?
 
-    public init(_ status: LedgerStatus) {
+    /// - Parameter wraps: take the width the ledger's status column gives it and wrap the word onto
+    ///   further lines, centred, when the word is wider than that (2026-10-08 badge column rule).
+    ///   Elsewhere the badge is its own width on one line.
+    public init(_ status: LedgerStatus, wraps: Bool = false) {
         self.status = status
+        self.wraps = wraps
+        verbatim = nil
+    }
+
+    /// A badge-sized piece of text, for measuring: the ledger's status column is capped at what the
+    /// old code `TRANSCRIBING` took.
+    init(measuring text: String) {
+        status = LedgerStatus(code: text, tone: .neutral)
+        wraps = false
+        verbatim = text
     }
 
     public var body: some View {
-        HStack(spacing: Space.xs) {
+        let words = HStack(spacing: Space.xs) {
             // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink.
             if status.code == "IMPORTING" { BlueprintLoader(color: status.tone.ink(blueprint.palette)) }
-            Text(verbatim: status.label)
+            Text(verbatim: verbatim ?? status.label)
         }
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(status.tone.ink(blueprint.palette))
-            .lineLimit(1)
-            // A code that is truncated or shrunk is not a code any more: the badge is always its
-            // own width, and the ledger's status column is measured to the widest one.
-            .fixedSize()
+            .multilineTextAlignment(.center)
+        return Group {
+            if wraps {
+                // A word wider than the column goes onto a second line rather than being cut or
+                // shrunk: every letter is still read, at full size. Its own line limit, because the
+                // ledger row puts its columns on one line each.
+                words.lineLimit(nil).fixedSize(horizontal: false, vertical: true)
+            } else {
+                // A word that is truncated or shrunk is not read any more: the badge is its own width.
+                words.lineLimit(1).fixedSize()
+            }
+        }
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .overlay {

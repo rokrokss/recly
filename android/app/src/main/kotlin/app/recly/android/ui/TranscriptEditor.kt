@@ -77,6 +77,8 @@ internal fun TranscriptEditor(
     onSeek: (Double) -> Unit,
     modifier: Modifier = Modifier,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
+    /** The recording's length, which picks the format of every time button ([clock]). */
+    scaleSec: Long? = null,
 ) {
     var menuFor by remember { mutableStateOf<Int?>(null) }
     var renaming by remember { mutableStateOf<String?>(null) }
@@ -92,8 +94,8 @@ internal fun TranscriptEditor(
         itemsIndexed(transcript.segments) { index, segment ->
             Column(Modifier.padding(horizontal = Space.m)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
-                    val stamp = hms(segment.start.toLong())
-                    val seekLabel = stringResource(R.string.transcript_seek, stamp)
+                    val stamp = clock(segment.start.toLong(), scaleSec)
+                    val seekLabel = stringResource(R.string.transcript_seek, hms(segment.start.toLong()))
                     BlueprintButton(stamp, { onSeek(segment.start) }, enabled = canSeek && segment.start < seekableDurationSec,
                         modifier = Modifier.semantics { contentDescription = seekLabel }, tone = ButtonTone.QUIET, monospace = true)
                     if (segment.speaker.isEmpty()) {

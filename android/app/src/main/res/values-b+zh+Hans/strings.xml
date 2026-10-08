@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">等待本地文件夹</string>
     <string name="job_state_done">完成</string>
     <string name="job_state_failed">失败</string>
-    <string name="job_state_needs_auth">等待上传</string>
+    <string name="job_state_needs_auth">等待Drive</string>
     <string name="job_state_skipped_short">时长过短</string>
     <string name="retry_soon">即将</string>
     <string name="retry_in_seconds">%1$d秒后</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">此手机上没有此密钥</string>
     <string name="alert_auth_rejected">提供商拒绝了密钥</string>
     <string name="alert_quota">提供商配额用尽，请检查限额和账单</string>
-    <string name="alert_uploads_waiting">等待上传：%1$d</string>
+    <string name="alert_uploads_waiting">等待Drive：%1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">%1$d条录音正在等待。</item>
     </plurals>
     <string name="provider_disclosure_transcribe">外部转录会将完整录音发送给%1$s。\n保留期限以及是否用于训练由提供商政策决定，Recly无法控制。\n使用前请阅读提供商政策。</string>
     <string name="settings_consent_reminder">同意提醒</string>
     <string name="consent_question">您已告知参与者将进行录音吗？</string>
-    <string name="consent_body">此录音不会向会议中的其他人显示任何提示。告知参与者是录音者的责任。\n\n韩国：可以录制自己参与的对话（禁止录制自己未参与的对话）。\n美国：CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA要求所有参与者同意。\n欧盟：GDPR要求告知并具备合法依据；丹麦要求商务通话取得明确同意。</string>
+    <string name="consent_body">此录音不会向会议中的其他人显示任何提示。告知参与者是录音者的责任。</string>
     <string name="consent_confirm">已告知·开始录音</string>
     <string name="consent_suppress">不再询问</string>
     <string name="consent_link">各司法辖区的录音同意规定</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">连接Drive</string>
     <string name="drive_attention">Drive连接需要处理</string>
     <string name="drive_optional">本地录音。连接Drive后即可上传。</string>
-    <string name="drive_pending">等待上传</string>
+    <string name="drive_pending">等待Drive</string>
     <string name="core_local_transcription_unavailable">此设备不支持本地转录，请选择其他转录方式。</string>
     <string name="core_local_model_required">尚未下载语音识别模型。</string>
     <string name="core_local_diarization_unavailable">此本地引擎不支持说话人识别。请关闭该功能或选择外部API。</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">设备本地转录不使用词汇表。</string>
     <string name="speaker_model">说话人分离模型</string>
     <string name="speaker_model_sentences">在此设备上逐句区分说话人。</string>
+    <string name="badge_retrying">等待重试</string>
+    <string name="badge_receiving">正在接收</string>
+    <string name="badge_transcribing">正在转录</string>
+    <string name="badge_needs_permission">需要权限</string>
+    <string name="badge_waiting_model">等待模型</string>
+    <string name="badge_storage_full">存储空间已满</string>
+    <string name="badge_waiting_folder">等待文件夹</string>
+    <string name="node_state_ready">就绪</string>
+    <string name="node_state_starting">正在启动</string>
+    <string name="node_state_saving">正在保存</string>
+    <string name="node_device_phone">手机</string>
+    <string name="detail_waiting_drive">等待Drive。连接Drive后即可上传并转录。</string>
+    <string name="processing_folder_monthly">按月文件夹</string>
+    <string name="processing_folder_single">单个文件夹</string>
+    <string name="recording_title_discard">放弃录音</string>
 </resources>

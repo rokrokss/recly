@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Oczekiwanie na folder lokalny</string>
     <string name="job_state_done">Gotowe</string>
     <string name="job_state_failed">Niepowodzenie</string>
-    <string name="job_state_needs_auth">Przesyłanie oczekuje</string>
+    <string name="job_state_needs_auth">Oczekiwanie na Drive</string>
     <string name="job_state_skipped_short">Za krótkie</string>
     <string name="retry_soon">wkrótce</string>
     <string name="retry_in_seconds">za %1$d s</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Brak klucza na tym telefonie</string>
     <string name="alert_auth_rejected">Dostawca odrzucił klucz</string>
     <string name="alert_quota">Wyczerpano limit u dostawcy — sprawdź limity i rozliczenia</string>
-    <string name="alert_uploads_waiting">Pliki oczekujące na przesłanie: %1$d</string>
+    <string name="alert_uploads_waiting">Oczekiwanie na Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Oczekujące nagrania: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Transkrypcja zewnętrzna wysyła całe nagranie do %1$s.\nTo, jak długo je przechowuje i czy używa go do trenowania modeli, zależy od zasad tego dostawcy — Recly nie ma na to wpływu.\nPrzed użyciem zapoznaj się z zasadami dostawcy.</string>
     <string name="settings_consent_reminder">Przypomnienie o zgodzie</string>
     <string name="consent_question">Czy uczestnicy zostali poinformowani o nagrywaniu?</string>
-    <string name="consent_body">To nagrywanie nie daje innym uczestnikom spotkania żadnego sygnału. Poinformowanie ich należy do osoby, która nagrywa.\n\nKorea — możesz nagrywać rozmowę, w której uczestniczysz (nagrywanie rozmowy, w której nie uczestniczysz, jest zabronione).\nStany Zjednoczone — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA wymagają zgody wszystkich uczestników.\nUE — RODO wymaga poinformowania i podstawy prawnej, a Dania wymaga wyraźnej zgody w przypadku rozmów służbowych.</string>
+    <string name="consent_body">To nagrywanie nie daje innym uczestnikom spotkania żadnego sygnału. Poinformowanie ich należy do osoby, która nagrywa.</string>
     <string name="consent_confirm">Poinformowano · Rozpocznij nagrywanie</string>
     <string name="consent_suppress">Nie pytaj ponownie</string>
     <string name="consent_link">Zasady zgody na nagrywanie według jurysdykcji</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Połącz z Drive</string>
     <string name="drive_attention">Połączenie z Drive wymaga uwagi</string>
     <string name="drive_optional">Nagrywaj lokalnie. Połącz z Drive, aby przesyłać.</string>
-    <string name="drive_pending">Przesyłanie oczekuje</string>
+    <string name="drive_pending">Oczekiwanie na Drive</string>
     <string name="core_local_transcription_unavailable">Lokalna transkrypcja jest niedostępna na tym urządzeniu. Wybierz inną metodę transkrypcji.</string>
     <string name="core_local_model_required">Model rozpoznawania mowy nie został jeszcze pobrany.</string>
     <string name="core_local_diarization_unavailable">Ten lokalny silnik nie obsługuje rozpoznawania mówców. Wyłącz tę opcję lub wybierz zewnętrzne API.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Transkrypcja na urządzeniu nie korzysta ze słownika.</string>
     <string name="speaker_model">Model rozróżniania mówców</string>
     <string name="speaker_model_sentences">Mówcy są rozróżniani na tym urządzeniu, zdanie po zdaniu.</string>
+    <string name="badge_retrying">Ponowienie</string>
+    <string name="badge_receiving">Odbieranie</string>
+    <string name="badge_transcribing">Transkrypcja</string>
+    <string name="badge_needs_permission">Wymaga zgody</string>
+    <string name="badge_waiting_model">Oczekiwanie na model</string>
+    <string name="badge_storage_full">Brak miejsca</string>
+    <string name="badge_waiting_folder">Oczekiwanie na folder</string>
+    <string name="node_state_ready">Gotowe</string>
+    <string name="node_state_starting">Trwa uruchamianie</string>
+    <string name="node_state_saving">Zapisywanie</string>
+    <string name="node_device_phone">Telefon</string>
+    <string name="detail_waiting_drive">Oczekiwanie na Drive. Połącz z Drive, aby przesłać i transkrybować.</string>
+    <string name="processing_folder_monthly">Foldery miesięczne</string>
+    <string name="processing_folder_single">Jeden folder</string>
+    <string name="recording_title_discard">Odrzuć nagranie</string>
 </resources>

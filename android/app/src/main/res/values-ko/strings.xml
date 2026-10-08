@@ -46,7 +46,7 @@
     <string name="enqueue_skipped_short">너무 짧아 건너뜀</string>
     <string name="enqueue_already_done">이미 처리됨</string>
 
-    <string name="jobs_title">녹음</string>
+    <string name="jobs_title">목록</string>
     <string name="jobs_empty">아직 녹음이 없습니다</string>
     <string name="jobs_empty_hint">녹음하면 여기에 표시됩니다.</string>
     <string name="jobs_untitled">제목 없음</string>
@@ -65,7 +65,7 @@
     <string name="job_state_waiting_folder">로컬 폴더 대기 중</string>
     <string name="job_state_done">완료</string>
     <string name="job_state_failed">실패</string>
-    <string name="job_state_needs_auth">업로드 대기</string>
+    <string name="job_state_needs_auth">Drive 연결 대기</string>
     <string name="job_state_skipped_short">너무 짧음</string>
     <string name="retry_soon">곧</string>
     <string name="retry_in_seconds">%1$d초 후</string>
@@ -223,7 +223,7 @@
     <string name="alert_missing_secret">이 폰에 없는 키가 있습니다</string>
     <string name="alert_auth_rejected">업체가 키를 거절했습니다</string>
     <string name="alert_quota">업체 할당량이 찼습니다 — 한도와 결제를 확인하세요</string>
-    <string name="alert_uploads_waiting">업로드 대기 %1$d건</string>
+    <string name="alert_uploads_waiting">Drive 연결 대기 %1$d건</string>
     <plurals name="alert_waiting">
         <item quantity="other">녹음 %1$d건이 기다리는 중입니다.</item>
     </plurals>
@@ -234,7 +234,7 @@
     <!-- docs/12 M8 · ADR-011: the wording is the Mac's, word for word (ConsentTextTest). -->
     <string name="settings_consent_reminder">동의 리마인더</string>
     <string name="consent_question">참가자에게 녹음을 알렸습니까?</string>
-    <string name="consent_body">이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.\n\n한국 — 대화 당사자면 녹음할 수 있습니다(당사자가 아닌 대화의 녹음은 금지).\n미국 — CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA는 참가자 전원의 동의가 필요합니다.\nEU — GDPR상 고지와 적법 근거가 필요하고, 덴마크는 업무 통화에 명시적 동의를 요구합니다.</string>
+    <string name="consent_body">이 녹음은 회의 상대에게 아무 표시도 남기지 않습니다. 고지 책임은 녹음하는 사람에게 있습니다.</string>
     <string name="consent_confirm">알렸습니다 · 녹음 시작</string>
     <string name="consent_suppress">다시 묻지 않기</string>
     <string name="consent_link">관할별 녹음 동의 규정 보기</string>
@@ -265,7 +265,7 @@
     <string name="drive_connect">Drive 연결</string>
     <string name="drive_attention">Drive 연결 확인 필요</string>
     <string name="drive_optional">기기에 녹음하고, Drive 연결 시 업로드합니다.</string>
-    <string name="drive_pending">업로드 대기</string>
+    <string name="drive_pending">Drive 연결 대기</string>
     <string name="core_local_transcription_unavailable">이 기기에서는 로컬 전사를 사용할 수 없습니다. 전사 방식을 변경해 주세요.</string>
     <string name="core_local_model_required">음성 인식 모델을 아직 다운로드하지 않았습니다.</string>
     <string name="core_local_diarization_unavailable">이 로컬 엔진은 화자 구분을 지원하지 않습니다. 화자 구분을 끄거나 외부 API를 선택해 주세요.</string>
@@ -398,4 +398,19 @@
     <string name="vocabulary_local_unsupported">기기 내 전사는 어휘를 사용하지 않습니다.</string>
     <string name="speaker_model">화자 모델</string>
     <string name="speaker_model_sentences">이 기기에서 문장 단위로 화자를 구분합니다.</string>
+    <string name="badge_retrying">재시도 대기</string>
+    <string name="badge_receiving">받는 중</string>
+    <string name="badge_transcribing">전사 중</string>
+    <string name="badge_needs_permission">허용 필요</string>
+    <string name="badge_waiting_model">모델 대기</string>
+    <string name="badge_storage_full">저장 공간 부족</string>
+    <string name="badge_waiting_folder">폴더 대기</string>
+    <string name="node_state_ready">준비</string>
+    <string name="node_state_starting">시작 중</string>
+    <string name="node_state_saving">저장 중</string>
+    <string name="node_device_phone">폰</string>
+    <string name="detail_waiting_drive">Drive 연결 대기 중입니다. Drive를 연결하면 업로드하고 전사합니다.</string>
+    <string name="processing_folder_monthly">월별 폴더</string>
+    <string name="processing_folder_single">폴더 하나</string>
+    <string name="recording_title_discard">녹음 버리기</string>
 </resources>

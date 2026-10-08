@@ -101,11 +101,11 @@ struct DetailMoreMenu: View {
 
     var body: some View {
         Menu {
-            Button(RecKitStrings.localized("Rename"), action: rename).disabled(model.writing)
+            ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
             ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
             ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
             ReasonedMenuItem(
-                title: RecKitStrings.localized("Add highlight at %@", LedgerFormat.clock(Int(positionSec))),
+                title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
                 reason: model.hasAudio ? nil : RecKitStrings.localized("No audio on this device"),
                 action: addHighlight
             )
@@ -124,13 +124,16 @@ struct DetailMoreMenu: View {
 /// transcript. Removing one is not deleting a recording, so it is not red.
 struct HighlightMenu<Label: View>: View {
     let atSec: Double
+    /// The moment as the page draws its times (2026-10-08 §3); what a screen reader hears stays the
+    /// full `00:12:34`.
+    let stamp: String
     let go: () -> Void
     let remove: () -> Void
     @ViewBuilder let label: () -> Label
 
     var body: some View {
         Menu {
-            Button(RecKitStrings.localized("Go to %@", LedgerFormat.clock(Int(atSec))), action: go)
+            Button(RecKitStrings.localized("Go to %@", stamp), action: go)
             Button(RecKitStrings.localized("Remove highlight"), action: remove)
         } label: {
             label()
@@ -158,7 +161,8 @@ struct SpeakerBadge: View {
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
             .overlay {
-                RoundedRectangle(cornerRadius: Radius.badge).strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+                // 2026-10-08 §12: the secondary colour, so the badge reads as one against the page.
+                RoundedRectangle(cornerRadius: Radius.badge).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
             }
             .frame(minHeight: minTouch)
             .contentShape(Rectangle())
@@ -292,7 +296,8 @@ public struct SearchResultRow: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if let first = hit.snippets.first {
-                    Text(verbatim: LedgerFormat.clock(Int(first.atSec)))
+                    // 2026-10-08 §3: a hit has no length beside it, so the time is shaped by itself.
+                    Text(verbatim: LedgerFormat.elapsed(Int(first.atSec)))
                         .font(blueprint.fonts.monoBodySmall)
                         .foregroundStyle(blueprint.palette.textMuted)
                 }
@@ -423,10 +428,18 @@ struct DetailShareSheet: View {
                     .font(blueprint.fonts.sans(TypeSize.body))
                     .foregroundStyle(copied ? blueprint.palette.success : blueprint.palette.textMuted)
                     .frame(width: 24)
-                Text(verbatim: RecKitStrings.localized("Copy all"))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(model.document == nil ? blueprint.palette.textMuted : blueprint.palette.text)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(verbatim: RecKitStrings.localized("Copy all"))
+                        .font(blueprint.fonts.bodySmall)
+                        .foregroundStyle(model.document == nil ? blueprint.palette.textMuted : blueprint.palette.text)
+                    // 2026-10-08 §12: an item that is off says why, as the format rows above do.
+                    if model.document == nil {
+                        Text(verbatim: RecKitStrings.localized("No transcript yet"))
+                            .font(blueprint.fonts.sans(TypeSize.small))
+                            .foregroundStyle(blueprint.palette.textMuted)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 if copied {
                     Text(verbatim: "\(BlueprintChip.selectionMark) \(RecKitStrings.localized("Copied"))")
                         .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))

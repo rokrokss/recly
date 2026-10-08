@@ -311,6 +311,9 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
             recordingId = nil
             highlightedAtSec = nil
         }
+        // 2026-10-08 §4: the clock keeps the recording's length while it is saved, and is back to
+        // nothing only once the recorder is idle again.
+        if next == .idle { elapsed = "" }
         publishStatus()
     }
 
@@ -351,10 +354,10 @@ final class WatchRecordingModel: ObservableObject, WatchRecordingCommands {
         self.ticker = ticker
     }
 
+    /// The clock stops where the recording did; [adopt] clears it once the save is over.
     private func stopTicking() {
         ticker?.invalidate()
         ticker = nil
-        elapsed = ""
     }
 
     /// Audio actually written, which is what the recorder counts.

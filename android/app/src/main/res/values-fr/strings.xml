@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">En attente du dossier local</string>
     <string name="job_state_done">Terminé</string>
     <string name="job_state_failed">Échec</string>
-    <string name="job_state_needs_auth">Envoi en attente</string>
+    <string name="job_state_needs_auth">En attente de Drive</string>
     <string name="job_state_skipped_short">Trop court</string>
     <string name="retry_soon">bientôt</string>
     <string name="retry_in_seconds">dans %1$d s</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Une clé manque sur ce téléphone</string>
     <string name="alert_auth_rejected">Le fournisseur a refusé la clé</string>
     <string name="alert_quota">Quota du fournisseur épuisé. Vérifiez les limites et la facturation</string>
-    <string name="alert_uploads_waiting">Envois en attente : %1$d</string>
+    <string name="alert_uploads_waiting">En attente de Drive : %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Enregistrements en attente : %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">La transcription externe envoie l’enregistrement complet à %1$s.\nLa conservation et l’utilisation pour l’entraînement dépendent de sa politique ; Recly ne les contrôle pas.\nLisez la politique du fournisseur avant de l’utiliser.</string>
     <string name="settings_consent_reminder">Rappel de consentement</string>
     <string name="consent_question">Avez-vous prévenu les participants de l’enregistrement ?</string>
-    <string name="consent_body">Cet enregistrement n’affiche aucun signe aux autres participants. La personne qui enregistre doit les prévenir.\n\nCorée : vous pouvez enregistrer une conversation à laquelle vous participez (sinon, c’est interdit).\nÉtats-Unis : CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA exigent le consentement de tous les participants.\nUE : le RGPD exige une information et une base légale ; le Danemark exige un consentement explicite pour les appels professionnels.</string>
+    <string name="consent_body">Cet enregistrement n’affiche aucun signe aux autres participants. La personne qui enregistre doit les prévenir.</string>
     <string name="consent_confirm">Je les ai prévenus · Enregistrer</string>
     <string name="consent_suppress">Ne plus demander</string>
     <string name="consent_link">Règles de consentement selon la juridiction</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Connecter Drive</string>
     <string name="drive_attention">La connexion Drive nécessite votre attention</string>
     <string name="drive_optional">Enregistrez localement. Connectez Drive pour envoyer.</string>
-    <string name="drive_pending">Envoi en attente</string>
+    <string name="drive_pending">En attente de Drive</string>
     <string name="core_local_transcription_unavailable">La transcription locale est indisponible sur cet appareil. Choisissez une autre méthode.</string>
     <string name="core_local_model_required">Le modèle de reconnaissance vocale n’est pas encore téléchargé.</string>
     <string name="core_local_diarization_unavailable">Ce moteur local n’identifie pas les locuteurs. Désactivez cette option ou choisissez une API externe.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">La transcription sur l’appareil n’utilise pas de vocabulaire.</string>
     <string name="speaker_model">Modèle de séparation des locuteurs</string>
     <string name="speaker_model_sentences">Les locuteurs sont distingués sur cet appareil, phrase par phrase.</string>
+    <string name="badge_retrying">Nouvel essai</string>
+    <string name="badge_receiving">Réception</string>
+    <string name="badge_transcribing">Transcription</string>
+    <string name="badge_needs_permission">Autorisation requise</string>
+    <string name="badge_waiting_model">En attente du modèle</string>
+    <string name="badge_storage_full">Stockage plein</string>
+    <string name="badge_waiting_folder">En attente du dossier</string>
+    <string name="node_state_ready">Prêt</string>
+    <string name="node_state_starting">Démarrage</string>
+    <string name="node_state_saving">Enregistrement en cours</string>
+    <string name="node_device_phone">Téléphone</string>
+    <string name="detail_waiting_drive">En attente de Drive. Connectez Drive pour envoyer et transcrire.</string>
+    <string name="processing_folder_monthly">Dossiers mensuels</string>
+    <string name="processing_folder_single">Un seul dossier</string>
+    <string name="recording_title_discard">Supprimer l’enregistrement</string>
 </resources>

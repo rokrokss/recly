@@ -182,6 +182,10 @@ class ShotsTest {
         model.retranscribe(RetranscribeRequest(short.id, provider = null, language = recly.core.model.Language.EN, replacesEdits = false))
         until { model.detail?.notice != null }
         shot("recordings-retranscribe-refused-en", 1000, 680, false) { RecordingsWindow(model, strings) { it() } }
+        // The folder choice is a local folder's alone (2026-10-09): with Google Drive chosen, the panel has none.
+        model.selectStorage(StorageKind.DRIVE)
+        until { model.storage == StorageKind.DRIVE && !showsFolderChoice(processing.stored) }
+        shot("settings-drive-en", 640, 2700, false) { SettingsWindow(model, strings) }
         model.shutdown()
     }
 

@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">Ожидание локальной папки</string>
     <string name="job_state_done">Готово</string>
     <string name="job_state_failed">Ошибка</string>
-    <string name="job_state_needs_auth">Ожидание загрузки</string>
+    <string name="job_state_needs_auth">Ожидание Drive</string>
     <string name="job_state_skipped_short">Слишком коротко</string>
     <string name="retry_soon">скоро</string>
     <string name="retry_in_seconds">через %1$d с</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">На этом телефоне нет ключа</string>
     <string name="alert_auth_rejected">Провайдер отклонил ключ</string>
     <string name="alert_quota">Квота провайдера исчерпана. Проверьте лимиты и оплату</string>
-    <string name="alert_uploads_waiting">Ожидающие загрузки: %1$d</string>
+    <string name="alert_uploads_waiting">Ожидание Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Ожидающих записей: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">Внешняя расшифровка отправляет всю запись в %1$s.\nСрок хранения и использование для обучения зависят от его политики. Recly это не контролирует.\nПеред использованием прочтите политику провайдера.</string>
     <string name="settings_consent_reminder">Напоминание о согласии</string>
     <string name="consent_question">Вы сообщили участникам о записи?</string>
-    <string name="consent_body">Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.\n\nКорея: можно записывать разговор, в котором вы участвуете; запись чужого разговора запрещена.\nСША: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA требуют согласия всех участников.\nЕС: GDPR требует уведомления и правового основания; Дания требует явного согласия для деловых звонков.</string>
+    <string name="consent_body">Другие участники встречи не увидят признаков записи. Сообщить им обязан тот, кто записывает.</string>
     <string name="consent_confirm">Сообщил · Начать запись</string>
     <string name="consent_suppress">Больше не спрашивать</string>
     <string name="consent_link">Правила согласия на запись по юрисдикциям</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Подключить Drive</string>
     <string name="drive_attention">Подключение Drive требует внимания</string>
     <string name="drive_optional">Записывайте локально. Подключите Drive для загрузки.</string>
-    <string name="drive_pending">Ожидание загрузки</string>
+    <string name="drive_pending">Ожидание Drive</string>
     <string name="core_local_transcription_unavailable">Локальная расшифровка недоступна на этом устройстве. Выберите другой способ.</string>
     <string name="core_local_model_required">Модель распознавания речи ещё не загружена.</string>
     <string name="core_local_diarization_unavailable">Этот локальный движок не распознаёт говорящих. Выключите эту функцию или выберите внешний API.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">Расшифровка на устройстве не использует словарь.</string>
     <string name="speaker_model">Модель разделения говорящих</string>
     <string name="speaker_model_sentences">Говорящие разделяются на этом устройстве по предложениям.</string>
+    <string name="badge_retrying">Повтор</string>
+    <string name="badge_receiving">Получение</string>
+    <string name="badge_transcribing">Расшифровка</string>
+    <string name="badge_needs_permission">Нужно разрешение</string>
+    <string name="badge_waiting_model">Ожидание модели</string>
+    <string name="badge_storage_full">Хранилище заполнено</string>
+    <string name="badge_waiting_folder">Ожидание папки</string>
+    <string name="node_state_ready">Готово</string>
+    <string name="node_state_starting">Запуск</string>
+    <string name="node_state_saving">Сохранение</string>
+    <string name="node_device_phone">Телефон</string>
+    <string name="detail_waiting_drive">Ожидание Drive. Подключите Drive, чтобы загрузить и расшифровать.</string>
+    <string name="processing_folder_monthly">Папки по месяцам</string>
+    <string name="processing_folder_single">Одна папка</string>
+    <string name="recording_title_discard">Удалить запись</string>
 </resources>

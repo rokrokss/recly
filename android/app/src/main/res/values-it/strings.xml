@@ -58,7 +58,7 @@
     <string name="job_state_waiting_folder">In attesa della cartella locale</string>
     <string name="job_state_done">Fine</string>
     <string name="job_state_failed">Errore</string>
-    <string name="job_state_needs_auth">Caricamento in attesa</string>
+    <string name="job_state_needs_auth">In attesa di Drive</string>
     <string name="job_state_skipped_short">Troppo breve</string>
     <string name="retry_soon">a breve</string>
     <string name="retry_in_seconds">tra %1$d s</string>
@@ -195,14 +195,14 @@
     <string name="alert_missing_secret">Manca una chiave su questo telefono</string>
     <string name="alert_auth_rejected">Il fornitore ha rifiutato la chiave</string>
     <string name="alert_quota">Quota del fornitore esaurita: controlla limiti e fatturazione</string>
-    <string name="alert_uploads_waiting">Caricamenti in attesa: %1$d</string>
+    <string name="alert_uploads_waiting">In attesa di Drive: %1$d</string>
     <plurals name="alert_waiting">
         <item quantity="other">Registrazioni in attesa: %1$d.</item>
     </plurals>
     <string name="provider_disclosure_transcribe">La trascrizione esterna invia l’intera registrazione a %1$s.\nPer quanto tempo la conserva e se la usa per l’addestramento dipende dall’informativa del fornitore: Recly non lo controlla.\nLeggi l’informativa del fornitore prima di usarlo.</string>
     <string name="settings_consent_reminder">Promemoria consenso</string>
     <string name="consent_question">Hai avvisato i partecipanti della registrazione?</string>
-    <string name="consent_body">Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra.\n\nCorea: puoi registrare una conversazione a cui partecipi (è vietato registrarne una a cui non partecipi).\nStati Uniti: CA·CT·FL·HI·IL·MD·MA·MT·NH·OR·PA·WA richiedono il consenso di tutti i partecipanti.\nUE: il GDPR richiede un’informativa e una base giuridica, e la Danimarca richiede il consenso esplicito per le chiamate di lavoro.</string>
+    <string name="consent_body">Questa registrazione non lascia alcun segno visibile agli altri partecipanti alla riunione. Informarli è responsabilità di chi registra.</string>
     <string name="consent_confirm">Li ho avvisati · Avvia registrazione</string>
     <string name="consent_suppress">Non chiedere più</string>
     <string name="consent_link">Norme sul consenso alla registrazione per giurisdizione</string>
@@ -233,7 +233,7 @@
     <string name="drive_connect">Collega Drive</string>
     <string name="drive_attention">Il collegamento a Drive richiede attenzione</string>
     <string name="drive_optional">Registra in locale. Collega Drive per caricare.</string>
-    <string name="drive_pending">Caricamento in attesa</string>
+    <string name="drive_pending">In attesa di Drive</string>
     <string name="core_local_transcription_unavailable">La trascrizione locale non è disponibile su questo dispositivo. Scegli un altro metodo di trascrizione.</string>
     <string name="core_local_model_required">Il modello di riconoscimento vocale non è ancora stato scaricato.</string>
     <string name="core_local_diarization_unavailable">Questo motore locale non supporta l’identificazione degli interlocutori. Disattivala o scegli un’API esterna.</string>
@@ -366,4 +366,19 @@
     <string name="vocabulary_local_unsupported">La trascrizione sul dispositivo non usa un vocabolario.</string>
     <string name="speaker_model">Modello di separazione degli interlocutori</string>
     <string name="speaker_model_sentences">Gli interlocutori vengono distinti su questo dispositivo, frase per frase.</string>
+    <string name="badge_retrying">Nuovo tentativo</string>
+    <string name="badge_receiving">Ricezione</string>
+    <string name="badge_transcribing">Trascrizione</string>
+    <string name="badge_needs_permission">Serve un permesso</string>
+    <string name="badge_waiting_model">In attesa del modello</string>
+    <string name="badge_storage_full">Spazio esaurito</string>
+    <string name="badge_waiting_folder">In attesa della cartella</string>
+    <string name="node_state_ready">Pronto</string>
+    <string name="node_state_starting">Avvio in corso</string>
+    <string name="node_state_saving">Salvataggio</string>
+    <string name="node_device_phone">Telefono</string>
+    <string name="detail_waiting_drive">In attesa di Drive. Collega Drive per caricare e trascrivere.</string>
+    <string name="processing_folder_monthly">Cartelle mensili</string>
+    <string name="processing_folder_single">Una cartella</string>
+    <string name="recording_title_discard">Scarta registrazione</string>
 </resources>

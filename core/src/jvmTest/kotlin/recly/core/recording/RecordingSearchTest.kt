@@ -167,6 +167,59 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a preview is the transcript's first words, and a recording without a transcript has none`() = runBlocking {
+        val meta = f.recordAndRun()
+        val bare = f.record(id = "01J9BBBBBB0000000000000000", startedAt = "2026-08-26T02:00:00.000Z")
+
+        assertEquals(
+            mapOf(meta.recordingId to "hello 1 hello 2"),
+            f.core.previews(listOf(meta.recordingId, bare.recordingId, "01J9NOTHERE000000000000000", meta.recordingId)),
+        )
+        assertEquals(emptyMap(), f.core.previews(emptyList()))
+    }
+
+    @Test
+    fun `a preview collapses whitespace and follows an edit`() = runBlocking {
+        val meta = f.recordAndRun()
+        assertEquals("hello 1 hello 2", f.core.previews(listOf(meta.recordingId))[meta.recordingId])
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "  the\n\nnew \t plan  "))
+
+        assertEquals("the new plan hello 2", f.core.previews(listOf(meta.recordingId))[meta.recordingId])
+    }
+
+    @Test
+    fun `a long preview is cut at a word, or at 120 characters when there is no word to cut at`() = runBlocking {
+        val meta = f.recordAndRun()
+        suspend fun preview() = f.core.previews(listOf(meta.recordingId)).getValue(meta.recordingId)
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "word ".repeat(30)))
+        assertEquals(List(24) { "word" }.joinToString(" ") + "…", preview())
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "x".repeat(200)))
+        assertEquals("x".repeat(120) + "…", preview())
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "ab " + "x".repeat(200)))
+        assertEquals("ab " + "x".repeat(117) + "…", preview(), "a word boundary that early would leave almost nothing")
+
+        f.core.editTranscript(meta.recordingId, TranscriptEdit.SetText(0, "a".repeat(112)))
+        assertEquals("a".repeat(112) + " hello 2", preview(), "exactly 120 characters are not cut")
+    }
+
+    @Test
+    fun `another device's transcript has a preview once a pull has read it, and a blank one has none`() = runBlocking {
+        val other = f.otherDevice("01J9PH0NE10000000000000000", transcript = { transcript(it.recordingId, "the quarterly budget", "and more") })
+        val blank = f.otherDevice("01J9PH0NE20000000000000000", transcript = { transcript(it.recordingId, " ", "\n") })
+
+        f.core.pullRemoteRecordings(force = true)
+
+        assertEquals(
+            mapOf(other.recordingId to "the quarterly budget and more"),
+            f.core.previews(listOf(other.recordingId, blank.recordingId)),
+        )
+    }
+
+    @Test
     fun `the limit counts recordings`() = runBlocking {
         f.record(id = "01J9AAAAAA0000000000000000", title = "plan one")
         f.record(id = "01J9BBBBBB0000000000000000", title = "plan two", startedAt = "2026-08-26T02:00:00.000Z")

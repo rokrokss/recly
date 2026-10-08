@@ -13,11 +13,11 @@ final class LanguageSettingUITests: XCTestCase {
         app.launch()
         openSettings(app)
         choose("en", in: app)
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 10))
 
         for (tag, title, name) in [("ja", "設定", "日本語"), ("zh-Hant", "設定", "繁體中文"), ("ar", "الإعدادات", "العربية")] {
             choose(tag, in: app)
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
             XCTAssertTrue(app.buttons["language"].label.contains(name))
             attach(named: tag + "-settings")
         }
@@ -34,9 +34,9 @@ final class LanguageSettingUITests: XCTestCase {
 
         openSettings(app)
         choose("ko", in: app)
-        XCTAssertTrue(app.navigationBars["설정"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["설정"].waitForExistence(timeout: 10))
         choose("en", in: app)
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 10))
     }
 
     private func openSettings(_ app: XCUIApplication) {

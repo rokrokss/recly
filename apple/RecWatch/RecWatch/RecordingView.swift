@@ -21,7 +21,8 @@ struct RecordingView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.center)
 
-            if model.isRecording {
+            // 2026-10-08 §4: and while the recording is being saved, at its final length.
+            if model.isRecording || (model.state == .stopping && !model.elapsed.isEmpty) {
                 Text(verbatim: model.elapsed)
                     .font(blueprint.fonts.monoTitle)
                     .foregroundStyle(blueprint.palette.text)

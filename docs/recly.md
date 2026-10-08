@@ -358,6 +358,7 @@ it (validation error `TranscribeNeedsUpload`).
 ### Template variables
 
 > **2026-09-24**: The folder in the recording processing settings (`storage.folder`) cannot use `title` or `workflowName` (§5 "Fixed processing settings").
+> **2026-10-09**: `storage.folder` applies only to a local folder; Google Drive and iCloud always use `recly/memo/{{yyyy}}-{{MM}}` (§9 principle 4).
 
 Only the names below are allowed inside `{{ }}`. An unknown variable is a validation error.
 
@@ -825,8 +826,9 @@ so they cannot be read from the queue.
 
 #### Titles
 
-Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a `Cancel` button just to its left.
-`Cancel` (including back navigation and closing the popup) is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
+Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a red `Discard recording` button just to its left
+(2026-10-08, user decision: it read `Cancel`, which did not say that it deletes). `Discard recording` (including back navigation and closing the popup)
+is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
 of the one pending recording ID, and does not create a Job or wake the workflow. Only one of save · cancel can take
 that recording, so a save action that arrives late after a cancel does not start an upload. Other recordings and Drive are not
 touched, and a refused · failed deletion is shown as an error. The placeholder of the title field is the existing translation `Untitled`.
@@ -1995,7 +1997,7 @@ The principle in one line: **intent, not decoration**.
 |---|---|---|
 | 1 | AI collaboration (a supporting layer, never forced) | Transcription is **chosen in settings: local, external API, or OFF**. New installs use local (OFF in builds without a local engine), and the external API runs with the user's key. The UI rule is "supporting layer": the original (parts · timer · status) is always the main content, the transcript is a separate layer beside or below it, and the result never covers or replaces the display of the original. Only recordings with a result get an entry point in their list row, and it opens in the transcript tab of the detail screen. There is no persuasion UI such as automatic suggestions, automatic runs or "Improve with AI" |
 | 2 | **Purposeful motion** (status signals, deliberate micro-delays) | For **rare, high-stakes actions** such as starting/stopping a recording, uploading and signing in, a visible processing state of 0.3–0.8 seconds (the button changes to "Saving…" and shows "✓" when done). No decorative animation. All motion respects `reduce motion` |
-| 3 | **Raw aesthetics** (monospace · grid · wireframe) | **The center of Recly's visual language.** Timers, part numbers, file names, sizes, sha and status codes are monospace. Screens are square nodes on a visible grid; the recording screen shows the device, transcription and status nodes, and the processing settings are offered as the existing sectioned table. No filler illustrations, no gradient overlays |
+| 3 | **Raw aesthetics** (monospace · grid · wireframe) | **The center of Recly's visual language.** Timers, part numbers, file names, sizes, sha and status words are monospace (the words are translated since 2026-10-08; codes such as `NEEDS_AUTH` stay in logs and files). Screens are square nodes on a visible grid; the recording screen shows the device, transcription and status nodes, and the processing settings are offered as the existing sectioned table. No filler illustrations, no gradient overlays |
 | 4 | Inclusive visuals (control) | **Reduce motion and high contrast follow the system settings as they are** — the app does not repeat the same toggles inside itself (duplicate controls are not control). WCAG AA (text 4.5:1, graphics 3:1). Swipe hints have a static alternative |
 | 5 | **Fluid typography** | A continuous scale instead of breakpoints: Compose `sp` + interpolation based on window size, SwiftUI Dynamic Type + `ScaledMetric`, clamp interpolation by window width on Windows. The user's font size setting is respected |
 | 6 | Authorship (Crafted, not prompted) | **No icon mascot.** Instead, **honest system indicators**: version · build · device ID · open-source notices in monospace at the bottom of settings. No "Handmade" marketing copy (product honesty) |
@@ -2014,8 +2016,13 @@ The principle in one line: **intent, not decoration**.
     and focus uses the accent color and a thicker border.
 - **Typography**: UI body = the platform system sans-serif (Roboto / SF Pro / Segoe UI — no bundled local fonts; Korean glyphs
   are guaranteed). **Data = monospace** (Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
-  Cascadia/Consolas): timer `00:12:34`, part `p001`, file names, bytes, status code `NEEDS_AUTH`, device ID. Scale:
+  Cascadia/Consolas): timer `12:34`, part `p001`, file names, bytes, status words (`Waiting for Drive`), device ID. Scale:
   12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation.
+- **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
+  recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
+  from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
+  confirmation) follow the elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats.
+  Examples elsewhere in this document written `00:12:34` stand for a time in this format.
 - **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
   use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
   (72×72; while recording, filled + mono timer). On phones (Android · iPhone), **text buttons are at least 88 wide** (dp/pt, 2026-09-29):
@@ -2067,8 +2074,9 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      node and the timer already say them. The line keeps its height even when empty, so the node does not move, and it is cleared when the user goes to another tab and
      comes back — it is news of that moment, not a message to leave on the tab. This decision applies only to the two phones; the desktop menu's and the watch's
      lines are unchanged.
-   - The **device node value** is the source code as is (`phone` / `desktop`) — it is not translated. It is treated like the track (`mono`), and
-     the header meta in all four shells is also `<source> · <first 8 characters of the device ID>`.
+   - The **device node value** is the source's name in the app language — `Phone` / `Desktop` (ko `폰` / `데스크톱`); until 2026-10-08 it was the
+     source code `phone` / `desktop`. The record screen's header is the app name only: the meta line `<source> · <first 8 characters of the device ID>`
+     was removed from all four shells (2026-10-08, user decision — the device ID is in Settings → About).
    - **Display of the workflow in use** (ADR-016) — **retired (2026-09-24)**: there is no workflow to choose, so the picker and the
      `Choose a workflow` prompt are gone. What follows is a record. The workflow node in all four shells shows **only its name**. The picker lists only workflow
      names, and the selected one is a filled chip (✓) — "selected" is not written out. A single-selection control shows its selection
@@ -2077,7 +2085,10 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      `Use`. **When there is no selection, or the workflow the pointer pointed to is gone**, both the node and the picker show, in all four shells, the single line
      `Choose a workflow` — in the same place, it says that just starting runs nothing and
      how to fix that.
-   - The **status node** is the recorder status code (`IDLE` · `STARTING` · `REC` · `STOPPING`). When a job is running in the idle state
+   - The **status node** is the recorder state as a translated word (2026-10-08, user decision; codes before): `Ready` · `Starting` · `Recording` ·
+     `Saving` (ko `준비` · `시작 중` · `녹음 중` · `저장 중`), and `Uploading` · `Receiving` as below — the code names in this paragraph are the states,
+     not what is written. While saving, the timer keeps the recording's final length and goes back to `00:00` only when the recorder is idle
+     (2026-10-08, every shell and both watches). When a job is running in the idle state
      (when the ledger has a row in `UPLOADING`), it shows `UPLOADING` (accent) with a rotating 8pt square loader to its left (the loader used next to the text of work that runs without
      progress — `Downloading model…` uses the same one. No system spinner is used — only the list's pull-to-refresh is allowed as an exception (§3 "Recordings from other devices",
      2026-09-29). There are only two loaders: this one, and the **waveform loader**, used only in the waveform's place
@@ -2085,7 +2096,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      flowing waves, bouncing bars, breathing and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research)) — with `reduce
      motion`, the code only. While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
      (Apple · Android · Windows 2026-09-03; Windows has no reduce motion signal, so its loader always spins).
-     Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered).
+     Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered), written `Opening` ·
+     `Helper missing` · `Naming`.
      **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
      loader) (2026-09-04). If a job on this device is running, `UPLOADING` wins, and while recording, `REC` beats both.
      Desktop has nothing to receive, so it is unchanged.
@@ -2096,18 +2108,27 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    - **Quick start** (iPhone, 2026-10-07): a Home Screen widget (small: the square record node; while recording, the mono timer and a stop node) and Lock
      Screen widgets (circular: the record icon or the timer; rectangular: `Recly` + `Record` or the timer) run the existing start and stop App Intents,
      opening the app where iOS requires it, like the Control. Gallery name `Record`, description `Start or stop a recording.`
-2. **List = ledger**: row = `time (mono) · title · length · status code · progress`. In all four shells, regardless of language, the time column is
+2. **List = ledger**: row = `time (mono) · title (and its preview line) · length · status word · progress`. In all four shells, regardless of language, the time column is
    **`MM-dd` over `HH:mm`** (month first; a fixed-width pattern, not locale formatting — only the spoken sentence uses locale formatting).
-   The status is a text badge (both color and text), and the failure reason is a translated message key.
+   The status is a text badge (both color and text), and the failure reason is a translated message key. The badge says a translated word, not the
+   code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Importing` · `Recording` ·
+   `Waiting for Drive` (`NEEDS_AUTH`) · `Needs permission` · `Waiting for model` · `Storage full` · `Too short` · `Waiting for iCloud` · `Waiting for folder` ·
+   `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
+   `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
+   `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
+   than it was with codes. The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive, and the banner of a failed job whose reason
+   has no word of its own (a missing or rejected key, a quota, local transcription or speaker separation unavailable) shows `Failed`. Under the title, a row whose
+   recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists,
+   not the popover or tray ledgers; 2026-10-08).
    **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
    device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
    left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
    word** as this device's upload — the badge says what, not where) · `TRANSCRIBING` (another device is transcribing = `remotePending` with
-   `transcribe`). All three are accent. `RECEIVING` has **no actions, like a row being recorded** (no delete, retry or Drive link — the transfer is
-   still writing it). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
+   `transcribe`). All three are accent. `RECEIVING` has **no actions but `Details`** (no delete, retry or Drive link — the transfer is
+   still writing it; 2026-10-08: this sentence follows the shells, which all open the detail). Another device's `UPLOADING` has no retry or Drive link, but offers Delete (2026-10-08, four shells): the adopted-row dialog,
    which deletes the folder from Drive (§3 "Retention · deletion"). `TRANSCRIBING` is like an adopted `DONE`
    row (details · delete). The length column keeps the placeholder used when there is no `durationSec` (it does not make up `0:00`),
-   and shells that measure the badge column width measure these codes too. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Upload waiting`) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
+   and shells that measure the badge column width measure these words, in the current language. In the header count, the first two count as `Waiting` and `TRANSCRIBING` is not counted. `NEEDS_AUTH` waiting for a Drive connection (badge `Waiting for Drive`, 2026-10-08) also counts as `Waiting` — it is work that resumes by itself once Drive is connected, not a failure (2026-09-29, both phones).
    The spoken states are `Receiving from the watch` · `Uploading on another device` · `Transcribing on another device` (§7).
    Row expansion has **actions — in one horizontal line, wrapping to the next line when they overflow (no vertical listing)**: `Open in Drive` (when there is a link) ·
    `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
@@ -2152,17 +2173,21 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    iPhone and macOS stop existing playback first, in the recording start preparation step, and then start capture. Until capture has fully stopped,
    playback and seeking are blocked, and the block is also released when starting the recording fails. Android stops playback when a recording starts on this device,
    and blocks playback and seeking (waveform · utterance times) while recording. The start and end of other recordings are also reflected in an open detail.
-   It distinguishes waiting for transcription / no transcription step / job failed / read failed / empty transcript / body. A read failure offers reading the result
+   It distinguishes waiting for transcription / no transcription step / job failed / read failed / empty transcript / body. A recording whose upload
+   waits for Drive says `Waiting for Drive. Connect Drive to upload and transcribe.` with a centred `Connect Drive` button, instead of pointing back to
+   the list (2026-10-08). A read failure offers reading the result
    again. On an explicit retry, if the local transcript is corrupted, the remote copy is fetched through the existing Drive path, verified, and then
    swapped in. If a newer valid local result appears during the download, that result is kept. Normal lookups are local-first, and healthy
    files are not downloaded again. An empty transcript offers a notice to play the recording. While playback is preparing or buffering, no separate notice text
    is added, so the player height and the position of the surrounding content do not change. Real playback failures are shown on screen and retried on the next
    playback request. Windows also shows ffmpeg's abnormal exit and exit-wait timeout as failures, excluding exits caused by the user's
-   stop or seek. The detail header has the title and, at its end, `Share` and `More` (**Detail header and More menu** below, 2026-10-07); internal IDs
+   stop or seek. The detail header has the title and, at its end, `Share` and `More` (**Detail header and More menu** below, 2026-10-07), in one row
+   (2026-10-08): Android has no `Close` button — the system back and re-tapping the list tab close the detail; the iPhone sheet has a quiet `xmark`
+   icon button (`Close`) after `More` and stays swipe-dismissable except while an edit has unsaved changes. Internal IDs
    are not shown (2026-09-29 — they are not information for the user to read).
    The list's first read shows a loading notice, and a truly empty list shows a notice that this is where recordings collect (desktop windows also show a start recording button, §9 screen principle 8).
-   Delete in the recordings list is fixed at the right of the action area, and its right border lines up with the right border of the `DONE` badge in the status column
-   above. The remaining actions, such as open, retry and details, wrap in the space on the left. The same rule applies to the mobile list and to the expanded list
+   Delete in the recordings list stands at the right end of the action area's last line, at the row's right edge (2026-10-08: it no longer has to line up
+   with the status badge above, which the 2026-09-29 flow already did not do). The remaining actions, such as open, retry and details, wrap in the space on the left. The same rule applies to the mobile list and to the expanded list
    in the desktop menu and tray.
    (2026-09-03: the parts table in rows was removed — part numbers, tracks, bytes and sha are not shown to the user)
    The detail additions of 2026-10-07 (§3 "Metadata", §8 "Editing" · "Exports", §10 "Re-transcription" · "Search" · "Shared rules for the shells") keep
@@ -2187,7 +2212,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists `Rename` · `Edit transcript` · `Transcribe again` ·
      `Add highlight at 00:12:34` (the playhead). An item that cannot run now stays in the menu, disabled, with the reason as its second line —
      `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
-     reached the storage; `Transcribing…` wins while a job runs); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
+     reached the storage) or `Waiting for Drive` (its pending job waits for a Drive connection); `Still recording` while it is being written. The items
+     stay disabled while any job of the recording is unsettled, but `Transcribing…` is said only while a transcription of it is queued or running
+     (2026-10-08); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
      reason for a few seconds under the header; nothing is silently ignored (2026-10-08).
    - **Share / export**: on phones `Share` opens a bottom sheet titled `Share`, one row per format (icon · label · format): `Transcript`
      (`Text · .txt`), `Transcript for notes` (`Markdown · .md`), `Subtitles` (`SubRip · .srt`), `Subtitles for the web` (`WebVTT · .vtt`), `Audio`
@@ -2271,7 +2298,12 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    If all chips fit at the same width, they share the line evenly; if a long name (`System default`) keeps them from fitting, the remaining
    space is added equally to each chip's own width — no chip gets narrower than its own width. If they do not fit on one line, they wrap, and each line is filled (Android
    `FillRow`, Apple `FillLayout`). In desktop windows the three words would stretch to the panel edge, so they stay left-aligned.
-   The Drive connection status also uses the common settings row. On the right is a single danger-colored “Disconnect” button, and one confirmation dialog completes it.
+   The Drive connection status also uses the common settings row. On the right is a single quiet `Disconnect` button (2026-10-08: no longer red — disconnecting deletes no recording), and one confirmation dialog,
+   whose confirm button is the primary one, completes it. Google Drive and iCloud store recordings in a folder a
+   month (`recly/memo/{{yyyy}}-{{MM}}`) and show no folder setting; only with a **local folder** is the folder a choice — two chips, `Monthly folders`
+   (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved path in mono under them, shown only while the storage is
+   the local folder (2026-10-09, user decision; the core's `ProcessingStorage.uploadFolder()`). The stored value is still the template, and a value
+   set elsewhere shows as Monthly and is left untouched until a chip is tapped. Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
    The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
    buttons — they are nothing to draw attention to. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
    Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
@@ -2301,7 +2333,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 5. **Notifications · dialogs**: **title + one-line description + at most 2 buttons.** The processing state is inline (the button changes to "Saving…"), and on completion
    a badge. A two-way question does not get a third option. The detail's dialogs of 2026-10-07 keep this shape: `Transcribe again?` with one line built
    from the current settings — `With AssemblyAI · Korean.` or `With on-device transcription · Korean.`, plus ` Your edits are replaced.` when the transcript
-   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`).
+   was edited or has speaker names — and `Cancel` · `Transcribe`; `Discard your changes?` (`Keep editing` · `Discard`); `Speaker name` (`Cancel` · `Save`). The title sheet after Stop has `Discard recording` · `Save` — the red
+   `Discard recording` deletes the recording that just ended, as `Cancel` did (§3 "Titles"; relabelled 2026-10-08, user decision).
 6. **macOS menu bar**: a popover (glass allowed) with the 3 status nodes + the recent ledger (infinite scroll, 20 rows at a time) + actions. The Windows tray has the same structure (a Compose
    popup window). While recording, a live waveform of the track being recorded (peaks of 0.1-second windows, recording color) flows in the empty space of the action row — the iPhone
    recording screen has the same band under the timer (Apple 2026-09-03). The Windows tray popup has the same band under the timer — the helper
@@ -2322,6 +2355,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    While recording, both watches have the phone's highlight node below the stop square — 48, radius 4, a 1.5 accent border, a filled 12 accent
    square inside, no text; accessibility name `Highlight` (2026-10-08: the word was dropped, as on the phones; 2026-10-07 it was a text button). On Apple Watch, Double Tap marks a highlight (watchOS 11 and later; it used to stop — Stop stays on the square); the Galaxy Watch
    has no gesture. The status line says `Highlight · 00:12:34` in the accent for 2 seconds (both watches), then goes back to its rule.
+   The Galaxy Watch tile draws the app's square record node (outlined; filled with the inner square while recording), not a Material pill button,
+   and says nothing when idle with nothing to send (2026-10-08).
 8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
    - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
      settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing
@@ -2344,7 +2379,10 @@ The system's `reduce motion` · `prefers-color-scheme` · contrast · font size 
 and the default motion and light/dark behavior is the only behavior.** The only exception is `Theme` in §9 principle 4: the light/dark scheme alone can be chosen differently from the system by
 the user (it is a preference, not an accessibility toggle), and high contrast and motion are still decided only by the system. **Every state is color + text** — nothing says anything by color alone.
 **Red means only two things (2026-09-26)**: in states, only failure (`FAILED` and its reason), and in actions, only irreversible deletion (`Delete` for a recording or an API key, the confirm button of a delete
-confirmation dialog). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
+confirmation dialog). The recording state is the one other red — the record and stop nodes and `Recording` — because red is the recording colour,
+not a warning; the desktop `Stop recording` belongs to it. Drive `Disconnect` is quiet (2026-10-08). A selected list row also shows a 2px accent bar on
+its start edge, not only a tint. Node borders, transcript time boxes, quiet buttons and dropdown boxes keep at least 3:1 against the background in
+light and dark, and a disabled quiet button has a dashed border and muted ink (2026-10-08). Waiting states (`NEEDS_MODEL` · `NEEDS_CONSENT` · `NEEDS_AUTH` · `NEEDS_SPACE`), down to the banner text and the reason in the expanded row, use the same
 warning tone as the badge or a dimmed color, and never red. `Remove highlight` and `Discard` (an edit) are not red either: they delete no recording (2026-10-07).
 **Speakers are told apart by their label only** — no speaker colours anywhere (2026-10-02, restated 2026-10-07; screen principle 2 "Transcript reader"). **Korean does not break lines inside a word**: Android sets `WordBreak.Phrase` in the `LineBreak` of the app Typography
 (the Compose default turns off Android 15+'s phrase-based line breaking for Korean), Windows (Compose Desktop)
@@ -2849,6 +2887,7 @@ android/
 | A9 | Entry points: Quick Settings tile, home widget (start/stop), app shortcuts. When starting from a tile or widget, the FGS background-start exception is either **used or given up** — it never fails silently |
 | A10 | Settings: Google Drive connection state and disconnect action, language, Wi-Fi only, consent reminder, **log export** |
 | A11 | Play listing: Wear OS form factor included, screenshots, Data safety form ("No data collected") |
+| A12 | Live Update (2026-10-08): the recording notification asks to be promoted (`NotificationCompat.Builder.setRequestPromotedOngoing(true)`, androidx.core 1.18; the normal permission `android.permission.POST_PROMOTED_NOTIFICATIONS` in the phone app's manifest only), so on Android 16 QPR1+ the status bar chip and the lock screen show the elapsed time (chronometer from the recording's start, `setWhen`); not colorized, a standard style, IMPORTANCE_LOW. The chip's clock is the system's. Older versions keep the plain ongoing notification. Checked on API 36.0 only: the extra is set, the promotion itself needs a 36.1 device (2026-10-08) |
 
 ### Watch `:android:wear`
 
@@ -3094,6 +3133,7 @@ So the duty to notify lies entirely with the user, and all the app can do is say
 **What the app shows**
 
 1. **Reminder** — "Did you tell the participants about the recording?" + [I told them] [Cancel]. Without confirmation, the recording does not start.
+   Its body is the reminder paragraph only; the jurisdiction notes are behind the `What's my jurisdiction?` link, not in the dialog (2026-10-08).
    It can be turned off in settings (turning it off is also the user's choice, and turning it off does not shift the responsibility). When it appears differs by device —
    Mac and Windows ask for every new recording (regardless of detection, meeting mode fixed), while phones (iPhone · Android) have no way to tell a meeting apart, so they
    ask **only once, before the first recording**, and the settings wording states that difference. **The two watches have none** (the screen is small, the phone is the source of truth, and

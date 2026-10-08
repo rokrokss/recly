@@ -86,7 +86,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
             val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
             if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-            ProcessingField(R.string.processing_storage, draft.folder) { v -> model.edit { it.folder = v } }
+            // Only a local folder keeps the template; Drive goes monthly whatever is stored (2026-10-09).
+            if (showsFolderChoice(state.stored)) FolderChoice(draft.folder) { v -> model.edit { it.folder = v } }
             ProcessingField(R.string.editor_min_duration, draft.minimumSeconds, monospace = true) { v -> model.edit { it.minimumSeconds = v } }
             SectionHeader(stringResource(R.string.processing_transcription))
             FillRow(Modifier.fillMaxWidth()) {
@@ -206,6 +207,65 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     HairLine()
 }
 
+/**
+ * docs/05: the Drive folder template as two chips (UX decisions of 2026-10-08) — monthly folders or one
+ * folder — and under them, in monospace, where today's recording would go. The draft holds the template
+ * string as it was stored until a chip is tapped, so a template the user wrote elsewhere shows as monthly
+ * and survives a Save of anything else.
+ */
+@Composable
+private fun FolderChoice(folder: String, onChange: (String) -> Unit) {
+    Text(stringResource(R.string.processing_storage), style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
+    val single = folderIsSingle(folder)
+    FillRow(Modifier.fillMaxWidth()) {
+        BlueprintChip(stringResource(R.string.processing_folder_monthly), !single, onClick = { folderAfterTap(folder, single = false)?.let(onChange) },
+            modifier = Modifier.testTag("folder-monthly"))
+        BlueprintChip(stringResource(R.string.processing_folder_single), single, onClick = { folderAfterTap(folder, single = true)?.let(onChange) },
+            modifier = Modifier.testTag("folder-single"))
+    }
+    Text(folderPreview(folder, java.time.LocalDateTime.now()), style = mono.small, color = blueprint.textMuted,
+        modifier = Modifier.testTag("folder-preview"))
+}
+
+/**
+ * Whether the folder row is drawn (user decision, 2026-10-09): only while this device stores recordings
+ * in a local folder — the stored settings' storage, which the storage chips above save and this panel
+ * reads again at once (`ProcessingViewModel.storageChanged`). Drive always uses a folder a month
+ * (`ProcessingStorage.uploadFolder`), so there it is not a choice and takes no room.
+ */
+internal fun showsFolderChoice(stored: ProcessingSettingsState): Boolean =
+    (stored as? ProcessingSettingsState.Ready)?.document?.settings?.storage?.provider == recly.core.storage.StorageKind.FOLDER
+
+/** The two templates the chips stand for. */
+internal const val FOLDER_MONTHLY: String = ProcessingStorage.DEFAULT_FOLDER
+internal const val FOLDER_SINGLE: String = "recly/memo"
+
+/** Only the one-folder template is "One folder"; anything else — a template written elsewhere too — shows as monthly. */
+internal fun folderIsSingle(template: String): Boolean = template == FOLDER_SINGLE
+
+/**
+ * What a tap on a chip leaves in the draft: that chip's template, or null — nothing to change — when the
+ * chip is already the chosen one, so a template written elsewhere is kept until the other chip is chosen.
+ */
+internal fun folderAfterTap(current: String, single: Boolean): String? =
+    if (folderIsSingle(current) == single) null else if (single) FOLDER_SINGLE else FOLDER_MONTHLY
+
+/** The template resolved for [now] — `recly/memo/2026-10` — or as written when it uses more than the clock. */
+internal fun folderPreview(template: String, now: java.time.LocalDateTime): String = runCatching {
+    recly.core.workflow.Template.render(
+        template,
+        recly.core.workflow.TemplateContext(
+            mapOf(
+                "yyyy" to "%04d".format(java.util.Locale.ROOT, now.year),
+                "MM" to "%02d".format(java.util.Locale.ROOT, now.monthValue),
+                "dd" to "%02d".format(java.util.Locale.ROOT, now.dayOfMonth),
+                "HH" to "%02d".format(java.util.Locale.ROOT, now.hour),
+                "mm" to "%02d".format(java.util.Locale.ROOT, now.minute),
+            ),
+        ),
+    )
+}.getOrDefault(template)
+
 /** What the speaker row names: the segmentation and embedding models, products and not translated. */
 private const val SPEAKER_MODEL_NAME = "pyannote 3.0 · ERes2Net"
 
@@ -274,17 +334,17 @@ private fun VocabularyEditor(terms: List<String>, onChange: (List<String>) -> Un
         terms.forEach { term -> VocabularyChip(term) { refused = false; onChange(terms - term) } }
     }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-        OutlinedTextField(
+        BlueprintField(
             text,
             { value ->
                 // A paste of several lines is several terms; a typed Enter is the same as Add.
                 if ('\n' in value) { text = value; add() } else text = value
             },
-            placeholder = { Text(stringResource(R.string.vocabulary_placeholder)) },
-            singleLine = true,
+            placeholder = stringResource(R.string.vocabulary_placeholder),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { add() }),
-            modifier = Modifier.weight(1f).testTag("vocabulary-field"),
+            modifier = Modifier.weight(1f),
+            fieldModifier = Modifier.testTag("vocabulary-field"),
         )
         BlueprintButton(stringResource(R.string.vocabulary_add), { add() }, enabled = text.isNotBlank(), tone = ButtonTone.QUIET,
             modifier = Modifier.testTag("vocabulary-add"))
@@ -346,11 +406,10 @@ private fun ProcessingField(
     keyboard: KeyboardOptions = KeyboardOptions.Default,
     change: (String) -> Unit,
 ) {
-    val style = if (monospace) mono.bodySmall else LocalTextStyle.current
-    OutlinedTextField(
-        value, change, label = { Text(stringResource(label)) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
-        placeholder = placeholder?.let { { Text(it, style = style) } },
-        textStyle = style,
+    BlueprintField(
+        value, change, label = stringResource(label), modifier = Modifier.fillMaxWidth(),
+        placeholder = placeholder,
+        textStyle = if (monospace) mono.bodySmall else MaterialTheme.typography.bodyMedium,
         keyboardOptions = keyboard,
     )
 }
@@ -392,11 +451,9 @@ private fun ProcessingSecret(name: String, label: Int, saved: List<String>, save
             BlueprintButton(stringResource(R.string.action_delete), delete, tone = ButtonTone.DANGER, minWidth = MinTouch)
         }
     } else {
-        OutlinedTextField(value, { value = it }, label = { Text(stringResource(label)) }, singleLine = true,
+        BlueprintField(value, { value = it }, label = stringResource(label),
             visualTransformation = PasswordVisualTransformation(), keyboardOptions = KEY_KEYBOARD, modifier = Modifier.fillMaxWidth(),
-            supportingText = if (name.isBlank() || replacing) null else {
-                { Text(stringResource(R.string.processing_key_not_on_device)) }
-            })
+            supporting = if (name.isBlank() || replacing) null else stringResource(R.string.processing_key_not_on_device))
         EndButtons {
             if (replacing) BlueprintButton(stringResource(R.string.action_cancel), { value = ""; replacing = false }, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(stringResource(R.string.processing_save_key), { save(name, value) { value = ""; replacing = false } },

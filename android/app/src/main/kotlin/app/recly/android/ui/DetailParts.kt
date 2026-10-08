@@ -62,6 +62,7 @@ import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
+import app.recly.android.ui.theme.dotGrid
 import app.recly.android.ui.theme.mono
 import java.io.File
 import kotlinx.coroutines.delay
@@ -89,7 +90,9 @@ internal class MoreActions(
 internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscription?, playheadSec: Double, actions: MoreActions) {
     var open by remember { mutableStateOf(false) }
     val transcript = detail.transcript?.takeIf { t -> t.segments.any { it.text.isNotBlank() } }
-    val transcribing = stringResource(R.string.detail_transcribing)
+    // Disabled exactly as before while a job may still rewrite the transcript; what the reason says is
+    // why (UX decisions of 2026-10-08): transcribing, waiting for Drive, or not uploaded yet.
+    val transcribing = stringResource(detail.busyReason)
     Box {
         GlyphButton(Glyph.MORE, stringResource(R.string.detail_more), { open = true }, Modifier.testTag("detail-more"))
         if (open) BlueprintMenu(onDismissRequest = { open = false }) {
@@ -111,7 +114,7 @@ internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscript
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
             val noAudio = detail.audio.isEmpty
-            val stamp = hms(playheadSec.toLong())
+            val stamp = clock(playheadSec.toLong(), recordingScale(detail))
             MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight), enabled = !noAudio,
                 reason = if (noAudio) stringResource(R.string.player_no_audio) else null, modifier = Modifier.testTag("more-highlight"))
         }
@@ -146,9 +149,11 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
     var unavailable by remember { mutableStateOf(emptySet<ExportFormat>()) }
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(3000); copied = false } }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = palette.surface,
-        shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card)) {
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = Space.m).testTag("share-sheet")) {
+    // docs/09: the iPhone's sheet — the paper and its dot grid, the card's 8dp top corners, and no pill
+    // grabber (UX decisions of 2026-10-08). A drag and a tap outside still put it away.
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = palette.background, tonalElevation = 0.dp,
+        shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card), dragHandle = null) {
+        Column(Modifier.fillMaxWidth().dotGrid(palette).navigationBarsPadding().padding(top = Space.s, bottom = Space.m).testTag("share-sheet")) {
             Text(stringResource(R.string.detail_share), Modifier.padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.titleMedium, color = palette.text)
             HairLine()
@@ -262,7 +267,7 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
         Box(
             Modifier
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-                .border(palette.line, palette.grid, RoundedCornerShape(Radius.node))
+                .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                 .clickable(role = Role.Button) { open = true }
                 .clearAndSetSemantics { contentDescription = description }
                 .testTag("speed-chip"),
@@ -296,9 +301,9 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
 
 /** docs/09 "Highlights": what a tick or a square marker offers — go there, or take the mark away (not red: no recording is deleted). */
 @Composable
-internal fun HighlightMenu(atSec: Double, onGo: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
+internal fun HighlightMenu(atSec: Double, scaleSec: Long?, onGo: () -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
     BlueprintMenu(onDismissRequest = onDismiss) {
-        val stamp = hms(atSec.toLong())
+        val stamp = clock(atSec.toLong(), scaleSec)
         MenuAction(monoStamp(stringResource(R.string.transcript_seek, stamp), stamp, mono.bodySmall), { onDismiss(); onGo() }, modifier = Modifier.testTag("highlight-go"))
         MenuAction(stringResource(R.string.highlight_remove), { onDismiss(); onRemove() }, modifier = Modifier.testTag("highlight-remove"))
     }

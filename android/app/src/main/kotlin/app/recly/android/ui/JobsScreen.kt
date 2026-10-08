@@ -6,6 +6,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.runtime.remember
 import androidx.compose.ui.focus.onFocusChanged
@@ -192,7 +194,8 @@ fun JobsScreen(
         // docs/09 "Search": the results take the ledger's place while the field has text.
         if (state.query.isNotBlank()) {
             HairLine()
-            SearchResults(state.hits, onOpenHit, Modifier.fillMaxWidth().weight(1f))
+            SearchResults(state.hits, onOpenHit, Modifier.fillMaxWidth().weight(1f),
+                lengths = state.items.associate { it.recordingId to it.durationSec })
             return@Column
         }
 
@@ -276,18 +279,22 @@ fun JobsScreen(
                     LazyColumn(modifier = Modifier.fillMaxSize(), state = ledger) {
                         items(state.items, key = { it.recordingId }) { item ->
                             val open = expanded == item.recordingId
+                            val title = item.title ?: stringResource(R.string.jobs_untitled)
+                            // UX decisions of 2026-10-08: the transcript's first words under the title,
+                            // and nothing — no line, no space — for a row without one here.
+                            val preview = state.previews[item.recordingId].orEmpty()
                             LedgerRow(
                                 modifier = Modifier.testTag("recording-${item.recordingId}"),
                                 date = ledgerColumn(item.startedAt, LEDGER_DATE),
                                 time = ledgerColumn(item.startedAt, LEDGER_TIME),
-                                title = item.title ?: stringResource(R.string.jobs_untitled),
-                                subtitle = "",
+                                title = title,
+                                subtitle = preview,
                                 length = item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
                                 status = item.badge(),
                                 columns = columns,
                                 announce = stringResource(
                                     R.string.jobs_row_description,
-                                    item.title ?: stringResource(R.string.jobs_untitled),
+                                    if (preview.isEmpty()) title else "$title, $preview",
                                     startedAt(item.startedAt, R.string.jobs_started_at_format),
                                     item.durationSec?.let { duration(it) } ?: EMPTY_LENGTH,
                                     label(item),
@@ -338,10 +345,15 @@ private fun ExpandedRow(
 ) {
     val palette = blueprint
     val context = LocalContext.current
+    // An opened row scrolls up just far enough for its actions to clear the tab bar (UX decisions of
+    // 2026-10-08) — the last rows of the ledger otherwise open below the fold.
+    val reveal = remember { BringIntoViewRequester() }
+    LaunchedEffect(item.recordingId) { reveal.bringIntoView() }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .bringIntoViewRequester(reveal)
             .background(palette.background)
             // Indented to the ledger's own title column, so the expansion sits under the recording
             // it belongs to rather than under a number somebody picked.
@@ -759,13 +771,21 @@ fun ItemState.badge(): LedgerStatus = when (this) {
  * a retry timer, so it is its own code rather than the `RETRY` its `WAITING` status would give it —
  * the same code the desktop's ledger shows (`windows/.../Ledger.LedgerStates`).
  */
-fun JobItem.badge(): LedgerStatus =
-    if (waitingMinutes != null || localRunning) TRANSCRIBING_BADGE else if (localPending) ItemState.PENDING.badge() else state.badge()
+fun JobItem.badge(): LedgerStatus = when {
+    waitingMinutes != null || localRunning -> TRANSCRIBING_BADGE
+    localPending -> ItemState.PENDING.badge()
+    // docs/03 "Storage location": waiting for the folder to be picked again, not for a retry timer.
+    waitsForFolder() -> FOLDER_BADGE
+    else -> state.badge()
+}
 
 /** The row's Details button, as wide as the detail's own Play button. */
 private val DetailMinWidth = 120.dp
 
 private val TRANSCRIBING_BADGE = LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT)
+
+/** A `WAITING` job held up by the local folder — the warning a retry wait already is, in its own word. */
+private val FOLDER_BADGE = LedgerStatus("WAITING_FOLDER", BadgeTone.WARNING)
 
 /**
  * The tone of the sentence an expanded row gives for its state: red only for a failure, the warning
@@ -784,7 +804,7 @@ internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
  * remembering to come back here.
  */
 internal val BADGE_CODES: List<String> =
-    ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code
+    ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code + FOLDER_BADGE.code
 
 /**
  * The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. A recording on
@@ -793,7 +813,7 @@ internal val BADGE_CODES: List<String> =
  * until the user allows a transfer or downloads the speech model is waiting too, not failed — the
  * iPhone's `Recents.summary` counts the same states.
  */
-// NEEDS_AUTH is a wait: its badge says "Upload waiting", and it goes on by itself once Drive is connected.
+// NEEDS_AUTH is a wait: its badge says "Waiting for Drive", and it goes on by itself once Drive is connected.
 fun ItemState.waiting(): Boolean =
     this == ItemState.PENDING || this == ItemState.WAITING || this == ItemState.NEEDS_AUTH ||
         this == ItemState.NEEDS_CONSENT || this == ItemState.NEEDS_MODEL ||
@@ -902,14 +922,8 @@ internal val LEDGER_TIME: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm
 
 private const val EMPTY_LENGTH = "--:--"
 
-private fun duration(seconds: Double): String {
-    val total = seconds.toLong()
-    return if (total >= 3600) {
-        "%d:%02d:%02d".format(total / 3600, (total % 3600) / 60, total % 60)
-    } else {
-        "%02d:%02d".format(total / 60, total % 60)
-    }
-}
+/** The ledger's length column: `MM:SS`, or `HH:MM:SS` from an hour (docs/09 "Typography"). */
+private fun duration(seconds: Double): String = clock(seconds.toLong())
 
 /**
  * docs/09 "Search": the field at the top of the list — the input border, a leading search glyph, and a clear
@@ -957,7 +971,13 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modi
  * of the first transcript match, and that match's time at the end. A tap opens it there.
  */
 @Composable
-private fun SearchResults(hits: List<SearchHit>?, onOpen: (SearchHit) -> Unit, modifier: Modifier = Modifier) {
+private fun SearchResults(
+    hits: List<SearchHit>?,
+    onOpen: (SearchHit) -> Unit,
+    modifier: Modifier = Modifier,
+    /** Each recording's length, which picks the format of its match's time (docs/09 "Typography"). */
+    lengths: Map<String, Double?> = emptyMap(),
+) {
     val palette = blueprint
     if (hits == null) {
         Box(modifier)
@@ -997,7 +1017,9 @@ private fun SearchResults(hits: List<SearchHit>?, onOpen: (SearchHit) -> Unit, m
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
                         }
                     }
-                    snippet?.let { Text(hms(it.atSec.toLong()), style = mono.small, color = palette.textMuted, maxLines = 1) }
+                    snippet?.let {
+                        Text(clock(it.atSec.toLong(), lengths[hit.recordingId]?.toLong()), style = mono.small, color = palette.textMuted, maxLines = 1)
+                    }
                 }
                 HairLine()
             }

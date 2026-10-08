@@ -22,7 +22,16 @@ public final class ProcessingSettingsModel: ObservableObject {
     /// docs/15: the destinations a save is waiting on the user's permission for. Asked here, when the
     /// provider is chosen, and never while recording; once allowed, the same destination saves quietly.
     @Published public private(set) var consentNeeded: [TransferTarget] = []
-    private var stored: ProcessingSettingsStateReady?
+    /// 2026-10-09 (user decision): the storage folder is a choice only for recordings kept in a local
+    /// folder — Drive and iCloud always go a folder a month (`ProcessingStorage.uploadFolder`). Read off
+    /// the stored storage, so a switch in the Storage section ([storageChanged]) shows or hides the row.
+    @Published public private(set) var showsFolderChoice = false
+    private var stored: ProcessingSettingsStateReady? {
+        didSet { showsFolderChoice = stored.map { Self.folderChoiceShown(for: $0.document.settings.storage.provider) } ?? false }
+    }
+
+    /// The rule behind [showsFolderChoice]: only a local folder takes the folder template.
+    public nonisolated static func folderChoiceShown(for storage: StorageKind) -> Bool { storage == .folder }
     private let core: ReclyCore_
     /// The shell's one model download, which this screen's "Download model" shares with the
     /// banner, the rows and the first-run card.
@@ -179,7 +188,7 @@ public struct ProcessingSettingsView: View {
         SectionBlock {
             if let draft = model.draft {
                 if model.importing { SectionFootnote(loc("Review the folder and transcription method before saving. Keys are not included.")) }
-                BlueprintField(loc("Storage folder"), text: field(\.folder))
+                if model.showsFolderChoice { folderChoice(draft) }
                 BlueprintField(loc("Minimum length (s)"), text: field(\.minimumSeconds), mono: true)
                 SectionHeader(loc("Transcription"))
                 ChoiceRow {
@@ -356,10 +365,67 @@ public struct ProcessingSettingsView: View {
             ? RecKitStrings.localized("Names and terms to spell correctly. They are sent with the audio to %@.", name)
             : RecKitStrings.localized("%@ does not use a vocabulary.", name)
     }
+    /// 2026-10-08 §10: where in the storage the recordings go, as the two choices there are — a folder a
+    /// month, or one folder — with today's folder under them in mono. Part of the draft like the
+    /// field it replaces; a template written some other way shows as monthly and is left as it is
+    /// until a chip is tapped, so an unrelated Save never rewrites it. Shown for a local folder only
+    /// (2026-10-09, [ProcessingSettingsModel.showsFolderChoice]).
+    private func folderChoice(_ draft: ProcessingDraft) -> some View {
+        let one = StorageFolder.isOne(draft.folder)
+        return VStack(alignment: .leading, spacing: Space.xs) {
+            Text(verbatim: loc("Storage folder"))
+                .font(blueprint.fonts.label)
+                .tracking(0.6)
+                .foregroundStyle(blueprint.palette.textMuted)
+            ChoiceRow {
+                BlueprintChip(loc("Monthly folders"), selected: !one, fill: true) { pickFolder(StorageFolder.monthly) }
+                    .accessibilityIdentifier("folder-monthly")
+                BlueprintChip(loc("One folder"), selected: one, fill: true) { pickFolder(StorageFolder.one) }
+                    .accessibilityIdentifier("folder-one")
+            }
+            Text(verbatim: StorageFolder.preview(draft.folder))
+                .font(blueprint.fonts.monoSmall)
+                .foregroundStyle(blueprint.palette.textMuted)
+                .accessibilityIdentifier("folder-preview")
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    private func pickFolder(_ template: String) {
+        guard model.draft?.folder != template else { return }
+        model.edit { $0.folder = template }
+    }
     private func field<Value>(_ path: ReferenceWritableKeyPath<ProcessingDraft, Value>) -> Binding<Value> {
         Binding(get: { model.draft![keyPath: path] }, set: { value in model.edit { $0[keyPath: path] = value } })
     }
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// 2026-10-08 §10: the storage folder template as the settings offer it — a folder a month (the
+/// default) or one folder — and what it comes to today. The stored value is the template string
+/// (spec/*.json); anything but the one-folder template counts as monthly.
+public enum StorageFolder {
+    public static let monthly = "recly/memo/{{yyyy}}-{{MM}}"
+    public static let one = "recly/memo"
+
+    public static func isOne(_ template: String) -> Bool { template == one }
+
+    /// The folder [template] names for a recording made at [date]: the clock variables filled in, the
+    /// rest of the template as written.
+    public static func preview(_ template: String, at date: Date = Date(), calendar: Calendar = .autoupdatingCurrent) -> String {
+        let parts = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: date)
+        let values = [
+            "yyyy": String(format: "%04d", parts.year ?? 0),
+            "MM": String(format: "%02d", parts.month ?? 0),
+            "dd": String(format: "%02d", parts.day ?? 0),
+            "HH": String(format: "%02d", parts.hour ?? 0),
+            "mm": String(format: "%02d", parts.minute ?? 0),
+        ]
+        var result = template
+        for (name, value) in values {
+            result = result.replacingOccurrences(of: "{{\(name)}}", with: value)
+        }
+        return result
+    }
 }
 
 /// docs/09 screen principle 4: the settings file as a section of its own, for a shell that shows it

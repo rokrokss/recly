@@ -7,9 +7,14 @@ private enum Column {
 }
 
 /// The status column: as wide as the widest badge the ledger can show, measured at the type size
-/// in use rather than guessed — so every code fits at full size and none is shrunk (the header and
-/// every row measure the same set, so they line up).
+/// and in the language in use rather than guessed — so the header and every row line up.
+///
+/// 2026-10-08 badge column rule: where the ledger caps it ([EnvironmentValues.ledgerStatusCapped] —
+/// the phone's list and the Mac's Details list), the column is never wider than the old code
+/// `TRANSCRIBING` was, so the title column is never narrower than it was with codes; a word wider than
+/// that wraps inside its badge, centred, and is never cut or shrunk.
 private struct StatusColumn<Content: View>: View {
+    @Environment(\.ledgerStatusCapped) private var capped
     private let content: Content
 
     init(@ViewBuilder content: () -> Content) {
@@ -17,14 +22,61 @@ private struct StatusColumn<Content: View>: View {
     }
 
     var body: some View {
-        ZStack {
-            ForEach(LedgerStatus.ledgerCodes, id: \.self) { code in
-                StatusBadge(LedgerStatus(code: code, tone: .neutral)).hidden()
+        StatusColumnLayout(capped: capped) {
+            StatusBadge(measuring: "TRANSCRIBING").hidden()
+            ForEach(LedgerStatus.ledgerStatuses.indices, id: \.self) { index in
+                StatusBadge(LedgerStatus.ledgerStatuses[index]).hidden()
             }
             content
         }
-        .fixedSize()
         .coordinateSpace(name: StatusColumnSpace.name)
+    }
+}
+
+/// The column's width from its hidden measures — the cap first, then every word — and the content,
+/// last, given that width and centred in it. The size asked for is not taken: the column is its own
+/// width, as the badge it holds used to be.
+private struct StatusColumnLayout: Layout {
+    let capped: Bool
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = columnWidth(subviews)
+        let content = subviews[subviews.count - 1].sizeThatFits(ProposedViewSize(width: width, height: nil))
+        return CGSize(width: width, height: content.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let centre = CGPoint(x: bounds.midX, y: bounds.midY)
+        for index in subviews.indices {
+            let content = index == subviews.count - 1
+            subviews[index].place(
+                at: centre,
+                anchor: .center,
+                proposal: content ? ProposedViewSize(width: bounds.width, height: nil) : .unspecified
+            )
+        }
+    }
+
+    private func columnWidth(_ subviews: Subviews) -> CGFloat {
+        let words = subviews.dropFirst().dropLast().map { $0.sizeThatFits(.unspecified).width }.max() ?? 0
+        guard capped else {
+            return max(words, subviews[subviews.count - 1].sizeThatFits(.unspecified).width)
+        }
+        return min(words, subviews[0].sizeThatFits(.unspecified).width)
+    }
+}
+
+private struct LedgerStatusCappedKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+extension EnvironmentValues {
+    /// 2026-10-08 badge column rule: the ledger's status column is capped at the old `TRANSCRIBING`
+    /// code's width, and a wider word wraps inside its badge. On for the phone's list and the Mac's
+    /// Details list; the menu bar's ledger has the width for every word on one line.
+    public var ledgerStatusCapped: Bool {
+        get { self[LedgerStatusCappedKey.self] }
+        set { self[LedgerStatusCappedKey.self] = newValue }
     }
 }
 
@@ -209,10 +261,13 @@ public struct LedgerRow<Trailing: View>: View {
         HStack(spacing: 10) {
             when.frame(width: Column.time, alignment: .leading)
             what.frame(maxWidth: .infinity, alignment: .leading)
+            // At least the column's width, and wider for a recording past the hour (`01:02:33`)
+            // rather than cut: the row's title gives way, and the right edges still line up.
             howLong
-                .frame(width: Column.length, alignment: .trailing)
+                .fixedSize()
+                .frame(minWidth: Column.length, alignment: .trailing)
             StatusColumn {
-                StatusBadge(status)
+                StatusBadge(status, wraps: true)
                     .background {
                         // Centred in its column, so the gap before the badge is the gap after it.
                         GeometryReader { geometry in
