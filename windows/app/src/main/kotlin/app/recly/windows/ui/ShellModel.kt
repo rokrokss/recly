@@ -253,6 +253,14 @@ class ShellModel(
      * fold the list back up under a user who had scrolled down it.
      */
     private var recentsLimit = Recents.PAGE
+    /**
+     * The first words of each transcript this PC holds, by recording id, for the Details list's rows (2026-10-08) —
+     * asked of the core for the rows the ledger has read, and again whenever those rows or a transcript change.
+     * A recording with no transcript here is not in it.
+     */
+    var previews: Map<String, String> by mutableStateOf(emptyMap())
+        private set
+
     /** Whether a [loadMoreRecents] is already reading, so scrolling does not ask twice for a page. */
     private var loadingMoreRecents = false
     /**
@@ -1084,6 +1092,17 @@ class ShellModel(
                 graph.core.deps.logger.log(Logger.Level.ERROR, "shell.recents.failed", error = it)
             }
         recentsLoading = false
+        // A job that moved is where a transcript arrives, so the rows' first words are read again with it.
+        refreshPreviews()
+    }
+
+    /** [previews] for the rows the ledger has read, through the core's search cache. */
+    private suspend fun refreshPreviews() {
+        val graph = graph ?: return
+        val ids = recents.map { it.id }
+        runCatching { graph.core.previews(ids) }
+            .onSuccess { previews = it }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.previews.failed", error = it) }
     }
 
     /**
@@ -1157,6 +1176,8 @@ class ShellModel(
         launch {
             graph.core.observeResults(recordingId).collect { result ->
                 updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
+                // A transcript read from Drive for this detail is now one this PC holds: its row says its first words.
+                if (result.transcript != null) refreshPreviews()
             }
         }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
@@ -1249,6 +1270,8 @@ class ShellModel(
         return runCatching { graph.core.editTranscript(recordingId, edit) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.transcript.edit.failed", error = it) }
             .getOrDefault(EditResult.Invalid("failed"))
+            // The row's first words follow the edit.
+            .also { if (it is EditResult.Edited) refreshPreviews() }
     }
 
     /** docs/08 "Exports": one file of the recording, made by the core under a name for people; null when there is nothing. */

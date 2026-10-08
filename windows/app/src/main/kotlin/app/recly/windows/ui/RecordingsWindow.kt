@@ -90,6 +90,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -399,6 +400,17 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             }
         },
     ) {
+        // The transcript's first words, under the title (2026-10-08): one quiet line, and nothing at all — no
+        // reserved space — for a recording with no transcript here. Read after the title, as the row's label is.
+        model.previews[item.id]?.let { preview ->
+            Text(
+                preview,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalAlignment = Alignment.CenterVertically,
