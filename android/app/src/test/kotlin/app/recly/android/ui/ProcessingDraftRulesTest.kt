@@ -126,4 +126,19 @@ class ProcessingDraftRulesTest {
     fun `the default folder is the monthly template`() {
         assertEquals(FOLDER_MONTHLY, ProcessingSettings().storage.folder)
     }
+
+    /** User decision of 2026-10-09: the folder is a choice only for a local folder. */
+    @Test
+    fun `the folder row shows only for a local folder`() {
+        fun stored(kind: recly.core.storage.StorageKind) = recly.core.processing.ProcessingSettingsState.Ready(
+            recly.core.processing.ProcessingSettingsDocument(
+                revision = 1, updatedAt = "2026-10-09T00:00:00Z", updatedBy = "test",
+                settings = ProcessingSettings(storage = recly.core.processing.ProcessingStorage(provider = kind)),
+            ),
+        )
+
+        assertEquals(true, showsFolderChoice(stored(recly.core.storage.StorageKind.FOLDER)))
+        assertEquals(false, showsFolderChoice(stored(recly.core.storage.StorageKind.DRIVE)))
+        assertEquals(false, showsFolderChoice(recly.core.processing.ProcessingSettingsState.NotInitialized))
+    }
 }

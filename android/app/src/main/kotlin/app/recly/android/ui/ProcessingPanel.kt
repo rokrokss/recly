@@ -86,7 +86,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
             val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
             val languageSupported = draft.mode == TranscriptionMode.OFF || draft.language in languages
             if (state.importing) Text(stringResource(R.string.processing_import_body), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-            FolderChoice(draft.folder) { v -> model.edit { it.folder = v } }
+            // Only a local folder keeps the template; Drive goes monthly whatever is stored (2026-10-09).
+            if (showsFolderChoice(state.stored)) FolderChoice(draft.folder) { v -> model.edit { it.folder = v } }
             ProcessingField(R.string.editor_min_duration, draft.minimumSeconds, monospace = true) { v -> model.edit { it.minimumSeconds = v } }
             SectionHeader(stringResource(R.string.processing_transcription))
             FillRow(Modifier.fillMaxWidth()) {
@@ -226,8 +227,17 @@ private fun FolderChoice(folder: String, onChange: (String) -> Unit) {
         modifier = Modifier.testTag("folder-preview"))
 }
 
+/**
+ * Whether the folder row is drawn (user decision, 2026-10-09): only while this device stores recordings
+ * in a local folder — the stored settings' storage, which the storage chips above save and this panel
+ * reads again at once (`ProcessingViewModel.storageChanged`). Drive always uses a folder a month
+ * (`ProcessingStorage.uploadFolder`), so there it is not a choice and takes no room.
+ */
+internal fun showsFolderChoice(stored: ProcessingSettingsState): Boolean =
+    (stored as? ProcessingSettingsState.Ready)?.document?.settings?.storage?.provider == recly.core.storage.StorageKind.FOLDER
+
 /** The two templates the chips stand for. */
-internal const val FOLDER_MONTHLY: String = "recly/memo/{{yyyy}}-{{MM}}"
+internal const val FOLDER_MONTHLY: String = ProcessingStorage.DEFAULT_FOLDER
 internal const val FOLDER_SINGLE: String = "recly/memo"
 
 /** Only the one-folder template is "One folder"; anything else — a template written elsewhere too — shows as monthly. */
