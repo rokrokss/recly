@@ -2113,7 +2113,10 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    code (2026-10-08, user decision): `Done` · `Failed` · `Retrying` · `Waiting` · `Uploading` · `Receiving` · `Transcribing` · `Importing` · `Recording` ·
    `Waiting for Drive` (`NEEDS_AUTH`) · `Needs permission` · `Waiting for model` · `Storage full` · `Too short` · `Waiting for iCloud` · `Waiting for folder` ·
    `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
-   `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. Under the title, a row whose
+   `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
+   `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
+   than it was with codes. The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive, and the banner of a failed job whose reason
+   has no word of its own (a missing or rejected key, a quota, local transcription or speaker separation unavailable) shows `Failed`. Under the title, a row whose
    recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists,
    not the popover or tray ledgers; 2026-10-08).
    **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
@@ -2294,8 +2297,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    If all chips fit at the same width, they share the line evenly; if a long name (`System default`) keeps them from fitting, the remaining
    space is added equally to each chip's own width — no chip gets narrower than its own width. If they do not fit on one line, they wrap, and each line is filled (Android
    `FillRow`, Apple `FillLayout`). In desktop windows the three words would stretch to the panel edge, so they stay left-aligned.
-   The Drive connection status also uses the common settings row. On the right is a single quiet `Disconnect` button (2026-10-08: no longer red — disconnecting deletes no recording), and one confirmation dialog
-   completes it. The Drive folder is two chips, `Monthly folders` (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved
+   The Drive connection status also uses the common settings row. On the right is a single quiet `Disconnect` button (2026-10-08: no longer red — disconnecting deletes no recording), and one confirmation dialog,
+   whose confirm button is the primary one, completes it. The Drive folder is two chips, `Monthly folders` (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved
    path in mono under them; the stored value is still the template, and a value set elsewhere shows as Monthly and is left untouched until a chip is
    tapped (2026-10-08). Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
    The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
