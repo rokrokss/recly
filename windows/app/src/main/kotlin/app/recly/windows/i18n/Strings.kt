@@ -490,6 +490,21 @@ enum class Str {
     LOCAL_MCP_BODY,
     LOCAL_MCP_COPY,
 
+    // The UX decisions of 2026-10-08: the badges and the State node say words, not codes.
+    BADGE_RETRY,
+    BADGE_RECEIVING,
+    BADGE_TRANSCRIBING,
+    BADGE_NEEDS_CONSENT,
+    BADGE_NEEDS_MODEL,
+    BADGE_STORAGE_FULL,
+    BADGE_WAITING_FOLDER,
+    BADGE_UNKNOWN,
+    NODE_READY,
+    NODE_STARTING,
+    NODE_NO_HELPER,
+    NODE_NAMING,
+    NODE_DESKTOP,
+
     CORE_STALE,
     ;
 

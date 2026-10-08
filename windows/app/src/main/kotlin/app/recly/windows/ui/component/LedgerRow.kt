@@ -42,13 +42,14 @@ private val LENGTH_COLUMN = 52.dp
 
 /**
  * Aligns an expanded row's action with the right edge of the column's centered DONE badge. [status]
- * is the ledger's measured status column ([statusColumnWidth]).
+ * is the ledger's measured status column ([statusColumnWidth]); [done] is that badge as it is drawn,
+ * its word in the app's language.
  */
 @Composable
-fun LedgerAction(status: Dp, content: @Composable () -> Unit) {
+fun LedgerAction(status: Dp, done: LedgerStatus, content: @Composable () -> Unit) {
     Layout(content = {
         Box { content() }
-        StatusBadge(LedgerStatus("DONE", BadgeTone.SUCCESS), Modifier.clearAndSetSemantics {})
+        StatusBadge(done, Modifier.clearAndSetSemantics {})
     }) { measurables, constraints ->
         val badge = measurables[1].measure(constraints.copy(
             minWidth = 0, maxWidth = status.roundToPx(), minHeight = 0,

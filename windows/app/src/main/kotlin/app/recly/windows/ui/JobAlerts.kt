@@ -33,8 +33,20 @@ enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
     QUOTA(Str.ALERT_QUOTA, "QUOTA", FixSurface.EDITOR),
     ;
 
-    /** docs/09 screen principle 2: the banner row wears the state as a code, in the tone of what it is. */
-    fun badge(): LedgerStatus = LedgerStatus(code, BadgeTone.WARNING)
+    /**
+     * docs/09 screen principle 2: the banner row wears the state in the tone of what it is — as the word the
+     * ledger rows say for the same wait (2026-10-08), and as its code for the reasons no badge word was
+     * given to.
+     */
+    fun badge(): LedgerStatus = LedgerStatus(code, BadgeTone.WARNING, word = WORDS[this])
+
+    private companion object {
+        val WORDS = mapOf(
+            LOCAL_MODEL_REQUIRED to Str.BADGE_NEEDS_MODEL,
+            NEEDS_AUTH to Str.DRIVE_PENDING,
+            NEEDS_SPACE to Str.BADGE_STORAGE_FULL,
+        )
+    }
 }
 
 /**

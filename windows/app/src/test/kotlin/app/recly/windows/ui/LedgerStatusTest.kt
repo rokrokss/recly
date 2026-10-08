@@ -3,6 +3,7 @@
 package app.recly.windows.ui
 
 import app.recly.windows.job
+import app.recly.windows.plain
 import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.component.statusColumn
 import app.recly.windows.i18n.StringTable
@@ -96,16 +97,60 @@ class LedgerStatusTest {
      */
     @Test
     fun `the status column is measured against every badge the ledger can wear`() {
-        val strings = StringTable.of(StringTable.BASE)
-        val labels = ledgerBadgeLabels(strings)
-        assertTrue("NEEDS_MODEL" in labels)
-        assertTrue(strings[Str.DRIVE_PENDING] in labels, "NEEDS_AUTH is drawn in words")
-        assertTrue("UNKNOWN" in labels)
-        LedgerStates.forEach { (key, badge) ->
-            assertTrue(key.message().ledgerStatus(strings).label in labels, "${badge.code} is not measured")
+        for (language in listOf(StringTable.BASE, StringTable.KOREAN)) {
+            val strings = StringTable.of(language)
+            val labels = ledgerBadgeLabels(strings)
+            assertTrue(strings[Str.BADGE_NEEDS_MODEL] in labels)
+            assertTrue(strings[Str.DRIVE_PENDING] in labels, "NEEDS_AUTH is drawn in words")
+            assertTrue(strings[Str.BADGE_UNKNOWN] in labels)
+            LedgerStates.forEach { (key, badge) ->
+                assertTrue(key.message().ledgerStatus(strings).label in labels, "${badge.code} is not measured")
+            }
         }
         // The widest label, plus the badge's padding and border either side.
         assertEquals(100.dp, statusColumn(widest = 86.dp, line = 1.dp))
+    }
+
+    /**
+     * The UX decisions of 2026-10-08: a badge says a word in the app's language, never the code — the
+     * code is the state's internal name. Every state has one, and the waits keep their tones.
+     */
+    @Test
+    fun `a badge says its word, not its code`() {
+        val en = StringTable.of(StringTable.BASE)
+        val ko = StringTable.of(StringTable.KOREAN)
+        LedgerStates.forEach { (key, badge) ->
+            assertTrue(badge.word != null, "${badge.code} has no word")
+            assertTrue(key.message().ledgerStatus(en).label != badge.code || badge.code == "UNKNOWN", "${badge.code} is drawn as its code")
+        }
+        val words = mapOf(
+            Str.STATE_DONE to ("Done" to "완료"),
+            Str.STATE_FAILED to ("Failed" to "실패"),
+            Str.STATE_RETRY_WAIT to ("Retrying" to "재시도 대기"),
+            Str.STATUS_WAITING to ("Waiting" to "대기"),
+            Str.STATE_UPLOADING to ("Uploading" to "업로드 중"),
+            Str.STATE_REMOTE_UPLOADING to ("Uploading" to "업로드 중"),
+            Str.STATE_RECEIVING to ("Receiving" to "받는 중"),
+            Str.STATE_REMOTE_TRANSCRIBING to ("Transcribing" to "전사 중"),
+            Str.PROCESSING_LOCAL_RUNNING to ("Transcribing" to "전사 중"),
+            Str.STATE_IMPORTING to ("Importing" to "가져오는 중"),
+            Str.STATUS_RECORDING to ("Recording" to "녹음 중"),
+            Str.STATUS_SIGN_IN_NEEDED to ("Waiting for Drive" to "Drive 연결 대기"),
+            Str.STATE_CONSENT_REQUIRED to ("Needs permission" to "허용 필요"),
+            Str.STATE_NEEDS_MODEL to ("Waiting for model" to "모델 대기"),
+            Str.STATE_NO_SPACE to ("Storage full" to "저장 공간 부족"),
+            Str.STATE_TOO_SHORT to ("Too short" to "너무 짧음"),
+            Str.STATE_WAITING_FOLDER to ("Waiting for folder" to "폴더 대기"),
+        )
+        words.forEach { (key, word) ->
+            assertEquals(word.first, key.message().ledgerStatus(en).label, key.name)
+            assertEquals(word.second, key.message().ledgerStatus(ko).label.plain(), key.name)
+        }
+        assertEquals("Unknown", UiMessage.Text("Weekly meeting").ledgerStatus(en).label)
+        assertEquals("알 수 없음", UiMessage.Text("Weekly meeting").ledgerStatus(ko).label.plain())
+        // The banner over the ledger says the same words for the same waits.
+        assertEquals("Waiting for model", AlertReason.LOCAL_MODEL_REQUIRED.badge().worded(en).label)
+        assertEquals("Storage full", AlertReason.NEEDS_SPACE.badge().worded(en).label)
     }
 
     /** docs/09: red is failure. A job that is waiting says why in its badge's warning tone. */

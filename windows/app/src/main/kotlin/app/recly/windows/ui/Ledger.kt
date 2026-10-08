@@ -28,64 +28,77 @@ import recly.core.job.StepReport
 /**
  * docs/09 screen principle 2: every row state is a code *and* a tone, so a reader who cannot tell the hues
  * apart still gets the answer from the letters. The codes are the ones the core and the logs already
- * use, and they are the phone's (`android/.../JobsScreen.badge`) — one product, one vocabulary.
+ * use, and they are the phone's (`android/.../JobsScreen.badge`) — one product, one vocabulary. What the
+ * badge *says* is the code's word in the app's language (the UX decisions of 2026-10-08): `Done`,
+ * `Waiting for Drive`, never `DONE` or `NEEDS_AUTH`. The code stays the state's internal name.
  *
  * The map is keyed by what [app.recly.windows.jobs.Recents.stateLabel] produces, which is the only
  * thing that ever reaches the ledger.
  */
 val LedgerStates: Map<Str, LedgerStatus> = mapOf(
-    Str.STATUS_RECORDING to LedgerStatus("REC", BadgeTone.DANGER),
-    Str.STATUS_WAITING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
-    Str.STATE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
-    Str.STATE_RETRY_WAIT to LedgerStatus("RETRY", BadgeTone.WARNING),
+    Str.STATUS_RECORDING to LedgerStatus("REC", BadgeTone.DANGER, word = Str.STATUS_RECORDING),
+    Str.STATUS_WAITING to LedgerStatus("PENDING", BadgeTone.NEUTRAL, word = Str.STATUS_WAITING),
+    Str.STATE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT, word = Str.STATE_UPLOADING),
+    Str.STATE_RETRY_WAIT to LedgerStatus("RETRY", BadgeTone.WARNING, word = Str.BADGE_RETRY),
     // docs/08 "Polling · status": a job parked while a provider transcribes is waiting on someone else,
     // not on a retry timer, so it is its own code.
-    Str.STATE_WAITING_TRANSCRIPTION to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
-    Str.PROCESSING_LOCAL_RUNNING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
-    Str.PROCESSING_LOCAL_PENDING to LedgerStatus("PENDING", BadgeTone.NEUTRAL),
+    Str.STATE_WAITING_TRANSCRIPTION to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT, word = Str.BADGE_TRANSCRIBING),
+    Str.PROCESSING_LOCAL_RUNNING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT, word = Str.BADGE_TRANSCRIBING),
+    Str.PROCESSING_LOCAL_PENDING to LedgerStatus("PENDING", BadgeTone.NEUTRAL, word = Str.STATUS_WAITING),
     // docs/03 "Recordings from other devices" (2026-09-04): work in flight somewhere else — the watch sending, or
     // another device uploading or transcribing. The accent of every "something is happening", and the
     // same codes the local states wear: to a reader the news is the news, and *where* it is happening
     // is what the row's sentence says (`STATE_REMOTE_*`).
-    Str.STATE_RECEIVING to LedgerStatus("RECEIVING", BadgeTone.ACCENT),
-    Str.STATE_REMOTE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT),
-    Str.STATE_REMOTE_TRANSCRIBING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT),
-    Str.STATE_DONE to LedgerStatus("DONE", BadgeTone.SUCCESS),
-    Str.STATE_FAILED to LedgerStatus("FAILED", BadgeTone.DANGER),
-    Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL),
+    Str.STATE_RECEIVING to LedgerStatus("RECEIVING", BadgeTone.ACCENT, word = Str.BADGE_RECEIVING),
+    Str.STATE_REMOTE_UPLOADING to LedgerStatus("UPLOADING", BadgeTone.ACCENT, word = Str.STATE_UPLOADING),
+    Str.STATE_REMOTE_TRANSCRIBING to LedgerStatus("TRANSCRIBING", BadgeTone.ACCENT, word = Str.BADGE_TRANSCRIBING),
+    Str.STATE_DONE to LedgerStatus("DONE", BadgeTone.SUCCESS, word = Str.STATE_DONE),
+    Str.STATE_FAILED to LedgerStatus("FAILED", BadgeTone.DANGER, word = Str.STATE_FAILED),
+    // A wait for the Drive connection, never red (docs/09 "Accessibility"): `Waiting for Drive`.
+    Str.STATUS_SIGN_IN_NEEDED to LedgerStatus("NEEDS_AUTH", BadgeTone.NEUTRAL, word = Str.DRIVE_PENDING),
     // docs/10 "Drive out of space": a job parked because Drive is full — nothing is lost and nothing
     // retries, and the banner beside it is what offers the storage page.
-    Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING),
-    Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING),
+    Str.STATE_CONSENT_REQUIRED to LedgerStatus("NEEDS_CONSENT", BadgeTone.WARNING, word = Str.BADGE_NEEDS_CONSENT),
+    Str.STATE_NO_SPACE to LedgerStatus("NO_SPACE", BadgeTone.WARNING, word = Str.BADGE_STORAGE_FULL),
     // Waiting for the on-device speech model: like consent, a wait the user ends, not a failure.
-    Str.STATE_NEEDS_MODEL to LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING),
+    Str.STATE_NEEDS_MODEL to LedgerStatus("NEEDS_MODEL", BadgeTone.WARNING, word = Str.BADGE_NEEDS_MODEL),
     // docs/03 "Storage location": the local folder cannot be reached, and picking it again is what carries
     // the job on — a wait, worn in the warning tone like the model's, never FAILED.
-    Str.STATE_WAITING_FOLDER to LedgerStatus("WAITING", BadgeTone.WARNING),
-    Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL),
+    Str.STATE_WAITING_FOLDER to LedgerStatus("WAITING", BadgeTone.WARNING, word = Str.BADGE_WAITING_FOLDER),
+    Str.STATE_TOO_SHORT to LedgerStatus("SKIPPED", BadgeTone.NEUTRAL, word = Str.STATE_TOO_SHORT),
     // docs/03 "Naming rules": a file being turned into parts — work in hand, with the loader turning.
-    Str.STATE_IMPORTING to LedgerStatus("IMPORTING", BadgeTone.ACCENT, busy = true),
+    Str.STATE_IMPORTING to LedgerStatus("IMPORTING", BadgeTone.ACCENT, busy = true, word = Str.STATE_IMPORTING),
 )
 
 /**
- * docs/09 screen principle 2: every label a ledger badge can wear — each state's code, `NEEDS_AUTH` as the
- * words it is drawn in, and `UNKNOWN` — which is what the status column is measured against, so none
- * of them is ever cut to fit.
+ * docs/09 screen principle 2: every label a ledger badge can wear in [strings]' language — each state's word
+ * and `Unknown` — which is what the status column is measured against, so none of them is ever cut to
+ * fit.
  */
 fun ledgerBadgeLabels(strings: Strings): List<String> =
     LedgerStates.keys.flatMap { key ->
         val status = key.message().ledgerStatus(strings)
         // Two spaces stand in for the loader a busy badge turns in front of its code — about its 12dp.
         listOfNotNull(status.label, "  ${status.label}".takeIf { status.busy })
-    } + UNKNOWN_STATE
+    } + strings[Str.BADGE_UNKNOWN]
 
-/** The state as a badge. Anything the map does not know is still a code, never a blank cell. */
+/**
+ * The state as a badge, its word in [strings]' language (or its code, with none). Anything the map
+ * does not know is still a badge — `Unknown` — never a blank cell.
+ */
 fun UiMessage.ledgerStatus(strings: Strings? = null): LedgerStatus {
-    val status = LedgerStates[(this as? UiMessage.Res)?.key] ?: LedgerStatus(UNKNOWN_STATE, BadgeTone.NEUTRAL)
-    return if (status.code == "NEEDS_AUTH" && strings != null) status.copy(label = strings[Str.DRIVE_PENDING]) else status
+    val status = LedgerStates[(this as? UiMessage.Res)?.key]
+        ?: LedgerStatus(UNKNOWN_STATE, BadgeTone.NEUTRAL, word = Str.BADGE_UNKNOWN)
+    return status.worded(strings)
 }
 
-/** What a badge says for a state this ledger does not know — still a code, never a blank cell. */
+/** The badge with its word put in, when there is a language to put it in. */
+fun LedgerStatus.worded(strings: Strings?): LedgerStatus {
+    val word = word ?: return this
+    return if (strings == null) this else copy(label = strings[word])
+}
+
+/** The code of a state this ledger does not know. */
 private const val UNKNOWN_STATE = "UNKNOWN"
 
 /**
