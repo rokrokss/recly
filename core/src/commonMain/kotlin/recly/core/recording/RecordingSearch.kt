@@ -72,6 +72,25 @@ class RecordingSearch internal constructor(
         }
     }
 
+    /**
+     * The first words of each of [recordingIds] whose transcript is held on this device, for the rows of a
+     * list: the segments' words from the start, one space between them, cut to [SNIPPET_CHARS] — at a word
+     * when there is one in the second half — and ended with `…`. A recording with no transcript here, or
+     * only blank segments, is left out. Read through the same cache as [search], off the caller's thread.
+     */
+    suspend fun previews(recordingIds: List<String>): Map<String, String> {
+        if (recordingIds.isEmpty()) return emptyMap()
+        return withContext(Dispatchers.Default) {
+            val previews = LinkedHashMap<String, String>()
+            for (id in recordingIds) {
+                if (id in previews) continue
+                val row = recordings.get(id) ?: continue
+                preview(segments(row))?.let { previews[id] = it }
+            }
+            previews
+        }
+    }
+
     /** The transcript's segments as they are on disk now: from memory while the file is unchanged. */
     private suspend fun segments(row: RecordingRecord): List<Segment> {
         val path = row.dir / TranscribeRunner.jsonFileName(MetaWriter.baseName(row.meta))
@@ -108,6 +127,28 @@ class RecordingSearch internal constructor(
         val suffix = if (to < text.length) ELLIPSIS else ""
         val ranges = ranges(segment.folded.substring(from, to), needle).map { it.copy(offset = it.offset + prefix.length) }
         return SearchSnippet(segment.start, prefix + text.substring(from, to) + suffix, ranges)
+    }
+
+    /** [previews] of one transcript: only as many segments as the cut needs are joined. */
+    private fun preview(segments: List<Segment>): String? {
+        val words = StringBuilder()
+        for (segment in segments) {
+            if (words.length > SNIPPET_CHARS) break
+            // A segment's text is trimmed and never blank, so the words neither start nor end with a space.
+            if (words.isNotEmpty()) words.append(' ')
+            for (c in segment.text) {
+                if (!c.isWhitespace()) words.append(c) else if (words.last() != ' ') words.append(' ')
+            }
+        }
+        if (words.isEmpty()) return null
+        if (words.length <= SNIPPET_CHARS) return words.toString()
+        val space = words.lastIndexOf(" ", SNIPPET_CHARS)
+        val end = when {
+            space > SNIPPET_CHARS / 2 -> space
+            words[SNIPPET_CHARS - 1].isHighSurrogate() -> SNIPPET_CHARS - 1
+            else -> SNIPPET_CHARS
+        }
+        return words.substring(0, end).trimEnd() + ELLIPSIS
     }
 
     companion object {
