@@ -167,6 +167,9 @@ struct RecordingsView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // 2026-10-08 badge column rule: the status column no wider than the old codes took, so a
+        // phone's title column keeps its width; a longer word wraps inside its badge.
+        .environment(\.ledgerStatusCapped, true)
         .dotGridBackground()
         .onChange(of: collapse) { expanded = nil }
         .task { await model.refreshRecents() }
