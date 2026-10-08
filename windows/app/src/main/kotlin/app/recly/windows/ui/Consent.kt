@@ -15,7 +15,10 @@ import app.recly.windows.i18n.Str
 object Consent {
     val QUESTION: Str = Str.CONSENT_QUESTION
 
-    /** docs/research/02 §Consent · law. Not legal advice and not a jurisdiction the app tries to guess. */
+    /**
+     * The reminder alone (2026-10-08): the recording shows the other side nothing, and telling them is the
+     * recorder's job. The jurisdictions are behind [LINK_TEXT], not in the dialog.
+     */
     val BODY: Str = Str.CONSENT_BODY
 
     val CONFIRM: Str = Str.CONSENT_CONFIRM
