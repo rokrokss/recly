@@ -55,7 +55,7 @@ struct RecordingView: View {
     private var statusLine: some View {
         if let at = model.highlightedAtSec {
             HighlightNews(atSec: at)
-                .foregroundStyle(blueprint.palette.text)
+                .foregroundStyle(blueprint.palette.accent)
         } else if !model.status.isEmpty {
             Text(verbatim: model.status)
                 .foregroundStyle(blueprint.palette.text)
@@ -93,26 +93,22 @@ struct RecordingView: View {
         .accessibilityLabel(model.canStop ? Text("Stop") : Text("Record"))
     }
 
-    /// The highlight square and the word, in the accent's outline: a mark at this moment of the recording.
+    /// docs/09 screen principle 7: the phone's highlight node — an accent outline and a small filled accent
+    /// square, no word. The name is for VoiceOver only.
     private var highlightButton: some View {
         Button { model.highlight() } label: {
-            HStack(spacing: Space.xs) {
+            ZStack {
+                RoundedRectangle(cornerRadius: Radius.node)
+                    .strokeBorder(blueprint.palette.accent, lineWidth: 1.5)
                 RoundedRectangle(cornerRadius: Radius.badge)
                     .fill(blueprint.palette.accent)
-                    .frame(width: 8, height: 8)
-                Text(verbatim: RecKitStrings.localized("Highlight"))
+                    .frame(width: 12, height: 12)
             }
-            .font(blueprint.fonts.sans(TypeSize.bodySmall, weight: .medium))
-            .foregroundStyle(blueprint.palette.accent)
-            .lineLimit(1)
-            .minimumScaleFactor(0.7)
-            .frame(maxWidth: .infinity, minHeight: 40)
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.accent, lineWidth: 1.5)
-            }
+            .frame(width: 48, height: 48)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Highlight")))
         .accessibilityIdentifier("highlight")
         .modifier(DoubleTapHighlight(armed: model.isRecording))
     }

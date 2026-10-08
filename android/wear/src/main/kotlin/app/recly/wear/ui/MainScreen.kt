@@ -41,6 +41,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
@@ -240,17 +242,23 @@ private const val HIGHLIGHT_MIN_SCALE = 0.7f
 /** The mark's time as every shell writes it, `00:12:34`. */
 private fun stamp(seconds: Long): String = "%02d:%02d:%02d".format(seconds / 3600, (seconds % 3600) / 60, seconds % 60)
 
-/** docs/03 "Metadata": the accent outline, a small filled accent square and the word, under the stop node. */
+/**
+ * docs/09 screen principle 7: the phone's highlight node under the stop node — an accent outline and a
+ * small filled accent square, no word. The name is for screen readers only.
+ */
 @Composable
 private fun HighlightButton(onClick: () -> Unit) {
-    CompactButton(
-        onClick = onClick,
-        shape = RoundedCornerShape(WearBlueprint.radius),
-        colors = ButtonDefaults.outlinedButtonColors(contentColor = WearBlueprint.accent),
-        border = BorderStroke(WearBlueprint.line, WearBlueprint.accent),
-        icon = { Box(Modifier.size(8.dp).background(WearBlueprint.accent, RoundedCornerShape(2.dp))) },
-        label = { Text(text = stringResource(R.string.highlight), maxLines = 1) },
-    )
+    val label = stringResource(R.string.highlight)
+    Box(
+        modifier = Modifier
+            .size(48.dp)
+            .border(1.5.dp, WearBlueprint.accent, RoundedCornerShape(WearBlueprint.radius))
+            .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(Modifier.size(12.dp).background(WearBlueprint.accent, RoundedCornerShape(2.dp)))
+    }
 }
 
 /** docs/09 "Shape": the round button is a square node here too — filled while it is recording. */

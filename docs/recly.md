@@ -2319,9 +2319,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    and the number does not change what they do (2026-10-05, both watches, tiles and complications included). The line says one thing, in this order: what a stop had to report
    (a failure, a deferred save), what the recorder is doing, transfers the phone refused (Wear), then recordings still on the watch. Idle with nothing
    left, it is blank and keeps its height, because the hollow button already says the watch is ready. A stop that went as asked is not announced.
-   While recording, both watches have a `Highlight` text button below the stop square, the small filled accent square (8) before its text, in an accent
-   outline (2026-10-07). On Apple Watch, Double Tap marks a highlight (watchOS 11 and later; it used to stop — Stop stays on the square); the Galaxy Watch
-   has no gesture. The status line says `Highlight · 00:12:34` for 2 seconds, then goes back to its rule.
+   While recording, both watches have the phone's highlight node below the stop square — 48, radius 4, a 1.5 accent border, a filled 12 accent
+   square inside, no text; accessibility name `Highlight` (2026-10-08: the word was dropped, as on the phones; 2026-10-07 it was a text button). On Apple Watch, Double Tap marks a highlight (watchOS 11 and later; it used to stop — Stop stays on the square); the Galaxy Watch
+   has no gesture. The status line says `Highlight · 00:12:34` in the accent for 2 seconds (both watches), then goes back to its rule.
 8. **Button placement** (2026-09-25, common to mobile and desktop; directions are by start/end, so they flip in RTL):
    - A button group inside a form or settings block is **end-aligned (right)**. The confirming action is at the very end, and `Cancel` is right before it. In the recording processing
      settings, `Cancel` · `Save` appear **only when something has changed** — two disabled buttons do not take up room all the time, and their appearing

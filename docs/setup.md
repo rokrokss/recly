@@ -145,8 +145,8 @@ If you said no, Recly shows where to turn it back on.
 | App | While recording |
 |---|---|
 | Android phone, iPhone | the square **Highlight** button beside the record button |
-| Galaxy Watch | **Highlight** under the stop button |
-| Apple Watch | **Highlight** under the stop button, or Double Tap (watchOS 11 and later) |
+| Galaxy Watch | the square **Highlight** button under the stop button |
+| Apple Watch | the square **Highlight** button under the stop button, or Double Tap (watchOS 11 and later) |
 | Mac | **Highlight** in the menu-bar popover, or the Shortcuts action **Add Highlight** |
 | Windows | **Highlight** in the tray popup |
 
