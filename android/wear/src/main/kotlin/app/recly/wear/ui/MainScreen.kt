@@ -124,7 +124,7 @@ private fun RecordScreen(
             ) {
                 FitToWatch {
                     Text(
-                        text = formatElapsed(elapsedSeconds(state.startedAt)),
+                        text = formatElapsed(elapsedSeconds(state.recorder)),
                         style = WearBlueprint.timer,
                         color = WearBlueprint.text,
                         maxLines = 1,
@@ -239,8 +239,8 @@ private const val MOTION_MS = 200
 /** How far the mark's line may shrink to stay on one line. */
 private const val HIGHLIGHT_MIN_SCALE = 0.7f
 
-/** The mark's time as every shell writes it, `00:12:34`. */
-private fun stamp(seconds: Long): String = "%02d:%02d:%02d".format(seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+/** The mark's time as every shell writes a live timer — `00:12`, `01:02:03` (docs/09 "Typography"). */
+private fun stamp(seconds: Long): String = formatElapsed(seconds)
 
 /**
  * docs/09 screen principle 7: the phone's highlight node under the stop node — an accent outline and a
@@ -271,6 +271,9 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
             else -> R.string.recording_start
         },
     )
+    // The node draws a square and no words, so this is its name (docs/09 "Accessibility") — the
+    // phone's own: Start recording, or Stop.
+    val name = stringResource(if (recording) R.string.recording_stop else R.string.tile_start)
     Box(
         modifier = Modifier
             .size(56.dp)
@@ -279,7 +282,8 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
                 if (recording) WearBlueprint.danger else WearBlueprint.background,
                 RoundedCornerShape(WearBlueprint.radius),
             )
-            .clickable(enabled = !busy, onClickLabel = label, role = Role.Button, onClick = onClick),
+            .clickable(enabled = !busy, onClickLabel = label, role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = name },
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -305,10 +309,23 @@ private fun WearMessage.text(): String = when (this) {
  * Ticks only while something is drawing it. The screen is off for most of a three-hour recording
  * and the notification's own chronometer covers that (docs/11 W3) — a timer that kept running here
  * would be a wake-up an hour of battery cannot pay for.
+ *
+ * While the recording is being saved it holds the length it ended at; only an idle recorder goes back
+ * to `00:00` (UX decisions of 2026-10-08).
  */
 @Composable
-private fun elapsedSeconds(startedAt: Instant?): Long {
-    if (startedAt == null) return 0
+private fun elapsedSeconds(recorder: RecorderState): Long {
+    // Not state: the start the stop is measured from, kept across Recording → Stopping, which has none.
+    val seen = remember { SeenStart() }
+    when (recorder) {
+        is RecorderState.Recording -> seen.startedAt = recorder.startedAt
+        RecorderState.Idle -> seen.startedAt = null
+        RecorderState.Starting, RecorderState.Stopping -> Unit
+    }
+    if (recorder == RecorderState.Stopping) {
+        return remember(seen.startedAt) { seen.startedAt?.let { (TimeClock.System.now() - it).inWholeSeconds.coerceAtLeast(0) } ?: 0 }
+    }
+    val startedAt = (recorder as? RecorderState.Recording)?.startedAt ?: return 0
     var now by remember(startedAt) { mutableStateOf(TimeClock.System.now()) }
     LaunchedEffect(startedAt) {
         while (true) {
@@ -317,4 +334,8 @@ private fun elapsedSeconds(startedAt: Instant?): Long {
         }
     }
     return (now - startedAt).inWholeSeconds
+}
+
+private class SeenStart {
+    var startedAt: Instant? = null
 }
