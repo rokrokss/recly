@@ -506,6 +506,8 @@ enum class Str {
     NODE_DESKTOP,
     /** docs/03 "Titles": the naming sheet's second button, which deletes the take that just ended. */
     RECORDING_DISCARD,
+    /** The detail of a recording whose upload waits for the Drive connection (2026-10-08). */
+    DETAIL_WAITING_DRIVE,
 
     CORE_STALE,
     ;

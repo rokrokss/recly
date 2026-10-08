@@ -100,6 +100,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.Placeholder
+import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SidebarRow
 import app.recly.windows.ui.component.SidebarWidth
@@ -600,6 +601,19 @@ private fun Detail(
             verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // A transcript waiting on the Drive connection says so, and the fix is right here rather than
+            // in the list (2026-10-08): the Settings' own Connect Drive, centred under the line (principle 8).
+            if (detail.waitsForDrive && detail.availability.waits) {
+                Text(strings[Str.DETAIL_WAITING_DRIVE], color = blueprint.textMuted, textAlign = TextAlign.Center)
+                ProcessingButton(
+                    label = strings[Str.SIGN_IN],
+                    state = model.action,
+                    strings = strings,
+                    onClick = model::signIn,
+                    enabled = model.clientConfigured && DisconnectGuard.signInBlocker(model.disconnectPhase.owed) == null,
+                )
+                return@Column
+            }
             Text(strings[detail.availability.message()], color = blueprint.textMuted)
             if (detail.availability == TranscriptAvailability.UNAVAILABLE) {
                 BlueprintButton(strings[Str.RECENT_RETRY], model::reloadDetailResults)
@@ -1114,6 +1128,10 @@ private fun droppedFiles(event: DragAndDropEvent): List<File> = runCatching {
     if (!transferable.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) return@runCatching emptyList()
     (transferable.getTransferData(DataFlavor.javaFileListFlavor) as List<*>).filterIsInstance<File>().filter { it.isFile }
 }.getOrDefault(emptyList())
+
+/** The transcript is still to come — the sentences that say it is waiting, as against a failure or nothing to wait for. */
+private val TranscriptAvailability.waits: Boolean
+    get() = this == TranscriptAvailability.PENDING || this == TranscriptAvailability.PARKED
 
 internal fun TranscriptAvailability.message(): Str = when (this) {
     TranscriptAvailability.NOT_REQUESTED -> Str.DETAIL_NOT_REQUESTED

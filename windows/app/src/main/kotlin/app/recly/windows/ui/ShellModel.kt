@@ -129,6 +129,14 @@ data class RecordingDetail(
     val retranscribingLocal: Boolean = false,
     /** Neither in storage yet nor another device's: there is no folder to transcribe again into. */
     val notUploaded: Boolean = false,
+    /** An unsettled job of this recording waits for the Drive connection (`NEEDS_AUTH`). */
+    val waitsForDrive: Boolean = false,
+    /**
+     * Why Edit transcript and Transcribe again wait while [transcribing] (2026-10-08): `Transcribing…` only
+     * while a transcription of it is really queued or running, `Waiting for Drive` for a job parked on the
+     * connection, `Not uploaded yet` for any other upload still to happen.
+     */
+    val busyReason: Str = Str.DETAIL_TRANSCRIBING,
     /** Why Transcribe again did not start, said under the header for a moment. */
     val notice: Str? = null,
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
@@ -1182,15 +1190,22 @@ class ShellModel(
             .distinctUntilChanged()
             .collect { open ->
                 val again = open.firstOrNull { it.retranscription }
-                val running = open.isNotEmpty() || graph.core.localTranscription.isRunning(recordingId)
+                val localRunning = graph.core.localTranscription.isRunning(recordingId)
+                val running = open.isNotEmpty() || localRunning
                 // Asked again as its jobs change: a job that settles is where an upload has landed or not.
                 val uploaded = runCatching { graph.core.uploaded(recordingId) }.getOrDefault(true)
+                val transcribingNow = localRunning || open.any { job ->
+                    transcriptionInFlight(job, runCatching { graph.core.jobs.steps(job.id) }.getOrDefault(emptyList()))
+                }
+                val waitsForDrive = open.any { it.status == JobStatus.NEEDS_AUTH }
                 updateDetail(recordingId) {
                     it.copy(
                         transcribing = running,
                         retranscribing = again != null,
                         retranscribingLocal = again?.workflow?.steps?.any { step -> step is recly.core.model.Step.LocalTranscribe } == true,
                         notUploaded = !uploaded,
+                        waitsForDrive = waitsForDrive,
+                        busyReason = busyReason(transcribingNow, waitsForDrive, uploaded),
                     )
                 }
             }
@@ -1299,7 +1314,8 @@ class ShellModel(
                     runner?.jobsDue()
                     null
                 }
-                RetranscribeResult.Busy -> Str.DETAIL_TRANSCRIBING
+                // The same reason More gives for it.
+                RetranscribeResult.Busy -> detail?.takeIf { it.recordingId == request.recordingId }?.busyReason ?: Str.DETAIL_TRANSCRIBING
                 RetranscribeResult.NoAudio -> Str.PLAYER_NO_AUDIO
                 RetranscribeResult.NoTranscriptionConfigured -> Str.DETAIL_TRANSCRIPTION_OFF
                 RetranscribeResult.Unsupported -> Str.DETAIL_NOT_UPLOADED

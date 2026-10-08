@@ -53,6 +53,11 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import recly.core.job.Job
+import recly.core.job.JobStatus
+import recly.core.job.StepRun
+import recly.core.job.StepStatus
+import recly.core.model.Step
 import recly.core.processing.TranscriptionMode
 import recly.core.recording.ExportFormat
 import recly.core.transcribe.TranscriptAvailability
@@ -69,6 +74,36 @@ internal val RecordingDetail.hasTranscript: Boolean
  */
 internal val RecordingDetail.spanSec: Double?
     get() = lengthSec?.takeIf { it > 0 } ?: audio.totalSec.takeIf { it > 0 } ?: transcript?.durationSec?.takeIf { it > 0 }
+
+/**
+ * Whether [job] has reached its transcription: the next step it has to run is a `transcribe` or a
+ * `local.transcribe`, queued or running. An upload still to happen in front of it is not a transcription yet.
+ */
+internal fun transcriptionInFlight(job: Job, steps: List<StepRun>): Boolean {
+    if (job.status != JobStatus.PENDING && job.status != JobStatus.RUNNING && job.status != JobStatus.WAITING) return false
+    // In the workflow's order; a step with no run yet has not started.
+    val next = job.workflow?.steps?.firstOrNull { step ->
+        val status = steps.firstOrNull { it.stepId == step.id }?.status
+        status != StepStatus.SUCCEEDED && status != StepStatus.SKIPPED
+    } ?: return false
+    val status = steps.firstOrNull { it.stepId == next.id }?.status ?: StepStatus.PENDING
+    return (next is Step.Transcribe || next is Step.LocalTranscribe) &&
+        (status == StepStatus.RUNNING || status == StepStatus.PENDING)
+}
+
+/**
+ * The reason More gives for Edit transcript and Transcribe again while a job of the recording is unsettled
+ * (2026-10-08). Which items are disabled does not change — a pending job may still rewrite the transcript
+ * (docs/08 "Editing") — only what they say: `Transcribing…` while a transcription is really under way, the
+ * badge's `Waiting for Drive` for a job parked on the connection, `Not uploaded yet` for an upload still to
+ * happen, and `Transcribing…` for whatever else is left.
+ */
+internal fun busyReason(transcribing: Boolean, waitsForDrive: Boolean, uploaded: Boolean): Str = when {
+    transcribing -> Str.DETAIL_TRANSCRIBING
+    waitsForDrive -> Str.DRIVE_PENDING
+    !uploaded -> Str.DETAIL_NOT_UPLOADED
+    else -> Str.DETAIL_TRANSCRIBING
+}
 
 /** Whether the audio is here, or still may be: only a settled trip that brought nothing back means none. */
 private val RecordingDetail.audioReachable: Boolean
@@ -162,13 +197,13 @@ internal fun MoreButton(
             MenuRow(strings[Str.DETAIL_RENAME], { open = false; model.askToRename() }, enabled = !detail.writing)
             val editBlocked = when {
                 !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
-                detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.transcribing -> detail.busyReason
                 else -> null
             }
             MenuRow(strings[Str.DETAIL_EDIT], { open = false; onEdit() }, enabled = editBlocked == null, secondary = editBlocked?.let { strings[it] })
             val againBlocked = when {
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
-                detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.transcribing -> detail.busyReason
                 detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
                 else -> null
             }
