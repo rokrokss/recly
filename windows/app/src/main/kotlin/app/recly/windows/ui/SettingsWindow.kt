@@ -146,8 +146,9 @@ private fun Account(model: ShellModel, strings: Strings) {
     val signInBlocker = DisconnectGuard.signInBlocker(model.disconnectPhase.owed)
     if (model.signedIn || model.disconnectPhase.owed || model.disconnecting) {
         TableRow(title = strings[if (model.disconnecting) Str.SETTINGS_ACCOUNT else if (model.signedIn) Str.SETTINGS_SIGNED_IN else Str.DRIVE_ATTENTION], trailing = {
+            // Quiet, not red (2026-10-08): red is for what cannot be undone, and Drive can be connected again.
             BlueprintButton(strings[if (model.disconnecting) Str.DRIVE_DISCONNECTING else Str.DRIVE_DISCONNECT],
-                model::askToDisconnect, tone = ButtonTone.DANGER, enabled = !model.disconnecting)
+                model::askToDisconnect, tone = ButtonTone.QUIET, enabled = !model.disconnecting)
         })
     } else {
         TableRow(

@@ -31,6 +31,7 @@ import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
@@ -57,7 +58,6 @@ import app.recly.windows.ui.theme.mono
 import java.util.Locale
 import kotlinx.coroutines.delay
 import recly.core.job.JobStatus
-import recly.core.model.Source
 
 /**
  * docs/09 screen principle 6: the tray's window — three state nodes, the recordings as a ledger a page at a
@@ -95,26 +95,23 @@ private fun Header(model: ShellModel, strings: Strings) {
     val palette = blueprint
 
     Column(Modifier.fillMaxWidth().background(palette.surface)) {
-        // The header is one line: the source and enough of the device id to tell two machines
-        // apart, exactly as the phones and the Mac write it. The whole id is in Settings → About.
-        ScreenHeader(
-            title = APP_NAME,
-            meta = model.deviceId.take(DEVICE_ID_PREFIX).ifEmpty { null }
-                ?.let { "${Source.DESKTOP.name.lowercase(Locale.ROOT)} · $it" },
-        )
+        // The header is the app's name alone (2026-10-08): the device id is in Settings → About,
+        // and nothing takes the line it used to have.
+        ScreenHeader(title = APP_NAME)
         StateNodeRow(
             nodes = listOf(
-                NodeSpec(strings[Str.NODE_DEVICE], Source.DESKTOP.name.lowercase(Locale.ROOT)),
+                NodeSpec(strings[Str.NODE_DEVICE], strings[Str.NODE_DESKTOP]),
                 NodeSpec(
                     label = strings[Str.PROCESSING_TRANSCRIPTION],
                     value = model.processing?.summary?.let { if (it.mode == recly.core.processing.TranscriptionMode.EXTERNAL) it.external?.provider?.let(recly.core.transcribe.SttProviders::displayName).orEmpty() else strings[it.mode.label()] } ?: strings[Str.PROCESSING_LOCAL],
                 ),
-                model.stateNode(strings[Str.NODE_STATE], palette),
+                model.stateNode(strings, palette),
             ),
             modifier = Modifier.padding(horizontal = Space.m),
         )
-        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard.
-        model.recordingSince?.let { Elapsed(it) }
+        // docs/09 screen principle 1: while it is running, the timer *is* the dashboard — and while it saves,
+        // the recording's final length stays on it until the recorder is idle (2026-10-08).
+        model.recordingSince?.let { Elapsed(it, model.recordingEndedAt) }
         // docs/09 screen principle 6: and under it the track being written, so the capture is visible as
         // well as counted. The levels are the helper's own write path (`HelperEvent.Level`).
         if (model.recording) {
@@ -170,18 +167,21 @@ private fun Header(model: ShellModel, strings: Strings) {
     }
 }
 
-/** docs/09 "Typography": `00:12:34`, counted from the moment the recorder said it had started. */
+/**
+ * docs/09 "Typography": `12:34`, or `01:02:03` from the hour (2026-10-08), counted from the moment the recorder
+ * said it had started — and stopped at [until], the moment it ended, while the stop saves.
+ */
 @Composable
-private fun Elapsed(since: Long) {
+private fun Elapsed(since: Long, until: Long?) {
     var now by remember(since) { mutableStateOf(System.currentTimeMillis()) }
-    LaunchedEffect(since) {
-        while (true) {
+    LaunchedEffect(since, until) {
+        while (until == null) {
             now = System.currentTimeMillis()
             delay(TICK_MS)
         }
     }
     MonoTimer(
-        text = LedgerFormat.elapsed(now - since),
+        text = LedgerFormat.clock((until ?: now) - since),
         modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
         color = blueprint.danger,
     )
@@ -316,7 +316,7 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
                     color = palette.textMuted,
                 )
             } else {
-                StatusBadge(alert.reason.badge())
+                StatusBadge(alert.reason.badge().worded(strings))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
                         strings[alert.reason.label],
@@ -429,7 +429,7 @@ private fun RecentRow(
                 // docs/03 "Deleting in the app": the dialog asks about Drive; this only opens it. Never
                 // over a recording that is still being written ([RecentItem.deletable]).
                 if (item.deletable) {
-                    LedgerAction(statusWidth) {
+                    LedgerAction(statusWidth, Str.STATE_DONE.message().ledgerStatus(strings)) {
                         BlueprintButton(
                             label = strings[Str.DELETE],
                             onClick = { model.askToDelete(item) },
@@ -443,7 +443,8 @@ private fun RecentRow(
 }
 
 /**
- * docs/09: state is a code, in monospace, and never colour alone.
+ * docs/09: state is a code, in monospace, and never colour alone. The code is the state's internal name; the
+ * node says its word ([stateWord], 2026-10-08).
  *
  * docs/09 screen principle 1 names four — `IDLE`·`STARTING`·`REC`·`STOPPING` — and the transitions come
  * first, because a capture that is coming up or closing is doing something the state it is between
@@ -466,24 +467,33 @@ internal fun ShellModel.stateCode(): String = when {
  * the executor get to speak: a pass running on one of the ledger's rows is `UPLOADING` in the accent
  * colour, with the loader turning beside it (`NodeSpec.busy`).
  */
-private fun ShellModel.stateNode(label: String, palette: BlueprintColors): NodeSpec {
+private fun ShellModel.stateNode(strings: Strings, palette: BlueprintColors): NodeSpec {
+    val label = strings[Str.NODE_STATE]
     val code = stateCode()
     if (code == IDLE && Recents.uploading(recents)) {
-        return NodeSpec(label, "UPLOADING", valueColor = palette.accent, active = true, busy = true)
+        return NodeSpec(label, strings[Str.STATE_UPLOADING], valueColor = palette.accent, active = true, busy = true)
     }
     return NodeSpec(
         label = label,
-        value = code,
+        value = strings[stateWord(code)],
         valueColor = if (recording) palette.danger else palette.textMuted,
         active = recording,
     )
 }
 
+/** What the State node says for a [stateCode], in the app's language (the UX decisions of 2026-10-08). */
+internal fun stateWord(code: String): Str = when (code) {
+    "STOPPING" -> Str.STATUS_SAVING
+    "REC" -> Str.STATUS_RECORDING
+    "STARTING" -> Str.NODE_STARTING
+    "OPENING" -> Str.STATUS_OPENING
+    "NO_HELPER" -> Str.NODE_NO_HELPER
+    "NAMING" -> Str.NODE_NAMING
+    else -> Str.NODE_READY
+}
+
 /** Nothing in flight here — which is what lets the node say what the executor is doing instead. */
 private const val IDLE = "IDLE"
-
-/** Enough of the device id to tell two machines apart, and not so much that it is a column. */
-private const val DEVICE_ID_PREFIX = 8
 
 private const val TICK_MS = 1_000L
 

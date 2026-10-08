@@ -153,7 +153,7 @@ fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StatusBadge(alert.reason.badge())
+        StatusBadge(alert.reason.badge().worded(strings))
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             if (download.running) {
                 LoadingText(downloadingText(strings, download.info?.progress), MaterialTheme.typography.bodyMedium, palette.text)

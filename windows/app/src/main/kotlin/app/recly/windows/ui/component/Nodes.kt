@@ -50,7 +50,8 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             .semantics(mergeDescendants = true) {}
             .border(
                 width = palette.line,
-                color = if (spec.active) palette.text else palette.grid,
+                // Quiet, but 3:1 against the page in light and dark: the input border, not the grid.
+                color = if (spec.active) palette.text else palette.inputBorder,
                 shape = RoundedCornerShape(Radius.node),
             )
             .background(palette.surface, RoundedCornerShape(Radius.node))

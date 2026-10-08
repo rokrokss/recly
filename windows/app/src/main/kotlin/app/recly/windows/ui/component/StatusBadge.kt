@@ -18,6 +18,7 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import app.recly.windows.i18n.Str
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -28,8 +29,18 @@ import app.recly.windows.ui.theme.mono
  */
 enum class BadgeTone { NEUTRAL, ACCENT, SUCCESS, WARNING, DANGER }
 
-/** The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the loader in front of the code. */
-data class LedgerStatus(val code: String, val tone: BadgeTone, val label: String = code, val busy: Boolean = false)
+/**
+ * The code and its tone — what [LedgerRow] shows in its last column. [busy] turns the loader in front of the code.
+ * The code stays internal (logs, tests); what the badge says is [label] — the translated [word] once a
+ * language is applied (the UX decisions of 2026-10-08: words instead of codes).
+ */
+data class LedgerStatus(
+    val code: String,
+    val tone: BadgeTone,
+    val label: String = code,
+    val busy: Boolean = false,
+    val word: Str? = null,
+)
 
 /**
  * A square badge: 1dp of the tone (2dp in high contrast), the code in monospace, on the surface.

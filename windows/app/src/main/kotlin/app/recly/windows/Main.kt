@@ -396,12 +396,14 @@ private fun TitlePrompt(
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = strings[Str.RECORDING_TITLE],
-        // Dismissing the title prompt discards this take, just like its Cancel button.
+        // Dismissing the title prompt discards this take, just like its Discard recording button.
         onDismissRequest = model::cancelTitle,
         theme = themed,
         height = TITLE_HEIGHT.dp,
         actions = {
-            BlueprintButton(strings[Str.CANCEL], model::cancelTitle, tone = ButtonTone.QUIET)
+            // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
+            // that cannot be undone (2026-10-08).
+            BlueprintButton(strings[Str.RECORDING_DISCARD], model::cancelTitle, tone = ButtonTone.DANGER)
             BlueprintButton(
                 label = strings[Str.SAVE],
                 onClick = { model.saveTitle(title, participants) },
@@ -467,6 +469,8 @@ private fun ConsentPrompt(
         theme = themed,
         width = CONSENT_WIDTH.dp,
         height = CONSENT_HEIGHT.dp,
+        // The reminder alone, the link and the box: sized to them.
+        fitContent = true,
         actions = {
             BlueprintButton(strings[Consent.CANCEL], model::consentCancelled, tone = ButtonTone.QUIET)
             BlueprintButton(
@@ -476,8 +480,8 @@ private fun ConsentPrompt(
             )
         },
     ) {
-        // The jurisdictions are prose about the law, not a table of data: sans, like every other
-        // sentence this app says (docs/09 "Typography").
+        // The reminder alone (2026-10-08): the jurisdictions are behind the link. Prose, not data: sans,
+        // like every other sentence this app says (docs/09 "Typography").
         BlueprintDialogText(strings[Consent.BODY])
         BlueprintDialogLink(strings[Consent.LINK_TEXT], model::openConsentGuidance)
         BlueprintCheckRow(
@@ -576,9 +580,9 @@ private fun taskbarIsLight(): Boolean {
 /** The product name, never translated (docs/07): the window titles and the popup header. */
 internal const val APP_NAME: String = "Recly"
 
-/** The consent body is three jurisdictions and a paragraph; a 460dp card would be a column. */
+/** The consent reminder, its link and the box; the confirm's label is long, so the card is wider than most. */
 private const val CONSENT_WIDTH = 560
-private const val CONSENT_HEIGHT = 380
+private const val CONSENT_HEIGHT = 300
 
 /** A hint, one field, and the six participant chips under it. */
 private const val TITLE_HEIGHT = 360

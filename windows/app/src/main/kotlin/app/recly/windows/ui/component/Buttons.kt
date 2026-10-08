@@ -71,7 +71,9 @@ fun BlueprintButton(
         !enabled -> palette.grid
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
-        else -> palette.grid
+        // A quiet button's edge is the input border, 3:1 against the page in light and dark (2026-10-08) —
+        // the grid is a decoration and too faint to say "this is a control" in the dark palette.
+        else -> palette.inputBorder
     }
     val fill = if (enabled && tone == ButtonTone.PRIMARY) palette.accent else Color.Transparent
 

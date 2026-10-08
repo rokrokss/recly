@@ -107,6 +107,35 @@ class ShellStartTest {
     }
 
     /**
+     * The UX decisions of 2026-10-08: while a stop saves, the tray's timer holds the recording's final length —
+     * every moment the shell says `STOPPING` with the capture down, the end is known — and once the recorder
+     * is idle both go.
+     */
+    @Test
+    fun `a stop holds the timer's final length until the recorder is idle`() = runBlocking {
+        val model = shell()
+        model.load(dataDirectory = dir.absolutePath.toPath(), helperCommand = FakeHelperCommand.command())
+        model.start()
+        withTimeout(TIMEOUT_MS) { while (!model.recording) delay(POLL_MS) }
+        val since = model.recordingSince
+        model.stop()
+        withTimeout(TIMEOUT_MS) {
+            while (model.transition != null || model.recording) {
+                if (model.transition == Transition.STOPPING && !model.recording && model.recordingSince != null) {
+                    assertEquals(since, model.recordingSince, "the timer restarted while saving")
+                }
+                delay(1)
+            }
+        }
+        assertNull(model.recordingSince, "the timer outlived the save")
+        assertNull(model.recordingEndedAt)
+        // docs/03: the take now waits for its name.
+        assertEquals("NAMING", model.stateCode())
+
+        model.shutdown()
+    }
+
+    /**
      * The consent reminder is off: this is a test about what a start leaves behind, and docs/12 M8's
      * question would stop it in front of the recorder ([ShellModel.start]).
      */

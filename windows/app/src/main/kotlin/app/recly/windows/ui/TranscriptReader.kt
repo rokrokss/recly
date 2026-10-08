@@ -34,6 +34,7 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
+import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
@@ -73,6 +74,8 @@ internal fun TranscriptReader(
     strings: Strings,
     modifier: Modifier = Modifier,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
+    /** The recording's length, which picks the format of every time drawn here ([LedgerFormat.clock]). */
+    spanSec: Double? = transcript.durationSec,
 ) {
     val blocks = document.blocks
     val ranges = remember(transcript) { blockSegments(transcript, blocks) }
@@ -134,6 +137,7 @@ internal fun TranscriptReader(
                         saving = saving[index],
                         speakerEnabled = !busy,
                         strings = strings,
+                        spanSec = spanSec,
                     )
                 }
             }
@@ -147,7 +151,7 @@ internal fun TranscriptReader(
                 open.speaker?.let { speaker ->
                     SpeakerMenu(transcript.speakers, speaker, close, { onRenameSpeaker(open.block, speaker) }, { onChangeSpeaker(open.block, ranges[open.block], it) }, strings)
                 }
-                open.highlight?.let { at -> HighlightMenu(at, close, { onSeek(at) }, { onRemoveHighlight(at) }, strings) }
+                open.highlight?.let { at -> HighlightMenu(at, spanSec, close, { onSeek(at) }, { onRemoveHighlight(at) }, strings) }
             }
         }
     }
@@ -170,14 +174,16 @@ private fun Group(
     saving: InlineSave?,
     speakerEnabled: Boolean,
     strings: Strings,
+    spanSec: Double?,
 ) {
     val palette = blueprint
-    val stamp = LedgerFormat.elapsed((start * 1000).toLong())
+    val stamp = LedgerFormat.clock(start, spanSec)
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Box(Modifier.width(2.dp).fillMaxHeight().background(if (isActive) palette.accent else Color.Transparent))
         Column(Modifier.padding(start = Space.m - 2.dp, end = Space.m)) {
             Row(horizontalArrangement = Arrangement.spacedBy(Space.xs), verticalAlignment = Alignment.CenterVertically) {
-                val seekLabel = strings[Str.TRANSCRIPT_SEEK, stamp]
+                // What a screen reader hears is unchanged: hours always said.
+                val seekLabel = strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((start * 1000).toLong())]
                 BlueprintButton(
                     stamp, { onSeek(start) }, enabled = canSeek,
                     modifier = Modifier.testTag("transcript-time-$index").semantics { contentDescription = seekLabel },
@@ -203,37 +209,48 @@ private fun Group(
 
 /**
  * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears
- * it as "Highlight 00:12:34". Its target is only a gap wider than the square, so the square stays by the time.
+ * it as "Highlight 00:12:34".
  */
 @Composable
 private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
     val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
+    // A 44 target (2026-10-08) with the square at its start, so the square stays by the time.
     Box(
         Modifier
-            .size(width = HIGHLIGHT_MARK + Space.xs * 2, height = 28.dp)
+            .size(MinTouch)
             .onGloballyPositioned { place = it.positionInRoot() }
             .clickable(role = Role.Button) { onMenu(place) }
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
+            .semantics { contentDescription = label }
+            .padding(start = Space.xs),
+        contentAlignment = Alignment.CenterStart,
     ) { HighlightMark() }
 }
 
-/** docs/09 "Screen principles": the pill that takes the list back to where playback is. */
+/**
+ * docs/09 "Screen principles": the pill that takes the list back to where playback is — 32 tall to look at, and
+ * a 44 target around it (2026-10-08).
+ */
 @Composable
 private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Unit) {
     val palette = blueprint
     val shape = RoundedCornerShape(8.dp)
     Box(
         modifier
-            .height(32.dp)
-            .background(palette.surface, shape)
-            .border(palette.line, palette.accent, shape)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.m),
+            .defaultMinSize(minHeight = MinTouch)
+            .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        Box(
+            Modifier
+                .height(32.dp)
+                .background(palette.surface, shape)
+                .border(palette.line, palette.accent, shape)
+                .padding(horizontal = Space.m),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge, color = palette.accent)
+        }
     }
 }
 

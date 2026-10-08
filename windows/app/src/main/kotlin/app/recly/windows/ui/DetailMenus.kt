@@ -53,6 +53,11 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import recly.core.job.Job
+import recly.core.job.JobStatus
+import recly.core.job.StepRun
+import recly.core.job.StepStatus
+import recly.core.model.Step
 import recly.core.processing.TranscriptionMode
 import recly.core.recording.ExportFormat
 import recly.core.transcribe.TranscriptAvailability
@@ -62,6 +67,43 @@ import recly.core.transcribe.TranscriptSpeaker
 /** Whether the detail has a transcript to show, edit or export. */
 internal val RecordingDetail.hasTranscript: Boolean
     get() = transcript != null && availability != TranscriptAvailability.EMPTY
+
+/**
+ * The recording's whole length, which picks the format of every time drawn on its screen so they all have one
+ * width (2026-10-08): the meta's, the audio's, or the transcript's; null when none of them knows.
+ */
+internal val RecordingDetail.spanSec: Double?
+    get() = lengthSec?.takeIf { it > 0 } ?: audio.totalSec.takeIf { it > 0 } ?: transcript?.durationSec?.takeIf { it > 0 }
+
+/**
+ * Whether [job] has reached its transcription: the next step it has to run is a `transcribe` or a
+ * `local.transcribe`, queued or running. An upload still to happen in front of it is not a transcription yet.
+ */
+internal fun transcriptionInFlight(job: Job, steps: List<StepRun>): Boolean {
+    if (job.status != JobStatus.PENDING && job.status != JobStatus.RUNNING && job.status != JobStatus.WAITING) return false
+    // In the workflow's order; a step with no run yet has not started.
+    val next = job.workflow?.steps?.firstOrNull { step ->
+        val status = steps.firstOrNull { it.stepId == step.id }?.status
+        status != StepStatus.SUCCEEDED && status != StepStatus.SKIPPED
+    } ?: return false
+    val status = steps.firstOrNull { it.stepId == next.id }?.status ?: StepStatus.PENDING
+    return (next is Step.Transcribe || next is Step.LocalTranscribe) &&
+        (status == StepStatus.RUNNING || status == StepStatus.PENDING)
+}
+
+/**
+ * The reason More gives for Edit transcript and Transcribe again while a job of the recording is unsettled
+ * (2026-10-08). Which items are disabled does not change — a pending job may still rewrite the transcript
+ * (docs/08 "Editing") — only what they say: `Transcribing…` while a transcription is really under way, the
+ * badge's `Waiting for Drive` for a job parked on the connection, `Not uploaded yet` for an upload still to
+ * happen, and `Transcribing…` for whatever else is left.
+ */
+internal fun busyReason(transcribing: Boolean, waitsForDrive: Boolean, uploaded: Boolean): Str = when {
+    transcribing -> Str.DETAIL_TRANSCRIBING
+    waitsForDrive -> Str.DRIVE_PENDING
+    !uploaded -> Str.DETAIL_NOT_UPLOADED
+    else -> Str.DETAIL_TRANSCRIBING
+}
 
 /** Whether the audio is here, or still may be: only a settled trip that brought nothing back means none. */
 private val RecordingDetail.audioReachable: Boolean
@@ -85,6 +127,8 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
             EXPORTS.forEach { (format, label, kind) ->
                 val audio = format == ExportFormat.AUDIO
                 val reason = when {
+                    // Nothing of a take still being written is whole enough to export.
+                    audio && detail.writing -> Str.DETAIL_STILL_RECORDING
                     audio && !detail.audioReachable -> Str.PLAYER_NO_AUDIO
                     !audio && !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                     else -> null
@@ -117,6 +161,8 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
                     open = false
                 },
                 enabled = detail.hasTranscript && preparing == null,
+                // A disabled item says why (2026-10-08).
+                secondary = if (detail.hasTranscript) null else strings[Str.DETAIL_NO_TRANSCRIPT],
             )
         } }
     }
@@ -143,39 +189,53 @@ internal fun MoreButton(
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
-    val stamp = LedgerFormat.elapsed((positionSec * 1000).toLong())
+    val stamp = LedgerFormat.clock(positionSec, detail.spanSec)
     Box {
         BlueprintButton(
             MORE_MARK,
             { open = true },
-            modifier = Modifier.semantics { contentDescription = strings[Str.DETAIL_MORE] },
+            // As wide as it is tall: a single mark is not a 44 target on its own.
+            modifier = Modifier.defaultMinSize(minWidth = MinTouch).semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
         )
         BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd) { MenuColumn {
-            MenuRow(strings[Str.DETAIL_RENAME], { open = false; model.askToRename() }, enabled = !detail.writing)
+            // The core refuses to rename a take still being written, and the item says so.
+            MenuRow(
+                strings[Str.DETAIL_RENAME],
+                { open = false; model.askToRename() },
+                enabled = !detail.writing,
+                secondary = if (detail.writing) strings[Str.DETAIL_STILL_RECORDING] else null,
+            )
             val editBlocked = when {
                 !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
-                detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.transcribing -> detail.busyReason
                 else -> null
             }
             MenuRow(strings[Str.DETAIL_EDIT], { open = false; onEdit() }, enabled = editBlocked == null, secondary = editBlocked?.let { strings[it] })
             val againBlocked = when {
+                detail.writing -> Str.DETAIL_STILL_RECORDING
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
-                detail.transcribing -> Str.DETAIL_TRANSCRIBING
+                detail.transcribing -> detail.busyReason
                 detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
                 else -> null
             }
             MenuRow(
                 strings[Str.DETAIL_RETRANSCRIBE],
                 { open = false; model.askToRetranscribe() },
-                enabled = againBlocked == null && !detail.writing,
+                enabled = againBlocked == null,
                 secondary = againBlocked?.let { strings[it] },
             )
+            // The playhead is the player's, and a take still being written has no player yet.
+            val highlightBlocked = when {
+                detail.writing -> Str.DETAIL_STILL_RECORDING
+                detail.audio.isEmpty -> Str.PLAYER_NO_AUDIO
+                else -> null
+            }
             MenuRow(
                 strings[Str.HIGHLIGHT_ADD_AT, stamp],
                 { open = false; model.setHighlights(detail.recordingId, detail.highlights + positionSec) },
-                enabled = !detail.audio.isEmpty,
-                secondary = if (detail.audio.isEmpty) strings[Str.PLAYER_NO_AUDIO] else null,
+                enabled = highlightBlocked == null,
+                secondary = highlightBlocked?.let { strings[it] },
             )
         } }
     }
@@ -183,9 +243,17 @@ internal fun MoreButton(
 
 /** docs/03 "Metadata": a highlight's own menu — go there, or take it away (not red: no recording is deleted). */
 @Composable
-internal fun HighlightMenu(atSec: Double, onDismiss: () -> Unit, onGoTo: () -> Unit, onRemove: () -> Unit, strings: Strings) {
+internal fun HighlightMenu(
+    atSec: Double,
+    /** The recording's length, for the time's format ([LedgerFormat.clock]). */
+    totalSec: Double?,
+    onDismiss: () -> Unit,
+    onGoTo: () -> Unit,
+    onRemove: () -> Unit,
+    strings: Strings,
+) {
     BlueprintMenu(true, onDismiss) { MenuColumn {
-        MenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.elapsed((atSec * 1000).toLong())], { onDismiss(); onGoTo() })
+        MenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.clock(atSec, totalSec)], { onDismiss(); onGoTo() })
         MenuRow(strings[Str.HIGHLIGHT_REMOVE], { onDismiss(); onRemove() })
     } }
 }
@@ -206,16 +274,23 @@ internal val HIGHLIGHT_MARK = 6.dp
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
-    Text(
-        name ?: id,
-        modifier = Modifier
-            .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-        style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
-        color = palette.textMuted,
-        maxLines = 1,
-    )
+    // The badge is about 20 tall; what takes the click is the 44 around it (2026-10-08), the badge at its start.
+    Box(
+        Modifier
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            name ?: id,
+            modifier = Modifier
+                .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
+                .padding(horizontal = 6.dp, vertical = 2.dp),
+            style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
+            color = palette.textMuted,
+            maxLines = 1,
+        )
+    }
 }
 
 /**
@@ -334,7 +409,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
         Box(
             Modifier
                 .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-                .border(palette.line, palette.grid, RoundedCornerShape(Radius.node))
+                // A quiet control's edge is the input border, 3:1 against the page in light and dark.
+                .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
                 .clickable(role = Role.Button) { open = true }
                 .semantics {
                     contentDescription = strings[Str.PLAYER_SPEED]
