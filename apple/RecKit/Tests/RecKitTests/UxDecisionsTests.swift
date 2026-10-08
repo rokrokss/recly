@@ -1,4 +1,5 @@
 import Foundation
+import RecKitTestSupport
 import ReclyCore
 import XCTest
 @testable import RecKit
@@ -121,6 +122,40 @@ final class UxDecisionsTests: XCTestCase {
         AppLanguage.current = .ko
         XCTAssertEqual([RecKitStrings.localized("Monthly folders"), RecKitStrings.localized("One folder")], ["월별 폴더", "폴더 하나"])
     }
+
+    /// 2026-10-09 (user decision): the folder is a choice for a local folder only; Drive and iCloud
+    /// always go a folder a month, so the row is not there for them.
+    func testTheFolderChoiceIsForALocalFolderOnly() {
+        XCTAssertTrue(ProcessingSettingsModel.folderChoiceShown(for: .folder))
+        XCTAssertFalse(ProcessingSettingsModel.folderChoiceShown(for: .drive))
+        XCTAssertFalse(ProcessingSettingsModel.folderChoiceShown(for: .icloud))
+    }
+
+    #if os(macOS)
+    /// The row follows a switch in the Storage section as it happens — the switch hands the new
+    /// revision to the processing form, which is what shows or hides it — over a real core with the
+    /// Mac's own local folder.
+    @MainActor
+    func testTheFolderRowFollowsAStorageSwitch() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("UxDecisionsTests-\(UUID().uuidString)")
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        let bridge = try await CoreBridge.make(
+            deviceName: "RecKitTests", dataDirectory: directory, secureStore: InMemorySecureStore()
+        )
+        let processing = ProcessingSettingsModel(core: bridge.core)
+        await processing.reload()
+        XCTAssertFalse(processing.showsFolderChoice, "Drive is the storage a new install starts with")
+
+        let storage = StorageChoice(core: bridge.core)
+        storage.onChanged = { await processing.storageChanged() }
+        await storage.select(.folder)
+        XCTAssertEqual(storage.selected, .folder)
+        XCTAssertTrue(processing.showsFolderChoice)
+
+        await storage.select(.drive)
+        XCTAssertFalse(processing.showsFolderChoice)
+    }
+    #endif
 
     // MARK: - Pieces
 

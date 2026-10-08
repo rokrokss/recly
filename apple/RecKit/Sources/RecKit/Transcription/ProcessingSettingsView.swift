@@ -22,7 +22,16 @@ public final class ProcessingSettingsModel: ObservableObject {
     /// docs/15: the destinations a save is waiting on the user's permission for. Asked here, when the
     /// provider is chosen, and never while recording; once allowed, the same destination saves quietly.
     @Published public private(set) var consentNeeded: [TransferTarget] = []
-    private var stored: ProcessingSettingsStateReady?
+    /// 2026-10-09 (user decision): the storage folder is a choice only for recordings kept in a local
+    /// folder — Drive and iCloud always go a folder a month (`ProcessingStorage.uploadFolder`). Read off
+    /// the stored storage, so a switch in the Storage section ([storageChanged]) shows or hides the row.
+    @Published public private(set) var showsFolderChoice = false
+    private var stored: ProcessingSettingsStateReady? {
+        didSet { showsFolderChoice = stored.map { Self.folderChoiceShown(for: $0.document.settings.storage.provider) } ?? false }
+    }
+
+    /// The rule behind [showsFolderChoice]: only a local folder takes the folder template.
+    public nonisolated static func folderChoiceShown(for storage: StorageKind) -> Bool { storage == .folder }
     private let core: ReclyCore_
     /// The shell's one model download, which this screen's "Download model" shares with the
     /// banner, the rows and the first-run card.
@@ -179,7 +188,7 @@ public struct ProcessingSettingsView: View {
         SectionBlock {
             if let draft = model.draft {
                 if model.importing { SectionFootnote(loc("Review the folder and transcription method before saving. Keys are not included.")) }
-                folderChoice(draft)
+                if model.showsFolderChoice { folderChoice(draft) }
                 BlueprintField(loc("Minimum length (s)"), text: field(\.minimumSeconds), mono: true)
                 SectionHeader(loc("Transcription"))
                 ChoiceRow {
@@ -359,7 +368,8 @@ public struct ProcessingSettingsView: View {
     /// 2026-10-08 §10: where in the storage the recordings go, as the two choices there are — a folder a
     /// month, or one folder — with today's folder under them in mono. Part of the draft like the
     /// field it replaces; a template written some other way shows as monthly and is left as it is
-    /// until a chip is tapped, so an unrelated Save never rewrites it.
+    /// until a chip is tapped, so an unrelated Save never rewrites it. Shown for a local folder only
+    /// (2026-10-09, [ProcessingSettingsModel.showsFolderChoice]).
     private func folderChoice(_ draft: ProcessingDraft) -> some View {
         let one = StorageFolder.isOne(draft.folder)
         return VStack(alignment: .leading, spacing: Space.xs) {
