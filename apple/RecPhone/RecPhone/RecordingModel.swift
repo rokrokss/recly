@@ -83,6 +83,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var signInState: ProcessingState = .idle
     @Published private(set) var transferPrivacy: TransferPrivacyModel?
     @Published var privacyPresented = false
+    /// docs/15 §10: the ChatGPT section's sign-in, and the connection a summary uses. Nil until the core is open.
+    @Published private(set) var chatGpt: ChatGptSettingsModel?
     /// docs/09 trend 2: where the one operation a ledger row can start — an upload now, a retry —
     /// actually is. `ProcessingButton` owns the *window* around it and this owns the truth, so a
     /// retry that took two seconds looks like two seconds and one that was refused wears no ✓.
@@ -333,6 +335,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
+            // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
+            let chatGpt = ChatGptSettingsModel(core: bridge.core)
+            self.chatGpt = chatGpt
+            Task { await chatGpt.refresh() }
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             //

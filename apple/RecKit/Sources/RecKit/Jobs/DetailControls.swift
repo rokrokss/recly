@@ -89,13 +89,14 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again · Add highlight — with the ones that cannot run now shown off, and why.
+/// again · Summarize · Add highlight — with the ones that cannot run now shown off, and why.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
     let rename: () -> Void
     let edit: () -> Void
     let transcribeAgain: () -> Void
+    let summarize: () -> Void
     let addHighlight: () -> Void
     @Environment(\.locale) private var locale
 
@@ -104,6 +105,10 @@ struct DetailMoreMenu: View {
             ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
             ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
             ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
+            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
+            if model.summaryOffered {
+                ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason, action: summarize)
+            }
             ReasonedMenuItem(
                 title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
                 reason: model.hasAudio ? nil : RecKitStrings.localized("No audio on this device"),

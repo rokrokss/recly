@@ -71,6 +71,15 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// docs/03: the recording's whole length as its meta has it — what every time on this page is
     /// shaped by (2026-10-08 §3). Nil until it is read, and for a recording still being written.
     @Published public private(set) var metaLengthSec: Double?
+    /// docs/08 "Summaries": this recording's meeting notes as the core has them — none, being written,
+    /// written, or a failure with the last one kept.
+    @Published public private(set) var summary: SummaryState = SummaryState.None.shared
+    /// docs/15 §10: the ChatGPT sign-in, for the More menu's reason and the name of a summary's model.
+    @Published public private(set) var chatGpt: ChatGptConnection = ChatGptConnection.SignedOut.shared
+    /// A Summarize this page asked for has not answered yet.
+    @Published public private(set) var summarizing = false
+    /// docs/15 "iPhone providers": the destination a summary waits on the user's permission for.
+    @Published public private(set) var summaryConsent: [TransferTarget] = []
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -138,6 +147,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         self.recordingId = recordingId
         self.title = title
         self.playbackGate = playbackGate
+        chatGpt = core.chatGpt.observe().value
     }
 
     /// Called again whenever the view is handed a different model, so it starts from `loading`
@@ -334,6 +344,10 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// `Copy all`: the text with its times, as the `.txt` has it.
     public func copyAll() {
         guard let text = document?.plainText else { return }
+        Self.copy(text)
+    }
+
+    private static func copy(_ text: String) {
         #if os(iOS)
         UIPasteboard.general.string = text
         #elseif os(macOS)
@@ -371,6 +385,106 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// yet (2026-10-08 §12 — a disabled item always says why).
     public var renameReason: String? {
         writing ? RecKitStrings.localized("Still recording") : nil
+    }
+
+    // MARK: - Summary (docs/08 "Summaries" · docs/09 "Summary view")
+
+    /// Summarize is in the More menu wherever ChatGPT is offered (docs/15 "China mainland App Store").
+    public var summaryOffered: Bool { !(chatGpt is ChatGptConnection.Unavailable) }
+
+    /// `Summarize`, or `Summarize again` once there is a summary to replace.
+    public var summarizeTitle: String {
+        RecKitStrings.localized(Self.hasSummary(summary) ? "Summarize again" : "Summarize")
+    }
+
+    /// Why `Summarize` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
+    public var summarizeReason: String? {
+        Self.summarizeReason(
+            writing: writing,
+            hasTranscript: transcript != nil && availability != .empty,
+            busy: transcriptionBusy ? busyReason : nil,
+            connection: chatGpt,
+            summary: summary,
+            summarizing: summarizing
+        )
+    }
+
+    /// The reason's rule, apart from the page. A take still being written has no transcript either, so
+    /// it says the more useful of the two first.
+    static func summarizeReason(
+        writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, summary: SummaryState, summarizing: Bool
+    ) -> String? {
+        if writing { return RecKitStrings.localized("Still recording") }
+        if !hasTranscript { return RecKitStrings.localized("No transcript yet") }
+        if let busy { return busy }
+        if connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired {
+            return CoreMessages.sentence(.chatgptSignInRequired)
+        }
+        if summarizing || summary is SummaryState.Running { return RecKitStrings.localized("Summarizing…") }
+        return nil
+    }
+
+    static func hasSummary(_ state: SummaryState) -> Bool {
+        switch onEnum(of: state) {
+        case .none: return false
+        case .ready: return true
+        case .running(let running): return running.previous != nil
+        case .failed(let failed): return failed.previous != nil
+        }
+    }
+
+    /// The Transcript | Summary chips stand while there is a summary, or one is on its way.
+    public var hasSummaryView: Bool { summarizing || !(summary is SummaryState.None) }
+
+    public func followSummary() async {
+        for await state in core.summaries.observe(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            summary = state
+        }
+    }
+
+    public func followChatGpt() async {
+        for await connection in core.chatGpt.observe() {
+            guard !Task.isCancelled else { return }
+            chatGpt = connection
+        }
+    }
+
+    /// The More menu's Summarize. The core runs it on a scope of its own, so it goes on when the page
+    /// closes; its progress comes back through [followSummary]. On the iPhone a destination the user has
+    /// not allowed yet is asked about first ([summaryConsent]).
+    public func summarize() async {
+        summarizing = true
+        defer { summarizing = false }
+        do {
+            let state = try await core.summaries.summarize(recordingId: recordingId)
+            if case .failed(let failed) = onEnum(of: state), ChatGptText.message(failed.reason) == .transferConsentRequired {
+                summaryConsent = [TransferTargets.shared.chatGptSummary()]
+            }
+        } catch {
+            logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// The answer to [summaryConsent]: allowed, exactly the destination shown is granted and the summary
+    /// starts; declined, nothing is sent.
+    public func answerSummaryConsent(allow: Bool) async {
+        let shown = summaryConsent
+        summaryConsent = []
+        guard allow, !shown.isEmpty else { return }
+        do {
+            try await core.transferConsents.grant(targets: shown)
+        } catch {
+            logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
+            return
+        }
+        await summarize()
+    }
+
+    /// The text of the summary on screen, with nothing added.
+    public func copySummary() {
+        guard case .ready(let ready) = onEnum(of: summary) else { return }
+        Self.copy(ready.summary.text)
     }
 
     /// The jobs of this recording, for the menu's reasons and the `Transcribing again…` line.
@@ -631,6 +745,10 @@ public struct RecordingDetailView: View {
     /// The speaker whose name the dialog is asking for, in reading mode.
     @State private var renamingSpeaker: String?
     @State private var speakerName = ""
+    /// docs/09 "Summary view": which of the two the page shows. It opens on the transcript.
+    @State private var showingSummary = false
+    /// The permission dialog's "I turned off …" answer (iPhone).
+    @State private var trainingOff = false
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -673,8 +791,14 @@ public struct RecordingDetailView: View {
                                 model: model,
                                 positionSec: positionSec,
                                 rename: { renaming = true },
-                                edit: { if let transcript = model.transcript { draft = TranscriptDraft(transcript) } },
+                                edit: {
+                                    if let transcript = model.transcript {
+                                        showingSummary = false
+                                        draft = TranscriptDraft(transcript)
+                                    }
+                                },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
+                                summarize: summarize,
                                 addHighlight: { Task { await model.addHighlight(atSec: positionSec) } }
                             )
                         }
@@ -734,8 +858,23 @@ public struct RecordingDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("retranscribe-refusal")
             }
+            // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
+            // never over the editor.
+            if !model.loading, draft == nil, model.hasSummaryView || showingSummary {
+                HStack(spacing: Space.s) {
+                    BlueprintChip(loc("Transcript"), selected: !showingSummary) { showingSummary = false }
+                        .accessibilityIdentifier("detail-transcript-tab")
+                    BlueprintChip(loc("Summary"), selected: showingSummary) { showingSummary = true }
+                        .accessibilityIdentifier("detail-summary-tab")
+                }
+                .padding(.horizontal, Space.m)
+                .padding(.top, Space.s)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
             if model.loading {
                 notice(loc("Loading…"))
+            } else if draft == nil, showingSummary {
+                SummaryPane(model: model, retry: summarize)
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
@@ -848,6 +987,17 @@ public struct RecordingDetailView: View {
             }
         }
         #if os(iOS)
+        // docs/15 "iPhone providers": the transcript goes to OpenAI only once the user has allowed it.
+        .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
+            BlueprintDialog(title: loc("Transfer permission needed")) {
+                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { answerSummaryConsent(allow: false) }
+                BlueprintButton(loc("Allow transfers and continue"), tone: .primary) { answerSummaryConsent(allow: true) }
+                    .disabled(TrainingOptOut.required(model.summaryConsent) && !trainingOff)
+                    .accessibilityIdentifier("summary-allow-transfer")
+            } content: {
+                TransferDisclosureList(targets: model.summaryConsent, trainingOff: $trainingOff)
+            }
+        }
         .sheet(isPresented: $sharing) { DetailShareSheet(model: model) }
         #endif
         // The identity of the *model*, not of the recording: the Mac keeps one view here and hands
@@ -861,6 +1011,7 @@ public struct RecordingDetailView: View {
             player.stop()
             renaming = false
             draft = nil
+            showingSummary = false
             await model.load()
             guard !Task.isCancelled else { return }
             player.load(model.audio)
@@ -868,6 +1019,8 @@ public struct RecordingDetailView: View {
         }
         .task(id: ObjectIdentifier(model)) { await model.followCapture() }
         .task(id: ObjectIdentifier(model)) { await model.followJobs() }
+        .task(id: ObjectIdentifier(model)) { await model.followSummary() }
+        .task(id: ObjectIdentifier(model)) { await model.followChatGpt() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         .onChange(of: model.deviceRecording) { _, active in if active { player.stop() } }
         .onChange(of: model.audio) { _, audio in player.load(audio) }
@@ -1263,6 +1416,22 @@ public struct RecordingDetailView: View {
 
     private var canSeek: Bool {
         !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching
+    }
+
+    /// docs/09 "Summary view": the More menu's Summarize, and the summary's own Retry — the page turns to
+    /// the summary while the core writes it.
+    private func summarize() {
+        showingSummary = true
+        Task { await model.summarize() }
+    }
+
+    private func answerSummaryConsent(allow: Bool) {
+        trainingOff = false
+        Task {
+            await model.answerSummaryConsent(allow: allow)
+            // Declined with nothing to show: the page goes back to what it was showing.
+            if !allow, !model.hasSummaryView { showingSummary = false }
+        }
     }
 
     /// Cancel or Done: straight back to reading when nothing changed, else the question first.

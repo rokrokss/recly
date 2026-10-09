@@ -116,6 +116,10 @@ final class MenuModel: ObservableObject {
     /// docs/09 screen principle 1·4: this install, for the popover's header. Empty until the core is open,
     /// which is the only thing that knows it.
     @Published private(set) var deviceId = ""
+    /// docs/15 §10: the ChatGPT section's sign-in, and the connection a summary uses. Nil until the core is open.
+    @Published private(set) var chatGpt: ChatGptSettingsModel?
+    /// Where the last ChatGPT sign-in was started, and so where its one-time welcome is drawn.
+    @Published var chatGptSurface: SettingsSurface = .popover
 
     /// docs/12 "Agent connection": recly-events, run for the user while its switch is on. Nil
     /// executable — a build made without Go — and the switch says so.
@@ -260,6 +264,10 @@ final class MenuModel: ObservableObject {
             // The recordings a picked folder let go are due now.
             storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
+            // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
+            let chatGpt = ChatGptSettingsModel(core: bridge.core)
+            self.chatGpt = chatGpt
+            Task { await chatGpt.refresh() }
             // docs/12 "Agent connection": recly-events runs on this Mac's own Drive connection — its
             // short-lived access token, never the refresh token (docs/recly.md §15 §9).
             agentEvents.driveConnected = { [weak self] in self?.hasGoogleCredential ?? false }

@@ -71,6 +71,9 @@ struct MenuPopover: View {
                 }
             }
         }
+        // docs/09 "ChatGPT": the welcome after a first sign-in started here, over the popover like the
+        // dialogs above.
+        .chatGptWelcome(model.chatGpt, inline: true, shown: model.chatGptSurface == .popover)
         // docs/10: the fix for a quota or a key is in the settings window, and only a view has an
         // `openWindow` to open one with.
         .onAppear {
@@ -467,6 +470,12 @@ struct SettingsPane: View {
                 ProcessingSettingsView(model: processing, settingsFile: false)
             }
 
+            // docs/15 §10: the user's ChatGPT plan, for summaries — the same block the phone's settings tab
+            // draws (RecKit).
+            if let chatGpt = model.chatGpt {
+                ChatGptSection(model: chatGpt) { model.chatGptSurface = surface }
+            }
+
             AgentConnectionSection(
                 agent: model.agentEvents, storage: model.storage, copyConfiguration: { await model.copyMCPConfiguration() }
             )
@@ -491,6 +500,10 @@ struct SettingsPane: View {
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
         }
+        // docs/09 "ChatGPT": the welcome after a first sign-in started in the Settings window is that
+        // window's sheet; one started in the popover is drawn over the popover (above).
+        .chatGptWelcome(surface == .settingsWindow ? model.chatGpt : nil, shown: model.chatGptSurface == .settingsWindow)
+        .task { await model.chatGpt?.refresh() }
         // docs/03 "Sign out vs Disconnect": the popover draws the warning over itself (above); the
         // Settings window has a window to present from, so a disconnect asked there is its sheet.
         .blueprintDialog(
