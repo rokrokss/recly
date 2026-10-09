@@ -1667,8 +1667,7 @@ Quantity sentences are written in a form whose grammar does not break with the n
 ### Windows desktop design notes
 
 - **The resource format is `.properties` + a `Str` enum.** Many of the sentences the tray app says are built outside composition —
-  `TrayIcon.displayMessage` balloons, the sign-in redirect page Ktor serves, `Recents.stateLabel`, the helper's
-  `--self-test` report. A plain table that can be read immediately from any thread is the only shape that fits. It is read directly as UTF-8
+  `TrayIcon.displayMessage` balloons, the sign-in redirect page Ktor serves, `Recents.stateLabel`. A plain table that can be read immediately from any thread is the only shape that fits. It is read directly as UTF-8
   (`Properties.load(InputStream)` is ISO-8859-1).
 - **Type-safe keys:** the `Str` enum is the key list, and a property key is the enum name lowercased with dots
   (`STATUS_WAITING` → `status.waiting`). A string that is not in the table does not compile in the first place, and `StringTableTest` cross-checks the en and ko
@@ -2345,6 +2344,9 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved path in mono under them, shown only while the storage is
    the local folder (2026-10-09, user decision; the core's `ProcessingStorage.uploadFolder()`). The stored value is still the template, and a value
    set elsewhere shows as Monthly and is left untouched until a chip is tapped. Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
+   Windows says nothing about its capture helper while it works; a helper that is missing or does not answer is one warning-tone line,
+   `Recording can’t start on this PC. Reinstall Recly.`, and what went wrong stays in the log (`shell.ready`) (2026-10-09, user decision —
+   no helper version, path or self-test in Settings).
    The outside shortcut that is always in place, `Microphone` → `Open System Settings`, is a quiet (gray) button — it is nothing to draw
    attention to. **A control whose only effect is to open a web page outside the app is a text link, not a button** (2026-10-09, user
    decision): the accent color, the size of the text it sits in (12 in a secondary line), a dotted underline in the accent color, no
