@@ -722,11 +722,14 @@ My Drive/
       …
       {base}.meta.json
       {base}.transcript.json / .txt   (when a transcribe step was added)
+      {base}.summary.json             (when the user summarized it, §8 "Summaries")
 ```
 
 - The folders are created by the app under the `drive.file` scope, so the app can find them again. Folder IDs are cached in the local DB.
 - The `{base}` folder records `title` in its `description` and `recordingId` · `workflowId` in its `appProperties`. `description` is
   **the canonical title**, which later renames update ("Recordings from other devices" — Titles, below).
+- A summary the user asked for is `{base}.summary.json`, the same JSON as the copy kept on the device, and the folder's
+  `appProperties.summaryAt` is the version it holds (`editedAt`, else `createdAt`), which the list's pull compares before reading the file (2026-10-09).
 - Upload completion is decided by comparing the Drive file's `md5Checksum` with the local md5 (sha256 is for transfer verification; md5 is the value Drive provides).
 - Part upload order: per track, starting from part 1. `meta.json` is uploaded last, so that "the meta exists → complete" can serve as a downstream trigger
   condition.
@@ -1989,16 +1992,27 @@ succeeded.
 2026-10-09 (ADR-001, revised). The detail's More menu has `Summarize` — `Summarize again` once there is a summary — and the core's
 `summaries.summarize(recordingId)` sends **the transcript's text only** (the `.txt` lines with the user's speaker names — no title, no
 time, no audio) to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
-model chosen in Settings → ChatGPT, OpenAI's first listed model by default; §15 §10). Audio never goes: the plan's API does not take
-audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text in
-the transcript's language — a summary, key points, decisions and action items, leaving out empty sections and adding nothing the
-transcript does not say — because no shell renders Markdown.
+model chosen in Settings → ChatGPT, OpenAI's first listed model by default; §15 §10). The model list leaves out `gpt-6-sol`, `gpt-5.6-sol`
+and `gpt-5.6-luna` (`ChatGptAccount.HIDDEN_MODELS`, 2026-10-09, user decision). Audio never goes: the plan's API does not take
+audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text — a summary,
+key points, decisions and action items, leaving out empty sections and adding nothing the transcript does not say — because no shell
+renders Markdown, in one language named in English with its tag (`Korean (ko)`), headings included (`SummaryLanguage`, 2026-10-09):
+the transcript's spoken language when it is one; for a mix (`ko-en`) the app's language when it is part of the mix, else the mix's first;
+for automatic detection the app's language, with its script or region (`zh-Hans`, `pt-BR`) — any of the 23 app languages (§7) and the
+transcription languages; an unknown tag falls back to English.
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
   consent before any background use; there is none.
-- **Kept on this device.** The result is `Summary` (`recordingId`, `text`, `model`, `createdAt`) as `summary.v1.json` beside the parts,
-  written whole and moved into place like `waveform.v1`. It is not uploaded, survives the 7-day audio cleanup and goes when the recording
-  is deleted. Another device does not see it; agents keep reading the transcript (principle 4).
+- **Editable, and shared through the storage** (2026-10-09, user decision). The result is `Summary` (`recordingId`, `text`, `model`,
+  `createdAt`, `editedAt`) as `summary.v1.json` beside the parts, written whole and moved into place like `waveform.v1`.
+  `summaries.edit(recordingId, text)` replaces the text — trimmed; an empty or unchanged text writes nothing — and sets `editedAt`; the
+  model stays, since it is still that model's summary, edited. On a recording stored in Drive or iCloud, each summary made or edited
+  also goes to the recording's folder as `{base}.summary.json` with the folder's `summaryAt` (§3 "Drive layout") — once the folder
+  exists, so a summary made before the upload follows it — and the account's other devices read it at the list's pull, or when the
+  recording is opened. The newer version (`editedAt`, else `createdAt`) wins, and an edit here that has not gone up yet is kept over the
+  folder's. A recording in a local folder keeps its summary on this device: the folder is written, never read back (§1c). It survives
+  the 7-day audio cleanup and goes when the recording is deleted. Agents read the transcript (principle 4); the summary file is there
+  for them too.
 - **One at a time per recording.** A second request joins the running one, and a summary keeps running when its screen closes. A
   failure keeps the previous summary (`SummaryState.Failed(reason, previous)`).
 - **Errors** are `CoreMessage`s: `CHATGPT_SIGN_IN_REQUIRED` (no sign-in, or OpenAI ended it), `CHATGPT_USAGE_LIMIT`
@@ -2331,8 +2345,13 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    (`recly/memo/{{yyyy}}-{{MM}}`) and `One folder` (`recly/memo`), with today's resolved path in mono under them, shown only while the storage is
    the local folder (2026-10-09, user decision; the core's `ProcessingStorage.uploadFolder()`). The stored value is still the template, and a value
    set elsewhere shows as Monthly and is left untouched until a chip is tapped. Android settings fields are the same Blueprint field as search and `Vocabulary` (2026-10-08).
-   The outside shortcuts that are always in place (`Microphone` → `Open System Settings`, `Privacy Policy` → `Open`) are quiet (gray)
-   buttons — they are nothing to draw attention to. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
+   The outside shortcut that is always in place, `Microphone` → `Open System Settings`, is a quiet (gray) button — it is nothing to draw
+   attention to. **A control whose only effect is to open a web page outside the app is a text link, not a button** (2026-10-09, user
+   decision): the accent color, the size of the text it sits in (12 in a secondary line), a dotted underline in the accent color, no
+   border or fill, 60 % opacity while pressed, the link role for accessibility and invisible padding up to the minimum target (`TextLink`
+   among each shell's Blueprint components). `Privacy Policy` is the link itself, the row's only content; ChatGPT's `Manage usage` is the
+   second line of the account row; the desktop `Set-up guide`s are links. Buttons stay for actions inside the app, and dialogs keep their
+   own link style. When permission is denied, the recording screen shows a separate accent-colored `Open Settings` (2026-09-29, phones).
    Their text uses the same `14sp` token as the surrounding rows, buttons and links, and they keep the minimum click target (Apple · Windows 44, Android 48) and the user's font scaling.
    - **Vocabulary** (2026-10-07, §5 "Fixed processing settings"): a `Vocabulary` row right after `Spoken language` in all four shells, edited as chips — a
      field (`Add a name or term`) where Enter/Return or `Add` adds a chip, a remove `×` on each chip (accessibility `Remove {term}`), one chip per line of a
@@ -2349,9 +2368,6 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      `On-device transcription does not separate speakers.` wherever the engine separates speakers. A missing speaker model never blocks a transcription
      — the transcript arrives without speakers — and a download starts only from the user's tap. The head count asked after stop (`People in the room`)
      is the speaker-count hint.
-   - **Keyboard shortcut** (2026-10-07): Settings → Capture has a `Keyboard shortcut` row with its combination in mono — `⌥⌘R` on the Mac, `Ctrl+Alt+R` on
-     Windows — and a switch, on by default; the combination starts and stops a recording from any app. When the system refuses it because another app
-     holds it, the row's second line says `Another app uses this shortcut.` in the warning tone.
    - **Local agents** (Mac · Windows, 2026-10-07, §15 §9): in Agent connection, the block `Local agents` → `Local MCP server` appears **only when this
      device stores recordings in iCloud or a local folder**, where the Drive-only rows cannot work: the line `Lets an agent on this computer, such as Claude
      Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer.` and the end-aligned `Set-up guide` · `Copy
@@ -2368,8 +2384,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    sends peaks of 0.1-second windows as `level {peaks[]}` events (2026-09-03). The Android recording screen has the same band under the timer —
    it reads `MediaRecorder.getMaxAmplitude()` every 0.1 seconds (2026-09-03).
    While recording, the command row of the popover and the tray has a `Highlight` text button right after Stop (2026-10-07, text only), and the line
-   under it says `Highlight · 00:12:34` for 2 seconds. The Mac also has the App Intents `Start recording` · `Stop recording` · `Add Highlight` and, like
-   Windows, the keyboard shortcut of principle 4.
+   under it says `Highlight · 00:12:34` for 2 seconds. The Mac also has the App Intents `Start recording` · `Stop recording` · `Add Highlight`.
+   There is no global keyboard shortcut (removed 2026-10-09, user decision).
 7. **Watch**: mono timer + square start/stop, **one-line status**, recordings still waiting to transfer — while the transfer pass is finding the phone and handing over files,
    the same recordings are spoken as `Sending` (2026-09-04; tiles and complications follow the same rule).
    Waiting and sending are two questions the user asks about the same recordings, and only the transfer pass knows which one applies.
@@ -2408,8 +2424,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   your ChatGPT plan` / `Summarize recordings with the plan you already have. Recly charges nothing for it.` with `Continue with ChatGPT`
   (OpenAI's wording for the action, checked 2026-10-09). While the browser is open the button shows its processing state and a line
   `Finish signing in in your browser` has a quiet `Cancel`. Signed in: the account's email / `Using your ChatGPT plan` with a quiet
-  `Sign out` (no confirmation — signing in again restores it), a `Model` picker of the plan's models (hidden when the list could not be
-  read) and a quiet `Manage usage` (ChatGPT's usage settings). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
+  `Sign out` (no confirmation — signing in again restores it) and, under that line, the text link `Manage usage` (ChatGPT's usage
+  settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
   to sign in again.` in the warning tone, with `Continue with ChatGPT`. The footnote says only the transcript text goes, never the audio, and
   that it counts toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
   ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
@@ -2421,6 +2437,15 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   and a quiet `Copy all`. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
   `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage` (primary) for the usage limit,
   `Retry` (quiet) for the rest, none when the sentence already says to sign in; the previous text stays under it.
+- **Editing** (2026-10-09). More → `Edit summary`, right after `Summarize again`, only while a summary is there (disabled `Summarizing…`
+  while one runs, absent while the transcript is being edited). It replaces the summary the way transcript editing replaces the
+  transcript: the header `Edit summary`, one multi-line plain-text field with the whole summary, `Cancel` · `Save` at the end (`Save`
+  primary, `Done` alone while nothing changed; on phones under the text, above the keyboard), `Saving…` → ✓ → back to the summary. A
+  secondary line under the field says where it goes: `Saving updates the summary in your storage, and your other devices show it.`, or
+  `Saving keeps the summary on this device.` for a local folder or a recording not uploaded yet. Leaving with changes — Back, closing,
+  the `Transcript` chip — asks `Discard your changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). An
+  edited summary's footer reads `ChatGPT · <model> · Edited`, and `Summarize again` on it first asks `Replace your edited summary?` /
+  `Summarizing again replaces the summary you edited.` (`Cancel` · `Replace`, not red — no recording is deleted).
 
 ### Accessibility
 
@@ -3097,9 +3122,7 @@ With the built-in speakers the microphone's input node runs with voice processin
 - **Quick start** (2026-10-07): App Intents `Start recording`, `Stop recording` and `Add Highlight`, with App Shortcuts phrases like the iPhone's
   (`Start recording with Recly`, `Recly start recording`, `Stop recording with Recly`, `Add a highlight with Recly`; `AppShortcuts.xcstrings`).
   They run in the app's process on the menu's own model, waiting up to 10 s for the core to open when the intent launched the app; a start still asks the
-  consent question (M8). **⌥⌘R** starts and stops a recording from any app: a Carbon `RegisterEventHotKey` with `kEventHotKeyExclusive`, so a combination
-  another app has registered is refused rather than shared. Settings → Capture → `Keyboard shortcut` shows `⌥⌘R` beside its switch (on by default,
-  `globalShortcut` in this Mac's defaults); a refusal is the warning-tone line `Another app uses this shortcut.`
+  consent question (M8).
 - **Details window** (2026-10-07): the toolbar's `Share` menu lists `Transcript` (`.txt`), `Transcript for notes` (`.md`), `Subtitles` (`.srt`),
   `Subtitles for the web` (`.vtt`) and `Audio` (`.m4a`) — each disabled with its reason when there is nothing in that format — then `Copy all` and
   `Save as…`. A format calls `exportFile` (the button shows `Preparing…` meanwhile) and opens `NSSharingServicePicker` under the button; `Save as…`
@@ -3404,7 +3427,6 @@ The development machine is macOS, so the Windows-only parts sit behind interface
 | Running apps · window titles | process table + `EnumWindows` | always empty → stood in for by `RECLY_DETECT_PROCESSES` |
 | Microphone "Let desktop apps access your microphone" | registry | always `UNKNOWN` (no guidance text appears) |
 | Meeting notifications | tray balloon | same API — shows up in the macOS Notification Center |
-| Keyboard shortcut `Ctrl+Alt+R` | `RegisterHotKey` on a thread of its own (`WindowsHotKey`, JNA) | `NoGlobalShortcut` — the settings row and its switch are there, and the keys do nothing |
 
 ### Tasks
 
@@ -3527,15 +3549,15 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | `deviceId` (a new UUID v4 per install) | Secure storage / on macOS `{dataDir}/device.id` | Carried in `deviceId` of the `meta.json` uploaded to Drive (§1). Does not leave any other way |
 | Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
 | App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
-| Summaries (`summary.v1.json`) and the chosen ChatGPT model | The recording's folder; the local database | Never uploaded. The summary arrives from OpenAI (§10) and stays on this device |
+| Summaries (`summary.v1.json`) and the chosen ChatGPT model | The recording's folder; the local database | The summary arrives from OpenAI (§10) and, with the user's edits, goes to the recording's Drive or iCloud folder as `{base}.summary.json` (§1, §1b); with a local folder it stays here. The chosen model does not leave |
 
 ### §1 Google Drive — the user's own Drive
 
 | Item | Details |
 |---|---|
 | Scope | Only `drive.file` (ADR-009). Non-sensitive. **The full `drive` scope is not requested** — the app cannot read the user's other files that it did not create |
-| What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, and, if transcription is on (local or external API), `{base}.transcript.json/.txt` |
-| Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` · the `pending` marker · `transcriptAt` (the version of the newest transcript, 2026-10-07) in `appProperties`; `reclyTranscript` (`transcribed` / `edited`) in the `appProperties` of the `.transcript.json/.txt` files (§8 "Result files") |
+| What is uploaded | Inside the recording folder `{folder template}/{base}/` (default `recly/{yyyy}/{yyyy}-{MM}/`): the part `.m4a` files, `{base}.meta.json`, and, if transcription is on (local or external API), `{base}.transcript.json/.txt`; `{base}.summary.json` when the user summarized the recording (§8 "Summaries") |
+| Metadata on the folder | The title in the folder `description`, `recordingId` · `workflowId` · the `pending` marker · `transcriptAt` (the version of the newest transcript, 2026-10-07) · `summaryAt` (the summary's, 2026-10-09) in `appProperties`; `reclyTranscript` (`transcribed` / `edited`) in the `appProperties` of the `.transcript.json/.txt` files (§8 "Result files") |
 | appDataFolder | **Not used.** Recording processing settings and secret values both exist only on the device (§5), and the only way to move them between devices is a settings export/import that the user does by hand |
 | What is received | `md5Checksum` · file metadata for upload verification. The list of the user's other files is not requested. The list's pull (§3 "Recordings from other devices") also reads `{base}.transcript.json` of the account's recordings — once for another device's recording never read here, and again when the folder's `transcriptAt` says a newer one is there; at most 10 files a pass (2026-10-07, §8 "Result files") |
 | Who sees it | The user, and people the user has shared the folder with. **Recly has no server that can access these files** — the OAuth refresh token exists only in the device's secure storage; the short-lived access tokens it yields are used only for Google API calls on the device (including, while Agent connection is on, by the recly-events copy the desktop app runs, §9) and are never sent to Recly |
@@ -3665,7 +3687,7 @@ When the recording processing settings are saved and the destination has not bee
 
 Existing jobs and jobs received from the Watch stay waiting for permission without a popup, and are resolved by going from the list to Settings → Privacy. Permission can be withdrawn on the same screen. Withdrawal does not delete data already sent or API keys. Google Drive uses its own separate Google OAuth. This permission is also separate from the participant recording consent reminder (§12 · §13).
 
-**Policy pages the user opens.** Settings and the notices above open Recly's public privacy policy (English `https://recly.dev/policy/privacy-policy`, Korean `https://recly.dev/policy/privacy-policy.ko`) and the chosen provider's privacy policy in an external browser. `PrivacyLinks` manages the URL list (recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android opens only the same two addresses of the Recly policy, via Settings → `Privacy` → `Privacy Policy` → `Open` (the Korean one when the app is in Korean, `privacyPolicyUrl`; 2026-09-29) — Android has no transfer permission, so the `Allowed destinations` row exists only on iPhone. The Mac and Windows `Set-up guide` under Agent connection opens `https://recly.dev/agent` (`/agent.ko` in Korean) the same way, and the `Set-up guide` of the `Local agents` block opens `https://recly.dev/mcp` (`/mcp.ko`). The website is visited only when the user taps a link. It is not an automatic request in the recording · job execution path.
+**Policy pages the user opens.** Settings and the notices above open Recly's public privacy policy (English `https://recly.dev/policy/privacy-policy`, Korean `https://recly.dev/policy/privacy-policy.ko`) and the chosen provider's privacy policy in an external browser. `PrivacyLinks` manages the URL list (recly.dev, AssemblyAI, NAVER Cloud, RTZR, OpenAI, Groq, Together, Mistral, ElevenLabs, Deepgram, Microsoft, Daglo, Speechmatics, Rev, Gladia). Android opens only the same two addresses of the Recly policy, via the Settings → `Privacy` link `Privacy Policy` (the Korean one when the app is in Korean, `privacyPolicyUrl`; 2026-09-29) — Android has no transfer permission, so the `Allowed destinations` row exists only on iPhone. The Mac and Windows `Set-up guide` under Agent connection opens `https://recly.dev/agent` (`/agent.ko` in Korean) the same way, and the `Set-up guide` of the `Local agents` block opens `https://recly.dev/mcp` (`/mcp.ko`). The website is visited only when the user taps a link. It is not an automatic request in the recording · job execution path.
 
 ### §4 Transfer between paired devices — watch ↔ phone
 
@@ -3780,7 +3802,8 @@ chosen by the user, as with the skills (`skills/`). `--print-config` prints the 
 The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan for summaries (§8
 "Summaries"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
 the device registers as a public client the first time (`client_id=dynamic_agent_client`, no secret, no API key, and
-`agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
+`agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart;
+recly-events never signs in to ChatGPT, so it has no entry there) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
 The watches have no part in it. Nothing passes through a Recly server; none exists.
 
 | Path | To | What is sent | What comes back |
@@ -3788,7 +3811,7 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Sign-in | `https://auth.openai.com/api/accounts/authorize` in the user's browser (the system browser on desktop; on Android a partial Custom Tab, a sheet over Recly, because Android freezes an app that is not visible about a minute after it leaves the screen and a frozen app's loopback cannot answer; `ASWebAuthenticationSession` on iPhone) | the client id, PKCE challenge, `state`, `nonce`, the scopes `openid profile email offline_access resource.invoke chatgpt.tokens.use.direct`, `resource=https://api.openai.com/v1`, the host ID, and the saved email as `login_hint` on a later sign-in | a redirect to `http://127.0.0.1:<port>/auth/callback` — a listener the app opens on the loopback interface for that one sign-in (OpenAI accepts only this form) — with the code and, the first time, the issued client id |
 | Tokens | `https://auth.openai.com/api/accounts/oauth/token` | the code and verifier, or the refresh token; the client id; `resource` | access token (1 hour), rotating refresh token (30 days), ID token (`sub`, `email`), `earliest_refresh_at` |
 | Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
-| Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`) |
+| Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
 | Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions, and **the recording's transcript text with the speakers' names** — no title, no time, never audio | the summary as a stream (`store: false`) |
 
 - Only when the user asks: signing in, and choosing `Summarize` on one recording. There is no background use (OpenAI's terms require
@@ -3798,7 +3821,8 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
   directly from the token endpoint over TLS. Requests that carry a code or token are never logged.
 - Requests count toward the user's ChatGPT plan; OpenAI's terms and the user's ChatGPT data controls govern what OpenAI does with them
   (iPhone: "iPhone providers" above). The app offers `Manage usage` (<https://chatgpt.com/settings/usage>).
-- Removing it: Settings → ChatGPT → `Sign out`, or remove Recly in ChatGPT's settings; summaries stay with their recordings (§7).
+- Removing it: Settings → ChatGPT → `Sign out`, or remove Recly in ChatGPT's settings; summaries stay with their recordings (§7), in
+  Drive or iCloud too.
 
 ---
 
@@ -3870,7 +3894,8 @@ the basis of proposal A.
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
 `xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
 `chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused`, `chatgpt.rejected`, `chatgpt.revoke.failed`) and `summary.*`
-(`summary.start`, `summary.done`, `summary.failed`). **These names are a stable
+(`summary.start`, `summary.done`, `summary.failed`, `summary.edited`; the storage's `remote.summary.pushed`, `remote.summary.push.failed`,
+`remote.summary.read`, `remote.summary.read.failed`). **These names are a stable
 contract** (§21). The only way to see what happened on a real device is **"Export logs"** in settings (a file ring buffer),
 and nothing leaves beyond that (ADR-022).
 
