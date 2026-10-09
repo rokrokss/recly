@@ -40,13 +40,17 @@ import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
 import recly.core.transcribe.providerJson
 
-/** Meeting notes ChatGPT wrote from one recording's transcript (docs/08 "Summaries"). [createdAt] is ISO UTC. */
+/**
+ * Meeting notes ChatGPT wrote from one recording's transcript (docs/08 "Summaries"). [createdAt] and [editedAt]
+ * are ISO UTC; [editedAt] is set once the user has changed the text.
+ */
 @Serializable
 data class Summary(
     val recordingId: String,
     val text: String,
     val model: String,
     val createdAt: String,
+    val editedAt: String? = null,
 )
 
 /** What the detail's summary view shows. */
@@ -73,6 +77,10 @@ class Summaries internal constructor(
     private val recordings: RecordingRepository,
     private val transcript: suspend (String) -> Transcript?,
     private val consents: TransferConsents,
+    /** A summary was made or edited here: it is to go up to the recording's folder (docs/08 "Summaries"). */
+    private val published: suspend (String) -> Unit = {},
+    /** The recording's folder copy, for a recording opened here before a pull brought it ([SummaryFile]). */
+    private val fetch: suspend (String) -> String? = { null },
 ) {
     /** The runs in progress and the failures of this process; a saved summary is read from its file. */
     private val runs = MutableStateFlow<Map<String, SummaryState>>(emptyMap())
@@ -118,7 +126,7 @@ class Summaries internal constructor(
         val previous = saved(recordingId)
         runs.update { it + (recordingId to SummaryState.Running(previous)) }
         val outcome = try {
-            SummaryState.Ready(write(recordingId, create(recordingId)))
+            SummaryState.Ready(save(create(recordingId)))
         } catch (e: CancellationException) {
             throw e
         } catch (e: ChatGptFailure) {
@@ -181,18 +189,61 @@ class Summaries internal constructor(
         return Summary(recordingId, summary, model, deps.clock.now().isoUtc())
     }
 
-    private suspend fun write(recordingId: String, summary: Summary): Summary {
-        recordings.saveSummary(recordingId, providerJson.encodeToString(Summary.serializer(), summary))
+    /**
+     * docs/08 "Summaries": the user's own words over ChatGPT's — kept here at once and carried to the
+     * recording's folder, so the other devices show the edit. Answers what the recording now has: the summary
+     * as it was when the text is unchanged or empty, the current state while a summary of it is running.
+     */
+    @Throws(Throwable::class)
+    suspend fun edit(recordingId: String, text: String): SummaryState {
+        if (startLock.withLock { started[recordingId]?.isActive == true }) return state(recordingId)
+        val current = saved(recordingId) ?: return SummaryState.None
+        val trimmed = text.trim()
+        if (trimmed.isEmpty() || trimmed == current.text) return SummaryState.Ready(current)
+        val edited = save(current.copy(text = trimmed, editedAt = deps.clock.now().isoUtc()))
+        runs.update { it - recordingId }
+        deps.logger.log(Logger.Level.INFO, "summary.edited", mapOf("recordingId" to recordingId))
+        return SummaryState.Ready(edited)
+    }
+
+    /** A pull wrote a newer summary from a folder: whoever shows one reads it again. */
+    internal fun changed() {
+        saved.value++
+    }
+
+    /** Kept here, then [published] for the folder. */
+    internal suspend fun save(summary: Summary): Summary {
+        recordings.summaryWrite {
+            recordings.saveSummary(summary.recordingId, providerJson.encodeToString(Summary.serializer(), summary))
+        }
+        saved.value++
+        published(summary.recordingId)
         return summary
     }
 
-    private suspend fun current(recordingId: String): SummaryState =
-        saved(recordingId)?.let { SummaryState.Ready(it) } ?: SummaryState.None
+    /** Recordings whose folder was already asked for a summary this run, found or not. */
+    private val fetched = mutableSetOf<String>()
 
-    private suspend fun saved(recordingId: String): Summary? = recordings.summary(recordingId)?.let {
-        runCatching { providerJson.decodeFromString(Summary.serializer(), it) }.getOrNull()
-            ?.takeIf { summary -> summary.recordingId == recordingId }
+    private suspend fun current(recordingId: String): SummaryState {
+        saved(recordingId)?.let { return SummaryState.Ready(it) }
+        // Another device's summary of a recording that no pull has brought yet: its folder is asked once.
+        if (!startLock.withLock { fetched.add(recordingId) }) return SummaryState.None
+        val json = try {
+            fetch(recordingId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        } ?: return SummaryState.None
+        val summary = SummaryFile.decode(json)?.takeIf { it.recordingId == recordingId } ?: return SummaryState.None
+        recordings.summaryWrite {
+            if (saved(recordingId) == null) recordings.saveSummary(recordingId, json)
+        }
+        return saved(recordingId)?.let { SummaryState.Ready(it) } ?: SummaryState.Ready(summary)
     }
+
+    private suspend fun saved(recordingId: String): Summary? =
+        recordings.summary(recordingId)?.let(SummaryFile::decode)?.takeIf { it.recordingId == recordingId }
 
     internal companion object {
         /**
@@ -294,4 +345,20 @@ internal object SummaryLanguage {
         "bn" to "Bengali", "ur" to "Urdu", "sw" to "Swahili", "vi" to "Vietnamese", "fa" to "Persian",
         "th" to "Thai", "id" to "Indonesian", "nl" to "Dutch", "uk" to "Ukrainian",
     )
+}
+
+/**
+ * docs/08 "Summaries", docs/03 "Drive layout": a summary in the recording's folder — `{base}.summary.json`, the
+ * same JSON as the copy kept here — and the folder's `summaryAt`, the version the folder holds: when it was last
+ * edited, or made. Drive and iCloud carry it to the user's other devices; a local folder does not.
+ */
+internal object SummaryFile {
+    const val STAMP: String = "summaryAt"
+    const val MIME: String = "application/json"
+
+    fun name(base: String): String = "$base.summary.json"
+
+    fun decode(json: String): Summary? = runCatching { providerJson.decodeFromString(Summary.serializer(), json) }.getOrNull()
+
+    fun version(summary: Summary): String = summary.editedAt ?: summary.createdAt
 }

@@ -543,8 +543,41 @@ class RecordingRepository(
         queries.kvSet(SEEN_PREFIX + recordingId, version)
     }
 
+    /** docs/08 "Summaries": the summaries made or edited here that the recording's folder has not received. */
+    suspend fun pendingSummaries(): Map<String, String> = locked {
+        queries.kvSelectPrefix(SUMMARY_PREFIX).executeAsList()
+            .associate { it.key.removePrefix(SUMMARY_PREFIX) to it.value_ }
+    }
+
+    internal suspend fun summaryPending(recordingId: String): String = locked {
+        pendingStamp().also { queries.kvSet(SUMMARY_PREFIX + recordingId, it) }
+    }
+
+    suspend fun summaryPushed(recordingId: String, stamp: String): Unit = locked {
+        queries.kvDeleteIfValue(SUMMARY_PREFIX + recordingId, stamp)
+    }
+
+    /** The folder's `summaryAt` this device took in, per recording. */
+    internal suspend fun summarySeen(): Map<String, String> = locked {
+        queries.kvSelectPrefix(SUMMARY_SEEN_PREFIX).executeAsList().associate { it.key.removePrefix(SUMMARY_SEEN_PREFIX) to it.value_ }
+    }
+
+    internal suspend fun setSummarySeen(recordingId: String, version: String): Unit = locked {
+        queries.kvSet(SUMMARY_SEEN_PREFIX + recordingId, version)
+    }
+
+    /**
+     * One writer of a recording's summary at a time — a new one, an edit, a copy read from its folder — so a
+     * copy read from the folder never lands over an edit made meanwhile (docs/08 "Summaries").
+     */
+    private val summaryWrites = Mutex()
+
+    internal suspend fun <T> summaryWrite(block: suspend () -> T): T = summaryWrites.withLock { block() }
+
     private fun forgetPending(recordingId: String) {
-        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX)) queries.kvDelete(prefix + recordingId)
+        for (prefix in listOf(TITLE_PREFIX, META_PREFIX, TRANSCRIPT_PREFIX, SEEN_PREFIX, SUMMARY_PREFIX, SUMMARY_SEEN_PREFIX)) {
+            queries.kvDelete(prefix + recordingId)
+        }
     }
 
     /** Unique per write, so a push that read an older change never clears a newer one. */
@@ -1048,5 +1081,11 @@ class RecordingRepository(
 
         /** Beside the parts: the summary of this recording, `Summary` as JSON (docs/08 "Summaries"). */
         private const val SUMMARY_FILE: String = "summary.v1.json"
+
+        /** `kv` rows: `summary/pending/{recordingId}` → a stamp; a summary the folder has not received. */
+        private const val SUMMARY_PREFIX: String = "summary/pending/"
+
+        /** `kv` rows: `summary/seen/{recordingId}` → the folder's `summaryAt` this device took in. */
+        private const val SUMMARY_SEEN_PREFIX: String = "summary/seen/"
     }
 }
