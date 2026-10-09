@@ -1388,7 +1388,7 @@ class ShellModel(
     }
 
     /**
-     * More → Summarize again, or Retry, over a summary the user edited: replacing it is asked first
+     * More → Summarize again over a summary the user edited: replacing it is asked first
      * (docs/08 "Summaries"). Any other summary is made at once.
      */
     fun askToSummarize() {

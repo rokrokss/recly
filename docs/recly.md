@@ -2009,7 +2009,8 @@ transcription languages; an unknown tag falls back to English.
   also goes to the recording's folder as `{base}.summary.json` with the folder's `summaryAt` (§3 "Drive layout") — once the folder
   exists, so a summary made before the upload follows it — and the account's other devices read it at the list's pull, or when the
   recording is opened. The newer version (`editedAt`, else `createdAt`) wins, and an edit here that has not gone up yet is kept over the
-  folder's. A recording in a local folder keeps its summary on this device: the folder is written, never read back (§1c). It survives
+  folder's. A recording in a local folder keeps its summary on this device and writes nothing for it into the folder,
+  which the app only ever writes and never reads back, so no other device could pick it up (§1c). It survives
   the 7-day audio cleanup and goes when the recording is deleted. Agents read the transcript (principle 4); the summary file is there
   for them too.
 - **One at a time per recording.** A second request joins the running one, and a summary keeps running when its screen closes. A

@@ -149,7 +149,8 @@ private fun SummaryFailureNotice(failure: SummaryFailure, model: ShellModel, str
                 { model.chatGpt?.openUsage() },
                 tone = ButtonTone.PRIMARY,
             )
-            SummaryRecovery.RETRY -> BlueprintButton(strings[Str.RECENT_RETRY], model::askToSummarize, tone = ButtonTone.QUIET)
+            // Retry repeats the run the user already asked for; only More → Summarize again asks first (docs/09).
+            SummaryRecovery.RETRY -> BlueprintButton(strings[Str.RECENT_RETRY], model::summarize, tone = ButtonTone.QUIET)
             SummaryRecovery.NONE -> Unit
         }
     }

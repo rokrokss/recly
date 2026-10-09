@@ -129,7 +129,7 @@ class ChatGptReasonsTest {
         assertFalse(summarizeAsksFirst(SummaryState.None))
         assertFalse(summarizeAsksFirst(SummaryState.Ready(summary)))
         assertTrue(summarizeAsksFirst(SummaryState.Ready(edited)))
-        // Retry after a failure replaces the summary still kept under it.
+        // Summarize again after a failure replaces the summary still kept under it (Retry does not ask).
         assertTrue(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), edited)))
         assertFalse(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
     }
