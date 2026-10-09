@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "Isang AI service ng third party. Hindi ito pinapatakbo ng Recly.",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "Ipinapadala rito ang text ng transcript ng bawat recording na ibinubuod mo. Hindi ipinapadala ang audio.",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "Maaaring gamitin ng ChatGPT ang ipinapadala mo para pahusayin ang mga model nito maliban kung naka-off ang “Improve the model for everyone” sa iyong data controls sa ChatGPT.",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "In-off ko ang “Improve the model for everyone” sa ChatGPT."
+  "I turned off “Improve the model for everyone” in ChatGPT.": "In-off ko ang “Improve the model for everyone” sa ChatGPT.",
+  "ChatGPT is connected. Close this window and return to Recly.": "Nakakonekta na ang ChatGPT. Isara ang window na ito at bumalik sa Recly.",
+  "Return to Recly": "Bumalik sa Recly"
 }

@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "Huduma ya AI ya mtu mwingine. Recly haiiendeshi.",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "Maandishi ya nakala ya kila rekodi unayofupisha hutumwa hapa. Sauti haitumwi.",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT inaweza kutumia unachotuma kuboresha miundo yake isipokuwa “Improve the model for everyone” imezimwa kwenye vidhibiti vya data vya ChatGPT.",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "Nimezima “Improve the model for everyone” kwenye ChatGPT."
+  "I turned off “Improve the model for everyone” in ChatGPT.": "Nimezima “Improve the model for everyone” kwenye ChatGPT.",
+  "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT imeunganishwa. Funga dirisha hili na urudi kwenye Recly.",
+  "Return to Recly": "Rudi kwenye Recly"
 }

@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">সেটিংসে ChatGPT-তে সাইন ইন করুন</string>
     <string name="core_chatgpt_usage_limit">ChatGPT ব্যবহারের সীমায় পৌঁছেছেন — ChatGPT সেটিংসে আপনার প্ল্যান ও Recly-র সীমা দেখুন</string>
     <string name="core_chatgpt_plan_required">এই ChatGPT অ্যাকাউন্ট অ্যাপে ব্যবহার করা যায় না</string>
+    <string name="chatgpt_page_ok">ChatGPT সংযুক্ত হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।</string>
+    <string name="chatgpt_page_return">Recly-তে ফিরে যান</string>
+    <string name="chatgpt_page_declined">সাইন-ইন বাতিল করা হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।</string>
+    <string name="chatgpt_page_done">এই সাইন-ইন আগেই সম্পন্ন হয়েছে। আপনি এই উইন্ডো বন্ধ করতে পারেন।</string>
 </resources>

@@ -56429,6 +56429,578 @@
           }
         }
       }
+    },
+    "ChatGPT is connected. Close this window and return to Recly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT is connected. Close this window and return to Recly."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT가 연결되었습니다. 이 창을 닫고 Recly로 돌아가세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPTに接続しました。このウィンドウを閉じてReclyに戻ってください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已连接ChatGPT。请关闭此窗口并返回Recly。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "已連接ChatGPT。請關閉此視窗並返回Recly。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT está conectado. Cierra esta ventana y vuelve a Recly."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT est connecté. Fermez cette fenêtre et revenez à Recly."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT ist verbunden. Dieses Fenster schließen und zu Recly zurückkehren."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ChatGPT está conectado. Feche esta janela e volte ao Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O ChatGPT está ligado. Feche esta janela e volte ao Recly."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تم الاتصال بـ ChatGPT. أغلق هذه النافذة وعُد إلى Recly."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT कनेक्ट हो गया। यह विंडो बंद करें और Recly पर लौटें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT подключён. Закройте это окно и вернитесь в Recly."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT è collegato. Chiudi questa finestra e torna a Recly."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT jest połączony. Zamknij to okno i wróć do Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT bağlandı. Bu pencereyi kapatıp Recly’ye dönün."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nakakonekta na ang ChatGPT. Isara ang window na ito at bumalik sa Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT সংযুক্ত হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT منسلک ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT imeunganishwa. Funga dirisha hili na urudi kwenye Recly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã kết nối ChatGPT. Hãy đóng cửa sổ này và quay lại Recly."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ChatGPT متصل شد. این پنجره را ببندید و به Recly برگردید."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เชื่อมต่อ ChatGPT แล้ว ปิดหน้าต่างนี้และกลับไปที่ Recly"
+          }
+        }
+      }
+    },
+    "Return to Recly": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Return to Recly"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly로 돌아가기"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reclyに戻る"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回Recly"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "返回Recly"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volver a Recly"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revenir à Recly"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zurück zu Recly"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voltar ao Recly"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voltar ao Recly"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "العودة إلى Recly"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly पर लौटें"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вернуться в Recly"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Torna a Recly"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wróć do Recly"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly’ye dön"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bumalik sa Recly"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly-তে ফিরে যান"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Recly پر واپس جائیں"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rudi kwenye Recly"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quay lại Recly"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "بازگشت به Recly"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "กลับไปที่ Recly"
+          }
+        }
+      }
+    },
+    "The sign-in was cancelled. Close this window and go back to Recly.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The sign-in was cancelled. Close this window and go back to Recly."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "로그인이 취소되었습니다. 이 창을 닫고 Recly로 돌아가세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ログインがキャンセルされました。このウィンドウを閉じてReclyに戻ってください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登录已取消。请关闭此窗口并返回Recly。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "登入已取消。請關閉此視窗並返回Recly。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se canceló el inicio de sesión. Cierra esta ventana y vuelve a Recly."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La connexion a été annulée. Fermez cette fenêtre et revenez à Recly."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Anmeldung wurde abgebrochen. Schließen Sie dieses Fenster und kehren Sie zu Recly zurück."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O login foi cancelado. Feche esta janela e volte ao Recly."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O início de sessão foi cancelado. Feche esta janela e volte ao Recly."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "أُلغي تسجيل الدخول. أغلق النافذة وعُد إلى Recly."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "साइन इन रद्द हुआ। यह विंडो बंद करके Recly पर लौटें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Вход отменён. Закройте окно и вернитесь в Recly."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accesso è stato annullato. Chiudi questa finestra e torna a Recly."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Logowanie zostało anulowane. Zamknij to okno i wróć do Recly."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oturum açma iptal edildi. Bu pencereyi kapatıp Recly'ye dönün."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kinansela ang pag-sign in. Isara ang window na ito at bumalik sa Recly."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সাইন-ইন বাতিল করা হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "سائن ان منسوخ ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuingia kumeghairiwa. Funga dirisha hili na urudi kwenye Recly."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã hủy đăng nhập. Hãy đóng cửa sổ này và quay lại Recly."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ورود لغو شد. این پنجره را ببندید و به Recly برگردید."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การลงชื่อเข้าใช้ถูกยกเลิก ปิดหน้าต่างนี้แล้วกลับไปที่ Recly"
+          }
+        }
+      }
+    },
+    "This sign-in has already been handled. You can close this window.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This sign-in has already been handled. You can close this window."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 로그인은 이미 처리되었습니다. 이 창을 닫아도 됩니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このログインは処理済みです。ウィンドウを閉じてください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此次登录已处理，您可以关闭此窗口。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此次登入已處理，您可以關閉此視窗。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este inicio de sesión ya se ha procesado. Puedes cerrar la ventana."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cette connexion a déjà été traitée. Vous pouvez fermer la fenêtre."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Anmeldung wurde bereits verarbeitet. Sie können das Fenster schließen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este login já foi processado. Você pode fechar a janela."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este início de sessão já foi processado. Pode fechar esta janela."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تمت معالجة تسجيل الدخول هذا. يمكنك إغلاق النافذة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "यह साइन इन पहले ही पूरा हुआ। विंडो बंद कर सकते हैं।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Этот вход уже обработан. Можете закрыть окно."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo accesso è già stato gestito. Puoi chiudere questa finestra."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "To logowanie zostało już obsłużone. Możesz zamknąć to okno."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu oturum açma işlemi zaten tamamlandı. Bu pencereyi kapatabilirsiniz."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naproseso na ang pag-sign in na ito. Maaari mo nang isara ang window na ito."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এই সাইন-ইন আগেই সম্পন্ন হয়েছে। আপনি এই উইন্ডো বন্ধ করতে পারেন।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "یہ سائن ان پہلے ہی مکمل ہو چکا ہے۔ آپ یہ ونڈو بند کر سکتے ہیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuingia huku tayari kumeshughulikiwa. Unaweza kufunga dirisha hili."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lần đăng nhập này đã được xử lý. Bạn có thể đóng cửa sổ này."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "این ورود قبلاً انجام شده است. می‌توانید این پنجره را ببندید."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การลงชื่อเข้าใช้นี้ได้รับการดำเนินการแล้ว คุณปิดหน้าต่างนี้ได้"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

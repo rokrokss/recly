@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">Đăng nhập ChatGPT trong Cài đặt</string>
     <string name="core_chatgpt_usage_limit">Đã đạt giới hạn sử dụng ChatGPT — hãy kiểm tra gói của bạn và giới hạn của Recly trong cài đặt ChatGPT</string>
     <string name="core_chatgpt_plan_required">Ứng dụng không thể dùng tài khoản ChatGPT này</string>
+    <string name="chatgpt_page_ok">Đã kết nối ChatGPT. Hãy đóng cửa sổ này và quay lại Recly.</string>
+    <string name="chatgpt_page_return">Quay lại Recly</string>
+    <string name="chatgpt_page_declined">Đã hủy đăng nhập. Hãy đóng cửa sổ này và quay lại Recly.</string>
+    <string name="chatgpt_page_done">Lần đăng nhập này đã được xử lý. Bạn có thể đóng cửa sổ này.</string>
 </resources>

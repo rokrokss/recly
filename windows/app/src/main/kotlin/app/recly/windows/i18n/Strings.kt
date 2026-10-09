@@ -542,6 +542,8 @@ enum class Str {
     CORE_CHATGPT_SIGN_IN_REQUIRED,
     CORE_CHATGPT_USAGE_LIMIT,
     CORE_CHATGPT_PLAN_REQUIRED,
+    CHATGPT_PAGE_OK,
+    CHATGPT_PAGE_RETURN,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

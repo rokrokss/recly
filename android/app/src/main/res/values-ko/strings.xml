@@ -439,4 +439,8 @@
     <string name="core_chatgpt_sign_in_required">설정에서 ChatGPT에 로그인하세요</string>
     <string name="core_chatgpt_usage_limit">ChatGPT 사용 한도에 도달했습니다 — ChatGPT 설정에서 요금제와 Recly 한도를 확인하세요</string>
     <string name="core_chatgpt_plan_required">이 ChatGPT 계정은 앱에서 사용할 수 없습니다</string>
+    <string name="chatgpt_page_ok">ChatGPT가 연결되었습니다. 이 창을 닫고 Recly로 돌아가세요.</string>
+    <string name="chatgpt_page_return">Recly로 돌아가기</string>
+    <string name="chatgpt_page_declined">로그인이 취소되었습니다. 이 창을 닫고 Recly로 돌아가세요.</string>
+    <string name="chatgpt_page_done">이 로그인은 이미 처리되었습니다. 이 창을 닫아도 됩니다.</string>
 </resources>

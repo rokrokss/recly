@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">請在設定中登入ChatGPT</string>
     <string name="core_chatgpt_usage_limit">已達到ChatGPT用量上限——請在ChatGPT設定中查看你的方案和Recly的限額</string>
     <string name="core_chatgpt_plan_required">此ChatGPT帳戶無法供App使用</string>
+    <string name="chatgpt_page_ok">已連接ChatGPT。請關閉此視窗並返回Recly。</string>
+    <string name="chatgpt_page_return">返回Recly</string>
+    <string name="chatgpt_page_declined">登入已取消。請關閉此視窗並返回Recly。</string>
+    <string name="chatgpt_page_done">此次登入已處理，您可以關閉此視窗。</string>
 </resources>

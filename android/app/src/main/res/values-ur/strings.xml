@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">ترتیبات میں ChatGPT میں سائن اِن کریں</string>
     <string name="core_chatgpt_usage_limit">ChatGPT کے استعمال کی حد پوری ہو گئی — ChatGPT کی ترتیبات میں اپنا پلان اور Recly کی حد دیکھیں</string>
     <string name="core_chatgpt_plan_required">یہ ChatGPT اکاؤنٹ ایپس میں استعمال نہیں ہو سکتا</string>
+    <string name="chatgpt_page_ok">ChatGPT منسلک ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔</string>
+    <string name="chatgpt_page_return">Recly پر واپس جائیں</string>
+    <string name="chatgpt_page_declined">سائن ان منسوخ ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔</string>
+    <string name="chatgpt_page_done">یہ سائن ان پہلے ہی مکمل ہو چکا ہے۔ آپ یہ ونڈو بند کر سکتے ہیں۔</string>
 </resources>

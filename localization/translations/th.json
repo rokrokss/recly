@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "บริการ AI ของบุคคลที่สาม Recly ไม่ได้เป็นผู้ให้บริการนี้",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "ข้อความถอดเสียงของการบันทึกแต่ละรายการที่คุณสรุปจะถูกส่งมาที่นี่ ไม่มีการส่งเสียง",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT อาจใช้สิ่งที่คุณส่งเพื่อปรับปรุงโมเดล เว้นแต่จะปิด “ปรับปรุงโมเดลสำหรับทุกคน” ในการควบคุมข้อมูลของ ChatGPT",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "ฉันปิด “ปรับปรุงโมเดลสำหรับทุกคน” ใน ChatGPT แล้ว"
+  "I turned off “Improve the model for everyone” in ChatGPT.": "ฉันปิด “ปรับปรุงโมเดลสำหรับทุกคน” ใน ChatGPT แล้ว",
+  "ChatGPT is connected. Close this window and return to Recly.": "เชื่อมต่อ ChatGPT แล้ว ปิดหน้าต่างนี้และกลับไปที่ Recly",
+  "Return to Recly": "กลับไปที่ Recly"
 }

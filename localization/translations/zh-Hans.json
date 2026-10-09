@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "第三方AI服务，并非由Recly运营。",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "你总结的每段录音的转写文本会发送到这里。不会发送音频。",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "除非你在ChatGPT数据控制中关闭了“为所有人改进模型”，否则ChatGPT可能会使用你发送的内容来改进模型。",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "我已在ChatGPT中关闭“为所有人改进模型”。"
+  "I turned off “Improve the model for everyone” in ChatGPT.": "我已在ChatGPT中关闭“为所有人改进模型”。",
+  "ChatGPT is connected. Close this window and return to Recly.": "已连接ChatGPT。请关闭此窗口并返回Recly。",
+  "Return to Recly": "返回Recly"
 }

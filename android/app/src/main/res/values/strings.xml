@@ -497,4 +497,8 @@
     <string name="core_chatgpt_sign_in_required">Sign in to ChatGPT in Settings</string>
     <string name="core_chatgpt_usage_limit">ChatGPT usage limit reached — check your plan and Recly’s limit in ChatGPT settings</string>
     <string name="core_chatgpt_plan_required">This ChatGPT account cannot be used by apps</string>
+    <string name="chatgpt_page_ok">ChatGPT is connected. Close this window and return to Recly.</string>
+    <string name="chatgpt_page_return">Return to Recly</string>
+    <string name="chatgpt_page_declined">The sign-in was cancelled. Close this window and go back to Recly.</string>
+    <string name="chatgpt_page_done">This sign-in has already been handled. You can close this window.</string>
 </resources>

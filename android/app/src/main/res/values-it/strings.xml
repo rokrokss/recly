@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">Accedi a ChatGPT in Impostazioni</string>
     <string name="core_chatgpt_usage_limit">Limite di utilizzo di ChatGPT raggiunto — controlla il tuo piano e il limite di Recly nelle impostazioni di ChatGPT</string>
     <string name="core_chatgpt_plan_required">Questo account ChatGPT non può essere usato dalle app</string>
+    <string name="chatgpt_page_ok">ChatGPT è collegato. Chiudi questa finestra e torna a Recly.</string>
+    <string name="chatgpt_page_return">Torna a Recly</string>
+    <string name="chatgpt_page_declined">L’accesso è stato annullato. Chiudi questa finestra e torna a Recly.</string>
+    <string name="chatgpt_page_done">Questo accesso è già stato gestito. Puoi chiudere questa finestra.</string>
 </resources>

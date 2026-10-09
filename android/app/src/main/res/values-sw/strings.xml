@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">Ingia kwenye ChatGPT katika Mipangilio</string>
     <string name="core_chatgpt_usage_limit">Kikomo cha matumizi ya ChatGPT kimefikiwa — angalia mpango wako na kikomo cha Recly kwenye mipangilio ya ChatGPT</string>
     <string name="core_chatgpt_plan_required">Akaunti hii ya ChatGPT haiwezi kutumiwa na programu</string>
+    <string name="chatgpt_page_ok">ChatGPT imeunganishwa. Funga dirisha hili na urudi kwenye Recly.</string>
+    <string name="chatgpt_page_return">Rudi kwenye Recly</string>
+    <string name="chatgpt_page_declined">Kuingia kumeghairiwa. Funga dirisha hili na urudi kwenye Recly.</string>
+    <string name="chatgpt_page_done">Kuingia huku tayari kumeshughulikiwa. Unaweza kufunga dirisha hili.</string>
 </resources>

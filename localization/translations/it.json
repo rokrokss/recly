@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "Un servizio di IA di terze parti. Recly non lo gestisce.",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "Il testo della trascrizione di ogni registrazione che riassumi viene inviato qui. L’audio non viene inviato.",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT può usare ciò che invii per migliorare i suoi modelli, a meno che “Migliora il modello per tutti” non sia disattivato nei controlli dei dati di ChatGPT.",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "Ho disattivato “Migliora il modello per tutti” in ChatGPT."
+  "I turned off “Improve the model for everyone” in ChatGPT.": "Ho disattivato “Migliora il modello per tutti” in ChatGPT.",
+  "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT è collegato. Chiudi questa finestra e torna a Recly.",
+  "Return to Recly": "Torna a Recly"
 }

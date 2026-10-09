@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "یک سرویس هوش مصنوعی شخص ثالث. Recly آن را اداره نمی‌کند.",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "متن رونوشت هر ضبطی که خلاصه می‌کنید به اینجا فرستاده می‌شود. صدا فرستاده نمی‌شود.",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "اگر «بهبود مدل برای همه» در کنترل‌های داده ChatGPT خاموش نباشد، ChatGPT ممکن است از محتوایی که می‌فرستید برای بهبود مدل‌هایش استفاده کند.",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "«بهبود مدل برای همه» را در ChatGPT خاموش کرده‌ام."
+  "I turned off “Improve the model for everyone” in ChatGPT.": "«بهبود مدل برای همه» را در ChatGPT خاموش کرده‌ام.",
+  "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT متصل شد. این پنجره را ببندید و به Recly برگردید.",
+  "Return to Recly": "بازگشت به Recly"
 }

@@ -566,5 +566,7 @@
   "A third-party AI service. Recly does not operate it.": "Dịch vụ AI của bên thứ ba. Recly không vận hành dịch vụ này.",
   "The transcript text of each recording you summarize is sent here. The audio is not sent.": "Văn bản bản ghi lời của mỗi bản ghi âm bạn tóm tắt sẽ được gửi đến đây. Âm thanh không được gửi.",
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT có thể dùng nội dung bạn gửi để cải thiện mô hình, trừ khi bạn đã tắt “Cải thiện mô hình cho mọi người” trong phần kiểm soát dữ liệu của ChatGPT.",
-  "I turned off “Improve the model for everyone” in ChatGPT.": "Tôi đã tắt “Cải thiện mô hình cho mọi người” trong ChatGPT."
+  "I turned off “Improve the model for everyone” in ChatGPT.": "Tôi đã tắt “Cải thiện mô hình cho mọi người” trong ChatGPT.",
+  "ChatGPT is connected. Close this window and return to Recly.": "Đã kết nối ChatGPT. Hãy đóng cửa sổ này và quay lại Recly.",
+  "Return to Recly": "Quay lại Recly"
 }

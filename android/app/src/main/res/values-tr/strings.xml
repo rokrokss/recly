@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">Ayarlar’dan ChatGPT’de oturum açın</string>
     <string name="core_chatgpt_usage_limit">ChatGPT kullanım sınırına ulaşıldı — planınızı ve Recly sınırını ChatGPT ayarlarından kontrol edin</string>
     <string name="core_chatgpt_plan_required">Bu ChatGPT hesabı uygulamalar tarafından kullanılamaz</string>
+    <string name="chatgpt_page_ok">ChatGPT bağlandı. Bu pencereyi kapatıp Recly’ye dönün.</string>
+    <string name="chatgpt_page_return">Recly’ye dön</string>
+    <string name="chatgpt_page_declined">Oturum açma iptal edildi. Bu pencereyi kapatıp Recly\'ye dönün.</string>
+    <string name="chatgpt_page_done">Bu oturum açma işlemi zaten tamamlandı. Bu pencereyi kapatabilirsiniz.</string>
 </resources>

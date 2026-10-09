@@ -406,4 +406,8 @@
     <string name="core_chatgpt_sign_in_required">Mag-sign in sa ChatGPT sa Mga Setting</string>
     <string name="core_chatgpt_usage_limit">Naabot na ang limitasyon sa paggamit ng ChatGPT — tingnan ang iyong plan at ang limitasyon ng Recly sa mga setting ng ChatGPT</string>
     <string name="core_chatgpt_plan_required">Hindi magagamit ng mga app ang ChatGPT account na ito</string>
+    <string name="chatgpt_page_ok">Nakakonekta na ang ChatGPT. Isara ang window na ito at bumalik sa Recly.</string>
+    <string name="chatgpt_page_return">Bumalik sa Recly</string>
+    <string name="chatgpt_page_declined">Kinansela ang pag-sign in. Isara ang window na ito at bumalik sa Recly.</string>
+    <string name="chatgpt_page_done">Naproseso na ang pag-sign in na ito. Maaari mo nang isara ang window na ito.</string>
 </resources>
