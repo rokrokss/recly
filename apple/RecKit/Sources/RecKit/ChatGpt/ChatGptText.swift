@@ -34,4 +34,10 @@ public enum ChatGptText {
     public static func modelLabel(_ id: String, connection: ChatGptConnection) -> String {
         (connection as? ChatGptConnection.SignedIn)?.models.first { $0.id == id }?.label ?? id
     }
+
+    /// The line under a summary: `ChatGPT · <model>`, and `· Edited` once the user changed it.
+    public static func summaryFooter(_ summary: Summary, connection: ChatGptConnection) -> String {
+        let made = RecKitStrings.localized("ChatGPT · %@", modelLabel(summary.model, connection: connection))
+        return summary.editedAt == nil ? made : "\(made) · \(RecKitStrings.localized("Edited"))"
+    }
 }

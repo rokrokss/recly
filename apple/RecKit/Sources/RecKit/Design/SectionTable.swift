@@ -136,14 +136,19 @@ public struct SectionRow<Trailing: View>: View {
     /// A state that needs the user, such as an ended sign-in, is said in the danger colour as well as
     /// in words (docs/09 "Every state is color + text"); nil is the quiet secondary colour.
     private let subtitleColor: Color?
+    /// A small link under the subtitle — the web page the row's account is managed on — so it takes no
+    /// row of its own (docs/09, 2026-10-09).
+    private let link: TextLink?
     private let trailing: Trailing
 
     public init(
-        title: String, subtitle: String? = nil, subtitleColor: Color? = nil, @ViewBuilder trailing: () -> Trailing
+        title: String, subtitle: String? = nil, subtitleColor: Color? = nil, link: TextLink? = nil,
+        @ViewBuilder trailing: () -> Trailing
     ) {
         self.title = title
         self.subtitle = subtitle
         self.subtitleColor = subtitleColor
+        self.link = link
         self.trailing = trailing()
     }
 
@@ -159,6 +164,7 @@ public struct SectionRow<Trailing: View>: View {
                             .font(blueprint.fonts.sans(TypeSize.small))
                             .foregroundStyle(subtitleColor ?? blueprint.palette.textMuted)
                     }
+                    if let link { link }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 trailing

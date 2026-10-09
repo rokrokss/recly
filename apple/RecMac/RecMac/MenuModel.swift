@@ -307,7 +307,6 @@ final class MenuModel: ObservableObject {
             // button starts a recording, and a button that cannot is worse than no notification —
             // so a tap that arrived before now was kept, and is served here.
             meetingRouter.connect { [weak self] action in self?.act(on: action) }
-            applyShortcut()
             // The device id identifies this install and the data directory carries the user's home
             // directory — neither belongs in a log anyone can read off the machine. Counts are what
             // the line is actually for.
@@ -652,22 +651,6 @@ final class MenuModel: ObservableObject {
 
     // MARK: - Quick start and highlights (docs/12 "Menu bar app")
 
-    /// ⌥⌘R from any app, on unless the user turned it off in Settings → Capture.
-    @Published var shortcutEnabled: Bool = Defaults.shortcut {
-        didSet {
-            Defaults.shortcut = shortcutEnabled
-            applyShortcut()
-        }
-    }
-    /// The system refused ⌥⌘R: another app holds it.
-    @Published private(set) var shortcutRefused = false
-    private lazy var shortcut = GlobalShortcut { [weak self] in self?.toggleRecording() }
-
-    private func applyShortcut() {
-        shortcutRefused = !shortcut.set(enabled: shortcutEnabled)
-        if shortcutRefused { logger.info("shell.shortcut.refused") }
-    }
-
     /// An App Intent can launch the app; it waits for the core to open — at most ten seconds — rather
     /// than be dropped by a start that refuses before [isReady].
     func whenReady() async {
@@ -676,11 +659,6 @@ final class MenuModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(100))
             waited += 1
         }
-    }
-
-    /// The shortcut's one action: a stop while something is recording or opening, a start otherwise.
-    func toggleRecording() {
-        if canStop { stop() } else if isIdle { start() }
     }
 
     /// The moment the user marked, in the running recording's own time — the popover's `Highlight`,
@@ -1452,19 +1430,12 @@ enum SettingsSurface {
 private enum Defaults {
     private static let consentReminderKey = "consentReminder"
     private static let modelPromptDismissedKey = "modelPromptDismissed"
-    private static let shortcutKey = "globalShortcut"
 
     /// docs/12 M8: on until the user turns it off — the one default here that is not `false`, so it
     /// is the absence of the key and not its value that has to be read.
     static var consentReminder: Bool {
         get { UserDefaults.standard.object(forKey: consentReminderKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: consentReminderKey) }
-    }
-
-    /// docs/12 "Menu bar app": ⌥⌘R, on until the user turns it off.
-    static var shortcut: Bool {
-        get { UserDefaults.standard.object(forKey: shortcutKey) as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: shortcutKey) }
     }
 
     /// docs/05 "Fixed processing settings": "Not now" on the first-run model card.

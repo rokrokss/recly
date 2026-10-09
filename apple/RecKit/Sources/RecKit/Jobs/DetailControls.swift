@@ -89,7 +89,7 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again · Summarize · Add highlight — with the ones that cannot run now shown off, and why.
+/// again · Summarize · Edit summary · Add highlight — with the ones that cannot run now shown off, and why.
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
@@ -97,6 +97,7 @@ struct DetailMoreMenu: View {
     let edit: () -> Void
     let transcribeAgain: () -> Void
     let summarize: () -> Void
+    let editSummary: () -> Void
     let addHighlight: () -> Void
     @Environment(\.locale) private var locale
 
@@ -108,6 +109,10 @@ struct DetailMoreMenu: View {
             // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
             if model.summaryOffered {
                 ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason, action: summarize)
+            }
+            // docs/08 "Summaries": the summary in the user's own words, once there is one. No ChatGPT is asked.
+            if model.summaryEditable {
+                ReasonedMenuItem(title: RecKitStrings.localized("Edit summary"), reason: model.editSummaryReason, action: editSummary)
             }
             ReasonedMenuItem(
                 title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
@@ -152,7 +157,8 @@ struct HighlightMenu<Label: View>: View {
 }
 
 /// docs/09 "Transcript reader": who is speaking, as a quiet badge — the name when the user gave one, else the
-/// id in mono. Told apart by the label only: no speaker has a colour (2026-10-02).
+/// id in mono. Told apart by the label only: no speaker has a colour (2026-10-02). The box is the time
+/// button's — one height, one corner — so the two stand on one line (2026-10-09).
 struct SpeakerBadge: View {
     let text: String
     let mono: Bool
@@ -163,13 +169,12 @@ struct SpeakerBadge: View {
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.small, weight: .medium))
             .foregroundStyle(blueprint.palette.textMuted)
             .lineLimit(1)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
+            .padding(.horizontal, 10)
+            .frame(minWidth: minTouch, minHeight: minTouch)
             .overlay {
                 // 2026-10-08 §12: the secondary colour, so the badge reads as one against the page.
-                RoundedRectangle(cornerRadius: Radius.badge).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
+                RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.textMuted, lineWidth: blueprint.line)
             }
-            .frame(minHeight: minTouch)
             .contentShape(Rectangle())
     }
 }

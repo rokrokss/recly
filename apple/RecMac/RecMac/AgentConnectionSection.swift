@@ -48,7 +48,7 @@ struct AgentConnectionSection: View {
                 tunnelRow
                 SectionFootnote(loc("Runs recly-events on this Mac. It tells your ChatGPT agent about each new transcript in your Drive and, when the agent asks, sends it the transcript through your own OpenAI tunnel."))
                 HStack {
-                    BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(Self.guide) }
+                    TextLink(loc("Set-up guide")) { openURL(Self.guide) }
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, Space.m)
@@ -207,8 +207,8 @@ private struct LocalMCPBlock: View {
                     .foregroundStyle(blueprint.palette.text)
                 SectionFootnote(loc("Lets an agent on this computer, such as Claude Desktop, Claude Code or Codex, read your recordings and transcripts. Nothing leaves this computer."))
                 HStack(spacing: Space.s) {
+                    TextLink(loc("Set-up guide")) { openURL(AgentConnectionSection.mcpGuide) }
                     Spacer(minLength: 0)
-                    BlueprintButton(loc("Set-up guide"), tone: .quiet) { openURL(AgentConnectionSection.mcpGuide) }
                     BlueprintButton(
                         copied ? RecKitStrings.localized("Copied") : loc("Copy configuration"),
                         leading: copied ? BlueprintChip.selectionMark : nil

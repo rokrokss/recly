@@ -59,7 +59,7 @@ struct SummaryPane: View {
 
     private func footer(_ summary: Summary) -> some View {
         HStack(spacing: Space.s) {
-            Text(verbatim: RecKitStrings.localized("ChatGPT · %@", ChatGptText.modelLabel(summary.model, connection: model.chatGpt)))
+            Text(verbatim: ChatGptText.summaryFooter(summary, connection: model.chatGpt))
                 .font(blueprint.fonts.sans(TypeSize.small))
                 .foregroundStyle(blueprint.palette.textMuted)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -104,6 +104,88 @@ struct SummaryPane: View {
         .padding(.vertical, Space.m)
         .accessibilityIdentifier("summary-failed")
     }
+
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// docs/09 "Summary view": the summary as the user rewrites it — the whole text in one field.
+struct SummaryDraft: Equatable {
+    let original: String
+    var text: String
+
+    init(_ summary: Summary) {
+        original = summary.text
+        text = summary.text
+    }
+
+    /// An empty or unchanged text is not saved (docs/08 "Summaries"), so neither is a change to keep.
+    var changed: Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trimmed.isEmpty && trimmed != original.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
+/// docs/09 "Summary view": edit mode stands in for the summary the way the transcript's editor stands in for
+/// the transcript — one plain field holding the whole text, the note on where a save goes under it, and the
+/// phone's Cancel · Save under that, above the keyboard.
+struct SummaryEditor: View {
+    @Binding var text: String
+    let changed: Bool
+    /// The recording's storage is this device's own (or none yet): the edit does not reach other devices.
+    let staysHere: Bool
+    let saving: Bool
+    let cancel: () -> Void
+    let save: () -> Void
+    @Environment(\.blueprint) private var blueprint
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: Space.s) {
+                // A text view, not a field: Return is a new line here, on the Mac too.
+                TextEditor(text: $text)
+                    .scrollContentBackground(.hidden)
+                    .font(blueprint.fonts.body)
+                    .foregroundStyle(blueprint.palette.text)
+                    // A field's 10 × 9, less the inset the text view keeps of its own on each platform.
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, Self.verticalInset)
+                    .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
+                    }
+                    .accessibilityLabel(Text(verbatim: loc("Summary")))
+                    .accessibilityIdentifier("summary-edit-text")
+                Text(verbatim: loc(staysHere
+                    ? "Saving keeps the summary on this device."
+                    : "Saving updates the summary in your storage, and your other devices show it."))
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(Space.m)
+            #if os(iOS)
+            HairLine()
+            HStack(spacing: Space.s) {
+                Spacer(minLength: 0)
+                EditorButtons(changed: changed, saving: saving, cancel: cancel, save: save)
+            }
+            .padding(.horizontal, Space.m)
+            .padding(.vertical, Space.s)
+            .background(blueprint.palette.surface)
+            #endif
+        }
+        #if os(iOS)
+        // 2026-10-08 §9: changes leave only through Cancel and its `Discard your changes?`.
+        .interactiveDismissDisabled(changed)
+        #endif
+    }
+
+    #if os(iOS)
+    private static let verticalInset: CGFloat = 1
+    #else
+    private static let verticalInset: CGFloat = 9
+    #endif
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }

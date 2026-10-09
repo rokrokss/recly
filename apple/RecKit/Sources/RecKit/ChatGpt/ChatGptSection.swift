@@ -44,16 +44,17 @@ public struct ChatGptSection: View {
     private var rows: some View {
         switch onEnum(of: model.connection) {
         case .signedIn(let signedIn):
-            SectionRow(title: signedIn.account, subtitle: loc("Using your ChatGPT plan")) {
+            // docs/09 (2026-10-09): Manage usage opens a web page, so it is a link on the account's own row.
+            SectionRow(
+                title: signedIn.account,
+                subtitle: loc("Using your ChatGPT plan"),
+                link: TextLink(loc("Manage usage"), small: true) { openURL(ChatGptSettingsModel.usage) }
+            ) {
                 BlueprintButton(loc("Sign out"), tone: .quiet) { model.signOut() }
                     .accessibilityIdentifier("chatgpt-sign-out")
             }
             if !signedIn.models.isEmpty {
                 SectionRow(title: loc("Model")) { picker(signedIn) }
-            }
-            SectionBlock {
-                BlueprintButton(loc("Manage usage"), tone: .quiet) { openURL(ChatGptSettingsModel.usage) }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         case .expired(let expired):
             SectionRow(
