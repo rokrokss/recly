@@ -92,7 +92,8 @@ internal class ChatGptHarness(requireTransferConsent: Boolean = false) {
         const val MODELS = """{"models":[
             {"slug":"gpt-a","display_name":"GPT A","visibility":"list"},
             {"slug":"gpt-internal","display_name":"Internal","visibility":"hide"},
-            {"slug":"gpt-b","display_name":"GPT B","visibility":"list"}]}"""
+            {"slug":"gpt-b","display_name":"GPT B","visibility":"list"},
+            {"slug":"gpt-5.6-luna","display_name":"Hidden by Recly","visibility":"list"}]}"""
     }
 }
 

@@ -139,13 +139,14 @@ class Summaries internal constructor(
     }
 
     private suspend fun create(recordingId: String): Summary {
-        val text = transcript(recordingId)?.let(TranscriptNormalizer::text)?.takeIf { it.isNotBlank() }
+        val transcript = transcript(recordingId)
+        val text = transcript?.let(TranscriptNormalizer::text)?.takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         deps.logger.log(Logger.Level.INFO, "summary.start", mapOf("recordingId" to recordingId, "model" to model))
         val body = buildJsonObject {
             put("model", model)
-            put("instructions", INSTRUCTIONS)
+            put("instructions", instructions(SummaryLanguage.of(transcript.language, deps.locale)))
             putJsonArray("input") {
                 addJsonObject {
                     put("role", "user")
@@ -195,11 +196,11 @@ class Summaries internal constructor(
 
     internal companion object {
         /**
-         * Plain text with "- " lists, because no shell renders Markdown (docs/09 "Summary view"), in the
-         * transcript's own language — the headings too.
+         * Plain text with "- " lists, because no shell renders Markdown (docs/09 "Summary view"), all of it in
+         * [language] — the headings too ([SummaryLanguage]).
          */
-        const val INSTRUCTIONS = """You write meeting notes from a recording's transcript.
-Write in the language most of the transcript is in, including the section headings.
+        fun instructions(language: String): String = """You write meeting notes from a recording's transcript.
+Write everything in $language, including the section headings, even where the transcript mixes in other languages.
 Use plain text. No Markdown: no #, no **, no tables. Start list items with "- ".
 Write these sections in this order, each a heading on its own line followed by its content, and leave out a section that would be empty:
 Summary: three to five sentences.
@@ -257,4 +258,40 @@ internal object ResponseStream {
         }.joinToString("")
 
     private fun httpBody(body: String) = recly.core.platform.HttpResult(200, emptyMap(), body.encodeToByteArray())
+}
+
+/**
+ * docs/08 "Summaries": the language a summary is written in, named for the model. The transcript's own
+ * language when the recording was transcribed in one; the app's language when it was not (`auto`, a mix such
+ * as `ko-en`) — so every language Recly speaks gets notes in it, headings included, instead of the model's guess.
+ */
+internal object SummaryLanguage {
+    fun of(transcript: String, appLocale: String): String {
+        val app = appLocale.lowercase().replace('_', '-').let { tag -> REGIONAL.firstOrNull { tag.startsWith(it) } ?: primary(tag) }
+        val code = when {
+            transcript.contains('-') && transcript.lowercase() !in REGIONAL -> transcript.split('-').map(::primary)
+                .let { mixed -> if (primary(app) in mixed) primary(app) else mixed.first() }
+            primary(transcript) in NAMES || transcript.lowercase() in REGIONAL -> transcript.lowercase()
+            else -> app
+        }
+        val known = code.takeIf { it in NAMES } ?: primary(code).takeIf { it in NAMES } ?: "en"
+        return "${NAMES.getValue(known)} ($known)"
+    }
+
+    private fun primary(tag: String): String = tag.lowercase().replace('_', '-').substringBefore('-')
+
+    /** Script and region pairs that name one language, not a mix. */
+    private val REGIONAL = setOf("zh-cn", "zh-tw", "zh-hans", "zh-hant", "pt-br", "pt-pt")
+
+    /** The 23 app languages (localization/languages.json) and the transcription languages (`Language`). */
+    private val NAMES = mapOf(
+        "en" to "English", "ko" to "Korean", "ja" to "Japanese", "zh" to "Chinese",
+        "zh-cn" to "Simplified Chinese", "zh-hans" to "Simplified Chinese",
+        "zh-tw" to "Traditional Chinese", "zh-hant" to "Traditional Chinese",
+        "es" to "Spanish", "fr" to "French", "de" to "German", "pt" to "Portuguese",
+        "pt-br" to "Brazilian Portuguese", "pt-pt" to "European Portuguese", "ar" to "Arabic", "hi" to "Hindi",
+        "ru" to "Russian", "it" to "Italian", "pl" to "Polish", "tr" to "Turkish", "fil" to "Filipino",
+        "bn" to "Bengali", "ur" to "Urdu", "sw" to "Swahili", "vi" to "Vietnamese", "fa" to "Persian",
+        "th" to "Thai", "id" to "Indonesian", "nl" to "Dutch", "uk" to "Ukrainian",
+    )
 }

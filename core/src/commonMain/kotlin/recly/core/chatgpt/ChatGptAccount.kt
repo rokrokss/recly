@@ -30,6 +30,7 @@ import okio.ByteString.Companion.encodeUtf8
 import okio.ByteString.Companion.toByteString
 import recly.core.db.RecDatabase
 import recly.core.message.CoreMessage
+import recly.core.model.Platform
 import recly.core.platform.CoreDeps
 import recly.core.platform.HttpBody
 import recly.core.platform.HttpPlan
@@ -159,7 +160,7 @@ class ChatGptAccount internal constructor(
             add("code_challenge_method" to "S256")
             add("ext_agent_host_id" to host)
             // The app's name goes only with a new registration; a returning one is recognised by its client id.
-            if (registration == null) add("agent_name_hint" to AGENT_NAME)
+            if (registration == null) add("agent_name_hint" to agentName())
             registration?.account?.takeIf { '@' in it }?.let { add("login_hint" to it) }
         }
         return ChatGptSignIn("$AUTH/api/accounts/authorize?" + parameters.formUrlEncode(), next.state)
@@ -293,6 +294,18 @@ class ChatGptAccount internal constructor(
         return pick(listModels())
     }
 
+    /**
+     * What ChatGPT's connected apps call this installation — one per app, so the user can tell the phone's from
+     * the desktop's (user decision 2026-10-09). Sent only with a new registration.
+     */
+    private fun agentName(): String = when (deps.device.platform) {
+        Platform.ANDROID -> "$AGENT_NAME Android"
+        Platform.IOS -> "$AGENT_NAME iPhone"
+        Platform.MACOS -> "$AGENT_NAME macOS"
+        Platform.WINDOWS -> "$AGENT_NAME Windows"
+        Platform.WEAROS, Platform.WATCHOS -> AGENT_NAME
+    }
+
     private suspend fun available(): Boolean {
         val policy = deps.transcriptionPolicy
         return !policy.enabled || policy.refresh() == OpenAiAvailability.ALLOWED
@@ -349,7 +362,7 @@ class ChatGptAccount internal constructor(
         return models.mapNotNull { item ->
             val model = item as? JsonObject ?: return@mapNotNull null
             val id = model.string("slug") ?: return@mapNotNull null
-            if (model.string("visibility") != "list") return@mapNotNull null
+            if (model.string("visibility") != "list" || id in HIDDEN_MODELS) return@mapNotNull null
             ChatGptModel(id, model.string("display_name") ?: id)
         }
     }
@@ -579,6 +592,9 @@ class ChatGptAccount internal constructor(
         const val SESSION_KEY = "session"
         const val PIECE = 2000
         const val MODEL_KEY = "chatgpt/model"
+
+        /** Listed by the plan but not offered for summaries (docs/09 "Summary view", user decision 2026-10-09). */
+        val HIDDEN_MODELS = setOf("gpt-6-sol", "gpt-5.6-sol", "gpt-5.6-luna")
 
         /** docs "Refresh errors" (checked 2026-10-09). */
         val UNUSABLE_GRANT = setOf(

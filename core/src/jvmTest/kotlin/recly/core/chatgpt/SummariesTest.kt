@@ -139,6 +139,28 @@ class SummariesTest {
     }
 
     @Test
+    fun `a summary is written in the recording's language, or the app's when it has none`() {
+        assertEquals("Korean (ko)", SummaryLanguage.of("ko", "en"))
+        assertEquals("Thai (th)", SummaryLanguage.of("th", "ko"))
+        assertEquals("Traditional Chinese (zh-tw)", SummaryLanguage.of("zh-tw", "en"))
+        assertEquals("Japanese (ja)", SummaryLanguage.of("auto", "ja"))
+        assertEquals("Arabic (ar)", SummaryLanguage.of("", "ar-EG"))
+        assertEquals("English (en)", SummaryLanguage.of("ko-en", "en-US"), "a mix the app language is part of")
+        assertEquals("Korean (ko)", SummaryLanguage.of("ko-en", "fr"))
+        assertEquals("Brazilian Portuguese (pt-br)", SummaryLanguage.of("auto", "pt-BR"))
+        assertEquals("English (en)", SummaryLanguage.of("xx", "zz"))
+    }
+
+    @Test
+    fun `the request names the language`() = runBlocking {
+        val f = fixture(transcript = TRANSCRIPT.copy(language = "ja"))
+        f.ready()
+        f.h.server.reply(stream("要約"), headers = SSE)
+        f.summaries.summarize(ID)
+        assertTrue("Write everything in Japanese (ja)" in f.h.server.requests.last().json()["instructions"]!!.jsonPrimitive.content)
+    }
+
+    @Test
     fun `the summarize destination is a valid grant`() {
         val target = TransferTargets.chatGptSummary()
         assertEquals("summarize", target.kind)

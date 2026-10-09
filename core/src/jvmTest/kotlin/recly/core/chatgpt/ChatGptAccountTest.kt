@@ -32,7 +32,7 @@ class ChatGptAccountTest {
         val query = Url(signIn.authorizationUrl).parameters
         assertEquals("https://auth.openai.com/api/accounts/authorize", signIn.authorizationUrl.substringBefore('?'))
         assertEquals("dynamic_agent_client", query["client_id"])
-        assertEquals("Recly", query["agent_name_hint"])
+        assertEquals("Recly macOS", query["agent_name_hint"], "the app's own name, so ChatGPT's list tells devices apart")
         assertEquals(ChatGptAccount.SCOPE, query["scope"])
         assertEquals("https://api.openai.com/v1", query["resource"])
         assertEquals(REDIRECT, query["redirect_uri"])

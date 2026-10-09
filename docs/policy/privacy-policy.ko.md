@@ -99,7 +99,7 @@ Together AI, Mistral AI, Daglo, Speechmatics, Rev AI, Gladia는 iPhone에서 제
 **(4) ChatGPT로 로그인하고 요약을 요청한 경우의 OpenAI — Android 폰·iPhone·Mac·Windows**
 설정 → ChatGPT에서 사용자 자신의 ChatGPT 계정으로 로그인(**ChatGPT로 계속하기**)한 뒤, 녹음에서 **요약하기**를 고를 수 있습니다. OpenAI의 Sign in with ChatGPT를 쓰며, 로그인하기 전에는 꺼져 있습니다.
 
-- **로그인**하면 OpenAI의 로그인 페이지가 브라우저에서 열립니다(iPhone은 로그인 시트, Android는 브라우저 탭). OpenAI는 그 결과를 앱이 그 로그인 한 번을 위해 사용자 기기 안(`127.0.0.1`)에 여는 수신기로 돌려보냅니다. 앱은 ChatGPT 요금제용 토큰과 계정 이메일을 받아 기기의 보안 저장소에 보관합니다(§2). 첫 로그인 때 이 설치의 무작위 ID와 함께 이 기기의 Recly가 "Recly"라는 이름으로 OpenAI에 등록되며, 개발자에게는 아무것도 가지 않습니다.
+- **로그인**하면 OpenAI의 로그인 페이지가 브라우저에서 열립니다(iPhone은 로그인 시트, Android는 브라우저 탭). OpenAI는 그 결과를 앱이 그 로그인 한 번을 위해 사용자 기기 안(`127.0.0.1`)에 여는 수신기로 돌려보냅니다. 앱은 ChatGPT 요금제용 토큰과 계정 이메일을 받아 기기의 보안 저장소에 보관합니다(§2). 첫 로그인 때 이 설치의 무작위 ID와 함께 이 기기의 Recly가 앱 이름("Recly Android", "Recly iPhone", "Recly macOS", "Recly Windows")으로 OpenAI에 등록되며, 개발자에게는 아무것도 가지 않습니다.
 - **요약**은 그 녹음 하나의 **녹취록 텍스트** — 사용자가 붙인 화자 이름 포함 — 와 고른 모델을 OpenAI(`api.openai.com`)로 보내고, 요약이 사용자 기기로 돌아옵니다. **오디오는 보내지 않습니다.** 요약하기를 고르지 않으면 아무것도 보내지 않으며, 자동·백그라운드 요약은 없습니다. 요약은 기기에서 녹음 옆에 보관하고 올리지 않습니다.
 - 요청은 사용자의 ChatGPT 요금제 사용량에 포함됩니다. OpenAI가 이를 어떻게 보관·사용하는지는 OpenAI의 약관과 개인정보 처리방침(<https://openai.com/policies/privacy-policy/>), 그리고 사용자의 ChatGPT 설정을 따릅니다 — OpenAI가 개인 요금제에 적용하는 ChatGPT 데이터 제어의 **모두를 위한 모델 개선**도 여기에 포함됩니다. 앱은 응답을 이후 대화용으로 저장하지 말라고 요청합니다(`store: false`). 설정의 **사용량 관리**는 ChatGPT 사용량 설정을 엽니다.
 - iPhone에서는 첫 요약 때 녹취록을 ChatGPT(OpenAI)로 보내도 되는지 묻고, ChatGPT에서 “모두를 위한 모델 개선”을 껐다고 확인해야 허용할 수 있습니다 — 아래 *iPhone의 외부 전사 전송 허용*을 보십시오. 중국 본토 App Store 스토어에서는 제공하지 않습니다.

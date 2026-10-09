@@ -3779,8 +3779,8 @@ chosen by the user, as with the skills (`skills/`). `--print-config` prints the 
 
 The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan for summaries (§8
 "Summaries"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
-the device registers as a public client the first time (`client_id=dynamic_agent_client`, `agent_name_hint=Recly`, no secret, no API
-key) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
+the device registers as a public client the first time (`client_id=dynamic_agent_client`, no secret, no API key, and
+`agent_name_hint` `Recly Android`, `Recly iPhone`, `Recly macOS` or `Recly Windows`, so ChatGPT's connected apps tell the devices apart) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
 The watches have no part in it. Nothing passes through a Recly server; none exists.
 
 | Path | To | What is sent | What comes back |
