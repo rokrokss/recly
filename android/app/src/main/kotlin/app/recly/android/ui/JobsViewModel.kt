@@ -34,6 +34,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import recly.core.ReclyCore
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
@@ -180,6 +182,8 @@ data class JobsUiState(
      * 2026-10-08) — the line under a row's title. A row without one is not in the map.
      */
     val previews: Map<String, String> = emptyMap(),
+    /** docs/09 "Summary view": whether the detail offers Summarize, and why it cannot. Hidden until the core says. */
+    val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -245,6 +249,8 @@ data class DetailState(
     val busyReason: Int = R.string.detail_transcribing,
     /** Its upload waits for a Drive connection, and the page offers the connection itself. */
     val waitingForDrive: Boolean = false,
+    /** docs/08 "Summaries": the recording's summary, or where the one asked for is. */
+    val summary: SummaryState = SummaryState.None,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -326,6 +332,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { preferences.playbackSpeed.collect { speed -> _state.update { it.copy(playbackSpeed = speed) } } }
         viewModelScope.launch { preferences.skipSilence.collect { skip -> _state.update { it.copy(skipSilence = skip) } } }
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
+        viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
         pullRemote()
     }
 
@@ -481,6 +488,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             if (it is recly.core.transcribe.RetranscribeResult.Started) scheduler().onJobsDue(expedited = true)
         }
     }.await()
+
+    /**
+     * docs/08 "Summaries": the More menu's Summarize, and Retry under a failed one. The run is the core's and goes
+     * on if the page closes; the page follows it through [DetailState.summary].
+     */
+    fun summarize(recordingId: String) = launch { runCatching { core().summaries.summarize(recordingId) } }
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
     fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)
@@ -646,6 +659,9 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
         updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
         resultJob = viewModelScope.launch {
+            launch {
+                core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
+            }
             launch {
                 core.recordings.observe().map { core.recordings.get(recordingId)?.meta?.highlights.orEmpty() }
                     .distinctUntilChanged()

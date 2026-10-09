@@ -67,6 +67,7 @@ import app.recly.android.ui.theme.mono
 import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.ChatGptConnection
 import recly.core.processing.ProcessingTranscription
 import recly.core.processing.TranscriptionMode
 import recly.core.recording.ExportFormat
@@ -80,14 +81,22 @@ internal class MoreActions(
     val onEdit: () -> Unit,
     val onRetranscribe: () -> Unit,
     val onAddHighlight: () -> Unit,
+    val onSummarize: () -> Unit,
 )
 
 /**
- * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Add highlight at the
- * playhead, in that order. An item that cannot run is shown disabled with its reason under it.
+ * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Add highlight
+ * at the playhead, in that order. An item that cannot run is shown disabled with its reason under it; Summarize
+ * is not there at all where ChatGPT is not offered.
  */
 @Composable
-internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscription?, playheadSec: Double, actions: MoreActions) {
+internal fun MoreButton(
+    detail: DetailState,
+    transcription: ProcessingTranscription?,
+    playheadSec: Double,
+    chatGpt: ChatGptConnection,
+    actions: MoreActions,
+) {
     var open by remember { mutableStateOf(false) }
     val transcript = detail.transcript?.takeIf { t -> t.segments.any { it.text.isNotBlank() } }
     // Disabled exactly as before while a job may still rewrite the transcript; what the reason says is
@@ -113,6 +122,12 @@ internal fun MoreButton(detail: DetailState, transcription: ProcessingTranscript
             }
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
+            if (chatGpt !is ChatGptConnection.Unavailable) {
+                val summarizeReason = summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+                MenuAction(stringResource(if (hasSummary(detail.summary)) R.string.summary_again else R.string.summary_summarize),
+                    pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason?.let { stringResource(it) },
+                    modifier = Modifier.testTag("more-summarize"))
+            }
             val noAudio = detail.audio.isEmpty
             val stamp = clock(playheadSec.toLong(), recordingScale(detail))
             MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight), enabled = !noAudio,

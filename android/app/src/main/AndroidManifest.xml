@@ -48,6 +48,15 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
 
+            <!-- docs/15 §10: "Return to Recly" on the ChatGPT sign-in page, which brings back the activity
+                 under the browser tab (ChatGptSignIn). It carries nothing; the sign-in is the loopback's. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="app.recly" android:host="chatgpt" />
+            </intent-filter>
+
             <!-- docs/11 A9: the static "start recording" shortcut. -->
             <meta-data
                 android:name="android.app.shortcuts"

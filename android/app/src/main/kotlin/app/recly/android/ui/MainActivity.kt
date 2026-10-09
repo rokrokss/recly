@@ -292,6 +292,8 @@ class MainActivity : ComponentActivity() {
         // docs/03 "Storage location": and the local folder may have been moved, deleted or had its grant
         // taken back while the app was away — the folder picker itself is one such trip.
         settingsModel.refreshStorage()
+        // docs/15 §10: and what this device holds of ChatGPT, which the detail's Summarize needs as much as Settings.
+        ChatGptSignIn.get(this).refresh()
     }
 
     private fun consumeAutoStart(intent: Intent) {
@@ -312,7 +314,8 @@ class MainActivity : ComponentActivity() {
         val uris = when (intent.action) {
             Intent.ACTION_SEND -> listOfNotNull(intent.getParcelableExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java))
             Intent.ACTION_SEND_MULTIPLE -> intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, android.net.Uri::class.java).orEmpty()
-            Intent.ACTION_VIEW -> listOfNotNull(intent.data)
+            // Only a file: the ChatGPT page's "Return to Recly" is a `VIEW` too, and only brings the app back.
+            Intent.ACTION_VIEW -> listOfNotNull(intent.data?.takeIf { it.scheme == android.content.ContentResolver.SCHEME_CONTENT })
             else -> return
         }
         intent.action = Intent.ACTION_MAIN
@@ -443,6 +446,8 @@ private fun JobsTab(
                 onRetranscribe = { model.retranscribe(detail.recordingId) },
                 onCloseFind = model::closeFind,
                 onConnectDrive = onConnectDrive,
+                chatGpt = state.chatGpt,
+                onSummarize = { model.summarize(detail.recordingId) },
             ),
         )
     } else {

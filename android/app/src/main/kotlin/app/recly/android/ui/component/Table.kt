@@ -20,6 +20,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -96,6 +98,8 @@ fun TableRow(
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    /** The muted second line by default; the warning ink for one that needs the user. */
+    subtitleColor: Color = Color.Unspecified,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
@@ -110,7 +114,7 @@ fun TableRow(
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
                 subtitle?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor.takeOrElse { palette.textMuted })
                 }
             }
             trailing?.invoke()

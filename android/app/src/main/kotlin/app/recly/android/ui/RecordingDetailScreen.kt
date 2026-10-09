@@ -85,6 +85,7 @@ import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.ChatGptConnection
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
@@ -98,7 +99,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
+import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
+import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ScreenHeader
@@ -129,6 +132,9 @@ class DetailActions(
     val onCloseFind: () -> Unit = {},
     /** The page of a recording whose upload waits for Drive offers the connection itself (UX decisions of 2026-10-08). */
     val onConnectDrive: () -> Unit = {},
+    /** docs/09 "Summary view": whether Summarize is offered, and why not; the models name the summary's. */
+    val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
+    val onSummarize: () -> Unit = {},
 )
 
 /**
@@ -279,6 +285,10 @@ fun RecordingDetailScreen(
         }, onCancel = { speakerNaming = null })
     }
     var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
+    // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens.
+    var view by remember(detail.recordingId) { mutableStateOf(DetailView.TRANSCRIPT) }
+    var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
+    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
@@ -305,11 +315,16 @@ fun RecordingDetailScreen(
                         // rename or edit one, and an action that does nothing is not one to offer. Not
                         // before the load has said which of the two this is, either.
                         if (!detail.loading && !detail.writing) {
-                            MoreButton(detail, transcription, player.positionSec, MoreActions(
+                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, MoreActions(
                                 onRename = { renaming = true },
-                                onEdit = { transcript?.let { draft = EditDraft.of(it) } },
+                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
+                                onSummarize = {
+                                    askedSummary = true
+                                    view = DetailView.SUMMARY
+                                    actions.onSummarize()
+                                },
                             ))
                         }
                     }
@@ -322,6 +337,15 @@ fun RecordingDetailScreen(
                 style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             HairLine()
         }
+        if (chips && !detail.loading) {
+            FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
+                BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT, { view = DetailView.TRANSCRIPT },
+                    modifier = Modifier.testTag("view-transcript"))
+                BlueprintChip(stringResource(R.string.summary_tab), view == DetailView.SUMMARY, { view = DetailView.SUMMARY },
+                    modifier = Modifier.testTag("view-summary"))
+            }
+            HairLine()
+        }
 
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -330,6 +354,8 @@ fun RecordingDetailScreen(
                 editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec,
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
+                chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary,
+                    (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty(), actions.onSummarize, Modifier.fillMaxSize())
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
                 transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
                     stringResource(R.string.detail_waiting_drive),
@@ -396,7 +422,7 @@ fun RecordingDetailScreen(
                     )
                 }
             }
-            if (draft == null && player.isPlaying && !following) {
+            if (draft == null && view == DetailView.TRANSCRIPT && player.isPlaying && !following) {
                 BackToPlayback({ following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = Space.s))
             }
         }
@@ -983,12 +1009,20 @@ private fun fetchingLabel(folder: Boolean): Int = if (folder) R.string.player_fe
 
 /**
  * The whole page, when there is one line to say and nothing to read — and, under it and centred, the one
- * button that carries the recording on when there is one (docs/09 screen principle 8).
+ * button that carries the recording on when there is one (docs/09 screen principle 8). [detail] is a
+ * diagnostic under the line, as it came; [button] a button of the caller's own.
  */
 @Composable
-private fun Notice(text: String, onRetry: (() -> Unit)? = null, action: Pair<String, () -> Unit>? = null) {
+internal fun Notice(
+    text: String,
+    onRetry: (() -> Unit)? = null,
+    action: Pair<String, () -> Unit>? = null,
+    detail: String? = null,
+    button: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier.fillMaxSize(),
+) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(Space.l),
+        modifier = modifier.padding(Space.l),
         verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -998,8 +1032,10 @@ private fun Notice(text: String, onRetry: (() -> Unit)? = null, action: Pair<Str
             color = blueprint.textMuted,
             textAlign = TextAlign.Center,
         )
+        detail?.let { Text(it, style = mono.small, color = blueprint.textMuted, textAlign = TextAlign.Center) }
         onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
         action?.let { (label, onClick) -> BlueprintButton(label, onClick, modifier = Modifier.testTag("detail-connect-drive")) }
+        button?.invoke()
     }
 }
 
