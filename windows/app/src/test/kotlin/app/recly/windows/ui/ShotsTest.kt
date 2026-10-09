@@ -113,6 +113,25 @@ class ShotsTest {
             shot("settings-$lang", 640, 2700, ko) { SettingsWindow(model, strings) }
         }
 
+        // docs/08 "Summaries": an edited summary with its footer, the More menu over it, and its editor.
+        File(recordingDir, "summary.v1.json").writeText(
+            Json.encodeToString(
+                recly.core.chatgpt.Summary.serializer(),
+                recly.core.chatgpt.Summary(model.detail!!.recordingId, SUMMARY, "gpt-5.4", "2026-10-09T10:00:00Z", "2026-10-09T10:05:00Z"),
+            ),
+        )
+        model.selectLanguage(AppLanguage.ENGLISH)
+        model.showSummary(true)
+        val summaryWindow: @Composable () -> Unit = { RecordingsWindow(model, model.localization.current) { it() } }
+        shot("recordings-summary-en", 1000, 680, false) { summaryWindow() }
+        shot("recordings-summary-more-en", 1000, 680, false, clicks = listOf(MORE)) { summaryWindow() }
+        shot("recordings-summary-edit-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY)) { summaryWindow() }
+        shot("recordings-summary-edit-changed-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY, SUMMARY_FIELD), typed = "!") {
+            summaryWindow()
+        }
+        File(recordingDir, "summary.v1.json").delete()
+        model.showSummary(false)
+
         // Skip silence on, in the dark; and the reader following playback, then scrolled away from it.
         model.selectLanguage(AppLanguage.ENGLISH)
         model.toggleSkipSilence(true)
@@ -285,5 +304,11 @@ class ShotsTest {
         val FIND_NEXT = Offset(900f, 210f)
         val POPUP_HIGHLIGHT = Offset(179f, 263f)
         val MCP_COPY = Offset(549f, 1806f)
+        val MORE_EDIT_SUMMARY = Offset(835f, 265f)
+        val SUMMARY_FIELD = Offset(700f, 400f)
+
+        const val SUMMARY = "Summary:\nThe team reviewed the release notes and agreed to ship on Friday.\n\n" +
+            "Key points:\n- The import button moved to the list header.\n- Highlight ticks show on the waveform.\n\n" +
+            "Action items:\n- Mina: publish the release notes by Thursday."
     }
 }

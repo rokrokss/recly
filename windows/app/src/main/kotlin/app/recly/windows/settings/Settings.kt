@@ -112,9 +112,6 @@ interface Settings {
      */
     var localFolder: String?
 
-    /** docs/14 "App": Ctrl+Alt+R starts and stops a recording, on unless the user turns it off. */
-    var globalShortcut: Boolean
-
     /** docs/09 "Screen principles": the detail player's speed and Skip silence, this PC's own and not synced. */
     var playbackSpeed: Float
 
@@ -179,10 +176,6 @@ class PreferenceSettings(
         get() = prefs.get(LOCAL_FOLDER, null)?.takeIf { it.isNotBlank() }
         set(value) = if (value.isNullOrBlank()) prefs.remove(LOCAL_FOLDER) else prefs.put(LOCAL_FOLDER, value)
 
-    override var globalShortcut: Boolean
-        get() = prefs.getBoolean(GLOBAL_SHORTCUT, true)
-        set(value) = prefs.putBoolean(GLOBAL_SHORTCUT, value)
-
     override var playbackSpeed: Float
         get() = prefs.getFloat(PLAYBACK_SPEED, 1f)
         set(value) = prefs.putFloat(PLAYBACK_SPEED, value)
@@ -202,7 +195,6 @@ class PreferenceSettings(
         const val REVOKE_DEBT = "revokeDebt"
         const val MODEL_PROMPT_DISMISSED = "modelPromptDismissed"
         const val LOCAL_FOLDER = "localFolder"
-        const val GLOBAL_SHORTCUT = "globalShortcut"
         const val PLAYBACK_SPEED = "playbackSpeed"
         const val SKIP_SILENCE = "skipSilence"
     }

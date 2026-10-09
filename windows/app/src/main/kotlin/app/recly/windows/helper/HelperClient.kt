@@ -1,8 +1,6 @@
 package app.recly.windows.helper
 
 import app.recly.windows.i18n.Str
-import app.recly.windows.i18n.UiMessage
-import app.recly.windows.i18n.message
 import java.io.BufferedWriter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -219,26 +217,6 @@ object CaptureHelper {
     }.getOrNull()
 
     /**
-     * `--self-test` (M6-L2): the helper's own report on the machine it is installed on — endpoints,
-     * the AAC encoder, ffmpeg. Exposed in the settings window because it is the first thing a
-     * support question needs and the user cannot run it from a console the MSI does not give them.
-     *
-     * The report itself is the helper's own text and is shown as it stands; only what this app has
-     * to say about a helper that did not answer is translated.
-     */
-    fun selfTest(command: List<String>, timeoutMs: Long = SELF_TEST_TIMEOUT_MS): UiMessage =
-        runCatching {
-            val process = ProcessBuilder(command + "--self-test").redirectErrorStream(true).start()
-            process.outputStream.close()
-            val text = process.inputStream.bufferedReader().use { it.readText() }
-            if (!process.waitFor(timeoutMs, java.util.concurrent.TimeUnit.MILLISECONDS)) {
-                process.destroyForcibly()
-                return Str.SELF_TEST_NO_ANSWER.message()
-            }
-            if (text.isBlank()) Str.SELF_TEST_EMPTY.message() else UiMessage.Text(text)
-        }.getOrElse { Str.SELF_TEST_FAILED.message(it.message.orEmpty()) }
-
-    /**
      * `--network-cost`: whether the internet connection is metered, asked before the speech model
      * download (about 1 GB). Anything that is not a clear answer — a helper that would not run, an
      * older one that does not know the flag, one that took too long — is [NetworkCost.UNKNOWN], and
@@ -257,7 +235,6 @@ object CaptureHelper {
 
     private const val VERSION_TIMEOUT_MS = 2_000L
 
-    private const val SELF_TEST_TIMEOUT_MS = 30_000L
 
     private val BINARY: String =
         if (System.getProperty("os.name").orEmpty().startsWith("Windows", ignoreCase = true)) {

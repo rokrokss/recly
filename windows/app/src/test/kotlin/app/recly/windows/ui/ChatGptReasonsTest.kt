@@ -15,10 +15,11 @@ import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
+import recly.core.storage.StorageKind
 
 /**
- * docs/09 "Summary view" · "Recording detail": what the More menu's Summarize says, when the Transcript | Summary
- * chips are there, and how a failed sign-in or summary is worded.
+ * docs/09 "Summary view" · "Recording detail": what the More menu's Summarize and Edit summary say, when the
+ * Transcript | Summary chips are there, and how a failed sign-in or summary is worded.
  */
 class ChatGptReasonsTest {
 
@@ -110,6 +111,43 @@ class ChatGptReasonsTest {
         assertEquals("gpt-old", summaryModelLabel("gpt-old", signedIn))
         assertEquals("gpt-x", summaryModelLabel("gpt-x", ChatGptConnection.SignedOut))
         assertEquals("ChatGPT · GPT X", base[Str.SUMMARY_MODEL, "GPT X"])
+    }
+
+    @Test
+    fun `Edit summary is offered over a summary, and waits while a new one is made`() {
+        assertEquals(SummaryEditItem(summary, null), summaryEditItem(SummaryState.Ready(summary)))
+        assertEquals(SummaryEditItem(summary, Str.SUMMARY_RUNNING), summaryEditItem(SummaryState.Running(summary)))
+        assertNull(summaryEditItem(SummaryState.Running(null)))
+        assertNull(summaryEditItem(SummaryState.None))
+        assertNull(summaryEditItem(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
+    }
+
+    @Test
+    fun `Summarize again asks first only over a summary the user edited`() {
+        val edited = summary.copy(editedAt = "2026-10-09T11:00:00Z")
+        assertFalse(summarizeAsksFirst(SummaryState.None))
+        assertFalse(summarizeAsksFirst(SummaryState.Ready(summary)))
+        assertTrue(summarizeAsksFirst(SummaryState.Ready(edited)))
+        // Retry after a failure replaces the summary still kept under it.
+        assertTrue(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), edited)))
+        assertFalse(summarizeAsksFirst(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
+    }
+
+    @Test
+    fun `an edit is text that differs once trimmed, and an emptied field is none`() {
+        assertFalse(summaryEdited("- one", "- one"))
+        assertFalse(summaryEdited("- one", "  - one\n"))
+        assertFalse(summaryEdited("- one", "   "))
+        assertTrue(summaryEdited("- one", "- one\n- two"))
+    }
+
+    @Test
+    fun `the editor's note says whether the other devices will show the edit`() {
+        assertEquals(Str.SUMMARY_EDIT_NOTE_SHARED, summaryEditNote(StorageKind.DRIVE))
+        assertEquals(Str.SUMMARY_EDIT_NOTE_SHARED, summaryEditNote(StorageKind.ICLOUD))
+        assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(StorageKind.FOLDER))
+        // Not uploaded yet: nothing has reached a folder another device reads.
+        assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(null))
     }
 
     private val base = StringTable.of(StringTable.BASE)

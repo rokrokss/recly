@@ -10,7 +10,7 @@ import java.util.Properties
  *
  * **Why `.properties` and not Compose Multiplatform resources** (docs/07, Windows row): a tray app
  * says most of what it says from outside a composition — `TrayIcon.displayMessage`, the loopback
- * sign-in page Ktor serves, `Recents.stateLabel`, the helper's self-test report — and the generated
+ * sign-in page Ktor serves, `Recents.stateLabel` — and the generated
  * CMP accessors are `@Composable` or `suspend`. A plain table is readable from any thread at any
  * time, which is the only shape that fits, and it costs no plugin and no generated code.
  */
@@ -170,10 +170,6 @@ enum class Str {
     // docs/14 "Capture": the microphone alone or the whole meeting, in the Mac's own two labels.
     /** docs/14 "Permissions": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
-    SETTINGS_HELPER_MISSING,
-    SETTINGS_HELPER_VERSION,
-    SETTINGS_HELPER_SILENT,
-    SETTINGS_SELF_TEST,
     SETTINGS_DATA,
     SETTINGS_OPEN_FOLDER,
 
@@ -215,10 +211,6 @@ enum class Str {
     SETTINGS_OPEN_SOURCE,
     SETTINGS_OPEN_SOURCE_VALUE,
 
-    SELF_TEST_RUNNING,
-    SELF_TEST_NO_ANSWER,
-    SELF_TEST_EMPTY,
-    SELF_TEST_FAILED,
     MIC_GUIDANCE,
 
     NOTIFY_MEETING_TITLE,
@@ -412,7 +404,7 @@ enum class Str {
     CORE_IMPORT_UNREADABLE,
 
     // Competitive features (2026-10-07): highlights, the detail's menus, exports, editing, search,
-    // import, playback speed, the keyboard shortcut, vocabulary, on-device speakers and the local MCP server.
+    // import, playback speed, vocabulary, on-device speakers and the local MCP server.
     HIGHLIGHT,
     HIGHLIGHT_MARKED,
     HIGHLIGHT_TICK,
@@ -472,8 +464,6 @@ enum class Str {
     PLAYER_SKIP_SILENCE,
     PLAYER_SPEED_VALUE,
     PLAYER_SPEED_VALUE_SKIP,
-    SETTINGS_SHORTCUT,
-    SETTINGS_SHORTCUT_TAKEN,
     VOCABULARY,
     VOCABULARY_PLACEHOLDER,
     VOCABULARY_ADD,

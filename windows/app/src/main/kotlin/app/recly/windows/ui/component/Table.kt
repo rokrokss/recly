@@ -86,6 +86,8 @@ fun TableRow(
      * in words (docs/09 "Every state is color + text"); null is the quiet secondary colour.
      */
     subtitleColor: Color? = null,
+    /** Under the second line, in the same column: a link that belongs to the row ([TextLink]). */
+    below: (@Composable () -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
@@ -102,6 +104,7 @@ fun TableRow(
                 subtitle?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor ?: palette.textMuted)
                 }
+                below?.invoke()
             }
             trailing?.invoke()
         }
