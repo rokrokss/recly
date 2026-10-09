@@ -4,9 +4,11 @@
 # tracked projects stay unsigned (docs/development.md "Release signing"): the team comes from
 # `Config/Local.xcconfig` (`RECLY_DEVELOPMENT_TEAM`) or `RECLY_TEAM_ID`, never from the tree.
 #
-# `-allowProvisioningUpdates` lets xcodebuild register the bundle ids, the app group and the
-# certificates itself. That needs either an Apple ID signed in to Xcode (Settings → Accounts) or an
-# App Store Connect API key passed through RECLY_ASC_KEY_PATH / RECLY_ASC_KEY_ID / RECLY_ASC_ISSUER.
+# `-allowProvisioningUpdates` lets xcodebuild register the bundle ids and the certificates itself.
+# That needs either an Apple ID signed in to Xcode (Settings → Accounts) or an App Store Connect API
+# key passed through RECLY_ASC_KEY_PATH / RECLY_ASC_KEY_ID / RECLY_ASC_ISSUER. The App IDs' App Groups
+# capability is not among what it registers: set it once in Apple Developer (docs/development.md
+# "App Group").
 #
 # Uploading is a separate, explicit step (`UPLOAD=1`) for the same reason release-mac.sh does not
 # notarize on a plain run: it sends the build to Apple under the user's account.

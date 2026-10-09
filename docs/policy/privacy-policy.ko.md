@@ -1,6 +1,6 @@
 # Recly 개인정보처리방침
 
-**시행일: 2026-10-08**
+**시행일: 2026-10-09**
 **문의: q0115643@gmail.com**
 
 정본은 [영어판](https://recly.dev/policy/privacy-policy)이며, Google OAuth 동의 화면과 앱 스토어에는 `https://recly.dev/policy/privacy-policy`를 등록한다. 한국어 공개 주소는 `https://recly.dev/policy/privacy-policy.ko`이다. 기술적 근거는 `docs/recly.md` §15(프라이버시·데이터 흐름).

@@ -163,11 +163,12 @@ settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_I
 `recly-events.exe` the MSI bundles, with the same client. See
 [`windows/README.md`](https://github.com/rokrokss/recly/blob/main/windows/README.md) for details.
 
-The display version of the current release is `0.2.0` on every platform. The build is `34` for the
-Apple apps, the embedded Watch app and the widgets, `39` for Android and `1,000,039` for Wear OS.
-The Windows MSI install version is set apart from the display version (`installerVersion`): it is
-`0.2.0`. During `0.1.x` its third field had to keep rising — it reached `0.1.32`, above the lower
-`0.1.3` — and `0.2.0` is above all of those, so it upgrades every earlier MSI.
+The display version of the current release is `0.3.0` on every platform. The build is `35` for the
+Apple apps, the embedded Watch app, the widgets and the share extension, `40` for Android and
+`1,000,040` for Wear OS. The Windows MSI install version is set apart from the display version
+(`installerVersion`): it is `0.3.0`. During `0.1.x` its third field had to keep rising — it reached
+`0.1.32`, above the lower `0.1.3` — and every `0.2.0` and later is above all of those, so it upgrades
+every earlier MSI.
 
 #### Release notes
 
@@ -252,6 +253,21 @@ the four values — each app's issued ID and its **reversed client ID**
 settings, so nothing you fill in shows up in the tracked tree. The consent screen must carry
 exactly one scope:
 `drive.file` ([recly.md §6](https://github.com/rokrokss/recly/blob/main/docs/recly.md#6-authentication-formerly-docs06)).
+
+### App Group
+
+The iPhone app, its widgets and its share extension share the App Group `group.app.recly`. Automatic
+signing registers the App IDs, but not their App Groups capability, so an archive fails with
+"Provisioning profile … doesn't match the entitlements file's value for the
+com.apple.security.application-groups entitlement" until it is set once in Apple Developer,
+Certificates, Identifiers & Profiles → Identifiers (2026-10-09):
+
+| Identifier | Set |
+|---|---|
+| `group.app.recly` (App Groups) | registered |
+| `app.recly` | App Groups → `group.app.recly` |
+| `app.recly.widgets` | App Groups → `group.app.recly` |
+| `app.recly.share` | App Groups → `group.app.recly` |
 
 ### Turning on iCloud
 
