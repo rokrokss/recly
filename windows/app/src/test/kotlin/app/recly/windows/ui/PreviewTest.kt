@@ -188,12 +188,6 @@ class PreviewTest {
                 field = value
             }
 
-        override var globalShortcut: Boolean = true
-            set(value) {
-                writes += "globalShortcut"
-                field = value
-            }
-
         override var playbackSpeed: Float = 1f
             set(value) {
                 writes += "playbackSpeed"

@@ -54,6 +54,7 @@ import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.Summary
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
@@ -179,7 +180,7 @@ private val EXPORTS = listOf(
 
 /**
  * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight ·
- * Summarize. What cannot run now stays in its place, disabled, with the reason under it.
+ * Summarize · Edit summary. What cannot run now stays in its place, disabled, with the reason under it.
  */
 @Composable
 internal fun MoreButton(
@@ -187,6 +188,7 @@ internal fun MoreButton(
     detail: RecordingDetail,
     positionSec: Double,
     onEdit: () -> Unit,
+    onEditSummary: (Summary) -> Unit,
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
@@ -244,10 +246,18 @@ internal fun MoreButton(
                 val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection, detail.summary)
                 MenuRow(
                     strings[summarizeLabel(detail.summary)],
-                    { open = false; model.summarize() },
+                    { open = false; model.askToSummarize() },
                     enabled = summaryBlocked == null,
                     secondary = summaryBlocked?.let { strings[it] },
                 )
+                summaryEditItem(detail.summary)?.let { item ->
+                    MenuRow(
+                        strings[Str.SUMMARY_EDIT],
+                        { open = false; onEditSummary(item.summary) },
+                        enabled = item.blocked == null,
+                        secondary = item.blocked?.let { strings[it] },
+                    )
+                }
             }
         } }
     }
@@ -280,24 +290,24 @@ internal fun HighlightMark(modifier: Modifier = Modifier) {
 internal val HIGHLIGHT_MARK = 6.dp
 
 /**
- * docs/08 "Editing": who says a group — the name the user gave, or the id in monospace — as a quiet badge
+ * docs/08 "Editing": who says a group — the name the user gave, or the id in monospace — as a quiet control
  * that opens the speaker menu. Speakers are told apart by this label alone.
  */
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
-    // The badge is about 20 tall; what takes the click is the 44 around it (2026-10-08), the badge at its start.
+    // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 12 type, so
+    // the two share one height, one centre and one baseline.
     Box(
         Modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.CenterStart,
+            .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.s, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             name ?: id,
-            modifier = Modifier
-                .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
             style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
             color = palette.textMuted,
             maxLines = 1,
@@ -357,13 +367,17 @@ internal fun SpeakerNameDialog(
     }
 }
 
-/** docs/08 "Editing": leaving the editor with changes in it. Discard is not red: no recording goes. */
+/**
+ * docs/08 "Editing" · "Summaries": leaving an editor with changes in it — [body] says whose. Discard is not red: no
+ * recording goes.
+ */
 @Composable
 internal fun DiscardEditsDialog(
     strings: Strings,
     theme: @Composable (@Composable () -> Unit) -> Unit,
     onKeep: () -> Unit,
     onDiscard: () -> Unit,
+    body: Str = Str.EDIT_DISCARD_BODY,
 ) {
     BlueprintDialog(
         title = strings[Str.EDIT_DISCARD_TITLE],
@@ -375,7 +389,29 @@ internal fun DiscardEditsDialog(
             BlueprintButton(strings[Str.EDIT_DISCARD], onDiscard, tone = ButtonTone.ACCENT)
         },
     ) {
-        BlueprintDialogText(strings[Str.EDIT_DISCARD_BODY])
+        BlueprintDialogText(strings[body])
+    }
+}
+
+/** docs/08 "Summaries": Summarize again over a summary the user edited. Replace is not red: no recording goes. */
+@Composable
+internal fun SummaryReplaceDialog(
+    strings: Strings,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onCancel: () -> Unit,
+    onReplace: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.SUMMARY_REPLACE_TITLE],
+        onDismissRequest = onCancel,
+        theme = theme,
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.SUMMARY_REPLACE], onReplace, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        BlueprintDialogText(strings[Str.SUMMARY_REPLACE_BODY])
     }
 }
 
@@ -430,7 +466,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Text(label, style = mono.small, color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
+            // The buttons' 14 beside it, in monospace: one baseline along the bar (2026-10-09).
+            Text(label, style = mono.bodySmall, color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
             if (skipSilence) {
                 Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(1.dp)))
             }

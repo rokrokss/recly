@@ -43,7 +43,6 @@ import app.recly.windows.record.StopResult
 import app.recly.windows.record.WindowsRecorder
 import app.recly.windows.record.completeRecording
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.settings.GlobalShortcut
 import app.recly.windows.settings.LaunchAtLogin
 import app.recly.windows.settings.LaunchAtLogins
 import app.recly.windows.settings.RecordingMode
@@ -101,6 +100,13 @@ import recly.core.transcribe.Transcript
  */
 enum class Transition { STARTING, STOPPING }
 
+/**
+ * docs/14 deliverable 5: recording cannot start because the capture helper is missing or does not answer — said
+ * once the shell has looked, and only on Windows: the development host runs without one on purpose.
+ */
+internal fun helperUnavailable(windows: Boolean, ready: Boolean, missing: Boolean, version: String?): Boolean =
+    windows && ready && (missing || version == null)
+
 /** What the detail window shows for one recording (docs/08 "Result files"). */
 data class RecordingDetail(
     val recordingId: String,
@@ -119,6 +125,8 @@ data class RecordingDetail(
     val fetchProgress: Float = 0f,
     /** docs/03 "Storage location": the trip is to the local folder this PC picked, not to Drive. */
     val folder: Boolean = false,
+    /** Where the recording's folder is, and null while it is not uploaded: whether an edit reaches the other devices. */
+    val storage: StorageKind? = null,
     /** docs/03 "Metadata": the moments the user marked, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
     /** The recording's whole length as its meta records it, which picks how its times are drawn (2026-10-08). */
@@ -324,15 +332,6 @@ class ShellModel(
     var launchAtLogin: Boolean by mutableStateOf(false)
         private set
 
-    /** docs/14 "App": Ctrl+Alt+R from anywhere, and whether Windows gave it to this app. */
-    var shortcutOn: Boolean by mutableStateOf(settings.globalShortcut)
-        private set
-
-    var shortcutRefused: Boolean by mutableStateOf(false)
-        private set
-
-    private var shortcut: GlobalShortcut? = null
-
     /** docs/14 "Agent connection": recly-events, run while its switch is on. Null until [load]. */
     var agentEvents: AgentEvents? by mutableStateOf(null)
         private set
@@ -351,6 +350,10 @@ class ShellModel(
 
     /** docs/10 "Re-transcription": the confirmation, while it is up. */
     var retranscribeRequest: RetranscribeRequest? by mutableStateOf(null)
+        private set
+
+    /** Summarize again was chosen over an edited summary, and the detail asks before replacing it. */
+    var summaryReplaceAsked: Boolean by mutableStateOf(false)
         private set
 
     /** docs/09 "Screen principles": the detail player's speed and Skip silence, this PC's own. */
@@ -463,16 +466,16 @@ class ShellModel(
     var micAccess: MicAccess by mutableStateOf(MicAccess.UNKNOWN)
         private set
 
-    /** deliverable 3: what the bundled helper says it is, or null when it would not run. */
+    /** deliverable 3: what the bundled helper says it is, or null when it would not run. Said in `shell.ready`. */
     var helperVersion: String? by mutableStateOf(null)
         private set
 
+    /** Settings' one line about the capture helper: there is none, or it does not answer ([helperUnavailable]). */
+    val helperUnavailable: Boolean
+        get() = helperUnavailable(Host.isWindows, ready, helperMissing, helperVersion)
+
     /** The helper died under a running recording; the recording was finalized and a restart offered. */
     var helperCrashed: Boolean by mutableStateOf(false)
-        private set
-
-    /** The last `--self-test` report, shown in the settings window. */
-    var selfTest: UiMessage? by mutableStateOf(null)
         private set
 
     /**
@@ -642,7 +645,6 @@ class ShellModel(
         balloon = TrayAlertBalloon(logger, localization::current)
         launcher = LaunchAtLogins.create(logger)
         launchAtLogin = launcher.isEnabled()
-        shortcut = GlobalShortcut.create(logger)
         consentReminder = settings.consentReminder
         micAccess = MicrophoneAccess.create(logger).state()
         // docs/14 "Agent connection": off unless the user turned it on; a build without recly-events
@@ -798,7 +800,6 @@ class ShellModel(
         // Started last: the offer's whole point is the recording behind it, and an offer made
         // before the shell is ready is one that cannot be taken.
         detector?.start()
-        applyShortcut()
 
         ready = true
         status = when {
@@ -985,7 +986,6 @@ class ShellModel(
     /** Quit: a recording in flight is finalized and queued first — the crash path is not the exit. */
     suspend fun shutdown() {
         askTitle = false
-        shortcut?.unregister()
         agentEvents?.shutdown()
         detector?.stop()
         // A quit with the dialog still open is a skip: that recording is already finalized and
@@ -1202,7 +1202,7 @@ class ShellModel(
             updateDetail(recordingId) {
                 it.copy(audio = local, writing = record?.meta?.status == RecordingStatus.RECORDING,
                     driveFetch = DriveFetch.DECIDING, folder = record?.storage == StorageKind.FOLDER,
-                    lengthSec = record?.meta?.durationSec)
+                    storage = record?.storage, lengthSec = record?.meta?.durationSec)
             }
             fetchFromDrive(graph, recordingId, record, local)
         }
@@ -1385,6 +1385,32 @@ class ShellModel(
                 updateDetail(recordingId) { if (it.summary == SummaryState.None) it.copy(showingSummary = false) else it }
             }
         }
+    }
+
+    /**
+     * More → Summarize again, or Retry, over a summary the user edited: replacing it is asked first
+     * (docs/08 "Summaries"). Any other summary is made at once.
+     */
+    fun askToSummarize() {
+        val detail = detail ?: return
+        if (summarizeAsksFirst(detail.summary)) summaryReplaceAsked = true else summarize()
+    }
+
+    fun answerSummaryReplace(replace: Boolean) {
+        summaryReplaceAsked = false
+        if (replace) summarize()
+    }
+
+    /**
+     * docs/08 "Summaries": the user's text for the recording's summary, kept here and carried to its folder by the
+     * core. What the recording has after it — the edited summary, or the run that is in the way — or null when it
+     * could not be saved.
+     */
+    suspend fun editSummary(recordingId: String, text: String): SummaryState? {
+        val graph = graph ?: return null
+        return runCatching { graph.core.summaries.edit(recordingId, text) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.summary.edit.failed", error = it) }
+            .getOrNull()
     }
 
     /** The Transcript | Summary chips. */
@@ -1999,31 +2025,6 @@ class ShellModel(
         launchAtLogin = launcher.set(enabled)
     }
 
-    fun toggleShortcut(enabled: Boolean) {
-        settings.globalShortcut = enabled
-        shortcutOn = enabled
-        applyShortcut()
-    }
-
-    /** On, it is (re)registered and may be refused; off, it is let go. The press is the tray's Start or Stop. */
-    private fun applyShortcut() {
-        val shortcut = shortcut ?: return
-        if (!shortcutOn) {
-            shortcut.unregister()
-            shortcutRefused = false
-            return
-        }
-        shortcutRefused = !shortcut.register {
-            scope.launch(Dispatchers.Main) {
-                when {
-                    transition != null -> Unit
-                    recording -> stop()
-                    ready && !helperMissing -> start()
-                }
-            }
-        }
-    }
-
     fun toggleConsentReminder(enabled: Boolean) {
         settings.consentReminder = enabled
         consentReminder = enabled
@@ -2112,14 +2113,6 @@ class ShellModel(
             }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.storage.failed", error = it) }
         localFolderAvailable = graph.core.deps.localFolder?.available() == true
-    }
-
-    /** deliverable 3: the helper's own report, from the settings window, on the machine it runs on. */
-    fun runSelfTest() {
-        val command = helperCommand ?: return
-        val io = graph?.core?.deps?.io ?: return
-        selfTest = Str.SELF_TEST_RUNNING.message()
-        scope.launch { selfTest = withContext(io) { CaptureHelper.selfTest(command) } }
     }
 
     fun openDataDir() {

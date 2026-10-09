@@ -99,5 +99,5 @@ docs/20 "Windows pending items" says as much.
      accumulate — in that case leave a screenshot of the warning screen and record it in docs/20 as
      "signed · awaiting reputation". It is an item time resolves, not a code problem.
 5. After installing, check on real hardware (the items on hold along with it): the tray icon, the
-   capture helper version row in Settings and "Run the self-test", the `HKCU\…\Run` launch-at-login
+   absence of the capture helper warning in Settings, the `HKCU\…\Run` launch-at-login
    toggle, Credential Manager sign-in, the detection notification when joining Teams.

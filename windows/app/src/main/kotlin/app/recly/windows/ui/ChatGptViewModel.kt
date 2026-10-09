@@ -25,10 +25,12 @@ import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptAccount
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptResult
+import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.platform.Logger
+import recly.core.storage.StorageKind
 
 /** What the ChatGPT section says under its rows, besides the account itself (docs/09 "Summary view"). */
 sealed interface ChatGptNotice {
@@ -273,6 +275,39 @@ internal fun summarizeLabel(summary: SummaryState): Str = when (summary) {
     is SummaryState.Failed -> if (summary.previous != null) Str.SUMMARY_AGAIN else Str.SUMMARY_SUMMARIZE
     SummaryState.None -> Str.SUMMARY_SUMMARIZE
 }
+
+/** The summary Summarize again would replace: the one on show, or the one still kept under a run or a failure. */
+private fun SummaryState.saved(): Summary? = when (this) {
+    is SummaryState.Ready -> summary
+    is SummaryState.Running -> previous
+    is SummaryState.Failed -> previous
+    SummaryState.None -> null
+}
+
+/** Summarize again over a summary the user edited asks before replacing it (docs/08 "Summaries"). */
+internal fun summarizeAsksFirst(summary: SummaryState): Boolean = summary.saved()?.editedAt != null
+
+/**
+ * More → Edit summary: offered once the recording has a summary, and disabled with `Summarizing…` while a new
+ * one is being made over it. Null when there is nothing to offer.
+ */
+internal data class SummaryEditItem(val summary: Summary, val blocked: Str?)
+
+internal fun summaryEditItem(summary: SummaryState): SummaryEditItem? = when (summary) {
+    is SummaryState.Ready -> SummaryEditItem(summary.summary, null)
+    is SummaryState.Running -> summary.previous?.let { SummaryEditItem(it, Str.SUMMARY_RUNNING) }
+    else -> null
+}
+
+/**
+ * What saving the edit changes: the text, trimmed as the core keeps it. An emptied field is not an edit — the core
+ * keeps the summary as it was — so it neither offers Save nor asks before it is left.
+ */
+internal fun summaryEdited(original: String, text: String): Boolean = text.trim().let { it.isNotEmpty() && it != original.trim() }
+
+/** The editor's note: Drive and iCloud carry the summary to the other devices; a local folder, or no folder yet, does not. */
+internal fun summaryEditNote(storage: StorageKind?): Str =
+    if (storage == StorageKind.DRIVE || storage == StorageKind.ICLOUD) Str.SUMMARY_EDIT_NOTE_SHARED else Str.SUMMARY_EDIT_NOTE_LOCAL
 
 /**
  * Why More → Summarize cannot run now, or null when it can. One reason, in this order: a take still being

@@ -23,13 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
-import app.recly.windows.settings.GlobalShortcut
-import app.recly.windows.ui.component.SwitchTrack
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.Dp
@@ -40,14 +36,13 @@ import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
-import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.ui.component.BlueprintDialogLink
+import app.recly.windows.ui.component.TextLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintTextField
@@ -73,7 +68,7 @@ import recly.core.storage.StorageKind
 /**
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
- * the system's alone, and there is no accessibility section), capture and its self-test, startup, the
+ * the system's alone, and there is no accessibility section), capture, startup, the
  * agent connection, and the honest block of what this build actually is.
  */
 @Composable
@@ -167,7 +162,7 @@ private fun Account(model: ShellModel, strings: Strings) {
     }
     if (model.revokeDebt && !model.disconnecting) {
         SectionFootnote(strings[Str.DISCONNECT_STILL_LISTED])
-        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
+        TextLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
             modifier = Modifier.padding(horizontal = Space.m))
         Row(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.End) {
             BlueprintButton(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled, tone = ButtonTone.QUIET)
@@ -212,9 +207,9 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/14 "Detection" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. And
- * the two facts a support question always starts with: whether there is a capture helper, and what
- * it says about the machine it is on.
+ * docs/14 "Detection" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. A
+ * capture helper that works says nothing here; one that is missing or silent on Windows is one line that
+ * says what to do, and the rest of what is known about it is in the log (`shell.ready`).
  */
 @Composable
 private fun Capture(model: ShellModel, strings: Strings) {
@@ -226,7 +221,6 @@ private fun Capture(model: ShellModel, strings: Strings) {
         checked = model.consentReminder,
         onCheckedChange = model::toggleConsentReminder,
     )
-    Shortcut(model, strings)
     // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while this is off — and
     // a row that only says where the switch is leaves the user to find it. Its own row rather than a
     // line under the reminder, because it has something to be done about it: the page itself, which
@@ -239,41 +233,12 @@ private fun Capture(model: ShellModel, strings: Strings) {
             },
         )
     }
-    TableRow(
-        title = if (model.helperMissing) {
-            strings[Str.SETTINGS_HELPER_MISSING, strings[ShellModel.HELPER_MISSING], CaptureHelper.OVERRIDE_ENV]
-        } else {
-            model.helperVersion?.let { strings[Str.SETTINGS_HELPER_VERSION, it] }
-                ?: strings[Str.SETTINGS_HELPER_SILENT]
-        },
-        subtitle = model.selfTest?.text(strings),
-        trailing = {
-            // deliverable 3: `--self-test`, from the one place a packaged app can offer it.
-            if (!model.helperMissing) {
-                BlueprintButton(strings[Str.SETTINGS_SELF_TEST], model::runSelfTest)
-            }
-        },
-    )
-}
-
-/**
- * docs/14 "App": the keyboard shortcut, its keys in monospace beside the switch. Refused by Windows, the row
- * says so in the warning tone — the switch stays on, and turning it off and on asks again.
- */
-@Composable
-private fun Shortcut(model: ShellModel, strings: Strings) {
-    TableRow(
-        title = strings[Str.SETTINGS_SHORTCUT],
-        modifier = Modifier.toggleable(value = model.shortcutOn, role = Role.Switch, onValueChange = model::toggleShortcut),
-        subtitle = strings[Str.SETTINGS_SHORTCUT_TAKEN].takeIf { model.shortcutOn && model.shortcutRefused },
-        subtitleColor = blueprint.warningInk,
-        trailing = {
-            Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                Text(GlobalShortcut.LABEL, style = mono.small, color = blueprint.textMuted)
-                SwitchTrack(checked = model.shortcutOn)
-            }
-        },
-    )
+    if (model.helperUnavailable) {
+        SettingsCard {
+            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+        }
+        HairLine()
+    }
 }
 
 @Composable
@@ -312,9 +277,13 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
             TableRow(title = connection.account, subtitle = strings[Str.CHATGPT_EXPIRED], subtitleColor = blueprint.warningInk,
                 trailing = signIn)
         is ChatGptConnection.SignedIn -> {
-            TableRow(title = connection.account, subtitle = strings[Str.CHATGPT_USING_PLAN], trailing = {
-                BlueprintButton(strings[Str.CHATGPT_SIGN_OUT], chatGpt::signOut, tone = ButtonTone.QUIET)
-            })
+            // ChatGPT's usage page is a web page, so it is a link under the plan line rather than a row of its own.
+            TableRow(
+                title = connection.account,
+                subtitle = strings[Str.CHATGPT_USING_PLAN],
+                below = { TextLink(strings[Str.CHATGPT_MANAGE_USAGE], chatGpt::openUsage, style = MaterialTheme.typography.bodySmall) },
+                trailing = { BlueprintButton(strings[Str.CHATGPT_SIGN_OUT], chatGpt::signOut, tone = ButtonTone.QUIET) },
+            )
             if (connection.models.isNotEmpty()) {
                 TableRow(title = strings[Str.CHATGPT_MODEL], trailing = {
                     BlueprintDropdown(
@@ -325,13 +294,6 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
                     )
                 })
             }
-            Row(
-                Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
-                horizontalArrangement = Arrangement.End,
-            ) {
-                BlueprintButton(strings[Str.CHATGPT_MANAGE_USAGE], chatGpt::openUsage, tone = ButtonTone.QUIET)
-            }
-            HairLine()
         }
     }
     if (chatGpt.listening) {
@@ -402,9 +364,8 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     AgentStatus(agent, strings)
     AgentTunnel(agent, strings)
     SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-    Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) }, tone = ButtonTone.QUIET)
-    }
+    TextLink(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) },
+        modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), style = MaterialTheme.typography.bodySmall)
 }
 
 /**
@@ -419,12 +380,15 @@ private fun LocalAgents(model: ShellModel, strings: Strings) {
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Section(strings[Str.LOCAL_AGENTS])
-    TableRow(title = strings[Str.LOCAL_MCP], subtitle = strings[Str.LOCAL_MCP_BODY])
+    TableRow(
+        title = strings[Str.LOCAL_MCP],
+        subtitle = strings[Str.LOCAL_MCP_BODY],
+        below = { TextLink(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, style = MaterialTheme.typography.bodySmall) },
+    )
     Row(
         Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
     ) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, tone = ButtonTone.QUIET)
         BlueprintButton(
             if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.LOCAL_MCP_COPY],
             {
