@@ -235,6 +235,14 @@ class ReclyCore(
     suspend fun exportFile(recordingId: String, format: recly.core.recording.ExportFormat): String? =
         exports.export(recordingId, format)
 
+    /** docs/15 §10: the user's ChatGPT sign-in — Settings' connection row and the model a summary uses. */
+    val chatGpt: recly.core.chatgpt.ChatGptAccount = recly.core.chatgpt.ChatGptAccount(db, deps)
+
+    /** docs/08 "Summaries": a recording's meeting notes, made on request with [chatGpt]. */
+    val summaries: recly.core.chatgpt.Summaries = recly.core.chatgpt.Summaries(
+        deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
+    )
+
     private val retranscription = recly.core.transcribe.Retranscription(
         deps, recordings, jobs, processingSettings, audio, folderMarker, ::outputs,
     )

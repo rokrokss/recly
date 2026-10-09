@@ -957,6 +957,30 @@ class RecordingRepository(
         deps.fileSystem.atomicMove(temp, file)
     }
 
+    /**
+     * The summary saved for this recording (docs/08 "Summaries"), as the JSON the core wrote, or null.
+     * Like the waveform it sits beside the parts, is not uploaded, survives the 7-day audio cleanup and
+     * goes with the recording.
+     */
+    @Throws(Throwable::class)
+    suspend fun summary(recordingId: String): String? = locked {
+        val record = record(recordingId) ?: return@locked null
+        val file = record.dir / SUMMARY_FILE
+        if (!deps.fileSystem.exists(file)) return@locked null
+        deps.fileSystem.read(file) { readUtf8() }
+    }
+
+    /** Written whole and moved into place under the lock [delete] takes, as [saveWaveform] is. */
+    @Throws(Throwable::class)
+    suspend fun saveSummary(recordingId: String, json: String): Unit = locked {
+        val record = record(recordingId) ?: return@locked
+        val file = record.dir / SUMMARY_FILE
+        val temp = record.dir / "$SUMMARY_FILE.tmp"
+        deps.fileSystem.createDirectories(record.dir)
+        deps.fileSystem.write(temp) { writeUtf8(json) }
+        deps.fileSystem.atomicMove(temp, file)
+    }
+
     private suspend fun <T> locked(body: () -> T): T = withContext(deps.io) { mutex.withLock { body() } }
 
     private fun record(id: String): RecordingRecord? =
@@ -1021,5 +1045,8 @@ class RecordingRepository(
 
         /** `kv` rows: `transcript/seen/{recordingId}` → the folder's `transcriptAt` this device took in. */
         private const val SEEN_PREFIX: String = "transcript/seen/"
+
+        /** Beside the parts: the summary of this recording, `Summary` as JSON (docs/08 "Summaries"). */
+        private const val SUMMARY_FILE: String = "summary.v1.json"
     }
 }

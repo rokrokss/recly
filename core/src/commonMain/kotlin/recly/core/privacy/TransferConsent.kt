@@ -53,6 +53,12 @@ object TransferTargets {
             ?.let { TransferTarget("transcribe", step.provider, it) }
     }
 
+    /**
+     * docs/15 §10: the transcript a summary sends to the user's ChatGPT plan. One fixed destination — the
+     * endpoint is not configurable — so one grant covers every summary on this device.
+     */
+    fun chatGptSummary(): TransferTarget = TransferTarget(SUMMARIZE, CHATGPT, "https://api.openai.com/v1")
+
     /** Only these runners use invokeUrl. Ignored configuration must never mislabel the recipient. */
     private fun endpoint(step: Step.Transcribe): String? = when (step.provider) {
         "clova", "azure", "openai", "groq", "together", "mistral", "speechmatics" ->
@@ -68,8 +74,12 @@ object TransferTargets {
     }.getOrNull()
 
     internal fun valid(target: TransferTarget): Boolean =
-        target.disclosureVersion == DISCLOSURE_VERSION && target.kind == "transcribe" &&
+        target == chatGptSummary() ||
+            target.disclosureVersion == DISCLOSURE_VERSION && target.kind == "transcribe" &&
             SttProviders.create(target.provider) != null && canonical(target.endpoint) == target.endpoint
+
+    const val SUMMARIZE: String = "summarize"
+    const val CHATGPT: String = "chatgpt"
 }
 
 @Serializable
