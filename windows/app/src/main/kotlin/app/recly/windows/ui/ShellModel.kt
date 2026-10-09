@@ -74,6 +74,7 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import okio.Path
 import recly.core.DisconnectResult
+import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.model.Highlight
@@ -142,6 +143,12 @@ data class RecordingDetail(
     /** docs/10 "Search": the query this detail was opened from, to tint, and the hit to scroll to. */
     val find: String? = null,
     val findAtSec: Double? = null,
+    /** A transcription of it is really queued or running — the text is about to change (docs/08 "Summaries"). */
+    val transcriptionRunning: Boolean = false,
+    /** docs/08 "Summaries": the recording's summary, as the core has it. */
+    val summary: SummaryState = SummaryState.None,
+    /** The Summary chip is the chosen one. A detail opens on the transcript. */
+    val showingSummary: Boolean = false,
 )
 
 /** docs/10 "Re-transcription": what the confirmation names — the method and the language — before it runs. */
@@ -328,6 +335,10 @@ class ShellModel(
 
     /** docs/14 "Agent connection": recly-events, run while its switch is on. Null until [load]. */
     var agentEvents: AgentEvents? by mutableStateOf(null)
+        private set
+
+    /** docs/15 §10 "Sign in with ChatGPT": the settings section and what the summaries run on. */
+    var chatGpt: ChatGptViewModel? by mutableStateOf(null)
         private set
 
     /** docs/03 "Deleting in the app": the recording the delete dialog is asking about, while it is up. */
@@ -655,6 +666,7 @@ class ShellModel(
                 }
             },
         ).also { it.start() }
+        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.loopback, scope, logger).also { it.start() }
 
         val command = helperCommand
         this.helperCommand = command
@@ -1180,6 +1192,9 @@ class ShellModel(
                 if (result.transcript != null) refreshPreviews()
             }
         }
+        launch {
+            graph.core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
+        }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
             val local = record?.let { rec ->
                 RecordingPlaylist.select(rec.meta.parts, rec.dir) { graph.core.deps.fileSystem.exists(it) }
@@ -1227,6 +1242,7 @@ class ShellModel(
                         notUploaded = !uploaded,
                         waitsForDrive = waitsForDrive,
                         busyReason = busyReason(transcribingNow, waitsForDrive, uploaded),
+                        transcriptionRunning = transcribingNow,
                     )
                 }
             }
@@ -1348,6 +1364,33 @@ class ShellModel(
             delay(NOTICE_MS)
             updateDetail(request.recordingId) { if (it.notice == notice) it.copy(notice = null) else it }
         }
+    }
+
+    /**
+     * More → Summarize (docs/08 "Summaries"): runs on the core's own scope, so closing the window does not
+     * stop it, and the detail follows it through [followDetailResults]. The view goes to the summary at once.
+     */
+    fun summarize() {
+        val graph = graph ?: return
+        val recordingId = detail?.recordingId ?: return
+        showSummary(true)
+        scope.launch {
+            try {
+                graph.core.summaries.summarize(recordingId)
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.summarize.failed", error = e)
+                // Nothing ran, so there is no state to follow: back to the transcript rather than a loader for ever.
+                updateDetail(recordingId) { if (it.summary == SummaryState.None) it.copy(showingSummary = false) else it }
+            }
+        }
+    }
+
+    /** The Transcript | Summary chips. */
+    fun showSummary(show: Boolean) {
+        val recordingId = detail?.recordingId ?: return
+        updateDetail(recordingId) { it.copy(showingSummary = show) }
     }
 
     fun changePlaybackSpeed(speed: Float) {

@@ -82,6 +82,9 @@ object CoreMessages {
         CoreMessage.UNSUPPORTED_AUDIO,
         CoreMessage.NO_INPUT_TRACK,
         CoreMessage.RESULT_TIMEOUT,
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED,
+        CoreMessage.CHATGPT_USAGE_LIMIT,
+        CoreMessage.CHATGPT_PLAN_REQUIRED,
         -> false
 
         else -> true
