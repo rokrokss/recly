@@ -2,7 +2,7 @@ package recly.core.platform
 
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
-import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
+import java.util.Properties
 import recly.core.DriverFactory
 import recly.core.db.RecDatabase
 
@@ -26,7 +26,12 @@ object JvmRuntime {
      * current (docs/10 "Schema migrations").
      */
     fun openDriver(path: String): SqlDriver =
-        JdbcSqliteDriver("jdbc:sqlite:$path").also(::upgrade)
+        ImmediateSqliteDriver("jdbc:sqlite:$path", connectionProperties()).also(::upgrade)
+
+    /** How long a connection waits for another one's write lock: long enough for a slow machine. */
+    private fun connectionProperties() = Properties().apply {
+        setProperty("busy_timeout", BUSY_TIMEOUT_MS.toString())
+    }
 
     internal fun upgrade(driver: SqlDriver) {
         val schema = RecDatabase.Schema
@@ -69,4 +74,7 @@ object JvmRuntime {
 
     /** Written before the desktop stamped a version — the schema as it stood at version 1. */
     private const val LEGACY = 1L
+
+    /** How long a transaction waits for another connection's write lock (sqlite-jdbc's own default is 3 s). */
+    private const val BUSY_TIMEOUT_MS = 10_000
 }
