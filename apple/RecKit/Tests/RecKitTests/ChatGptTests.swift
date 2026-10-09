@@ -200,7 +200,7 @@ final class ChatGptSettingsTests: XCTestCase {
 @MainActor
 final class SummaryMenuTests: XCTestCase {
     private let signedIn = ChatGptConnection.SignedIn(account: "a@example.com", models: [ChatGptModel(id: "gpt-x", label: "GPT X")], model: "gpt-x")
-    private let summary = Summary(recordingId: "r1", text: "Summary\n- one", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z")
+    private let summary = Summary(recordingId: "r1", text: "Summary\n- one", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil)
 
     func testTheReasonSaysWhatStandsInTheWay() {
         func reason(writing: Bool = false, transcript: Bool = true, busy: String? = nil,
@@ -241,6 +241,52 @@ final class SummaryMenuTests: XCTestCase {
         XCTAssertEqual(ChatGptText.detail(provider), "500 server_error")
         XCTAssertTrue(ChatGptText.cancelled(CoreMessage.signInCancelled.code(arg: nil, detail: nil)))
         XCTAssertFalse(ChatGptText.cancelled(provider))
+    }
+
+    /// docs/09 "Summary view": Edit summary is there once a summary is, and off while a new one is written.
+    func testEditSummaryWaitsForARunningSummary() {
+        XCTAssertNil(RecordingDetailModel.savedSummary(SummaryState.None.shared))
+        XCTAssertNil(RecordingDetailModel.savedSummary(SummaryState.Running(previous: nil)))
+        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Ready(summary: summary)), summary)
+        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Running(previous: summary)), summary)
+        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary)), summary)
+
+        let running = RecKitStrings.localized("Summarizing…")
+        XCTAssertNil(RecordingDetailModel.editSummaryReason(summary: SummaryState.Ready(summary: summary), summarizing: false))
+        XCTAssertNil(RecordingDetailModel.editSummaryReason(summary: SummaryState.Failed(reason: "PROVIDER_ERROR", previous: summary), summarizing: false))
+        XCTAssertEqual(RecordingDetailModel.editSummaryReason(summary: SummaryState.Running(previous: summary), summarizing: false), running)
+        XCTAssertEqual(RecordingDetailModel.editSummaryReason(summary: SummaryState.Ready(summary: summary), summarizing: true), running)
+    }
+
+    /// The footer says a summary was edited; Summarize again asks before it replaces one that was.
+    func testAnEditedSummaryIsSaidAndAskedAbout() {
+        let edited = Summary(recordingId: "r1", text: "Mine", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: "2026-10-09T01:00:00Z")
+        XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
+        XCTAssertEqual(
+            ChatGptText.summaryFooter(edited, connection: signedIn),
+            RecKitStrings.localized("ChatGPT · %@", "GPT X") + " · " + RecKitStrings.localized("Edited")
+        )
+        XCTAssertEqual(RecordingDetailModel.savedSummary(SummaryState.Failed(reason: "PROVIDER_ERROR", previous: edited))?.editedAt, edited.editedAt)
+    }
+
+    /// Save is offered only for a text the core would keep: not an unchanged one, not an empty one.
+    func testADraftChangesOnlyWithTextTheCoreWouldKeep() {
+        var draft = SummaryDraft(summary)
+        XCTAssertFalse(draft.changed)
+        draft.text = summary.text + "\n  "
+        XCTAssertFalse(draft.changed)
+        draft.text = "   \n"
+        XCTAssertFalse(draft.changed)
+        draft.text = "Summary\n- one\n- two"
+        XCTAssertTrue(draft.changed)
+    }
+
+    /// The editor's note: the summary reaches the other devices only from Drive or iCloud.
+    func testTheNoteFollowsTheRecordingsStorage() {
+        XCTAssertTrue(RecordingDetailModel.summaryStaysHere(storage: nil))
+        XCTAssertTrue(RecordingDetailModel.summaryStaysHere(storage: .folder))
+        XCTAssertFalse(RecordingDetailModel.summaryStaysHere(storage: .drive))
+        XCTAssertFalse(RecordingDetailModel.summaryStaysHere(storage: .icloud))
     }
 
     func testTheModelIsNamedAsThePlanNamesIt() {

@@ -240,6 +240,7 @@ public struct TransferPrivacyView: View {
     @State private var trainingOff = false
     @Environment(\.locale) private var locale
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.openURL) private var openURL
 
     public init(model: TransferPrivacyModel) { self.model = model }
 
@@ -247,7 +248,7 @@ public struct TransferPrivacyView: View {
         let pending = model.pending
         return ScrollView {
             VStack(alignment: .leading, spacing: Space.m) {
-                Link(loc("Privacy Policy"), destination: PrivacyLinks.recly(locale: locale))
+                TextLink(loc("Privacy Policy")) { openURL(PrivacyLinks.recly(locale: locale)) }
                 if let message = model.message {
                     Text(verbatim: message.text).foregroundStyle(blueprint.palette.danger)
                 }
@@ -273,7 +274,7 @@ public struct TransferPrivacyView: View {
                             .font(blueprint.fonts.monoSmall)
                             .fixedSize(horizontal: false, vertical: true)
                         if let url = PrivacyLinks.provider(target.provider) {
-                            Link(loc("Provider privacy information"), destination: url)
+                            TextLink(loc("Provider privacy information")) { openURL(url) }
                         }
                         // docs/09 screen principle 8: the destination spans several lines, so its action sits under it, at the end.
                         BlueprintButton(loc("Withdraw permission"), tone: .quiet) {

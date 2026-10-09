@@ -461,8 +461,6 @@ struct SettingsPane: View {
             // docs/12 M8: the reminder is on by default and this is where it goes off — and back
             // on, which the alert's own "Do not ask again" cannot do.
             SwitchRow(title: loc("Consent check before recording"), isOn: $model.consentReminder)
-            // docs/12 "Menu bar app": ⌥⌘R starts and stops a recording from any app.
-            ShortcutRow(isOn: $model.shortcutEnabled, refused: model.shortcutRefused)
 
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).

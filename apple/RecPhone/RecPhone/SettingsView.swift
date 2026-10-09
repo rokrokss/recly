@@ -166,11 +166,12 @@ struct SettingsView: View {
     private var privacy: some View {
         Group {
             section(RecKitStrings.localized("Privacy"))
-            SectionRow(title: RecKitStrings.localized("Privacy Policy")) {
-                // A way out that is always here, like the microphone's: quiet.
-                BlueprintButton(RecKitStrings.localized("Open"), tone: .quiet) {
+            // docs/09 (2026-10-09): a web page, so the row is the link itself.
+            SectionBlock {
+                TextLink(RecKitStrings.localized("Privacy Policy")) {
                     openURL(PrivacyLinks.recly(locale: locale))
                 }
+                .accessibilityIdentifier("privacy-policy")
             }
             if model.transferPrivacy != nil {
                 SectionRow(title: RecKitStrings.localized("Allowed destinations")) {

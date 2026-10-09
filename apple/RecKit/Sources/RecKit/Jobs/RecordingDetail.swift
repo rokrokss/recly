@@ -56,7 +56,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var silences: [SilentRange] = []
     /// docs/10 "Search": the find the page was opened with, or that ⌘F started; nil when there is none.
     @Published public var find: TranscriptFind?
-    /// An edit on its way to the core: `Saving…`, then ✓ for a moment.
+    /// An edit — of the transcript or of the summary — on its way to the core: `Saving…`, then ✓ for a
+    /// moment.
     @Published public private(set) var saving: ProcessingState = .idle
     /// The current processing settings' transcription mode, for the More menu's reasons.
     @Published public private(set) var transcriptionOff = false
@@ -141,6 +142,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var icloud: Bool { audioRecord?.storage == .icloud }
     /// docs/03 "Storage location": the audio comes back from the local folder picked on this device.
     public var folder: Bool { audioRecord?.storage == .folder }
+    /// docs/08 "Summaries": an edited summary stays on this device — the recording's storage is the local
+    /// folder, or it is in no storage yet.
+    public var summaryStaysHere: Bool { Self.summaryStaysHere(storage: audioRecord?.storage) }
+
+    static func summaryStaysHere(storage: StorageKind?) -> Bool { storage == nil || storage == .folder }
 
     public init(core: ReclyCore_, recordingId: String, title: String, playbackGate: RecordingPlaybackGate? = nil) {
         self.core = core
@@ -424,14 +430,32 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         return nil
     }
 
-    static func hasSummary(_ state: SummaryState) -> Bool {
+    static func hasSummary(_ state: SummaryState) -> Bool { savedSummary(state) != nil }
+
+    /// The summary the recording has: the one on screen, or the one kept under a new run or a failure.
+    public var savedSummary: Summary? { Self.savedSummary(summary) }
+
+    static func savedSummary(_ state: SummaryState) -> Summary? {
         switch onEnum(of: state) {
-        case .none: return false
-        case .ready: return true
-        case .running(let running): return running.previous != nil
-        case .failed(let failed): return failed.previous != nil
+        case .none: return nil
+        case .ready(let ready): return ready.summary
+        case .running(let running): return running.previous
+        case .failed(let failed): return failed.previous
         }
     }
+
+    /// `Edit summary` is in the More menu once the recording has a summary (docs/08 "Summaries").
+    public var summaryEditable: Bool { Self.hasSummary(summary) }
+
+    /// Why `Edit summary` cannot run now, or nil when it can: not while a new summary is written over it.
+    public var editSummaryReason: String? { Self.editSummaryReason(summary: summary, summarizing: summarizing) }
+
+    static func editSummaryReason(summary: SummaryState, summarizing: Bool) -> String? {
+        summarizing || summary is SummaryState.Running ? RecKitStrings.localized("Summarizing…") : nil
+    }
+
+    /// docs/09 "Summary view": `Summarize again` over a summary the user edited asks first.
+    public var summaryEdited: Bool { Self.savedSummary(summary)?.editedAt != nil }
 
     /// The Transcript | Summary chips stand while there is a summary, or one is on its way.
     public var hasSummaryView: Bool { summarizing || !(summary is SummaryState.None) }
@@ -485,6 +509,27 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public func copySummary() {
         guard case .ready(let ready) = onEnum(of: summary) else { return }
         Self.copy(ready.summary.text)
+    }
+
+    /// docs/08 "Summaries": the user's own text over the summary — kept here at once, and carried to the
+    /// recording's folder by the core. `Saving…` while it goes, ✓ for a moment after; false when it did not
+    /// take (a summary was being written over it).
+    @discardableResult
+    public func editSummary(_ text: String) async -> Bool {
+        guard saving != .processing else { return false }
+        saving = .processing
+        do {
+            let state = try await core.summaries.edit(recordingId: recordingId, text: text)
+            if state is SummaryState.Ready {
+                summary = state
+                showSaved()
+                return true
+            }
+        } catch {
+            logger.error("shell.chatgpt.summary.edit.failed error=\(String(describing: error), privacy: .private)")
+        }
+        saving = .failed
+        return false
     }
 
     /// The jobs of this recording, for the menu's reasons and the `Transcribing again…` line.
@@ -570,11 +615,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         do {
             if case .edited(let edited) = onEnum(of: try await core.editTranscript(recordingId: recordingId, edit: edit)) {
                 adopt(edited.transcript)
-                saving = .done
-                Task { [weak self] in
-                    try? await Task.sleep(for: .seconds(1.5))
-                    if self?.saving == .done { self?.saving = .idle }
-                }
+                showSaved()
                 return true
             }
         } catch {
@@ -582,6 +623,15 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
         saving = .failed
         return false
+    }
+
+    /// ✓ for a moment after a save.
+    private func showSaved() {
+        saving = .done
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            if self?.saving == .done { self?.saving = .idle }
+        }
     }
 
     /// docs/09 "Editing and speakers": a speaker's name from the speaker menu; empty takes it away and the id
@@ -738,8 +788,13 @@ public struct RecordingDetailView: View {
     /// docs/09 "Editing and speakers": the editor's draft while the page is in edit mode, nil while it is
     /// reading.
     @State private var draft: TranscriptDraft?
-    /// `Discard your changes?` is up.
-    @State private var discarding = false
+    /// docs/09 "Summary view": the summary editor's text while the page edits the summary, nil while it does
+    /// not.
+    @State private var summaryDraft: SummaryDraft?
+    /// `Discard your changes?` is up, and for which editor.
+    @State private var discarding: Discarding?
+    /// `Replace your edited summary?` is up.
+    @State private var replacing = false
     /// docs/10 "Re-transcription": the confirmation's line while it is up.
     @State private var retranscribeLine: String?
     /// The speaker whose name the dialog is asking for, in reading mode.
@@ -765,13 +820,18 @@ public struct RecordingDetailView: View {
 
     public var body: some View {
         VStack(spacing: 0) {
-            ScreenHeader(title: draft == nil ? model.title : RecKitStrings.localized("Edit transcript"), trailingAlignment: .trailing, oneRow: Self.oneRowHeader) {
+            ScreenHeader(title: headerTitle, trailingAlignment: .trailing, oneRow: Self.oneRowHeader) {
                 HStack(spacing: Space.xs) {
                     if let draft {
                         // docs/09 "Editing and speakers": the desktop's Cancel · Save are in the header; the
                         // phone's sit under the fields, above the keyboard.
                         #if !os(iOS)
                         EditorButtons(changed: draft.changed, saving: model.saving == .processing, cancel: leaveEditor, save: saveDraft)
+                        #endif
+                    } else if summaryDraft != nil {
+                        // docs/09 "Summary view": the summary's editor puts them where the transcript's does.
+                        #if !os(iOS)
+                        EditorButtons(changed: summaryDraft?.changed == true, saving: model.saving == .processing, cancel: leaveSummaryEditor, save: saveSummary)
                         #endif
                     } else {
                         #if os(iOS)
@@ -798,7 +858,13 @@ public struct RecordingDetailView: View {
                                     }
                                 },
                                 transcribeAgain: { Task { retranscribeLine = await model.retranscribeLine() } },
-                                summarize: summarize,
+                                summarize: summarizeAgain,
+                                editSummary: {
+                                    if let summary = model.savedSummary {
+                                        showingSummary = true
+                                        summaryDraft = SummaryDraft(summary)
+                                    }
+                                },
                                 addHighlight: { Task { await model.addHighlight(atSec: positionSec) } }
                             )
                         }
@@ -826,7 +892,7 @@ public struct RecordingDetailView: View {
             #endif
             // docs/09 "Transcript reader": a transcription of this recording again, while the old text stays
             // readable.
-            if let again = model.retranscribing, draft == nil {
+            if let again = model.retranscribing, !editing {
                 LoadingText(
                     text: loc(again == .local ? "Transcribing on this device" : "Transcribing again…"),
                     font: blueprint.fonts.sans(TypeSize.small),
@@ -836,19 +902,19 @@ public struct RecordingDetailView: View {
                 .padding(.top, Space.s)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .accessibilityIdentifier("retranscribing")
-            } else if model.saving == .processing, draft == nil {
+            } else if model.saving == .processing, !editing {
                 LoadingText(text: loc("Saving…"), font: blueprint.fonts.sans(TypeSize.small), color: blueprint.palette.textMuted)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
-            } else if model.saving == .done, draft == nil {
+            } else if model.saving == .done, !editing {
                 Text(verbatim: BlueprintChip.selectionMark)
                     .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
                     .foregroundStyle(blueprint.palette.success)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
                     .frame(maxWidth: .infinity, alignment: .leading)
-            } else if let refusal = model.retranscribeRefusal, draft == nil {
+            } else if let refusal = model.retranscribeRefusal, !editing {
                 // docs/10 "Re-transcription": a Transcribe again that did not start says why.
                 Text(verbatim: loc(refusal))
                     .font(blueprint.fonts.sans(TypeSize.small))
@@ -859,10 +925,10 @@ public struct RecordingDetailView: View {
                     .accessibilityIdentifier("retranscribe-refusal")
             }
             // docs/09 "Summary view": Transcript | Summary, once there is a summary or one was asked for —
-            // never over the editor.
+            // never over the transcript's editor; over the summary's, Transcript asks before it drops changes.
             if !model.loading, draft == nil, model.hasSummaryView || showingSummary {
                 HStack(spacing: Space.s) {
-                    BlueprintChip(loc("Transcript"), selected: !showingSummary) { showingSummary = false }
+                    BlueprintChip(loc("Transcript"), selected: !showingSummary, action: showTranscript)
                         .accessibilityIdentifier("detail-transcript-tab")
                     BlueprintChip(loc("Summary"), selected: showingSummary) { showingSummary = true }
                         .accessibilityIdentifier("detail-summary-tab")
@@ -873,6 +939,15 @@ public struct RecordingDetailView: View {
             }
             if model.loading {
                 notice(loc("Loading…"))
+            } else if draft == nil, showingSummary, summaryDraft != nil {
+                SummaryEditor(
+                    text: Binding(get: { summaryDraft?.text ?? "" }, set: { summaryDraft?.text = $0 }),
+                    changed: summaryDraft?.changed == true,
+                    staysHere: model.summaryStaysHere,
+                    saving: model.saving == .processing,
+                    cancel: leaveSummaryEditor,
+                    save: saveSummary
+                )
             } else if draft == nil, showingSummary {
                 SummaryPane(model: model, retry: summarize)
             } else if let draft {
@@ -962,17 +1037,30 @@ public struct RecordingDetailView: View {
                 BlueprintDialogText(retranscribeLine ?? "")
             }
         }
-        // docs/09 "Editing and speakers": leaving the editor with changes in it.
-        .blueprintDialogOverlay(isPresented: $discarding) {
+        // docs/09 "Editing and speakers" · "Summary view": leaving an editor with changes in it.
+        .blueprintDialogOverlay(isPresented: Binding(get: { discarding != nil }, set: { if !$0 { discarding = nil } })) {
             BlueprintDialog(title: loc("Discard your changes?")) {
-                BlueprintButton(loc("Keep editing"), tone: .quiet) { discarding = false }
-                BlueprintButton(loc("Discard"), tone: .accent) {
-                    discarding = false
-                    draft = nil
-                }
-                .accessibilityIdentifier("discard-edits")
+                BlueprintButton(loc("Keep editing"), tone: .quiet) { discarding = nil }
+                BlueprintButton(loc("Discard"), tone: .accent, action: discard)
+                    .accessibilityIdentifier("discard-edits")
             } content: {
-                BlueprintDialogText(loc("Your edits to this transcript will be lost."))
+                BlueprintDialogText(loc(discarding == .transcript
+                    ? "Your edits to this transcript will be lost."
+                    : "Your edits to this summary will be lost."))
+            }
+        }
+        // docs/09 "Summary view": a new summary would replace the user's own words. Not red: no recording
+        // is deleted.
+        .blueprintDialogOverlay(isPresented: $replacing) {
+            BlueprintDialog(title: loc("Replace your edited summary?")) {
+                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { replacing = false }
+                BlueprintButton(loc("Replace"), tone: .primary) {
+                    replacing = false
+                    summarize()
+                }
+                .accessibilityIdentifier("summary-replace-confirm")
+            } content: {
+                BlueprintDialogText(loc("Summarizing again replaces the summary you edited."))
             }
         }
         .blueprintDialogOverlay(isPresented: Binding(get: { renamingSpeaker != nil }, set: { if !$0 { renamingSpeaker = nil } })) {
@@ -1011,6 +1099,7 @@ public struct RecordingDetailView: View {
             player.stop()
             renaming = false
             draft = nil
+            summaryDraft = nil
             showingSummary = false
             await model.load()
             guard !Task.isCancelled else { return }
@@ -1425,6 +1514,11 @@ public struct RecordingDetailView: View {
         Task { await model.summarize() }
     }
 
+    /// The More menu's Summarize: over a summary the user edited, the question first.
+    private func summarizeAgain() {
+        if model.summaryEdited { replacing = true } else { summarize() }
+    }
+
     private func answerSummaryConsent(allow: Bool) {
         trainingOff = false
         Task {
@@ -1434,14 +1528,58 @@ public struct RecordingDetailView: View {
         }
     }
 
+    private var headerTitle: String {
+        if draft != nil { return loc("Edit transcript") }
+        if summaryDraft != nil { return loc("Edit summary") }
+        return model.title
+    }
+
+    /// One of the two editors is up, and the lines that belong to reading stay off.
+    private var editing: Bool { draft != nil || summaryDraft != nil }
+
+    /// Which editor `Discard your changes?` is about — and, from the Transcript chip, where the page goes.
+    private enum Discarding { case transcript, summary, summaryForTranscript }
+
     /// Cancel or Done: straight back to reading when nothing changed, else the question first.
     private func leaveEditor() {
-        if draft?.changed == true { discarding = true } else { draft = nil }
+        if draft?.changed == true { discarding = .transcript } else { draft = nil }
+    }
+
+    private func leaveSummaryEditor() {
+        if summaryDraft?.changed == true { discarding = .summary } else { summaryDraft = nil }
+    }
+
+    /// The Transcript chip: from the summary's editor, the same question Cancel asks when there are changes.
+    private func showTranscript() {
+        if summaryDraft?.changed == true {
+            discarding = .summaryForTranscript
+        } else {
+            summaryDraft = nil
+            showingSummary = false
+        }
+    }
+
+    private func discard() {
+        switch discarding {
+        case .transcript: draft = nil
+        case .summary: summaryDraft = nil
+        case .summaryForTranscript:
+            summaryDraft = nil
+            showingSummary = false
+        case nil: break
+        }
+        discarding = nil
     }
 
     private func saveDraft() {
         guard let draft else { return }
         Task { if await model.edit(draft.edits) { self.draft = nil } }
+    }
+
+    /// Save → `Saving…` → ✓ under the header, back on the summary.
+    private func saveSummary() {
+        guard let summaryDraft else { return }
+        Task { if await model.editSummary(summaryDraft.text) { self.summaryDraft = nil } }
     }
 
     /// Where in the recording a point of the row is. The row is the whole recording end to end, so
