@@ -92,7 +92,13 @@ class ChatGptAccount internal constructor(
     private val db: RecDatabase,
     private val deps: CoreDeps,
 ) {
-    private val state = MutableStateFlow<ChatGptConnection>(ChatGptConnection.SignedOut)
+    /**
+     * An App Store build starts from [ChatGptConnection.Unavailable] and shows the section only once
+     * [refresh] has the storefront: the section must not flash up in China mainland (docs/15).
+     */
+    private val state = MutableStateFlow(
+        if (deps.transcriptionPolicy.enabled) ChatGptConnection.Unavailable else ChatGptConnection.SignedOut,
+    )
 
     /** Every credential read-modify-write and every refresh, one at a time: the refresh token rotates. */
     private val mutex = Mutex()

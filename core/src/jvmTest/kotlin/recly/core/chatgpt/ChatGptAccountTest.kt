@@ -185,6 +185,27 @@ class ChatGptAccountTest {
     }
 
     @Test
+    fun `an App Store build shows nothing until the storefront allows it`() = runBlocking {
+        fun account(country: String) = ChatGptAccount(
+            h.db,
+            recly.core.testing.testDeps(
+                secureStore = h.store,
+                transcriptionPolicy = recly.core.transcribe.TranscriptionPolicy(
+                    object : recly.core.transcribe.AppStoreRegion {
+                        override suspend fun countryCode() = country
+                    },
+                ),
+            ),
+        )
+        val china = account("CHN")
+        assertEquals(ChatGptConnection.Unavailable, china.observe().value)
+        assertEquals(ChatGptConnection.Unavailable, china.refresh())
+        val korea = account("KOR")
+        assertEquals(ChatGptConnection.Unavailable, korea.observe().value, "not before the storefront is known")
+        assertEquals(ChatGptConnection.SignedOut, korea.refresh())
+    }
+
+    @Test
     fun `usage and eligibility errors get their own messages`() {
         fun code(status: Int, body: String) =
             ChatGptAccount.failure(recly.core.platform.HttpResult(status, emptyMap(), body.encodeToByteArray())).reason
