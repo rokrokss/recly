@@ -296,6 +296,8 @@ internal data class SummaryEditItem(val summary: Summary, val blocked: Str?)
 internal fun summaryEditItem(summary: SummaryState): SummaryEditItem? = when (summary) {
     is SummaryState.Ready -> SummaryEditItem(summary.summary, null)
     is SummaryState.Running -> summary.previous?.let { SummaryEditItem(it, Str.SUMMARY_RUNNING) }
+    // A failed run keeps the summary under it, and that one can still be edited.
+    is SummaryState.Failed -> summary.previous?.let { SummaryEditItem(it, null) }
     else -> null
 }
 

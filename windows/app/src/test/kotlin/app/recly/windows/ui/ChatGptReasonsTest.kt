@@ -120,6 +120,7 @@ class ChatGptReasonsTest {
         assertNull(summaryEditItem(SummaryState.Running(null)))
         assertNull(summaryEditItem(SummaryState.None))
         assertNull(summaryEditItem(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
+        assertEquals(SummaryEditItem(summary, null), summaryEditItem(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), summary)))
     }
 
     @Test
