@@ -5,6 +5,7 @@ package app.recly.android.ui
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -82,12 +83,13 @@ internal class MoreActions(
     val onRetranscribe: () -> Unit,
     val onAddHighlight: () -> Unit,
     val onSummarize: () -> Unit,
+    val onEditSummary: () -> Unit,
 )
 
 /**
- * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Add highlight
- * at the playhead, in that order. An item that cannot run is shown disabled with its reason under it; Summarize
- * is not there at all where ChatGPT is not offered.
+ * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Edit summary · Add
+ * highlight at the playhead, in that order. An item that cannot run is shown disabled with its reason under it; Summarize
+ * is not there at all where ChatGPT is not offered, and Edit summary not before there is a summary.
  */
 @Composable
 internal fun MoreButton(
@@ -127,6 +129,11 @@ internal fun MoreButton(
                 MenuAction(stringResource(if (hasSummary(detail.summary)) R.string.summary_again else R.string.summary_summarize),
                     pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason?.let { stringResource(it) },
                     modifier = Modifier.testTag("more-summarize"))
+            }
+            if (hasSummary(detail.summary)) {
+                val editReason = editSummaryReason(detail.summary)
+                MenuAction(stringResource(R.string.summary_edit), pick(actions.onEditSummary), enabled = editReason == null,
+                    reason = editReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-edit-summary"))
             }
             val noAudio = detail.audio.isEmpty
             val stamp = clock(playheadSec.toLong(), recordingScale(detail))
@@ -393,9 +400,12 @@ internal fun RetranscribeDialog(transcription: ProcessingTranscription, edited: 
     ) { BlueprintDialogText(body) }
 }
 
-/** docs/09 "Editing and speakers": leaving the editor with changes in it. Discard is not red — nothing saved is lost. */
+/**
+ * docs/09 "Editing and speakers": leaving the editor with changes in it — the transcript's, or the summary's with its
+ * own [body]. Discard is not red — nothing saved is lost.
+ */
 @Composable
-internal fun DiscardDialog(onKeep: () -> Unit, onDiscard: () -> Unit) {
+internal fun DiscardDialog(onKeep: () -> Unit, onDiscard: () -> Unit, @StringRes body: Int = R.string.edit_discard_body) {
     BlueprintDialog(
         title = stringResource(R.string.edit_discard_title),
         onDismissRequest = onKeep,
@@ -403,7 +413,21 @@ internal fun DiscardDialog(onKeep: () -> Unit, onDiscard: () -> Unit) {
             BlueprintButton(stringResource(R.string.edit_keep), onKeep, tone = ButtonTone.QUIET)
             BlueprintButton(stringResource(R.string.edit_discard), onDiscard, modifier = Modifier.testTag("edit-discard"))
         },
-    ) { BlueprintDialogText(stringResource(R.string.edit_discard_body)) }
+    ) { BlueprintDialogText(stringResource(body)) }
+}
+
+/** docs/09 "Summary view": "Summarize again" over a summary the user edited. Replace is not red — no recording is deleted. */
+@Composable
+internal fun ReplaceSummaryDialog(onCancel: () -> Unit, onReplace: () -> Unit) {
+    BlueprintDialog(
+        title = stringResource(R.string.summary_replace_title),
+        onDismissRequest = onCancel,
+        actions = {
+            BlueprintButton(stringResource(R.string.action_cancel), onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch,
+                modifier = Modifier.testTag("summary-replace-cancel"))
+            BlueprintButton(stringResource(R.string.summary_replace), onReplace, tone = ButtonTone.PRIMARY, modifier = Modifier.testTag("summary-replace"))
+        },
+    ) { BlueprintDialogText(stringResource(R.string.summary_replace_body)) }
 }
 
 /**
@@ -425,7 +449,8 @@ internal fun FindBar(current: Int, total: Int, onPrevious: () -> Unit, onNext: (
         BlueprintButton("›", onNext, enabled = total > 0, tone = ButtonTone.QUIET, minWidth = MinTouch,
             modifier = Modifier.findLabel(stringResource(R.string.find_next)).testTag("find-next"))
         Box(Modifier.weight(1f))
-        GlyphButton(Glyph.CLOSE, stringResource(R.string.find_close), onClose, Modifier.testTag("find-close"))
+        // The arrows' height: an icon button is 40dp of its own.
+        GlyphButton(Glyph.CLOSE, stringResource(R.string.find_close), onClose, Modifier.size(MinTouch).testTag("find-close"))
     }
     HairLine()
 }

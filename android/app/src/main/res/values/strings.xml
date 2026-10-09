@@ -19,7 +19,6 @@
     <string name="action_done">✓</string>
     <!-- docs/13 deliverable 1: the way back on after a refused permission, in the iPhone's words. -->
     <string name="action_open_settings">Open System Settings</string>
-    <string name="action_open">Open</string>
 
     <!-- Bottom navigation. -->
     <string name="tab_record">Record</string>

@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.storage.StorageKind
 
 /** The detail's two views once a summary is in play (docs/09 "Summary view"). */
 internal enum class DetailView { TRANSCRIPT, SUMMARY }
@@ -72,6 +74,41 @@ internal fun hasSummary(summary: SummaryState): Boolean = when (summary) {
     is SummaryState.Ready -> true
     is SummaryState.Running -> summary.previous != null
     is SummaryState.Failed -> summary.previous != null
+}
+
+/** The summary the recording keeps: what Edit summary opens, and what Summarize again would replace. */
+internal fun savedSummary(summary: SummaryState): Summary? = when (summary) {
+    SummaryState.None -> null
+    is SummaryState.Ready -> summary.summary
+    is SummaryState.Running -> summary.previous
+    is SummaryState.Failed -> summary.previous
+}
+
+/** Edit summary is offered once there is a summary; it waits while a new one is being written. */
+@StringRes
+internal fun editSummaryReason(summary: SummaryState): Int? = if (summary is SummaryState.Running) R.string.summary_running else null
+
+/** "Summarize again" asks first when the summary it would replace is one the user edited. */
+internal fun asksBeforeReplacing(summary: SummaryState): Boolean = savedSummary(summary)?.editedAt != null
+
+/**
+ * The summary editor's note: Drive and iCloud carry a saved summary to the other devices; a local folder, or a
+ * recording not uploaded yet, keeps it here — the transcript editor's own rule (docs/09 "Editing and speakers").
+ */
+@StringRes
+internal fun summaryEditNote(storage: StorageKind?): Int = when (storage) {
+    StorageKind.DRIVE, StorageKind.ICLOUD -> R.string.summary_edit_note_shared
+    StorageKind.FOLDER, null -> R.string.summary_edit_note_local
+}
+
+/** docs/09 "Summary view": the summary editor's working copy. */
+internal data class SummaryDraft(val original: String, val text: String) {
+    /** Whether Save writes anything: the core keeps the summary as it is for blank or unchanged text. */
+    val changed: Boolean get() = text.trim().let { it.isNotEmpty() && it != original.trim() }
+
+    companion object {
+        fun of(summary: Summary) = SummaryDraft(summary.text, summary.text)
+    }
 }
 
 /** Transcript | Summary, once there is a summary or the user has just asked for one — never while editing. */
@@ -152,6 +189,12 @@ internal fun SummaryPane(state: SummaryState, models: List<ChatGptModel>, onRetr
     }
 }
 
+/** docs/09 "Summary view": the whole summary as one plain text field, as the transcript editor's fields are. */
+@Composable
+internal fun SummaryEditor(text: String, onText: (String) -> Unit, modifier: Modifier = Modifier) {
+    OutlinedTextField(text, onText, modifier.padding(Space.m).testTag("summary-editor"))
+}
+
 /** The text as ChatGPT wrote it, selectable, in the transcript's body type. */
 @Composable
 private fun SummaryText(summary: Summary, modifier: Modifier) {
@@ -160,7 +203,7 @@ private fun SummaryText(summary: Summary, modifier: Modifier) {
     }
 }
 
-/** "ChatGPT · <model>" and Copy all, which says `✓ Copied` for a moment as the transcript's does. */
+/** "ChatGPT · <model>" — "· Edited" once the user changed it — and Copy all, which says `✓ Copied` for a moment as the transcript's does. */
 @Composable
 private fun SummaryFooter(summary: Summary, models: List<ChatGptModel>) {
     val palette = blueprint
@@ -173,7 +216,9 @@ private fun SummaryFooter(summary: Summary, models: List<ChatGptModel>) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val label = models.firstOrNull { it.id == summary.model }?.label ?: summary.model
-        Text(stringResource(R.string.summary_model, label), Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+        val written = stringResource(R.string.summary_model, label)
+        Text(if (summary.editedAt == null) written else "$written · ${stringResource(R.string.summary_edited)}", Modifier.weight(1f),
+            style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
         BlueprintButton(
             stringResource(if (copied) R.string.transcript_copied else R.string.transcript_copy),
             { clipboard.setText(AnnotatedString(summary.text)); copied = true },

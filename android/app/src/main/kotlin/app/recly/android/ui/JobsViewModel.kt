@@ -225,6 +225,8 @@ data class DetailState(
     val fetchProgress: Float = 0f,
     /** The parts come back from the local folder rather than Drive (docs/03 "Storage location"). */
     val folder: Boolean = false,
+    /** docs/03 "Storage location": where the recording's folder is; null until it has one. */
+    val storage: StorageKind? = null,
     /** docs/03 "Metadata": the marked moments, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
     /** A transcription of this recording is queued or running: nothing may edit the transcript under it. */
@@ -498,6 +500,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         runCatching { core().summaries.summarize(recordingId) }.onFailure { onFailure() }
     }
 
+    /** docs/08 "Summaries": the user's own words over ChatGPT's, saved at once; the page follows on [DetailState.summary]. */
+    suspend fun editSummary(recordingId: String, text: String): SummaryState {
+        val core = core()
+        return withContext(core.deps.io) { core.summaries.edit(recordingId, text) }
+    }
+
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
     fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)
 
@@ -684,7 +692,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 it.copy(loading = false, audio = audio, waveform = if (same) it.waveform else FloatArray(0),
                     waveformLoading = !same && !audio.isEmpty,
                     writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING,
-                    folder = record?.storage == StorageKind.FOLDER, durationSec = record?.meta?.durationSec)
+                    folder = record?.storage == StorageKind.FOLDER, storage = record?.storage, durationSec = record?.meta?.durationSec)
             }
             fetchFromDrive(core, recordingId, record, audio)
             decodeWaveform(core, recordingId)

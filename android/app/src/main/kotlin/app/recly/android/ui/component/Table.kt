@@ -101,6 +101,8 @@ fun TableRow(
     /** The muted second line by default; the warning ink for one that needs the user. */
     subtitleColor: Color = Color.Unspecified,
     trailing: (@Composable () -> Unit)? = null,
+    /** A line under the subtitle — a [TextLink] that belongs to this row rather than to a row of its own. */
+    under: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
     Column(modifier.fillMaxWidth().background(palette.surface)) {
@@ -116,6 +118,7 @@ fun TableRow(
                 subtitle?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor.takeOrElse { palette.textMuted })
                 }
+                under?.invoke()
             }
             trailing?.invoke()
         }

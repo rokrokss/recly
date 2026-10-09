@@ -622,13 +622,6 @@ class CrossShellDictionaryTest {
                 reckit = "Privacy Policy",
             ),
             Line(
-                what = "the link that opens it",
-                en = "Open",
-                ko = "열기",
-                android = "action_open",
-                reckit = "Open",
-            ),
-            Line(
                 what = "the sign-in button",
                 en = "Connect Google Drive",
                 ko = "Google Drive 연결",

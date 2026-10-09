@@ -86,6 +86,7 @@ import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryState
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
@@ -136,6 +137,8 @@ class DetailActions(
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
     /** The argument runs when the summary could not even start, so the page stops waiting for it. */
     val onSummarize: (onFailure: () -> Unit) -> Unit = {},
+    /** docs/09 "Summary view": the summary as the user rewrote it; answers what the recording has now. */
+    val onEditSummary: suspend (String) -> SummaryState = { SummaryState.None },
 )
 
 /**
@@ -244,6 +247,11 @@ fun RecordingDetailScreen(
         }
     }
 
+    // docs/09 "Summary view": the summary editor's draft, while it is open, and where leaving it with changes goes once
+    // the user has said Discard — back to the summary, or to the transcript chip they pressed.
+    var summaryDraft by remember(detail.recordingId) { mutableStateOf<SummaryDraft?>(null) }
+    var summaryLeaving by remember(detail.recordingId) { mutableStateOf<DetailView?>(null) }
+
     // docs/09 "Transcript reader": following the playhead, until the user scrolls the transcript.
     var following by remember(detail.recordingId) { mutableStateOf(true) }
     LaunchedEffect(player.isPlaying) { if (!player.isPlaying) following = true }
@@ -290,6 +298,42 @@ fun RecordingDetailScreen(
     var view by remember(detail.recordingId) { mutableStateOf(DetailView.TRANSCRIPT) }
     var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
     val summaryFailed = { askedSummary = false; view = DetailView.TRANSCRIPT }
+    val summarize = {
+        askedSummary = true
+        view = DetailView.SUMMARY
+        actions.onSummarize(summaryFailed)
+    }
+    var askReplace by remember(detail.recordingId) { mutableStateOf(false) }
+    if (askReplace) ReplaceSummaryDialog(onCancel = { askReplace = false }, onReplace = { askReplace = false; summarize() })
+    val leaveSummaryEditor = { to: DetailView ->
+        if (summaryDraft?.changed == true) summaryLeaving = to else { summaryDraft = null; view = to }
+    }
+    BackHandler(enabled = summaryDraft != null) { leaveSummaryEditor(DetailView.SUMMARY) }
+    summaryLeaving?.let { to ->
+        DiscardDialog(onKeep = { summaryLeaving = null }, onDiscard = { summaryLeaving = null; summaryDraft = null; view = to },
+            body = R.string.summary_discard_body)
+    }
+    val saveSummary = saveSummary@{
+        val editing = summaryDraft ?: return@saveSummary
+        if (!editing.changed) {
+            summaryDraft = null
+            return@saveSummary
+        }
+        saving = SavePhase.SAVING
+        scope.launch {
+            val started = SystemClock.elapsedRealtime()
+            val result = actions.onEditSummary(editing.text)
+            val work = SystemClock.elapsedRealtime() - started
+            delay(processingHoldMs(work))
+            // Anything but Ready means a summary of it started meanwhile: the draft stays for the user to keep or leave.
+            if (result is SummaryState.Ready) {
+                saving = SavePhase.DONE
+                delay(doneBadgeMs(work))
+                summaryDraft = null
+            }
+            saving = SavePhase.IDLE
+        }
+    }
     val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
@@ -303,6 +347,8 @@ fun RecordingDetailScreen(
         if (!keyboardVisible) {
             if (draft != null) {
                 ScreenHeader(title = stringResource(R.string.detail_edit))
+            } else if (summaryDraft != null) {
+                ScreenHeader(title = stringResource(R.string.summary_edit))
             } else ScreenHeader(
                 title = detail.title ?: stringResource(R.string.jobs_untitled),
                 // One row: the title on one line, the two icons at its end (UX decisions of 2026-10-08).
@@ -322,10 +368,9 @@ fun RecordingDetailScreen(
                                 onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
-                                onSummarize = {
-                                    askedSummary = true
-                                    view = DetailView.SUMMARY
-                                    actions.onSummarize(summaryFailed)
+                                onSummarize = { if (asksBeforeReplacing(detail.summary)) askReplace = true else summarize() },
+                                onEditSummary = {
+                                    savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
                                 },
                             ))
                         }
@@ -341,7 +386,9 @@ fun RecordingDetailScreen(
         }
         if (chips && !detail.loading) {
             FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
-                BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT, { view = DetailView.TRANSCRIPT },
+                // While the summary is being edited the chips stay; going to the transcript leaves the editor.
+                BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
+                    { if (summaryDraft != null) leaveSummaryEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
                     modifier = Modifier.testTag("view-transcript"))
                 BlueprintChip(stringResource(R.string.summary_tab), view == DetailView.SUMMARY, { view = DetailView.SUMMARY },
                     modifier = Modifier.testTag("view-summary"))
@@ -352,10 +399,13 @@ fun RecordingDetailScreen(
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             val editing = draft
+            val summaryEditing = summaryDraft
             when {
                 editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec,
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
+                summaryEditing != null ->
+                    SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
                 chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary,
                     (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty(), { actions.onSummarize(summaryFailed) }, Modifier.fillMaxSize())
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
@@ -432,31 +482,13 @@ fun RecordingDetailScreen(
         // docs/09 "Editing and speakers": the editor's footer and its answers sit under the fields, above
         // the keyboard — the note says what a save does to the files in storage.
         draft?.let { editing ->
-            HairLine()
-            Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
-                verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                Text(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent),
-                    style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-                    // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
-                    if (editing.changed || saving != SavePhase.IDLE) {
-                        BlueprintButton(stringResource(R.string.action_cancel), { leaveEditor() }, tone = ButtonTone.QUIET, minWidth = MinTouch,
-                            enabled = saving == SavePhase.IDLE)
-                    }
-                    BlueprintButton(
-                        label = when {
-                            saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
-                            !editing.changed -> stringResource(R.string.job_state_done)
-                            else -> stringResource(R.string.action_save)
-                        },
-                        onClick = save,
-                        tone = ButtonTone.PRIMARY,
-                        enabled = saving == SavePhase.IDLE,
-                        leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
-                        modifier = Modifier.testTag("edit-save"),
-                    )
-                }
-            }
+            EditFooter(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent), editing.changed, saving,
+                onCancel = { leaveEditor() }, onSave = save)
+        }
+        // docs/09 "Summary view": the summary editor's, in the same place; its note says where the saved summary goes.
+        summaryDraft?.let { editing ->
+            EditFooter(stringResource(summaryEditNote(detail.storage)), editing.changed, saving,
+                onCancel = { leaveSummaryEditor(DetailView.SUMMARY) }, onSave = saveSummary)
         }
 
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
@@ -469,6 +501,35 @@ fun RecordingDetailScreen(
 
 /** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
 internal enum class SavePhase { IDLE, SAVING, DONE }
+
+/** An editor's footer: what a save does, then end-aligned `Cancel` · `Save` — `Done` alone while nothing changed. */
+@Composable
+private fun EditFooter(note: String, changed: Boolean, saving: SavePhase, onCancel: () -> Unit, onSave: () -> Unit) {
+    HairLine()
+    Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+        verticalArrangement = Arrangement.spacedBy(Space.s)) {
+        Text(note, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
+            if (changed || saving != SavePhase.IDLE) {
+                BlueprintButton(stringResource(R.string.action_cancel), onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch,
+                    enabled = saving == SavePhase.IDLE)
+            }
+            BlueprintButton(
+                label = when {
+                    saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
+                    !changed -> stringResource(R.string.job_state_done)
+                    else -> stringResource(R.string.action_save)
+                },
+                onClick = onSave,
+                tone = ButtonTone.PRIMARY,
+                enabled = saving == SavePhase.IDLE,
+                leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
+                modifier = Modifier.testTag("edit-save"),
+            )
+        }
+    }
+}
 
 /** docs/09 "Detail header and More menu": a refused "Transcribe again" in the menu's own reasons; null when it started. */
 internal fun retranscribeRefusal(result: RetranscribeResult): Int? = when (result) {

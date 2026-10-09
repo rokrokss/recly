@@ -448,6 +448,7 @@ private fun JobsTab(
                 onConnectDrive = onConnectDrive,
                 chatGpt = state.chatGpt,
                 onSummarize = { onFailure -> model.summarize(detail.recordingId, onFailure) },
+                onEditSummary = { model.editSummary(detail.recordingId, it) },
             ),
         )
     } else {

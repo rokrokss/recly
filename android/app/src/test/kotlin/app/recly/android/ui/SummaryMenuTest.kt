@@ -11,10 +11,12 @@ import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.Summary
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
+import recly.core.storage.StorageKind
 
 /**
  * docs/09 "Detail header and More menu" · "Summary view": why Summarize waits, in the order the reasons are
- * checked; when it says "again"; when the Transcript | Summary chips are there; and what a failed summary offers.
+ * checked; when it says "again"; when the Transcript | Summary chips are there; what a failed summary offers; and the
+ * summary editor's item, question, note and draft.
  */
 class SummaryMenuTest {
 
@@ -78,6 +80,48 @@ class SummaryMenuTest {
         assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.CHATGPT_PLAN_REQUIRED.code()))
         assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.PROVIDER_ERROR.code(detail = "500")))
         assertEquals(SummaryRecovery.RETRY, summaryRecovery("not a key"))
+    }
+
+    @Test
+    fun `Edit summary is there once there is a summary, and waits while a new one is written`() {
+        val edited = summary.copy(editedAt = "2026-10-09T11:00:00Z")
+        assertNull(savedSummary(SummaryState.None))
+        assertNull(savedSummary(SummaryState.Running(null)))
+        assertEquals(summary, savedSummary(SummaryState.Ready(summary)))
+        assertEquals(edited, savedSummary(SummaryState.Running(edited)))
+        assertEquals(summary, savedSummary(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), summary)))
+        assertNull(editSummaryReason(SummaryState.Ready(summary)))
+        assertNull(editSummaryReason(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), summary)))
+        assertEquals(R.string.summary_running, editSummaryReason(SummaryState.Running(summary)))
+    }
+
+    @Test
+    fun `Summarize again asks first only over a summary the user edited`() {
+        val edited = summary.copy(editedAt = "2026-10-09T11:00:00Z")
+        assertFalse(asksBeforeReplacing(SummaryState.None))
+        assertFalse(asksBeforeReplacing(SummaryState.Ready(summary)))
+        assertTrue(asksBeforeReplacing(SummaryState.Ready(edited)))
+        assertTrue(asksBeforeReplacing(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), edited)))
+        assertFalse(asksBeforeReplacing(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
+    }
+
+    @Test
+    fun `the editor's note says the summary travels only with Drive or iCloud`() {
+        assertEquals(R.string.summary_edit_note_shared, summaryEditNote(StorageKind.DRIVE))
+        assertEquals(R.string.summary_edit_note_shared, summaryEditNote(StorageKind.ICLOUD))
+        assertEquals(R.string.summary_edit_note_local, summaryEditNote(StorageKind.FOLDER))
+        // Not uploaded yet: there is no folder for it to go to.
+        assertEquals(R.string.summary_edit_note_local, summaryEditNote(null))
+    }
+
+    @Test
+    fun `a draft has changed only when Save would write it`() {
+        val draft = SummaryDraft.of(summary)
+        assertFalse(draft.changed)
+        assertTrue(draft.copy(text = "Summary\n- two").changed)
+        // The core trims, and keeps the summary for blank text.
+        assertFalse(draft.copy(text = "  ${summary.text}\n").changed)
+        assertFalse(draft.copy(text = "   ").changed)
     }
 
     @Test
