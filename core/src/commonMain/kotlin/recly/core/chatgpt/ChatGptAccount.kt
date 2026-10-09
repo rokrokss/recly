@@ -41,7 +41,7 @@ import recly.core.transcribe.providerJson
 /** One model the signed-in plan offers, as `GET /v1/models` lists it. [label] is OpenAI's own name for it. */
 data class ChatGptModel(val id: String, val label: String)
 
-/** What the settings section shows (docs/09 "Settings"). */
+/** What Settings → ChatGPT shows (docs/09 "Summary view"). */
 sealed class ChatGptConnection {
     /** docs/15 "China mainland App Store": not offered in this storefront — the shells show nothing. */
     data object Unavailable : ChatGptConnection()
@@ -67,7 +67,7 @@ data class ChatGptSignIn(val authorizationUrl: String, val state: String)
 
 /** A call that either worked or says why, as a [CoreMessage] wire code the shell renders (docs/07 §5). */
 sealed class ChatGptResult {
-    /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "ChatGPT"). */
+    /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "Summary view"). */
     data class Done(val welcome: Boolean = false) : ChatGptResult()
 
     data class Failed(val reason: String) : ChatGptResult()

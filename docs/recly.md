@@ -59,7 +59,8 @@ post-processing.
    each device.
 3. **The original is not deleted before the ack.**
 4. **The files in Drive are the interface.** Transcription is a choice of local, external API or OFF; from summarization on,
-   the work belongs to the user's agent (§16, `skills/recly-notes/`). The default is "my Drive + my automation". Drive is the
+   the work belongs to the user's agent (§16, `skills/recly-notes/`) — except a summary the user asks for, one recording at a
+   time, through the user's own ChatGPT plan (§8 "Summaries", 2026-10-09). The default is "my Drive + my automation". Drive is the
    source archive the app writes, so agents only read it. The repository's two skills are **examples** — one way to write
    minutes and keep those notes and later edits in the user's Notion (`skills/recly-notion/`) — and they assume the user
    adapts them to their own format and note app or builds their own (2026-10-01).
@@ -73,7 +74,7 @@ the current rule.
 
 | Number | Rule |
 |---|---|
-| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) |
+| ADR-001 | The device records and the original goes to the user's Drive. Transcription and delivery are **optional steps the user puts into their own workflow**, not fixed post-processing. Summarization is not in the pipeline — the pipeline takes on only what a subscription agent cannot do (STT), and what an agent can do (text summarization) is done with an agent skill (`skills/recly-notes/`). (Revised 2026-09-24: user workflows and webhooks retired — transcription is the local, external API or OFF choice in the recording processing settings, §5) (Revised 2026-10-09: one exception — a summary of one recording, asked for in its detail, through the user's own ChatGPT plan with Sign in with ChatGPT. The subscription comes into the app rather than the app holding a key, so the rule "use what the user already pays for, no server" holds. It is never a step of the processing plan and never automatic, and there is no summarization with an API key; §8 "Summaries", §15 §10) |
 | ADR-002 | The Android phone, iPhone, macOS and Windows run workflows. Galaxy Watch hands files to the phone over the Data Layer, Apple Watch over WatchConnectivity. **The watches have no authentication or network code.** Standalone upload from a cellular watch is out of scope |
 | ADR-003 | When the phone and the watch record at the same time, there are two files and they are not linked. `recordingId` is an independent per-device ULID, and there is no session linking (session id) |
 | ADR-004 | The workflow engine, Drive client, webhooks, sync and job queue live in a single Kotlin Multiplatform `core/`. Workflow logic is not written twice. (Webhooks retired 2026-09-24) |
@@ -1435,6 +1436,9 @@ is never selected on Windows.
 
 - The Google access/refresh token lives in the same store as secrets, in a different namespace (`tokens`). It is not synchronized.
 - The core calls only `TokenProvider.accessToken()`. Refreshing and prompting the user to sign in again are the shell's job (§6).
+- The ChatGPT sign-in (§15 §10) is the core's own, in a namespace of its own (`chatgpt`: `host`, `registration`, `session.0`…), so a
+  Drive disconnect — which empties `tokens` — leaves it alone. The session is split into 2,000-character pieces because a Windows
+  credential holds 2,560 bytes.
 
 ---
 
@@ -1979,6 +1983,28 @@ first export of a process removes every earlier one, each later one those older 
 The result files are added to the `files[]` of §4: `track: "transcript"` (two entries, json · txt). Only when the preceding `transcribe` step
 succeeded.
 
+### Summaries
+
+2026-10-09 (ADR-001, revised). The detail's More menu has `Summarize` — `Summarize again` once there is a summary — and the core's
+`summaries.summarize(recordingId)` sends **the transcript's text only** (the `.txt` lines with the user's speaker names, plus the title
+and start time) to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
+model chosen in Settings → ChatGPT, OpenAI's first listed model by default; §15 §10). Audio never goes: the plan's API does not take
+audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text in
+the transcript's language — a summary, key points, decisions and action items, leaving out empty sections and adding nothing the
+transcript does not say — because no shell renders Markdown.
+
+- **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
+  consent before any background use; there is none.
+- **Kept on this device.** The result is `Summary` (`recordingId`, `text`, `model`, `createdAt`) as `summary.v1.json` beside the parts,
+  written whole and moved into place like `waveform.v1`. It is not uploaded, survives the 7-day audio cleanup and goes when the recording
+  is deleted. Another device does not see it; agents keep reading the transcript (principle 4).
+- **One at a time per recording.** A second request joins the running one, and a summary keeps running when its screen closes. A
+  failure keeps the previous summary (`SummaryState.Failed(reason, previous)`).
+- **Errors** are `CoreMessage`s: `CHATGPT_SIGN_IN_REQUIRED` (no sign-in, or OpenAI ended it), `CHATGPT_USAGE_LIMIT`
+  (`subscription_sharing_usage_limit_exceeded`, or a 429), `CHATGPT_PLAN_REQUIRED` (`subscription_sharing_user_not_eligible`, or a grant
+  without `chatgpt.tokens.use.direct`), `TRANSFER_CONSENT_REQUIRED` (iPhone, before anything is sent) and `PROVIDER_ERROR` with OpenAI's
+  code or admission `detail` as its detail. A stream that ends without `response.completed` is a failure, not a short summary.
+
 ### What is not included
 
 Identifying "me" by transcribing mic/sys separately, entering the participant count on the watch, and recognizing a speaker from one
@@ -2373,6 +2399,28 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
    - Exception: the expanded actions of a ledger row pin only delete to the end, as in principle 2, and the rest wrap from the start.
    - A menu item that cannot run now is not hidden: it stays, disabled, with its reason as the item's second line (More, Share; 2026-10-07).
 
+### Summary view
+
+2026-10-09 (§8 "Summaries"). Nothing about it is offered unprompted (trend 1): there is no banner and no button outside the More menu.
+
+- **Settings → ChatGPT**, after Recording processing (desktop: before Agent connection), laid out like the Drive rows. Signed out: `Use
+  your ChatGPT plan` / `Summarize recordings with the plan you already have. Recly charges nothing for it.` with `Continue with ChatGPT`
+  (OpenAI's wording for the action, checked 2026-10-09). While the browser is open the button shows its processing state and a line
+  `Finish signing in in your browser` has a quiet `Cancel`. Signed in: the account's email / `Using your ChatGPT plan` with a quiet
+  `Sign out` (no confirmation — signing in again restores it), a `Model` picker of the plan's models (hidden when the list could not be
+  read) and a quiet `Manage usage` (ChatGPT's usage settings). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
+  to sign in again.` in the warning tone, with `Continue with ChatGPT`. The footnote says only the transcript text goes, never the audio, and
+  that it counts toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
+  ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
+  absent where the core says `Unavailable` (§15 "China mainland App Store").
+- **The detail.** More → `Summarize` / `Summarize again`, disabled with its reason like the other items: `No transcript yet`,
+  `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. Once a summary exists or one was asked for, two
+  chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
+  `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12)
+  and a quiet `Copy all`. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
+  `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage` (primary) for the usage limit,
+  `Retry` (quiet) for the rest, none when the sentence already says to sign in; the previous text stays under it.
+
 ### Accessibility
 
 The system's `reduce motion` · `prefers-color-scheme` · contrast · font size are applied automatically — **the app settings have no accessibility section,
@@ -2434,6 +2482,7 @@ recly.core
                 TranscriptEditing · SpeakerTurns · SpeakerDiarizationModels
   sync/         WorkflowSync (pull/push/merge)
   secrets/      SecretsRepository · SecretSync · SecretSyncStore
+  chatgpt/      ChatGptAccount (Sign in with ChatGPT, §15 §10) · Summaries · ResponseStream (§8 "Summaries")
   transfer/     TransferReceiver (receiver-side verification · ack helpers)
   platform/     SecureStore · TokenProvider · Transport · Crypto · AudioTools · Clock · Logger · DeviceInfo
   ReclyCore     composition root
@@ -3383,7 +3432,7 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+devices. (4) OpenAI receives a recording's transcript text only when the user signed in with ChatGPT and asks for its summary (§10). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
@@ -3430,6 +3479,9 @@ Response to App Review on 2026-09-14: on iPhone/iPad, OpenAI transcription is di
 - An unconfirmed region or a failed lookup is not treated as allowed. That transcription waits 60 seconds with `STOREFRONT_UNAVAILABLE` and does not use up retries. If China mainland is confirmed, it fails with `PROVIDER_REGION_RESTRICTED`. Other steps and the `onError` contract stay as they are.
 - In the restricted or region-unconfirmed state, transcription HTTP redirects are not followed automatically. The transcription provider's final endpoint must be used; this prevents audio from being delivered through a redirect to a destination that was never checked.
 - StoreKit's current country information is read right before use, and the settings screen subscribes to `Storefront.updates`. A previous country is not stored on disk and reused as grounds for allowing.
+- Sign in with ChatGPT (§10) follows the same rule (2026-10-09): while the storefront is China mainland or unconfirmed the core reports
+  `ChatGptConnection.Unavailable`, the shells show neither Settings → ChatGPT nor the detail's `Summarize`, and the core refuses its OpenAI
+  requests.
 - Additional system service path: the app asks Apple StoreKit for App Store country information. Recly passes no recordings, transcripts, processing settings or external provider API keys to this lookup. Apple's system service manages the account/storefront information, and the app does not call a separate IP geolocation server.
 
 ### iPhone providers
@@ -3456,6 +3508,12 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
   (<https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models>, checked 2026-09-29).
   ElevenLabs's EU data residency and zero-retention mode are Enterprise-only, so they are not used.
 - Excluded (iPhone): Together AI, Mistral AI, Daglo, Speechmatics, Rev AI, Gladia.
+- **ChatGPT summaries (§10, 2026-10-09).** OpenAI documents no training rule for the plan's API: the requests count as the plan's
+  usage, and its help pages say ChatGPT's "Improve the model for everyone" setting governs personal plans (Codex included). So the
+  iPhone treats it like ElevenLabs: the destination `TransferTargets.chatGptSummary()` (`summarize`, `chatgpt`,
+  `https://api.openai.com/v1`) needs the transfer permission, asked the first time `Summarize` is chosen, and its allow button turns on
+  only when "I turned off “Improve the model for everyone” in ChatGPT." is checked, with a link to OpenAI's data-controls help
+  (<https://help.openai.com/en/articles/7730893>). Settings → Privacy lists and withdraws it like the providers.
 
 ### §0 What stays on the device
 
@@ -3468,6 +3526,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | `deviceId` (a new UUID v4 per install) | Secure storage / on macOS `{dataDir}/device.id` | Carried in `deviceId` of the `meta.json` uploaded to Drive (§1). Does not leave any other way |
 | Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
 | App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
+| Summaries (`summary.v1.json`) and the chosen ChatGPT model | The recording's folder; the local database | Never uploaded. The summary arrives from OpenAI (§10) and stays on this device |
 
 ### §1 Google Drive — the user's own Drive
 
@@ -3635,7 +3694,7 @@ Key values **are not part of the recording processing settings.** The settings h
 (ADR-008). So there is no key in the settings export file, in Drive, or in logs. The storage mechanism is the same as the Secrets table in §5.
 
 - What is stored here: Google access/refresh tokens (`tokens` namespace), STT API
-  keys (`secrets` namespace), `deviceId`.
+  keys (`secrets` namespace), `deviceId`, and the ChatGPT sign-in (`chatgpt` namespace, §10).
 - **The only path by which a key leaves is provider authentication.** When the user chooses external API transcription, the STT key is carried as is
   to the provider in a request header. So the correct sentence is not "it does not leave the device" but **"it never goes to Recly, only to the provider the
   user chose"**.
@@ -3649,8 +3708,8 @@ Key values **are not part of the recording processing settings.** The settings h
 - No analytics, usage statistics or event collection.
 - No crash reporting (no Firebase/Crashlytics/Sentry/AppCenter-family dependency in any of the four shells).
 - No remote config, A/B testing or advertising identifiers.
-- There is **no account** on Recly's side. No sign-up, no email collection, no user identifier. Signing in is done against the user's Google account,
-  and the resulting token exists only on the device.
+- There is **no account** on Recly's side. No sign-up, no email collection, no user identifier. Signing in is done against the user's Google account —
+  and, for summaries, the user's ChatGPT account (§10) — and the resulting tokens exist only on the device.
 - No "our server" calls such as update checks or license checks either.
 
 ### §7 Data deletion
@@ -3666,6 +3725,7 @@ The canonical rules are in §3 Retention · deletion. Summary:
 | Delete the recordings in the local folder | "Delete" in the list → `Also delete from the local folder` (the default keeps it), or delete them in the folder yourself | Deleting the app leaves the folder and its files where they are |
 | Delete everything | Delete each key in the secrets list + disconnect + delete the app + delete the `recly/` folder in Drive | **Deleting the app erases everything only on Android/Wear.** On macOS `~/Library/Application Support/app.recly.mac/` and keychain items remain, on Windows `%LOCALAPPDATA%\Recly\` and Credential Manager items remain, and on iOS · watchOS keychain items may remain (Apple does not guarantee their deletion). Per-platform cleanup is in `docs/policy/privacy-policy.md` §7 |
 | Copies held by a provider | Recly cannot delete them on the user's behalf | The user does it directly, following that provider's console · policy |
+| End the ChatGPT sign-in | Settings → ChatGPT → `Sign out` (revokes it at OpenAI), or remove Recly in ChatGPT's settings | The tokens are deleted from the device; the host ID and the registration (OpenAI's client id, the account's email) stay so a later sign-in reuses them. Summaries stay with their recordings |
 
 **What deleting a recording deletes.** `RecordingRepository.delete` deletes `step_run` → `job` → `part` →
 `recording` in one transaction and deletes the directory within the same lock section. So the recording's full processing plan
@@ -3713,6 +3773,31 @@ files of its own and never writes to the folders it reads: it lists recording fo
 `{base}.folder.json` and the transcripts, and names the audio files' paths (`get_audio_files`) without opening them. What it answers goes
 to the agent that started it, and where that agent sends it — to Anthropic or OpenAI, say — is the agent's own path under its provider's terms,
 chosen by the user, as with the skills (`skills/`). `--print-config` prints the `mcpServers` entry that starts it.
+
+### §10 Sign in with ChatGPT — the user's own ChatGPT plan (2026-10-09)
+
+The Android phone, iPhone, Mac and Windows apps can sign in to the user's ChatGPT account and use its plan for summaries (§8
+"Summaries"). OpenAI's open-source flow (<https://developers.openai.com/siwc/token-sharing-open-source/sign-in>, checked 2026-10-09):
+the device registers as a public client the first time (`client_id=dynamic_agent_client`, `agent_name_hint=Recly`, no secret, no API
+key) and reuses the client id OpenAI issued afterwards, with the device's own `ext_agent_host_id` (`urn:uuid:` made once per install).
+The watches have no part in it. Nothing passes through a Recly server; none exists.
+
+| Path | To | What is sent | What comes back |
+|---|---|---|---|
+| Sign-in | `https://auth.openai.com/api/accounts/authorize` in the user's browser (the system browser on desktop, Custom Tabs on Android, `ASWebAuthenticationSession` on iPhone) | the client id, PKCE challenge, `state`, `nonce`, the scopes `openid profile email offline_access resource.invoke chatgpt.tokens.use.direct`, `resource=https://api.openai.com/v1`, the host ID, and the saved email as `login_hint` on a later sign-in | a redirect to `http://127.0.0.1:<port>/auth/callback` — a listener the app opens on the loopback interface for that one sign-in (OpenAI accepts only this form) — with the code and, the first time, the issued client id |
+| Tokens | `https://auth.openai.com/api/accounts/oauth/token` | the code and verifier, or the refresh token; the client id; `resource` | access token (1 hour), rotating refresh token (30 days), ID token (`sub`, `email`), `earliest_refresh_at` |
+| Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
+| Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`) |
+| Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions, and **the recording's transcript text with the speakers' names, its title and start time** — never audio | the summary as a stream (`store: false`) |
+
+- Only when the user asks: signing in, and choosing `Summarize` on one recording. There is no background use (OpenAI's terms require
+  express consent for it).
+- The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
+  client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
+  directly from the token endpoint over TLS. Requests that carry a code or token are never logged.
+- Requests count toward the user's ChatGPT plan; OpenAI's terms and the user's ChatGPT data controls govern what OpenAI does with them
+  (iPhone: "iPhone providers" above). The app offers `Manage usage` (<https://chatgpt.com/settings/usage>).
+- Removing it: Settings → ChatGPT → `Sign out`, or remove Recly in ChatGPT's settings; summaries stay with their recordings (§7).
 
 ---
 
@@ -3782,7 +3867,9 @@ the basis of proposal A.
 ### Instrumentation
 
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
-`xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`. **These names are a stable
+`xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
+`chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused`, `chatgpt.rejected`, `chatgpt.revoke.failed`) and `summary.*`
+(`summary.start`, `summary.done`, `summary.failed`). **These names are a stable
 contract** (§21). The only way to see what happened on a real device is **"Export logs"** in settings (a file ring buffer),
 and nothing leaves beyond that (ADR-022).
 
