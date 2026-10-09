@@ -1,0 +1,92 @@
+package app.recly.android.ui
+
+import app.recly.android.R
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.ChatGptModel
+import recly.core.chatgpt.Summary
+import recly.core.chatgpt.SummaryState
+import recly.core.message.CoreMessage
+
+/**
+ * docs/09 "Detail header and More menu" · "Summary view": why Summarize waits, in the order the reasons are
+ * checked; when it says "again"; when the Transcript | Summary chips are there; and what a failed summary offers.
+ */
+class SummaryMenuTest {
+
+    private val signedIn = ChatGptConnection.SignedIn("me@example.com", listOf(ChatGptModel("gpt-5", "GPT-5")), "gpt-5")
+    private val summary = Summary("r1", "Summary\n- one", "gpt-5", "2026-10-09T10:00:00Z")
+
+    @Test
+    fun `no transcript comes first`() {
+        assertEquals(R.string.detail_no_transcript,
+            summarizeReason(false, transcribing = true, busyReason = R.string.detail_transcribing, ChatGptConnection.SignedOut, SummaryState.Running(null)))
+    }
+
+    @Test
+    fun `a transcription on its way says what the menu already says about it`() {
+        assertEquals(R.string.detail_transcribing, summarizeReason(true, true, R.string.detail_transcribing, ChatGptConnection.SignedOut, SummaryState.None))
+        assertEquals(R.string.detail_not_uploaded, summarizeReason(true, true, R.string.detail_not_uploaded, signedIn, SummaryState.None))
+    }
+
+    @Test
+    fun `signed out or expired sends the user to Settings`() {
+        assertEquals(R.string.core_chatgpt_sign_in_required, summarizeReason(true, false, R.string.detail_transcribing, ChatGptConnection.SignedOut, SummaryState.None))
+        assertEquals(R.string.core_chatgpt_sign_in_required,
+            summarizeReason(true, false, R.string.detail_transcribing, ChatGptConnection.Expired("me@example.com"), SummaryState.Ready(summary)))
+    }
+
+    @Test
+    fun `a summary already being written says so`() {
+        assertEquals(R.string.summary_running, summarizeReason(true, false, R.string.detail_transcribing, signedIn, SummaryState.Running(summary)))
+    }
+
+    @Test
+    fun `signed in with a transcript, it can run - again after a summary or a failure`() {
+        assertNull(summarizeReason(true, false, R.string.detail_transcribing, signedIn, SummaryState.None))
+        assertNull(summarizeReason(true, false, R.string.detail_transcribing, signedIn, SummaryState.Ready(summary)))
+        assertNull(summarizeReason(true, false, R.string.detail_transcribing, signedIn, SummaryState.Failed(CoreMessage.CHATGPT_USAGE_LIMIT.code(), null)))
+    }
+
+    @Test
+    fun `Summarize again once there is a summary to replace`() {
+        assertFalse(hasSummary(SummaryState.None))
+        assertFalse(hasSummary(SummaryState.Running(null)))
+        assertFalse(hasSummary(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null)))
+        assertTrue(hasSummary(SummaryState.Ready(summary)))
+        assertTrue(hasSummary(SummaryState.Running(summary)))
+        assertTrue(hasSummary(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), summary)))
+    }
+
+    @Test
+    fun `the chips are there for a summary or one just asked for, never while editing`() {
+        assertFalse(showsSummaryChips(SummaryState.None, asked = false, editing = false))
+        assertTrue(showsSummaryChips(SummaryState.None, asked = true, editing = false))
+        assertTrue(showsSummaryChips(SummaryState.Ready(summary), asked = false, editing = false))
+        assertTrue(showsSummaryChips(SummaryState.Failed(CoreMessage.PROVIDER_ERROR.code(), null), asked = false, editing = false))
+        assertFalse(showsSummaryChips(SummaryState.Ready(summary), asked = true, editing = true))
+    }
+
+    @Test
+    fun `a failed summary offers the one button that helps`() {
+        assertEquals(SummaryRecovery.MANAGE_USAGE, summaryRecovery(CoreMessage.CHATGPT_USAGE_LIMIT.code()))
+        assertEquals(SummaryRecovery.NONE, summaryRecovery(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()))
+        assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.CHATGPT_PLAN_REQUIRED.code()))
+        assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.PROVIDER_ERROR.code(detail = "500")))
+        assertEquals(SummaryRecovery.RETRY, summaryRecovery("not a key"))
+    }
+
+    @Test
+    fun `four reasons are said in their own words, any other as a failure with its detail`() {
+        assertEquals(CoreMessage.CHATGPT_USAGE_LIMIT, spokenReason(CoreMessage.CHATGPT_USAGE_LIMIT.code()))
+        assertEquals(CoreMessage.PROVIDER_REGION_RESTRICTED, spokenReason(CoreMessage.PROVIDER_REGION_RESTRICTED.code()))
+        assertNull(spokenReason(CoreMessage.PROVIDER_ERROR.code(detail = "state mismatch")))
+        assertEquals("state mismatch", reasonDetail(CoreMessage.PROVIDER_ERROR.code(detail = "state mismatch")))
+        assertEquals("no transcript", reasonDetail(CoreMessage.STEP_FAILED.code("no transcript")))
+        assertEquals("as it came", reasonDetail("as it came"))
+    }
+}

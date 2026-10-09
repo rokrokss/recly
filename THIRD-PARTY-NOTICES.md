@@ -27,7 +27,7 @@ is stale. Build-only tooling (Gradle, the Android Gradle Plugin, Xcode, cargo) i
 | json-schema-validator (networknt) | core | Apache-2.0 | <https://github.com/networknt/json-schema-validator> |
 | SKIE (Swift API generation for the core XCFramework) | Apple | Apache-2.0 | <https://github.com/touchlab/SKIE> |
 | Compose Multiplatform | Windows | Apache-2.0 | <https://github.com/JetBrains/compose-multiplatform> |
-| AndroidX / Jetpack Compose — `androidx.*` (core, activity, lifecycle, navigation, work, datastore, credentials, security-crypto, glance, media3, compose, wear-*) | Android phone, Galaxy Watch | Apache-2.0 | <https://github.com/androidx/androidx> |
+| AndroidX / Jetpack Compose — `androidx.*` (core, activity, lifecycle, navigation, work, datastore, credentials, security-crypto, glance, media3, browser, compose, wear-*) | Android phone, Galaxy Watch | Apache-2.0 | <https://github.com/androidx/androidx> |
 | JNA and JNA Platform (Win32 wrappers) | Windows | Dual-licensed LGPL-2.1-or-later **or** Apache-2.0 from JNA 4.0 onward; Recly elects **Apache-2.0** | <https://github.com/java-native-access/jna> |
 | Google Play services — `play-services-auth`, `play-services-wearable` | Android phone, Galaxy Watch | Proprietary — Android Software Development Kit License Agreement | <https://developer.android.com/studio/terms> |
 | Google Identity Services — `com.google.android.libraries.identity.googleid:googleid` | Android phone | Proprietary — Android Software Development Kit License Agreement | <https://developer.android.com/studio/terms> |
