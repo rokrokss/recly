@@ -66,7 +66,8 @@ and its key; and a computer that stays on.
 - **Files are the interface.** Transcripts are plain files next to the audio, in a
   [documented format](spec/) any agent, script or app can read. Transcribe on the device or with your
   own key (AssemblyAI, CLOVA, Deepgram, OpenAI, Azure and more), with speakers separated on the device
-  or by a provider that can, or not at all. Notes are your agent's job, not a paid tier.
+  or by a provider that can, or not at all. Notes are your agent's job, not a paid tier — or, for one
+  recording at a time, a summary from your own ChatGPT plan after **Continue with ChatGPT**.
 - **Mark it, fix it, find it.** Tap **Highlight** while recording, on the phone, either watch or the
   desktop, and the moment goes into the recording's files for your agent. Afterwards, fix a word,
   name the speakers, transcribe again with your current settings, search every title and
@@ -84,6 +85,7 @@ and its key; and a computer that stays on.
 | Storage | Your Google Drive (or your iCloud on iPhone and Mac, or a local folder you pick on iPhone, Mac, Windows and Android) | To Google Drive or iCloud: the audio parts and a small metadata file, to your own account. A local folder: nothing leaves the device. |
 | Transcription | On device, or a provider you chose with your own key | On device: no audio goes to a speech service. External: the joined audio goes to the provider you selected, with your vocabulary if you set one. Results are written next to the recording. |
 | Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your storage and writes the notes wherever you keep them (Notion, in the example skills). If you turn on automatic minutes, recly-events tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, and the transcript when the agent asks for it; never the audio. |
+| Summary (optional) | Your ChatGPT plan, when you choose **Summarize** on a recording after signing in with ChatGPT | That recording's transcript text, to OpenAI; never the audio. The summary is kept on the device. |
 | Processing settings and API keys | Your device | Nothing is synced. **Settings file** → **Export settings** moves configuration only; enter keys separately on each device. |
 
 The full list of every network path, with nothing left out, is in the
