@@ -443,4 +443,12 @@
     <string name="chatgpt_page_return">Recly로 돌아가기</string>
     <string name="chatgpt_page_declined">로그인이 취소되었습니다. 이 창을 닫고 Recly로 돌아가세요.</string>
     <string name="chatgpt_page_done">이 로그인은 이미 처리되었습니다. 이 창을 닫아도 됩니다.</string>
+    <string name="summary_edit">요약 편집</string>
+    <string name="summary_discard_body">이 요약에서 고친 내용이 사라집니다.</string>
+    <string name="summary_replace_title">고친 요약을 바꿀까요?</string>
+    <string name="summary_replace_body">다시 요약하면 고친 요약 대신 새 요약이 들어갑니다.</string>
+    <string name="summary_replace">바꾸기</string>
+    <string name="summary_edited">편집됨</string>
+    <string name="summary_edit_note_shared">저장하면 저장소의 요약이 바뀌고 다른 기기에도 보입니다.</string>
+    <string name="summary_edit_note_local">저장하면 이 기기에 요약을 보관합니다.</string>
 </resources>

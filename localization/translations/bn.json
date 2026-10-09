@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "আপনার ChatGPT ডেটা নিয়ন্ত্রণে “সবার জন্য মডেল উন্নত করুন” বন্ধ না থাকলে ChatGPT আপনার পাঠানো বিষয়বস্তু মডেল উন্নত করতে ব্যবহার করতে পারে।",
   "I turned off “Improve the model for everyone” in ChatGPT.": "আমি ChatGPT-তে “সবার জন্য মডেল উন্নত করুন” বন্ধ করেছি।",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT সংযুক্ত হয়েছে। এই উইন্ডো বন্ধ করে Recly-তে ফিরে যান।",
-  "Return to Recly": "Recly-তে ফিরে যান"
+  "Return to Recly": "Recly-তে ফিরে যান",
+  "Edit summary": "সারাংশ সম্পাদনা করুন",
+  "Your edits to this summary will be lost.": "এই সারাংশে আপনার পরিবর্তনগুলো হারিয়ে যাবে।",
+  "Replace your edited summary?": "আপনার সম্পাদিত সারাংশ বদলাবেন?",
+  "Summarizing again replaces the summary you edited.": "আবার সারাংশ করলে আপনার সম্পাদিত সারাংশ বদলে যাবে।",
+  "Replace": "বদলান",
+  "Edited": "সম্পাদিত",
+  "Saving updates the summary in your storage, and your other devices show it.": "সংরক্ষণ করলে আপনার স্টোরেজে সারাংশ আপডেট হয় এবং অন্য ডিভাইসেও দেখা যায়।",
+  "Saving keeps the summary on this device.": "সংরক্ষণ করলে সারাংশ এই ডিভাইসে থাকে।",
+  "Recording can’t start on this PC. Reinstall Recly.": "এই পিসিতে রেকর্ডিং শুরু করা যাচ্ছে না। Recly আবার ইনস্টল করুন।"
 }

@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">بازگشت به Recly</string>
     <string name="chatgpt_page_declined">ورود لغو شد. این پنجره را ببندید و به Recly برگردید.</string>
     <string name="chatgpt_page_done">این ورود قبلاً انجام شده است. می‌توانید این پنجره را ببندید.</string>
+    <string name="summary_edit">ویرایش خلاصه</string>
+    <string name="summary_discard_body">ویرایش‌های شما در این خلاصه از بین می‌رود.</string>
+    <string name="summary_replace_title">خلاصه‌ای را که ویرایش کرده‌اید جایگزین شود؟</string>
+    <string name="summary_replace_body">خلاصه کردن دوباره، خلاصه ویرایش‌شده را جایگزین می‌کند.</string>
+    <string name="summary_replace">جایگزین کردن</string>
+    <string name="summary_edited">ویرایش‌شده</string>
+    <string name="summary_edit_note_shared">ذخیره کردن، خلاصه را در فضای ذخیره‌سازی شما به‌روز می‌کند و دستگاه‌های دیگرتان هم آن را نشان می‌دهند.</string>
+    <string name="summary_edit_note_local">ذخیره کردن، خلاصه را روی همین دستگاه نگه می‌دارد.</string>
 </resources>

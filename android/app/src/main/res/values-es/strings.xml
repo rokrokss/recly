@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Volver a Recly</string>
     <string name="chatgpt_page_declined">Se canceló el inicio de sesión. Cierra esta ventana y vuelve a Recly.</string>
     <string name="chatgpt_page_done">Este inicio de sesión ya se ha procesado. Puedes cerrar la ventana.</string>
+    <string name="summary_edit">Editar resumen</string>
+    <string name="summary_discard_body">Se perderán tus cambios en este resumen.</string>
+    <string name="summary_replace_title">¿Reemplazar el resumen que editaste?</string>
+    <string name="summary_replace_body">Resumir de nuevo reemplaza el resumen que editaste.</string>
+    <string name="summary_replace">Reemplazar</string>
+    <string name="summary_edited">Editado</string>
+    <string name="summary_edit_note_shared">Al guardar, se actualiza el resumen en tu almacenamiento y tus otros dispositivos lo muestran.</string>
+    <string name="summary_edit_note_local">Al guardar, el resumen se conserva en este dispositivo.</string>
 </resources>

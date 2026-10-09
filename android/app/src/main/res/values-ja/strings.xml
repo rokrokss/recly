@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Reclyに戻る</string>
     <string name="chatgpt_page_declined">ログインがキャンセルされました。このウィンドウを閉じてReclyに戻ってください。</string>
     <string name="chatgpt_page_done">このログインは処理済みです。ウィンドウを閉じてください。</string>
+    <string name="summary_edit">要約を編集</string>
+    <string name="summary_discard_body">この要約への編集は失われます。</string>
+    <string name="summary_replace_title">編集した要約を置き換えますか?</string>
+    <string name="summary_replace_body">もう一度要約すると、編集した要約は新しい要約に置き換わります。</string>
+    <string name="summary_replace">置き換える</string>
+    <string name="summary_edited">編集済み</string>
+    <string name="summary_edit_note_shared">保存するとストレージの要約が更新され、ほかのデバイスにも表示されます。</string>
+    <string name="summary_edit_note_local">保存すると要約はこのデバイスに保存されます。</string>
 </resources>

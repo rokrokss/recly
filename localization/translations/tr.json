@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT veri kontrollerinizde “Modeli herkes için geliştir” kapalı değilse ChatGPT, gönderdiklerinizi modellerini geliştirmek için kullanabilir.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "ChatGPT’de “Modeli herkes için geliştir” seçeneğini kapattım.",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT bağlandı. Bu pencereyi kapatıp Recly’ye dönün.",
-  "Return to Recly": "Recly’ye dön"
+  "Return to Recly": "Recly’ye dön",
+  "Edit summary": "Özeti düzenle",
+  "Your edits to this summary will be lost.": "Bu özette yaptığınız değişiklikler kaybolacak.",
+  "Replace your edited summary?": "Düzenlediğiniz özet değiştirilsin mi?",
+  "Summarizing again replaces the summary you edited.": "Yeniden özetlemek düzenlediğiniz özetin yerini alır.",
+  "Replace": "Değiştir",
+  "Edited": "Düzenlendi",
+  "Saving updates the summary in your storage, and your other devices show it.": "Kaydetmek, depolamanızdaki özeti günceller ve diğer cihazlarınız da gösterir.",
+  "Saving keeps the summary on this device.": "Kaydetmek özeti bu cihazda tutar.",
+  "Recording can’t start on this PC. Reinstall Recly.": "Bu bilgisayarda kayıt başlatılamıyor. Recly’yi yeniden yükleyin."
 }

@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "قد يستخدم ChatGPT ما ترسله لتحسين نماذجه ما لم يكن خيار “تحسين النموذج للجميع” متوقفًا في عناصر التحكم في البيانات في ChatGPT.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "أوقفتُ خيار “تحسين النموذج للجميع” في ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "تم الاتصال بـ ChatGPT. أغلق هذه النافذة وعُد إلى Recly.",
-  "Return to Recly": "العودة إلى Recly"
+  "Return to Recly": "العودة إلى Recly",
+  "Edit summary": "تعديل الملخص",
+  "Your edits to this summary will be lost.": "ستفقد تعديلاتك على هذا الملخص.",
+  "Replace your edited summary?": "هل تريد استبدال الملخص الذي عدّلته؟",
+  "Summarizing again replaces the summary you edited.": "التلخيص مرة أخرى يستبدل الملخص الذي عدّلته.",
+  "Replace": "استبدال",
+  "Edited": "معدّل",
+  "Saving updates the summary in your storage, and your other devices show it.": "يؤدي الحفظ إلى تحديث الملخص في مساحة التخزين، وستعرضه أجهزتك الأخرى.",
+  "Saving keeps the summary on this device.": "يحتفظ الحفظ بالملخص على هذا الجهاز.",
+  "Recording can’t start on this PC. Reinstall Recly.": "لا يمكن بدء التسجيل على هذا الكمبيوتر. أعد تثبيت Recly."
 }

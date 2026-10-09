@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "Maaaring gamitin ng ChatGPT ang ipinapadala mo para pahusayin ang mga model nito maliban kung naka-off ang “Improve the model for everyone” sa iyong data controls sa ChatGPT.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "In-off ko ang “Improve the model for everyone” sa ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "Nakakonekta na ang ChatGPT. Isara ang window na ito at bumalik sa Recly.",
-  "Return to Recly": "Bumalik sa Recly"
+  "Return to Recly": "Bumalik sa Recly",
+  "Edit summary": "I-edit ang buod",
+  "Your edits to this summary will be lost.": "Mawawala ang mga pagbabago mo sa buod na ito.",
+  "Replace your edited summary?": "Palitan ang buod na in-edit mo?",
+  "Summarizing again replaces the summary you edited.": "Papalitan ng bagong buod ang buod na in-edit mo.",
+  "Replace": "Palitan",
+  "Edited": "In-edit",
+  "Saving updates the summary in your storage, and your other devices show it.": "Ina-update ng pag-save ang buod sa iyong storage, at ipapakita ito ng iba mong device.",
+  "Saving keeps the summary on this device.": "Itinatago ng pag-save ang buod sa device na ito.",
+  "Recording can’t start on this PC. Reinstall Recly.": "Hindi makapagsimula ng pag-record sa PC na ito. I-install muli ang Recly."
 }

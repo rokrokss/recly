@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">返回Recly</string>
     <string name="chatgpt_page_declined">登入已取消。請關閉此視窗並返回Recly。</string>
     <string name="chatgpt_page_done">此次登入已處理，您可以關閉此視窗。</string>
+    <string name="summary_edit">編輯摘要</string>
+    <string name="summary_discard_body">你對此摘要的修改將會遺失。</string>
+    <string name="summary_replace_title">要取代你編輯過的摘要嗎?</string>
+    <string name="summary_replace_body">重新摘要會用新摘要取代你編輯過的摘要。</string>
+    <string name="summary_replace">取代</string>
+    <string name="summary_edited">已編輯</string>
+    <string name="summary_edit_note_shared">儲存會更新儲存空間中的摘要,你的其他裝置也會顯示。</string>
+    <string name="summary_edit_note_local">儲存會將摘要保留在此裝置上。</string>
 </resources>

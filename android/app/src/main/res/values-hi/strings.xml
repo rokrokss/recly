@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Recly पर लौटें</string>
     <string name="chatgpt_page_declined">साइन इन रद्द हुआ। यह विंडो बंद करके Recly पर लौटें।</string>
     <string name="chatgpt_page_done">यह साइन इन पहले ही पूरा हुआ। विंडो बंद कर सकते हैं।</string>
+    <string name="summary_edit">सारांश संपादित करें</string>
+    <string name="summary_discard_body">इस सारांश में आपके बदलाव खो जाएंगे।</string>
+    <string name="summary_replace_title">अपना संपादित सारांश बदलें?</string>
+    <string name="summary_replace_body">फिर से सारांश बनाने पर आपका संपादित सारांश बदल जाएगा।</string>
+    <string name="summary_replace">बदलें</string>
+    <string name="summary_edited">संपादित</string>
+    <string name="summary_edit_note_shared">सहेजने पर आपके स्टोरेज में सारांश अपडेट होता है और आपके दूसरे डिवाइस भी उसे दिखाते हैं।</string>
+    <string name="summary_edit_note_local">सहेजने पर सारांश इसी डिवाइस पर रहता है।</string>
 </resources>

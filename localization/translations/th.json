@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT อาจใช้สิ่งที่คุณส่งเพื่อปรับปรุงโมเดล เว้นแต่จะปิด “ปรับปรุงโมเดลสำหรับทุกคน” ในการควบคุมข้อมูลของ ChatGPT",
   "I turned off “Improve the model for everyone” in ChatGPT.": "ฉันปิด “ปรับปรุงโมเดลสำหรับทุกคน” ใน ChatGPT แล้ว",
   "ChatGPT is connected. Close this window and return to Recly.": "เชื่อมต่อ ChatGPT แล้ว ปิดหน้าต่างนี้และกลับไปที่ Recly",
-  "Return to Recly": "กลับไปที่ Recly"
+  "Return to Recly": "กลับไปที่ Recly",
+  "Edit summary": "แก้ไขสรุป",
+  "Your edits to this summary will be lost.": "การแก้ไขสรุปนี้จะหายไป",
+  "Replace your edited summary?": "แทนที่สรุปที่คุณแก้ไขไหม",
+  "Summarizing again replaces the summary you edited.": "การสรุปอีกครั้งจะแทนที่สรุปที่คุณแก้ไข",
+  "Replace": "แทนที่",
+  "Edited": "แก้ไขแล้ว",
+  "Saving updates the summary in your storage, and your other devices show it.": "การบันทึกจะอัปเดตสรุปในพื้นที่จัดเก็บ และอุปกรณ์อื่นของคุณจะแสดงด้วย",
+  "Saving keeps the summary on this device.": "การบันทึกจะเก็บสรุปไว้ในอุปกรณ์นี้",
+  "Recording can’t start on this PC. Reinstall Recly.": "เริ่มบันทึกบนพีซีนี้ไม่ได้ ติดตั้ง Recly ใหม่"
 }

@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Torna a Recly</string>
     <string name="chatgpt_page_declined">L’accesso è stato annullato. Chiudi questa finestra e torna a Recly.</string>
     <string name="chatgpt_page_done">Questo accesso è già stato gestito. Puoi chiudere questa finestra.</string>
+    <string name="summary_edit">Modifica riassunto</string>
+    <string name="summary_discard_body">Le modifiche a questo riassunto andranno perse.</string>
+    <string name="summary_replace_title">Sostituire il riassunto modificato?</string>
+    <string name="summary_replace_body">Riassumere di nuovo sostituisce il riassunto modificato.</string>
+    <string name="summary_replace">Sostituisci</string>
+    <string name="summary_edited">Modificato</string>
+    <string name="summary_edit_note_shared">Il salvataggio aggiorna il riassunto nel tuo spazio di archiviazione e lo mostra sugli altri dispositivi.</string>
+    <string name="summary_edit_note_local">Il salvataggio conserva il riassunto su questo dispositivo.</string>
 </resources>

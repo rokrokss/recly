@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">返回Recly</string>
     <string name="chatgpt_page_declined">登录已取消。请关闭此窗口并返回Recly。</string>
     <string name="chatgpt_page_done">此次登录已处理，您可以关闭此窗口。</string>
+    <string name="summary_edit">编辑总结</string>
+    <string name="summary_discard_body">你对此总结的修改将会丢失。</string>
+    <string name="summary_replace_title">要替换你编辑过的总结吗?</string>
+    <string name="summary_replace_body">重新总结会用新总结替换你编辑过的总结。</string>
+    <string name="summary_replace">替换</string>
+    <string name="summary_edited">已编辑</string>
+    <string name="summary_edit_note_shared">保存会更新存储中的总结,你的其他设备也会显示。</string>
+    <string name="summary_edit_note_local">保存会将总结保留在此设备上。</string>
 </resources>

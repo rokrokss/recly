@@ -501,4 +501,12 @@
     <string name="chatgpt_page_return">Return to Recly</string>
     <string name="chatgpt_page_declined">The sign-in was cancelled. Close this window and go back to Recly.</string>
     <string name="chatgpt_page_done">This sign-in has already been handled. You can close this window.</string>
+    <string name="summary_edit">Edit summary</string>
+    <string name="summary_discard_body">Your edits to this summary will be lost.</string>
+    <string name="summary_replace_title">Replace your edited summary?</string>
+    <string name="summary_replace_body">Summarizing again replaces the summary you edited.</string>
+    <string name="summary_replace">Replace</string>
+    <string name="summary_edited">Edited</string>
+    <string name="summary_edit_note_shared">Saving updates the summary in your storage, and your other devices show it.</string>
+    <string name="summary_edit_note_local">Saving keeps the summary on this device.</string>
 </resources>

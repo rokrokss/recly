@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">العودة إلى Recly</string>
     <string name="chatgpt_page_declined">أُلغي تسجيل الدخول. أغلق النافذة وعُد إلى Recly.</string>
     <string name="chatgpt_page_done">تمت معالجة تسجيل الدخول هذا. يمكنك إغلاق النافذة.</string>
+    <string name="summary_edit">تعديل الملخص</string>
+    <string name="summary_discard_body">ستفقد تعديلاتك على هذا الملخص.</string>
+    <string name="summary_replace_title">هل تريد استبدال الملخص الذي عدّلته؟</string>
+    <string name="summary_replace_body">التلخيص مرة أخرى يستبدل الملخص الذي عدّلته.</string>
+    <string name="summary_replace">استبدال</string>
+    <string name="summary_edited">معدّل</string>
+    <string name="summary_edit_note_shared">يؤدي الحفظ إلى تحديث الملخص في مساحة التخزين، وستعرضه أجهزتك الأخرى.</string>
+    <string name="summary_edit_note_local">يحتفظ الحفظ بالملخص على هذا الجهاز.</string>
 </resources>

@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT może używać wysłanych treści do ulepszania modeli, chyba że w ustawieniach danych ChatGPT wyłączono opcję „Ulepsz model dla wszystkich”.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "Wyłączyłem opcję „Ulepsz model dla wszystkich” w ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT jest połączony. Zamknij to okno i wróć do Recly.",
-  "Return to Recly": "Wróć do Recly"
+  "Return to Recly": "Wróć do Recly",
+  "Edit summary": "Edytuj podsumowanie",
+  "Your edits to this summary will be lost.": "Zmiany w tym podsumowaniu zostaną utracone.",
+  "Replace your edited summary?": "Zastąpić edytowane podsumowanie?",
+  "Summarizing again replaces the summary you edited.": "Ponowne podsumowanie zastąpi edytowane podsumowanie.",
+  "Replace": "Zastąp",
+  "Edited": "Edytowano",
+  "Saving updates the summary in your storage, and your other devices show it.": "Zapisanie aktualizuje podsumowanie w pamięci, a inne urządzenia je pokażą.",
+  "Saving keeps the summary on this device.": "Zapisanie zachowa podsumowanie na tym urządzeniu.",
+  "Recording can’t start on this PC. Reinstall Recly.": "Na tym komputerze nie można rozpocząć nagrywania. Zainstaluj Recly ponownie."
 }

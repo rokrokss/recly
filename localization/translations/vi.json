@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT có thể dùng nội dung bạn gửi để cải thiện mô hình, trừ khi bạn đã tắt “Cải thiện mô hình cho mọi người” trong phần kiểm soát dữ liệu của ChatGPT.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "Tôi đã tắt “Cải thiện mô hình cho mọi người” trong ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "Đã kết nối ChatGPT. Hãy đóng cửa sổ này và quay lại Recly.",
-  "Return to Recly": "Quay lại Recly"
+  "Return to Recly": "Quay lại Recly",
+  "Edit summary": "Sửa bản tóm tắt",
+  "Your edits to this summary will be lost.": "Các chỉnh sửa của bạn trong bản tóm tắt này sẽ bị mất.",
+  "Replace your edited summary?": "Thay bản tóm tắt bạn đã sửa?",
+  "Summarizing again replaces the summary you edited.": "Tóm tắt lại sẽ thay thế bản tóm tắt bạn đã sửa.",
+  "Replace": "Thay thế",
+  "Edited": "Đã sửa",
+  "Saving updates the summary in your storage, and your other devices show it.": "Lưu sẽ cập nhật bản tóm tắt trong bộ nhớ của bạn và các thiết bị khác cũng hiển thị.",
+  "Saving keeps the summary on this device.": "Lưu sẽ giữ bản tóm tắt trên thiết bị này.",
+  "Recording can’t start on this PC. Reinstall Recly.": "Không thể bắt đầu ghi âm trên PC này. Hãy cài đặt lại Recly."
 }

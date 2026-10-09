@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Rudi kwenye Recly</string>
     <string name="chatgpt_page_declined">Kuingia kumeghairiwa. Funga dirisha hili na urudi kwenye Recly.</string>
     <string name="chatgpt_page_done">Kuingia huku tayari kumeshughulikiwa. Unaweza kufunga dirisha hili.</string>
+    <string name="summary_edit">Hariri muhtasari</string>
+    <string name="summary_discard_body">Mabadiliko yako kwenye muhtasari huu yatapotea.</string>
+    <string name="summary_replace_title">Badilisha muhtasari uliouhariri?</string>
+    <string name="summary_replace_body">Kufupisha tena kunabadilisha muhtasari uliouhariri.</string>
+    <string name="summary_replace">Badilisha</string>
+    <string name="summary_edited">Imehaririwa</string>
+    <string name="summary_edit_note_shared">Kuhifadhi kunasasisha muhtasari kwenye hifadhi yako, na vifaa vyako vingine vinauonyesha.</string>
+    <string name="summary_edit_note_local">Kuhifadhi kunaweka muhtasari kwenye kifaa hiki.</string>
 </resources>

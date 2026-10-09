@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Voltar ao Recly</string>
     <string name="chatgpt_page_declined">O login foi cancelado. Feche esta janela e volte ao Recly.</string>
     <string name="chatgpt_page_done">Este login já foi processado. Você pode fechar a janela.</string>
+    <string name="summary_edit">Editar resumo</string>
+    <string name="summary_discard_body">Suas alterações neste resumo serão perdidas.</string>
+    <string name="summary_replace_title">Substituir o resumo que você editou?</string>
+    <string name="summary_replace_body">Resumir de novo substitui o resumo que você editou.</string>
+    <string name="summary_replace">Substituir</string>
+    <string name="summary_edited">Editado</string>
+    <string name="summary_edit_note_shared">Salvar atualiza o resumo no seu armazenamento, e seus outros dispositivos o mostram.</string>
+    <string name="summary_edit_note_local">Salvar mantém o resumo neste dispositivo.</string>
 </resources>

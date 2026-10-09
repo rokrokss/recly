@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Recly پر واپس جائیں</string>
     <string name="chatgpt_page_declined">سائن ان منسوخ ہو گیا۔ یہ ونڈو بند کریں اور Recly پر واپس جائیں۔</string>
     <string name="chatgpt_page_done">یہ سائن ان پہلے ہی مکمل ہو چکا ہے۔ آپ یہ ونڈو بند کر سکتے ہیں۔</string>
+    <string name="summary_edit">خلاصہ میں ترمیم کریں</string>
+    <string name="summary_discard_body">اس خلاصے میں آپ کی ترامیم ضائع ہو جائیں گی۔</string>
+    <string name="summary_replace_title">اپنا ترمیم شدہ خلاصہ بدلیں؟</string>
+    <string name="summary_replace_body">دوبارہ خلاصہ بنانے سے آپ کا ترمیم شدہ خلاصہ بدل جائے گا۔</string>
+    <string name="summary_replace">بدلیں</string>
+    <string name="summary_edited">ترمیم شدہ</string>
+    <string name="summary_edit_note_shared">محفوظ کرنے سے آپ کے اسٹوریج میں خلاصہ اپ ڈیٹ ہوتا ہے اور آپ کے دوسرے آلات بھی اسے دکھاتے ہیں۔</string>
+    <string name="summary_edit_note_local">محفوظ کرنے سے خلاصہ اسی آلے پر رہتا ہے۔</string>
 </resources>

@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT может использовать отправленное для улучшения своих моделей, если в настройках данных ChatGPT не выключен параметр «Улучшить модель для всех».",
   "I turned off “Improve the model for everyone” in ChatGPT.": "Я выключил «Улучшить модель для всех» в ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT подключён. Закройте это окно и вернитесь в Recly.",
-  "Return to Recly": "Вернуться в Recly"
+  "Return to Recly": "Вернуться в Recly",
+  "Edit summary": "Редактировать пересказ",
+  "Your edits to this summary will be lost.": "Ваши правки в этом пересказе будут потеряны.",
+  "Replace your edited summary?": "Заменить отредактированный пересказ?",
+  "Summarizing again replaces the summary you edited.": "Новый пересказ заменит отредактированный.",
+  "Replace": "Заменить",
+  "Edited": "Изменено",
+  "Saving updates the summary in your storage, and your other devices show it.": "Сохранение обновит пересказ в хранилище, и он появится на других ваших устройствах.",
+  "Saving keeps the summary on this device.": "Сохранение оставит пересказ на этом устройстве.",
+  "Recording can’t start on this PC. Reinstall Recly.": "На этом ПК не удаётся начать запись. Переустановите Recly."
 }

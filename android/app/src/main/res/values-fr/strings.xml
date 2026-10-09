@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Revenir à Recly</string>
     <string name="chatgpt_page_declined">La connexion a été annulée. Fermez cette fenêtre et revenez à Recly.</string>
     <string name="chatgpt_page_done">Cette connexion a déjà été traitée. Vous pouvez fermer la fenêtre.</string>
+    <string name="summary_edit">Modifier le résumé</string>
+    <string name="summary_discard_body">Vos modifications de ce résumé seront perdues.</string>
+    <string name="summary_replace_title">Remplacer le résumé modifié ?</string>
+    <string name="summary_replace_body">Résumer à nouveau remplace le résumé que vous avez modifié.</string>
+    <string name="summary_replace">Remplacer</string>
+    <string name="summary_edited">Modifié</string>
+    <string name="summary_edit_note_shared">L’enregistrement met à jour le résumé dans votre stockage, et vos autres appareils l’affichent.</string>
+    <string name="summary_edit_note_local">L’enregistrement conserve le résumé sur cet appareil.</string>
 </resources>

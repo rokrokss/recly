@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Zurück zu Recly</string>
     <string name="chatgpt_page_declined">Die Anmeldung wurde abgebrochen. Schließen Sie dieses Fenster und kehren Sie zu Recly zurück.</string>
     <string name="chatgpt_page_done">Diese Anmeldung wurde bereits verarbeitet. Sie können das Fenster schließen.</string>
+    <string name="summary_edit">Zusammenfassung bearbeiten</string>
+    <string name="summary_discard_body">Deine Änderungen an dieser Zusammenfassung gehen verloren.</string>
+    <string name="summary_replace_title">Bearbeitete Zusammenfassung ersetzen?</string>
+    <string name="summary_replace_body">Erneutes Zusammenfassen ersetzt die bearbeitete Zusammenfassung.</string>
+    <string name="summary_replace">Ersetzen</string>
+    <string name="summary_edited">Bearbeitet</string>
+    <string name="summary_edit_note_shared">Beim Speichern wird die Zusammenfassung im Speicher aktualisiert und auf deinen anderen Geräten angezeigt.</string>
+    <string name="summary_edit_note_local">Beim Speichern bleibt die Zusammenfassung auf diesem Gerät.</string>
 </resources>

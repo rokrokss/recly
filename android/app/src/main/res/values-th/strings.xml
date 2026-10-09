@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">กลับไปที่ Recly</string>
     <string name="chatgpt_page_declined">การลงชื่อเข้าใช้ถูกยกเลิก ปิดหน้าต่างนี้แล้วกลับไปที่ Recly</string>
     <string name="chatgpt_page_done">การลงชื่อเข้าใช้นี้ได้รับการดำเนินการแล้ว คุณปิดหน้าต่างนี้ได้</string>
+    <string name="summary_edit">แก้ไขสรุป</string>
+    <string name="summary_discard_body">การแก้ไขสรุปนี้จะหายไป</string>
+    <string name="summary_replace_title">แทนที่สรุปที่คุณแก้ไขไหม</string>
+    <string name="summary_replace_body">การสรุปอีกครั้งจะแทนที่สรุปที่คุณแก้ไข</string>
+    <string name="summary_replace">แทนที่</string>
+    <string name="summary_edited">แก้ไขแล้ว</string>
+    <string name="summary_edit_note_shared">การบันทึกจะอัปเดตสรุปในพื้นที่จัดเก็บ และอุปกรณ์อื่นของคุณจะแสดงด้วย</string>
+    <string name="summary_edit_note_local">การบันทึกจะเก็บสรุปไว้ในอุปกรณ์นี้</string>
 </resources>

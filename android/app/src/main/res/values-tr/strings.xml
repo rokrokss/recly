@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Recly’ye dön</string>
     <string name="chatgpt_page_declined">Oturum açma iptal edildi. Bu pencereyi kapatıp Recly\'ye dönün.</string>
     <string name="chatgpt_page_done">Bu oturum açma işlemi zaten tamamlandı. Bu pencereyi kapatabilirsiniz.</string>
+    <string name="summary_edit">Özeti düzenle</string>
+    <string name="summary_discard_body">Bu özette yaptığınız değişiklikler kaybolacak.</string>
+    <string name="summary_replace_title">Düzenlediğiniz özet değiştirilsin mi?</string>
+    <string name="summary_replace_body">Yeniden özetlemek düzenlediğiniz özetin yerini alır.</string>
+    <string name="summary_replace">Değiştir</string>
+    <string name="summary_edited">Düzenlendi</string>
+    <string name="summary_edit_note_shared">Kaydetmek, depolamanızdaki özeti günceller ve diğer cihazlarınız da gösterir.</string>
+    <string name="summary_edit_note_local">Kaydetmek özeti bu cihazda tutar.</string>
 </resources>

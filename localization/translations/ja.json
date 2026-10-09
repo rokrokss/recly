@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPTのデータコントロールで「すべての人のためにモデルを改善する」をオフにしていない場合、送信した内容がモデルの改善に使われることがあります。",
   "I turned off “Improve the model for everyone” in ChatGPT.": "ChatGPTで「すべての人のためにモデルを改善する」をオフにしました。",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPTに接続しました。このウィンドウを閉じてReclyに戻ってください。",
-  "Return to Recly": "Reclyに戻る"
+  "Return to Recly": "Reclyに戻る",
+  "Edit summary": "要約を編集",
+  "Your edits to this summary will be lost.": "この要約への編集は失われます。",
+  "Replace your edited summary?": "編集した要約を置き換えますか?",
+  "Summarizing again replaces the summary you edited.": "もう一度要約すると、編集した要約は新しい要約に置き換わります。",
+  "Replace": "置き換える",
+  "Edited": "編集済み",
+  "Saving updates the summary in your storage, and your other devices show it.": "保存するとストレージの要約が更新され、ほかのデバイスにも表示されます。",
+  "Saving keeps the summary on this device.": "保存すると要約はこのデバイスに保存されます。",
+  "Recording can’t start on this PC. Reinstall Recly.": "このPCでは録音を開始できません。Reclyを再インストールしてください。"
 }

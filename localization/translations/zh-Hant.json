@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "除非你在ChatGPT資料控制中關閉了「為所有人改善模型」，否則ChatGPT可能會使用你傳送的內容來改善模型。",
   "I turned off “Improve the model for everyone” in ChatGPT.": "我已在ChatGPT中關閉「為所有人改善模型」。",
   "ChatGPT is connected. Close this window and return to Recly.": "已連接ChatGPT。請關閉此視窗並返回Recly。",
-  "Return to Recly": "返回Recly"
+  "Return to Recly": "返回Recly",
+  "Edit summary": "編輯摘要",
+  "Your edits to this summary will be lost.": "你對此摘要的修改將會遺失。",
+  "Replace your edited summary?": "要取代你編輯過的摘要嗎?",
+  "Summarizing again replaces the summary you edited.": "重新摘要會用新摘要取代你編輯過的摘要。",
+  "Replace": "取代",
+  "Edited": "已編輯",
+  "Saving updates the summary in your storage, and your other devices show it.": "儲存會更新儲存空間中的摘要,你的其他裝置也會顯示。",
+  "Saving keeps the summary on this device.": "儲存會將摘要保留在此裝置上。",
+  "Recording can’t start on this PC. Reinstall Recly.": "此電腦無法開始錄音。請重新安裝Recly。"
 }

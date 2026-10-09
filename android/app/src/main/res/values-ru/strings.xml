@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Вернуться в Recly</string>
     <string name="chatgpt_page_declined">Вход отменён. Закройте окно и вернитесь в Recly.</string>
     <string name="chatgpt_page_done">Этот вход уже обработан. Можете закрыть окно.</string>
+    <string name="summary_edit">Редактировать пересказ</string>
+    <string name="summary_discard_body">Ваши правки в этом пересказе будут потеряны.</string>
+    <string name="summary_replace_title">Заменить отредактированный пересказ?</string>
+    <string name="summary_replace_body">Новый пересказ заменит отредактированный.</string>
+    <string name="summary_replace">Заменить</string>
+    <string name="summary_edited">Изменено</string>
+    <string name="summary_edit_note_shared">Сохранение обновит пересказ в хранилище, и он появится на других ваших устройствах.</string>
+    <string name="summary_edit_note_local">Сохранение оставит пересказ на этом устройстве.</string>
 </resources>

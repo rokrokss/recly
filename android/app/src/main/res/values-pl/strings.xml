@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Wróć do Recly</string>
     <string name="chatgpt_page_declined">Logowanie zostało anulowane. Zamknij to okno i wróć do Recly.</string>
     <string name="chatgpt_page_done">To logowanie zostało już obsłużone. Możesz zamknąć to okno.</string>
+    <string name="summary_edit">Edytuj podsumowanie</string>
+    <string name="summary_discard_body">Zmiany w tym podsumowaniu zostaną utracone.</string>
+    <string name="summary_replace_title">Zastąpić edytowane podsumowanie?</string>
+    <string name="summary_replace_body">Ponowne podsumowanie zastąpi edytowane podsumowanie.</string>
+    <string name="summary_replace">Zastąp</string>
+    <string name="summary_edited">Edytowano</string>
+    <string name="summary_edit_note_shared">Zapisanie aktualizuje podsumowanie w pamięci, a inne urządzenia je pokażą.</string>
+    <string name="summary_edit_note_local">Zapisanie zachowa podsumowanie na tym urządzeniu.</string>
 </resources>

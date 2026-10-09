@@ -410,4 +410,12 @@
     <string name="chatgpt_page_return">Bumalik sa Recly</string>
     <string name="chatgpt_page_declined">Kinansela ang pag-sign in. Isara ang window na ito at bumalik sa Recly.</string>
     <string name="chatgpt_page_done">Naproseso na ang pag-sign in na ito. Maaari mo nang isara ang window na ito.</string>
+    <string name="summary_edit">I-edit ang buod</string>
+    <string name="summary_discard_body">Mawawala ang mga pagbabago mo sa buod na ito.</string>
+    <string name="summary_replace_title">Palitan ang buod na in-edit mo?</string>
+    <string name="summary_replace_body">Papalitan ng bagong buod ang buod na in-edit mo.</string>
+    <string name="summary_replace">Palitan</string>
+    <string name="summary_edited">In-edit</string>
+    <string name="summary_edit_note_shared">Ina-update ng pag-save ang buod sa iyong storage, at ipapakita ito ng iba mong device.</string>
+    <string name="summary_edit_note_local">Itinatago ng pag-save ang buod sa device na ito.</string>
 </resources>

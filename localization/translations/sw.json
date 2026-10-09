@@ -568,5 +568,14 @@
   "ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls.": "ChatGPT inaweza kutumia unachotuma kuboresha miundo yake isipokuwa “Improve the model for everyone” imezimwa kwenye vidhibiti vya data vya ChatGPT.",
   "I turned off “Improve the model for everyone” in ChatGPT.": "Nimezima “Improve the model for everyone” kwenye ChatGPT.",
   "ChatGPT is connected. Close this window and return to Recly.": "ChatGPT imeunganishwa. Funga dirisha hili na urudi kwenye Recly.",
-  "Return to Recly": "Rudi kwenye Recly"
+  "Return to Recly": "Rudi kwenye Recly",
+  "Edit summary": "Hariri muhtasari",
+  "Your edits to this summary will be lost.": "Mabadiliko yako kwenye muhtasari huu yatapotea.",
+  "Replace your edited summary?": "Badilisha muhtasari uliouhariri?",
+  "Summarizing again replaces the summary you edited.": "Kufupisha tena kunabadilisha muhtasari uliouhariri.",
+  "Replace": "Badilisha",
+  "Edited": "Imehaririwa",
+  "Saving updates the summary in your storage, and your other devices show it.": "Kuhifadhi kunasasisha muhtasari kwenye hifadhi yako, na vifaa vyako vingine vinauonyesha.",
+  "Saving keeps the summary on this device.": "Kuhifadhi kunaweka muhtasari kwenye kifaa hiki.",
+  "Recording can’t start on this PC. Reinstall Recly.": "Kurekodi hakuwezi kuanza kwenye PC hii. Sakinisha Recly upya."
 }
