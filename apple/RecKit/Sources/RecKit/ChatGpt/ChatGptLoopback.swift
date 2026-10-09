@@ -50,8 +50,9 @@ public final class ChatGptLoopback: @unchecked Sendable {
     public func start() async throws -> UInt16 {
         let parameters = NWParameters.tcp
         // The loopback address alone, not every interface: a listener without a local endpoint takes them all.
+        // Bound there, only this device can connect. `acceptLocalOnly` is not set on top: in the iOS simulator
+        // its policy check refused every connection, the browser's callback included.
         parameters.requiredLocalEndpoint = .hostPort(host: .ipv4(.loopback), port: .any)
-        parameters.acceptLocalOnly = true
         let listener = try NWListener(using: parameters)
         listener.newConnectionHandler = { [weak self] connection in
             guard let self else { return connection.cancel() }
