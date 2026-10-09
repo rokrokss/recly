@@ -207,18 +207,22 @@ class ChatGptAccount internal constructor(
                 tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
                 throw e
             }
-            mutex.withLock {
+            val changed = mutex.withLock {
                 val saved = registration()
                 if (saved != null && saved.subject != identity.subject) {
                     // A client id is one account's (docs/15 §10). Another account signed in on it: keep nothing,
                     // and let the next sign-in register that account afresh.
                     delete(REGISTRATION_KEY)
-                    tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
-                    throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "account changed"))
+                    return@withLock true
                 }
                 // Kept before the plan is checked: a returning sign-in reuses this client id, never registers again.
                 val account = identity.email ?: identity.name ?: saved?.account ?: AGENT_NAME
                 write(REGISTRATION_KEY, providerJson.encodeToString(Registration.serializer(), Registration(clientId, identity.subject, account)))
+                false
+            }
+            if (changed) {
+                tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
+                throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "account changed"))
             }
             if (planScope(tokens) != true) {
                 tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
