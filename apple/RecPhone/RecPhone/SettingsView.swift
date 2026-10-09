@@ -34,6 +34,7 @@ struct SettingsView: View {
                     microphone
                     uploads
                     processingSettings
+                    chatGpt
                     privacy
                     about
                 }
@@ -54,6 +55,10 @@ struct SettingsView: View {
                 }
             }
         }
+        // docs/09 "ChatGPT": the first sign-in on this phone, confirmed once.
+        .chatGptWelcome(model.chatGpt)
+        // docs/15 §10: the sign-in and the plan's models as they are now, whenever Settings opens.
+        .task { await model.chatGpt?.refresh() }
         // docs/03 "Sign out vs Disconnect": the four things that are true of a disconnect and are not
         // true of a sign-out, before it happens rather than after.
         .blueprintDialog(item: $model.disconnectPrompt) { prompt in
@@ -145,6 +150,16 @@ struct SettingsView: View {
     private var processingSettings: some View {
         if let processing = model.processing {
             ProcessingSettingsView(model: processing)
+        }
+    }
+
+    // MARK: - ChatGPT (docs/15 §10)
+
+    /// The same block the Mac's settings pane draws (RecKit).
+    @ViewBuilder
+    private var chatGpt: some View {
+        if let chatGpt = model.chatGpt {
+            ChatGptSection(model: chatGpt)
         }
     }
 
