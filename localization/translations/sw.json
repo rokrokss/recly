@@ -196,7 +196,6 @@
   "On-device transcription does not separate speakers.": "Unukuzi kwenye kifaa hautenganishi wazungumzaji.",
   "On-device transcription needs Apple’s speech recognition model.": "Unukuzi kwenye kifaa unahitaji modeli ya utambuzi wa matamshi ya Apple.",
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "Unukuzi kwenye kifaa unahitaji Qwen3-ASR ({0}), modeli ya chanzo huria ya utambuzi wa matamshi.",
-  "Open": "Fungua",
   "Open Drive storage": "Fungua hifadhi ya Drive",
   "Open Recly": "Fungua Recly",
   "Open Recly once to answer the recording reminder": "Fungua Recly mara moja ili ujibu kikumbusho cha kurekodi",

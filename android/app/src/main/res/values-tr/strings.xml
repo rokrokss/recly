@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">Sistem Ayarları\'nı aç</string>
-    <string name="action_open">Aç</string>
     <string name="tab_record">Kayıt</string>
     <string name="tab_jobs">Liste</string>
     <string name="tab_settings">Ayarlar</string>

@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">Otwórz Ustawienia systemowe</string>
-    <string name="action_open">Otwórz</string>
     <string name="tab_record">Nagraj</string>
     <string name="tab_jobs">Lista</string>
     <string name="tab_settings">Ustawienia</string>

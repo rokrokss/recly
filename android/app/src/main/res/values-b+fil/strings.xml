@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">Buksan ang System Settings</string>
-    <string name="action_open">Buksan</string>
     <string name="tab_record">Mag-record</string>
     <string name="tab_jobs">Listahan</string>
     <string name="tab_settings">Mga Setting</string>

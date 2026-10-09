@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">فتح إعدادات النظام</string>
-    <string name="action_open">فتح</string>
     <string name="tab_record">تسجيل</string>
     <string name="tab_jobs">القائمة</string>
     <string name="tab_settings">الإعدادات</string>

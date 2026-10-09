@@ -196,7 +196,6 @@
   "On-device transcription does not separate speakers.": "Transkrypcja na urządzeniu nie rozróżnia mówców.",
   "On-device transcription needs Apple’s speech recognition model.": "Transkrypcja na urządzeniu wymaga modelu rozpoznawania mowy Apple.",
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "Transkrypcja na urządzeniu wymaga Qwen3-ASR ({0}) — modelu rozpoznawania mowy typu open source.",
-  "Open": "Otwórz",
   "Open Drive storage": "Otwórz miejsce na dane Drive",
   "Open Recly": "Otwórz Recly",
   "Open Recly once to answer the recording reminder": "Otwórz Recly, aby odpowiedzieć na przypomnienie o nagrywaniu",

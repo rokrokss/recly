@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">システム設定を開く</string>
-    <string name="action_open">開く</string>
     <string name="tab_record">録音</string>
     <string name="tab_jobs">一覧</string>
     <string name="tab_settings">設定</string>

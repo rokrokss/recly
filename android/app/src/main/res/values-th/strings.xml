@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">เปิดการตั้งค่าระบบ</string>
-    <string name="action_open">เปิด</string>
     <string name="tab_record">บันทึกเสียง</string>
     <string name="tab_jobs">รายการ</string>
     <string name="tab_settings">การตั้งค่า</string>

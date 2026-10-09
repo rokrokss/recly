@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">Открыть системные настройки</string>
-    <string name="action_open">Открыть</string>
     <string name="tab_record">Записать</string>
     <string name="tab_jobs">Список</string>
     <string name="tab_settings">Настройки</string>

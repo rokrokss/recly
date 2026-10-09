@@ -196,7 +196,6 @@
   "On-device transcription does not separate speakers.": "Hindi pinaghihiwalay ng pag-transcribe sa device ang mga nagsasalita.",
   "On-device transcription needs Apple’s speech recognition model.": "Kailangan ng pag-transcribe sa device ang modelo ng speech recognition ng Apple.",
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "Kailangan ng pag-transcribe sa device ang Qwen3-ASR ({0}), isang open-source na modelo ng speech recognition.",
-  "Open": "Buksan",
   "Open Drive storage": "Buksan ang storage ng Drive",
   "Open Recly": "Buksan ang Recly",
   "Open Recly once to answer the recording reminder": "Buksan ang Recly nang isang beses para sagutin ang paalala sa pag-record",

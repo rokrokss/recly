@@ -10,7 +10,6 @@
     <string name="action_processing">…</string>
     <string name="action_done">✓</string>
     <string name="action_open_settings">打开系统设置</string>
-    <string name="action_open">打开</string>
     <string name="tab_record">录音</string>
     <string name="tab_jobs">列表</string>
     <string name="tab_settings">设置</string>

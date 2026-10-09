@@ -196,7 +196,6 @@
   "On-device transcription does not separate speakers.": "การถอดเสียงในอุปกรณ์ไม่แยกผู้พูด",
   "On-device transcription needs Apple’s speech recognition model.": "การถอดเสียงในอุปกรณ์ต้องใช้โมเดลรู้จำเสียงพูดของ Apple",
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "การถอดเสียงในอุปกรณ์ต้องใช้ Qwen3-ASR ({0}) ซึ่งเป็นโมเดลรู้จำเสียงพูดแบบโอเพนซอร์ส",
-  "Open": "เปิด",
   "Open Drive storage": "เปิดพื้นที่เก็บข้อมูล Drive",
   "Open Recly": "เปิด Recly",
   "Open Recly once to answer the recording reminder": "เปิด Recly หนึ่งครั้งเพื่อตอบการเตือนเรื่องการบันทึกเสียง",

@@ -196,7 +196,6 @@
   "On-device transcription does not separate speakers.": "Chép lời trên thiết bị không phân biệt người nói.",
   "On-device transcription needs Apple’s speech recognition model.": "Chép lời trên thiết bị cần mô hình nhận dạng giọng nói của Apple.",
   "On-device transcription needs Qwen3-ASR ({0}), an open-source speech recognition model.": "Chép lời trên thiết bị cần Qwen3-ASR ({0}), một mô hình nhận dạng giọng nói nguồn mở.",
-  "Open": "Mở",
   "Open Drive storage": "Mở bộ nhớ Drive",
   "Open Recly": "Mở Recly",
   "Open Recly once to answer the recording reminder": "Hãy mở Recly một lần để trả lời lời nhắc ghi âm",
