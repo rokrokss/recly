@@ -471,4 +471,30 @@
     <string name="processing_folder_single">One folder</string>
     <!-- The naming sheet's second answer discards the recording that just ended (docs/03 "Titles"). -->
     <string name="recording_title_discard">Discard recording</string>
+    <!-- docs/15 §10 "Sign in with ChatGPT" and docs/08 "Summaries". -->
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_use_plan">Use your ChatGPT plan</string>
+    <string name="chatgpt_use_plan_note">Summarize recordings with the plan you already have. Recly charges nothing for it.</string>
+    <string name="chatgpt_continue">Continue with ChatGPT</string>
+    <string name="chatgpt_using_plan">Using your ChatGPT plan</string>
+    <string name="chatgpt_sign_out">Sign out</string>
+    <string name="chatgpt_model">Model</string>
+    <string name="chatgpt_manage_usage">Manage usage</string>
+    <string name="chatgpt_expired">OpenAI ended this sign-in. Continue with ChatGPT to sign in again.</string>
+    <string name="chatgpt_finish_in_browser">Finish signing in in your browser</string>
+    <string name="chatgpt_sign_in_failed">Could not sign in to ChatGPT</string>
+    <string name="chatgpt_revoke_unconfirmed">Signed out on this device, but OpenAI did not confirm it. You can remove Recly in ChatGPT settings.</string>
+    <string name="chatgpt_footnote">A summary sends only the transcript text to OpenAI, never the audio, and counts toward your ChatGPT plan’s usage.</string>
+    <string name="chatgpt_welcome_title">You’re using your ChatGPT plan</string>
+    <string name="chatgpt_welcome_body">Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings.</string>
+    <string name="chatgpt_got_it">Got it</string>
+    <string name="summary_summarize">Summarize</string>
+    <string name="summary_again">Summarize again</string>
+    <string name="summary_tab">Summary</string>
+    <string name="summary_running">Summarizing…</string>
+    <string name="summary_failed">Could not summarize</string>
+    <string name="summary_model">ChatGPT · %1$s</string>
+    <string name="core_chatgpt_sign_in_required">Sign in to ChatGPT in Settings</string>
+    <string name="core_chatgpt_usage_limit">ChatGPT usage limit reached — check your plan and Recly’s limit in ChatGPT settings</string>
+    <string name="core_chatgpt_plan_required">This ChatGPT account cannot be used by apps</string>
 </resources>

@@ -58,6 +58,13 @@ sealed class ChatGptConnection {
     data class Expired(val account: String) : ChatGptConnection()
 }
 
+/**
+ * A sign-in the shell has started: open [authorizationUrl] in the browser, and hand the callback whose `state`
+ * query value is [state] to [ChatGptAccount.finishSignIn] — after answering the browser at once, so its page
+ * does not wait on the token exchange.
+ */
+data class ChatGptSignIn(val authorizationUrl: String, val state: String)
+
 /** A call that either worked or says why, as a [CoreMessage] wire code the shell renders (docs/07 §5). */
 sealed class ChatGptResult {
     /** [welcome]: the first sign-in on this device, which the shells confirm once (docs/09 "ChatGPT"). */
@@ -116,11 +123,11 @@ class ChatGptAccount internal constructor(
     }
 
     /**
-     * Starts a sign-in on [redirectUri], the loopback the shell is listening on, and answers the URL the
-     * shell opens in the browser. A second call replaces the first: only the newest sign-in can finish.
+     * Starts a sign-in on [redirectUri], the loopback the shell is listening on. A second call replaces the
+     * first: only the newest sign-in can finish.
      */
     @Throws(Throwable::class)
-    suspend fun beginSignIn(redirectUri: String): String {
+    suspend fun beginSignIn(redirectUri: String): ChatGptSignIn {
         check(available()) { "ChatGPT is not offered here" }
         require(LOOPBACK.matches(redirectUri)) { "Not a loopback callback: $redirectUri" }
         val (registration, host) = mutex.withLock { registration() to hostId() }
@@ -141,7 +148,7 @@ class ChatGptAccount internal constructor(
             if (registration == null) add("agent_name_hint" to AGENT_NAME)
             registration?.account?.takeIf { '@' in it }?.let { add("login_hint" to it) }
         }
-        return "$AUTH/api/accounts/authorize?" + parameters.formUrlEncode()
+        return ChatGptSignIn("$AUTH/api/accounts/authorize?" + parameters.formUrlEncode(), next.state)
     }
 
     /** The shell gave up on the sign-in it started (the user closed the browser sheet, a timeout). */
@@ -227,12 +234,25 @@ class ChatGptAccount internal constructor(
         if (current is ChatGptConnection.SignedIn) publish(current.copy(model = pick(current.models)))
     }
 
-    /** Runs [call] with an access token; on a 401 it refreshes once and runs it again. */
+    /**
+     * Runs [call] with an access token; on a 401 it refreshes once and runs it again. A 401 to a token
+     * just issued confirms OpenAI no longer accepts this sign-in (disconnected in ChatGPT settings): it
+     * ends here too, as docs "Disconnection" asks.
+     */
     internal suspend fun authorized(call: suspend (token: String) -> HttpResult): HttpResult {
         if (!available()) throw ChatGptFailure(CoreMessage.PROVIDER_REGION_RESTRICTED.code())
         val first = call(accessToken(force = false))
         if (first.status != 401) return first
-        return call(accessToken(force = true))
+        val second = call(accessToken(force = true))
+        if (second.status == 401) {
+            mutex.withLock {
+                val account = registration()?.account
+                deleteSession()
+                if (account != null) publish(ChatGptConnection.Expired(account))
+            }
+            deps.logger.log(Logger.Level.WARN, "chatgpt.rejected", emptyMap())
+        }
+        return second
     }
 
     /** The model a summary should use now, or null when there is none to pick. */
@@ -280,6 +300,7 @@ class ChatGptAccount internal constructor(
             val next = session(tokens, previous = current)
             writeSession(next)
             if (tokens.string("id_token") != null) identity(tokens, registration.clientId, nonce = null, subject = registration.subject)
+            else requirePlanScope(tokens)
             next.access
         }
     }

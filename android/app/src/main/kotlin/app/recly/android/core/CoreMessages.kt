@@ -47,6 +47,9 @@ object CoreMessages {
         CoreMessage.IMPORT_UNSUPPORTED -> R.string.core_import_unsupported
         CoreMessage.IMPORT_UNREADABLE -> R.string.core_import_unreadable
         CoreMessage.STALE -> R.string.core_stale
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> R.string.core_chatgpt_sign_in_required
+        CoreMessage.CHATGPT_USAGE_LIMIT -> R.string.core_chatgpt_usage_limit
+        CoreMessage.CHATGPT_PLAN_REQUIRED -> R.string.core_chatgpt_plan_required
     }
 
     /** The keys whose sentence has a `%1$s` in it, so the rest are looked up without one. */
@@ -70,6 +73,9 @@ object CoreMessages {
         CoreMessage.IMPORT_UNSUPPORTED,
         CoreMessage.IMPORT_UNREADABLE,
         CoreMessage.STALE,
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED,
+        CoreMessage.CHATGPT_USAGE_LIMIT,
+        CoreMessage.CHATGPT_PLAN_REQUIRED,
         // docs/08 "Errors": what to do about it is the whole sentence, and the provider's own line
         // is the code's detail — shown under it, never inside it.
         CoreMessage.AUTH_REJECTED,

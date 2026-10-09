@@ -413,4 +413,30 @@
     <string name="processing_folder_monthly">월별 폴더</string>
     <string name="processing_folder_single">폴더 하나</string>
     <string name="recording_title_discard">녹음 버리기</string>
+    <!-- docs/15 §10 "Sign in with ChatGPT" and docs/08 "Summaries". -->
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_use_plan">ChatGPT 요금제 사용</string>
+    <string name="chatgpt_use_plan_note">이미 쓰는 요금제로 녹음을 요약합니다. Recly는 따로 요금을 받지 않습니다.</string>
+    <string name="chatgpt_continue">ChatGPT로 계속하기</string>
+    <string name="chatgpt_using_plan">ChatGPT 요금제 사용 중</string>
+    <string name="chatgpt_sign_out">로그아웃</string>
+    <string name="chatgpt_model">모델</string>
+    <string name="chatgpt_manage_usage">사용량 관리</string>
+    <string name="chatgpt_expired">OpenAI에서 로그인을 끝냈습니다. 다시 로그인하려면 ChatGPT로 계속하기를 누르세요.</string>
+    <string name="chatgpt_finish_in_browser">브라우저에서 로그인을 마치세요</string>
+    <string name="chatgpt_sign_in_failed">ChatGPT에 로그인하지 못했습니다</string>
+    <string name="chatgpt_revoke_unconfirmed">이 기기에서는 로그아웃했지만 OpenAI가 확인하지 않았습니다. ChatGPT 설정에서 Recly를 제거할 수 있습니다.</string>
+    <string name="chatgpt_footnote">요약할 때는 전사본 텍스트만 OpenAI로 보내고 오디오는 보내지 않습니다. 요약은 ChatGPT 요금제 사용량에 포함됩니다.</string>
+    <string name="chatgpt_welcome_title">ChatGPT 요금제를 사용합니다</string>
+    <string name="chatgpt_welcome_body">Recly의 요약은 ChatGPT 요금제를 사용합니다. 사용량은 ChatGPT 설정에서 관리할 수 있습니다.</string>
+    <string name="chatgpt_got_it">확인</string>
+    <string name="summary_summarize">요약하기</string>
+    <string name="summary_again">다시 요약하기</string>
+    <string name="summary_tab">요약</string>
+    <string name="summary_running">요약하는 중…</string>
+    <string name="summary_failed">요약하지 못했습니다</string>
+    <string name="summary_model">ChatGPT · %1$s</string>
+    <string name="core_chatgpt_sign_in_required">설정에서 ChatGPT에 로그인하세요</string>
+    <string name="core_chatgpt_usage_limit">ChatGPT 사용 한도에 도달했습니다 — ChatGPT 설정에서 요금제와 Recly 한도를 확인하세요</string>
+    <string name="core_chatgpt_plan_required">이 ChatGPT 계정은 앱에서 사용할 수 없습니다</string>
 </resources>

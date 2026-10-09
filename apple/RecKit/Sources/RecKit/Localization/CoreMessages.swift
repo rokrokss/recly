@@ -69,6 +69,10 @@ public enum CoreMessages {
         case .importUnsupported: return "This file has no audio that can be imported."
         case .importUnreadable: return "The file could not be opened."
         case .stale: return "The document changed while this was open"
+        // docs/15 §10 "Sign in with ChatGPT": what a summary needs that only the user can give.
+        case .chatgptSignInRequired: return "Sign in to ChatGPT in Settings"
+        case .chatgptUsageLimit: return "ChatGPT usage limit reached — check your plan and Recly’s limit in ChatGPT settings"
+        case .chatgptPlanRequired: return "This ChatGPT account cannot be used by apps"
         }
     }
 
@@ -77,7 +81,8 @@ public enum CoreMessages {
         switch message {
         case .localTranscriptionUnavailable, .localModelRequired, .localDiarizationUnavailable, .providerRegionRestricted, .providerNotOffered, .storefrontUnavailable, .transferConsentRequired, .needsAuth, .driveReauth, .driveConsentRequired, .driveStorageFull, .icloudUnavailable, .icloudStorageFull, .icloudUploading, .folderUnavailable, .signInCancelled,
              .stale, .authRejected, .quota, .providerError, .unsupportedAudio,
-             .noInputTrack, .resultTimeout, .importUnsupported, .importUnreadable:
+             .noInputTrack, .resultTimeout, .importUnsupported, .importUnreadable,
+             .chatgptSignInRequired, .chatgptUsageLimit, .chatgptPlanRequired:
             return false
         default:
             return true

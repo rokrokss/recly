@@ -98,6 +98,10 @@ class Summaries internal constructor(
      */
     @Throws(Throwable::class)
     suspend fun summarize(recordingId: String): SummaryState {
+        // Asked before the run starts, so the screen goes straight to the permission dialog.
+        if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
+            return SummaryState.Failed(CoreMessage.TRANSFER_CONSENT_REQUIRED.code(), saved(recordingId))
+        }
         val run = startLock.withLock {
             started[recordingId]?.takeIf { it.isActive } ?: scope.async { run(recordingId) }.also { started[recordingId] = it }
         }
@@ -124,13 +128,11 @@ class Summaries internal constructor(
             runs.update { it - recordingId }
             saved.value++
         }
+        startLock.withLock { started.remove(recordingId) }
         return outcome
     }
 
     private suspend fun create(recordingId: String): Summary {
-        if (consents.missing(listOf(TransferTargets.chatGptSummary())).isNotEmpty()) {
-            throw ChatGptFailure(CoreMessage.TRANSFER_CONSENT_REQUIRED.code())
-        }
         val text = transcript(recordingId)?.let(TranscriptNormalizer::text)?.takeIf { it.isNotBlank() }
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
@@ -213,8 +215,8 @@ Call people what the transcript calls them. Do not add anything the transcript d
 }
 
 /**
- * The Responses API's server-sent events, read whole: the transport hands back the body once the
- * stream has ended (docs/10 "Transport"). Text comes from `response.output_text.delta`; a stream that
+ * The Responses API's server-sent events, read whole: [recly.core.platform.Transport] hands back the body
+ * once the stream has ended. Text comes from `response.output_text.delta`; a stream that
  * ends without `response.completed` is a failure, not a short summary.
  */
 internal object ResponseStream {
