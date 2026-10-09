@@ -1,7 +1,9 @@
 package app.recly.android.ui
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.ContextWrapper
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.core.net.toUri
 import app.recly.android.R
@@ -178,11 +180,31 @@ internal const val CHATGPT_USAGE_URL = "https://chatgpt.com/settings/usage"
 /**
  * The sign-in page in a Custom Tab, from the activity so the tab sits on the app's task. A browser without
  * Custom Tabs takes the same `VIEW` as a plain link. False when nothing on the phone opens a link.
+ *
+ * A partial tab — a sheet over Recly, which stays visible behind it — rather than a page in front of it:
+ * Android freezes an app that is not visible about a minute after it leaves the screen, and a frozen app's
+ * loopback cannot answer the browser (measured on API 36, 2026-10-09). A partial tab needs a result launch;
+ * a browser without partial tabs (before Chrome 107) shows the same tab full height.
  */
 internal fun Context.openSignIn(url: String): Boolean = try {
-    CustomTabsIntent.Builder().build().launchUrl(this, url.toUri())
+    val tab = CustomTabsIntent.Builder()
+        .setInitialActivityHeightPx(resources.displayMetrics.heightPixels * 9 / 10)
+        .build()
+    tab.intent.data = url.toUri()
+    val activity = findActivity()
+    @Suppress("DEPRECATION")
+    if (activity != null) activity.startActivityForResult(tab.intent, SIGN_IN_TAB) else tab.launchUrl(this, url.toUri())
     true
 } catch (e: ActivityNotFoundException) {
     AndroidLogger().log(Logger.Level.WARN, "shell.openUrl.failed", error = e)
     false
+}
+
+/** The tab's result is not read: the loopback is how the sign-in comes back. */
+private const val SIGN_IN_TAB = 0x5157
+
+private tailrec fun Context.findActivity(): Activity? = when (this) {
+    is Activity -> this
+    is ContextWrapper -> baseContext.findActivity()
+    else -> null
 }
