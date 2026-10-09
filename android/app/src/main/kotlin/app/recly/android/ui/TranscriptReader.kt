@@ -198,22 +198,22 @@ internal fun TranscriptReader(
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in
- * monospace. A tap opens the speaker menu.
+ * monospace. A tap opens the speaker menu. The border is the whole [MinTouch] target, so the badge stands as tall
+ * as the time button beside it, on the same centre line.
  */
 @Composable
 internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val palette = blueprint
     Box(
         modifier
-            .defaultMinSize(minHeight = 48.dp)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.s),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            modifier = Modifier
-                .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
-                .padding(horizontal = Space.s, vertical = 2.dp),
             style = if (named) MaterialTheme.typography.labelLarge else mono.small,
             color = palette.textMuted,
             maxLines = 1,

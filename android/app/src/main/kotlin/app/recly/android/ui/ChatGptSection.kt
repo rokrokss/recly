@@ -1,6 +1,5 @@
 package app.recly.android.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,6 +32,7 @@ import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.SectionFootnote
 import app.recly.android.ui.component.SectionHeader
 import app.recly.android.ui.component.TableRow
+import app.recly.android.ui.component.TextLink
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
@@ -66,8 +66,12 @@ fun ChatGptSection() {
     }
     when (current) {
         is ChatGptConnection.SignedIn -> {
+            // Manage usage is a page at OpenAI, so a link under the plan line rather than a button of its own row (docs/09, 2026-10-09).
             TableRow(current.account, subtitle = stringResource(R.string.chatgpt_using_plan), modifier = Modifier.testTag("chatgpt-account"), trailing = {
                 BlueprintButton(stringResource(R.string.chatgpt_sign_out), signIn::signOut, tone = ButtonTone.QUIET, modifier = Modifier.testTag("chatgpt-sign-out"))
+            }, under = {
+                TextLink(stringResource(R.string.chatgpt_manage_usage), { context.openUrl(CHATGPT_USAGE_URL) }, Modifier.testTag("chatgpt-usage"),
+                    style = MaterialTheme.typography.bodySmall)
             })
             // Offline, the plan's list is not known; nothing to choose from then.
             if (current.models.isNotEmpty()) {
@@ -83,11 +87,6 @@ fun ChatGptSection() {
                     )
                 })
             }
-            Row(Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s), horizontalArrangement = Arrangement.End) {
-                BlueprintButton(stringResource(R.string.chatgpt_manage_usage), { context.openUrl(CHATGPT_USAGE_URL) }, tone = ButtonTone.QUIET,
-                    modifier = Modifier.testTag("chatgpt-usage"))
-            }
-            HairLine()
         }
 
         is ChatGptConnection.Expired -> TableRow(current.account, subtitle = stringResource(R.string.chatgpt_expired),
