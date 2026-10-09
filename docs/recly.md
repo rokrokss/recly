@@ -1436,9 +1436,10 @@ is never selected on Windows.
 
 - The Google access/refresh token lives in the same store as secrets, in a different namespace (`tokens`). It is not synchronized.
 - The core calls only `TokenProvider.accessToken()`. Refreshing and prompting the user to sign in again are the shell's job (§6).
-- The ChatGPT sign-in (§15 §10) is the core's own, in a namespace of its own (`chatgpt`: `host`, `registration`, `session.0`…), so a
+- The ChatGPT sign-in (§15 §10) is the core's own, in a namespace of its own (`chatgpt`: `host`, `registration`, `session` and its pieces), so a
   Drive disconnect — which empties `tokens` — leaves it alone. The session is split into 2,000-character pieces because a Windows
-  credential holds 2,560 bytes.
+  credential holds 2,560 bytes: `session.a.0`, `session.a.1`, … with `session` (`a:2`, the generation and the count) written last and the
+  next session in the other generation, so a write cut short leaves the previous one whole.
 
 ---
 
@@ -1986,8 +1987,8 @@ succeeded.
 ### Summaries
 
 2026-10-09 (ADR-001, revised). The detail's More menu has `Summarize` — `Summarize again` once there is a summary — and the core's
-`summaries.summarize(recordingId)` sends **the transcript's text only** (the `.txt` lines with the user's speaker names, plus the title
-and start time) to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
+`summaries.summarize(recordingId)` sends **the transcript's text only** (the `.txt` lines with the user's speaker names — no title, no
+time, no audio) to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
 model chosen in Settings → ChatGPT, OpenAI's first listed model by default; §15 §10). Audio never goes: the plan's API does not take
 audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text in
 the transcript's language — a summary, key points, decisions and action items, leaving out empty sections and adding nothing the
@@ -3788,7 +3789,7 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Tokens | `https://auth.openai.com/api/accounts/oauth/token` | the code and verifier, or the refresh token; the client id; `resource` | access token (1 hour), rotating refresh token (30 days), ID token (`sub`, `email`), `earliest_refresh_at` |
 | Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`) |
-| Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions, and **the recording's transcript text with the speakers' names, its title and start time** — never audio | the summary as a stream (`store: false`) |
+| Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions, and **the recording's transcript text with the speakers' names** — no title, no time, never audio | the summary as a stream (`store: false`) |
 
 - Only when the user asks: signing in, and choosing `Summarize` on one recording. There is no background use (OpenAI's terms require
   express consent for it).

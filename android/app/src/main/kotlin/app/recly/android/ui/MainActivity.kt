@@ -447,7 +447,7 @@ private fun JobsTab(
                 onCloseFind = model::closeFind,
                 onConnectDrive = onConnectDrive,
                 chatGpt = state.chatGpt,
-                onSummarize = { model.summarize(detail.recordingId) },
+                onSummarize = { onFailure -> model.summarize(detail.recordingId, onFailure) },
             ),
         )
     } else {

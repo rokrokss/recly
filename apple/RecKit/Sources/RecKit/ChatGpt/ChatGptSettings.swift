@@ -20,7 +20,7 @@ public protocol ChatGptBrowser: AnyObject {
     @MainActor func close()
 }
 
-/// docs/09 "Settings" · docs/15 §10: the ChatGPT section's state and the sign-in it runs. The tokens never
+/// docs/09 "Summary view" · docs/15 §10: the ChatGPT section's state and the sign-in it runs. The tokens never
 /// pass through here — the core exchanges the code and keeps them; this owns the socket, the browser and
 /// the five minutes the user has to finish.
 @MainActor
@@ -38,7 +38,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     /// The authorization page is open and the loopback is waiting for it — "Finish signing in in your browser".
     @Published public private(set) var waitingForBrowser = false
     @Published public private(set) var failure: Failure?
-    /// The first sign-in on this device, confirmed once (docs/09 "ChatGPT").
+    /// The first sign-in on this device, confirmed once (docs/09 "Summary view").
     @Published public var welcome = false
 
     /// ChatGPT's own usage page — where the plan's limits are, and where Recly can be disconnected.
@@ -116,7 +116,15 @@ public final class ChatGptSettingsModel: ObservableObject {
     }
 
     private func run(_ loopback: ChatGptLoopback) async {
+        // The limit and Cancel hold from the first moment, before the browser is open too.
+        let timeout = self.timeout
+        let clock = Task {
+            guard (try? await Task.sleep(for: timeout)) != nil else { return }
+            loopback.stop()
+        }
+        waitingForBrowser = true
         defer {
+            clock.cancel()
             loopback.stop()
             browser.close()
             waitingForBrowser = false
@@ -127,13 +135,7 @@ public final class ChatGptSettingsModel: ObservableObject {
             let started = try await core.chatGpt.beginSignIn(redirectUri: ChatGptLoopback.redirectUri(port: port))
             loopback.expect(state: started.state)
             guard let url = URL(string: started.authorizationUrl) else { throw URLError(.badURL) }
-            waitingForBrowser = true
             browser.open(url) { [weak loopback] in loopback?.stop() }
-            let timeout = self.timeout
-            let clock = Task {
-                guard (try? await Task.sleep(for: timeout)) != nil else { return }
-                loopback.stop()
-            }
             let callback = await loopback.callback()
             clock.cancel()
             waitingForBrowser = false

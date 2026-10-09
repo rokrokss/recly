@@ -59,8 +59,8 @@ class SummariesTest {
         assertEquals(JsonPrimitive(true), body["stream"])
         assertEquals(setOf("model", "instructions", "input", "store", "stream"), body.keys, "nothing the plan's API refuses")
         val text = body["input"]!!.jsonArray[0].jsonObject["content"]!!.jsonArray[0].jsonObject["text"]!!.jsonPrimitive.content
-        assertTrue("Title: Weekly sync" in text)
         assertTrue("Mina: We ship on Friday." in text)
+        assertFalse("Weekly sync" in text, "the transcript's text only — not the title")
 
         assertTrue(f.h.fs.exists(f.dir / "summary.v1.json"))
         assertEquals(state, f.summaries.state(ID))
@@ -107,10 +107,13 @@ class SummariesTest {
     }
 
     @Test
-    fun `without a sign-in the summary asks for one`() = runBlocking {
+    fun `without a sign-in the summary asks for one, until the user signs in`() = runBlocking {
         val f = fixture()
         f.recordings.create(f.meta, f.dir)
         assertEquals(SummaryState.Failed(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code(), null), f.summaries.summarize(ID))
+        f.h.signIn()
+        assertEquals(SummaryState.None, f.summaries.state(ID))
+        assertEquals(SummaryState.None, f.summaries.observe(ID).first())
     }
 
     @Test

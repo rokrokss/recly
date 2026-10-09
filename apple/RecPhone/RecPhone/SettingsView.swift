@@ -55,7 +55,7 @@ struct SettingsView: View {
                 }
             }
         }
-        // docs/09 "ChatGPT": the first sign-in on this phone, confirmed once.
+        // docs/09 "Summary view": the first sign-in on this phone, confirmed once.
         .chatGptWelcome(model.chatGpt)
         // docs/15 §10: the sign-in and the plan's models as they are now, whenever Settings opens.
         .task { await model.chatGpt?.refresh() }

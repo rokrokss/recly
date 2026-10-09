@@ -29,7 +29,7 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.platform.Logger
 
-/** What the ChatGPT section says besides the connection itself (docs/09 "Settings"). */
+/** What the ChatGPT section says besides the connection itself (docs/09 "Summary view"). */
 data class ChatGptUiState(
     /** The loopback is open and the browser has the sign-in: Cancel is offered. */
     val signingIn: Boolean = false,
@@ -122,7 +122,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
         job?.cancel()
     }
 
-    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Settings"). */
+    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Summary view"). */
     fun signOut() {
         _state.update { it.copy(failure = null, revokeUnconfirmed = false) }
         scope.launch {
@@ -161,7 +161,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
         const val RETURN_SCHEME = "app.recly"
         const val RETURN_HOST = "chatgpt"
 
-        /** docs/09 "Settings": then the listener closes, as Cancel does. */
+        /** docs/09 "Summary view": then the listener closes, as Cancel does. */
         private val TIMEOUT = 5.minutes
 
         @Volatile private var instance: ChatGptSignIn? = null
@@ -172,7 +172,7 @@ class ChatGptSignIn private constructor(private val context: Context) {
     }
 }
 
-/** Where ChatGPT shows and limits what Recly uses of the plan (docs/09 "Settings"). */
+/** Where ChatGPT shows and limits what Recly uses of the plan (docs/09 "Summary view"). */
 internal const val CHATGPT_USAGE_URL = "https://chatgpt.com/settings/usage"
 
 /**

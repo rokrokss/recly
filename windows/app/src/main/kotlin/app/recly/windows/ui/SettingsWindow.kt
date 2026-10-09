@@ -289,7 +289,7 @@ private fun Startup(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/09 "ChatGPT" · docs/15 §10: the user's own ChatGPT plan, for summaries — in the Drive rows' shape, with
+ * docs/09 "Summary view" · docs/15 §10: the user's own ChatGPT plan, for summaries — in the Drive rows' shape, with
  * the Drive connect button's tones. Nothing at all where it is not offered.
  */
 @Composable

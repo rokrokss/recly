@@ -84,12 +84,18 @@ class Summaries internal constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun observe(recordingId: String): Flow<SummaryState> =
-        combine(runs, saved) { all, _ -> all[recordingId] }
+        combine(runs, saved, account.observe()) { all, _, connection -> all[recordingId]?.takeUnless { stale(it, connection) } }
             .map { it ?: current(recordingId) }
             .distinctUntilChanged()
 
     @Throws(Throwable::class)
-    suspend fun state(recordingId: String): SummaryState = runs.value[recordingId] ?: current(recordingId)
+    suspend fun state(recordingId: String): SummaryState =
+        runs.value[recordingId]?.takeUnless { stale(it, account.observe().value) } ?: current(recordingId)
+
+    /** "Sign in to ChatGPT" is said until the user has; after that the recording shows what it has. */
+    private fun stale(state: SummaryState, connection: ChatGptConnection): Boolean =
+        state is SummaryState.Failed && connection is ChatGptConnection.SignedIn &&
+            state.reason.startsWith(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.name)
 
     /**
      * Summarizes [recordingId] — or joins the summary of it already running — and answers how it ended.
@@ -137,7 +143,6 @@ class Summaries internal constructor(
             ?: throw ChatGptFailure(CoreMessage.STEP_FAILED.code("no transcript"))
         val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         deps.logger.log(Logger.Level.INFO, "summary.start", mapOf("recordingId" to recordingId, "model" to model))
-        val prompt = input(recordingId, text)
         val body = buildJsonObject {
             put("model", model)
             put("instructions", INSTRUCTIONS)
@@ -147,7 +152,8 @@ class Summaries internal constructor(
                     putJsonArray("content") {
                         addJsonObject {
                             put("type", "input_text")
-                            put("text", prompt)
+                            // The transcript's text and nothing else (docs/15 §10): no title, no time, no audio.
+                            put("text", text)
                         }
                     }
                 }
@@ -172,16 +178,6 @@ class Summaries internal constructor(
         val summary = ResponseStream.text(result.body.decodeToString()).trim()
         if (summary.isEmpty()) throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "empty summary"))
         return Summary(recordingId, summary, model, deps.clock.now().isoUtc())
-    }
-
-    /** The title and the start time help the notes name the meeting; the rest is the transcript as exported. */
-    private suspend fun input(recordingId: String, text: String): String {
-        val meta = recordings.get(recordingId)?.meta
-        return buildString {
-            meta?.title?.takeIf { it.isNotBlank() }?.let { append("Title: ").append(it).append('\n') }
-            meta?.let { append("Started: ").append(it.startedAt).append(" (").append(it.timezone).append(")\n\n") }
-            append(text)
-        }
     }
 
     private suspend fun write(recordingId: String, summary: Summary): Summary {

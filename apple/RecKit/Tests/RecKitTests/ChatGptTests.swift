@@ -106,7 +106,7 @@ final class ChatGptLoopbackTests: XCTestCase {
     }
 }
 
-/// docs/09 "Settings": the section's sign-in, run against the real core with a browser that stands in for
+/// docs/09 "Summary view": the section's sign-in, run against the real core with a browser that stands in for
 /// the user. None of these reach OpenAI: a decline is answered before any token request.
 @MainActor
 final class ChatGptSettingsTests: XCTestCase {

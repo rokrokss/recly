@@ -2,7 +2,7 @@
 import ReclyCore
 import SwiftUI
 
-/// docs/09 "Settings" · docs/15 §10: the ChatGPT section, after Recording processing — the plan the user
+/// docs/09 "Summary view" · docs/15 §10: the ChatGPT section, after Recording processing — the plan the user
 /// already pays for, used for summaries, on the same rows and buttons the Drive account has. Nothing at
 /// all where ChatGPT is not offered.
 public struct ChatGptSection: View {
@@ -134,7 +134,7 @@ public struct ChatGptSection: View {
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
 }
 
-/// The one-time confirmation after the first sign-in on a device (docs/09 "ChatGPT"). The shells present it
+/// The one-time confirmation after the first sign-in on a device (docs/09 "Summary view"). The shells present it
 /// where their other questions go.
 public struct ChatGptWelcomeDialog: View {
     private let done: () -> Void

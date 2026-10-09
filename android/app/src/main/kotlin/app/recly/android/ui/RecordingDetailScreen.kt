@@ -134,7 +134,8 @@ class DetailActions(
     val onConnectDrive: () -> Unit = {},
     /** docs/09 "Summary view": whether Summarize is offered, and why not; the models name the summary's. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
-    val onSummarize: () -> Unit = {},
+    /** The argument runs when the summary could not even start, so the page stops waiting for it. */
+    val onSummarize: (onFailure: () -> Unit) -> Unit = {},
 )
 
 /**
@@ -288,6 +289,7 @@ fun RecordingDetailScreen(
     // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens.
     var view by remember(detail.recordingId) { mutableStateOf(DetailView.TRANSCRIPT) }
     var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
+    val summaryFailed = { askedSummary = false; view = DetailView.TRANSCRIPT }
     val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
@@ -323,7 +325,7 @@ fun RecordingDetailScreen(
                                 onSummarize = {
                                     askedSummary = true
                                     view = DetailView.SUMMARY
-                                    actions.onSummarize()
+                                    actions.onSummarize(summaryFailed)
                                 },
                             ))
                         }
@@ -355,7 +357,7 @@ fun RecordingDetailScreen(
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary,
-                    (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty(), actions.onSummarize, Modifier.fillMaxSize())
+                    (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty(), { actions.onSummarize(summaryFailed) }, Modifier.fillMaxSize())
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
                 transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
                     stringResource(R.string.detail_waiting_drive),

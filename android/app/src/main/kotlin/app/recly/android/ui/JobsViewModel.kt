@@ -491,9 +491,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * docs/08 "Summaries": the More menu's Summarize, and Retry under a failed one. The run is the core's and goes
-     * on if the page closes; the page follows it through [DetailState.summary].
+     * on if the page closes; the page follows it through [DetailState.summary]. [onFailure]: the core could not even
+     * start it (an unreadable keychain), so the page goes back to what it showed.
      */
-    fun summarize(recordingId: String) = launch { runCatching { core().summaries.summarize(recordingId) } }
+    fun summarize(recordingId: String, onFailure: () -> Unit) = launch {
+        runCatching { core().summaries.summarize(recordingId) }.onFailure { onFailure() }
+    }
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
     fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)

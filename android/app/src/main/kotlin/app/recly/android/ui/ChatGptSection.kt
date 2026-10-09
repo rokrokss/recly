@@ -40,7 +40,7 @@ import app.recly.android.ui.theme.mono
 import recly.core.chatgpt.ChatGptConnection
 
 /**
- * docs/09 "Settings" · docs/15 §10: the user's own ChatGPT plan, for summaries — the Drive account's rows in
+ * docs/09 "Summary view" · docs/15 §10: the user's own ChatGPT plan, for summaries — the Drive account's rows in
  * shape. Not drawn at all where ChatGPT is not offered.
  */
 @Composable
@@ -124,7 +124,7 @@ fun ChatGptSection() {
     SectionFootnote(stringResource(R.string.chatgpt_footnote))
 }
 
-/** docs/09 "ChatGPT": once, after the first sign-in on this device. */
+/** docs/09 "Summary view": once, after the first sign-in on this device. */
 @Composable
 private fun WelcomeDialog(onManageUsage: () -> Unit, onDone: () -> Unit) {
     BlueprintDialog(

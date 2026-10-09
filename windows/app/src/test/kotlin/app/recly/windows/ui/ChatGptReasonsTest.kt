@@ -17,7 +17,7 @@ import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 
 /**
- * docs/09 "ChatGPT" · "Recording detail": what the More menu's Summarize says, when the Transcript | Summary
+ * docs/09 "Summary view" · "Recording detail": what the More menu's Summarize says, when the Transcript | Summary
  * chips are there, and how a failed sign-in or summary is worded.
  */
 class ChatGptReasonsTest {

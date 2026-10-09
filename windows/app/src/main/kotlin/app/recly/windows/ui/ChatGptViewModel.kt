@@ -11,6 +11,7 @@ import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.ProcessingState
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -29,7 +30,7 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.platform.Logger
 
-/** What the ChatGPT section says under its rows, besides the account itself (docs/09 "ChatGPT"). */
+/** What the ChatGPT section says under its rows, besides the account itself (docs/09 "Summary view"). */
 sealed interface ChatGptNotice {
     /** [reason] is a `CoreMessage` wire code — or, for a sign-in this shell could not even start, its diagnostic. */
     data class SignInFailed(val reason: String) : ChatGptNotice
@@ -75,6 +76,9 @@ class ChatGptViewModel(
 
     private var signIn: Job? = null
 
+    /** Bumped by every sign-in and every Cancel, so a browser open that arrives late knows it is stale. */
+    @Volatile private var attempt = 0
+
     /** Follows the core's connection for as long as the app runs, and reads it once now. */
     fun start() {
         scope.launch { account.observe().collect { connection = it } }
@@ -99,16 +103,28 @@ class ChatGptViewModel(
         notice = null
         action = ProcessingState.PROCESSING
         listening = true
+        val mine = ++attempt
+        val opened = AtomicBoolean(false)
         signIn = scope.launch {
             val result = try {
-                val callback = receiver.awaitCallback(timeout, browserTimeout, begin = account::beginSignIn, browser = browser)
+                // The browser opens on a detached thread (LoopbackReceiver): a Cancel pressed before it gets there
+                // must not open it anyway.
+                val callback = receiver.awaitCallback(timeout, browserTimeout, begin = account::beginSignIn) { url ->
+                    if (attempt != mine) {
+                        account.cancelSignIn()
+                    } else {
+                        browser(url)
+                        opened.set(true)
+                    }
+                }
                 // The browser has its page and the port is closed; what is left is the core's exchange.
                 listening = false
                 account.finishSignIn(callback)
             } catch (e: TimeoutCancellationException) {
-                // Five minutes with no callback: given up on, as Cancel would (docs/15 §10).
+                // Five minutes with no callback: given up on, as Cancel would (docs/15 §10). A browser that never
+                // opened is a failure to say, though: nothing on screen would tell the user what happened.
                 account.cancelSignIn()
-                null
+                if (opened.get()) null else ChatGptResult.Failed(CoreMessage.PROVIDER_ERROR.code(detail = "no browser opened"))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -134,6 +150,7 @@ class ChatGptViewModel(
 
     /** The status line's Cancel: the port closes with the wait, and the core forgets the sign-in. */
     fun cancelSignIn() {
+        attempt++
         signIn?.cancel()
         signIn = null
         account.cancelSignIn()
@@ -141,7 +158,7 @@ class ChatGptViewModel(
         action = ProcessingState.IDLE
     }
 
-    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "ChatGPT"). */
+    /** No confirmation: Continue with ChatGPT signs back in to the same registration (docs/09 "Summary view"). */
     fun signOut() {
         notice = null
         scope.launch {
@@ -199,7 +216,7 @@ class ChatGptViewModel(
     }
 }
 
-/** A sign-in the user cancelled in the browser says nothing (docs/09 "ChatGPT"). */
+/** A sign-in the user cancelled in the browser says nothing (docs/09 "Summary view"). */
 internal fun cancelled(reason: String): Boolean = CoreMessageRef.parse(reason)?.message == CoreMessage.SIGN_IN_CANCELLED
 
 /**
@@ -228,7 +245,7 @@ internal fun chatGptDiagnostic(reason: String): String? {
 internal fun signInFailureLine(reason: String): UiMessage? =
     chatGptSentence(reason) ?: chatGptDiagnostic(reason)?.let(UiMessage::Text)
 
-/** The one button under a failed summary's notice (docs/09 "Recording detail"). */
+/** The one button under a failed summary's notice (docs/09 "Summary view"). */
 enum class SummaryRecovery { MANAGE_USAGE, NONE, RETRY }
 
 /** What a failed summary's centred notice says, and the button under it. */

@@ -109,23 +109,31 @@ class ChatGptAccount internal constructor(
 
     /**
      * Reads what this device holds and, when signed in, the plan's models. A secure store that will not
-     * be read throws rather than reading as signed out (docs/05 "fails closed").
+     * be read throws rather than reading as signed out (docs/05 "Secrets").
      */
     @Throws(Throwable::class)
     suspend fun refresh(): ChatGptConnection {
         if (!available()) return publish(ChatGptConnection.Unavailable)
-        val (registration, session) = mutex.withLock { registration() to session() }
-        if (registration == null || session == null) return publish(ChatGptConnection.SignedOut)
+        mutex.withLock { held() }?.let { return publish(it) }
         val models = try {
             listModels()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // Offline keeps the sign-in; a refused refresh has already said Expired.
-            if (state.value is ChatGptConnection.Expired) return state.value
+            // Offline keeps the sign-in; an end OpenAI confirmed is read back below.
             emptyList()
         }
-        return publish(ChatGptConnection.SignedIn(registration.account, models, pick(models)))
+        // A sign-out, or an end OpenAI confirmed, while the list was read wins over this answer.
+        return mutex.withLock {
+            held() ?: publish(ChatGptConnection.SignedIn(registration()!!.account, models, pick(models)))
+        }
+    }
+
+    /** What this device holds when it is not a usable sign-in, or null when it is one. Under [mutex]. */
+    private suspend fun held(): ChatGptConnection? {
+        val registration = registration() ?: return ChatGptConnection.SignedOut
+        if (session() != null) return null
+        return if (registration.ended) ChatGptConnection.Expired(registration.account) else ChatGptConnection.SignedOut
     }
 
     /**
@@ -184,27 +192,40 @@ class ChatGptAccount internal constructor(
             ?: throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "no client id"))
         if (returned != null && returned != clientId) throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "client id changed"))
         val code = query["code"] ?: throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "no code"))
-        val tokens = tokenRequest(
-            "grant_type" to "authorization_code",
-            "client_id" to clientId,
-            "code" to code,
-            "code_verifier" to started.verifier,
-            "redirect_uri" to started.redirectUri,
-        )
-        val identity = identity(tokens, clientId, started.nonce)
-        val session = session(tokens, previous = null)
-        mutex.withLock {
-            val saved = registration()
-            if (saved != null && saved.subject != identity.subject) {
-                // A client id is one account's (docs/15 §10). Another account signed in on it: keep nothing,
-                // and let the next sign-in register that account afresh.
-                delete(REGISTRATION_KEY)
-                revokeQuietly(clientId, session.refresh)
-                throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "account changed"))
+        // The code is spent by the exchange: what it returns is kept even if the caller has gone.
+        withContext(NonCancellable) {
+            val tokens = tokenRequest(
+                "grant_type" to "authorization_code",
+                "client_id" to clientId,
+                "code" to code,
+                "code_verifier" to started.verifier,
+                "redirect_uri" to started.redirectUri,
+            )
+            val identity = try {
+                identity(tokens, clientId, started.nonce)
+            } catch (e: ChatGptFailure) {
+                tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
+                throw e
             }
-            val account = identity.email ?: identity.name ?: saved?.account ?: AGENT_NAME
-            write(REGISTRATION_KEY, providerJson.encodeToString(Registration.serializer(), Registration(clientId, identity.subject, account)))
-            writeSession(session)
+            mutex.withLock {
+                val saved = registration()
+                if (saved != null && saved.subject != identity.subject) {
+                    // A client id is one account's (docs/15 §10). Another account signed in on it: keep nothing,
+                    // and let the next sign-in register that account afresh.
+                    delete(REGISTRATION_KEY)
+                    tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
+                    throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "account changed"))
+                }
+                // Kept before the plan is checked: a returning sign-in reuses this client id, never registers again.
+                val account = identity.email ?: identity.name ?: saved?.account ?: AGENT_NAME
+                write(REGISTRATION_KEY, providerJson.encodeToString(Registration.serializer(), Registration(clientId, identity.subject, account)))
+            }
+            if (planScope(tokens) != true) {
+                tokens.string("refresh_token")?.let { revokeQuietly(clientId, it) }
+                throw ChatGptFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code())
+            }
+            val session = session(tokens, previous = null)
+            mutex.withLock { writeSession(session) }
         }
         deps.logger.log(Logger.Level.INFO, "chatgpt.signin", mapOf("registered" to (started.clientId == null)))
         refresh()
@@ -219,8 +240,12 @@ class ChatGptAccount internal constructor(
     @Throws(Throwable::class)
     suspend fun signOut(): ChatGptResult {
         val (clientId, refresh) = mutex.withLock {
-            val held = registration()?.clientId to session()?.refresh
-            deleteSession()
+            val registration = registration()
+            val held = registration?.clientId to session()?.refresh
+            writeSession(null)
+            registration?.takeIf { it.ended }?.let {
+                write(REGISTRATION_KEY, providerJson.encodeToString(Registration.serializer(), it.copy(ended = false)))
+            }
             held
         }
         publish(if (available()) ChatGptConnection.SignedOut else ChatGptConnection.Unavailable)
@@ -251,11 +276,7 @@ class ChatGptAccount internal constructor(
         if (first.status != 401) return first
         val second = call(accessToken(force = true))
         if (second.status == 401) {
-            mutex.withLock {
-                val account = registration()?.account
-                deleteSession()
-                if (account != null) publish(ChatGptConnection.Expired(account))
-            }
+            mutex.withLock { registration()?.let { end(it) } }
             deps.logger.log(Logger.Level.WARN, "chatgpt.rejected", emptyMap())
         }
         return second
@@ -286,27 +307,27 @@ class ChatGptAccount internal constructor(
             if (current.expiresAt > now) return@withLock current.access
             throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "refresh not ready"))
         }
-        val tokens = try {
-            tokenRequest(
-                "grant_type" to "refresh_token",
-                "client_id" to registration.clientId,
-                "refresh_token" to current.refresh,
-            )
-        } catch (e: ChatGptFailure) {
-            if (e.reason == CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()) {
-                // Unusable for good: drop the tokens, keep the registration for the next sign-in.
-                deleteSession()
-                publish(ChatGptConnection.Expired(registration.account))
-                deps.logger.log(Logger.Level.WARN, "chatgpt.refresh.refused", emptyMap())
-            }
-            throw e
-        }
-        // The replacement refresh token is the only one that works now: it is saved even if the caller has gone.
+        // Once OpenAI has the old refresh token, the replacement is the only one that works: the exchange and
+        // the save run to the end even if the caller has gone.
         withContext(NonCancellable) {
+            val tokens = try {
+                tokenRequest(
+                    "grant_type" to "refresh_token",
+                    "client_id" to registration.clientId,
+                    "refresh_token" to current.refresh,
+                )
+            } catch (e: ChatGptFailure) {
+                if (e.reason == CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()) {
+                    end(registration)
+                    deps.logger.log(Logger.Level.WARN, "chatgpt.refresh.refused", emptyMap())
+                }
+                throw e
+            }
             val next = session(tokens, previous = current)
             writeSession(next)
             if (tokens.string("id_token") != null) identity(tokens, registration.clientId, nonce = null, subject = registration.subject)
-            else requirePlanScope(tokens)
+            // A refresh may leave `scope` out when it did not change (RFC 6749 §5.1); only one without the plan fails.
+            if (planScope(tokens) == false) throw ChatGptFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code())
             next.access
         }
     }
@@ -361,10 +382,9 @@ class ChatGptAccount internal constructor(
      * The ID token's claims. Its signature is not checked: it came straight from OpenAI's token endpoint
      * over TLS in answer to this request, which OpenID Connect Core 1.0 §3.1.3.7 (6) accepts in place of
      * the signature. What is checked is that it is OpenAI's, for this client, unexpired, from this sign-in
-     * ([nonce]) and, on a refresh, still the same person — and that the grant includes the plan.
+     * ([nonce]) and, on a refresh, still the same person.
      */
     private fun identity(tokens: JsonObject, clientId: String, nonce: String?, subject: String? = null): Identity {
-        requirePlanScope(tokens)
         val token = tokens.string("id_token") ?: throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "no id token"))
         val claims = token.split('.').getOrNull(1)?.decodeBase64()?.utf8()
             ?.let { runCatching { providerJson.parseToJsonElement(it).jsonObject }.getOrNull() }
@@ -386,11 +406,20 @@ class ChatGptAccount internal constructor(
         return Identity(claims.string("sub")!!, claims.string("email"), claims.string("name"))
     }
 
-    /** Without this scope the token signs in but cannot use the plan (docs "ChatGPT plan use isn't enabled"). */
-    private fun requirePlanScope(tokens: JsonObject) {
-        if (DIRECT_SCOPE !in tokens.string("scope")?.split(' ').orEmpty()) {
-            throw ChatGptFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code())
-        }
+    /**
+     * Whether the grant includes the plan, or null when the response does not say. Without the scope the token
+     * signs in but cannot use the plan (docs "ChatGPT plan use isn't enabled").
+     */
+    private fun planScope(tokens: JsonObject): Boolean? = tokens.string("scope")?.split(' ')?.contains(DIRECT_SCOPE)
+
+    /**
+     * OpenAI ended the sign-in (docs "Disconnection"): its tokens go, and the registration remembers it so Settings
+     * says so until the next sign-in or sign-out. Under [mutex].
+     */
+    private suspend fun end(registration: Registration) {
+        writeSession(null)
+        write(REGISTRATION_KEY, providerJson.encodeToString(Registration.serializer(), registration.copy(ended = true)))
+        publish(ChatGptConnection.Expired(registration.account))
     }
 
     /** A token response as what is kept; a refresh may leave out the refresh or ID token it did not replace. */
@@ -457,34 +486,41 @@ class ChatGptAccount internal constructor(
         runCatching { providerJson.decodeFromString(Registration.serializer(), it) }.getOrNull()
     }
 
-    private suspend fun session(): Session? = readPieces(SESSION_KEY)?.let {
-        runCatching { providerJson.decodeFromString(Session.serializer(), it) }.getOrNull()
+    /**
+     * A Windows credential holds 2,560 bytes (docs/05 "Secrets") and the session's tokens are longer, so it is
+     * kept as pieces of [PIECE] ASCII characters, `session.a.0`, `session.a.1`, … The key `session` names the
+     * generation and the count (`a:3`) and is written last, the next session goes to the other generation, and
+     * only then are the old pieces removed — a write cut short leaves the previous session whole.
+     */
+    private suspend fun session(): Session? {
+        val (generation, count) = readString(SESSION_KEY)?.split(':')?.takeIf { it.size == 2 } ?: return null
+        val json = buildString {
+            repeat(count.toIntOrNull() ?: return null) { append(readString("$SESSION_KEY.$generation.$it") ?: return null) }
+        }
+        return runCatching { providerJson.decodeFromString(Session.serializer(), json) }.getOrNull()
     }
 
-    private suspend fun writeSession(session: Session) =
-        writePieces(SESSION_KEY, providerJson.encodeToString(Session.serializer(), session))
+    /** Null removes it. */
+    private suspend fun writeSession(session: Session?) {
+        val old = readString(SESSION_KEY)?.substringBefore(':')
+        if (session == null) {
+            delete(SESSION_KEY)
+        } else {
+            val generation = if (old == "a") "b" else "a"
+            deletePieces(generation)
+            val pieces = providerJson.encodeToString(Session.serializer(), session).chunked(PIECE)
+            pieces.forEachIndexed { index, piece -> write("$SESSION_KEY.$generation.$index", piece) }
+            write(SESSION_KEY, "$generation:${pieces.size}")
+        }
+        old?.let { deletePieces(it) }
+    }
 
-    private suspend fun deleteSession() = writePieces(SESSION_KEY, "")
+    private suspend fun deletePieces(generation: String) =
+        deps.secureStore.names(NAMESPACE).filter { it.startsWith("$SESSION_KEY.$generation.") }.forEach { delete(it) }
 
     /** docs/15 §10: `ext_agent_host_id` — one per installation, made once and kept through sign-outs. */
     private suspend fun hostId(): String =
         readString(HOST_KEY) ?: "urn:uuid:${Uuid.random()}".also { write(HOST_KEY, it) }
-
-    /**
-     * A Windows credential holds 2,560 bytes (docs/05 "Secrets") and the session's tokens are longer, so
-     * a long value is kept as `name.0`, `name.1`, … — ASCII, [PIECE] characters each.
-     */
-    private suspend fun writePieces(name: String, value: String) {
-        val pieces = value.chunked(PIECE)
-        pieces.forEachIndexed { index, piece -> write("$name.$index", piece) }
-        var index = pieces.size
-        while (readString("$name.$index") != null) delete("$name.${index++}")
-    }
-
-    private suspend fun readPieces(name: String): String? = buildString {
-        var index = 0
-        while (true) append(readString("$name.${index++}") ?: break)
-    }.ifEmpty { null }
 
     private suspend fun readString(key: String): String? = deps.secureStore.get(NAMESPACE, key)?.decodeToString()
 
@@ -501,8 +537,9 @@ class ChatGptAccount internal constructor(
         ChatGptResult.Failed(e.reason)
     }
 
+    /** [ended]: OpenAI ended the last sign-in, and nothing since has signed in or out. */
     @Serializable
-    private data class Registration(val clientId: String, val subject: String, val account: String)
+    private data class Registration(val clientId: String, val subject: String, val account: String, val ended: Boolean = false)
 
     /** Times are Unix seconds. */
     @Serializable

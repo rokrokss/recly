@@ -181,7 +181,7 @@ fun MeteredDownloadDialog(
 }
 
 /**
- * docs/09 "ChatGPT": said once, after the first sign-in on this PC — where the summaries' usage goes, and
+ * docs/09 "Summary view": said once, after the first sign-in on this PC — where the summaries' usage goes, and
  * where to see it.
  */
 @Composable

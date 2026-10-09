@@ -10,7 +10,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import recly.core.platform.HttpPlan
+import recly.core.platform.HttpResult
+import recly.core.platform.Transport
+import recly.core.testing.testDeps
 import recly.core.chatgpt.ChatGptHarness.Companion.CLIENT
 import recly.core.chatgpt.ChatGptHarness.Companion.EMAIL
 import recly.core.chatgpt.ChatGptHarness.Companion.REDIRECT
@@ -47,7 +54,7 @@ class ChatGptAccountTest {
             ChatGptConnection.SignedIn(EMAIL, listOf(ChatGptModel("gpt-a", "GPT A"), ChatGptModel("gpt-b", "GPT B")), "gpt-a"),
             h.account.observe().value,
         )
-        assertEquals(setOf("host", "registration", "session.0"), h.held().keys)
+        assertEquals(setOf("host", "registration", "session", "session.a.0"), h.held().keys)
         assertTrue(h.store.entries.keys.none { it.startsWith("tokens/") }, "a Drive disconnect must not reach it")
         assertTrue("chatgpt.signin" in h.logger.events)
     }
@@ -98,11 +105,14 @@ class ChatGptAccountTest {
         val signIn = h.account.beginSignIn(REDIRECT)
         val nonce = Url(signIn.authorizationUrl).parameters["nonce"]
         h.server.reply(h.tokens("access-1", "refresh-1", nonce = nonce, scope = "openid profile email offline_access"))
+        h.server.reply("""{"issuer":"https://auth.openai.com","revocation_endpoint":"https://auth.openai.com/oauth/revoke"}""")
+        h.server.reply("", status = 200)
         assertEquals(
             ChatGptResult.Failed(CoreMessage.CHATGPT_PLAN_REQUIRED.code()),
             h.account.finishSignIn("$REDIRECT?code=c&state=${signIn.state}&client_id=$CLIENT"),
         )
-        assertEquals(setOf("host"), h.held().keys)
+        assertEquals(setOf("host", "registration"), h.held().keys, "the client id is kept, so a retry does not register again")
+        assertEquals("refresh-1", form(h.server.requests.last().text)["token"], "the tokens it cannot use are revoked")
     }
 
     @Test
@@ -127,7 +137,9 @@ class ChatGptAccountTest {
         assertEquals("refresh-1", refresh["refresh_token"])
         assertEquals(CLIENT, refresh["client_id"])
         assertNull(refresh["scope"], "omitted to keep the grant")
-        assertTrue("refresh-2" in h.held()["session.0"]!!)
+        assertEquals("b:1", h.held()["session"], "the next generation, written whole before the old one goes")
+        assertEquals(setOf("host", "registration", "session", "session.b.0"), h.held().keys)
+        assertTrue("refresh-2" in h.held()["session.b.0"]!!)
         assertEquals("Bearer access-2", h.server.requests[3].headers["Authorization"])
 
         h.clock.advance(3600.seconds)
@@ -135,6 +147,42 @@ class ChatGptAccountTest {
         assertEquals(ChatGptConnection.Expired(EMAIL), h.account.refresh())
         assertEquals(setOf("host", "registration"), h.held().keys)
         assertTrue("chatgpt.refresh.refused" in h.logger.events)
+        // Settings opened later still says OpenAI ended it, and signing out clears that.
+        assertEquals(ChatGptConnection.Expired(EMAIL), ChatGptAccount(h.db, h.deps).refresh())
+        assertEquals(ChatGptResult.Done(), h.account.signOut())
+        assertEquals(ChatGptConnection.SignedOut, h.account.refresh())
+    }
+
+    @Test
+    fun `a refresh that leaves out the scope keeps the grant`() = runBlocking {
+        h.signIn()
+        h.clock.advance(3600.seconds)
+        h.server.reply("""{"access_token":"access-2","refresh_token":"refresh-2","expires_in":3600}""")
+        h.server.reply(ChatGptHarness.MODELS)
+        assertTrue(h.account.refresh() is ChatGptConnection.SignedIn)
+    }
+
+    @Test
+    fun `a sign-out during the model list wins`() = runBlocking {
+        h.signIn()
+        val reached = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        val account = ChatGptAccount(h.db, testDeps(
+            clock = h.clock, secureStore = h.store,
+            transport = object : Transport {
+                override suspend fun execute(plan: HttpPlan): HttpResult {
+                    reached.complete(Unit)
+                    gate.await()
+                    return HttpResult(200, emptyMap(), ChatGptHarness.MODELS.encodeToByteArray())
+                }
+            },
+        ))
+        val refreshing = async(Dispatchers.Default) { account.refresh() }
+        reached.await()
+        // What signOut leaves, written while the list is on its way.
+        h.store.entries.keys.filter { it.startsWith("chatgpt/session") }.forEach { h.store.entries.remove(it) }
+        gate.complete(Unit)
+        assertEquals(ChatGptConnection.SignedOut, refreshing.await())
     }
 
     @Test
@@ -160,18 +208,18 @@ class ChatGptAccountTest {
         h.server.reply(h.tokens("access-3", "refresh-3", idToken = false))
         h.server.reply("""{"detail":"Unauthorized"}""", status = 401)
         assertEquals(ChatGptConnection.Expired(EMAIL), h.account.refresh())
-        assertFalse("session.0" in h.held())
+        assertFalse("session" in h.held())
     }
 
     @Test
     fun `a session longer than one Windows credential is kept in pieces, and shrinks cleanly`() = runBlocking {
         h.signIn(access = "a".repeat(4500))
-        assertEquals(setOf("host", "registration", "session.0", "session.1", "session.2"), h.held().keys)
+        assertEquals(setOf("host", "registration", "session", "session.a.0", "session.a.1", "session.a.2"), h.held().keys)
         h.clock.advance(3600.seconds)
         h.server.reply(h.tokens("short", "refresh-2", idToken = false))
         h.server.reply(ChatGptHarness.MODELS)
         h.account.refresh()
-        assertEquals(setOf("host", "registration", "session.0"), h.held().keys)
+        assertEquals(setOf("host", "registration", "session", "session.b.0"), h.held().keys)
         assertEquals("Bearer short", h.server.requests.last().headers["Authorization"])
     }
 
