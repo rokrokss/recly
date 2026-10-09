@@ -44,6 +44,7 @@ import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
 import app.recly.windows.ui.component.BlueprintDialogLink
@@ -64,7 +65,9 @@ import app.recly.windows.ui.component.TableRow
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
+import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
+import recly.core.chatgpt.ChatGptConnection
 import recly.core.storage.StorageKind
 
 /**
@@ -87,6 +90,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Startup(model, strings)
             Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
+            model.chatGpt?.let { ChatGpt(it, strings) }
             model.agentEvents?.let { AgentConnection(model, it, strings) }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
@@ -282,6 +286,86 @@ private fun Startup(model: ShellModel, strings: Strings) {
         onCheckedChange = model::toggleLaunchAtLogin,
         enabled = model.launchAtLoginSupported,
     )
+}
+
+/**
+ * docs/09 "ChatGPT" · docs/15 §10: the user's own ChatGPT plan, for summaries — in the Drive rows' shape, with
+ * the Drive connect button's tones. Nothing at all where it is not offered.
+ */
+@Composable
+private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
+    // Once each time the window opens: the plan's models are a request to OpenAI.
+    LaunchedEffect(Unit) { chatGpt.refresh() }
+    val connection = chatGpt.connection
+    if (connection == ChatGptConnection.Unavailable) return
+    Section(strings[Str.CHATGPT_TITLE])
+    val signIn: @Composable () -> Unit = {
+        // Disabled rather than offered twice: a window reopened in the middle of a sign-in has a new button.
+        ProcessingButton(label = strings[Str.CHATGPT_CONTINUE], state = chatGpt.action, strings = strings,
+            onClick = chatGpt::signIn, tone = ButtonTone.PRIMARY, enabled = chatGpt.action != ProcessingState.PROCESSING)
+    }
+    when (connection) {
+        ChatGptConnection.Unavailable -> Unit
+        ChatGptConnection.SignedOut ->
+            TableRow(title = strings[Str.CHATGPT_USE_PLAN], subtitle = strings[Str.CHATGPT_USE_PLAN_NOTE], trailing = signIn)
+        is ChatGptConnection.Expired ->
+            TableRow(title = connection.account, subtitle = strings[Str.CHATGPT_EXPIRED], subtitleColor = blueprint.warningInk,
+                trailing = signIn)
+        is ChatGptConnection.SignedIn -> {
+            TableRow(title = connection.account, subtitle = strings[Str.CHATGPT_USING_PLAN], trailing = {
+                BlueprintButton(strings[Str.CHATGPT_SIGN_OUT], chatGpt::signOut, tone = ButtonTone.QUIET)
+            })
+            if (connection.models.isNotEmpty()) {
+                TableRow(title = strings[Str.CHATGPT_MODEL], trailing = {
+                    BlueprintDropdown(
+                        label = strings[Str.CHATGPT_MODEL],
+                        options = connection.models.map { it.id to it.label },
+                        selected = connection.model.orEmpty(),
+                        onSelect = chatGpt::selectModel,
+                    )
+                })
+            }
+            Row(
+                Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                BlueprintButton(strings[Str.CHATGPT_MANAGE_USAGE], chatGpt::openUsage, tone = ButtonTone.QUIET)
+            }
+            HairLine()
+        }
+    }
+    if (chatGpt.listening) {
+        SettingsCard {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                Text(strings[Str.CHATGPT_FINISH_IN_BROWSER], style = MaterialTheme.typography.bodyMedium, color = blueprint.text,
+                    modifier = Modifier.weight(1f))
+                BlueprintButton(strings[Str.CANCEL], chatGpt::cancelSignIn, tone = ButtonTone.QUIET)
+            }
+        }
+        HairLine()
+    }
+    when (val notice = chatGpt.notice) {
+        is ChatGptNotice.SignInFailed -> {
+            SettingsCard(spacing = 2.dp) {
+                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                // A diagnostic is data, in monospace as the ledger shows one; a sentence is a sentence.
+                signInFailureLine(notice.reason)?.let {
+                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small else MaterialTheme.typography.bodySmall,
+                        color = blueprint.textMuted)
+                }
+            }
+            HairLine()
+        }
+        // Not red: this PC holds nothing any more, and ChatGPT's settings can remove Recly.
+        ChatGptNotice.RevokeUnconfirmed -> {
+            SettingsCard {
+                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+            }
+            HairLine()
+        }
+        null -> Unit
+    }
+    SectionFootnote(strings[Str.CHATGPT_FOOTNOTE])
 }
 
 /**

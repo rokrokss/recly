@@ -531,7 +531,17 @@ private fun Detail(
                 {
                     Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
                         ExportButton(model, detail, strings)
-                        MoreButton(model, detail, player.positionSec, { detail.transcript?.let { onDraft(TranscriptDraft(it)) } }, strings)
+                        MoreButton(
+                            model, detail, player.positionSec,
+                            {
+                                detail.transcript?.let {
+                                    // The editor is the transcript's: it opens over the Transcript view.
+                                    model.showSummary(false)
+                                    onDraft(TranscriptDraft(it))
+                                }
+                            },
+                            strings,
+                        )
                     }
                 }
             },
@@ -546,6 +556,10 @@ private fun Detail(
             )
         }
     }
+    // docs/08 "Summaries": Transcript | Summary, once there is a summary to choose — never over the editor.
+    val summaryChips = !detail.loading && showsSummaryChips(detail.summary, detail.showingSummary, editing = draft != null)
+    val summaryShown = summaryChips && detail.showingSummary
+    if (summaryChips) SummaryChips(detail.showingSummary, model::showSummary, strings)
     // A take still being written to has nothing whole to play, and nothing to say about it either.
     if (!detail.loading && !detail.writing) {
         PlayerBar(model, detail, player, waveforms, strings)
@@ -560,7 +574,7 @@ private fun Detail(
             onFindOpen(true)
         }
     }
-    val finding = findOpen && draft == null && document != null
+    val finding = findOpen && draft == null && document != null && !summaryShown
     val matches = remember(document, findQuery, finding) { if (finding) findMatches(document!!.blocks, findQuery) else emptyList() }
     var currentMatch by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
     LaunchedEffect(matches) {
@@ -588,7 +602,7 @@ private fun Detail(
         HairLine()
     }
     // docs/10 "Re-transcription": the old text stays readable under a line that says the new one is coming.
-    if (detail.retranscribing && draft == null && detail.hasTranscript) {
+    if (detail.retranscribing && draft == null && detail.hasTranscript && !summaryShown) {
         LoadingText(
             strings[if (detail.retranscribingLocal) Str.PROCESSING_LOCAL_RUNNING else Str.TRANSCRIPT_TRANSCRIBING_AGAIN],
             MaterialTheme.typography.bodySmall,
@@ -598,6 +612,7 @@ private fun Detail(
     }
     when {
         detail.loading -> Placeholder(strings[Str.DETAIL_LOADING])
+        summaryShown -> SummaryPane(model, detail, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,

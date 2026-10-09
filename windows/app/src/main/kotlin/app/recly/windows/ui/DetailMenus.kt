@@ -53,6 +53,7 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.ChatGptConnection
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
@@ -177,8 +178,8 @@ private val EXPORTS = listOf(
 )
 
 /**
- * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight. What
- * cannot run now stays in its place, disabled, with the reason under it.
+ * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight ·
+ * Summarize. What cannot run now stays in its place, disabled, with the reason under it.
  */
 @Composable
 internal fun MoreButton(
@@ -237,6 +238,17 @@ internal fun MoreButton(
                 enabled = highlightBlocked == null,
                 secondary = highlightBlocked?.let { strings[it] },
             )
+            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
+            val connection = model.chatGpt?.connection
+            if (connection != null && connection != ChatGptConnection.Unavailable) {
+                val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection, detail.summary)
+                MenuRow(
+                    strings[summarizeLabel(detail.summary)],
+                    { open = false; model.summarize() },
+                    enabled = summaryBlocked == null,
+                    secondary = summaryBlocked?.let { strings[it] },
+                )
+            }
         } }
     }
 }

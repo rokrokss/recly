@@ -180,6 +180,32 @@ fun MeteredDownloadDialog(
     }
 }
 
+/**
+ * docs/09 "ChatGPT": said once, after the first sign-in on this PC — where the summaries' usage goes, and
+ * where to see it.
+ */
+@Composable
+fun ChatGptWelcomeDialog(
+    strings: Strings,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onManageUsage: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.CHATGPT_WELCOME_TITLE],
+        onDismissRequest = onDismiss,
+        theme = theme,
+        height = METERED_HEIGHT,
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CHATGPT_MANAGE_USAGE], onManageUsage, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.CHATGPT_GOT_IT], onDismiss, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        BlueprintDialogText(strings[Str.CHATGPT_WELCOME_BODY])
+    }
+}
+
 /** Where the window opens before it takes the card's own height ([BlueprintDialog] `fitContent`). */
 private val METERED_HEIGHT: Dp = 160.dp
 
