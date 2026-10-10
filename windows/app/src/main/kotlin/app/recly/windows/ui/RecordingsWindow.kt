@@ -391,25 +391,37 @@ private fun Sidebar(
 @Composable
 private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, selected: Boolean, onOpen: () -> Unit) {
     val palette = blueprint
+    val actions = if (selected) rowActions(item) else RowActions.NONE
     SidebarRow(
         title = item.title.text(strings),
         selected = selected,
         onOpen = onOpen,
-        // docs/03 "Deleting in the app": deleting a recording is not one of the things opening it should
-        // be able to do by accident, which is why the button is out here. And never over one that
-        // is still being written ([RecentItem.deletable]).
-        controls = {
-            // Waiting for the speech model: the row's one action is the download.
-            if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) {
-                ModelDownloadChip(model, strings, item.modelLanguage)
-            }
-            Box(Modifier.weight(1f))
-            if (item.deletable) {
-                BlueprintButton(
-                    label = strings[Str.DELETE],
-                    onClick = { model.askToDelete(item) },
-                    tone = ButtonTone.DANGER,
-                )
+        // 2026-10-11 (N1, W26): the actions are the open row's alone, as the tray's expanded row has them — every
+        // other row is its title, its first words and its state. docs/03 "Deleting in the app": deleting a recording
+        // is not one of the things opening it should be able to do by accident, which is why the button is out
+        // here. And never over one that is still being written ([RecentItem.deletable]).
+        controls = if (actions == RowActions.NONE) null else {
+            {
+                // Waiting for the speech model: the download comes first.
+                if (actions.download) ModelDownloadChip(model, strings, item.modelLanguage)
+                if (actions.retry) {
+                    ProcessingButton(
+                        label = strings[Str.RECENT_RETRY],
+                        state = model.action,
+                        strings = strings,
+                        onClick = { model.retry(item) },
+                    )
+                }
+                // docs/08 AUTH_REJECTED: in the actions line, as the tray's expanded row has it.
+                if (actions.checkKey) CheckKeyButton(item, strings) { model.settingsOpen = true }
+                Box(Modifier.weight(1f))
+                if (actions.delete) {
+                    BlueprintButton(
+                        label = strings[Str.DELETE],
+                        onClick = { model.askToDelete(item) },
+                        tone = ButtonTone.DANGER,
+                    )
+                }
             }
         },
     ) {
@@ -436,11 +448,26 @@ private fun RecordingRow(model: ShellModel, item: RecentItem, strings: Strings, 
             )
             StatusBadge(item.state.ledgerStatus(strings))
         }
-        // docs/08 "Errors": what to do about it, and — for a key — where to do it. The popup's
+        // docs/08 "Errors": why the open row is stuck — what to do about it is in its actions line. The popup's
         // expanded row says the same thing about the same recording ([FailureReason]).
-        FailureReason(item, strings) { model.settingsOpen = true }
+        if (selected) FailureReason(item, strings)
     }
 }
+
+/** What the open row of the list offers (2026-10-11, N1): the tray's expanded row's Download, Retry, Check the key and Delete. */
+internal data class RowActions(val download: Boolean, val retry: Boolean, val checkKey: Boolean, val delete: Boolean) {
+    companion object {
+        val NONE = RowActions(download = false, retry = false, checkKey = false, delete = false)
+    }
+}
+
+/** The tray's own rules ([retryable], [CheckKeyButton]), so the two surfaces never offer different things. */
+internal fun rowActions(item: RecentItem): RowActions = RowActions(
+    download = item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL,
+    retry = retryable(item.jobStatus, transcribing = item.waitingMinutes != null || item.localPending),
+    checkKey = recly.core.job.StepReport.needsKey(item.lastError),
+    delete = item.deletable,
+)
 
 @Composable
 private fun Detail(

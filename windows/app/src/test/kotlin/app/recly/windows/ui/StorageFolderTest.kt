@@ -46,6 +46,17 @@ class StorageFolderTest {
         assertFalse(showsFolderChoice(ProcessingSettingsState.NotInitialized))
     }
 
+    /** 2026-10-11 (N8): the row shows the folder by its name; the path is only its tooltip and its spoken value. */
+    @Test
+    fun `the local folder row names the folder, not its path`() {
+        assertEquals("Recordings", folderName("C:\\Users\\me\\Recordings"))
+        assertEquals("Recordings", folderName("C:\\Users\\me\\Recordings\\"))
+        assertEquals("share", folderName("\\\\nas\\share"))
+        assertEquals("Meeting recordings", folderName("/Users/me/Meeting recordings"))
+        // A drive's root has no name of its own.
+        assertEquals("D:\\", folderName("D:\\"))
+    }
+
     /** Monthly is the processing settings' own default, so a fresh install shows it chosen. */
     @Test
     fun `monthly is the default`() {

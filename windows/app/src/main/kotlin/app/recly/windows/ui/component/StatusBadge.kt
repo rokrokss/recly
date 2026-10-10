@@ -13,14 +13,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.blueprint
+import app.recly.windows.ui.theme.forWord
 import app.recly.windows.ui.theme.mono
 
 /**
@@ -43,7 +47,8 @@ data class LedgerStatus(
 )
 
 /**
- * A square badge: 1dp of the tone (2dp in high contrast), the code in monospace, on the surface.
+ * A square badge: 1dp of the tone (2dp in high contrast), the word in monospace — or in the sans face for
+ * Hangul, Kana and Han ([forWord]) — on the surface.
  * The letters are drawn in an ink that clears WCAG AA on both the surface and the page — which for
  * amber is not the same colour as the border (see [app.recly.windows.ui.theme.BlueprintColors]).
  */
@@ -60,7 +65,7 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         if (status.busy) BlueprintLoader(status.tone.ink())
         Text(
             text = status.label,
-            style = mono.small,
+            style = mono.small.forWord(status.label),
             color = status.tone.ink(),
             maxLines = 1,
             textAlign = TextAlign.Center,
@@ -78,7 +83,26 @@ private val BADGE_PAD: Dp = 6.dp
  * rule.
  */
 @Composable
-fun statusColumnWidth(labels: List<String>): Dp = statusColumn(textColumnWidth(labels, mono.small), blueprint.line)
+fun statusColumnWidth(labels: List<String>): Dp {
+    // Each word measured in the face it is drawn in ([forWord]): a Korean word is not as wide in sans as in mono.
+    val style = mono.small
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val widest = remember(labels, style, density) {
+        val px = labels.maxOfOrNull { sample ->
+            // The spaces in front of a busy badge's word stand in for its loader ([ledgerBadgeLabels]), so they
+            // stay the mono face's width whatever face the word takes.
+            val word = sample.trimStart()
+            val text = buildAnnotatedString {
+                withStyle(SpanStyle(fontFamily = style.fontFamily)) { append(sample.substring(0, sample.length - word.length)) }
+                append(word)
+            }
+            measurer.measure(text, style.forWord(word), maxLines = 1).size.width
+        } ?: 0
+        with(density) { px.toDp() }
+    }
+    return statusColumn(widest, blueprint.line)
+}
 
 /** The widest code, plus the badge's padding and border on each side. */
 internal fun statusColumn(widest: Dp, line: Dp): Dp = widest + (BADGE_PAD + line) * 2

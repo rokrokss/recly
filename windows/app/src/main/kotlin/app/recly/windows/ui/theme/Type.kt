@@ -62,6 +62,26 @@ fun monoType(scale: Float): MonoType = MonoType(
     timer = mono(Type.TIMER * scale, letterSpacing = 1f),
 )
 
+/**
+ * A word drawn in a [MonoType] style — a badge's state, a node's value — in the face it can be read in
+ * (2026-10-11, N3): Hangul, Kana and Han take the body sans face, because the monospace fonts have none
+ * of those glyphs and the fallback set `업로드 중` with full-width gaps. Size and line height stay the
+ * style's own, so a badge is as tall in Korean as in English. Times, counts and ids never come here.
+ */
+fun TextStyle.forWord(text: String): TextStyle =
+    if (text.codePoints().anyMatch(::isCjk)) copy(fontFamily = FontFamily.Default) else this
+
+/** Whether [codePoint] is written in a script the monospace faces do not carry. */
+internal fun isCjk(codePoint: Int): Boolean = Character.UnicodeScript.of(codePoint) in CJK_SCRIPTS
+
+private val CJK_SCRIPTS = setOf(
+    Character.UnicodeScript.HANGUL,
+    Character.UnicodeScript.HIRAGANA,
+    Character.UnicodeScript.KATAKANA,
+    Character.UnicodeScript.HAN,
+    Character.UnicodeScript.BOPOMOFO,
+)
+
 private fun mono(size: Float, letterSpacing: Float = 0f) = TextStyle(
     fontFamily = FontFamily.Monospace,
     fontSize = size.sp,
