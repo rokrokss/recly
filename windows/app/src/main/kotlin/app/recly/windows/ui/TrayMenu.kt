@@ -26,7 +26,8 @@ sealed interface TrayEntry {
  * **It is the fallback now, not the UI.** docs/09 screen principle 6 puts the state nodes and the ledger in
  * a window ([TrayPopup]), because an AWT menu item is one run of system text and cannot draw any of
  * them. What stays here is what has to work even if that window will not open on
- * some machine: what the app is doing, the way in to the window, start/stop, and quit.
+ * some machine: what the app is doing, the ways in to the windows — the popup, Details and Settings
+ * (2026-10-10) — start/stop, and quit.
  *
  * Every label is resolved from [strings] on the way out, so a language change produces a different
  * list and Compose replaces the AWT items with it.
@@ -48,6 +49,8 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
     add(TrayEntry.Separator)
 
     add(TrayEntry.Item(strings[Str.TRAY_OPEN]) { model.popupOpen = true })
+    add(TrayEntry.Item(strings[Str.WINDOW_RECORDINGS]) { model.recordingsOpen = true })
+    add(TrayEntry.Item(strings[Str.TRAY_SETTINGS]) { model.settingsOpen = true })
     if (model.recording) {
         add(TrayEntry.Item(strings[Str.TRAY_STOP], onClick = model::stop))
     } else {

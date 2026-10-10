@@ -1,5 +1,7 @@
 package app.recly.windows.ui
 
+import app.recly.windows.i18n.UiMessage
+import app.recly.windows.i18n.message
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.plain
@@ -67,7 +69,7 @@ class TrayPopupTest {
             "REC" to ("Recording" to "녹음 중"),
             "STOPPING" to ("Saving" to "저장 중"),
             "OPENING" to ("Opening" to "여는 중"),
-            "NO_HELPER" to ("Helper missing" to "도우미 없음"),
+            "NO_HELPER" to ("Can’t record" to "녹음 불가"),
             "NAMING" to ("Naming" to "제목 입력"),
         )
         words.forEach { (code, word) ->
@@ -78,5 +80,19 @@ class TrayPopupTest {
         assertEquals("업로드 중", ko[Str.STATE_UPLOADING].plain())
         assertEquals("Desktop", en[Str.NODE_DESKTOP])
         assertEquals("데스크톱", ko[Str.NODE_DESKTOP].plain())
+    }
+
+    /**
+     * 2026-10-10: the ledger's last line is not the place for what a line above already says — the highlight just
+     * marked is under the Highlight button, and the banner counts the recordings waiting for Drive.
+     */
+    @Test
+    fun `the status line is left out where a line above says the same`() {
+        val drive = listOf(JobAlert(AlertReason.NEEDS_AUTH, 2))
+        assertFalse(statusLineShown(Str.HIGHLIGHT_MARKED.message("00:12"), emptyList()))
+        assertFalse(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), drive))
+        assertTrue(statusLineShown(Str.STATUS_SIGN_IN_NEEDED.message(), emptyList()))
+        assertTrue(statusLineShown(Str.STATUS_RECORDING.message(), drive))
+        assertTrue(statusLineShown(UiMessage.Text("a diagnostic"), drive))
     }
 }

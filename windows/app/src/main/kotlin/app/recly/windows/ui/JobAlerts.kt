@@ -35,10 +35,12 @@ enum class AlertReason(val label: Str, val code: String, val fix: FixSurface) {
 
     /**
      * docs/09 screen principle 2: the banner row wears the state in the tone of what it is — as the word the
-     * ledger rows say for the same jobs (2026-10-08): the wait's own word, and `Failed` for the reasons a job
-     * the queue gave up on carries, as the Apple shells say it.
+     * ledger rows say for the same jobs (2026-10-08): the wait's own word in the warning tone, and `Failed` for the
+     * reasons a job the queue gave up on carries, as the Apple shells say it — in the failure's red, as the rows
+     * wear it (2026-10-10).
      */
-    fun badge(): LedgerStatus = LedgerStatus(code, BadgeTone.WARNING, word = WORDS[this] ?: Str.STATE_FAILED)
+    fun badge(): LedgerStatus = WORDS[this]?.let { LedgerStatus(code, BadgeTone.WARNING, word = it) }
+        ?: LedgerStatus(code, BadgeTone.DANGER, word = Str.STATE_FAILED)
 
     private companion object {
         val WORDS = mapOf(

@@ -30,11 +30,11 @@ class TrayMenuTest {
         val korean = labels(model)
 
         assertEquals(
-            listOf("Opening", "Connect Google Drive", "Open Recly", "Start recording", "Import audio…", "Quit"),
+            listOf("Opening", "Connect Google Drive", "Open Recly", "Details", "Settings", "Start recording", "Import audio…", "Quit"),
             english,
         )
         assertEquals(
-            listOf("여는 중", "Google Drive 연결", "Recly 열기", "녹음 시작", "오디오 가져오기…", "종료"),
+            listOf("여는 중", "Google Drive 연결", "Recly 열기", "상세", "설정", "녹음 시작", "오디오 가져오기…", "종료"),
             korean.map { it.plain() },
         )
     }

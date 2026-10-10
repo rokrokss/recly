@@ -3,11 +3,13 @@ package app.recly.windows.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextDirection
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.coreMessageDetail
+import app.recly.windows.i18n.finalCoreMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
@@ -118,13 +120,15 @@ fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? 
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) return
     val error = item.lastError ?: return
     val palette = blueprint
+    // A job the queue gave up on will not try again by itself, so its line does not say it will (2026-10-10).
+    val failed = item.jobStatus == recly.core.job.JobStatus.FAILED
     Text(
-        coreMessage(error).text(strings),
+        (if (failed) finalCoreMessage(error) else coreMessage(error)).text(strings),
         style = MaterialTheme.typography.bodySmall,
         color = reasonTone(item.jobStatus).ink(),
     )
     coreMessageDetail(error)?.let {
-        Text(it, style = mono.small, color = palette.textMuted)
+        Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
     }
     if (onCheckKey != null) CheckKeyButton(item, strings, onCheckKey)
 }

@@ -1,10 +1,13 @@
 package app.recly.windows.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.text.style.TextDirection
+import app.recly.windows.ui.component.fieldBox
+import kotlin.math.hypot
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +15,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -53,7 +55,6 @@ import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.theme.MinTouch
-import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -78,14 +79,14 @@ internal fun SummaryChips(showingSummary: Boolean, onShowSummary: (Boolean) -> U
 /**
  * docs/08 "Summaries": the recording's summary — plain text from ChatGPT, shown as it is — or where a new one
  * has got to. The previous summary stays readable under a run and under a failure, until a new one replaces it.
- * Its times play the recording from there, as the transcript's do ([canSeek], [onSeek]).
+ * Its times play the recording from there ([canPlay], [onPlay]): seek, and start playing (2026-10-10).
  */
 @Composable
 internal fun SummaryPane(
     model: ShellModel,
     detail: RecordingDetail,
-    canSeek: Boolean,
-    onSeek: (Double) -> Unit,
+    canPlay: Boolean,
+    onPlay: (Double) -> Unit,
     strings: Strings,
     modifier: Modifier = Modifier,
 ) {
@@ -99,15 +100,15 @@ internal fun SummaryPane(
             SummaryState.None -> LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
             is SummaryState.Running -> {
                 LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
-                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings, detail.audio.totalSec) }
+                summary.previous?.let { CitedText(it.text, canPlay, onPlay, strings, detail.audio.totalSec) }
             }
             is SummaryState.Ready -> {
-                CitedText(summary.summary.text, canSeek, onSeek, strings, detail.audio.totalSec)
+                CitedText(summary.summary.text, canPlay, onPlay, strings, detail.audio.totalSec)
                 SummaryFooter(
                     text = summary.summary.text,
                     source = summaryFooter(
                         strings,
-                        summaryModelLabel(summary.summary.model, model.chatGpt?.connection ?: ChatGptConnection.SignedOut),
+                        summaryModelLabel(summary.summary.model, summary.summary.modelName, model.chatGpt?.connection ?: ChatGptConnection.SignedOut),
                         summary.summary.summaryFormat,
                         edited = summary.summary.editedAt != null,
                     ),
@@ -117,7 +118,7 @@ internal fun SummaryPane(
             }
             is SummaryState.Failed -> {
                 SummaryFailureNotice(summaryFailure(summary.reason), { model.chatGpt?.openUsage() }, model::retrySummary, strings)
-                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings, detail.audio.totalSec) }
+                summary.previous?.let { CitedText(it.text, canPlay, onPlay, strings, detail.audio.totalSec) }
             }
         }
     }
@@ -125,21 +126,23 @@ internal fun SummaryPane(
 
 /**
  * docs/09 "Summary view": a summary or an answer — plain text with its own line breaks, selectable like the
- * transcript — whose `[00:12:34]` times each play the recording from there, the way a transcript time does.
+ * transcript, in the direction its own words take — whose `[00:12:34]` times each play the recording from there.
  *
  * The text is one selectable [Text], each time a span of it in monospace and the accent, with no underline — a
  * dotted one is a web page. Selection and a click on part of a text want the same press, so a time's target is not
- * the span but an invisible box laid over it, at least [MinTouch] each way and centred on its words: the press on a
- * time is the time's, a drag anywhere else selects, and a copy carries the time as written. The boxes take no room,
- * so the lines keep their height; one reaches a little over the lines next to it. A time the player cannot reach
- * now — nothing to play, or past the recording's end ([seekableDurationSec]), as a transcript time button past it
- * is off — is muted and only text.
+ * the span but an invisible box laid over it, at least [MinTouch] each way and centred on its words — one for each
+ * line a time is on: the press on a time is the time's, a drag anywhere else selects, and a copy carries the time as
+ * written. The boxes take no room, so the lines keep their height; one reaches a little over the lines next to it,
+ * and where two reach over each other the press plays the time whose words are nearest ([citationHit], Apple's
+ * rule, 2026-10-10). A time the player cannot reach now — nothing to play, or past the recording's end
+ * ([seekableDurationSec]), as a transcript time button past it is off — is muted and only text. Each box is also a
+ * screen reader's `Play from …` button.
  */
 @Composable
 internal fun CitedText(
     text: String,
-    canSeek: Boolean,
-    onSeek: (Double) -> Unit,
+    canPlay: Boolean,
+    onPlay: (Double) -> Unit,
     strings: Strings,
     seekableDurationSec: Double = Double.POSITIVE_INFINITY,
 ) {
@@ -147,59 +150,101 @@ internal fun CitedText(
     val runs = remember(text) { citationRuns(text) }
     // Where each run starts in the text, which is where the layout finds its words.
     val starts = remember(runs) { runs.runningFold(0) { at, run -> at + run.text.length } }
-    val interactions = remember(runs) { runs.map { MutableInteractionSource() } }
-    val pressed = interactions.map { it.collectIsPressedAsState().value }
-    val playable = runs.map { run -> canSeek && run.atSec != null && run.atSec < seekableDurationSec }
+    var pressed by remember(text) { mutableStateOf<Int?>(null) }
+    val playable = runs.map { run -> canPlay && run.atSec != null && run.atSec < seekableDurationSec }
     val annotated = buildAnnotatedString {
         runs.forEachIndexed { index, run ->
             if (run.atSec == null) {
                 append(run.text)
             } else {
                 val color = if (playable[index]) palette.accent else palette.textMuted
-                withStyle(SpanStyle(fontFamily = mono.body.fontFamily, color = if (pressed[index]) color.copy(alpha = PRESSED_ALPHA) else color)) {
+                withStyle(SpanStyle(fontFamily = mono.body.fontFamily, color = if (pressed == index) color.copy(alpha = PRESSED_ALPHA) else color)) {
                     append(run.text)
                 }
             }
         }
     }
     var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
-    val reach = with(LocalDensity.current) { MinTouch.roundToPx() }
+    val reach = with(LocalDensity.current) { MinTouch.toPx() }
     Box {
         SelectionContainer {
-            Text(annotated, style = MaterialTheme.typography.bodyMedium, color = palette.text, onTextLayout = { layout = it })
+            Text(
+                annotated,
+                // Across the width, so the words' own direction also decides which edge they start from.
+                modifier = Modifier.fillMaxWidth(),
+                style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                color = palette.text,
+                onTextLayout = { layout = it },
+            )
         }
-        val lines = layout
-        if (lines != null) runs.forEachIndexed { index, run ->
-            if (playable[index]) {
-                val label = strings[Str.SUMMARY_PLAY_FROM, run.time!!]
-                citationBoxes(lines, starts[index], starts[index + 1]).forEach { box ->
-                    Box(
-                        Modifier
-                            // Centred on the words and taking no room: the lines keep their height.
-                            .layout { measurable, _ ->
-                                val width = maxOf(box.width.roundToInt(), reach)
-                                val height = maxOf(box.height.roundToInt(), reach)
-                                val target = measurable.measure(Constraints.fixed(width, height))
-                                layout(0, 0) {
-                                    target.place((box.center.x - width / 2f).roundToInt(), (box.center.y - height / 2f).roundToInt())
-                                }
-                            }
-                            .pointerHoverIcon(PointerIcon.Hand)
-                            .clickable(interactionSource = interactions[index], indication = null, role = Role.Button) { onSeek(run.atSec!!) }
-                            .semantics { contentDescription = label },
-                    )
-                }
-            }
+        val lines = layout ?: return@Box
+        val targets = remember(lines, playable) {
+            runs.indices.filter { playable[it] }.flatMap { index -> citationTargets(lines, index, starts[index], starts[index + 1]) }
+        }
+        targets.forEach { target ->
+            val area = target.area(reach)
+            val label = strings[Str.SUMMARY_PLAY_FROM, runs[target.run].time!!]
+            val play = { hit: CitationTarget? -> hit?.let { runs[it.run].atSec }?.let(onPlay) }
+            Box(
+                Modifier
+                    // Over the words and taking no room: the lines keep their height.
+                    .layout { measurable, _ ->
+                        val box = measurable.measure(Constraints.fixed(area.width.roundToInt(), area.height.roundToInt()))
+                        layout(0, 0) { box.place(area.left.roundToInt(), area.top.roundToInt()) }
+                    }
+                    .pointerHoverIcon(PointerIcon.Hand)
+                    .pointerInput(targets) {
+                        detectTapGestures(
+                            onPress = { at ->
+                                pressed = citationHit(at + area.topLeft, targets, reach)?.run
+                                tryAwaitRelease()
+                                pressed = null
+                            },
+                            onTap = { at -> play(citationHit(at + area.topLeft, targets, reach)) },
+                        )
+                    }
+                    .semantics {
+                        contentDescription = label
+                        role = Role.Button
+                        onClick { play(target); true }
+                    },
+            )
         }
     }
 }
 
+/**
+ * docs/09 "Summary view": one time's words on one line of the text — [run] is its place among the text's runs — and
+ * around them the box a press plays it from.
+ */
+internal data class CitationTarget(val run: Int, val glyphs: Rect) {
+    /** At least [reach] each way, centred on the words: it reaches over the lines next to it, where [citationHit] decides. */
+    fun area(reach: Float): Rect {
+        val width = maxOf(glyphs.width, reach)
+        val height = maxOf(glyphs.height, reach)
+        return Rect(glyphs.center.x - width / 2, glyphs.center.y - height / 2, glyphs.center.x + width / 2, glyphs.center.y + height / 2)
+    }
+
+    fun distance(point: Offset): Float =
+        hypot(maxOf(glyphs.left - point.x, 0f, point.x - glyphs.right), maxOf(glyphs.top - point.y, 0f, point.y - glyphs.bottom))
+}
+
+/**
+ * What a press at [point] plays: of the targets whose area holds it, the one whose words are nearest — so a press on
+ * a time's own words plays that time even where the next line's target reaches over it (Apple's `CitationTarget.hit`).
+ */
+internal fun citationHit(point: Offset, targets: List<CitationTarget>, reach: Float): CitationTarget? =
+    targets.filter { it.area(reach).contains(point) }.minByOrNull { it.distance(point) }
+
 /** The box around the characters [start] to [end] on each line they are on — one, unless a time wraps. */
-private fun citationBoxes(layout: TextLayoutResult, start: Int, end: Int): List<Rect> =
+private fun citationTargets(layout: TextLayoutResult, run: Int, start: Int, end: Int): List<CitationTarget> =
     (start until end).groupBy(layout::getLineForOffset).values.map { offsets ->
-        offsets.map(layout::getBoundingBox).reduce { a, b ->
-            Rect(minOf(a.left, b.left), minOf(a.top, b.top), maxOf(a.right, b.right), maxOf(a.bottom, b.bottom))
-        }
+        CitationTarget(
+            run,
+            offsets.map(layout::getBoundingBox).reduce { a, b ->
+                Rect(minOf(a.left, b.left), minOf(a.top, b.top), maxOf(a.right, b.right), maxOf(a.bottom, b.bottom))
+            },
+        )
     }
 
 /**
@@ -230,7 +275,8 @@ internal fun SummaryFooter(text: String, source: String, recordingId: String, st
 
 /**
  * A centred notice and at most one centred button under it (docs/09 screen principle 8): Manage usage for a
- * spent plan, nothing where the sentence already says where to go, Retry for the rest. The summary's, and Ask's.
+ * spent plan, nothing where the sentence already says where to go or where trying again cannot help, Retry for the
+ * rest. The summary's, and Ask's.
  */
 @Composable
 internal fun SummaryFailureNotice(failure: SummaryFailure, onManageUsage: () -> Unit, onRetry: () -> Unit, strings: Strings) {
@@ -239,8 +285,16 @@ internal fun SummaryFailureNotice(failure: SummaryFailure, onManageUsage: () -> 
         verticalArrangement = Arrangement.spacedBy(Space.s),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(failure.headline.text(strings), color = blueprint.danger, textAlign = TextAlign.Center)
-        failure.detail?.let { Text(it, style = mono.small, color = blueprint.textMuted, textAlign = TextAlign.Center) }
+        // A sentence that says where to go is something to attend to; anything else failed (as on the Mac).
+        Text(
+            failure.headline.text(strings),
+            style = MaterialTheme.typography.bodyMedium,
+            color = if (failure.attention) blueprint.warningInk else blueprint.danger,
+            textAlign = TextAlign.Center,
+        )
+        failure.detail?.let {
+            Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted, textAlign = TextAlign.Center)
+        }
         when (failure.recovery) {
             SummaryRecovery.MANAGE_USAGE -> BlueprintButton(strings[Str.CHATGPT_MANAGE_USAGE], onManageUsage, tone = ButtonTone.PRIMARY)
             // Retry repeats the run the user already asked for; only More → Summarize again asks first (docs/09).
@@ -276,11 +330,11 @@ internal fun SummaryEditor(draft: SummaryDraft, note: Str, enabled: Boolean, str
                 .fillMaxWidth()
                 .padding(Space.m)
                 .semantics { contentDescription = strings[Str.SUMMARY_TAB] }
-                .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
-                .background(palette.surface, RoundedCornerShape(Radius.node))
+                // The accent while it has the focus, as every other field (2026-10-10).
+                .fieldBox()
                 .padding(Space.s),
             enabled = enabled,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text, textDirection = TextDirection.Content),
             cursorBrush = SolidColor(palette.accent),
         )
         HairLine()

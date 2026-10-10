@@ -15,6 +15,14 @@ import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
@@ -35,32 +43,40 @@ import recly.core.chatgpt.ChatGptConnection
  * docs/08 "Ask": one question about one recording — a preset or the user's own — and its answer, in a dialog over
  * the detail. Nothing is kept: closing it forgets the answer ([ShellModel.closeAsk]), though a question still
  * running finishes, and reopening the panel shows it running.
+ *
+ * Its one way out is the close mark in its title row (2026-10-10). It is as tall as what it holds, up to
+ * [ASK_HEIGHT], where the body scrolls under the title; and it leaves the detail usable under it — the player there
+ * pauses what one of the answer's times started.
  */
 @Composable
 internal fun AskDialog(
     model: ShellModel,
     detail: RecordingDetail,
-    canSeek: Boolean,
-    onSeek: (Double) -> Unit,
+    canPlay: Boolean,
+    onPlay: (Double) -> Unit,
     strings: Strings,
     theme: @Composable (@Composable () -> Unit) -> Unit,
 ) {
     val presets by produceState(emptyList<AskPreset>(), detail.recordingId) { value = model.askPresets(detail.recordingId) }
-    // Gone with the window, or with another recording picked under it: closed as Close closes it.
+    // Gone with the window, or with another recording picked under it: closed as the close mark closes it.
     DisposableEffect(detail.recordingId) { onDispose { model.closeAsk() } }
     BlueprintDialog(
         title = strings[Str.ASK_TITLE],
         onDismissRequest = model::closeAsk,
-        actions = { BlueprintButton(strings[Str.CLOSE], model::closeAsk, tone = ButtonTone.QUIET) },
-        height = ASK_HEIGHT,
+        actions = null,
+        height = ASK_OPENING_HEIGHT,
         theme = theme,
+        fitContent = true,
+        maxHeight = ASK_HEIGHT,
+        closeLabel = strings[Str.CLOSE],
+        modeless = true,
     ) {
         AskPanel(
             state = detail.ask,
             presets = presets,
-            modelLabel = { summaryModelLabel(it, model.chatGpt?.connection ?: ChatGptConnection.SignedOut) },
-            canSeek = canSeek,
-            onSeek = onSeek,
+            modelLabel = { id, name -> summaryModelLabel(id, name, model.chatGpt?.connection ?: ChatGptConnection.SignedOut) },
+            canPlay = canPlay,
+            onPlay = onPlay,
             onAsk = model::ask,
             onManageUsage = { model.chatGpt?.openUsage() },
             strings = strings,
@@ -79,9 +95,10 @@ internal fun AskDialog(
 internal fun AskPanel(
     state: AskState,
     presets: List<AskPreset>,
-    modelLabel: (String) -> String,
-    canSeek: Boolean,
-    onSeek: (Double) -> Unit,
+    /** The footer's model, from its id and the name kept with the answer ([summaryModelLabel]). */
+    modelLabel: (String, String?) -> String,
+    canPlay: Boolean,
+    onPlay: (Double) -> Unit,
     onAsk: (AskPreset?, String?) -> Unit,
     onManageUsage: () -> Unit,
     strings: Strings,
@@ -89,7 +106,8 @@ internal fun AskPanel(
 ) {
     val running = state is AskState.Running
     // What was asked in the user's words stays in the field, also when the panel is opened again over it.
-    var question by remember { mutableStateOf(state.askedQuestion().orEmpty()) }
+    var field by remember { mutableStateOf(TextFieldValue(state.askedQuestion().orEmpty())) }
+    val question = field.text
     Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Space.m)) {
         if (presets.isNotEmpty()) {
             FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -106,25 +124,40 @@ internal fun AskPanel(
             }
         }
         Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
+            val asks = question.isNotBlank() && !running
             BlueprintTextField(
-                question,
-                { question = it },
+                field,
+                { field = it },
                 strings[Str.ASK_QUESTION],
+                // Enter asks, as Ask does; Shift+Enter is a new line where the cursor is (2026-10-10).
+                modifier = Modifier.onPreviewKeyEvent { event ->
+                    when {
+                        event.key != Key.Enter && event.key != Key.NumPadEnter -> false
+                        event.isShiftPressed -> {
+                            if (event.type == KeyEventType.KeyDown) field = insertLineBreak(field)
+                            true
+                        }
+                        else -> {
+                            if (event.type == KeyEventType.KeyDown && asks) onAsk(null, question)
+                            true
+                        }
+                    }
+                },
                 singleLine = false,
                 maxLines = QUESTION_LINES,
                 enabled = !running,
                 monospace = false,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                BlueprintButton(strings[Str.ASK], { onAsk(null, question) }, tone = ButtonTone.PRIMARY, enabled = question.isNotBlank() && !running)
+                BlueprintButton(strings[Str.ASK], { onAsk(null, question) }, tone = ButtonTone.PRIMARY, enabled = asks)
             }
         }
         when (state) {
             AskState.None -> Unit
             is AskState.Running -> LoadingText(strings[Str.ASK_RUNNING], MaterialTheme.typography.bodyMedium, blueprint.textMuted)
             is AskState.Ready -> {
-                CitedText(state.answer.text, canSeek, onSeek, strings, seekableDurationSec)
-                SummaryFooter(state.answer.text, strings[Str.SUMMARY_MODEL, modelLabel(state.answer.model)], state.answer.recordingId, strings)
+                CitedText(state.answer.text, canPlay, onPlay, strings, seekableDurationSec)
+                SummaryFooter(state.answer.text, strings[Str.SUMMARY_MODEL, modelLabel(state.answer.model, state.answer.modelName)], state.answer.recordingId, strings)
             }
             // Retry asks the same preset or the same words again.
             is AskState.Failed -> SummaryFailureNotice(
@@ -135,6 +168,13 @@ internal fun AskPanel(
             )
         }
     }
+}
+
+/** [field] with its selection replaced by a line break and the cursor after it: Shift+Enter in the question. */
+internal fun insertLineBreak(field: TextFieldValue): TextFieldValue {
+    val start = minOf(field.selection.start, field.selection.end)
+    val end = maxOf(field.selection.start, field.selection.end)
+    return TextFieldValue(field.text.replaceRange(start, end, "\n"), TextRange(start + 1))
 }
 
 /** The preset the state is about, or null for the user's own question and for nothing asked. */
@@ -155,5 +195,8 @@ internal fun AskState.askedQuestion(): String? = when (this) {
 /** Up to four lines of question before the field scrolls. */
 private const val QUESTION_LINES = 4
 
-/** Room for the chips, the question and an answer of a few paragraphs; a longer one scrolls with the rest. */
+/** The tallest the panel grows: the chips, the question and an answer of a few paragraphs; a longer one scrolls. */
 private val ASK_HEIGHT = 560.dp
+
+/** Where the window opens before it takes the panel's own height. */
+private val ASK_OPENING_HEIGHT = 320.dp

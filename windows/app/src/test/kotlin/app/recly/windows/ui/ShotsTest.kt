@@ -187,7 +187,7 @@ class ShotsTest {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(strings[Str.ASK_TITLE], style = MaterialTheme.typography.titleMedium, color = blueprint.text)
-                    AskPanel(state, presets, { "GPT-5.4" }, canSeek = true, onSeek = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
+                    AskPanel(state, presets, { _, _ -> "GPT-5.4" }, canPlay = true, onPlay = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
                 }
             }
             shot("ask-running-$lang", 460, 560, ko) { panel(AskState.Running(AskPreset.ACTION_ITEMS, null)) }
@@ -261,11 +261,8 @@ class ShotsTest {
         processing.refreshLocal()
         model.modelDownload?.refresh()
         delay(500)
+        // Copy configuration's check is the picture; what it put on the clipboard is not read back or printed.
         shot("settings-speaker-download-en", 640, 2700, false, clicks = listOf(MCP_COPY)) { SettingsWindow(model, strings) }
-        val copied = runCatching {
-            java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
-        }.getOrNull()
-        println("SHOTS clipboard after Copy configuration:\n$copied")
         model.openDetail(short)
         until { model.detail?.loading == false }
         shot("recordings-more-not-uploaded-en", 1000, 680, false, clicks = listOf(MORE)) { RecordingsWindow(model, strings) { it() } }

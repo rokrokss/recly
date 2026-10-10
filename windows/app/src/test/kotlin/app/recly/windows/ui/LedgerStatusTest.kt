@@ -151,14 +151,15 @@ class LedgerStatusTest {
         // The banner over the ledger says the same words for the same waits.
         assertEquals("Waiting for model", AlertReason.LOCAL_MODEL_REQUIRED.badge().worded(en).label)
         assertEquals("Storage full", AlertReason.NEEDS_SPACE.badge().worded(en).label)
-        // A job the queue gave up on says `Failed`, whatever the reason the banner names; the tone stays the banner's.
+        // A job the queue gave up on says `Failed`, whatever the reason the banner names, in the failure's red as the
+        // rows wear it (2026-10-10).
         listOf(
             AlertReason.MISSING_SECRET, AlertReason.AUTH_REJECTED, AlertReason.QUOTA,
             AlertReason.LOCAL_TRANSCRIPTION_UNAVAILABLE, AlertReason.LOCAL_DIARIZATION_UNAVAILABLE,
         ).forEach { reason ->
             assertEquals("Failed", reason.badge().worded(en).label, reason.name)
             assertEquals("실패", reason.badge().worded(ko).label.plain(), reason.name)
-            assertEquals(BadgeTone.WARNING, reason.badge().tone, reason.name)
+            assertEquals(BadgeTone.DANGER, reason.badge().tone, reason.name)
         }
         // The NEEDS_AUTH sentence is the badge's words too.
         assertEquals("Waiting for Drive", en[Str.STATUS_SIGN_IN_NEEDED])
