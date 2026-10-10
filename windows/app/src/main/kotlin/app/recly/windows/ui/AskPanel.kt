@@ -64,6 +64,7 @@ internal fun AskDialog(
             onAsk = model::ask,
             onManageUsage = { model.chatGpt?.openUsage() },
             strings = strings,
+            seekableDurationSec = detail.audio.totalSec,
         )
     }
 }
@@ -84,6 +85,7 @@ internal fun AskPanel(
     onAsk: (AskPreset?, String?) -> Unit,
     onManageUsage: () -> Unit,
     strings: Strings,
+    seekableDurationSec: Double = Double.POSITIVE_INFINITY,
 ) {
     val running = state is AskState.Running
     // What was asked in the user's words stays in the field, also when the panel is opened again over it.
@@ -121,7 +123,7 @@ internal fun AskPanel(
             AskState.None -> Unit
             is AskState.Running -> LoadingText(strings[Str.ASK_RUNNING], MaterialTheme.typography.bodyMedium, blueprint.textMuted)
             is AskState.Ready -> {
-                CitedText(state.answer.text, canSeek, onSeek, strings)
+                CitedText(state.answer.text, canSeek, onSeek, strings, seekableDurationSec)
                 SummaryFooter(state.answer.text, strings[Str.SUMMARY_MODEL, modelLabel(state.answer.model)], state.answer.recordingId, strings)
             }
             // Retry asks the same preset or the same words again.
