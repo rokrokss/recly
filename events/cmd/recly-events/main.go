@@ -53,7 +53,7 @@ const usage = `recly-events — tell your ChatGPT agent when Recly finishes a tr
 Usage:
   recly-events init [--google | --google-client FILE] [--no-browser] [--tunnel-id ID]
                     [--tunnel-key-file FILE | --tunnel-key-stdin] [--no-check]
-  recly-events serve [--exit-with-stdin]
+  recly-events serve
   recly-events status [--json]
   recly-events test
   recly-events service install|uninstall
@@ -397,8 +397,6 @@ type runtimeStatus struct {
 	TunnelError string    `json:"tunnelError,omitempty"`
 	StartedAt   time.Time `json:"startedAt"`
 	Version     string    `json:"version"`
-	// DriveFromApp says Drive is reached with the desktop app's own connection, not the saved sign-in.
-	DriveFromApp bool `json:"driveFromApp,omitempty"`
 }
 
 // liveStatus is the runtimeStatus shared between the tunnel loop and the admin socket.
@@ -421,21 +419,8 @@ func (l *liveStatus) snapshot() runtimeStatus {
 
 func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
-	withStdin := fs.Bool("exit-with-stdin", false, "stop when standard input closes, for a parent process such as the Recly desktop app")
-	tokenStdin := fs.Bool("drive-token-stdin", false, "take Google Drive access tokens, one per line, on standard input from a parent such as the Recly desktop app instead of the saved sign-in; stop when it closes")
 	if err := fs.Parse(args); err != nil {
 		return err
-	}
-	var pipe *drive.TokenPipe
-	if *withStdin || *tokenStdin {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithCancel(ctx)
-		defer cancel()
-		if *tokenStdin {
-			pipe = drive.ReadTokens(os.Stdin, cancel)
-		} else {
-			app.StopWhenClosed(os.Stdin, cancel)
-		}
 	}
 	cfg, err := app.LoadConfig(home)
 	if err != nil {
@@ -448,11 +433,8 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 	if err != nil {
 		return err
 	}
-	// The desktop app's own Drive connection when it runs this copy (§15 §9), else the saved sign-in.
-	var api *drive.API
-	if pipe != nil {
-		api = &drive.API{Client: pipe.Client()}
-	} else if api, err = driveAPI(ctx, home, cfg); err != nil {
+	api, err := driveAPI(ctx, home, cfg)
+	if err != nil {
 		return err
 	}
 	store, err := state.Open(home.State())
@@ -467,14 +449,14 @@ func cmdServe(ctx context.Context, home app.Home, args []string) error {
 		API: api, Store: store, Log: log, Every: time.Duration(cfg.PollInterval()) * time.Second,
 		Emit: func(id string, rec drive.Recording) (bool, error) { return hub.Emit(id, rec) },
 	}
-	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version, DriveFromApp: pipe != nil}}
+	rt := &liveStatus{rt: runtimeStatus{PID: os.Getpid(), StartedAt: time.Now(), Version: version}}
 	stopAdmin, err := serveAdmin(home, api, hub, rt, log)
 	if err != nil {
 		return err
 	}
 	defer stopAdmin()
 
-	log.Info("serve.start", "version", version, "tunnel", cfg.TunnelID, "pollSeconds", cfg.PollInterval(), "driveFromApp", pipe != nil)
+	log.Info("serve.start", "version", version, "tunnel", cfg.TunnelID, "pollSeconds", cfg.PollInterval())
 	go hub.Run(ctx)
 	go watcher.Run(ctx)
 	for ctx.Err() == nil {
@@ -655,9 +637,7 @@ func cmdStatus(home app.Home, args []string) error {
 			fmt.Println("Tunnel:        ", cfg.TunnelID, "connecting")
 		}
 	}
-	if rt != nil && rt.DriveFromApp {
-		fmt.Println("Google:         the Recly app's own Drive connection")
-	} else if tokenErr != nil {
+	if tokenErr != nil {
 		fmt.Println("Google:         not connected —", tokenErr)
 	} else {
 		fmt.Printf("Google:         signed in %s, token last refreshed %s\n", ago(tf.ObtainedAt), ago(tf.RefreshedAt))
