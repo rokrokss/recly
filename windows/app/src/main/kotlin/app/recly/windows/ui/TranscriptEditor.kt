@@ -53,7 +53,10 @@ internal class TranscriptDraft(val original: Transcript) {
 
     /** The draft's speakers, the original's first, as the menu lists them. */
     val people: List<TranscriptSpeaker>
-        get() = (original.speakers.map { it.id } + speakers).filter { it.isNotEmpty() }.distinct().map { TranscriptSpeaker(it, nameOf(it)) }
+        get() = (original.speakers.map { it.id } + speakers).filter { it.isNotEmpty() }.distinct().map(::speakerOf)
+
+    /** Speaker [id] as the draft has it: its name so far, and still the person who made the recording if it was. */
+    fun speakerOf(id: String): TranscriptSpeaker = TranscriptSpeaker(id, nameOf(id), original.speakers.firstOrNull { it.id == id }?.me)
 
     val edit: TranscriptEdit? by derivedStateOf { transcriptEdit(original, texts, speakers, names) }
 
@@ -110,7 +113,7 @@ internal fun TranscriptEditor(
                             if (speaker.isEmpty()) {
                                 BlueprintButton(strings[Str.SPEAKER_ADD], { draft.assign(index, null) }, tone = ButtonTone.QUIET, enabled = speakersEnabled)
                             } else {
-                                SpeakerBadge(speaker, draft.nameOf(speaker), speakersEnabled) { menu = true }
+                                SpeakerBadge(speaker, speakerName(draft.speakerOf(speaker), strings), speakersEnabled) { menu = true }
                                 if (menu) SpeakerMenu(draft.people, speaker, { menu = false }, { onRenameSpeaker(speaker) }, { draft.assign(index, it) }, strings)
                             }
                         }

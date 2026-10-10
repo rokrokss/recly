@@ -5,7 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.recly.windows.auth.LoopbackReceiver
 import app.recly.windows.auth.openInSystemBrowser
+import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Str
+import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
@@ -22,10 +24,17 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptAccount
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptResult
+import recly.core.chatgpt.Summaries
 import recly.core.chatgpt.Summary
+import recly.core.chatgpt.SummaryCitations
+import recly.core.chatgpt.SummaryFormat
+import recly.core.chatgpt.SummaryPreferences
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
@@ -50,6 +59,8 @@ sealed interface ChatGptNotice {
  */
 class ChatGptViewModel(
     private val account: ChatGptAccount,
+    /** Settings → ChatGPT's format, My format and About you are the summaries' own (docs/08 "Summaries"). */
+    private val summaries: Summaries,
     private val receiver: LoopbackReceiver,
     private val scope: CoroutineScope,
     private val logger: Logger,
@@ -59,7 +70,15 @@ class ChatGptViewModel(
     private val browserTimeout: Duration = BROWSER_TIMEOUT,
 ) {
     var connection: ChatGptConnection by mutableStateOf(account.observe().value)
+        // Set by the off-screen shots alone, which draw the signed-in rows without signing in.
+        internal set
+
+    /** What every summary on this PC is asked for: its format, My format's words and About you — kept signed out too. */
+    var preferences: SummaryPreferences by mutableStateOf(SummaryPreferences())
         private set
+
+    /** One save at a time, in the order they were made: each one carries every field as it was then. */
+    private val saving = Mutex()
 
     /** The loopback is open and the browser is where the user is: the status line and its Cancel. */
     var listening: Boolean by mutableStateOf(false)
@@ -84,6 +103,15 @@ class ChatGptViewModel(
     /** Follows the core's connection for as long as the app runs, and reads it once now. */
     fun start() {
         scope.launch { account.observe().collect { connection = it } }
+        scope.launch {
+            try {
+                summaries.observePreferences().collect { preferences = it }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.log(Logger.Level.ERROR, "shell.chatgpt.preferences.failed", error = e)
+            }
+        }
         refresh()
     }
 
@@ -188,6 +216,32 @@ class ChatGptViewModel(
         }
     }
 
+    /** Settings → Summary format: saved the moment it is chosen, like the model. */
+    fun selectFormat(format: SummaryFormat) = savePreferences { it.copy(format = format) }
+
+    /** My format's words, once the field is left; empty is allowed, and puts the format back to General. */
+    fun saveCustomFormat(text: String) = savePreferences { it.copy(customFormat = text) }
+
+    fun saveAboutMe(text: String) = savePreferences { it.copy(aboutMe = text) }
+
+    /** Shown at once; the core keeps it trimmed and capped, and [preferences] follows what it kept. */
+    private fun savePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
+        val wanted = change(preferences)
+        if (wanted == preferences) return
+        preferences = wanted
+        scope.launch {
+            saving.withLock {
+                try {
+                    summaries.setPreferences(wanted)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    logger.log(Logger.Level.ERROR, "shell.chatgpt.preferences.failed", error = e)
+                }
+            }
+        }
+    }
+
     fun dismissWelcome() {
         welcome = false
     }
@@ -253,7 +307,8 @@ enum class SummaryRecovery { MANAGE_USAGE, NONE, RETRY }
 /** What a failed summary's centred notice says, and the button under it. */
 data class SummaryFailure(val headline: UiMessage, val detail: String?, val recovery: SummaryRecovery)
 
-internal fun summaryFailure(reason: String): SummaryFailure {
+/** [failed] is the headline when the reason has no sentence of its own: `Could not summarize`, or Ask's `Could not answer`. */
+internal fun summaryFailure(reason: String, failed: Str = Str.SUMMARY_FAILED): SummaryFailure {
     val sentence = chatGptSentence(reason)
     val recovery = when (CoreMessageRef.parse(reason)?.message) {
         CoreMessage.CHATGPT_USAGE_LIMIT -> SummaryRecovery.MANAGE_USAGE
@@ -264,7 +319,7 @@ internal fun summaryFailure(reason: String): SummaryFailure {
     return if (sentence != null) {
         SummaryFailure(sentence, null, recovery)
     } else {
-        SummaryFailure(Str.SUMMARY_FAILED.message(), chatGptDiagnostic(reason), recovery)
+        SummaryFailure(failed.message(), chatGptDiagnostic(reason), recovery)
     }
 }
 
@@ -277,7 +332,7 @@ internal fun summarizeLabel(summary: SummaryState): Str = when (summary) {
 }
 
 /** The summary Summarize again would replace: the one on show, or the one still kept under a run or a failure. */
-private fun SummaryState.saved(): Summary? = when (this) {
+internal fun SummaryState.saved(): Summary? = when (this) {
     is SummaryState.Ready -> summary
     is SummaryState.Running -> previous
     is SummaryState.Failed -> previous
@@ -323,12 +378,23 @@ internal fun summarizeBlocked(
     transcriptionRunning: Boolean,
     connection: ChatGptConnection,
     summary: SummaryState,
+): Str? = askBlocked(writing, hasTranscript, transcriptionRunning, connection)
+    ?: if (summary is SummaryState.Running) Str.SUMMARY_RUNNING else null
+
+/**
+ * Why More → Ask about this recording cannot run now (docs/08 "Ask"): Summarize's reasons, but a summary being made
+ * is none — a question is asked beside it.
+ */
+internal fun askBlocked(
+    writing: Boolean,
+    hasTranscript: Boolean,
+    transcriptionRunning: Boolean,
+    connection: ChatGptConnection,
 ): Str? = when {
     writing -> Str.DETAIL_STILL_RECORDING
     !hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
     transcriptionRunning -> Str.DETAIL_TRANSCRIBING
     connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired -> Str.CORE_CHATGPT_SIGN_IN_REQUIRED
-    summary is SummaryState.Running -> Str.SUMMARY_RUNNING
     else -> null
 }
 
@@ -342,3 +408,58 @@ internal fun showsSummaryChips(summary: SummaryState, summaryChosen: Boolean, ed
 /** The footer's model: OpenAI's name for it while the plan lists it, otherwise its id. */
 internal fun summaryModelLabel(model: String, connection: ChatGptConnection): String =
     (connection as? ChatGptConnection.SignedIn)?.models?.firstOrNull { it.id == model }?.label ?: model
+
+/** docs/08 "Summaries": a format's name, in Settings and in More → Summarize as. */
+internal fun summaryFormatLabel(format: SummaryFormat): Str = when (format) {
+    SummaryFormat.AUTO -> Str.SUMMARY_FORMAT_AUTO
+    SummaryFormat.ONE_ON_ONE -> Str.SUMMARY_FORMAT_ONE_ON_ONE
+    SummaryFormat.LECTURE -> Str.SUMMARY_FORMAT_LECTURE
+    SummaryFormat.INTERVIEW -> Str.SUMMARY_FORMAT_INTERVIEW
+    SummaryFormat.CUSTOM -> Str.SUMMARY_FORMAT_CUSTOM
+}
+
+/**
+ * The line under a summary (docs/09 "Summary view"): `ChatGPT · <model>`, then the format unless it is General, then
+ * `Edited` once the user has changed it — one separator throughout.
+ */
+internal fun summaryFooter(strings: Strings, model: String, format: SummaryFormat, edited: Boolean): String =
+    buildList {
+        add(strings[Str.SUMMARY_MODEL, model])
+        if (format != SummaryFormat.AUTO) add(strings[summaryFormatLabel(format)])
+        if (edited) add(strings[Str.SUMMARY_EDITED])
+    }.joinToString(FOOTER_SEPARATOR)
+
+/** The footer's own join, the one [Str.SUMMARY_MODEL] puts between ChatGPT and the model. */
+private const val FOOTER_SEPARATOR = " · "
+
+/** docs/08 "Ask": a preset's chip. Translate names the app's language the way the language list does. */
+internal fun askPresetLabel(preset: AskPreset, strings: Strings): String = when (preset) {
+    AskPreset.FOLLOW_UP_EMAIL -> strings[Str.ASK_FOLLOW_UP_EMAIL]
+    AskPreset.ACTION_ITEMS -> strings[Str.ASK_ACTION_ITEMS]
+    AskPreset.OPEN_QUESTIONS -> strings[Str.ASK_OPEN_QUESTIONS]
+    AskPreset.TRANSLATE -> strings[
+        Str.ASK_TRANSLATE,
+        AppLanguage.choices.firstOrNull { it.first == AppLanguage.of(strings.language) }?.let { strings[it.second] } ?: strings.language,
+    ]
+    AskPreset.MY_SPEAKING -> strings[Str.ASK_MY_SPEAKING]
+}
+
+/**
+ * One piece of a summary or an answer as the detail draws it: plain text, or a citation — its text as written,
+ * brackets and all, the time inside them for a screen reader, and the second it plays from.
+ */
+internal data class CitationRun(val text: String, val time: String? = null, val atSec: Double? = null)
+
+/** [text] cut at its citations ([SummaryCitations], the one rule every shell reads them by): every character once, in order. */
+internal fun citationRuns(text: String): List<CitationRun> {
+    val runs = mutableListOf<CitationRun>()
+    var at = 0
+    for (citation in SummaryCitations.parse(text)) {
+        if (citation.offset > at) runs += CitationRun(text.substring(at, citation.offset))
+        val written = text.substring(citation.offset, citation.offset + citation.length)
+        runs += CitationRun(written, written.removePrefix("[").removeSuffix("]"), citation.atSec)
+        at = citation.offset + citation.length
+    }
+    if (at < text.length) runs += CitationRun(text.substring(at))
+    return runs
+}

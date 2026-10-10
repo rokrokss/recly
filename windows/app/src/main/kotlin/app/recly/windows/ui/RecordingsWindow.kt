@@ -320,7 +320,7 @@ private fun Sidebar(
             items(found, key = { "hit-${it.recordingId}" }) { hit ->
                 // The hit's time is drawn in the format the recording's own length picks, when the list knows it.
                 val length = model.recents.firstOrNull { it.id == hit.recordingId }?.durationSec
-                SearchResultRow(hit, strings[Str.UNTITLED], length) { onOpenHit(hit) }
+                SearchResultRow(hit, strings[Str.UNTITLED], strings[Str.SUMMARY_TAB], length) { onOpenHit(hit) }
             }
             if (hits != null && found.isEmpty()) {
                 item {
@@ -645,7 +645,7 @@ private fun Detail(
         summaryDraft != null -> SummaryEditor(
             summaryDraft, summaryEditNote(detail.storage), enabled = editSave == null, strings = strings, modifier = Modifier.fillMaxSize(),
         )
-        summaryShown -> SummaryPane(model, detail, strings, Modifier.fillMaxSize())
+        summaryShown -> SummaryPane(model, detail, canSeek, onSeek, strings, Modifier.fillMaxSize())
         draft != null -> TranscriptEditor(
             draft = draft,
             canSeek = canSeek,
@@ -720,6 +720,7 @@ private fun Detail(
     if (model.summaryReplaceAsked) {
         SummaryReplaceDialog(strings, theme, onCancel = { model.answerSummaryReplace(false) }, onReplace = { model.answerSummaryReplace(true) })
     }
+    if (model.askingAbout == detail.recordingId) AskDialog(model, detail, canSeek, onSeek, strings, theme)
 }
 
 /**

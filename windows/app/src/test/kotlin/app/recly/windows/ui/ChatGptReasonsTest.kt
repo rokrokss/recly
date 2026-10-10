@@ -1,6 +1,7 @@
 package app.recly.windows.ui
 
 import app.recly.windows.i18n.Str
+import app.recly.windows.plain
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
@@ -10,12 +11,25 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import recly.core.chatgpt.AskAnswer
+import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.AskState
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.Summary
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
+import recly.core.model.Track
+import recly.core.recording.SearchHit
+import recly.core.recording.SearchRange
+import recly.core.recording.SearchSnippet
+import recly.core.recording.SummaryMatch
 import recly.core.storage.StorageKind
+import recly.core.transcribe.Transcript
+import recly.core.transcribe.TranscriptProvider
+import recly.core.transcribe.TranscriptSegment
+import recly.core.transcribe.TranscriptSpeaker
 
 /**
  * docs/09 "Summary view" · "Recording detail": what the More menu's Summarize and Edit summary say, when the
@@ -149,6 +163,116 @@ class ChatGptReasonsTest {
         assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(StorageKind.FOLDER))
         // Not uploaded yet: nothing has reached a folder another device reads.
         assertEquals(Str.SUMMARY_EDIT_NOTE_LOCAL, summaryEditNote(null))
+    }
+
+    @Test
+    fun `Ask waits for what Summarize waits for, but not for a summary being made`() {
+        assertNull(askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = signedIn))
+        assertEquals(Str.DETAIL_STILL_RECORDING, askBlocked(writing = true, hasTranscript = false, transcriptionRunning = false, connection = signedIn))
+        assertEquals(Str.DETAIL_NO_TRANSCRIPT, askBlocked(writing = false, hasTranscript = false, transcriptionRunning = false, connection = signedIn))
+        assertEquals(Str.DETAIL_TRANSCRIBING, askBlocked(writing = false, hasTranscript = true, transcriptionRunning = true, connection = signedIn))
+        assertEquals(
+            Str.CORE_CHATGPT_SIGN_IN_REQUIRED,
+            askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = ChatGptConnection.SignedOut),
+        )
+        // Summarize as… is Summarize's own item, with its reasons, the running summary among them.
+        assertEquals(Str.SUMMARY_RUNNING, summarizeBlocked(false, true, false, signedIn, SummaryState.Running(summary)))
+        assertNull(askBlocked(writing = false, hasTranscript = true, transcriptionRunning = false, connection = signedIn))
+    }
+
+    @Test
+    fun `the footer adds the format unless it is General, then Edited`() {
+        assertEquals("ChatGPT · GPT X", summaryFooter(base, "GPT X", SummaryFormat.AUTO, edited = false))
+        assertEquals("ChatGPT · GPT X · Lecture", summaryFooter(base, "GPT X", SummaryFormat.LECTURE, edited = false))
+        assertEquals("ChatGPT · GPT X · My format · Edited", summaryFooter(base, "GPT X", SummaryFormat.CUSTOM, edited = true))
+        assertEquals("ChatGPT · GPT X · Edited", summaryFooter(base, "GPT X", SummaryFormat.AUTO, edited = true))
+        assertEquals(SummaryFormat.ONE_ON_ONE, summary.copy(format = "one_on_one").summaryFormat)
+        assertEquals("ChatGPT · GPT X · 1:1", summaryFooter(StringTable.of(StringTable.KOREAN), "GPT X", SummaryFormat.ONE_ON_ONE, edited = false))
+    }
+
+    @Test
+    fun `a summary is cut at its times, and nothing else is`() {
+        val text = "- Ship on Friday [00:00:31]\n- Notes by Thursday [1:05][00:02]. [99:99] is not one"
+        val runs = citationRuns(text)
+
+        assertEquals(text, runs.joinToString("") { it.text }, "every character once, in order")
+        assertEquals(
+            listOf(
+                CitationRun("- Ship on Friday "),
+                CitationRun("[00:00:31]", "00:00:31", 31.0),
+                CitationRun("\n- Notes by Thursday "),
+                CitationRun("[1:05]", "1:05", 65.0),
+                CitationRun("[00:02]", "00:02", 2.0),
+                CitationRun(". [99:99] is not one"),
+            ),
+            runs,
+        )
+        assertEquals(listOf(CitationRun("[00:12:34]", "00:12:34", 754.0)), citationRuns("[00:12:34]"))
+        assertEquals(listOf(CitationRun("No times here.")), citationRuns("No times here."))
+        assertEquals(emptyList(), citationRuns(""))
+        assertEquals("Play from 00:00:31", base[Str.SUMMARY_PLAY_FROM, runs[1].time])
+    }
+
+    @Test
+    fun `a failed answer says Could not answer where the reason has no sentence`() {
+        val failed = summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500"), Str.ASK_FAILED)
+        assertEquals("Could not answer", failed.headline.text(base))
+        assertEquals("HTTP 500", failed.detail)
+        assertEquals(SummaryRecovery.RETRY, failed.recovery)
+        assertEquals(SummaryRecovery.MANAGE_USAGE, summaryFailure(CoreMessage.CHATGPT_USAGE_LIMIT.code(), Str.ASK_FAILED).recovery)
+    }
+
+    @Test
+    fun `the presets are named, Translate in the app's own language name`() {
+        assertEquals("Translate to English", askPresetLabel(AskPreset.TRANSLATE, base))
+        assertEquals("한국어로 번역", askPresetLabel(AskPreset.TRANSLATE, StringTable.of(StringTable.KOREAN)).plain())
+        assertEquals("Feedback on how I spoke", askPresetLabel(AskPreset.MY_SPEAKING, base))
+        assertEquals("Follow-up email", askPresetLabel(AskPreset.FOLLOW_UP_EMAIL, base))
+        val answer = AskAnswer("r1", AskPreset.ACTION_ITEMS, null, "- Mina: notes [00:31]", "gpt-x")
+        assertEquals(AskPreset.ACTION_ITEMS, AskState.Ready(answer).askedPreset())
+        assertNull(AskState.Running(null, "When do we ship?").askedPreset())
+        assertEquals("When do we ship?", AskState.Failed("PROVIDER_ERROR", null, "When do we ship?").askedQuestion())
+    }
+
+    @Test
+    fun `a hit found in the summary alone opens on the summary, with Summary in front of its line`() {
+        val match = SummaryMatch("Ship the release on Friday", listOf(SearchRange(9, 7)))
+        fun hit(title: Boolean = false, snippets: Boolean = false, summary: SummaryMatch? = match) = SearchHit(
+            "r1", "Weekly", "2026-10-09T10:00:00Z", title, if (title) listOf(SearchRange(0, 6)) else emptyList(),
+            if (snippets) listOf(SearchSnippet(31.0, "the release", listOf(SearchRange(4, 7)))) else emptyList(), summary,
+        )
+        assertTrue(opensOnSummary(hit()))
+        assertFalse(opensOnSummary(hit(title = true)))
+        assertFalse(opensOnSummary(hit(snippets = true)))
+        assertFalse(opensOnSummary(hit(title = true, summary = null)))
+
+        val line = summarySnippet("Summary", match)
+        assertEquals("Summary · Ship the release on Friday", line.text)
+        assertEquals("release", line.text.substring(line.ranges.single().offset, line.ranges.single().offset + line.ranges.single().length))
+    }
+
+    @Test
+    fun `the person who made the recording is Me until they are named, also in the editor`() {
+        assertEquals("Me", speakerName(TranscriptSpeaker("S1", me = true), base))
+        assertEquals("나", speakerName(TranscriptSpeaker("S1", me = true), StringTable.of(StringTable.KOREAN)))
+        assertEquals("Mina", speakerName(TranscriptSpeaker("S1", "Mina", me = true), base))
+        assertNull(speakerName(TranscriptSpeaker("S2"), base))
+        assertNull(speakerName(null, base))
+
+        val transcript = Transcript(
+            recordingId = "r1", track = Track.MONO, language = "en", provider = TranscriptProvider("assemblyai"),
+            createdAt = "2026-10-10T00:00:00Z", durationSec = 10.0,
+            speakers = listOf(TranscriptSpeaker("S1", me = true), TranscriptSpeaker("S2", "Mina")),
+            segments = listOf(TranscriptSegment(0.0, 5.0, "S1", "Hi."), TranscriptSegment(5.0, 10.0, "S2", "Hello.")),
+        )
+        val draft = TranscriptDraft(transcript)
+        draft.rename("S1", "Hyungrok")
+        draft.assign(1, null)
+        // Renamed, still the one who made it; and a new speaker is nobody's "me".
+        assertEquals(
+            listOf(TranscriptSpeaker("S1", "Hyungrok", me = true), TranscriptSpeaker("S2", "Mina"), TranscriptSpeaker("S3")),
+            draft.people,
+        )
     }
 
     private val base = StringTable.of(StringTable.BASE)

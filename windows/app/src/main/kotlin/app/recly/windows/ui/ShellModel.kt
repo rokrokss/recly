@@ -73,6 +73,9 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import okio.Path
 import recly.core.DisconnectResult
+import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.AskState
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
@@ -155,8 +158,10 @@ data class RecordingDetail(
     val transcriptionRunning: Boolean = false,
     /** docs/08 "Summaries": the recording's summary, as the core has it. */
     val summary: SummaryState = SummaryState.None,
-    /** The Summary chip is the chosen one. A detail opens on the transcript. */
+    /** The Summary chip is the chosen one. A detail opens on the transcript, or on a summary search found it in. */
     val showingSummary: Boolean = false,
+    /** docs/08 "Ask": the question asked about it in this run of the app, and where it has got to. */
+    val ask: AskState = AskState.None,
 )
 
 /** docs/10 "Re-transcription": what the confirmation names — the method and the language — before it runs. */
@@ -354,6 +359,16 @@ class ShellModel(
 
     /** Summarize again was chosen over an edited summary, and the detail asks before replacing it. */
     var summaryReplaceAsked: Boolean by mutableStateOf(false)
+        private set
+
+    /** The format that question is about: More → Summarize as's choice, or null for Settings' (docs/08 "Summaries"). */
+    private var replaceFormat: SummaryFormat? = null
+
+    /** The recording and format the last summary was asked for in, which Retry under a failure asks for again. */
+    private var lastSummary: Pair<String, SummaryFormat?>? = null
+
+    /** docs/08 "Ask": the recording the Ask panel is open over, while it is. */
+    var askingAbout: String? by mutableStateOf(null)
         private set
 
     /** docs/09 "Screen principles": the detail player's speed and Skip silence, this PC's own. */
@@ -668,7 +683,7 @@ class ShellModel(
                 }
             },
         ).also { it.start() }
-        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.loopback, scope, logger).also { it.start() }
+        chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, logger).also { it.start() }
 
         val command = helperCommand
         this.helperCommand = command
@@ -1195,6 +1210,9 @@ class ShellModel(
         launch {
             graph.core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
         }
+        launch {
+            graph.core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
+        }
         graph.core.recordings.observeAudio(recordingId).collectLatest { record ->
             val local = record?.let { rec ->
                 RecordingPlaylist.select(rec.meta.parts, rec.dir) { graph.core.deps.fileSystem.exists(it) }
@@ -1315,12 +1333,13 @@ class ShellModel(
 
     /**
      * A search result: the detail opens on its transcript hit with every match of [query] tinted — or, for a
-     * hit in the title alone, as it opens from the list, with nothing to find.
+     * hit in the title alone, as it opens from the list, with nothing to find; or, found in its summary alone, on
+     * the summary ([opensOnSummary]).
      */
     fun openSearchHit(hit: SearchHit, query: String) {
         val title = hit.title?.takeIf { it.isNotBlank() }?.let(UiMessage::Text) ?: Str.UNTITLED.message()
         val first = hit.snippets.firstOrNull()
-        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec)
+        openDetail(hit.recordingId, title, find = query.takeIf { first != null }, findAtSec = first?.atSec, showingSummary = opensOnSummary(hit))
     }
 
     /** More → Transcribe again: the confirmation, worded from the settings as they are now. */
@@ -1369,14 +1388,16 @@ class ShellModel(
     /**
      * More → Summarize (docs/08 "Summaries"): runs on the core's own scope, so closing the window does not
      * stop it, and the detail follows it through [followDetailResults]. The view goes to the summary at once.
+     * [format] is More → Summarize as's choice; null is the one Settings says.
      */
-    fun summarize() {
+    fun summarize(format: SummaryFormat? = null) {
         val graph = graph ?: return
         val recordingId = detail?.recordingId ?: return
         showSummary(true)
+        lastSummary = recordingId to format
         scope.launch {
             try {
-                graph.core.summaries.summarize(recordingId)
+                graph.core.summaries.summarize(recordingId, format)
             } catch (e: kotlin.coroutines.cancellation.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -1391,14 +1412,59 @@ class ShellModel(
      * More → Summarize again over a summary the user edited: replacing it is asked first
      * (docs/08 "Summaries"). Any other summary is made at once.
      */
-    fun askToSummarize() {
+    fun askToSummarize(format: SummaryFormat? = null) {
         val detail = detail ?: return
-        if (summarizeAsksFirst(detail.summary)) summaryReplaceAsked = true else summarize()
+        if (summarizeAsksFirst(detail.summary)) {
+            replaceFormat = format
+            summaryReplaceAsked = true
+        } else {
+            summarize(format)
+        }
     }
 
     fun answerSummaryReplace(replace: Boolean) {
         summaryReplaceAsked = false
-        if (replace) summarize()
+        if (replace) summarize(replaceFormat)
+    }
+
+    /** Retry under a failed summary: the same recording in the same format, without asking (docs/09 "Summary view"). */
+    fun retrySummary() {
+        summarize(lastSummary?.takeIf { it.first == detail?.recordingId }?.second)
+    }
+
+    /** More → Ask about this recording (docs/08 "Ask"). */
+    fun openAsk() {
+        askingAbout = detail?.recordingId
+    }
+
+    /** Closing the panel forgets its answer; a question still running finishes, and reopening shows it. */
+    fun closeAsk() {
+        val recordingId = askingAbout ?: return
+        askingAbout = null
+        graph?.core?.summaries?.clearAsk(recordingId)
+    }
+
+    /** The presets the Ask panel offers for [recordingId]: Translate and Feedback only where they make sense. */
+    suspend fun askPresets(recordingId: String): List<AskPreset> {
+        val graph = graph ?: return emptyList()
+        return runCatching { graph.core.summaries.askPresets(recordingId) }
+            .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.ask.failed", error = it) }
+            .getOrDefault(emptyList())
+    }
+
+    /** A preset, or the user's own [question], about the recording the panel is open over; the detail follows the answer. */
+    fun ask(preset: AskPreset?, question: String?) {
+        val graph = graph ?: return
+        val recordingId = askingAbout ?: return
+        scope.launch {
+            try {
+                graph.core.summaries.ask(recordingId, preset, question)
+            } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.chatgpt.ask.failed", error = e)
+            }
+        }
     }
 
     /**
@@ -1445,9 +1511,15 @@ class ShellModel(
 
     fun openDetail(item: RecentItem) = openDetail(item.id, item.title)
 
-    private fun openDetail(recordingId: String, title: UiMessage, find: String? = null, findAtSec: Double? = null) {
+    private fun openDetail(
+        recordingId: String,
+        title: UiMessage,
+        find: String? = null,
+        findAtSec: Double? = null,
+        showingSummary: Boolean = false,
+    ) {
         val graph = graph ?: return
-        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec)
+        detail = RecordingDetail(recordingId, title, find = find, findAtSec = findAtSec, showingSummary = showingSummary)
         scope.launch {
             val result = runCatching { graph.core.results(recordingId) }
                 .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.detail.failed", error = it) }
@@ -1465,6 +1537,7 @@ class ShellModel(
                 availability = result?.availability ?: TranscriptAvailability.UNAVAILABLE,
                 find = find,
                 findAtSec = findAtSec,
+                showingSummary = showingSummary,
             )
         }
     }

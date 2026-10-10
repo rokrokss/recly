@@ -15,13 +15,22 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -63,6 +72,7 @@ import app.recly.windows.ui.theme.mono
 import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryPreferences
 import recly.core.storage.StorageKind
 
 /**
@@ -327,7 +337,92 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
         }
         null -> Unit
     }
+    SummaryPreferenceRows(chatGpt, strings)
     SectionFootnote(strings[Str.CHATGPT_FOOTNOTE])
+}
+
+/**
+ * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
+ * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
+ * texts when their field is left.
+ */
+@Composable
+private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
+    val preferences = chatGpt.preferences
+    TableRow(title = strings[Str.SUMMARY_FORMAT], trailing = {
+        BlueprintDropdown(
+            label = strings[Str.SUMMARY_FORMAT],
+            options = preferences.formats.map { it to strings[summaryFormatLabel(it)] },
+            // My format emptied goes back to General.
+            selected = preferences.effectiveFormat,
+            onSelect = chatGpt::selectFormat,
+        )
+    })
+    SettingsCard {
+        PreferenceField(
+            saved = preferences.customFormat,
+            onSave = chatGpt::saveCustomFormat,
+            label = strings[Str.SUMMARY_FORMAT_CUSTOM],
+            placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
+            hint = strings[Str.SUMMARY_CUSTOM_NOTE],
+            max = SummaryPreferences.CUSTOM_MAX,
+            singleLine = false,
+        )
+    }
+    HairLine()
+    SettingsCard {
+        PreferenceField(
+            saved = preferences.aboutMe,
+            onSave = chatGpt::saveAboutMe,
+            label = strings[Str.SUMMARY_ABOUT],
+            placeholder = strings[Str.SUMMARY_ABOUT_PLACEHOLDER],
+            hint = strings[Str.SUMMARY_ABOUT_NOTE],
+            max = SummaryPreferences.ABOUT_MAX,
+            singleLine = true,
+        )
+    }
+    HairLine()
+}
+
+/**
+ * A text kept as it is typed and saved when the editing ends — the field left, Return in a one-line field, the
+ * window put behind another or closed — with no Save of its own. Empty is a value like any other. A field that is
+ * not [singleLine] shows four lines, grows to eight and then scrolls.
+ */
+@Composable
+internal fun PreferenceField(
+    saved: String,
+    onSave: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    hint: String,
+    max: Int,
+    singleLine: Boolean,
+) {
+    var text by remember(saved) { mutableStateOf(saved) }
+    val latest by rememberUpdatedState(text)
+    val focus = LocalFocusManager.current
+    // Going to another window ends the editing — a summary asked for there uses what was typed here — and so does
+    // this one closing. Saving what is already kept saves nothing.
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(windowFocused) { if (!windowFocused) onSave(latest) }
+    DisposableEffect(Unit) { onDispose { onSave(latest) } }
+    BlueprintTextField(
+        value = text,
+        onValueChange = { text = it.take(max) },
+        label = label,
+        modifier = Modifier
+            .onFocusChanged { if (!it.hasFocus && text != saved) onSave(text) }
+            .onPreviewKeyEvent { event ->
+                (singleLine && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
+            },
+        hint = hint,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else MULTI_LINE_MIN,
+        maxLines = if (singleLine) 1 else MULTI_LINE_MAX,
+        monospace = false,
+        placeholder = placeholder,
+    )
 }
 
 /**
@@ -589,6 +684,10 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
 }
 
 private const val COPIED_MS = 3_000L
+
+/** My format: four lines open, eight before it scrolls. */
+private const val MULTI_LINE_MIN = 4
+private const val MULTI_LINE_MAX = 8
 
 private fun system(): String =
     "${System.getProperty("os.name")} ${System.getProperty("os.version")}"
