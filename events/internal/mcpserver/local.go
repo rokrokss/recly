@@ -25,7 +25,7 @@ func ServeLocal(ctx context.Context, tools *library.Tools, version string, t mcp
 
 // LocalServer is the server ServeLocal runs.
 func LocalServer(tools *library.Tools, version string) (*mcp.Server, error) {
-	s := mcp.NewServer(&mcp.Implementation{Name: "recly", Title: "Recly", Version: version},
+	s := mcp.NewServer(&mcp.Implementation{Name: "recly", Title: "Recly Events", Version: version},
 		&mcp.ServerOptions{Instructions: library.LocalInstructions})
 	for _, def := range library.LocalTools() {
 		b, err := json.Marshal(def)

@@ -230,6 +230,9 @@ func TestServeOverInMemoryTransport(t *testing.T) {
 	if v := session.InitializeResult().ProtocolVersion; v != ProtocolVersion {
 		t.Fatalf("protocol = %s", v)
 	}
+	if info := session.InitializeResult().ServerInfo; info == nil || info.Name != "recly-events" || info.Title != "Recly Events" {
+		t.Fatalf("server info = %+v", info)
+	}
 	tools, err := session.ListTools(ctx, nil)
 	if err != nil || len(tools.Tools) != 4 {
 		t.Fatalf("tools = %+v %v", tools, err)
