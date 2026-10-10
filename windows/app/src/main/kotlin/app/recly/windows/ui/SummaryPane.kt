@@ -9,14 +9,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.InlineTextContent
-import androidx.compose.foundation.text.appendInlineContent
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
@@ -37,16 +34,14 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.Placeholder
-import androidx.compose.ui.text.PlaceholderVerticalAlign
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
@@ -62,6 +57,7 @@ import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.SummaryState
@@ -103,10 +99,10 @@ internal fun SummaryPane(
             SummaryState.None -> LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
             is SummaryState.Running -> {
                 LoadingText(strings[Str.SUMMARY_RUNNING], MaterialTheme.typography.bodyMedium, palette.textMuted)
-                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings) }
+                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings, detail.audio.totalSec) }
             }
             is SummaryState.Ready -> {
-                CitedText(summary.summary.text, canSeek, onSeek, strings)
+                CitedText(summary.summary.text, canSeek, onSeek, strings, detail.audio.totalSec)
                 SummaryFooter(
                     text = summary.summary.text,
                     source = summaryFooter(
@@ -121,7 +117,7 @@ internal fun SummaryPane(
             }
             is SummaryState.Failed -> {
                 SummaryFailureNotice(summaryFailure(summary.reason), { model.chatGpt?.openUsage() }, model::retrySummary, strings)
-                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings) }
+                summary.previous?.let { CitedText(it.text, canSeek, onSeek, strings, detail.audio.totalSec) }
             }
         }
     }
@@ -131,73 +127,80 @@ internal fun SummaryPane(
  * docs/09 "Summary view": a summary or an answer — plain text with its own line breaks, selectable like the
  * transcript — whose `[00:12:34]` times each play the recording from there, the way a transcript time does.
  *
- * Selection and a tap on part of a text want the same press, so each time is not a span of the text but a small
- * control of its own set into it ([InlineTextContent]): the press on a time is the time's, a drag anywhere else
- * selects, and a copy carries the time as written. Its 44 target is invisible padding laid over the lines next to
- * it, so the lines keep their height.
+ * The text is one selectable [Text], each time a span of it in monospace and the accent, with no underline — a
+ * dotted one is a web page. Selection and a click on part of a text want the same press, so a time's target is not
+ * the span but an invisible box laid over it, at least [MinTouch] each way and centred on its words: the press on a
+ * time is the time's, a drag anywhere else selects, and a copy carries the time as written. The boxes take no room,
+ * so the lines keep their height; one reaches a little over the lines next to it. A time the player cannot reach
+ * now — nothing to play, or past the recording's end ([seekableDurationSec]), as a transcript time button past it
+ * is off — is muted and only text.
  */
 @Composable
-internal fun CitedText(text: String, canSeek: Boolean, onSeek: (Double) -> Unit, strings: Strings) {
+internal fun CitedText(
+    text: String,
+    canSeek: Boolean,
+    onSeek: (Double) -> Unit,
+    strings: Strings,
+    seekableDurationSec: Double = Double.POSITIVE_INFINITY,
+) {
     val palette = blueprint
-    val style = MaterialTheme.typography.bodyMedium
-    val citation = style.copy(fontFamily = mono.body.fontFamily)
     val runs = remember(text) { citationRuns(text) }
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val annotated = remember(runs) {
-        buildAnnotatedString {
-            runs.forEachIndexed { index, run -> if (run.atSec == null) append(run.text) else appendInlineContent("$CITATION$index", run.text) }
-        }
-    }
-    // Each time's room in the line, as wide and as tall as its own words: measured once per text, not per frame of
-    // the player under it.
-    val placeholders = remember(runs, citation, density) {
-        runs.map { run ->
-            run.atSec?.let {
-                val size = measurer.measure(run.text, citation, softWrap = false).size
-                with(density) { Placeholder(size.width.toSp(), size.height.toSp(), PlaceholderVerticalAlign.TextCenter) }
+    // Where each run starts in the text, which is where the layout finds its words.
+    val starts = remember(runs) { runs.runningFold(0) { at, run -> at + run.text.length } }
+    val interactions = remember(runs) { runs.map { MutableInteractionSource() } }
+    val pressed = interactions.map { it.collectIsPressedAsState().value }
+    val playable = runs.map { run -> canSeek && run.atSec != null && run.atSec < seekableDurationSec }
+    val annotated = buildAnnotatedString {
+        runs.forEachIndexed { index, run ->
+            if (run.atSec == null) {
+                append(run.text)
+            } else {
+                val color = if (playable[index]) palette.accent else palette.textMuted
+                withStyle(SpanStyle(fontFamily = mono.body.fontFamily, color = if (pressed[index]) color.copy(alpha = PRESSED_ALPHA) else color)) {
+                    append(run.text)
+                }
             }
         }
     }
-    val inline = runs.withIndex().filter { it.value.atSec != null }.associate { (index, run) ->
-        "$CITATION$index" to InlineTextContent(placeholders[index]!!) {
-            Citation(run.text, strings[Str.SUMMARY_PLAY_FROM, run.time!!], citation, canSeek) { onSeek(run.atSec!!) }
+    var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
+    val reach = with(LocalDensity.current) { MinTouch.roundToPx() }
+    Box {
+        SelectionContainer {
+            Text(annotated, style = MaterialTheme.typography.bodyMedium, color = palette.text, onTextLayout = { layout = it })
         }
-    }
-    SelectionContainer {
-        Text(annotated, style = style, color = palette.text, inlineContent = inline)
+        val lines = layout
+        if (lines != null) runs.forEachIndexed { index, run ->
+            if (playable[index]) {
+                val label = strings[Str.SUMMARY_PLAY_FROM, run.time!!]
+                citationBoxes(lines, starts[index], starts[index + 1]).forEach { box ->
+                    Box(
+                        Modifier
+                            // Centred on the words and taking no room: the lines keep their height.
+                            .layout { measurable, _ ->
+                                val width = maxOf(box.width.roundToInt(), reach)
+                                val height = maxOf(box.height.roundToInt(), reach)
+                                val target = measurable.measure(Constraints.fixed(width, height))
+                                layout(0, 0) {
+                                    target.place((box.center.x - width / 2f).roundToInt(), (box.center.y - height / 2f).roundToInt())
+                                }
+                            }
+                            .pointerHoverIcon(PointerIcon.Hand)
+                            .clickable(interactionSource = interactions[index], indication = null, role = Role.Button) { onSeek(run.atSec!!) }
+                            .semantics { contentDescription = label },
+                    )
+                }
+            }
+        }
     }
 }
 
-/** One time in a summary: monospace in the accent, no underline — a dotted one is a web page (docs/09). */
-@Composable
-private fun Citation(text: String, label: String, style: TextStyle, enabled: Boolean, onClick: () -> Unit) {
-    val palette = blueprint
-    val interaction = remember { MutableInteractionSource() }
-    val pressed by interaction.collectIsPressedAsState()
-    Box(
-        Modifier
-            // The text's own box in the line; the target under it is MinTouch tall and centred on it.
-            .layout { measurable, constraints ->
-                val target = measurable.measure(constraints.copy(minHeight = 0, maxHeight = Constraints.Infinity))
-                layout(constraints.maxWidth, constraints.maxHeight) { target.place(0, (constraints.maxHeight - target.height) / 2) }
-            }
-            .defaultMinSize(minHeight = MinTouch)
-            .pointerHoverIcon(if (enabled) PointerIcon.Hand else PointerIcon.Default)
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = label },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            modifier = Modifier.alpha(if (pressed) PRESSED_ALPHA else 1f).clearAndSetSemantics { },
-            style = style,
-            color = if (enabled) palette.accent else palette.textMuted,
-            maxLines = 1,
-            softWrap = false,
-        )
+/** The box around the characters [start] to [end] on each line they are on — one, unless a time wraps. */
+private fun citationBoxes(layout: TextLayoutResult, start: Int, end: Int): List<Rect> =
+    (start until end).groupBy(layout::getLineForOffset).values.map { offsets ->
+        offsets.map(layout::getBoundingBox).reduce { a, b ->
+            Rect(minOf(a.left, b.left), minOf(a.top, b.top), maxOf(a.right, b.right), maxOf(a.bottom, b.bottom))
+        }
     }
-}
 
 /**
  * Which model wrote it — in which format, and that the user has changed it since ([summaryFooter]) — and Copy all,
@@ -291,9 +294,6 @@ internal fun SummaryEditor(draft: SummaryDraft, note: Str, enabled: Boolean, str
 }
 
 private const val COPIED_MS = 3_000L
-
-/** The id of a time set into the text ([CitedText]), with its run's index after it. */
-private const val CITATION = "citation-"
 
 /** Pressed, a time fades as a text link does. */
 private const val PRESSED_ALPHA = 0.6f
