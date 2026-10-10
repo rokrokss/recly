@@ -71,7 +71,6 @@
   "Could not set launch at login": "Não foi possível configurar a abertura ao iniciar sessão",
   "Could not stop playback — try again": "Não foi possível parar a reprodução — tente novamente",
   "Dark": "Escuro",
-  "Data": "Dados",
   "Delete": "Eliminar",
   "Delete key: {0}": "Eliminar chave: {0}",
   "Delete on this Mac only": "Eliminar só neste Mac",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Falha ao iniciar sessão: {0}",
   "Signing in in your browser": "A iniciar sessão no browser",
   "Skip": "Ignorar",
-  "Something went wrong at the provider. It will try again.": "Ocorreu um erro no fornecedor. Será feita uma nova tentativa.",
   "Speech recognition model": "Modelo de reconhecimento de voz",
   "Spoken language": "Idioma falado",
   "Start": "Iniciar",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "Iniciar gravação com o ${applicationName}",
   "Starting": "A iniciar",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Começa por uma letra minúscula; minúsculas, algarismos e sublinhados, até 32 caracteres",
-  "Startup": "Arranque",
   "State": "Estado",
   "Status": "Estado",
   "Still uploading — try again once it has finished": "Ainda a carregar — tente novamente quando terminar",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "A transcrição está desativada. Ative-a em Definições e depois use Transcrever novamente.",
   "{0} waiting": "{0} em espera",
   "{0} failed": "{0} com falha",
-  "Something went wrong at the provider.": "Algo correu mal no fornecedor."
+  "Something went wrong at the provider.": "Algo correu mal no fornecedor.",
+  "Open data folder": "Abrir pasta de dados"
 }

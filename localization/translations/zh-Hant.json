@@ -51,7 +51,6 @@
   "Could not set launch at login": "無法設定登入時啟動",
   "Could not stop playback — try again": "無法停止播放，請重試",
   "Dark": "深色",
-  "Data": "資料",
   "Delete": "刪除",
   "Delete key: {0}": "刪除金鑰：{0}",
   "Delete on this Mac only": "僅從此Mac刪除",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "登入失敗：{0}",
   "Signing in in your browser": "正在瀏覽器中登入",
   "Skip": "略過",
-  "Something went wrong at the provider. It will try again.": "供應商發生錯誤，將自動重試。",
   "Start": "開始",
   "Start a Recly recording": "開始Recly錄音",
   "Start a recording with Recly.": "使用Recly開始錄音。",
@@ -229,7 +227,6 @@
   "Start recording again": "重新開始錄音",
   "Start recording with ${applicationName}": "使用${applicationName}開始錄音",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "以小寫字母開頭，僅含小寫字母、數字和底線，最多32個字元",
-  "Startup": "啟動",
   "State": "狀態",
   "Status": "狀態",
   "Still uploading — try again once it has finished": "仍在上傳，請在完成後重試",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "轉寫已關閉。請在設定中開啟，然後使用「重新轉錄」。",
   "{0} waiting": "{0}項等待",
   "{0} failed": "{0}項失敗",
-  "Something went wrong at the provider.": "服務提供方發生問題。"
+  "Something went wrong at the provider.": "服務提供方發生問題。",
+  "Open data folder": "打開資料檔案夾"
 }

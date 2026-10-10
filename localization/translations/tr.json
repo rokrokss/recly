@@ -71,7 +71,6 @@
   "Could not set launch at login": "Oturum açıldığında başlatma ayarlanamadı",
   "Could not stop playback — try again": "Oynatma durdurulamadı — yeniden deneyin",
   "Dark": "Koyu",
-  "Data": "Veriler",
   "Delete": "Sil",
   "Delete key: {0}": "Anahtarı sil: {0}",
   "Delete on this Mac only": "Yalnızca bu Mac'ten sil",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Oturum açılamadı: {0}",
   "Signing in in your browser": "Tarayıcınızda oturum açılıyor",
   "Skip": "Atla",
-  "Something went wrong at the provider. It will try again.": "Sağlayıcıda bir sorun oluştu. Yeniden denenecek.",
   "Speech recognition model": "Konuşma tanıma modeli",
   "Spoken language": "Konuşulan dil",
   "Start": "Başlat",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "${applicationName} ile kaydı başlat",
   "Starting": "Başlatılıyor",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Küçük harfle başlar; küçük harf, rakam ve alt çizgi, en fazla 32 karakter",
-  "Startup": "Başlangıç",
   "State": "Durum",
   "Status": "Durum",
   "Still uploading — try again once it has finished": "Hâlâ yükleniyor — bittiğinde yeniden deneyin",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "Döküm kapalı. Ayarlar bölümünden açın, ardından Yeniden metne dönüştür seçeneğini kullanın.",
   "{0} waiting": "{0} bekliyor",
   "{0} failed": "{0} başarısız",
-  "Something went wrong at the provider.": "Sağlayıcı tarafında bir sorun oluştu."
+  "Something went wrong at the provider.": "Sağlayıcı tarafında bir sorun oluştu.",
+  "Open data folder": "Veri klasörünü aç"
 }

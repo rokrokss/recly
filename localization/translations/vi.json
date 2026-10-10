@@ -71,7 +71,6 @@
   "Could not set launch at login": "Không thể đặt mở khi đăng nhập",
   "Could not stop playback — try again": "Không thể dừng phát — hãy thử lại",
   "Dark": "Tối",
-  "Data": "Dữ liệu",
   "Delete": "Xóa",
   "Delete key: {0}": "Xóa khóa: {0}",
   "Delete on this Mac only": "Chỉ xóa trên máy Mac này",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Đăng nhập thất bại: {0}",
   "Signing in in your browser": "Đang đăng nhập trong trình duyệt",
   "Skip": "Bỏ qua",
-  "Something went wrong at the provider. It will try again.": "Đã xảy ra lỗi ở phía nhà cung cấp. Ứng dụng sẽ tự thử lại.",
   "Speech recognition model": "Mô hình nhận dạng giọng nói",
   "Spoken language": "Ngôn ngữ nói",
   "Start": "Bắt đầu",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "Bắt đầu ghi âm bằng ${applicationName}",
   "Starting": "Đang khởi động",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Bắt đầu bằng chữ thường; chỉ gồm chữ thường, chữ số và dấu gạch dưới, tối đa 32 ký tự",
-  "Startup": "Khởi động",
   "State": "Tình trạng",
   "Status": "Trạng thái",
   "Still uploading — try again once it has finished": "Vẫn đang tải lên — hãy thử lại khi hoàn tất",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "Đang tắt chép lời. Hãy bật trong Cài đặt rồi dùng Chép lời lại.",
   "{0} waiting": "{0} đang chờ",
   "{0} failed": "{0} thất bại",
-  "Something went wrong at the provider.": "Đã xảy ra lỗi ở phía nhà cung cấp."
+  "Something went wrong at the provider.": "Đã xảy ra lỗi ở phía nhà cung cấp.",
+  "Open data folder": "Mở thư mục dữ liệu"
 }

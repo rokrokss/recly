@@ -51,7 +51,6 @@
   "Could not set launch at login": "लॉगिन पर शुरू करना सेट नहीं हो सका",
   "Could not stop playback — try again": "प्लेबैक रोका नहीं जा सका। फिर कोशिश करें",
   "Dark": "गहरा",
-  "Data": "डेटा",
   "Delete": "हटाएँ",
   "Delete key: {0}": "कुंजी हटाएँ: {0}",
   "Delete on this Mac only": "केवल इस Mac से हटाएँ",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "साइन इन विफल: {0}",
   "Signing in in your browser": "ब्राउज़र में साइन इन हो रहा है",
   "Skip": "छोड़ें",
-  "Something went wrong at the provider. It will try again.": "प्रदाता में समस्या हुई। फिर कोशिश होगी।",
   "Start": "शुरू करें",
   "Start a Recly recording": "Recly रिकॉर्डिंग शुरू करें",
   "Start a recording with Recly.": "Recly से रिकॉर्डिंग शुरू करता है।",
@@ -229,7 +227,6 @@
   "Start recording again": "फिर रिकॉर्डिंग शुरू करें",
   "Start recording with ${applicationName}": "${applicationName} से रिकॉर्डिंग शुरू करें",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "छोटे अक्षर से शुरू; छोटे अक्षर, अंक और अंडरस्कोर, अधिकतम 32",
-  "Startup": "स्टार्टअप",
   "State": "स्थिति",
   "Status": "स्थिति",
   "Still uploading — try again once it has finished": "अभी अपलोड जारी है। पूरा होने पर फिर कोशिश करें",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "ट्रांसक्रिप्शन बंद है। सेटिंग में इसे चालू करें, फिर “फिर से ट्रांसक्राइब करें” इस्तेमाल करें।",
   "{0} waiting": "{0} प्रतीक्षारत",
   "{0} failed": "{0} विफल",
-  "Something went wrong at the provider.": "प्रदाता की ओर से कुछ गड़बड़ हुई।"
+  "Something went wrong at the provider.": "प्रदाता की ओर से कुछ गड़बड़ हुई।",
+  "Open data folder": "डेटा फ़ोल्डर खोलें"
 }

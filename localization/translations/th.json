@@ -71,7 +71,6 @@
   "Could not set launch at login": "ตั้งค่าการเปิดเมื่อเข้าสู่ระบบไม่ได้",
   "Could not stop playback — try again": "หยุดการเล่นไม่ได้ ลองอีกครั้ง",
   "Dark": "มืด",
-  "Data": "ข้อมูล",
   "Delete": "ลบ",
   "Delete key: {0}": "ลบคีย์: {0}",
   "Delete on this Mac only": "ลบเฉพาะใน Mac เครื่องนี้",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "ลงชื่อเข้าใช้ไม่สำเร็จ: {0}",
   "Signing in in your browser": "กำลังลงชื่อเข้าใช้ในเบราว์เซอร์",
   "Skip": "ข้าม",
-  "Something went wrong at the provider. It will try again.": "เกิดข้อผิดพลาดที่ผู้ให้บริการ ระบบจะลองอีกครั้ง",
   "Speech recognition model": "โมเดลรู้จำเสียงพูด",
   "Spoken language": "ภาษาที่พูด",
   "Start": "เริ่ม",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "เริ่มบันทึกเสียงด้วย ${applicationName}",
   "Starting": "กำลังเริ่ม",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "ขึ้นต้นด้วยอักษรอังกฤษตัวพิมพ์เล็ก ใช้ได้เฉพาะตัวพิมพ์เล็ก ตัวเลข และขีดล่าง ไม่เกิน 32 ตัว",
-  "Startup": "การเริ่มต้น",
   "State": "สถานะ",
   "Status": "สถานะ",
   "Still uploading — try again once it has finished": "ยังอัปโหลดอยู่ ลองอีกครั้งเมื่ออัปโหลดเสร็จ",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "ปิดการถอดเสียงอยู่ เปิดในการตั้งค่า แล้วใช้ ถอดเสียงอีกครั้ง",
   "{0} waiting": "รอ {0}",
   "{0} failed": "ล้มเหลว {0}",
-  "Something went wrong at the provider.": "เกิดปัญหาที่ฝั่งผู้ให้บริการ"
+  "Something went wrong at the provider.": "เกิดปัญหาที่ฝั่งผู้ให้บริการ",
+  "Open data folder": "เปิดโฟลเดอร์ข้อมูล"
 }

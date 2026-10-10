@@ -51,7 +51,6 @@
   "Could not set launch at login": "No se pudo configurar el inicio al iniciar sesión",
   "Could not stop playback — try again": "No se pudo detener la reproducción. Inténtalo de nuevo",
   "Dark": "Oscuro",
-  "Data": "Datos",
   "Delete": "Eliminar",
   "Delete key: {0}": "Eliminar clave: {0}",
   "Delete on this Mac only": "Eliminar solo de este Mac",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "Error al iniciar sesión: {0}",
   "Signing in in your browser": "Iniciando sesión en el navegador",
   "Skip": "Omitir",
-  "Something went wrong at the provider. It will try again.": "Hubo un error en el proveedor. Se reintentará.",
   "Start": "Iniciar",
   "Start a Recly recording": "Iniciar una grabación de Recly",
   "Start a recording with Recly.": "Inicia una grabación con Recly.",
@@ -229,7 +227,6 @@
   "Start recording again": "Volver a grabar",
   "Start recording with ${applicationName}": "Iniciar grabación con ${applicationName}",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Empieza por una minúscula; minúsculas, números y guiones bajos, hasta 32 caracteres",
-  "Startup": "Inicio",
   "State": "Estado",
   "Status": "Estado",
   "Still uploading — try again once it has finished": "Aún se está subiendo. Reintenta cuando termine",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "La transcripción está desactivada. Actívala en Ajustes y luego usa Volver a transcribir.",
   "{0} waiting": "{0} en espera",
   "{0} failed": "{0} con error",
-  "Something went wrong at the provider.": "Algo salió mal en el proveedor."
+  "Something went wrong at the provider.": "Algo salió mal en el proveedor.",
+  "Open data folder": "Abrir carpeta de datos"
 }

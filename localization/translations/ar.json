@@ -51,7 +51,6 @@
   "Could not set launch at login": "تعذّر ضبط التشغيل عند تسجيل الدخول",
   "Could not stop playback — try again": "تعذّر إيقاف التشغيل. أعد المحاولة",
   "Dark": "داكن",
-  "Data": "البيانات",
   "Delete": "حذف",
   "Delete key: {0}": "حذف المفتاح: {0}",
   "Delete on this Mac only": "الحذف من هذا الـMac فقط",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "فشل تسجيل الدخول: {0}",
   "Signing in in your browser": "جارٍ تسجيل الدخول في المتصفح",
   "Skip": "تخطٍّ",
-  "Something went wrong at the provider. It will try again.": "حدث خطأ لدى المزوّد. ستتم إعادة المحاولة.",
   "Start": "بدء",
   "Start a Recly recording": "بدء تسجيل Recly",
   "Start a recording with Recly.": "يبدأ تسجيلًا باستخدام Recly.",
@@ -229,7 +227,6 @@
   "Start recording again": "بدء التسجيل مجددًا",
   "Start recording with ${applicationName}": "بدء التسجيل باستخدام ${applicationName}",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "يبدأ بحرف صغير؛ أحرف صغيرة وأرقام وشرطة سفلية، حتى 32 حرفًا",
-  "Startup": "بدء التشغيل",
   "State": "الحالة",
   "Status": "الحالة",
   "Still uploading — try again once it has finished": "الرفع مستمر. أعد المحاولة بعد انتهائه",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "النسخ الصوتي متوقف. شغّله في الإعدادات، ثم استخدم «إعادة النسخ».",
   "{0} waiting": "{0} منتظر",
   "{0} failed": "{0} فاشل",
-  "Something went wrong at the provider.": "حدث خطأ لدى مزوّد الخدمة."
+  "Something went wrong at the provider.": "حدث خطأ لدى مزوّد الخدمة.",
+  "Open data folder": "فتح مجلد البيانات"
 }

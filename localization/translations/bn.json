@@ -71,7 +71,6 @@
   "Could not set launch at login": "লগ-ইনের সময় চালু হওয়া সেট করা যায়নি",
   "Could not stop playback — try again": "প্লেব্যাক থামানো যায়নি; আবার চেষ্টা করুন",
   "Dark": "গাঢ়",
-  "Data": "ডেটা",
   "Delete": "মুছুন",
   "Delete key: {0}": "কী-টি মুছুন: {0}",
   "Delete on this Mac only": "শুধু এই Mac থেকে মুছুন",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "সাইন-ইন ব্যর্থ হয়েছে: {0}",
   "Signing in in your browser": "আপনার ব্রাউজারে সাইন-ইন করা হচ্ছে",
   "Skip": "এড়িয়ে যান",
-  "Something went wrong at the provider. It will try again.": "প্রদানকারীর দিকে কোনো সমস্যা হয়েছে। আবার চেষ্টা করা হবে।",
   "Speech recognition model": "স্পিচ রিকগনিশন মডেল",
   "Spoken language": "রেকর্ডিংয়ের ভাষা",
   "Start": "শুরু করুন",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "${applicationName} দিয়ে রেকর্ডিং শুরু করুন",
   "Starting": "শুরু হচ্ছে",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "ছোট হাতের অক্ষর দিয়ে শুরু; ছোট হাতের অক্ষর, অঙ্ক ও আন্ডারস্কোর, সর্বোচ্চ 32 অক্ষর",
-  "Startup": "স্টার্টআপ",
   "State": "অবস্থা",
   "Status": "স্ট্যাটাস",
   "Still uploading — try again once it has finished": "এখনও আপলোড হচ্ছে; শেষ হলে আবার চেষ্টা করুন",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "ট্রান্সক্রিপশন বন্ধ। সেটিংস-এ চালু করে «আবার ট্রান্সক্রাইব করুন» ব্যবহার করুন।",
   "{0} waiting": "অপেক্ষায় {0}",
   "{0} failed": "ব্যর্থ {0}",
-  "Something went wrong at the provider.": "প্রদানকারীর দিকে একটি সমস্যা হয়েছে।"
+  "Something went wrong at the provider.": "প্রদানকারীর দিকে একটি সমস্যা হয়েছে।",
+  "Open data folder": "ডেটা ফোল্ডার খুলুন"
 }

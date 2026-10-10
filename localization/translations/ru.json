@@ -51,7 +51,6 @@
   "Could not set launch at login": "Не удалось настроить запуск при входе",
   "Could not stop playback — try again": "Не удалось остановить воспроизведение. Повторите попытку",
   "Dark": "Тёмная",
-  "Data": "Данные",
   "Delete": "Удалить",
   "Delete key: {0}": "Удалить ключ: {0}",
   "Delete on this Mac only": "Удалить только с этого Mac",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "Ошибка входа: {0}",
   "Signing in in your browser": "Вход через браузер",
   "Skip": "Пропустить",
-  "Something went wrong at the provider. It will try again.": "У провайдера произошла ошибка. Попытка будет повторена.",
   "Start": "Начать",
   "Start a Recly recording": "Начать запись Recly",
   "Start a recording with Recly.": "Начинает запись с помощью Recly.",
@@ -229,7 +227,6 @@
   "Start recording again": "Начать запись снова",
   "Start recording with ${applicationName}": "Начать запись с ${applicationName}",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Начинается со строчной буквы; строчные буквы, цифры и подчёркивания, до 32 символов",
-  "Startup": "Запуск",
   "State": "Состояние",
   "Status": "Статус",
   "Still uploading — try again once it has finished": "Загрузка ещё идёт. Повторите после завершения",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "Расшифровка выключена. Включите её в разделе «Настройки», а затем выберите «Расшифровать заново».",
   "{0} waiting": "{0} в ожидании",
   "{0} failed": "{0} с ошибкой",
-  "Something went wrong at the provider.": "На стороне поставщика что-то пошло не так."
+  "Something went wrong at the provider.": "На стороне поставщика что-то пошло не так.",
+  "Open data folder": "Открыть папку данных"
 }

@@ -71,7 +71,6 @@
   "Could not set launch at login": "Imeshindwa kuweka mpangilio wa kufungua wakati wa kuingia",
   "Could not stop playback — try again": "Imeshindwa kusimamisha uchezaji — jaribu tena",
   "Dark": "Meusi",
-  "Data": "Data",
   "Delete": "Futa",
   "Delete key: {0}": "Futa ufunguo: {0}",
   "Delete on this Mac only": "Futa kwenye Mac hii pekee",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Imeshindwa kuingia: {0}",
   "Signing in in your browser": "Inaingia kupitia kivinjari chako",
   "Skip": "Ruka",
-  "Something went wrong at the provider. It will try again.": "Hitilafu imetokea kwa mtoa huduma. Itajaribu tena.",
   "Speech recognition model": "Modeli ya utambuzi wa matamshi",
   "Spoken language": "Lugha inayozungumzwa",
   "Start": "Anza",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "Anza kurekodi kwa ${applicationName}",
   "Starting": "Inaanzishwa",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Huanza na herufi ndogo; herufi ndogo, tarakimu na mistari ya chini, hadi herufi 32",
-  "Startup": "Uanzishaji",
   "State": "Hali ya sasa",
   "Status": "Hali",
   "Still uploading — try again once it has finished": "Bado inapakia — jaribu tena ikishakamilika",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "Unukuzi umezimwa. Uwashe kwenye Mipangilio, kisha tumia Nukuu tena.",
   "{0} waiting": "zinazosubiri: {0}",
   "{0} failed": "zilizoshindwa: {0}",
-  "Something went wrong at the provider.": "Kuna hitilafu upande wa mtoa huduma."
+  "Something went wrong at the provider.": "Kuna hitilafu upande wa mtoa huduma.",
+  "Open data folder": "Fungua folda ya data"
 }

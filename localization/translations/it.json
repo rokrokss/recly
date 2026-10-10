@@ -71,7 +71,6 @@
   "Could not set launch at login": "Impossibile impostare l’apertura al login",
   "Could not stop playback — try again": "Impossibile interrompere la riproduzione: riprova",
   "Dark": "Scuro",
-  "Data": "Dati",
   "Delete": "Elimina",
   "Delete key: {0}": "Elimina chiave: {0}",
   "Delete on this Mac only": "Elimina solo da questo Mac",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Accesso non riuscito: {0}",
   "Signing in in your browser": "Accesso in corso nel browser",
   "Skip": "Salta",
-  "Something went wrong at the provider. It will try again.": "Si è verificato un errore presso il fornitore. Verrà fatto un nuovo tentativo.",
   "Speech recognition model": "Modello di riconoscimento vocale",
   "Spoken language": "Lingua parlata",
   "Start": "Avvia",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "Avvia registrazione con ${applicationName}",
   "Starting": "Avvio in corso",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Inizia con una lettera minuscola; minuscole, cifre e trattini bassi, fino a 32 caratteri",
-  "Startup": "Avvio",
   "State": "Stato",
   "Status": "Stato",
   "Still uploading — try again once it has finished": "Caricamento ancora in corso: riprova al termine",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "La trascrizione è disattivata. Attivala in Impostazioni, poi usa Trascrivi di nuovo.",
   "{0} waiting": "{0} in attesa",
   "{0} failed": "{0} con errore",
-  "Something went wrong at the provider.": "Si è verificato un problema presso il fornitore."
+  "Something went wrong at the provider.": "Si è verificato un problema presso il fornitore.",
+  "Open data folder": "Apri cartella dei dati"
 }

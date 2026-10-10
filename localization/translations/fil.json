@@ -71,7 +71,6 @@
   "Could not set launch at login": "Hindi ma-set ang pagbukas sa pag-log in",
   "Could not stop playback — try again": "Hindi maihinto ang pag-playback — subukang muli",
   "Dark": "Madilim",
-  "Data": "Data",
   "Delete": "I-delete",
   "Delete key: {0}": "I-delete ang key: {0}",
   "Delete on this Mac only": "I-delete sa Mac na ito lang",
@@ -283,7 +282,6 @@
   "Sign-in failed: {0}": "Nabigo ang pag-sign in: {0}",
   "Signing in in your browser": "Nagsa-sign in sa iyong browser",
   "Skip": "Laktawan",
-  "Something went wrong at the provider. It will try again.": "Nagkaproblema sa provider. Susubukan itong muli.",
   "Speech recognition model": "Modelo ng speech recognition",
   "Spoken language": "Wikang sinasalita",
   "Start": "Simulan",
@@ -295,7 +293,6 @@
   "Start recording with ${applicationName}": "Simulan ang pag-record gamit ang ${applicationName}",
   "Starting": "Sinisimulan",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "Nagsisimula sa maliit na titik; maliliit na titik, numero at underscore, hanggang 32",
-  "Startup": "Pagsisimula",
   "State": "Kalagayan",
   "Status": "Status",
   "Still uploading — try again once it has finished": "Ina-upload pa — subukang muli kapag tapos na",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "Naka-off ang transcription. I-on ito sa Mga Setting, pagkatapos ay gamitin ang I-transcribe ulit.",
   "{0} waiting": "{0} naghihintay",
   "{0} failed": "{0} nabigo",
-  "Something went wrong at the provider.": "May nangyaring mali sa provider."
+  "Something went wrong at the provider.": "May nangyaring mali sa provider.",
+  "Open data folder": "Buksan ang data folder"
 }

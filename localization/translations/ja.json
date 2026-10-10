@@ -51,7 +51,6 @@
   "Could not set launch at login": "ログイン時の起動を設定できませんでした",
   "Could not stop playback — try again": "再生を停止できませんでした。再試行してください",
   "Dark": "ダーク",
-  "Data": "データ",
   "Delete": "削除",
   "Delete key: {0}": "キーを削除：{0}",
   "Delete on this Mac only": "このMacからのみ削除",
@@ -220,7 +219,6 @@
   "Sign-in failed: {0}": "ログインに失敗しました：{0}",
   "Signing in in your browser": "ブラウザでログイン中",
   "Skip": "スキップ",
-  "Something went wrong at the provider. It will try again.": "提供者でエラーが発生しました。自動で再試行します。",
   "Start": "開始",
   "Start a Recly recording": "Reclyで録音を開始",
   "Start a recording with Recly.": "Reclyで録音を開始します。",
@@ -229,7 +227,6 @@
   "Start recording again": "録音を再開",
   "Start recording with ${applicationName}": "${applicationName}で録音を開始",
   "Starts with a lowercase letter; lowercase, digits and underscores, up to 32": "英小文字で始め、英小文字・数字・アンダースコアを32文字以内で入力",
-  "Startup": "起動",
   "State": "状態",
   "Status": "ステータス",
   "Still uploading — try again once it has finished": "アップロード中です。完了後に再試行してください",
@@ -593,5 +590,6 @@
   "Transcription is off. Turn it on in Settings, then use Transcribe again.": "文字起こしはオフです。設定でオンにしてから「もう一度文字起こし」を使ってください。",
   "{0} waiting": "{0}件待機中",
   "{0} failed": "{0}件失敗",
-  "Something went wrong at the provider.": "プロバイダー側で問題が発生しました。"
+  "Something went wrong at the provider.": "プロバイダー側で問題が発生しました。",
+  "Open data folder": "データフォルダを開く"
 }
