@@ -341,7 +341,7 @@ fun selectionInk(palette: BlueprintColors, selected: Boolean): Color =
     if (selected) palette.accent else palette.textMuted
 
 /**
- * A link inside a dialog — the Google account permissions page. Accent and underlined, because a
+ * A link inside a dialog — the consent reminder's. Accent and underlined, because a
  * link that is only a colour is invisible to a colour-blind reader (docs/09 "Every state is color + text"),
  * and [MinTouch] tall because it is something you click.
  */

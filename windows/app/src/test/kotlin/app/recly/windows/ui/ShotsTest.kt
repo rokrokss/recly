@@ -2,7 +2,14 @@
 
 package app.recly.windows.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.ImageComposeScene
@@ -13,11 +20,14 @@ import androidx.compose.ui.input.pointer.PointerButton
 import androidx.compose.ui.input.pointer.PointerButtons
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import app.recly.windows.FakeSettings
 import app.recly.windows.helper.FakeHelperCommand
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
+import app.recly.windows.i18n.Str
 import app.recly.windows.ui.theme.ReclyDesktopTheme
+import app.recly.windows.ui.theme.blueprint
 import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -27,6 +37,11 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.Json
 import okio.Path.Companion.toPath
 import org.jetbrains.skia.EncodedImageFormat
+import recly.core.chatgpt.AskAnswer
+import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.AskState
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.ChatGptModel
 import recly.core.model.Track
 import recly.core.processing.TranscriptionMode
 import recly.core.processing.selectTranscriptionMode
@@ -110,8 +125,83 @@ class ShotsTest {
             shot("recordings-find-next-$lang", 1000, 680, ko, clicks = listOf(FIND_NEXT)) { window() }
             model.openDetail(model.recents.first())
             until { model.detail?.transcript != null && model.detail?.find == null }
-            shot("settings-$lang", 640, 2700, ko) { SettingsWindow(model, strings) }
+            shot("settings-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
         }
+
+        // docs/08 "Summaries": an edited summary in a format of its own, with its times and its footer, the More menu
+        // over it, and its editor.
+        File(recordingDir, "summary.v1.json").writeText(
+            Json.encodeToString(
+                recly.core.chatgpt.Summary.serializer(),
+                recly.core.chatgpt.Summary(
+                    model.detail!!.recordingId, SUMMARY, "gpt-5.4", "2026-10-09T10:00:00Z", "2026-10-09T10:05:00Z", format = "lecture",
+                ),
+            ),
+        )
+        for (ko in listOf(false, true)) {
+            model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
+            val lang = if (ko) "ko" else "en"
+            val strings = model.localization.current
+            model.showSummary(true)
+            val summaryWindow: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
+            shot("recordings-summary-$lang", 1000, 680, ko) { summaryWindow() }
+            shot("recordings-summary-more-$lang", 1000, 680, ko, clicks = listOf(MORE)) { summaryWindow() }
+            shot("recordings-summary-export-$lang", 1000, 680, ko, clicks = listOf(EXPORT)) { summaryWindow() }
+            // docs/10 "Search": a word only the summary has — its line under the title, and the hit opening on it.
+            model.showSummary(false)
+            shot("recordings-search-summary-$lang", 1000, 680, ko, clicks = listOf(SEARCH), typed = "Thursday") { summaryWindow() }
+            val summaryHit = model.search("Thursday").first()
+            check(opensOnSummary(summaryHit)) { "the hit is not the summary's alone: $summaryHit" }
+            model.openSearchHit(summaryHit, "Thursday")
+            // The summary itself arrives once the window is drawn and follows the detail.
+            until { model.detail?.loading == false && model.detail?.showingSummary == true }
+            shot("recordings-search-summary-open-$lang", 1000, 680, ko) { summaryWindow() }
+            model.openDetail(model.recents.first())
+            until { model.detail?.transcript != null && model.detail?.find == null }
+        }
+        model.selectLanguage(AppLanguage.ENGLISH)
+        model.showSummary(true)
+        val summaryWindow: @Composable () -> Unit = { RecordingsWindow(model, model.localization.current) { it() } }
+        shot("recordings-summary-edit-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY)) { summaryWindow() }
+        shot("recordings-summary-edit-changed-en", 1000, 680, false, clicks = listOf(MORE, MORE_EDIT_SUMMARY, SUMMARY_FIELD), typed = "!") {
+            summaryWindow()
+        }
+
+        // Signed in, drawn without signing in (nothing here talks to OpenAI): the menu's summary items enabled, Summarize
+        // as… turned into the formats, and the settings rows under the model.
+        val chatGpt = model.chatGpt!!
+        chatGpt.connection = ChatGptConnection.SignedIn("me@example.com", listOf(ChatGptModel("gpt-5.4", "GPT-5.4")), "gpt-5.4")
+        for (ko in listOf(false, true)) {
+            model.selectLanguage(if (ko) AppLanguage.KOREAN else AppLanguage.ENGLISH)
+            val lang = if (ko) "ko" else "en"
+            val strings = model.localization.current
+            val window: @Composable () -> Unit = { RecordingsWindow(model, strings) { it() } }
+            shot("recordings-summary-more-signed-in-$lang", 1000, 680, ko, clicks = listOf(MORE)) { window() }
+            shot("recordings-summary-as-$lang", 1000, 680, ko, clicks = listOf(MORE, MORE_SUMMARIZE_AS)) { window() }
+            shot("settings-signed-in-$lang", 640, SETTINGS_HEIGHT, ko) { SettingsWindow(model, strings) }
+            // docs/08 "Ask": the panel's body as the dialog holds it, running and answered — states drawn, not asked.
+            val presets = AskPreset.entries
+            val panel: @Composable (AskState) -> Unit = { state ->
+                Column(
+                    androidx.compose.ui.Modifier.fillMaxSize().border(1.dp, blueprint.grid).background(blueprint.surface).padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    Text(strings[Str.ASK_TITLE], style = MaterialTheme.typography.titleMedium, color = blueprint.text)
+                    AskPanel(state, presets, { "GPT-5.4" }, canSeek = true, onSeek = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
+                }
+            }
+            shot("ask-running-$lang", 460, 560, ko) { panel(AskState.Running(AskPreset.ACTION_ITEMS, null)) }
+            shot("ask-ready-$lang", 460, 560, ko) {
+                panel(AskState.Ready(AskAnswer(model.detail!!.recordingId, AskPreset.ACTION_ITEMS, null, ANSWER, "gpt-5.4")))
+            }
+            shot("ask-failed-$lang", 460, 560, ko) {
+                panel(AskState.Failed(recly.core.message.CoreMessage.CHATGPT_USAGE_LIMIT.code(), null, "When do we ship?"))
+            }
+        }
+        chatGpt.connection = ChatGptConnection.SignedOut
+        File(recordingDir, "summary.v1.json").delete()
+        model.selectLanguage(AppLanguage.ENGLISH)
+        model.showSummary(false)
 
         // Skip silence on, in the dark; and the reader following playback, then scrolled away from it.
         model.selectLanguage(AppLanguage.ENGLISH)
@@ -196,7 +286,8 @@ class ShotsTest {
         provider = TranscriptProvider("assemblyai"),
         createdAt = "2026-10-07T00:00:00Z",
         durationSec = 40.0,
-        speakers = listOf(TranscriptSpeaker("S1", "Mina"), TranscriptSpeaker("S2")),
+        // S2 is the person who made the recording (docs/08 "Me and others"), shown as Me.
+        speakers = listOf(TranscriptSpeaker("S1", "Mina"), TranscriptSpeaker("S2", me = true)),
         segments = listOf(
             TranscriptSegment(0.0, 6.0, "S1", "Thanks for joining. Let's go over the release notes for Recly first."),
             TranscriptSegment(6.0, 11.5, "S1", "The import button is in the list header now."),
@@ -217,6 +308,7 @@ class ShotsTest {
         dark: Boolean = false,
         /** A wheel turn at this point (dp), after the clicks. */
         scroll: Offset? = null,
+
         content: @Composable () -> Unit,
     ) {
         val scene = ImageComposeScene(width * SCALE, height * SCALE, Density(SCALE.toFloat())) {
@@ -285,5 +377,16 @@ class ShotsTest {
         val FIND_NEXT = Offset(900f, 210f)
         val POPUP_HIGHLIGHT = Offset(179f, 263f)
         val MCP_COPY = Offset(549f, 1806f)
+        val MORE_EDIT_SUMMARY = Offset(835f, 313f)
+        val MORE_SUMMARIZE_AS = Offset(835f, 265f)
+        val SUMMARY_FIELD = Offset(700f, 400f)
+        const val SETTINGS_HEIGHT = 3100
+
+        const val SUMMARY = "Summary:\nThe team reviewed the release notes and agreed to ship on Friday. [00:00:31]\n\n" +
+            "Key ideas:\n- The import button moved to the list header. [00:00:06]\n- Highlight ticks show on the waveform. [00:00:20]\n\n" +
+            "To review:\n- Mina: publish the release notes by Thursday. [00:00:20]"
+
+        const val ANSWER = "- Mina: publish the release notes by Thursday [00:00:20]\n" +
+            "- Unassigned: check the highlight ticks on the waveform [00:00:11]\n- Ship the release on Friday [00:00:31]"
     }
 }

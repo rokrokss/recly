@@ -7,12 +7,16 @@ import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.Parameters
 import io.ktor.server.application.call
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.request.uri
+import io.ktor.server.response.respond
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.withTimeout
+import recly.core.chatgpt.ChatGptSignIn
 import recly.core.platform.Logger
 
 /**
@@ -71,37 +76,90 @@ class LoopbackReceiver(
         timeout: Duration,
         browserTimeout: Duration,
         onReady: suspend (redirectUri: String) -> Unit,
+    ): String = listen(GOOGLE_PATH, timeout, browserTimeout, onReady) { parameters, _ ->
+        val received = parameters["code"]
+        val error = parameters["error"]
+        when {
+            // RFC 8252 §8.9: reject a response whose state is not the pending one.
+            parameters["state"] != state ->
+                Verdict.declined(AuthDeclinedException(Str.AUTH_STATE_MISMATCH.message()))
+
+            // Google's diagnostic, and it is shown as it arrived (docs/07 rule 4).
+            error != null -> Verdict.declined(AuthDeclinedException(UiMessage.Text(error)))
+            received != null -> Verdict(OK, HttpStatusCode.OK, Result.success(received))
+            else -> Verdict.declined(AuthDeclinedException(Str.AUTH_NO_CODE.message()))
+        }
+    }
+
+    /**
+     * docs/15 §10 "Sign in with ChatGPT": the same server for OpenAI's redirect, which OpenAI accepts only
+     * as `http://127.0.0.1:<port>/auth/callback`. [begin] starts the sign-in on that redirect URI and
+     * answers the `state` its callback will carry and the page to open; the answer is the whole URL the
+     * browser brought back, because the core reads `client_id` from it as well as the code.
+     *
+     * Two differences from [awaitCode]. A request that is not this sign-in's callback — another path, a
+     * `state` that is not the one [begin] answered — is a 404 and the wait goes on, since anything on this
+     * machine can reach the port. And a callback that says `error` is still handed back: the core is what
+     * tells a cancelled sign-in (silent) from a refused one.
+     */
+    suspend fun awaitCallback(
+        timeout: Duration,
+        browserTimeout: Duration,
+        begin: suspend (redirectUri: String) -> ChatGptSignIn,
+        browser: suspend (url: String) -> Unit,
     ): String {
-        val code = CompletableDeferred<Result<String>>()
+        // Set before the browser opens, so no callback the browser brings can arrive ahead of it.
+        val expected = AtomicReference<String?>(null)
+        return listen(
+            CHATGPT_PATH,
+            timeout,
+            browserTimeout,
+            onReady = { origin ->
+                val started = begin("$origin$CHATGPT_PATH")
+                expected.set(started.state)
+                browser(started.authorizationUrl)
+            },
+        ) { parameters, url ->
+            val state = expected.get()
+            when {
+                state == null || parameters["state"] != state -> null
+                parameters["error"] != null -> Verdict(DECLINED, HttpStatusCode.BadRequest, Result.success(url))
+                else -> Verdict(Str.CHATGPT_PAGE_OK, HttpStatusCode.OK, Result.success(url))
+            }
+        }
+    }
+
+    /**
+     * The server both sign-ins share: one GET route at [path], answered by [verdict] — with the page it
+     * names, and the result it carries handed back — or, when [verdict] says null, a 404 that leaves the
+     * wait going. [onReady] gets the origin (`http://127.0.0.1:<port>`) once the port is known.
+     */
+    private suspend fun listen(
+        path: String,
+        timeout: Duration,
+        browserTimeout: Duration,
+        onReady: suspend (origin: String) -> Unit,
+        verdict: (parameters: Parameters, url: String) -> Verdict?,
+    ): String {
+        val answer = CompletableDeferred<Result<String>>()
         val server = embeddedServer(CIO, port = 0, host = HOST) {
             routing {
-                get("/") {
+                get(path) {
                     // Exactly one redirect is answered. The port is open to anything on this
                     // machine, and a second request — a reload, or somebody guessing the port — is
                     // not the sign-in this process started, whatever it carries.
-                    if (code.isCompleted) {
+                    if (answer.isCompleted) {
                         call.respondText(page(DONE), ContentType.Text.Html, HttpStatusCode.OK)
                         return@get
                     }
-                    val parameters = call.request.queryParameters
-                    val received = parameters["code"]
-                    val error = parameters["error"]
-                    val answered = when {
-                        // RFC 8252 §8.9: reject a response whose state is not the pending one.
-                        parameters["state"] != state ->
-                            Result.failure(AuthDeclinedException(Str.AUTH_STATE_MISMATCH.message()))
-
-                        // Google's diagnostic, and it is shown as it arrived (docs/07 rule 4).
-                        error != null -> Result.failure(AuthDeclinedException(UiMessage.Text(error)))
-                        received != null -> Result.success(received)
-                        else -> Result.failure(AuthDeclinedException(Str.AUTH_NO_CODE.message()))
+                    val url = "http://$HOST:${call.request.local.localPort}${call.request.uri}"
+                    val answered = verdict(call.request.queryParameters, url)
+                    if (answered == null) {
+                        call.respond(HttpStatusCode.NotFound)
+                        return@get
                     }
-                    call.respondText(
-                        page(if (answered.isSuccess) OK else DECLINED),
-                        ContentType.Text.Html,
-                        if (answered.isSuccess) HttpStatusCode.OK else HttpStatusCode.BadRequest,
-                    )
-                    code.complete(answered)
+                    call.respondText(page(answered.page), ContentType.Text.Html, answered.status)
+                    answer.complete(answered.result)
                 }
             }
         }
@@ -111,9 +169,16 @@ class LoopbackReceiver(
             logger.log(Logger.Level.INFO, "auth.loopback.listening", mapOf("port" to port))
             val opened = opens.async { onReady("http://$HOST:$port") }
             withTimeout(browserTimeout) { opened.await() }
-            withTimeout(timeout) { code.await() }.getOrThrow()
+            withTimeout(timeout) { answer.await() }.getOrThrow()
         } finally {
             server.stop(gracePeriodMillis = 0, timeoutMillis = STOP_TIMEOUT_MS)
+        }
+    }
+
+    /** How the one callback is answered: the page the browser is left on, and what the sign-in gets. */
+    private class Verdict(val page: Str, val status: HttpStatusCode, val result: Result<String>) {
+        companion object {
+            fun declined(reason: AuthDeclinedException) = Verdict(DECLINED, HttpStatusCode.BadRequest, Result.failure(reason))
         }
     }
 
@@ -131,6 +196,12 @@ class LoopbackReceiver(
     private companion object {
         const val HOST = "127.0.0.1"
         const val STOP_TIMEOUT_MS = 1_000L
+
+        /** Google's Desktop client redirects to the bare origin (docs/06). */
+        const val GOOGLE_PATH = "/"
+
+        /** The one redirect path OpenAI accepts for a loopback (docs/15 §10). */
+        const val CHATGPT_PATH = "/auth/callback"
 
         val OK = Str.AUTH_PAGE_OK
         val DECLINED = Str.AUTH_PAGE_DECLINED

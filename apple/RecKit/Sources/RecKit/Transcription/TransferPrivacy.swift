@@ -31,18 +31,36 @@ public enum PrivacyLinks {
         "rtzr": "https://developers.rtzr.ai/privacy",
         "clova": "https://privacy.navercloudcorp.com/en/ncp/PrivacyPolicy/ncp-p",
         "gladia": "https://www.gladia.io/privacy-notice",
+        // docs/15 §10: a summary's destination, OpenAI's own policy (checked 2026-10-09).
+        "chatgpt": "https://openai.com/policies/privacy-policy/",
     ]
 }
 
 /// docs/15 "iPhone providers" (App Review 5.1.1(i)): ElevenLabs trains on audio unless the account
 /// has turned that off, and Recly cannot see the account — so the user says it has, before allowing.
+/// ChatGPT is the same for a summary's transcript: "Improve the model for everyone" is on unless the
+/// user turned it off in their data controls.
 public enum TrainingOptOut {
     static let provider = "elevenlabs"
     // ElevenLabs' own help page for the "Improve the models for everyone" toggle, checked 2026-09-29.
     static let help = URL(string: "https://elevenlabs.io/docs/help-center/legal/is-my-data-used-to-improve-eleven-labs-ai-models")!
+    // OpenAI's own help page for the data controls, checked 2026-10-09.
+    static let chatGptHelp = URL(string: "https://help.openai.com/en/articles/7730893")!
 
     public static func required(_ targets: [TransferTarget]) -> Bool {
-        targets.contains { $0.provider == provider }
+        targets.contains { $0.provider == provider || TransferTargetText.summary($0) }
+    }
+}
+
+/// Who a destination is, as the permission screens name it.
+public enum TransferTargetText {
+    /// docs/15 §10: the transcript a summary sends to the user's ChatGPT plan.
+    public static func summary(_ target: TransferTarget) -> Bool {
+        target.kind == TransferTargets.shared.SUMMARIZE && target.provider == TransferTargets.shared.CHATGPT
+    }
+
+    public static func name(_ target: TransferTarget) -> String {
+        summary(target) ? RecKitStrings.localized("ChatGPT (OpenAI)") : SttProviders.shared.displayName(name: target.provider)
     }
 }
 
@@ -63,18 +81,24 @@ public struct TransferDisclosureList: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.s) {
             ForEach(targets, id: \.id) { target in
+                let summary = TransferTargetText.summary(target)
                 VStack(alignment: .leading, spacing: Space.xs) {
                     // Who: the company by name, and what kind of service it is (App Review 5.1.2(i)).
-                    Text(verbatim: SttProviders.shared.displayName(name: target.provider))
+                    Text(verbatim: TransferTargetText.name(target))
                         .font(blueprint.fonts.label)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: loc("A third-party AI speech recognition service. Recly does not operate it."))
+                    Text(verbatim: summary
+                        ? loc("A third-party AI service. Recly does not operate it.")
+                        : loc("A third-party AI speech recognition service. Recly does not operate it."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)
                     Text(verbatim: target.endpoint)
                         .font(blueprint.fonts.monoSmall)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(verbatim: loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
+                    // What: a summary sends the transcript's text, never the audio (docs/15 §10).
+                    Text(verbatim: summary
+                        ? loc("The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.")
+                        : loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)
                     // The list's text colour would turn a plain `Link` into body text; this one reads as a link.
@@ -87,6 +111,14 @@ public struct TransferDisclosureList: View {
                             .fixedSize(horizontal: false, vertical: true)
                         BlueprintDialogLink(loc("How to turn it off")) { openURL(TrainingOptOut.help) }
                         BlueprintCheckRow(loc("I turned off model training in my ElevenLabs account."), isOn: $trainingOff)
+                            .accessibilityIdentifier("training-off")
+                    }
+                    if summary {
+                        Text(verbatim: loc("ChatGPT may use what you send to improve its models unless “Improve the model for everyone” is turned off in your ChatGPT data controls."))
+                            .font(blueprint.fonts.bodySmall)
+                            .fixedSize(horizontal: false, vertical: true)
+                        BlueprintDialogLink(loc("How to turn it off")) { openURL(TrainingOptOut.chatGptHelp) }
+                        BlueprintCheckRow(loc("I turned off “Improve the model for everyone” in ChatGPT."), isOn: $trainingOff)
                             .accessibilityIdentifier("training-off")
                     }
                     if target.kind == "transcribe",
@@ -208,6 +240,7 @@ public struct TransferPrivacyView: View {
     @State private var trainingOff = false
     @Environment(\.locale) private var locale
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.openURL) private var openURL
 
     public init(model: TransferPrivacyModel) { self.model = model }
 
@@ -215,7 +248,7 @@ public struct TransferPrivacyView: View {
         let pending = model.pending
         return ScrollView {
             VStack(alignment: .leading, spacing: Space.m) {
-                Link(loc("Privacy Policy"), destination: PrivacyLinks.recly(locale: locale))
+                TextLink(loc("Privacy Policy")) { openURL(PrivacyLinks.recly(locale: locale)) }
                 if let message = model.message {
                     Text(verbatim: message.text).foregroundStyle(blueprint.palette.danger)
                 }
@@ -236,12 +269,12 @@ public struct TransferPrivacyView: View {
                 }
                 ForEach(model.approved, id: \.id) { target in
                     VStack(alignment: .leading, spacing: Space.xs) {
-                        Text(verbatim: SttProviders.shared.displayName(name: target.provider))
+                        Text(verbatim: TransferTargetText.name(target))
                         Text(verbatim: target.endpoint)
                             .font(blueprint.fonts.monoSmall)
                             .fixedSize(horizontal: false, vertical: true)
                         if let url = PrivacyLinks.provider(target.provider) {
-                            Link(loc("Provider privacy information"), destination: url)
+                            TextLink(loc("Provider privacy information")) { openURL(url) }
                         }
                         // docs/09 screen principle 8: the destination spans several lines, so its action sits under it, at the end.
                         BlueprintButton(loc("Withdraw permission"), tone: .quiet) {

@@ -83,7 +83,6 @@ class FakeSettings(
     override var revokeDebt: Boolean = false,
     override var modelPromptDismissed: Boolean = false,
     override var localFolder: String? = null,
-    override var globalShortcut: Boolean = true,
     override var playbackSpeed: Float = 1f,
     override var skipSilence: Boolean = false,
 ) : Settings

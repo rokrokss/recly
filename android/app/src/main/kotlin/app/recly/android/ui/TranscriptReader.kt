@@ -80,9 +80,18 @@ internal fun findMatches(groups: List<ReaderGroup>, query: String): List<FindMat
     groups.flatMap { group -> RecordingSearch.findRanges(group.text, query).map { FindMatch(group.index, it.offset, it.length) } }
 
 
-/** The speaker a group header shows: the name the user gave, or the id. */
-internal fun speakerLabel(transcript: Transcript, id: String): String =
-    transcript.speakers.firstOrNull { it.id == id }?.name ?: id
+/**
+ * The speaker a group header shows: the name the user gave, [me] — the app's word for "Me" — for the person who made
+ * the recording while they have no name (docs/08 "Me and others"), or the id.
+ */
+internal fun speakerLabel(transcript: Transcript, id: String, me: String): String {
+    val speaker = transcript.speakers.firstOrNull { it.id == id }
+    return speaker?.name ?: if (speaker?.me == true) me else id
+}
+
+/** A label that is a word — a name, or "Me" — is set in the body face; an id like `S1` is data, in monospace. */
+internal fun speakerIsWord(transcript: Transcript, id: String): Boolean =
+    transcript.speakers.firstOrNull { it.id == id }?.let { it.name != null || it.me == true } == true
 
 /**
  * docs/09 "Transcript reader": the transcript in utterance groups, each with its time (a seek), its speaker
@@ -144,6 +153,7 @@ internal fun TranscriptReader(
         if (reduce) list.scrollToItem(match.group, offset) else list.animateScrollToItem(match.group, offset)
     }
     val tint = palette.accent.copy(alpha = 0.16f)
+    val me = stringResource(R.string.speaker_me)
     SelectionContainer(modifier) {
         LazyColumn(Modifier.fillMaxSize().testTag("transcript-passages"), state = list,
             contentPadding = PaddingValues(vertical = Space.s), verticalArrangement = Arrangement.spacedBy(Space.s)) {
@@ -176,7 +186,7 @@ internal fun TranscriptReader(
                             }
                         }
                         if (group.speaker.isNotEmpty()) Box {
-                            SpeakerBadge(speakerLabel(transcript, group.speaker), named = transcript.speakers.any { it.id == group.speaker && it.name != null },
+                            SpeakerBadge(speakerLabel(transcript, group.speaker, me), named = speakerIsWord(transcript, group.speaker),
                                 onClick = { onSpeaker(group) }, enabled = speakersEnabled, modifier = Modifier.testTag("transcript-speaker-${group.index}"))
                             if (speakerMenuFor == group.index) speakerMenu()
                         }
@@ -198,22 +208,22 @@ internal fun TranscriptReader(
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in
- * monospace. A tap opens the speaker menu.
+ * monospace. A tap opens the speaker menu. The border is the whole [MinTouch] target, so the badge stands as tall
+ * as the time button beside it, on the same centre line.
  */
 @Composable
 internal fun SpeakerBadge(label: String, named: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val palette = blueprint
     Box(
         modifier
-            .defaultMinSize(minHeight = 48.dp)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.s),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            modifier = Modifier
-                .border(palette.line, if (enabled) palette.textMuted else palette.grid, RoundedCornerShape(Radius.badge))
-                .padding(horizontal = Space.s, vertical = 2.dp),
             style = if (named) MaterialTheme.typography.labelLarge else mono.small,
             color = palette.textMuted,
             maxLines = 1,

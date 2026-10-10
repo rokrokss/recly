@@ -133,6 +133,18 @@ enum class CoreMessage {
 
     /** Something changed the settings while they were open here — a second window, or an import. */
     STALE,
+
+    /**
+     * docs/15 §10: a summary needs the ChatGPT sign-in, and there is none here — never made, signed out,
+     * or refused by OpenAI on refresh. Signing in again in Settings is what fixes it.
+     */
+    CHATGPT_SIGN_IN_REQUIRED,
+
+    /** The ChatGPT plan's usage limit for apps is reached; it resets on OpenAI's schedule, not Recly's. */
+    CHATGPT_USAGE_LIMIT,
+
+    /** The account signed in, but its plan does not let apps use it (the token lacks the plan scope). */
+    CHATGPT_PLAN_REQUIRED,
     ;
 
     /**

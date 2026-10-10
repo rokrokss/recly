@@ -12,6 +12,7 @@ const pairs = [
   ["transcript.schema.json", "examples/transcript.json"],
   ["transcript.schema.json", "examples/transcript-local.json"],
   ["transcript.schema.json", "examples/transcript-edited.json"],
+  ["transcript.schema.json", "examples/transcript-desktop-me.json"],
   ["recording-settings.schema.json", "examples/recording-settings.json"],
   ["recording-settings.schema.json", "examples/recording-settings-external.json"],
 ];
@@ -74,6 +75,7 @@ for (const [label, expected, change] of [
   ["v2 missing capability", false, c => { delete c.speakerIdentification; return c; }],
   ["v2 fabricated speaker", false, c => { c.segments[0].speaker = "S1"; return c; }],
   ["v1 requires speaker", false, c => { c.schema = 1; delete c.speakerIdentification; delete c.timing; return c; }],
+  ["me is true or absent", false, c => { c.speakerIdentification = "identified"; c.speakers = [{ id: "S1", me: false }]; c.segments.forEach(x => x.speaker = "S1"); return c; }],
 ]) {
   const valid = transcriptSchema(change(structuredClone(localTranscript)));
   if (valid !== expected) { console.error(`FAIL transcript: ${label}`); failed++; }

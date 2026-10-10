@@ -53,6 +53,8 @@ import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.Summary
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepRun
@@ -110,8 +112,9 @@ private val RecordingDetail.audioReachable: Boolean
     get() = !audio.isEmpty || driveFetch == DriveFetch.DECIDING || driveFetch == DriveFetch.FETCHING
 
 /**
- * docs/08 "Exports": Export… — the five formats, each made by the core and saved under the name it gave the
- * file, and Copy all. While the core prepares one (joining the audio takes a moment) its row says so.
+ * docs/08 "Exports": Export… — the formats, each made by the core and saved under the name it gave the file, and
+ * Copy all. While the core prepares one (joining the audio takes a moment) its row says so. The summary is one of
+ * them wherever summaries are offered.
  */
 @Composable
 internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: Strings) {
@@ -123,13 +126,15 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Box {
         BlueprintButton(if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.EXPORT], { open = true }, tone = ButtonTone.QUIET)
-        BlueprintMenu(open, { if (preparing == null) open = false }, alignment = Alignment.TopEnd) { MenuColumn {
-            EXPORTS.forEach { (format, label, kind) ->
+        val summaries = model.chatGpt?.connection != ChatGptConnection.Unavailable
+        BlueprintMenu(open, { if (preparing == null) open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+            EXPORTS.filter { (format) -> format != ExportFormat.SUMMARY || summaries }.forEach { (format, label, kind) ->
                 val audio = format == ExportFormat.AUDIO
                 val reason = when {
                     // Nothing of a take still being written is whole enough to export.
                     audio && detail.writing -> Str.DETAIL_STILL_RECORDING
                     audio && !detail.audioReachable -> Str.PLAYER_NO_AUDIO
+                    format == ExportFormat.SUMMARY -> if (detail.summary.saved() == null) Str.SUMMARY_NONE else null
                     !audio && !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                     else -> null
                 }
@@ -171,14 +176,18 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
 private val EXPORTS = listOf(
     Triple(ExportFormat.TXT, Str.EXPORT_TRANSCRIPT, Str.EXPORT_TRANSCRIPT_FORMAT),
     Triple(ExportFormat.MD, Str.EXPORT_NOTES, Str.EXPORT_NOTES_FORMAT),
+    // The summary as text, under the chip's own name; the .md carries it too (docs/08 "Exports").
+    Triple(ExportFormat.SUMMARY, Str.SUMMARY_TAB, Str.EXPORT_TRANSCRIPT_FORMAT),
     Triple(ExportFormat.SRT, Str.EXPORT_SUBTITLES, Str.EXPORT_SUBTITLES_FORMAT),
     Triple(ExportFormat.VTT, Str.EXPORT_WEB_SUBTITLES, Str.EXPORT_WEB_SUBTITLES_FORMAT),
     Triple(ExportFormat.AUDIO, Str.EXPORT_AUDIO, Str.EXPORT_AUDIO_FORMAT),
 )
 
 /**
- * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight. What
- * cannot run now stays in its place, disabled, with the reason under it.
+ * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight ·
+ * Summarize · Summarize as… · Edit summary · Ask about this recording…. What cannot run now stays in its place,
+ * disabled, with the reason under it. Summarize as… turns the menu into the formats, the way Change speaker turns
+ * the speaker's menu into the speakers.
  */
 @Composable
 internal fun MoreButton(
@@ -186,19 +195,33 @@ internal fun MoreButton(
     detail: RecordingDetail,
     positionSec: Double,
     onEdit: () -> Unit,
+    onEditSummary: (Summary) -> Unit,
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
+    var choosingFormat by remember { mutableStateOf(false) }
     val stamp = LedgerFormat.clock(positionSec, detail.spanSec)
     Box {
         BlueprintButton(
             MORE_MARK,
-            { open = true },
+            {
+                choosingFormat = false
+                open = true
+            },
             // As wide as it is tall: a single mark is not a 44 target on its own.
             modifier = Modifier.defaultMinSize(minWidth = MinTouch).semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
         )
-        BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd) { MenuColumn {
+        BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+            if (choosingFormat) {
+                // The formats Settings offers; the summary on show has its own marked.
+                val current = detail.summary.saved()?.summaryFormat
+                model.chatGpt?.preferences?.formats.orEmpty().forEach { format ->
+                    val label = strings[summaryFormatLabel(format)]
+                    MenuRow(if (format == current) "$SELECTION_MARK $label" else label, { open = false; model.askToSummarize(format) })
+                }
+                return@MenuColumn
+            }
             // The core refuses to rename a take still being written, and the item says so.
             MenuRow(
                 strings[Str.DETAIL_RENAME],
@@ -237,6 +260,39 @@ internal fun MoreButton(
                 enabled = highlightBlocked == null,
                 secondary = highlightBlocked?.let { strings[it] },
             )
+            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
+            val connection = model.chatGpt?.connection
+            if (connection != null && connection != ChatGptConnection.Unavailable) {
+                val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection, detail.summary)
+                MenuRow(
+                    strings[summarizeLabel(detail.summary)],
+                    { open = false; model.askToSummarize() },
+                    enabled = summaryBlocked == null,
+                    secondary = summaryBlocked?.let { strings[it] },
+                )
+                MenuRow(
+                    strings[Str.SUMMARY_AS],
+                    { choosingFormat = true },
+                    enabled = summaryBlocked == null,
+                    secondary = summaryBlocked?.let { strings[it] },
+                )
+                summaryEditItem(detail.summary)?.let { item ->
+                    MenuRow(
+                        strings[Str.SUMMARY_EDIT],
+                        { open = false; onEditSummary(item.summary) },
+                        enabled = item.blocked == null,
+                        secondary = item.blocked?.let { strings[it] },
+                    )
+                }
+                // docs/08 "Ask": one question about this recording, in a panel over the detail.
+                val askBlocked = askBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection)
+                MenuRow(
+                    strings[Str.ASK_MENU],
+                    { open = false; model.openAsk() },
+                    enabled = askBlocked == null,
+                    secondary = askBlocked?.let { strings[it] },
+                )
+            }
         } }
     }
 }
@@ -268,24 +324,31 @@ internal fun HighlightMark(modifier: Modifier = Modifier) {
 internal val HIGHLIGHT_MARK = 6.dp
 
 /**
- * docs/08 "Editing": who says a group — the name the user gave, or the id in monospace — as a quiet badge
- * that opens the speaker menu. Speakers are told apart by this label alone.
+ * docs/08 "Editing" · "Me and others": what a speaker is called — the name the user gave, else `Me` for the person
+ * who made the recording, else null, which the label shows as the id.
+ */
+internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String? =
+    speaker?.name?.takeIf { it.isNotBlank() } ?: if (speaker?.me == true) strings[Str.SPEAKER_ME] else null
+
+/**
+ * docs/08 "Editing": who says a group — the name the user gave ([speakerName]), or the id in monospace — as a quiet
+ * control that opens the speaker menu. Speakers are told apart by this label alone.
  */
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
     val palette = blueprint
-    // The badge is about 20 tall; what takes the click is the 44 around it (2026-10-08), the badge at its start.
+    // The time button's box beside it (2026-10-09): the same 44 height, corner and edge, and the same 12 type, so
+    // the two share one height, one centre and one baseline.
     Box(
         Modifier
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
-        contentAlignment = Alignment.CenterStart,
+            .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+            .padding(horizontal = Space.s, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             name ?: id,
-            modifier = Modifier
-                .border(palette.line, palette.textMuted, RoundedCornerShape(Radius.badge))
-                .padding(horizontal = 6.dp, vertical = 2.dp),
             style = if (name != null) MaterialTheme.typography.labelSmall else mono.small,
             color = palette.textMuted,
             maxLines = 1,
@@ -313,7 +376,7 @@ internal fun SpeakerMenu(
             MenuRow(strings[Str.SPEAKER_CHANGE], { choosing = true })
         } else {
             speakers.forEach { speaker ->
-                val label = speaker.name ?: speaker.id
+                val label = speakerName(speaker, strings) ?: speaker.id
                 MenuRow(if (speaker.id == current) "$SELECTION_MARK $label" else label, { onDismiss(); onChange(speaker.id) })
             }
             MenuRow(strings[Str.SPEAKER_NEW], { onDismiss(); onChange(null) })
@@ -345,13 +408,17 @@ internal fun SpeakerNameDialog(
     }
 }
 
-/** docs/08 "Editing": leaving the editor with changes in it. Discard is not red: no recording goes. */
+/**
+ * docs/08 "Editing" · "Summaries": leaving an editor with changes in it — [body] says whose. Discard is not red: no
+ * recording goes.
+ */
 @Composable
 internal fun DiscardEditsDialog(
     strings: Strings,
     theme: @Composable (@Composable () -> Unit) -> Unit,
     onKeep: () -> Unit,
     onDiscard: () -> Unit,
+    body: Str = Str.EDIT_DISCARD_BODY,
 ) {
     BlueprintDialog(
         title = strings[Str.EDIT_DISCARD_TITLE],
@@ -363,7 +430,29 @@ internal fun DiscardEditsDialog(
             BlueprintButton(strings[Str.EDIT_DISCARD], onDiscard, tone = ButtonTone.ACCENT)
         },
     ) {
-        BlueprintDialogText(strings[Str.EDIT_DISCARD_BODY])
+        BlueprintDialogText(strings[body])
+    }
+}
+
+/** docs/08 "Summaries": Summarize again over a summary the user edited. Replace is not red: no recording goes. */
+@Composable
+internal fun SummaryReplaceDialog(
+    strings: Strings,
+    theme: @Composable (@Composable () -> Unit) -> Unit,
+    onCancel: () -> Unit,
+    onReplace: () -> Unit,
+) {
+    BlueprintDialog(
+        title = strings[Str.SUMMARY_REPLACE_TITLE],
+        onDismissRequest = onCancel,
+        theme = theme,
+        fitContent = true,
+        actions = {
+            BlueprintButton(strings[Str.CANCEL], onCancel, tone = ButtonTone.QUIET)
+            BlueprintButton(strings[Str.SUMMARY_REPLACE], onReplace, tone = ButtonTone.PRIMARY)
+        },
+    ) {
+        BlueprintDialogText(strings[Str.SUMMARY_REPLACE_BODY])
     }
 }
 
@@ -418,7 +507,8 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Text(label, style = mono.small, color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
+            // The buttons' 14 beside it, in monospace: one baseline along the bar (2026-10-09).
+            Text(label, style = mono.bodySmall, color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
             if (skipSilence) {
                 Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(1.dp)))
             }
@@ -492,3 +582,9 @@ private const val COPIED_MS = 3_000L
 
 /** The narrowest a menu is, as [BlueprintMenu] draws it. */
 private val MENU_WIDTH = 200.dp
+
+/**
+ * Export's seven items and More's eight whole, each with a second line under it, in a window at its opening height —
+ * none behind a scroll.
+ */
+private val DETAIL_MENU_HEIGHT = 440.dp

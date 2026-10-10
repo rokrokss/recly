@@ -17,9 +17,13 @@ data class SearchRange(val offset: Int, val length: Int)
 /** One segment of a transcript that matches: where it starts in the recording, its words, and the matches in them. */
 data class SearchSnippet(val atSec: Double, val text: String, val ranges: List<SearchRange>)
 
+/** The line of a recording's summary that matches, cut like a [SearchSnippet], with the matches in it. */
+data class SummaryMatch(val text: String, val ranges: List<SearchRange>)
+
 /**
  * One recording a search found: by its title ([titleRanges] mark the matches there), its transcript
- * ([snippets], at most [RecordingSearch.SNIPPETS]), or both.
+ * ([snippets], at most [RecordingSearch.SNIPPETS]), its summary ([summary], the first line that matches), or
+ * any of them.
  */
 data class SearchHit(
     val recordingId: String,
@@ -28,11 +32,12 @@ data class SearchHit(
     val matchesInTitle: Boolean,
     val titleRanges: List<SearchRange>,
     val snippets: List<SearchSnippet>,
+    val summary: SummaryMatch? = null,
 )
 
 /**
- * docs/10 "Search": the titles of every row in the list and the transcripts held on this device —
- * this device's own, and other devices' once read (opened, or cached by a pull). Case is ignored, and
+ * docs/10 "Search": the titles of every row in the list, the transcripts held on this device —
+ * this device's own, and other devices' once read (opened, or cached by a pull) — and their summaries. Case is ignored, and
  * so are the accents of Latin letters and the width of full-width Latin, so `resume` finds `Résumé` and
  * `ＡＢＣ` finds `abc`; the query is one phrase.
  *
@@ -49,6 +54,7 @@ class RecordingSearch internal constructor(
 
     private val mutex = Mutex()
     private val cache = mutableMapOf<String, Cached>()
+    private val summaries = mutableMapOf<String, Cached>()
 
     suspend fun search(query: String, limit: Int): List<SearchHit> {
         val needle = fold(query.trim())
@@ -65,8 +71,10 @@ class RecordingSearch internal constructor(
                     .take(SNIPPETS)
                     .map { snippet(it, needle) }
                     .toList()
-                if (titleRanges.isEmpty() && snippets.isEmpty()) continue
-                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets)
+                val summary = summaryLines(row).firstOrNull { needle in it.folded }?.let { snippet(it, needle) }
+                    ?.let { SummaryMatch(it.text, it.ranges) }
+                if (titleRanges.isEmpty() && snippets.isEmpty() && summary == null) continue
+                hits += SearchHit(row.id, title, row.meta.startedAt, titleRanges.isNotEmpty(), titleRanges, snippets, summary)
             }
             hits
         }
@@ -114,6 +122,23 @@ class RecordingSearch internal constructor(
         }
         mutex.withLock { cache[row.id] = Cached(stamp, segments) }
         return segments
+    }
+
+    /** The summary's non-blank lines as it is on disk now: from memory while the file is unchanged. */
+    private suspend fun summaryLines(row: RecordingRecord): List<Segment> {
+        val path = row.dir / RecordingRepository.SUMMARY_FILE
+        val stamp = withContext(deps.io) { deps.fileSystem.metadataOrNull(path) }
+            ?.let { it.size to it.lastModifiedAtMillis }
+        if (stamp == null) {
+            mutex.withLock { summaries.remove(row.id) }
+            return emptyList()
+        }
+        mutex.withLock { summaries[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
+        val text = recordings.summary(row.id)?.let(recly.core.chatgpt.SummaryFile::decode)?.text.orEmpty()
+        // A list item is shown as its words: "- " is how the plain text marks a list, not something the user wrote.
+        val lines = text.lines().map { it.trim().removePrefix("- ").trim() }.filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
+        mutex.withLock { summaries[row.id] = Cached(stamp, lines) }
+        return lines
     }
 
     /** The segment's words, cut to [SNIPPET_CHARS] around the first match when longer, with every match in it marked. */

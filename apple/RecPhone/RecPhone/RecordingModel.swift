@@ -83,6 +83,8 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     @Published private(set) var signInState: ProcessingState = .idle
     @Published private(set) var transferPrivacy: TransferPrivacyModel?
     @Published var privacyPresented = false
+    /// docs/15 §10: the ChatGPT section's sign-in, and the connection a summary uses. Nil until the core is open.
+    @Published private(set) var chatGpt: ChatGptSettingsModel?
     /// docs/09 trend 2: where the one operation a ledger row can start — an upload now, a retry —
     /// actually is. `ProcessingButton` owns the *window* around it and this owns the truth, so a
     /// retry that took two seconds looks like two seconds and one that was refused wears no ✓.
@@ -333,6 +335,10 @@ final class RecordingModel: ObservableObject, RecordingCommands {
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             transferPrivacy = TransferPrivacyModel(core: bridge.core)
+            // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
+            let chatGpt = ChatGptSettingsModel(core: bridge.core)
+            self.chatGpt = chatGpt
+            Task { await chatGpt.refresh() }
             // There is a screen for a tap to land on now, so whatever came in while the core was
             // opening is served (docs/10).
             //
@@ -608,11 +614,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search") —
-    /// unless only the title matched, when there is nothing in the text to find.
+    /// unless only the title matched, when there is nothing in the text to find — or on the summary, when
+    /// only the summary matched.
     func detail(for hit: SearchHit, query: String) -> RecordingDetailModel? {
         let title = hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
         let detail = detail(id: hit.recordingId, title: title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: query, atSec: first.atSec) }
+        detail?.opensOnSummary = hit.onlyInSummary
         return detail
     }
 

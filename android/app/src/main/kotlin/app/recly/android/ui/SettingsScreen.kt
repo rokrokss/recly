@@ -34,7 +34,6 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.BlueprintDialog
-import app.recly.android.ui.component.BlueprintDialogLink
 import app.recly.android.ui.component.BlueprintDialogText
 import app.recly.android.ui.component.BlueprintDropdown
 import app.recly.android.ui.component.ButtonTone
@@ -50,6 +49,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import app.recly.android.ui.component.TableRow
+import app.recly.android.ui.component.TextLink
 import java.util.Locale
 import kotlin.time.ExperimentalTime
 import recly.core.storage.StorageKind
@@ -161,9 +161,9 @@ fun SettingsScreen(
             }
             if (settings.storage != StorageKind.FOLDER && main.revokeDebt && !main.disconnecting) {
                 SectionFootnote(stringResource(R.string.disconnect_still_listed))
-                BlueprintDialogLink(stringResource(R.string.disconnect_permissions), onClick = {
+                TextLink(stringResource(R.string.disconnect_permissions), onClick = {
                     context.openUrl(GOOGLE_PERMISSIONS_URL)
-                }, modifier = Modifier.padding(horizontal = Space.m))
+                }, modifier = Modifier.padding(horizontal = Space.m, vertical = Space.s))
                 // docs/09 screen principle 8: the answer to the notice above it, end-aligned under it.
                 FlowRow(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
                     BlueprintButton(stringResource(R.string.disconnect_removed), onRevokeDebtSettled,
@@ -274,23 +274,22 @@ fun SettingsScreen(
 
             ProcessingPanel()
 
+            ChatGptSection()
+
             // docs/15 "Policy pages the user opens": Recly's own privacy policy, in the browser, right
             // before About as on the iPhone. Only the policy: the iPhone's "Allowed destinations" is
             // its transfer permission (docs/15), which this shell does not ask for.
             Section(stringResource(R.string.settings_privacy))
+            // A page outside the app, so the row is its link (docs/09, 2026-10-09) — a row's height, with the table's inset.
             val policyLocale = LocalConfiguration.current.locales[0]
-            TableRow(
-                title = stringResource(R.string.settings_privacy_policy),
-                trailing = {
-                    BlueprintButton(
-                        label = stringResource(R.string.action_open),
-                        onClick = { context.openUrl(privacyPolicyUrl(policyLocale)) },
-                        // A way out that is always here, like the microphone's: quiet.
-                        tone = ButtonTone.QUIET,
-                        modifier = Modifier.testTag("privacy-policy"),
-                    )
-                },
-            )
+            Column(Modifier.fillMaxWidth().background(palette.surface)) {
+                TextLink(
+                    stringResource(R.string.settings_privacy_policy),
+                    onClick = { context.openUrl(privacyPolicyUrl(policyLocale)) },
+                    modifier = Modifier.padding(Space.m).testTag("privacy-policy"),
+                )
+                HairLine()
+            }
 
             // docs/09 trend 6: no mascot, no "handmade" line — the build, in monospace.
             Section(stringResource(R.string.settings_about))
@@ -381,9 +380,9 @@ private fun About(line: String) {
 /**
  * The language's own name. Only the two [AppLanguage.choices] offers are ever drawn:
  * [AppLanguage.SYSTEM] is the store's "nothing chosen" and the screen names the language the app
- * resolved to instead.
+ * resolved to instead. Ask's Translate names the app's language by it too.
  */
-private fun AppLanguage.labelRes(): Int =
+internal fun AppLanguage.labelRes(): Int =
     when (this) {
         AppLanguage.ENGLISH -> R.string.settings_language_en
         AppLanguage.KOREAN -> R.string.settings_language_ko

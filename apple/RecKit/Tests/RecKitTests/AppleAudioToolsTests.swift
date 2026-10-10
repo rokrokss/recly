@@ -83,16 +83,38 @@ final class AppleAudioToolsTests: XCTestCase {
         }
     }
 
+    /// docs/08 "Me and others": a part's loudest sample per window, from its start, the waveform's measure —
+    /// quiet where it was silent, loud where it was not; and nil, not a throw, for a file that will not decode.
+    func testLevelsAreOnePeakPerWindowAndNilForABadFile() async throws {
+        let url = try part(named: "20260826T010000Z_desktop_01J9ABCD_p001_mic.m4a", seconds: 2, toneFrom: 1)
+        let levels = try await AppleAudioTools().__levels(file: url.okioPath, windowSec: 0.25)?.map(\.floatValue)
+        let peaks = try XCTUnwrap(levels)
+        XCTAssertEqual(Double(peaks.count), 2 / 0.25, accuracy: 1)
+        XCTAssertLessThan(peaks[0], 0.05, "\(peaks)")
+        XCTAssertGreaterThan(peaks[6], 0.3, "\(peaks)")
+        XCTAssertTrue(peaks.allSatisfy { $0 >= 0 && $0 <= 1 }, "\(peaks)")
+
+        let bogus = directory.appendingPathComponent("bogus_mic.m4a")
+        try Data(count: 4000).write(to: bogus)
+        let none = try await AppleAudioTools().__levels(file: bogus.okioPath, windowSec: 0.25)
+        XCTAssertNil(none)
+    }
+
     /// docs/08's tolerance: one AAC frame, which at 16 kHz is 64 ms.
     private let frame = 0.064
 
-    /// One part of [seconds] of silence, in the recorder's own container.
-    private func part(named name: String, seconds: Double) throws -> URL {
+    /// One part of [seconds] of silence, in the recorder's own container — a half-scale tone from [toneFrom]
+    /// seconds on, when given.
+    private func part(named name: String, seconds: Double, toneFrom: Double? = nil) throws -> URL {
         var file: AVAudioFile? = try SegmentedRecorder.openSegmentFile(named: name, in: directory)
         let format = try XCTUnwrap(file?.processingFormat)
         let frames = AVAudioFrameCount(4_000)
-        for _ in 0 ..< Int((seconds * format.sampleRate / Double(frames)).rounded()) {
-            try file?.write(from: try XCTUnwrap(silence(of: frames, in: format)))
+        for chunk in 0 ..< Int((seconds * format.sampleRate / Double(frames)).rounded()) {
+            let buffer = try XCTUnwrap(silence(of: frames, in: format))
+            if let toneFrom, Double(chunk) * Double(frames) / format.sampleRate >= toneFrom, let samples = buffer.floatChannelData?[0] {
+                for index in 0 ..< Int(frames) { samples[index] = 0.5 * sinf(Float(index) * 2 * .pi * 440 / Float(format.sampleRate)) }
+            }
+            try file?.write(from: buffer)
         }
         // Only the release writes the trailing MPEG-4 atoms (see `SegmentFileTests`).
         file = nil

@@ -140,14 +140,14 @@ class LocalTranscriptionService(private val db: RecDatabase, private val deps: C
             TranscriptProvider(info.name, info.revision), deps.clock.now().isoUtc(), step.language.wire)
         val identified = diarize && saved.segments.isNotEmpty() && saved.segments.all { !it.speaker.isNullOrEmpty() }
 
-        val transcript = Transcript(
+        val transcript = MeAndOthers.mark(deps, ctx.recording.dir, ctx.recording.meta, Transcript(
             schema = Transcript.LOCAL_SCHEMA, recordingId = ctx.recording.id, track = track, language = step.language.wire,
             provider = TranscriptProvider(info.name, info.revision), createdAt = deps.clock.now().isoUtc(),
             durationSec = parts.maxOf { it.startOffsetSec + it.durationSec },
             speakers = if (identified) normalized.speakers else emptyList(),
             segments = normalized.segments.map { if (identified) it else it.copy(speaker = "") },
             speakerIdentification = if (identified) "identified" else "unavailable", timing = "segment",
-        )
+        ))
         publishCheckpoint(ctx, entry, saved.copy(complete = true), transcript)
         } finally {
             if (paths.size > 1) deps.fileSystem.delete(inputFile, mustExist = false)

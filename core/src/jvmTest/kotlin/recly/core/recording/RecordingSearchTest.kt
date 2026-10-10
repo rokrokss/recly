@@ -41,6 +41,18 @@ class RecordingSearchTest {
     }
 
     @Test
+    fun `a summary line is found too`() = runBlocking {
+        val meta = f.recordAndRun(title = "Weekly")
+        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\n- The Budget moves to Q3.", "gpt-a", "2026-08-26T02:00:00.000Z"))
+
+        val hit = f.core.search("budget", 10).single()
+        assertEquals(SummaryMatch("The Budget moves to Q3.", listOf(SearchRange(4, 6))), hit.summary)
+        assertEquals(emptyList(), hit.snippets)
+        assertFalse(hit.matchesInTitle)
+        assertEquals(null, f.core.search("hello 1", 10).single().summary, "a transcript hit says nothing of the summary")
+    }
+
+    @Test
     fun `a find bar finds in a text what the search found, at the text's own places`() {
         fun found(text: String, query: String) = RecordingSearch.findRanges(text, query).map { text.substring(it.offset, it.offset + it.length) }
 

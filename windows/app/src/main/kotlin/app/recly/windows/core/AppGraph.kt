@@ -5,6 +5,7 @@ package app.recly.windows.core
 import app.cash.sqldelight.db.SqlDriver
 import app.recly.windows.auth.GoogleAuth
 import app.recly.windows.auth.JvmTokenProvider
+import app.recly.windows.auth.LoopbackReceiver
 import app.recly.windows.auth.TokenEndpoint
 import app.recly.windows.i18n.Localization
 import app.recly.windows.transcribe.QwenSpeechEngine
@@ -33,6 +34,8 @@ class AppGraph(
     val auth: GoogleAuth,
     val tokens: JvmTokenProvider,
     val dataDir: Path,
+    /** The sign-in redirects' loopback — Google's (docs/06) and ChatGPT's (docs/15 §10). */
+    val loopback: LoopbackReceiver,
 )
 
 /**
@@ -64,7 +67,7 @@ object AppModule {
             tokenProvider = tokens,
             transport = transport,
             fileSystem = fileSystem,
-            audio = FfmpegAudioTools(fileSystem, io),
+            audio = FfmpegAudioTools(fileSystem, io, logger),
             dataDir = dataDir,
             device = DeviceInfo(
                 deviceId = deviceId(fileSystem, dataDir),
@@ -80,11 +83,13 @@ object AppModule {
         )
 
         val core = ReclyCore(deps, JvmDriverFactory(dataDir / databaseName))
+        val loopback = LoopbackReceiver(logger, localization::current)
         AppGraph(
             core = core,
-            auth = GoogleAuth(tokens, endpoint, logger, localization::current),
+            auth = GoogleAuth(tokens, endpoint, logger, localization::current, receiver = loopback),
             tokens = tokens,
             dataDir = dataDir,
+            loopback = loopback,
         )
     }
 

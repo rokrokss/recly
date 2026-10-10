@@ -1,0 +1,37 @@
+{
+  "schema": 2,
+  "recordingId": "01J9ABCDEF0123456789ABCDEF",
+  "track": "mix",
+  "language": "en",
+  "provider": {
+    "name": "apple-speech",
+    "model": "speech-26"
+  },
+  "createdAt": "2026-10-10T03:10:00.000Z",
+  "durationSec": 1820.5,
+  "speakers": [
+    {
+      "id": "S1",
+      "me": true
+    },
+    {
+      "id": "S2"
+    }
+  ],
+  "segments": [
+    {
+      "start": 0.4,
+      "end": 3.1,
+      "speaker": "S1",
+      "text": "Can everyone hear me?"
+    },
+    {
+      "start": 3.6,
+      "end": 6.0,
+      "speaker": "S2",
+      "text": "Yes, loud and clear."
+    }
+  ],
+  "speakerIdentification": "identified",
+  "timing": "segment"
+}

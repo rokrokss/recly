@@ -34,6 +34,7 @@ struct SettingsView: View {
                     microphone
                     uploads
                     processingSettings
+                    chatGpt
                     privacy
                     about
                 }
@@ -54,6 +55,10 @@ struct SettingsView: View {
                 }
             }
         }
+        // docs/09 "Summary view": the first sign-in on this phone, confirmed once.
+        .chatGptWelcome(model.chatGpt)
+        // docs/15 §10: the sign-in and the plan's models as they are now, whenever Settings opens.
+        .task { await model.chatGpt?.refresh() }
         // docs/03 "Sign out vs Disconnect": the four things that are true of a disconnect and are not
         // true of a sign-out, before it happens rather than after.
         .blueprintDialog(item: $model.disconnectPrompt) { prompt in
@@ -148,14 +153,25 @@ struct SettingsView: View {
         }
     }
 
+    // MARK: - ChatGPT (docs/15 §10)
+
+    /// The same block the Mac's settings pane draws (RecKit).
+    @ViewBuilder
+    private var chatGpt: some View {
+        if let chatGpt = model.chatGpt {
+            ChatGptSection(model: chatGpt)
+        }
+    }
+
     private var privacy: some View {
         Group {
             section(RecKitStrings.localized("Privacy"))
-            SectionRow(title: RecKitStrings.localized("Privacy Policy")) {
-                // A way out that is always here, like the microphone's: quiet.
-                BlueprintButton(RecKitStrings.localized("Open"), tone: .quiet) {
+            // docs/09 (2026-10-09): a web page, so the row is the link itself.
+            SectionBlock {
+                TextLink(RecKitStrings.localized("Privacy Policy")) {
                     openURL(PrivacyLinks.recly(locale: locale))
                 }
+                .accessibilityIdentifier("privacy-policy")
             }
             if model.transferPrivacy != nil {
                 SectionRow(title: RecKitStrings.localized("Allowed destinations")) {

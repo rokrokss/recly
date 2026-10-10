@@ -35,9 +35,13 @@ data class Transcript(
 @Serializable
 data class TranscriptProvider(val name: String, val model: String? = null, val jobRef: String? = null)
 
-/** [name] is what the user called the speaker, or null until somebody does (docs/08 "Editing"). */
+/**
+ * [name] is what the user called the speaker, or null until somebody does (docs/08 "Editing"). [me] is true for
+ * the person who made the recording, told apart on a desktop by its microphone track (docs/08 "Me and others");
+ * absent otherwise.
+ */
 @Serializable
-data class TranscriptSpeaker(val id: String, val name: String? = null)
+data class TranscriptSpeaker(val id: String, val name: String? = null, val me: Boolean? = null)
 
 @Serializable
 data class TranscriptSegment(
@@ -137,8 +141,11 @@ object TranscriptNormalizer {
      *
      * A recording with highlights (docs/03 "Metadata") also lists them: their clock times in the front
      * matter, and a "Highlights" section before the lines — each time with the words being said then.
+     *
+     * The share sheet's copy also carries the recording's [summary] (docs/08 "Exports"), as a "Summary" section
+     * before a "Transcript" one; the file in the recording's folder is written without it.
      */
-    fun markdown(transcript: Transcript, meta: RecordingMeta): String = buildString {
+    fun markdown(transcript: Transcript, meta: RecordingMeta, summary: String? = null): String = buildString {
         append("---\n")
         meta.title?.takeIf { it.isNotBlank() }?.let { append("title: ").append(recJson.encodeToString(it)).append('\n') }
         append("recordingId: ").append(meta.recordingId).append('\n')
@@ -157,8 +164,25 @@ object TranscriptNormalizer {
                 append('\n')
             }
         }
+        summary?.trim()?.takeIf { it.isNotEmpty() }?.let { notes ->
+            append("\n## Summary\n\n").append(markdownLines(notes)).append('\n')
+            append("\n## Transcript\n")
+        }
         val lines = text(transcript).trimEnd('\n')
         if (lines.isNotEmpty()) append('\n').append(lines.replace("\n", "\n\n")).append('\n')
+    }
+
+    /** A summary's plain lines as Markdown: "- " items stay one list, every other line is a paragraph of its own. */
+    private fun markdownLines(text: String): String {
+        val out = StringBuilder()
+        var inList = false
+        for (line in text.lines().map(String::trimEnd).filter(String::isNotBlank)) {
+            val item = line.trimStart().startsWith("- ")
+            if (out.isNotEmpty()) out.append(if (item && inList) "\n" else "\n\n")
+            out.append(line)
+            inList = item
+        }
+        return out.toString()
     }
 
     /**
@@ -183,12 +207,19 @@ object TranscriptNormalizer {
         }
     }
 
-    /** What each speaker id is written as: the name the user gave it, else the id. */
+    /**
+     * What each speaker id is written as: the name the user gave it, else [ME] for the person who made the
+     * recording, else the id. [ME] is a fixed word, like the ids, for the agents that read these lines; the
+     * shells show it in the app's language (docs/08 "Me and others").
+     */
     private fun labels(transcript: Transcript): Map<String, String> =
-        transcript.speakers.associate { it.id to (it.name?.trim()?.takeIf(String::isNotEmpty) ?: it.id) }
+        transcript.speakers.associate { it.id to (it.name?.trim()?.takeIf(String::isNotEmpty) ?: if (it.me == true) ME else it.id) }
+
+    /** The label [text] writes for the person who made the recording when they have not named themselves. */
+    const val ME: String = "Me"
 
     /** The words of the segment playing at [atSec], or of the last one before it. */
-    private fun spokenAt(transcript: Transcript, atSec: Double): String? {
+    internal fun spokenAt(transcript: Transcript, atSec: Double): String? {
         val spoken = transcript.segments.filter { it.text.isNotBlank() }
         val segment = spoken.firstOrNull { atSec >= it.start && atSec < it.end }
             ?: spoken.lastOrNull { it.start <= atSec }

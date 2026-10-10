@@ -135,9 +135,9 @@ If you said no, Recly shows where to turn it back on.
   shortcut.
 - **iPhone**: the Record tab, Siri or Shortcuts, the Action button, the Control Center control, or
   the **Record** widget on the Home Screen or Lock Screen.
-- **Mac**: the menu-bar icon → **Start recording**, ⌥⌘R, or Shortcuts. When a meeting app starts
+- **Mac**: the menu-bar icon → **Start recording**, or Shortcuts. When a meeting app starts
   using the microphone, Recly asks **Are you in a meeting?** and records only if you say so.
-- **Windows**: the tray icon → **Start recording**, Ctrl+Alt+R, or **Record the detected meeting**
+- **Windows**: the tray icon → **Start recording**, or **Record the detected meeting**
   when Recly notices a meeting.
 
 ### Mark a moment
@@ -158,12 +158,8 @@ remove it. Highlights are kept in the recording's `….meta.json`, where agents 
 
 | Keys | Where | What |
 |---|---|---|
-| ⌥⌘R | Mac, any app | start or stop recording |
-| Ctrl+Alt+R | Windows, any app | start or stop recording |
 | ⌘F, Ctrl+F | Details window | search, or find in the open transcript |
 | ⌘I | Mac Details window | import audio |
-
-Turn ⌥⌘R or Ctrl+Alt+R off under **Settings** → **Capture** → **Keyboard shortcut**.
 
 Recly asks whether you told the people in the room: before the first recording on the phones, and
 before every recording on the desktops (**Consent check before recording** in Settings turns it off).
@@ -191,6 +187,11 @@ recording.**
 | **More** → **Edit transcript** | fix the text; tap a speaker to rename them or move a line to another speaker. Saving rewrites the transcript files and does not start your ChatGPT agent again |
 | **More** → **Transcribe again** | transcribe with the current settings; replaces your edits |
 | **More** → **Rename** | change the title |
+| **More** → **Summarize** | after **Settings** → **ChatGPT** → **Continue with ChatGPT**: a summary of the transcript from your ChatGPT plan, under **Summary** (not on the China mainland App Store) |
+| **More** → **Summarize as…** | the same in another format: General, One-on-one, Lecture, Interview, or your own **My format** from **Settings** → **ChatGPT** |
+| **More** → **Edit summary** | fix the summary; in Google Drive or iCloud your other devices show the edit, with a local folder it stays on this device |
+| **More** → **Ask about this recording…** | a follow-up email, the action items, the open questions, a translation, feedback on how you spoke, or your own question; the answer is not saved |
+| a time such as `[00:12:34]` in a summary | plays from there |
 | speed (`1×`) | 0.75× to 2×, and **Skip silence** |
 
 ### Import audio

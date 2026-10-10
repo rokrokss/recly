@@ -15,21 +15,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
-import app.recly.windows.settings.GlobalShortcut
-import app.recly.windows.ui.component.SwitchTrack
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.Dp
@@ -40,13 +45,13 @@ import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
-import app.recly.windows.helper.CaptureHelper
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.text
 import app.recly.windows.settings.AppTheme
-import app.recly.windows.ui.component.BlueprintDialogLink
+import app.recly.windows.ui.component.TextLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintTextField
@@ -64,13 +69,16 @@ import app.recly.windows.ui.component.TableRow
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
+import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryPreferences
 import recly.core.storage.StorageKind
 
 /**
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
- * the system's alone, and there is no accessibility section), capture and its self-test, startup, the
+ * the system's alone, and there is no accessibility section), capture, startup, the
  * agent connection, and the honest block of what this build actually is.
  */
 @Composable
@@ -87,6 +95,7 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Startup(model, strings)
             Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
+            model.chatGpt?.let { ChatGpt(it, strings) }
             model.agentEvents?.let { AgentConnection(model, it, strings) }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
@@ -163,7 +172,7 @@ private fun Account(model: ShellModel, strings: Strings) {
     }
     if (model.revokeDebt && !model.disconnecting) {
         SectionFootnote(strings[Str.DISCONNECT_STILL_LISTED])
-        BlueprintDialogLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
+        TextLink(strings[Str.DISCONNECT_PERMISSIONS], model::openAccountPermissions,
             modifier = Modifier.padding(horizontal = Space.m))
         Row(Modifier.fillMaxWidth().padding(horizontal = Space.m), horizontalArrangement = Arrangement.End) {
             BlueprintButton(strings[Str.DISCONNECT_REMOVED], model::revokeDebtSettled, tone = ButtonTone.QUIET)
@@ -208,9 +217,9 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 }
 
 /**
- * docs/14 "Detection" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. And
- * the two facts a support question always starts with: whether there is a capture helper, and what
- * it says about the machine it is on.
+ * docs/14 "Detection" · ADR-011: detect, ask, record — automatic recording is the user's to turn on. A
+ * capture helper that works says nothing here; one that is missing or silent on Windows is one line that
+ * says what to do, and the rest of what is known about it is in the log (`shell.ready`).
  */
 @Composable
 private fun Capture(model: ShellModel, strings: Strings) {
@@ -222,7 +231,6 @@ private fun Capture(model: ShellModel, strings: Strings) {
         checked = model.consentReminder,
         onCheckedChange = model::toggleConsentReminder,
     )
-    Shortcut(model, strings)
     // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while this is off — and
     // a row that only says where the switch is leaves the user to find it. Its own row rather than a
     // line under the reminder, because it has something to be done about it: the page itself, which
@@ -235,41 +243,12 @@ private fun Capture(model: ShellModel, strings: Strings) {
             },
         )
     }
-    TableRow(
-        title = if (model.helperMissing) {
-            strings[Str.SETTINGS_HELPER_MISSING, strings[ShellModel.HELPER_MISSING], CaptureHelper.OVERRIDE_ENV]
-        } else {
-            model.helperVersion?.let { strings[Str.SETTINGS_HELPER_VERSION, it] }
-                ?: strings[Str.SETTINGS_HELPER_SILENT]
-        },
-        subtitle = model.selfTest?.text(strings),
-        trailing = {
-            // deliverable 3: `--self-test`, from the one place a packaged app can offer it.
-            if (!model.helperMissing) {
-                BlueprintButton(strings[Str.SETTINGS_SELF_TEST], model::runSelfTest)
-            }
-        },
-    )
-}
-
-/**
- * docs/14 "App": the keyboard shortcut, its keys in monospace beside the switch. Refused by Windows, the row
- * says so in the warning tone — the switch stays on, and turning it off and on asks again.
- */
-@Composable
-private fun Shortcut(model: ShellModel, strings: Strings) {
-    TableRow(
-        title = strings[Str.SETTINGS_SHORTCUT],
-        modifier = Modifier.toggleable(value = model.shortcutOn, role = Role.Switch, onValueChange = model::toggleShortcut),
-        subtitle = strings[Str.SETTINGS_SHORTCUT_TAKEN].takeIf { model.shortcutOn && model.shortcutRefused },
-        subtitleColor = blueprint.warningInk,
-        trailing = {
-            Row(horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
-                Text(GlobalShortcut.LABEL, style = mono.small, color = blueprint.textMuted)
-                SwitchTrack(checked = model.shortcutOn)
-            }
-        },
-    )
+    if (model.helperUnavailable) {
+        SettingsCard {
+            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+        }
+        HairLine()
+    }
 }
 
 @Composable
@@ -281,6 +260,168 @@ private fun Startup(model: ShellModel, strings: Strings) {
         checked = model.launchAtLogin,
         onCheckedChange = model::toggleLaunchAtLogin,
         enabled = model.launchAtLoginSupported,
+    )
+}
+
+/**
+ * docs/09 "Summary view" · docs/15 §10: the user's own ChatGPT plan, for summaries — in the Drive rows' shape, with
+ * the Drive connect button's tones. Nothing at all where it is not offered.
+ */
+@Composable
+private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
+    // Once each time the window opens: the plan's models are a request to OpenAI.
+    LaunchedEffect(Unit) { chatGpt.refresh() }
+    val connection = chatGpt.connection
+    if (connection == ChatGptConnection.Unavailable) return
+    Section(strings[Str.CHATGPT_TITLE])
+    val signIn: @Composable () -> Unit = {
+        // Disabled rather than offered twice: a window reopened in the middle of a sign-in has a new button.
+        ProcessingButton(label = strings[Str.CHATGPT_CONTINUE], state = chatGpt.action, strings = strings,
+            onClick = chatGpt::signIn, tone = ButtonTone.PRIMARY, enabled = chatGpt.action != ProcessingState.PROCESSING)
+    }
+    when (connection) {
+        ChatGptConnection.Unavailable -> Unit
+        ChatGptConnection.SignedOut ->
+            TableRow(title = strings[Str.CHATGPT_USE_PLAN], subtitle = strings[Str.CHATGPT_USE_PLAN_NOTE], trailing = signIn)
+        is ChatGptConnection.Expired ->
+            TableRow(title = connection.account, subtitle = strings[Str.CHATGPT_EXPIRED], subtitleColor = blueprint.warningInk,
+                trailing = signIn)
+        is ChatGptConnection.SignedIn -> {
+            // ChatGPT's usage page is a web page, so it is a link under the plan line rather than a row of its own.
+            TableRow(
+                title = connection.account,
+                subtitle = strings[Str.CHATGPT_USING_PLAN],
+                below = { TextLink(strings[Str.CHATGPT_MANAGE_USAGE], chatGpt::openUsage, style = MaterialTheme.typography.bodySmall) },
+                trailing = { BlueprintButton(strings[Str.CHATGPT_SIGN_OUT], chatGpt::signOut, tone = ButtonTone.QUIET) },
+            )
+            if (connection.models.isNotEmpty()) {
+                TableRow(title = strings[Str.CHATGPT_MODEL], trailing = {
+                    BlueprintDropdown(
+                        label = strings[Str.CHATGPT_MODEL],
+                        options = connection.models.map { it.id to it.label },
+                        selected = connection.model.orEmpty(),
+                        onSelect = chatGpt::selectModel,
+                    )
+                })
+            }
+        }
+    }
+    if (chatGpt.listening) {
+        SettingsCard {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s), verticalAlignment = Alignment.CenterVertically) {
+                Text(strings[Str.CHATGPT_FINISH_IN_BROWSER], style = MaterialTheme.typography.bodyMedium, color = blueprint.text,
+                    modifier = Modifier.weight(1f))
+                BlueprintButton(strings[Str.CANCEL], chatGpt::cancelSignIn, tone = ButtonTone.QUIET)
+            }
+        }
+        HairLine()
+    }
+    when (val notice = chatGpt.notice) {
+        is ChatGptNotice.SignInFailed -> {
+            SettingsCard(spacing = 2.dp) {
+                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                // A diagnostic is data, in monospace as the ledger shows one; a sentence is a sentence.
+                signInFailureLine(notice.reason)?.let {
+                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small else MaterialTheme.typography.bodySmall,
+                        color = blueprint.textMuted)
+                }
+            }
+            HairLine()
+        }
+        // Not red: this PC holds nothing any more, and ChatGPT's settings can remove Recly.
+        ChatGptNotice.RevokeUnconfirmed -> {
+            SettingsCard {
+                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+            }
+            HairLine()
+        }
+        null -> Unit
+    }
+    SummaryPreferenceRows(chatGpt, strings)
+    SectionFootnote(strings[Str.CHATGPT_FOOTNOTE])
+}
+
+/**
+ * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
+ * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
+ * texts when their field is left.
+ */
+@Composable
+private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
+    val preferences = chatGpt.preferences
+    TableRow(title = strings[Str.SUMMARY_FORMAT], trailing = {
+        BlueprintDropdown(
+            label = strings[Str.SUMMARY_FORMAT],
+            options = preferences.formats.map { it to strings[summaryFormatLabel(it)] },
+            // My format emptied goes back to General.
+            selected = preferences.effectiveFormat,
+            onSelect = chatGpt::selectFormat,
+        )
+    })
+    SettingsCard {
+        PreferenceField(
+            saved = preferences.customFormat,
+            onSave = chatGpt::saveCustomFormat,
+            label = strings[Str.SUMMARY_FORMAT_CUSTOM],
+            placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
+            hint = strings[Str.SUMMARY_CUSTOM_NOTE],
+            max = SummaryPreferences.CUSTOM_MAX,
+            singleLine = false,
+        )
+    }
+    HairLine()
+    SettingsCard {
+        PreferenceField(
+            saved = preferences.aboutMe,
+            onSave = chatGpt::saveAboutMe,
+            label = strings[Str.SUMMARY_ABOUT],
+            placeholder = strings[Str.SUMMARY_ABOUT_PLACEHOLDER],
+            hint = strings[Str.SUMMARY_ABOUT_NOTE],
+            max = SummaryPreferences.ABOUT_MAX,
+            singleLine = true,
+        )
+    }
+    HairLine()
+}
+
+/**
+ * A text kept as it is typed and saved when the editing ends — the field left, Return in a one-line field, the
+ * window put behind another or closed — with no Save of its own. Empty is a value like any other. A field that is
+ * not [singleLine] shows four lines, grows to eight and then scrolls.
+ */
+@Composable
+internal fun PreferenceField(
+    saved: String,
+    onSave: (String) -> Unit,
+    label: String,
+    placeholder: String,
+    hint: String,
+    max: Int,
+    singleLine: Boolean,
+) {
+    var text by remember(saved) { mutableStateOf(saved) }
+    val latest by rememberUpdatedState(text)
+    val focus = LocalFocusManager.current
+    // Going to another window ends the editing — a summary asked for there uses what was typed here — and so does
+    // this one closing. Saving what is already kept saves nothing.
+    val windowFocused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(windowFocused) { if (!windowFocused) onSave(latest) }
+    DisposableEffect(Unit) { onDispose { onSave(latest) } }
+    BlueprintTextField(
+        value = text,
+        onValueChange = { text = it.take(max) },
+        label = label,
+        modifier = Modifier
+            .onFocusChanged { if (!it.hasFocus && text != saved) onSave(text) }
+            .onPreviewKeyEvent { event ->
+                (singleLine && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
+            },
+        hint = hint,
+        singleLine = singleLine,
+        minLines = if (singleLine) 1 else MULTI_LINE_MIN,
+        maxLines = if (singleLine) 1 else MULTI_LINE_MAX,
+        monospace = false,
+        placeholder = placeholder,
     )
 }
 
@@ -318,9 +459,8 @@ private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Stri
     AgentStatus(agent, strings)
     AgentTunnel(agent, strings)
     SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-    Row(Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s)) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) }, tone = ButtonTone.QUIET)
-    }
+    TextLink(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) },
+        modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), style = MaterialTheme.typography.bodySmall)
 }
 
 /**
@@ -335,12 +475,15 @@ private fun LocalAgents(model: ShellModel, strings: Strings) {
     var copied by remember { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Section(strings[Str.LOCAL_AGENTS])
-    TableRow(title = strings[Str.LOCAL_MCP], subtitle = strings[Str.LOCAL_MCP_BODY])
+    TableRow(
+        title = strings[Str.LOCAL_MCP],
+        subtitle = strings[Str.LOCAL_MCP_BODY],
+        below = { TextLink(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, style = MaterialTheme.typography.bodySmall) },
+    )
     Row(
         Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
     ) {
-        BlueprintButton(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, tone = ButtonTone.QUIET)
         BlueprintButton(
             if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.LOCAL_MCP_COPY],
             {
@@ -541,6 +684,10 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
 }
 
 private const val COPIED_MS = 3_000L
+
+/** My format: four lines open, eight before it scrolls. */
+private const val MULTI_LINE_MIN = 4
+private const val MULTI_LINE_MAX = 8
 
 private fun system(): String =
     "${System.getProperty("os.name")} ${System.getProperty("os.version")}"

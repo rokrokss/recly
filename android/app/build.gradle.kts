@@ -118,6 +118,9 @@ dependencies {
     // what an ExoPlayer playlist is — `MediaPlayer` would need the gaps stitched by hand.
     implementation(libs.androidx.media3.exoplayer)
 
+    // docs/15 §10: the ChatGPT sign-in page in a Custom Tab, over the app rather than in a browser of its own.
+    implementation(libs.androidx.browser)
+
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.datastore.preferences)
 

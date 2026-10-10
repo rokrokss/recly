@@ -78,6 +78,9 @@ class AndroidAudioTools(private val io: CoroutineDispatcher) : AudioTools {
         }
     }
 
+    /** A phone records one `mono` track, so nothing asks it to tell the microphone from the system's sound (docs/08 "Me and others"). */
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = null
+
     private fun audioTrack(extractor: MediaExtractor): Int? = (0 until extractor.trackCount)
         .firstOrNull {
             extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true

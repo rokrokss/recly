@@ -63,7 +63,8 @@ public struct DriveConnectionSection: View {
         }
         if revokeDebt && !disconnecting {
             SectionFootnote(DisconnectGuard.stillListed.text)
-            BlueprintDialogLink(loc("Google permissions"), action: permissions)
+            TextLink(loc("Google permissions"), action: permissions)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Space.m)
             SectionBlock {
                 BlueprintButton(DisconnectGuard.debtSettled.text, tone: .quiet, action: debtSettled)

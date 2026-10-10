@@ -45,6 +45,9 @@ object CoreMessages {
         CoreMessage.IMPORT_UNSUPPORTED -> Str.CORE_IMPORT_UNSUPPORTED
         CoreMessage.IMPORT_UNREADABLE -> Str.CORE_IMPORT_UNREADABLE
         CoreMessage.STALE -> Str.CORE_STALE
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> Str.CORE_CHATGPT_SIGN_IN_REQUIRED
+        CoreMessage.CHATGPT_USAGE_LIMIT -> Str.CORE_CHATGPT_USAGE_LIMIT
+        CoreMessage.CHATGPT_PLAN_REQUIRED -> Str.CORE_CHATGPT_PLAN_REQUIRED
     }
 
     /**
@@ -79,6 +82,9 @@ object CoreMessages {
         CoreMessage.UNSUPPORTED_AUDIO,
         CoreMessage.NO_INPUT_TRACK,
         CoreMessage.RESULT_TIMEOUT,
+        CoreMessage.CHATGPT_SIGN_IN_REQUIRED,
+        CoreMessage.CHATGPT_USAGE_LIMIT,
+        CoreMessage.CHATGPT_PLAN_REQUIRED,
         -> false
 
         else -> true

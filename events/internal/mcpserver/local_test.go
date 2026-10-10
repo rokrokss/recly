@@ -114,7 +114,8 @@ func TestLocalServerAnswersAnInitializeHandshake(t *testing.T) {
 	send(`{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"claude-code","version":"2"}}}`)
 	init := read()
 	result := init["result"].(map[string]any)
-	if result["protocolVersion"] != "2025-06-18" || result["serverInfo"].(map[string]any)["name"] != "recly" {
+	if result["protocolVersion"] != "2025-06-18" || result["serverInfo"].(map[string]any)["name"] != "recly" ||
+		result["serverInfo"].(map[string]any)["title"] != "Recly Events" {
 		t.Fatalf("initialize = %v", init)
 	}
 	send(`{"jsonrpc":"2.0","method":"notifications/initialized"}`)

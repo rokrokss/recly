@@ -38,7 +38,8 @@ type Handler struct {
 }
 
 func (h *Handler) serverInfo() map[string]any {
-	return map[string]any{"name": "recly-events", "version": h.Version}
+	// title is what ChatGPT shows, beside the apps' own "Recly macOS", "Recly Windows" and the rest.
+	return map[string]any{"name": "recly-events", "title": "Recly Events", "version": h.Version}
 }
 
 // Handle answers one request. A nil result with a nil error never happens.

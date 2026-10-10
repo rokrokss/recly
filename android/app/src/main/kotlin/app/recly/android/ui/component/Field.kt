@@ -29,6 +29,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
@@ -40,7 +42,8 @@ import app.recly.android.ui.theme.blueprint
  * while it has focus, and its [label] above it rather than floating inside, Material's way.
  *
  * [modifier] is the whole block's (a `weight` goes here); [fieldModifier] is the editable text's own
- * (its test tag). [supporting] is a quiet line under the box.
+ * (its test tag). [supporting] is a quiet line under the box. One line by default; [maxLines] above one makes a
+ * box that starts [minLines] tall, grows with the text up to [maxLines] and then scrolls.
  */
 @Composable
 fun BlueprintField(
@@ -55,6 +58,9 @@ fun BlueprintField(
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     fieldModifier: Modifier = Modifier,
+    minLines: Int = 1,
+    maxLines: Int = 1,
+    enabled: Boolean = true,
 ) {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
@@ -67,8 +73,11 @@ fun BlueprintField(
         BasicTextField(
             value = value,
             onValueChange = onValueChange,
-            singleLine = true,
-            textStyle = textStyle.copy(color = palette.text),
+            singleLine = maxLines == 1,
+            minLines = minLines,
+            maxLines = maxLines,
+            enabled = enabled,
+            textStyle = textStyle.copy(color = if (enabled) palette.text else palette.textMuted),
             cursorBrush = SolidColor(palette.accent),
             visualTransformation = visualTransformation,
             keyboardOptions = keyboardOptions,
@@ -84,11 +93,14 @@ fun BlueprintField(
                         .defaultMinSize(minHeight = MinTouch)
                         .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, shape)
                         .background(palette.surface, shape)
-                        .padding(horizontal = Space.s),
+                        .padding(horizontal = Space.s, vertical = if (maxLines == 1) 0.dp else Space.s),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(Modifier.weight(1f)) {
-                        if (value.isEmpty() && placeholder != null) Text(placeholder, style = textStyle, color = palette.textMuted, maxLines = 1)
+                        // A placeholder longer than the box ends in "…" rather than mid-sentence.
+                        if (value.isEmpty() && placeholder != null) {
+                            Text(placeholder, style = textStyle, color = palette.textMuted, maxLines = maxLines, overflow = TextOverflow.Ellipsis)
+                        }
                         field()
                     }
                 }

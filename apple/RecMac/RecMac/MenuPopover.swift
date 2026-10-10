@@ -71,6 +71,9 @@ struct MenuPopover: View {
                 }
             }
         }
+        // docs/09 "Summary view": the welcome after a first sign-in started here, over the popover like the
+        // dialogs above.
+        .chatGptWelcome(model.chatGpt, inline: true, shown: model.chatGptSurface == .popover)
         // docs/10: the fix for a quota or a key is in the settings window, and only a view has an
         // `openWindow` to open one with.
         .onAppear {
@@ -458,13 +461,17 @@ struct SettingsPane: View {
             // docs/12 M8: the reminder is on by default and this is where it goes off — and back
             // on, which the alert's own "Do not ask again" cannot do.
             SwitchRow(title: loc("Consent check before recording"), isOn: $model.consentReminder)
-            // docs/12 "Menu bar app": ⌥⌘R starts and stops a recording from any app.
-            ShortcutRow(isOn: $model.shortcutEnabled, refused: model.shortcutRefused)
 
             // docs/05: the recording processing settings. The same block the phone's settings tab
             // draws (RecKit).
             if let processing = model.processing {
                 ProcessingSettingsView(model: processing, settingsFile: false)
+            }
+
+            // docs/15 §10: the user's ChatGPT plan, for summaries — the same block the phone's settings tab
+            // draws (RecKit).
+            if let chatGpt = model.chatGpt {
+                ChatGptSection(model: chatGpt) { model.chatGptSurface = surface }
             }
 
             AgentConnectionSection(
@@ -491,6 +498,10 @@ struct SettingsPane: View {
             .padding(.horizontal, Space.m)
             .padding(.vertical, 12)
         }
+        // docs/09 "Summary view": the welcome after a first sign-in started in the Settings window is that
+        // window's sheet; one started in the popover is drawn over the popover (above).
+        .chatGptWelcome(surface == .settingsWindow ? model.chatGpt : nil, shown: model.chatGptSurface == .settingsWindow)
+        .task { await model.chatGpt?.refresh() }
         // docs/03 "Sign out vs Disconnect": the popover draws the warning over itself (above); the
         // Settings window has a window to present from, so a disconnect asked there is its sheet.
         .blueprintDialog(

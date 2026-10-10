@@ -53,6 +53,7 @@ import app.recly.windows.ui.DeleteDialog
 import app.recly.windows.ui.DevFlags
 import app.recly.windows.ui.DisconnectDialog
 import app.recly.windows.ui.ByteFormat
+import app.recly.windows.ui.ChatGptWelcomeDialog
 import app.recly.windows.ui.MeteredDownloadDialog
 import app.recly.windows.ui.RecordingsWindow
 import app.recly.windows.ui.RenameDialog
@@ -231,6 +232,19 @@ fun main(args: Array<String>) {
                 theme = themed,
                 onCancel = model::cancelRetranscribe,
                 onConfirm = model::retranscribe,
+            )
+        }
+
+        // docs/09 "Summary view": from here like the rename — the settings window may be closed under it.
+        model.chatGpt?.takeIf { it.welcome }?.let { chatGpt ->
+            ChatGptWelcomeDialog(
+                strings = strings,
+                theme = themed,
+                onManageUsage = {
+                    chatGpt.dismissWelcome()
+                    chatGpt.openUsage()
+                },
+                onDismiss = chatGpt::dismissWelcome,
             )
         }
 

@@ -116,6 +116,10 @@ final class MenuModel: ObservableObject {
     /// docs/09 screen principle 1·4: this install, for the popover's header. Empty until the core is open,
     /// which is the only thing that knows it.
     @Published private(set) var deviceId = ""
+    /// docs/15 §10: the ChatGPT section's sign-in, and the connection a summary uses. Nil until the core is open.
+    @Published private(set) var chatGpt: ChatGptSettingsModel?
+    /// Where the last ChatGPT sign-in was started, and so where its one-time welcome is drawn.
+    @Published var chatGptSurface: SettingsSurface = .popover
 
     /// docs/12 "Agent connection": recly-events, run for the user while its switch is on. Nil
     /// executable — a build made without Go — and the switch says so.
@@ -260,6 +264,10 @@ final class MenuModel: ObservableObject {
             // The recordings a picked folder let go are due now.
             storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
+            // Read once at launch, so a recording's More menu knows the sign-in before Settings is opened.
+            let chatGpt = ChatGptSettingsModel(core: bridge.core)
+            self.chatGpt = chatGpt
+            Task { await chatGpt.refresh() }
             // docs/12 "Agent connection": recly-events runs on this Mac's own Drive connection — its
             // short-lived access token, never the refresh token (docs/recly.md §15 §9).
             agentEvents.driveConnected = { [weak self] in self?.hasGoogleCredential ?? false }
@@ -299,7 +307,6 @@ final class MenuModel: ObservableObject {
             // button starts a recording, and a button that cannot is worse than no notification —
             // so a tap that arrived before now was kept, and is served here.
             meetingRouter.connect { [weak self] action in self?.act(on: action) }
-            applyShortcut()
             // The device id identifies this install and the data directory carries the user's home
             // directory — neither belongs in a log anyone can read off the machine. Counts are what
             // the line is actually for.
@@ -644,22 +651,6 @@ final class MenuModel: ObservableObject {
 
     // MARK: - Quick start and highlights (docs/12 "Menu bar app")
 
-    /// ⌥⌘R from any app, on unless the user turned it off in Settings → Capture.
-    @Published var shortcutEnabled: Bool = Defaults.shortcut {
-        didSet {
-            Defaults.shortcut = shortcutEnabled
-            applyShortcut()
-        }
-    }
-    /// The system refused ⌥⌘R: another app holds it.
-    @Published private(set) var shortcutRefused = false
-    private lazy var shortcut = GlobalShortcut { [weak self] in self?.toggleRecording() }
-
-    private func applyShortcut() {
-        shortcutRefused = !shortcut.set(enabled: shortcutEnabled)
-        if shortcutRefused { logger.info("shell.shortcut.refused") }
-    }
-
     /// An App Intent can launch the app; it waits for the core to open — at most ten seconds — rather
     /// than be dropped by a start that refuses before [isReady].
     func whenReady() async {
@@ -668,11 +659,6 @@ final class MenuModel: ObservableObject {
             try? await Task.sleep(for: .milliseconds(100))
             waited += 1
         }
-    }
-
-    /// The shortcut's one action: a stop while something is recording or opening, a start otherwise.
-    func toggleRecording() {
-        if canStop { stop() } else if isIdle { start() }
     }
 
     /// The moment the user marked, in the running recording's own time — the popover's `Highlight`,
@@ -1064,11 +1050,13 @@ final class MenuModel: ObservableObject {
     }
 
     /// docs/10 "Search": a search result opens at its first transcript hit, with every match of the
-    /// query marked and the find bar over the transcript — unless only the title matched.
+    /// query marked and the find bar over the transcript — unless only the title matched — or on the
+    /// summary, when only the summary did.
     func showDetail(_ hit: SearchHit) {
         let title = hit.title ?? ""
         showDetail(recordingId: hit.recordingId, title: title.isEmpty ? RecKitStrings.localized("Untitled") : title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: searchQuery, atSec: first.atSec) }
+        detail?.opensOnSummary = hit.onlyInSummary
     }
 
     private func showDetail(recordingId: String, title: String) {
@@ -1444,19 +1432,12 @@ enum SettingsSurface {
 private enum Defaults {
     private static let consentReminderKey = "consentReminder"
     private static let modelPromptDismissedKey = "modelPromptDismissed"
-    private static let shortcutKey = "globalShortcut"
 
     /// docs/12 M8: on until the user turns it off — the one default here that is not `false`, so it
     /// is the absence of the key and not its value that has to be read.
     static var consentReminder: Bool {
         get { UserDefaults.standard.object(forKey: consentReminderKey) as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: consentReminderKey) }
-    }
-
-    /// docs/12 "Menu bar app": ⌥⌘R, on until the user turns it off.
-    static var shortcut: Bool {
-        get { UserDefaults.standard.object(forKey: shortcutKey) as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: shortcutKey) }
     }
 
     /// docs/05 "Fixed processing settings": "Not now" on the first-run model card.

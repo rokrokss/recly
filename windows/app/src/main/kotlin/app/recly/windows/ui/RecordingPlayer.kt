@@ -323,12 +323,12 @@ object RecordingWaveform {
      * timeline rather than a short waveform — half a shape under a whole clock would put the
      * recording at the wrong seconds — so it is thrown, and the bar draws its baseline instead.
      */
-    private fun decode(
+    internal fun decode(
         path: Path,
         spawn: (Path, Double) -> Process,
-        cancelled: () -> Boolean,
-        onProcess: (Process?) -> Unit,
-        windowSec: Double,
+        cancelled: () -> Boolean = { false },
+        onProcess: (Process?) -> Unit = {},
+        windowSec: Double = WaveformPeaks.WINDOW_SEC,
     ): FloatArray {
         val decoder = spawn(path, 0.0)
         onProcess(decoder)

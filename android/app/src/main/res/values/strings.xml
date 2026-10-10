@@ -19,7 +19,6 @@
     <string name="action_done">✓</string>
     <!-- docs/13 deliverable 1: the way back on after a refused permission, in the iPhone's words. -->
     <string name="action_open_settings">Open System Settings</string>
-    <string name="action_open">Open</string>
 
     <!-- Bottom navigation. -->
     <string name="tab_record">Record</string>
@@ -471,4 +470,68 @@
     <string name="processing_folder_single">One folder</string>
     <!-- The naming sheet's second answer discards the recording that just ended (docs/03 "Titles"). -->
     <string name="recording_title_discard">Discard recording</string>
+    <!-- docs/15 §10 "Sign in with ChatGPT" and docs/08 "Summaries". -->
+    <string name="chatgpt_title">ChatGPT</string>
+    <string name="chatgpt_use_plan">Use your ChatGPT plan</string>
+    <string name="chatgpt_use_plan_note">Summarize recordings with the plan you already have. Recly charges nothing for it.</string>
+    <string name="chatgpt_continue">Continue with ChatGPT</string>
+    <string name="chatgpt_using_plan">Using your ChatGPT plan</string>
+    <string name="chatgpt_sign_out">Sign out</string>
+    <string name="chatgpt_model">Model</string>
+    <string name="chatgpt_manage_usage">Manage usage</string>
+    <string name="chatgpt_expired">OpenAI ended this sign-in. Continue with ChatGPT to sign in again.</string>
+    <string name="chatgpt_finish_in_browser">Finish signing in in your browser</string>
+    <string name="chatgpt_sign_in_failed">Could not sign in to ChatGPT</string>
+    <string name="chatgpt_revoke_unconfirmed">Signed out on this device, but OpenAI did not confirm it. You can remove Recly in ChatGPT settings.</string>
+    <string name="chatgpt_footnote">A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage.</string>
+    <string name="chatgpt_welcome_title">You’re using your ChatGPT plan</string>
+    <string name="chatgpt_welcome_body">Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings.</string>
+    <string name="chatgpt_got_it">Got it</string>
+    <string name="summary_summarize">Summarize</string>
+    <string name="summary_again">Summarize again</string>
+    <string name="summary_tab">Summary</string>
+    <string name="summary_running">Summarizing…</string>
+    <string name="summary_failed">Could not summarize</string>
+    <string name="summary_model">ChatGPT · %1$s</string>
+    <string name="core_chatgpt_sign_in_required">Sign in to ChatGPT in Settings</string>
+    <string name="core_chatgpt_usage_limit">ChatGPT usage limit reached — check your plan and Recly’s limit in ChatGPT settings</string>
+    <string name="core_chatgpt_plan_required">This ChatGPT account cannot be used by apps</string>
+    <string name="chatgpt_page_ok">ChatGPT is connected. Close this window and return to Recly.</string>
+    <string name="chatgpt_page_return">Return to Recly</string>
+    <string name="chatgpt_page_declined">The sign-in was cancelled. Close this window and go back to Recly.</string>
+    <string name="chatgpt_page_done">This sign-in has already been handled. You can close this window.</string>
+    <string name="summary_edit">Edit summary</string>
+    <string name="summary_discard_body">Your edits to this summary will be lost.</string>
+    <string name="summary_replace_title">Replace your edited summary?</string>
+    <string name="summary_replace_body">Summarizing again replaces the summary you edited.</string>
+    <string name="summary_replace">Replace</string>
+    <string name="summary_edited">Edited</string>
+    <string name="summary_edit_note_shared">Saving updates the summary in your storage, and your other devices show it.</string>
+    <string name="summary_edit_note_local">Saving keeps the summary on this device.</string>
+    <string name="summary_format">Summary format</string>
+    <string name="summary_format_general">General</string>
+    <string name="summary_format_one_on_one">One-on-one</string>
+    <string name="summary_format_lecture">Lecture</string>
+    <string name="summary_format_interview">Interview</string>
+    <string name="summary_format_custom">My format</string>
+    <string name="summary_custom_placeholder">Sections and instructions, e.g. Summary, Risks, Next steps with owners.</string>
+    <string name="summary_custom_note">Used when the summary format is My format.</string>
+    <string name="summary_about">About you</string>
+    <string name="summary_about_placeholder">e.g. Product manager; I care about deadlines and decisions.</string>
+    <string name="summary_about_note">Summaries use this to judge what matters to you.</string>
+    <string name="summary_as">Summarize as…</string>
+    <string name="summary_play_from">Play from %1$s</string>
+    <string name="ask_menu">Ask about this recording…</string>
+    <string name="ask_title">Ask about this recording</string>
+    <string name="ask_follow_up_email">Follow-up email</string>
+    <string name="ask_action_items">Action items</string>
+    <string name="ask_open_questions">Open questions</string>
+    <string name="ask_translate">Translate to %1$s</string>
+    <string name="ask_my_speaking">Feedback on how I spoke</string>
+    <string name="ask_own_question">Ask your own question</string>
+    <string name="ask_ask">Ask</string>
+    <string name="ask_running">Asking…</string>
+    <string name="ask_failed">Could not answer</string>
+    <string name="share_no_summary">No summary yet</string>
+    <string name="speaker_me">Me</string>
 </resources>

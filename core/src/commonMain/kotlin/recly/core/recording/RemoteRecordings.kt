@@ -12,6 +12,7 @@ import kotlin.time.Instant
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.jsonObject
+import recly.core.chatgpt.SummaryFile
 import recly.core.drive.DriveFolderMarker
 import recly.core.drive.DriveNotFound
 import recly.core.drive.string
@@ -101,6 +102,8 @@ class RemoteRecordings(
     private val icloudChosen: suspend () -> Boolean = { false },
     /** A transcript on this device was replaced by a newer one from its folder ([refreshTranscripts]). */
     private val transcriptsChanged: () -> Unit = {},
+    /** The same for a summary ([refreshSummaries]). */
+    private val summariesChanged: () -> Unit = {},
 ) {
     private val mutex = Mutex()
     private var lastPulledAt: Instant? = null
@@ -224,6 +227,27 @@ class RemoteRecordings(
     }
 
     /**
+     * docs/08 "Summaries": a summary made or edited here, carried to the recording's folder as
+     * `{base}.summary.json`, and the folder's `summaryAt` moved on, so the other devices take it in at their next
+     * pull. A local folder is this device's alone: there is no one to carry it to.
+     */
+    suspend fun pushSummaries(): Unit = pushing.withLock {
+        push(recordings.pendingSummaries(), "remote.summary.pushed", "remote.summary.push.failed", recordings::summaryPushed) { record, folderId, _ ->
+            if (StorageKind.ofId(folderId) == StorageKind.FOLDER) return@push true
+            val json = recordings.summary(record.id) ?: return@push true
+            val summary = SummaryFile.decode(json) ?: return@push true
+            results.write(
+                record.dir, folderId, SummaryFile.name(MetaWriter.baseName(record.meta)), json.encodeToByteArray(),
+                SummaryFile.MIME, local = false,
+            )
+            val version = SummaryFile.version(summary)
+            api.updateAppProperties(folderId, mapOf(SummaryFile.STAMP to version))
+            recordings.setSummarySeen(record.id, version)
+            true
+        }
+    }
+
+    /**
      * One kind of pending write, for every recording that has one: [write] it into the recording's
      * folder, then [done] with the value it was pending with. A folder that is not known, or has no
      * `meta.json` yet, is not ready for it; a folder that is gone takes the write with it.
@@ -339,6 +363,7 @@ class RemoteRecordings(
                     pending = properties.string(DriveFolderMarker.PENDING),
                     pendingAt = properties.string(DriveFolderMarker.PENDING_AT),
                     transcriptAt = properties.string(TranscriptMarks.FOLDER_STAMP),
+                    summaryAt = properties.string(SummaryFile.STAMP),
                 )
             }
             .sortedByDescending { it.createdTime }
@@ -481,7 +506,9 @@ class RemoteRecordings(
         pushTitles()
         pushMeta()
         pushTranscripts()
+        pushSummaries()
         refreshTranscripts(folders, ::covered)
+        refreshSummaries(folders, ::covered)
         return PullSummary(adopted, dropped, retitled)
     }
 
@@ -551,6 +578,62 @@ class RemoteRecordings(
             throw e
         } catch (e: Throwable) {
             deps.logger.log(Logger.Level.WARN, "remote.transcript.read.failed", emptyMap(), e)
+        }
+    }
+
+    /**
+     * docs/08 "Summaries": the summaries on this device kept up with their folders — a folder whose `summaryAt`
+     * names a version newer than the copy here (made or edited on another device) has its `{base}.summary.json`
+     * read again. None while an edit of this device's is on its way out; at most [REFRESH_PER_PASS] a pass.
+     * Never throws: what is not read now is read by a later pass, or when the recording is opened.
+     */
+    private suspend fun refreshSummaries(folders: Map<String, List<Folder>>, covered: (String) -> Boolean) {
+        try {
+            val seen = recordings.summarySeen()
+            val editing = recordings.pendingSummaries().keys
+            var fetched = 0
+            var changed = false
+            for (row in recordings.list(Int.MAX_VALUE)) {
+                if (fetched >= REFRESH_PER_PASS) break
+                val folderId = row.driveFolderId ?: continue
+                if (!covered(folderId) || row.id in editing) continue
+                val stamp = folders[row.id]?.firstOrNull { it.id == folderId }?.summaryAt ?: continue
+                if (stamp == seen[row.id]) continue
+                val local = recordings.summary(row.id)?.let(SummaryFile::decode)?.let(SummaryFile::version)
+                if (local != null && local >= stamp) {
+                    recordings.setSummarySeen(row.id, stamp)
+                    continue
+                }
+                fetched++
+                val file = api.findChild(folderId, SummaryFile.name(MetaWriter.baseName(row.meta))) ?: continue
+                val json = try {
+                    api.download(file.id).decodeToString()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Throwable) {
+                    deps.logger.log(Logger.Level.WARN, "remote.summary.read.failed", mapOf("recordingId" to row.id), e)
+                    continue
+                }
+                val summary = SummaryFile.decode(json)?.takeIf { it.recordingId == row.id } ?: continue
+                val written = recordings.summaryWrite {
+                    // An edit made here since the pass began is newer than what the folder had: it stays and goes up.
+                    val newer = recordings.summary(row.id)?.let(SummaryFile::decode)
+                        ?.let { SummaryFile.version(it) >= SummaryFile.version(summary) } == true
+                    if (row.id in recordings.pendingSummaries() || newer) return@summaryWrite false
+                    recordings.saveSummary(row.id, json)
+                    recordings.setSummarySeen(row.id, stamp)
+                    true
+                }
+                if (written) {
+                    changed = true
+                    deps.logger.log(Logger.Level.INFO, "remote.summary.read", mapOf("recordingId" to row.id))
+                }
+            }
+            if (changed) summariesChanged()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            deps.logger.log(Logger.Level.WARN, "remote.summary.read.failed", emptyMap(), e)
         }
     }
 
@@ -684,6 +767,8 @@ class RemoteRecordings(
         val pendingAt: String?,
         /** The version of the transcript in it (`appProperties.transcriptAt`, docs/08 "Result files"). */
         val transcriptAt: String?,
+        /** The version of the summary in it (`appProperties.summaryAt`, docs/08 "Summaries"). */
+        val summaryAt: String? = null,
     )
 
     private class Adoptable(val folder: Folder, val meta: RecordingMeta, val fileIds: Map<Pair<Int, Track>, String>)

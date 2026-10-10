@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextOverflow
 import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.Glyph
@@ -968,7 +969,8 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modi
 
 /**
  * docs/09 "Search": one row per recording found — when, the title with its matches tinted, up to two lines
- * of the first transcript match, and that match's time at the end. A tap opens it there.
+ * of the first transcript match, and that match's time at the end; then the summary's first matching line. A tap
+ * opens it there.
  */
 @Composable
 private fun SearchResults(
@@ -1015,6 +1017,15 @@ private fun SearchResults(
                         snippet?.let {
                             Text(tinted(it.text, it.ranges, tint, palette.text), style = MaterialTheme.typography.bodySmall, color = palette.textMuted,
                                 maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                        // The summary's first matching line, after what it is: "Summary · …".
+                        hit.summary?.let {
+                            val label = stringResource(R.string.summary_tab) + " · "
+                            Text(buildAnnotatedString {
+                                withStyle(SpanStyle(color = palette.textMuted)) { append(label) }
+                                append(tinted(it.text, it.ranges, tint, palette.text))
+                            }, style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.testTag("hit-summary-${hit.recordingId}"))
                         }
                     }
                     snippet?.let {

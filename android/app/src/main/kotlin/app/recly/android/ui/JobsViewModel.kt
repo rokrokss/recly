@@ -34,6 +34,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonPrimitive
 import recly.core.ReclyCore
+import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.AskState
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
+import recly.core.chatgpt.SummaryPreferences
+import recly.core.chatgpt.SummaryState
 import recly.core.job.Job
 import recly.core.job.JobStatus
 import recly.core.job.StepReport
@@ -180,6 +186,10 @@ data class JobsUiState(
      * 2026-10-08) — the line under a row's title. A row without one is not in the map.
      */
     val previews: Map<String, String> = emptyMap(),
+    /** docs/09 "Summary view": whether the detail offers Summarize, and why it cannot. Hidden until the core says. */
+    val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
+    /** docs/08 "Summaries": this device's formats — what More → Summarize as offers. */
+    val summaryPreferences: SummaryPreferences = SummaryPreferences(),
 )
 
 /** docs/09 "Search": the detail opened from a search hit — every match tinted, the find bar up, and where to start. */
@@ -221,6 +231,8 @@ data class DetailState(
     val fetchProgress: Float = 0f,
     /** The parts come back from the local folder rather than Drive (docs/03 "Storage location"). */
     val folder: Boolean = false,
+    /** docs/03 "Storage location": where the recording's folder is; null until it has one. */
+    val storage: StorageKind? = null,
     /** docs/03 "Metadata": the marked moments, in seconds of the recording. */
     val highlights: List<Double> = emptyList(),
     /** A transcription of this recording is queued or running: nothing may edit the transcript under it. */
@@ -245,6 +257,12 @@ data class DetailState(
     val busyReason: Int = R.string.detail_transcribing,
     /** Its upload waits for a Drive connection, and the page offers the connection itself. */
     val waitingForDrive: Boolean = false,
+    /** docs/08 "Summaries": the recording's summary, or where the one asked for is. */
+    val summary: SummaryState = SummaryState.None,
+    /** docs/08 "Ask": the one question about this recording, while this process holds it. */
+    val ask: AskState = AskState.None,
+    /** docs/09 "Search": opened from a hit found only in the summary, so the page starts on it. */
+    val openSummary: Boolean = false,
 )
 
 /** What the player bar has to say while the parts are on their way back, and after. */
@@ -326,6 +344,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { preferences.playbackSpeed.collect { speed -> _state.update { it.copy(playbackSpeed = speed) } } }
         viewModelScope.launch { preferences.skipSilence.collect { skip -> _state.update { it.copy(skipSilence = skip) } } }
         viewModelScope.launch { AudioImports.get(getApplication()).failure.collect { code -> _state.update { it.copy(importFailure = code) } } }
+        viewModelScope.launch { core().chatGpt.observe().collect { connection -> _state.update { it.copy(chatGpt = connection) } } }
+        viewModelScope.launch { core().summaries.observePreferences().collect { prefs -> _state.update { it.copy(summaryPreferences = prefs) } } }
         pullRemote()
     }
 
@@ -409,7 +429,8 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
 
     /**
      * A search hit opens its recording at the first transcript match, with every match tinted (docs/09 "Search").
-     * A hit in the title alone opens the reading page: there is nothing in the transcript to find.
+     * A hit in the title alone opens the reading page: there is nothing in the transcript to find. A hit in the
+     * summary alone opens on the summary.
      */
     fun openHit(hit: SearchHit) {
         val query = _state.value.query.trim()
@@ -417,7 +438,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob?.cancel()
         resultJob?.cancel()
         detailJob = viewModelScope.launch {
-            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find)
+            openDetail(hit.recordingId, hit.title?.takeIf { it.isNotBlank() }, find, opensOnSummary(hit))
         }
     }
 
@@ -481,6 +502,35 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             if (it is recly.core.transcribe.RetranscribeResult.Started) scheduler().onJobsDue(expedited = true)
         }
     }.await()
+
+    /**
+     * docs/08 "Summaries": the More menu's Summarize, and Retry under a failed one. The run is the core's and goes
+     * on if the page closes; the page follows it through [DetailState.summary]. [onFailure]: the core could not even
+     * start it (an unreadable keychain), so the page goes back to what it showed.
+     */
+    fun summarize(recordingId: String, format: SummaryFormat?, onFailure: () -> Unit) = launch {
+        runCatching { core().summaries.summarize(recordingId, format) }.onFailure { onFailure() }
+    }
+
+    /** docs/08 "Ask": the presets that make sense for the recording; none when it cannot be read. */
+    suspend fun askPresets(recordingId: String): List<AskPreset> {
+        val core = core()
+        return runCatching { withContext(core.deps.io) { core.summaries.askPresets(recordingId) } }.getOrDefault(emptyList())
+    }
+
+    /** docs/08 "Ask": one preset or the user's own question; the run is the core's, and the panel follows [DetailState.ask]. */
+    fun ask(recordingId: String, preset: AskPreset?, question: String?) = launch {
+        runCatching { core().summaries.ask(recordingId, preset, question) }
+    }
+
+    /** The Ask panel closed: nothing of the answer is kept (docs/08 "Ask"). */
+    fun clearAsk(recordingId: String) = launch { core().summaries.clearAsk(recordingId) }
+
+    /** docs/08 "Summaries": the user's own words over ChatGPT's, saved at once; the page follows on [DetailState.summary]. */
+    suspend fun editSummary(recordingId: String, text: String): SummaryState {
+        val core = core()
+        return withContext(core.deps.io) { core.summaries.edit(recordingId, text) }
+    }
 
     /** A waiting row's download is for its own step's language; the banner's ([language] null) for the saved settings'. */
     fun downloadModel(language: String?, onWifi: Boolean) = ModelDownload.get(getApplication()).start(language, onWifi)
@@ -624,7 +674,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         detailJob = viewModelScope.launch { openDetail(item.recordingId, item.title) }
     }
 
-    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null) {
+    private suspend fun openDetail(recordingId: String, title: String?, find: FindRequest? = null, openSummary: Boolean = false) {
         val core = core()
         val busy = transcribing(core, core.jobs.list(), recordingId)
         _state.update {
@@ -634,6 +684,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                     title = title,
                     deviceRecording = capturing(RecorderService.state.value),
                     find = find,
+                    openSummary = openSummary,
                 )),
             )
         }
@@ -646,6 +697,12 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         }
         updateDetail(recordingId) { it.copy(transcript = result.transcript, availability = result.availability) }
         resultJob = viewModelScope.launch {
+            launch {
+                core.summaries.observe(recordingId).collect { summary -> updateDetail(recordingId) { it.copy(summary = summary) } }
+            }
+            launch {
+                core.summaries.observeAsk(recordingId).collect { ask -> updateDetail(recordingId) { it.copy(ask = ask) } }
+            }
             launch {
                 core.recordings.observe().map { core.recordings.get(recordingId)?.meta?.highlights.orEmpty() }
                     .distinctUntilChanged()
@@ -665,7 +722,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
                 it.copy(loading = false, audio = audio, waveform = if (same) it.waveform else FloatArray(0),
                     waveformLoading = !same && !audio.isEmpty,
                     writing = record?.meta?.status == RecordingStatus.RECORDING, driveFetch = DriveFetch.DECIDING,
-                    folder = record?.storage == StorageKind.FOLDER, durationSec = record?.meta?.durationSec)
+                    folder = record?.storage == StorageKind.FOLDER, storage = record?.storage, durationSec = record?.meta?.durationSec)
             }
             fetchFromDrive(core, recordingId, record, audio)
             decodeWaveform(core, recordingId)

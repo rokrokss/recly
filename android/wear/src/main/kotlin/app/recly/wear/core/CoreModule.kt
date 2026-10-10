@@ -81,6 +81,8 @@ object CoreModule {
 internal object NoAudioTools : AudioTools {
     override suspend fun concat(parts: List<Path>, out: Path): Unit =
         throw UnsupportedOperationException("the watch does not run jobs (ADR-002); the phone transcribes")
+
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = null
 }
 
 /**

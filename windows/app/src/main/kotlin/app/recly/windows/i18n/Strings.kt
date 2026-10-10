@@ -10,7 +10,7 @@ import java.util.Properties
  *
  * **Why `.properties` and not Compose Multiplatform resources** (docs/07, Windows row): a tray app
  * says most of what it says from outside a composition — `TrayIcon.displayMessage`, the loopback
- * sign-in page Ktor serves, `Recents.stateLabel`, the helper's self-test report — and the generated
+ * sign-in page Ktor serves, `Recents.stateLabel` — and the generated
  * CMP accessors are `@Composable` or `suspend`. A plain table is readable from any thread at any
  * time, which is the only shape that fits, and it costs no plugin and no generated code.
  */
@@ -170,10 +170,6 @@ enum class Str {
     // docs/14 "Capture": the microphone alone or the whole meeting, in the Mac's own two labels.
     /** docs/14 "Permissions": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
-    SETTINGS_HELPER_MISSING,
-    SETTINGS_HELPER_VERSION,
-    SETTINGS_HELPER_SILENT,
-    SETTINGS_SELF_TEST,
     SETTINGS_DATA,
     SETTINGS_OPEN_FOLDER,
 
@@ -215,10 +211,6 @@ enum class Str {
     SETTINGS_OPEN_SOURCE,
     SETTINGS_OPEN_SOURCE_VALUE,
 
-    SELF_TEST_RUNNING,
-    SELF_TEST_NO_ANSWER,
-    SELF_TEST_EMPTY,
-    SELF_TEST_FAILED,
     MIC_GUIDANCE,
 
     NOTIFY_MEETING_TITLE,
@@ -412,7 +404,7 @@ enum class Str {
     CORE_IMPORT_UNREADABLE,
 
     // Competitive features (2026-10-07): highlights, the detail's menus, exports, editing, search,
-    // import, playback speed, the keyboard shortcut, vocabulary, on-device speakers and the local MCP server.
+    // import, playback speed, vocabulary, on-device speakers and the local MCP server.
     HIGHLIGHT,
     HIGHLIGHT_MARKED,
     HIGHLIGHT_TICK,
@@ -472,8 +464,6 @@ enum class Str {
     PLAYER_SKIP_SILENCE,
     PLAYER_SPEED_VALUE,
     PLAYER_SPEED_VALUE_SKIP,
-    SETTINGS_SHORTCUT,
-    SETTINGS_SHORTCUT_TAKEN,
     VOCABULARY,
     VOCABULARY_PLACEHOLDER,
     VOCABULARY_ADD,
@@ -515,6 +505,72 @@ enum class Str {
     DETAIL_STILL_RECORDING,
 
     CORE_STALE,
+
+    // docs/15 §10 "Sign in with ChatGPT" and docs/08 "Summaries".
+    CHATGPT_TITLE,
+    CHATGPT_USE_PLAN,
+    CHATGPT_USE_PLAN_NOTE,
+    CHATGPT_CONTINUE,
+    CHATGPT_USING_PLAN,
+    CHATGPT_SIGN_OUT,
+    CHATGPT_MODEL,
+    CHATGPT_MANAGE_USAGE,
+    CHATGPT_EXPIRED,
+    CHATGPT_FINISH_IN_BROWSER,
+    CHATGPT_SIGN_IN_FAILED,
+    CHATGPT_REVOKE_UNCONFIRMED,
+    CHATGPT_FOOTNOTE,
+    CHATGPT_WELCOME_TITLE,
+    CHATGPT_WELCOME_BODY,
+    CHATGPT_GOT_IT,
+    SUMMARY_SUMMARIZE,
+    SUMMARY_AGAIN,
+    SUMMARY_TAB,
+    SUMMARY_RUNNING,
+    SUMMARY_FAILED,
+    SUMMARY_MODEL,
+    CORE_CHATGPT_SIGN_IN_REQUIRED,
+    CORE_CHATGPT_USAGE_LIMIT,
+    CORE_CHATGPT_PLAN_REQUIRED,
+    CHATGPT_PAGE_OK,
+    CHATGPT_PAGE_RETURN,
+    SUMMARY_EDIT,
+    SUMMARY_DISCARD_BODY,
+    SUMMARY_REPLACE_TITLE,
+    SUMMARY_REPLACE_BODY,
+    SUMMARY_REPLACE,
+    SUMMARY_EDITED,
+    SUMMARY_EDIT_NOTE_SHARED,
+    SUMMARY_EDIT_NOTE_LOCAL,
+    HELPER_UNAVAILABLE,
+
+    // docs/08 "Summaries" · "Ask" · "Me and others" (round 3).
+    SUMMARY_FORMAT,
+    SUMMARY_FORMAT_AUTO,
+    SUMMARY_FORMAT_ONE_ON_ONE,
+    SUMMARY_FORMAT_LECTURE,
+    SUMMARY_FORMAT_INTERVIEW,
+    SUMMARY_FORMAT_CUSTOM,
+    SUMMARY_CUSTOM_PLACEHOLDER,
+    SUMMARY_CUSTOM_NOTE,
+    SUMMARY_ABOUT,
+    SUMMARY_ABOUT_PLACEHOLDER,
+    SUMMARY_ABOUT_NOTE,
+    SUMMARY_AS,
+    SUMMARY_PLAY_FROM,
+    SUMMARY_NONE,
+    ASK_MENU,
+    ASK_TITLE,
+    ASK_FOLLOW_UP_EMAIL,
+    ASK_ACTION_ITEMS,
+    ASK_OPEN_QUESTIONS,
+    ASK_TRANSLATE,
+    ASK_MY_SPEAKING,
+    ASK_QUESTION,
+    ASK,
+    ASK_RUNNING,
+    ASK_FAILED,
+    SPEAKER_ME,
     ;
 
     val key: String = name.lowercase(Locale.ROOT).replace('_', '.')

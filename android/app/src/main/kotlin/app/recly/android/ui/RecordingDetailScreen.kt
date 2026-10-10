@@ -49,6 +49,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -85,6 +86,10 @@ import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.AskPreset
+import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
+import recly.core.chatgpt.SummaryState
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
 import recly.core.recording.SilenceRanges
@@ -98,7 +103,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
+import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
+import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ScreenHeader
@@ -129,6 +136,21 @@ class DetailActions(
     val onCloseFind: () -> Unit = {},
     /** The page of a recording whose upload waits for Drive offers the connection itself (UX decisions of 2026-10-08). */
     val onConnectDrive: () -> Unit = {},
+    /** docs/09 "Summary view": whether Summarize is offered, and why not; the models name the summary's. */
+    val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
+    /**
+     * Summarize in [format] — null: Settings' format. [onFailure] runs when the summary could not even start, so the page
+     * stops waiting for it.
+     */
+    val onSummarize: (format: SummaryFormat?, onFailure: () -> Unit) -> Unit = { _, _ -> },
+    /** docs/09 "Summary view": the summary as the user rewrote it; answers what the recording has now. */
+    val onEditSummary: suspend (String) -> SummaryState = { SummaryState.None },
+    /** docs/08 "Summaries": what More → Summarize as offers. */
+    val summaryFormats: List<SummaryFormat> = emptyList(),
+    /** docs/08 "Ask": the presets that make sense for the recording, the question, and letting its answer go. */
+    val askPresets: suspend () -> List<AskPreset> = { emptyList() },
+    val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
+    val onClearAsk: () -> Unit = {},
 )
 
 /**
@@ -237,6 +259,11 @@ fun RecordingDetailScreen(
         }
     }
 
+    // docs/09 "Summary view": the summary editor's draft, while it is open, and where leaving it with changes goes once
+    // the user has said Discard — back to the summary, or to the transcript chip they pressed.
+    var summaryDraft by remember(detail.recordingId) { mutableStateOf<SummaryDraft?>(null) }
+    var summaryLeaving by remember(detail.recordingId) { mutableStateOf<DetailView?>(null) }
+
     // docs/09 "Transcript reader": following the playhead, until the user scrolls the transcript.
     var following by remember(detail.recordingId) { mutableStateOf(true) }
     LaunchedEffect(player.isPlaying) { if (!player.isPlaying) following = true }
@@ -279,9 +306,69 @@ fun RecordingDetailScreen(
         }, onCancel = { speakerNaming = null })
     }
     var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
+    // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens, unless a search found
+    // the summary alone.
+    var view by remember(detail.recordingId) { mutableStateOf(if (detail.openSummary) DetailView.SUMMARY else DetailView.TRANSCRIPT) }
+    var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
+    val summaryFailed = { askedSummary = false; view = DetailView.TRANSCRIPT }
+    // The format last asked for on this page — Settings' while null — which Retry under a failure asks for again.
+    var summaryFormat by remember(detail.recordingId) { mutableStateOf<SummaryFormat?>(null) }
+    val summarize = { format: SummaryFormat? ->
+        askedSummary = true
+        view = DetailView.SUMMARY
+        summaryFormat = format
+        actions.onSummarize(format, summaryFailed)
+    }
+    // Summarize again or Summarize as over an edited summary: the question first, holding the format asked for.
+    var replacing by remember(detail.recordingId) { mutableStateOf<SummarizeRequest?>(null) }
+    replacing?.let { request ->
+        ReplaceSummaryDialog(onCancel = { replacing = null }, onReplace = { replacing = null; summarize(request.format) })
+    }
+    val requestSummary = { format: SummaryFormat? ->
+        if (asksBeforeReplacing(detail.summary)) replacing = SummarizeRequest(format) else summarize(format)
+    }
+    // docs/08 "Ask": the panel, while it is open; its answer lives in the core for as long as it is.
+    var asking by remember(detail.recordingId) { mutableStateOf(false) }
+    val leaveSummaryEditor = { to: DetailView ->
+        if (summaryDraft?.changed == true) summaryLeaving = to else { summaryDraft = null; view = to }
+    }
+    BackHandler(enabled = summaryDraft != null) { leaveSummaryEditor(DetailView.SUMMARY) }
+    summaryLeaving?.let { to ->
+        DiscardDialog(onKeep = { summaryLeaving = null }, onDiscard = { summaryLeaving = null; summaryDraft = null; view = to },
+            body = R.string.summary_discard_body)
+    }
+    val saveSummary = saveSummary@{
+        val editing = summaryDraft ?: return@saveSummary
+        if (!editing.changed) {
+            summaryDraft = null
+            return@saveSummary
+        }
+        saving = SavePhase.SAVING
+        scope.launch {
+            val started = SystemClock.elapsedRealtime()
+            val result = actions.onEditSummary(editing.text)
+            val work = SystemClock.elapsedRealtime() - started
+            delay(processingHoldMs(work))
+            // Anything but Ready means a summary of it started meanwhile: the draft stays for the user to keep or leave.
+            if (result is SummaryState.Ready) {
+                saving = SavePhase.DONE
+                delay(doneBadgeMs(work))
+                summaryDraft = null
+            }
+            saving = SavePhase.IDLE
+        }
+    }
+    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
+    // docs/09 "Summary view": a citation plays where a time button for that second would.
+    val canSeekTo = { atSec: Double -> canSeek && atSec < detail.audio.totalSec }
+    val models = (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty()
+    if (asking) {
+        val presets by produceState(emptyList<AskPreset>(), detail.recordingId) { value = actions.askPresets() }
+        AskPanel(detail.ask, presets, models, canSeekTo, seek, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
+    }
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
@@ -291,6 +378,8 @@ fun RecordingDetailScreen(
         if (!keyboardVisible) {
             if (draft != null) {
                 ScreenHeader(title = stringResource(R.string.detail_edit))
+            } else if (summaryDraft != null) {
+                ScreenHeader(title = stringResource(R.string.summary_edit))
             } else ScreenHeader(
                 title = detail.title ?: stringResource(R.string.jobs_untitled),
                 // One row: the title on one line, the two icons at its end (UX decisions of 2026-10-08).
@@ -305,11 +394,17 @@ fun RecordingDetailScreen(
                         // rename or edit one, and an action that does nothing is not one to offer. Not
                         // before the load has said which of the two this is, either.
                         if (!detail.loading && !detail.writing) {
-                            MoreButton(detail, transcription, player.positionSec, MoreActions(
+                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, actions.summaryFormats, MoreActions(
                                 onRename = { renaming = true },
-                                onEdit = { transcript?.let { draft = EditDraft.of(it) } },
+                                onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
+                                onSummarize = { requestSummary(null) },
+                                onSummarizeAs = { requestSummary(it) },
+                                onEditSummary = {
+                                    savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
+                                },
+                                onAsk = { asking = true },
                             ))
                         }
                     }
@@ -322,14 +417,30 @@ fun RecordingDetailScreen(
                 style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             HairLine()
         }
+        if (chips && !detail.loading) {
+            FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
+                // While the summary is being edited the chips stay; going to the transcript leaves the editor.
+                BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
+                    { if (summaryDraft != null) leaveSummaryEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
+                    modifier = Modifier.testTag("view-transcript"))
+                BlueprintChip(stringResource(R.string.summary_tab), view == DetailView.SUMMARY, { view = DetailView.SUMMARY },
+                    modifier = Modifier.testTag("view-summary"))
+            }
+            HairLine()
+        }
 
         // docs/09 screen principle 2: only the transcript scrolls; playback stays above the tab bar.
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
             val editing = draft
+            val summaryEditing = summaryDraft
             when {
                 editing != null -> TranscriptEditor(editing, { draft = it }, canSeek, seek, Modifier.fillMaxSize(), detail.audio.totalSec,
                     scaleSec = scale)
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
+                summaryEditing != null ->
+                    SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
+                chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
+                    Modifier.fillMaxSize(), canSeekTo, seek)
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
                 transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
                     stringResource(R.string.detail_waiting_drive),
@@ -396,7 +507,7 @@ fun RecordingDetailScreen(
                     )
                 }
             }
-            if (draft == null && player.isPlaying && !following) {
+            if (draft == null && view == DetailView.TRANSCRIPT && player.isPlaying && !following) {
                 BackToPlayback({ following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = Space.s))
             }
         }
@@ -404,31 +515,13 @@ fun RecordingDetailScreen(
         // docs/09 "Editing and speakers": the editor's footer and its answers sit under the fields, above
         // the keyboard — the note says what a save does to the files in storage.
         draft?.let { editing ->
-            HairLine()
-            Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
-                verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                Text(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent),
-                    style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
-                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-                    // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
-                    if (editing.changed || saving != SavePhase.IDLE) {
-                        BlueprintButton(stringResource(R.string.action_cancel), { leaveEditor() }, tone = ButtonTone.QUIET, minWidth = MinTouch,
-                            enabled = saving == SavePhase.IDLE)
-                    }
-                    BlueprintButton(
-                        label = when {
-                            saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
-                            !editing.changed -> stringResource(R.string.job_state_done)
-                            else -> stringResource(R.string.action_save)
-                        },
-                        onClick = save,
-                        tone = ButtonTone.PRIMARY,
-                        enabled = saving == SavePhase.IDLE,
-                        leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
-                        modifier = Modifier.testTag("edit-save"),
-                    )
-                }
-            }
+            EditFooter(stringResource(if (detail.folder) R.string.edit_footer else R.string.edit_footer_agent), editing.changed, saving,
+                onCancel = { leaveEditor() }, onSave = save)
+        }
+        // docs/09 "Summary view": the summary editor's, in the same place; its note says where the saved summary goes.
+        summaryDraft?.let { editing ->
+            EditFooter(stringResource(summaryEditNote(detail.storage)), editing.changed, saving,
+                onCancel = { leaveSummaryEditor(DetailView.SUMMARY) }, onSave = saveSummary)
         }
 
         // A take still being written to has nothing whole to play yet, and nothing to say about it.
@@ -439,8 +532,40 @@ fun RecordingDetailScreen(
     }
 }
 
+/** A summary the user asked for: in [format], or Settings' format while null. */
+private data class SummarizeRequest(val format: SummaryFormat?)
+
 /** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
 internal enum class SavePhase { IDLE, SAVING, DONE }
+
+/** An editor's footer: what a save does, then end-aligned `Cancel` · `Save` — `Done` alone while nothing changed. */
+@Composable
+private fun EditFooter(note: String, changed: Boolean, saving: SavePhase, onCancel: () -> Unit, onSave: () -> Unit) {
+    HairLine()
+    Column(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+        verticalArrangement = Arrangement.spacedBy(Space.s)) {
+        Text(note, style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            // Nothing changed: `Done` alone — there is nothing for Cancel to throw away.
+            if (changed || saving != SavePhase.IDLE) {
+                BlueprintButton(stringResource(R.string.action_cancel), onCancel, tone = ButtonTone.QUIET, minWidth = MinTouch,
+                    enabled = saving == SavePhase.IDLE)
+            }
+            BlueprintButton(
+                label = when {
+                    saving == SavePhase.SAVING -> stringResource(R.string.edit_saving)
+                    !changed -> stringResource(R.string.job_state_done)
+                    else -> stringResource(R.string.action_save)
+                },
+                onClick = onSave,
+                tone = ButtonTone.PRIMARY,
+                enabled = saving == SavePhase.IDLE,
+                leading = if (saving == SavePhase.DONE) stringResource(R.string.action_done) else null,
+                modifier = Modifier.testTag("edit-save"),
+            )
+        }
+    }
+}
 
 /** docs/09 "Detail header and More menu": a refused "Transcribe again" in the menu's own reasons; null when it started. */
 internal fun retranscribeRefusal(result: RetranscribeResult): Int? = when (result) {
@@ -983,12 +1108,20 @@ private fun fetchingLabel(folder: Boolean): Int = if (folder) R.string.player_fe
 
 /**
  * The whole page, when there is one line to say and nothing to read — and, under it and centred, the one
- * button that carries the recording on when there is one (docs/09 screen principle 8).
+ * button that carries the recording on when there is one (docs/09 screen principle 8). [detail] is a
+ * diagnostic under the line, as it came; [button] a button of the caller's own.
  */
 @Composable
-private fun Notice(text: String, onRetry: (() -> Unit)? = null, action: Pair<String, () -> Unit>? = null) {
+internal fun Notice(
+    text: String,
+    onRetry: (() -> Unit)? = null,
+    action: Pair<String, () -> Unit>? = null,
+    detail: String? = null,
+    button: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier.fillMaxSize(),
+) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(Space.l),
+        modifier = modifier.padding(Space.l),
         verticalArrangement = Arrangement.spacedBy(Space.s, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -998,8 +1131,10 @@ private fun Notice(text: String, onRetry: (() -> Unit)? = null, action: Pair<Str
             color = blueprint.textMuted,
             textAlign = TextAlign.Center,
         )
+        detail?.let { Text(it, style = mono.small, color = blueprint.textMuted, textAlign = TextAlign.Center) }
         onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
         action?.let { (label, onClick) -> BlueprintButton(label, onClick, modifier = Modifier.testTag("detail-connect-drive")) }
+        button?.invoke()
     }
 }
 
