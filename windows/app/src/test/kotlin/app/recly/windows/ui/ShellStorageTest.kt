@@ -105,7 +105,8 @@ class ShellStorageTest {
 
         processing.save().join()
 
-        assertEquals(Str.PROCESSING_SAVED.message(), processing.message, "the save was refused")
+        // Saved says itself on Save's own button now (2026-10-10): no line is left behind, and nothing failed.
+        assertEquals(null, processing.message, "the save was refused")
         val stored = assertIs<ProcessingSettingsState.Ready>(processing.stored).document.settings.storage
         assertEquals(42, stored.minDurationSec)
         assertEquals(StorageKind.FOLDER, stored.provider, "the form's save put the storage back")

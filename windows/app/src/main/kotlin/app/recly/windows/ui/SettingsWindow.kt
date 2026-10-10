@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.agent.AgentEvents
@@ -72,6 +74,7 @@ import app.recly.windows.ui.theme.mono
 import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
 import recly.core.storage.StorageKind
 
@@ -245,7 +248,8 @@ private fun Capture(model: ShellModel, strings: Strings) {
     }
     if (model.helperUnavailable) {
         SettingsCard {
-            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+            // A message, at 12 in its tone, as every message in Settings (2026-10-10).
+            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
         }
         HairLine()
     }
@@ -319,10 +323,10 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
     when (val notice = chatGpt.notice) {
         is ChatGptNotice.SignInFailed -> {
             SettingsCard(spacing = 2.dp) {
-                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 // A diagnostic is data, in monospace as the ledger shows one; a sentence is a sentence.
                 signInFailureLine(notice.reason)?.let {
-                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small else MaterialTheme.typography.bodySmall,
+                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.bodySmall,
                         color = blueprint.textMuted)
                 }
             }
@@ -331,7 +335,7 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
         // Not red: this PC holds nothing any more, and ChatGPT's settings can remove Recly.
         ChatGptNotice.RevokeUnconfirmed -> {
             SettingsCard {
-                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
             }
             HairLine()
         }
@@ -345,31 +349,50 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
  * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
  * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
  * texts when their field is left.
+ *
+ * Shorter since 2026-10-10: the format offers all five always, and My format's field is there only while the format
+ * is My format — taking the cursor when it is chosen with nothing written yet, and saying until then that summaries
+ * use General.
  */
 @Composable
 private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
     val preferences = chatGpt.preferences
+    val customFocus = remember { FocusRequester() }
+    var focusCustom by remember { mutableStateOf(false) }
     TableRow(title = strings[Str.SUMMARY_FORMAT], trailing = {
         BlueprintDropdown(
             label = strings[Str.SUMMARY_FORMAT],
-            options = preferences.formats.map { it to strings[summaryFormatLabel(it)] },
-            // My format emptied goes back to General.
-            selected = preferences.effectiveFormat,
-            onSelect = chatGpt::selectFormat,
+            options = SummaryFormat.entries.map { it to strings[summaryFormatLabel(it)] },
+            selected = preferences.format,
+            onSelect = { format ->
+                focusCustom = format == SummaryFormat.CUSTOM && preferences.customFormat.isBlank()
+                chatGpt.selectFormat(format)
+            },
         )
     })
-    SettingsCard {
-        PreferenceField(
-            saved = preferences.customFormat,
-            onSave = chatGpt::saveCustomFormat,
-            label = strings[Str.SUMMARY_FORMAT_CUSTOM],
-            placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
-            hint = strings[Str.SUMMARY_CUSTOM_NOTE],
-            max = SummaryPreferences.CUSTOM_MAX,
-            singleLine = false,
-        )
+    if (preferences.format == SummaryFormat.CUSTOM) {
+        SettingsCard {
+            PreferenceField(
+                saved = preferences.customFormat,
+                onSave = chatGpt::saveCustomFormat,
+                label = strings[Str.SUMMARY_FORMAT_CUSTOM],
+                placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
+                hint = strings[Str.SUMMARY_CUSTOM_NOTE],
+                emptyHint = strings[Str.SUMMARY_CUSTOM_EMPTY],
+                max = SummaryPreferences.CUSTOM_MAX,
+                returnSaves = false,
+                lines = CUSTOM_LINES,
+                focusRequester = customFocus,
+            )
+        }
+        HairLine()
+        LaunchedEffect(focusCustom) {
+            if (focusCustom) {
+                runCatching { customFocus.requestFocus() }
+                focusCustom = false
+            }
+        }
     }
-    HairLine()
     SettingsCard {
         PreferenceField(
             saved = preferences.aboutMe,
@@ -378,16 +401,18 @@ private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
             placeholder = strings[Str.SUMMARY_ABOUT_PLACEHOLDER],
             hint = strings[Str.SUMMARY_ABOUT_NOTE],
             max = SummaryPreferences.ABOUT_MAX,
-            singleLine = true,
+            returnSaves = true,
+            lines = ABOUT_LINES,
         )
     }
     HairLine()
 }
 
 /**
- * A text kept as it is typed and saved when the editing ends — the field left, Return in a one-line field, the
- * window put behind another or closed — with no Save of its own. Empty is a value like any other. A field that is
- * not [singleLine] shows four lines, grows to eight and then scrolls.
+ * A text kept as it is typed and saved when the editing ends — the field left, Return where [returnSaves], the window
+ * put behind another or closed — with no Save of its own. Empty is a value like any other, and [emptyHint] says what
+ * an empty one means. It shows the first of [lines], grows to the last and then scrolls; where Return saves, a line
+ * break pasted in is a space.
  */
 @Composable
 internal fun PreferenceField(
@@ -397,7 +422,10 @@ internal fun PreferenceField(
     placeholder: String,
     hint: String,
     max: Int,
-    singleLine: Boolean,
+    returnSaves: Boolean,
+    lines: IntRange,
+    emptyHint: String? = null,
+    focusRequester: FocusRequester? = null,
 ) {
     var text by remember(saved) { mutableStateOf(saved) }
     val latest by rememberUpdatedState(text)
@@ -409,19 +437,20 @@ internal fun PreferenceField(
     DisposableEffect(Unit) { onDispose { onSave(latest) } }
     BlueprintTextField(
         value = text,
-        onValueChange = { text = it.take(max) },
+        onValueChange = { typed -> text = (if (returnSaves) typed.replace(LINE_BREAK, " ") else typed).take(max) },
         label = label,
         modifier = Modifier
             .onFocusChanged { if (!it.hasFocus && text != saved) onSave(text) }
             .onPreviewKeyEvent { event ->
-                (singleLine && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
+                (returnSaves && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
             },
-        hint = hint,
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else MULTI_LINE_MIN,
-        maxLines = if (singleLine) 1 else MULTI_LINE_MAX,
+        hint = if (text.isBlank() && emptyHint != null) emptyHint else hint,
+        singleLine = lines.last == 1,
+        minLines = lines.first,
+        maxLines = lines.last,
         monospace = false,
         placeholder = placeholder,
+        focusRequester = focusRequester,
     )
 }
 
@@ -627,7 +656,8 @@ private fun About(model: ShellModel, strings: Strings) {
     val palette = blueprint
     Section(strings[Str.SETTINGS_ABOUT])
     SettingsCard(spacing = 2.dp) {
-        Mono(strings[Str.SETTINGS_ABOUT_APP, OAuthConfig.APP_VERSION, system()])
+        // The version, and the build — the MSI's own install version — as the phones and the Macs show theirs (2026-10-10).
+        Mono(strings[Str.SETTINGS_ABOUT_APP, "${OAuthConfig.APP_VERSION} (build ${OAuthConfig.BUILD})", system()])
         Mono(strings[Str.SETTINGS_ABOUT_DEVICE, model.deviceId])
         Text(
             strings[Str.SETTINGS_OPEN_SOURCE],
@@ -641,7 +671,8 @@ private fun About(model: ShellModel, strings: Strings) {
 
 @Composable
 private fun Mono(line: String) {
-    Text(line, style = mono.small, color = blueprint.textMuted)
+    // Data — the build, the device, a path — left to right in every language (2026-10-10).
+    Text(line, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted)
 }
 
 /**
@@ -685,9 +716,11 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
 
 private const val COPIED_MS = 3_000L
 
-/** My format: four lines open, eight before it scrolls. */
-private const val MULTI_LINE_MIN = 4
-private const val MULTI_LINE_MAX = 8
+/** My format: two lines open, eight before it scrolls; About you: one, up to three (2026-10-10). */
+private val CUSTOM_LINES = 2..8
+private val ABOUT_LINES = 1..3
+
+private val LINE_BREAK = Regex("\\r\\n|\\r|\\n")
 
 private fun system(): String =
     "${System.getProperty("os.name")} ${System.getProperty("os.version")}"

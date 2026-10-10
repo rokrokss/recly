@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
@@ -148,8 +149,11 @@ fun ReclyDesktopTheme(
                 colorScheme = palette.toColorScheme(),
                 typography = typography,
                 shapes = ReclyShapes,
-                content = content,
-            )
+            ) {
+                // A `Text` given no colour takes the content colour, which Material leaves black outside a `Surface` —
+                // near-black on the dark page (2026-10-10). The body colour, so a forgotten one still reads.
+                CompositionLocalProvider(LocalContentColor provides palette.text, content = content)
+            }
         }
     }
 }

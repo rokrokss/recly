@@ -2110,6 +2110,9 @@ class ShellModel(
     fun selectLanguage(choice: AppLanguage) {
         localization.language = choice
         language = choice
+        // Summaries, Ask's presets and its Translate follow the app's language without a restart (2026-10-10) —
+        // the same tag the core was opened with ([AppGraph]).
+        graph?.core?.summaries?.setLocale(choice.tag.ifEmpty { Host.language() })
     }
 
     fun selectTheme(choice: AppTheme) {
@@ -2330,7 +2333,8 @@ class ShellModel(
     }
 
     companion object {
-        val HELPER_MISSING = Str.STATUS_HELPER_MISSING
+        /** docs/14 deliverable 5: the same words Settings says (2026-10-10). */
+        val HELPER_MISSING = Str.HELPER_UNAVAILABLE
         val HELPER_DIED = Str.STATUS_HELPER_DIED
         val MIC_DENIED = Str.STATUS_MIC_DENIED
         val NEEDS_AUTH_NOTICE = Str.STATUS_SIGN_IN_NEEDED

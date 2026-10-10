@@ -2,7 +2,6 @@ package app.recly.windows.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -31,13 +29,14 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.HairLine
+import app.recly.windows.ui.component.fieldBox
 import app.recly.windows.ui.theme.MinTouch
-import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
@@ -46,15 +45,17 @@ import recly.core.recording.SearchRange
 import recly.core.recording.SummaryMatch
 
 /**
- * docs/10 "Search": a field on the input border with a magnifier at its start and a clear mark at its end
- * while it has text. [label] is what a reader hears it called; the placeholder says the same.
+ * docs/10 "Search": a field on the input border — the accent while it has the focus, as every field (2026-10-10) —
+ * with a magnifier at its start and, where [clearLabel] is given, a clear mark at its end while it has text. [label]
+ * is what a reader hears it called; the placeholder says the same, cut with a mark when it does not fit.
  */
 @Composable
 internal fun SearchField(
     query: String,
     onQuery: (String) -> Unit,
     label: String,
-    clearLabel: String,
+    /** Null for a field whose bar has its own close (the find bar, 2026-10-10). */
+    clearLabel: String?,
     modifier: Modifier = Modifier,
     focus: FocusRequester? = null,
 ) {
@@ -62,8 +63,7 @@ internal fun SearchField(
     Row(
         modifier
             .defaultMinSize(minHeight = MinTouch)
-            .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
-            .background(palette.surface, RoundedCornerShape(Radius.node))
+            .fieldBox()
             .padding(start = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
@@ -79,16 +79,18 @@ internal fun SearchField(
             onValueChange = onQuery,
             modifier = Modifier.weight(1f).then(focus?.let { Modifier.focusRequester(it) } ?: Modifier).semantics { contentDescription = label },
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
+            textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text, textDirection = TextDirection.Content),
             cursorBrush = SolidColor(palette.accent),
             decorationBox = { inner ->
                 Box {
-                    if (query.isEmpty()) Text(label, style = MaterialTheme.typography.bodyMedium, color = palette.textMuted, maxLines = 1)
+                    if (query.isEmpty()) {
+                        Text(label, style = MaterialTheme.typography.bodyMedium, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                     inner()
                 }
             },
         )
-        if (query.isNotEmpty()) {
+        if (query.isNotEmpty() && clearLabel != null) {
             Box(
                 Modifier.size(MinTouch).clickable(role = Role.Button) { onQuery("") }.semantics { contentDescription = clearLabel },
                 contentAlignment = Alignment.Center,
@@ -116,8 +118,8 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: Str
             verticalAlignment = Alignment.Top,
         ) {
             Column {
-                Text(LedgerFormat.date(hit.startedAt), style = mono.small, color = palette.textMuted, maxLines = 1)
-                Text(LedgerFormat.time(hit.startedAt), style = mono.small, color = palette.textMuted, maxLines = 1)
+                Text(LedgerFormat.date(hit.startedAt), style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, maxLines = 1)
+                Text(LedgerFormat.time(hit.startedAt), style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, maxLines = 1)
             }
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(
@@ -127,15 +129,17 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: Str
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                // The transcript's and the summary's words, in the direction they take (2026-10-10).
+                val words = MaterialTheme.typography.bodySmall.copy(textDirection = TextDirection.Content)
                 hit.snippets.take(SNIPPET_LINES).forEach { snippet ->
-                    Text(tinted(snippet.text, snippet.ranges), style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(tinted(snippet.text, snippet.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 hit.summary?.let { summarySnippet(summaryLabel, it) }?.let { line ->
-                    Text(tinted(line.text, line.ranges), style = MaterialTheme.typography.bodySmall, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(tinted(line.text, line.ranges), style = words, color = palette.textMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
             hit.snippets.firstOrNull()?.let {
-                Text(LedgerFormat.clock(it.atSec, totalSec), style = mono.small, color = palette.textMuted, maxLines = 1)
+                Text(LedgerFormat.clock(it.atSec, totalSec), style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, maxLines = 1)
             }
         }
         HairLine()
@@ -143,8 +147,9 @@ internal fun SearchResultRow(hit: SearchHit, untitled: String, summaryLabel: Str
 }
 
 /**
- * docs/10 "Search": the find bar at the top of the transcript — the query, `‹ 2 / 7 ›` and close. The arrows
- * move between matches without moving the playhead.
+ * docs/10 "Search": the find bar at the top of the transcript — the query, `‹ 2 / 7 ›` and close, which is the bar's
+ * one close: its field has no clear mark of its own (2026-10-10). The arrows move between matches without moving the
+ * playhead.
  */
 @Composable
 internal fun FindBar(
@@ -164,12 +169,12 @@ internal fun FindBar(
         horizontalArrangement = Arrangement.spacedBy(Space.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        SearchField(query, onQuery, strings[Str.TRANSCRIPT_SEARCH], strings[Str.TRANSCRIPT_CLEAR_SEARCH], Modifier.weight(1f), focus)
+        SearchField(query, onQuery, strings[Str.TRANSCRIPT_SEARCH], null, Modifier.weight(1f), focus)
         FindArrow("‹", strings[Str.FIND_PREVIOUS], count > 0, onPrevious)
         val position = if (count == 0) "0 / 0" else "${(current ?: 0) + 1} / $count"
         Text(
             position,
-            style = mono.small,
+            style = mono.small.copy(textDirection = TextDirection.Ltr),
             color = palette.textMuted,
             modifier = Modifier.semantics { contentDescription = strings[Str.FIND_POSITION, if (count == 0) 0 else (current ?: 0) + 1, count] },
         )
@@ -184,7 +189,8 @@ private fun FindArrow(mark: String, label: String, enabled: Boolean, onClick: ()
         Modifier.size(MinTouch).clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Text(mark, style = MaterialTheme.typography.titleMedium, color = if (enabled) blueprint.text else blueprint.grid, modifier = Modifier.clearAndSetSemantics { })
+        // Off, the mark is muted rather than the grid's near-nothing (2026-10-10).
+        Text(mark, style = MaterialTheme.typography.titleMedium, color = if (enabled) blueprint.text else blueprint.textMuted, modifier = Modifier.clearAndSetSemantics { })
     }
 }
 

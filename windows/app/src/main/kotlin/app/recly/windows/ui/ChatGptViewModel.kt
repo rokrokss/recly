@@ -304,8 +304,11 @@ internal fun signInFailureLine(reason: String): UiMessage? =
 /** The one button under a failed summary's notice (docs/09 "Summary view"). */
 enum class SummaryRecovery { MANAGE_USAGE, NONE, RETRY }
 
-/** What a failed summary's centred notice says, and the button under it. */
-data class SummaryFailure(val headline: UiMessage, val detail: String?, val recovery: SummaryRecovery)
+/**
+ * What a failed summary's centred notice says, and the button under it. [attention] is a sentence that says where to
+ * go — said in the warning tone, not the failure's red.
+ */
+data class SummaryFailure(val headline: UiMessage, val detail: String?, val recovery: SummaryRecovery, val attention: Boolean = false)
 
 /** [failed] is the headline when the reason has no sentence of its own: `Could not summarize`, or Ask's `Could not answer`. */
 internal fun summaryFailure(reason: String, failed: Str = Str.SUMMARY_FAILED): SummaryFailure {
@@ -314,10 +317,12 @@ internal fun summaryFailure(reason: String, failed: Str = Str.SUMMARY_FAILED): S
         CoreMessage.CHATGPT_USAGE_LIMIT -> SummaryRecovery.MANAGE_USAGE
         // The sentence says where: Settings.
         CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> SummaryRecovery.NONE
+        // An account apps cannot use stays one however often it is asked (2026-10-10).
+        CoreMessage.CHATGPT_PLAN_REQUIRED -> SummaryRecovery.NONE
         else -> SummaryRecovery.RETRY
     }
     return if (sentence != null) {
-        SummaryFailure(sentence, null, recovery)
+        SummaryFailure(sentence, null, recovery, attention = true)
     } else {
         SummaryFailure(failed.message(), chatGptDiagnostic(reason), recovery)
     }
@@ -405,9 +410,12 @@ internal fun askBlocked(
 internal fun showsSummaryChips(summary: SummaryState, summaryChosen: Boolean, editing: Boolean): Boolean =
     !editing && (summary != SummaryState.None || summaryChosen)
 
-/** The footer's model: OpenAI's name for it while the plan lists it, otherwise its id. */
-internal fun summaryModelLabel(model: String, connection: ChatGptConnection): String =
-    (connection as? ChatGptConnection.SignedIn)?.models?.firstOrNull { it.id == model }?.label ?: model
+/**
+ * The footer's model: the plan's name for it when it was written ([Summary.modelName], kept with it so it reads the
+ * same signed out), else OpenAI's name for it while the plan lists it, otherwise its id.
+ */
+internal fun summaryModelLabel(model: String, modelName: String?, connection: ChatGptConnection): String =
+    modelName ?: (connection as? ChatGptConnection.SignedIn)?.models?.firstOrNull { it.id == model }?.label ?: model
 
 /** docs/08 "Summaries": a format's name, in Settings and in More → Summarize as. */
 internal fun summaryFormatLabel(format: SummaryFormat): Str = when (format) {

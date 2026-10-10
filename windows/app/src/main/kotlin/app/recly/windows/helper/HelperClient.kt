@@ -155,7 +155,7 @@ class HelperClient(
  * this development host has no Rust helper at all (M6-L2), so the env var is the way a fake one is
  * put in front of the app — see `windows/app/README.md`.
  *
- * Null is a first-class answer: the tray says [Str.STATUS_HELPER_MISSING] and recording is disabled
+ * Null is a first-class answer: the tray says [Str.HELPER_UNAVAILABLE] and recording is disabled
  * rather than offered and failing (deliverable 5).
  */
 object CaptureHelper {

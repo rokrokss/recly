@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -68,7 +69,8 @@ fun BlueprintButton(
         else -> palette.textMuted
     }
     val edge = when {
-        !enabled -> palette.grid
+        // The input border, not the grid: a disabled button's dashed edge stays visible on the dark page (2026-10-10).
+        !enabled -> palette.inputBorder
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         // A quiet button's edge is the input border, 3:1 against the page in light and dark (2026-10-08) —
@@ -79,8 +81,8 @@ fun BlueprintButton(
 
     Row(
         modifier = modifier
-            // docs/09 "Accessibility": the label is small, the button is not.
-            .defaultMinSize(minHeight = MinTouch)
+            // docs/09 "Accessibility": the label is small, the button is not — either way.
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
             .background(fill, RoundedCornerShape(Radius.node))
             // docs/09 "High-contrast mode" promotes `grid` and `textMuted` to the body colour, which left a
             // disabled button drawn in exactly the ink and the border weight of a live QUIET one.
@@ -107,7 +109,8 @@ fun BlueprintButton(
         }
         Text(
             label,
-            style = if (monospace) mono.small else MaterialTheme.typography.labelLarge,
+            // Data — a time, a name of a key — reads left to right in every language (docs/09 "Typography").
+            style = if (monospace) mono.small.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge,
             color = ink,
             maxLines = 3,
             // A label that will not fit is cut with a mark that says so — a Korean button label is
@@ -246,18 +249,21 @@ fun BlueprintChip(
     role: Role = Role.RadioButton,
 ) {
     val palette = blueprint
-    val ink = when {
-        !enabled -> palette.grid
-        selected -> palette.accent
-        else -> palette.textMuted
-    }
+    val ink = if (enabled && selected) palette.accent else palette.textMuted
     Row(
         modifier = modifier
-            .defaultMinSize(minHeight = MinTouch)
-            .border(
-                width = if (selected) palette.selectedLine else palette.line,
-                color = ink,
-                shape = RoundedCornerShape(Radius.node),
+            .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+            // Disabled, the edge is dashed as a disabled button's is: the muted ink alone is an unchosen chip's.
+            .then(
+                if (enabled) {
+                    Modifier.border(
+                        width = if (selected) palette.selectedLine else palette.line,
+                        color = ink,
+                        shape = RoundedCornerShape(Radius.node),
+                    )
+                } else {
+                    Modifier.dashedBorder(palette.line, palette.inputBorder, Radius.node)
+                },
             )
             // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
             // border is not something a screen reader can read. `selectable` puts the same fact in

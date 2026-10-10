@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -163,9 +164,11 @@ fun LedgerRow(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            // Times are data, left to right in every language (2026-10-10).
+            val stamp = mono.small.copy(textDirection = TextDirection.Ltr)
             Column(Modifier.width(TIME_COLUMN).clearAndSetSemantics {}) {
-                Text(date, style = mono.small, color = palette.textMuted, maxLines = 1)
-                Text(time, style = mono.small, color = palette.textMuted, maxLines = 1)
+                Text(date, style = stamp, color = palette.textMuted, maxLines = 1)
+                Text(time, style = stamp, color = palette.textMuted, maxLines = 1)
             }
             Column(
                 modifier = Modifier.weight(1f).clearAndSetSemantics {},
@@ -193,7 +196,7 @@ fun LedgerRow(
             Text(
                 length,
                 modifier = Modifier.width(lengthColumnWidth()).clearAndSetSemantics {},
-                style = mono.small,
+                style = stamp,
                 color = palette.text,
                 textAlign = TextAlign.End,
                 maxLines = 1,

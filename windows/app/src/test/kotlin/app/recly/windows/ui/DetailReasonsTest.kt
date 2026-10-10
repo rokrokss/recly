@@ -2,6 +2,7 @@
 
 package app.recly.windows.ui
 
+import recly.core.transcribe.TranscriptAvailability
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.StringTable
 import app.recly.windows.job
@@ -73,4 +74,22 @@ class DetailReasonsTest {
         state = null,
         output = null,
     )
+
+    /**
+     * 2026-10-10: in the transcript's place the detail says the real reason — the wait for Drive, with Connect Drive,
+     * whatever the availability says; another device transcribing; then the availability's own sentence.
+     */
+    @Test
+    fun `the detail says why there is no transcript`() {
+        assertEquals(Str.DETAIL_WAITING_DRIVE, transcriptNotice(TranscriptAvailability.NOT_REQUESTED, waitsForDrive = true, remoteTranscribing = false))
+        assertEquals(Str.DETAIL_WAITING_DRIVE, transcriptNotice(TranscriptAvailability.PENDING, waitsForDrive = true, remoteTranscribing = false))
+        assertEquals(Str.DETAIL_FAILED, transcriptNotice(TranscriptAvailability.FAILED, waitsForDrive = true, remoteTranscribing = false))
+        assertEquals(Str.STATE_REMOTE_TRANSCRIBING, transcriptNotice(TranscriptAvailability.PENDING, waitsForDrive = false, remoteTranscribing = true))
+        assertEquals(Str.DETAIL_NOT_REQUESTED, transcriptNotice(TranscriptAvailability.NOT_REQUESTED, waitsForDrive = false, remoteTranscribing = false))
+        assertEquals(
+            "Transcription is off. Turn it on in Settings, then use Transcribe again.",
+            StringTable.of(StringTable.BASE)[Str.DETAIL_NOT_REQUESTED],
+        )
+        assertEquals("Transcribing on another device", StringTable.of(StringTable.BASE)[Str.STATE_REMOTE_TRANSCRIBING])
+    }
 }
