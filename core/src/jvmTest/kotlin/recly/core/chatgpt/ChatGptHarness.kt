@@ -16,7 +16,7 @@ import recly.core.testing.inMemoryDatabase
 import recly.core.testing.testDeps
 
 /** A [ChatGptAccount] against a scripted OpenAI, with the keychain and the clock in reach. */
-internal class ChatGptHarness(requireTransferConsent: Boolean = false) {
+internal class ChatGptHarness(requireTransferConsent: Boolean = false, locale: String = "en") {
     val server = ScriptedServer()
     val fs = FakeFileSystem()
     val clock = FakeClock()
@@ -30,6 +30,7 @@ internal class ChatGptHarness(requireTransferConsent: Boolean = false) {
         secureStore = store,
         transport = server.transport(fs),
         requireTransferConsent = requireTransferConsent,
+        locale = locale,
     )
     val account = ChatGptAccount(db, deps)
 

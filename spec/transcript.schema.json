@@ -90,6 +90,10 @@
               "string",
               "null"
             ]
+          },
+          "me": {
+            "description": "True for the person who made the recording, told apart on a desktop by its microphone track while the system-audio track is quiet. Absent for everyone else. See docs/recly.md section 8 \"Me and others\".",
+            "const": true
           }
         }
       }

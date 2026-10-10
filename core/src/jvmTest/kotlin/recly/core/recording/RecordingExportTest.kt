@@ -45,6 +45,22 @@ class RecordingExportTest {
     }
 
     @Test
+    fun `the summary goes out as text of its own and inside the Markdown`() = runBlocking {
+        val meta = f.recordAndRun(title = "Weekly")
+        assertNull(f.core.exportFile(meta.recordingId, ExportFormat.SUMMARY), "no summary yet")
+        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\nWe ship.\nAction items\n- Mina: notes [00:00:01]\n- Joon: deck", "gpt-a", "2026-08-26T02:00:00.000Z"))
+
+        val text = f.core.exportFile(meta.recordingId, ExportFormat.SUMMARY)!!.toPath()
+        assertEquals("2026-08-26 Weekly.summary.txt", text.name)
+        assertEquals("Summary\nWe ship.\nAction items\n- Mina: notes [00:00:01]\n- Joon: deck\n", f.fs.read(text) { readUtf8() })
+        val md = f.fs.read(f.core.exportFile(meta.recordingId, ExportFormat.MD)!!.toPath()) { readUtf8() }
+        assertTrue(
+            "\n## Summary\n\nSummary\n\nWe ship.\n\nAction items\n\n- Mina: notes [00:00:01]\n- Joon: deck\n\n## Transcript\n\n[00:00:00] hello 1" in md,
+            md,
+        )
+    }
+
+    @Test
     fun `nothing to export is null`() = runBlocking {
         val meta = f.record()
 
