@@ -39,19 +39,16 @@ struct AskPanel: View {
                 .disabled(running)
             }
             HStack(alignment: .bottom, spacing: Space.s) {
-                TextField("", text: $question, prompt: Text(verbatim: loc("Ask your own question")).foregroundColor(blueprint.palette.textMuted), axis: .vertical)
-                    .lineLimit(1...4)
-                    .textFieldStyle(.plain)
+                questionField
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 9)
+                    // 2026-10-10 (2.13): the user's words in their own direction.
+                    .contentDirection(question)
                     .frame(minHeight: minTouch)
                     .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
                     .overlay {
                         RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
                     }
-                    .onSubmit(askOwn)
                     .disabled(running)
                     .accessibilityLabel(Text(verbatim: loc("Ask your own question")))
                     .accessibilityIdentifier("ask-question")
@@ -81,7 +78,8 @@ struct AskPanel: View {
                 CitedText(text: ready.answer.text, seekableSec: seekableSec, onSeek: onSeek)
                     .accessibilityIdentifier("ask-answer")
                 HStack(spacing: Space.s) {
-                    Text(verbatim: RecKitStrings.localized("ChatGPT · %@", modelLabel(ready.answer.model)))
+                    // The plan's name for the model when the answer was written, as a summary's footer has it.
+                    Text(verbatim: RecKitStrings.localized("ChatGPT · %@", ready.answer.modelName ?? modelLabel(ready.answer.model)))
                         .font(blueprint.fonts.sans(TypeSize.small))
                         .foregroundStyle(blueprint.palette.textMuted)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,6 +99,25 @@ struct AskPanel: View {
             ChatGptFailureNotice(reason: failed.reason, failed: loc("Could not answer"), retrying: false, retry: retry)
                 .accessibilityIdentifier("ask-failed")
         }
+    }
+
+    /// The question, up to four lines. 2026-10-10 (3.3): on the Mac Return asks and Shift+Return starts a new line —
+    /// a text view, because a `TextField` there keeps the new line for ⌥Return; on the phone Return is the
+    /// keyboard's new line and `Ask` asks.
+    @ViewBuilder
+    private var questionField: some View {
+        #if os(macOS)
+        GrowingTextEditor(text: $question, placeholder: loc("Ask your own question"), lines: 1...4, onReturn: askOwn)
+            .padding(.horizontal, 10 - GrowingTextEditor.inset)
+            .padding(.vertical, 9)
+        #else
+        TextField("", text: $question, prompt: FieldPlaceholder.prompt(loc("Ask your own question"), blueprint.palette), axis: .vertical)
+            .lineLimit(1...4)
+            .textFieldStyle(.plain)
+            .onSubmit(askOwn)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+        #endif
     }
 
     private var running: Bool { state is AskState.Running }
@@ -132,6 +149,8 @@ struct AskFrame<Content: View>: View {
     @ViewBuilder let content: () -> Content
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
+    /// The body's own height, which the Mac card is as tall as until the window stops it.
+    @State private var bodyHeight: CGFloat = 0
 
     var body: some View {
         #if os(iOS)
@@ -149,6 +168,8 @@ struct AskFrame<Content: View>: View {
         }
         .dotGridBackground()
         #else
+        // 2026-10-10 (3.3): the title row and its close icon stay put; the body under them scrolls once the card
+        // is as tall as the window lets it be.
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: Space.s) {
                 Text(verbatim: RecKitStrings.localized("Ask about this recording"))
@@ -157,7 +178,12 @@ struct AskFrame<Content: View>: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 closeButton
             }
-            content()
+            ScrollView {
+                content()
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { bodyHeight = $0 }
+            }
+            .scrollBounceBehavior(.basedOnSize)
+            .frame(maxHeight: max(bodyHeight, 1))
         }
         .padding(Space.m)
         .frame(maxWidth: BlueprintDialog<EmptyView, EmptyView>.maxWidth)

@@ -123,18 +123,20 @@ final class BlueprintSurfaceTests: XCTestCase {
         let row = app.buttons["language"]
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         // The language the app is in, which on a fresh install of an English simulator is the one
-        // it followed the system to. There is no "system default" to offer or to say.
-        XCTAssertTrue(row.label.contains("English"), row.label)
+        // it followed the system to. There is no "system default" to offer or to say. 2026-10-10 (A-A8): a
+        // dropdown box, whose value is the language.
+        XCTAssertTrue((row.value as? String)?.contains("English") == true, String(describing: row.value))
         row.tap()
 
-        XCTAssertTrue(app.buttons["language-en"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["language-en"].isSelected, "the language in effect is not marked")
-        XCTAssertTrue(app.buttons["language-ko"].exists)
+        let english = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "English")).firstMatch
+        XCTAssertTrue(english.waitForExistence(timeout: 10))
+        XCTAssertTrue(english.label.hasPrefix("✓"), "the language in effect is not marked")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "한국어")).firstMatch.exists)
         XCTAssertFalse(app.buttons["language-system"].exists, "the system default is still offered")
-        attach("language dialog")
+        attach("language menu")
         // Closed rather than answered: this case is about what the screen offers, and picking one
         // would leave the rest of the run in another language.
-        app.buttons["Close"].firstMatch.tap()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.05)).tap()
 
         XCTAssertTrue(
             app.switches["consent-reminder"].waitForExistence(timeout: 10),

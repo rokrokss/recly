@@ -190,13 +190,19 @@ public struct SectionFootnote: View {
     /// The block's own inset is the footnote's inside a [SectionBlock] (see [SectionRow]).
     @Environment(\.insideSectionBlock) private var insideBlock
     private let text: String
+    /// A line that is a failure or a warning rather than supporting copy says so in its tone; nil is the quiet
+    /// secondary colour.
+    private let tone: BadgeTone?
 
-    public init(_ text: String) { self.text = text }
+    public init(_ text: String, tone: BadgeTone? = nil) {
+        self.text = text
+        self.tone = tone
+    }
 
     public var body: some View {
         Text(verbatim: text)
             .font(blueprint.fonts.sans(TypeSize.small))
-            .foregroundStyle(blueprint.palette.textMuted)
+            .foregroundStyle(tone?.ink(blueprint.palette) ?? blueprint.palette.textMuted)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, insideBlock ? 0 : Space.m)
@@ -398,11 +404,12 @@ public struct BlueprintField: View {
                 .foregroundStyle(blueprint.palette.textMuted)
             Group {
                 if secure {
-                    SecureField("", text: $text, prompt: prompt)
+                    SecureField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette))
                 } else {
-                    TextField("", text: $text, prompt: prompt)
+                    TextField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette))
                 }
             }
+            .fieldPlaceholder(placeholder, empty: text.isEmpty)
             .focused($focused)
             .textFieldStyle(.plain)
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.bodySmall)
@@ -417,9 +424,48 @@ public struct BlueprintField: View {
             .accessibilityLabel(Text(verbatim: label))
         }
     }
+}
 
-    private var prompt: Text? {
-        placeholder.map { Text(verbatim: $0).foregroundColor(blueprint.palette.textMuted) }
+/// docs/09 "Fields": a field's placeholder, in the muted ink. iOS draws the prompt a `TextField` is handed in the
+/// colour it is given; macOS draws it in a grey of its own, close to the typed text's (2026-10-10, A-A7) — so on
+/// the Mac a field is handed no prompt, and [View.fieldPlaceholder] lays the words over it while it is empty.
+enum FieldPlaceholder {
+    static func prompt(_ text: String?, _ palette: BlueprintPalette) -> Text? {
+        #if os(macOS)
+        nil
+        #else
+        text.map { Text(verbatim: $0).foregroundColor(palette.textMuted) }
+        #endif
+    }
+}
+
+extension View {
+    /// The Mac's half of [FieldPlaceholder]: [text] over the field, at its start, while it is [empty]. Applied to the
+    /// field itself, inside its padding, so the words stand where typing starts; nothing on iOS.
+    func fieldPlaceholder(_ text: String?, empty: Bool) -> some View {
+        modifier(FieldPlaceholderOverlay(text: text, empty: empty))
+    }
+}
+
+private struct FieldPlaceholderOverlay: ViewModifier {
+    @Environment(\.blueprint) private var blueprint
+    let text: String?
+    let empty: Bool
+
+    func body(content: Content) -> some View {
+        #if os(macOS)
+        content.overlay(alignment: .topLeading) {
+            if empty, let text {
+                Text(verbatim: text)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                    .lineLimit(1)
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
+        #else
+        content
+        #endif
     }
 }
 
@@ -433,6 +479,7 @@ public struct BlueprintField: View {
 /// shape.
 public struct BlueprintChip: View {
     @Environment(\.blueprint) private var blueprint
+    @Environment(\.isEnabled) private var isEnabled
     private let label: String
     private let selected: Bool
     private let fill: Bool
@@ -455,7 +502,7 @@ public struct BlueprintChip: View {
         Button(action: action) {
             Text(verbatim: selected ? "\(Self.selectionMark) \(label)" : label)
                 .font(blueprint.fonts.sans(TypeSize.small, weight: .medium))
-                .foregroundStyle(selected ? blueprint.palette.accent : blueprint.palette.textMuted)
+                .foregroundStyle(selected && isEnabled ? blueprint.palette.accent : blueprint.palette.textMuted)
                 .lineLimit(1)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
@@ -469,10 +516,10 @@ public struct BlueprintChip: View {
                 )
                 .overlay {
                     RoundedRectangle(cornerRadius: Radius.node)
-                        .strokeBorder(
-                            selected ? blueprint.palette.accent : blueprint.palette.grid,
-                            lineWidth: selected ? blueprint.palette.selectedLine : blueprint.line
-                        )
+                        .strokeBorder(edge, style: StrokeStyle(
+                            lineWidth: selected ? blueprint.palette.selectedLine : blueprint.line,
+                            dash: isEnabled ? [] : BlueprintButton.dash
+                        ))
                 }
                 .contentShape(Rectangle())
         }
@@ -480,6 +527,13 @@ public struct BlueprintChip: View {
         // The mark is decoration to a screen reader, which is told the same fact as a trait.
         .accessibilityLabel(Text(verbatim: label))
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
+    }
+
+    /// 2026-10-10 (A-A3): an unselected chip's edge in the secondary colour, as the speaker badge's, so it reads as
+    /// a control against the page; off, it is dashed in the input border's colour, as a disabled button's is.
+    private var edge: Color {
+        guard isEnabled else { return blueprint.palette.inputBorder }
+        return selected ? blueprint.palette.accent : blueprint.palette.textMuted
     }
 }
 

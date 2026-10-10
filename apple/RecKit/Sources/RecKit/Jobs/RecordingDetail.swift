@@ -69,6 +69,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// 2026-10-08 §7: a job of this recording is held up only because Drive is not connected — what
     /// the page says instead of sending the user back to the list, and the More menu's reason.
     @Published public private(set) var waitingForDrive = false
+    /// docs/03 "Recordings from other devices": the device that made this recording has said its transcription is
+    /// still to come — what the page says while there is no transcript (2026-10-10, 2.12).
+    @Published public private(set) var transcribingElsewhere = false
     /// docs/03: the recording's whole length as its meta has it — what every time on this page is
     /// shaped by (2026-10-08 §3). Nil until it is read, and for a recording still being written.
     @Published public private(set) var metaLengthSec: Double?
@@ -279,13 +282,17 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     public var transcriptMessage: String {
         // 2026-10-08 §7: waiting for Drive is said here with its fix under it, rather than as "check
-        // the list".
-        if waitingForDrive, availability == .parked || availability == .failed || availability == .pending {
+        // the list" — and rather than as "no transcription", which a job held up before its upload also
+        // reads as (2026-10-10, 2.12).
+        if waitingForDrive, availability != .unavailable, availability != .empty {
             return RecKitStrings.localized("Waiting for Drive. Connect Drive to upload and transcribe.")
+        }
+        if transcribingElsewhere, availability == .pending {
+            return RecKitStrings.localized("Transcribing on another device")
         }
         let key: String
         switch availability {
-        case .notRequested: key = "This recording has no transcription step to run."
+        case .notRequested: key = "Transcription is off. Turn it on in Settings, then use Transcribe again."
         case .failed: key = "Transcription could not finish. Check this recording in the list for the next action."
         case .parked: key = "Transcription is waiting. Check this recording in the list for what it needs."
         case .unavailable: key = "Could not load the transcript. Try again."
@@ -373,6 +380,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// Why `Edit transcript` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var editReason: String? {
+        if writing { return Self.stillRecording }
         if transcript == nil { return RecKitStrings.localized("No transcript yet") }
         if transcriptionBusy { return busyReason }
         return nil
@@ -380,6 +388,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// Why `Transcribe again` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
     public var retranscribeReason: String? {
+        if writing { return Self.stillRecording }
         if transcriptionOff { return RecKitStrings.localized("Transcription is off in Settings") }
         if transcriptionBusy { return busyReason }
         if !uploaded { return RecKitStrings.localized(waitingForDrive ? "Waiting for Drive" : "Not uploaded yet") }
@@ -399,8 +408,18 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     /// Why `Rename` cannot run now, or nil when it can: a take still being written has no name to give
     /// yet (2026-10-08 §12 — a disabled item always says why).
     public var renameReason: String? {
-        writing ? RecKitStrings.localized("Still recording") : nil
+        writing ? Self.stillRecording : nil
     }
+
+    /// Why `Add highlight at …` cannot run now, or nil when it can.
+    public var highlightReason: String? {
+        if writing { return Self.stillRecording }
+        return hasAudio ? nil : RecKitStrings.localized("No audio on this device")
+    }
+
+    /// 2026-10-10 (A-A11): while the take is being written, every item of the More menu is off for this one
+    /// reason, whatever else would also stand in its way.
+    static var stillRecording: String { RecKitStrings.localized("Still recording") }
 
     // MARK: - Summary (docs/08 "Summaries" · docs/09 "Summary view")
 
@@ -447,7 +466,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     }
 
     static func askReason(writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection) -> String? {
-        if writing { return RecKitStrings.localized("Still recording") }
+        if writing { return stillRecording }
         if !hasTranscript { return RecKitStrings.localized("No transcript yet") }
         if let busy { return busy }
         if connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired {
@@ -458,6 +477,9 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
 
     /// The format of the summary the recording has, for the ✓ in `Summarize as…`; nil when it has none.
     public var summaryFormat: SummaryFormat? { savedSummary?.summaryFormat }
+
+    /// docs/08 "Exports": the formats Share offers — `Summary` only where ChatGPT is (2026-10-10, A-A20).
+    public var shareFormats: [ShareFormat] { ShareFormat.allCases.filter { $0 != .summary || summaryOffered } }
 
     /// docs/08 "Exports": why the share sheet's `Summary` cannot be had, or nil when it can.
     public var summaryExportReason: String? { Self.summaryExportReason(summary) }
@@ -484,10 +506,11 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     public var summaryEditable: Bool { Self.hasSummary(summary) }
 
     /// Why `Edit summary` cannot run now, or nil when it can: not while a new summary is written over it.
-    public var editSummaryReason: String? { Self.editSummaryReason(summary: summary, summarizing: summarizing) }
+    public var editSummaryReason: String? { Self.editSummaryReason(writing: writing, summary: summary, summarizing: summarizing) }
 
-    static func editSummaryReason(summary: SummaryState, summarizing: Bool) -> String? {
-        summarizing || summary is SummaryState.Running ? RecKitStrings.localized("Summarizing…") : nil
+    static func editSummaryReason(writing: Bool = false, summary: SummaryState, summarizing: Bool) -> String? {
+        if writing { return stillRecording }
+        return summarizing || summary is SummaryState.Running ? RecKitStrings.localized("Summarizing…") : nil
     }
 
     /// docs/09 "Summary view": `Summarize again` over a summary the user edited asks first.
@@ -765,6 +788,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         audioRecord = record
         guard let record else {
             writing = false
+            transcribingElsewhere = false
             metaLengthSec = nil
             givenTitle = ""
             playedParts = []
@@ -772,6 +796,7 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             return .empty
         }
         writing = record.meta.status == RecordingStatus.recording
+        transcribingElsewhere = record.remotePending.contains("transcribe")
         metaLengthSec = record.meta.durationSec?.doubleValue
         givenTitle = record.meta.title ?? ""
         highlights = record.meta.highlights.map(\.atSec)
@@ -1201,11 +1226,14 @@ public struct RecordingDetailView: View {
                         SummaryConsentDialog(model: model, trainingOff: $trainingOff, answer: answerSummaryConsent)
                     }
                     .presentationDetents([.large])
+                    // 2026-10-10 (1.4): an answer, or a question still being answered, is not thrown away by a
+                    // swipe — only the close icon takes it.
+                    .interactiveDismissDisabled(model.ask is AskState.Running || model.ask is AskState.Ready)
             }
         }
         #else
-        // docs/09 "Ask": a card over the detail, as its other questions are.
-        .blueprintDialogOverlay(isPresented: $asking) {
+        // docs/09 "Ask": a card over the detail, as its other questions are — one that scrolls its own body.
+        .blueprintDialogOverlay(isPresented: $asking, scrolls: false) {
             AskFrame(close: { asking = false; closeAsk() }) { askPanel }
         }
         #endif
@@ -1558,9 +1586,7 @@ public struct RecordingDetailView: View {
                 #endif
             } else if model.hasAudio {
                 #if os(iOS)
-                Text(verbatim: "\(model.stamp(positionSec)) / \(model.stamp(model.totalSec))")
-                    .font(blueprint.fonts.monoBodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
+                clock
                 Spacer(minLength: Space.s)
                 // docs/09 "Playback": the speed between the clock and Play.
                 PlaybackSpeedChip(player: player)
@@ -1591,9 +1617,7 @@ public struct RecordingDetailView: View {
                 }
                 // docs/07 rule 4: a clock is a stamp, not a sentence.
                 #if !os(iOS)
-                Text(verbatim: "\(model.stamp(positionSec)) / \(model.stamp(model.totalSec))")
-                    .font(blueprint.fonts.monoBodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
+                clock
                 // docs/09 "Playback" · "Highlights" (desktop): the speed, and a mark at the playhead.
                 PlaybackSpeedChip(player: player)
                 BlueprintButton(loc("Highlight"), tone: .quiet) {
@@ -1626,6 +1650,17 @@ public struct RecordingDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    /// The recording's own clock — `00:12 / 02:30` — on one line, left to right in every language (2026-10-10,
+    /// 2.13): the bar gives way around it rather than wrapping it.
+    private var clock: some View {
+        Text(verbatim: "\(model.stamp(positionSec)) / \(model.stamp(model.totalSec))")
+            .font(blueprint.fonts.monoBodySmall)
+            .foregroundStyle(blueprint.palette.textMuted)
+            .lineLimit(1)
+            .fixedSize()
+            .leftToRight()
+    }
+
     /// Where the bar says it is: the finger while there is one on the waveform, and the player the
     /// rest of the time.
     private var positionSec: Double { scrubSec ?? player.positionSec }
@@ -1652,10 +1687,16 @@ public struct RecordingDetailView: View {
         let format: SummaryFormat?
     }
 
-    /// docs/09 "Summary view": a citation plays the recording from its second, as a transcript time button does —
-    /// nil, so the citations are plain text, while the recording cannot be played from a point.
+    /// docs/09 "Summary view": a citation plays the recording from its second — it says `Play from` — where a
+    /// transcript time button only moves the playhead (2026-10-10, 1.2); nil, so the citations are plain text,
+    /// while the recording cannot be played from a point.
     private var citationSeek: ((Double) -> Void)? {
-        canSeek ? { seek(toSec: $0) } : nil
+        canSeek ? { playFrom($0) } : nil
+    }
+
+    private func playFrom(_ sec: Double) {
+        seek(toSec: sec)
+        if !player.active { player.play() }
     }
 
     // MARK: Ask (docs/09 "Ask")

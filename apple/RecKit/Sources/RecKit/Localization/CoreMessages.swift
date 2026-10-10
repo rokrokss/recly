@@ -61,7 +61,8 @@ public enum CoreMessages {
         // the code's detail — shown under it, never inside it.
         case .authRejected: return "The provider rejected the key."
         case .quota: return "The provider is out of quota or is rate-limiting."
-        case .providerError: return "Something went wrong at the provider. It will try again."
+        // 2026-10-10 (2.10): no "It will try again" — a failed job's row says this too, and nothing retries that.
+        case .providerError: return "Something went wrong at the provider."
         case .unsupportedAudio: return "The provider would not accept this audio."
         case .noInputTrack: return "This recording has no mono or mix track to transcribe."
         case .resultTimeout: return "The provider did not finish in time. It will submit again."

@@ -9,8 +9,8 @@ public struct ChatGptSection: View {
     @ObservedObject private var model: ChatGptSettingsModel
     /// Told before a sign-in starts, so a shell drawn on two surfaces knows which one to welcome on.
     private let onSignIn: (() -> Void)?
-    @State private var pickingModel = false
-    @State private var pickingFormat = false
+    /// My format was just chosen with nothing in it: its field takes the focus as it appears (2026-10-10, 3.1).
+    @State private var focusMyFormat = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
@@ -39,62 +39,58 @@ public struct ChatGptSection: View {
             failure
             // docs/08 "Summaries": what every summary is asked for — under Model, signed in or out.
             SectionRow(title: loc("Summary format")) { formatPicker }
-            SectionBlock {
-                PreferenceField(
-                    title: loc("My format"),
-                    text: $model.customFormat,
-                    placeholder: loc("Sections and instructions, e.g. Summary, Risks, Next steps with owners."),
-                    note: loc("Used when the summary format is My format."),
-                    limit: Int(SummaryPreferences.companion.CUSTOM_MAX),
-                    multiline: true,
-                    identifier: "chatgpt-my-format",
-                    done: model.savePreferences
-                )
+            // 2026-10-10 (3.1): My format's words only while My format is the format — until it has some, the note
+            // says what summaries use meanwhile.
+            if model.preferences.format == .custom {
+                SectionBlock {
+                    PreferenceField(
+                        title: loc("My format"),
+                        text: $model.customFormat,
+                        placeholder: loc("Sections and instructions, e.g. Summary, Risks, Next steps with owners."),
+                        note: loc(model.customFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                            ? "Write your format here; until then summaries use General."
+                            : "Used when the summary format is My format."),
+                        limit: Int(SummaryPreferences.companion.CUSTOM_MAX),
+                        lines: 2...8,
+                        multiline: true,
+                        identifier: "chatgpt-my-format",
+                        focusRequested: $focusMyFormat,
+                        done: model.savePreferences
+                    )
+                }
             }
             SectionBlock {
                 PreferenceField(
                     title: loc("About you"),
                     text: $model.aboutMe,
                     placeholder: loc("e.g. Product manager; I care about deadlines and decisions."),
-                    note: loc("Summaries use this to judge what matters to you."),
+                    note: loc("Summaries and answers use this to judge what matters to you."),
                     limit: Int(SummaryPreferences.companion.ABOUT_MAX),
+                    lines: 1...3,
                     multiline: false,
                     identifier: "chatgpt-about-you",
+                    focusRequested: .constant(false),
                     done: model.savePreferences
                 )
             }
-            SectionFootnote(loc("A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage."))
+            SectionFootnote(loc("Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage."))
         }
     }
 
-    /// The format Summarize uses: the platform's dropdown on the Mac, and on the phone the button and dialog
-    /// the Model row has.
-    @ViewBuilder
+    /// The format Summarize uses, as a dropdown on both platforms (2026-10-10, A-A8). Every format is offered —
+    /// My format too, whose words are written once it is chosen (3.1) — and the one shown is the one saved.
     private var formatPicker: some View {
-        let shown = model.shownPreferences
-        let options = shown.formats.map(FormatOption.init)
-        let current = FormatOption(format: shown.effectiveFormat)
-        #if os(macOS)
-        BlueprintDropdown(loc("Summary format"), options: options, selection: Binding(get: { current }, set: { model.selectFormat($0.format) })) {
+        let options = SummaryFormat.allCases.map(FormatOption.init)
+        let current = FormatOption(format: model.preferences.format)
+        return BlueprintDropdown(loc("Summary format"), options: options, selection: Binding(get: { current }, set: { option in
+            model.selectFormat(option.format)
+            if option.format == .custom, model.customFormat.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                focusMyFormat = true
+            }
+        })) {
             ChatGptText.formatLabel($0.format)
         }
         .accessibilityIdentifier("chatgpt-summary-format")
-        #else
-        BlueprintButton(ChatGptText.formatLabel(current.format), tone: .quiet) { pickingFormat = true }
-            .accessibilityIdentifier("chatgpt-summary-format")
-            .blueprintDialog(isPresented: $pickingFormat) {
-                BlueprintDialog(title: loc("Summary format")) {
-                    BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingFormat = false }
-                } content: {
-                    ForEach(options) { option in
-                        BlueprintRadioRow(ChatGptText.formatLabel(option.format), selected: option == current) {
-                            model.selectFormat(option.format)
-                            pickingFormat = false
-                        }
-                    }
-                }
-            }
-        #endif
     }
 
     private struct FormatOption: Hashable, Identifiable {
@@ -166,27 +162,11 @@ public struct ChatGptSection: View {
         }
     }
 
-    @ViewBuilder
+    /// The plan's models, as a dropdown on both platforms (2026-10-10, A-A8).
     private func picker(_ signedIn: ChatGptConnection.SignedIn) -> some View {
         let options = signedIn.models.map { ModelOption(id: $0.id, label: $0.label) }
         let current = options.first { $0.id == signedIn.model } ?? options[0]
-        #if os(macOS)
-        BlueprintDropdown(loc("Model"), options: options, selection: Binding(get: { current }, set: { model.selectModel($0.id) })) { $0.label }
-        #else
-        BlueprintButton(current.label, tone: .quiet) { pickingModel = true }
-            .blueprintDialog(isPresented: $pickingModel) {
-                BlueprintDialog(title: loc("Model")) {
-                    BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingModel = false }
-                } content: {
-                    ForEach(options) { option in
-                        BlueprintRadioRow(option.label, selected: option == current) {
-                            model.selectModel(option.id)
-                            pickingModel = false
-                        }
-                    }
-                }
-            }
-        #endif
+        return BlueprintDropdown(loc("Model"), options: options, selection: Binding(get: { current }, set: { model.selectModel($0.id) })) { $0.label }
     }
 
     private struct ModelOption: Hashable, Identifiable {
@@ -198,9 +178,9 @@ public struct ChatGptSection: View {
 }
 
 /// One of the section's two fields (docs/09 "Summary view"): its name, the box, and what it is for under it —
-/// the vocabulary row's shape. Saved when editing ends — the focus leaves, Return on the one-line field, the
-/// screen goes — with no Cancel · Save; empty is allowed. My format shows 4 lines, grows to 8 and then
-/// scrolls; on the Mac, Return saves it there as in any field, and ⌥Return starts a new line.
+/// the vocabulary row's shape. Saved when editing ends — the focus leaves, the screen goes — with no Cancel · Save;
+/// empty is allowed. Each grows over [lines] and then scrolls. My format is written in lines: Return is a new line
+/// in it, on the Mac too (2026-10-10, A-A6). About you is one paragraph that wraps: Return saves it.
 private struct PreferenceField: View {
     let title: String
     @Binding var text: String
@@ -208,8 +188,11 @@ private struct PreferenceField: View {
     let note: String
     /// The core keeps no more than this (`SummaryPreferences`), so the field takes no more.
     let limit: Int
+    let lines: ClosedRange<Int>
     let multiline: Bool
     let identifier: String
+    /// Set by the section when the field is to take the focus as it appears — once, then cleared.
+    @Binding var focusRequested: Bool
     let done: () -> Void
     @Environment(\.blueprint) private var blueprint
     @FocusState private var focused: Bool
@@ -223,20 +206,25 @@ private struct PreferenceField: View {
                 .textFieldStyle(.plain)
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 9)
                 .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
                 .overlay {
                     RoundedRectangle(cornerRadius: Radius.node)
                         .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: focused ? blueprint.line + 1 : blueprint.line)
                 }
-                .focused($focused)
                 .onChange(of: text) { _, typed in
                     if typed.count > limit { text = String(typed.prefix(limit)) }
+                    // A paragraph: the phone's Return, which a wrapping field takes as a new line, ends the
+                    // editing instead (the Mac's submits).
+                    if !multiline, typed.contains(where: \.isNewline) {
+                        text = typed.filter { !$0.isNewline }
+                        focused = false
+                    }
                 }
                 .onChange(of: focused) { _, now in if !now { done() } }
                 .onSubmit(done)
                 .onDisappear(perform: done)
+                .onAppear { if focusRequested { takeFocus() } }
+                .onChange(of: focusRequested) { _, requested in if requested { takeFocus() } }
                 .accessibilityLabel(Text(verbatim: title))
                 .accessibilityIdentifier(identifier)
             Text(verbatim: note)
@@ -249,15 +237,36 @@ private struct PreferenceField: View {
 
     @ViewBuilder
     private var field: some View {
-        let prompt = Text(verbatim: placeholder).foregroundColor(blueprint.palette.textMuted)
+        #if os(macOS)
         if multiline {
-            TextField("", text: $text, prompt: prompt, axis: .vertical)
-                .lineLimit(4...8)
+            // A field's 10 × 9, less the inset the text view keeps of its own.
+            GrowingTextEditor(text: $text, placeholder: placeholder, lines: lines, focused: $focused)
+                .padding(.horizontal, 10 - GrowingTextEditor.inset)
+                .padding(.vertical, 9)
         } else {
-            TextField("", text: $text, prompt: prompt)
-                #if os(iOS)
-                .submitLabel(.done)
-                #endif
+            TextField("", text: $text, axis: .vertical)
+                .lineLimit(lines)
+                .fieldPlaceholder(placeholder, empty: text.isEmpty)
+                .focused($focused)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+        }
+        #else
+        TextField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette), axis: .vertical)
+            .lineLimit(lines)
+            .submitLabel(multiline ? .return : .done)
+            .focused($focused)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 9)
+        #endif
+    }
+
+    /// A moment after the field appears, once whatever opened it — the format's menu — has closed.
+    private func takeFocus() {
+        focusRequested = false
+        Task {
+            try? await Task.sleep(for: .milliseconds(150))
+            focused = true
         }
     }
 }

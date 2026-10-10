@@ -103,7 +103,9 @@ public struct BlueprintButton: View {
     }
 
     private var edge: Color {
-        guard isEnabled else { return blueprint.palette.grid }
+        // 2026-10-10 (A-A2): a disabled button's dashed edge in the input border's colour, which clears 3:1
+        // against the page — on the grid's it all but disappeared.
+        guard isEnabled else { return blueprint.palette.inputBorder }
         switch tone {
         case .primary, .accent: return blueprint.palette.accent
         case .danger: return blueprint.palette.danger
@@ -148,6 +150,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
     private let options: [Value]
     private let title: (Value) -> String
     private let mono: Bool
+    private let itemIdentifier: ((Value) -> String)?
     @Binding private var selection: Value
 
     /// The glyph on the closed dropdown. Not an SF Symbol: it sits in the label's own line of text,
@@ -156,17 +159,20 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
 
     /// - Parameter mono: for a value that is data — a provider id — rather than a word, as
     ///   [BlueprintField]'s own `mono` is. The menu is the platform's and stays in its own font.
+    /// - Parameter itemIdentifier: each item's accessibility identifier, for a UI test to pick it by.
     public init(
         _ label: String,
         options: [Value],
         selection: Binding<Value>,
         mono: Bool = false,
+        itemIdentifier: ((Value) -> String)? = nil,
         title: @escaping (Value) -> String
     ) {
         self.label = label
         self.options = options
         _selection = selection
         self.mono = mono
+        self.itemIdentifier = itemIdentifier
         self.title = title
     }
 
@@ -182,6 +188,7 @@ public struct BlueprintDropdown<Value: Hashable & Identifiable>: View {
                         ? "\(BlueprintChip.selectionMark) \(title(option))"
                         : title(option))
                 }
+                .accessibilityIdentifier(itemIdentifier?(option) ?? "")
             }
         } label: {
             box

@@ -914,6 +914,9 @@ final class RecordingModel: ObservableObject, RecordingCommands {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                // docs/08 "Summaries": summaries and questions after this one are written in the new
+                // language, and Translate offers it — the core opened with the old one.
+                self.bridge?.core.summaries.setLocale(tag: AppLanguage.resolvedCode)
                 // [watchReceiver] is the only proof there is a `WCSession` to publish on: it is
                 // set exactly when `isSupported()` was true.
                 if self.watchReceiver != nil { self.publishLanguageToWatch() }

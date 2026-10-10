@@ -283,6 +283,14 @@ final class DisconnectGuardTests: XCTestCase {
         XCTAssertNotNil(korean)
         XCTAssertNotEqual(korean, english, "the catalog gave the key back")
     }
+
+    /// 2026-10-10 (2.10): the two blockers are what the shells draw in the warning tone; what a disconnect says
+    /// when it went wrong otherwise is not one of them.
+    func testTheBlockersAreToldApartFromWhatADisconnectReports() throws {
+        XCTAssertTrue(DisconnectGuard.isBlocker(try XCTUnwrap(DisconnectGuard.signInBlocker(pending: true))))
+        XCTAssertTrue(DisconnectGuard.isBlocker(try XCTUnwrap(DisconnectGuard.liveBlocker(recording: true))))
+        XCTAssertFalse(DisconnectGuard.isBlocker(DisconnectGuard.saveFailed))
+    }
 }
 
 /// docs/03 · docs/06: the *order* a disconnect writes things down in, which is the whole of what

@@ -165,6 +165,7 @@ public struct LedgerRow<Trailing: View>: View {
     private let status: LedgerStatus
     private let announce: String
     private let expanded: Bool?
+    private let opened: Bool
     private let action: () -> Void
     private let trailing: Trailing
 
@@ -172,6 +173,9 @@ public struct LedgerRow<Trailing: View>: View {
     ///   opens one — nil where the tap does something else entirely (the Mac's window opens a
     ///   detail), because a row that announces an expand action nobody can see is worse than one
     ///   that says nothing.
+    /// - Parameter opened: the recording is the one open beside the list (the Mac's Details window): the row
+    ///   wears the page's tint and a 2pt accent bar at its start, as Windows' does (2026-10-10, A-A9), and a
+    ///   screen reader hears it as selected.
     /// - Parameter trailing: what the row offers *about* the recording, beside the state and on the
     ///   same line — a chip, not a button's worth of height. It is a sibling of the row's own
     ///   button and never inside it, because a button with a button in it is one target that
@@ -186,6 +190,7 @@ public struct LedgerRow<Trailing: View>: View {
         status: LedgerStatus,
         announce: String,
         expanded: Bool? = nil,
+        opened: Bool = false,
         action: @escaping () -> Void,
         @ViewBuilder trailing: () -> Trailing
     ) {
@@ -197,6 +202,7 @@ public struct LedgerRow<Trailing: View>: View {
         self.status = status
         self.announce = announce
         self.expanded = expanded
+        self.opened = opened
         self.action = action
         self.trailing = trailing()
     }
@@ -221,7 +227,10 @@ public struct LedgerRow<Trailing: View>: View {
             }
             HairLine()
         }
-        .background(blueprint.palette.surface)
+        .background(opened ? blueprint.palette.background : blueprint.palette.surface)
+        .overlay(alignment: .leading) {
+            if opened { Rectangle().fill(blueprint.palette.accent).frame(width: 2) }
+        }
     }
 
     /// The row itself — a real button rather than a tap gesture, so it is announced as something to
@@ -239,7 +248,7 @@ public struct LedgerRow<Trailing: View>: View {
         .buttonStyle(.plain)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: announce))
-        .accessibilityAddTraits(.isButton)
+        .accessibilityAddTraits(opened ? [.isButton, .isSelected] : .isButton)
     }
 
     /// What the tap would do, named — the same two sentences Android's row labels its
@@ -338,6 +347,7 @@ extension LedgerRow where Trailing == EmptyView {
         status: LedgerStatus,
         announce: String,
         expanded: Bool? = nil,
+        opened: Bool = false,
         action: @escaping () -> Void
     ) {
         self.init(
@@ -349,6 +359,7 @@ extension LedgerRow where Trailing == EmptyView {
             status: status,
             announce: announce,
             expanded: expanded,
+            opened: opened,
             action: action
         ) { EmptyView() }
     }

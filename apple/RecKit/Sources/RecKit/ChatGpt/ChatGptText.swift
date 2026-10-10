@@ -37,9 +37,10 @@ public enum ChatGptText {
     }
 
     /// The line under a summary: `ChatGPT · <model>`, then `· <format>` when it was not General, and `· Edited`
-    /// once the user changed it.
+    /// once the user changed it. The model is the plan's name for it when the summary was written (`GPT-5.4`),
+    /// which outlives the plan's list; else what the list calls it now, else its id.
     public static func summaryFooter(_ summary: Summary, connection: ChatGptConnection) -> String {
-        var line = RecKitStrings.localized("ChatGPT · %@", modelLabel(summary.model, connection: connection))
+        var line = RecKitStrings.localized("ChatGPT · %@", summary.modelName ?? modelLabel(summary.model, connection: connection))
         if summary.summaryFormat != .auto { line += " · " + formatLabel(summary.summaryFormat) }
         if summary.editedAt != nil { line += " · " + RecKitStrings.localized("Edited") }
         return line
