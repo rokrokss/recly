@@ -544,8 +544,8 @@ func adminClient(home app.Home) *http.Client {
 
 // ---------------------------------------------------------------- status / test / service
 
-// statusReport is `status --json`, which the desktop apps read to show the agent connection
-// (docs/recly.md §15 §9). It names no subscription or event.
+// statusReport is `status --json`, for a script or a monitor that watches the server (docs/recly.md
+// §15 §9). It names no subscription or event.
 type statusReport struct {
 	Home           string         `json:"home"`
 	TunnelID       string         `json:"tunnelId,omitempty"`
