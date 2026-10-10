@@ -5,7 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
+import app.recly.windows.ui.theme.forWord
 import app.recly.windows.ui.theme.mono
 
 /** One node of the dashboard: a label and the value under it (docs/09 screen principle 1). */
@@ -39,7 +42,7 @@ data class NodeSpec(
     val busy: Boolean = false,
 )
 
-/** A square node with a label and a monospace value. */
+/** A square node with a label and a monospace value — sans for Hangul, Kana and Han ([forWord]). */
 @Composable
 fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
     val palette = blueprint
@@ -72,22 +75,27 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             if (spec.busy) BlueprintLoader(spec.valueColor ?: palette.text)
             Text(
                 spec.value,
-                style = mono.bodySmall,
+                style = mono.bodySmall.forWord(spec.value),
                 color = spec.valueColor ?: palette.text,
-                maxLines = 1,
+                // Two lines rather than a word cut short (2026-10-11, N2): `Wird hochgeladen` was `Wird hochgel…`.
+                // Compose Desktop has no hyphenation, so a line breaks only between words.
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
-/** The three dashboard nodes, joined edge to edge by straight 20dp connectors. */
+/**
+ * The three dashboard nodes, joined edge to edge by straight 20dp connectors — one height, the tallest's, so a
+ * value on two lines does not leave the other two boxes short.
+ */
 @Composable
 fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
     val palette = blueprint
-    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
+    Row(modifier = modifier.height(IntrinsicSize.Max), verticalAlignment = Alignment.CenterVertically) {
         nodes.forEachIndexed { index, spec ->
-            StateNode(spec, Modifier.weight(1f))
+            StateNode(spec, Modifier.weight(1f).fillMaxHeight())
             if (index != nodes.lastIndex) {
                 Box(
                     Modifier

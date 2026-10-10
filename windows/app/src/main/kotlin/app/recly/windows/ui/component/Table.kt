@@ -1,5 +1,7 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -21,6 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.recly.windows.ui.theme.MinTouch
@@ -88,6 +93,11 @@ fun TableRow(
     subtitleColor: Color? = null,
     /** Under the second line, in the same column: a link that belongs to the row ([TextLink]). */
     below: (@Composable () -> Unit)? = null,
+    /**
+     * The whole of what a shortened [title] stands for — a folder's path behind its name (2026-10-11, N8): never
+     * drawn in the row, only in the title's tooltip and as its value to a screen reader.
+     */
+    titleDetail: String? = null,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
@@ -100,7 +110,18 @@ fun TableRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
+                if (titleDetail == null) {
+                    Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
+                } else {
+                    DetailTooltip(titleDetail) {
+                        Text(
+                            title,
+                            modifier = Modifier.semantics { stateDescription = titleDetail },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.text,
+                        )
+                    }
+                }
                 subtitle?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor ?: palette.textMuted)
                 }
@@ -110,6 +131,28 @@ fun TableRow(
         }
         HairLine()
     }
+}
+
+/** [detail] on hover over [content], in the menus' card: data, so monospace and left to right. */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun DetailTooltip(detail: String, content: @Composable () -> Unit) {
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    TooltipArea(
+        tooltip = {
+            Text(
+                detail,
+                modifier = Modifier
+                    .border(palette.line, palette.inputBorder, shape)
+                    .background(palette.surface, shape)
+                    .padding(horizontal = Space.s, vertical = Space.xs),
+                style = mono.small.copy(textDirection = TextDirection.Ltr),
+                color = palette.text,
+            )
+        },
+        content = content,
+    )
 }
 
 /** Supporting copy below a settings row uses the table's quiet type and inset (docs/09). */

@@ -58,6 +58,23 @@ class TrayPopupTest {
         assertFalse(retryable(null, transcribing = true))
     }
 
+    /**
+     * 2026-10-11 (N1, W26): the Details list's open row offers what the tray's expanded row does — the download, Retry,
+     * Check the key and Delete — by the same rules, and a row with nothing to offer has no actions line at all.
+     */
+    @Test
+    fun `the open row of the Details list offers the expanded row's actions`() {
+        fun row(status: JobStatus?, state: Str, lastError: String? = null) =
+            app.recly.windows.jobs.RecentItem("r", "j", status, UiMessage.Text("Weekly sync"), "2026-10-11T09:00:00Z", 60.0, state.message(),
+                link = null, lastError = lastError)
+        val failed = rowActions(row(JobStatus.FAILED, Str.STATE_FAILED, recly.core.message.CoreMessage.AUTH_REJECTED.code(detail = "401")))
+        assertEquals(RowActions(download = false, retry = true, checkKey = true, delete = true), failed)
+        assertEquals(RowActions(download = false, retry = false, checkKey = false, delete = true), rowActions(row(JobStatus.DONE, Str.STATE_DONE)))
+        assertEquals(RowActions(download = true, retry = false, checkKey = false, delete = true), rowActions(row(JobStatus.NEEDS_MODEL, Str.STATE_NEEDS_MODEL)))
+        // A take still being written: nothing to offer, so no line under it.
+        assertEquals(RowActions.NONE, rowActions(row(null, Str.STATUS_RECORDING)))
+    }
+
     /** The UX decisions of 2026-10-08: the State and Device nodes say words in the app's language, not codes. */
     @Test
     fun `the State node says words, not codes`() {

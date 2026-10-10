@@ -121,14 +121,16 @@ private fun Storage(model: ShellModel, strings: Strings) {
 
 /**
  * The local folder in the Drive row's shape: where it is and a way to change it, nothing picked yet, or
- * a folder that cannot be reached any more and has to be picked again.
+ * a folder that cannot be reached any more and has to be picked again. The folder by its name; its path is a
+ * technical value, so only the tooltip and a screen reader have it (2026-10-11, N8).
  */
 @Composable
 private fun LocalFolderRow(model: ShellModel, strings: Strings) {
     val folder = model.localFolder
     val reachable = folder != null && model.localFolderAvailable
     TableRow(
-        title = folder ?: strings[Str.STORAGE_NO_FOLDER],
+        title = folder?.let(::folderName) ?: strings[Str.STORAGE_NO_FOLDER],
+        titleDetail = folder,
         subtitle = if (folder != null && !reachable) strings[Str.STORAGE_FOLDER_UNREACHABLE] else null,
         trailing = {
             BlueprintButton(
@@ -138,6 +140,14 @@ private fun LocalFolderRow(model: ShellModel, strings: Strings) {
         },
     )
 }
+
+/**
+ * A folder's own name — the last part of its [path], with either separator — or the path itself where there is no
+ * name, a drive's root (`D:\`).
+ */
+internal fun folderName(path: String): String =
+    path.trimEnd('\\', '/').substringAfterLast('\\').substringAfterLast('/')
+        .takeUnless { it.isEmpty() || it.endsWith(':') } ?: path
 
 /** docs/06: the Drive rows, under the Google Drive chip. */
 @Composable
@@ -315,13 +325,9 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
             }
             HairLine()
         }
-        // Not red: this PC holds nothing any more, and ChatGPT's settings can remove Recly.
-        ChatGptNotice.RevokeUnconfirmed -> {
-            SettingsCard {
-                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
-            }
-            HairLine()
-        }
+        // Not a warning: this PC holds nothing any more, and ChatGPT's settings can remove Recly. A quiet footnote
+        // under the account row, as on the Mac (2026-10-11, N7).
+        ChatGptNotice.RevokeUnconfirmed -> SectionFootnote(strings[Str.CHATGPT_REVOKE_UNCONFIRMED])
         null -> Unit
     }
     SummaryPreferenceRows(chatGpt, strings)
