@@ -288,6 +288,10 @@ class ChatGptAccount internal constructor(
     }
 
     /** The model a summary should use now, or null when there is none to pick. */
+    /** What Settings calls [id] — the plan's label for it while signed in, else null. */
+    internal fun modelLabel(id: String): String? =
+        (state.value as? ChatGptConnection.SignedIn)?.models?.firstOrNull { it.id == id }?.label
+
     internal suspend fun model(): String? {
         val current = state.value
         if (current is ChatGptConnection.SignedIn && current.model != null) return current.model
