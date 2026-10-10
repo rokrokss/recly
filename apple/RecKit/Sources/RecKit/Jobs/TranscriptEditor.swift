@@ -30,9 +30,12 @@ final class TranscriptDraft: ObservableObject {
         return seen
     }
 
+    /// The name typed for the speaker, else `Me` for the person who made the recording — whom a rename keeps
+    /// (docs/08 "Me and others") — else the id.
     func label(_ id: String) -> String {
         let name = names[id]?.trimmingCharacters(in: .whitespaces) ?? ""
-        return name.isEmpty ? id : name
+        if !name.isEmpty { return name }
+        return original.speakers.contains { $0.id == id && $0.me?.boolValue == true } ? RecKitStrings.localized("Me") : id
     }
 
     /// Segment [index] to speaker [id], or to a new one. A transcript nobody was identified in gets its

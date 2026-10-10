@@ -4,7 +4,7 @@ import RecKit
 import SwiftUI
 
 /// docs/08 "Exports" · ux §3: the Details window's `Share` toolbar button — the recording's transcript as
-/// text, Markdown, SubRip or WebVTT, or its audio, handed to the system's share picker under the button,
+/// text, Markdown, SubRip or WebVTT, its summary as text, or its audio, handed to the system's share picker under the button,
 /// or saved where the user picks; and `Copy all`, the text with its times on the clipboard.
 struct ShareMenu: View {
     @ObservedObject var detail: RecordingDetailModel
@@ -64,6 +64,7 @@ struct ShareMenu: View {
 
     /// Why a format cannot be had right now, nil when it can.
     private func reason(_ format: ShareFormat) -> String? {
+        if format == .summary { return detail.summaryExportReason }
         if !format.needsTranscript {
             return detail.audioUnavailable ? RecKitStrings.localized("No audio on this device") : nil
         }

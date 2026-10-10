@@ -10,6 +10,7 @@ public struct ChatGptSection: View {
     /// Told before a sign-in starts, so a shell drawn on two surfaces knows which one to welcome on.
     private let onSignIn: (() -> Void)?
     @State private var pickingModel = false
+    @State private var pickingFormat = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
     @Environment(\.openURL) private var openURL
@@ -36,8 +37,69 @@ public struct ChatGptSection: View {
                 }
             }
             failure
-            SectionFootnote(loc("A summary sends only the transcript text to OpenAI, never the audio, and counts toward your ChatGPT plan’s usage."))
+            // docs/08 "Summaries": what every summary is asked for — under Model, signed in or out.
+            SectionRow(title: loc("Summary format")) { formatPicker }
+            SectionBlock {
+                PreferenceField(
+                    title: loc("My format"),
+                    text: $model.customFormat,
+                    placeholder: loc("Sections and instructions, e.g. Summary, Risks, Next steps with owners."),
+                    note: loc("Used when the summary format is My format."),
+                    limit: Int(SummaryPreferences.companion.CUSTOM_MAX),
+                    multiline: true,
+                    identifier: "chatgpt-my-format",
+                    done: model.savePreferences
+                )
+            }
+            SectionBlock {
+                PreferenceField(
+                    title: loc("About you"),
+                    text: $model.aboutMe,
+                    placeholder: loc("e.g. Product manager; I care about deadlines and decisions."),
+                    note: loc("Summaries use this to judge what matters to you."),
+                    limit: Int(SummaryPreferences.companion.ABOUT_MAX),
+                    multiline: false,
+                    identifier: "chatgpt-about-you",
+                    done: model.savePreferences
+                )
+            }
+            SectionFootnote(loc("A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage."))
         }
+    }
+
+    /// The format Summarize uses: the platform's dropdown on the Mac, and on the phone the button and dialog
+    /// the Model row has.
+    @ViewBuilder
+    private var formatPicker: some View {
+        let shown = model.shownPreferences
+        let options = shown.formats.map(FormatOption.init)
+        let current = FormatOption(format: shown.effectiveFormat)
+        #if os(macOS)
+        BlueprintDropdown(loc("Summary format"), options: options, selection: Binding(get: { current }, set: { model.selectFormat($0.format) })) {
+            ChatGptText.formatLabel($0.format)
+        }
+        .accessibilityIdentifier("chatgpt-summary-format")
+        #else
+        BlueprintButton(ChatGptText.formatLabel(current.format), tone: .quiet) { pickingFormat = true }
+            .accessibilityIdentifier("chatgpt-summary-format")
+            .blueprintDialog(isPresented: $pickingFormat) {
+                BlueprintDialog(title: loc("Summary format")) {
+                    BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingFormat = false }
+                } content: {
+                    ForEach(options) { option in
+                        BlueprintRadioRow(ChatGptText.formatLabel(option.format), selected: option == current) {
+                            model.selectFormat(option.format)
+                            pickingFormat = false
+                        }
+                    }
+                }
+            }
+        #endif
+    }
+
+    private struct FormatOption: Hashable, Identifiable {
+        let format: SummaryFormat
+        var id: SummaryFormat { format }
     }
 
     @ViewBuilder
@@ -133,6 +195,71 @@ public struct ChatGptSection: View {
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// One of the section's two fields (docs/09 "Summary view"): its name, the box, and what it is for under it —
+/// the vocabulary row's shape. Saved when editing ends — the focus leaves, Return on the one-line field, the
+/// screen goes — with no Cancel · Save; empty is allowed. My format shows 4 lines, grows to 8 and then
+/// scrolls; on the Mac, Return saves it there as in any field, and ⌥Return starts a new line.
+private struct PreferenceField: View {
+    let title: String
+    @Binding var text: String
+    let placeholder: String
+    let note: String
+    /// The core keeps no more than this (`SummaryPreferences`), so the field takes no more.
+    let limit: Int
+    let multiline: Bool
+    let identifier: String
+    let done: () -> Void
+    @Environment(\.blueprint) private var blueprint
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            Text(verbatim: title)
+                .font(blueprint.fonts.bodySmall)
+                .foregroundStyle(blueprint.palette.text)
+            field
+                .textFieldStyle(.plain)
+                .font(blueprint.fonts.bodySmall)
+                .foregroundStyle(blueprint.palette.text)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 9)
+                .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
+                .overlay {
+                    RoundedRectangle(cornerRadius: Radius.node)
+                        .strokeBorder(focused ? blueprint.palette.accent : blueprint.palette.inputBorder, lineWidth: focused ? blueprint.line + 1 : blueprint.line)
+                }
+                .focused($focused)
+                .onChange(of: text) { _, typed in
+                    if typed.count > limit { text = String(typed.prefix(limit)) }
+                }
+                .onChange(of: focused) { _, now in if !now { done() } }
+                .onSubmit(done)
+                .onDisappear(perform: done)
+                .accessibilityLabel(Text(verbatim: title))
+                .accessibilityIdentifier(identifier)
+            Text(verbatim: note)
+                .font(blueprint.fonts.sans(TypeSize.small))
+                .foregroundStyle(blueprint.palette.textMuted)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private var field: some View {
+        let prompt = Text(verbatim: placeholder).foregroundColor(blueprint.palette.textMuted)
+        if multiline {
+            TextField("", text: $text, prompt: prompt, axis: .vertical)
+                .lineLimit(4...8)
+        } else {
+            TextField("", text: $text, prompt: prompt)
+                #if os(iOS)
+                .submitLabel(.done)
+                #endif
+        }
+    }
 }
 
 /// The one-time confirmation after the first sign-in on a device (docs/09 "Summary view"). The shells present it

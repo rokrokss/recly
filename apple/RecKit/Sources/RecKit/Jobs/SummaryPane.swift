@@ -9,10 +9,13 @@ struct SummaryPane: View {
     @ObservedObject var model: RecordingDetailModel
     /// Summarize again, from the failure notice.
     let retry: () -> Void
+    /// How far the recording here can be played, and the seek a citation makes — nil while it cannot be
+    /// played from a point (see [CitedText]).
+    let seekableSec: Double
+    let onSeek: ((Double) -> Void)?
     @State private var copied = false
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    @Environment(\.openURL) private var openURL
 
     var body: some View {
         ScrollView {
@@ -48,12 +51,7 @@ struct SummaryPane: View {
     }
 
     private func text(_ summary: Summary) -> some View {
-        Text(verbatim: summary.text)
-            .font(blueprint.fonts.body)
-            .foregroundStyle(blueprint.palette.text)
-            .textSelection(.enabled)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
+        CitedText(text: summary.text, seekableSec: seekableSec, onSeek: onSeek)
             .accessibilityIdentifier("summary-text")
     }
 
@@ -76,13 +74,33 @@ struct SummaryPane: View {
         }
     }
 
-    /// One centred notice and at most one way out of it (docs/09 screen principle 8).
     private func notice(_ reason: String) -> some View {
+        ChatGptFailureNotice(reason: reason, failed: loc("Could not summarize"), retrying: model.summarizing, retry: retry)
+            .accessibilityIdentifier("summary-failed")
+    }
+
+    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+}
+
+/// One centred notice and at most one way out of it (docs/09 screen principle 8): a summary's failure, and an
+/// answer's (docs/09 "Ask").
+struct ChatGptFailureNotice: View {
+    let reason: String
+    /// What it says when the code has no sentence the user can act on — `Could not summarize`.
+    let failed: String
+    /// A run already going again: Retry waits for it.
+    let retrying: Bool
+    let retry: () -> Void
+    @Environment(\.blueprint) private var blueprint
+    @Environment(\.locale) private var locale
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
         let sentence = ChatGptText.sentence(reason)
         let message = ChatGptText.message(reason)
-        return VStack(spacing: Space.s) {
+        VStack(spacing: Space.s) {
             // A sentence that says what to do is something to attend to; anything else failed.
-            Text(verbatim: sentence ?? loc("Could not summarize"))
+            Text(verbatim: sentence ?? failed)
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(sentence == nil ? blueprint.palette.danger : BadgeTone.warning.ink(blueprint.palette))
                 .multilineTextAlignment(.center)
@@ -93,19 +111,93 @@ struct SummaryPane: View {
                     .multilineTextAlignment(.center)
             }
             if message == .chatgptUsageLimit {
-                BlueprintButton(loc("Manage usage"), tone: .primary) { openURL(ChatGptSettingsModel.usage) }
+                BlueprintButton(RecKitStrings.localized("Manage usage"), tone: .primary) { openURL(ChatGptSettingsModel.usage) }
             } else if message != .chatgptSignInRequired {
-                BlueprintButton(loc("Retry"), tone: .quiet, action: retry)
-                    .disabled(model.summarizing)
+                BlueprintButton(RecKitStrings.localized("Retry"), tone: .quiet, action: retry)
+                    .disabled(retrying)
                     .accessibilityIdentifier("summary-retry")
             }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, Space.m)
-        .accessibilityIdentifier("summary-failed")
+    }
+}
+
+/// docs/09 "Summary view": a summary or an answer as selectable plain text, every `[HH:MM:SS]` in it a link that
+/// plays the recording from there — the seek a transcript time button makes. A link inside the one `Text`,
+/// rather than a button beside it, is what keeps the whole text selectable (SwiftUI selects within one
+/// `Text`), so a citation's target is its own glyphs rather than a 44pt box, and a screen reader reaches each
+/// one as a named action, `Play from 00:12:34`. Mono and accent, never underlined: a dotted underline means
+/// a web page (docs/09, 2026-10-09).
+struct CitedText: View {
+    let text: String
+    /// How far the recording here can be played: a citation past it is plain text, as a time button past it
+    /// is off.
+    let seekableSec: Double
+    /// Nil while the recording cannot be played from a point (no audio here, still being written).
+    let onSeek: ((Double) -> Void)?
+    @Environment(\.blueprint) private var blueprint
+    @Environment(\.locale) private var locale
+
+    var body: some View {
+        let runs = ChatGptText.runs(text)
+        let playable = Self.playable(runs, seekableSec: onSeek == nil ? 0 : seekableSec)
+        Text(attributed(runs, playable: playable))
+            .font(blueprint.fonts.body)
+            .foregroundStyle(blueprint.palette.text)
+            .tint(blueprint.palette.accent)
+            .textSelection(.enabled)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .environment(\.openURL, OpenURLAction { url in
+                guard let sec = Self.second(url) else { return .systemAction }
+                onSeek?(sec)
+                return .handled
+            })
+            .accessibilityActions {
+                ForEach(Array(playable.enumerated()), id: \.offset) { _, citation in
+                    Button(ChatGptText.playFrom(citation.text)) { onSeek?(citation.atSec) }
+                }
+            }
     }
 
-    private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
+    /// The citations a tap can play from: inside what the recording here holds.
+    static func playable(_ runs: [CitationRun], seekableSec: Double) -> [(text: String, atSec: Double)] {
+        runs.compactMap { run in
+            guard case .citation(let text, let atSec) = run, atSec < seekableSec else { return nil }
+            return (text, atSec)
+        }
+    }
+
+    private func attributed(_ runs: [CitationRun], playable: [(text: String, atSec: Double)]) -> AttributedString {
+        var out = AttributedString()
+        for run in runs {
+            switch run {
+            case .text(let words):
+                out += AttributedString(words)
+            case .citation(let words, let atSec):
+                var part = AttributedString(words)
+                part.font = blueprint.fonts.monoBody
+                if playable.contains(where: { $0.atSec == atSec }) {
+                    part.link = Self.url(atSec)
+                    part.foregroundColor = blueprint.palette.accent
+                } else {
+                    part.foregroundColor = blueprint.palette.textMuted
+                }
+                out += part
+            }
+        }
+        return out
+    }
+
+    private static let scheme = "recly-seek"
+
+    static func url(_ atSec: Double) -> URL? { URL(string: "\(scheme):\(atSec)") }
+
+    static func second(_ url: URL) -> Double? {
+        guard url.scheme == scheme else { return nil }
+        return Double(url.absoluteString.dropFirst(scheme.count + 1))
+    }
 }
 
 /// docs/09 "Summary view": the summary as the user rewrites it — the whole text in one field.

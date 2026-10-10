@@ -97,7 +97,7 @@ public struct TransferDisclosureList: View {
                         .fixedSize(horizontal: false, vertical: true)
                     // What: a summary sends the transcript's text, never the audio (docs/15 §10).
                     Text(verbatim: summary
-                        ? loc("The transcript text of each recording you summarize is sent here. The audio is not sent.")
+                        ? loc("The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.")
                         : loc("The full recording, the language and speaker settings and your vocabulary are sent here for transcription. Retention and training depend on the provider and your account settings."))
                         .font(blueprint.fonts.bodySmall)
                         .fixedSize(horizontal: false, vertical: true)

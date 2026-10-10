@@ -40,6 +40,12 @@ public final class ChatGptSettingsModel: ObservableObject {
     @Published public private(set) var failure: Failure?
     /// The first sign-in on this device, confirmed once (docs/09 "Summary view").
     @Published public var welcome = false
+    /// docs/08 "Summaries": this device's summary format, My format and About you, as saved — shown and editable
+    /// signed in or out.
+    @Published public private(set) var preferences = SummaryPreferences(format: .auto, customFormat: "", aboutMe: "")
+    /// My format and About you as their fields hold them; saved when editing ends ([savePreferences]).
+    @Published public var customFormat = ""
+    @Published public var aboutMe = ""
 
     /// ChatGPT's own usage page — where the plan's limits are, and where Recly can be disconnected.
     public static let usage = URL(string: "https://chatgpt.com/settings/usage")!
@@ -49,6 +55,7 @@ public final class ChatGptSettingsModel: ObservableObject {
     private let timeout: Duration
     private var loopback: ChatGptLoopback?
     private var observer: Task<Void, Never>?
+    private var preferencesObserver: Task<Void, Never>?
     private let logger = Logger(subsystem: CoreBridge.appName, category: "chatgpt")
 
     public convenience init(core: ReclyCore_) {
@@ -69,9 +76,17 @@ public final class ChatGptSettingsModel: ObservableObject {
                 self?.connection = connection
             }
         }
+        preferencesObserver = Task { [weak self] in
+            for await preferences in core.summaries.observePreferences() {
+                self?.adopt(preferences)
+            }
+        }
     }
 
-    deinit { observer?.cancel() }
+    deinit {
+        observer?.cancel()
+        preferencesObserver?.cancel()
+    }
 
     /// docs/15 "China mainland App Store": the whole section goes where ChatGPT is not offered.
     public var available: Bool { !(connection is ChatGptConnection.Unavailable) }
@@ -114,6 +129,55 @@ public final class ChatGptSettingsModel: ObservableObject {
     public func selectModel(_ id: String) {
         Task { try? await core.chatGpt.selectModel(id: id) }
     }
+
+    // MARK: - Summary preferences (docs/08 "Summaries")
+
+    /// What the section shows: the saved format over the fields as they are typed, so `My format` is offered
+    /// once it has words and General stands in for it once they are gone (`effectiveFormat`).
+    public var shownPreferences: SummaryPreferences {
+        SummaryPreferences(format: preferences.format, customFormat: customFormat, aboutMe: aboutMe)
+    }
+
+    /// Saved at once, like the model — with the fields as they are, so a pick made while one is being typed in
+    /// keeps what was typed. Shown at once too: a field that ends its editing as the menu closes saves with the
+    /// format just picked, not the one before it.
+    public func selectFormat(_ format: SummaryFormat) {
+        preferences = SummaryPreferences(format: format, customFormat: preferences.customFormat, aboutMe: preferences.aboutMe)
+        save(SummaryPreferences(format: format, customFormat: customFormat, aboutMe: aboutMe))
+    }
+
+    /// The fields' end of editing — focus gone, Return, the screen closed. Nothing to do when what they hold is
+    /// what is saved.
+    public func savePreferences() {
+        let next = shownPreferences
+        guard Self.trimmed(next.customFormat) != preferences.customFormat || Self.trimmed(next.aboutMe) != preferences.aboutMe else { return }
+        save(next)
+    }
+
+    /// One save after another, so the last thing the user did is what is kept.
+    private func save(_ next: SummaryPreferences) {
+        let previous = saving
+        saving = Task {
+            await previous?.value
+            do {
+                adopt(try await core.summaries.setPreferences(preferences: next))
+            } catch {
+                logger.error("shell.chatgpt.preferences.failed error=\(String(describing: error), privacy: .private)")
+            }
+        }
+    }
+
+    private var saving: Task<Void, Never>?
+
+    /// The saved preferences; a field keeps its own text while that is the saved text, trimmed — the spaces
+    /// being typed are not taken away.
+    private func adopt(_ saved: SummaryPreferences) {
+        preferences = saved
+        if Self.trimmed(customFormat) != saved.customFormat { customFormat = saved.customFormat }
+        if Self.trimmed(aboutMe) != saved.aboutMe { aboutMe = saved.aboutMe }
+    }
+
+    private static func trimmed(_ text: String) -> String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
 
     private func run(_ loopback: ChatGptLoopback) async {
         // The limit and Cancel hold from the first moment, before the browser is open too.

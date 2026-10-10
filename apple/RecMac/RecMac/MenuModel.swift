@@ -1050,11 +1050,13 @@ final class MenuModel: ObservableObject {
     }
 
     /// docs/10 "Search": a search result opens at its first transcript hit, with every match of the
-    /// query marked and the find bar over the transcript — unless only the title matched.
+    /// query marked and the find bar over the transcript — unless only the title matched — or on the
+    /// summary, when only the summary did.
     func showDetail(_ hit: SearchHit) {
         let title = hit.title ?? ""
         showDetail(recordingId: hit.recordingId, title: title.isEmpty ? RecKitStrings.localized("Untitled") : title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: searchQuery, atSec: first.atSec) }
+        detail?.opensOnSummary = hit.onlyInSummary
     }
 
     private func showDetail(recordingId: String, title: String) {

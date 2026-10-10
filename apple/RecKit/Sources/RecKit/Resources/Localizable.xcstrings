@@ -53716,18 +53716,6 @@
     "A summary sends only the transcript text to OpenAI, never the audio, and counts toward your ChatGPT plan’s usage.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A summary sends only the transcript text to OpenAI, never the audio, and counts toward your ChatGPT plan’s usage."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "요약할 때는 전사본 텍스트만 OpenAI로 보내고 오디오는 보내지 않습니다. 요약은 ChatGPT 요금제 사용량에 포함됩니다."
-          }
-        },
         "ja": {
           "stringUnit": {
             "state": "translated",
@@ -55861,18 +55849,6 @@
     "The transcript text of each recording you summarize is sent here. The audio is not sent.": {
       "extractionState": "manual",
       "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The transcript text of each recording you summarize is sent here. The audio is not sent."
-          }
-        },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "요약하는 녹음의 전사본 텍스트가 이곳으로 전송됩니다. 오디오는 보내지 않습니다."
-          }
-        },
         "ja": {
           "stringUnit": {
             "state": "translated",
@@ -57999,6 +57975,483 @@
           "stringUnit": {
             "state": "translated",
             "value": "การบันทึกจะเก็บสรุปไว้ในอุปกรณ์นี้"
+          }
+        }
+      }
+    },
+    "Summary format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summary format"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약 형식"
+          }
+        }
+      }
+    },
+    "General": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "General"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "일반"
+          }
+        }
+      }
+    },
+    "One-on-one": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "One-on-one"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "1:1"
+          }
+        }
+      }
+    },
+    "Lecture": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lecture"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "강의"
+          }
+        }
+      }
+    },
+    "Interview": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Interview"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "인터뷰"
+          }
+        }
+      }
+    },
+    "My format": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "My format"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 형식"
+          }
+        }
+      }
+    },
+    "Sections and instructions, e.g. Summary, Risks, Next steps with owners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sections and instructions, e.g. Summary, Risks, Next steps with owners."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "섹션과 지시를 적으세요. 예: 요약, 위험, 담당자별 다음 단계."
+          }
+        }
+      }
+    },
+    "Used when the summary format is My format.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Used when the summary format is My format."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약 형식이 내 형식일 때 씁니다."
+          }
+        }
+      }
+    },
+    "About you": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About you"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나에 대해"
+          }
+        }
+      }
+    },
+    "e.g. Product manager; I care about deadlines and decisions.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. Product manager; I care about deadlines and decisions."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "예: 프로덕트 매니저, 마감과 결정 사항이 중요합니다."
+          }
+        }
+      }
+    },
+    "Summaries use this to judge what matters to you.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summaries use this to judge what matters to you."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약할 때 무엇이 중요한지 판단하는 데 씁니다."
+          }
+        }
+      }
+    },
+    "A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약할 때는 전사본 텍스트, 표시한 하이라이트, 여기 적은 내용을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. 요약은 ChatGPT 요금제 사용량에 포함됩니다."
+          }
+        }
+      }
+    },
+    "Summarize as…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Summarize as…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "다른 형식으로 요약…"
+          }
+        }
+      }
+    },
+    "Ask about this recording…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask about this recording…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 녹음에 대해 묻기…"
+          }
+        }
+      }
+    },
+    "Ask about this recording": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask about this recording"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "이 녹음에 대해 묻기"
+          }
+        }
+      },
+      "generatesSymbol": false
+    },
+    "Follow-up email": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Follow-up email"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "후속 메일"
+          }
+        }
+      }
+    },
+    "Action items": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Action items"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "할 일"
+          }
+        }
+      }
+    },
+    "Open questions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open questions"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "남은 질문"
+          }
+        }
+      }
+    },
+    "Translate to %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate to %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@로 번역"
+          }
+        }
+      }
+    },
+    "Feedback on how I spoke": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Feedback on how I spoke"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "내 말하기 피드백"
+          }
+        }
+      }
+    },
+    "Ask your own question": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask your own question"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "직접 질문하기"
+          }
+        }
+      }
+    },
+    "Ask": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ask"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "묻기"
+          }
+        }
+      }
+    },
+    "Asking…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Asking…"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "묻는 중…"
+          }
+        }
+      }
+    },
+    "Could not answer": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not answer"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "답하지 못했습니다"
+          }
+        }
+      }
+    },
+    "Play from %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Play from %@"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@부터 재생"
+          }
+        }
+      }
+    },
+    "No summary yet": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No summary yet"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "아직 요약이 없습니다"
+          }
+        }
+      }
+    },
+    "Me": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Me"
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "나"
+          }
+        }
+      }
+    },
+    "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The transcript text of each recording you summarize or ask about is sent here, with the moments you highlighted and what you wrote in Settings → ChatGPT. The audio is not sent."
+          }
+        },
+        "ko": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "요약하거나 질문하는 녹음의 전사본 텍스트가 표시한 하이라이트, 설정 → ChatGPT에 적은 내용과 함께 이곳으로 전송됩니다. 오디오는 보내지 않습니다."
           }
         }
       }
