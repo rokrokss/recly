@@ -15,6 +15,132 @@
             "state": "translated",
             "value": "대기 %@"
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@件待機中"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@项等待"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@項等待"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ en espera"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ en attente"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wartend"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ em espera"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ em espera"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ منتظر"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ प्रतीक्षारत"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ в ожидании"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ in attesa"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "oczekujące: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ bekliyor"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ naghihintay"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "অপেক্ষায় %@"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "منتظر: %@"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zinazosubiri: %@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ đang chờ"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ در انتظار"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "รอ %@"
+          }
         }
       }
     },
@@ -31,6 +157,132 @@
           "stringUnit": {
             "state": "translated",
             "value": "실패 %@"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@件失敗"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@项失败"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@項失敗"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ con error"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ en échec"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ fehlgeschlagen"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ com falha"
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ com falha"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ فاشل"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ विफल"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ с ошибкой"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ con errore"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "niepowodzenia: %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ başarısız"
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ nabigo"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ব্যর্থ %@"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ناکام: %@"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zilizoshindwa: %@"
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ thất bại"
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ ناموفق"
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ล้มเหลว %@"
           }
         }
       },
@@ -13921,6 +14173,132 @@
             "state": "translated",
             "value": "제공자 쪽에서 문제가 생겼습니다."
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "プロバイダー側で問題が発生しました。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务提供方出现问题。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服務提供方發生問題。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo salió mal en el proveedor."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Un problème est survenu chez le fournisseur."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim Anbieter ist etwas schiefgelaufen."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo deu errado no provedor."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Algo correu mal no fornecedor."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "حدث خطأ لدى مزوّد الخدمة."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "प्रदाता की ओर से कुछ गड़बड़ हुई।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На стороне поставщика что-то пошло не так."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Si è verificato un problema presso il fornitore."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Po stronie dostawcy coś poszło nie tak."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sağlayıcı tarafında bir sorun oluştu."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "May nangyaring mali sa provider."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "প্রদানকারীর দিকে একটি সমস্যা হয়েছে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "فراہم کنندہ کی طرف کچھ غلط ہو گیا۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kuna hitilafu upande wa mtoa huduma."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đã xảy ra lỗi ở phía nhà cung cấp."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "در سمت ارائه‌دهنده مشکلی پیش آمد."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เกิดปัญหาที่ฝั่งผู้ให้บริการ"
+          }
         }
       }
     },
@@ -20799,6 +21177,132 @@
           "stringUnit": {
             "state": "translated",
             "value": "전사가 꺼져 있습니다. 설정에서 켠 다음 다시 전사를 누르세요."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "文字起こしはオフです。設定でオンにしてから「もう一度文字起こし」を使ってください。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转写已关闭。请在设置中开启，然后使用“重新转录”。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "轉寫已關閉。請在設定中開啟，然後使用「重新轉錄」。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcripción está desactivada. Actívala en Ajustes y luego usa Volver a transcribir."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La transcription est désactivée. Activez-la dans Réglages, puis utilisez Transcrire à nouveau."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Transkription ist aus. Schalte sie in den Einstellungen ein und verwende dann „Erneut transkribieren“."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A transcrição está desativada. Ative-a em Configurações e depois use Transcrever novamente."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "A transcrição está desativada. Ative-a em Definições e depois use Transcrever novamente."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "النسخ الصوتي متوقف. شغّله في الإعدادات، ثم استخدم «إعادة النسخ»."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ट्रांसक्रिप्शन बंद है। सेटिंग में इसे चालू करें, फिर “फिर से ट्रांसक्राइब करें” इस्तेमाल करें।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Расшифровка выключена. Включите её в разделе «Настройки», а затем выберите «Расшифровать заново»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La trascrizione è disattivata. Attivala in Impostazioni, poi usa Trascrivi di nuovo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Transkrypcja jest wyłączona. Włącz ją w: Ustawienia, a potem użyj opcji Transkrybuj ponownie."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Döküm kapalı. Ayarlar bölümünden açın, ardından Yeniden metne dönüştür seçeneğini kullanın."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naka-off ang transcription. I-on ito sa Mga Setting, pagkatapos ay gamitin ang I-transcribe ulit."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ট্রান্সক্রিপশন বন্ধ। সেটিংস-এ চালু করে «আবার ট্রান্সক্রাইব করুন» ব্যবহার করুন।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ٹرانسکرپشن بند ہے۔ اسے ترتیبات میں آن کریں، پھر «دوبارہ ٹرانسکرائب کریں» استعمال کریں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unukuzi umezimwa. Uwashe kwenye Mipangilio, kisha tumia Nukuu tena."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Đang tắt chép lời. Hãy bật trong Cài đặt rồi dùng Chép lời lại."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "رونویسی خاموش است. آن را در تنظیمات روشن کنید، سپس «رونویسی دوباره» را بزنید."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ปิดการถอดเสียงอยู่ เปิดในการตั้งค่า แล้วใช้ ถอดเสียงอีกครั้ง"
           }
         }
       }
@@ -58373,6 +58877,132 @@
             "state": "translated",
             "value": "여기에 형식을 적으세요. 그때까지는 일반 형식으로 요약합니다."
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここに形式を書いてください。それまでは「一般」で要約します。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此写下你的格式；在此之前，摘要使用“通用”格式。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此寫下你的格式；在此之前，摘要使用「通用」格式。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escribe aquí tu formato; mientras tanto, los resúmenes usan General."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Écrivez votre format ici ; d’ici là, les résumés utilisent Général."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schreibe hier dein Format; bis dahin verwenden Zusammenfassungen „Allgemein“."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escreva seu formato aqui; até lá, os resumos usam Geral."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escreva aqui o seu formato; até lá, os resumos usam Geral."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اكتب تنسيقك هنا؛ وحتى ذلك الحين تستخدم الملخصات التنسيق العام."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "अपना फ़ॉर्मैट यहाँ लिखें; तब तक सारांश “सामान्य” फ़ॉर्मैट में बनेंगे।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Опишите здесь свой формат; пока его нет, сводки используют «Общий»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scrivi qui il tuo formato; fino ad allora i riepiloghi usano Generale."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz tu swój format; do tego czasu podsumowania używają formatu Ogólny."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Biçiminizi buraya yazın; o zamana kadar özetler Genel biçimini kullanır."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Isulat dito ang iyong format; hanggang doon, Pangkalahatan ang gagamitin ng mga buod."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "এখানে আপনার ফরম্যাট লিখুন; ততক্ষণ সারাংশ «সাধারণ» ফরম্যাটে হবে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اپنا فارمیٹ یہاں لکھیں؛ تب تک خلاصے «عمومی» فارمیٹ استعمال کریں گے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Andika muundo wako hapa; hadi hapo muhtasari utatumia Jumla."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hãy viết định dạng của bạn ở đây; trong lúc đó, bản tóm tắt dùng dạng Chung."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "قالب خود را اینجا بنویسید؛ تا آن زمان خلاصه‌ها از «عمومی» استفاده می‌کنند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "เขียนรูปแบบของคุณที่นี่ ระหว่างนี้สรุปจะใช้แบบทั่วไป"
+          }
         }
       }
     },
@@ -58676,6 +59306,132 @@
             "state": "translated",
             "value": "요약과 답에서 무엇이 중요한지 판단하는 데 씁니다."
           }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要約と回答は、あなたにとって何が重要かを判断するのにこれを使います。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘要和回答会据此判断哪些内容对你重要。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘要和回答會據此判斷哪些內容對你重要。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los resúmenes y las respuestas lo usan para valorar lo que te importa."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les résumés et les réponses s’en servent pour juger ce qui compte pour vous."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusammenfassungen und Antworten nutzen das, um einzuschätzen, was dir wichtig ist."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumos e respostas usam isso para avaliar o que importa para você."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumos e respostas usam isto para avaliar o que lhe importa."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "تستخدم الملخصات والإجابات هذا لتقدير ما يهمّك."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सारांश और जवाब इससे तय करते हैं कि आपके लिए क्या अहम है।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сводки и ответы учитывают это, чтобы понять, что для вас важно."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riepiloghi e risposte lo usano per capire cosa conta per te."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania i odpowiedzi korzystają z tego, by ocenić, co jest dla Ciebie ważne."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özetler ve yanıtlar, sizin için neyin önemli olduğunu anlamak için bunu kullanır."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ginagamit ito ng mga buod at sagot para matantya kung ano ang mahalaga sa iyo."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে সারাংশ ও উত্তর এটি ব্যবহার করে।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خلاصے اور جوابات اس سے اندازہ لگاتے ہیں کہ آپ کے لیے کیا اہم ہے۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muhtasari na majibu hutumia hili kupima kilicho muhimu kwako."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản tóm tắt và câu trả lời dùng thông tin này để biết điều gì quan trọng với bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خلاصه‌ها و پاسخ‌ها از این برای تشخیص آنچه برایتان مهم است استفاده می‌کنند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "สรุปและคำตอบใช้ข้อมูลนี้เพื่อตัดสินว่าอะไรสำคัญกับคุณ"
+          }
         }
       }
     },
@@ -58692,6 +59448,132 @@
           "stringUnit": {
             "state": "translated",
             "value": "요약과 질문에는 전사본 텍스트, 표시한 하이라이트, 여기 적은 내용을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. ChatGPT 요금제 사용량에 포함됩니다."
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "要約と質問では、文字起こしのテキスト、ハイライトした瞬間、ここに書いた内容を OpenAI に送ります。音声は送りません。ChatGPT プランの使用量に含まれます。"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘要和提问会把转写文本、你标记的时刻以及你在此填写的内容发送给 OpenAI——绝不发送音频——并计入你的 ChatGPT 套餐用量。"
+          }
+        },
+        "zh-Hant": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "摘要和提問會把轉寫文字、你標記的時刻以及你在此填寫的內容傳送給 OpenAI——絕不傳送音訊——並計入你的 ChatGPT 方案用量。"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los resúmenes y las preguntas envían a OpenAI el texto de la transcripción, los momentos que destacaste y lo que escribiste aquí —nunca el audio— y cuentan para el uso de tu plan de ChatGPT."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les résumés et les questions envoient à OpenAI le texte de la transcription, les moments surlignés et ce que vous avez écrit ici — jamais l’audio — et comptent dans l’utilisation de votre forfait ChatGPT."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zusammenfassungen und Fragen senden den Transkripttext, die markierten Momente und was du hier geschrieben hast an OpenAI – nie das Audio – und zählen zur Nutzung deines ChatGPT-Tarifs."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumos e perguntas enviam à OpenAI o texto da transcrição, os momentos que você destacou e o que escreveu aqui — nunca o áudio — e contam para o uso do seu plano do ChatGPT."
+          }
+        },
+        "pt-PT": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Resumos e perguntas enviam à OpenAI o texto da transcrição, os momentos que destacou e o que escreveu aqui — nunca o áudio — e contam para a utilização do seu plano do ChatGPT."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ترسل الملخصات والأسئلة نص النسخة المكتوبة واللحظات التي ميّزتها وما كتبته هنا إلى OpenAI — ولا ترسل الصوت أبداً — وتُحتسب ضمن استخدام خطة ChatGPT."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सारांश और सवाल ट्रांसक्रिप्ट का टेक्स्ट, आपके हाइलाइट किए पल और यहाँ लिखी बातें OpenAI को भेजते हैं — ऑडियो कभी नहीं — और ये आपके ChatGPT प्लान के इस्तेमाल में गिने जाते हैं।"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сводки и вопросы отправляют в OpenAI текст расшифровки, отмеченные вами моменты и то, что вы здесь написали, — но никогда не аудио — и учитываются в использовании вашего плана ChatGPT."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riepiloghi e domande inviano a OpenAI il testo della trascrizione, i momenti evidenziati e ciò che hai scritto qui — mai l’audio — e contano nell’utilizzo del tuo piano ChatGPT."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Podsumowania i pytania wysyłają do OpenAI tekst transkrypcji, zaznaczone momenty i to, co tu wpisano — nigdy dźwięk — i wliczają się do wykorzystania Twojego planu ChatGPT."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Özetler ve sorular; döküm metnini, vurguladığınız anları ve buraya yazdıklarınızı OpenAI'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır."
+          }
+        },
+        "fil": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ipinapadala ng mga buod at tanong sa OpenAI ang teksto ng transcript, ang mga sandaling na-highlight mo at ang isinulat mo rito — hindi kailanman ang audio — at bilang ang mga ito sa paggamit ng iyong ChatGPT plan."
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "সারাংশ ও প্রশ্ন ট্রান্সক্রিপ্টের লেখা, আপনার হাইলাইট করা মুহূর্ত আর এখানে যা লিখেছেন তা OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এগুলো আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।"
+          }
+        },
+        "ur": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خلاصے اور سوالات ٹرانسکرپٹ کا متن، آپ کے نمایاں کیے گئے لمحات اور جو آپ نے یہاں لکھا، OpenAI کو بھیجتے ہیں — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتے ہیں۔"
+          }
+        },
+        "sw": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Muhtasari na maswali hutuma maandishi ya nakala, nyakati ulizoangazia na ulichoandika hapa kwa OpenAI — kamwe si sauti — na huhesabiwa katika matumizi ya mpango wako wa ChatGPT."
+          }
+        },
+        "vi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bản tóm tắt và câu hỏi gửi văn bản bản chép lời, những khoảnh khắc bạn đánh dấu và nội dung bạn viết ở đây tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn."
+          }
+        },
+        "fa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "خلاصه‌ها و پرسش‌ها متن رونوشت، لحظه‌هایی که برجسته کرده‌اید و آنچه اینجا نوشته‌اید را به OpenAI می‌فرستند — هرگز صدا را نه — و جزو مصرف طرح ChatGPT شما حساب می‌شوند."
+          }
+        },
+        "th": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "การสรุปและคำถามจะส่งข้อความถอดเสียง ช่วงที่คุณไฮไลต์ และสิ่งที่คุณเขียนไว้ที่นี่ไปยัง OpenAI — ไม่ส่งเสียงเลย — และนับรวมในการใช้งานแพ็กเกจ ChatGPT ของคุณ"
           }
         }
       }

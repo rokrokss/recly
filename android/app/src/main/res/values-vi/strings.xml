@@ -105,7 +105,7 @@
     <string name="core_step_failed">Thất bại: %1$s</string>
     <string name="core_auth_rejected">Nhà cung cấp đã từ chối khóa.</string>
     <string name="core_quota">Nhà cung cấp đã hết hạn mức hoặc đang giới hạn tốc độ yêu cầu.</string>
-    <string name="core_provider_error">Đã xảy ra lỗi ở phía nhà cung cấp. Ứng dụng sẽ tự thử lại.</string>
+    <string name="core_provider_error">Đã xảy ra lỗi ở phía nhà cung cấp.</string>
     <string name="core_unsupported_audio">Nhà cung cấp không chấp nhận âm thanh này.</string>
     <string name="core_no_input_track">Bản ghi âm này không có rãnh mono hoặc rãnh trộn để chép lời.</string>
     <string name="core_result_timeout">Nhà cung cấp không xử lý xong kịp thời. Ứng dụng sẽ gửi lại.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Tiêu đề</string>
     <string name="jobs_column_length">Thời lượng</string>
     <string name="jobs_column_status">Trạng thái</string>
-    <string name="jobs_summary">%1$d · %2$d đang chờ · %3$d thất bại</string>
+    <string name="jobs_summary_waiting">%1$d đang chờ</string>
+    <string name="jobs_summary_failed">%1$d thất bại</string>
     <string name="jobs_row_expand">Mở rộng</string>
     <string name="jobs_row_collapse">Thu gọn</string>
     <string name="jobs_row_description">%1$s, ghi âm lúc %2$s, thời lượng %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Cần quyền chuyển dữ liệu</string>
     <string name="job_state_needs_model">Đang chờ mô hình giọng nói</string>
     <string name="delete_key_title">Xóa khóa: %1$s</string>
-    <string name="detail_not_requested">Bản ghi âm này không có bước chép lời nào để chạy.</string>
+    <string name="detail_not_requested">Đang tắt chép lời. Hãy bật trong Cài đặt rồi dùng Chép lời lại.</string>
     <string name="detail_pending">Chép lời chưa hoàn tất. Kết quả sẽ hiển thị ở đây khi sẵn sàng.</string>
     <string name="detail_failed">Không thể hoàn tất chép lời. Hãy xem bản ghi âm này trong danh sách để biết bước tiếp theo.</string>
     <string name="detail_parked">Chép lời đang chờ. Hãy xem bản ghi âm này trong danh sách để biết cần làm gì.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Tắt</string>
     <string name="processing_storage">Thư mục lưu trữ</string>
     <string name="processing_transcription">Chép lời</string>
-    <string name="processing_saved">Đã lưu cài đặt</string>
     <string name="processing_prepare">Tải xuống mô hình</string>
     <string name="processing_download_progress">Đang tải xuống mô hình… %1$d%%</string>
     <string name="processing_download_bytes">%1$s/%2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Đang chép lời…</string>
     <string name="detail_transcription_off">Chép lời đang tắt trong Cài đặt</string>
     <string name="detail_not_uploaded">Chưa tải lên</string>
+    <string name="detail_still_recording">Vẫn đang ghi âm</string>
     <string name="share_transcript">Bản chép lời</string>
     <string name="share_transcript_format">Văn bản · .txt</string>
     <string name="share_notes">Bản chép lời cho ghi chú</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Hoàn tất đăng nhập trong trình duyệt</string>
     <string name="chatgpt_sign_in_failed">Không thể đăng nhập ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Đã đăng xuất trên thiết bị này nhưng OpenAI chưa xác nhận. Bạn có thể gỡ Recly trong phần cài đặt ChatGPT.</string>
-    <string name="chatgpt_footnote">Bản tóm tắt gửi văn bản bản chép lời, những khoảnh khắc bạn đánh dấu và nội dung bạn viết ở đây tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn.</string>
+    <string name="chatgpt_footnote">Bản tóm tắt và câu hỏi gửi văn bản bản chép lời, những khoảnh khắc bạn đánh dấu và nội dung bạn viết ở đây tới OpenAI — không bao giờ gửi âm thanh — và được tính vào mức sử dụng gói ChatGPT của bạn.</string>
     <string name="chatgpt_welcome_title">Bạn đang dùng gói ChatGPT của mình</string>
     <string name="chatgpt_welcome_body">Bản tóm tắt trong Recly dùng gói ChatGPT của bạn. Bạn có thể quản lý mức sử dụng trong cài đặt ChatGPT.</string>
     <string name="chatgpt_got_it">Đã hiểu</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Định dạng của tôi</string>
     <string name="summary_custom_placeholder">Các mục và chỉ dẫn, ví dụ: Tóm tắt, Rủi ro, Bước tiếp theo kèm người phụ trách.</string>
     <string name="summary_custom_note">Dùng khi định dạng tóm tắt là Định dạng của tôi.</string>
+    <string name="summary_custom_empty">Hãy viết định dạng của bạn ở đây; trong lúc đó, bản tóm tắt dùng dạng Chung.</string>
     <string name="summary_about">Về bạn</string>
     <string name="summary_about_placeholder">ví dụ: Quản lý sản phẩm; tôi quan tâm đến hạn chót và quyết định.</string>
-    <string name="summary_about_note">Bản tóm tắt dùng thông tin này để biết điều gì quan trọng với bạn.</string>
+    <string name="summary_about_note">Bản tóm tắt và câu trả lời dùng thông tin này để biết điều gì quan trọng với bạn.</string>
     <string name="summary_as">Tóm tắt theo dạng…</string>
     <string name="summary_play_from">Phát từ %1$s</string>
     <string name="ask_menu">Hỏi về bản ghi này…</string>

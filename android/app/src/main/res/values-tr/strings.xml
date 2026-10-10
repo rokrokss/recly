@@ -105,7 +105,7 @@
     <string name="core_step_failed">Başarısız: %1$s</string>
     <string name="core_auth_rejected">Sağlayıcı anahtarı reddetti.</string>
     <string name="core_quota">Sağlayıcının kotası doldu veya istek hızı sınırlanıyor.</string>
-    <string name="core_provider_error">Sağlayıcıda bir sorun oluştu. Yeniden denenecek.</string>
+    <string name="core_provider_error">Sağlayıcı tarafında bir sorun oluştu.</string>
     <string name="core_unsupported_audio">Sağlayıcı bu sesi kabul etmedi.</string>
     <string name="core_no_input_track">Bu kayıtta metne dönüştürülecek mono veya miks kanal yok.</string>
     <string name="core_result_timeout">Sağlayıcı zamanında tamamlayamadı. Yeniden gönderilecek.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Başlık</string>
     <string name="jobs_column_length">Süre</string>
     <string name="jobs_column_status">Durum</string>
-    <string name="jobs_summary">%1$d · %2$d bekliyor · %3$d başarısız</string>
+    <string name="jobs_summary_waiting">%1$d bekliyor</string>
+    <string name="jobs_summary_failed">%1$d başarısız</string>
     <string name="jobs_row_expand">Genişlet</string>
     <string name="jobs_row_collapse">Daralt</string>
     <string name="jobs_row_description">%1$s, kayıt tarihi %2$s, süre %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Aktarım izni gerekiyor</string>
     <string name="job_state_needs_model">Konuşma modeli bekleniyor</string>
     <string name="delete_key_title">Anahtarı sil: %1$s</string>
-    <string name="detail_not_requested">Bu kayıtta çalıştırılacak bir transkripsiyon adımı yok.</string>
+    <string name="detail_not_requested">Döküm kapalı. Ayarlar bölümünden açın, ardından Yeniden metne dönüştür seçeneğini kullanın.</string>
     <string name="detail_pending">Transkripsiyon henüz bitmedi. Sonuç hazır olduğunda burada görünecek.</string>
     <string name="detail_failed">Transkripsiyon tamamlanamadı. Sonraki adım için listede bu kayda bakın.</string>
     <string name="detail_parked">Transkripsiyon bekliyor. Neyin gerektiğini görmek için listede bu kayda bakın.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Kapalı</string>
     <string name="processing_storage">Depolama klasörü</string>
     <string name="processing_transcription">Transkripsiyon</string>
-    <string name="processing_saved">Ayarlar kaydedildi</string>
     <string name="processing_prepare">Modeli indir</string>
     <string name="processing_download_progress">Model indiriliyor… %%%1$d</string>
     <string name="processing_download_bytes">%1$s / %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Metne dönüştürülüyor…</string>
     <string name="detail_transcription_off">Transkripsiyon Ayarlar\'da kapalı</string>
     <string name="detail_not_uploaded">Henüz yüklenmedi</string>
+    <string name="detail_still_recording">Kayıt sürüyor</string>
     <string name="share_transcript">Transkript</string>
     <string name="share_transcript_format">Metin · .txt</string>
     <string name="share_notes">Notlar için transkript</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Oturum açmayı tarayıcınızda tamamlayın</string>
     <string name="chatgpt_sign_in_failed">ChatGPT’de oturum açılamadı</string>
     <string name="chatgpt_revoke_unconfirmed">Bu cihazda oturum kapatıldı ancak OpenAI bunu onaylamadı. Recly’yi ChatGPT ayarlarından kaldırabilirsiniz.</string>
-    <string name="chatgpt_footnote">Özet; döküm metnini, vurguladığınız anları ve buraya yazdıklarınızı OpenAI\'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır.</string>
+    <string name="chatgpt_footnote">Özetler ve sorular; döküm metnini, vurguladığınız anları ve buraya yazdıklarınızı OpenAI\'ye gönderir — sesi asla göndermez — ve ChatGPT planınızın kullanımına sayılır.</string>
     <string name="chatgpt_welcome_title">ChatGPT planınızı kullanıyorsunuz</string>
     <string name="chatgpt_welcome_body">Recly’deki özetler ChatGPT planınızı kullanır. Kullanımı ChatGPT ayarlarından yönetebilirsiniz.</string>
     <string name="chatgpt_got_it">Anladım</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Benim biçimim</string>
     <string name="summary_custom_placeholder">Bölümler ve talimatlar, ör. Özet, Riskler, Sorumlularıyla sonraki adımlar.</string>
     <string name="summary_custom_note">Özet biçimi Benim biçimim olduğunda kullanılır.</string>
+    <string name="summary_custom_empty">Biçiminizi buraya yazın; o zamana kadar özetler Genel biçimini kullanır.</string>
     <string name="summary_about">Hakkınızda</string>
     <string name="summary_about_placeholder">ör. Ürün yöneticisi; teslim tarihleri ve kararlar benim için önemli.</string>
-    <string name="summary_about_note">Özetler, sizin için neyin önemli olduğunu anlamak için bunu kullanır.</string>
+    <string name="summary_about_note">Özetler ve yanıtlar, sizin için neyin önemli olduğunu anlamak için bunu kullanır.</string>
     <string name="summary_as">Farklı biçimde özetle…</string>
     <string name="summary_play_from">%1$s konumundan oynat</string>
     <string name="ask_menu">Bu kayıt hakkında sor…</string>

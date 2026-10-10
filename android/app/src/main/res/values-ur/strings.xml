@@ -105,7 +105,7 @@
     <string name="core_step_failed">ناکام: %1$s</string>
     <string name="core_auth_rejected">فراہم کنندہ نے کلید مسترد کر دی۔</string>
     <string name="core_quota">فراہم کنندہ کا کوٹا ختم ہو گیا ہے یا وہ درخواستوں کی شرح محدود کر رہا ہے۔</string>
-    <string name="core_provider_error">فراہم کنندہ کی طرف کچھ غلط ہو گیا۔ دوبارہ کوشش کی جائے گی۔</string>
+    <string name="core_provider_error">فراہم کنندہ کی طرف کچھ غلط ہو گیا۔</string>
     <string name="core_unsupported_audio">فراہم کنندہ نے یہ آڈیو قبول نہیں کیا۔</string>
     <string name="core_no_input_track">اس ریکارڈنگ میں ٹرانسکرائب کرنے کے لیے کوئی مونو یا مکس ٹریک نہیں۔</string>
     <string name="core_result_timeout">فراہم کنندہ وقت پر مکمل نہیں کر سکا۔ دوبارہ جمع کیا جائے گا۔</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">عنوان</string>
     <string name="jobs_column_length">دورانیہ</string>
     <string name="jobs_column_status">صورتحال</string>
-    <string name="jobs_summary">%1$d · منتظر: %2$d · ناکام: %3$d</string>
+    <string name="jobs_summary_waiting">منتظر: %1$d</string>
+    <string name="jobs_summary_failed">ناکام: %1$d</string>
     <string name="jobs_row_expand">پھیلائیں</string>
     <string name="jobs_row_collapse">سمیٹیں</string>
     <string name="jobs_row_description">%1$s، ریکارڈنگ کا وقت %2$s، دورانیہ %3$s، %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">منتقلی کی اجازت درکار ہے</string>
     <string name="job_state_needs_model">تقریر کے ماڈل کا انتظار</string>
     <string name="delete_key_title">کلید حذف کریں: %1$s</string>
-    <string name="detail_not_requested">اس ریکارڈنگ میں چلانے کے لیے ٹرانسکرپشن کا کوئی مرحلہ نہیں۔</string>
+    <string name="detail_not_requested">ٹرانسکرپشن بند ہے۔ اسے ترتیبات میں آن کریں، پھر «دوبارہ ٹرانسکرائب کریں» استعمال کریں۔</string>
     <string name="detail_pending">ٹرانسکرپشن ابھی مکمل نہیں ہوا۔ تیار ہونے پر نتیجہ یہاں ظاہر ہو گا۔</string>
     <string name="detail_failed">ٹرانسکرپشن مکمل نہیں ہو سکا۔ اگلے قدم کے لیے فہرست میں یہ ریکارڈنگ دیکھیں۔</string>
     <string name="detail_parked">ٹرانسکرپشن منتظر ہے۔ فہرست میں یہ ریکارڈنگ دیکھیں کہ اسے کیا درکار ہے۔</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">آف</string>
     <string name="processing_storage">اسٹوریج فولڈر</string>
     <string name="processing_transcription">ٹرانسکرپشن</string>
-    <string name="processing_saved">ترتیبات محفوظ ہو گئیں</string>
     <string name="processing_prepare">ماڈل ڈاؤن لوڈ کریں</string>
     <string name="processing_download_progress">ماڈل ڈاؤن لوڈ ہو رہا ہے… %1$d%%</string>
     <string name="processing_download_bytes">%2$s میں سے %1$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">ٹرانسکرائب ہو رہا ہے…</string>
     <string name="detail_transcription_off">ترتیبات میں ٹرانسکرپشن بند ہے</string>
     <string name="detail_not_uploaded">ابھی اپ لوڈ نہیں ہوا</string>
+    <string name="detail_still_recording">ابھی ریکارڈنگ جاری ہے</string>
     <string name="share_transcript">ٹرانسکرپٹ</string>
     <string name="share_transcript_format">متن · .txt</string>
     <string name="share_notes">نوٹس کے لیے ٹرانسکرپٹ</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">اپنے براؤزر میں سائن اِن مکمل کریں</string>
     <string name="chatgpt_sign_in_failed">ChatGPT میں سائن اِن نہیں ہو سکا</string>
     <string name="chatgpt_revoke_unconfirmed">اس آلے پر سائن آؤٹ ہو گیا، لیکن OpenAI نے اس کی تصدیق نہیں کی۔ آپ ChatGPT کی ترتیبات میں Recly کو ہٹا سکتے ہیں۔</string>
-    <string name="chatgpt_footnote">خلاصہ ٹرانسکرپٹ کا متن، آپ کے نمایاں کیے گئے لمحات اور جو آپ نے یہاں لکھا، OpenAI کو بھیجتا ہے — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتا ہے۔</string>
+    <string name="chatgpt_footnote">خلاصے اور سوالات ٹرانسکرپٹ کا متن، آپ کے نمایاں کیے گئے لمحات اور جو آپ نے یہاں لکھا، OpenAI کو بھیجتے ہیں — آڈیو کبھی نہیں — اور یہ آپ کے ChatGPT پلان کے استعمال میں شمار ہوتے ہیں۔</string>
     <string name="chatgpt_welcome_title">آپ اپنا ChatGPT پلان استعمال کر رہے ہیں</string>
     <string name="chatgpt_welcome_body">Recly میں خلاصے آپ کا ChatGPT پلان استعمال کرتے ہیں۔ آپ ChatGPT کی ترتیبات میں استعمال کا انتظام کر سکتے ہیں۔</string>
     <string name="chatgpt_got_it">سمجھ گیا</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">میرا فارمیٹ</string>
     <string name="summary_custom_placeholder">حصے اور ہدایات، مثلاً خلاصہ، خطرات، ذمہ داروں کے ساتھ اگلے اقدامات۔</string>
     <string name="summary_custom_note">جب خلاصے کا فارمیٹ «میرا فارمیٹ» ہو تب استعمال ہوتا ہے۔</string>
+    <string name="summary_custom_empty">اپنا فارمیٹ یہاں لکھیں؛ تب تک خلاصے «عمومی» فارمیٹ استعمال کریں گے۔</string>
     <string name="summary_about">آپ کے بارے میں</string>
     <string name="summary_about_placeholder">مثلاً پروڈکٹ مینیجر؛ میرے لیے ڈیڈ لائنز اور فیصلے اہم ہیں۔</string>
-    <string name="summary_about_note">خلاصے اس سے اندازہ لگاتے ہیں کہ آپ کے لیے کیا اہم ہے۔</string>
+    <string name="summary_about_note">خلاصے اور جوابات اس سے اندازہ لگاتے ہیں کہ آپ کے لیے کیا اہم ہے۔</string>
     <string name="summary_as">بطور خلاصہ…</string>
     <string name="summary_play_from">%1$s سے چلائیں</string>
     <string name="ask_menu">اس ریکارڈنگ کے بارے میں پوچھیں…</string>

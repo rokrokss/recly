@@ -105,7 +105,7 @@
     <string name="core_step_failed">ناموفق: %1$s</string>
     <string name="core_auth_rejected">ارائه‌دهنده کلید را رد کرد.</string>
     <string name="core_quota">سهمیه ارائه‌دهنده تمام شده است یا محدودیت تعداد درخواست اعمال شده است.</string>
-    <string name="core_provider_error">مشکلی در سمت ارائه‌دهنده پیش آمد. دوباره تلاش می‌شود.</string>
+    <string name="core_provider_error">در سمت ارائه‌دهنده مشکلی پیش آمد.</string>
     <string name="core_unsupported_audio">ارائه‌دهنده این صدا را نپذیرفت.</string>
     <string name="core_no_input_track">این ضبط مسیر صوتی مونو یا ترکیبی برای رونویسی ندارد.</string>
     <string name="core_result_timeout">ارائه‌دهنده به‌موقع کار را تمام نکرد. دوباره ارسال می‌شود.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">عنوان</string>
     <string name="jobs_column_length">مدت</string>
     <string name="jobs_column_status">وضعیت</string>
-    <string name="jobs_summary">%1$d · %2$d در انتظار · %3$d ناموفق</string>
+    <string name="jobs_summary_waiting">%1$d در انتظار</string>
+    <string name="jobs_summary_failed">%1$d ناموفق</string>
     <string name="jobs_row_expand">گسترش دادن</string>
     <string name="jobs_row_collapse">جمع کردن</string>
     <string name="jobs_row_description">%1$s، زمان ضبط %2$s، مدت %3$s، %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">اجازه انتقال لازم است</string>
     <string name="job_state_needs_model">در انتظار مدل گفتار</string>
     <string name="delete_key_title">حذف کلید: %1$s</string>
-    <string name="detail_not_requested">این ضبط مرحله رونویسی برای اجرا ندارد.</string>
+    <string name="detail_not_requested">رونویسی خاموش است. آن را در تنظیمات روشن کنید، سپس «رونویسی دوباره» را بزنید.</string>
     <string name="detail_pending">رونویسی هنوز تمام نشده است. نتیجه پس از آماده شدن اینجا نمایش داده می‌شود.</string>
     <string name="detail_failed">رونویسی کامل نشد. برای اقدام بعدی، این ضبط را در فهرست بررسی کنید.</string>
     <string name="detail_parked">رونویسی در انتظار است. برای اینکه ببینید این ضبط به چه نیاز دارد، آن را در فهرست بررسی کنید.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">خاموش</string>
     <string name="processing_storage">پوشه ذخیره‌سازی</string>
     <string name="processing_transcription">رونویسی</string>
-    <string name="processing_saved">تنظیمات ذخیره شد</string>
     <string name="processing_prepare">بارگیری مدل</string>
     <string name="processing_download_progress">در حال بارگیری مدل… %1$d%%</string>
     <string name="processing_download_bytes">%1$s از %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">در حال رونویسی…</string>
     <string name="detail_transcription_off">رونویسی در تنظیمات خاموش است</string>
     <string name="detail_not_uploaded">هنوز بارگذاری نشده است</string>
+    <string name="detail_still_recording">هنوز در حال ضبط</string>
     <string name="share_transcript">رونوشت</string>
     <string name="share_transcript_format">متن · .txt</string>
     <string name="share_notes">رونوشت برای یادداشت‌ها</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">ورود را در مرورگر خود کامل کنید</string>
     <string name="chatgpt_sign_in_failed">ورود به ChatGPT ممکن نشد</string>
     <string name="chatgpt_revoke_unconfirmed">در این دستگاه از حساب خارج شدید، اما OpenAI آن را تأیید نکرد. می‌توانید Recly را در تنظیمات ChatGPT حذف کنید.</string>
-    <string name="chatgpt_footnote">خلاصه متن رونوشت، لحظه‌هایی که برجسته کرده‌اید و آنچه اینجا نوشته‌اید را به OpenAI می‌فرستد — هرگز صدا را نه — و جزو مصرف طرح ChatGPT شما حساب می‌شود.</string>
+    <string name="chatgpt_footnote">خلاصه‌ها و پرسش‌ها متن رونوشت، لحظه‌هایی که برجسته کرده‌اید و آنچه اینجا نوشته‌اید را به OpenAI می‌فرستند — هرگز صدا را نه — و جزو مصرف طرح ChatGPT شما حساب می‌شوند.</string>
     <string name="chatgpt_welcome_title">از طرح ChatGPT خود استفاده می‌کنید</string>
     <string name="chatgpt_welcome_body">خلاصه‌ها در Recly از طرح ChatGPT شما استفاده می‌کنند. می‌توانید مصرف را در تنظیمات ChatGPT مدیریت کنید.</string>
     <string name="chatgpt_got_it">متوجه شدم</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">قالب من</string>
     <string name="summary_custom_placeholder">بخش‌ها و دستورها، مثلاً: خلاصه، ریسک‌ها، گام‌های بعدی با مسئول هر کار.</string>
     <string name="summary_custom_note">وقتی قالب خلاصه «قالب من» باشد به کار می‌رود.</string>
+    <string name="summary_custom_empty">قالب خود را اینجا بنویسید؛ تا آن زمان خلاصه‌ها از «عمومی» استفاده می‌کنند.</string>
     <string name="summary_about">دربارهٔ شما</string>
     <string name="summary_about_placeholder">مثلاً: مدیر محصول؛ ضرب‌الاجل‌ها و تصمیم‌ها برایم مهم‌اند.</string>
-    <string name="summary_about_note">خلاصه‌ها از این برای تشخیص آنچه برایتان مهم است استفاده می‌کنند.</string>
+    <string name="summary_about_note">خلاصه‌ها و پاسخ‌ها از این برای تشخیص آنچه برایتان مهم است استفاده می‌کنند.</string>
     <string name="summary_as">خلاصه با قالب…</string>
     <string name="summary_play_from">پخش از %1$s</string>
     <string name="ask_menu">پرسیدن دربارهٔ این ضبط…</string>

@@ -105,7 +105,7 @@
     <string name="core_step_failed">Ошибка: %1$s</string>
     <string name="core_auth_rejected">Провайдер отклонил ключ</string>
     <string name="core_quota">Исчерпана квота провайдера или ограничена частота запросов.</string>
-    <string name="core_provider_error">У провайдера произошла ошибка. Попытка будет повторена.</string>
+    <string name="core_provider_error">На стороне поставщика что-то пошло не так.</string>
     <string name="core_unsupported_audio">Провайдер не принял это аудио.</string>
     <string name="core_no_input_track">В записи нет моно- или смешанной дорожки для расшифровки.</string>
     <string name="core_result_timeout">Провайдер не завершил вовремя. Запрос будет отправлен снова.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Название</string>
     <string name="jobs_column_length">Длительность</string>
     <string name="jobs_column_status">Статус</string>
-    <string name="jobs_summary">%1$d · %2$d в ожидании · %3$d с ошибкой</string>
+    <string name="jobs_summary_waiting">%1$d в ожидании</string>
+    <string name="jobs_summary_failed">%1$d с ошибкой</string>
     <string name="jobs_row_expand">Развернуть</string>
     <string name="jobs_row_collapse">Свернуть</string>
     <string name="jobs_row_description">%1$s, записано %2$s, длительность %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Нужно разрешение на передачу</string>
     <string name="job_state_needs_model">Ожидание речевой модели</string>
     <string name="delete_key_title">Удалить ключ: %1$s</string>
-    <string name="detail_not_requested">В этой записи нет шага расшифровки.</string>
+    <string name="detail_not_requested">Расшифровка выключена. Включите её в разделе «Настройки», а затем выберите «Расшифровать заново».</string>
     <string name="detail_pending">Расшифровка ещё не завершена. Результат появится здесь, когда будет готов.</string>
     <string name="detail_failed">Не удалось завершить расшифровку. Откройте запись в списке для следующего действия.</string>
     <string name="detail_parked">Расшифровка ожидает. Посмотрите в списке, что нужно для этой записи.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Выключено</string>
     <string name="processing_storage">Папка хранения</string>
     <string name="processing_transcription">Расшифровка</string>
-    <string name="processing_saved">Настройки сохранены</string>
     <string name="processing_prepare">Загрузить модель</string>
     <string name="processing_download_progress">Загрузка модели… %1$d%%</string>
     <string name="processing_download_bytes">%1$s из %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Расшифровка…</string>
     <string name="detail_transcription_off">Расшифровка отключена в Настройках</string>
     <string name="detail_not_uploaded">Ещё не загружено</string>
+    <string name="detail_still_recording">Запись ещё идёт</string>
     <string name="share_transcript">Расшифровка</string>
     <string name="share_transcript_format">Текст · .txt</string>
     <string name="share_notes">Расшифровка для заметок</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Завершите вход в браузере</string>
     <string name="chatgpt_sign_in_failed">Не удалось войти в ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Вы вышли на этом устройстве, но OpenAI это не подтвердила. Recly можно удалить в настройках ChatGPT.</string>
-    <string name="chatgpt_footnote">Сводка отправляет в OpenAI текст расшифровки, отмеченные вами моменты и то, что вы здесь написали, — но никогда не аудио — и учитывается в использовании вашего плана ChatGPT.</string>
+    <string name="chatgpt_footnote">Сводки и вопросы отправляют в OpenAI текст расшифровки, отмеченные вами моменты и то, что вы здесь написали, — но никогда не аудио — и учитываются в использовании вашего плана ChatGPT.</string>
     <string name="chatgpt_welcome_title">Вы используете свой тариф ChatGPT</string>
     <string name="chatgpt_welcome_body">Краткие пересказы в Recly используют ваш тариф ChatGPT. Использованием можно управлять в настройках ChatGPT.</string>
     <string name="chatgpt_got_it">Понятно</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Мой формат</string>
     <string name="summary_custom_placeholder">Разделы и указания, например: Сводка, Риски, Следующие шаги с ответственными.</string>
     <string name="summary_custom_note">Используется, когда выбран формат сводки «Мой формат».</string>
+    <string name="summary_custom_empty">Опишите здесь свой формат; пока его нет, сводки используют «Общий».</string>
     <string name="summary_about">О вас</string>
     <string name="summary_about_placeholder">например: продакт-менеджер; мне важны сроки и решения.</string>
-    <string name="summary_about_note">Сводки учитывают это, чтобы понять, что для вас важно.</string>
+    <string name="summary_about_note">Сводки и ответы учитывают это, чтобы понять, что для вас важно.</string>
     <string name="summary_as">Сводка в формате…</string>
     <string name="summary_play_from">Воспроизвести с %1$s</string>
     <string name="ask_menu">Спросить об этой записи…</string>

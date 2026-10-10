@@ -105,7 +105,7 @@
     <string name="core_step_failed">Error: %1$s</string>
     <string name="core_auth_rejected">El proveedor rechazó la clave</string>
     <string name="core_quota">El proveedor agotó la cuota o limita las solicitudes.</string>
-    <string name="core_provider_error">Hubo un error en el proveedor. Se reintentará.</string>
+    <string name="core_provider_error">Algo salió mal en el proveedor.</string>
     <string name="core_unsupported_audio">El proveedor no aceptó este audio.</string>
     <string name="core_no_input_track">Esta grabación no tiene una pista mono o mezclada para transcribir.</string>
     <string name="core_result_timeout">El proveedor no terminó a tiempo. Se enviará de nuevo.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Título</string>
     <string name="jobs_column_length">Duración</string>
     <string name="jobs_column_status">Estado</string>
-    <string name="jobs_summary">%1$d · %2$d en espera · %3$d con error</string>
+    <string name="jobs_summary_waiting">%1$d en espera</string>
+    <string name="jobs_summary_failed">%1$d con error</string>
     <string name="jobs_row_expand">Expandir</string>
     <string name="jobs_row_collapse">Contraer</string>
     <string name="jobs_row_description">%1$s, grabado %2$s, duración %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Se necesita permiso de transferencia</string>
     <string name="job_state_needs_model">Esperando el modelo de voz</string>
     <string name="delete_key_title">Eliminar clave: %1$s</string>
-    <string name="detail_not_requested">Esta grabación no tiene un paso de transcripción.</string>
+    <string name="detail_not_requested">La transcripción está desactivada. Actívala en Ajustes y luego usa Volver a transcribir.</string>
     <string name="detail_pending">La transcripción no ha terminado. El resultado aparecerá aquí cuando esté listo.</string>
     <string name="detail_failed">No se pudo terminar la transcripción. Revisa esta grabación en la lista para continuar.</string>
     <string name="detail_parked">La transcripción está en espera. Revisa en la lista qué necesita esta grabación.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Desactivado</string>
     <string name="processing_storage">Carpeta de almacenamiento</string>
     <string name="processing_transcription">Transcripción</string>
-    <string name="processing_saved">Ajustes guardados</string>
     <string name="processing_prepare">Descargar modelo</string>
     <string name="processing_download_progress">Descargando modelo… %1$d%%</string>
     <string name="processing_download_bytes">%1$s de %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Transcribiendo…</string>
     <string name="detail_transcription_off">La transcripción está desactivada en Ajustes</string>
     <string name="detail_not_uploaded">Aún no se ha subido</string>
+    <string name="detail_still_recording">Aún grabando</string>
     <string name="share_transcript">Transcripción</string>
     <string name="share_transcript_format">Texto · .txt</string>
     <string name="share_notes">Transcripción para notas</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Termina de iniciar sesión en tu navegador</string>
     <string name="chatgpt_sign_in_failed">No se pudo iniciar sesión en ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Se cerró la sesión en este dispositivo, pero OpenAI no lo confirmó. Puedes quitar Recly en los ajustes de ChatGPT.</string>
-    <string name="chatgpt_footnote">Un resumen envía a OpenAI el texto de la transcripción, los momentos que destacaste y lo que escribiste aquí —nunca el audio— y cuenta para el uso de tu plan de ChatGPT.</string>
+    <string name="chatgpt_footnote">Los resúmenes y las preguntas envían a OpenAI el texto de la transcripción, los momentos que destacaste y lo que escribiste aquí —nunca el audio— y cuentan para el uso de tu plan de ChatGPT.</string>
     <string name="chatgpt_welcome_title">Estás usando tu plan de ChatGPT</string>
     <string name="chatgpt_welcome_body">Los resúmenes de Recly usan tu plan de ChatGPT. Puedes gestionar el uso en los ajustes de ChatGPT.</string>
     <string name="chatgpt_got_it">Entendido</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Mi formato</string>
     <string name="summary_custom_placeholder">Secciones e instrucciones, p. ej. Resumen, Riesgos, Próximos pasos con responsables.</string>
     <string name="summary_custom_note">Se usa cuando el formato del resumen es Mi formato.</string>
+    <string name="summary_custom_empty">Escribe aquí tu formato; mientras tanto, los resúmenes usan General.</string>
     <string name="summary_about">Sobre ti</string>
     <string name="summary_about_placeholder">p. ej. Product manager; me importan los plazos y las decisiones.</string>
-    <string name="summary_about_note">Los resúmenes lo usan para valorar lo que te importa.</string>
+    <string name="summary_about_note">Los resúmenes y las respuestas lo usan para valorar lo que te importa.</string>
     <string name="summary_as">Resumir como…</string>
     <string name="summary_play_from">Reproducir desde %1$s</string>
     <string name="ask_menu">Preguntar sobre esta grabación…</string>
