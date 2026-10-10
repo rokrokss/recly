@@ -135,7 +135,8 @@ class RecordingSearch internal constructor(
         }
         mutex.withLock { summaries[row.id]?.takeIf { it.stamp == stamp }?.let { return it.segments } }
         val text = recordings.summary(row.id)?.let(recly.core.chatgpt.SummaryFile::decode)?.text.orEmpty()
-        val lines = text.lines().map(String::trim).filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
+        // A list item is shown as its words: "- " is how the plain text marks a list, not something the user wrote.
+        val lines = text.lines().map { it.trim().removePrefix("- ").trim() }.filter(String::isNotEmpty).map { Segment(0.0, it, fold(it)) }
         mutex.withLock { summaries[row.id] = Cached(stamp, lines) }
         return lines
     }

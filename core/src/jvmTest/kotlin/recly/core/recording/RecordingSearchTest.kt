@@ -43,7 +43,7 @@ class RecordingSearchTest {
     @Test
     fun `a summary line is found too`() = runBlocking {
         val meta = f.recordAndRun(title = "Weekly")
-        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\nThe Budget moves to Q3.", "gpt-a", "2026-08-26T02:00:00.000Z"))
+        f.core.summaries.save(recly.core.chatgpt.Summary(meta.recordingId, "Summary\n- The Budget moves to Q3.", "gpt-a", "2026-08-26T02:00:00.000Z"))
 
         val hit = f.core.search("budget", 10).single()
         assertEquals(SummaryMatch("The Budget moves to Q3.", listOf(SearchRange(4, 6))), hit.summary)
