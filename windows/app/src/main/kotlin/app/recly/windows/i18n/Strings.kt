@@ -138,7 +138,6 @@ enum class Str {
     SIGN_IN,
     SIGN_OUT,
     SETTINGS_NO_CLIENT,
-    SETTINGS_STARTUP,
     SETTINGS_LAUNCH_AT_LOGIN,
     SETTINGS_LAUNCH_UNSUPPORTED,
     SETTINGS_CONSENT_REMINDER,
@@ -168,8 +167,8 @@ enum class Str {
     // docs/14 "Capture": the microphone alone or the whole meeting, in the Mac's own two labels.
     /** docs/14 "Permissions": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
-    SETTINGS_DATA,
     SETTINGS_OPEN_FOLDER,
+    SETTINGS_OPEN_DATA_FOLDER,
 
     SETTINGS_LANGUAGE,
     SETTINGS_APP_LANGUAGE,
@@ -367,7 +366,6 @@ enum class Str {
     CORE_AUTH_REJECTED,
     CORE_QUOTA,
     CORE_PROVIDER_ERROR,
-    CORE_PROVIDER_ERROR_FINAL,
     CORE_UNSUPPORTED_AUDIO,
     CORE_NO_INPUT_TRACK,
     CORE_RESULT_TIMEOUT,

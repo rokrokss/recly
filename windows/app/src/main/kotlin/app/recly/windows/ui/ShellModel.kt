@@ -619,15 +619,11 @@ class ShellModel(
     private val settings: Settings get() = localization.settings
 
     /**
-     * Where the data is and which install this is — the two facts a support question starts with.
-     * Compose state rather than a read through [graph], which is a plain field: a window composed
-     * before [load] finished would otherwise show a blank path for ever, because nothing invalidates
-     * it when the core opens.
+     * docs/09 trend 6: the settings window's about block says what this install actually is — the fact a support
+     * question starts with. Compose state rather than a read through [graph], which is a plain field: a window
+     * composed before [load] finished would otherwise show a blank id for ever, because nothing invalidates it when
+     * the core opens.
      */
-    var dataDir: String by mutableStateOf("")
-        private set
-
-    /** docs/09 trend 6: the settings window's about block says what this install actually is. */
     var deviceId: String by mutableStateOf("")
         private set
     val launchAtLoginSupported: Boolean get() = ::launcher.isInitialized && launcher.supported
@@ -640,7 +636,7 @@ class ShellModel(
      * test can open a whole shell — core, recorder, executor — over a temp directory and the fake
      * helper instead of the developer's own install, which is what `%LOCALAPPDATA%\Recly` and
      * `CaptureHelper.command()` otherwise resolve to (`ShellStartTest`). `AppModule.build` takes
-     * [dataDir] for the same reason.
+     * its data directory for the same reason.
      */
     suspend fun load(
         dataDirectory: Path = Host.dataDir(),
@@ -654,7 +650,6 @@ class ShellModel(
             return
         }
         this.graph = graph
-        dataDir = graph.dataDir.toString()
         deviceId = graph.core.deps.device.deviceId
         val logger = graph.core.deps.logger
         balloon = TrayAlertBalloon(logger, localization::current)

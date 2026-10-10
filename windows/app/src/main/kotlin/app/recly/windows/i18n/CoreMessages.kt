@@ -104,19 +104,6 @@ fun coreMessage(code: String): UiMessage {
 }
 
 /**
- * [code] on a row the queue gave up on (`FAILED`), which nothing runs again by itself: the same line, but the
- * provider's failure without "It will try again" — nested in `RETRY_BUDGET_SPENT` too (2026-10-10).
- */
-fun finalCoreMessage(code: String): UiMessage {
-    val ref = CoreMessageRef.parse(code) ?: return UiMessage.Text(code)
-    return when (ref.message) {
-        CoreMessage.PROVIDER_ERROR -> UiMessage.Res(Str.CORE_PROVIDER_ERROR_FINAL)
-        CoreMessage.RETRY_BUDGET_SPENT -> UiMessage.Res(Str.CORE_RETRY_BUDGET_SPENT, listOf(ref.arg?.let(::finalCoreMessage) ?: ""))
-        else -> coreMessage(ref.message, ref.arg)
-    }
-}
-
-/**
  * The diagnostic that came with [code], if any — a provider's response, a parser complaint.
  * Never translated, and never part of the sentence: the window puts it under one, in monospace.
  */
