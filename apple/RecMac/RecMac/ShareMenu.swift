@@ -15,7 +15,7 @@ struct ShareMenu: View {
 
     var body: some View {
         Menu {
-            ForEach(ShareFormat.allCases) { format in
+            ForEach(detail.shareFormats) { format in
                 Button { share(format) } label: {
                     Text(verbatim: format.title)
                     Text(verbatim: reason(format) ?? format.detail)
@@ -33,7 +33,7 @@ struct ShareMenu: View {
             }
             .disabled(detail.document == nil)
             Menu(loc("Save as…")) {
-                ForEach(ShareFormat.allCases) { format in
+                ForEach(detail.shareFormats) { format in
                     Button { save(format) } label: {
                         Text(verbatim: format.title)
                         if let reason = reason(format) { Text(verbatim: reason) }

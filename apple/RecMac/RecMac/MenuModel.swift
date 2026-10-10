@@ -374,6 +374,10 @@ final class MenuModel: ObservableObject {
         RecorderStatusLine.text(state: state, note: note, message: message)
     }
 
+    /// 2026-10-10 (2.10): the line is what stands in the way of a disconnect or a sign-in, which is said in the
+    /// warning tone.
+    var statusIsBlocker: Bool { state == .idle && message.map(DisconnectGuard.isBlocker) == true }
+
     /// The menu bar icon: the app mark's 22-point monochrome template (docs/09 "App icon"), so the
     /// status item is the same shape as the launcher icon. The idle one is a template image and
     /// AppKit paints it in the menu bar's own colour; the recording one is red (docs/12 "Status icon") and a template would lose that, so it is an ordinary image with a light and a dark
@@ -633,6 +637,9 @@ final class MenuModel: ObservableObject {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                // docs/08 "Summaries": summaries and questions after this one are written in the new
+                // language, and Translate offers it — the core opened with the old one.
+                self.bridge?.core.summaries.setLocale(tag: AppLanguage.resolvedCode)
                 Task { await self.notifier.relocalize() }
                 // A job alert already standing in Notification Center was painted once and is still
                 // in the old language; posting it again under the same identifier replaces it.
@@ -1266,8 +1273,10 @@ final class MenuModel: ObservableObject {
     /// question the phone's `NamingSheet` asks in the same shape rather than an `NSAlert` with a
     /// text field bolted to its side.
     private func askForTitle() -> NamingAnswer? {
-        BlueprintPanel.run { finish in
+        let asksPeople = !(processing?.transcriptionOff ?? false)
+        return BlueprintPanel.run { finish in
             NamingSheet(
+                asksPeople: asksPeople,
                 onSave: { finish(.save(title: $0, participants: $1)) },
                 onCancel: { finish(.discard) }
             )

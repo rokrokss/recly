@@ -4,9 +4,8 @@ import SwiftUI
 /// hands the new locale down and every row is resolved again.
 ///
 /// A row that names the language the app is in, with the rest of them behind it: the list of
-/// languages grows, and a row stays one row however long that list gets. What opens it is what each
-/// platform already has — the Mac's own pop-up menu on the Mac, and a dialog on the phone, where a
-/// menu hanging off a tapped row is not the idiom.
+/// languages grows, and a row stays one row however long that list gets. The same dropdown box on
+/// both platforms (2026-10-10, A-A8), with the platform's own menu behind it.
 ///
 /// Every label is the language's own name and is never translated (docs/07 rule 1), so whoever
 /// cannot read the language the app is currently in can still find the one they want. There is no
@@ -19,7 +18,6 @@ public struct LanguageSection: View {
     @ObservedObject private var language: AppLanguage
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
-    @State private var picking = false
 
     public init(language: AppLanguage) {
         self.language = language
@@ -27,40 +25,17 @@ public struct LanguageSection: View {
 
     public var body: some View {
         SectionHeader(loc("Language")).padding(.horizontal, Space.m)
-        #if os(macOS)
+        // The watch has no settings screen (it follows the phone's language), and no dropdown either.
+        #if !os(watchOS)
         SectionRow(title: loc("App language")) {
             BlueprintDropdown(
                 loc("App language"),
                 options: AppLanguage.Choice.choices,
                 selection: $language.effective,
+                itemIdentifier: { "language-" + $0.rawValue },
                 title: title
             )
             .accessibilityIdentifier("language")
-        }
-        #else
-        Button { picking = true } label: {
-            SectionRow(title: loc("App language")) {
-                Text(verbatim: title(language.effective))
-                    .font(blueprint.fonts.bodySmall)
-                    .foregroundStyle(blueprint.palette.textMuted)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("language")
-        .blueprintDialog(isPresented: $picking) {
-            BlueprintDialog(title: loc("App language")) {
-                // Nothing to cancel: a choice is applied the moment it is made (rule 3), so the one
-                // answer here closes a question that has already been answered.
-                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { picking = false }
-            } content: {
-                ForEach(AppLanguage.Choice.choices) { choice in
-                    BlueprintRadioRow(title(choice), selected: language.effective == choice) {
-                        picking = false
-                        language.choice = choice
-                    }
-                    .accessibilityIdentifier("language-" + choice.rawValue)
-                }
-            }
         }
         #endif
     }

@@ -327,6 +327,23 @@ final class RecordingDetailTests: XCTestCase {
         XCTAssertEqual(model.retranscribeRefusal, "Not uploaded yet")
     }
 
+    /// 2026-10-10 (A-A11): while the take is being written, every item of the More menu is off, and each says the
+    /// one reason there is — not whatever else would also stand in its way (no transcript, not uploaded, no audio).
+    @MainActor
+    func testEveryMoreMenuItemSaysStillRecordingWhileTheTakeIsWritten() async throws {
+        let bridge = try await makeBridge()
+        let id = try await seed(bridge, status: .recording)
+        let model = RecordingDetailModel(core: bridge.core, recordingId: id, title: "Meeting")
+        await model.load()
+        XCTAssertTrue(model.writing)
+        let still = RecKitStrings.localized("Still recording")
+        let reasons = [
+            model.renameReason, model.editReason, model.retranscribeReason, model.summarizeReason,
+            model.editSummaryReason, model.askReason, model.highlightReason,
+        ]
+        XCTAssertEqual(reasons, Array(repeating: still, count: reasons.count))
+    }
+
     /// A finalized recording and its directory, with no title of its own — the row a rename is
     /// about, minus the microphone that would otherwise have to make one.
     private func seed(_ bridge: CoreBridge, status: RecordingStatus = .finalized) async throws -> String {

@@ -20,7 +20,8 @@ public struct ListSearchField: View {
                 .font(blueprint.fonts.sans(TypeSize.small))
                 .foregroundStyle(blueprint.palette.textMuted)
                 .accessibilityHidden(true)
-            TextField("", text: $text, prompt: Text(verbatim: RecKitStrings.localized("Search titles and transcripts")))
+            TextField("", text: $text, prompt: FieldPlaceholder.prompt(placeholder, blueprint.palette))
+                .fieldPlaceholder(placeholder, empty: text.isEmpty)
                 .textFieldStyle(.plain)
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
@@ -28,6 +29,7 @@ public struct ListSearchField: View {
                 #if os(iOS)
                 .submitLabel(.search)
                 #endif
+                .accessibilityLabel(Text(verbatim: placeholder))
                 .accessibilityIdentifier("list-search")
             if !text.isEmpty {
                 Button { text = "" } label: {
@@ -43,7 +45,9 @@ public struct ListSearchField: View {
             }
         }
         .padding(.leading, Space.s)
-        .padding(.trailing, Self.clearSide == minTouch ? 0 : Space.s)
+        // 2026-10-10 (A-A23): the × brings its own 44pt target to the end on the phone; with nothing typed the
+        // field keeps its inset there, so the placeholder does not run into the edge.
+        .padding(.trailing, Self.clearSide == minTouch && !text.isEmpty ? 0 : Space.s)
         .frame(minHeight: Self.height)
         .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
         .overlay {
@@ -53,6 +57,8 @@ public struct ListSearchField: View {
         .padding(.horizontal, Space.m)
         .padding(.bottom, Space.s)
     }
+
+    private var placeholder: String { RecKitStrings.localized("Search titles and transcripts") }
 
     /// A finger on the phone needs the whole 44pt target; the Mac's pointer is served by a smaller field.
     #if os(iOS)

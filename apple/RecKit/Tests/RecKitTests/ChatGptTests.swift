@@ -240,7 +240,7 @@ final class ChatGptSettingsTests: XCTestCase {
 @MainActor
 final class SummaryMenuTests: XCTestCase {
     private let signedIn = ChatGptConnection.SignedIn(account: "a@example.com", models: [ChatGptModel(id: "gpt-x", label: "GPT X")], model: "gpt-x")
-    private let summary = Summary(recordingId: "r1", text: "Summary\n- one", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil)
+    private let summary = Summary(recordingId: "r1", text: "Summary\n- one", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: nil)
 
     func testTheReasonSaysWhatStandsInTheWay() {
         func reason(writing: Bool = false, transcript: Bool = true, busy: String? = nil,
@@ -300,7 +300,7 @@ final class SummaryMenuTests: XCTestCase {
 
     /// The footer says a summary was edited; Summarize again asks before it replaces one that was.
     func testAnEditedSummaryIsSaidAndAskedAbout() {
-        let edited = Summary(recordingId: "r1", text: "Mine", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: "2026-10-09T01:00:00Z", format: nil)
+        let edited = Summary(recordingId: "r1", text: "Mine", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: "2026-10-09T01:00:00Z", format: nil, modelName: nil)
         XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
         XCTAssertEqual(
             ChatGptText.summaryFooter(edited, connection: signedIn),
@@ -349,11 +349,21 @@ final class SummaryMenuTests: XCTestCase {
         )
     }
 
+    /// The footer names the model as the plan named it when the summary was written, even once the plan's list no
+    /// longer has it; with no name kept, the list's label, then the id.
+    func testTheFooterNamesTheModelAsItWasWhenWritten() {
+        let named = Summary(recordingId: "r1", text: "Notes", model: "gpt-old", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: "GPT-5.4")
+        let unnamed = Summary(recordingId: "r1", text: "Notes", model: "gpt-old", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: nil, modelName: nil)
+        XCTAssertEqual(ChatGptText.summaryFooter(named, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT-5.4"))
+        XCTAssertEqual(ChatGptText.summaryFooter(unnamed, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "gpt-old"))
+        XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), RecKitStrings.localized("ChatGPT · %@", "GPT X"))
+    }
+
     /// The footer names a format other than General, before `Edited`.
     func testTheFooterNamesTheFormat() {
-        let lecture = Summary(recordingId: "r1", text: "Notes", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: "lecture")
+        let lecture = Summary(recordingId: "r1", text: "Notes", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z", editedAt: nil, format: "lecture", modelName: nil)
         let editedInterview = Summary(recordingId: "r1", text: "Notes", model: "gpt-x", createdAt: "2026-10-09T00:00:00Z",
-                                      editedAt: "2026-10-09T01:00:00Z", format: "interview")
+                                      editedAt: "2026-10-09T01:00:00Z", format: "interview", modelName: nil)
         let made = RecKitStrings.localized("ChatGPT · %@", "GPT X")
         XCTAssertEqual(ChatGptText.summaryFooter(summary, connection: signedIn), made)
         XCTAssertEqual(ChatGptText.summaryFooter(lecture, connection: signedIn), made + " · " + RecKitStrings.localized("Lecture"))

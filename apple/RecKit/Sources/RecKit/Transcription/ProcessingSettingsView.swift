@@ -13,6 +13,8 @@ public final class ProcessingSettingsModel: ObservableObject {
     @Published public private(set) var busy = false
     @Published public private(set) var importing = false
     @Published public private(set) var message: UiMessage?
+    /// docs/09 trend 2: Save's own `…` and ✓ — the whole of what a save that worked says (2026-10-10, W13).
+    @Published public private(set) var saveState: ProcessingState = .idle
     @Published public private(set) var localLanguages: [Language] = []
     @Published public private(set) var local: LocalEngineInfo?
     @Published public private(set) var summaryKey = "On device"
@@ -67,6 +69,9 @@ public final class ProcessingSettingsModel: ObservableObject {
     public func save() async {
         guard let draft, let stored, !busy, languageSupported else { return }
         busy = true; defer { busy = false }
+        saveState = .processing
+        var outcome = ProcessingState.failed
+        defer { finishSave(outcome) }
         do {
             if draft.mode == .external {
                 let step = Step.Transcribe(id: "transcribe", onError: .abort, retry: Retry(maxAttempts: 5, initialDelaySec: 30, maxDelaySec: 3600), provider: draft.provider, secretRef: draft.secretRef, invokeUrl: draft.invokeUrl.isEmpty ? nil : draft.invokeUrl, language: draft.language, diarize: draft.settings().transcription.diarize, speakers: Speakers(min: 1, max: 8), model: draft.model.isEmpty ? nil : draft.model, vocabulary: draft.settings().transcription.vocabulary)
@@ -74,17 +79,38 @@ public final class ProcessingSettingsModel: ObservableObject {
                 if let issue = core.deps.transcriptionPolicy.issue(step: step, endpoint: nil) { message = .core(issue.code(arg: nil, detail: nil)); return }
                 // Empty where no permission is required (every shell but the iPhone's).
                 let missing = try await core.transferConsents.missing(targets: TransferTargets.shared.forStep(step: step).map { [$0] } ?? [])
-                if !missing.isEmpty { consentNeeded = missing; return }
+                if !missing.isEmpty { consentNeeded = missing; outcome = .idle; return }
             }
             let result = try await core.processingSettings.save(settings: draft.settings(), expectedRevision: stored.document.revision)
             if result is ProcessingSaveResultSaved {
-                await reload(); message = .key("Settings saved"); onSaved?()
+                await reload(); outcome = .done; onSaved?()
             } else if let invalid = result as? ProcessingSaveResultInvalid {
                 message = .key("Failed: %@", args: [.verbatim(invalid.errors.joined(separator: "\n"))])
             } else if result is ProcessingSaveResultStale { message = .core(CoreMessage.stale.code(arg: nil, detail: nil)) }
             else { message = .key("These settings cannot be read by this version. The original data has been preserved.") }
         } catch { failed(error) }
     }
+    /// ✓ for a moment after a save that worked, then the row goes; anything else ends the button's `…` — the
+    /// message says why — and leaves nothing standing for a Cancel to strand.
+    private func finishSave(_ outcome: ProcessingState) {
+        saveState = outcome == .done ? .done : .idle
+        guard outcome == .done else { return }
+        Task { [weak self] in
+            try? await Task.sleep(for: .seconds(1.5))
+            if self?.saveState == .done { self?.saveState = .idle }
+        }
+    }
+
+    /// 2026-10-10 (W13): [message] is never good news any more — Save's ✓ is that — so it is drawn as what it is:
+    /// red for a save or an import that failed, the warning tone for what has to be put right first (the key's
+    /// name, a provider this region cannot use, settings changed elsewhere).
+    public var messageTone: BadgeTone {
+        guard case .key(let key, _) = message, key != Self.keyNameRule else { return .warning }
+        return .danger
+    }
+
+    private static let keyNameRule = "Starts with a lowercase letter; lowercase, digits and underscores, up to 32"
+
     /// The answer to the question [save] asked. Allowed: exactly the destinations shown are granted,
     /// jobs waiting on them resume, and the save goes ahead. Declined: nothing is saved.
     public func answerConsent(allow: Bool) async {
@@ -99,7 +125,7 @@ public final class ProcessingSettingsModel: ObservableObject {
     }
     public func saveKey(_ name: String, value: String) async -> Bool {
         guard name.range(of: "^[a-z][a-z0-9_]{0,31}$", options: .regularExpression) != nil, !value.isEmpty else {
-            message = .key("Starts with a lowercase letter; lowercase, digits and underscores, up to 32"); return false
+            message = .key(Self.keyNameRule); return false
         }
         do { try await core.secrets.put(name: name, value: value); secretNames = try await core.secrets.names(); message = nil; return true }
         catch { failed(error); return false }
@@ -142,6 +168,10 @@ public final class ProcessingSettingsModel: ObservableObject {
         if let state = try? await core.initializeProcessing() { stored = state }
     }
 
+    /// The saved settings transcribe nothing, so a question that is only a hint to the transcription — how many
+    /// people were in the room — is not asked (2026-10-10, 3.5).
+    public var transcriptionOff: Bool { stored?.document.settings.transcription.mode == .off }
+
     /// Export writes the stored document, so only offer it when that is exactly what the screen shows.
     public var canExport: Bool { stored != nil && !dirty }
     public var languages: [Language] { draft?.mode == .local ? localLanguages : draft?.languages ?? [] }
@@ -171,8 +201,6 @@ public struct ProcessingSettingsView: View {
     @ObservedObject private var download: ModelDownload
     @Environment(\.locale) private var locale
     @Environment(\.scenePhase) private var scenePhase
-    @State private var pickingLanguage = false
-    @State private var pickingProvider = false
     @State private var deletingKey: String?
     @State private var trainingOff = false
     /// The settings file at the end of the block; a shell that shows it as a section of its own,
@@ -237,14 +265,11 @@ public struct ProcessingSettingsView: View {
                 if draft.mode == .external {
                     // docs/09 principle 4: a settings row, "Provider … ElevenLabs", like Language below.
                     SectionRow(title: loc("Provider")) {
-                        #if os(macOS)
+                        // 2026-10-10 (A-A8): the same dropdown box on both platforms.
                         BlueprintDropdown(loc("Provider"), options: model.providers.map(ProviderOption.init),
                             selection: Binding(get: { ProviderOption(name: draft.provider) }, set: { option in
                                 model.edit { $0.selectProvider(value: option.name) }
                             }), title: { SttProviders.shared.displayName(name: $0.name) })
-                        #else
-                        BlueprintButton(SttProviders.shared.displayName(name: draft.provider), tone: .quiet) { pickingProvider = true }
-                        #endif
                     }
                     ProviderDisclosure(provider: draft.provider)
                     if SttProviders.shared.keyIsClientPair(name: draft.provider) { SectionFootnote(loc("Enter the key as client ID:client secret.")) }
@@ -257,26 +282,26 @@ public struct ProcessingSettingsView: View {
                 }
                 if draft.mode != .off {
                     SectionRow(title: loc("Spoken language")) {
-                        #if os(macOS)
                         BlueprintDropdown(loc("Spoken language"), options: model.languages.map(SpeechLanguageOption.init),
                             selection: Binding(get: { SpeechLanguageOption(language: draft.language) }, set: { option in
                                 model.edit { $0.language = option.language }
                                 Task { await model.refreshLocal() }
                             }), title: { speechLanguageTitle($0.language) })
-                        #else
-                        BlueprintButton(speechLanguageTitle(draft.language), tone: .quiet) { pickingLanguage = true }
-                        #endif
                     }
                     if !model.languageSupported { SectionFootnote(loc("This language is not supported by the selected transcription method.")) }
                     // docs/09 "Vocabulary": after the language, part of the same draft (Cancel · Save).
                     VocabularyEditor(terms: field(\.vocabulary), description: vocabularyDescription(draft))
                 }
-                if let message = model.message { SectionFootnote(message.text) }
-                // docs/09 screen principle 8: Cancel · Save only appear when there is something to save.
-                if model.dirty {
+                if let message = model.message { SectionFootnote(message.text, tone: model.messageTone) }
+                // docs/09 screen principle 8: Cancel · Save only appear when there is something to save — and Save
+                // stays for its ✓ after (2026-10-10, W13).
+                if model.dirty || model.saveState != .idle {
                     FlowLayout(alignment: .trailing) {
-                        BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { Task { await model.reload() } }.disabled(model.busy)
-                        BlueprintButton(loc("Save"), tone: .primary) { Task { await model.save() } }.disabled(model.busy || !model.languageSupported)
+                        if model.dirty {
+                            BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { Task { await model.reload() } }.disabled(model.busy)
+                        }
+                        ProcessingButton(loc("Save"), state: model.saveState, tone: .primary) { Task { await model.save() } }
+                            .disabled(!model.dirty || !model.languageSupported)
                     }
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
@@ -325,29 +350,6 @@ public struct ProcessingSettingsView: View {
                     .accessibilityIdentifier("allow-and-save")
             } content: {
                 TransferDisclosureList(targets: model.consentNeeded, trainingOff: $trainingOff)
-            }
-        }
-        .blueprintDialog(isPresented: $pickingLanguage) {
-            BlueprintDialog(title: loc("Spoken language")) {
-                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingLanguage = false }
-            } content: {
-                ForEach(model.languages, id: \.self) { language in
-                    BlueprintRadioRow(speechLanguageTitle(language), selected: model.draft?.language == language) {
-                        model.edit { $0.language = language }; pickingLanguage = false
-                        Task { await model.refreshLocal() }
-                    }
-                }
-            }
-        }
-        .blueprintDialog(isPresented: $pickingProvider) {
-            BlueprintDialog(title: loc("Provider")) {
-                BlueprintButton(loc("Close"), tone: .quiet, minWidth: minTouch) { pickingProvider = false }
-            } content: {
-                ForEach(model.providers, id: \.self) { name in
-                    BlueprintRadioRow(SttProviders.shared.displayName(name: name), selected: model.draft?.provider == name) {
-                        model.edit { $0.selectProvider(value: name) }; pickingProvider = false
-                    }
-                }
             }
         }
     }

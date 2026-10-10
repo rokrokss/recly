@@ -76,6 +76,7 @@ struct RecordingView: View {
             NamingSheet(
                 title: $title,
                 participants: $participants,
+                asksPeople: !(model.processing?.transcriptionOff ?? false),
                 onSave: { finishNaming(with: title, participants: participants) },
                 onCancel: cancelNaming
             )
@@ -132,9 +133,10 @@ struct RecordingView: View {
                     .accessibilityHidden(model.status.isEmpty && model.highlightedAtSec == nil)
                 if model.microphoneDenied {
                     VStack(spacing: Space.s) {
+                        // 2026-10-10 (2.10): something to put right in Settings, not a failure — the warning tone.
                         Text("The microphone permission is required.")
                             .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.danger)
+                            .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
                             .multilineTextAlignment(.center)
                         BlueprintButton(loc("Open Settings")) { model.openSettings() }
                             .accessibilityIdentifier("openSettings")
@@ -371,6 +373,8 @@ private struct ConsentDialog: View {
 private struct NamingSheet: View {
     @Binding var title: String
     @Binding var participants: Int?
+    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off.
+    let asksPeople: Bool
     let onSave: () -> Void
     let onCancel: () -> Void
 
@@ -390,21 +394,23 @@ private struct NamingSheet: View {
                     BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
                         .accessibilityIdentifier("titleField")
                 }
-                VStack(alignment: .leading, spacing: Space.xs) {
-                    Text(verbatim: loc("People in the room"))
-                        .font(blueprint.fonts.label)
-                        .tracking(0.6)
-                        .foregroundStyle(blueprint.palette.textMuted)
-                    // docs/09 Fluid typography: six chips across a phone is a row at the design's own type
-                    // size and several rows at the user's.
-                    FlowLayout {
-                        ForEach(choices, id: \.self) { choice in
-                            BlueprintChip(label(choice), selected: participants == choice) {
-                                participants = choice
+                if asksPeople {
+                    VStack(alignment: .leading, spacing: Space.xs) {
+                        Text(verbatim: loc("People in the room"))
+                            .font(blueprint.fonts.label)
+                            .tracking(0.6)
+                            .foregroundStyle(blueprint.palette.textMuted)
+                        // docs/09 Fluid typography: six chips across a phone is a row at the design's own type
+                        // size and several rows at the user's.
+                        FlowLayout {
+                            ForEach(choices, id: \.self) { choice in
+                                BlueprintChip(label(choice), selected: participants == choice) {
+                                    participants = choice
+                                }
                             }
                         }
+                        .accessibilityIdentifier("participants")
                     }
-                    .accessibilityIdentifier("participants")
                 }
                 // docs/03 "Titles" · 2026-10-08 §5: the second answer throws the recording away, so it
                 // says so, in the red of every other irreversible delete. Side by side while both fit;
@@ -425,6 +431,9 @@ private struct NamingSheet: View {
         }
         .dotGridBackground()
         .presentationDetents([.medium])
+        // docs/03 "Titles" · 2026-10-10 (1.3): the take leaves this sheet only through its two answers — a swipe
+        // down was a Discard nobody chose.
+        .interactiveDismissDisabled()
     }
 
     @ViewBuilder private var answers: some View {

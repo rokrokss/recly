@@ -311,6 +311,12 @@ public enum DisconnectGuard {
         recording ? .key("Stop the recording first") : nil
     }
 
+    /// Whether [message] is one of the two above — what stands in the way rather than what happened, which the
+    /// shells draw in the warning tone (2026-10-10, 2.10).
+    public static func isBlocker(_ message: UiMessage) -> Bool {
+        message == signInBlocker(pending: true) || message == liveBlocker(recording: true)
+    }
+
     /// docs/03: the row a failed revoke leaves behind. The grant is still standing and it is
     /// Google's page — not this app — that takes it down, so the row outlives the disconnect, the
     /// phase and even the signed-in state.

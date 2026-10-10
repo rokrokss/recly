@@ -153,7 +153,7 @@ final class RecentsRemoteTests: XCTestCase {
         XCTAssertFalse(item.canRetry)
         XCTAssertEqual(item.link, URL(string: "https://drive.google.com/drive/folders/1FolderId"))
         // A finished row is neither queued nor failed, so the header counts it as neither.
-        XCTAssertEqual(Recents.summary([item]), "1 · 0 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary([item]), "1")
     }
 
     /// The meta another device wrote beside its parts in Drive — finalized, because a recording that
@@ -356,15 +356,14 @@ final class RecentsSummaryTests: XCTestCase {
         XCTAssertEqual(Recents.summary(items), "10 · 3 waiting · 3 failed")
     }
 
-    /// Nothing recorded yet: the zeros are still said, because a header that changes shape as rows
-    /// arrive is a header that has to be read twice.
-    func testAnEmptyLedgerCountsZeroOfEach() {
-        XCTAssertEqual(Recents.summary([]), "0 · 0 waiting · 0 failed")
+    /// Nothing recorded yet: the count, and no zeros after it (2026-10-10, A-A21).
+    func testAnEmptyLedgerSaysOnlyItsCount() {
+        XCTAssertEqual(Recents.summary([]), "0")
     }
 
     func testLocalTranscriptionRemainsInTheWaitingCount() {
         let items = ["Transcription pending", "Transcribing on this device"].map(item(state:))
-        XCTAssertEqual(Recents.summary(items), "2 · 2 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary(items), "2 · 2 waiting")
     }
 
     private func item(state: String) -> RecentItem {
@@ -563,7 +562,7 @@ final class RecentsInFlightElsewhereTests: XCTestCase {
             "Transcribing on another device", "Done",
         ].map(item(state:))
 
-        XCTAssertEqual(Recents.summary(items), "4 · 2 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary(items), "4 · 2 waiting")
     }
 
     /// docs/09 screen principle 1: what the iPhone's State node reads off the ledger. A job of this phone's

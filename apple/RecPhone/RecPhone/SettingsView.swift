@@ -100,9 +100,9 @@ struct SettingsView: View {
             hint(note, tone: .danger)
         }
         // docs/07 rule 3: what the last disconnect had to say, made into words here rather than
-        // stored as them.
+        // stored as them — in the warning tone when it is what stands in the way (2026-10-10, 2.10).
         if let message = model.message {
-            hint(message.text, tone: .neutral)
+            hint(message.text, tone: DisconnectGuard.isBlocker(message) ? .warning : .neutral)
         }
 
     }
@@ -229,5 +229,7 @@ struct SettingsView: View {
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(blueprint.palette.textMuted)
             .textSelection(.enabled)
+            // 2026-10-10 (2.13): diagnostics read left to right in every language.
+            .environment(\.layoutDirection, .leftToRight)
     }
 }

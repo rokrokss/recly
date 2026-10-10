@@ -110,9 +110,11 @@ struct ChatGptFailureNotice: View {
                     .foregroundStyle(blueprint.palette.textMuted)
                     .multilineTextAlignment(.center)
             }
+            // 2026-10-10 (2.15): no Retry where asking again cannot help — the sentence says where the fix is
+            // (sign-in), or that this account cannot be used at all (plan).
             if message == .chatgptUsageLimit {
                 BlueprintButton(RecKitStrings.localized("Manage usage"), tone: .primary) { openURL(ChatGptSettingsModel.usage) }
-            } else if message != .chatgptSignInRequired {
+            } else if message != .chatgptSignInRequired, message != .chatgptPlanRequired {
                 BlueprintButton(RecKitStrings.localized("Retry"), tone: .quiet, action: retry)
                     .disabled(retrying)
                     .accessibilityIdentifier("summary-retry")
@@ -164,6 +166,8 @@ struct CitedText: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        // 2026-10-10 (2.13): ChatGPT's words in their own direction, whatever the app's.
+        .contentDirection(text)
         // The links stay under the targets on iOS 18 / macOS 15 too: a tap that reaches the glyphs still plays.
         .environment(\.openURL, OpenURLAction { url in
             guard let sec = Self.second(url) else { return .systemAction }
@@ -172,9 +176,10 @@ struct CitedText: View {
         })
     }
 
+    /// 2026-10-10 (A-A4): the transcript's size, 14, with citations in the 14 mono.
     private func selectable(_ text: Text) -> some View {
         text
-            .font(blueprint.fonts.body)
+            .font(blueprint.fonts.bodySmall)
             .foregroundStyle(blueprint.palette.text)
             .tint(blueprint.palette.accent)
             .textSelection(.enabled)
@@ -215,7 +220,7 @@ struct CitedText: View {
             return AttributedString(words)
         case .citation(let words, let atSec):
             var part = AttributedString(words)
-            part.font = blueprint.fonts.monoBody
+            part.font = blueprint.fonts.monoBodySmall
             if playable {
                 part.link = Self.url(atSec)
                 part.foregroundColor = blueprint.palette.accent
@@ -387,7 +392,9 @@ struct SummaryEditor: View {
                 // A text view, not a field: Return is a new line here, on the Mac too.
                 TextEditor(text: $text)
                     .scrollContentBackground(.hidden)
-                    .font(blueprint.fonts.body)
+                    // The summary's own size (A-A4), in its own direction (2.13).
+                    .font(blueprint.fonts.bodySmall)
+                    .contentDirection(text)
                     .foregroundStyle(blueprint.palette.text)
                     // A field's 10 × 9, less the inset the text view keeps of its own on each platform.
                     .padding(.horizontal, 5)

@@ -43,7 +43,7 @@ final class ModelWaitTests: XCTestCase {
 
     func testTheHeaderCountsItAsWaitingAndNotAsFailed() {
         AppLanguage.current = .en
-        XCTAssertEqual(Recents.summary([item("Waiting for speech model")]), "1 · 1 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary([item("Waiting for speech model")]), "1 · 1 waiting")
     }
 
     /// Parked like consent: no timer brings it back, the download does.

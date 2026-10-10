@@ -92,8 +92,9 @@ struct ReasonedMenuItem: View {
 }
 
 /// docs/09 "Detail header and More menu": the detail's More menu — Rename · Edit transcript · Transcribe
-/// again · Summarize · Summarize as… · Edit summary · Ask about this recording… · Add highlight — with the ones
-/// that cannot run now shown off, and why.
+/// again ─ Summarize · Summarize as… · Edit summary · Ask about this recording… ─ Add highlight — with the ones
+/// that cannot run now shown off, and why. The three groups are parted by a hairline, and a group with nothing in
+/// it (no ChatGPT, no summary) takes its divider with it (2026-10-10, 2.2).
 struct DetailMoreMenu: View {
     @ObservedObject var model: RecordingDetailModel
     let positionSec: Double
@@ -112,6 +113,7 @@ struct DetailMoreMenu: View {
             ReasonedMenuItem(title: RecKitStrings.localized("Rename"), reason: model.renameReason, action: rename)
             ReasonedMenuItem(title: RecKitStrings.localized("Edit transcript"), reason: model.editReason, action: edit)
             ReasonedMenuItem(title: RecKitStrings.localized("Transcribe again"), reason: model.retranscribeReason, action: transcribeAgain)
+            if model.summaryOffered || model.summaryEditable { Divider() }
             // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
             if model.summaryOffered {
                 ReasonedMenuItem(title: model.summarizeTitle, reason: model.summarizeReason) { summarize(nil) }
@@ -136,9 +138,10 @@ struct DetailMoreMenu: View {
             if model.summaryOffered {
                 ReasonedMenuItem(title: RecKitStrings.localized("Ask about this recording…"), reason: model.askReason, action: askAbout)
             }
+            Divider()
             ReasonedMenuItem(
                 title: RecKitStrings.localized("Add highlight at %@", model.stamp(positionSec)),
-                reason: model.hasAudio ? nil : RecKitStrings.localized("No audio on this device"),
+                reason: model.highlightReason,
                 action: addHighlight
             )
         } label: {
@@ -421,7 +424,7 @@ struct DetailShareSheet: View {
             HairLine()
             ScrollView {
                 VStack(spacing: 0) {
-                    ForEach(ShareFormat.allCases) { format in
+                    ForEach(model.shareFormats) { format in
                         row(format)
                     }
                     copyRow

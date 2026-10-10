@@ -150,7 +150,8 @@ struct AgentConnectionSection: View {
                             changingTunnel = false
                         }
                     }
-                    BlueprintButton(loc("Save"), tone: .quiet) {
+                    // 2026-10-10 (A-A26): the form's own answer, primary as every other Save.
+                    BlueprintButton(loc("Save"), tone: .primary) {
                         agent.saveTunnel(id: tunnelId, key: tunnelKey) { changingTunnel = false }
                         tunnelKey = ""
                     }

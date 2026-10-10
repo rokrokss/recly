@@ -168,6 +168,8 @@ struct TranscriptReader: View {
                 .font(blueprint.fonts.bodySmall)
                 .foregroundStyle(blueprint.palette.text)
                 .textSelection(.enabled)
+                // 2026-10-10 (2.13): what was said, in its own direction, whatever the app's.
+                .contentDirection(group.text)
                 .accessibilityIdentifier("transcript-text-\(group.id)")
         }
         .frame(maxWidth: .infinity, alignment: .leading)

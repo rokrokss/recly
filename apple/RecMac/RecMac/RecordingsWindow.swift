@@ -209,6 +209,8 @@ struct RecordingsWindow: View {
                 length: length,
                 state: item.stateLabel
             ),
+            // 2026-10-10 (A-A9): the row whose recording is open beside the list says so.
+            opened: menu.detail?.recordingId == item.id,
             action: { menu.showDetail(item) }
         ) {
             // docs/03: a recording being written to, imported, or arriving from the watch is not one
