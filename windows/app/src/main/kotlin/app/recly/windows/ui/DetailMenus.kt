@@ -112,8 +112,9 @@ private val RecordingDetail.audioReachable: Boolean
     get() = !audio.isEmpty || driveFetch == DriveFetch.DECIDING || driveFetch == DriveFetch.FETCHING
 
 /**
- * docs/08 "Exports": Export… — the five formats, each made by the core and saved under the name it gave the
- * file, and Copy all. While the core prepares one (joining the audio takes a moment) its row says so.
+ * docs/08 "Exports": Export… — the formats, each made by the core and saved under the name it gave the file, and
+ * Copy all. While the core prepares one (joining the audio takes a moment) its row says so. The summary is one of
+ * them wherever summaries are offered.
  */
 @Composable
 internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: Strings) {
@@ -125,13 +126,15 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Box {
         BlueprintButton(if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.EXPORT], { open = true }, tone = ButtonTone.QUIET)
-        BlueprintMenu(open, { if (preparing == null) open = false }, alignment = Alignment.TopEnd) { MenuColumn {
-            EXPORTS.forEach { (format, label, kind) ->
+        val summaries = model.chatGpt?.connection != ChatGptConnection.Unavailable
+        BlueprintMenu(open, { if (preparing == null) open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+            EXPORTS.filter { (format) -> format != ExportFormat.SUMMARY || summaries }.forEach { (format, label, kind) ->
                 val audio = format == ExportFormat.AUDIO
                 val reason = when {
                     // Nothing of a take still being written is whole enough to export.
                     audio && detail.writing -> Str.DETAIL_STILL_RECORDING
                     audio && !detail.audioReachable -> Str.PLAYER_NO_AUDIO
+                    format == ExportFormat.SUMMARY -> if (detail.summary.saved() == null) Str.SUMMARY_NONE else null
                     !audio && !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                     else -> null
                 }
@@ -173,6 +176,8 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
 private val EXPORTS = listOf(
     Triple(ExportFormat.TXT, Str.EXPORT_TRANSCRIPT, Str.EXPORT_TRANSCRIPT_FORMAT),
     Triple(ExportFormat.MD, Str.EXPORT_NOTES, Str.EXPORT_NOTES_FORMAT),
+    // The summary as text, under the chip's own name; the .md carries it too (docs/08 "Exports").
+    Triple(ExportFormat.SUMMARY, Str.SUMMARY_TAB, Str.EXPORT_TRANSCRIPT_FORMAT),
     Triple(ExportFormat.SRT, Str.EXPORT_SUBTITLES, Str.EXPORT_SUBTITLES_FORMAT),
     Triple(ExportFormat.VTT, Str.EXPORT_WEB_SUBTITLES, Str.EXPORT_WEB_SUBTITLES_FORMAT),
     Triple(ExportFormat.AUDIO, Str.EXPORT_AUDIO, Str.EXPORT_AUDIO_FORMAT),
@@ -180,7 +185,9 @@ private val EXPORTS = listOf(
 
 /**
  * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight ·
- * Summarize · Edit summary. What cannot run now stays in its place, disabled, with the reason under it.
+ * Summarize · Summarize as… · Edit summary · Ask about this recording…. What cannot run now stays in its place,
+ * disabled, with the reason under it. Summarize as… turns the menu into the formats, the way Change speaker turns
+ * the speaker's menu into the speakers.
  */
 @Composable
 internal fun MoreButton(
@@ -192,16 +199,29 @@ internal fun MoreButton(
     strings: Strings,
 ) {
     var open by remember { mutableStateOf(false) }
+    var choosingFormat by remember { mutableStateOf(false) }
     val stamp = LedgerFormat.clock(positionSec, detail.spanSec)
     Box {
         BlueprintButton(
             MORE_MARK,
-            { open = true },
+            {
+                choosingFormat = false
+                open = true
+            },
             // As wide as it is tall: a single mark is not a 44 target on its own.
             modifier = Modifier.defaultMinSize(minWidth = MinTouch).semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
         )
-        BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd) { MenuColumn {
+        BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+            if (choosingFormat) {
+                // The formats Settings offers; the summary on show has its own marked.
+                val current = detail.summary.saved()?.summaryFormat
+                model.chatGpt?.preferences?.formats.orEmpty().forEach { format ->
+                    val label = strings[summaryFormatLabel(format)]
+                    MenuRow(if (format == current) "$SELECTION_MARK $label" else label, { open = false; model.askToSummarize(format) })
+                }
+                return@MenuColumn
+            }
             // The core refuses to rename a take still being written, and the item says so.
             MenuRow(
                 strings[Str.DETAIL_RENAME],
@@ -250,6 +270,12 @@ internal fun MoreButton(
                     enabled = summaryBlocked == null,
                     secondary = summaryBlocked?.let { strings[it] },
                 )
+                MenuRow(
+                    strings[Str.SUMMARY_AS],
+                    { choosingFormat = true },
+                    enabled = summaryBlocked == null,
+                    secondary = summaryBlocked?.let { strings[it] },
+                )
                 summaryEditItem(detail.summary)?.let { item ->
                     MenuRow(
                         strings[Str.SUMMARY_EDIT],
@@ -258,6 +284,14 @@ internal fun MoreButton(
                         secondary = item.blocked?.let { strings[it] },
                     )
                 }
+                // docs/08 "Ask": one question about this recording, in a panel over the detail.
+                val askBlocked = askBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection)
+                MenuRow(
+                    strings[Str.ASK_MENU],
+                    { open = false; model.openAsk() },
+                    enabled = askBlocked == null,
+                    secondary = askBlocked?.let { strings[it] },
+                )
             }
         } }
     }
@@ -290,8 +324,15 @@ internal fun HighlightMark(modifier: Modifier = Modifier) {
 internal val HIGHLIGHT_MARK = 6.dp
 
 /**
- * docs/08 "Editing": who says a group — the name the user gave, or the id in monospace — as a quiet control
- * that opens the speaker menu. Speakers are told apart by this label alone.
+ * docs/08 "Editing" · "Me and others": what a speaker is called — the name the user gave, else `Me` for the person
+ * who made the recording, else null, which the label shows as the id.
+ */
+internal fun speakerName(speaker: TranscriptSpeaker?, strings: Strings): String? =
+    speaker?.name?.takeIf { it.isNotBlank() } ?: if (speaker?.me == true) strings[Str.SPEAKER_ME] else null
+
+/**
+ * docs/08 "Editing": who says a group — the name the user gave ([speakerName]), or the id in monospace — as a quiet
+ * control that opens the speaker menu. Speakers are told apart by this label alone.
  */
 @Composable
 internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, onClick: () -> Unit) {
@@ -335,7 +376,7 @@ internal fun SpeakerMenu(
             MenuRow(strings[Str.SPEAKER_CHANGE], { choosing = true })
         } else {
             speakers.forEach { speaker ->
-                val label = speaker.name ?: speaker.id
+                val label = speakerName(speaker, strings) ?: speaker.id
                 MenuRow(if (speaker.id == current) "$SELECTION_MARK $label" else label, { onDismiss(); onChange(speaker.id) })
             }
             MenuRow(strings[Str.SPEAKER_NEW], { onDismiss(); onChange(null) })
@@ -541,3 +582,9 @@ private const val COPIED_MS = 3_000L
 
 /** The narrowest a menu is, as [BlueprintMenu] draws it. */
 private val MENU_WIDTH = 200.dp
+
+/**
+ * Export's seven items and More's eight whole, each with a second line under it, in a window at its opening height —
+ * none behind a scroll.
+ */
+private val DETAIL_MENU_HEIGHT = 440.dp

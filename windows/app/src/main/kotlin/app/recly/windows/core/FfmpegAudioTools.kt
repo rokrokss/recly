@@ -1,12 +1,16 @@
 package app.recly.windows.core
 
 import app.recly.windows.helper.CaptureHelper
+import app.recly.windows.ui.RecordingPlayer
+import app.recly.windows.ui.RecordingWaveform
 import java.util.concurrent.TimeUnit
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import okio.FileSystem
 import okio.Path
 import recly.core.platform.AudioTools
+import recly.core.platform.Logger
 
 /**
  * docs/08 "Audio preparation" on the desktop: the bundled ffmpeg (ADR-019) joins the parts with the
@@ -18,10 +22,26 @@ import recly.core.platform.AudioTools
 class FfmpegAudioTools(
     private val fileSystem: FileSystem,
     private val io: CoroutineDispatcher,
+    private val logger: Logger,
     private val ffmpeg: String = CaptureHelper.ffmpeg(),
+    /** A file from a second into it, as raw PCM on stdout: the detail's own decoder ([RecordingPlayer.decoder]). */
+    private val spawn: (Path, Double) -> Process = RecordingPlayer.decoder(ffmpeg),
 ) : AudioTools {
-    // TODO(round 3 Windows lane): decode with ffmpeg; until then the core leaves speakers as they are.
-    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = null
+    /**
+     * docs/08 "Me and others": the waveform's own decode and its own measure ([RecordingWaveform]) — the loudest
+     * sample of every window from the file's start — so the core reads the tracks the way the detail draws them.
+     * A file ffmpeg cannot read is null, never a throw: the core then leaves the speakers as they are.
+     */
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = withContext(io) {
+        try {
+            RecordingWaveform.decode(file, spawn, windowSec = windowSec).toList()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.log(Logger.Level.WARN, "shell.audio.levels.failed", mapOf("file" to file.name), e)
+            null
+        }
+    }
 
     override suspend fun concat(parts: List<Path>, out: Path) = withContext(io) {
         // Checked here because ffmpeg does not check it for us: a part the concat demuxer cannot

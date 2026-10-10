@@ -340,7 +340,7 @@ private class Dribble(private val bytes: ByteArray, private val at: Int) : Input
  * An ffmpeg that has already written its part and exited, which is what a decode of one is — or,
  * with a [gate], one still working until the test lets it finish.
  */
-private class PcmProcess(
+internal class PcmProcess(
     pcm: ByteArray,
     private val exit: Int = 0,
     private val gate: java.util.concurrent.CountDownLatch? = null,

@@ -193,7 +193,7 @@ private fun Group(
                 if (speaker.isNotEmpty()) {
                     var place by remember { mutableStateOf(Offset.Zero) }
                     Box(Modifier.onGloballyPositioned { place = it.positionInRoot() }) {
-                        SpeakerBadge(speaker, transcript.speakers.firstOrNull { it.id == speaker }?.name, speakerEnabled) { onSpeakerMenu(place) }
+                        SpeakerBadge(speaker, speakerName(transcript.speakers.firstOrNull { it.id == speaker }, strings), speakerEnabled) { onSpeakerMenu(place) }
                     }
                 }
                 when (saving) {

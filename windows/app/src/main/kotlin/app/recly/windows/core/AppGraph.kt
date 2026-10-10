@@ -67,7 +67,7 @@ object AppModule {
             tokenProvider = tokens,
             transport = transport,
             fileSystem = fileSystem,
-            audio = FfmpegAudioTools(fileSystem, io),
+            audio = FfmpegAudioTools(fileSystem, io, logger),
             dataDir = dataDir,
             device = DeviceInfo(
                 deviceId = deviceId(fileSystem, dataDir),

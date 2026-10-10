@@ -64,6 +64,10 @@ fun BlueprintTextField(
     /** A second line under the box: what the field means, or what an empty one falls back to. */
     hint: String? = null,
     singleLine: Boolean = true,
+    /** How many lines a field that is not [singleLine] shows empty, and how many it grows to before it scrolls. */
+    minLines: Int = 1,
+    maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
+    enabled: Boolean = true,
     /** Monospace by default: nearly every field in this app holds data rather than prose. */
     monospace: Boolean = true,
     minHeight: Dp = MinTouch,
@@ -97,9 +101,12 @@ fun BlueprintTextField(
                 .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, RoundedCornerShape(Radius.node))
                 .background(palette.surface, RoundedCornerShape(Radius.node))
                 .padding(horizontal = Space.s, vertical = 10.dp),
+            enabled = enabled,
             singleLine = singleLine,
+            minLines = minLines,
+            maxLines = maxLines,
             visualTransformation = if (secret) PasswordVisualTransformation() else VisualTransformation.None,
-            textStyle = style.copy(color = palette.text),
+            textStyle = style.copy(color = if (enabled) palette.text else palette.textMuted),
             cursorBrush = SolidColor(palette.accent),
             decorationBox = { innerTextField ->
                 Box {
@@ -151,6 +158,8 @@ fun BlueprintMenu(
     offset: IntOffset = IntOffset.Zero,
     /** Which corner of the thing clicked the menu hangs from — the end for a button at a window's end. */
     alignment: androidx.compose.ui.Alignment = androidx.compose.ui.Alignment.TopStart,
+    /** How tall it gets before it scrolls: a menu of actions that should be seen whole asks for more. */
+    maxHeight: Dp = MENU_MAX_HEIGHT,
     content: @Composable () -> Unit,
 ) {
     if (!expanded) return
@@ -172,7 +181,7 @@ fun BlueprintMenu(
                 // A list that outgrows the window (languages, workflows) scrolls instead of
                 // clipping its tail into rows that exist but cannot be picked. Focus traversal
                 // brings an off-screen item into view on its own, so keyboard users lose nothing.
-                .heightIn(max = MENU_MAX_HEIGHT)
+                .heightIn(max = maxHeight)
                 .verticalScroll(rememberScrollState()),
         ) {
             content()
