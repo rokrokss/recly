@@ -81,8 +81,8 @@ import recly.core.storage.StorageKind
 /**
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
- * the system's alone, and there is no accessibility section), capture, startup, the
- * agent connection, and the honest block of what this build actually is.
+ * the system's alone, and there is no accessibility section), capture with the start at login (as the Mac
+ * has it, 2026-10-10), the agent connection, and the honest block of what this build actually is.
  */
 @Composable
 fun SettingsWindow(model: ShellModel, strings: Strings) {
@@ -95,8 +95,6 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Language(model, strings)
             Appearance(model, strings)
             Capture(model, strings)
-            Startup(model, strings)
-            Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
             model.chatGpt?.let { ChatGpt(it, strings) }
             model.agentEvents?.let { AgentConnection(model, it, strings) }
@@ -227,6 +225,14 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 @Composable
 private fun Capture(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_RECORDING])
+    // docs/12 "Runner": first in the section, as on the Mac — a section of its own for one switch is gone (2026-10-10).
+    SwitchRow(
+        title = strings[Str.SETTINGS_LAUNCH_AT_LOGIN],
+        subtitle = if (model.launchAtLoginSupported) null else strings[Str.SETTINGS_LAUNCH_UNSUPPORTED],
+        checked = model.launchAtLogin,
+        onCheckedChange = model::toggleLaunchAtLogin,
+        enabled = model.launchAtLoginSupported,
+    )
     // docs/12 M8: the reminder is on by default and this is where it goes off — and back on, which
     // the dialog's own "Do not ask again" cannot do.
     SwitchRow(
@@ -253,18 +259,6 @@ private fun Capture(model: ShellModel, strings: Strings) {
         }
         HairLine()
     }
-}
-
-@Composable
-private fun Startup(model: ShellModel, strings: Strings) {
-    Section(strings[Str.SETTINGS_STARTUP])
-    SwitchRow(
-        title = strings[Str.SETTINGS_LAUNCH_AT_LOGIN],
-        subtitle = if (model.launchAtLoginSupported) null else strings[Str.SETTINGS_LAUNCH_UNSUPPORTED],
-        checked = model.launchAtLogin,
-        onCheckedChange = model::toggleLaunchAtLogin,
-        enabled = model.launchAtLoginSupported,
-    )
 }
 
 /**
@@ -638,19 +632,11 @@ private fun AgentWorking(text: String) {
     HairLine()
 }
 
-@Composable
-private fun Data(model: ShellModel, strings: Strings) {
-    Section(strings[Str.SETTINGS_DATA])
-    SettingsCard {
-        // docs/09: a path is data, so it is monospace and it is shown rather than described.
-        Mono(model.dataDir)
-        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
-            modifier = Modifier.align(Alignment.End))
-    }
-    HairLine()
-}
-
-/** docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace. */
+/**
+ * docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace — and at its end the
+ * way to the folder this PC keeps it all in. The folder's path is not shown (2026-10-10): docs/09 keeps technical
+ * values out of the UI, and the button opens it.
+ */
 @Composable
 private fun About(model: ShellModel, strings: Strings) {
     val palette = blueprint
@@ -665,13 +651,15 @@ private fun About(model: ShellModel, strings: Strings) {
             color = palette.textMuted,
         )
         Mono(strings[Str.SETTINGS_OPEN_SOURCE_VALUE])
+        BlueprintButton(strings[Str.SETTINGS_OPEN_DATA_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
+            modifier = Modifier.align(Alignment.End).padding(top = Space.s))
     }
     HairLine()
 }
 
 @Composable
 private fun Mono(line: String) {
-    // Data — the build, the device, a path — left to right in every language (2026-10-10).
+    // Data — the build, the device — left to right in every language (2026-10-10).
     Text(line, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted)
 }
 

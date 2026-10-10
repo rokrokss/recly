@@ -100,7 +100,7 @@ class ChatGptReasonsTest {
         assertTrue(summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).attention)
         assertFalse(summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500")).attention)
 
-        // PROVIDER_ERROR's own sentence promises a retry nothing here makes: the headline is the detail's.
+        // PROVIDER_ERROR has no sentence of its own here: the headline is the screen's, with the detail under it.
         val provider = summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500: upstream"))
         assertEquals(Str.SUMMARY_FAILED.message(), provider.headline)
         assertEquals("HTTP 500: upstream", provider.detail)

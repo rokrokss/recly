@@ -277,8 +277,7 @@ internal fun cancelled(reason: String): Boolean = CoreMessageRef.parse(reason)?.
 
 /**
  * The reasons that are a sentence of their own — where the fix is, or why there is none. Any other
- * failure is the screen's own headline with the diagnostic under it: `PROVIDER_ERROR`'s sentence says
- * "It will try again", which nothing here does.
+ * failure is the screen's own headline with the diagnostic under it.
  */
 private val SENTENCES = setOf(
     CoreMessage.CHATGPT_SIGN_IN_REQUIRED,

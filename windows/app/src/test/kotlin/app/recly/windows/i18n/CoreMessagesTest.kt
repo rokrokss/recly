@@ -78,19 +78,17 @@ class CoreMessagesTest {
     }
 
     /**
-     * 2026-10-10: a row the queue gave up on will not try again by itself, so its line keeps the provider's failure
-     * and drops the promise — nested in Out of retries as well; every other code says what it always said.
+     * 2026-10-10: the provider's failure is one sentence on every row — retrying or given up on — and promises nothing:
+     * a retry is said by the row's own badge and its "Retrying in…", and a row the queue gave up on will not retry.
      */
     @Test
-    fun `a failed row's line does not promise another attempt`() {
+    fun `the provider's failure promises no retry`() {
         val provider = CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 503")
-        assertEquals("Something went wrong at the provider. It will try again.", coreMessage(provider).text(en))
-        assertEquals("Something went wrong at the provider.", finalCoreMessage(provider).text(en))
+        assertEquals("Something went wrong at the provider.", coreMessage(provider).text(en))
+        assertEquals("제공자 쪽에서 문제가 생겼습니다.", coreMessage(provider).text(ko).plain())
         val spent = CoreMessage.RETRY_BUDGET_SPENT.code(CoreMessage.PROVIDER_ERROR.code())
-        assertEquals("Out of retries: Something went wrong at the provider.", finalCoreMessage(spent).text(en))
-        assertEquals(coreMessage(CoreMessage.AUTH_REJECTED.code()), finalCoreMessage(CoreMessage.AUTH_REJECTED.code()))
-        assertEquals(UiMessage.Text("an old sentence"), finalCoreMessage("an old sentence"))
-        assertEquals("제공자 쪽에서 문제가 생겼습니다.", finalCoreMessage(provider).text(ko).plain())
+        assertEquals("Out of retries: Something went wrong at the provider.", coreMessage(spent).text(en))
+        assertEquals("HTTP 503", coreMessageDetail(provider))
     }
 
     private companion object {
