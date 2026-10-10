@@ -32,7 +32,7 @@ class SummariesTest {
         val h = ChatGptHarness(requireTransferConsent)
         val recordings = RecordingRepository(h.db, h.deps)
         val consents = TransferConsents(h.db, h.deps)
-        val summaries = Summaries(h.deps, h.account, recordings, { transcript }, consents)
+        val summaries = Summaries(h.db, h.deps, h.account, recordings, { transcript }, consents)
         val meta = testMeta(title = "Weekly sync")
         val dir = "/data/recordings/${MetaWriter.baseName(meta)}".toPath()
 

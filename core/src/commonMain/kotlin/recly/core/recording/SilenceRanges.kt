@@ -43,7 +43,7 @@ object SilenceRanges {
         return ranges
     }
 
-    private fun threshold(peaks: List<Float>): Float {
+    internal fun threshold(peaks: List<Float>): Float {
         val sounding = peaks.filter { it > 0f }.sorted()
         if (sounding.isEmpty()) return FLOOR
         val quiet = percentile(sounding, 0.08) * 2

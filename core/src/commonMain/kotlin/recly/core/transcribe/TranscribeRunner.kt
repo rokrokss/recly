@@ -173,7 +173,7 @@ class TranscribeRunner(
     ): StepOutput {
         val meta = ctx.recording.meta
         val track = state.track ?: track(meta)
-        val transcript = TranscriptNormalizer.normalize(
+        val normalized = TranscriptNormalizer.normalize(
             recordingId = meta.recordingId,
             track = track,
             parts = partsOf(meta, track),
@@ -183,6 +183,7 @@ class TranscribeRunner(
             createdAt = deps.clock.now().isoUtc(),
             language = result.language ?: step.language.wire,
         )
+        val transcript = MeAndOthers.mark(deps, ctx.recording.dir, meta, normalized)
         val base = MetaWriter.baseName(meta)
         if (recly.core.processing.ProcessingPlan.isFixed(ctx.workflow.id)) {
             TranscriptCache.write(ctx, transcript)

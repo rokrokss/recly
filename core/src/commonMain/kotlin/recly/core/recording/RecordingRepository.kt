@@ -1080,7 +1080,7 @@ class RecordingRepository(
         private const val SEEN_PREFIX: String = "transcript/seen/"
 
         /** Beside the parts: the summary of this recording, `Summary` as JSON (docs/08 "Summaries"). */
-        private const val SUMMARY_FILE: String = "summary.v1.json"
+        internal const val SUMMARY_FILE: String = "summary.v1.json"
 
         /** `kv` rows: `summary/pending/{recordingId}` → a stamp; a summary the folder has not received. */
         private const val SUMMARY_PREFIX: String = "summary/pending/"

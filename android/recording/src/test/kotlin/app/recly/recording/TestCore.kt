@@ -166,6 +166,7 @@ private object NoTransport : Transport {
 /** Nothing in the recovery scan transcribes, so a call here is a bug in the test. */
 private object NoAudioTools : AudioTools {
     override suspend fun concat(parts: List<Path>, out: Path): Unit = throw NotImplementedError()
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = throw NotImplementedError()
 }
 
 fun phoneMeta(

@@ -125,6 +125,11 @@ object UnusedTransport : Transport {
 class FakeAudioTools(private val fs: FileSystem) : AudioTools {
     val calls = mutableListOf<List<Path>>()
 
+    /** What [levels] answers for a part, by its file name; a part not here cannot be decoded. */
+    val levelsByName = mutableMapOf<String, List<Float>>()
+
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = levelsByName[file.name]
+
     override suspend fun concat(parts: List<Path>, out: Path) {
         calls += parts
         out.parent?.let { fs.createDirectories(it) }

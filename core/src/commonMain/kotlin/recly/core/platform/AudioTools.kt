@@ -14,4 +14,12 @@ import okio.Path
 interface AudioTools {
     /** Writes [parts], in the given order, to [out] as one file. */
     suspend fun concat(parts: List<Path>, out: Path)
+
+    /**
+     * The loudest sample of every [windowSec] window of [file], 0–1, from its start — what the waveform is drawn
+     * from ([recly.core.recording.WaveformPeaks]). The core asks it of a desktop recording's `mic` and `sys` parts
+     * to tell the person who made the recording from the others (docs/08 "Me and others"). Null when this shell
+     * cannot decode it; a shell that never records both tracks may always answer null.
+     */
+    suspend fun levels(file: Path, windowSec: Double): List<Float>?
 }

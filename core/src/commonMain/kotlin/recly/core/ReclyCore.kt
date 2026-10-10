@@ -223,13 +223,15 @@ class ReclyCore(
 
     private val exports = recly.core.recording.RecordingExport(
         deps, recordings, { results(it).transcript }, { audio(it, null) },
+        summary = { recordingId -> recordings.summary(recordingId)?.let(recly.core.chatgpt.SummaryFile::decode)?.text },
     )
 
     /**
-     * docs/08 "Exports": one file of the recording for a share sheet — its transcript as text, Markdown,
-     * SubRip or WebVTT, or its audio as one `.m4a` — written to a cache directory and named for people
-     * (`2026-08-26 Weekly meeting.srt`). Null when there is nothing in that format: no transcript, or audio
-     * that is neither here nor fetchable. The files are removed by a later export.
+     * docs/08 "Exports": one file of the recording for a share sheet — its transcript as text, Markdown
+     * (with the summary, when there is one), SubRip or WebVTT, its summary as text, or its audio as one `.m4a` —
+     * written to a cache directory and named for people (`2026-08-26 Weekly meeting.srt`). Null when there is
+     * nothing in that format: no transcript, no summary, or audio that is neither here nor fetchable. The files
+     * are removed by a later export.
      */
     @Throws(Throwable::class)
     suspend fun exportFile(recordingId: String, format: recly.core.recording.ExportFormat): String? =
@@ -240,7 +242,7 @@ class ReclyCore(
 
     /** docs/08 "Summaries": a recording's meeting notes, made on request with [chatGpt]. */
     val summaries: recly.core.chatgpt.Summaries = recly.core.chatgpt.Summaries(
-        deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
+        db, deps, chatGpt, recordings, { results(it).transcript }, transferConsents,
         published = { recordingId ->
             recordings.summaryPending(recordingId)
             pushes.launch { remote.pushSummaries() }

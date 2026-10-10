@@ -16,8 +16,8 @@ import recly.core.platform.CoreDeps
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptNormalizer
 
-/** What a share sheet can be handed (docs/08 "Exports"). */
-enum class ExportFormat { TXT, MD, SRT, VTT, AUDIO }
+/** What a share sheet can be handed (docs/08 "Exports"). [SUMMARY] is the recording's summary as plain text. */
+enum class ExportFormat { TXT, MD, SRT, VTT, AUDIO, SUMMARY }
 
 /**
  * docs/08 "Exports": one file for the share sheet, made on demand in a directory of its own under
@@ -34,6 +34,8 @@ internal class RecordingExport(
     private val recordings: RecordingRepository,
     private val transcript: suspend (String) -> Transcript?,
     private val audio: suspend (String) -> RecordingAudio,
+    /** The recording's summary text (docs/08 "Summaries"), or null. */
+    private val summary: suspend (String) -> String? = { null },
 ) {
     private val mutex = Mutex()
     private var cleaned = false
@@ -42,9 +44,10 @@ internal class RecordingExport(
         val record = recordings.get(recordingId) ?: return null
         val content = when (format) {
             ExportFormat.TXT -> transcript(recordingId)?.let(TranscriptNormalizer::text)
-            ExportFormat.MD -> transcript(recordingId)?.let { TranscriptNormalizer.markdown(it, record.meta) }
+            ExportFormat.MD -> transcript(recordingId)?.let { TranscriptNormalizer.markdown(it, record.meta, summary(recordingId)) }
             ExportFormat.SRT -> transcript(recordingId)?.let(TranscriptNormalizer::srt)
             ExportFormat.VTT -> transcript(recordingId)?.let(TranscriptNormalizer::vtt)
+            ExportFormat.SUMMARY -> summary(recordingId)?.trim()?.takeIf { it.isNotEmpty() }?.let { it + "\n" }
             ExportFormat.AUDIO -> null
         }
         val parts = if (format == ExportFormat.AUDIO) {
@@ -59,7 +62,13 @@ internal class RecordingExport(
                 (deps.dataDir / EXPORTS / Random.nextLong().toULong().toString(16)).also { deps.fileSystem.createDirectories(it) }
             }
         }
-        val out = dir / fileName(record.meta, format.name.lowercase().let { if (format == ExportFormat.AUDIO) "m4a" else it })
+        val extension = when (format) {
+            ExportFormat.AUDIO -> "m4a"
+            // `2026-08-26 Weekly meeting.summary.txt`, beside the transcript's `.txt`.
+            ExportFormat.SUMMARY -> "summary.txt"
+            else -> format.name.lowercase()
+        }
+        val out = dir / fileName(record.meta, extension)
         withContext(deps.io) {
             when {
                 content != null -> deps.fileSystem.write(out) { writeUtf8(content) }

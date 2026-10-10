@@ -20,6 +20,9 @@ class FfmpegAudioTools(
     private val io: CoroutineDispatcher,
     private val ffmpeg: String = CaptureHelper.ffmpeg(),
 ) : AudioTools {
+    // TODO(round 3 Windows lane): decode with ffmpeg; until then the core leaves speakers as they are.
+    override suspend fun levels(file: Path, windowSec: Double): List<Float>? = null
+
     override suspend fun concat(parts: List<Path>, out: Path) = withContext(io) {
         // Checked here because ffmpeg does not check it for us: a part the concat demuxer cannot
         // open is a warning, not an exit code — it writes the parts it did read, exits 0, and the
