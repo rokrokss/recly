@@ -72,10 +72,13 @@ public struct TranscriptMatch: Equatable, Sendable {
 }
 
 extension Transcript {
-    /// What a speaker id is written as: the name the user gave it, else the id (`S1`).
+    /// What a speaker id is written as: the name the user gave it, else `Me` for the person who made the
+    /// recording (docs/08 "Me and others"), else the id (`S1`).
     public func label(of speaker: String) -> String {
-        let name = speakers.first { $0.id == speaker }?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        return (name?.isEmpty == false ? name : nil) ?? speaker
+        let found = speakers.first { $0.id == speaker }
+        let name = found?.name?.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let name, !name.isEmpty { return name }
+        return found?.me?.boolValue == true ? RecKitStrings.localized("Me") : speaker
     }
 
     /// Whether the user's own work is in it — an edit, or a speaker given a name — which a new

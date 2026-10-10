@@ -614,11 +614,13 @@ final class RecordingModel: ObservableObject, RecordingCommands {
     }
 
     /// The same for a search hit: the page opens on the first match, with the find bar (docs/10 "Search") —
-    /// unless only the title matched, when there is nothing in the text to find.
+    /// unless only the title matched, when there is nothing in the text to find — or on the summary, when
+    /// only the summary matched.
     func detail(for hit: SearchHit, query: String) -> RecordingDetailModel? {
         let title = hit.title?.isEmpty == false ? hit.title! : RecKitStrings.localized("Untitled")
         let detail = detail(id: hit.recordingId, title: title)
         if let first = hit.snippets.first { detail?.find = TranscriptFind(query: query, atSec: first.atSec) }
+        detail?.opensOnSummary = hit.onlyInSummary
         return detail
     }
 

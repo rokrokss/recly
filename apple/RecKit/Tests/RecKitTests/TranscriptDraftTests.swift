@@ -61,6 +61,33 @@ final class TranscriptDraftTests: XCTestCase {
         XCTAssertNil(RecordingPlayer.silenceEnd(silences, at: 6))
     }
 
+    /// docs/08 "Me and others": the person who made the recording reads `Me` until they are given a name — in
+    /// the reader and in the editor's draft — and a rename keeps them the one who made it.
+    func testTheRecordingsMakerReadsMeUntilNamed() throws {
+        let plain = transcript(["S1", "S2"], texts: ["Hello", "Hi"])
+        let mine = Transcript(
+            schema: plain.schema, recordingId: plain.recordingId, track: plain.track, language: plain.language,
+            provider: plain.provider, createdAt: plain.createdAt, editedAt: nil, durationSec: plain.durationSec,
+            speakers: [TranscriptSpeaker(id: "S1", name: nil, me: true), TranscriptSpeaker(id: "S2", name: nil, me: false)],
+            segments: plain.segments, speakerIdentification: nil, timing: nil
+        )
+        XCTAssertEqual(mine.label(of: "S1"), RecKitStrings.localized("Me"))
+        XCTAssertEqual(mine.label(of: "S2"), "S2")
+        XCTAssertEqual(plain.label(of: "S1"), "S1")
+
+        let draft = TranscriptDraft(mine)
+        XCTAssertEqual(draft.label("S1"), RecKitStrings.localized("Me"))
+        draft.rename("S1", "Hyungrok")
+        XCTAssertEqual(draft.label("S1"), "Hyungrok")
+        let renamed = try apply(draft.edits, to: mine)
+        XCTAssertEqual(renamed.label(of: "S1"), "Hyungrok")
+        XCTAssertEqual(renamed.speakers.first { $0.id == "S1" }?.me?.boolValue, true)
+
+        AppLanguage.current = .ko
+        defer { AppLanguage.current = .system }
+        XCTAssertEqual(mine.label(of: "S1"), "나")
+    }
+
     private func apply(_ edits: [any TranscriptEdit], to transcript: Transcript) throws -> Transcript {
         TranscriptEdits.shared.apply(transcript: transcript, edit: TranscriptEditBatch(edits: edits), editedAt: "2026-10-07T00:00:00.000Z")
     }
@@ -74,7 +101,7 @@ final class TranscriptDraftTests: XCTestCase {
             schema: 1, recordingId: "01J9ABCDEF", track: .mono, language: "en",
             provider: TranscriptProvider(name: "test", model: nil, jobRef: nil), createdAt: "2026-10-07T00:00:00.000Z",
             editedAt: nil, durationSec: Double(speakers.count * 2),
-            speakers: ids.map { TranscriptSpeaker(id: $0, name: nil) }, segments: segments,
+            speakers: ids.map { TranscriptSpeaker(id: $0, name: nil, me: nil) }, segments: segments,
             speakerIdentification: nil, timing: nil
         )
     }

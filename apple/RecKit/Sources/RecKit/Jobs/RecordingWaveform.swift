@@ -84,14 +84,14 @@ enum RecordingWaveform {
     /// The watch has no `AVAssetReader` — and no detail page to draw a waveform on either (ADR-002:
     /// it records and hands over, and the phone is where a recording is read). The shared model
     /// compiles here; there is simply nothing for it to decode.
-    private static func peaks(of url: URL, windowSec: Double) async throws -> [Float] {
+    static func peaks(of url: URL, windowSec: Double) async throws -> [Float] {
         throw Failure.undecodable(url)
     }
     #else
     /// One part, as linear PCM the reader hands over in whatever chunks it likes: the samples are
     /// counted into windows across the buffer boundaries, so a window is [windowSec] of the part
-    /// and not of a buffer.
-    private static func peaks(of url: URL, windowSec: Double) async throws -> [Float] {
+    /// and not of a buffer. Also the core's `AudioTools.levels` ([AppleAudioTools]).
+    static func peaks(of url: URL, windowSec: Double) async throws -> [Float] {
         let asset = AVURLAsset(url: url)
         guard let track = try? await asset.loadTracks(withMediaType: .audio).first,
               let reader = try? AVAssetReader(asset: asset)

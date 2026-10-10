@@ -1,4 +1,5 @@
 import Foundation
+import os
 import ReclyCore
 #if !os(watchOS)
 import AVFoundation
@@ -43,6 +44,25 @@ public final class AppleAudioTools: NSObject, ReclyCore.AudioTools {
             }
         }
     }
+
+    /// docs/08 "Me and others": the loudest sample of every [windowSec] window of one `mic` or `sys` part,
+    /// decoded the way the waveform is (`RecordingWaveform`), so the core weighs the two tracks by the same
+    /// measure the bar draws. Nil, logged, for a file that will not decode — never a throw, which would
+    /// fail the transcription the core asks this in. The iPhone shares it and is never asked; the watch
+    /// decodes nothing and answers nil.
+    public func __levels(file: OkioPath, windowSec: Double) async throws -> [KotlinFloat]? {
+        let url = URL(fileURLWithPath: file.description(), isDirectory: false)
+        do {
+            return try await RecordingWaveform.peaks(of: url, windowSec: windowSec).map { KotlinFloat(float: $0) }
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch {
+            logger.error("shell.audio.levels.failed file=\(url.lastPathComponent, privacy: .public) error=\(String(describing: error), privacy: .private)")
+            return nil
+        }
+    }
+
+    private let logger = Logger(subsystem: CoreBridge.appName, category: "audio")
 
     #if os(watchOS)
     /// The `__` name is the raw Kotlin member: SKIE hides it behind the `async` wrapper callers

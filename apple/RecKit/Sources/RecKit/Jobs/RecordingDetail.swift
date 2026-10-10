@@ -79,8 +79,17 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     @Published public private(set) var chatGpt: ChatGptConnection = ChatGptConnection.SignedOut.shared
     /// A Summarize this page asked for has not answered yet.
     @Published public private(set) var summarizing = false
-    /// docs/15 "iPhone providers": the destination a summary waits on the user's permission for.
+    /// docs/15 "iPhone providers": the destination a summary — or a question — waits on the user's permission for.
     @Published public private(set) var summaryConsent: [TransferTarget] = []
+    /// docs/08 "Summaries": the formats `Summarize as…` offers — Settings' list, My format once it has words.
+    @Published public private(set) var summaryFormats: [SummaryFormat] = [.auto, .oneOnOne, .lecture, .interview]
+    /// docs/08 "Ask": the one question about this recording — none, being answered, answered or failed. Kept by
+    /// the core in this process only.
+    @Published public private(set) var ask: AskState = AskState.None.shared
+    /// docs/08 "Ask": the presets that make sense for this recording, read when the panel opens.
+    @Published public private(set) var askPresets: [AskPreset] = []
+    /// docs/10 "Search": the page opens on the summary — a search hit whose only match is in it.
+    public var opensOnSummary = false
 
     public enum Retranscribing: Sendable { case external, local }
 
@@ -403,7 +412,8 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         RecKitStrings.localized(Self.hasSummary(summary) ? "Summarize again" : "Summarize")
     }
 
-    /// Why `Summarize` cannot run now, or nil when it can (docs/09 "Detail header and More menu").
+    /// Why `Summarize` and `Summarize as…` cannot run now, or nil when they can (docs/09 "Detail header and More
+    /// menu").
     public var summarizeReason: String? {
         Self.summarizeReason(
             writing: writing,
@@ -420,14 +430,40 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
     static func summarizeReason(
         writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection, summary: SummaryState, summarizing: Bool
     ) -> String? {
+        if let reason = askReason(writing: writing, hasTranscript: hasTranscript, busy: busy, connection: connection) { return reason }
+        if summarizing || summary is SummaryState.Running { return RecKitStrings.localized("Summarizing…") }
+        return nil
+    }
+
+    /// Why `Ask about this recording…` cannot run now, or nil when it can: Summarize's reasons, but a summary
+    /// being written does not stand in a question's way.
+    public var askReason: String? {
+        Self.askReason(
+            writing: writing,
+            hasTranscript: transcript != nil && availability != .empty,
+            busy: transcriptionBusy ? busyReason : nil,
+            connection: chatGpt
+        )
+    }
+
+    static func askReason(writing: Bool, hasTranscript: Bool, busy: String?, connection: ChatGptConnection) -> String? {
         if writing { return RecKitStrings.localized("Still recording") }
         if !hasTranscript { return RecKitStrings.localized("No transcript yet") }
         if let busy { return busy }
         if connection is ChatGptConnection.SignedOut || connection is ChatGptConnection.Expired {
             return CoreMessages.sentence(.chatgptSignInRequired)
         }
-        if summarizing || summary is SummaryState.Running { return RecKitStrings.localized("Summarizing…") }
         return nil
+    }
+
+    /// The format of the summary the recording has, for the ✓ in `Summarize as…`; nil when it has none.
+    public var summaryFormat: SummaryFormat? { savedSummary?.summaryFormat }
+
+    /// docs/08 "Exports": why the share sheet's `Summary` cannot be had, or nil when it can.
+    public var summaryExportReason: String? { Self.summaryExportReason(summary) }
+
+    static func summaryExportReason(_ state: SummaryState) -> String? {
+        hasSummary(state) ? nil : RecKitStrings.localized("No summary yet")
     }
 
     static func hasSummary(_ state: SummaryState) -> Bool { savedSummary(state) != nil }
@@ -474,27 +510,46 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
         }
     }
 
-    /// The More menu's Summarize. The core runs it on a scope of its own, so it goes on when the page
-    /// closes; its progress comes back through [followSummary]. On the iPhone a destination the user has
-    /// not allowed yet is asked about first ([summaryConsent]).
-    public func summarize() async {
+    /// Settings' formats, for `Summarize as…`.
+    public func followSummaryPreferences() async {
+        for await preferences in core.summaries.observePreferences() {
+            guard !Task.isCancelled else { return }
+            summaryFormats = preferences.formats
+        }
+    }
+
+    /// The More menu's Summarize — as [format], or nil for Settings' format. The core runs it on a scope of its
+    /// own, so it goes on when the page closes; its progress comes back through [followSummary]. On the iPhone
+    /// a destination the user has not allowed yet is asked about first ([summaryConsent]).
+    public func summarize(format: SummaryFormat? = nil) async {
         summarizing = true
         defer { summarizing = false }
         do {
-            let state = try await core.summaries.summarize(recordingId: recordingId)
+            let state = try await core.summaries.summarize(recordingId: recordingId, format: format)
             if case .failed(let failed) = onEnum(of: state), ChatGptText.message(failed.reason) == .transferConsentRequired {
-                summaryConsent = [TransferTargets.shared.chatGptSummary()]
+                askConsent { [weak self] in await self?.summarize(format: format) }
             }
         } catch {
             logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
         }
     }
 
-    /// The answer to [summaryConsent]: allowed, exactly the destination shown is granted and the summary
+    /// What the permission dialog goes on to do once it is allowed: the summary, or the question, it stood in
+    /// front of.
+    private var afterConsent: (() async -> Void)?
+
+    private func askConsent(then next: @escaping () async -> Void) {
+        afterConsent = next
+        summaryConsent = [TransferTargets.shared.chatGptSummary()]
+    }
+
+    /// The answer to [summaryConsent]: allowed, exactly the destination shown is granted and what waited on it
     /// starts; declined, nothing is sent.
     public func answerSummaryConsent(allow: Bool) async {
         let shown = summaryConsent
+        let next = afterConsent
         summaryConsent = []
+        afterConsent = nil
         guard allow, !shown.isEmpty else { return }
         do {
             try await core.transferConsents.grant(targets: shown)
@@ -502,7 +557,55 @@ public final class RecordingDetailModel: ObservableObject, Identifiable {
             logger.error("shell.chatgpt.summarize.failed error=\(String(describing: error), privacy: .private)")
             return
         }
-        await summarize()
+        await next?()
+    }
+
+    // MARK: - Ask (docs/08 "Ask" · docs/09 "Ask")
+
+    public func followAsk() async {
+        for await state in core.summaries.observeAsk(recordingId: recordingId) {
+            guard !Task.isCancelled else { return }
+            ask = state
+        }
+    }
+
+    /// The panel opened: the presets this recording has.
+    public func openAsk() async {
+        do {
+            askPresets = try await core.summaries.askPresets(recordingId: recordingId)
+        } catch {
+            logger.error("shell.chatgpt.ask.failed error=\(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// The panel closed: the answer goes with it, and a question still running finishes unseen.
+    public func closeAsk() {
+        core.summaries.clearAsk(recordingId: recordingId)
+    }
+
+    /// One preset, or the user's own question — the question wins. Its progress comes back through
+    /// [followAsk]; on the iPhone a destination not allowed yet is asked about first, as for a summary.
+    public func ask(preset: AskPreset?, question: String?) async {
+        do {
+            let state = try await core.summaries.ask(recordingId: recordingId, preset: preset, question: question)
+            if case .failed(let failed) = onEnum(of: state), ChatGptText.message(failed.reason) == .transferConsentRequired {
+                askConsent { [weak self] in await self?.ask(preset: preset, question: question) }
+            }
+        } catch {
+            logger.error("shell.chatgpt.ask.failed error=\(String(describing: error), privacy: .private)")
+        }
+    }
+
+    /// The failure notice's Retry: the same preset or question again.
+    public func retryAsk() async {
+        guard case .failed(let failed) = onEnum(of: ask) else { return }
+        await ask(preset: failed.preset, question: failed.question)
+    }
+
+    /// The answer as it is, for its Copy all.
+    public func copyAnswer() {
+        guard case .ready(let ready) = onEnum(of: ask) else { return }
+        Self.copy(ready.answer.text)
     }
 
     /// The text of the summary on screen, with nothing added.
@@ -793,8 +896,9 @@ public struct RecordingDetailView: View {
     @State private var summaryDraft: SummaryDraft?
     /// `Discard your changes?` is up, and for which editor.
     @State private var discarding: Discarding?
-    /// `Replace your edited summary?` is up.
-    @State private var replacing = false
+    /// `Replace your edited summary?` is up, for the summary it would start — Settings' format (nil) or the
+    /// one picked under `Summarize as…`.
+    @State private var replacing: Replacement?
     /// docs/10 "Re-transcription": the confirmation's line while it is up.
     @State private var retranscribeLine: String?
     /// The speaker whose name the dialog is asking for, in reading mode.
@@ -804,6 +908,11 @@ public struct RecordingDetailView: View {
     @State private var showingSummary = false
     /// The permission dialog's "I turned off …" answer (iPhone).
     @State private var trainingOff = false
+    /// The format the last Summarize on this page asked for, which the failure notice's Retry asks for again.
+    @State private var lastFormat: SummaryFormat?
+    /// docs/09 "Ask": the panel is up, and the question typed in it.
+    @State private var asking = false
+    @State private var question = ""
     @Environment(\.blueprint) private var blueprint
     /// docs/07 rule 3: every string on this screen is resolved outside SwiftUI, so reading the
     /// locale is what declares the dependency that redraws it in the new language.
@@ -865,6 +974,7 @@ public struct RecordingDetailView: View {
                                         summaryDraft = SummaryDraft(summary)
                                     }
                                 },
+                                askAbout: openAsk,
                                 addHighlight: { Task { await model.addHighlight(atSec: positionSec) } }
                             )
                         }
@@ -949,7 +1059,7 @@ public struct RecordingDetailView: View {
                     save: saveSummary
                 )
             } else if draft == nil, showingSummary {
-                SummaryPane(model: model, retry: summarize)
+                SummaryPane(model: model, retry: { summarize(lastFormat) }, seekableSec: model.totalSec, onSeek: citationSeek)
             } else if let draft {
                 TranscriptEditor(
                     draft: draft,
@@ -1051,12 +1161,13 @@ public struct RecordingDetailView: View {
         }
         // docs/09 "Summary view": a new summary would replace the user's own words. Not red: no recording
         // is deleted.
-        .blueprintDialogOverlay(isPresented: $replacing) {
+        .blueprintDialogOverlay(isPresented: Binding(get: { replacing != nil }, set: { if !$0 { replacing = nil } })) {
             BlueprintDialog(title: loc("Replace your edited summary?")) {
-                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { replacing = false }
+                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { replacing = nil }
                 BlueprintButton(loc("Replace"), tone: .primary) {
-                    replacing = false
-                    summarize()
+                    let format = replacing?.format
+                    replacing = nil
+                    summarize(format)
                 }
                 .accessibilityIdentifier("summary-replace-confirm")
             } content: {
@@ -1075,18 +1186,28 @@ public struct RecordingDetailView: View {
             }
         }
         #if os(iOS)
-        // docs/15 "iPhone providers": the transcript goes to OpenAI only once the user has allowed it.
-        .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
-            BlueprintDialog(title: loc("Transfer permission needed")) {
-                BlueprintButton(loc("Cancel"), tone: .quiet, minWidth: minTouch) { answerSummaryConsent(allow: false) }
-                BlueprintButton(loc("Allow transfers and continue"), tone: .primary) { answerSummaryConsent(allow: true) }
-                    .disabled(TrainingOptOut.required(model.summaryConsent) && !trainingOff)
-                    .accessibilityIdentifier("summary-allow-transfer")
-            } content: {
-                TransferDisclosureList(targets: model.summaryConsent, trainingOff: $trainingOff)
-            }
+        // docs/15 "iPhone providers": the transcript goes to OpenAI only once the user has allowed it — asked
+        // here, or in the Ask sheet when the question came from there.
+        .blueprintDialogOverlay(isPresented: Binding(get: { !asking && !model.summaryConsent.isEmpty }, set: { _ in })) {
+            SummaryConsentDialog(model: model, trainingOff: $trainingOff, answer: answerSummaryConsent)
         }
         .sheet(isPresented: $sharing) { DetailShareSheet(model: model) }
+        // docs/09 "Ask": a full-height sheet of its own, presented from a node of its own — the page already
+        // presents Share.
+        .background {
+            Color.clear.sheet(isPresented: $asking, onDismiss: closeAsk) {
+                AskFrame(close: { asking = false }) { askPanel }
+                    .blueprintDialogOverlay(isPresented: Binding(get: { !model.summaryConsent.isEmpty }, set: { _ in })) {
+                        SummaryConsentDialog(model: model, trainingOff: $trainingOff, answer: answerSummaryConsent)
+                    }
+                    .presentationDetents([.large])
+            }
+        }
+        #else
+        // docs/09 "Ask": a card over the detail, as its other questions are.
+        .blueprintDialogOverlay(isPresented: $asking) {
+            AskFrame(close: { asking = false; closeAsk() }) { askPanel }
+        }
         #endif
         // The identity of the *model*, not of the recording: the Mac keeps one view here and hands
         // it a new model on every pick — including a second pick of the row already open — and a
@@ -1100,7 +1221,11 @@ public struct RecordingDetailView: View {
             renaming = false
             draft = nil
             summaryDraft = nil
-            showingSummary = false
+            // docs/10 "Search": a hit found only in the summary opens on it.
+            showingSummary = model.opensOnSummary
+            lastFormat = nil
+            asking = false
+            question = ""
             await model.load()
             guard !Task.isCancelled else { return }
             player.load(model.audio)
@@ -1110,6 +1235,8 @@ public struct RecordingDetailView: View {
         .task(id: ObjectIdentifier(model)) { await model.followJobs() }
         .task(id: ObjectIdentifier(model)) { await model.followSummary() }
         .task(id: ObjectIdentifier(model)) { await model.followChatGpt() }
+        .task(id: ObjectIdentifier(model)) { await model.followSummaryPreferences() }
+        .task(id: ObjectIdentifier(model)) { await model.followAsk() }
         .onChange(of: model.silences, initial: true) { _, silences in player.silences = silences }
         .onChange(of: model.deviceRecording) { _, active in if active { player.stop() } }
         .onChange(of: model.audio) { _, audio in player.load(audio) }
@@ -1507,16 +1634,54 @@ public struct RecordingDetailView: View {
         !model.deviceRecording && !model.writing && model.hasAudio && model.driveFetch != .deciding && model.driveFetch != .fetching
     }
 
-    /// docs/09 "Summary view": the More menu's Summarize, and the summary's own Retry — the page turns to
-    /// the summary while the core writes it.
-    private func summarize() {
+    /// docs/09 "Summary view": the More menu's Summarize and Summarize as…, and the summary's own Retry — the
+    /// page turns to the summary while the core writes it.
+    private func summarize(_ format: SummaryFormat?) {
         showingSummary = true
-        Task { await model.summarize() }
+        lastFormat = format
+        Task { await model.summarize(format: format) }
     }
 
     /// The More menu's Summarize: over a summary the user edited, the question first.
-    private func summarizeAgain() {
-        if model.summaryEdited { replacing = true } else { summarize() }
+    private func summarizeAgain(_ format: SummaryFormat?) {
+        if model.summaryEdited { replacing = Replacement(format: format) } else { summarize(format) }
+    }
+
+    /// What `Replace your edited summary?` goes on to start.
+    private struct Replacement: Equatable {
+        let format: SummaryFormat?
+    }
+
+    /// docs/09 "Summary view": a citation plays the recording from its second, as a transcript time button does —
+    /// nil, so the citations are plain text, while the recording cannot be played from a point.
+    private var citationSeek: ((Double) -> Void)? {
+        canSeek ? { seek(toSec: $0) } : nil
+    }
+
+    // MARK: Ask (docs/09 "Ask")
+
+    private func openAsk() {
+        asking = true
+        Task { await model.openAsk() }
+    }
+
+    /// Closing drops the answer; a question still running finishes, and reopening shows it running.
+    private func closeAsk() {
+        model.closeAsk()
+    }
+
+    private var askPanel: some View {
+        AskPanel(
+            state: model.ask,
+            presets: model.askPresets,
+            modelLabel: { ChatGptText.modelLabel($0, connection: model.chatGpt) },
+            question: $question,
+            ask: { preset, typed in Task { await model.ask(preset: preset, question: typed) } },
+            retry: { Task { await model.retryAsk() } },
+            copy: model.copyAnswer,
+            seekableSec: model.totalSec,
+            onSeek: citationSeek
+        )
     }
 
     private func answerSummaryConsent(allow: Bool) {
