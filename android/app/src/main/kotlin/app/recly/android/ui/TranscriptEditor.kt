@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,8 +21,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDirection
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.theme.Space
 import recly.core.transcribe.Transcript
@@ -112,7 +114,10 @@ internal fun TranscriptEditor(
                         }
                     }
                 }
-                OutlinedTextField(draft.texts[index], { onDraft(draft.type(index, it)) }, modifier = Modifier.fillMaxWidth().testTag("edit-text-$index"))
+                // The Blueprint field, in the direction of its own words.
+                BlueprintField(draft.texts[index], { onDraft(draft.type(index, it)) }, Modifier.fillMaxWidth(),
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                    fieldModifier = Modifier.testTag("edit-text-$index"), maxLines = Int.MAX_VALUE)
             }
         }
     }

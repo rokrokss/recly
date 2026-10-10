@@ -63,6 +63,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.core.coreMessage
@@ -145,15 +146,17 @@ fun JobsScreen(
         DeleteDialog(request = request, onCancel = onCancelDelete, onDelete = onDelete)
     }
 
+    val resources = LocalContext.current.resources
     Column(modifier.fillMaxSize()) {
         // The tab is "List"; the screen is what is in it, as on the iPhone.
         ScreenHeader(
             title = stringResource(R.string.jobs_title),
-            meta = stringResource(
-                R.string.jobs_summary,
+            meta = headerCounts(
                 state.items.size,
                 state.items.count { it.waiting() },
                 state.items.count { it.state.failing() },
+                waitingWord = { resources.getString(R.string.jobs_summary_waiting, it) },
+                failedWord = { resources.getString(R.string.jobs_summary_failed, it) },
             ),
             // docs/09 "Import": at the header's end, the system picker for audio and video.
             trailing = {
@@ -386,7 +389,7 @@ private fun ExpandedRow(
                     color = item.state.reasonTone().ink(),
                 )
                 coreMessageDetail(error)?.let { detail ->
-                    Text(detail, style = mono.small, color = palette.textMuted)
+                    Text(detail, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
                 }
             }
         }
@@ -556,6 +559,8 @@ private fun AlertBanner(
             val waiting = pluralStringResource(R.plurals.alert_waiting, alert.count, alert.count)
             AlertLine(
                 code = alert.reason.code,
+                // A failure's `Failed` in the failure's own red, as its row says it; a wait in the warning.
+                tone = if (alert.reason.wait) BadgeTone.WARNING else BadgeTone.DANGER,
                 // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and a code
                 // read out as three separate things (the same rule as [LedgerRow]).
                 description = "$reason $waiting",
@@ -590,6 +595,7 @@ private fun AlertBanner(
 private fun AlertLine(
     code: String,
     lines: @Composable ColumnScope.() -> Unit,
+    tone: BadgeTone = BadgeTone.WARNING,
     description: String? = null,
     onClick: (() -> Unit)? = null,
     action: @Composable () -> Unit,
@@ -623,7 +629,7 @@ private fun AlertLine(
                 verticalArrangement = Arrangement.spacedBy(Space.xs),
                 itemVerticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusBadge(LedgerStatus(code, BadgeTone.WARNING))
+                StatusBadge(LedgerStatus(code, tone))
                 action()
             }
         }
@@ -807,6 +813,10 @@ internal fun ItemState.reasonTone(): BadgeTone = when (badge().tone) {
 internal val BADGE_CODES: List<String> =
     ItemState.entries.map { it.badge().code } + TRANSCRIBING_BADGE.code + FOLDER_BADGE.code
 
+/** docs/09 screen principle 2: "14 · 2 waiting · 1 failed" — a count of none is not said ("3 · 1 waiting"). */
+internal fun headerCounts(total: Int, waiting: Int, failed: Int, waitingWord: (Int) -> String, failedWord: (Int) -> String): String =
+    listOfNotNull(total.toString(), waiting.takeIf { it > 0 }?.let(waitingWord), failed.takeIf { it > 0 }?.let(failedWord)).joinToString(" · ")
+
 /**
  * The two counts the header carries, so "14 · 2 waiting · 1 failed" is one glance. A recording on
  * its way here — from the watch, or from another device's upload — is one the list is waiting for
@@ -958,7 +968,9 @@ private fun SearchField(query: String, onQuery: (String) -> Unit, modifier: Modi
             ) {
                 GlyphIcon(Glyph.SEARCH, palette.textMuted, size = 20.dp)
                 Box(Modifier.weight(1f)) {
-                    if (query.isEmpty()) Text(stringResource(R.string.search_placeholder), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
+                    // One line, ended in "…" where a long language does not fit — never cut mid-word.
+                    if (query.isEmpty()) Text(stringResource(R.string.search_placeholder), style = MaterialTheme.typography.bodyMedium, color = palette.textMuted,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                     field()
                 }
                 if (query.isNotEmpty()) GlyphButton(Glyph.CLOSE, stringResource(R.string.transcript_clear_search), { onQuery("") }, Modifier.testTag("search-clear"))

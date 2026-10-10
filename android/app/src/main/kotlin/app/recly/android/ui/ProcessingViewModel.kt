@@ -99,7 +99,7 @@ class ProcessingViewModel(application: Application) : AndroidViewModel(applicati
                 is ProcessingSaveResult.Saved -> {
                     _state.value = before.copy(stored = ProcessingSettingsState.Ready(result.document),
                         draft = ProcessingDraft.from(result.document.settings), dirty = false, busy = false,
-                        importing = false, message = UiMessage.Res(R.string.processing_saved))
+                        importing = false, message = null)
                     WorkScheduler(getApplication()).runNow(expedited = false)
                     refreshLocal()
                 }

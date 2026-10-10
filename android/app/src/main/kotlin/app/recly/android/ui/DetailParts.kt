@@ -23,7 +23,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -43,12 +43,14 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogText
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.BlueprintMenu
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.Glyph
@@ -57,6 +59,7 @@ import app.recly.android.ui.component.GlyphIcon
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.component.MenuAction
+import app.recly.android.ui.component.MenuBack
 import app.recly.android.ui.component.MenuOption
 import app.recly.android.ui.component.SwitchTrack
 import app.recly.android.ui.theme.MinTouch
@@ -90,10 +93,13 @@ internal class MoreActions(
 )
 
 /**
- * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Summarize as… · Edit
- * summary · Ask about this recording… · Add highlight at the playhead, in that order. An item that cannot run is shown
- * disabled with its reason under it; the ChatGPT items are not there at all where ChatGPT is not offered, and Edit
- * summary not before there is a summary. Summarize as… turns the menu into the list of [formats], as Change speaker does.
+ * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again ─ Summarize · Summarize as… · Edit
+ * summary · Ask about this recording… ─ Add highlight at the playhead, in that order and in those three groups, a hairline
+ * between them. An item that cannot run is shown disabled with its reason under it — every one of them `Still recording`
+ * while the recorder is writing into this take; the ChatGPT items are not there at all where ChatGPT is not offered, and
+ * Edit summary not before there is a summary, and a group left empty has no line of its own. The menu is as tall as the
+ * window lets it be, so no item is out of sight. Summarize as… turns the menu into the list of [formats] under a heading
+ * that goes back, as Change speaker does.
  */
 @Composable
 internal fun MoreButton(
@@ -110,28 +116,34 @@ internal fun MoreButton(
     // Disabled exactly as before while a job may still rewrite the transcript; what the reason says is
     // why (UX decisions of 2026-10-08): transcribing, waiting for Drive, or not uploaded yet.
     val transcribing = stringResource(detail.busyReason)
+    // The core refuses to change a take still being written: the one reason every item gives meanwhile.
+    val writing = if (detail.writing) stringResource(R.string.detail_still_recording) else null
+    val tallest = LocalConfiguration.current.screenHeightDp.dp
     Box {
         GlyphButton(Glyph.MORE, stringResource(R.string.detail_more), { open = true }, Modifier.testTag("detail-more"))
-        if (open && choosingFormat) BlueprintMenu(onDismissRequest = { open = false; choosingFormat = false }) {
+        if (open && choosingFormat) BlueprintMenu(onDismissRequest = { open = false; choosingFormat = false }, maxHeight = tallest) {
+            MenuBack(stringResource(R.string.summary_as), { choosingFormat = false }, Modifier.testTag("summarize-as-back"))
             val current = currentFormat(detail.summary)
+            // Each line runs a summary, so it is a button; the format the summary was written in keeps its `✓`.
             formats.forEach { format ->
                 MenuOption(stringResource(format.formatLabel()), format == current, onSelect = {
                     open = false
                     choosingFormat = false
                     actions.onSummarizeAs(format)
-                })
+                }, role = Role.Button, modifier = Modifier.testTag("summarize-as-${format.name.lowercase()}"))
             }
-        } else if (open) BlueprintMenu(onDismissRequest = { open = false }) {
+        } else if (open) BlueprintMenu(onDismissRequest = { open = false }, maxHeight = tallest) {
             fun pick(action: () -> Unit): () -> Unit = { open = false; action() }
-            MenuAction(stringResource(R.string.detail_rename), pick(actions.onRename), modifier = Modifier.testTag("more-rename"))
-            val editReason = when {
+            MenuAction(stringResource(R.string.detail_rename), pick(actions.onRename), enabled = writing == null, reason = writing,
+                modifier = Modifier.testTag("more-rename"))
+            val editReason = writing ?: when {
                 transcript == null -> stringResource(R.string.detail_no_transcript)
                 detail.transcribing -> transcribing
                 else -> null
             }
             MenuAction(stringResource(R.string.detail_edit), pick(actions.onEdit), enabled = editReason == null, reason = editReason,
                 modifier = Modifier.testTag("more-edit"))
-            val againReason = when {
+            val againReason = writing ?: when {
                 transcription == null || transcription.mode == TranscriptionMode.OFF -> stringResource(R.string.detail_transcription_off)
                 detail.transcribing -> transcribing
                 !detail.uploaded -> stringResource(R.string.detail_not_uploaded)
@@ -140,28 +152,31 @@ internal fun MoreButton(
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
             val offered = chatGpt !is ChatGptConnection.Unavailable
-            val summarizeReason = summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+            if (offered || hasSummary(detail.summary)) HairLine()
             if (offered) {
+                val summarizeReason = writing ?: summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+                    ?.let { stringResource(it) }
                 MenuAction(stringResource(if (hasSummary(detail.summary)) R.string.summary_again else R.string.summary_summarize),
-                    pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason?.let { stringResource(it) },
+                    pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason,
                     modifier = Modifier.testTag("more-summarize"))
                 MenuAction(stringResource(R.string.summary_as), { choosingFormat = true }, enabled = summarizeReason == null,
-                    reason = summarizeReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-summarize-as"))
+                    reason = summarizeReason, modifier = Modifier.testTag("more-summarize-as"))
             }
             if (hasSummary(detail.summary)) {
-                val editReason = editSummaryReason(detail.summary)
+                val editReason = writing ?: editSummaryReason(detail.summary)?.let { stringResource(it) }
                 MenuAction(stringResource(R.string.summary_edit), pick(actions.onEditSummary), enabled = editReason == null,
-                    reason = editReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-edit-summary"))
+                    reason = editReason, modifier = Modifier.testTag("more-edit-summary"))
             }
             if (offered) {
-                val askReason = askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)
+                val askReason = writing ?: askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)?.let { stringResource(it) }
                 MenuAction(stringResource(R.string.ask_menu), pick(actions.onAsk), enabled = askReason == null,
-                    reason = askReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-ask"))
+                    reason = askReason, modifier = Modifier.testTag("more-ask"))
             }
-            val noAudio = detail.audio.isEmpty
+            HairLine()
+            val highlightReason = writing ?: if (detail.audio.isEmpty) stringResource(R.string.player_no_audio) else null
             val stamp = clock(playheadSec.toLong(), recordingScale(detail))
-            MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight), enabled = !noAudio,
-                reason = if (noAudio) stringResource(R.string.player_no_audio) else null, modifier = Modifier.testTag("more-highlight"))
+            MenuAction(monoStamp(stringResource(R.string.highlight_add_at, stamp), stamp, mono.bodySmall), pick(actions.onAddHighlight),
+                enabled = highlightReason == null, reason = highlightReason, modifier = Modifier.testTag("more-highlight"))
         }
     }
 }
@@ -186,7 +201,7 @@ private val SHARE_ROWS = listOf(
  * puts the text with its times on the clipboard and says `✓ Copied`.
  */
 @Composable
-internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) -> String?, onDismiss: () -> Unit) {
+internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) -> String?, onDismiss: () -> Unit, chatGpt: ChatGptConnection) {
     val palette = blueprint
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
@@ -204,7 +219,8 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
             Text(stringResource(R.string.detail_share), Modifier.padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.titleMedium, color = palette.text)
             HairLine()
-            SHARE_ROWS.forEach { row ->
+            // The summary is not a row where ChatGPT is not offered, as it is not in More.
+            SHARE_ROWS.filter { it.export != ExportFormat.SUMMARY || chatGpt !is ChatGptConnection.Unavailable }.forEach { row ->
                 val format = row.export
                 val noAudio = detail.audio.isEmpty && detail.driveFetch == DriveFetch.IDLE
                 val reason = when {
@@ -324,7 +340,9 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 .testTag("speed-chip"),
             contentAlignment = Alignment.Center,
         ) {
-            Text(speedLabel(speed), Modifier.padding(horizontal = Space.s), style = mono.bodySmall, color = palette.textMuted)
+            // `1×` in every language: an Arabic line would turn it into `×1`.
+            Text(speedLabel(speed), Modifier.padding(horizontal = Space.s), style = mono.bodySmall.copy(textDirection = TextDirection.Ltr),
+                color = palette.textMuted)
             if (skipSilence) {
                 Box(Modifier.align(Alignment.TopEnd).offset((-4).dp, 4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(Radius.badge)))
             }
@@ -362,8 +380,9 @@ internal fun HighlightMenu(atSec: Double, scaleSec: Long?, onGo: () -> Unit, onR
 
 /**
  * docs/09 "Editing and speakers": Rename speaker · Change speaker for this line, the second opening the list of
- * speakers (name or id) and New speaker. [current] is the speaker of the line; null on a transcript nobody
- * was identified in, where only New speaker is there to choose.
+ * speakers (name or id) and New speaker under a heading that goes back to those two. [current] is the speaker of the
+ * line; null on a transcript nobody was identified in, where only New speaker is there to choose and nothing to go
+ * back to.
  */
 @Composable
 internal fun SpeakerMenu(
@@ -379,6 +398,7 @@ internal fun SpeakerMenu(
             MenuAction(stringResource(R.string.speaker_rename), { onDismiss(); current?.let(onRename) }, modifier = Modifier.testTag("speaker-rename"))
             MenuAction(stringResource(R.string.speaker_change), { choosing = true }, modifier = Modifier.testTag("speaker-change"))
         } else {
+            if (current != null) MenuBack(stringResource(R.string.speaker_change), { choosing = false }, Modifier.testTag("speaker-change-back"))
             val me = stringResource(R.string.speaker_me)
             transcript.speakers.forEach { speaker ->
                 MenuOption(speakerLabel(transcript, speaker.id, me), speaker.id == current, onSelect = {
@@ -386,7 +406,9 @@ internal fun SpeakerMenu(
                     if (speaker.id != current) onChange(speaker.id)
                 }, monospace = !speakerIsWord(transcript, speaker.id))
             }
-            MenuAction(stringResource(R.string.speaker_new), { onDismiss(); onChange(null) }, modifier = Modifier.testTag("speaker-new"))
+            // In the speakers' mark column, so it lines up with them.
+            MenuOption(stringResource(R.string.speaker_new), selected = false, onSelect = { onDismiss(); onChange(null) }, role = Role.Button,
+                modifier = Modifier.testTag("speaker-new"))
         }
     }
 }
@@ -403,8 +425,8 @@ internal fun SpeakerNameDialog(name: String?, onSave: (String) -> Unit, onCancel
             BlueprintButton(stringResource(R.string.action_save), { onSave(text) }, tone = ButtonTone.PRIMARY, modifier = Modifier.testTag("speaker-name-save"))
         },
     ) {
-        OutlinedTextField(text, { text = it }, placeholder = { Text(stringResource(R.string.speaker_name_placeholder)) },
-            singleLine = true, modifier = Modifier.fillMaxWidth().testTag("speaker-name-field"))
+        BlueprintField(text, { text = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.speaker_name_placeholder),
+            fieldModifier = Modifier.testTag("speaker-name-field"))
     }
 }
 
@@ -469,13 +491,14 @@ internal fun FindBar(current: Int, total: Int, onPrevious: () -> Unit, onNext: (
     val palette = blueprint
     val count = stringResource(R.string.processing_download_bytes, (current + 1).coerceAtMost(total).toString(), total.toString())
     Row(
-        Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.s).testTag("find-bar"),
+        // The page's own 16dp gutter, so the arrows line up with the transcript under them.
+        Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m).testTag("find-bar"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         BlueprintButton("‹", onPrevious, enabled = total > 0, tone = ButtonTone.QUIET, minWidth = MinTouch,
             modifier = Modifier.findLabel(stringResource(R.string.find_previous)).testTag("find-previous"))
         Text("${(current + 1).coerceAtMost(total)} / $total", Modifier.padding(horizontal = Space.s).clearAndSetSemantics { contentDescription = count },
-            style = mono.bodySmall, color = palette.textMuted)
+            style = mono.bodySmall.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
         BlueprintButton("›", onNext, enabled = total > 0, tone = ButtonTone.QUIET, minWidth = MinTouch,
             modifier = Modifier.findLabel(stringResource(R.string.find_next)).testTag("find-next"))
         Box(Modifier.weight(1f))

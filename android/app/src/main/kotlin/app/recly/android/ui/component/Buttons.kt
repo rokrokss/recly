@@ -72,7 +72,8 @@ fun BlueprintButton(
         else -> palette.textMuted
     }
     val edge = when {
-        !enabled -> palette.grid
+        // The dash is in the input border too: the grid's colour left a disabled button stray grey text.
+        !enabled -> palette.inputBorder
         tone == ButtonTone.PRIMARY || tone == ButtonTone.ACCENT -> palette.accent
         tone == ButtonTone.DANGER -> palette.danger
         // docs/09 "Accessibility": a control's edge is 3:1 against the page, light and dark — the
@@ -161,9 +162,10 @@ fun BlueprintChip(
     role: Role = Role.RadioButton,
 ) {
     val palette = blueprint
+    // A disabled chip is the disabled button: muted words in a dashed input border, which stay readable where the
+    // grid's colour vanished.
     val ink = when {
-        !enabled -> palette.grid
-        selected -> palette.accent
+        selected && enabled -> palette.accent
         else -> palette.textMuted
     }
     Row(
@@ -173,10 +175,16 @@ fun BlueprintChip(
             // wants a chip square anyway, so the box grows to the target rather than hiding behind
             // an invisible one.
             .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
-            .border(
-                width = if (selected) palette.selectedLine else palette.line,
-                color = ink,
-                shape = RoundedCornerShape(Radius.node),
+            .then(
+                if (enabled) {
+                    Modifier.border(
+                        width = if (selected) palette.selectedLine else palette.line,
+                        color = ink,
+                        shape = RoundedCornerShape(Radius.node),
+                    )
+                } else {
+                    Modifier.dashedBorder(palette.line, palette.inputBorder, Radius.node)
+                },
             )
             // docs/09 "Accessibility": the border is the only thing that says this one is chosen, and a
             // border is not something a screen reader can read. `selectable` puts the same fact in

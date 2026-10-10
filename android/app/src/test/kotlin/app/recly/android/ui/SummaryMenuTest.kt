@@ -1,6 +1,8 @@
 package app.recly.android.ui
 
 import app.recly.android.R
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -90,7 +92,8 @@ class SummaryMenuTest {
     fun `a failed summary offers the one button that helps`() {
         assertEquals(SummaryRecovery.MANAGE_USAGE, summaryRecovery(CoreMessage.CHATGPT_USAGE_LIMIT.code()))
         assertEquals(SummaryRecovery.NONE, summaryRecovery(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()))
-        assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.CHATGPT_PLAN_REQUIRED.code()))
+        // Asking again cannot change the plan.
+        assertEquals(SummaryRecovery.NONE, summaryRecovery(CoreMessage.CHATGPT_PLAN_REQUIRED.code()))
         assertEquals(SummaryRecovery.RETRY, summaryRecovery(CoreMessage.PROVIDER_ERROR.code(detail = "500")))
         assertEquals(SummaryRecovery.RETRY, summaryRecovery("not a key"))
     }
@@ -196,6 +199,44 @@ class SummaryMenuTest {
         assertEquals(listOf("00:12:34", "01:05", "1:02:03"), runs.mapNotNull { run -> run.citation?.let { citationTime(text, it) } })
         // Ends on text, and the last run is the full stop after the last citation.
         assertEquals(".", text.substring(runs.last().start, runs.last().end))
+    }
+
+    @Test
+    fun `a tap at the middle of each of three stacked citations plays that one, not the next line's`() {
+        // Three bulleted lines 20 px apart, a citation at the start of each — the targets, 48 px tall, overlap.
+        val glyphs = listOf(Rect(16f, 0f, 96f, 20f), Rect(16f, 20f, 96f, 40f), Rect(16f, 40f, 96f, 60f))
+        val targets = glyphs.mapIndexed { run, box -> CitationTarget(run * 2, box) }
+        glyphs.forEachIndexed { index, box ->
+            assertEquals(index * 2, citationAt(box.center, targets, reach = 48f)?.run, "the middle of citation $index")
+        }
+        // Near the bottom of the middle line it is still the middle one's; above the first line, within its reach, the first's.
+        assertEquals(2, citationAt(Offset(50f, 38f), targets, 48f)?.run)
+        assertEquals(0, citationAt(Offset(56f, -10f), targets, 48f)?.run)
+        // Out of every reach: no citation, and the tap is the text's.
+        assertNull(citationAt(Offset(200f, 30f), targets, 48f))
+    }
+
+    @Test
+    fun `a target is the glyphs grown to the reach each way, never shrunk`() {
+        assertEquals(Rect(32f, -14f, 80f, 34f), CitationTarget(0, Rect(50f, 0f, 62f, 20f)).area(48f))
+        assertEquals(Rect(0f, -14f, 120f, 34f), CitationTarget(0, Rect(0f, 0f, 120f, 20f)).area(48f))
+    }
+
+    @Test
+    fun `the footer names the model by the name it had when written, then the plan's list, then its id`() {
+        val models = listOf(ChatGptModel("gpt-5", "GPT-5"))
+        assertEquals("GPT-5.4", modelLabel("GPT-5.4", "gpt-5", models))
+        assertEquals("GPT-5", modelLabel(null, "gpt-5", models))
+        assertEquals("gpt-5-mini", modelLabel(null, "gpt-5-mini", models))
+    }
+
+    @Test
+    fun `the preset chip of the answer on screen is marked, and none for an own question`() {
+        assertNull(askedPreset(AskState.None))
+        assertEquals(AskPreset.ACTION_ITEMS, askedPreset(AskState.Running(AskPreset.ACTION_ITEMS, null)))
+        assertEquals(AskPreset.TRANSLATE, askedPreset(AskState.Ready(AskAnswer("r1", AskPreset.TRANSLATE, null, "Hola", "gpt-5"))))
+        assertEquals(AskPreset.OPEN_QUESTIONS, askedPreset(AskState.Failed(CoreMessage.PROVIDER_ERROR.code(), AskPreset.OPEN_QUESTIONS, null)))
+        assertNull(askedPreset(AskState.Ready(AskAnswer("r1", null, "Why?", "Because.", "gpt-5"))))
     }
 
     @Test

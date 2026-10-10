@@ -34,6 +34,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -50,6 +52,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextDirection
 
 /**
  * docs/09 "Shape": one of a set of choices that is expected to grow — the app language, the provider,
@@ -154,7 +157,8 @@ fun BlueprintMenu(onDismissRequest: () -> Unit, maxHeight: Dp = MENU_MAX_HEIGHT,
                 // of its own would take the whole window for them to fill.
                 .width(IntrinsicSize.Max)
                 .widthIn(min = MENU_MIN_WIDTH, max = LocalConfiguration.current.screenWidthDp.dp - Space.m * 2)
-                .border(palette.line, palette.grid, shape)
+                // The input border, as the box that opened it: the grid's colour left the list's edge invisible in dark.
+                .border(palette.line, palette.inputBorder, shape)
                 .background(palette.surface, shape)
                 .padding(vertical = Space.xs)
                 .heightIn(max = maxHeight)
@@ -167,17 +171,19 @@ fun BlueprintMenu(onDismissRequest: () -> Unit, maxHeight: Dp = MENU_MAX_HEIGHT,
 
 /**
  * One line of the open list, [MinTouch] tall whatever the label does. `selectable`, so a reader
- * hears "<label>, radio button, selected" — the same fact the chips put in their semantics.
+ * hears "<label>, radio button, selected" — the same fact the chips put in their semantics. [role] is
+ * [Role.Button] for a line that runs something rather than choosing a value (Summarize as, New speaker).
  */
 @Composable
-fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace: Boolean = false) {
+fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace: Boolean = false, role: Role = Role.RadioButton,
+    modifier: Modifier = Modifier) {
     val palette = blueprint
     val ink = if (selected) palette.accent else palette.text
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
+            .selectable(selected = selected, role = role, onClick = onSelect)
             .padding(horizontal = Space.m, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
@@ -191,9 +197,40 @@ fun MenuOption(label: String, selected: Boolean, onSelect: () -> Unit, monospace
             color = if (selected) ink else Color.Transparent,
             modifier = Modifier.clearAndSetSemantics { },
         )
-        Text(label, style = if (monospace) mono.bodySmall else MaterialTheme.typography.bodyMedium, color = ink)
+        // Data — a speed, an id — reads left to right in every language.
+        Text(label, style = if (monospace) mono.bodySmall.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.bodyMedium, color = ink)
     }
 }
+
+/**
+ * The first line of a list a menu item turned the menu into — `‹` in the [MenuOption]s' mark column, then that item's
+ * words — which goes back to the menu (Summarize as, Change speaker). A heading for a screen reader, and a button.
+ */
+@Composable
+fun MenuBack(label: String, onBack: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = MinTouch)
+            .clickable(role = Role.Button, onClick = onBack)
+            .semantics { heading() }
+            .padding(horizontal = Space.m, vertical = Space.xs),
+        horizontalArrangement = Arrangement.spacedBy(Space.s),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The mark column's own width, whichever of the two glyphs is wider.
+        Box(Modifier.clearAndSetSemantics { }, contentAlignment = Alignment.Center) {
+            Text(SELECTION_MARK, style = MaterialTheme.typography.bodyMedium, color = Color.Transparent)
+            Text(BACK_MARK, style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
+        }
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = palette.textMuted)
+    }
+    HairLine()
+}
+
+/** What [MenuBack] points with. */
+const val BACK_MARK: String = "‹"
 
 /**
  * One action of a [BlueprintMenu]: its words and, for one that cannot run now, why — the reason is the
