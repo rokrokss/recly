@@ -1980,7 +1980,8 @@ first export of a process removes every earlier one, each later one those older 
 
 §3. Integer, optional. Where it is filled in:
 
-- Desktop · phone: the participant count is chosen in the title dialog after stopping (2·3·4·5·6+·Unknown). The default "Unknown" = omitted.
+- Desktop · phone: the participant count is chosen in the title dialog after stopping (2·3·4·5·6+·Unknown), only while transcription is on —
+  it is the speaker-count hint and nothing else (2026-10-10). The default "Unknown" = omitted.
 - Watch: none (the phone receives the transfer and enqueues it right away). The processing plan's `speakers` default applies.
 
 ### Webhooks
