@@ -74,8 +74,11 @@ sealed class ChatGptResult {
     data class Failed(val reason: String) : ChatGptResult()
 }
 
-/** A failure with its [CoreMessage] wire code; caught inside the core and turned into a result. */
-internal class ChatGptFailure(val reason: String) : Exception(reason)
+/**
+ * A failure with its [CoreMessage] wire code; caught inside the core and turned into a result. [grantError] is the
+ * OAuth error code of a refused token request, for the log; never a token.
+ */
+internal class ChatGptFailure(val reason: String, val grantError: String? = null) : Exception(reason)
 
 /**
  * docs/15 §10 "Sign in with ChatGPT": the user's own ChatGPT plan, through OpenAI's open-source flow
@@ -340,7 +343,14 @@ class ChatGptAccount internal constructor(
             } catch (e: ChatGptFailure) {
                 if (e.reason == CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()) {
                     end(registration)
-                    deps.logger.log(Logger.Level.WARN, "chatgpt.refresh.refused", emptyMap())
+                    deps.logger.log(
+                        Logger.Level.WARN, "chatgpt.refresh.refused",
+                        buildMap {
+                            e.grantError?.let { put("error", it) }
+                            // How long after the access token ran out the refresh was tried.
+                            put("afterExpirySec", now - current.expiresAt)
+                        },
+                    )
                 }
                 throw e
             }
@@ -394,8 +404,9 @@ class ChatGptAccount internal constructor(
         }
         val body2 = runCatching { json(result) }.getOrNull()
         val error = body2?.string("error") ?: (body2?.get("error") as? JsonObject)?.string("code")
-        // docs "Refresh errors": these mean the token is gone for good; only signing in again helps.
-        if (error in UNUSABLE_GRANT) throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
+        // docs "Refresh errors": these mean the token is gone for good; only signing in again helps. The code — never
+        // a token — goes with it, so the log says which one OpenAI gave.
+        if (error in UNUSABLE_GRANT) throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code(), grantError = error)
         throw ChatGptFailure(CoreMessage.PROVIDER_ERROR.code(detail = "token ${result.status} ${error.orEmpty()}".trim()))
     }
 

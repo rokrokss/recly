@@ -146,7 +146,10 @@ class ChatGptAccountTest {
         h.server.reply("""{"error":"refresh_token_invalidated"}""", status = 400)
         assertEquals(ChatGptConnection.Expired(EMAIL), h.account.refresh())
         assertEquals(setOf("host", "registration"), h.held().keys)
-        assertTrue("chatgpt.refresh.refused" in h.logger.events)
+        val refused = h.logger.fieldsOf("chatgpt.refresh.refused").single()
+        assertEquals("refresh_token_invalidated", refused["error"], "which refusal it was, for a log the user exports")
+        assertTrue("afterExpirySec" in refused)
+        assertFalse(refused.values.any { "refresh" in it.toString() && it != "refresh_token_invalidated" }, "never a token")
         // Settings opened later still says OpenAI ended it, and signing out clears that.
         assertEquals(ChatGptConnection.Expired(EMAIL), ChatGptAccount(h.db, h.deps).refresh())
         assertEquals(ChatGptResult.Done(), h.account.signOut())
