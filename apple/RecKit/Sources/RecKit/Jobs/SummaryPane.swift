@@ -123,12 +123,16 @@ struct ChatGptFailureNotice: View {
     }
 }
 
-/// docs/09 "Summary view": a summary or an answer as selectable plain text, every `[HH:MM:SS]` in it a link that
-/// plays the recording from there — the seek a transcript time button makes. A link inside the one `Text`,
-/// rather than a button beside it, is what keeps the whole text selectable (SwiftUI selects within one
-/// `Text`), so a citation's target is its own glyphs rather than a 44pt box, and a screen reader reaches each
-/// one as a named action, `Play from 00:12:34`. Mono and accent, never underlined: a dotted underline means
-/// a web page (docs/09, 2026-10-09).
+/// docs/09 "Summary view": a summary or an answer as selectable plain text, every `[HH:MM:SS]` in it playing the
+/// recording from there — the seek a transcript time button makes. Mono and accent, never underlined: a dotted
+/// underline means a web page (docs/09, 2026-10-09).
+///
+/// The text stays one `Text`, because SwiftUI selects within one `Text`, so a citation cannot be a button beside
+/// it. From iOS 18 / macOS 15 its target is laid over it instead: at least [minTouch] each way, centred on the
+/// citation, placed from the text's own line layout ([CitationTarget]), and a screen reader reaches each citation
+/// as its own `Play from 00:12:34` button. A press or a drag anywhere else selects as before. On iOS 17 / macOS 14
+/// a citation is only a link inside the text: its target is its own glyphs, and a screen reader reaches it as a
+/// named action on the text.
 struct CitedText: View {
     let text: String
     /// How far the recording here can be played: a citation past it is plain text, as a time button past it
@@ -142,52 +146,84 @@ struct CitedText: View {
     var body: some View {
         let runs = ChatGptText.runs(text)
         let playable = Self.playable(runs, seekableSec: onSeek == nil ? 0 : seekableSec)
-        Text(attributed(runs, playable: playable))
+        Group {
+            if #available(iOS 18, macOS 15, *) {
+                selectable(marked(runs, playable: playable))
+                    .accessibilitySortPriority(1)
+                    .overlayPreferenceValue(Text.LayoutKey.self) { layouts in
+                        CitationTargets(layouts: layouts, playable: playable) { onSeek?($0) }
+                    }
+                    .accessibilityElement(children: .contain)
+            } else {
+                selectable(Text(attributed(runs, playable: playable)))
+                    .accessibilityActions {
+                        ForEach(Array(playable.enumerated()), id: \.offset) { _, citation in
+                            Button(ChatGptText.playFrom(citation.text)) { onSeek?(citation.atSec) }
+                        }
+                    }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // The links stay under the targets on iOS 18 / macOS 15 too: a tap that reaches the glyphs still plays.
+        .environment(\.openURL, OpenURLAction { url in
+            guard let sec = Self.second(url) else { return .systemAction }
+            onSeek?(sec)
+            return .handled
+        })
+    }
+
+    private func selectable(_ text: Text) -> some View {
+        text
             .font(blueprint.fonts.body)
             .foregroundStyle(blueprint.palette.text)
             .tint(blueprint.palette.accent)
             .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .environment(\.openURL, OpenURLAction { url in
-                guard let sec = Self.second(url) else { return .systemAction }
-                onSeek?(sec)
-                return .handled
-            })
-            .accessibilityActions {
-                ForEach(Array(playable.enumerated()), id: \.offset) { _, citation in
-                    Button(ChatGptText.playFrom(citation.text)) { onSeek?(citation.atSec) }
-                }
-            }
     }
+
+    /// A citation a tap can play from, by its place among the text's runs.
+    typealias Playable = (run: Int, text: String, atSec: Double)
 
     /// The citations a tap can play from: inside what the recording here holds.
-    static func playable(_ runs: [CitationRun], seekableSec: Double) -> [(text: String, atSec: Double)] {
-        runs.compactMap { run in
+    static func playable(_ runs: [CitationRun], seekableSec: Double) -> [Playable] {
+        runs.enumerated().compactMap { index, run in
             guard case .citation(let text, let atSec) = run, atSec < seekableSec else { return nil }
-            return (text, atSec)
+            return (index, text, atSec)
         }
     }
 
-    private func attributed(_ runs: [CitationRun], playable: [(text: String, atSec: Double)]) -> AttributedString {
-        var out = AttributedString()
-        for run in runs {
-            switch run {
-            case .text(let words):
-                out += AttributedString(words)
-            case .citation(let words, let atSec):
-                var part = AttributedString(words)
-                part.font = blueprint.fonts.monoBody
-                if playable.contains(where: { $0.atSec == atSec }) {
-                    part.link = Self.url(atSec)
-                    part.foregroundColor = blueprint.palette.accent
-                } else {
-                    part.foregroundColor = blueprint.palette.textMuted
-                }
-                out += part
-            }
+    private func attributed(_ runs: [CitationRun], playable: [Playable]) -> AttributedString {
+        runs.indices.reduce(into: AttributedString()) { out, index in
+            out += part(runs[index], playable: playable.contains { $0.run == index })
         }
-        return out
+    }
+
+    /// The same text as [attributed], each playable citation in it marked with its run so the layout can say
+    /// where it is.
+    @available(iOS 18, macOS 15, *)
+    private func marked(_ runs: [CitationRun], playable: [Playable]) -> Text {
+        runs.indices.reduce(Text(verbatim: "")) { out, index in
+            let plays = playable.contains { $0.run == index }
+            let text = Text(part(runs[index], playable: plays))
+            return out + (plays ? text.customAttribute(CitationMark(run: index)) : text)
+        }
+    }
+
+    private func part(_ run: CitationRun, playable: Bool) -> AttributedString {
+        switch run {
+        case .text(let words):
+            return AttributedString(words)
+        case .citation(let words, let atSec):
+            var part = AttributedString(words)
+            part.font = blueprint.fonts.monoBody
+            if playable {
+                part.link = Self.url(atSec)
+                part.foregroundColor = blueprint.palette.accent
+            } else {
+                part.foregroundColor = blueprint.palette.textMuted
+            }
+            return part
+        }
     }
 
     private static let scheme = "recly-seek"
@@ -197,6 +233,120 @@ struct CitedText: View {
     static func second(_ url: URL) -> Double? {
         guard url.scheme == scheme else { return nil }
         return Double(url.absoluteString.dropFirst(scheme.count + 1))
+    }
+}
+
+/// Which of a [CitedText]'s runs a stretch of its laid-out text is.
+private struct CitationMark: TextAttribute {
+    let run: Int
+}
+
+/// docs/09 "Summary view": a citation's target — its glyphs on one line of the text, and around them the box a
+/// tap or a click plays it from.
+struct CitationTarget: Equatable {
+    /// The citation's place among the text's runs.
+    let run: Int
+    let glyphs: CGRect
+
+    /// At least [minTouch] each way, centred on the glyphs, so it reaches over the lines above and below: where it
+    /// meets a neighbour's, [hit] decides.
+    var area: CGRect {
+        glyphs.insetBy(dx: min(0, (glyphs.width - minTouch) / 2), dy: min(0, (glyphs.height - minTouch) / 2))
+    }
+
+    /// One target for each line a citation sits on: the pieces of it the layout lays out on one line — right to
+    /// left text cuts `[` and `]` off the digits — are one box.
+    static func targets(_ pieces: [(run: Int, line: Int, glyphs: CGRect)]) -> [CitationTarget] {
+        var lines: [(run: Int, line: Int)] = []
+        var boxes: [CGRect] = []
+        for piece in pieces {
+            if let at = lines.firstIndex(where: { $0 == (piece.run, piece.line) }) {
+                boxes[at] = boxes[at].union(piece.glyphs)
+            } else {
+                lines.append((piece.run, piece.line))
+                boxes.append(piece.glyphs)
+            }
+        }
+        return zip(lines, boxes).map { CitationTarget(run: $0.run, glyphs: $1) }
+    }
+
+    /// What a tap at [point] plays: of the targets whose area holds it, the one whose glyphs are nearest — so a
+    /// tap on a citation's own glyphs plays that citation even where the next line's target reaches over it.
+    static func hit(_ point: CGPoint, in targets: [CitationTarget]) -> CitationTarget? {
+        targets.filter { $0.area.contains(point) }.min { $0.distance(point) < $1.distance(point) }
+    }
+
+    private func distance(_ point: CGPoint) -> CGFloat {
+        hypot(max(glyphs.minX - point.x, 0, point.x - glyphs.maxX), max(glyphs.minY - point.y, 0, point.y - glyphs.maxY))
+    }
+}
+
+/// The targets over a [CitedText] (iOS 18 / macOS 15), placed by the text's layout. One layer takes a tap or a
+/// click anywhere in a target and plays what [CitationTarget.hit] picks; each citation is its own `Play from`
+/// button for a screen reader. Nothing here draws.
+@available(iOS 18, macOS 15, *)
+private struct CitationTargets: View {
+    let layouts: Text.LayoutKey.Value
+    let playable: [CitedText.Playable]
+    let onSeek: (Double) -> Void
+
+    var body: some View {
+        GeometryReader { proxy in
+            let targets = CitationTarget.targets(pieces(proxy))
+            ZStack {
+                Color.clear
+                    .contentShape(Areas(rects: targets.map(\.area)))
+                    .onTapGesture(coordinateSpace: .local) { point in
+                        if let target = CitationTarget.hit(point, in: targets) { seek(target.run) }
+                    }
+                    #if os(macOS)
+                    .pointerStyle(.link)
+                    #endif
+                    .accessibilityHidden(true)
+                ForEach(Array(targets.enumerated()), id: \.offset) { index, target in
+                    // A citation the layout cut over two lines is one button, on its first line.
+                    if let citation = playable.first(where: { $0.run == target.run }),
+                       !targets[..<index].contains(where: { $0.run == target.run }) {
+                        Color.clear
+                            .frame(width: target.area.width, height: target.area.height)
+                            .position(x: target.area.midX, y: target.area.midY)
+                            .accessibilityElement()
+                            .accessibilityLabel(Text(verbatim: ChatGptText.playFrom(citation.text)))
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction { onSeek(citation.atSec) }
+                    }
+                }
+            }
+        }
+        // The layout gives its runs from the left in either direction; right to left, `position` would mirror the
+        // buttons away from their citations.
+        .environment(\.layoutDirection, .leftToRight)
+    }
+
+    private func pieces(_ proxy: GeometryProxy) -> [(run: Int, line: Int, glyphs: CGRect)] {
+        var pieces: [(run: Int, line: Int, glyphs: CGRect)] = []
+        var lineIndex = 0
+        for anchored in layouts {
+            let origin = proxy[anchored.origin]
+            for line in anchored.layout {
+                for run in line {
+                    guard let mark = run[CitationMark.self] else { continue }
+                    pieces.append((mark.run, lineIndex, run.typographicBounds.rect.offsetBy(dx: origin.x, dy: origin.y)))
+                }
+                lineIndex += 1
+            }
+        }
+        return pieces
+    }
+
+    private func seek(_ run: Int) {
+        if let citation = playable.first(where: { $0.run == run }) { onSeek(citation.atSec) }
+    }
+
+    private struct Areas: Shape {
+        let rects: [CGRect]
+
+        func path(in _: CGRect) -> Path { Path { $0.addRects(rects) } }
     }
 }
 
