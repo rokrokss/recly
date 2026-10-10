@@ -61,21 +61,21 @@ defaults:
     values:
       description: >-
         Have your ChatGPT agent write the minutes by itself whenever a Recly transcript lands in
-        Google Drive, set up from the Recly Mac or Windows app.
+        Google Drive, with recly-events running on your own computer.
   - scope: { path: "agent.ko.md" }
     values:
       description: >-
-        Recly 녹취록이 Google Drive에 올라오면 ChatGPT 에이전트가 스스로 회의록을 쓰게 하기. Recly Mac·Windows
-        앱에서 설정합니다.
+        Recly 녹취록이 Google Drive에 올라오면 ChatGPT 에이전트가 스스로 회의록을 쓰게 하기. 내 컴퓨터에서
+        recly-events를 실행합니다.
   - scope: { path: "recly-events.md" }
     values:
       description: >-
-        Run recly-events yourself, on a server, on Linux or on a computer without the Recly app, so
-        your ChatGPT agent hears about each new transcript.
+        Run recly-events yourself, on a Mac, Linux or Windows computer or a server, so your ChatGPT
+        agent hears about each new transcript.
   - scope: { path: "recly-events.ko.md" }
     values:
       description: >-
-        서버, Linux, Recly 앱이 없는 컴퓨터에서 recly-events를 직접 실행해 ChatGPT 에이전트가 새 녹취록마다
+        Mac, Linux, Windows 컴퓨터나 서버에서 recly-events를 직접 실행해 ChatGPT 에이전트가 새 녹취록마다
         알림을 받게 하기.
   - scope: { path: "mcp.md" }
     values:

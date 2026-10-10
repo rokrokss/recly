@@ -2,10 +2,9 @@
 
 [한국어](recly-events.ko.md)
 
-For a server, Linux, or a computer without the Recly app. The Recly Mac and Windows apps run
-recly-events for you: with one of them, follow [Automatic minutes with a ChatGPT agent](agent.md)
-instead. For recordings in a local folder or iCloud, read by Claude or Codex, see
-[Local MCP server](mcp.md).
+Set up recly-events on a Mac, Linux or Windows computer, or a server, so your ChatGPT agent hears
+about each new transcript. What it does: [Automatic minutes with a ChatGPT agent](agent.md). For
+recordings in a local folder or iCloud, read by Claude or Codex, see [Local MCP server](mcp.md).
 
 ## Before you start
 
@@ -157,9 +156,6 @@ Task Scheduler → **Create Basic Task**:
 ```sh
 recly-events status
 ```
-
-Run only one recly-events. If the Recly Mac or Windows app has its agent switch on as well, the app
-leaves this one alone and says **Already running outside Recly**.
 
 ## 5. Add the app in ChatGPT
 

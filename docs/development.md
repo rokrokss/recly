@@ -9,9 +9,8 @@
   too.
 - **Xcode 26 on macOS** for the Apple apps, which call iOS 26 and macOS 26 APIs. Their builds start
   with `make core`, which runs Gradle, so they need the two items above as well.
-- **Go** for recly-events and for the copy of it the Mac app carries (`make mac-helper`).
-  `events/go.mod` asks for Go 1.27; a `go` from 1.21 on downloads that toolchain itself. Without
-  Go, `make mac` builds the Mac app without recly-events.
+- **Go** for recly-events (`make events`). `events/go.mod` asks for Go 1.27; a `go` from 1.21 on
+  downloads that toolchain itself.
 - **Rust** 1.82 or later for the Windows capture helper (`rust-version` in
   `windows/capture-helper/Cargo.toml`). Packaging the MSI also needs WiX 3, on Windows.
 - **Node.js with npm** for spec validation (`make spec`).
@@ -112,7 +111,7 @@ Apple build number as `<n>`, for example `v0.2.0-build.34`. The packages come fr
   team: `RECLY_DEVELOPMENT_TEAM` in `apple/Config/Local.xcconfig`, or `RECLY_TEAM_ID`.
 - Android phone and Wear OS: `make android-release-apk` and `make aab`.
 - Windows: pushing the tag runs `.github/workflows/windows-release.yml`, which runs the capture
-  helper, recly-events and Windows shell tests, builds the MSI and the two skill ZIPs, and attaches
+  helper and Windows shell tests, builds the MSI and the two skill ZIPs, and attaches
   them to the release for the tag. If that release does not exist yet, the workflow creates it as a
   pre-release with generated notes.
 
@@ -151,16 +150,13 @@ key into `android/*/build/outputs/apk/release/`. They may differ from the app si
 Play-installed builds.
 
 For macOS, `make mac-release` builds the distribution file
-`apple/build/dist/Recly-<version>-<build>.dmg`, signed with Developer ID and notarized. It and `make mac`
-first build the recly-events the app bundles (`make mac-helper`, which needs Go); without Go the app is
-built without it, and its Agent connection switch says so (docs/recly.md §12 "Agent connection"). Existing
+`apple/build/dist/Recly-<version>-<build>.dmg`, signed with Developer ID and notarized. Existing
 iOS archives and DMGs are kept. The Windows MSI is built with `make windows-msi` on a Windows host
 or with `.github/workflows/windows-release.yml`. A manual run by default only produces an Actions
 artifact that keeps the MSI and the two skill ZIPs for 30 days. Only a `v*` tag push or a manual
 run with `publish_release=true` set explicitly publishes to a GitHub release. The Windows OAuth
 settings come from the repository's Actions secrets `REC_GOOGLE_DESKTOP_CLIENT_ID` and
-`REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. The same job builds the
-`recly-events.exe` the MSI bundles, with the same client. See
+`REC_GOOGLE_DESKTOP_CLIENT_SECRET`; if they are missing, packaging stops. See
 [`windows/README.md`](https://github.com/rokrokss/recly/blob/main/windows/README.md) for details.
 
 The display version of the current release is `0.3.0` on every platform. The build is `35` for the
@@ -227,7 +223,7 @@ and notarized, and what an installer puts in place is not quarantined. Each arch
 Go module (`events/scripts/notices.sh`). Recly's
 desktop OAuth client is compiled in from `local.properties`, as for the Windows app; the script
 stops without it, and when `events/` has uncommitted changes. The build flags live in
-`events/scripts/build.sh`, which `make events`, `make mac-helper` and the Windows release job use too. `UPLOAD=1` also creates a draft
+`events/scripts/build.sh`, which `make events` uses too. `UPLOAD=1` also creates a draft
 pre-release that does not become "Latest"; publishing it creates the tag. CI
 (`.github/workflows/events.yml`) tests `events/` on Linux, macOS and Windows.
 

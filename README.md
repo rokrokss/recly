@@ -28,12 +28,12 @@ call, and no monthly fee.
 ## Minutes that write themselves
 
 Stop recording, and your ChatGPT agent writes the minutes by itself, usually within a minute. Every
-new transcript becomes an [MCP event](https://developers.openai.com/plugins/build/mcp-events): recly-events, built into the Recly Mac and Windows
-apps, sends `recording.transcribed` to your agent, a dot or a Work chat, and the agent reads the
+new transcript becomes an [MCP event](https://developers.openai.com/plugins/build/mcp-events): recly-events, a small program you run on your
+own computer, sends `recording.transcribed` to your agent, a dot or a Work chat, and the agent reads the
 transcript and does what you asked for every recording: minutes, decisions and action items, a
 follow-up email to draft.
 
-<p align="center"><img src="docs/design/agent-flow.svg" width="100%" alt="A transcript lands in your Google Drive. recly-events, in the Recly Mac or Windows app, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for."></p>
+<p align="center"><img src="docs/design/agent-flow.svg" width="100%" alt="A transcript lands in your Google Drive. recly-events, running on your computer, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for."></p>
 
 - **An event, not a prompt.** OpenAI's MCP Events let an app start your agent. `recording.transcribed`
   reaches ChatGPT signed, and every new transcript starts a run of your agent.
@@ -46,12 +46,11 @@ follow-up email to draft.
 - **Nothing missed.** A computer that slept catches up when it wakes, and events your agent has not
   picked up wait in an inbox for 30 days.
 
-**Turn it on** in the Mac or Windows app (0.2.0 and later), under Settings → Agent connection: the
-[ChatGPT agent guide](docs/agent.md) has the steps. On a server, Linux or a computer without the
-app, [run recly-events yourself](docs/recly-events.md). You need recordings stored in Google Drive;
-a ChatGPT dot (at the time of writing, ChatGPT Business Premium, or ChatGPT Pro outside the EEA,
-Switzerland and the UK) or a Work chat on ChatGPT web; an OpenAI Platform account for the tunnel
-and its key; and a computer that stays on.
+**Set it up:** [run recly-events yourself](docs/recly-events.md) on a Mac, Linux or Windows
+computer, or a server. You need recordings stored in Google Drive; a ChatGPT dot (at the time of
+writing, ChatGPT Business Premium, or ChatGPT Pro outside the EEA, Switzerland and the UK) or a
+Work chat on ChatGPT web; an OpenAI Platform account for the tunnel and its key; and a computer
+that stays on.
 
 ## Why Recly
 
@@ -84,7 +83,7 @@ and its key; and a computer that stays on.
 | Recording | Your watch, phone or desktop | Nothing. A watch hands the audio to your paired phone, and only there. |
 | Storage | Your Google Drive (or your iCloud on iPhone and Mac, or a local folder you pick on iPhone, Mac, Windows and Android) | To Google Drive or iCloud: the audio parts and a small metadata file, to your own account. A local folder: nothing leaves the device. |
 | Transcription | On device, or a provider you chose with your own key | On device: no audio goes to a speech service. External: the joined audio goes to the provider you selected, with your vocabulary if you set one. Results are written next to the recording. |
-| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your storage and writes the notes wherever you keep them (Notion, in the example skills). If you turn on automatic minutes, recly-events tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, and the transcript when the agent asks for it; never the audio. |
+| Notes | Your own AI agent (Claude, ChatGPT, Codex, ...) | The agent reads the transcript from your storage and writes the notes wherever you keep them (Notion, in the example skills). If you run recly-events for automatic minutes, it tells your ChatGPT agent about each new transcript through OpenAI: the recording's name, title and Drive links, and the transcript when the agent asks for it; never the audio. |
 | Summary (optional) | Your ChatGPT plan, when you choose **Summarize** on a recording after signing in with ChatGPT | That recording's transcript text with your highlights, and what you wrote under Summary format and About you, to OpenAI; never the audio. **Ask about this recording** sends the same with your question. The summary, which you can edit, is kept with the recording in Drive or iCloud for your other devices, or on the device with a local folder. |
 | Processing settings and API keys | Your device | Nothing is synced. **Settings file** → **Export settings** moves configuration only; enter keys separately on each device. |
 
@@ -214,7 +213,7 @@ transcription adapters and the job queue.
 
 Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on
 iPhone and Mac, or a local folder that stays on your device), to the transcription provider you
-chose with your own key, between your own paired watch and phone, and, if you turn on automatic
+chose with your own key, between your own paired watch and phone, and, if you set up automatic
 minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, and its
 transcript when the agent asks for it; never the audio. The [privacy policy](https://recly.dev/policy/privacy-policy) lists
 every one of those paths, and
