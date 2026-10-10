@@ -95,25 +95,6 @@ jobs:
           cp "$bin"/*.dll windows/app/resources/windows-x64/
           ls -l windows/app/resources/windows-x64
 
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: events/go.mod
-          cache-dependency-path: events/go.sum
-
-      # docs/14 "Agent connection": recly-events, which Settings runs while its switch is on, with
-      # Recly's desktop client compiled in as `make events` does, and its Go modules' notices.
-      - name: recly-events
-        shell: bash
-        env:
-          REC_GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.REC_GOOGLE_DESKTOP_CLIENT_ID }}
-          REC_GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.REC_GOOGLE_DESKTOP_CLIENT_SECRET }}
-        run: |
-          set -e
-          (cd events && go test ./...)
-          REQUIRE_CLIENT=1 bash events/scripts/build.sh windows/app/resources/windows-x64/recly-events.exe "app-${GITHUB_SHA::7}"
-          windows/app/resources/windows-x64/recly-events.exe version
-          bash events/scripts/notices.sh > windows/app/resources/common/THIRD-PARTY-recly-events.txt
-
       # jpackage shells out to WiX 3 (`candle`/`light`) and finds it on PATH or not at all.
       - name: WiX 3 on PATH
         shell: bash

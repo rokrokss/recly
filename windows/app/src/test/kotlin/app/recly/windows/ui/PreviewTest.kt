@@ -146,12 +146,6 @@ class PreviewTest {
                 field = value
             }
 
-        override var agentEvents: Boolean = false
-            set(value) {
-                writes += "agentEvents"
-                field = value
-            }
-
         override var language: AppLanguage = AppLanguage.ENGLISH
             set(value) {
                 writes += "language"

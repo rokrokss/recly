@@ -33,17 +33,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.recly.windows.agent.AgentEvents
-import app.recly.windows.agent.AgentEventsPhase
-import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
@@ -57,14 +49,12 @@ import app.recly.windows.ui.component.TextLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintTextField
-import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.BlueprintDropdown
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
-import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
@@ -82,7 +72,7 @@ import recly.core.storage.StorageKind
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
  * the system's alone, and there is no accessibility section), capture with the start at login (as the Mac
- * has it, 2026-10-10), the agent connection, and the honest block of what this build actually is.
+ * has it, 2026-10-10), and the honest block of what this build actually is.
  */
 @Composable
 fun SettingsWindow(model: ShellModel, strings: Strings) {
@@ -97,7 +87,6 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Capture(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
             model.chatGpt?.let { ChatGpt(it, strings) }
-            model.agentEvents?.let { AgentConnection(model, it, strings) }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
         }
@@ -449,190 +438,6 @@ internal fun PreferenceField(
 }
 
 /**
- * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
- * go to Google Drive. It runs on this PC's own Drive connection, so the one thing it asks for is an
- * OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
- * off, and the set-up guide is always there. On, one line under the switch says how the server is.
- */
-@Composable
-private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
-    // Asked again whenever this window comes to the front: the server may have come or gone while it
-    // was behind.
-    val focused = LocalWindowInfo.current.isWindowFocused
-    LaunchedEffect(focused) { if (focused) agent.sectionShown() }
-    Section(strings[Str.AGENT_SECTION])
-    // A build without the program, or a storage recly-events cannot watch: the switch says which, in
-    // the place of its second line, and cannot be turned.
-    val note = when (agent.phase) {
-        AgentEventsPhase.Unavailable -> Str.AGENT_UNAVAILABLE
-        AgentEventsPhase.NotDrive -> Str.AGENT_NOT_DRIVE
-        else -> null
-    }
-    SwitchRow(
-        title = strings[Str.AGENT_TOGGLE],
-        subtitle = note?.let { strings[it] },
-        checked = agent.enabled && note == null,
-        onCheckedChange = agent::toggle,
-        enabled = note == null,
-    )
-    // docs/14 "Agent connection": recordings in a local folder are for agents on this PC instead.
-    if (model.storage == StorageKind.FOLDER && agent.phase != AgentEventsPhase.Unavailable) LocalAgents(model, strings)
-    if (note != null) return
-    // Off, the phase says nothing: the line is there only while the switch is on.
-    AgentStatus(agent, strings)
-    AgentTunnel(agent, strings)
-    SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-    TextLink(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) },
-        modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), style = MaterialTheme.typography.bodySmall)
-}
-
-/**
- * The local MCP server: recly-events run by the agent itself over this PC's local folder, so there is no
- * switch — nothing runs until an agent starts it. The configuration is what recly-events prints for the
- * folder, copied for pasting into the agent's settings.
- */
-@Composable
-private fun LocalAgents(model: ShellModel, strings: Strings) {
-    val clipboard = LocalClipboardManager.current
-    val scope = rememberCoroutineScope()
-    var copied by remember { mutableStateOf(false) }
-    LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
-    Section(strings[Str.LOCAL_AGENTS])
-    TableRow(
-        title = strings[Str.LOCAL_MCP],
-        subtitle = strings[Str.LOCAL_MCP_BODY],
-        below = { TextLink(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, style = MaterialTheme.typography.bodySmall) },
-    )
-    Row(
-        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
-        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-    ) {
-        BlueprintButton(
-            if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.LOCAL_MCP_COPY],
-            {
-                scope.launch {
-                    model.localMcpConfiguration()?.let {
-                        clipboard.setText(AnnotatedString(it))
-                        copied = true
-                    }
-                }
-            },
-            enabled = model.localFolder != null,
-        )
-    }
-    HairLine()
-}
-
-/**
- * One line under the switch, and only what the rows below do not already say: nothing while the tunnel
- * row asks for its fields. The square loader only while something is under way; a running server says
- * that it works, or what to do next — never what is merely possible.
- */
-@Composable
-private fun AgentStatus(agent: AgentEvents, strings: Strings) {
-    when (val phase = agent.phase) {
-        AgentEventsPhase.Off, AgentEventsPhase.Unavailable, AgentEventsPhase.NotDrive,
-        AgentEventsPhase.NeedsSetup -> Unit
-        AgentEventsPhase.NeedsDrive -> AgentLine(strings[Str.AGENT_STATUS_NEEDS_DRIVE])
-        AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
-        AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
-        is AgentEventsPhase.Running -> AgentLine(
-            strings[
-                when (phase.subscription) {
-                    AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
-                    AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
-                    AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
-                },
-            ],
-        )
-        AgentEventsPhase.TunnelError -> AgentLine(strings[Str.AGENT_STATUS_TUNNEL_ERROR], danger = true)
-        AgentEventsPhase.Elsewhere -> AgentLine(strings[Str.AGENT_STATUS_ELSEWHERE])
-        AgentEventsPhase.GaveUp -> AgentLine(strings[Str.AGENT_STATUS_GAVE_UP], danger = true)
-    }
-}
-
-/**
- * docs/05 "Secrets": a saved tunnel is a row that says so, as a saved transcription key is; the
- * fields come back only to take a new one, and a key left empty keeps the saved one.
- */
-@Composable
-private fun AgentTunnel(agent: AgentEvents, strings: Strings) {
-    var changing by remember { mutableStateOf(false) }
-    var tunnelId by remember(agent.tunnelId) { mutableStateOf(agent.tunnelId) }
-    var tunnelKey by remember { mutableStateOf("") }
-    if (agent.tunnelId.isNotEmpty() && agent.tunnelKeySaved && !changing) {
-        TableRow(
-            title = strings[Str.AGENT_TUNNEL],
-            subtitle = "$SELECTION_MARK ${strings[Str.PROCESSING_KEY_ON_DEVICE]}",
-            subtitleColor = blueprint.success,
-            trailing = {
-                BlueprintButton(
-                    strings[Str.AGENT_TUNNEL_CHANGE],
-                    {
-                        tunnelId = agent.tunnelId
-                        tunnelKey = ""
-                        changing = true
-                    },
-                    tone = ButtonTone.QUIET,
-                )
-            },
-        )
-        return
-    }
-    SettingsCard {
-        Text(strings[Str.AGENT_TUNNEL], style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
-        BlueprintTextField(tunnelId, { tunnelId = it }, strings[Str.AGENT_TUNNEL_ID], placeholder = "tunnel_…")
-        BlueprintTextField(
-            tunnelKey,
-            { tunnelKey = it },
-            strings[Str.AGENT_TUNNEL_KEY],
-            placeholder = if (agent.tunnelKeySaved) strings[Str.AGENT_TUNNEL_KEY_KEEP] else "sk-…",
-            secret = true,
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            if (changing) {
-                BlueprintButton(
-                    strings[Str.CANCEL],
-                    {
-                        tunnelKey = ""
-                        changing = false
-                    },
-                    tone = ButtonTone.QUIET,
-                )
-            }
-            BlueprintButton(
-                strings[Str.SAVE],
-                {
-                    agent.saveTunnel(tunnelId, tunnelKey) { changing = false }
-                    tunnelKey = ""
-                },
-                tone = ButtonTone.QUIET,
-                // An ID, and a key unless one is saved already.
-                enabled = tunnelId.isNotBlank() && (agent.tunnelKeySaved || tunnelKey.isNotBlank()),
-            )
-        }
-        if (agent.saveFailed) {
-            Text(strings[Str.AGENT_SAVE_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
-        }
-    }
-    HairLine()
-}
-
-@Composable
-private fun AgentLine(text: String, danger: Boolean = false) {
-    SettingsCard {
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (danger) blueprint.danger else blueprint.text)
-    }
-    HairLine()
-}
-
-@Composable
-private fun AgentWorking(text: String) {
-    SettingsCard { LoadingText(text, MaterialTheme.typography.bodyMedium, blueprint.text) }
-    HairLine()
-}
-
-/**
  * docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace — and at its end the
  * way to the folder this PC keeps it all in. The folder's path is not shown (2026-10-10): docs/09 keeps technical
  * values out of the UI, and the button opens it.
@@ -701,8 +506,6 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
     }
     HairLine()
 }
-
-private const val COPIED_MS = 3_000L
 
 /** My format: two lines open, eight before it scrolls; About you: one, up to three (2026-10-10). */
 private val CUSTOM_LINES = 2..8

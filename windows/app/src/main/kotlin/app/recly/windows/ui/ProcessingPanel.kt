@@ -150,7 +150,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
 
 /**
  * docs/05: the processing settings out to a file and back. Its own section in Settings, after the
- * features — Agent connection included — because it is a utility (docs/09 screen principle 4).
+ * features, because it is a utility (docs/09 screen principle 4).
  */
 @Composable
 fun ProcessingSettingsFile(model: ProcessingViewModel, strings: Strings) {

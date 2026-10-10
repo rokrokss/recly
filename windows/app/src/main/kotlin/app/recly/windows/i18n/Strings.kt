@@ -142,28 +142,6 @@ enum class Str {
     SETTINGS_LAUNCH_UNSUPPORTED,
     SETTINGS_CONSENT_REMINDER,
     SETTINGS_RECORDING,
-    // docs/14 "Agent connection": recly-events, run for the user while its switch is on.
-    AGENT_SECTION,
-    AGENT_TOGGLE,
-    AGENT_UNAVAILABLE,
-    AGENT_NOT_DRIVE,
-    AGENT_TUNNEL,
-    AGENT_TUNNEL_CHANGE,
-    AGENT_TUNNEL_ID,
-    AGENT_TUNNEL_KEY,
-    AGENT_TUNNEL_KEY_KEEP,
-    AGENT_SAVE_FAILED,
-    AGENT_FOOTNOTE,
-    AGENT_GUIDE,
-    AGENT_STATUS_NEEDS_DRIVE,
-    AGENT_STATUS_STARTING,
-    AGENT_STATUS_CONNECTING,
-    AGENT_STATUS_SUBSCRIBED,
-    AGENT_STATUS_NOT_SUBSCRIBED,
-    AGENT_STATUS_SUBSCRIPTION_ENDED,
-    AGENT_STATUS_TUNNEL_ERROR,
-    AGENT_STATUS_ELSEWHERE,
-    AGENT_STATUS_GAVE_UP,
     // docs/14 "Capture": the microphone alone or the whole meeting, in the Mac's own two labels.
     /** docs/14 "Permissions": the Windows page that turns the microphone back on for desktop apps. */
     SETTINGS_OPEN_MICROPHONE,
@@ -401,7 +379,7 @@ enum class Str {
     CORE_IMPORT_UNREADABLE,
 
     // Competitive features (2026-10-07): highlights, the detail's menus, exports, editing, search,
-    // import, playback speed, vocabulary, on-device speakers and the local MCP server.
+    // import, playback speed, vocabulary and on-device speakers.
     HIGHLIGHT,
     HIGHLIGHT_MARKED,
     HIGHLIGHT_TICK,
@@ -472,10 +450,6 @@ enum class Str {
     VOCABULARY_LOCAL_UNSUPPORTED,
     PROCESSING_SPEAKER_MODEL,
     PROCESSING_LOCAL_SPEAKERS,
-    LOCAL_AGENTS,
-    LOCAL_MCP,
-    LOCAL_MCP_BODY,
-    LOCAL_MCP_COPY,
 
     // The UX decisions of 2026-10-08: the badges and the State node say words, not codes.
     BADGE_RETRY,
