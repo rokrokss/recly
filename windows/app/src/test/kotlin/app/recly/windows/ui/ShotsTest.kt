@@ -187,7 +187,7 @@ class ShotsTest {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
                     Text(strings[Str.ASK_TITLE], style = MaterialTheme.typography.titleMedium, color = blueprint.text)
-                    AskPanel(state, presets, { "GPT-5.4" }, canSeek = true, onSeek = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
+                    AskPanel(state, presets, { _, _ -> "GPT-5.4" }, canPlay = true, onPlay = {}, onAsk = { _, _ -> }, onManageUsage = {}, strings = strings)
                 }
             }
             shot("ask-running-$lang", 460, 560, ko) { panel(AskState.Running(AskPreset.ACTION_ITEMS, null)) }
@@ -261,11 +261,7 @@ class ShotsTest {
         processing.refreshLocal()
         model.modelDownload?.refresh()
         delay(500)
-        shot("settings-speaker-download-en", 640, 2700, false, clicks = listOf(MCP_COPY)) { SettingsWindow(model, strings) }
-        val copied = runCatching {
-            java.awt.Toolkit.getDefaultToolkit().systemClipboard.getData(java.awt.datatransfer.DataFlavor.stringFlavor) as String
-        }.getOrNull()
-        println("SHOTS clipboard after Copy configuration:\n$copied")
+        shot("settings-speaker-download-en", 640, 2700, false) { SettingsWindow(model, strings) }
         model.openDetail(short)
         until { model.detail?.loading == false }
         shot("recordings-more-not-uploaded-en", 1000, 680, false, clicks = listOf(MORE)) { RecordingsWindow(model, strings) { it() } }
@@ -376,7 +372,6 @@ class ShotsTest {
         val FLAG_REMOVE = Offset(475f, 271f)
         val FIND_NEXT = Offset(900f, 210f)
         val POPUP_HIGHLIGHT = Offset(179f, 263f)
-        val MCP_COPY = Offset(549f, 1806f)
         val MORE_EDIT_SUMMARY = Offset(835f, 313f)
         val MORE_SUMMARIZE_AS = Offset(835f, 265f)
         val SUMMARY_FIELD = Offset(700f, 400f)

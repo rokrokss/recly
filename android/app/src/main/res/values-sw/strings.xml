@@ -105,7 +105,7 @@
     <string name="core_step_failed">Imeshindwa: %1$s</string>
     <string name="core_auth_rejected">Mtoa huduma amekataa ufunguo.</string>
     <string name="core_quota">Mtoa huduma amefikia kikomo cha mgao au anadhibiti kasi ya maombi.</string>
-    <string name="core_provider_error">Hitilafu imetokea kwa mtoa huduma. Itajaribu tena.</string>
+    <string name="core_provider_error">Kuna hitilafu upande wa mtoa huduma.</string>
     <string name="core_unsupported_audio">Mtoa huduma hakukubali sauti hii.</string>
     <string name="core_no_input_track">Rekodi hii haina mkondo wa sauti wa mono au mchanganyiko wa kunukuu.</string>
     <string name="core_result_timeout">Mtoa huduma hakumaliza kwa wakati. Itatumwa tena.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Kichwa</string>
     <string name="jobs_column_length">Muda</string>
     <string name="jobs_column_status">Hali</string>
-    <string name="jobs_summary">%1$d · zinazosubiri: %2$d · zilizoshindwa: %3$d</string>
+    <string name="jobs_summary_waiting">zinazosubiri: %1$d</string>
+    <string name="jobs_summary_failed">zilizoshindwa: %1$d</string>
     <string name="jobs_row_expand">Panua</string>
     <string name="jobs_row_collapse">Kunja</string>
     <string name="jobs_row_description">%1$s, ilirekodiwa %2$s, muda %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Ruhusa ya uhamishaji inahitajika</string>
     <string name="job_state_needs_model">Inasubiri modeli ya matamshi</string>
     <string name="delete_key_title">Futa ufunguo: %1$s</string>
-    <string name="detail_not_requested">Rekodi hii haina hatua ya unukuzi ya kuendesha.</string>
+    <string name="detail_not_requested">Unukuzi umezimwa. Uwashe kwenye Mipangilio, kisha tumia Nukuu tena.</string>
     <string name="detail_pending">Unukuzi bado haujakamilika. Matokeo yataonekana hapa yakiwa tayari.</string>
     <string name="detail_failed">Unukuzi haukuweza kukamilika. Angalia rekodi hii kwenye orodha ili ujue hatua inayofuata.</string>
     <string name="detail_parked">Unukuzi unasubiri. Angalia rekodi hii kwenye orodha ili ujue kinachohitajika.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Imezimwa</string>
     <string name="processing_storage">Folda ya kuhifadhi</string>
     <string name="processing_transcription">Unukuzi</string>
-    <string name="processing_saved">Mipangilio imehifadhiwa</string>
     <string name="processing_prepare">Pakua modeli</string>
     <string name="processing_download_progress">Inapakua modeli… %1$d%%</string>
     <string name="processing_download_bytes">%1$s kati ya %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Inanukuu…</string>
     <string name="detail_transcription_off">Unukuzi umezimwa katika Mipangilio</string>
     <string name="detail_not_uploaded">Bado haijapakiwa</string>
+    <string name="detail_still_recording">Bado inarekodi</string>
     <string name="share_transcript">Nakala</string>
     <string name="share_transcript_format">Maandishi · .txt</string>
     <string name="share_notes">Nakala kwa ajili ya madokezo</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Maliza kuingia kwenye kivinjari chako</string>
     <string name="chatgpt_sign_in_failed">Imeshindwa kuingia kwenye ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Umetoka kwenye kifaa hiki, lakini OpenAI haijathibitisha. Unaweza kuondoa Recly kwenye mipangilio ya ChatGPT.</string>
-    <string name="chatgpt_footnote">Muhtasari hutuma maandishi ya nakala, nyakati ulizoangazia na ulichoandika hapa kwa OpenAI — kamwe si sauti — na huhesabiwa katika matumizi ya mpango wako wa ChatGPT.</string>
+    <string name="chatgpt_footnote">Muhtasari na maswali hutuma maandishi ya nakala, nyakati ulizoangazia na ulichoandika hapa kwa OpenAI — kamwe si sauti — na huhesabiwa katika matumizi ya mpango wako wa ChatGPT.</string>
     <string name="chatgpt_welcome_title">Unatumia mpango wako wa ChatGPT</string>
     <string name="chatgpt_welcome_body">Muhtasari katika Recly hutumia mpango wako wa ChatGPT. Unaweza kudhibiti matumizi kwenye mipangilio ya ChatGPT.</string>
     <string name="chatgpt_got_it">Nimeelewa</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Muundo wangu</string>
     <string name="summary_custom_placeholder">Sehemu na maelekezo, k.m. Muhtasari, Hatari, Hatua zinazofuata na wahusika.</string>
     <string name="summary_custom_note">Hutumika muundo wa muhtasari ukiwa Muundo wangu.</string>
+    <string name="summary_custom_empty">Andika muundo wako hapa; hadi hapo muhtasari utatumia Jumla.</string>
     <string name="summary_about">Kuhusu wewe</string>
     <string name="summary_about_placeholder">k.m. Meneja wa bidhaa; ninajali tarehe za mwisho na maamuzi.</string>
-    <string name="summary_about_note">Muhtasari hutumia hili kupima kilicho muhimu kwako.</string>
+    <string name="summary_about_note">Muhtasari na majibu hutumia hili kupima kilicho muhimu kwako.</string>
     <string name="summary_as">Fupisha kama…</string>
     <string name="summary_play_from">Cheza kuanzia %1$s</string>
     <string name="ask_menu">Uliza kuhusu rekodi hii…</string>

@@ -210,8 +210,8 @@ is transcribed like any other. A video's picture is not kept.
 
 Recly stops at the transcript and hands it to the AI you already use:
 
-- **Automatically, with ChatGPT**: [Automatic minutes with a ChatGPT agent](agent.md) (Mac and
-  Windows apps, Google Drive).
+- **Automatically, with ChatGPT**: [Automatic minutes with a ChatGPT agent](agent.md) (recly-events
+  on your own computer, Google Drive).
 - **On request, with any agent**: the [example skills](https://github.com/rokrokss/recly/blob/main/skills/README.md)
   for Claude, ChatGPT, Codex and others.
 

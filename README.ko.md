@@ -27,11 +27,11 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 ## 저절로 써지는 회의록
 
 녹음을 멈추면 ChatGPT 에이전트가 보통 1분 안에 알아서 회의록을 씁니다. 새 녹취록은 하나하나
-[MCP 이벤트](https://developers.openai.com/plugins/build/mcp-events)가 됩니다. Recly Mac·Windows 앱에 들어 있는 recly-events가 `recording.transcribed`를
+[MCP 이벤트](https://developers.openai.com/plugins/build/mcp-events)가 됩니다. 내 컴퓨터에서 직접 실행하는 작은 프로그램 recly-events가 `recording.transcribed`를
 내 에이전트(dot이나 Work 채팅)에게 보내면, 에이전트가 녹취록을 읽고 녹음마다 하라고 정해 둔 일을 합니다. 회의록,
 결정 사항과 할 일, 후속 메일 초안 같은 것들입니다.
 
-<p align="center"><img src="docs/design/agent-flow.ko.svg" width="100%" alt="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다."></p>
+<p align="center"><img src="docs/design/agent-flow.ko.svg" width="100%" alt="녹취록이 내 Google Drive에 올라옵니다. 내 컴퓨터에서 실행 중인 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다."></p>
 
 - **프롬프트가 아니라 이벤트.** OpenAI의 MCP Events는 앱이 에이전트를 깨울 수 있게 합니다.
   `recording.transcribed`는 서명된 채 ChatGPT에 닿고, 새 녹취록마다 에이전트가 한 번씩 일합니다.
@@ -43,11 +43,10 @@ Plaud나 NotePin은 세 가지를 팝니다. 녹음기, 녹취, AI 노트. 녹�
 - **놓치는 것 없이.** 잠들었던 컴퓨터는 깨어나면 그사이의 녹취록을 따라잡고, 에이전트가 아직 가져가지 않은
   이벤트는 30일 동안 우편함에 남습니다.
 
-**켜는 법:** Mac·Windows 앱(0.2.0부터)의 설정 → 에이전트 연결에서 켭니다. 단계는
-[ChatGPT 에이전트 안내](docs/agent.ko.md)에 있습니다. 서버, Linux, 앱이 없는 컴퓨터에서는
-[recly-events를 직접 실행하세요](docs/recly-events.ko.md). 필요한 것: Google Drive에 저장되는 녹음, ChatGPT
-dot(이 글을 쓰는 시점에 ChatGPT Business Premium, 또는 EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work
-채팅, 터널과 키를 만들 OpenAI Platform 계정, 그리고 켜 둔 컴퓨터.
+**설정하는 법:** Mac, Linux, Windows 컴퓨터나 서버에서 [recly-events를 직접 실행하세요](docs/recly-events.ko.md).
+필요한 것: Google Drive에 저장되는 녹음, ChatGPT dot(이 글을 쓰는 시점에 ChatGPT Business Premium, 또는
+EEA·스위스·영국 밖의 ChatGPT Pro) 또는 ChatGPT 웹의 Work 채팅, 터널과 키를 만들 OpenAI Platform 계정, 그리고 켜 둔
+컴퓨터.
 
 ## 왜 Recly인가
 
@@ -75,7 +74,7 @@ dot(이 글을 쓰는 시점에 ChatGPT Business Premium, 또는 EEA·스위스�
 | 녹음 | 내 워치·폰·데스크톱 | 없음. 워치는 짝 지은 내 폰으로만 오디오를 넘깁니다. |
 | 저장 | 내 Google Drive(iPhone·Mac은 내 iCloud, iPhone·Mac·Windows·Android는 고른 로컬 폴더도 가능) | Google Drive나 iCloud: 오디오 파트와 작은 메타데이터 파일, 내 계정으로. 로컬 폴더: 기기를 떠나는 것 없음. |
 | 녹취 | 기기 안, 또는 내가 고른 업체(내 키로) | 기기 안: 음성 인식 서비스로 가는 오디오 없음. 외부: 합친 오디오가 고른 업체로 갑니다. 어휘를 넣었다면 어휘도 함께 갑니다. 결과는 녹음 옆에 기록됩니다. |
-| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 저장소에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). 자동 회의록을 켜면 recly-events가 새 녹취록마다 OpenAI를 거쳐 내 ChatGPT 에이전트에게 알립니다. 녹음 이름, 제목, Drive 링크를 보내고, 녹취록은 에이전트가 요청할 때만 보냅니다. 오디오는 보내지 않습니다. |
+| 노트 | 내 AI 에이전트(Claude, ChatGPT, Codex 등) | 에이전트가 내 저장소에서 녹취록을 읽고 내가 노트를 두는 곳에 씁니다(예시 스킬은 Notion). 자동 회의록을 위해 recly-events를 실행하면 새 녹취록마다 OpenAI를 거쳐 내 ChatGPT 에이전트에게 알립니다. 녹음 이름, 제목, Drive 링크를 보내고, 녹취록은 에이전트가 요청할 때만 보냅니다. 오디오는 보내지 않습니다. |
 | 요약(선택) | ChatGPT로 로그인한 뒤 녹음에서 **요약하기**를 고르면 내 ChatGPT 요금제 | 그 녹음의 녹취록 텍스트와 하이라이트, 요약 형식·나에 대해에 적은 내용이 OpenAI로 갑니다. 오디오는 보내지 않습니다. **이 녹음에 대해 묻기**는 여기에 질문을 더해 보냅니다. 요약은 고칠 수 있고, Drive·iCloud의 녹음 폴더에 함께 두어 다른 기기에서도 보입니다. 로컬 폴더라면 기기에 둡니다. |
 | 처리 설정, API 키 | 기기 안 | 동기화하지 않습니다. **설정 파일** → **설정 내보내기**에는 키 값이 포함되지 않아 기기마다 별도로 입력합니다. |
 
@@ -194,7 +193,7 @@ npx skills add rokrokss/recly            # Agent Skills를 지원하는 어떤 �
 ## 프라이버시
 
 Recly에는 서버가 없습니다. 데이터는 고른 저장소(내 Google Drive, iPhone·Mac에서는 내 iCloud, 또는 기기 안에
-머무는 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 켰다면 OpenAI를 거쳐
+머무는 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 설정했다면 OpenAI를 거쳐
 내 ChatGPT 에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크와, 에이전트가 요청할 때의
 녹취록이고, 오디오는 가지 않습니다. [개인정보처리방침](https://recly.dev/policy/privacy-policy.ko)이 그 경로를 전부 나열하고,
 [docs/recly.md §15](docs/recly.md#15-privacy--data-flows-formerly-docs15)가 그 뒤의 엔지니어링 계약입니다.

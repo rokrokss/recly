@@ -18,7 +18,8 @@ final class LanguageSettingUITests: XCTestCase {
         for (tag, title, name) in [("ja", "設定", "日本語"), ("zh-Hant", "設定", "繁體中文"), ("ar", "الإعدادات", "العربية")] {
             choose(tag, in: app)
             XCTAssertTrue(app.staticTexts[title].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.buttons["language"].label.contains(name))
+            // 2026-10-10 (A-A8): the row is a dropdown box — its label says what it is, its value the language.
+            XCTAssertTrue((app.buttons["language"].value as? String)?.contains(name) == true)
             attach(named: tag + "-settings")
         }
         let record = app.tabBars.buttons["تسجيل"]
@@ -51,12 +52,13 @@ final class LanguageSettingUITests: XCTestCase {
         for _ in 0..<8 where !row.isHittable { app.scrollViews.firstMatch.swipeUp() }
         XCTAssertTrue(row.isHittable)
         row.tap()
-        let choice = app.buttons["language-" + tag]
+        // The platform's menu: its items are found by the language's own name, with or without the ✓.
+        let choice = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", Self.names[tag] ?? tag)).firstMatch
         XCTAssertTrue(choice.waitForExistence(timeout: 10))
-        for _ in 0..<8 where !choice.isHittable { app.scrollViews.firstMatch.swipeUp() }
-        XCTAssertTrue(choice.isHittable)
         choice.tap()
     }
+
+    private static let names = ["en": "English", "ko": "한국어", "ja": "日本語", "zh-Hant": "繁體中文", "ar": "العربية"]
 
     private func attach(named name: String) {
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())

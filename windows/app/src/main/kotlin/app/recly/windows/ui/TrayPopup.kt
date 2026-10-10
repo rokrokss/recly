@@ -25,12 +25,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.APP_NAME
 import app.recly.windows.detect.MeetingDetectionRule
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
+import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.message
 import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
@@ -141,7 +143,7 @@ private fun Header(model: ShellModel, strings: Strings) {
                     onClick = model::stop,
                     tone = ButtonTone.DANGER,
                 )
-                // docs/03 "Metadata": the moment the timer is at, marked; the line under the ledger says when.
+                // docs/03 "Metadata": the moment the timer is at, marked; the line under this row says when.
                 BlueprintButton(strings[Str.HIGHLIGHT], model::highlightNow, enabled = model.transition == null)
             } else {
                 ProcessingButton(
@@ -164,7 +166,32 @@ private fun Header(model: ShellModel, strings: Strings) {
                 }
             }
         }
+        // `Highlight · 00:12:34`, under the button that marked it rather than at the foot of the ledger (2026-10-10).
+        // The line is there for the whole recording, blank until a mark, so the ledger does not move when one comes
+        // and goes.
+        if (model.recording) {
+            Text(
+                model.status.takeIf { it.isHighlightLine() }?.text(strings).orEmpty(),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textMuted,
+                maxLines = 1,
+            )
+        }
     }
+}
+
+/** The status is the line [ShellModel.highlightNow] says for a moment. */
+private fun UiMessage.isHighlightLine(): Boolean = (this as? UiMessage.Res)?.key == Str.HIGHLIGHT_MARKED
+
+/**
+ * Whether the ledger's last line says the status (2026-10-10): not while a line above says the same — the highlight
+ * just marked, under the Highlight button, or the wait for Drive that the banner counts.
+ */
+internal fun statusLineShown(status: UiMessage, alerts: List<JobAlert>): Boolean = when {
+    status.isHighlightLine() -> false
+    (status as? UiMessage.Res)?.key == Str.STATUS_SIGN_IN_NEEDED -> alerts.none { it.reason == AlertReason.NEEDS_AUTH }
+    else -> true
 }
 
 /**
@@ -261,7 +288,7 @@ private fun Ledger(
                 )
             }
         }
-        item {
+        if (statusLineShown(model.status, model.alerts)) item {
             Text(
                 model.status.text(strings),
                 modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
@@ -274,7 +301,7 @@ private fun Ledger(
                 Text(
                     it,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m).padding(bottom = Space.s),
-                    style = mono.small,
+                    style = mono.small.copy(textDirection = TextDirection.Ltr),
                     color = palette.textMuted,
                 )
             }
@@ -487,7 +514,7 @@ internal fun stateWord(code: String): Str = when (code) {
     "REC" -> Str.STATUS_RECORDING
     "STARTING" -> Str.NODE_STARTING
     "OPENING" -> Str.STATUS_OPENING
-    "NO_HELPER" -> Str.NODE_NO_HELPER
+    "NO_HELPER" -> Str.NODE_CANNOT_RECORD
     "NAMING" -> Str.NODE_NAMING
     else -> Str.NODE_READY
 }

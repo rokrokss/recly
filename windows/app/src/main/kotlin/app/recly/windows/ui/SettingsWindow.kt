@@ -24,6 +24,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
@@ -32,16 +33,9 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalWindowInfo
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import app.recly.windows.agent.AgentEvents
-import app.recly.windows.agent.AgentEventsPhase
-import app.recly.windows.agent.AgentEventsSubscription
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
@@ -55,14 +49,12 @@ import app.recly.windows.ui.component.TextLink
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintChip
 import app.recly.windows.ui.component.BlueprintTextField
-import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.BlueprintDropdown
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.SectionHeader
-import app.recly.windows.ui.component.SELECTION_MARK
 import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
@@ -72,14 +64,15 @@ import app.recly.windows.ui.theme.mono
 import app.recly.windows.ui.theme.ProcessingState
 import kotlin.time.ExperimentalTime
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
 import recly.core.storage.StorageKind
 
 /**
  * docs/09 screen principle 4, over docs/14 "App": a section table — the storage and its account (docs/03,
  * docs/06), the language (docs/07), the theme override (docs/09 "Accessibility": motion and contrast are
- * the system's alone, and there is no accessibility section), capture, startup, the
- * agent connection, and the honest block of what this build actually is.
+ * the system's alone, and there is no accessibility section), capture with the start at login (as the Mac
+ * has it, 2026-10-10), and the honest block of what this build actually is.
  */
 @Composable
 fun SettingsWindow(model: ShellModel, strings: Strings) {
@@ -92,11 +85,8 @@ fun SettingsWindow(model: ShellModel, strings: Strings) {
             Language(model, strings)
             Appearance(model, strings)
             Capture(model, strings)
-            Startup(model, strings)
-            Data(model, strings)
             model.processing?.let { ProcessingPanel(it, strings, preparationAllowed = !model.recording && model.transition == null) }
             model.chatGpt?.let { ChatGpt(it, strings) }
-            model.agentEvents?.let { AgentConnection(model, it, strings) }
             model.processing?.let { ProcessingSettingsFile(it, strings) }
             About(model, strings)
         }
@@ -224,6 +214,14 @@ private fun Appearance(model: ShellModel, strings: Strings) {
 @Composable
 private fun Capture(model: ShellModel, strings: Strings) {
     Section(strings[Str.SETTINGS_RECORDING])
+    // docs/12 "Runner": first in the section, as on the Mac — a section of its own for one switch is gone (2026-10-10).
+    SwitchRow(
+        title = strings[Str.SETTINGS_LAUNCH_AT_LOGIN],
+        subtitle = if (model.launchAtLoginSupported) null else strings[Str.SETTINGS_LAUNCH_UNSUPPORTED],
+        checked = model.launchAtLogin,
+        onCheckedChange = model::toggleLaunchAtLogin,
+        enabled = model.launchAtLoginSupported,
+    )
     // docs/12 M8: the reminder is on by default and this is where it goes off — and back on, which
     // the dialog's own "Do not ask again" cannot do.
     SwitchRow(
@@ -245,22 +243,11 @@ private fun Capture(model: ShellModel, strings: Strings) {
     }
     if (model.helperUnavailable) {
         SettingsCard {
-            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+            // A message, at 12 in its tone, as every message in Settings (2026-10-10).
+            Text(strings[Str.HELPER_UNAVAILABLE], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
         }
         HairLine()
     }
-}
-
-@Composable
-private fun Startup(model: ShellModel, strings: Strings) {
-    Section(strings[Str.SETTINGS_STARTUP])
-    SwitchRow(
-        title = strings[Str.SETTINGS_LAUNCH_AT_LOGIN],
-        subtitle = if (model.launchAtLoginSupported) null else strings[Str.SETTINGS_LAUNCH_UNSUPPORTED],
-        checked = model.launchAtLogin,
-        onCheckedChange = model::toggleLaunchAtLogin,
-        enabled = model.launchAtLoginSupported,
-    )
 }
 
 /**
@@ -319,10 +306,10 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
     when (val notice = chatGpt.notice) {
         is ChatGptNotice.SignInFailed -> {
             SettingsCard(spacing = 2.dp) {
-                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodyMedium, color = blueprint.danger)
+                Text(strings[Str.CHATGPT_SIGN_IN_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
                 // A diagnostic is data, in monospace as the ledger shows one; a sentence is a sentence.
                 signInFailureLine(notice.reason)?.let {
-                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small else MaterialTheme.typography.bodySmall,
+                    Text(it.text(strings), style = if (it is UiMessage.Text) mono.small.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.bodySmall,
                         color = blueprint.textMuted)
                 }
             }
@@ -331,7 +318,7 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
         // Not red: this PC holds nothing any more, and ChatGPT's settings can remove Recly.
         ChatGptNotice.RevokeUnconfirmed -> {
             SettingsCard {
-                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodyMedium, color = blueprint.warningInk)
+                Text(strings[Str.CHATGPT_REVOKE_UNCONFIRMED], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
             }
             HairLine()
         }
@@ -345,31 +332,50 @@ private fun ChatGpt(chatGpt: ChatGptViewModel, strings: Strings) {
  * docs/08 "Summaries": what every summary on this PC is shaped as and who it is for — under the model, and there
  * signed out too, since only running a summary needs the sign-in. The format is saved when it is chosen; the two
  * texts when their field is left.
+ *
+ * Shorter since 2026-10-10: the format offers all five always, and My format's field is there only while the format
+ * is My format — taking the cursor when it is chosen with nothing written yet, and saying until then that summaries
+ * use General.
  */
 @Composable
 private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
     val preferences = chatGpt.preferences
+    val customFocus = remember { FocusRequester() }
+    var focusCustom by remember { mutableStateOf(false) }
     TableRow(title = strings[Str.SUMMARY_FORMAT], trailing = {
         BlueprintDropdown(
             label = strings[Str.SUMMARY_FORMAT],
-            options = preferences.formats.map { it to strings[summaryFormatLabel(it)] },
-            // My format emptied goes back to General.
-            selected = preferences.effectiveFormat,
-            onSelect = chatGpt::selectFormat,
+            options = SummaryFormat.entries.map { it to strings[summaryFormatLabel(it)] },
+            selected = preferences.format,
+            onSelect = { format ->
+                focusCustom = format == SummaryFormat.CUSTOM && preferences.customFormat.isBlank()
+                chatGpt.selectFormat(format)
+            },
         )
     })
-    SettingsCard {
-        PreferenceField(
-            saved = preferences.customFormat,
-            onSave = chatGpt::saveCustomFormat,
-            label = strings[Str.SUMMARY_FORMAT_CUSTOM],
-            placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
-            hint = strings[Str.SUMMARY_CUSTOM_NOTE],
-            max = SummaryPreferences.CUSTOM_MAX,
-            singleLine = false,
-        )
+    if (preferences.format == SummaryFormat.CUSTOM) {
+        SettingsCard {
+            PreferenceField(
+                saved = preferences.customFormat,
+                onSave = chatGpt::saveCustomFormat,
+                label = strings[Str.SUMMARY_FORMAT_CUSTOM],
+                placeholder = strings[Str.SUMMARY_CUSTOM_PLACEHOLDER],
+                hint = strings[Str.SUMMARY_CUSTOM_NOTE],
+                emptyHint = strings[Str.SUMMARY_CUSTOM_EMPTY],
+                max = SummaryPreferences.CUSTOM_MAX,
+                returnSaves = false,
+                lines = CUSTOM_LINES,
+                focusRequester = customFocus,
+            )
+        }
+        HairLine()
+        LaunchedEffect(focusCustom) {
+            if (focusCustom) {
+                runCatching { customFocus.requestFocus() }
+                focusCustom = false
+            }
+        }
     }
-    HairLine()
     SettingsCard {
         PreferenceField(
             saved = preferences.aboutMe,
@@ -378,16 +384,18 @@ private fun SummaryPreferenceRows(chatGpt: ChatGptViewModel, strings: Strings) {
             placeholder = strings[Str.SUMMARY_ABOUT_PLACEHOLDER],
             hint = strings[Str.SUMMARY_ABOUT_NOTE],
             max = SummaryPreferences.ABOUT_MAX,
-            singleLine = true,
+            returnSaves = true,
+            lines = ABOUT_LINES,
         )
     }
     HairLine()
 }
 
 /**
- * A text kept as it is typed and saved when the editing ends — the field left, Return in a one-line field, the
- * window put behind another or closed — with no Save of its own. Empty is a value like any other. A field that is
- * not [singleLine] shows four lines, grows to eight and then scrolls.
+ * A text kept as it is typed and saved when the editing ends — the field left, Return where [returnSaves], the window
+ * put behind another or closed — with no Save of its own. Empty is a value like any other, and [emptyHint] says what
+ * an empty one means. It shows the first of [lines], grows to the last and then scrolls; where Return saves, a line
+ * break pasted in is a space.
  */
 @Composable
 internal fun PreferenceField(
@@ -397,7 +405,10 @@ internal fun PreferenceField(
     placeholder: String,
     hint: String,
     max: Int,
-    singleLine: Boolean,
+    returnSaves: Boolean,
+    lines: IntRange,
+    emptyHint: String? = null,
+    focusRequester: FocusRequester? = null,
 ) {
     var text by remember(saved) { mutableStateOf(saved) }
     val latest by rememberUpdatedState(text)
@@ -409,225 +420,35 @@ internal fun PreferenceField(
     DisposableEffect(Unit) { onDispose { onSave(latest) } }
     BlueprintTextField(
         value = text,
-        onValueChange = { text = it.take(max) },
+        onValueChange = { typed -> text = (if (returnSaves) typed.replace(LINE_BREAK, " ") else typed).take(max) },
         label = label,
         modifier = Modifier
             .onFocusChanged { if (!it.hasFocus && text != saved) onSave(text) }
             .onPreviewKeyEvent { event ->
-                (singleLine && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
+                (returnSaves && event.type == KeyEventType.KeyDown && event.key == Key.Enter).also { if (it) focus.clearFocus() }
             },
-        hint = hint,
-        singleLine = singleLine,
-        minLines = if (singleLine) 1 else MULTI_LINE_MIN,
-        maxLines = if (singleLine) 1 else MULTI_LINE_MAX,
+        hint = if (text.isBlank() && emptyHint != null) emptyHint else hint,
+        singleLine = lines.last == 1,
+        minLines = lines.first,
+        maxLines = lines.last,
         monospace = false,
         placeholder = placeholder,
+        focusRequester = focusRequester,
     )
 }
 
 /**
- * docs/14 "Agent connection": recly-events run for the user, off by default and only where recordings
- * go to Google Drive. It runs on this PC's own Drive connection, so the one thing it asks for is an
- * OpenAI tunnel. The switch only decides whether it runs: the tunnel can be set up or changed with it
- * off, and the set-up guide is always there. On, one line under the switch says how the server is.
+ * docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace — and at its end the
+ * way to the folder this PC keeps it all in. The folder's path is not shown (2026-10-10): docs/09 keeps technical
+ * values out of the UI, and the button opens it.
  */
-@Composable
-private fun AgentConnection(model: ShellModel, agent: AgentEvents, strings: Strings) {
-    // Asked again whenever this window comes to the front: the server may have come or gone while it
-    // was behind.
-    val focused = LocalWindowInfo.current.isWindowFocused
-    LaunchedEffect(focused) { if (focused) agent.sectionShown() }
-    Section(strings[Str.AGENT_SECTION])
-    // A build without the program, or a storage recly-events cannot watch: the switch says which, in
-    // the place of its second line, and cannot be turned.
-    val note = when (agent.phase) {
-        AgentEventsPhase.Unavailable -> Str.AGENT_UNAVAILABLE
-        AgentEventsPhase.NotDrive -> Str.AGENT_NOT_DRIVE
-        else -> null
-    }
-    SwitchRow(
-        title = strings[Str.AGENT_TOGGLE],
-        subtitle = note?.let { strings[it] },
-        checked = agent.enabled && note == null,
-        onCheckedChange = agent::toggle,
-        enabled = note == null,
-    )
-    // docs/14 "Agent connection": recordings in a local folder are for agents on this PC instead.
-    if (model.storage == StorageKind.FOLDER && agent.phase != AgentEventsPhase.Unavailable) LocalAgents(model, strings)
-    if (note != null) return
-    // Off, the phase says nothing: the line is there only while the switch is on.
-    AgentStatus(agent, strings)
-    AgentTunnel(agent, strings)
-    SectionFootnote(strings[Str.AGENT_FOOTNOTE])
-    TextLink(strings[Str.AGENT_GUIDE], { model.openAgentGuide(strings.language) },
-        modifier = Modifier.padding(horizontal = Space.m).padding(bottom = Space.s), style = MaterialTheme.typography.bodySmall)
-}
-
-/**
- * The local MCP server: recly-events run by the agent itself over this PC's local folder, so there is no
- * switch — nothing runs until an agent starts it. The configuration is what recly-events prints for the
- * folder, copied for pasting into the agent's settings.
- */
-@Composable
-private fun LocalAgents(model: ShellModel, strings: Strings) {
-    val clipboard = LocalClipboardManager.current
-    val scope = rememberCoroutineScope()
-    var copied by remember { mutableStateOf(false) }
-    LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
-    Section(strings[Str.LOCAL_AGENTS])
-    TableRow(
-        title = strings[Str.LOCAL_MCP],
-        subtitle = strings[Str.LOCAL_MCP_BODY],
-        below = { TextLink(strings[Str.AGENT_GUIDE], { model.openMcpGuide(strings.language) }, style = MaterialTheme.typography.bodySmall) },
-    )
-    Row(
-        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
-        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-    ) {
-        BlueprintButton(
-            if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.LOCAL_MCP_COPY],
-            {
-                scope.launch {
-                    model.localMcpConfiguration()?.let {
-                        clipboard.setText(AnnotatedString(it))
-                        copied = true
-                    }
-                }
-            },
-            enabled = model.localFolder != null,
-        )
-    }
-    HairLine()
-}
-
-/**
- * One line under the switch, and only what the rows below do not already say: nothing while the tunnel
- * row asks for its fields. The square loader only while something is under way; a running server says
- * that it works, or what to do next — never what is merely possible.
- */
-@Composable
-private fun AgentStatus(agent: AgentEvents, strings: Strings) {
-    when (val phase = agent.phase) {
-        AgentEventsPhase.Off, AgentEventsPhase.Unavailable, AgentEventsPhase.NotDrive,
-        AgentEventsPhase.NeedsSetup -> Unit
-        AgentEventsPhase.NeedsDrive -> AgentLine(strings[Str.AGENT_STATUS_NEEDS_DRIVE])
-        AgentEventsPhase.Starting -> AgentWorking(strings[Str.AGENT_STATUS_STARTING])
-        AgentEventsPhase.Connecting -> AgentWorking(strings[Str.AGENT_STATUS_CONNECTING])
-        is AgentEventsPhase.Running -> AgentLine(
-            strings[
-                when (phase.subscription) {
-                    AgentEventsSubscription.ACTIVE -> Str.AGENT_STATUS_SUBSCRIBED
-                    AgentEventsSubscription.NONE -> Str.AGENT_STATUS_NOT_SUBSCRIBED
-                    AgentEventsSubscription.ENDED -> Str.AGENT_STATUS_SUBSCRIPTION_ENDED
-                },
-            ],
-        )
-        AgentEventsPhase.TunnelError -> AgentLine(strings[Str.AGENT_STATUS_TUNNEL_ERROR], danger = true)
-        AgentEventsPhase.Elsewhere -> AgentLine(strings[Str.AGENT_STATUS_ELSEWHERE])
-        AgentEventsPhase.GaveUp -> AgentLine(strings[Str.AGENT_STATUS_GAVE_UP], danger = true)
-    }
-}
-
-/**
- * docs/05 "Secrets": a saved tunnel is a row that says so, as a saved transcription key is; the
- * fields come back only to take a new one, and a key left empty keeps the saved one.
- */
-@Composable
-private fun AgentTunnel(agent: AgentEvents, strings: Strings) {
-    var changing by remember { mutableStateOf(false) }
-    var tunnelId by remember(agent.tunnelId) { mutableStateOf(agent.tunnelId) }
-    var tunnelKey by remember { mutableStateOf("") }
-    if (agent.tunnelId.isNotEmpty() && agent.tunnelKeySaved && !changing) {
-        TableRow(
-            title = strings[Str.AGENT_TUNNEL],
-            subtitle = "$SELECTION_MARK ${strings[Str.PROCESSING_KEY_ON_DEVICE]}",
-            subtitleColor = blueprint.success,
-            trailing = {
-                BlueprintButton(
-                    strings[Str.AGENT_TUNNEL_CHANGE],
-                    {
-                        tunnelId = agent.tunnelId
-                        tunnelKey = ""
-                        changing = true
-                    },
-                    tone = ButtonTone.QUIET,
-                )
-            },
-        )
-        return
-    }
-    SettingsCard {
-        Text(strings[Str.AGENT_TUNNEL], style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
-        BlueprintTextField(tunnelId, { tunnelId = it }, strings[Str.AGENT_TUNNEL_ID], placeholder = "tunnel_…")
-        BlueprintTextField(
-            tunnelKey,
-            { tunnelKey = it },
-            strings[Str.AGENT_TUNNEL_KEY],
-            placeholder = if (agent.tunnelKeySaved) strings[Str.AGENT_TUNNEL_KEY_KEEP] else "sk-…",
-            secret = true,
-        )
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            if (changing) {
-                BlueprintButton(
-                    strings[Str.CANCEL],
-                    {
-                        tunnelKey = ""
-                        changing = false
-                    },
-                    tone = ButtonTone.QUIET,
-                )
-            }
-            BlueprintButton(
-                strings[Str.SAVE],
-                {
-                    agent.saveTunnel(tunnelId, tunnelKey) { changing = false }
-                    tunnelKey = ""
-                },
-                tone = ButtonTone.QUIET,
-                // An ID, and a key unless one is saved already.
-                enabled = tunnelId.isNotBlank() && (agent.tunnelKeySaved || tunnelKey.isNotBlank()),
-            )
-        }
-        if (agent.saveFailed) {
-            Text(strings[Str.AGENT_SAVE_FAILED], style = MaterialTheme.typography.bodySmall, color = blueprint.danger)
-        }
-    }
-    HairLine()
-}
-
-@Composable
-private fun AgentLine(text: String, danger: Boolean = false) {
-    SettingsCard {
-        Text(text, style = MaterialTheme.typography.bodyMedium, color = if (danger) blueprint.danger else blueprint.text)
-    }
-    HairLine()
-}
-
-@Composable
-private fun AgentWorking(text: String) {
-    SettingsCard { LoadingText(text, MaterialTheme.typography.bodyMedium, blueprint.text) }
-    HairLine()
-}
-
-@Composable
-private fun Data(model: ShellModel, strings: Strings) {
-    Section(strings[Str.SETTINGS_DATA])
-    SettingsCard {
-        // docs/09: a path is data, so it is monospace and it is shown rather than described.
-        Mono(model.dataDir)
-        BlueprintButton(strings[Str.SETTINGS_OPEN_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
-            modifier = Modifier.align(Alignment.End))
-    }
-    HairLine()
-}
-
-/** docs/09 trend 6: no mascot and no "handmade" line — what this build actually is, in monospace. */
 @Composable
 private fun About(model: ShellModel, strings: Strings) {
     val palette = blueprint
     Section(strings[Str.SETTINGS_ABOUT])
     SettingsCard(spacing = 2.dp) {
-        Mono(strings[Str.SETTINGS_ABOUT_APP, OAuthConfig.APP_VERSION, system()])
+        // The version, and the build — the MSI's own install version — as the phones and the Macs show theirs (2026-10-10).
+        Mono(strings[Str.SETTINGS_ABOUT_APP, "${OAuthConfig.APP_VERSION} (build ${OAuthConfig.BUILD})", system()])
         Mono(strings[Str.SETTINGS_ABOUT_DEVICE, model.deviceId])
         Text(
             strings[Str.SETTINGS_OPEN_SOURCE],
@@ -635,13 +456,16 @@ private fun About(model: ShellModel, strings: Strings) {
             color = palette.textMuted,
         )
         Mono(strings[Str.SETTINGS_OPEN_SOURCE_VALUE])
+        BlueprintButton(strings[Str.SETTINGS_OPEN_DATA_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
+            modifier = Modifier.align(Alignment.End).padding(top = Space.s))
     }
     HairLine()
 }
 
 @Composable
 private fun Mono(line: String) {
-    Text(line, style = mono.small, color = blueprint.textMuted)
+    // Data — the build, the device — left to right in every language (2026-10-10).
+    Text(line, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted)
 }
 
 /**
@@ -683,11 +507,11 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
     HairLine()
 }
 
-private const val COPIED_MS = 3_000L
+/** My format: two lines open, eight before it scrolls; About you: one, up to three (2026-10-10). */
+private val CUSTOM_LINES = 2..8
+private val ABOUT_LINES = 1..3
 
-/** My format: four lines open, eight before it scrolls. */
-private const val MULTI_LINE_MIN = 4
-private const val MULTI_LINE_MAX = 8
+private val LINE_BREAK = Regex("\\r\\n|\\r|\\n")
 
 private fun system(): String =
     "${System.getProperty("os.name")} ${System.getProperty("os.version")}"

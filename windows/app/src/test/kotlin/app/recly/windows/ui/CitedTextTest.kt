@@ -119,4 +119,60 @@ class CitedTextTest {
             scene.close()
         }
     }
+
+    /**
+     * 2026-10-10: three times on three lines, one under another. Each one's 44 target reaches over its neighbours',
+     * and a press plays the time whose words are nearest — the vertical centre of each line plays that line's time.
+     */
+    @Test
+    fun `stacked times each play their own from the centre of their line`() {
+        val plays = mutableListOf<Double>()
+        var text = Rect.Zero
+        val scene = ImageComposeScene(600, 300, Density(1f)) {
+            ReclyDesktopTheme(dark = false, highContrast = false) {
+                Column {
+                    Spacer(Modifier.height(60.dp).width(10.dp))
+                    Column(Modifier.onGloballyPositioned { text = it.boundsInRoot() }) {
+                        CitedText("[00:01] one\n[00:02] two\n[00:03] three", true, { plays += it }, StringTable.of(StringTable.BASE))
+                    }
+                }
+            }
+        }
+        fun settle() {
+            scene.render()
+            while (scene.hasInvalidations()) scene.render()
+        }
+        fun click(at: Offset) {
+            scene.sendPointerEvent(PointerEventType.Move, at)
+            scene.sendPointerEvent(PointerEventType.Press, at, buttons = PointerButtons(isPrimaryPressed = true), button = PointerButton.Primary)
+            scene.sendPointerEvent(PointerEventType.Release, at, buttons = PointerButtons(), button = PointerButton.Primary)
+            settle()
+        }
+        try {
+            settle()
+            val line = text.height / 3
+            for (index in 0 until 3) {
+                plays.clear()
+                click(Offset(text.left + 20f, text.top + line * index + line / 2))
+                assertEquals(listOf(index + 1.0), plays, "the centre of line ${index + 1}")
+            }
+        } finally {
+            scene.close()
+        }
+    }
+
+    /** The rule itself: inside more than one target, the nearest words win; inside none, nothing plays. */
+    @Test
+    fun `a press inside two targets plays the time whose words are nearest`() {
+        val first = CitationTarget(0, Rect(0f, 0f, 60f, 20f))
+        val second = CitationTarget(2, Rect(0f, 20f, 60f, 40f))
+        val targets = listOf(first, second)
+        assertEquals(first, citationHit(Offset(10f, 10f), targets, reach = 44f))
+        assertEquals(second, citationHit(Offset(10f, 30f), targets, reach = 44f))
+        // Between the two, a little nearer the second.
+        assertEquals(second, citationHit(Offset(10f, 21f), targets, reach = 44f))
+        // Above the first, inside its reach alone.
+        assertEquals(first, citationHit(Offset(10f, -8f), targets, reach = 44f))
+        assertEquals(null, citationHit(Offset(100f, 10f), targets, reach = 44f))
+    }
 }

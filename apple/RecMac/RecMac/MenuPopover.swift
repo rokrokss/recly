@@ -282,7 +282,7 @@ struct MenuPopover: View {
             }
             Text(verbatim: model.status)
                 .font(blueprint.fonts.sans(TypeSize.small))
-                .foregroundStyle(blueprint.palette.textMuted)
+                .foregroundStyle(model.statusIsBlocker ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.textMuted)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, Space.m)
                 .padding(.vertical, Space.s)
@@ -410,7 +410,7 @@ struct MenuPopover: View {
 }
 
 /// docs/09 screen principle 4: the settings the menu used to carry, as a section table — account, language,
-/// theme, capture, recording processing, the agent connection, and the honest system block at the bottom.
+/// theme, capture, recording processing, and the honest system block at the bottom.
 struct SettingsPane: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
@@ -474,12 +474,8 @@ struct SettingsPane: View {
                 ChatGptSection(model: chatGpt) { model.chatGptSurface = surface }
             }
 
-            AgentConnectionSection(
-                agent: model.agentEvents, storage: model.storage, copyConfiguration: { await model.copyMCPConfiguration() }
-            )
-
             // docs/09 screen principle 4: the settings file is a utility, so it comes after the
-            // features, Agent connection included (2026-10-06).
+            // features.
             if let processing = model.processing {
                 ProcessingSettingsFileSection(model: processing)
             }
@@ -492,7 +488,12 @@ struct SettingsPane: View {
                 Text(verbatim: loc("Open-source notices"))
                     .font(blueprint.fonts.sans(TypeSize.small))
                     .foregroundStyle(blueprint.palette.textMuted)
-                mono("AppAuth · GTMAppAuth · Kotlin · Ktor · SQLDelight — Apache-2.0")
+                // 2026-10-10 (A-A10): the same notices the iPhone lists — the Mac ships the speaker separation too.
+                mono("AppAuth · GTMAppAuth · FluidAudio · Kotlin · Ktor · NemoTextProcessing · SQLDelight — Apache-2.0")
+                mono("fastcluster — BSD-2-Clause")
+                // docs/09 "On-device speaker separation": the diarization models the app ships, and the
+                // attribution CC-BY-4.0 asks for.
+                mono("pyannote community-1 (pyannote · WeSpeaker · BUT Speech@FIT · Fluid Inference, converted to Core ML) — CC-BY-4.0")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, Space.m)
@@ -528,5 +529,7 @@ struct SettingsPane: View {
             .font(blueprint.fonts.monoSmall)
             .foregroundStyle(blueprint.palette.textMuted)
             .textSelection(.enabled)
+            // 2026-10-10 (2.13): diagnostics read left to right in every language.
+            .environment(\.layoutDirection, .leftToRight)
     }
 }

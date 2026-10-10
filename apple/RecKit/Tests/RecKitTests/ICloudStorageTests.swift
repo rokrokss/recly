@@ -31,7 +31,7 @@ final class ICloudStorageTests: XCTestCase {
         XCTAssertNil(item(state: state, lastError: code(.icloudUploading)).reason)
         XCTAssertFalse(item(state: state).canRetry)
         XCTAssertTrue(item(state: state).canDelete)
-        XCTAssertEqual(Recents.summary([item(state: state)]), "1 · 0 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary([item(state: state)]), "1")
         XCTAssertTrue(Recents.uploading([item(state: state)]))
     }
 
@@ -57,7 +57,7 @@ final class ICloudStorageTests: XCTestCase {
         XCTAssertEqual(Recents.stateLabel(record: record(), job: job(.needsSpace), lastError: code(.driveStorageFull)), "No space in Drive")
         XCTAssertEqual(LedgerStatus.forRecent(state: "No space in iCloud").code, "NO_SPACE")
         XCTAssertTrue(item(state: "No space in iCloud").canRetry)
-        XCTAssertEqual(Recents.summary([item(state: "No space in iCloud")]), "1 · 0 waiting · 1 failed")
+        XCTAssertEqual(Recents.summary([item(state: "No space in iCloud")]), "1 · 1 failed")
 
         XCTAssertEqual(JobAlerts.reason(status: .needsSpace, lastError: full), .icloudSpace)
         XCTAssertEqual(JobAlerts.reason(status: .needsSpace, lastError: code(.driveStorageFull)), .needsSpace)

@@ -131,10 +131,10 @@
     <div class="section-head">
       <p class="kicker"><b>02</b> Automatic minutes</p>
       <h2>Stop recording. Your ChatGPT agent writes the minutes.</h2>
-      <p class="lede">Every new transcript becomes an <a href="https://developers.openai.com/plugins/build/mcp-events">MCP event</a>. recly-events, built into the Recly Mac and Windows apps, sends <code>recording.transcribed</code> to your ChatGPT agent, a dot or a Work chat, and the agent reads the transcript and writes the minutes, usually within a minute. You never prompt it, and there is still no Recly server.</p>
+      <p class="lede">Every new transcript becomes an <a href="https://developers.openai.com/plugins/build/mcp-events">MCP event</a>. recly-events, a small program you run on your own computer, sends <code>recording.transcribed</code> to your ChatGPT agent, a dot or a Work chat, and the agent reads the transcript and writes the minutes, usually within a minute. You never prompt it, and there is still no Recly server.</p>
     </div>
     <figure class="diagram wide">
-      <img src="/design/agent-flow.svg?v=3" width="1200" height="480" loading="lazy" alt="A transcript lands in your Google Drive. recly-events, in the Recly Mac or Windows app, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for.">
+      <img src="/design/agent-flow.svg?v=4" width="1200" height="480" loading="lazy" alt="A transcript lands in your Google Drive. recly-events, running on your computer, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for.">
     </figure>
     <div class="cards four">
       <article class="card">
@@ -156,11 +156,11 @@
     </div>
     <div class="split">
       <div>
-        <p class="sub">Turn it on</p>
+        <p class="sub">Set it up</p>
         <div class="cards stack">
           <article class="card">
-            <h3>Built into the Mac and Windows apps</h3>
-            <p>In Settings → Agent connection, enter your OpenAI tunnel ID and its key, a restricted OpenAI API key (<a href="/agent.html#1-create-an-openai-tunnel-and-its-key">how to create both</a>), and turn on “Tell ChatGPT about new recordings”. The app runs recly-events on the Google Drive connection it already has: no second sign-in, no terminal. On a server or Linux, <a href="/recly-events.html">run recly-events yourself</a>.</p>
+            <h3>A program you run</h3>
+            <p>Install recly-events on a Mac, Linux or Windows computer, or a server. Sign in to Google Drive and save your OpenAI tunnel ID and its key, a restricted OpenAI API key (<a href="/recly-events.html#2-create-the-tunnel-and-its-key">how to create both</a>), with <code>recly-events init</code>, then start it with <code>recly-events service install</code>.</p>
           </article>
           <article class="card">
             <h3>What you need</h3>
@@ -182,7 +182,7 @@
             <button class="btn btn-quiet" type="button" data-copy="cmd-subscribe" data-done="Copied ✓" data-fail="Copy failed">Copy</button>
           </div>
         </div>
-        <p class="fine">Change step 3 to whatever you want done with each recording; keep the others. Step by step: the <a href="/agent.html">ChatGPT agent guide</a>.</p>
+        <p class="fine">Change step 3 to whatever you want done with each recording; keep the others. Step by step: <a href="/recly-events.html">running recly-events yourself</a>.</p>
       </div>
     </div>
   </div>
@@ -345,7 +345,7 @@
     <div class="section-head">
       <p class="kicker"><b>07</b> Privacy</p>
       <h2>There is no Recly server to trust.</h2>
-      <p class="lede">Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on iPhone and Mac, or a local folder that stays on your device), to the transcription provider you chose with your own key, between your own paired watch and phone, and, if you turn on automatic minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, and its transcript when the agent asks for it; never the audio.</p>
+      <p class="lede">Recly has no server. Data goes only to the storage you choose (your Google Drive, your iCloud on iPhone and Mac, or a local folder that stays on your device), to the transcription provider you chose with your own key, between your own paired watch and phone, and, if you run recly-events for automatic minutes, to your ChatGPT agent through OpenAI: the recording's name, title and Drive links, and its transcript when the agent asks for it; never the audio.</p>
     </div>
     <div class="stats">
       <div><span class="n">0</span><span class="t">Recly servers, databases or accounts</span></div>

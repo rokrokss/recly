@@ -105,7 +105,7 @@
     <string name="core_step_failed">ব্যর্থ: %1$s</string>
     <string name="core_auth_rejected">প্রদানকারী কী-টি প্রত্যাখ্যান করেছে।</string>
     <string name="core_quota">প্রদানকারীর কোটা শেষ, অথবা অনুরোধের হার সীমিত করা হচ্ছে।</string>
-    <string name="core_provider_error">প্রদানকারীর দিকে কোনো সমস্যা হয়েছে। আবার চেষ্টা করা হবে।</string>
+    <string name="core_provider_error">প্রদানকারীর দিকে একটি সমস্যা হয়েছে।</string>
     <string name="core_unsupported_audio">প্রদানকারী এই অডিও গ্রহণ করেনি।</string>
     <string name="core_no_input_track">এই রেকর্ডিংয়ে ট্রান্সক্রাইব করার মতো কোনো মোনো বা মিক্স ট্র্যাক নেই।</string>
     <string name="core_result_timeout">প্রদানকারী সময়মতো শেষ করতে পারেনি। আবার জমা দেওয়া হবে।</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">শিরোনাম</string>
     <string name="jobs_column_length">দৈর্ঘ্য</string>
     <string name="jobs_column_status">স্ট্যাটাস</string>
-    <string name="jobs_summary">%1$d · অপেক্ষায় %2$d · ব্যর্থ %3$d</string>
+    <string name="jobs_summary_waiting">অপেক্ষায় %1$d</string>
+    <string name="jobs_summary_failed">ব্যর্থ %1$d</string>
     <string name="jobs_row_expand">প্রসারিত করুন</string>
     <string name="jobs_row_collapse">সঙ্কুচিত করুন</string>
     <string name="jobs_row_description">%1$s, রেকর্ডের সময় %2$s, দৈর্ঘ্য %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">ট্রান্সফারের অনুমতি প্রয়োজন</string>
     <string name="job_state_needs_model">স্পিচ মডেলের অপেক্ষায়</string>
     <string name="delete_key_title">কী-টি মুছুন: %1$s</string>
-    <string name="detail_not_requested">এই রেকর্ডিংয়ে চালানোর মতো কোনো ট্রান্সক্রিপশন ধাপ নেই।</string>
+    <string name="detail_not_requested">ট্রান্সক্রিপশন বন্ধ। সেটিংস-এ চালু করে «আবার ট্রান্সক্রাইব করুন» ব্যবহার করুন।</string>
     <string name="detail_pending">ট্রান্সক্রিপশন এখনও শেষ হয়নি। প্রস্তুত হলে ফলাফল এখানে দেখা যাবে।</string>
     <string name="detail_failed">ট্রান্সক্রিপশন শেষ করা যায়নি। পরবর্তী পদক্ষেপ জানতে তালিকায় এই রেকর্ডিংটি দেখুন।</string>
     <string name="detail_parked">ট্রান্সক্রিপশন অপেক্ষায় আছে। এই রেকর্ডিংয়ের জন্য কোন পদক্ষেপ দরকার, তা তালিকায় দেখুন।</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">বন্ধ</string>
     <string name="processing_storage">স্টোরেজ ফোল্ডার</string>
     <string name="processing_transcription">ট্রান্সক্রিপশন</string>
-    <string name="processing_saved">সেটিংস সেভ করা হয়েছে</string>
     <string name="processing_prepare">মডেল ডাউনলোড করুন</string>
     <string name="processing_download_progress">মডেল ডাউনলোড হচ্ছে… %1$d%%</string>
     <string name="processing_download_bytes">%2$s-এর মধ্যে %1$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">ট্রান্সক্রাইব হচ্ছে…</string>
     <string name="detail_transcription_off">সেটিংসে ট্রান্সক্রিপশন বন্ধ আছে</string>
     <string name="detail_not_uploaded">এখনও আপলোড হয়নি</string>
+    <string name="detail_still_recording">এখনও রেকর্ড হচ্ছে</string>
     <string name="share_transcript">ট্রান্সক্রিপ্ট</string>
     <string name="share_transcript_format">টেক্সট · .txt</string>
     <string name="share_notes">নোটের জন্য ট্রান্সক্রিপ্ট</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">আপনার ব্রাউজারে সাইন ইন শেষ করুন</string>
     <string name="chatgpt_sign_in_failed">ChatGPT-তে সাইন ইন করা যায়নি</string>
     <string name="chatgpt_revoke_unconfirmed">এই ডিভাইসে সাইন আউট হয়েছে, কিন্তু OpenAI তা নিশ্চিত করেনি। ChatGPT সেটিংসে Recly সরাতে পারেন।</string>
-    <string name="chatgpt_footnote">সারাংশ ট্রান্সক্রিপ্টের লেখা, আপনার হাইলাইট করা মুহূর্ত আর এখানে যা লিখেছেন তা OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এটি আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।</string>
+    <string name="chatgpt_footnote">সারাংশ ও প্রশ্ন ট্রান্সক্রিপ্টের লেখা, আপনার হাইলাইট করা মুহূর্ত আর এখানে যা লিখেছেন তা OpenAI-তে পাঠায় — অডিও কখনও নয় — এবং এগুলো আপনার ChatGPT প্ল্যানের ব্যবহারে গোনা হয়।</string>
     <string name="chatgpt_welcome_title">আপনি আপনার ChatGPT প্ল্যান ব্যবহার করছেন</string>
     <string name="chatgpt_welcome_body">Recly-র সারাংশ আপনার ChatGPT প্ল্যান ব্যবহার করে। ChatGPT সেটিংসে ব্যবহার পরিচালনা করতে পারেন।</string>
     <string name="chatgpt_got_it">বুঝেছি</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">আমার ফরম্যাট</string>
     <string name="summary_custom_placeholder">বিভাগ ও নির্দেশনা, যেমন: সারাংশ, ঝুঁকি, দায়িত্বপ্রাপ্তসহ পরবর্তী পদক্ষেপ।</string>
     <string name="summary_custom_note">সারাংশের ফরম্যাট «আমার ফরম্যাট» হলে ব্যবহার হয়।</string>
+    <string name="summary_custom_empty">এখানে আপনার ফরম্যাট লিখুন; ততক্ষণ সারাংশ «সাধারণ» ফরম্যাটে হবে।</string>
     <string name="summary_about">আপনার সম্পর্কে</string>
     <string name="summary_about_placeholder">যেমন: প্রোডাক্ট ম্যানেজার; সময়সীমা আর সিদ্ধান্ত আমার কাছে গুরুত্বপূর্ণ।</string>
-    <string name="summary_about_note">কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে সারাংশ এটি ব্যবহার করে।</string>
+    <string name="summary_about_note">কী আপনার কাছে গুরুত্বপূর্ণ, তা বুঝতে সারাংশ ও উত্তর এটি ব্যবহার করে।</string>
     <string name="summary_as">অন্য ফরম্যাটে সারাংশ…</string>
     <string name="summary_play_from">%1$s থেকে চালান</string>
     <string name="ask_menu">এই রেকর্ডিং নিয়ে জিজ্ঞাসা…</string>

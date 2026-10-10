@@ -3,6 +3,7 @@ package app.recly.windows.ui
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.text.style.TextDirection
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.UiMessage
@@ -124,7 +125,7 @@ fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? 
         color = reasonTone(item.jobStatus).ink(),
     )
     coreMessageDetail(error)?.let {
-        Text(it, style = mono.small, color = palette.textMuted)
+        Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
     }
     if (onCheckKey != null) CheckKeyButton(item, strings, onCheckKey)
 }

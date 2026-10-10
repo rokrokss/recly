@@ -105,7 +105,7 @@
     <string name="core_step_failed">Nabigo: %1$s</string>
     <string name="core_auth_rejected">Tinanggihan ng provider ang key.</string>
     <string name="core_quota">Ubos na ang quota ng provider o nililimitahan nito ang mga request.</string>
-    <string name="core_provider_error">Nagkaproblema sa provider. Susubukan itong muli.</string>
+    <string name="core_provider_error">May nangyaring mali sa provider.</string>
     <string name="core_unsupported_audio">Hindi tinanggap ng provider ang audio na ito.</string>
     <string name="core_no_input_track">Walang mono o mix na track ang recording na ito na ita-transcribe.</string>
     <string name="core_result_timeout">Hindi natapos ng provider sa takdang oras. Ipapadala itong muli.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Pamagat</string>
     <string name="jobs_column_length">Haba</string>
     <string name="jobs_column_status">Status</string>
-    <string name="jobs_summary">%1$d · %2$d naghihintay · %3$d nabigo</string>
+    <string name="jobs_summary_waiting">%1$d naghihintay</string>
+    <string name="jobs_summary_failed">%1$d nabigo</string>
     <string name="jobs_row_expand">I-expand</string>
     <string name="jobs_row_collapse">I-collapse</string>
     <string name="jobs_row_description">%1$s, na-record %2$s, haba %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Kailangan ng pahintulot sa paglilipat</string>
     <string name="job_state_needs_model">Naghihintay sa modelo ng speech recognition</string>
     <string name="delete_key_title">I-delete ang key: %1$s</string>
-    <string name="detail_not_requested">Walang hakbang ng pag-transcribe na patatakbuhin para sa recording na ito.</string>
+    <string name="detail_not_requested">Naka-off ang transcription. I-on ito sa Mga Setting, pagkatapos ay gamitin ang I-transcribe ulit.</string>
     <string name="detail_pending">Hindi pa tapos ang pag-transcribe. Lalabas dito ang resulta kapag handa na.</string>
     <string name="detail_failed">Hindi natapos ang pag-transcribe. Tingnan ang recording na ito sa listahan para sa susunod na gagawin.</string>
     <string name="detail_parked">Naghihintay ang pag-transcribe. Tingnan ang recording na ito sa listahan para malaman ang kailangan nito.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Naka-off</string>
     <string name="processing_storage">Folder ng storage</string>
     <string name="processing_transcription">Pag-transcribe</string>
-    <string name="processing_saved">Na-save ang mga setting</string>
     <string name="processing_prepare">I-download ang modelo</string>
     <string name="processing_download_progress">Dina-download ang modelo… %1$d%%</string>
     <string name="processing_download_bytes">%1$s ng %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Nagta-transcribe…</string>
     <string name="detail_transcription_off">Naka-off ang pag-transcribe sa Mga Setting</string>
     <string name="detail_not_uploaded">Hindi pa na-upload</string>
+    <string name="detail_still_recording">Nagre-record pa</string>
     <string name="share_transcript">Transcript</string>
     <string name="share_transcript_format">Teksto · .txt</string>
     <string name="share_notes">Transcript para sa mga tala</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Tapusin ang pag-sign in sa iyong browser</string>
     <string name="chatgpt_sign_in_failed">Hindi makapag-sign in sa ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Naka-sign out na sa device na ito, pero hindi ito kinumpirma ng OpenAI. Maaari mong alisin ang Recly sa mga setting ng ChatGPT.</string>
-    <string name="chatgpt_footnote">Ipinapadala ng buod sa OpenAI ang teksto ng transcript, ang mga sandaling na-highlight mo at ang isinulat mo rito — hindi kailanman ang audio — at bilang ito sa paggamit ng iyong ChatGPT plan.</string>
+    <string name="chatgpt_footnote">Ipinapadala ng mga buod at tanong sa OpenAI ang teksto ng transcript, ang mga sandaling na-highlight mo at ang isinulat mo rito — hindi kailanman ang audio — at bilang ang mga ito sa paggamit ng iyong ChatGPT plan.</string>
     <string name="chatgpt_welcome_title">Ginagamit mo ang iyong ChatGPT plan</string>
     <string name="chatgpt_welcome_body">Ginagamit ng mga buod sa Recly ang iyong ChatGPT plan. Maaari mong pamahalaan ang paggamit sa mga setting ng ChatGPT.</string>
     <string name="chatgpt_got_it">Nakuha ko</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Aking format</string>
     <string name="summary_custom_placeholder">Mga seksiyon at tagubilin, hal. Buod, Mga panganib, Susunod na hakbang at sino ang gagawa.</string>
     <string name="summary_custom_note">Ginagamit kapag Aking format ang format ng buod.</string>
+    <string name="summary_custom_empty">Isulat dito ang iyong format; hanggang doon, Pangkalahatan ang gagamitin ng mga buod.</string>
     <string name="summary_about">Tungkol sa iyo</string>
     <string name="summary_about_placeholder">hal. Product manager; mahalaga sa akin ang mga deadline at desisyon.</string>
-    <string name="summary_about_note">Ginagamit ito ng mga buod para matantya kung ano ang mahalaga sa iyo.</string>
+    <string name="summary_about_note">Ginagamit ito ng mga buod at sagot para matantya kung ano ang mahalaga sa iyo.</string>
     <string name="summary_as">Ibuod bilang…</string>
     <string name="summary_play_from">I-play mula %1$s</string>
     <string name="ask_menu">Magtanong tungkol sa recording na ito…</string>

@@ -41,8 +41,8 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -99,12 +99,15 @@ import recly.core.transcribe.RetranscribeResult
 import recly.core.transcribe.Transcript
 import recly.core.transcribe.TranscriptEdit
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.FillRow
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
@@ -211,7 +214,7 @@ fun RecordingDetailScreen(
         )
     }
     var sharing by remember(detail.recordingId) { mutableStateOf(false) }
-    if (sharing) ShareSheet(detail, actions.onExport, onDismiss = { sharing = false })
+    if (sharing) ShareSheet(detail, actions.onExport, onDismiss = { sharing = false }, chatGpt = actions.chatGpt)
     var askAgain by remember(detail.recordingId) { mutableStateOf(false) }
     // Why a "Transcribe again" the core refused did not start, for a moment under the header.
     var refusal by remember(detail.recordingId) { mutableStateOf<Int?>(null) }
@@ -362,12 +365,21 @@ fun RecordingDetailScreen(
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
-    // docs/09 "Summary view": a citation plays where a time button for that second would.
+    // docs/09 "Summary view": a citation plays where a time button for that second would — and, as its `Play from`
+    // says, starts playing there; the transcript's time buttons only move the playhead.
     val canSeekTo = { atSec: Double -> canSeek && atSec < detail.audio.totalSec }
+    val playFrom: (Double) -> Unit = { atSec ->
+        seek(atSec)
+        // The recorder as it is at the tap, as Play asks it.
+        if (RecordingPlaylist.canPlay(RecorderService.state.value == RecorderState.Idle, detail.driveFetch != DriveFetch.DECIDING, !detail.audio.isEmpty)) {
+            player.load(detail.audio)
+            player.play()
+        }
+    }
     val models = (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty()
     if (asking) {
         val presets by produceState(emptyList<AskPreset>(), detail.recordingId) { value = actions.askPresets() }
-        AskPanel(detail.ask, presets, models, canSeekTo, seek, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
+        AskPanel(detail.ask, presets, models, canSeekTo, playFrom, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
     }
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
@@ -390,10 +402,10 @@ fun RecordingDetailScreen(
                         if (!detail.loading) {
                             GlyphButton(Glyph.SHARE, stringResource(R.string.detail_share), { sharing = true }, Modifier.testTag("detail-share"))
                         }
-                        // Not while the recorder is still writing into this take: the core refuses to
-                        // rename or edit one, and an action that does nothing is not one to offer. Not
-                        // before the load has said which of the two this is, either.
-                        if (!detail.loading && !detail.writing) {
+                        // While the recorder is still writing into this take every item is there, disabled with
+                        // `Still recording` — the core refuses to rename or edit one. Not before the load has said
+                        // which of the two this is.
+                        if (!detail.loading) {
                             MoreButton(detail, transcription, player.positionSec, actions.chatGpt, actions.summaryFormats, MoreActions(
                                 onRename = { renaming = true },
                                 onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
@@ -440,12 +452,15 @@ fun RecordingDetailScreen(
                 summaryEditing != null ->
                     SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
                 chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
-                    Modifier.fillMaxSize(), canSeekTo, seek)
-                // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
-                transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
+                    Modifier.fillMaxSize(), canSeekTo, playFrom)
+                // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list — whatever
+                // the transcript's own state says, a step that never ran included.
+                transcript == null && detail.waitingForDrive -> Notice(
                     stringResource(R.string.detail_waiting_drive),
                     action = stringResource(R.string.drive_connect) to actions.onConnectDrive,
                 )
+                // docs/03 "Recordings from other devices": the transcript is being made somewhere else.
+                transcript == null && detail.remoteTranscribing -> Notice(stringResource(R.string.job_state_remote_transcribing))
                 transcript == null -> Notice(
                     stringResource(detail.availability.message()),
                     onRetry = onReload.takeIf { detail.availability == TranscriptAvailability.UNAVAILABLE },
@@ -619,13 +634,8 @@ private fun RenameDialog(title: String?, onSave: (String) -> Unit, onCancel: () 
             )
         },
     ) {
-        OutlinedTextField(
-            value = text,
-            onValueChange = { text = it },
-            label = { Text(stringResource(R.string.recording_title_field)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-        )
+        BlueprintField(text, { text = it }, Modifier.fillMaxWidth(), label = stringResource(R.string.recording_title_field),
+            fieldModifier = Modifier.testTag("rename-field"))
     }
 }
 
@@ -686,7 +696,7 @@ private fun PlayerBar(detail: DetailState, player: RecordingPlayer, actions: Det
             if (shown) waveform()
             PlayerControls(detail, player, scrubSec, actions)
         }
-        if (player.failed) Text(stringResource(R.string.player_error), style = MaterialTheme.typography.bodyMedium, color = palette.danger)
+        if (player.failed) Text(stringResource(R.string.player_error), style = MaterialTheme.typography.bodySmall, color = palette.danger)
     }
 }
 
@@ -972,6 +982,9 @@ private fun FetchProgress(fraction: Float, folder: Boolean) {
     }
 }
 
+/** The smallest the player's clock shrinks to before it would have to wrap. */
+private val CLOCK_MIN_SIZE = 9.sp
+
 /** The Play button's size, which the fetch's progress takes before it becomes that button. */
 private val PlayMinWidth: Dp = 120.dp
 private val PlayMinHeight: Dp = 48.dp
@@ -1033,12 +1046,18 @@ private fun PlayerControls(detail: DetailState, player: RecordingPlayer, scrubSe
             // docs/07 rule 4: a clock is a stamp, not a sentence. The finger while there is one on
             // the waveform, and the player the rest of the time — the two are the same playhead.
             val scale = recordingScale(detail)
-            Text(
-                "${clock((scrubSec ?: player.positionSec).toLong(), scale)} / ${clock(detail.audio.totalSec.toLong(), scale)}",
-                modifier = Modifier.weight(1f),
-                style = mono.bodySmall,
-                color = palette.textMuted,
-            )
+            // Left to right in every language, on one line: smaller rather than broken over two at a large font.
+            val clockStyle = mono.bodySmall.copy(textDirection = TextDirection.Ltr)
+            Box(Modifier.weight(1f), contentAlignment = Alignment.CenterStart) {
+                Text(
+                    "${clock((scrubSec ?: player.positionSec).toLong(), scale)} / ${clock(detail.audio.totalSec.toLong(), scale)}",
+                    style = clockStyle,
+                    color = palette.textMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                    autoSize = TextAutoSize.StepBased(minFontSize = CLOCK_MIN_SIZE, maxFontSize = clockStyle.fontSize),
+                )
+            }
             // docs/09 "Playback": speed and Skip silence, between the clock and Play.
             SpeedChip(actions.playbackSpeed, actions.skipSilence, actions.onSpeed, actions.onSkipSilence)
             // Not while this phone is recording: that microphone belongs to the recorder, and
@@ -1131,15 +1150,13 @@ internal fun Notice(
             color = blueprint.textMuted,
             textAlign = TextAlign.Center,
         )
-        detail?.let { Text(it, style = mono.small, color = blueprint.textMuted, textAlign = TextAlign.Center) }
+        // A diagnostic as it came — left to right in every language.
+        detail?.let { Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = blueprint.textMuted, textAlign = TextAlign.Center) }
         onRetry?.let { BlueprintButton(stringResource(R.string.action_retry), it) }
         action?.let { (label, onClick) -> BlueprintButton(label, onClick, modifier = Modifier.testTag("detail-connect-drive")) }
         button?.invoke()
     }
 }
-
-/** What the transcript says while the upload waits for Drive: the step has not run, or stopped on that wait. */
-private val DRIVE_WAITS = setOf(TranscriptAvailability.PARKED, TranscriptAvailability.PENDING, TranscriptAvailability.FAILED)
 
 /**
  * The length every time on a recording's page is formatted by ([clock]): its own `meta.json` length,

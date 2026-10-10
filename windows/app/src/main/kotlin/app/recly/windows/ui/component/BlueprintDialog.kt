@@ -27,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.unit.DpSize
@@ -44,6 +45,13 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindow
+import androidx.compose.ui.window.DialogModalityType
+import androidx.compose.ui.window.WindowDecoration
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.window.rememberDialogState
 import app.recly.windows.ui.theme.BlueprintColors
 import app.recly.windows.ui.theme.MinTouch
@@ -69,11 +77,14 @@ import app.recly.windows.ui.theme.blueprint
  *
  * The Android twin is `ui/component/BlueprintDialog.kt`, and the Mac's is `Design/BlueprintDialog`.
  */
+// The modeless dialog's window (its decoration and its modality) is Compose Desktop's experimental API.
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun BlueprintDialog(
     title: String,
     onDismissRequest: () -> Unit,
-    actions: @Composable () -> Unit,
+    /** Its answers; null for a panel that is only closed ([closeLabel]). */
+    actions: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
     width: Dp = WIDTH,
     /**
@@ -92,25 +103,23 @@ fun BlueprintDialog(
      * A short question sized to its card rather than to [height]: the window opens at [height] and
      * then takes the card's own height, once the card has been laid out in this window's type
      * scale and language — so there is no empty band between the body and the answers. Its body
-     * does not scroll, so this is for a line or two and nothing longer.
+     * does not scroll, so this is for a line or two and nothing longer — unless [maxHeight] caps it.
      */
     fitContent: Boolean = false,
+    /** With [fitContent]: the tallest the card grows; past it the body scrolls under a title that stays. */
+    maxHeight: Dp? = null,
+    /** A close mark at the end of the title row, which a reader hears as this; it does what Escape does. */
+    closeLabel: String? = null,
+    /** The window it is opened over stays in use while it is up — its player plays and pauses (docs/09 "Ask"). */
+    modeless: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val state = rememberDialogState(width = width, height = height)
-    DialogWindow(
-        onCloseRequest = onDismissRequest,
-        // The taskbar still wants a name for it, even though the card draws its own.
-        title = title,
-        state = state,
-        undecorated = true,
-        transparent = true,
-        resizable = false,
-        onKeyEvent = { event ->
-            (event.type == KeyEventType.KeyDown && event.key == Key.Escape)
-                .also { if (it) onDismissRequest() }
-        },
-    ) {
+    val onKey: (KeyEvent) -> Boolean = { event ->
+        (event.type == KeyEventType.KeyDown && event.key == Key.Escape)
+            .also { if (it) onDismissRequest() }
+    }
+    val card: @Composable () -> Unit = {
         theme {
             if (fitContent) {
                 val density = LocalDensity.current
@@ -120,16 +129,43 @@ fun BlueprintDialog(
                         // Measured at its own height whatever the window is now, and the window follows.
                         modifier = modifier
                             .wrapContentHeight(Alignment.Top, unbounded = true)
+                            .then(maxHeight?.let { Modifier.heightIn(max = it) } ?: Modifier)
                             .onSizeChanged { card -> state.size = DpSize(width, with(density) { card.height.toDp() }) },
                         actions = actions,
                         content = content,
                         fill = false,
+                        scrolls = maxHeight != null,
+                        closeLabel = closeLabel,
+                        onClose = onDismissRequest,
                     )
                 }
             } else {
-                DialogCard(title, modifier, actions, content, fill = true)
+                DialogCard(title, modifier, actions, content, fill = true, closeLabel = closeLabel, onClose = onDismissRequest)
             }
         }
+    }
+    if (modeless) {
+        DialogWindow(
+            onCloseRequest = onDismissRequest,
+            state = state,
+            title = title,
+            decoration = WindowDecoration.Undecorated(),
+            transparent = true,
+            resizable = false,
+            modalityType = DialogModalityType.Modeless,
+            onKeyEvent = onKey,
+        ) { card() }
+    } else {
+        DialogWindow(
+            onCloseRequest = onDismissRequest,
+            // The taskbar still wants a name for it, even though the card draws its own.
+            title = title,
+            state = state,
+            undecorated = true,
+            transparent = true,
+            resizable = false,
+            onKeyEvent = onKey,
+        ) { card() }
     }
 }
 
@@ -137,10 +173,14 @@ fun BlueprintDialog(
 private fun DialogCard(
     title: String,
     modifier: Modifier,
-    actions: @Composable () -> Unit,
+    actions: (@Composable () -> Unit)?,
     content: @Composable ColumnScope.() -> Unit,
     /** The window's whole height, the body scrolling in it; or, false, the card's own height. */
     fill: Boolean,
+    /** The card's own height up to a cap, the body scrolling under it. */
+    scrolls: Boolean = false,
+    closeLabel: String? = null,
+    onClose: () -> Unit = {},
 ) {
     val palette = blueprint
     val shape = RoundedCornerShape(Radius.node)
@@ -155,23 +195,31 @@ private fun DialogCard(
             .padding(Space.m),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.titleMedium,
-            color = palette.text,
-            maxLines = TITLE_LINES,
-            overflow = TextOverflow.Clip,
-            onTextLayout = { layout ->
-                spill = if (layout.hasVisualOverflow) {
-                    title.substring(layout.getLineEnd(layout.lineCount - 1, visibleEnd = true)).trimStart()
-                } else {
-                    ""
-                }
-            },
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.titleMedium,
+                color = palette.text,
+                maxLines = TITLE_LINES,
+                overflow = TextOverflow.Clip,
+                onTextLayout = { layout ->
+                    spill = if (layout.hasVisualOverflow) {
+                        title.substring(layout.getLineEnd(layout.lineCount - 1, visibleEnd = true)).trimStart()
+                    } else {
+                        ""
+                    }
+                },
+            )
+            closeLabel?.let { CloseMark(it, onClose) }
+        }
         Column(
             // Filled, so the answers sit at the foot of the card rather than halfway up it.
-            modifier = if (fill) Modifier.weight(1f).verticalScroll(rememberScrollState()) else Modifier,
+            modifier = when {
+                fill -> Modifier.weight(1f).verticalScroll(rememberScrollState())
+                scrolls -> Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())
+                else -> Modifier
+            },
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             if (spill.isNotEmpty()) {
@@ -179,9 +227,26 @@ private fun DialogCard(
             }
             content()
         }
-        DialogActions(actions)
+        actions?.let { DialogActions(it) }
     }
 }
+
+/** The title row's close: a mark in a [MinTouch] square, named for a reader by [label]. */
+@Composable
+private fun CloseMark(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(MinTouch)
+            .clickable(role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(CLOSE_MARK, style = MaterialTheme.typography.titleMedium, color = blueprint.textMuted, modifier = Modifier.clearAndSetSemantics { })
+    }
+}
+
+/** The same mark the find bar closes with. */
+private const val CLOSE_MARK = "×"
 
 /**
  * The answers, in a row while they fit and in a stack when they do not. What decides it is nearly
@@ -242,7 +307,7 @@ internal fun stackActions(available: Int, widths: List<Int>, spacing: Int): Bool
 private const val TITLE_LINES = 3
 
 /** docs/09: the body is 14–16, and what it means decides the colour. */
-enum class DialogTone { BODY, MUTED, DANGER }
+enum class DialogTone { BODY, MUTED, WARNING, DANGER }
 
 /** One line of a dialog body. Sans, not mono: it is a sentence and not a column of data. */
 @Composable
@@ -259,6 +324,7 @@ fun BlueprintDialogText(text: String, modifier: Modifier = Modifier, tone: Dialo
         color = when (tone) {
             DialogTone.BODY -> palette.text
             DialogTone.MUTED -> palette.textMuted
+            DialogTone.WARNING -> palette.warningInk
             DialogTone.DANGER -> palette.danger
         },
     )

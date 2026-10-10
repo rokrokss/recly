@@ -25,7 +25,8 @@ struct VocabularyEditor: View {
                 }
             }
             HStack(spacing: Space.s) {
-                TextField("", text: $entry, prompt: Text(verbatim: loc("Add a name or term")).foregroundColor(blueprint.palette.textMuted))
+                TextField("", text: $entry, prompt: FieldPlaceholder.prompt(loc("Add a name or term"), blueprint.palette))
+                    .fieldPlaceholder(loc("Add a name or term"), empty: entry.isEmpty)
                     .textFieldStyle(.plain)
                     .font(blueprint.fonts.bodySmall)
                     .foregroundStyle(blueprint.palette.text)

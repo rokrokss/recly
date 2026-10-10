@@ -196,7 +196,7 @@ Recly는 참가자에게 녹음을 알렸는지 묻습니다. 폰은 첫 녹음 
 
 Recly는 녹취록에서 멈추고, 이미 쓰는 AI에게 넘깁니다.
 
-- **ChatGPT로 자동으로**: [ChatGPT 에이전트로 자동 회의록](agent.ko.md)(Mac·Windows 앱, Google Drive).
+- **ChatGPT로 자동으로**: [ChatGPT 에이전트로 자동 회의록](agent.ko.md)(내 컴퓨터의 recly-events, Google Drive).
 - **어떤 에이전트든 부탁할 때**: Claude, ChatGPT, Codex 등에서 쓰는
   [예시 스킬](https://github.com/rokrokss/recly/blob/main/skills/README.md)(영어).
 

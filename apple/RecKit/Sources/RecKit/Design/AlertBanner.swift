@@ -93,7 +93,8 @@ private struct AlertLine<Action: View>: View {
                             .foregroundStyle(blueprint.palette.textMuted)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    StatusBadge(LedgerStatus(code: alert.reason.code, tone: .warning))
+                    // 2026-10-10 (A-A25): a badge that says Failed is in the failure's red, as its line is.
+                    StatusBadge(LedgerStatus(code: alert.reason.code, tone: alert.reason.isWait ? .warning : .danger))
                 }
                 .padding(.leading, Space.m)
                 .padding(.vertical, Space.s)

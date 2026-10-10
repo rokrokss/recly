@@ -65,6 +65,8 @@ struct PlaybackSpeedChip: View {
             Text(verbatim: PlaybackPreferences.label(player.rate))
                 .font(blueprint.fonts.monoBodySmall)
                 .foregroundStyle(blueprint.palette.textMuted)
+                // 2026-10-10 (2.13): `1×` in every language, never `×1`.
+                .leftToRight()
                 .padding(.horizontal, Space.s)
                 .frame(minWidth: minTouch, minHeight: minTouch)
                 .overlay {

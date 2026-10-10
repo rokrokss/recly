@@ -113,13 +113,17 @@ extension View {
     /// has one — the record screen's naming prompt, which is a different question with a different
     /// answer — has no second one to give. And a `LSUIElement` menu-bar app has no window at all:
     /// its popover *is* the surface, so its dialogs are drawn inside it.
+    ///
+    /// - Parameter scrolls: false for a card that scrolls its own body under a header that stays (the Mac's Ask,
+    ///   2026-10-10): it is then handed the height there is rather than an endless one.
     public func blueprintDialogOverlay<Content: View>(
         isPresented: Binding<Bool>,
+        scrolls: Bool = true,
         @ViewBuilder content: @escaping () -> Content
     ) -> some View {
         overlay {
             if isPresented.wrappedValue {
-                BlueprintDialogScrim { content() }
+                BlueprintDialogScrim(scrolls: scrolls) { content() }
             }
         }
     }
@@ -132,19 +136,25 @@ extension View {
 /// a blur — there is nothing here for glass to be the chrome of.
 public struct BlueprintDialogScrim<Content: View>: View {
     @Environment(\.blueprint) private var blueprint
+    private let scrolls: Bool
     private let content: Content
 
-    public init(@ViewBuilder content: () -> Content) {
+    public init(scrolls: Bool = true, @ViewBuilder content: () -> Content) {
+        self.scrolls = scrolls
         self.content = content()
     }
 
     public var body: some View {
         ZStack {
             blueprint.palette.background.opacity(0.86)
-            ScrollView {
-                content.padding(Space.m).frame(maxWidth: .infinity)
+            if scrolls {
+                ScrollView {
+                    content.padding(Space.m).frame(maxWidth: .infinity)
+                }
+                .scrollBounceBehavior(.basedOnSize)
+            } else {
+                content.padding(Space.m).frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .scrollBounceBehavior(.basedOnSize)
         }
         .contentShape(Rectangle())
         // The scrim is the dialog: a screen reader that could still reach the list behind it would

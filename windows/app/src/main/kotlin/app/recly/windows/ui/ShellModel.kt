@@ -5,9 +5,6 @@ package app.recly.windows.ui
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import app.recly.windows.agent.AgentEvents
-import app.recly.windows.agent.AgentEventsProgram
-import app.recly.windows.agent.ProcessRunner
 import app.recly.windows.auth.OAuthConfig
 import app.recly.windows.auth.RevokeResult
 import app.recly.windows.auth.SignInResult
@@ -28,7 +25,6 @@ import app.recly.windows.helper.NetworkCost
 import app.recly.windows.i18n.AppLanguage
 import app.recly.windows.i18n.Localization
 import app.recly.windows.i18n.Str
-import app.recly.windows.i18n.StringTable
 import app.recly.windows.i18n.UiMessage
 import app.recly.windows.i18n.coreMessage
 import app.recly.windows.i18n.message
@@ -69,7 +65,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.time.Duration.Companion.seconds
 import kotlin.time.Instant
 import okio.Path
 import recly.core.DisconnectResult
@@ -335,10 +330,6 @@ class ShellModel(
         private set
 
     var launchAtLogin: Boolean by mutableStateOf(false)
-        private set
-
-    /** docs/14 "Agent connection": recly-events, run while its switch is on. Null until [load]. */
-    var agentEvents: AgentEvents? by mutableStateOf(null)
         private set
 
     /** docs/15 §10 "Sign in with ChatGPT": the settings section and what the summaries run on. */
@@ -619,15 +610,11 @@ class ShellModel(
     private val settings: Settings get() = localization.settings
 
     /**
-     * Where the data is and which install this is — the two facts a support question starts with.
-     * Compose state rather than a read through [graph], which is a plain field: a window composed
-     * before [load] finished would otherwise show a blank path for ever, because nothing invalidates
-     * it when the core opens.
+     * docs/09 trend 6: the settings window's about block says what this install actually is — the fact a support
+     * question starts with. Compose state rather than a read through [graph], which is a plain field: a window
+     * composed before [load] finished would otherwise show a blank id for ever, because nothing invalidates it when
+     * the core opens.
      */
-    var dataDir: String by mutableStateOf("")
-        private set
-
-    /** docs/09 trend 6: the settings window's about block says what this install actually is. */
     var deviceId: String by mutableStateOf("")
         private set
     val launchAtLoginSupported: Boolean get() = ::launcher.isInitialized && launcher.supported
@@ -640,7 +627,7 @@ class ShellModel(
      * test can open a whole shell — core, recorder, executor — over a temp directory and the fake
      * helper instead of the developer's own install, which is what `%LOCALAPPDATA%\Recly` and
      * `CaptureHelper.command()` otherwise resolve to (`ShellStartTest`). `AppModule.build` takes
-     * [dataDir] for the same reason.
+     * its data directory for the same reason.
      */
     suspend fun load(
         dataDirectory: Path = Host.dataDir(),
@@ -654,7 +641,6 @@ class ShellModel(
             return
         }
         this.graph = graph
-        dataDir = graph.dataDir.toString()
         deviceId = graph.core.deps.device.deviceId
         val logger = graph.core.deps.logger
         balloon = TrayAlertBalloon(logger, localization::current)
@@ -662,27 +648,6 @@ class ShellModel(
         launchAtLogin = launcher.isEnabled()
         consentReminder = settings.consentReminder
         micAccess = MicrophoneAccess.create(logger).state()
-        // docs/14 "Agent connection": off unless the user turned it on; a build without recly-events
-        // says so on the switch.
-        agentEvents = AgentEvents(
-            settings = settings,
-            runner = AgentEventsProgram.locate()?.let(::ProcessRunner),
-            scope = scope,
-            clock = graph.core.deps.clock,
-            logger = logger,
-            // recly-events runs on this PC's own Drive connection — its short-lived access token,
-            // never the refresh token (docs/recly.md §15 §9).
-            driveConnected = { signedIn },
-            driveToken = {
-                try {
-                    graph.core.deps.tokenProvider.accessToken()
-                } catch (e: kotlin.coroutines.cancellation.CancellationException) {
-                    throw e
-                } catch (_: Exception) {
-                    null
-                }
-            },
-        ).also { it.start() }
         chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, logger).also { it.start() }
 
         val command = helperCommand
@@ -1001,7 +966,6 @@ class ShellModel(
     /** Quit: a recording in flight is finalized and queued first — the crash path is not the exit. */
     suspend fun shutdown() {
         askTitle = false
-        agentEvents?.shutdown()
         detector?.stop()
         // A quit with the dialog still open is a skip: that recording is already finalized and
         // `stop` has nothing left to do for it, so without this its job would never be made.
@@ -2110,6 +2074,9 @@ class ShellModel(
     fun selectLanguage(choice: AppLanguage) {
         localization.language = choice
         language = choice
+        // Summaries, Ask's presets and its Translate follow the app's language without a restart (2026-10-10) —
+        // the same tag the core was opened with ([AppGraph]).
+        graph?.core?.summaries?.setLocale(choice.tag.ifEmpty { Host.language() })
     }
 
     fun selectTheme(choice: AppTheme) {
@@ -2179,11 +2146,7 @@ class ShellModel(
 
     private suspend fun readStorage(graph: AppGraph) {
         runCatching { graph.core.processingSettings.storage() }
-            .onSuccess {
-                storage = it
-                // docs/14 "Agent connection": recly-events can watch Google Drive only.
-                agentEvents?.storageChanged(it == StorageKind.DRIVE)
-            }
+            .onSuccess { storage = it }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "shell.storage.failed", error = it) }
         localFolderAvailable = graph.core.deps.localFolder?.available() == true
     }
@@ -2258,23 +2221,6 @@ class ShellModel(
         }
     }
 
-    /**
-     * docs/14 "Agent connection": the `mcpServers` entry that starts the bundled recly-events over this PC's
-     * local folder, as recly-events itself prints it. Null when there is no program, no folder, or no answer.
-     */
-    suspend fun localMcpConfiguration(): String? {
-        val program = AgentEventsProgram.locate() ?: return null
-        val folder = localFolder ?: return null
-        val (code, output) = ProcessRunner(program).run(listOf("mcp", "--print-config", "--folder", folder), timeout = MCP_CONFIG_TIMEOUT)
-        if (code != 0 || output.isBlank()) graph?.core?.deps?.logger?.log(Logger.Level.WARN, "shell.mcp.config.failed", mapOf("exit" to code))
-        return output.takeIf { code == 0 && it.isNotBlank() }
-    }
-
-    fun openMcpGuide(language: String) = open(if (language == StringTable.KOREAN) MCP_GUIDE_URL_KO else MCP_GUIDE_URL)
-
-    /** [language] is the one the window shows: the guide has a Korean page, every other language gets the English one. */
-    fun openAgentGuide(language: String) = open(if (language == StringTable.KOREAN) AGENT_GUIDE_URL_KO else AGENT_GUIDE_URL)
-
     private fun open(target: String) {
         runCatching {
             // A URL and a `ms-settings:` deep link are both for whoever owns the scheme; only a
@@ -2330,7 +2276,8 @@ class ShellModel(
     }
 
     companion object {
-        val HELPER_MISSING = Str.STATUS_HELPER_MISSING
+        /** docs/14 deliverable 5: the same words Settings says (2026-10-10). */
+        val HELPER_MISSING = Str.HELPER_UNAVAILABLE
         val HELPER_DIED = Str.STATUS_HELPER_DIED
         val MIC_DENIED = Str.STATUS_MIC_DENIED
         val NEEDS_AUTH_NOTICE = Str.STATUS_SIGN_IN_NEEDED
@@ -2349,16 +2296,6 @@ class ShellModel(
 
         /** docs/03: Google's own page, which is the only place a failed revoke can be finished. */
         const val GOOGLE_PERMISSIONS_URL = "https://myaccount.google.com/permissions"
-
-        /** docs/14 "Agent connection": the set-up guide — the OpenAI tunnel, the ChatGPT app, the prompt. */
-        const val AGENT_GUIDE_URL = "https://recly.dev/agent"
-        const val AGENT_GUIDE_URL_KO = "https://recly.dev/agent.ko"
-
-        /** docs/mcp.md on the site: the local MCP server for Claude and Codex. */
-        const val MCP_GUIDE_URL = "https://recly.dev/mcp"
-        const val MCP_GUIDE_URL_KO = "https://recly.dev/mcp.ko"
-
-        private val MCP_CONFIG_TIMEOUT = 10.seconds
 
         /** docs/14 "Permissions": Settings → Privacy → Microphone, the page and not directions to it. */
         const val MICROPHONE_SETTINGS_URL = "ms-settings:privacy-microphone"

@@ -8,8 +8,8 @@ The guides below are the Markdown sources of the pages on recly.dev. Each has a 
 
 - [Install guide](https://recly.dev/install.md): the stores, the Mac and Windows downloads, sideloading the Android and watch apps, checking a download, updating and uninstalling
 - [Set-up guide](https://recly.dev/setup.md): where recordings go, how they are transcribed, permissions, recording and finding recordings
-- [Automatic minutes with a ChatGPT agent](https://recly.dev/agent.md): turn it on in the Recly Mac or Windows app so a ChatGPT agent writes the minutes for each new transcript
-- [Running recly-events yourself](https://recly.dev/recly-events.md): the same on a server, on Linux or on a computer without the Recly app
+- [Automatic minutes with a ChatGPT agent](https://recly.dev/agent.md): how recly-events lets a ChatGPT agent write the minutes for each new transcript, and what you need
+- [Running recly-events yourself](https://recly.dev/recly-events.md): install and set up recly-events on a Mac, Linux or Windows computer, or a server
 - [Local MCP server](https://recly.dev/mcp.md): `recly-events mcp` lets Claude Desktop, Claude Code or Codex list, search and read the recordings in a local folder or in iCloud on a Mac, with no network
 - [FAQ](https://recly.dev/faq.md): cost, devices, accounts, where recordings go, on-device transcription, speakers, Windows, updates
 

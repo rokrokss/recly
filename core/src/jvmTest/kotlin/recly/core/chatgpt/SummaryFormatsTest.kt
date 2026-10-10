@@ -68,6 +68,25 @@ class SummaryFormatsTest {
         assertFalse("Weekly sync" in input, "still no title")
         assertEquals("lecture", summary.format)
         assertEquals(SummaryFormat.LECTURE, summary.summaryFormat)
+        assertEquals("GPT A", summary.modelName, "the plan's name, kept for when the footer is read signed out")
+    }
+
+    @Test
+    fun `a language change in the app reaches the next request and the presets`() = runBlocking {
+        val f = Fixture(transcript = TRANSCRIPT.copy(language = "auto"), locale = "en")
+        f.ready()
+        assertFalse(AskPreset.TRANSLATE in Fixture(locale = "en").summaries.askPresets(ID))
+        f.h.server.reply(stream("Notes"), headers = SSE)
+        f.summaries.summarize(ID)
+        assertTrue("Write everything in English (en)" in f.request().first)
+
+        f.summaries.setLocale("ko-KR")
+        f.h.server.reply(stream("노트"), headers = SSE)
+        f.summaries.summarize(ID)
+        assertTrue("Write everything in Korean (ko)" in f.request().first, "no restart needed")
+        val english = Fixture(locale = "en")
+        english.summaries.setLocale("ja")
+        assertTrue(AskPreset.TRANSLATE in english.summaries.askPresets(ID))
     }
 
     @Test

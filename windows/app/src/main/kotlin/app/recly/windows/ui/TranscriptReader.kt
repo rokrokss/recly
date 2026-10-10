@@ -19,6 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextDirection
 import kotlin.math.roundToInt
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -129,6 +132,7 @@ internal fun TranscriptReader(
                         speaker = block.speaker,
                         text = tinted(block.text, matches, index, currentMatch),
                         highlight = highlights.firstOrNull { it >= block.start && it < end },
+                        markSlot = highlights.isNotEmpty(),
                         isActive = index == active,
                         canSeek = canSeek && block.start < seekableDurationSec,
                         onSeek = onSeek,
@@ -165,6 +169,8 @@ private fun Group(
     speaker: String,
     text: AnnotatedString,
     highlight: Double?,
+    /** The recording has highlights: every group keeps the mark's place, so the speakers line up (2026-10-10). */
+    markSlot: Boolean,
     isActive: Boolean,
     canSeek: Boolean,
     onSeek: (Double) -> Unit,
@@ -189,10 +195,15 @@ private fun Group(
                     modifier = Modifier.testTag("transcript-time-$index").semantics { contentDescription = seekLabel },
                     tone = if (isActive) ButtonTone.ACCENT else ButtonTone.QUIET, monospace = true,
                 )
-                highlight?.let { at -> HighlightFlag(at, strings) { place -> onHighlightMenu(place, at) } }
+                if (markSlot) {
+                    Box(Modifier.size(HIGHLIGHT_MARK), contentAlignment = Alignment.Center) {
+                        highlight?.let { at -> HighlightFlag(at, strings) { place -> onHighlightMenu(place, at) } }
+                    }
+                }
                 if (speaker.isNotEmpty()) {
                     var place by remember { mutableStateOf(Offset.Zero) }
-                    Box(Modifier.onGloballyPositioned { place = it.positionInRoot() }) {
+                    // Its menu opens under it (2026-10-10).
+                    Box(Modifier.onGloballyPositioned { place = it.positionInRoot() + Offset(0f, it.size.height.toFloat()) }) {
                         SpeakerBadge(speaker, speakerName(transcript.speakers.firstOrNull { it.id == speaker }, strings), speakerEnabled) { onSpeakerMenu(place) }
                     }
                 }
@@ -202,29 +213,38 @@ private fun Group(
                     null -> Unit
                 }
             }
-            Text(text, style = MaterialTheme.typography.bodyMedium, color = palette.text, modifier = Modifier.testTag("transcript-text-$index"))
+            // What was said, in the direction its own words take and aligned by it, across the width (2026-10-10).
+            Text(
+                text,
+                style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                color = palette.text,
+                modifier = Modifier.fillMaxWidth().testTag("transcript-text-$index"),
+            )
         }
     }
 }
 
 /**
- * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears
- * it as "Highlight 00:12:34".
+ * The square right after a group's time, centred with it: it opens the highlight's menu, and a reader hears it as
+ * "Highlight 00:12:34". Its 44 target (2026-10-08) is laid over the square and takes no room (2026-10-10), so the
+ * speaker after it stays where every other group's is; where it reaches over the time beside it, it is the target.
  */
 @Composable
 private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
     val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
-    // A 44 target (2026-10-08) with the square at its start, so the square stays by the time.
+    HighlightMark()
     Box(
         Modifier
-            .size(MinTouch)
-            .onGloballyPositioned { place = it.positionInRoot() }
+            .layout { measurable, _ ->
+                val reach = MinTouch.roundToPx()
+                val target = measurable.measure(Constraints.fixed(reach, reach))
+                layout(0, 0) { target.place(-reach / 2, -reach / 2) }
+            }
+            .onGloballyPositioned { place = it.positionInRoot() + Offset(0f, it.size.height.toFloat()) }
             .clickable(role = Role.Button) { onMenu(place) }
-            .semantics { contentDescription = label }
-            .padding(start = Space.xs),
-        contentAlignment = Alignment.CenterStart,
-    ) { HighlightMark() }
+            .semantics { contentDescription = label },
+    )
 }
 
 /**

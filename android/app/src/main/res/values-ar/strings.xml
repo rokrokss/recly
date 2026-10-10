@@ -105,7 +105,7 @@
     <string name="core_step_failed">فشل: %1$s</string>
     <string name="core_auth_rejected">رفض المزوّد المفتاح</string>
     <string name="core_quota">نفدت حصة المزوّد أو قُيّد معدل الطلبات.</string>
-    <string name="core_provider_error">حدث خطأ لدى المزوّد. ستتم إعادة المحاولة.</string>
+    <string name="core_provider_error">حدث خطأ لدى مزوّد الخدمة.</string>
     <string name="core_unsupported_audio">لم يقبل المزوّد هذا الصوت.</string>
     <string name="core_no_input_track">لا يحتوي هذا التسجيل على مسار أحادي أو ممزوج للنسخ.</string>
     <string name="core_result_timeout">لم ينتهِ المزوّد في الوقت المحدد. سيُعاد الإرسال.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">العنوان</string>
     <string name="jobs_column_length">المدة</string>
     <string name="jobs_column_status">الحالة</string>
-    <string name="jobs_summary">%1$d · %2$d منتظر · %3$d فاشل</string>
+    <string name="jobs_summary_waiting">%1$d منتظر</string>
+    <string name="jobs_summary_failed">%1$d فاشل</string>
     <string name="jobs_row_expand">توسيع</string>
     <string name="jobs_row_collapse">طي</string>
     <string name="jobs_row_description">%1$s، سُجّل %2$s، المدة %3$s، %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">يلزم إذن النقل</string>
     <string name="job_state_needs_model">في انتظار نموذج الكلام</string>
     <string name="delete_key_title">حذف المفتاح: %1$s</string>
-    <string name="detail_not_requested">لا توجد خطوة نسخ لهذا التسجيل.</string>
+    <string name="detail_not_requested">النسخ الصوتي متوقف. شغّله في الإعدادات، ثم استخدم «إعادة النسخ».</string>
     <string name="detail_pending">لم يكتمل النسخ بعد. ستظهر النتيجة هنا عند جاهزيتها.</string>
     <string name="detail_failed">تعذّر إكمال النسخ. راجع التسجيل في القائمة لمعرفة الخطوة التالية.</string>
     <string name="detail_parked">النسخ في الانتظار. راجع القائمة لمعرفة ما يحتاجه هذا التسجيل.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">إيقاف</string>
     <string name="processing_storage">مجلد التخزين</string>
     <string name="processing_transcription">النسخ النصي</string>
-    <string name="processing_saved">تم حفظ الإعدادات</string>
     <string name="processing_prepare">تنزيل النموذج</string>
     <string name="processing_download_progress">جارٍ تنزيل النموذج… %1$d%%</string>
     <string name="processing_download_bytes">%1$s من %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">جارٍ النسخ…</string>
     <string name="detail_transcription_off">النسخ مُعطَّل في الإعدادات</string>
     <string name="detail_not_uploaded">لم يتم الرفع بعد</string>
+    <string name="detail_still_recording">التسجيل مستمر</string>
     <string name="share_transcript">النص</string>
     <string name="share_transcript_format">نص عادي · .txt</string>
     <string name="share_notes">نص للملاحظات</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">أكمل تسجيل الدخول في متصفحك</string>
     <string name="chatgpt_sign_in_failed">تعذّر تسجيل الدخول إلى ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">تم تسجيل الخروج على هذا الجهاز، لكن OpenAI لم تؤكد ذلك. يمكنك إزالة Recly من إعدادات ChatGPT.</string>
-    <string name="chatgpt_footnote">يرسل الملخص نص النسخة المكتوبة واللحظات التي ميّزتها وما كتبته هنا إلى OpenAI — ولا يرسل الصوت أبداً — ويُحتسب ضمن استخدام خطة ChatGPT.</string>
+    <string name="chatgpt_footnote">ترسل الملخصات والأسئلة نص النسخة المكتوبة واللحظات التي ميّزتها وما كتبته هنا إلى OpenAI — ولا ترسل الصوت أبداً — وتُحتسب ضمن استخدام خطة ChatGPT.</string>
     <string name="chatgpt_welcome_title">أنت تستخدم خطة ChatGPT الخاصة بك</string>
     <string name="chatgpt_welcome_body">تستخدم الملخصات في Recly خطة ChatGPT الخاصة بك. يمكنك إدارة الاستخدام من إعدادات ChatGPT.</string>
     <string name="chatgpt_got_it">حسنًا</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">تنسيقي</string>
     <string name="summary_custom_placeholder">الأقسام والتعليمات، مثل: الملخص، المخاطر، الخطوات التالية مع المسؤولين.</string>
     <string name="summary_custom_note">يُستخدم عندما يكون تنسيق الملخص «تنسيقي».</string>
+    <string name="summary_custom_empty">اكتب تنسيقك هنا؛ وحتى ذلك الحين تستخدم الملخصات التنسيق العام.</string>
     <string name="summary_about">عنك</string>
     <string name="summary_about_placeholder">مثلاً: مدير منتج؛ تهمّني المواعيد النهائية والقرارات.</string>
-    <string name="summary_about_note">تستخدم الملخصات هذا لتقدير ما يهمّك.</string>
+    <string name="summary_about_note">تستخدم الملخصات والإجابات هذا لتقدير ما يهمّك.</string>
     <string name="summary_as">تلخيص بتنسيق…</string>
     <string name="summary_play_from">تشغيل من %1$s</string>
     <string name="ask_menu">اسأل عن هذا التسجيل…</string>

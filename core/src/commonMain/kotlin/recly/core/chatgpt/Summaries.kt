@@ -59,6 +59,8 @@ data class Summary(
     val editedAt: String? = null,
     /** [SummaryFormat.wire] of the format it was written in; absent for [SummaryFormat.AUTO]. */
     val format: String? = null,
+    /** The plan's name for [model] when it was written (`GPT-5.4`), so the footer reads the same signed out. */
+    val modelName: String? = null,
 ) {
     val summaryFormat: SummaryFormat get() = SummaryFormat.of(format)
 }
@@ -110,6 +112,8 @@ data class AskAnswer(
     val question: String?,
     val text: String,
     val model: String,
+    /** The plan's name for [model], as on a [Summary]. */
+    val modelName: String? = null,
 )
 
 sealed class AskState {
@@ -186,6 +190,14 @@ class Summaries internal constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     private val prefs = MutableStateFlow<SummaryPreferences?>(null)
+
+    /** The app's language, which a shell changes while it runs (docs/08 "Summaries" — the language rule). */
+    private val locale = MutableStateFlow(deps.locale)
+
+    /** The app's language changed: later summaries and questions follow it, and so does which Ask presets are on offer. */
+    fun setLocale(tag: String) {
+        if (tag.isNotBlank()) locale.value = tag
+    }
     private val asks = MutableStateFlow<Map<String, AskState>>(emptyMap())
     private val askRuns = mutableMapOf<String, Deferred<AskState>>()
 
@@ -259,7 +271,10 @@ class Summaries internal constructor(
         deps.logger.log(Logger.Level.INFO, "summary.start", mapOf("recordingId" to recordingId, "model" to model, "format" to format.wire))
         val instructions = instructions(source.language, format, preferences, source.hasMe, source.marked.isNotEmpty())
         val text = complete(model, instructions, source.input())
-        return Summary(recordingId, text, model, deps.clock.now().isoUtc(), format = format.wire.takeIf { format != SummaryFormat.AUTO })
+        return Summary(
+            recordingId, text, model, deps.clock.now().isoUtc(),
+            format = format.wire.takeIf { format != SummaryFormat.AUTO }, modelName = account.modelLabel(model),
+        )
     }
 
     /** What a request about one recording is made from (docs/15 §10): its transcript lines and the moments the user marked. */
@@ -274,7 +289,7 @@ class Summaries internal constructor(
         val highlights = recordings.get(recordingId)?.meta?.highlights.orEmpty()
         return Source(
             text,
-            SummaryLanguage.of(transcript.language, deps.locale),
+            SummaryLanguage.of(transcript.language, locale.value),
             transcript.speakers.any { it.me == true },
             marked(transcript, highlights),
         )
@@ -371,7 +386,7 @@ class Summaries internal constructor(
         val transcript = transcript(recordingId) ?: return emptyList()
         return AskPreset.entries.filter { preset ->
             when (preset) {
-                AskPreset.TRANSLATE -> SummaryLanguage.translatable(transcript.language, deps.locale)
+                AskPreset.TRANSLATE -> SummaryLanguage.translatable(transcript.language, locale.value)
                 AskPreset.MY_SPEAKING -> transcript.speakers.any { it.me == true }
                 else -> true
             }
@@ -408,9 +423,9 @@ class Summaries internal constructor(
             val model = account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
             deps.logger.log(Logger.Level.INFO, "summary.ask.start", mapOf("recordingId" to recordingId, "model" to model, "preset" to (preset?.name ?: "own")))
             val preferences = preferences()
-            val instructions = askInstructions(source.language, SummaryLanguage.app(deps.locale), preset, preferences, source.hasMe, source.marked.isNotEmpty())
+            val instructions = askInstructions(source.language, SummaryLanguage.app(locale.value), preset, preferences, source.hasMe, source.marked.isNotEmpty())
             val input = source.input() + "\n" + QUESTION_HEADING + "\n" + (question ?: presetQuestion(preset!!)) + "\n"
-            AskState.Ready(AskAnswer(recordingId, preset, question, complete(model, instructions, input), model))
+            AskState.Ready(AskAnswer(recordingId, preset, question, complete(model, instructions, input), model, account.modelLabel(model)))
         } catch (e: CancellationException) {
             throw e
         } catch (e: ChatGptFailure) {

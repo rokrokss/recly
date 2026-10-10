@@ -38,7 +38,7 @@ final class LocalFolderStorageTests: XCTestCase {
         XCTAssertEqual(waiting.reasonTone, .warning)
         XCTAssertTrue(waiting.canRetry)
         XCTAssertTrue(waiting.canDelete)
-        XCTAssertEqual(Recents.summary([waiting]), "1 · 1 waiting · 0 failed")
+        XCTAssertEqual(Recents.summary([waiting]), "1 · 1 waiting")
         XCTAssertFalse(Recents.uploading([waiting]))
     }
 

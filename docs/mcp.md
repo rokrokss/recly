@@ -13,9 +13,11 @@ ChatGPT with [recly-events](agent.md), or to any agent through its own Google Dr
 
 | Computer | Path |
 |---|---|
-| Mac with the Recly app | `/Applications/Recly.app/Contents/MacOS/recly-events` |
 | Mac, from the `.pkg` | `/usr/local/bin/recly-events` |
-| Linux, Windows | Where you put it: [Install](recly-events.md#1-install) |
+| Linux, Windows | Where you put it |
+
+Not installed yet: [Install](recly-events.md#1-install). The local MCP server needs no other step
+of that guide.
 
 **The folder Recly stores recordings in:**
 
@@ -27,9 +29,6 @@ ChatGPT with [recly-events](agent.md), or to any agent through its own Google Dr
 Any folder above the recordings works; the folder template does not matter.
 
 ## 1. Print the configuration
-
-**Mac with the Recly app:** Settings → Agent connection → Local agents → **Copy configuration** copies
-it for the folder Recly stores recordings in. Otherwise:
 
 ```sh
 recly-events mcp --print-config --folder ~/Notes/Recly
@@ -139,4 +138,4 @@ the decisions, and the action items with owners.
 | No recordings | `--folder` points at a single recording's folder, or at a folder with no Recly recordings. Point it at the storage folder. |
 | `hasTranscript` is false, or a recording is missing | The recording has no transcript yet, or iCloud has not brought it down to this Mac: in Finder, choose **Download Now** on the Recly folder. |
 | Claude Desktop does not list `recly` | Quit and reopen Claude Desktop. Its log is `~/Library/Logs/Claude/mcp-server-recly.log` on a Mac, under `%APPDATA%\Claude\logs` on Windows. |
-| An older recly-events says `Usage` | It predates `mcp`. Update the Recly app, or install the newest [`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true). |
+| An older recly-events says `Usage` | It predates `mcp`. Install the newest [`events-v…` release](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true). |

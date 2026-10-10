@@ -77,6 +77,7 @@ import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.highContrastOf
 import app.recly.windows.ui.theme.observeSystemHighContrast
 import app.recly.windows.ui.trayMenu
+import recly.core.processing.TranscriptionMode
 import java.util.Locale
 import java.awt.KeyboardFocusManager
 import java.beans.PropertyChangeListener
@@ -410,10 +411,13 @@ private fun TitlePrompt(
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = strings[Str.RECORDING_TITLE],
-        // Dismissing the title prompt discards this take, just like its Discard recording button.
-        onDismissRequest = model::cancelTitle,
+        // Only its two buttons close it (2026-10-10): Escape, or the window's own close, would discard the take
+        // without the red button that says so.
+        onDismissRequest = {},
         theme = themed,
         height = TITLE_HEIGHT.dp,
+        // As tall as what it asks, which is less while transcription is off.
+        fitContent = true,
         actions = {
             // docs/03 "Titles": the take is deleted, so the button says so, in the red of every delete
             // that cannot be undone (2026-10-08).
@@ -429,31 +433,35 @@ private fun TitlePrompt(
         BlueprintTextField(
             value = title,
             onValueChange = { title = it },
-            label = strings[Str.RECORDING_TITLE],
+            // `Title`, not the dialog's own title again (2026-10-10).
+            label = strings[Str.LEDGER_TITLE],
             placeholder = strings[Str.UNTITLED],
             // A title is something a person types, not a field of data.
             monospace = false,
         )
         // docs/03: and how many people were in the room — the hint the `transcribe` step trusts over
         // the workflow's own `speakers` (docs/08). The same question, in the same order, as the
-        // phones and the Mac ask it.
-        BlueprintDialogText(strings[Str.RECORDING_PARTICIPANTS], tone = DialogTone.MUTED)
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalArrangement = Arrangement.spacedBy(Space.s),
-        ) {
-            PARTICIPANT_CHOICES.forEach { choice ->
-                BlueprintChip(
-                    label = when (choice) {
-                        null -> strings[Str.PARTICIPANTS_UNKNOWN]
-                        // docs/08 caps the hint at 10 speakers; "6+" asks for six and lets the
-                        // provider find more.
-                        PARTICIPANTS_MANY -> strings[Str.PARTICIPANTS_MANY]
-                        else -> choice.toString()
-                    },
-                    selected = participants == choice,
-                    onClick = { participants = choice },
-                )
+        // phones and the Mac ask it — and not at all while transcription is off, when it is a hint for nothing
+        // (2026-10-10).
+        if (model.processing?.summary?.mode != TranscriptionMode.OFF) {
+            BlueprintDialogText(strings[Str.RECORDING_PARTICIPANTS], tone = DialogTone.MUTED)
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                verticalArrangement = Arrangement.spacedBy(Space.s),
+            ) {
+                PARTICIPANT_CHOICES.forEach { choice ->
+                    BlueprintChip(
+                        label = when (choice) {
+                            null -> strings[Str.PARTICIPANTS_UNKNOWN]
+                            // docs/08 caps the hint at 10 speakers; "6+" asks for six and lets the
+                            // provider find more.
+                            PARTICIPANTS_MANY -> strings[Str.PARTICIPANTS_MANY]
+                            else -> choice.toString()
+                        },
+                        selected = participants == choice,
+                        onClick = { participants = choice },
+                    )
+                }
             }
         }
     }

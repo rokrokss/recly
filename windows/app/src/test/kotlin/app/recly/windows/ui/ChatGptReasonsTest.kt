@@ -91,12 +91,16 @@ class ChatGptReasonsTest {
         assertEquals(SummaryRecovery.MANAGE_USAGE, limit.recovery)
         assertNull(limit.detail)
 
-        // The sentence says where to go; there is nothing to press.
+        // The sentence says where to go; there is nothing to press — nor where asking again cannot help (2026-10-10).
         assertEquals(SummaryRecovery.NONE, summaryFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()).recovery)
-        assertEquals(SummaryRecovery.RETRY, summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).recovery)
+        assertEquals(SummaryRecovery.NONE, summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).recovery)
         assertEquals(SummaryRecovery.RETRY, summaryFailure(CoreMessage.PROVIDER_REGION_RESTRICTED.code()).recovery)
+        // A sentence of its own is something to attend to, in the warning tone; the rest failed.
+        assertTrue(limit.attention)
+        assertTrue(summaryFailure(CoreMessage.CHATGPT_PLAN_REQUIRED.code()).attention)
+        assertFalse(summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500")).attention)
 
-        // PROVIDER_ERROR's own sentence promises a retry nothing here makes: the headline is the detail's.
+        // PROVIDER_ERROR has no sentence of its own here: the headline is the screen's, with the detail under it.
         val provider = summaryFailure(CoreMessage.PROVIDER_ERROR.code(detail = "HTTP 500: upstream"))
         assertEquals(Str.SUMMARY_FAILED.message(), provider.headline)
         assertEquals("HTTP 500: upstream", provider.detail)
@@ -121,9 +125,12 @@ class ChatGptReasonsTest {
 
     @Test
     fun `the footer names the model the way the plan does, or by its id`() {
-        assertEquals("GPT X", summaryModelLabel("gpt-x", signedIn))
-        assertEquals("gpt-old", summaryModelLabel("gpt-old", signedIn))
-        assertEquals("gpt-x", summaryModelLabel("gpt-x", ChatGptConnection.SignedOut))
+        assertEquals("GPT X", summaryModelLabel("gpt-x", null, signedIn))
+        assertEquals("gpt-old", summaryModelLabel("gpt-old", null, signedIn))
+        assertEquals("gpt-x", summaryModelLabel("gpt-x", null, ChatGptConnection.SignedOut))
+        // The name kept with the summary reads the same signed out, and over a plan that names it otherwise now.
+        assertEquals("GPT-5.4", summaryModelLabel("gpt-5.4", "GPT-5.4", ChatGptConnection.SignedOut))
+        assertEquals("GPT X (2026)", summaryModelLabel("gpt-x", "GPT X (2026)", signedIn))
         assertEquals("ChatGPT · GPT X", base[Str.SUMMARY_MODEL, "GPT X"])
     }
 

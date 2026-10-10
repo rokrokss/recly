@@ -121,10 +121,6 @@ final class MenuModel: ObservableObject {
     /// Where the last ChatGPT sign-in was started, and so where its one-time welcome is drawn.
     @Published var chatGptSurface: SettingsSurface = .popover
 
-    /// docs/12 "Agent connection": recly-events, run for the user while its switch is on. Nil
-    /// executable — a build made without Go — and the switch says so.
-    let agentEvents = AgentEventsController(executable: Bundle.main.url(forAuxiliaryExecutable: "recly-events"))
-
     private let logger = Logger(subsystem: "app.recly.mac", category: "shell")
     private var bridge: CoreBridge?
     private var recorder: SegmentedRecorder?
@@ -256,11 +252,7 @@ final class MenuModel: ObservableObject {
             }
             self.processing = processing
             let storage = StorageChoice(core: bridge.core)
-            storage.onChanged = { [weak self, weak processing, weak storage] in
-                await processing?.storageChanged()
-                // docs/12 "Agent connection": recly-events can watch Google Drive only.
-                if let storage { self?.agentEvents.driveStorage = storage.selected == .drive }
-            }
+            storage.onChanged = { [weak processing] in await processing?.storageChanged() }
             // The recordings a picked folder let go are due now.
             storage.onFolderPicked = { [weak self] in self?.runner?.jobsDue() }
             self.storage = storage
@@ -268,11 +260,6 @@ final class MenuModel: ObservableObject {
             let chatGpt = ChatGptSettingsModel(core: bridge.core)
             self.chatGpt = chatGpt
             Task { await chatGpt.refresh() }
-            // docs/12 "Agent connection": recly-events runs on this Mac's own Drive connection — its
-            // short-lived access token, never the refresh token (docs/recly.md §15 §9).
-            agentEvents.driveConnected = { [weak self] in self?.hasGoogleCredential ?? false }
-            agentEvents.driveToken = { [tokens] in try? await tokens.__accessToken() }
-            agentEvents.driveStorage = (try? await bridge.core.processingSettings.storage()).map { $0 == .drive } ?? true
             observeJobs(core: bridge.core)
             observeRecordings(core: bridge.core)
             // There is a screen for a tap to land on now, so whatever came in while the core was
@@ -289,8 +276,6 @@ final class MenuModel: ObservableObject {
             self.auth = auth
             await auth.restore()
             account = auth.account
-            // The Drive connection recly-events runs on is known now, not at the next poll.
-            agentEvents.refreshNow()
             let runner = JobRunner(
                 queue: CoreJobQueue(core: bridge.core),
                 onPass: { [weak self] _ in self?.passFinished() }
@@ -373,6 +358,10 @@ final class MenuModel: ObservableObject {
     var status: String {
         RecorderStatusLine.text(state: state, note: note, message: message)
     }
+
+    /// 2026-10-10 (2.10): the line is what stands in the way of a disconnect or a sign-in, which is said in the
+    /// warning tone.
+    var statusIsBlocker: Bool { state == .idle && message.map(DisconnectGuard.isBlocker) == true }
 
     /// The menu bar icon: the app mark's 22-point monochrome template (docs/09 "App icon"), so the
     /// status item is the same shape as the launcher icon. The idle one is a template image and
@@ -633,6 +622,9 @@ final class MenuModel: ObservableObject {
         ) { [weak self] _ in
             MainActor.assumeIsolated {
                 guard let self else { return }
+                // docs/08 "Summaries": summaries and questions after this one are written in the new
+                // language, and Translate offers it — the core opened with the old one.
+                self.bridge?.core.summaries.setLocale(tag: AppLanguage.resolvedCode)
                 Task { await self.notifier.relocalize() }
                 // A job alert already standing in Notification Center was painted once and is still
                 // in the old language; posting it again under the same identifier replaces it.
@@ -1156,45 +1148,6 @@ final class MenuModel: ObservableObject {
         }
     }
 
-    // MARK: - Local MCP server (docs/12 "Agent connection")
-
-    /// `recly-events mcp --print-config --folder <root>` for the folder recordings go to — the iCloud
-    /// folder or the picked local folder — onto the clipboard, for an agent on this Mac to start the
-    /// server with. False when there is no folder or the program refused it.
-    func copyMCPConfiguration() async -> Bool {
-        guard let executable = Bundle.main.url(forAuxiliaryExecutable: "recly-events"),
-              let root = await recordingsRoot()
-        else { return false }
-        let printed: Data? = await Task.detached {
-            let process = Process()
-            process.executableURL = executable
-            process.arguments = ["mcp", "--print-config", "--folder", root]
-            let out = Pipe()
-            process.standardOutput = out
-            process.standardError = FileHandle.nullDevice
-            guard (try? process.run()) != nil else { return nil }
-            let data = out.fileHandleForReading.readDataToEndOfFile()
-            process.waitUntilExit()
-            return process.terminationStatus == 0 ? data : nil
-        }.value
-        guard let printed, let text = String(data: printed, encoding: .utf8) else {
-            logger.error("agent.mcp.config.failed")
-            return false
-        }
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(text, forType: .string)
-        logger.info("agent.mcp.config.copied")
-        return true
-    }
-
-    /// The top of the folder new recordings go to, when it is on this Mac's disk.
-    private func recordingsRoot() async -> String? {
-        guard let core = bridge?.core, let kind = try? await core.processingSettings.storage() else { return nil }
-        if kind == .folder { return LocalFolderPath.current }
-        if kind == .icloud { return await (core.deps.ubiquity as? ICloudContainer)?.folderURL("")?.path }
-        return nil
-    }
-
     // MARK: - Launch at login (docs/12 "Runner")
 
     func setLaunchAtLogin(_ enabled: Bool) {
@@ -1266,8 +1219,10 @@ final class MenuModel: ObservableObject {
     /// question the phone's `NamingSheet` asks in the same shape rather than an `NSAlert` with a
     /// text field bolted to its side.
     private func askForTitle() -> NamingAnswer? {
-        BlueprintPanel.run { finish in
+        let asksPeople = !(processing?.transcriptionOff ?? false)
+        return BlueprintPanel.run { finish in
             NamingSheet(
+                asksPeople: asksPeople,
                 onSave: { finish(.save(title: $0, participants: $1)) },
                 onCancel: { finish(.discard) }
             )

@@ -131,10 +131,10 @@
     <div class="section-head">
       <p class="kicker"><b>02</b> 자동 회의록</p>
       <h2>녹음을 멈추면, ChatGPT 에이전트가 회의록을 씁니다.</h2>
-      <p class="lede">새 녹취록은 하나하나 <a href="https://developers.openai.com/plugins/build/mcp-events">MCP 이벤트</a>가 됩니다. Recly Mac·Windows 앱에 들어 있는 recly-events가 <code>recording.transcribed</code>를 내 ChatGPT 에이전트(dot이나 Work 채팅)에게 보내면, 에이전트가 녹취록을 읽고 보통 1분 안에 회의록을 씁니다. 부탁할 필요가 없고, Recly 서버도 여전히 없습니다.</p>
+      <p class="lede">새 녹취록은 하나하나 <a href="https://developers.openai.com/plugins/build/mcp-events">MCP 이벤트</a>가 됩니다. 내 컴퓨터에서 직접 실행하는 작은 프로그램 recly-events가 <code>recording.transcribed</code>를 내 ChatGPT 에이전트(dot이나 Work 채팅)에게 보내면, 에이전트가 녹취록을 읽고 보통 1분 안에 회의록을 씁니다. 부탁할 필요가 없고, Recly 서버도 여전히 없습니다.</p>
     </div>
     <figure class="diagram wide">
-      <img src="/design/agent-flow.ko.svg?v=3" width="1200" height="480" loading="lazy" alt="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
+      <img src="/design/agent-flow.ko.svg?v=4" width="1200" height="480" loading="lazy" alt="녹취록이 내 Google Drive에 올라옵니다. 내 컴퓨터에서 실행 중인 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
     </figure>
     <div class="cards four">
       <article class="card">
@@ -156,11 +156,11 @@
     </div>
     <div class="split">
       <div>
-        <p class="sub">켜는 법</p>
+        <p class="sub">설정하는 법</p>
         <div class="cards stack">
           <article class="card">
-            <h3>Mac·Windows 앱에 들어 있습니다</h3>
-            <p>설정 → 에이전트 연결에서 OpenAI 터널 ID와 그 키(권한을 제한한 OpenAI API 키, <a href="/agent.ko.html#1-openai-터널과-키-만들기">만드는 법</a>)를 넣고 “ChatGPT에 새 녹음 전달하기”를 켜세요. 앱이 이미 가진 Google Drive 연결로 recly-events를 실행하므로 다시 로그인하거나 터미널을 열 필요가 없습니다. 서버나 Linux에서는 <a href="/recly-events.ko.html">recly-events를 직접 실행하세요</a>.</p>
+            <h3>직접 실행하는 프로그램</h3>
+            <p>Mac, Linux, Windows 컴퓨터나 서버에 recly-events를 설치하세요. <code>recly-events init</code>으로 Google Drive에 로그인하고 OpenAI 터널 ID와 그 키(권한을 제한한 OpenAI API 키, <a href="/recly-events.ko.html#2-터널과-키-만들기">만드는 법</a>)를 저장한 뒤, <code>recly-events service install</code>로 실행합니다.</p>
           </article>
           <article class="card">
             <h3>필요한 것</h3>
@@ -182,7 +182,7 @@
             <button class="btn btn-quiet" type="button" data-copy="cmd-subscribe" data-done="복사됨 ✓" data-fail="복사 실패">복사</button>
           </div>
         </div>
-        <p class="fine">3번은 녹음마다 하고 싶은 일로 바꾸고, 나머지는 그대로 두세요. 단계별 안내: <a href="/agent.ko.html">ChatGPT 에이전트 안내</a>.</p>
+        <p class="fine">3번은 녹음마다 하고 싶은 일로 바꾸고, 나머지는 그대로 두세요. 단계별 안내: <a href="/recly-events.ko.html">recly-events 직접 실행하기</a>.</p>
       </div>
     </div>
   </div>
@@ -345,7 +345,7 @@
     <div class="section-head">
       <p class="kicker"><b>07</b> 프라이버시</p>
       <h2>믿어야 할 Recly 서버가 없습니다.</h2>
-      <p class="lede">Recly에는 서버가 없습니다. 데이터는 고른 저장소(내 Google Drive, iPhone·Mac에서는 내 iCloud, 또는 기기 안에 머무는 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 켰다면 OpenAI를 거쳐 내 ChatGPT 에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크와, 에이전트가 요청할 때의 녹취록이고, 오디오는 가지 않습니다.</p>
+      <p class="lede">Recly에는 서버가 없습니다. 데이터는 고른 저장소(내 Google Drive, iPhone·Mac에서는 내 iCloud, 또는 기기 안에 머무는 로컬 폴더), 내 키로 고른 전사 업체, 짝지은 내 워치와 폰 사이, 그리고 자동 회의록을 위해 recly-events를 실행한다면 OpenAI를 거쳐 내 ChatGPT 에이전트에게만 갑니다. 에이전트에게 가는 것은 녹음의 이름·제목·Drive 링크와, 에이전트가 요청할 때의 녹취록이고, 오디오는 가지 않습니다.</p>
     </div>
     <div class="stats">
       <div><span class="n">0</span><span class="t">Recly 서버·데이터베이스·계정</span></div>

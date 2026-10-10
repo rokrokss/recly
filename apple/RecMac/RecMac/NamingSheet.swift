@@ -9,6 +9,8 @@ import SwiftUI
 /// "Unknown" is where the count starts and it writes nothing: a recording keeps whatever count it
 /// already had rather than losing it to an unanswered question.
 struct NamingSheet: View {
+    /// 2026-10-10 (3.5): the count is a hint to the transcription, so it is not asked while transcription is off.
+    let asksPeople: Bool
     /// `(title, participants)` — nil title is "no name", nil participants is "unknown".
     let onSave: (String?, Int?) -> Void
     let onCancel: () -> Void
@@ -29,14 +31,16 @@ struct NamingSheet: View {
             BlueprintButton(loc("Save"), tone: .primary, minWidth: 120) { onSave(trimmed, participants) }
         } content: {
             BlueprintField(loc("Title"), text: $title, placeholder: RecKitStrings.localized("Untitled"))
-            Text(verbatim: loc("People in the room"))
-                .font(blueprint.fonts.label)
-                .tracking(0.6)
-                .foregroundStyle(blueprint.palette.textMuted)
-            FlowLayout {
-                ForEach(choices, id: \.self) { choice in
-                    BlueprintChip(label(choice), selected: participants == choice) {
-                        participants = choice
+            if asksPeople {
+                Text(verbatim: loc("People in the room"))
+                    .font(blueprint.fonts.label)
+                    .tracking(0.6)
+                    .foregroundStyle(blueprint.palette.textMuted)
+                FlowLayout {
+                    ForEach(choices, id: \.self) { choice in
+                        BlueprintChip(label(choice), selected: participants == choice) {
+                            participants = choice
+                        }
                     }
                 }
             }

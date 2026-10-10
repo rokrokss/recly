@@ -8,6 +8,8 @@ import recly.core.message.CoreMessage
 import recly.core.processing.*
 import recly.core.transcribe.LocalEngineInfo
 import recly.core.transcribe.installed
+import app.recly.windows.ui.theme.Motion
+import app.recly.windows.ui.theme.ProcessingState
 
 /** Draft and import preview survive window dismissal. Only Save affects future captures. */
 class ProcessingViewModel(
@@ -25,6 +27,11 @@ class ProcessingViewModel(
     var busy by mutableStateOf(false); private set
     var importing by mutableStateOf(false); private set
     var message: UiMessage? by mutableStateOf(null); private set
+    /**
+     * Save's own window (docs/09 trend 2): `…` while it saves, then the check — the whole of what says it saved
+     * (2026-10-10); a line that stayed behind saying so is gone. Taken down once the button has had its window.
+     */
+    var saveState: ProcessingState by mutableStateOf(ProcessingState.IDLE); private set
     var summary: ProcessingTranscription by mutableStateOf(ProcessingTranscription()); private set
     var secretNames: List<String> by mutableStateOf(emptyList()); private set
     /** Whether this build ships an on-device engine; the panel hides `local` when it does not. */
@@ -65,6 +72,8 @@ class ProcessingViewModel(
         val current = draft ?: return@launch
         if (busy) return@launch
         busy = true
+        saveState = ProcessingState.PROCESSING
+        var saved = false
         try {
             val result = when (val value = stored) {
                 is ProcessingSettingsState.Ready -> core.processingSettings.save(current.settings(), value.document.revision)
@@ -75,13 +84,20 @@ class ProcessingViewModel(
                     stored = ProcessingSettingsState.Ready(result.document); draft = ProcessingDraft.from(result.document.settings)
                     summary = result.document.settings.transcription; dirty = false; importing = false
                     download.track(engineLanguage(summary.language))
-                    message = Str.PROCESSING_SAVED.message(); onSaved()
+                    message = null; saved = true; onSaved()
                 }
                 is ProcessingSaveResult.Invalid -> message = coreMessage(CoreMessage.STEP_FAILED, result.errors.joinToString("\n"))
                 ProcessingSaveResult.Stale -> message = coreMessage(CoreMessage.STALE)
                 else -> message = Str.PROCESSING_UNREADABLE.message()
             }
-        } catch (error: Exception) { failed(error) } finally { busy = false }
+        } catch (error: Exception) { failed(error) } finally { busy = false; settleSave(if (saved) ProcessingState.DONE else ProcessingState.FAILED) }
+    }
+    private fun settleSave(state: ProcessingState) {
+        saveState = state
+        scope.launch {
+            delay(Motion.PROCESSING_MAX_MS)
+            if (saveState == state) saveState = ProcessingState.IDLE
+        }
     }
     fun saveKey(name: String, value: String, saved: () -> Unit) = scope.launch {
         if (!name.matches(Regex("[a-z][a-z0-9_]{0,31}")) || value.isBlank()) {

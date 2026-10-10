@@ -21,13 +21,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.*
 import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.mono
+import app.recly.windows.ui.theme.ProcessingState
 import recly.core.processing.*
 import java.time.LocalDateTime
 import java.util.Locale
@@ -50,7 +50,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         BlueprintButton(strings[Str.CANCEL], { deletingKey = null }, tone = ButtonTone.QUIET)
         // Irreversible, so the danger tone, as every Delete that cannot be undone wears it.
         BlueprintButton(strings[Str.DELETE], { model.deleteKey(name); deletingKey = null }, tone = ButtonTone.DANGER)
-    }) { Text(name) } }
+    }) { Text(name, color = blueprint.text) } }
     // The same section heading as the rest of Settings (SettingsWindow `Section`).
     SectionHeader(strings[Str.PROCESSING_TITLE], Modifier.padding(horizontal = Space.m))
     HairLine()
@@ -60,7 +60,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
         Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY])
+        // Every line here says its colour (2026-10-10): a forgotten one was near-black on the dark page.
+        if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
         // Only for recordings kept in a local folder (2026-10-09): Drive always files them a folder a month.
         if (showsFolderChoice(model.stored)) StorageFolder(draft.folder, { v -> model.edit { it.folder = v } }, strings)
         BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
@@ -83,11 +84,11 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
             when {
                 // A language the model lacks has its own line below; this one is for the device.
                 !model.localInstalled || (model.local?.status == LocalEngineStatus.UNSUPPORTED && languageSupported) ->
-                    Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall)
+                    Text(strings[Str.CORE_LOCAL_TRANSCRIPTION_UNAVAILABLE], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
                 model.local?.status == LocalEngineStatus.MODEL_REQUIRED -> {
                     (model.local?.modelBytes ?: model.download.info?.modelBytes)?.let { bytes ->
                         val size = ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))
-                        Text(strings[Str.PROCESSING_MODEL_DOWNLOAD, size], style = MaterialTheme.typography.bodySmall)
+                        Text(strings[Str.PROCESSING_MODEL_DOWNLOAD, size], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
                     }
                     // Not while recording, as on the Mac: the download is for later, the recording is now.
                     ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
@@ -101,8 +102,10 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                 BlueprintDropdown(strings[Str.FIELD_PROVIDER], WorkflowParser.STT_PROVIDERS.map { it to SttProviders.displayName(it) }, draft.provider, { value -> model.edit { it.selectProvider(value) } })
             }
             // docs/15 §3: what leaves the device, said under the provider choice on every shell.
-            Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE, SttProviders.displayName(draft.provider)], style = MaterialTheme.typography.bodySmall)
-            if (SttProviders.keyIsClientPair(draft.provider)) Text(strings[Str.PROCESSING_KEY_CLIENT_PAIR], style = MaterialTheme.typography.bodySmall)
+            Text(strings[Str.PROVIDER_DISCLOSURE_TRANSCRIBE, SttProviders.displayName(draft.provider)], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            if (SttProviders.keyIsClientPair(draft.provider)) {
+                Text(strings[Str.PROCESSING_KEY_CLIENT_PAIR], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
+            }
             ProcessingKey(model, draft.secretRef, strings) { deletingKey = draft.secretRef }
             if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL], placeholder = draft.invokeUrlHint)
             if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
@@ -112,14 +115,23 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
             LabelledRow(strings[Str.FIELD_LANGUAGE]) {
                 BlueprintDropdown(strings[Str.FIELD_LANGUAGE], languages.map { it to transcriptionLanguageLabel(it, strings) }, draft.language, { value -> model.edit { it.language = value } })
             }
-            if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED])
+            if (!languageSupported) Text(strings[Str.PROCESSING_LANGUAGE_UNSUPPORTED], style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk)
             Vocabulary(model, draft, strings)
         }
-        model.message?.let { Text(it.text(strings)) }
-        // docs/09: a form's buttons are end-aligned, the commit last — and only there while the draft has changes.
-        if (model.dirty) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
-            BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = !model.busy)
-            BlueprintButton(strings[Str.SAVE], { model.save() }, tone = ButtonTone.PRIMARY, enabled = !model.busy && languageSupported)
+        // What did not save, and why — 12, in the failure's colour (2026-10-10). That it saved is Save's own check.
+        model.message?.let { Text(it.text(strings), style = MaterialTheme.typography.bodySmall, color = blueprint.danger) }
+        // docs/09: a form's buttons are end-aligned, the commit last — and only there while the draft has changes, or
+        // while Save is still showing that it saved.
+        if (model.dirty || model.saveState != ProcessingState.IDLE) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
+            if (model.dirty) BlueprintButton(strings[Str.CANCEL], { model.reload() }, tone = ButtonTone.QUIET, enabled = !model.busy)
+            ProcessingButton(
+                label = strings[Str.SAVE],
+                state = model.saveState,
+                strings = strings,
+                onClick = { model.save() },
+                tone = ButtonTone.PRIMARY,
+                enabled = model.dirty && !model.busy && languageSupported,
+            )
         }
         // Keys only matter to an external provider, so the list lives with it — after the form it
         // belongs to, because deleting one is not part of that form's Save.
@@ -138,7 +150,7 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
 
 /**
  * docs/05: the processing settings out to a file and back. Its own section in Settings, after the
- * features — Agent connection included — because it is a utility (docs/09 screen principle 4).
+ * features, because it is a utility (docs/09 screen principle 4).
  */
 @Composable
 fun ProcessingSettingsFile(model: ProcessingViewModel, strings: Strings) {
@@ -173,11 +185,14 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
             BlueprintButton(strings[Str.DELETE], delete, tone = ButtonTone.DANGER)
         }
     } else {
-        OutlinedTextField(value, { value = it }, label = { Text(strings[Str.FIELD_API_KEY]) }, singleLine = true,
-            visualTransformation = PasswordVisualTransformation(), modifier = Modifier.fillMaxWidth(),
-            supportingText = if (name.isBlank() || replacing) null else {
-                { Text(strings[Str.PROCESSING_KEY_NOT_ON_DEVICE]) }
-            })
+        // The field every other field is (2026-10-10): its label over the box, never floating, and dots for what is typed.
+        BlueprintTextField(
+            value = value,
+            onValueChange = { value = it },
+            label = strings[Str.FIELD_API_KEY],
+            hint = if (name.isBlank() || replacing) null else strings[Str.PROCESSING_KEY_NOT_ON_DEVICE],
+            secret = true,
+        )
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             if (replacing) BlueprintButton(strings[Str.CANCEL], { value = ""; replacing = false }, tone = ButtonTone.QUIET)
             BlueprintButton(strings[Str.PROCESSING_SAVE_KEY], { model.saveKey(name, value) { value = ""; replacing = false } }, enabled = name.isNotBlank() && value.isNotBlank(), tone = ButtonTone.QUIET)
@@ -197,11 +212,11 @@ private fun SpeakerModel(model: ProcessingViewModel, strings: Strings, preparati
     val info = model.download.info ?: model.local
     if (model.local?.status == LocalEngineStatus.READY && info?.supportsDiarization == false) {
         info.modelBytes?.let { bytes ->
-            Text(strings[Str.PROCESSING_MODEL_SIZE, ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))], style = MaterialTheme.typography.bodySmall)
+            Text(strings[Str.PROCESSING_MODEL_SIZE, ByteFormat.format(bytes, Locale.forLanguageTag(strings.language))], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
         }
         ModelDownloadControls(model.download, strings, preparationAllowed, model::prepare, ButtonTone.ACCENT)
     }
-    Text(strings[Str.PROCESSING_LOCAL_SPEAKERS], style = MaterialTheme.typography.bodySmall)
+    Text(strings[Str.PROCESSING_LOCAL_SPEAKERS], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
 }
 
 /**

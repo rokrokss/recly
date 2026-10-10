@@ -92,6 +92,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
      */
     fun setLanguage(value: AppLanguage) {
         language.select(value)
+        // The core is not recreated with the activities: its summaries and Ask presets are told the language here.
+        viewModelScope.launch { CoreModule.get(getApplication()).core.summaries.setLocale(value.tag) }
     }
 
     /**

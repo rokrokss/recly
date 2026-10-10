@@ -145,8 +145,8 @@ fun DisconnectDialog(
     ) {
         BlueprintDialogText(strings[Str.DISCONNECT_OTHER_DEVICES], tone = DialogTone.MUTED)
         // docs/12: a capture that is running has no job yet, so the core's Busy guard does not cover
-        // it. Say what is in the way; never stop it for them.
-        prompt.blocker?.let { BlueprintDialogText(strings[it], tone = DialogTone.DANGER) }
+        // it. Say what is in the way — a wait, in the warning tone, not a failure (2026-10-10); never stop it for them.
+        prompt.blocker?.let { BlueprintDialogText(strings[it], tone = DialogTone.WARNING) }
 
     }
 }

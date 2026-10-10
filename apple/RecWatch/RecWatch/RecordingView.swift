@@ -38,9 +38,10 @@ struct RecordingView: View {
             }
 
             if model.microphoneDenied {
+                // 2026-10-10 (2.10): something to put right in Settings, not a failure — the warning tone.
                 Text("Turn the microphone on in Settings > Privacy")
                     .font(blueprint.fonts.sans(TypeSize.small))
-                    .foregroundStyle(blueprint.palette.danger)
+                    .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
             }
         }
         .padding(.horizontal, Space.xs)

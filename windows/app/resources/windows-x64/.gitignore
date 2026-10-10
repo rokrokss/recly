@@ -1,10 +1,8 @@
 # The MSI's payload (docs/14 "App", ADR-019). Built, never committed:
 #   recly-capture-helper.exe  — cargo build --release, windows/capture-helper
 #   ffmpeg.exe + *.dll        — an LGPL shared build (windows/README.md)
-#   recly-events.exe          — go build, events/ (docs/14 "Agent connection")
 # `.github/workflows/windows.yml` puts them here before `packageMsi`.
 recly-capture-helper.exe
 ffmpeg.exe
 ff*.exe
 *.dll
-recly-events.exe

@@ -105,7 +105,7 @@
     <string name="core_step_failed">失败：%1$s</string>
     <string name="core_auth_rejected">提供商拒绝了密钥</string>
     <string name="core_quota">提供商配额用尽或触发速率限制。</string>
-    <string name="core_provider_error">提供商发生错误，将自动重试。</string>
+    <string name="core_provider_error">服务提供方出现问题。</string>
     <string name="core_unsupported_audio">提供商无法接受此音频。</string>
     <string name="core_no_input_track">此录音没有可转录的单声道或混音轨道。</string>
     <string name="core_result_timeout">提供商未在规定时间内完成，将重新提交。</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">标题</string>
     <string name="jobs_column_length">时长</string>
     <string name="jobs_column_status">状态</string>
-    <string name="jobs_summary">%1$d·%2$d项等待·%3$d项失败</string>
+    <string name="jobs_summary_waiting">%1$d项等待</string>
+    <string name="jobs_summary_failed">%1$d项失败</string>
     <string name="jobs_row_expand">展开</string>
     <string name="jobs_row_collapse">收起</string>
     <string name="jobs_row_description">%1$s，录制于%2$s，时长%3$s，%4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">需要传输权限</string>
     <string name="job_state_needs_model">等待语音模型</string>
     <string name="delete_key_title">删除密钥：%1$s</string>
-    <string name="detail_not_requested">此录音没有可运行的转录步骤。</string>
+    <string name="detail_not_requested">转写已关闭。请在设置中开启，然后使用“重新转录”。</string>
     <string name="detail_pending">转录尚未完成，结果就绪后会显示在此处。</string>
     <string name="detail_failed">转录未能完成。请在列表中查看此录音以进行下一步操作。</string>
     <string name="detail_parked">转录正在等待。请在列表中查看此录音需要的操作。</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">关闭</string>
     <string name="processing_storage">存储文件夹</string>
     <string name="processing_transcription">转录</string>
-    <string name="processing_saved">设置已保存</string>
     <string name="processing_prepare">下载模型</string>
     <string name="processing_download_progress">正在下载模型… %1$d%%</string>
     <string name="processing_download_bytes">%1$s / %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">正在转录…</string>
     <string name="detail_transcription_off">已在“设置”中关闭转录</string>
     <string name="detail_not_uploaded">尚未上传</string>
+    <string name="detail_still_recording">仍在录音</string>
     <string name="share_transcript">转录文本</string>
     <string name="share_transcript_format">纯文本 · .txt</string>
     <string name="share_notes">笔记用转录文本</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">请在浏览器中完成登录</string>
     <string name="chatgpt_sign_in_failed">无法登录ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">已在此设备上退出登录，但OpenAI未确认。你可以在ChatGPT设置中移除Recly。</string>
-    <string name="chatgpt_footnote">摘要会把转写文本、你标记的时刻以及你在此填写的内容发送给 OpenAI——绝不发送音频——并计入你的 ChatGPT 套餐用量。</string>
+    <string name="chatgpt_footnote">摘要和提问会把转写文本、你标记的时刻以及你在此填写的内容发送给 OpenAI——绝不发送音频——并计入你的 ChatGPT 套餐用量。</string>
     <string name="chatgpt_welcome_title">你正在使用ChatGPT套餐</string>
     <string name="chatgpt_welcome_body">Recly中的总结使用你的ChatGPT套餐。你可以在ChatGPT设置中管理用量。</string>
     <string name="chatgpt_got_it">知道了</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">我的格式</string>
     <string name="summary_custom_placeholder">写下章节和要求，例如：摘要、风险、带负责人的后续步骤。</string>
     <string name="summary_custom_note">摘要格式为“我的格式”时使用。</string>
+    <string name="summary_custom_empty">在此写下你的格式；在此之前，摘要使用“通用”格式。</string>
     <string name="summary_about">关于你</string>
     <string name="summary_about_placeholder">例如：产品经理，关注截止日期和决定。</string>
-    <string name="summary_about_note">摘要会据此判断哪些内容对你重要。</string>
+    <string name="summary_about_note">摘要和回答会据此判断哪些内容对你重要。</string>
     <string name="summary_as">按格式总结…</string>
     <string name="summary_play_from">从 %1$s 开始播放</string>
     <string name="ask_menu">询问这段录音…</string>

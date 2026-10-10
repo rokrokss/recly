@@ -64,9 +64,6 @@ interface Settings {
     /** docs/12 M8: asked once before the first meeting recording, and switchable off in Settings. */
     var consentReminder: Boolean
 
-    /** docs/14 "Agent connection": run recly-events for the user. Off unless they turn it on. */
-    var agentEvents: Boolean
-
     /** docs/07 rule 2: system default, Korean or English, on this machine only. */
     var language: AppLanguage
 
@@ -135,10 +132,6 @@ class PreferenceSettings(
         get() = prefs.getBoolean(CONSENT_REMINDER, true)
         set(value) = prefs.putBoolean(CONSENT_REMINDER, value)
 
-    override var agentEvents: Boolean
-        get() = prefs.getBoolean(AGENT_EVENTS, false)
-        set(value) = prefs.putBoolean(AGENT_EVENTS, value)
-
     override var language: AppLanguage
         get() = AppLanguage.of(prefs.get(LANGUAGE, ""))
         set(value) = prefs.put(LANGUAGE, value.tag)
@@ -188,7 +181,6 @@ class PreferenceSettings(
         /** `Preferences` wants a path, and `app.recly.windows` is not one. */
         const val NODE = "app/recly/windows"
         const val CONSENT_REMINDER = "consentReminder"
-        const val AGENT_EVENTS = "agentEvents"
         const val LANGUAGE = "language"
         const val THEME = "theme"
         const val DISCONNECT_PHASE = "disconnectPhase"

@@ -33,10 +33,12 @@ val generateOAuthConfig = tasks.register("generateOAuthConfig") {
     val clientId = oauth("google.desktopClientId", "REC_GOOGLE_DESKTOP_CLIENT_ID", "REPLACE_ME.apps.googleusercontent.com")
     val clientSecret = oauth("google.desktopClientSecret", "REC_GOOGLE_DESKTOP_CLIENT_SECRET", "REPLACE_ME")
     val version = project.version.toString()
+    val build = installerVersion
     val output = layout.buildDirectory.dir("generated/oauth")
     inputs.property("clientId", clientId)
     inputs.property("clientSecret", clientSecret)
     inputs.property("version", version)
+    inputs.property("build", build)
     outputs.dir(output)
     doLast {
         val file = output.get().file("app/recly/windows/auth/OAuthConfig.kt").asFile
@@ -50,6 +52,9 @@ val generateOAuthConfig = tasks.register("generateOAuthConfig") {
                 const val CLIENT_ID: String = "$clientId"
                 const val CLIENT_SECRET: String = "$clientSecret"
                 const val APP_VERSION: String = "$version"
+
+                /** The MSI's install version, which moves while [APP_VERSION] stays: what Settings → About calls the build. */
+                const val BUILD: String = "$build"
 
                 /** True while the placeholders are in place: sign-in is offered but cannot work. */
                 val isPlaceholder: Boolean get() = CLIENT_ID.startsWith("REPLACE_ME")

@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.dp
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Radius
@@ -114,7 +115,8 @@ fun TableRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
+                // A word longer than the column (German "Zusammenfassungsformat") breaks with a hyphen, not mid-word.
+                Text(title, style = MaterialTheme.typography.bodyMedium.copy(hyphens = Hyphens.Auto), color = palette.text)
                 subtitle?.let {
                     Text(it, style = MaterialTheme.typography.bodySmall, color = subtitleColor.takeOrElse { palette.textMuted })
                 }

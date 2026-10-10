@@ -49,10 +49,10 @@ class PreferenceFieldTest {
                 ReclyDesktopTheme(dark = false, highContrast = false) {
                     Column {
                         Column(Modifier.onGloballyPositioned { first = it.boundsInRoot() }) {
-                            PreferenceField("", { custom += it }, "My format", "Sections", "Used when", max = 10, singleLine = false)
+                            PreferenceField("", { custom += it }, "My format", "Sections", "Used when", max = 10, returnSaves = false, lines = 2..8)
                         }
                         Column(Modifier.onGloballyPositioned { second = it.boundsInRoot() }) {
-                            PreferenceField("", { about += it }, "About you", "e.g.", "Summaries use this", max = 300, singleLine = true)
+                            PreferenceField("", { about += it }, "About you", "e.g.", "Summaries use this", max = 300, returnSaves = true, lines = 1..3)
                         }
                     }
                 }
@@ -91,7 +91,7 @@ class PreferenceFieldTest {
             assertEquals("Risks, own", custom.last())
             type("PM")
             press(Key.Enter, java.awt.event.KeyEvent.VK_ENTER)
-            assertEquals("PM", about.last(), "Return in the one-line field")
+            assertEquals("PM", about.last(), "Return in the field where Return saves")
             // Back in at the end of the text (elsewhere than before: twice in one place is a double click, which
             // selects the word), a change, and the window put behind another.
             click(Offset(second.left + 200f, second.top + 30f))

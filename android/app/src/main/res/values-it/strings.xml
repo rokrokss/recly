@@ -105,7 +105,7 @@
     <string name="core_step_failed">Errore: %1$s</string>
     <string name="core_auth_rejected">Il fornitore ha rifiutato la chiave.</string>
     <string name="core_quota">Il fornitore ha esaurito la quota o sta limitando le richieste.</string>
-    <string name="core_provider_error">Si è verificato un errore presso il fornitore. Verrà fatto un nuovo tentativo.</string>
+    <string name="core_provider_error">Si è verificato un problema presso il fornitore.</string>
     <string name="core_unsupported_audio">Il fornitore non ha accettato questo audio.</string>
     <string name="core_no_input_track">Questa registrazione non ha una traccia mono o mixata da trascrivere.</string>
     <string name="core_result_timeout">Il fornitore non ha terminato in tempo. La richiesta verrà inviata di nuovo.</string>
@@ -126,7 +126,8 @@
     <string name="jobs_column_title">Titolo</string>
     <string name="jobs_column_length">Durata</string>
     <string name="jobs_column_status">Stato</string>
-    <string name="jobs_summary">%1$d · %2$d in attesa · %3$d con errore</string>
+    <string name="jobs_summary_waiting">%1$d in attesa</string>
+    <string name="jobs_summary_failed">%1$d con errore</string>
     <string name="jobs_row_expand">Espandi</string>
     <string name="jobs_row_collapse">Comprimi</string>
     <string name="jobs_row_description">%1$s, registrata il %2$s, durata %3$s, %4$s</string>
@@ -209,7 +210,7 @@
     <string name="job_state_needs_consent">Serve l’autorizzazione al trasferimento</string>
     <string name="job_state_needs_model">In attesa del modello vocale</string>
     <string name="delete_key_title">Elimina chiave: %1$s</string>
-    <string name="detail_not_requested">Questa registrazione non ha un passaggio di trascrizione da eseguire.</string>
+    <string name="detail_not_requested">La trascrizione è disattivata. Attivala in Impostazioni, poi usa Trascrivi di nuovo.</string>
     <string name="detail_pending">La trascrizione non è ancora terminata. Il risultato apparirà qui quando sarà pronto.</string>
     <string name="detail_failed">Impossibile completare la trascrizione. Controlla questa registrazione nell’elenco per sapere come procedere.</string>
     <string name="detail_parked">La trascrizione è in attesa. Controlla questa registrazione nell’elenco per vedere cosa serve.</string>
@@ -242,7 +243,6 @@
     <string name="processing_off">Disattivato</string>
     <string name="processing_storage">Cartella di archiviazione</string>
     <string name="processing_transcription">Trascrizione</string>
-    <string name="processing_saved">Impostazioni salvate</string>
     <string name="processing_prepare">Scarica modello</string>
     <string name="processing_download_progress">Download del modello… %1$d%%</string>
     <string name="processing_download_bytes">%1$s di %2$s</string>
@@ -311,6 +311,7 @@
     <string name="detail_transcribing">Trascrizione in corso…</string>
     <string name="detail_transcription_off">La trascrizione è disattivata in Impostazioni</string>
     <string name="detail_not_uploaded">Non ancora caricata</string>
+    <string name="detail_still_recording">Registrazione in corso</string>
     <string name="share_transcript">Trascrizione</string>
     <string name="share_transcript_format">Testo · .txt</string>
     <string name="share_notes">Trascrizione per appunti</string>
@@ -392,7 +393,7 @@
     <string name="chatgpt_finish_in_browser">Completa l’accesso nel browser</string>
     <string name="chatgpt_sign_in_failed">Impossibile accedere a ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Disconnesso su questo dispositivo, ma OpenAI non l’ha confermato. Puoi rimuovere Recly nelle impostazioni di ChatGPT.</string>
-    <string name="chatgpt_footnote">Un riepilogo invia a OpenAI il testo della trascrizione, i momenti evidenziati e ciò che hai scritto qui — mai l’audio — e conta nell’utilizzo del tuo piano ChatGPT.</string>
+    <string name="chatgpt_footnote">Riepiloghi e domande inviano a OpenAI il testo della trascrizione, i momenti evidenziati e ciò che hai scritto qui — mai l’audio — e contano nell’utilizzo del tuo piano ChatGPT.</string>
     <string name="chatgpt_welcome_title">Stai usando il tuo piano ChatGPT</string>
     <string name="chatgpt_welcome_body">I riassunti in Recly usano il tuo piano ChatGPT. Puoi gestire l’utilizzo nelle impostazioni di ChatGPT.</string>
     <string name="chatgpt_got_it">Ho capito</string>
@@ -425,9 +426,10 @@
     <string name="summary_format_custom">Il mio formato</string>
     <string name="summary_custom_placeholder">Sezioni e istruzioni, ad es. Riepilogo, Rischi, Prossimi passi con responsabili.</string>
     <string name="summary_custom_note">Usato quando il formato del riepilogo è Il mio formato.</string>
+    <string name="summary_custom_empty">Scrivi qui il tuo formato; fino ad allora i riepiloghi usano Generale.</string>
     <string name="summary_about">Su di te</string>
     <string name="summary_about_placeholder">ad es. Product manager; mi interessano scadenze e decisioni.</string>
-    <string name="summary_about_note">I riepiloghi lo usano per capire cosa conta per te.</string>
+    <string name="summary_about_note">Riepiloghi e risposte lo usano per capire cosa conta per te.</string>
     <string name="summary_as">Riepiloga come…</string>
     <string name="summary_play_from">Riproduci da %1$s</string>
     <string name="ask_menu">Chiedi su questa registrazione…</string>

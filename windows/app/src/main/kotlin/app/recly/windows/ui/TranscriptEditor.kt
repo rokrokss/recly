@@ -1,7 +1,5 @@
 package app.recly.windows.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,13 +26,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.HairLine
-import app.recly.windows.ui.theme.Radius
+import app.recly.windows.ui.component.fieldBox
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import recly.core.transcribe.Transcript
@@ -124,10 +122,10 @@ internal fun TranscriptEditor(
                         modifier = Modifier
                             .fillMaxWidth()
                             .semantics { contentDescription = spoken }
-                            .border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node))
-                            .background(palette.surface, RoundedCornerShape(Radius.node))
+                            // The accent while it has the focus, and the direction of its own words (2026-10-10).
+                            .fieldBox()
                             .padding(horizontal = Space.s, vertical = Space.s),
-                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text),
+                        textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text, textDirection = TextDirection.Content),
                         cursorBrush = SolidColor(palette.accent),
                     )
                 }

@@ -33,12 +33,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -70,6 +68,7 @@ import app.recly.android.ui.component.BlueprintChip
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogLink
 import app.recly.android.ui.component.BlueprintDialogText
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.DialogTone
 import app.recly.android.ui.component.LiveWaveform
@@ -243,11 +242,12 @@ fun RecordingSection(
             // after the second one the system dialog does not open at all — so the screen offers
             // the one thing that can undo it, in the iPhone's own words.
             if (gate.microphoneDenied) {
+                // A permission to give back, in the warning tone: red is for a failure or a delete.
                 Text(
                     stringResource(R.string.recording_mic_required),
                     modifier = Modifier.padding(horizontal = Space.m),
                     style = MaterialTheme.typography.bodySmall,
-                    color = palette.danger,
+                    color = palette.warningInk,
                     textAlign = TextAlign.Center,
                 )
                 BlueprintButton(
@@ -264,7 +264,8 @@ fun RecordingSection(
     // The recording is already finalized on disk by the time this appears; the answer only decides
     // what title the queued job carries.
     if (state.untitled != null) {
-        TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle)
+        TitleDialog(onSave = onSaveTitle, onCancel = onCancelTitle,
+            askParticipants = state.processing.mode != recly.core.processing.TranscriptionMode.OFF)
     }
 
     if (state.consentPrompt) {
@@ -585,15 +586,19 @@ private fun granted(context: Context, permission: String): Boolean =
 /**
  * docs/03: the name, and how many people were in the room. The participant count is a hint the
  * `transcribe` step trusts over the workflow's own `speakers` (docs/08), and "unknown" — the
- * default — writes nothing at all rather than guessing.
+ * default — writes nothing at all rather than guessing; with transcription off nothing would use it, so
+ * [askParticipants] leaves the question out.
+ *
+ * docs/03 "Titles": it closes through its two buttons only — Back and a tap outside do nothing, because the
+ * second button deletes the recording and no gesture should come near that.
  */
 @Composable
-internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit) {
+internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit, askParticipants: Boolean = true) {
     var title by remember { mutableStateOf("") }
     var participants by remember { mutableStateOf<Int?>(null) }
     BlueprintDialog(
         title = stringResource(R.string.recording_title_prompt),
-        onDismissRequest = onCancel,
+        onDismissRequest = {},
         actions = {
             // docs/03 "Titles": the second answer throws the recording that just ended away — said
             // so, in the red of an irreversible delete (user decision, 2026-10-08).
@@ -612,13 +617,9 @@ internal fun TitleDialog(onSave: (String, Int?) -> Unit, onCancel: () -> Unit) {
             )
         },
     ) {
-        OutlinedTextField(
-            value = title,
-            onValueChange = { title = it },
-            placeholder = { Text(stringResource(R.string.jobs_untitled)) },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth().height(64.dp),
-        )
+        BlueprintField(title, { title = it }, Modifier.fillMaxWidth(), placeholder = stringResource(R.string.jobs_untitled),
+            fieldModifier = Modifier.testTag("title-field"))
+        if (!askParticipants) return@BlueprintDialog
         BlueprintDialogText(
             stringResource(R.string.recording_participants),
             tone = DialogTone.MUTED,

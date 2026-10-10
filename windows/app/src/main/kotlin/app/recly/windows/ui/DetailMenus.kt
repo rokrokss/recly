@@ -7,10 +7,7 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
@@ -34,13 +31,21 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.BlueprintDialog
 import app.recly.windows.ui.component.BlueprintDialogText
+import app.recly.windows.ui.component.BACK_MARK
 import app.recly.windows.ui.component.BlueprintMenu
+import app.recly.windows.ui.component.BlueprintMenuColumn
+import app.recly.windows.ui.component.BlueprintMenuDivider
+import app.recly.windows.ui.component.BlueprintMenuRow
 import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
@@ -127,7 +132,7 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
     Box {
         BlueprintButton(if (copied) "$SELECTION_MARK ${strings[Str.TRANSCRIPT_COPIED]}" else strings[Str.EXPORT], { open = true }, tone = ButtonTone.QUIET)
         val summaries = model.chatGpt?.connection != ChatGptConnection.Unavailable
-        BlueprintMenu(open, { if (preparing == null) open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+        BlueprintMenu(open, { if (preparing == null) open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
             EXPORTS.filter { (format) -> format != ExportFormat.SUMMARY || summaries }.forEach { (format, label, kind) ->
                 val audio = format == ExportFormat.AUDIO
                 val reason = when {
@@ -138,7 +143,7 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
                     !audio && !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                     else -> null
                 }
-                MenuRow(
+                BlueprintMenuRow(
                     label = strings[label],
                     onClick = {
                         preparing = format
@@ -158,7 +163,7 @@ internal fun ExportButton(model: ShellModel, detail: RecordingDetail, strings: S
                     },
                 )
             }
-            MenuRow(
+            BlueprintMenuRow(
                 label = strings[Str.TRANSCRIPT_COPY],
                 onClick = {
                     detail.transcript?.let { clipboard.setText(AnnotatedString(TranscriptNormalizer.text(it))) }
@@ -184,10 +189,12 @@ private val EXPORTS = listOf(
 )
 
 /**
- * docs/09 "Screen principles": the detail's ⋯ — Rename · Edit transcript · Transcribe again · Add highlight ·
- * Summarize · Summarize as… · Edit summary · Ask about this recording…. What cannot run now stays in its place,
- * disabled, with the reason under it. Summarize as… turns the menu into the formats, the way Change speaker turns
- * the speaker's menu into the speakers.
+ * docs/09 "Screen principles": the detail's ⋯, in three groups with a hairline between them (2026-10-10) — Rename ·
+ * Edit transcript · Transcribe again, then the summary's Summarize · Summarize as… · Edit summary · Ask about this
+ * recording… where ChatGPT is offered, then Add highlight. What cannot run now stays in its place, disabled, with the
+ * reason under it — `Still recording` for every one of them while the take is being written. Summarize as… turns the
+ * menu into the formats under a heading that goes back, the way Change speaker turns the speaker's menu into the
+ * speakers.
  */
 @Composable
 internal fun MoreButton(
@@ -208,93 +215,105 @@ internal fun MoreButton(
                 choosingFormat = false
                 open = true
             },
-            // As wide as it is tall: a single mark is not a 44 target on its own.
-            modifier = Modifier.defaultMinSize(minWidth = MinTouch).semantics { contentDescription = strings[Str.DETAIL_MORE] },
+            modifier = Modifier.semantics { contentDescription = strings[Str.DETAIL_MORE] },
             tone = ButtonTone.QUIET,
         )
-        BlueprintMenu(open, { open = false }, alignment = Alignment.TopEnd, maxHeight = DETAIL_MENU_HEIGHT) { MenuColumn {
+        BlueprintMenu(open, { open = false }, end = true, maxHeight = DETAIL_MENU_HEIGHT) { BlueprintMenuColumn {
             if (choosingFormat) {
+                BlueprintMenuRow(strings[Str.SUMMARY_AS], { choosingFormat = false }, mark = BACK_MARK)
                 // The formats Settings offers; the summary on show has its own marked.
                 val current = detail.summary.saved()?.summaryFormat
                 model.chatGpt?.preferences?.formats.orEmpty().forEach { format ->
-                    val label = strings[summaryFormatLabel(format)]
-                    MenuRow(if (format == current) "$SELECTION_MARK $label" else label, { open = false; model.askToSummarize(format) })
+                    BlueprintMenuRow(
+                        strings[summaryFormatLabel(format)],
+                        { open = false; model.askToSummarize(format) },
+                        mark = if (format == current) SELECTION_MARK else "",
+                    )
                 }
-                return@MenuColumn
+                return@BlueprintMenuColumn
             }
+            // A take still being written: every item waits for it, and says so (2026-10-10).
+            val recording = Str.DETAIL_STILL_RECORDING.takeIf { detail.writing }
             // The core refuses to rename a take still being written, and the item says so.
-            MenuRow(
+            BlueprintMenuRow(
                 strings[Str.DETAIL_RENAME],
                 { open = false; model.askToRename() },
-                enabled = !detail.writing,
-                secondary = if (detail.writing) strings[Str.DETAIL_STILL_RECORDING] else null,
+                enabled = recording == null,
+                secondary = recording?.let { strings[it] },
             )
-            val editBlocked = when {
+            val editBlocked = recording ?: when {
                 !detail.hasTranscript -> Str.DETAIL_NO_TRANSCRIPT
                 detail.transcribing -> detail.busyReason
                 else -> null
             }
-            MenuRow(strings[Str.DETAIL_EDIT], { open = false; onEdit() }, enabled = editBlocked == null, secondary = editBlocked?.let { strings[it] })
-            val againBlocked = when {
-                detail.writing -> Str.DETAIL_STILL_RECORDING
+            BlueprintMenuRow(strings[Str.DETAIL_EDIT], { open = false; onEdit() }, enabled = editBlocked == null, secondary = editBlocked?.let { strings[it] })
+            val againBlocked = recording ?: when {
                 model.processing?.summary?.mode == TranscriptionMode.OFF -> Str.DETAIL_TRANSCRIPTION_OFF
                 detail.transcribing -> detail.busyReason
                 detail.notUploaded -> Str.DETAIL_NOT_UPLOADED
                 else -> null
             }
-            MenuRow(
+            BlueprintMenuRow(
                 strings[Str.DETAIL_RETRANSCRIBE],
                 { open = false; model.askToRetranscribe() },
                 enabled = againBlocked == null,
                 secondary = againBlocked?.let { strings[it] },
             )
-            // The playhead is the player's, and a take still being written has no player yet.
-            val highlightBlocked = when {
-                detail.writing -> Str.DETAIL_STILL_RECORDING
-                detail.audio.isEmpty -> Str.PLAYER_NO_AUDIO
-                else -> null
-            }
-            MenuRow(
-                strings[Str.HIGHLIGHT_ADD_AT, stamp],
-                { open = false; model.setHighlights(detail.recordingId, detail.highlights + positionSec) },
-                enabled = highlightBlocked == null,
-                secondary = highlightBlocked?.let { strings[it] },
-            )
-            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not.
+            // docs/08 "Summaries": asked for here, one recording at a time; not offered where ChatGPT is not — and then
+            // the group and its hairline are not there at all.
             val connection = model.chatGpt?.connection
             if (connection != null && connection != ChatGptConnection.Unavailable) {
+                BlueprintMenuDivider()
                 val summaryBlocked = summarizeBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection, detail.summary)
-                MenuRow(
+                BlueprintMenuRow(
                     strings[summarizeLabel(detail.summary)],
                     { open = false; model.askToSummarize() },
                     enabled = summaryBlocked == null,
                     secondary = summaryBlocked?.let { strings[it] },
                 )
-                MenuRow(
+                BlueprintMenuRow(
                     strings[Str.SUMMARY_AS],
                     { choosingFormat = true },
                     enabled = summaryBlocked == null,
                     secondary = summaryBlocked?.let { strings[it] },
                 )
                 summaryEditItem(detail.summary)?.let { item ->
-                    MenuRow(
+                    val editSummaryBlocked = recording ?: item.blocked
+                    BlueprintMenuRow(
                         strings[Str.SUMMARY_EDIT],
                         { open = false; onEditSummary(item.summary) },
-                        enabled = item.blocked == null,
-                        secondary = item.blocked?.let { strings[it] },
+                        enabled = editSummaryBlocked == null,
+                        secondary = editSummaryBlocked?.let { strings[it] },
                     )
                 }
                 // docs/08 "Ask": one question about this recording, in a panel over the detail.
                 val askBlocked = askBlocked(detail.writing, detail.hasTranscript, detail.transcriptionRunning, connection)
-                MenuRow(
+                BlueprintMenuRow(
                     strings[Str.ASK_MENU],
                     { open = false; model.openAsk() },
                     enabled = askBlocked == null,
                     secondary = askBlocked?.let { strings[it] },
                 )
             }
+            BlueprintMenuDivider()
+            // The playhead is the player's, and a take still being written has no player yet.
+            val highlightBlocked = recording ?: Str.PLAYER_NO_AUDIO.takeIf { detail.audio.isEmpty }
+            BlueprintMenuRow(
+                // The time is data, in the monospace every other time on this page is in (2026-10-10).
+                monoStamp(strings[Str.HIGHLIGHT_ADD_AT, stamp], stamp, mono.small.fontFamily),
+                { open = false; model.setHighlights(detail.recordingId, detail.highlights + positionSec) },
+                enabled = highlightBlocked == null,
+                secondary = highlightBlocked?.let { strings[it] },
+            )
         } }
     }
+}
+
+/** [sentence] with [stamp] in it set in [family] — a time inside a translated sentence, wherever the language puts it. */
+internal fun monoStamp(sentence: String, stamp: String, family: FontFamily?): AnnotatedString = buildAnnotatedString {
+    append(sentence)
+    val at = sentence.indexOf(stamp)
+    if (at >= 0) addStyle(SpanStyle(fontFamily = family), at, at + stamp.length)
 }
 
 /** docs/03 "Metadata": a highlight's own menu — go there, or take it away (not red: no recording is deleted). */
@@ -308,9 +327,9 @@ internal fun HighlightMenu(
     onRemove: () -> Unit,
     strings: Strings,
 ) {
-    BlueprintMenu(true, onDismiss) { MenuColumn {
-        MenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.clock(atSec, totalSec)], { onDismiss(); onGoTo() })
-        MenuRow(strings[Str.HIGHLIGHT_REMOVE], { onDismiss(); onRemove() })
+    BlueprintMenu(true, onDismiss) { BlueprintMenuColumn {
+        BlueprintMenuRow(strings[Str.TRANSCRIPT_SEEK, LedgerFormat.clock(atSec, totalSec)], { onDismiss(); onGoTo() })
+        BlueprintMenuRow(strings[Str.HIGHLIGHT_REMOVE], { onDismiss(); onRemove() })
     } }
 }
 
@@ -358,7 +377,8 @@ internal fun SpeakerBadge(id: String, name: String?, enabled: Boolean = true, on
 
 /**
  * docs/08 "Editing": Rename speaker, or Change speaker for this line — which turns the menu into the list of
- * speakers and New speaker. [current] is "" on a line nobody was identified on.
+ * speakers and New speaker, under a heading that goes back (2026-10-10). [current] is "" on a line nobody was
+ * identified on, which opens on the list and has nothing to go back to.
  */
 @Composable
 internal fun SpeakerMenu(
@@ -370,16 +390,18 @@ internal fun SpeakerMenu(
     strings: Strings,
 ) {
     var choosing by remember { mutableStateOf(current.isEmpty()) }
-    BlueprintMenu(true, onDismiss) { MenuColumn {
+    BlueprintMenu(true, onDismiss) { BlueprintMenuColumn {
         if (!choosing) {
-            MenuRow(strings[Str.SPEAKER_RENAME], { onDismiss(); onRename() })
-            MenuRow(strings[Str.SPEAKER_CHANGE], { choosing = true })
+            BlueprintMenuRow(strings[Str.SPEAKER_RENAME], { onDismiss(); onRename() })
+            BlueprintMenuRow(strings[Str.SPEAKER_CHANGE], { choosing = true })
         } else {
+            if (current.isNotEmpty()) BlueprintMenuRow(strings[Str.SPEAKER_CHANGE], { choosing = false }, mark = BACK_MARK)
             speakers.forEach { speaker ->
                 val label = speakerName(speaker, strings) ?: speaker.id
-                MenuRow(if (speaker.id == current) "$SELECTION_MARK $label" else label, { onDismiss(); onChange(speaker.id) })
+                BlueprintMenuRow(label, { onDismiss(); onChange(speaker.id) }, mark = if (speaker.id == current) SELECTION_MARK else "")
             }
-            MenuRow(strings[Str.SPEAKER_NEW], { onDismiss(); onChange(null) })
+            // In the column the names are in.
+            BlueprintMenuRow(strings[Str.SPEAKER_NEW], { onDismiss(); onChange(null) }, mark = "")
         }
     } }
 }
@@ -507,15 +529,16 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // The buttons' 14 beside it, in monospace: one baseline along the bar (2026-10-09).
-            Text(label, style = mono.bodySmall, color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
+            // The buttons' 14 beside it, in monospace: one baseline along the bar (2026-10-09). A number, left to right
+            // in every language (2026-10-10).
+            Text(label, style = mono.bodySmall.copy(textDirection = TextDirection.Ltr), color = palette.textMuted, modifier = Modifier.padding(horizontal = Space.s))
             if (skipSilence) {
                 Box(Modifier.align(Alignment.TopEnd).padding(4.dp).size(6.dp).background(palette.accent, RoundedCornerShape(1.dp)))
             }
         }
-        BlueprintMenu(open, { open = false }) { MenuColumn {
+        BlueprintMenu(open, { open = false }) { BlueprintMenuColumn {
             SPEEDS.forEach { choice ->
-                MenuRow(if (choice == speed) "$SELECTION_MARK ${speedLabel(choice)}" else speedLabel(choice), { open = false; onSpeed(choice) })
+                BlueprintMenuRow(speedLabel(choice), { open = false; onSpeed(choice) }, mark = if (choice == speed) SELECTION_MARK else "", ltr = true)
             }
             Row(
                 Modifier
@@ -526,47 +549,17 @@ internal fun SpeedChip(speed: Float, skipSilence: Boolean, onSpeed: (Float) -> U
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(strings[Str.PLAYER_SKIP_SILENCE], style = MaterialTheme.typography.labelLarge, color = palette.text, modifier = Modifier.weight(1f))
+                // In the column the speeds are in, past their mark's.
+                Text(
+                    strings[Str.PLAYER_SKIP_SILENCE],
+                    style = MaterialTheme.typography.labelLarge,
+                    color = palette.text,
+                    modifier = Modifier.weight(1f).padding(start = SPEED_MARK_INSET),
+                )
                 SwitchTrack(checked = skipSilence)
             }
         } }
     }
-}
-
-/**
- * One line of the detail's menus: the label at the start, a quieter [secondary] line under it — what the
- * row makes, or why it cannot run now — and [trailing] at the end. [MinTouch] tall.
- */
-@Composable
-private fun MenuRow(
-    label: String,
-    onClick: () -> Unit,
-    enabled: Boolean = true,
-    secondary: String? = null,
-    trailing: (@Composable () -> Unit)? = null,
-) {
-    val palette = blueprint
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = MinTouch)
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s + Space.xs, vertical = 6.dp),
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge, color = if (enabled) palette.text else palette.textMuted)
-            secondary?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
-        }
-        trailing?.invoke()
-    }
-}
-
-/** A menu as wide as its widest row, so the rows' backgrounds and targets line up. */
-@Composable
-private fun MenuColumn(content: @Composable () -> Unit) {
-    Column(Modifier.width(IntrinsicSize.Max).widthIn(min = MENU_WIDTH)) { content() }
 }
 
 /** `1×`, `1.25×`: a number, so not translated. */
@@ -580,11 +573,11 @@ private const val MORE_MARK = "⋯"
 
 private const val COPIED_MS = 3_000L
 
-/** The narrowest a menu is, as [BlueprintMenu] draws it. */
-private val MENU_WIDTH = 200.dp
+/** Where a menu row's label starts past its mark column: the column and the gap after it. */
+private val SPEED_MARK_INSET = 16.dp + Space.s
 
 /**
- * Export's seven items and More's eight whole, each with a second line under it, in a window at its opening height —
- * none behind a scroll.
+ * Export's seven items and More's eight whole, each with a second line under it, and More's two hairlines — none
+ * behind a scroll while the window has the room ([BlueprintMenu] keeps it inside the window).
  */
-private val DETAIL_MENU_HEIGHT = 440.dp
+private val DETAIL_MENU_HEIGHT = 560.dp

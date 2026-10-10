@@ -119,7 +119,7 @@
     <string name="core_step_failed">실패: %1$s</string>
     <string name="core_auth_rejected">제공자가 키를 거부했습니다.</string>
     <string name="core_quota">제공자의 할당량이 떨어졌거나 요청이 제한되고 있습니다.</string>
-    <string name="core_provider_error">제공자 쪽에서 문제가 생겼습니다. 다시 시도합니다.</string>
+    <string name="core_provider_error">제공자 쪽에서 문제가 생겼습니다.</string>
     <string name="core_unsupported_audio">제공자가 이 오디오를 받아들이지 않았습니다.</string>
     <string name="core_no_input_track">이 녹음에는 전사할 모노·믹스 트랙이 없습니다.</string>
     <string name="core_result_timeout">제공자가 제때 끝내지 못했습니다. 다시 제출합니다.</string>
@@ -145,7 +145,8 @@
     <string name="jobs_column_title">제목</string>
     <string name="jobs_column_length">길이</string>
     <string name="jobs_column_status">상태</string>
-    <string name="jobs_summary">%1$d · 대기 %2$d · 실패 %3$d</string>
+    <string name="jobs_summary_waiting">대기 %1$d</string>
+    <string name="jobs_summary_failed">실패 %1$d</string>
     <string name="jobs_row_expand">펼치기</string>
     <string name="jobs_row_collapse">접기</string>
     <string name="jobs_row_description">%1$s, %2$s 녹음, 길이 %3$s, %4$s</string>
@@ -241,7 +242,7 @@
     <string name="job_state_needs_consent">전송 허용 필요</string>
     <string name="job_state_needs_model">음성 모델 대기</string>
     <string name="delete_key_title">키 삭제: %1$s</string>
-    <string name="detail_not_requested">이 녹음에는 실행할 전사 단계가 없습니다.</string>
+    <string name="detail_not_requested">전사가 꺼져 있습니다. 설정에서 켠 다음 다시 전사를 누르세요.</string>
     <string name="detail_pending">전사가 아직 끝나지 않았습니다. 완료되면 여기에 결과가 표시됩니다.</string>
     <string name="detail_failed">전사를 완료하지 못했습니다. 목록에서 이 녹음의 상태와 필요한 조치를 확인해 주세요.</string>
     <string name="detail_parked">전사가 대기 중입니다. 목록에서 이 녹음에 필요한 조치를 확인해 주세요.</string>
@@ -274,7 +275,6 @@
     <string name="processing_off">전사 안 함</string>
     <string name="processing_storage">저장 폴더</string>
     <string name="processing_transcription">전사</string>
-    <string name="processing_saved">설정을 저장했습니다</string>
     <string name="processing_prepare">모델 다운로드</string>
     <string name="processing_download_progress">모델 다운로드 중… %1$d%%</string>
     <string name="processing_download_bytes">%2$s 중 %1$s</string>
@@ -343,6 +343,7 @@
     <string name="detail_transcribing">전사 중…</string>
     <string name="detail_transcription_off">설정에서 전사가 꺼져 있습니다</string>
     <string name="detail_not_uploaded">아직 업로드되지 않았습니다</string>
+    <string name="detail_still_recording">아직 녹음 중</string>
     <string name="share_transcript">전사본</string>
     <string name="share_transcript_format">텍스트 · .txt</string>
     <string name="share_notes">노트용 전사본</string>
@@ -421,16 +422,16 @@
     <string name="chatgpt_sign_out">로그아웃</string>
     <string name="chatgpt_model">모델</string>
     <string name="chatgpt_manage_usage">사용량 관리</string>
-    <string name="chatgpt_expired">OpenAI에서 로그인을 끝냈습니다. 다시 로그인하려면 ChatGPT로 계속하기를 누르세요.</string>
+    <string name="chatgpt_expired">OpenAI가 로그인을 해제했습니다. ChatGPT로 계속하기를 눌러 다시 로그인하세요.</string>
     <string name="chatgpt_finish_in_browser">브라우저에서 로그인을 마치세요</string>
     <string name="chatgpt_sign_in_failed">ChatGPT에 로그인하지 못했습니다</string>
     <string name="chatgpt_revoke_unconfirmed">이 기기에서는 로그아웃했지만 OpenAI가 확인하지 않았습니다. ChatGPT 설정에서 Recly를 제거할 수 있습니다.</string>
-    <string name="chatgpt_footnote">요약할 때는 전사본 텍스트, 표시한 하이라이트, 여기 적은 내용을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. 요약은 ChatGPT 요금제 사용량에 포함됩니다.</string>
+    <string name="chatgpt_footnote">요약과 질문에는 전사본 텍스트, 표시한 하이라이트, 여기 적은 내용을 OpenAI로 보냅니다. 오디오는 보내지 않습니다. ChatGPT 요금제 사용량에 포함됩니다.</string>
     <string name="chatgpt_welcome_title">ChatGPT 요금제를 사용합니다</string>
     <string name="chatgpt_welcome_body">Recly의 요약은 ChatGPT 요금제를 사용합니다. 사용량은 ChatGPT 설정에서 관리할 수 있습니다.</string>
     <string name="chatgpt_got_it">확인</string>
     <string name="summary_summarize">요약하기</string>
-    <string name="summary_again">다시 요약하기</string>
+    <string name="summary_again">다시 요약</string>
     <string name="summary_tab">요약</string>
     <string name="summary_running">요약하는 중…</string>
     <string name="summary_failed">요약하지 못했습니다</string>
@@ -444,7 +445,7 @@
     <string name="chatgpt_page_done">이 로그인은 이미 처리되었습니다. 이 창을 닫아도 됩니다.</string>
     <string name="summary_edit">요약 편집</string>
     <string name="summary_discard_body">이 요약에서 고친 내용이 사라집니다.</string>
-    <string name="summary_replace_title">고친 요약을 바꿀까요?</string>
+    <string name="summary_replace_title">고친 요약을 새 요약으로 바꿀까요?</string>
     <string name="summary_replace_body">다시 요약하면 고친 요약 대신 새 요약이 들어갑니다.</string>
     <string name="summary_replace">바꾸기</string>
     <string name="summary_edited">편집됨</string>
@@ -458,9 +459,10 @@
     <string name="summary_format_custom">내 형식</string>
     <string name="summary_custom_placeholder">섹션과 지시를 적으세요. 예: 요약, 위험, 담당자별 다음 단계.</string>
     <string name="summary_custom_note">요약 형식이 내 형식일 때 씁니다.</string>
+    <string name="summary_custom_empty">여기에 형식을 적으세요. 적기 전까지는 일반 형식으로 요약합니다.</string>
     <string name="summary_about">나에 대해</string>
     <string name="summary_about_placeholder">예: 프로덕트 매니저, 마감과 결정 사항이 중요합니다.</string>
-    <string name="summary_about_note">요약할 때 무엇이 중요한지 판단하는 데 씁니다.</string>
+    <string name="summary_about_note">요약과 답에서 무엇이 중요한지 판단하는 데 씁니다.</string>
     <string name="summary_as">다른 형식으로 요약…</string>
     <string name="summary_play_from">%1$s부터 재생</string>
     <string name="ask_menu">이 녹음에 대해 묻기…</string>

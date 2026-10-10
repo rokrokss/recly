@@ -347,20 +347,19 @@ public enum Recents {
     }
 
     /// docs/09 screen principle 2: what the ledger's header says about the list under it — "14 · 2 waiting ·
-    /// 1 failed" is one glance, where the count on its own is a number nobody has a use for.
+    /// 1 failed" is one glance, where the count on its own is a number nobody has a use for. A part that is
+    /// zero is left out (2026-10-10, A-A21): "3 · 1 waiting", and "3" alone when nothing waits or failed.
     ///
     /// The Android ledger's counting rule (`JobsScreen.waiting` · `JobsScreen.failing`): a
     /// recording without a job is finished, while one that was too short counts with the failures
     /// because it is a recording that produced nothing.
     public static func summary(_ items: [RecentItem]) -> String {
-        UiMessage.key(
-            "%1$@ · %2$@ waiting · %3$@ failed",
-            args: [
-                .verbatim(String(items.count)),
-                .verbatim(String(items.filter { waiting.contains($0.state) }.count)),
-                .verbatim(String(items.filter { failing.contains($0.state) }.count)),
-            ]
-        ).text
+        let waitingCount = items.filter { waiting.contains($0.state) }.count
+        let failedCount = items.filter { failing.contains($0.state) }.count
+        var parts = [String(items.count)]
+        if waitingCount > 0 { parts.append(RecKitStrings.localized("%@ waiting", String(waitingCount))) }
+        if failedCount > 0 { parts.append(RecKitStrings.localized("%@ failed", String(failedCount))) }
+        return parts.joined(separator: " · ")
     }
 
     /// docs/09 screen principle 2 (2026-09-04): a recording still arriving from the watch, and one another
