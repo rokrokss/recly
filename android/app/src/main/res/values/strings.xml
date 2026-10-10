@@ -151,7 +151,7 @@
          next. The provider\'s own line rides along as the code\'s detail. -->
     <string name="core_auth_rejected">The provider rejected the key.</string>
     <string name="core_quota">The provider is out of quota or is rate-limiting.</string>
-    <string name="core_provider_error">Something went wrong at the provider. It will try again.</string>
+    <string name="core_provider_error">Something went wrong at the provider.</string>
     <string name="core_unsupported_audio">The provider would not accept this audio.</string>
     <string name="core_no_input_track">This recording has no mono or mix track to transcribe.</string>
     <string name="core_result_timeout">The provider did not finish in time. It will submit again.</string>
@@ -178,7 +178,8 @@
     <string name="jobs_column_title">Title</string>
     <string name="jobs_column_length">Length</string>
     <string name="jobs_column_status">Status</string>
-    <string name="jobs_summary">%1$d · %2$d waiting · %3$d failed</string>
+    <string name="jobs_summary_waiting">%1$d waiting</string>
+    <string name="jobs_summary_failed">%1$d failed</string>
     <string name="jobs_row_expand">Expand</string>
     <string name="jobs_row_collapse">Collapse</string>
     <string name="jobs_row_description">%1$s, recorded %2$s, length %3$s, %4$s</string>
@@ -294,7 +295,7 @@
     <string name="job_state_needs_consent">Transfer permission needed</string>
     <string name="job_state_needs_model">Waiting for speech model</string>
     <string name="delete_key_title">Delete key: %1$s</string>
-    <string name="detail_not_requested">This recording has no transcription step to run.</string>
+    <string name="detail_not_requested">Transcription is off. Turn it on in Settings, then use Transcribe again.</string>
     <string name="detail_pending">Transcription is not finished yet. The result will appear here when ready.</string>
     <string name="detail_failed">Transcription could not finish. Check this recording in the list for the next action.</string>
     <string name="detail_parked">Transcription is waiting. Check this recording in the list for what it needs.</string>
@@ -327,7 +328,6 @@
     <string name="processing_off">Off</string>
     <string name="processing_storage">Storage folder</string>
     <string name="processing_transcription">Transcription</string>
-    <string name="processing_saved">Settings saved</string>
     <string name="processing_prepare">Download model</string>
     <string name="processing_download_progress">Downloading model… %1$d%%</string>
     <string name="processing_download_bytes">%1$s of %2$s</string>
@@ -397,6 +397,7 @@
     <string name="detail_transcribing">Transcribing…</string>
     <string name="detail_transcription_off">Transcription is off in Settings</string>
     <string name="detail_not_uploaded">Not uploaded yet</string>
+    <string name="detail_still_recording">Still recording</string>
     <string name="share_transcript">Transcript</string>
     <string name="share_transcript_format">Text · .txt</string>
     <string name="share_notes">Transcript for notes</string>
@@ -483,7 +484,7 @@
     <string name="chatgpt_finish_in_browser">Finish signing in in your browser</string>
     <string name="chatgpt_sign_in_failed">Could not sign in to ChatGPT</string>
     <string name="chatgpt_revoke_unconfirmed">Signed out on this device, but OpenAI did not confirm it. You can remove Recly in ChatGPT settings.</string>
-    <string name="chatgpt_footnote">A summary sends the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and counts toward your ChatGPT plan’s usage.</string>
+    <string name="chatgpt_footnote">Summaries and questions send the transcript text, the moments you highlighted and what you wrote here to OpenAI — never the audio — and count toward your ChatGPT plan’s usage.</string>
     <string name="chatgpt_welcome_title">You’re using your ChatGPT plan</string>
     <string name="chatgpt_welcome_body">Summaries in Recly use your ChatGPT plan. You can manage usage in ChatGPT settings.</string>
     <string name="chatgpt_got_it">Got it</string>
@@ -516,9 +517,10 @@
     <string name="summary_format_custom">My format</string>
     <string name="summary_custom_placeholder">Sections and instructions, e.g. Summary, Risks, Next steps with owners.</string>
     <string name="summary_custom_note">Used when the summary format is My format.</string>
+    <string name="summary_custom_empty">Write your format here; until then summaries use General.</string>
     <string name="summary_about">About you</string>
     <string name="summary_about_placeholder">e.g. Product manager; I care about deadlines and decisions.</string>
-    <string name="summary_about_note">Summaries use this to judge what matters to you.</string>
+    <string name="summary_about_note">Summaries and answers use this to judge what matters to you.</string>
     <string name="summary_as">Summarize as…</string>
     <string name="summary_play_from">Play from %1$s</string>
     <string name="ask_menu">Ask about this recording…</string>

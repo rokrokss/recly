@@ -180,8 +180,8 @@ fun dialogMaxHeight(screenHeightDp: Int): Dp = (screenHeightDp * HEIGHT_FRACTION
 
 private const val HEIGHT_FRACTION = 0.8f
 
-/** docs/09: the body is 14–16, and what it means decides the colour. */
-enum class DialogTone { BODY, MUTED, DANGER }
+/** docs/09: the body is 14–16, and what it means decides the colour — WARNING for what stands in the way. */
+enum class DialogTone { BODY, MUTED, WARNING, DANGER }
 
 /** One line of a dialog body. */
 @Composable
@@ -198,6 +198,7 @@ fun BlueprintDialogText(text: String, modifier: Modifier = Modifier, tone: Dialo
         color = when (tone) {
             DialogTone.BODY -> palette.text
             DialogTone.MUTED -> palette.textMuted
+            DialogTone.WARNING -> palette.warningInk
             DialogTone.DANGER -> palette.danger
         },
     )

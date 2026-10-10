@@ -178,7 +178,8 @@ private fun RecordScreen(
                     onClick = onInfo,
                     shape = RoundedCornerShape(WearBlueprint.radius),
                     colors = ButtonDefaults.outlinedButtonColors(),
-                    border = BorderStroke(WearBlueprint.line, WearBlueprint.grid),
+                    // The input border's level (the phone's `inputBorder`): the grid's colour left the button's edge unseen.
+                    border = BorderStroke(WearBlueprint.line, WearBlueprint.textMuted),
                     label = { Text(text = stringResource(R.string.info_open), maxLines = 1) },
                 )
             }

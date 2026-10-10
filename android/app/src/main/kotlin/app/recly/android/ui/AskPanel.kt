@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -34,6 +36,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.settings.AppLanguage
@@ -75,12 +79,21 @@ internal fun askedQuestion(state: AskState): String = when (state) {
 /** Ask is pressable with words in the field and nothing running. */
 internal fun canAsk(state: AskState, question: String): Boolean = state !is AskState.Running && question.isNotBlank()
 
+/** The preset behind the answer on screen — or the one being written, or the one that failed — whose chip has `✓`. */
+internal fun askedPreset(state: AskState): AskPreset? = when (state) {
+    AskState.None -> null
+    is AskState.Running -> state.preset.takeIf { state.question == null }
+    is AskState.Ready -> state.answer.preset.takeIf { state.answer.question == null }
+    is AskState.Failed -> state.preset.takeIf { state.question == null }
+}
+
 /**
  * docs/08 "Ask": one question about the open recording, in a full-height sheet over the detail — the Share sheet's
  * paper and corners. The presets that make sense for it ([presets]) ask at once; the field asks the user's own. While
  * one runs the inputs wait under `Asking…`; the answer is selectable text whose citations play from their time
  * ([canSeek], [onSeek] — the transcript's own seek), with `ChatGPT · <model>` and Copy all; a failure is the summary's
- * notice, its Retry asking the same again. Nothing is kept: closing is [onClose], which lets the answer go.
+ * notice, its Retry asking the same again. Nothing is kept: closing is [onClose], which lets the answer go — so only
+ * the ✕ and Back close the sheet, never a drag that could throw an answer away.
  */
 @Composable
 internal fun AskPanel(
@@ -98,6 +111,7 @@ internal fun AskPanel(
     ModalBottomSheet(
         onDismissRequest = onClose,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        sheetGesturesEnabled = false,
         containerColor = palette.background,
         tonalElevation = 0.dp,
         shape = RoundedCornerShape(topStart = Radius.card, topEnd = Radius.card),
@@ -113,12 +127,13 @@ internal fun AskPanel(
             if (presets.isNotEmpty()) {
                 // The app's own language, under its own name — the App language list's word for it.
                 val language = stringResource(AppLanguage.effective(LocalConfiguration.current.locales[0]).labelRes())
+                val asked = askedPreset(state)
                 FillRow(Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s)) {
                     presets.forEach { preset ->
-                        // An action, not a choice: a tap asks.
+                        // An action, not a choice: a tap asks. The one the answer below came from has `✓`.
                         BlueprintChip(
                             if (preset == AskPreset.TRANSLATE) stringResource(preset.presetLabel(), language) else stringResource(preset.presetLabel()),
-                            selected = false,
+                            selected = preset == asked,
                             onClick = { onAsk(preset, null) },
                             enabled = !running,
                             role = Role.Button,
@@ -134,11 +149,15 @@ internal fun AskPanel(
                 horizontalArrangement = Arrangement.spacedBy(Space.s),
                 verticalAlignment = Alignment.Bottom,
             ) {
+                // The keyboard's own Send asks, as the button beside it does.
                 BlueprintField(
                     question,
                     { question = it },
                     modifier = Modifier.weight(1f),
                     placeholder = own,
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(onSend = { if (canAsk(state, question)) onAsk(null, question) }),
                     fieldModifier = Modifier.semantics { contentDescription = own }.testTag("ask-field"),
                     maxLines = QUESTION_LINES,
                     enabled = !running,
@@ -155,11 +174,11 @@ internal fun AskPanel(
                     is AskState.Ready -> Column(Modifier.fillMaxSize()) {
                         val answer = state.answer
                         SelectionContainer(Modifier.weight(1f).fillMaxWidth().background(palette.surface).verticalScroll(rememberScrollState())) {
-                            CitedText(answer.text, canSeek, onSeek, Modifier.padding(Space.m).testTag("ask-answer"))
+                            CitedText(answer.text, canSeek, onSeek, Modifier.testTag("ask-answer"))
                         }
                         HairLine()
-                        val label = models.firstOrNull { it.id == answer.model }?.label ?: answer.model
-                        CopyFooter(stringResource(R.string.summary_model, label), answer.text, Modifier.testTag("ask-copy"))
+                        CopyFooter(stringResource(R.string.summary_model, modelLabel(answer.modelName, answer.model, models)), answer.text,
+                            Modifier.testTag("ask-copy"))
                     }
                     is AskState.Failed -> ChatGptFailure(state.reason, R.string.ask_failed, { onAsk(state.preset, state.question) },
                         Modifier.fillMaxSize(), retryTag = "ask-retry")

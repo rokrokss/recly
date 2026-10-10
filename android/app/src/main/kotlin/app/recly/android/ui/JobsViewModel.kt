@@ -257,6 +257,8 @@ data class DetailState(
     val busyReason: Int = R.string.detail_transcribing,
     /** Its upload waits for a Drive connection, and the page offers the connection itself. */
     val waitingForDrive: Boolean = false,
+    /** docs/03 "Recordings from other devices": another device is transcribing it, so its transcript is on the way. */
+    val remoteTranscribing: Boolean = false,
     /** docs/08 "Summaries": the recording's summary, or where the one asked for is. */
     val summary: SummaryState = SummaryState.None,
     /** docs/08 "Ask": the one question about this recording, while this process holds it. */
@@ -352,14 +354,19 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
     /**
      * Whether a transcription of the open recording is queued or running, and whether it is a "Transcribe
      * again" — what the detail's More menu and its one-line status say (docs/10 "Re-transcription") — and
-     * whether it is uploaded yet, which a job settling may have just made it.
+     * whether it is uploaded yet, which a job settling may have just made it — and whether another device is the one
+     * transcribing it.
      */
     private suspend fun transcribing(core: ReclyCore, jobs: List<Job>, recordingId: String): Transcribing {
         val unsettled = jobs.filter { it.recordingId == recordingId && it.status !in SETTLED }
         // Said only while it is on its way: one parked for the model, a consent or Drive is the list's to explain.
         val again = unsettled.filter { it.retranscription && it.status in IN_FLIGHT }.maxByOrNull { it.createdAt }
         val localRunning = core.localTranscription.isRunning(recordingId)
-        val uploaded = core.recordings.get(recordingId)?.remote == true || driveHasEveryPart(core, recordingId)
+        val record = core.recordings.get(recordingId)
+        val uploaded = record?.remote == true || driveHasEveryPart(core, recordingId)
+        // The list row's own answer, so the page and its row say the same thing.
+        val remote = record != null &&
+            stateOf(record, jobs.filter { it.recordingId == recordingId }.maxByOrNull { it.createdAt }) == ItemState.REMOTE_TRANSCRIBING
         val drive = unsettled.any { it.status == JobStatus.NEEDS_AUTH }
         // The set of jobs that disable the menu is unchanged; only what the menu says about them is.
         val reason = when {
@@ -376,6 +383,7 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
             uploaded = uploaded,
             reason = reason,
             drive = drive,
+            remote = remote,
         )
     }
 
@@ -386,10 +394,11 @@ class JobsViewModel(application: Application) : AndroidViewModel(application) {
         val uploaded: Boolean,
         val reason: Int,
         val drive: Boolean,
+        val remote: Boolean,
     ) {
         fun applyTo(detail: DetailState) =
             detail.copy(transcribing = running, retranscribing = again, retranscribingLocally = locally, uploaded = uploaded,
-                busyReason = reason, waitingForDrive = drive)
+                busyReason = reason, waitingForDrive = drive, remoteTranscribing = remote)
     }
 
     /** docs/09 "Playback": this device's preferences, so every recording plays at the speed last chosen. */

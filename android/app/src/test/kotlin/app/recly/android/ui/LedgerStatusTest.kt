@@ -171,6 +171,16 @@ class LedgerStatusTest {
         assertEquals(3, ItemState.entries.count { it.failing() })
     }
 
+    /** The header says the counts there are: a zero is left out, not stated. */
+    @Test
+    fun `the header leaves out a count of none`() {
+        fun header(total: Int, waiting: Int, failed: Int) = headerCounts(total, waiting, failed, { "$it waiting" }, { "$it failed" })
+        assertEquals("14 · 2 waiting · 1 failed", header(14, 2, 1))
+        assertEquals("3 · 1 waiting", header(3, 1, 0))
+        assertEquals("3 · 1 failed", header(3, 0, 1))
+        assertEquals("0", header(0, 0, 0))
+    }
+
     /**
      * The iPhone's `Recents.summary`: a job parked until the user allows a transfer or downloads
      * the speech model is waiting, not failed — and so is one waiting for Drive (`NEEDS_AUTH`, badge

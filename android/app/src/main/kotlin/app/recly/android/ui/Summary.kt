@@ -2,30 +2,37 @@ package app.recly.android.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -33,17 +40,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import app.recly.android.R
 import app.recly.android.core.CoreMessages
 import app.recly.android.core.coreMessage
 import app.recly.android.ui.component.BlueprintButton
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.LoadingText
@@ -51,6 +63,7 @@ import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import kotlin.math.hypot
 import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
@@ -71,7 +84,7 @@ internal enum class DetailView { TRANSCRIPT, SUMMARY }
 /**
  * Why the More menu's Summarize cannot run now, or null when it can — in the order the reasons are checked
  * (docs/09 "Detail header and More menu"). [busyReason] is what the menu already says while a transcription
- * of the recording is queued or running. A take still being written has no More menu at all.
+ * of the recording is queued or running. A take still being written says `Still recording` before any of these.
  */
 @StringRes
 internal fun summarizeReason(
@@ -198,10 +211,15 @@ internal enum class SummaryRecovery { MANAGE_USAGE, RETRY, NONE }
 
 internal fun summaryRecovery(reason: String): SummaryRecovery = when (CoreMessageRef.parse(reason)?.message) {
     CoreMessage.CHATGPT_USAGE_LIMIT -> SummaryRecovery.MANAGE_USAGE
-    // The sentence says where to sign in; there is nothing to press here.
-    CoreMessage.CHATGPT_SIGN_IN_REQUIRED -> SummaryRecovery.NONE
+    // The sentence says where to sign in; there is nothing to press here. Nor for a plan without access: asking again
+    // gets the same answer.
+    CoreMessage.CHATGPT_SIGN_IN_REQUIRED, CoreMessage.CHATGPT_PLAN_REQUIRED -> SummaryRecovery.NONE
     else -> SummaryRecovery.RETRY
 }
+
+/** The model a summary or an answer names: the plan's name for it when written, else the current list's, else its id. */
+internal fun modelLabel(modelName: String?, model: String, models: List<ChatGptModel>): String =
+    modelName ?: models.firstOrNull { it.id == model }?.label ?: model
 
 /**
  * docs/09 "Summary view": the summary of the open recording, or where it is. The text is ChatGPT's plain text
@@ -219,12 +237,13 @@ internal fun SummaryPane(
 ) {
     val palette = blueprint
     when (state) {
-        // None only for the moment between the tap and the run starting.
+        // None only for the moment between the tap and the run starting. The summary it replaces keeps its footer, so
+        // nothing under it moves when the new one arrives.
         SummaryState.None, is SummaryState.Running -> Column(modifier) {
             LoadingText(stringResource(R.string.summary_running), MaterialTheme.typography.bodySmall, palette.textMuted,
                 Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("summary-running"))
             HairLine()
-            (state as? SummaryState.Running)?.previous?.let { SummaryText(it, Modifier.weight(1f), canSeek, onSeek) }
+            (state as? SummaryState.Running)?.previous?.let { PreviousSummary(it, models, canSeek, onSeek) }
         }
 
         is SummaryState.Ready -> Column(modifier) {
@@ -241,11 +260,19 @@ internal fun SummaryPane(
                 Column(modifier) {
                     ChatGptFailure(state.reason, R.string.summary_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "summary-retry")
                     HairLine()
-                    SummaryText(previous, Modifier.weight(1f), canSeek, onSeek)
+                    PreviousSummary(previous, models, canSeek, onSeek)
                 }
             }
         }
     }
+}
+
+/** The summary still kept under a running or failed one: its text and its footer, as when it was Ready. */
+@Composable
+private fun ColumnScope.PreviousSummary(summary: Summary, models: List<ChatGptModel>, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit) {
+    SummaryText(summary, Modifier.weight(1f), canSeek, onSeek)
+    HairLine()
+    SummaryFooter(summary, models)
 }
 
 /**
@@ -270,29 +297,40 @@ internal fun ChatGptFailure(reason: String, @StringRes generic: Int, onRetry: ()
     Notice(text, detail = detail, button = button, modifier = modifier)
 }
 
-/** docs/09 "Summary view": the whole summary as one plain text field, as the transcript editor's fields are. */
+/**
+ * docs/09 "Summary view": the whole summary as one plain text field, as the transcript editor's fields are — the
+ * Blueprint field, growing with the text while the pane scrolls, in the direction of its own words.
+ */
 @Composable
 internal fun SummaryEditor(text: String, onText: (String) -> Unit, modifier: Modifier = Modifier) {
-    OutlinedTextField(text, onText, modifier.padding(Space.m).testTag("summary-editor"))
+    Column(modifier.verticalScroll(rememberScrollState()).padding(Space.m)) {
+        BlueprintField(text, onText, Modifier.fillMaxWidth(), textStyle = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+            fieldModifier = Modifier.testTag("summary-editor"), maxLines = Int.MAX_VALUE)
+    }
 }
 
 /** The text as ChatGPT wrote it, selectable, in the transcript's body type. */
 @Composable
 private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit) {
     SelectionContainer(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        CitedText(summary.text, canSeek, onSeek, Modifier.padding(Space.m).testTag("summary-text"))
+        CitedText(summary.text, canSeek, onSeek, Modifier.testTag("summary-text"))
     }
 }
 
 /**
  * docs/09 "Summary view": a summary's or an answer's text with every citation in it a way to play from its time —
- * the citation in monospace and the accent, with no underline (a dotted one is a web page), and a tap target of at
- * least [MinTouch] each way laid over it as invisible padding. The text stays one selectable text: the targets are
- * siblings over it, so a long press anywhere else selects as before, and a citation the player cannot reach now
- * ([canSeek]) is drawn muted and takes no tap. Each target is its own `Play from {time}` button for a screen reader.
+ * the citation in monospace and the accent, with no underline (a dotted one is a web page). Each citation is a target
+ * on every line it sits on, its glyphs grown to at least [MinTouch] each way; where two targets overlap — a citation
+ * on each of two lines — a tap plays the one whose glyphs are nearest it ([citationAt], the iPhone and Mac's rule).
+ * The taps are read by one layer over the text that takes only a tap inside a target, so the text stays one
+ * selectable text and a long press anywhere selects as before. A citation the player cannot reach now ([canSeek]) is
+ * drawn muted and is no target. For a screen reader each citation is its own `Play from {time}` button.
+ *
+ * The words take their direction from themselves: an English summary in an Arabic app still reads left to right.
+ * [padding] is inside the tap layer, so a target reaches into it.
  */
 @Composable
-internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit, modifier: Modifier = Modifier) {
+internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit, modifier: Modifier = Modifier, padding: Dp = Space.m) {
     val palette = blueprint
     val runs = remember(text) { textRuns(text) }
     val citation = mono.body.fontFamily
@@ -311,25 +349,87 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
     var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
     val density = LocalDensity.current
     val reach = with(density) { MinTouch.toPx() }
-    Box(modifier) {
-        Text(styled, style = MaterialTheme.typography.bodyMedium, color = palette.text, onTextLayout = { layout = it })
-        val lines = layout
-        if (lines != null) {
-            runs.forEach { run ->
-                val cited = run.citation ?: return@forEach
-                if (!canSeek(cited.atSec)) return@forEach
-                val bounds = lines.getPathForRange(run.start, run.end).getBounds()
-                val width = maxOf(bounds.width, reach)
-                val height = maxOf(bounds.height, reach)
-                val label = stringResource(R.string.summary_play_from, citationTime(text, cited))
-                Box(
-                    Modifier
-                        .offset { IntOffset((bounds.center.x - width / 2).roundToInt(), (bounds.center.y - height / 2).roundToInt()) }
-                        .size(with(density) { width.toDp() }, with(density) { height.toDp() })
-                        .clickable(role = Role.Button) { onSeek(cited.atSec) }
-                        .semantics { contentDescription = label },
-                )
+    val inset = with(density) { padding.toPx() }
+    // In the tap layer's own coordinates: the text sits [padding] in from its top-left corner whatever the direction.
+    val targets = layout?.let { lines -> citationTargets(lines, runs) }.orEmpty()
+        .filter { target -> runs[target.run].citation?.let { canSeek(it.atSec) } == true }
+        .map { it.copy(glyphs = it.glyphs.translate(inset, inset)) }
+    val play by rememberUpdatedState { target: CitationTarget -> runs[target.run].citation?.let { onSeek(it.atSec) } }
+    Box(
+        modifier.pointerInput(targets, reach) {
+            awaitEachGesture {
+                // Before the text's own gestures see it, and taking nothing unless it ends as a tap in a target.
+                val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
+                val target = citationAt(down.position, targets, reach) ?: return@awaitEachGesture
+                val up = withTimeoutOrNull(viewConfiguration.longPressTimeoutMillis) {
+                    var change = down
+                    while (change.pressed) {
+                        change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: return@withTimeoutOrNull null
+                        if ((change.position - down.position).getDistance() > viewConfiguration.touchSlop) return@withTimeoutOrNull null
+                    }
+                    change
+                }
+                if (up != null) {
+                    up.consume()
+                    play(target)
+                }
             }
+        },
+    ) {
+        Text(styled, Modifier.fillMaxWidth().padding(padding), style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content),
+            color = palette.text, onTextLayout = { layout = it })
+        // A citation the layout cut over two lines is one button, on its first line. Placed by the layout's own
+        // left-to-right coordinates, so a right-to-left page does not mirror it away from its citation.
+        targets.distinctBy { it.run }.forEach { target ->
+            val cited = runs[target.run].citation ?: return@forEach
+            val area = target.area(reach)
+            val label = stringResource(R.string.summary_play_from, citationTime(text, cited))
+            Box(
+                Modifier
+                    .align(AbsoluteAlignment.TopLeft)
+                    .absoluteOffset { IntOffset(area.left.roundToInt(), area.top.roundToInt()) }
+                    .size(with(density) { area.width.toDp() }, with(density) { area.height.toDp() })
+                    .semantics {
+                        contentDescription = label
+                        role = Role.Button
+                        onClick(label) { onSeek(cited.atSec); true }
+                    },
+            )
+        }
+    }
+}
+
+/** docs/09 "Summary view": a citation's target — its glyphs on one line of the text, by its place among the text's runs. */
+internal data class CitationTarget(val run: Int, val glyphs: Rect) {
+    /** At least [reach] each way, centred on the glyphs, so it reaches over the lines above and below: [citationAt] decides. */
+    fun area(reach: Float): Rect {
+        val width = maxOf(glyphs.width, reach)
+        val height = maxOf(glyphs.height, reach)
+        return Rect(glyphs.center.x - width / 2, glyphs.center.y - height / 2, glyphs.center.x + width / 2, glyphs.center.y + height / 2)
+    }
+
+    /** How far [point] is from the glyphs themselves — nothing when it is on them. */
+    fun distance(point: Offset): Float = hypot(
+        maxOf(glyphs.left - point.x, 0f, point.x - glyphs.right),
+        maxOf(glyphs.top - point.y, 0f, point.y - glyphs.bottom),
+    )
+}
+
+/**
+ * What a tap at [point] plays: of the targets whose area holds it, the one whose glyphs are nearest — so a tap on a
+ * citation's own glyphs plays that citation even where the next line's target reaches over it.
+ */
+internal fun citationAt(point: Offset, targets: List<CitationTarget>, reach: Float): CitationTarget? =
+    targets.filter { it.area(reach).contains(point) }.minByOrNull { it.distance(point) }
+
+/** Every citation's glyphs, one box for each line it is laid out on. */
+internal fun citationTargets(layout: TextLayoutResult, runs: List<TextRun>): List<CitationTarget> = buildList {
+    runs.forEachIndexed { index, run ->
+        if (run.citation == null || run.end <= run.start) return@forEachIndexed
+        for (line in layout.getLineForOffset(run.start)..layout.getLineForOffset(run.end - 1)) {
+            val from = maxOf(run.start, layout.getLineStart(line))
+            val to = minOf(run.end, layout.getLineEnd(line))
+            if (from < to) add(CitationTarget(index, layout.getPathForRange(from, to).getBounds()))
         }
     }
 }
@@ -337,7 +437,7 @@ internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Doub
 /** "ChatGPT · <model> · <format> · Edited" — each part where there is one — and Copy all for the summary. */
 @Composable
 private fun SummaryFooter(summary: Summary, models: List<ChatGptModel>) {
-    val label = models.firstOrNull { it.id == summary.model }?.label ?: summary.model
+    val label = modelLabel(summary.modelName, summary.model, models)
     CopyFooter(
         footerLine(
             stringResource(R.string.summary_model, label),

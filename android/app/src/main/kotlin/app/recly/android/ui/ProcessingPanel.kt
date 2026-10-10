@@ -37,7 +37,12 @@ import app.recly.recording.RecorderState
 import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
+import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.mono
+import app.recly.android.ui.theme.processingHoldMs
+import android.os.SystemClock
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import recly.core.message.CoreMessage
 import recly.core.model.Language
 import recly.core.processing.*
@@ -54,6 +59,9 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     val resources = LocalContext.current.resources
     val state by model.state.collectAsState()
     var deletingKey by remember { mutableStateOf<String?>(null) }
+    // The Save button's own window: `Saving…`, then `✓` (docs/09 trend 2).
+    var savePhase by remember { mutableStateOf(SavePhase.IDLE) }
+    val scope = rememberCoroutineScope()
     // What on-device falls back to when the language on screen is one it cannot take — the
     // language the app is in, as the iPhone reads it (see [selectTranscriptionMode]).
     val deviceLocale = LocalConfiguration.current.locales[0].toLanguageTag()
@@ -79,8 +87,8 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
     ) {
         val draft = state.draft
         if (draft == null) {
-            // Settings that could not be read: the reason, where the settings would have been.
-            state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
+            // Settings that could not be read: the reason, where the settings would have been, in the warning tone.
+            state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk) }
         } else {
             // docs/05 "Fixed processing settings": on this device that means Qwen3-ASR, which has its own language list.
             val languages = if (draft.mode == TranscriptionMode.LOCAL) Qwen3Asr.languages else draft.languages
@@ -175,12 +183,33 @@ fun ProcessingPanel(model: ProcessingViewModel = viewModel()) {
                     style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted,
                 )
             }
-            state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted) }
-            // Only a draft with changes has anything to commit; the buttons appearing is the sign that it does.
-            if (state.dirty) EndButtons {
-                BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET, enabled = !state.busy, minWidth = MinTouch)
-                BlueprintButton(stringResource(R.string.action_save), { model.save() }, tone = ButtonTone.PRIMARY,
-                    enabled = !state.busy && languageSupported)
+            // Only what went wrong is said here, in the warning tone; a save that went through is the button's own ✓.
+            state.message?.let { Text(it.text(resources), style = MaterialTheme.typography.bodySmall, color = blueprint.warningInk) }
+            // Only a draft with changes has anything to commit; the buttons appearing is the sign that it does. They stay
+            // through the save — `Saving…`, then `✓` — and go with the changes once it has said so.
+            if (state.dirty || savePhase != SavePhase.IDLE) EndButtons {
+                BlueprintButton(stringResource(R.string.action_cancel), { model.reload() }, tone = ButtonTone.QUIET,
+                    enabled = !state.busy && savePhase == SavePhase.IDLE, minWidth = MinTouch)
+                BlueprintButton(
+                    stringResource(if (savePhase == SavePhase.SAVING) R.string.edit_saving else R.string.action_save),
+                    {
+                        savePhase = SavePhase.SAVING
+                        scope.launch {
+                            val started = SystemClock.elapsedRealtime()
+                            model.save().join()
+                            val work = SystemClock.elapsedRealtime() - started
+                            delay(processingHoldMs(work))
+                            if (!model.state.value.dirty) {
+                                savePhase = SavePhase.DONE
+                                delay(doneBadgeMs(work))
+                            }
+                            savePhase = SavePhase.IDLE
+                        }
+                    },
+                    tone = ButtonTone.PRIMARY,
+                    enabled = !state.busy && languageSupported && savePhase == SavePhase.IDLE,
+                    leading = if (savePhase == SavePhase.DONE) stringResource(R.string.action_done) else null,
+                )
             }
             // Keys only matter to an external provider, so the list lives with it — after the draft's
             // own Save, since deleting a key is not part of it. The current provider's key is managed

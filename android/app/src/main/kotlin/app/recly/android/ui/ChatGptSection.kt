@@ -22,12 +22,15 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -52,6 +55,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryPreferences
 
 /**
@@ -129,7 +133,7 @@ fun ChatGptSection() {
             if (spoken != null) {
                 Text(coreMessage(spoken).text(), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
             } else {
-                reasonDetail(reason)?.let { Text(it, style = mono.small, color = palette.textMuted) }
+                reasonDetail(reason)?.let { Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted) }
             }
         }
     }
@@ -144,6 +148,9 @@ fun ChatGptSection() {
  * docs/08 "Summaries": Summary format, My format and About you. The format is saved the moment it is chosen, as
  * the model is; the two fields when editing ends — focus leaves, Done, the screen or the app goes — with no Save.
  * Empty is an answer. The rows wait for what is stored, so a field never starts from a guess.
+ *
+ * The format offers all five; My format's field is there only while it is the format, and chosen with no words yet it
+ * takes the focus and its note says General is used meanwhile.
  */
 @Composable
 private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
@@ -152,26 +159,33 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
         CoreModule.get(context).core.summaries.observePreferences().collect { value = it }
     }
     val preferences = stored ?: return
+    // My format was just chosen with nothing written for it: its field asks for the words at once.
+    var writeFormat by remember { mutableStateOf(false) }
     TableRow(stringResource(R.string.summary_format), trailing = {
         BlueprintDropdown(
             label = stringResource(R.string.summary_format),
-            options = preferences.formats,
-            // My format emptied while it is the format: General is what a summary would be written in.
-            selected = preferences.effectiveFormat,
-            onSelect = { format -> signIn.updatePreferences { it.copy(format = format) } },
+            options = SummaryFormat.entries,
+            selected = preferences.format,
+            onSelect = { format ->
+                writeFormat = format == SummaryFormat.CUSTOM && preferences.customFormat.isBlank()
+                signIn.updatePreferences { it.copy(format = format) }
+            },
             modifier = Modifier.testTag("summary-format"),
             title = { stringResource(it.formatLabel()) },
         )
     })
-    PreferenceField(
+    if (preferences.format == SummaryFormat.CUSTOM) PreferenceField(
         saved = preferences.customFormat,
         max = SummaryPreferences.CUSTOM_MAX,
         label = stringResource(R.string.summary_format_custom),
         placeholder = stringResource(R.string.summary_custom_placeholder),
-        supporting = stringResource(R.string.summary_custom_note),
-        multiline = true,
+        supporting = stringResource(if (preferences.customFormat.isBlank()) R.string.summary_custom_empty else R.string.summary_custom_note),
+        lines = CUSTOM_LINES..CUSTOM_MAX_LINES,
+        newlines = true,
         onSave = { text -> signIn.updatePreferences { it.copy(customFormat = text) } },
         tag = "summary-custom",
+        focus = writeFormat,
+        onFocused = { writeFormat = false },
     )
     PreferenceField(
         saved = preferences.aboutMe,
@@ -179,7 +193,8 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
         label = stringResource(R.string.summary_about),
         placeholder = stringResource(R.string.summary_about_placeholder),
         supporting = stringResource(R.string.summary_about_note),
-        multiline = false,
+        lines = 1..ABOUT_MAX_LINES,
+        newlines = false,
         onSave = { text -> signIn.updatePreferences { it.copy(aboutMe = text) } },
         tag = "summary-about",
     )
@@ -187,7 +202,9 @@ private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
 
 /**
  * One text setting as a table row: its name over the field and a quiet line under it, cut at [max] characters as it
- * is typed. What was typed is saved when editing ends and differs from [saved] — the core trims it.
+ * is typed. What was typed is saved when editing ends and differs from [saved] — the core trims it. The box is
+ * [lines] tall, growing with the text; Return adds a line where [newlines], and is Done — the end of editing —
+ * where not. [focus] puts the cursor in it as it appears, and [onFocused] says that happened.
  */
 @Composable
 private fun PreferenceField(
@@ -196,12 +213,15 @@ private fun PreferenceField(
     label: String,
     placeholder: String,
     supporting: String,
-    multiline: Boolean,
+    lines: IntRange,
+    newlines: Boolean,
     onSave: (String) -> Unit,
     tag: String,
+    focus: Boolean = false,
+    onFocused: () -> Unit = {},
 ) {
     var text by remember(saved) { mutableStateOf(saved) }
-    val focus = LocalFocusManager.current
+    val focusManager = LocalFocusManager.current
     val current by rememberUpdatedState(text)
     val kept by rememberUpdatedState(saved)
     val save by rememberUpdatedState(onSave)
@@ -217,6 +237,13 @@ private fun PreferenceField(
         }
     }
     var focused by remember { mutableStateOf(false) }
+    val requester = remember { FocusRequester() }
+    LaunchedEffect(focus) {
+        if (focus) {
+            requester.requestFocus()
+            onFocused()
+        }
+    }
     Column(Modifier.fillMaxWidth().background(blueprint.surface)) {
         BlueprintField(
             text,
@@ -225,24 +252,26 @@ private fun PreferenceField(
             label = label,
             placeholder = placeholder,
             supporting = supporting,
-            keyboardOptions = if (multiline) KeyboardOptions.Default else KeyboardOptions(imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+            keyboardOptions = if (newlines) KeyboardOptions.Default else KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
             fieldModifier = Modifier
+                .focusRequester(requester)
                 .onFocusChanged {
                     if (focused && !it.isFocused) commit()
                     focused = it.isFocused
                 }
                 .testTag(tag),
-            minLines = if (multiline) CUSTOM_LINES else 1,
-            maxLines = if (multiline) CUSTOM_MAX_LINES else 1,
+            minLines = lines.first,
+            maxLines = lines.last,
         )
         HairLine()
     }
 }
 
-/** My format's box: four lines to start with, eight before it scrolls. */
-private const val CUSTOM_LINES = 4
+/** My format's box: two lines to start with, eight before it scrolls; About you wraps to three. */
+private const val CUSTOM_LINES = 2
 private const val CUSTOM_MAX_LINES = 8
+private const val ABOUT_MAX_LINES = 3
 
 /** docs/09 "Summary view": once, after the first sign-in on this device. */
 @Composable

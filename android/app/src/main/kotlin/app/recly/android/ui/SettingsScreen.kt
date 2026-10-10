@@ -352,7 +352,8 @@ private fun DisconnectDialog(
         BlueprintDialogText(stringResource(R.string.disconnect_other_devices), tone = DialogTone.MUTED)
         // docs/12: a capture that is running has no job yet, so the core's Busy guard does not
         // cover it. Say what is in the way; never stop it for them.
-        prompt.blocker?.let { BlueprintDialogText(stringResource(it), tone = DialogTone.DANGER) }
+        // In the warning tone: nothing failed, the recording is just in the way.
+        prompt.blocker?.let { BlueprintDialogText(stringResource(it), tone = DialogTone.WARNING) }
     }
 }
 

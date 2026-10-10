@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
 import app.recly.android.ui.component.BlueprintButton
@@ -152,7 +153,10 @@ internal fun TranscriptReader(
         val offset = -list.layoutInfo.viewportSize.height / 3
         if (reduce) list.scrollToItem(match.group, offset) else list.animateScrollToItem(match.group, offset)
     }
-    val tint = palette.accent.copy(alpha = 0.16f)
+    // docs/09: a match is the accent at 16 %; the one the find bar is on, a step stronger (as the PC draws it).
+    val tint = palette.accent.copy(alpha = MATCH_TINT)
+    val currentTint = palette.accent.copy(alpha = CURRENT_MATCH_TINT)
+    val currentMatch = find.getOrNull(findCurrent)
     val me = stringResource(R.string.speaker_me)
     SelectionContainer(modifier) {
         LazyColumn(Modifier.fillMaxSize().testTag("transcript-passages"), state = list,
@@ -195,16 +199,21 @@ internal fun TranscriptReader(
                         }
                     }
                     val matches = find.filter { it.group == group.index }
+                    // What was said takes its direction from itself: English in an Arabic app still reads left to right.
                     Text(if (matches.isEmpty()) AnnotatedString(group.text) else buildAnnotatedString {
                         append(group.text)
-                        matches.forEach { addStyle(SpanStyle(background = tint), it.offset, it.offset + it.length) }
-                    }, style = MaterialTheme.typography.bodyMedium, color = palette.text,
+                        matches.forEach { addStyle(SpanStyle(background = if (it == currentMatch) currentTint else tint), it.offset, it.offset + it.length) }
+                    }, style = MaterialTheme.typography.bodyMedium.copy(textDirection = TextDirection.Content), color = palette.text,
                         modifier = Modifier.testTag("transcript-text-${group.index}"))
                 }
             }
         }
     }
 }
+
+/** A find match's tint, and the current one's. */
+private const val MATCH_TINT = 0.16f
+private const val CURRENT_MATCH_TINT = 0.4f
 
 /**
  * docs/09 "Transcript reader": who speaks, as a quiet badge — the name in the body face, an id like `S1` in
