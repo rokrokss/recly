@@ -29,9 +29,6 @@ apple/RecKit/Frameworks/
 # Speaker diarization models fetched by apple/scripts/fetch-speaker-models.sh
 apple/RecKit/Sources/RecKitSpeakers/Models/
 
-# recly-events' notices for the MSI, made by the Windows release job (docs/14 "Agent connection")
-windows/app/resources/common/THIRD-PARTY-recly-events.txt
-
 # Rust
 target/
 
