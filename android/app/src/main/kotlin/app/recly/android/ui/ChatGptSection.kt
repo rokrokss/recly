@@ -1,24 +1,37 @@
 package app.recly.android.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.recly.android.R
 import app.recly.android.core.CoreModule
 import app.recly.android.core.coreMessage
@@ -26,6 +39,7 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.BlueprintDialog
 import app.recly.android.ui.component.BlueprintDialogText
 import app.recly.android.ui.component.BlueprintDropdown
+import app.recly.android.ui.component.BlueprintField
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.ProcessingButton
@@ -38,6 +52,7 @@ import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryPreferences
 
 /**
  * docs/09 "Summary view" · docs/15 §10: the user's own ChatGPT plan, for summaries — the Drive account's rows in
@@ -118,10 +133,116 @@ fun ChatGptSection() {
             }
         }
     }
+    // What every summary is asked for on this device — set signed in or out; only running a summary needs the sign-in.
+    SummaryPreferenceRows(signIn)
     // Not a failure: this device is signed out either way, and the sentence says where the rest is done.
     if (ui.revokeUnconfirmed) SectionFootnote(stringResource(R.string.chatgpt_revoke_unconfirmed))
     SectionFootnote(stringResource(R.string.chatgpt_footnote))
 }
+
+/**
+ * docs/08 "Summaries": Summary format, My format and About you. The format is saved the moment it is chosen, as
+ * the model is; the two fields when editing ends — focus leaves, Done, the screen or the app goes — with no Save.
+ * Empty is an answer. The rows wait for what is stored, so a field never starts from a guess.
+ */
+@Composable
+private fun SummaryPreferenceRows(signIn: ChatGptSignIn) {
+    val context = LocalContext.current
+    val stored by produceState<SummaryPreferences?>(null) {
+        CoreModule.get(context).core.summaries.observePreferences().collect { value = it }
+    }
+    val preferences = stored ?: return
+    TableRow(stringResource(R.string.summary_format), trailing = {
+        BlueprintDropdown(
+            label = stringResource(R.string.summary_format),
+            options = preferences.formats,
+            // My format emptied while it is the format: General is what a summary would be written in.
+            selected = preferences.effectiveFormat,
+            onSelect = { format -> signIn.updatePreferences { it.copy(format = format) } },
+            modifier = Modifier.testTag("summary-format"),
+            title = { stringResource(it.formatLabel()) },
+        )
+    })
+    PreferenceField(
+        saved = preferences.customFormat,
+        max = SummaryPreferences.CUSTOM_MAX,
+        label = stringResource(R.string.summary_format_custom),
+        placeholder = stringResource(R.string.summary_custom_placeholder),
+        supporting = stringResource(R.string.summary_custom_note),
+        multiline = true,
+        onSave = { text -> signIn.updatePreferences { it.copy(customFormat = text) } },
+        tag = "summary-custom",
+    )
+    PreferenceField(
+        saved = preferences.aboutMe,
+        max = SummaryPreferences.ABOUT_MAX,
+        label = stringResource(R.string.summary_about),
+        placeholder = stringResource(R.string.summary_about_placeholder),
+        supporting = stringResource(R.string.summary_about_note),
+        multiline = false,
+        onSave = { text -> signIn.updatePreferences { it.copy(aboutMe = text) } },
+        tag = "summary-about",
+    )
+}
+
+/**
+ * One text setting as a table row: its name over the field and a quiet line under it, cut at [max] characters as it
+ * is typed. What was typed is saved when editing ends and differs from [saved] — the core trims it.
+ */
+@Composable
+private fun PreferenceField(
+    saved: String,
+    max: Int,
+    label: String,
+    placeholder: String,
+    supporting: String,
+    multiline: Boolean,
+    onSave: (String) -> Unit,
+    tag: String,
+) {
+    var text by remember(saved) { mutableStateOf(saved) }
+    val focus = LocalFocusManager.current
+    val current by rememberUpdatedState(text)
+    val kept by rememberUpdatedState(saved)
+    val save by rememberUpdatedState(onSave)
+    val commit = { if (current.trim() != kept) save(current) }
+    // The screen going (another tab) and the app going (Home, the switcher) both end the editing.
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event -> if (event == Lifecycle.Event.ON_STOP) commit() }
+        lifecycle.addObserver(observer)
+        onDispose {
+            lifecycle.removeObserver(observer)
+            commit()
+        }
+    }
+    var focused by remember { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth().background(blueprint.surface)) {
+        BlueprintField(
+            text,
+            { text = it.take(max) },
+            modifier = Modifier.fillMaxWidth().padding(Space.m),
+            label = label,
+            placeholder = placeholder,
+            supporting = supporting,
+            keyboardOptions = if (multiline) KeyboardOptions.Default else KeyboardOptions(imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focus.clearFocus() }),
+            fieldModifier = Modifier
+                .onFocusChanged {
+                    if (focused && !it.isFocused) commit()
+                    focused = it.isFocused
+                }
+                .testTag(tag),
+            minLines = if (multiline) CUSTOM_LINES else 1,
+            maxLines = if (multiline) CUSTOM_MAX_LINES else 1,
+        )
+        HairLine()
+    }
+}
+
+/** My format's box: four lines to start with, eight before it scrolls. */
+private const val CUSTOM_LINES = 4
+private const val CUSTOM_MAX_LINES = 8
 
 /** docs/09 "Summary view": once, after the first sign-in on this device. */
 @Composable

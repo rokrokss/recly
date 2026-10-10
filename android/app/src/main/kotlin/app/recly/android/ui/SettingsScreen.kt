@@ -380,9 +380,9 @@ private fun About(line: String) {
 /**
  * The language's own name. Only the two [AppLanguage.choices] offers are ever drawn:
  * [AppLanguage.SYSTEM] is the store's "nothing chosen" and the screen names the language the app
- * resolved to instead.
+ * resolved to instead. Ask's Translate names the app's language by it too.
  */
-private fun AppLanguage.labelRes(): Int =
+internal fun AppLanguage.labelRes(): Int =
     when (this) {
         AppLanguage.ENGLISH -> R.string.settings_language_en
         AppLanguage.KOREAN -> R.string.settings_language_ko

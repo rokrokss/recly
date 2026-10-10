@@ -49,6 +49,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -85,7 +86,9 @@ import app.recly.android.ui.component.LoadingText
 import app.recly.android.ui.theme.doneBadgeMs
 import app.recly.android.ui.theme.processingHoldMs
 import kotlinx.coroutines.launch
+import recly.core.chatgpt.AskPreset
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.processing.ProcessingTranscription
 import recly.core.recording.ExportFormat
@@ -135,10 +138,19 @@ class DetailActions(
     val onConnectDrive: () -> Unit = {},
     /** docs/09 "Summary view": whether Summarize is offered, and why not; the models name the summary's. */
     val chatGpt: ChatGptConnection = ChatGptConnection.Unavailable,
-    /** The argument runs when the summary could not even start, so the page stops waiting for it. */
-    val onSummarize: (onFailure: () -> Unit) -> Unit = {},
+    /**
+     * Summarize in [format] — null: Settings' format. [onFailure] runs when the summary could not even start, so the page
+     * stops waiting for it.
+     */
+    val onSummarize: (format: SummaryFormat?, onFailure: () -> Unit) -> Unit = { _, _ -> },
     /** docs/09 "Summary view": the summary as the user rewrote it; answers what the recording has now. */
     val onEditSummary: suspend (String) -> SummaryState = { SummaryState.None },
+    /** docs/08 "Summaries": what More → Summarize as offers. */
+    val summaryFormats: List<SummaryFormat> = emptyList(),
+    /** docs/08 "Ask": the presets that make sense for the recording, the question, and letting its answer go. */
+    val askPresets: suspend () -> List<AskPreset> = { emptyList() },
+    val onAsk: (AskPreset?, String?) -> Unit = { _, _ -> },
+    val onClearAsk: () -> Unit = {},
 )
 
 /**
@@ -294,17 +306,29 @@ fun RecordingDetailScreen(
         }, onCancel = { speakerNaming = null })
     }
     var highlightMenu by remember(detail.recordingId) { mutableStateOf<Double?>(null) }
-    // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens.
-    var view by remember(detail.recordingId) { mutableStateOf(DetailView.TRANSCRIPT) }
+    // docs/09 "Summary view": which of the two the page shows — the transcript whenever it opens, unless a search found
+    // the summary alone.
+    var view by remember(detail.recordingId) { mutableStateOf(if (detail.openSummary) DetailView.SUMMARY else DetailView.TRANSCRIPT) }
     var askedSummary by remember(detail.recordingId) { mutableStateOf(false) }
     val summaryFailed = { askedSummary = false; view = DetailView.TRANSCRIPT }
-    val summarize = {
+    // The format last asked for on this page — Settings' while null — which Retry under a failure asks for again.
+    var summaryFormat by remember(detail.recordingId) { mutableStateOf<SummaryFormat?>(null) }
+    val summarize = { format: SummaryFormat? ->
         askedSummary = true
         view = DetailView.SUMMARY
-        actions.onSummarize(summaryFailed)
+        summaryFormat = format
+        actions.onSummarize(format, summaryFailed)
     }
-    var askReplace by remember(detail.recordingId) { mutableStateOf(false) }
-    if (askReplace) ReplaceSummaryDialog(onCancel = { askReplace = false }, onReplace = { askReplace = false; summarize() })
+    // Summarize again or Summarize as over an edited summary: the question first, holding the format asked for.
+    var replacing by remember(detail.recordingId) { mutableStateOf<SummarizeRequest?>(null) }
+    replacing?.let { request ->
+        ReplaceSummaryDialog(onCancel = { replacing = null }, onReplace = { replacing = null; summarize(request.format) })
+    }
+    val requestSummary = { format: SummaryFormat? ->
+        if (asksBeforeReplacing(detail.summary)) replacing = SummarizeRequest(format) else summarize(format)
+    }
+    // docs/08 "Ask": the panel, while it is open; its answer lives in the core for as long as it is.
+    var asking by remember(detail.recordingId) { mutableStateOf(false) }
     val leaveSummaryEditor = { to: DetailView ->
         if (summaryDraft?.changed == true) summaryLeaving = to else { summaryDraft = null; view = to }
     }
@@ -338,6 +362,13 @@ fun RecordingDetailScreen(
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
+    // docs/09 "Summary view": a citation plays where a time button for that second would.
+    val canSeekTo = { atSec: Double -> canSeek && atSec < detail.audio.totalSec }
+    val models = (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty()
+    if (asking) {
+        val presets by produceState(emptyList<AskPreset>(), detail.recordingId) { value = actions.askPresets() }
+        AskPanel(detail.ask, presets, models, canSeekTo, seek, actions.onAsk, onClose = { asking = false; actions.onClearAsk() })
+    }
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
@@ -363,15 +394,17 @@ fun RecordingDetailScreen(
                         // rename or edit one, and an action that does nothing is not one to offer. Not
                         // before the load has said which of the two this is, either.
                         if (!detail.loading && !detail.writing) {
-                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, MoreActions(
+                            MoreButton(detail, transcription, player.positionSec, actions.chatGpt, actions.summaryFormats, MoreActions(
                                 onRename = { renaming = true },
                                 onEdit = { transcript?.let { draft = EditDraft.of(it); view = DetailView.TRANSCRIPT } },
                                 onRetranscribe = { askAgain = true },
                                 onAddHighlight = { actions.onHighlights(detail.highlights + player.positionSec) },
-                                onSummarize = { if (asksBeforeReplacing(detail.summary)) askReplace = true else summarize() },
+                                onSummarize = { requestSummary(null) },
+                                onSummarizeAs = { requestSummary(it) },
                                 onEditSummary = {
                                     savedSummary(detail.summary)?.let { summaryDraft = SummaryDraft.of(it); view = DetailView.SUMMARY }
                                 },
+                                onAsk = { asking = true },
                             ))
                         }
                     }
@@ -406,8 +439,8 @@ fun RecordingDetailScreen(
                 detail.loading -> Notice(stringResource(R.string.detail_loading))
                 summaryEditing != null ->
                     SummaryEditor(summaryEditing.text, { summaryDraft = summaryEditing.copy(text = it) }, Modifier.fillMaxSize())
-                chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary,
-                    (actions.chatGpt as? ChatGptConnection.SignedIn)?.models.orEmpty(), { actions.onSummarize(summaryFailed) }, Modifier.fillMaxSize())
+                chips && view == DetailView.SUMMARY -> SummaryPane(detail.summary, models, { actions.onSummarize(summaryFormat, summaryFailed) },
+                    Modifier.fillMaxSize(), canSeekTo, seek)
                 // UX decisions of 2026-10-08: the wait is for Drive, and the fix is here rather than in the list.
                 transcript == null && detail.waitingForDrive && detail.availability in DRIVE_WAITS -> Notice(
                     stringResource(R.string.detail_waiting_drive),
@@ -498,6 +531,9 @@ fun RecordingDetailScreen(
         }
     }
 }
+
+/** A summary the user asked for: in [format], or Settings' format while null. */
+private data class SummarizeRequest(val format: SummaryFormat?)
 
 /** A save's window, shown on its button or beside a badge: `Saving…`, then `✓` (docs/09 trend 2). */
 internal enum class SavePhase { IDLE, SAVING, DONE }

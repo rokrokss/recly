@@ -69,6 +69,7 @@ import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import recly.core.chatgpt.ChatGptConnection
+import recly.core.chatgpt.SummaryFormat
 import recly.core.processing.ProcessingTranscription
 import recly.core.processing.TranscriptionMode
 import recly.core.recording.ExportFormat
@@ -83,13 +84,16 @@ internal class MoreActions(
     val onRetranscribe: () -> Unit,
     val onAddHighlight: () -> Unit,
     val onSummarize: () -> Unit,
+    val onSummarizeAs: (SummaryFormat) -> Unit,
     val onEditSummary: () -> Unit,
+    val onAsk: () -> Unit,
 )
 
 /**
- * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Edit summary · Add
- * highlight at the playhead, in that order. An item that cannot run is shown disabled with its reason under it; Summarize
- * is not there at all where ChatGPT is not offered, and Edit summary not before there is a summary.
+ * docs/09 "Detail header and More menu": Rename · Edit transcript · Transcribe again · Summarize · Summarize as… · Edit
+ * summary · Ask about this recording… · Add highlight at the playhead, in that order. An item that cannot run is shown
+ * disabled with its reason under it; the ChatGPT items are not there at all where ChatGPT is not offered, and Edit
+ * summary not before there is a summary. Summarize as… turns the menu into the list of [formats], as Change speaker does.
  */
 @Composable
 internal fun MoreButton(
@@ -97,16 +101,27 @@ internal fun MoreButton(
     transcription: ProcessingTranscription?,
     playheadSec: Double,
     chatGpt: ChatGptConnection,
+    formats: List<SummaryFormat>,
     actions: MoreActions,
 ) {
     var open by remember { mutableStateOf(false) }
+    var choosingFormat by remember { mutableStateOf(false) }
     val transcript = detail.transcript?.takeIf { t -> t.segments.any { it.text.isNotBlank() } }
     // Disabled exactly as before while a job may still rewrite the transcript; what the reason says is
     // why (UX decisions of 2026-10-08): transcribing, waiting for Drive, or not uploaded yet.
     val transcribing = stringResource(detail.busyReason)
     Box {
         GlyphButton(Glyph.MORE, stringResource(R.string.detail_more), { open = true }, Modifier.testTag("detail-more"))
-        if (open) BlueprintMenu(onDismissRequest = { open = false }) {
+        if (open && choosingFormat) BlueprintMenu(onDismissRequest = { open = false; choosingFormat = false }) {
+            val current = currentFormat(detail.summary)
+            formats.forEach { format ->
+                MenuOption(stringResource(format.formatLabel()), format == current, onSelect = {
+                    open = false
+                    choosingFormat = false
+                    actions.onSummarizeAs(format)
+                })
+            }
+        } else if (open) BlueprintMenu(onDismissRequest = { open = false }) {
             fun pick(action: () -> Unit): () -> Unit = { open = false; action() }
             MenuAction(stringResource(R.string.detail_rename), pick(actions.onRename), modifier = Modifier.testTag("more-rename"))
             val editReason = when {
@@ -124,16 +139,24 @@ internal fun MoreButton(
             }
             MenuAction(stringResource(R.string.detail_retranscribe), pick(actions.onRetranscribe), enabled = againReason == null, reason = againReason,
                 modifier = Modifier.testTag("more-retranscribe"))
-            if (chatGpt !is ChatGptConnection.Unavailable) {
-                val summarizeReason = summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+            val offered = chatGpt !is ChatGptConnection.Unavailable
+            val summarizeReason = summarizeReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt, detail.summary)
+            if (offered) {
                 MenuAction(stringResource(if (hasSummary(detail.summary)) R.string.summary_again else R.string.summary_summarize),
                     pick(actions.onSummarize), enabled = summarizeReason == null, reason = summarizeReason?.let { stringResource(it) },
                     modifier = Modifier.testTag("more-summarize"))
+                MenuAction(stringResource(R.string.summary_as), { choosingFormat = true }, enabled = summarizeReason == null,
+                    reason = summarizeReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-summarize-as"))
             }
             if (hasSummary(detail.summary)) {
                 val editReason = editSummaryReason(detail.summary)
                 MenuAction(stringResource(R.string.summary_edit), pick(actions.onEditSummary), enabled = editReason == null,
                     reason = editReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-edit-summary"))
+            }
+            if (offered) {
+                val askReason = askReason(transcript != null, detail.transcribing, detail.busyReason, chatGpt)
+                MenuAction(stringResource(R.string.ask_menu), pick(actions.onAsk), enabled = askReason == null,
+                    reason = askReason?.let { stringResource(it) }, modifier = Modifier.testTag("more-ask"))
             }
             val noAudio = detail.audio.isEmpty
             val stamp = clock(playheadSec.toLong(), recordingScale(detail))
@@ -149,6 +172,8 @@ private data class ShareRow(val glyph: Glyph, val label: Int, val format: Int?, 
 private val SHARE_ROWS = listOf(
     ShareRow(Glyph.DOCUMENT, R.string.share_transcript, R.string.share_transcript_format, ExportFormat.TXT),
     ShareRow(Glyph.DOCUMENT, R.string.share_notes, R.string.share_notes_format, ExportFormat.MD),
+    // docs/08 "Exports": the summary alone, as the text ChatGPT wrote — the .md above carries it too.
+    ShareRow(Glyph.DOCUMENT, R.string.summary_tab, R.string.share_transcript_format, ExportFormat.SUMMARY),
     ShareRow(Glyph.SUBTITLES, R.string.share_subtitles, R.string.share_subtitles_format, ExportFormat.SRT),
     ShareRow(Glyph.SUBTITLES, R.string.share_web_subtitles, R.string.share_web_subtitles_format, ExportFormat.VTT),
     ShareRow(Glyph.AUDIO, R.string.share_audio, R.string.share_audio_format, ExportFormat.AUDIO),
@@ -183,6 +208,9 @@ internal fun ShareSheet(detail: DetailState, onExport: suspend (ExportFormat) ->
                 val format = row.export
                 val noAudio = detail.audio.isEmpty && detail.driveFetch == DriveFetch.IDLE
                 val reason = when {
+                    format == ExportFormat.SUMMARY && (savedSummary(detail.summary) == null || format in unavailable) ->
+                        stringResource(R.string.share_no_summary)
+                    format == ExportFormat.SUMMARY -> null
                     format == ExportFormat.AUDIO && (noAudio || format in unavailable) -> stringResource(R.string.player_no_audio)
                     format != ExportFormat.AUDIO && transcript == null -> stringResource(R.string.detail_no_transcript)
                     else -> null
@@ -267,6 +295,7 @@ private fun mimeOf(format: ExportFormat): String = when (format) {
     ExportFormat.SRT -> "application/x-subrip"
     ExportFormat.VTT -> "text/vtt"
     ExportFormat.AUDIO -> "audio/mp4"
+    ExportFormat.SUMMARY -> "text/plain"
 }
 
 /** docs/09 "Playback": the speeds the chip offers. */
@@ -350,11 +379,12 @@ internal fun SpeakerMenu(
             MenuAction(stringResource(R.string.speaker_rename), { onDismiss(); current?.let(onRename) }, modifier = Modifier.testTag("speaker-rename"))
             MenuAction(stringResource(R.string.speaker_change), { choosing = true }, modifier = Modifier.testTag("speaker-change"))
         } else {
+            val me = stringResource(R.string.speaker_me)
             transcript.speakers.forEach { speaker ->
-                MenuOption(speaker.name ?: speaker.id, speaker.id == current, onSelect = {
+                MenuOption(speakerLabel(transcript, speaker.id, me), speaker.id == current, onSelect = {
                     onDismiss()
                     if (speaker.id != current) onChange(speaker.id)
-                }, monospace = speaker.name == null)
+                }, monospace = !speakerIsWord(transcript, speaker.id))
             }
             MenuAction(stringResource(R.string.speaker_new), { onDismiss(); onChange(null) }, modifier = Modifier.testTag("speaker-new"))
         }
