@@ -103,7 +103,7 @@ internal fun TranscriptEditor(
                             tone = ButtonTone.QUIET, modifier = Modifier.testTag("edit-add-speaker-$index"))
                     } else {
                         androidx.compose.foundation.layout.Box {
-                            SpeakerBadge(speakerLabel(transcript, segment.speaker), named = transcript.speakers.any { it.id == segment.speaker && it.name != null },
+                            SpeakerBadge(speakerLabel(transcript, segment.speaker, stringResource(R.string.speaker_me)), named = speakerIsWord(transcript, segment.speaker),
                                 onClick = { menuFor = index }, modifier = Modifier.testTag("edit-speaker-$index"))
                             if (menuFor == index) SpeakerMenu(transcript, segment.speaker,
                                 onRename = { renaming = it },

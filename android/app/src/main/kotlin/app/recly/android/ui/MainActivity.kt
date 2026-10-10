@@ -447,8 +447,12 @@ private fun JobsTab(
                 onCloseFind = model::closeFind,
                 onConnectDrive = onConnectDrive,
                 chatGpt = state.chatGpt,
-                onSummarize = { onFailure -> model.summarize(detail.recordingId, onFailure) },
+                onSummarize = { format, onFailure -> model.summarize(detail.recordingId, format, onFailure) },
                 onEditSummary = { model.editSummary(detail.recordingId, it) },
+                summaryFormats = state.summaryPreferences.formats,
+                askPresets = { model.askPresets(detail.recordingId) },
+                onAsk = { preset, question -> model.ask(detail.recordingId, preset, question) },
+                onClearAsk = { model.clearAsk(detail.recordingId) },
             ),
         )
     } else {

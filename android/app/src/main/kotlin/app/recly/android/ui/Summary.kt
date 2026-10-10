@@ -2,12 +2,16 @@ package app.recly.android.ui
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -24,9 +28,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.IntOffset
 import app.recly.android.R
 import app.recly.android.core.CoreMessages
 import app.recly.android.core.coreMessage
@@ -34,15 +47,22 @@ import app.recly.android.ui.component.BlueprintButton
 import app.recly.android.ui.component.ButtonTone
 import app.recly.android.ui.component.HairLine
 import app.recly.android.ui.component.LoadingText
+import app.recly.android.ui.theme.MinTouch
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
+import app.recly.android.ui.theme.mono
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 import recly.core.chatgpt.ChatGptConnection
 import recly.core.chatgpt.ChatGptModel
 import recly.core.chatgpt.Summary
+import recly.core.chatgpt.SummaryCitation
+import recly.core.chatgpt.SummaryCitations
+import recly.core.chatgpt.SummaryFormat
 import recly.core.chatgpt.SummaryState
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
+import recly.core.recording.SearchHit
 import recly.core.storage.StorageKind
 
 /** The detail's two views once a summary is in play (docs/09 "Summary view"). */
@@ -60,13 +80,57 @@ internal fun summarizeReason(
     @StringRes busyReason: Int,
     connection: ChatGptConnection,
     summary: SummaryState,
-): Int? = when {
+): Int? = askReason(hasTranscript, transcribing, busyReason, connection)
+    ?: if (summary is SummaryState.Running) R.string.summary_running else null
+
+/** Why More → Ask about this recording cannot open now: Summarize's reasons, but a summary being written is none (docs/08 "Ask"). */
+@StringRes
+internal fun askReason(hasTranscript: Boolean, transcribing: Boolean, @StringRes busyReason: Int, connection: ChatGptConnection): Int? = when {
     !hasTranscript -> R.string.detail_no_transcript
     transcribing -> busyReason
     connection !is ChatGptConnection.SignedIn -> CoreMessages.resourceOf(CoreMessage.CHATGPT_SIGN_IN_REQUIRED)
-    summary is SummaryState.Running -> R.string.summary_running
     else -> null
 }
+
+/** docs/08 "Summaries": each format under its name in Settings, in Summarize as and in the summary's footer. */
+@StringRes
+internal fun SummaryFormat.formatLabel(): Int = when (this) {
+    SummaryFormat.AUTO -> R.string.summary_format_general
+    SummaryFormat.ONE_ON_ONE -> R.string.summary_format_one_on_one
+    SummaryFormat.LECTURE -> R.string.summary_format_lecture
+    SummaryFormat.INTERVIEW -> R.string.summary_format_interview
+    SummaryFormat.CUSTOM -> R.string.summary_format_custom
+}
+
+/** The format the footer names: none for General, which every summary is unless asked otherwise. */
+internal fun footerFormat(summary: Summary): SummaryFormat? = summary.summaryFormat.takeIf { it != SummaryFormat.AUTO }
+
+/** "ChatGPT · <model>", then the format, then "Edited" — each where there is one, on the one separator. */
+internal fun footerLine(written: String, format: String?, edited: String?): String = listOfNotNull(written, format, edited).joinToString(" · ")
+
+/** The format Summarize as marks `✓`: the one the recording's summary was written in, if it has one. */
+internal fun currentFormat(summary: SummaryState): SummaryFormat? = savedSummary(summary)?.summaryFormat
+
+/** docs/09 "Search": a hit found in the summary alone opens on the summary — there is nothing in the transcript to find. */
+internal fun opensOnSummary(hit: SearchHit): Boolean = hit.summary != null && hit.snippets.isEmpty() && !hit.matchesInTitle
+
+/** One stretch of a summary or an answer: plain text, or a [citation] — `[HH:MM:SS]` or `[MM:SS]` — that plays from its time. */
+internal data class TextRun(val start: Int, val end: Int, val citation: SummaryCitation? = null)
+
+/** [text] cut at every citation the core reads in it ([SummaryCitations]), so the runs cover it end to end in order. */
+internal fun textRuns(text: String): List<TextRun> = buildList {
+    var at = 0
+    SummaryCitations.parse(text).forEach { citation ->
+        if (citation.offset > at) add(TextRun(at, citation.offset))
+        add(TextRun(citation.offset, citation.offset + citation.length, citation))
+        at = citation.offset + citation.length
+    }
+    if (at < text.length) add(TextRun(at, text.length))
+}
+
+/** The citation's time as the text writes it, without its brackets — what `Play from {time}` says. */
+internal fun citationTime(text: String, citation: SummaryCitation): String =
+    text.substring(citation.offset + 1, citation.offset + citation.length - 1)
 
 /** "Summarize again" once there is a summary to replace. */
 internal fun hasSummary(summary: SummaryState): Boolean = when (summary) {
@@ -141,52 +205,69 @@ internal fun summaryRecovery(reason: String): SummaryRecovery = when (CoreMessag
 
 /**
  * docs/09 "Summary view": the summary of the open recording, or where it is. The text is ChatGPT's plain text
- * with its own line breaks; [models] names the model it was written with.
+ * with its own line breaks; [models] names the model it was written with. A citation in it plays from its time
+ * through [onSeek] — the transcript's time buttons' own seek — where [canSeek] allows it.
  */
 @Composable
-internal fun SummaryPane(state: SummaryState, models: List<ChatGptModel>, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+internal fun SummaryPane(
+    state: SummaryState,
+    models: List<ChatGptModel>,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+    canSeek: (Double) -> Boolean = { false },
+    onSeek: (Double) -> Unit = {},
+) {
     val palette = blueprint
-    val context = LocalContext.current
     when (state) {
         // None only for the moment between the tap and the run starting.
         SummaryState.None, is SummaryState.Running -> Column(modifier) {
             LoadingText(stringResource(R.string.summary_running), MaterialTheme.typography.bodySmall, palette.textMuted,
                 Modifier.padding(horizontal = Space.m, vertical = Space.s).testTag("summary-running"))
             HairLine()
-            (state as? SummaryState.Running)?.previous?.let { SummaryText(it, Modifier.weight(1f)) }
+            (state as? SummaryState.Running)?.previous?.let { SummaryText(it, Modifier.weight(1f), canSeek, onSeek) }
         }
 
         is SummaryState.Ready -> Column(modifier) {
-            SummaryText(state.summary, Modifier.weight(1f))
+            SummaryText(state.summary, Modifier.weight(1f), canSeek, onSeek)
             HairLine()
             SummaryFooter(state.summary, models)
         }
 
         is SummaryState.Failed -> {
-            val spoken = spokenReason(state.reason)
-            val text = if (spoken != null) coreMessage(spoken).text() else stringResource(R.string.summary_failed)
-            val detail = if (spoken != null) null else reasonDetail(state.reason)
-            val button: (@Composable () -> Unit)? = when (summaryRecovery(state.reason)) {
-                SummaryRecovery.MANAGE_USAGE -> {
-                    { BlueprintButton(stringResource(R.string.chatgpt_manage_usage), { context.openUrl(CHATGPT_USAGE_URL) }, tone = ButtonTone.PRIMARY) }
-                }
-                SummaryRecovery.RETRY -> {
-                    { BlueprintButton(stringResource(R.string.action_retry), onRetry, tone = ButtonTone.QUIET, modifier = Modifier.testTag("summary-retry")) }
-                }
-                SummaryRecovery.NONE -> null
-            }
             val previous = state.previous
             if (previous == null) {
-                Notice(text, detail = detail, button = button, modifier = modifier.fillMaxSize())
+                ChatGptFailure(state.reason, R.string.summary_failed, onRetry, modifier.fillMaxSize(), retryTag = "summary-retry")
             } else {
                 Column(modifier) {
-                    Notice(text, detail = detail, button = button, modifier = Modifier.fillMaxWidth())
+                    ChatGptFailure(state.reason, R.string.summary_failed, onRetry, Modifier.fillMaxWidth(), retryTag = "summary-retry")
                     HairLine()
-                    SummaryText(previous, Modifier.weight(1f))
+                    SummaryText(previous, Modifier.weight(1f), canSeek, onSeek)
                 }
             }
         }
     }
+}
+
+/**
+ * A summary or an answer that could not be written, as a centred notice: the reason's own sentence where it says
+ * what to do, otherwise [generic] with the detail as it came — and the one button that helps (docs/09 "Summary view").
+ */
+@Composable
+internal fun ChatGptFailure(reason: String, @StringRes generic: Int, onRetry: () -> Unit, modifier: Modifier, retryTag: String) {
+    val context = LocalContext.current
+    val spoken = spokenReason(reason)
+    val text = if (spoken != null) coreMessage(spoken).text() else stringResource(generic)
+    val detail = if (spoken != null) null else reasonDetail(reason)
+    val button: (@Composable () -> Unit)? = when (summaryRecovery(reason)) {
+        SummaryRecovery.MANAGE_USAGE -> {
+            { BlueprintButton(stringResource(R.string.chatgpt_manage_usage), { context.openUrl(CHATGPT_USAGE_URL) }, tone = ButtonTone.PRIMARY) }
+        }
+        SummaryRecovery.RETRY -> {
+            { BlueprintButton(stringResource(R.string.action_retry), onRetry, tone = ButtonTone.QUIET, modifier = Modifier.testTag(retryTag)) }
+        }
+        SummaryRecovery.NONE -> null
+    }
+    Notice(text, detail = detail, button = button, modifier = modifier)
 }
 
 /** docs/09 "Summary view": the whole summary as one plain text field, as the transcript editor's fields are. */
@@ -197,34 +278,96 @@ internal fun SummaryEditor(text: String, onText: (String) -> Unit, modifier: Mod
 
 /** The text as ChatGPT wrote it, selectable, in the transcript's body type. */
 @Composable
-private fun SummaryText(summary: Summary, modifier: Modifier) {
+private fun SummaryText(summary: Summary, modifier: Modifier, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit) {
     SelectionContainer(modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
-        Text(summary.text, Modifier.padding(Space.m).testTag("summary-text"), style = MaterialTheme.typography.bodyMedium, color = blueprint.text)
+        CitedText(summary.text, canSeek, onSeek, Modifier.padding(Space.m).testTag("summary-text"))
     }
 }
 
-/** "ChatGPT · <model>" — "· Edited" once the user changed it — and Copy all, which says `✓ Copied` for a moment as the transcript's does. */
+/**
+ * docs/09 "Summary view": a summary's or an answer's text with every citation in it a way to play from its time —
+ * the citation in monospace and the accent, with no underline (a dotted one is a web page), and a tap target of at
+ * least [MinTouch] each way laid over it as invisible padding. The text stays one selectable text: the targets are
+ * siblings over it, so a long press anywhere else selects as before, and a citation the player cannot reach now
+ * ([canSeek]) is drawn muted and takes no tap. Each target is its own `Play from {time}` button for a screen reader.
+ */
+@Composable
+internal fun CitedText(text: String, canSeek: (Double) -> Boolean, onSeek: (Double) -> Unit, modifier: Modifier = Modifier) {
+    val palette = blueprint
+    val runs = remember(text) { textRuns(text) }
+    val citation = mono.body.fontFamily
+    val styled = buildAnnotatedString {
+        runs.forEach { run ->
+            val cited = run.citation
+            if (cited == null) {
+                append(text, run.start, run.end)
+            } else {
+                withStyle(SpanStyle(fontFamily = citation, color = if (canSeek(cited.atSec)) palette.accent else palette.textMuted)) {
+                    append(text, run.start, run.end)
+                }
+            }
+        }
+    }
+    var layout by remember(text) { mutableStateOf<TextLayoutResult?>(null) }
+    val density = LocalDensity.current
+    val reach = with(density) { MinTouch.toPx() }
+    Box(modifier) {
+        Text(styled, style = MaterialTheme.typography.bodyMedium, color = palette.text, onTextLayout = { layout = it })
+        val lines = layout
+        if (lines != null) {
+            runs.forEach { run ->
+                val cited = run.citation ?: return@forEach
+                if (!canSeek(cited.atSec)) return@forEach
+                val bounds = lines.getPathForRange(run.start, run.end).getBounds()
+                val width = maxOf(bounds.width, reach)
+                val height = maxOf(bounds.height, reach)
+                val label = stringResource(R.string.summary_play_from, citationTime(text, cited))
+                Box(
+                    Modifier
+                        .offset { IntOffset((bounds.center.x - width / 2).roundToInt(), (bounds.center.y - height / 2).roundToInt()) }
+                        .size(with(density) { width.toDp() }, with(density) { height.toDp() })
+                        .clickable(role = Role.Button) { onSeek(cited.atSec) }
+                        .semantics { contentDescription = label },
+                )
+            }
+        }
+    }
+}
+
+/** "ChatGPT · <model> · <format> · Edited" — each part where there is one — and Copy all for the summary. */
 @Composable
 private fun SummaryFooter(summary: Summary, models: List<ChatGptModel>) {
+    val label = models.firstOrNull { it.id == summary.model }?.label ?: summary.model
+    CopyFooter(
+        footerLine(
+            stringResource(R.string.summary_model, label),
+            footerFormat(summary)?.let { stringResource(it.formatLabel()) },
+            if (summary.editedAt == null) null else stringResource(R.string.summary_edited),
+        ),
+        summary.text,
+        Modifier.testTag("summary-copy"),
+    )
+}
+
+/** Who wrote the text above it, and Copy all, which says `✓ Copied` for a moment as the transcript's does. */
+@Composable
+internal fun CopyFooter(line: String, text: String, copyModifier: Modifier = Modifier) {
     val palette = blueprint
     val clipboard = LocalClipboardManager.current
-    var copied by remember(summary) { mutableStateOf(false) }
+    var copied by remember(text) { mutableStateOf(false) }
     LaunchedEffect(copied) { if (copied) { delay(COPIED_MS); copied = false } }
     Row(
         Modifier.fillMaxWidth().background(palette.surface).padding(horizontal = Space.m, vertical = Space.s),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        val label = models.firstOrNull { it.id == summary.model }?.label ?: summary.model
-        val written = stringResource(R.string.summary_model, label)
-        Text(if (summary.editedAt == null) written else "$written · ${stringResource(R.string.summary_edited)}", Modifier.weight(1f),
-            style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+        Text(line, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
         BlueprintButton(
             stringResource(if (copied) R.string.transcript_copied else R.string.transcript_copy),
-            { clipboard.setText(AnnotatedString(summary.text)); copied = true },
+            { clipboard.setText(AnnotatedString(text)); copied = true },
             tone = ButtonTone.QUIET,
             leading = if (copied) stringResource(R.string.action_done) else null,
-            modifier = Modifier.testTag("summary-copy"),
+            modifier = copyModifier,
         )
     }
 }

@@ -23,10 +23,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import recly.core.chatgpt.ChatGptAccount
 import recly.core.chatgpt.ChatGptResult
+import recly.core.chatgpt.SummaryPreferences
 import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import recly.core.platform.Logger
@@ -136,6 +139,24 @@ class ChatGptSignIn private constructor(private val context: Context) {
     fun selectModel(id: String) {
         scope.launch { runCatching { account().selectModel(id) } }
     }
+
+    /**
+     * Settings → ChatGPT's Summary format, My format and About you (docs/08 "Summaries"): [change] is applied to what
+     * is stored at the time, one save after another, so a field saved as the format changes keeps both. Here rather than
+     * on the screen, so a field saved as the screen goes still is.
+     */
+    fun updatePreferences(change: (SummaryPreferences) -> SummaryPreferences) {
+        scope.launch {
+            preferencesLock.withLock {
+                runCatching {
+                    val summaries = CoreModule.get(context).core.summaries
+                    summaries.setPreferences(change(summaries.preferences()))
+                }
+            }
+        }
+    }
+
+    private val preferencesLock = Mutex()
 
     fun dismissWelcome() {
         _state.update { it.copy(welcome = false) }
