@@ -410,7 +410,7 @@ struct MenuPopover: View {
 }
 
 /// docs/09 screen principle 4: the settings the menu used to carry, as a section table — account, language,
-/// theme, capture, recording processing, the agent connection, and the honest system block at the bottom.
+/// theme, capture, recording processing, and the honest system block at the bottom.
 struct SettingsPane: View {
     @ObservedObject var model: MenuModel
     @ObservedObject var language: AppLanguage
@@ -474,12 +474,8 @@ struct SettingsPane: View {
                 ChatGptSection(model: chatGpt) { model.chatGptSurface = surface }
             }
 
-            AgentConnectionSection(
-                agent: model.agentEvents, storage: model.storage, copyConfiguration: { await model.copyMCPConfiguration() }
-            )
-
             // docs/09 screen principle 4: the settings file is a utility, so it comes after the
-            // features, Agent connection included (2026-10-06).
+            // features.
             if let processing = model.processing {
                 ProcessingSettingsFileSection(model: processing)
             }

@@ -431,7 +431,7 @@ public enum StorageFolder {
 }
 
 /// docs/09 screen principle 4: the settings file as a section of its own, for a shell that shows it
-/// after the sections below Recording processing — the Mac, under Agent connection.
+/// after the sections below Recording processing — the Mac, after its ChatGPT section.
 public struct ProcessingSettingsFileSection: View {
     @ObservedObject private var model: ProcessingSettingsModel
     public init(model: ProcessingSettingsModel) {
