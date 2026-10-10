@@ -1933,6 +1933,7 @@ once.
   §5 "Fixed processing settings"). `name` is `null` until the user names the speaker (§8 "Editing").
 - `words` is included when the provider gives it and omitted otherwise. `start/end` are seconds (decimal), on the **recording timeline**.
 - With `diarize: false`, `speakers` is the single `[{"id":"S1"}]`, and every segment is `S1`.
+- `me: true` marks the person who made the recording, on a desktop recording (§8 "Me and others"); it is absent for everyone else.
 - `editedAt` is there once the user has edited the transcript (§8 "Editing").
 
 ### Editing
@@ -1963,7 +1964,9 @@ recordings and other devices' alike. `TranscriptEdit` is one of four concrete cl
 ### Exports
 
 2026-10-07. `ReclyCore.exportFile(recordingId, format): String?` writes one file for a share sheet and returns its path, or null when there
-is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above, highlights included), `SRT` and `VTT` —
+is nothing in that format. `ExportFormat` is `TXT` (the `.txt` lines), `MD` (the `.md` above, highlights included, and — 2026-10-10 —
+the recording's summary as a `## Summary` section before a `## Transcript` one; the `.md` in a local folder is written without it), `SUMMARY`
+(the summary's text, `… .summary.txt`), `SRT` and `VTT` —
 one cue per segment, the speaker's name or id in front when speakers were identified; a segment longer than 7 seconds or 84 characters is
 cut between its words where it has word timings and stays one cue where it does not — and `AUDIO`, the playback track (`mix`, else
 `mono`) joined into one `.m4a` by the shell's lossless `AudioTools.concat`, after any part the retention sweep took is fetched back. The
@@ -1989,19 +1992,31 @@ succeeded.
 ### Summaries
 
 2026-10-09 (ADR-001, revised). The detail's More menu has `Summarize` — `Summarize again` once there is a summary — and the core's
-`summaries.summarize(recordingId)` sends **the transcript's text only** (the `.txt` lines with the user's speaker names — no title, no
-time, no audio) to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
+`summaries.summarize(recordingId, format)` sends **the transcript's text** (the `.txt` lines with their times and the user's speaker
+names — no title, no audio) and, after it under `Moments the user marked as important:`, each highlight as its time and the words said then
+(2026-10-10), to the user's ChatGPT plan through `POST https://api.openai.com/v1/responses` (`store: false`, `stream: true`, the
 model chosen in Settings → ChatGPT, OpenAI's first listed model by default; §15 §10). The model list leaves out `gpt-6-sol`, `gpt-5.6-sol`
 and `gpt-5.6-luna` (`ChatGptAccount.HIDDEN_MODELS`, 2026-10-09, user decision). Audio never goes: the plan's API does not take
-audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text — a summary,
-key points, decisions and action items, leaving out empty sections and adding nothing the transcript does not say — because no shell
-renders Markdown, in one language named in English with its tag (`Korean (ko)`), headings included (`SummaryLanguage`, 2026-10-09):
+audio or transcription, which is why transcription stays the processing plan's (§8 "Providers"). The instructions ask for plain text
+(no shell renders Markdown) in the sections of the chosen format, leaving out empty ones and adding nothing the transcript does not say;
+each key point, decision and action item ends with the `[HH:MM:SS]` of the transcript line it comes from, and an action item with no named
+owner gets the word for "unassigned" rather than a guess (2026-10-10). The marked moments are to be covered; the Settings line `About you`,
+when there is one, tells the model what matters to the user; `Me` in the transcript (§8 "Me and others") is named with the word for
+"me". All of it in one language named in English with its tag (`Korean (ko)`), headings included (`SummaryLanguage`, 2026-10-09):
 the transcript's spoken language when it is one; for a mix (`ko-en`) the app's language when it is part of the mix, else the mix's first;
 for automatic detection the app's language, with its script or region (`zh-Hans`, `pt-BR`) — any of the 23 app languages (§7) and the
 transcription languages; an unknown tag falls back to English.
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
   consent before any background use; there is none.
+- **Formats and About you** (2026-10-10, user decision). `SummaryFormat` is `AUTO` (`General`: Summary, Key points, Decisions, Action
+  items), `ONE_ON_ONE` (Summary, Updates by person, Feedback, Decisions, Action items), `LECTURE` (Summary, Key ideas, Examples,
+  Questions, To review), `INTERVIEW` (Summary, Questions and answers, Notable quotes, Follow-ups) and `CUSTOM` — `My format`, the user's
+  own instructions, offered only once they have words. `SummaryPreferences(format, customFormat, aboutMe)` is this device's, in `kv`
+  (`summary/prefs/…`), like the model: My format up to 1,000 characters, About you up to 300, trimmed. `summarize(id)` uses the
+  preference; More → `Summarize as…` passes a format for that run. `Summary.format` keeps the format's wire name (absent for General).
+- **Citations.** `SummaryCitations.parse(text)` is the one reading of `[HH:MM:SS]` and `[MM:SS]` (minutes and seconds up to 59) the
+  shells turn into taps that play from that time (§9 "Summary view").
 - **Editable, and shared through the storage** (2026-10-09, user decision). The result is `Summary` (`recordingId`, `text`, `model`,
   `createdAt`, `editedAt`) as `summary.v1.json` beside the parts, written whole and moved into place like `waveform.v1`.
   `summaries.edit(recordingId, text)` replaces the text — trimmed; an empty or unchanged text writes nothing — and sets `editedAt`; the
@@ -2019,11 +2034,42 @@ transcription languages; an unknown tag falls back to English.
   (`subscription_sharing_usage_limit_exceeded`, or a 429), `CHATGPT_PLAN_REQUIRED` (`subscription_sharing_user_not_eligible`, or a grant
   without `chatgpt.tokens.use.direct`), `TRANSFER_CONSENT_REQUIRED` (iPhone, before anything is sent) and `PROVIDER_ERROR` with OpenAI's
   code or admission `detail` as its detail. A stream that ends without `response.completed` is a failure, not a short summary.
+- **Search and share** (2026-10-10): `search` finds summary lines too (§10 "Search"), and the share sheet gets the summary as text and inside
+  the `.md` (§8 "Exports").
+
+### Ask
+
+2026-10-10 (user decision). More → `Ask about this recording…` asks ChatGPT one question about one recording through the same request
+as a summary — the transcript's lines, the marked moments, About you and `Me`, then `Question:` and the question — and shows the answer.
+`summaries.ask(recordingId, preset, question)` takes the user's own words (up to 500 characters, answered in the question's language) or
+an `AskPreset`, answered in the summary's language: `FOLLOW_UP_EMAIL` (a draft with a subject line and placeholders for names the
+transcript does not give), `ACTION_ITEMS`, `OPEN_QUESTIONS`, `TRANSLATE` (the whole transcript, line by line, into the app's language —
+offered only when the transcript is in one other known language) and `MY_SPEAKING` (feedback for `Me` — offered only when the transcript
+has one). `askPresets(recordingId)` says which apply. The answer is `AskState` per recording, one run at a time (asking again while one
+runs answers that one), kept in this process only — never written, uploaded or synced — until the panel closes (`clearAsk`). It needs the
+same permission on iPhone and has the same errors as a summary.
+
+### Me and others
+
+2026-10-10 (user decision). A desktop recording made in meeting mode has `mic` and `sys` tracks (§3); after transcription the core marks
+the person who made it in `transcript.json` (`speakers[].me: true`), on both the external and the on-device path (`MeAndOthers`). The
+shell's `AudioTools.levels(file, windowSec)` gives each part's peaks per 0.25 s window, like the waveform, and each track's own silence
+threshold (`SilenceRanges`) says where it is sounding — loudness is never compared across the tracks, whose scales differ. A window is the
+user's when `mic` sounds and `sys` is quiet, and the call's when `sys` sounds.
+
+- Identified speakers are kept: the one whose speech is at least 70 % the user's (and at least 3 seconds of it) becomes `me` — one at most,
+  and nobody is split. Without speakers, the lines that are at least 60 % the user's and the rest become two speakers, numbered in order of
+  first appearance, and the transcript counts as identified.
+- Nothing changes when either track is silent throughout (a room recorded in meeting mode has no call to tell apart), when the recording
+  has no `sys` track, or when a `mic` or `sys` part is not on this device — "Transcribe again" after the 7-day cleanup fetches only the
+  track it transcribes, so it comes back without `me` (`transcribe.me.skipped`).
+- The files and the model write an unnamed `me` as `Me`, a fixed word like the ids; the shells show it in the app's language (`나`).
+  Renaming it is renaming a speaker, and `me` stays.
 
 ### What is not included
 
-Identifying "me" by transcribing mic/sys separately, entering the participant count on the watch, and recognizing a speaker from one
-recording to the next. (On-device diarization, speaker names and transcript editing were added on 2026-10-07.) There is no Gemini adapter either — its speaker diarization works only through the prompt and its timestamps cannot be trusted, so it cannot keep the
+Entering the participant count on the watch, and recognizing a speaker from one recording to the next. (Telling the user from the call
+on a desktop was added on 2026-10-10 — "Me and others" above.) (On-device diarization, speaker names and transcript editing were added on 2026-10-07.) There is no Gemini adapter either — its speaker diarization works only through the prompt and its timestamps cannot be trusted, so it cannot keep the
 `start/end` contract of `transcript.json`. The adapter interface is the same, so adding a provider means adding one adapter.
 
 ---
@@ -2429,15 +2475,21 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   `Finish signing in in your browser` has a quiet `Cancel`. Signed in: the account's email / `Using your ChatGPT plan` with a quiet
   `Sign out` (no confirmation — signing in again restores it) and, under that line, the text link `Manage usage` (ChatGPT's usage
   settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
-  to sign in again.` in the warning tone, with `Continue with ChatGPT`. The footnote says only the transcript text goes, never the audio, and
-  that it counts toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
+  to sign in again.` in the warning tone, with `Continue with ChatGPT`. Then, signed in or not (2026-10-10): `Summary format`, a dropdown of
+  `General` · `One-on-one` · `Lecture` · `Interview` · `My format` (the last once it has words), saved on choosing; `My format`, a
+  multi-line field (`Used when the summary format is My format.`); `About you`, a one-line field (`Summaries use this to judge what matters
+  to you.`) — the fields save when editing ends. The footnote says what goes — the transcript text, the highlighted moments and what is
+  written there, never the audio — and that it counts toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
   ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
   absent where the core says `Unavailable` (§15 "China mainland App Store").
-- **The detail.** More → `Summarize` / `Summarize again`, disabled with its reason like the other items: `No transcript yet`,
+- **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops, a picker on the phones, `✓` on
+  the summary's format) and, after `Edit summary`, `Ask about this recording…` — disabled with their reason like the other items: `No transcript yet`,
   `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
-  `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12)
-  and a quiet `Copy all`. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
+  `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12),
+  ` · <format>` when it is not General, and a quiet `Copy all`. Each `[HH:MM:SS]` in it (`SummaryCitations`) plays from that time, as the
+  transcript's time buttons do: mono, accent, no underline — a dotted underline means a web page — with the minimum target and the
+  accessibility label `Play from 00:12:34`; `Copy all` copies the brackets too. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
   `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage` (primary) for the usage limit,
   `Retry` (quiet) for the rest, none when the sentence already says to sign in; the previous text stays under it.
 - **Editing** (2026-10-09). More → `Edit summary`, right after `Summarize again`, only while a summary is there (disabled `Summarizing…`
@@ -2449,6 +2501,12 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   the `Transcript` chip — asks `Discard your changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). An
   edited summary's footer reads `ChatGPT · <model> · Edited`, and `Summarize again` on it first asks `Replace your edited summary?` /
   `Summarizing again replaces the summary you edited.` (`Cancel` · `Replace`, not red — no recording is deleted).
+- **Ask** (2026-10-10, §8 "Ask"). A dialog on the desktops, a full-height sheet on the phones: `Ask about this recording`, the preset chips
+  (`Follow-up email`, `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows; a tap
+  asks), `Ask your own question` with a primary `Ask`, then the answer the way the summary is shown — `Asking…` with the square loader,
+  citations, `ChatGPT · <model>` and `Copy all`, or the summary's failure notice. Closing it drops the answer.
+- **Elsewhere.** Share lists `Summary` (`.txt`) after `Transcript for notes`, disabled with `No summary yet`; a search hit shows a matching
+  summary line as `Summary · …` and opens on the Summary chip when nothing else matched; an unnamed `me` speaker is `Me` (§8 "Me and others").
 
 ### Accessibility
 
@@ -2753,7 +2811,8 @@ segment's start (`atSec`), its words (cut to 120 characters around the first mat
 (`SearchRange(offset, length)`). It is a plain scan off the caller's thread: each transcript is read and folded once and kept in memory
 until its file's size or time changes. Another device's transcript is searchable once it is on this device — opened, or read by a pull
 (§8 "Result files"). A shell's find bar in a transcript marks its matches with `RecordingSearch.findRanges(text, query)`, the same fold
-and phrase as `search`, so a recording the search found opens with the same matches.
+and phrase as `search`, so a recording the search found opens with the same matches. Since 2026-10-10 the recording's summary is searched too:
+`SearchHit.summary` is its first matching line, cut the same way, as `SummaryMatch(text, ranges)`.
 
 ### Shared rules for the shells
 
@@ -3458,7 +3517,7 @@ Recly **has no server.** Data goes to (1) the user's Google Drive (§1, includin
 (§1b) if iCloud was chosen on iPhone · Mac, (2) the STT provider (§3), **only when the user chose external API
 transcription** in the recording processing settings, and (3) **the user's own other paired device** (watch ↔ phone,
 §4) — the first two go with the user's account and the user's keys, and the third stays between two of the user's own
-devices. (4) OpenAI receives a recording's transcript text only when the user signed in with ChatGPT and asks for its summary (§10). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
+devices. (4) OpenAI receives a recording's transcript text — with its highlighted moments and the user's `My format` and `About you` — only when the user signed in with ChatGPT and asks for its summary or a question about it (§10). A local folder the user picked on iPhone · Mac · Windows · the Android phone (§1c) is on the device itself — Recly sends nothing anywhere
 by writing there, and whatever syncs that folder is the user's own choice. Beyond these, App Store builds use the StoreKit country lookup below, local transcription uses model downloads
 the user requested (Apple system assets; on Android · Windows, public files on Hugging Face · GitHub), and policy
 links open in the browser only when the user taps them (end of §3). Webhooks (§2) were retired on 2026-09-24 and are no longer a path. The optional
@@ -3553,6 +3612,7 @@ Android · Windows · directly distributed macOS keep all fourteen, and the poli
 | Logs (`rec.*`, `shell.*`, `detect.*`) | Platform logs (Android `Log`, Apple `os.Logger`, JVM stdout) | Only when the user takes them out with "Export logs" |
 | App settings such as language and Wi-Fi only | Platform settings store | Does not leave (not a sync target) |
 | Summaries (`summary.v1.json`) and the chosen ChatGPT model | The recording's folder; the local database | The summary arrives from OpenAI (§10) and, with the user's edits, goes to the recording's Drive or iCloud folder as `{base}.summary.json` (§1, §1b); with a local folder it stays here. The chosen model does not leave |
+| Summary format, My format, About you (`summary/prefs/…`) and Ask answers | The local database; Ask answers in memory only | My format and About you go to OpenAI with each summary and question (§10); nothing else leaves |
 
 ### §1 Google Drive — the user's own Drive
 
@@ -3815,9 +3875,10 @@ The watches have no part in it. Nothing passes through a Recly server; none exis
 | Tokens | `https://auth.openai.com/api/accounts/oauth/token` | the code and verifier, or the refresh token; the client id; `resource` | access token (1 hour), rotating refresh token (30 days), ID token (`sub`, `email`), `earliest_refresh_at` |
 | Sign-out | the `revocation_endpoint` from `https://auth.openai.com/.well-known/openid-configuration` | the refresh token and client id | 200 |
 | Models | `GET https://api.openai.com/v1/models` | the access token | the plan's models (`slug`, `display_name`); Recly offers those marked `list`, less `HIDDEN_MODELS` (§8) |
-| Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions, and **the recording's transcript text with the speakers' names** — no title, no time, never audio | the summary as a stream (`store: false`) |
+| Summary | `POST https://api.openai.com/v1/responses` | the access token, the model, the instructions — with the user's `My format` and `About you` when set — and **the recording's transcript text with its times and the speakers' names**, plus each highlight's time and the words said then — no title, never audio | the summary as a stream (`store: false`) |
+| Ask | the same | the same, plus the preset's question or the user's own | the answer as a stream (`store: false`); kept in memory only |
 
-- Only when the user asks: signing in, and choosing `Summarize` on one recording. There is no background use (OpenAI's terms require
+- Only when the user asks: signing in, and choosing `Summarize`, `Summarize as…` or a question in `Ask about this recording…` on one recording. There is no background use (OpenAI's terms require
   express consent for it).
 - The tokens stay in the device's secure storage (§5, namespace `chatgpt`); the ID token's claims are checked (issuer, audience = the
   client id, expiry, `nonce`, the same `sub` on a later sign-in) without its signature, which OpenID Connect allows for a token received
@@ -3897,8 +3958,9 @@ the basis of proposal A.
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
 `xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
 `chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused`, `chatgpt.rejected`, `chatgpt.revoke.failed`) and `summary.*`
-(`summary.start`, `summary.done`, `summary.failed`, `summary.edited`; the storage's `remote.summary.pushed`, `remote.summary.push.failed`,
-`remote.summary.read`, `remote.summary.read.failed`). **These names are a stable
+(`summary.start`, `summary.done`, `summary.failed`, `summary.edited`, `summary.ask.start`, `summary.ask.done`, `summary.ask.failed`; the
+storage's `remote.summary.pushed`, `remote.summary.push.failed`, `remote.summary.read`, `remote.summary.read.failed`), and the desktop's
+`transcribe.me`, `transcribe.me.skipped` and `transcribe.me.levels.failed` (§8 "Me and others"). **These names are a stable
 contract** (§21). The only way to see what happened on a real device is **"Export logs"** in settings (a file ring buffer),
 and nothing leaves beyond that (ADR-022).
 
