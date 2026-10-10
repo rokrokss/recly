@@ -13,9 +13,11 @@
 
 | 컴퓨터 | 경로 |
 |---|---|
-| Recly 앱이 있는 Mac | `/Applications/Recly.app/Contents/MacOS/recly-events` |
 | `.pkg`로 설치한 Mac | `/usr/local/bin/recly-events` |
-| Linux, Windows | 직접 둔 곳: [설치](recly-events.ko.md#1-설치하기) |
+| Linux, Windows | 직접 둔 곳 |
+
+아직 설치하지 않았다면: [설치하기](recly-events.ko.md#1-설치하기). 로컬 MCP 서버에는 그 안내의 다른 단계가
+필요 없습니다.
 
 **Recly가 녹음을 저장하는 폴더:**
 
@@ -27,9 +29,6 @@
 녹음보다 위에 있는 폴더면 어디든 됩니다. 폴더 템플릿은 상관없습니다.
 
 ## 1. 설정 출력하기
-
-**Recly 앱이 있는 Mac:** 설정 → 에이전트 연결 → 로컬 에이전트 → **설정 복사**가 Recly가 녹음을 저장하는 폴더의
-설정을 복사합니다. 그 밖에는:
 
 ```sh
 recly-events mcp --print-config --folder ~/Notes/Recly
@@ -137,4 +136,4 @@ ChatGPT 데스크톱 앱, Codex CLI, Codex IDE 확장이 이 설정을 함께 �
 | 녹음이 하나도 없음 | `--folder`가 녹음 하나의 폴더나 Recly 녹음이 없는 폴더를 가리킵니다. 저장 폴더를 가리키세요. |
 | `hasTranscript`가 false이거나 녹음이 빠짐 | 아직 전사되지 않았거나, iCloud가 이 Mac에 내려받지 않았습니다. Finder에서 Recly 폴더에 **지금 다운로드**를 고르세요. |
 | Claude Desktop에 `recly`가 없음 | Claude Desktop을 종료했다가 다시 여세요. 로그는 Mac에서 `~/Library/Logs/Claude/mcp-server-recly.log`, Windows에서 `%APPDATA%\Claude\logs` 아래에 있습니다. |
-| 오래된 recly-events가 `Usage`를 출력 | `mcp`가 없는 버전입니다. Recly 앱을 업데이트하거나 최신 [`events-v…` 릴리스](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true)를 설치하세요. |
+| 오래된 recly-events가 `Usage`를 출력 | `mcp`가 없는 버전입니다. 최신 [`events-v…` 릴리스](https://github.com/rokrokss/recly/releases?q=events-v&expanded=true)를 설치하세요. |

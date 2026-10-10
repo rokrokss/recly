@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="녹취록이 내 Google Drive에 올라옵니다. Recly Mac·Windows 앱 안의 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="녹취록이 내 Google Drive에 올라옵니다. 내 컴퓨터에서 실행 중인 recly-events가 이름과 링크만 읽어 10초 안에 찾고, 서명된 recording.transcribed MCP 이벤트를 ChatGPT로 바로 보냅니다. 에이전트는 알아서 시작합니다. 에이전트가 recly-events에 되묻는 호출은 내 OpenAI Secure MCP Tunnel로 들어오므로 내 컴퓨터는 포트를 열지 않습니다. 에이전트는 같은 터널로 recly-events에서 녹취록을 읽고 회의록을, 또는 내가 정해 둔 일을 씁니다.">
   <!-- README and recly.dev "Minutes that write themselves": what happens after a transcript lands,
        when recly-events is running (events/README.md "How it works"). The event goes out to
        ChatGPT as a signed HTTPS request (internal/webhook); ChatGPT's MCP calls come back through
@@ -115,7 +115,7 @@
       <circle cx="62" cy="2" r="7" fill="#DA1E28" stroke="#FFFFFF" stroke-width="2.5"/>
     </g>
     <text class="t title" x="115" y="98" text-anchor="middle">recly-events가 발견</text>
-    <text class="t sub" x="115" y="124" text-anchor="middle">Mac·Windows 앱 안에서</text>
+    <text class="t sub" x="115" y="124" text-anchor="middle">직접 실행하는 프로그램</text>
   </g>
 
   <!-- 3 · the agent -->

@@ -2,8 +2,8 @@
 
 [English](recly-events.md)
 
-서버, Linux, Recly 앱이 없는 컴퓨터용입니다. Recly Mac·Windows 앱은 recly-events를 대신 실행하므로, 그 앱을 쓴다면
-[ChatGPT 에이전트로 자동 회의록](agent.ko.md)을 따르세요. 로컬 폴더나 iCloud의 녹음을 Claude나 Codex가 읽게 하려면
+Mac, Linux, Windows 컴퓨터나 서버에 recly-events를 설정해 ChatGPT 에이전트가 새 녹취록마다 알림을 받게 합니다. 하는 일은
+[ChatGPT 에이전트로 자동 회의록](agent.ko.md)에 있습니다. 로컬 폴더나 iCloud의 녹음을 Claude나 Codex가 읽게 하려면
 [로컬 MCP 서버](mcp.ko.md)를 보세요.
 
 ## 시작 전에
@@ -157,9 +157,6 @@ sudo loginctl enable-linger $USER
 ```sh
 recly-events status
 ```
-
-recly-events는 하나만 실행하세요. Recly Mac·Windows 앱의 에이전트 스위치도 켜 두었다면, 앱은 이것을 건드리지 않고
-**Recly 밖에서 이미 실행 중입니다**라고 표시합니다.
 
 ## 5. ChatGPT에 앱 추가하기
 

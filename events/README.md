@@ -15,18 +15,16 @@ write meeting minutes.
 - Your agent then reads the transcript with recly-events' `get_transcript`, through the same tunnel:
   ChatGPT needs no Google Drive app.
 
-It is optional. Turn it on in the Recly Mac or Windows app, which runs the copy it includes, or run it
-yourself on any computer. It listens on no network port. Every connection it makes goes out, to
+It is optional and separate from the Recly apps, which do not include or run it: you run it yourself,
+on any computer. It listens on no network port. Every connection it makes goes out, to
 Google and to OpenAI.
 
 The same program also has a local MCP server, `recly-events mcp`, for recordings in a local folder
 or in iCloud on a Mac: Claude Desktop, Claude Code or Codex on the same computer starts it, and it
 makes no connection at all ([Local MCP server](#local-mcp-server)).
 
-Using the Recly Mac or Windows app? Follow the [ChatGPT agent guide](https://recly.dev/agent.html).
-Running it yourself on a server, Linux or a computer without the app? The step-by-step guide is
-[Running recly-events yourself](https://recly.dev/recly-events.html); this page is the full
-reference.
+The step-by-step guide is [Running recly-events yourself](https://recly.dev/recly-events.html);
+this page is the full reference.
 
 ## How it works
 
@@ -53,29 +51,6 @@ reference.
   up when it wakes. It has been run on macOS so far. On Linux (Ubuntu 24.04 in a container), the
   sign-in without a browser and the systemd service have been tried, but not yet with a real Google
   account and tunnel. Windows is untested.
-
-## From the Recly Mac or Windows app
-
-The Mac and Windows apps include recly-events and run it for you while **Settings → Agent connection →
-Tell ChatGPT about new recordings** is on. It is off by default, and available only while the app
-stores recordings in Google Drive.
-
-There is no Google sign-in step: the app's copy uses the Google Drive connection the app already
-has, handing it the app's short-lived Drive access token, so it needs no `google-token.json`.
-
-1. Create the tunnel and its key ([step 2](#2-create-an-openai-tunnel-and-its-key) below).
-2. Enter the tunnel ID as **Tunnel ID** and the API key as **Tunnel key**, choose **Save**, then turn
-   the switch on. Google Drive must be connected in the app.
-3. When the line under the switch says **Add the app in ChatGPT and ask your agent to subscribe**, do
-   [steps 5 and 6](#5-add-it-to-chatgpt) below.
-
-The app keeps the server running while the app runs, restarts it if it stops (up to three times in
-ten minutes), and stops it when you turn the switch off, disconnect Google Drive, or the app goes,
-even if it crashes. It uses the same folder and key as the command line, so `recly-events status`
-shows it too, with `Google: the Recly app's own Drive connection`.
-A server started some other way, such as `service install`, is left alone, and the line under the
-switch says it is already running outside Recly. On a Mac, `/Applications/Recly.app/Contents/MacOS/recly-events test`
-sends the test event.
 
 ## Set up
 
@@ -219,8 +194,7 @@ Step 3 is only an example. Write whatever you want done with each recording; kee
 If you named the app something other than `Recly Events` in step 5, use that name in the first line.
 The minutes appear in the conversation where you sent this.
 
-Once the agent has subscribed, `recly-events status` shows the subscription, and in the Mac or
-Windows app the line under the switch says **Your subscribed agent hears about each new transcript**.
+Once the agent has subscribed, `recly-events status` shows the subscription.
 
 ### 7. Test
 
@@ -376,8 +350,7 @@ disconnects every Recly app on every device as well.
 
 ## Remove it
 
-1. Turn off Settings → Agent connection in the app, or run `recly-events service uninstall` (or stop
-   `serve`, or delete the Windows task).
+1. Run `recly-events service uninstall` (or stop `serve`, or delete the Windows task).
 2. Delete its directory (see [Everyday use](#everyday-use)). Its Google sign-in and tunnel key go
    with it.
 3. Delete the program. On a Mac, where the package installed it:

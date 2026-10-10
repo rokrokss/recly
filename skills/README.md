@@ -61,8 +61,7 @@ Chat inside that project.
 
 To have a ChatGPT dot or Work chat start as soon as a transcript lands, use recly-events: it
 tells your agent about each new transcript, and its subscription prompt can ask the agent to follow
-these skills for the recording it names. With the Recly Mac or Windows app, follow the
-[ChatGPT agent guide](https://recly.dev/agent.html); to run it yourself, follow
+these skills for the recording it names. Set it up with
 [Running recly-events yourself](https://recly.dev/recly-events.html).
 
 ## Write your own

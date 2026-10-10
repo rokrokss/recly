@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="A transcript lands in your Google Drive. recly-events, in the Recly Mac or Windows app, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for.">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="1200" height="480" role="img" aria-label="A transcript lands in your Google Drive. recly-events, running on your computer, sees it within 10 seconds, reading only names and links, and sends your ChatGPT agent a signed recording.transcribed MCP event, straight to ChatGPT. The agent starts by itself. Its calls back to recly-events come through your own OpenAI Secure MCP Tunnel, so your computer opens no port. The agent reads the transcript from recly-events through the same tunnel and writes the minutes, or whatever you asked for.">
   <!-- README and recly.dev "Minutes that write themselves": what happens after a transcript lands,
        when recly-events is running (events/README.md "How it works"). The event goes out to
        ChatGPT as a signed HTTPS request (internal/webhook); ChatGPT's MCP calls come back through
@@ -115,7 +115,7 @@
       <circle cx="62" cy="2" r="7" fill="#DA1E28" stroke="#FFFFFF" stroke-width="2.5"/>
     </g>
     <text class="t title" x="115" y="98" text-anchor="middle">recly-events sees it</text>
-    <text class="t sub" x="115" y="124" text-anchor="middle">in the Mac or Windows app</text>
+    <text class="t sub" x="115" y="124" text-anchor="middle">a program you run yourself</text>
   </g>
 
   <!-- 3 · the agent -->

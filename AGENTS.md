@@ -27,9 +27,9 @@ windows/     app/ (Compose Desktop) + capture-helper/ (Rust, WASAPI) + bundled f
 spec/        JSON Schema + examples — the contract every client honors
 skills/      example agent skills (the `recly` plugin) — recly-notes (transcript → notes) · recly-notion (notes ↔ Notion)
 events/      recly-events (Go) — optional server: watches Drive for new transcripts and publishes MCP events
-             to ChatGPT through an OpenAI Secure MCP Tunnel; the user runs it, or the Mac and Windows apps
-             run their bundled copy while Settings → Agent connection is on (off by default); also
-             `recly-events mcp`, a local stdio MCP server for recordings in a local folder or iCloud
+             to ChatGPT through an OpenAI Secure MCP Tunnel; a separate program the user installs and runs
+             (the apps do not bundle or run it); also `recly-events mcp`, a local stdio MCP server for
+             recordings in a local folder or iCloud
 scripts/     icon rendering
 docs/        recly.md (design source of truth) · user guides (install, setup, agent, recly-events, faq; also on recly.dev) · development.md · policy/privacy-policy.md (+ .ko.md) · design/icon.svg
 ```
