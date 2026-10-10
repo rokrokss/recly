@@ -7,7 +7,7 @@
 #   events/scripts/build.sh OUT [VERSION]                 GOOS and GOARCH come from the environment
 #   REQUIRE_CLIENT=1 events/scripts/build.sh OUT VERSION  stop when there is no client (releases)
 #
-# Used by `make events`, `make mac-helper`, release.sh and the Windows release job.
+# Used by `make events` and release.sh.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 
