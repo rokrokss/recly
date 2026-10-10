@@ -831,8 +831,9 @@ so they cannot be read from the queue.
 #### Titles
 
 Right after stop, the title popup in all four shells has a wide `Save` button (minimum width 120pt/dp) at the bottom right and a red `Discard recording` button just to its left
-(2026-10-08, user decision: it read `Cancel`, which did not say that it deletes). `Discard recording` (including back navigation and closing the popup)
-is **the action that discards the recording that just ended**. It is not an action that only skips the title. It deletes the local files · meta · DB rows
+(2026-10-08, user decision: it read `Cancel`, which did not say that it deletes). `Discard recording` is **the action that discards the
+recording that just ended**; the popup closes only through its two buttons — no swipe, outside tap, Back or Escape (2026-10-10: a swipe on
+the iPhone sheet used to discard the recording without a word). It is not an action that only skips the title. It deletes the local files · meta · DB rows
 of the one pending recording ID, and does not create a Job or wake the workflow. Only one of save · cancel can take
 that recording, so a save action that arrives late after a cancel does not start an upload. Other recordings and Drive are not
 touched, and a refused · failed deletion is shown as an error. The placeholder of the title field is the existing translation `Untitled`.
@@ -2005,7 +2006,8 @@ when there is one, tells the model what matters to the user; `Me` in the transcr
 "me". All of it in one language named in English with its tag (`Korean (ko)`), headings included (`SummaryLanguage`, 2026-10-09):
 the transcript's spoken language when it is one; for a mix (`ko-en`) the app's language when it is part of the mix, else the mix's first;
 for automatic detection the app's language, with its script or region (`zh-Hans`, `pt-BR`) — any of the 23 app languages (§7) and the
-transcription languages; an unknown tag falls back to English.
+transcription languages; an unknown tag falls back to English. "The app's language" is the one it shows now: a shell passes a change with
+`summaries.setLocale(tag)`, so a new language needs no restart (2026-10-10).
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
   consent before any background use; there is none.
@@ -2018,7 +2020,8 @@ transcription languages; an unknown tag falls back to English.
 - **Citations.** `SummaryCitations.parse(text)` is the one reading of `[HH:MM:SS]` and `[MM:SS]` (minutes and seconds up to 59) the
   shells turn into taps that play from that time (§9 "Summary view").
 - **Editable, and shared through the storage** (2026-10-09, user decision). The result is `Summary` (`recordingId`, `text`, `model`,
-  `createdAt`, `editedAt`) as `summary.v1.json` beside the parts, written whole and moved into place like `waveform.v1`.
+  `createdAt`, `editedAt`, `format`, and `modelName` — the plan's name for the model when it was written, so the footer reads the same signed
+  out) as `summary.v1.json` beside the parts, written whole and moved into place like `waveform.v1`.
   `summaries.edit(recordingId, text)` replaces the text — trimmed; an empty or unchanged text writes nothing — and sets `editedAt`; the
   model stays, since it is still that model's summary, edited. On a recording stored in Drive or iCloud, each summary made or edited
   also goes to the recording's folder as `{base}.summary.json` with the folder's `summaryAt` (§3 "Drive layout") — once the folder
@@ -2108,7 +2111,8 @@ The principle in one line: **intent, not decoration**.
 - **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
   recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
   from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
-  confirmation) follow the elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats.
+  confirmation) follow the elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats, and a
+  summary's or an answer's citations show as ChatGPT wrote them (`[00:12:34]`), since they are part of its text (2026-10-10).
   Examples elsewhere in this document written `00:12:34` stand for a time in this format.
 - **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
   use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
@@ -2296,10 +2300,13 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      bar only from search; on the desktops ⌘F / Ctrl+F also opens it for the open transcript, or else focuses the list's field. No results: the centred
      `No recordings match` over the dimmed `Search looks in titles and in transcripts on this device.`
    - **Detail header and More menu**: at the header's end, two icon buttons, `Share` and `More` (Windows: an `Export…` text button and `⋯`; the Mac
-     keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists `Rename` · `Edit transcript` · `Transcribe again` ·
-     `Add highlight at 00:12:34` (the playhead). An item that cannot run now stays in the menu, disabled, with the reason as its second line —
+     keeps `Share` in the window toolbar and `⋯` in the detail header). `More` lists, in three groups parted by a hairline (2026-10-10, the same
+     on every shell): `Rename` · `Edit transcript` · `Transcribe again`; `Summarize` · `Summarize as…` · `Edit summary` · `Ask about this
+     recording…` (§9 "Summary view"; the group is absent where ChatGPT is not offered); `Add highlight at 00:12:34` (the playhead). The menu
+     is never cut short: it may be as tall as the window. An item that cannot run now stays in the menu, disabled, with the reason as its second line —
      `No transcript yet` or `Transcribing…`; `Transcription is off in Settings`; `Not uploaded yet` (`Transcribe again` on a recording that has not
-     reached the storage) or `Waiting for Drive` (its pending job waits for a Drive connection); `Still recording` while it is being written. The items
+     reached the storage) or `Waiting for Drive` (its pending job waits for a Drive connection); `Still recording` while it is being written — for
+     every item, and More is shown then too (2026-10-10). The items
      stay disabled while any job of the recording is unsettled, but `Transcribing…` is said only while a transcription of it is queued or running
      (2026-10-08); `No audio on this device` — so the menu says why instead of hiding it. A start the core still refuses shows the same
      reason for a few seconds under the header; nothing is silently ignored (2026-10-08).
@@ -2476,10 +2483,11 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   `Sign out` (no confirmation — signing in again restores it) and, under that line, the text link `Manage usage` (ChatGPT's usage
   settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
   to sign in again.` in the warning tone, with `Continue with ChatGPT`. Then, signed in or not (2026-10-10): `Summary format`, a dropdown of
-  `General` · `One-on-one` · `Lecture` · `Interview` · `My format` (the last once it has words), saved on choosing; `My format`, a
-  multi-line field (`Used when the summary format is My format.`); `About you`, a one-line field (`Summaries use this to judge what matters
-  to you.`) — the fields save when editing ends. The footnote says what goes — the transcript text, the highlighted moments and what is
-  written there, never the audio — and that it counts toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
+  `General` · `One-on-one` · `Lecture` · `Interview` · `My format`, saved on choosing; only while it is My format, the `My format` field
+  under it (two lines growing to eight; `Used when the summary format is My format.`, or `Write your format here; until then summaries use
+  General.` while it is empty); `About you`, a field of up to three lines (`Summaries and answers use this to judge what matters to you.`) —
+  the fields save when editing ends; Return adds a line in My format and ends About you. The footnote says what goes — the transcript text,
+  the highlighted moments and what is written there, never the audio — for summaries and questions, and that they count toward the plan. The first sign-in on a device shows once `You’re using your ChatGPT plan` / `Summaries in Recly use your
   ChatGPT plan. You can manage usage in ChatGPT settings.` with `Manage usage` and `Got it`. The whole section and the More item are
   absent where the core says `Unavailable` (§15 "China mainland App Store").
 - **The detail.** More → `Summarize` / `Summarize again`, then `Summarize as…` (a submenu on the desktops, a picker on the phones, `✓` on
@@ -2487,11 +2495,14 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   `Transcribing…`, `Still recording`, `Sign in to ChatGPT in Settings`, `Summarizing…`. Once a summary exists or one was asked for, two
   chips under the header switch the body between `Transcript` and `Summary` (the detail opens on `Transcript`; asking for a summary selects
   `Summary`; no chips while editing). The summary is selectable plain text with its line breaks, then `ChatGPT · <model>` (secondary, 12),
-  ` · <format>` when it is not General, and a quiet `Copy all`. Each `[HH:MM:SS]` in it (`SummaryCitations`) plays from that time, as the
-  transcript's time buttons do: mono, accent, no underline — a dotted underline means a web page — with the minimum target and the
-  accessibility label `Play from 00:12:34`; `Copy all` copies the brackets too. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
+  ` · <format>` when it is not General, and a quiet `Copy all`. Each `[HH:MM:SS]` in it (`SummaryCitations`) plays the recording from that time
+  (2026-10-10: seek and play): mono, accent, no underline — a dotted underline means a web page — with a target of at least the minimum each
+  way, laid over the selectable text; where two targets overlap, the citation whose glyphs are nearest the tap wins; each has its own
+  accessibility element `Play from 00:12:34`; past the recording's end, or with no audio, it is muted and inert; `Copy all` copies the
+  brackets too. While it runs: the square loader and `Summarizing…` over the previous text. A failure: a centred notice — the
   `CoreMessage` sentence, or `Could not summarize` with the detail — and one centred button: `Manage usage` (primary) for the usage limit,
-  `Retry` (quiet) for the rest, none when the sentence already says to sign in; the previous text stays under it.
+  `Retry` (quiet) for the rest, none when the sentence already says to sign in or that the plan cannot be used; the previous text and its
+  footer stay under it.
 - **Editing** (2026-10-09). More → `Edit summary`, right after `Summarize again`, only while a summary is there (disabled `Summarizing…`
   while one runs, absent while the transcript is being edited). It replaces the summary the way transcript editing replaces the
   transcript: the header `Edit summary`, one multi-line plain-text field with the whole summary, `Cancel` · `Save` at the end (`Save`
@@ -2501,10 +2512,12 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   the `Transcript` chip — asks `Discard your changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). An
   edited summary's footer reads `ChatGPT · <model> · Edited`, and `Summarize again` on it first asks `Replace your edited summary?` /
   `Summarizing again replaces the summary you edited.` (`Cancel` · `Replace`, not red — no recording is deleted).
-- **Ask** (2026-10-10, §8 "Ask"). A dialog on the desktops, a full-height sheet on the phones: `Ask about this recording`, the preset chips
-  (`Follow-up email`, `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows; a tap
-  asks), `Ask your own question` with a primary `Ask`, then the answer the way the summary is shown — `Asking…` with the square loader,
-  citations, `ChatGPT · <model>` and `Copy all`, or the summary's failure notice. Closing it drops the answer.
+- **Ask** (2026-10-10, §8 "Ask"). A dialog on the desktops, a full-height sheet on the phones: the title `Ask about this recording` with a ✕
+  in its row (the one close control on every shell; the title row stays while the body scrolls), the preset chips (`Follow-up email`,
+  `Action items`, `Open questions`, `Translate to {language}`, `Feedback on how I spoke`, as `askPresets` allows; a tap asks; `✓` on the one
+  behind the shown answer), `Ask your own question` with a primary `Ask` (Enter asks and Shift+Enter adds a line on the desktops; the phone
+  keyboard's Send asks), then the answer the way the summary is shown — `Asking…` with the square loader, citations, `ChatGPT · <model>` and
+  `Copy all`, or the summary's failure notice. No swipe closes it; closing it drops the answer.
 - **Elsewhere.** Share lists `Summary` (`.txt`) after `Transcript for notes`, disabled with `No summary yet`; a search hit shows a matching
   summary line as `Summary · …` and opens on the Summary chip when nothing else matched; an unnamed `me` speaker is `Me` (§8 "Me and others").
 
@@ -2812,7 +2825,8 @@ segment's start (`atSec`), its words (cut to 120 characters around the first mat
 until its file's size or time changes. Another device's transcript is searchable once it is on this device — opened, or read by a pull
 (§8 "Result files"). A shell's find bar in a transcript marks its matches with `RecordingSearch.findRanges(text, query)`, the same fold
 and phrase as `search`, so a recording the search found opens with the same matches. Since 2026-10-10 the recording's summary is searched too:
-`SearchHit.summary` is its first matching line, cut the same way, as `SummaryMatch(text, ranges)`.
+`SearchHit.summary` is its first matching line, cut the same way, as `SummaryMatch(text, ranges)` — without the list's `- ` and the
+`[HH:MM:SS]` citations, which are not words.
 
 ### Shared rules for the shells
 
@@ -3957,7 +3971,8 @@ the basis of proposal A.
 
 All clients use the same log event names: `rec.start`, `rec.part`, `rec.stop`, `rec.finalize`, `xfer.part`,
 `xfer.ack`, `job.step.start/ok/fail`, `sync.pull/push/merge`, `secrets.*`, `detect.*`, `chatgpt.*` (`chatgpt.signin`,
-`chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused`, `chatgpt.rejected`, `chatgpt.revoke.failed`) and `summary.*`
+`chatgpt.signout`, `chatgpt.failed`, `chatgpt.refresh.refused` (with OpenAI's `error` code and `afterExpirySec`, never a token),
+`chatgpt.rejected`, `chatgpt.revoke.failed`) and `summary.*`
 (`summary.start`, `summary.done`, `summary.failed`, `summary.edited`, `summary.ask.start`, `summary.ask.done`, `summary.ask.failed`; the
 storage's `remote.summary.pushed`, `remote.summary.push.failed`, `remote.summary.read`, `remote.summary.read.failed`), and the desktop's
 `transcribe.me`, `transcribe.me.skipped` and `transcribe.me.levels.failed` (§8 "Me and others"). **These names are a stable
