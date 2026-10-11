@@ -89,12 +89,6 @@ fun ledgerColumns(lengths: List<String>, codes: List<String>): LedgerColumns = L
     status = statusColumnWidth(codes),
 )
 
-/**
- * Where the title column starts, so a detail drawn under a row — what an expanded row says about
- * itself — lines up with the title rather than with an indent somebody guessed.
- */
-val LedgerTitleInset: Dp = Space.m + TIME_COLUMN + COLUMN_GAP
-
 /** A 1dp rule — the only divider this design has. */
 @Composable
 fun HairLine(modifier: Modifier = Modifier) {

@@ -216,7 +216,6 @@
   "Provider": "Nhà cung cấp",
   "Provider privacy information": "Thông tin quyền riêng tư của nhà cung cấp",
   "Quit": "Thoát",
-  "REC": "GHI",
   "Reading from the local folder…": "Đang đọc từ thư mục cục bộ…",
   "Receiving from the watch": "Đang nhận từ đồng hồ",
   "Recly Record": "Recly Ghi âm",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} đang chờ",
   "{0} failed": "{0} thất bại",
   "Something went wrong at the provider.": "Đã xảy ra lỗi ở phía nhà cung cấp.",
-  "Open data folder": "Mở thư mục dữ liệu"
+  "Open data folder": "Mở thư mục dữ liệu",
+  "Recording, {0}": "Đang ghi, {0}"
 }

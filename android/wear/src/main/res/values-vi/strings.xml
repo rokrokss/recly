@@ -16,10 +16,10 @@
     <string name="tile_start">Bắt đầu ghi âm</string>
     <string name="quick_start_label">Recly Ghi âm</string>
     <string name="entry_ready">Sẵn sàng</string>
-    <string name="complication_recording">GHI</string>
     <string name="complication_pending">Đang chờ</string>
     <string name="complication_sending">Đang gửi</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Đang ghi, %1$s</string>
     <string name="info_open">Trợ giúp</string>
     <string name="info_back">Đóng</string>
     <string name="info_shortcut_title">Nhấn hai lần phím Home → ghi âm</string>

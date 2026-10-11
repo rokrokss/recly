@@ -49,8 +49,8 @@ fun Placeholder(text: String) {
 
 /**
  * One row of that list: a tint and an accent [title] while it is the row on show, whatever [body]
- * has to add underneath, and a separate action row below. A null [onOpen] keeps the summary static
- * when the caller provides an explicit Edit action.
+ * has to add underneath, and a separate action row below — none at all with no [controls]. A null
+ * [onOpen] keeps the summary static when the caller provides an explicit Edit action.
  *
  * [controls] is outside the row's own click target on purpose — deleting a recording or marking a
  * workflow is not one of the things opening it should be able to do by accident. The tint and the
@@ -61,7 +61,7 @@ fun SidebarRow(
     title: String,
     selected: Boolean,
     onOpen: (() -> Unit)?,
-    controls: @Composable RowScope.() -> Unit,
+    controls: (@Composable RowScope.() -> Unit)?,
     body: @Composable ColumnScope.() -> Unit,
 ) {
     val palette = blueprint
@@ -96,13 +96,15 @@ fun SidebarRow(
             )
             body()
         }
-        Row(
-            modifier = Modifier.fillMaxWidth()
-                .padding(start = Space.m, end = Space.m, bottom = Space.xs),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
-            content = controls,
-        )
+        if (controls != null) {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .padding(start = Space.m, end = Space.m, bottom = Space.xs),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                verticalAlignment = Alignment.CenterVertically,
+                content = controls,
+            )
+        }
         HairLine()
     }
 }

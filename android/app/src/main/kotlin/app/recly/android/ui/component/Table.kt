@@ -31,6 +31,7 @@ import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import app.recly.android.ui.theme.monoWords
 
 /**
  * The one line at the top of every screen: what this is, and — in monospace, on the right — the
@@ -57,7 +58,8 @@ fun ScreenHeader(
                 Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
                     maxLines = if (compact || singleLine) 1 else 3, overflow = TextOverflow.Ellipsis)
                 meta?.let { value ->
-                    SelectionContainer { Text(value, style = mono.small, color = blueprint.textMuted, maxLines = if (compact) 1 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis) }
+                    // Counts in mono, the words between them in the sans where they are Korean (N3).
+                    SelectionContainer { Text(monoWords(value), style = mono.small, color = blueprint.textMuted, maxLines = if (compact) 1 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis) }
                 }
             }
         }

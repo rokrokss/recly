@@ -16,10 +16,10 @@
     <string name="tile_start">開始錄音</string>
     <string name="quick_start_label">Recly錄音</string>
     <string name="entry_ready">閒置</string>
-    <string name="complication_recording">錄音</string>
     <string name="complication_pending">等待中</string>
     <string name="complication_sending">正在傳送</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">正在錄音，%1$s</string>
     <string name="info_open">說明</string>
     <string name="info_back">關閉</string>
     <string name="info_shortcut_title">按兩下首頁鍵→錄音</string>

@@ -16,10 +16,10 @@
     <string name="tile_start">Kaydı başlat</string>
     <string name="quick_start_label">Recly Kayıt</string>
     <string name="entry_ready">Hazır</string>
-    <string name="complication_recording">KAYIT</string>
     <string name="complication_pending">Bekliyor</string>
     <string name="complication_sending">Gönderiliyor</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Kaydediliyor, %1$s</string>
     <string name="info_open">Yardım</string>
     <string name="info_back">Kapat</string>
     <string name="info_shortcut_title">Ana Ekran tuşuna çift bas → kayıt</string>

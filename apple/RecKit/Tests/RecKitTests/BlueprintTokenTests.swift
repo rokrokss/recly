@@ -108,6 +108,13 @@ final class BlueprintContrastTests: XCTestCase {
             encoding: .utf8
         )
         XCTAssertTrue(watch.contains("iconSize: CGFloat = 19"), "the complication's glyph size drifted")
+        // 2026-10-11 (N4): the complication's recording mark is the palette's red too.
+        XCTAssertTrue(
+            watch.contains(String(format: "0x%06X", BlueprintPalette.light.hex(.danger))),
+            "the complication's danger is not the palette's"
+        )
+        XCTAssertTrue(watch.contains("node: CGFloat = \(Int(Radius.node))"))
+        XCTAssertTrue(watch.contains("badge: CGFloat = \(Int(Radius.badge))"))
     }
 
     /// The check itself, on a pair whose answer is known: black on white is 21:1.

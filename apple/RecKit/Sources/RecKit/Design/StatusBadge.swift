@@ -136,54 +136,6 @@ public struct LedgerStatus: Equatable, Sendable {
     }
 }
 
-/// The same chip as [StatusBadge], as something to press: what a ledger row offers *about* the
-/// recording, on the line the state is already on. A [BlueprintButton] is the size of a button and
-/// would be a second row's worth of height here; this is the size of the badge it sits beside.
-///
-/// Its own control rather than a modifier on the badge, because the two say different things — one
-/// is what the recording is, the other is what can be done to it.
-public struct BadgeButton: View {
-    @Environment(\.blueprint) private var blueprint
-    @Environment(\.isEnabled) private var isEnabled
-    private let label: String
-    private let tone: BadgeTone
-    private let action: () -> Void
-
-    public init(_ label: String, tone: BadgeTone, action: @escaping () -> Void) {
-        self.label = label
-        self.tone = tone
-        self.action = action
-    }
-
-    public var body: some View {
-        Button(action: action) {
-            Text(verbatim: label)
-                .font(blueprint.fonts.monoSmall)
-                .foregroundStyle(ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .overlay {
-                    RoundedRectangle(cornerRadius: Radius.badge)
-                        .strokeBorder(edge, lineWidth: blueprint.line)
-                }
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(verbatim: label))
-        .accessibilityAddTraits(.isButton)
-    }
-
-    private var ink: Color {
-        isEnabled ? tone.ink(blueprint.palette) : blueprint.palette.textMuted
-    }
-
-    private var edge: Color {
-        isEnabled ? tone.edge(blueprint.palette) : blueprint.palette.grid
-    }
-}
-
 /// A square badge: 1pt of the tone (2pt in high contrast), the state's word in monospace, on the surface.
 public struct StatusBadge: View {
     @Environment(\.blueprint) private var blueprint
@@ -210,12 +162,16 @@ public struct StatusBadge: View {
     }
 
     public var body: some View {
+        let label = verbatim ?? status.label
         let words = HStack(spacing: Space.xs) {
             // docs/09 "Import": an import is work with no percentage — the one loader, in the badge's ink.
             if status.code == "IMPORTING" { BlueprintLoader(color: status.tone.ink(blueprint.palette)) }
-            Text(verbatim: verbatim ?? status.label)
+            // 2026-10-11 (N2): a word wider than the column breaks at a hyphen, never between two letters.
+            // Only the badge that wraps pays for it; the column's measures are one line each.
+            if wraps { WrappingText(label) } else { Text(verbatim: label) }
         }
-            .font(blueprint.fonts.monoSmall)
+            // 2026-10-11 (N3): Hangul, Kana and Han in the sans.
+            .font(blueprint.fonts.mono(TypeSize.small, words: label))
             .foregroundStyle(status.tone.ink(blueprint.palette))
             .multilineTextAlignment(.center)
         return Group {

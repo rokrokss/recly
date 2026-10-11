@@ -104,8 +104,8 @@ private const val UNKNOWN_STATE = "UNKNOWN"
 
 /**
  * docs/07 §5 · docs/08 "Errors": what the core last said about this row — the sentence translated, the
- * diagnostic that came with it never, on its own line in monospace under it. [CheckKeyButton] under
- * it with an `onCheckKey`, for a surface with no actions line of its own to put it in.
+ * diagnostic that came with it never, on its own line in monospace under it. What to do about it is in the
+ * row's actions line ([CheckKeyButton]).
  *
  * Written once and drawn twice: the tray popup's expanded row and the recordings window's sidebar
  * are two views of the same recording, and a row that named a failure in one place and stayed
@@ -113,7 +113,7 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  * Nothing at all for a row that is not stuck.
  */
 @Composable
-fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? = null) {
+fun FailureReason(item: RecentItem, strings: Strings) {
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
     // Waiting for the speech model is not a failure: the state and the row's Download say it.
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) return
@@ -127,7 +127,6 @@ fun FailureReason(item: RecentItem, strings: Strings, onCheckKey: (() -> Unit)? 
     coreMessageDetail(error)?.let {
         Text(it, style = mono.small.copy(textDirection = TextDirection.Ltr), color = palette.textMuted)
     }
-    if (onCheckKey != null) CheckKeyButton(item, strings, onCheckKey)
 }
 
 /**
@@ -140,9 +139,8 @@ fun reasonTone(status: recly.core.job.JobStatus?): BadgeTone =
 
 /**
  * docs/09 screen principle 2 lists `Check the key` among a row's actions, in the one line the others are in —
- * so a surface that has such a line draws it there itself (the popup's expanded row, and the Mac's
- * `MenuPopover.actions` in the same order). The recordings window's sidebar has no actions line, and
- * for it the button stays under the reason, which is what [FailureReason] does with an `onCheckKey`.
+ * so a surface that has such a line draws it there itself (the popup's expanded row, the recordings window's
+ * open row since 2026-10-11, and the Mac's `MenuPopover.actions` in the same order).
  *
  * Nothing at all unless the key is what the core refused (`AUTH_REJECTED`).
  */

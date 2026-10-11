@@ -216,7 +216,6 @@
   "Provider": "Fornitore",
   "Provider privacy information": "Privacy del fornitore",
   "Quit": "Esci",
-  "REC": "REC",
   "Reading from the local folder…": "Lettura dalla cartella locale…",
   "Receiving from the watch": "Ricezione dall’orologio",
   "Recly Record": "Recly Registra",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} in attesa",
   "{0} failed": "{0} con errore",
   "Something went wrong at the provider.": "Si è verificato un problema presso il fornitore.",
-  "Open data folder": "Apri cartella dei dati"
+  "Open data folder": "Apri cartella dei dati",
+  "Recording, {0}": "Registrazione in corso, {0}"
 }

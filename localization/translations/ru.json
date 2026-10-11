@@ -178,7 +178,6 @@
   "How to turn it off": "Как отключить",
   "I turned off model training in my ElevenLabs account.": "Обучение моделей в моём аккаунте ElevenLabs отключено.",
   "Quit": "Выйти",
-  "REC": "ЗАП",
   "Receiving from the watch": "Получение с часов",
   "Recly Record": "Recly Запись",
   "Recly Settings": "Настройки Recly",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} в ожидании",
   "{0} failed": "{0} с ошибкой",
   "Something went wrong at the provider.": "На стороне поставщика что-то пошло не так.",
-  "Open data folder": "Открыть папку данных"
+  "Open data folder": "Открыть папку данных",
+  "Recording, {0}": "Идёт запись, {0}"
 }

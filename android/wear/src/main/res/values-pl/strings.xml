@@ -16,10 +16,10 @@
     <string name="tile_start">Rozpocznij nagrywanie</string>
     <string name="quick_start_label">Recly Nagraj</string>
     <string name="entry_ready">W gotowości</string>
-    <string name="complication_recording">NAGR</string>
     <string name="complication_pending">Oczekiwanie</string>
     <string name="complication_sending">Wysyłanie</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Nagrywanie, %1$s</string>
     <string name="info_open">Pomoc</string>
     <string name="info_back">Zamknij</string>
     <string name="info_shortcut_title">2× przycisk Home → nagrywanie</string>

@@ -16,10 +16,10 @@
     <string name="tile_start">شروع ضبط</string>
     <string name="quick_start_label">ضبط Recly</string>
     <string name="entry_ready">آماده</string>
-    <string name="complication_recording">ضبط</string>
     <string name="complication_pending">در انتظار</string>
     <string name="complication_sending">در حال ارسال</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">در حال ضبط، %1$s</string>
     <string name="info_open">راهنما</string>
     <string name="info_back">بستن</string>
     <string name="info_shortcut_title">دو بار فشردن کلید صفحه اصلی ← ضبط</string>

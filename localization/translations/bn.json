@@ -216,7 +216,6 @@
   "Provider": "প্রদানকারী",
   "Provider privacy information": "প্রদানকারীর গোপনীয়তা সংক্রান্ত তথ্য",
   "Quit": "প্রস্থান করুন",
-  "REC": "রেকর্ড",
   "Reading from the local folder…": "লোকাল ফোল্ডার থেকে পড়া হচ্ছে…",
   "Receiving from the watch": "ঘড়ি থেকে গ্রহণ করা হচ্ছে",
   "Recly Record": "Recly রেকর্ড",
@@ -566,5 +565,6 @@
   "{0} waiting": "অপেক্ষায় {0}",
   "{0} failed": "ব্যর্থ {0}",
   "Something went wrong at the provider.": "প্রদানকারীর দিকে একটি সমস্যা হয়েছে।",
-  "Open data folder": "ডেটা ফোল্ডার খুলুন"
+  "Open data folder": "ডেটা ফোল্ডার খুলুন",
+  "Recording, {0}": "রেকর্ড হচ্ছে, {0}"
 }

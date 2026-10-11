@@ -15,18 +15,23 @@ final class WatchComplicationTests: XCTestCase {
     func testTheIdleFaceOffersARecording() {
         let status = WatchStatus()
 
-        XCTAssertEqual(status.symbol, "mic")
+        // 2026-10-11 (N4): the app's own record node, not the system's microphone.
+        XCTAssertEqual(status.mark, .record)
         XCTAssertEqual(status.label, "Record")
+        XCTAssertNil(status.elapsedSince)
         XCTAssertTrue(status.startsOnTap)
     }
 
     /// While a recording runs the tap is the stop — the same switch the app's own button is, so a
     /// glance and a tap do what the wrist expects.
     func testARunningRecordingTurnsTheTapIntoTheStop() {
-        let status = WatchStatus(state: .recording, startedAt: Date(), waiting: 0)
+        let startedAt = Date()
+        let status = WatchStatus(state: .recording, startedAt: startedAt, waiting: 0)
 
-        XCTAssertEqual(status.symbol, "square.fill")
+        XCTAssertEqual(status.mark, .recording)
         XCTAssertEqual(status.label, "Recording")
+        // 2026-10-11 (N4): the face counts the time up from the start in place of the word.
+        XCTAssertEqual(status.elapsedSince, startedAt)
         XCTAssertFalse(status.startsOnTap)
     }
 
@@ -36,7 +41,8 @@ final class WatchComplicationTests: XCTestCase {
     func testRecordingsWaitingForThePhoneAreShown() {
         let status = WatchStatus(state: .idle, startedAt: nil, waiting: 2)
 
-        XCTAssertEqual(status.symbol, "arrow.up.square")
+        XCTAssertEqual(status.mark, .waiting)
+        XCTAssertNil(status.elapsedSince)
         // docs/09 screen principle 7: said without a count — whether any are left is the question.
         XCTAssertEqual(status.label, "Waiting")
         XCTAssertTrue(status.startsOnTap, "a queue is no reason not to start another recording")
@@ -46,8 +52,18 @@ final class WatchComplicationTests: XCTestCase {
     func testARecordingOutranksTheQueueOnTheFace() {
         let status = WatchStatus(state: .recording, startedAt: Date(), waiting: 3)
 
-        XCTAssertEqual(status.symbol, "square.fill")
+        XCTAssertEqual(status.mark, .recording)
         XCTAssertEqual(status.label, "Recording")
+    }
+
+    /// 2026-10-11 (N3): SF Mono has no Hangul, Kana or Han, so the face's words are drawn in the sans in
+    /// the languages written in them, and in monospace in the rest.
+    func testTheFaceDrawsHangulKanaAndHanWordsInTheSans() {
+        XCTAssertTrue(WatchStatus(language: "ko").wordsInSans)
+        XCTAssertTrue(WatchStatus(language: "ja").wordsInSans)
+        XCTAssertTrue(WatchStatus(language: "zh-Hans").wordsInSans)
+        XCTAssertFalse(WatchStatus(language: "en").wordsInSans)
+        XCTAssertFalse(WatchStatus(language: "de").wordsInSans)
     }
 
     /// docs/07 rule 2·3: the extension links no RecKit and cannot read the setting, so the language

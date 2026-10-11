@@ -60,36 +60,57 @@ struct ComplicationFace: View {
     var body: some View {
         // The tap is the recording's own switch: start when there is nothing running, stop when
         // there is (`WatchStatus.startsOnTap`).
-        if status.startsOnTap {
-            Button(intent: StartWatchRecordingIntent()) { face }
-                .buttonStyle(.plain)
-        } else {
-            Button(intent: StopWatchRecordingIntent()) { face }
-                .buttonStyle(.plain)
+        Group {
+            if status.startsOnTap {
+                Button(intent: StartWatchRecordingIntent()) { face }
+                    .buttonStyle(.plain)
+            } else {
+                Button(intent: StopWatchRecordingIntent()) { face }
+                    .buttonStyle(.plain)
+            }
         }
+        .accessibilityLabel(spoken)
+        .environment(\.locale, status.appLocale)
+        .environment(\.layoutDirection, status.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
     }
 
     /// docs/09 "Raw aesthetics": the complication says the state in monospace — it is a status code on a
-    /// watch face, not a headline.
+    /// watch face, not a headline. 2026-10-11 (N4): the app's square record mark rather than a system
+    /// glyph, and while a recording runs its elapsed time in place of the word, where the family has
+    /// room for a line: beside the mark on the rectangular face, as the curved label on the corner and on
+    /// a circular face that shows one. A circular face without a label keeps the mark alone.
     @ViewBuilder
     private var face: some View {
         switch family {
         case .accessoryRectangular:
-            Label { title } icon: { Image(systemName: status.symbol) }
-                .font(.system(.body, design: .monospaced))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .environment(\.locale, status.appLocale)
-                .environment(\.layoutDirection, status.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
+            HStack(spacing: 6) {
+                ComplicationMark(mark: status.mark)
+                line.font(font(.body))
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
         default:
-            Image(systemName: status.symbol)
-                .font(.system(size: WidgetTokens.iconSize, weight: .light))
+            ComplicationMark(mark: status.mark)
                 .widgetLabel {
-                    title.font(.system(.caption2, design: .monospaced))
+                    line.font(font(.caption2))
                 }
-                .environment(\.locale, status.appLocale)
-                .environment(\.layoutDirection, status.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         }
+    }
+
+    /// The elapsed time while recording — counted by the system from the recording's start, so a long
+    /// recording needs no timeline update (the phone's widgets do the same) — and the state's word
+    /// otherwise.
+    private var line: Text {
+        if let since = status.elapsedSince {
+            return Text(timerInterval: since ... Date.distantFuture, countsDown: false)
+        }
+        return title
+    }
+
+    /// Monospace, except for a word in a language written in Hangul, Kana or Han ([WatchStatus.wordsInSans]):
+    /// the time is always monospace.
+    private func font(_ style: Font.TextStyle) -> Font {
+        status.elapsedSince == nil && status.wordsInSans ? .system(style) : .system(style, design: .monospaced)
     }
 
     /// docs/07 rule 2·3: the extension links no RecKit and cannot read the app's language setting
@@ -97,5 +118,49 @@ struct ComplicationFace: View {
     /// hands it down as `\.locale` — which is what resolves these keys.
     private var title: Text {
         Text(LocalizedStringKey(status.label))
+    }
+
+    /// What VoiceOver says: what the tap does while nothing runs (`Start recording`, with the waiting
+    /// state after it), and the recording with its time while one does (`Recording, 0:12`) — the
+    /// timer read live rather than a time frozen into the entry.
+    private var spoken: Text {
+        if let since = status.elapsedSince {
+            return title + Text(verbatim: ", ") + Text(timerInterval: since ... Date.distantFuture, countsDown: false)
+        }
+        if status.mark == .waiting {
+            return Text("Start recording") + Text(verbatim: ", ") + title
+        }
+        return Text("Start recording")
+    }
+}
+
+/// docs/09 "Shape" · 2026-10-11 (N4): the watch app's own Record button at glyph size — a square node with
+/// a small filled square in it — and while recording the filled square in the recording's red, which a
+/// tinted face draws in its accent. Waiting keeps the system's square arrow.
+struct ComplicationMark: View {
+    let mark: WatchStatus.Mark
+
+    var body: some View {
+        Group {
+            switch mark {
+            case .record:
+                ZStack {
+                    RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
+                        .strokeBorder(lineWidth: 2)
+                    RoundedRectangle(cornerRadius: WidgetTokens.Radius.badge)
+                        .frame(width: 7, height: 7)
+                }
+                .frame(width: WidgetTokens.iconSize, height: WidgetTokens.iconSize)
+            case .recording:
+                RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
+                    .fill(WidgetTokens.danger)
+                    .frame(width: WidgetTokens.iconSize, height: WidgetTokens.iconSize)
+                    .widgetAccentable()
+            case .waiting:
+                Image(systemName: "arrow.up.square")
+                    .font(.system(size: WidgetTokens.iconSize, weight: .light))
+            }
+        }
+        .accessibilityHidden(true)
     }
 }

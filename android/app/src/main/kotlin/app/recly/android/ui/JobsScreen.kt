@@ -46,10 +46,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -62,6 +64,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
@@ -80,7 +83,6 @@ import app.recly.android.ui.component.ActionFlow
 import app.recly.android.ui.component.LedgerHeader
 import app.recly.android.ui.component.LedgerRow
 import app.recly.android.ui.component.LedgerStatus
-import app.recly.android.ui.component.LedgerTitleInset
 import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
@@ -359,9 +361,9 @@ private fun ExpandedRow(
             .fillMaxWidth()
             .bringIntoViewRequester(reveal)
             .background(palette.background)
-            // Indented to the ledger's own title column, so the expansion sits under the recording
-            // it belongs to rather than under a number somebody picked.
-            .padding(start = LedgerTitleInset, end = Space.m, top = Space.s, bottom = 12.dp),
+            // From the row's own leading gutter, as on the iPhone (2026-10-12): past the time column a done
+            // row's three buttons do not always fit one line, and Delete went to a line of its own.
+            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
@@ -536,17 +538,16 @@ private fun AlertBanner(
                 return@forEach
             }
             if (alert.reason == AlertReason.NEEDS_AUTH) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s),
-                    verticalAlignment = Alignment.CenterVertically,
+                AlertLine(
+                    code = null,
+                    lines = {
+                        Text(
+                            stringResource(R.string.alert_uploads_waiting, alert.count),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.textMuted,
+                        )
+                    },
                 ) {
-                    Text(
-                        stringResource(R.string.alert_uploads_waiting, alert.count),
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.textMuted,
-                    )
                     BlueprintButton(
                         stringResource(R.string.drive_connect),
                         onClick = { onFix(alert) },
@@ -586,55 +587,79 @@ private fun AlertBanner(
 }
 
 /**
- * One reason: what it is, how many recordings are behind it, the code, and what to press — the
- * iPhone's `AlertLine`. The code and the button take at most half the row and fold onto a second
- * line there when they do not fit side by side, so a long code such as
- * `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line.
+ * One reason: what it is, how many recordings are behind it, the code (none for the Drive wait), and what
+ * to press — the iPhone's `AlertLine`. On a phone the sentence has the row's whole width and the code and
+ * the button sit under it, at the end (N5, UX decisions of 2026-10-11): beside it, they squeezed a
+ * sentence such as the quota's to a few words a line. A wider window keeps them beside it, in at most
+ * half the row, folding onto a second line there when they do not fit side by side, so a long code such
+ * as `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line. Either way a word
+ * too long for its line breaks at a hyphen, not anywhere (N2).
  */
 @Composable
 private fun AlertLine(
-    code: String,
+    code: String?,
     lines: @Composable ColumnScope.() -> Unit,
     tone: BadgeTone = BadgeTone.WARNING,
     description: String? = null,
     onClick: (() -> Unit)? = null,
     action: @Composable () -> Unit,
 ) {
-    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-        // Half the row, or the code's own width where that is more: a code is never cut.
-        val trailing = maxOf(maxWidth / 2, statusColumnWidth(listOf(code)))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier
-                    .weight(1f)
-                    .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-                    .then(
-                        if (description != null) {
-                            Modifier.semantics(mergeDescendants = true) { contentDescription = description }
-                        } else {
-                            Modifier
-                        },
+    val sentence = Modifier
+        .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+        .then(
+            if (description != null) {
+                Modifier.semantics(mergeDescendants = true) { contentDescription = description }
+            } else {
+                Modifier
+            },
+        )
+    val trailing: @Composable () -> Unit = {
+        code?.let { StatusBadge(LedgerStatus(it, tone)) }
+        action()
+    }
+    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto)) {
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
+            if (maxWidth + Space.m * 2 < PHONE_WIDTH) {
+                Column(Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = sentence.fillMaxWidth().padding(vertical = Space.s),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                        content = lines,
                     )
-                    .padding(vertical = Space.s),
-                verticalArrangement = Arrangement.spacedBy(2.dp),
-                content = lines,
-            )
-            FlowRow(
-                modifier = Modifier.widthIn(max = trailing).padding(vertical = Space.s),
-                horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                verticalArrangement = Arrangement.spacedBy(Space.xs),
-                itemVerticalAlignment = Alignment.CenterVertically,
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = Space.s),
+                        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+                        verticalArrangement = Arrangement.spacedBy(Space.xs),
+                        itemVerticalAlignment = Alignment.CenterVertically,
+                    ) { trailing() }
+                }
+                return@BoxWithConstraints
+            }
+            // Half the row, or the code's own width where that is more: a code is never cut.
+            val half = maxOf(maxWidth / 2, code?.let { statusColumnWidth(listOf(it)) } ?: 0.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(Space.s),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                StatusBadge(LedgerStatus(code, tone))
-                action()
+                Column(
+                    modifier = sentence.weight(1f).padding(vertical = Space.s),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                    content = lines,
+                )
+                FlowRow(
+                    modifier = Modifier.widthIn(max = half).padding(vertical = Space.s),
+                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
+                    verticalArrangement = Arrangement.spacedBy(Space.xs),
+                    itemVerticalAlignment = Alignment.CenterVertically,
+                ) { trailing() }
             }
         }
     }
 }
+
+/** A window narrower than this is a phone's (the compact width class): the banner stacks its lines. */
+private val PHONE_WIDTH = 600.dp
 
 /**
  * What the last delete or retry had to say, as the iPhone's warning banner: the sentence in the

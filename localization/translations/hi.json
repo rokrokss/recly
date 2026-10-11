@@ -178,7 +178,6 @@
   "How to turn it off": "इसे बंद कैसे करें",
   "I turned off model training in my ElevenLabs account.": "मैंने अपने ElevenLabs खाते में मॉडल प्रशिक्षण बंद कर दिया है।",
   "Quit": "बाहर निकलें",
-  "REC": "रिकॉर्ड",
   "Receiving from the watch": "घड़ी से मिल रहा है",
   "Recly Record": "Recly रिकॉर्ड",
   "Recly Settings": "Recly सेटिंग",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} प्रतीक्षारत",
   "{0} failed": "{0} विफल",
   "Something went wrong at the provider.": "प्रदाता की ओर से कुछ गड़बड़ हुई।",
-  "Open data folder": "डेटा फ़ोल्डर खोलें"
+  "Open data folder": "डेटा फ़ोल्डर खोलें",
+  "Recording, {0}": "रिकॉर्ड हो रहा है, {0}"
 }

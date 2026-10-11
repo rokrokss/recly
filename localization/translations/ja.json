@@ -178,7 +178,6 @@
   "How to turn it off": "オフにする方法",
   "I turned off model training in my ElevenLabs account.": "ElevenLabsアカウントでモデルの学習をオフにしました。",
   "Quit": "終了",
-  "REC": "録音",
   "Receiving from the watch": "ウォッチから受信中",
   "Recly Record": "Recly録音",
   "Recly Settings": "Reclyの設定",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0}件待機中",
   "{0} failed": "{0}件失敗",
   "Something went wrong at the provider.": "プロバイダー側で問題が発生しました。",
-  "Open data folder": "データフォルダを開く"
+  "Open data folder": "データフォルダを開く",
+  "Recording, {0}": "録音中、{0}"
 }

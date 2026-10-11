@@ -51,6 +51,14 @@ public struct BlueprintFonts: Equatable, Sendable {
         .system(size: size * scale, weight: weight)
     }
 
+    /// 2026-10-11 (N3): the face for *words* drawn where data is — a badge, a node's value, a status line.
+    /// SF Mono has no Hangul, Kana or Han; their fallback is set in mono's cells, with mono's wide space
+    /// between the words (`업로드  중`), so [text] in those scripts takes the sans at the same size.
+    /// Times, counts and ids stay in [mono].
+    public func mono(_ size: CGFloat, weight: Font.Weight = .regular, words text: String) -> Font {
+        CJKText.contains(text) ? sans(size, weight: weight) : mono(size, weight: weight)
+    }
+
     public var monoSmall: Font { mono(TypeSize.small) }
     public var monoBodySmall: Font { mono(TypeSize.bodySmall) }
     public var monoBody: Font { mono(TypeSize.body) }
@@ -64,6 +72,29 @@ public struct BlueprintFonts: Equatable, Sendable {
     public var rowTitle: Font { sans(TypeSize.bodySmall, weight: .semibold) }
     public var title: Font { sans(TypeSize.title, weight: .semibold) }
     public var headline: Font { sans(TypeSize.headline) }
+}
+
+/// Hangul, Kana and Han, with their punctuation and full-width forms — the scripts SF Mono has no glyphs
+/// for ([BlueprintFonts.mono(_:weight:words:)]).
+enum CJKText {
+    static func contains(_ text: String) -> Bool {
+        text.unicodeScalars.contains { scalar in ranges.contains { $0.contains(scalar.value) } }
+    }
+
+    private static let ranges: [ClosedRange<UInt32>] = [
+        0x1100...0x11FF, // Hangul Jamo
+        0x2E80...0x2FDF, // CJK and Kangxi radicals
+        0x3000...0x30FF, // CJK symbols and punctuation, Hiragana, Katakana
+        0x3130...0x318F, // Hangul compatibility Jamo
+        0x31F0...0x31FF, // Katakana phonetic extensions
+        0x3400...0x4DBF, // CJK extension A
+        0x4E00...0x9FFF, // CJK unified ideographs
+        0xA960...0xA97F, // Hangul Jamo extended-A
+        0xAC00...0xD7FF, // Hangul syllables, Jamo extended-B
+        0xF900...0xFAFF, // CJK compatibility ideographs
+        0xFF00...0xFFEF, // half-width and full-width forms
+        0x20000...0x3134F, // CJK extensions B–G
+    ]
 }
 
 /// docs/09 "Motion": motion is a state signal, never decoration. One easing, one duration for a normal

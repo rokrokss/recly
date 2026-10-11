@@ -216,7 +216,6 @@
   "Provider": "Sağlayıcı",
   "Provider privacy information": "Sağlayıcı gizlilik bilgileri",
   "Quit": "Çık",
-  "REC": "KAYIT",
   "Reading from the local folder…": "Yerel klasörden okunuyor…",
   "Receiving from the watch": "Saatten alınıyor",
   "Recly Record": "Recly Kayıt",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} bekliyor",
   "{0} failed": "{0} başarısız",
   "Something went wrong at the provider.": "Sağlayıcı tarafında bir sorun oluştu.",
-  "Open data folder": "Veri klasörünü aç"
+  "Open data folder": "Veri klasörünü aç",
+  "Recording, {0}": "Kaydediliyor, {0}"
 }

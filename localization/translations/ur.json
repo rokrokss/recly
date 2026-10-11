@@ -216,7 +216,6 @@
   "Provider": "فراہم کنندہ",
   "Provider privacy information": "فراہم کنندہ کی رازداری کی معلومات",
   "Quit": "باہر نکلیں",
-  "REC": "ریکارڈ",
   "Reading from the local folder…": "مقامی فولڈر سے پڑھا جا رہا ہے…",
   "Receiving from the watch": "گھڑی سے موصول ہو رہا ہے",
   "Recly Record": "Recly ریکارڈ",
@@ -566,5 +565,6 @@
   "{0} waiting": "منتظر: {0}",
   "{0} failed": "ناکام: {0}",
   "Something went wrong at the provider.": "فراہم کنندہ کی طرف کچھ غلط ہو گیا۔",
-  "Open data folder": "ڈیٹا فولڈر کھولیں"
+  "Open data folder": "ڈیٹا فولڈر کھولیں",
+  "Recording, {0}": "ریکارڈنگ جاری، {0}"
 }

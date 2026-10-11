@@ -52,20 +52,42 @@ struct WatchStatus: Codable, Equatable {
 extension WatchStatus {
     var isRecording: Bool { state == .recording }
 
+    /// What the face draws. docs/09 "Shape": squares, never circles — and 2026-10-11 (N4) the app's own
+    /// record node rather than a system microphone: the square the watch app's Record button is.
+    enum Mark: Equatable {
+        /// Nothing running: the record node, a square outline with a small filled square in it.
+        case record
+        /// A recording running: the filled square, in the recording colour where the face allows colour.
+        case recording
+        /// Recordings the phone has not acked yet (the system's `arrow.up.square`).
+        case waiting
+    }
+
     /// A recording being made outranks recordings waiting to go: it is the one the tap acts on.
-    ///
-    /// docs/09 "Shape": squares, never circles — the recording mark on every other surface of this
-    /// product is a filled square, and a complication is not the place it becomes a dot.
-    var symbol: String {
-        if isRecording { return "square.fill" }
-        return waiting > 0 ? "arrow.up.square" : "mic"
+    var mark: Mark {
+        if isRecording { return .recording }
+        return waiting > 0 ? .waiting : .record
     }
 
     /// A docs/07 key. Waiting recordings are said without a count, and as waiting rather than
-    /// sending (docs/09 screen principle 7): what the face answers is whether any are left.
+    /// sending (docs/09 screen principle 7): what the face answers is whether any are left. While a
+    /// recording runs the face shows its elapsed time instead ([elapsedSince]), and this is what
+    /// VoiceOver says before it.
     var label: String {
         if isRecording { return "Recording" }
         return waiting > 0 ? "Waiting" : "Record"
+    }
+
+    /// 2026-10-11 (N4): where the running recording's clock counts from — the face draws the elapsed
+    /// time in place of a word. Nil while nothing is recording, or for a file that never said when.
+    var elapsedSince: Date? { isRecording ? startedAt : nil }
+
+    /// 2026-10-11 (N3): the face's words are drawn in the sans, not the monospace, in a language written
+    /// in Hangul, Kana or Han — SF Mono has none of those glyphs, and their fallback in mono's cells
+    /// spaces the words apart. Read off the language rather than the words: the extension resolves its
+    /// keys in SwiftUI and never holds the string.
+    var wordsInSans: Bool {
+        ["ko", "ja", "zh"].contains(appLocale.language.languageCode?.identifier ?? "")
     }
 
     /// The complication's tap: start when there is nothing running, stop when there is. Both run in

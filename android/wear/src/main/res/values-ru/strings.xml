@@ -16,10 +16,10 @@
     <string name="tile_start">Начать запись</string>
     <string name="quick_start_label">Recly Запись</string>
     <string name="entry_ready">Ожидание</string>
-    <string name="complication_recording">ЗАП</string>
     <string name="complication_pending">Ожидание</string>
     <string name="complication_sending">Отправка</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Идёт запись, %1$s</string>
     <string name="info_open">Справка</string>
     <string name="info_back">Закрыть</string>
     <string name="info_shortcut_title">Двойное нажатие «Домой» → запись</string>

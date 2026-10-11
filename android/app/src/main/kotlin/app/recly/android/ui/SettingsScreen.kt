@@ -25,6 +25,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.recly.android.BuildConfig
 import app.recly.android.R
@@ -120,10 +122,13 @@ fun SettingsScreen(
                 // Drive's row in shape: where the folder is and the way to change it, or that there is
                 // none to use and the way to pick one. The name is what the user picked it by.
                 val reachable = settings.folder != null && settings.folderReachable
+                // N8: the folder's name on the row; where it is, only for TalkBack.
+                val path = settings.folderPath?.takeIf { it != settings.folder }
                 TableRow(
                     title = settings.folder ?: stringResource(R.string.folder_none),
                     subtitle = if (settings.folder != null && !reachable) stringResource(R.string.folder_unreachable) else null,
-                    modifier = Modifier.testTag("folder-status"),
+                    modifier = Modifier.testTag("folder-status")
+                        .then(if (path != null) Modifier.semantics(mergeDescendants = true) { stateDescription = path } else Modifier),
                     trailing = {
                         BlueprintButton(
                             label = stringResource(if (reachable) R.string.folder_change else R.string.folder_choose),

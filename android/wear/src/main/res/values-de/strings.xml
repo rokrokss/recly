@@ -16,10 +16,10 @@
     <string name="tile_start">Aufnahme starten</string>
     <string name="quick_start_label">Recly Aufnahme</string>
     <string name="entry_ready">Bereit</string>
-    <string name="complication_recording">AUFN</string>
     <string name="complication_pending">Wartend</string>
     <string name="complication_sending">Wird gesendet</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Aufnahme läuft, %1$s</string>
     <string name="info_open">Hilfe</string>
     <string name="info_back">Schließen</string>
     <string name="info_shortcut_title">Home-Taste zweimal drücken → aufnehmen</string>

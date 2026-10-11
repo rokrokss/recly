@@ -216,7 +216,6 @@
   "Provider": "Mtoa huduma",
   "Provider privacy information": "Maelezo ya faragha ya mtoa huduma",
   "Quit": "Toka",
-  "REC": "REKODI",
   "Reading from the local folder…": "Inasoma kutoka kwenye folda ya ndani…",
   "Receiving from the watch": "Inapokea kutoka kwenye saa",
   "Recly Record": "Recly Rekodi",
@@ -566,5 +565,6 @@
   "{0} waiting": "zinazosubiri: {0}",
   "{0} failed": "zilizoshindwa: {0}",
   "Something went wrong at the provider.": "Kuna hitilafu upande wa mtoa huduma.",
-  "Open data folder": "Fungua folda ya data"
+  "Open data folder": "Fungua folda ya data",
+  "Recording, {0}": "Inarekodi, {0}"
 }

@@ -16,10 +16,10 @@
     <string name="tile_start">Démarrer l’enregistrement</string>
     <string name="quick_start_label">Recly Enregistrer</string>
     <string name="entry_ready">Inactif</string>
-    <string name="complication_recording">ENR</string>
     <string name="complication_pending">En attente</string>
     <string name="complication_sending">Envoi</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Enregistrement, %1$s</string>
     <string name="info_open">Aide</string>
     <string name="info_back">Fermer</string>
     <string name="info_shortcut_title">Double appui sur Accueil → enregistrer</string>

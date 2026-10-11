@@ -178,7 +178,6 @@
   "How to turn it off": "Como desativar",
   "I turned off model training in my ElevenLabs account.": "Desativei o treinamento de modelos na minha conta ElevenLabs.",
   "Quit": "Sair",
-  "REC": "GRAV",
   "Receiving from the watch": "Recebendo do relógio",
   "Recly Record": "Recly Gravar",
   "Recly Settings": "Configurações do Recly",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} em espera",
   "{0} failed": "{0} com falha",
   "Something went wrong at the provider.": "Algo deu errado no provedor.",
-  "Open data folder": "Abrir pasta de dados"
+  "Open data folder": "Abrir pasta de dados",
+  "Recording, {0}": "Gravando, {0}"
 }

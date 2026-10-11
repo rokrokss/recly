@@ -2,7 +2,10 @@ package app.recly.wear.ui.theme
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -45,6 +48,58 @@ object WearBlueprint {
         lineHeight = (size * 1.25f).sp,
     )
 }
+
+/**
+ * UX decisions of 2026-10-11 (N3), the phone's `monoWords`: the status line's Hangul, Kana and Han words are
+ * drawn in the sans, so `전송 대기` does not read as two words a monospace cell apart. Times and Latin stay
+ * monospace (`하이라이트 · 00:12`). The face only, so the line keeps its height.
+ */
+fun monoWords(text: String): AnnotatedString {
+    val runs = cjkRuns(text)
+    if (runs.isEmpty()) return AnnotatedString(text)
+    return buildAnnotatedString {
+        append(text)
+        runs.forEach { addStyle(SpanStyle(fontFamily = FontFamily.SansSerif), it.first, it.last + 1) }
+    }
+}
+
+/** The stretches of [text] in a CJK script, each with the spaces between its words. */
+internal fun cjkRuns(text: String): List<IntRange> {
+    val runs = mutableListOf<IntRange>()
+    var start = -1
+    var end = -1
+    var i = 0
+    while (i < text.length) {
+        val point = text.codePointAt(i)
+        val next = i + Character.charCount(point)
+        when {
+            isCjk(point) -> {
+                if (start < 0) start = i
+                end = next
+            }
+            // A space may sit between two words of the stretch; it joins only if a CJK letter follows.
+            start >= 0 && Character.isWhitespace(point) -> Unit
+            start >= 0 -> {
+                runs += start until end
+                start = -1
+            }
+        }
+        i = next
+    }
+    if (start >= 0) runs += start until end
+    return runs
+}
+
+private val CJK_SCRIPTS = setOf(
+    Character.UnicodeScript.HANGUL,
+    Character.UnicodeScript.HIRAGANA,
+    Character.UnicodeScript.KATAKANA,
+    Character.UnicodeScript.HAN,
+)
+
+/** The long-vowel marks (`アップロード`) are in no script of their own, but they are Kana words' letters. */
+private fun isCjk(point: Int): Boolean =
+    Character.UnicodeScript.of(point) in CJK_SCRIPTS || point == 0x30FC || point == 0xFF70
 
 /** Wear's own Material, in the Blueprint palette — the components the watch keeps land in it. */
 @Composable

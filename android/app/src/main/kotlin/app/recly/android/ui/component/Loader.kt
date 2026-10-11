@@ -61,5 +61,5 @@ fun LoadingText(text: String, style: TextStyle, color: Color, modifier: Modifier
 }
 
 /** docs/09: 8dp, and one full turn slow enough to read as "still working" rather than "hurry". */
-private val LOADER = 8.dp
+internal val LOADER = 8.dp
 private const val LOADER_TURN_MS = 1_200
