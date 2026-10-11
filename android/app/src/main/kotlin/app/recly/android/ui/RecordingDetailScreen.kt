@@ -361,7 +361,8 @@ fun RecordingDetailScreen(
             saving = SavePhase.IDLE
         }
     }
-    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null)
+    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
+    val chips = showsSummaryChips(detail.summary, askedSummary, editing = draft != null, typing = keyboardVisible && summaryDraft != null)
     val canSeek = !detail.writing && !detail.deviceRecording && !detail.audio.isEmpty &&
         detail.driveFetch != DriveFetch.DECIDING && detail.driveFetch != DriveFetch.FETCHING
     val seek: (Double) -> Unit = { if (!detail.deviceRecording) player.seek(detail.audio, it) }
@@ -384,7 +385,6 @@ fun RecordingDetailScreen(
 
     // docs/09 "Typography": every time on this page takes its format from the recording's own length.
     val scale = recordingScale(detail)
-    val keyboardVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
     Column(modifier = modifier.fillMaxSize()) {
         // The title alone: the recording's id is the ledger's key, not something the user reads by.
         if (!keyboardVisible) {
@@ -431,7 +431,8 @@ fun RecordingDetailScreen(
         }
         if (chips && !detail.loading) {
             FillRow(Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s)) {
-                // While the summary is being edited the chips stay; going to the transcript leaves the editor.
+                // While the summary is being edited the chips stay (until the keyboard is up); going to the
+                // transcript leaves the editor.
                 BlueprintChip(stringResource(R.string.share_transcript), view == DetailView.TRANSCRIPT,
                     { if (summaryDraft != null) leaveSummaryEditor(DetailView.TRANSCRIPT) else view = DetailView.TRANSCRIPT },
                     modifier = Modifier.testTag("view-transcript"))

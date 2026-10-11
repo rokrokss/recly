@@ -79,10 +79,7 @@ object CoreModule {
             ),
             io = Dispatchers.IO,
             // docs/07 §6: seeds the first transcription language, and only on a first install.
-            locale = Locale.getDefault().let { locale ->
-                if (locale.language == "zh") app.recly.android.settings.AppLanguage.effective(locale).tag
-                else locale.toLanguageTag()
-            },
+            locale = app.recly.android.settings.coreLocaleTag(Locale.getDefault()),
             localTranscription = QwenSpeechEngine.make(context, transport, logger),
             localFolder = folder,
         )

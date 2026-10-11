@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/11 W5 (N4, UX decisions of 2026-10-11): the complication's idle glyph — the record node, a square
+     edge round a smaller filled square, the launcher's monochrome template drawn at a complication's size.
+     White only: the watch face tints it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="2"
+        android:pathData="M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,8 H15 A1,1 0 0 1 16,9 V15 A1,1 0 0 1 15,16 H9 A1,1 0 0 1 8,15 V9 A1,1 0 0 1 9,8 Z" />
+</vector>

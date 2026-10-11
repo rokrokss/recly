@@ -1,7 +1,10 @@
 package app.recly.android.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineBreak
@@ -77,6 +80,63 @@ val WordLineBreak: LineBreak = LineBreak(
     strictness = LineBreak.Strictness.Normal,
     wordBreak = LineBreak.WordBreak.Phrase,
 )
+
+/**
+ * UX decisions of 2026-10-11 (N3): words drawn in the monospace face — a badge, a node's state, the list's
+ * counts — take Hangul, Kana and Han from the sans. The mono face has none of those glyphs, so they come
+ * from the fallback either way; what it still adds is its own wide space, and `업로드 중` read as two words
+ * a full cell apart. Digits, Latin and punctuation stay monospace, so `8 · 대기 2` keeps its counts as data.
+ * The face only: no size or line height of its own, so nothing around the word moves.
+ */
+fun monoWords(text: String): AnnotatedString {
+    val runs = cjkRuns(text)
+    if (runs.isEmpty()) return AnnotatedString(text)
+    return buildAnnotatedString {
+        append(text)
+        runs.forEach { addStyle(SpanStyle(fontFamily = FontFamily.SansSerif), it.first, it.last + 1) }
+    }
+}
+
+/**
+ * The stretches of [text] in a CJK script, each with the spaces between its words, so `전사 안 함` is one
+ * stretch and not three with a monospace space in each gap.
+ */
+internal fun cjkRuns(text: String): List<IntRange> {
+    val runs = mutableListOf<IntRange>()
+    var start = -1
+    var end = -1
+    var i = 0
+    while (i < text.length) {
+        val point = text.codePointAt(i)
+        val next = i + Character.charCount(point)
+        when {
+            isCjk(point) -> {
+                if (start < 0) start = i
+                end = next
+            }
+            // A space may sit between two words of the stretch; it joins only if a CJK letter follows.
+            start >= 0 && Character.isWhitespace(point) -> Unit
+            start >= 0 -> {
+                runs += start until end
+                start = -1
+            }
+        }
+        i = next
+    }
+    if (start >= 0) runs += start until end
+    return runs
+}
+
+private val CJK_SCRIPTS = setOf(
+    Character.UnicodeScript.HANGUL,
+    Character.UnicodeScript.HIRAGANA,
+    Character.UnicodeScript.KATAKANA,
+    Character.UnicodeScript.HAN,
+)
+
+/** The long-vowel marks (`アップロード`) are in no script of their own, but they are Kana words' letters. */
+private fun isCjk(point: Int): Boolean =
+    Character.UnicodeScript.of(point) in CJK_SCRIPTS || point == 0x30FC || point == 0xFF70
 
 /** The M3 slots, on the same six sizes, so a component we keep is drawn on the same scale. */
 fun reclyTypography(scale: Float): Typography {

@@ -39,6 +39,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.recly.android.R
+import app.recly.android.core.CoreModule
+import app.recly.android.settings.coreLocaleTag
 import app.recly.android.ui.component.BlueprintNavBar
 import app.recly.android.ui.component.NavGlyph
 import app.recly.android.ui.component.NavItem
@@ -107,6 +109,11 @@ class MainActivity : ComponentActivity() {
         // and nothing having happened. The notification itself stays up until the queue says the
         // reason is gone (docs/10 rule 3), so the tap is never the last chance to act on it.
         consumeFix(intent)
+        // N9 (UX decisions of 2026-10-11): the core is not recreated with the activities, and its summaries and
+        // Ask presets follow the app's language however it changed — the in-app picker or the system's per-app
+        // language screen. Either one recreates this activity, so this is where the core is told.
+        val locale = coreLocaleTag(resources.configuration.locales[0])
+        lifecycleScope.launch { CoreModule.get(applicationContext).core.summaries.setLocale(locale) }
         setContent {
             val settings by settingsModel.state.collectAsState()
             // docs/09 "Accessibility": the system decides the font scale and reduce motion, and the theme is

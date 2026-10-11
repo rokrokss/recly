@@ -82,7 +82,8 @@
                 android:resource="@mipmap/ic_launcher" />
         </service>
 
-        <!-- docs/11 W5: the complication. One SHORT_TEXT ("REC" / "Waiting"); a tap opens the app. -->
+        <!-- docs/11 W5: the complication. SHORT_TEXT (the record square with the elapsed time, or "Waiting"),
+             and the square alone where the slot has no room for words (N4); a tap opens the app. -->
         <service
             android:name=".entry.RecComplicationService"
             android:exported="true"
@@ -94,7 +95,7 @@
 
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="SHORT_TEXT" />
+                android:value="SHORT_TEXT,MONOCHROMATIC_IMAGE" />
             <!-- How often the watch face asks again on its own. A recording starting or a transfer
                  finishing is pushed sooner than that, through
                  `ComplicationDataSourceUpdateRequester`. -->

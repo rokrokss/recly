@@ -58,6 +58,7 @@ import app.recly.recording.RecorderState
 import app.recly.wear.R
 import app.recly.wear.ui.theme.ReclyWearTheme
 import app.recly.wear.ui.theme.WearBlueprint
+import app.recly.wear.ui.theme.monoWords
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
@@ -139,7 +140,7 @@ private fun RecordScreen(
                         // The mark's line is said on one line, smaller where it must be: its two seconds
                         // should not move the stop node, and a Korean sentence must not break inside a word.
                         BasicText(
-                            text = line.first,
+                            text = monoWords(line.first),
                             style = WearBlueprint.small.copy(color = line.second, textAlign = TextAlign.Center),
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(
@@ -149,7 +150,7 @@ private fun RecordScreen(
                             ),
                         )
                     } else Text(
-                        text = line?.first ?: stringResource(R.string.recording_active),
+                        text = monoWords(line?.first ?: stringResource(R.string.recording_active)),
                         modifier = if (line == null) Modifier.clearAndSetSemantics {} else Modifier,
                         style = WearBlueprint.small,
                         color = line?.second ?: Color.Transparent,

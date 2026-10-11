@@ -89,6 +89,12 @@ class SummaryMenuTest {
     }
 
     @Test
+    fun `the summary editor's keyboard takes the chips' room until it goes`() {
+        assertFalse(showsSummaryChips(SummaryState.Ready(summary), asked = false, editing = false, typing = true))
+        assertTrue(showsSummaryChips(SummaryState.Ready(summary), asked = false, editing = false, typing = false))
+    }
+
+    @Test
     fun `a failed summary offers the one button that helps`() {
         assertEquals(SummaryRecovery.MANAGE_USAGE, summaryRecovery(CoreMessage.CHATGPT_USAGE_LIMIT.code()))
         assertEquals(SummaryRecovery.NONE, summaryRecovery(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code()))

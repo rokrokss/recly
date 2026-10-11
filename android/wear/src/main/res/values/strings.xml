@@ -29,6 +29,8 @@
     <string name="complication_pending">Waiting</string>
     <string name="complication_sending">Sending</string>
     <string name="complication_idle">Recly</string>
+    <!-- N4: what TalkBack says of the complication while it records; %1$s is the elapsed time the face counts. -->
+    <string name="complication_recording_description">Recording, %1$s</string>
 
     <!-- docs/11 W5 "setup guide screen". Neither place can be deep-linked from here, so the screen can
          only describe the way there. -->

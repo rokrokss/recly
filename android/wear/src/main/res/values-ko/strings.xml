@@ -21,6 +21,7 @@
     <string name="complication_pending">전송 대기</string>
     <string name="complication_sending">전송 중</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">녹음 중, %1$s</string>
 
     <string name="info_open">안내</string>
     <string name="info_back">닫기</string>
