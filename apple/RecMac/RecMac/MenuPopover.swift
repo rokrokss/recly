@@ -90,26 +90,28 @@ struct MenuPopover: View {
             StateNodeRow(specs).padding(.horizontal, Space.m)
             // 2026-10-08 §12: a capture finding its way back is a wait, not a failure — the warning
             // tone; red stays for deletion and for the recording state.
+            // 2026-10-11 (N3): these status lines are words — Hangul, Kana and Han take the sans.
             if model.isRecording, model.microphoneRecovering {
                 Text(verbatim: loc("Reconnecting microphone…"))
-                    .font(blueprint.fonts.monoSmall)
+                    .font(blueprint.fonts.mono(TypeSize.small, words: loc("Reconnecting microphone…")))
                     .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
             } else if model.isRecording, let device = model.capturedInputDevice {
                 Text(AppStrings.localized("Microphone: %@", device))
-                    .font(blueprint.fonts.monoSmall)
+                    .font(blueprint.fonts.mono(TypeSize.small, words: AppStrings.localized("Microphone: %@", device)))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
                     .padding(.top, Space.s)
             }
             if model.isRecording, model.captureHealth != .healthy {
-                Text(verbatim: loc(model.captureHealth == .failed
+                let line = loc(model.captureHealth == .failed
                     ? "System audio unavailable. Microphone recording continues."
-                    : "Reconnecting system audio…"))
-                    .font(blueprint.fonts.monoSmall)
+                    : "Reconnecting system audio…")
+                Text(verbatim: line)
+                    .font(blueprint.fonts.mono(TypeSize.small, words: line))
                     .foregroundStyle(BadgeTone.warning.ink(blueprint.palette))
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
@@ -119,7 +121,7 @@ struct MenuPopover: View {
             // while it is being taken. Nothing to say in microphone mode, so nothing is said.
             if model.isRecording, let device = model.capturedOutputDevice {
                 Text(AppStrings.localized("System audio: %@", device))
-                    .font(blueprint.fonts.monoSmall)
+                    .font(blueprint.fonts.mono(TypeSize.small, words: AppStrings.localized("System audio: %@", device)))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
@@ -166,7 +168,7 @@ struct MenuPopover: View {
             // The news of that moment, for two seconds — then the row is as it was.
             if let at = model.highlighted {
                 Text(RecKitStrings.localized("Highlight · %@", at))
-                    .font(blueprint.fonts.monoSmall)
+                    .font(blueprint.fonts.mono(TypeSize.small, words: RecKitStrings.localized("Highlight · %@", at)))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, Space.m)
