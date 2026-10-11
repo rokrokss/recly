@@ -961,8 +961,8 @@ Watch recording reaches an Obsidian vault through its iPhone. Its rules are unde
 #### Local folder
 
 - **Where**: iPhone, Mac, Windows and the Android phone (2026-10-03). The `Local folder` chip in `Storage`, and under it one row in the shape of the Drive
-  row — `No folder chosen` · `Choose folder`, or where the folder is (Mac · Windows the path, iPhone the folder's name as Files shows it, Android a
-  readable name of the tree such as `Documents/Notes`) ·
+  row — `No folder chosen` · `Choose folder`, or the folder's own name (2026-10-11, every shell: the last part of the path as Finder, Files or
+  Explorer shows it — the full path only in the tooltip and the accessibility value; a drive root shows itself) ·
   `Change folder`; a folder that cannot be reached adds `This folder cannot be reached. Choose it again.` and offers `Choose folder`. Picking a folder
   releases the uploads waiting for one at once (`ReclyCore.resumeFolderWaits`) and runs the queue. The status is checked again when settings appear and
   when the app becomes active again.
@@ -2008,7 +2008,8 @@ when there is one, tells the model what matters to the user; `Me` in the transcr
 the transcript's spoken language when it is one; for a mix (`ko-en`) the app's language when it is part of the mix, else the mix's first;
 for automatic detection the app's language, with its script or region (`zh-Hans`, `pt-BR`) — any of the 23 app languages (§7) and the
 transcription languages; an unknown tag falls back to English. "The app's language" is the one it shows now: a shell passes a change with
-`summaries.setLocale(tag)`, so a new language needs no restart (2026-10-10).
+`summaries.setLocale(tag)`, so a new language needs no restart (2026-10-10) — on Android from wherever the language changes, the
+system's per-app language screen included (2026-10-11).
 
 - **On request only.** It is not a step, never runs on its own, and a recording never waits for it. OpenAI's terms ask for express
   consent before any background use; there is none.
@@ -2113,7 +2114,8 @@ The principle in one line: **intent, not decoration**.
   recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
   from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
   confirmation) follow the elapsed time itself. Exported files (`.txt`, `.md`, `.srt`, `.vtt`) and spoken times keep their own formats, and a
-  summary's or an answer's citations show as ChatGPT wrote them (`[00:12:34]`), since they are part of its text (2026-10-10).
+  summary's or an answer's citations show as ChatGPT wrote them (`[00:12:34]`), since they are part of its text (2026-10-10), and Apple's widgets,
+  Live Activity and watch complication use the system's self-updating timer (`0:12`), the only text a widget can update every second (2026-10-11).
   Examples elsewhere in this document written `00:12:34` stand for a time in this format.
 - **Shape**: corner radius 4 (nodes) / 8 (cards) / 0 (table rows) / **2 (badges)** — squares smaller than a node, such as status badges, checkboxes, radios and switch thumbs,
   use half the node radius (`Radius.badge`). The round record button is a **square node + thick border**
@@ -2208,10 +2210,17 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `Unknown` (ko `완료` · `실패` · `재시도 대기` · `대기` · `업로드 중` · `받는 중` · `전사 중` · `가져오는 중` · `녹음 중` · `Drive 연결 대기` · `허용 필요` ·
    `모델 대기` · `저장 공간 부족` · `너무 짧음` · `iCloud 대기` · `폴더 대기` · `알 수 없음`); the code names below are the states. On phones and in the desktop Details lists the status column is capped at the width the code
    `TRANSCRIBING` needed, and a longer word wraps inside its badge onto a second line (centred, never cut), so the title column is never narrower
-   than it was with codes. The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive, and the banner of a failed job whose reason
+   than it was with codes. A word too long for its line breaks only at the language's own hyphenation points, with a hyphen (2026-10-11 — badges,
+   state nodes and banner lines; Compose Desktop has no hyphenation, so Windows only wraps between words there); a state node takes two lines
+   rather than truncate, the three nodes keep one height, and on a narrow phone with large text they stack. Status words written in Hangul, Kana or
+   Han characters are set in the sans face, not the mono one — mono has no such glyphs and leaves full-width gaps (`업로드  중`); Latin words, times and
+   counts stay mono (Apple sets a whole string with such characters in sans, counts included). The notice banner says `Waiting for Drive: 3` for uploads that wait for Drive (on a window narrower than 600 pt/dp every
+   banner line gives its sentence the full width, with its badge and button together, end-aligned, under it — 2026-10-11, both phones), and the banner of a failed job whose reason
    has no word of its own (a missing or rejected key, a quota, local transcription or speaker separation unavailable) shows `Failed`. Under the title, a row whose
    recording has a transcript on this device shows its first words on one secondary line (`core.previews`; phones and the desktop Details lists,
-   not the popover or tray ledgers; 2026-10-08).
+   not the popover or tray ledgers; 2026-10-08). In the desktop Details lists only the open row carries its reason, its diagnostic line and its
+   actions (`Download model`, `Retry` by the ledger's rule, `Check the key`, the Mac's `Open Drive storage` on a full Drive, and the red `Delete`
+   end-aligned) — the other rows are title, preview, time and badge only (2026-10-11).
    **Three things happening elsewhere** (2026-09-04, §3 "Recordings from other devices") are read **before** the job state mapping — none of the three is a job of this
    device, so they cannot be read from the queue: `RECEIVING` (being received from the watch = `receiving`; its `status = recording`, so
    left alone it would show as `REC`) · `UPLOADING` (another device is uploading = `remoteUploading`; the **same
@@ -2475,7 +2484,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
   your ChatGPT plan` / `Summarize recordings with the plan you already have. Recly charges nothing for it.` with `Continue with ChatGPT`
   (OpenAI's wording for the action, checked 2026-10-09). While the browser is open the button shows its processing state and a line
   `Finish signing in in your browser` has a quiet `Cancel`. Signed in: the account's email / `Using your ChatGPT plan` with a quiet
-  `Sign out` (no confirmation — signing in again restores it) and, under that line, the text link `Manage usage` (ChatGPT's usage
+  `Sign out` (no confirmation — signing in again restores it; when OpenAI did not confirm the revocation, a muted footnote under the
+  account row says so, on every shell — 2026-10-11) and, under that line, the text link `Manage usage` (ChatGPT's usage
   settings, principle 4), then a `Model` picker of the plan's models (hidden when the list could not be read). Ended by OpenAI: the email / `OpenAI ended this sign-in. Continue with ChatGPT
   to sign in again.` in the warning tone, with `Continue with ChatGPT`. Then, signed in or not (2026-10-10): `Summary format`, a dropdown of
   `General` · `One-on-one` · `Lecture` · `Interview` · `My format`, saved on choosing; only while it is My format, the `My format` field
@@ -2501,7 +2511,8 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
 - **Editing** (2026-10-09). More → `Edit summary`, right after `Summarize again`, only while a summary is there (disabled `Summarizing…`
   while one runs, absent while the transcript is being edited). It replaces the summary the way transcript editing replaces the
   transcript: the header `Edit summary`, one multi-line plain-text field with the whole summary, `Cancel` · `Save` at the end (`Save`
-  primary, `Done` alone while nothing changed; on phones under the text, above the keyboard), `Saving…` → ✓ → back to the summary. A
+  primary, `Done` alone while nothing changed; on phones under the text, above the keyboard — and while the keyboard is up the `Transcript` /
+  `Summary` chips step aside, 2026-10-11), `Saving…` → ✓ → back to the summary. A
   secondary line under the field says where it goes: `Saving updates the summary in your storage, and your other devices show it.`, or
   `Saving keeps the summary on this device.` for a local folder or a recording not uploaded yet. Leaving with changes — Back, closing,
   the `Transcript` chip — asks `Discard your changes?` / `Your edits to this summary will be lost.` (`Keep editing` · `Discard`). An
@@ -3043,7 +3054,7 @@ android/
 | W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, recordings waiting to transfer (`Sending` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04; in the status line without a count, §9 screen principle 7). The record screen fills the first screen, and Help sits below it, reached by touch or bezel scroll (2026-10-05). There are only two screens and no navigation library — the only journey on the watch is "record" |
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
 | W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
-| W5 | Entry points: tile (`launchAction`), complication (state), **a second launcher item "Recly Record"** (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
+| W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Record"** (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
 | W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, tick on transfer complete |
 | W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
 
@@ -3354,7 +3365,8 @@ that is not moved inside the callback is deleted. Sending the workflow summary t
 - **Transfer**: `WCSession.transferFile(url, metadata: [recordingId, part, track, sha256, file])` per part + the meta last.
   The `didFinish` callback can be missed, so **the phone's ack (`didReceiveUserInfo`)** is the completion criterion. Acked parts are deleted.
   Retry: unacked parts are resent when the app becomes active (the phone ignores duplicates by sha256).
-- **Entry points**: complication (state + tap to start), App Shortcut → Watch Ultra Action button, Double
+- **Entry points**: complication (state + tap to start; the square record glyph when idle, the red filled square and the elapsed time while
+  recording — the system's self-updating timer, so it reads `0:12`; 2026-10-11), App Shortcut → Watch Ultra Action button, Double
   Tap (`handGestureShortcut(.primaryAction)`) for stop.
 - No auth or network. (Receiving the workflow summary was retired 2026-09-24)
 
