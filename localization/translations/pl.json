@@ -216,7 +216,6 @@
   "Provider": "Dostawca",
   "Provider privacy information": "Informacje o prywatności u dostawcy",
   "Quit": "Zakończ",
-  "REC": "NAGR",
   "Reading from the local folder…": "Odczytywanie z folderu lokalnego…",
   "Receiving from the watch": "Odbieranie z zegarka",
   "Recly Record": "Recly Nagraj",
@@ -566,5 +565,6 @@
   "{0} waiting": "oczekujące: {0}",
   "{0} failed": "niepowodzenia: {0}",
   "Something went wrong at the provider.": "Po stronie dostawcy coś poszło nie tak.",
-  "Open data folder": "Otwórz folder danych"
+  "Open data folder": "Otwórz folder danych",
+  "Recording, {0}": "Nagrywanie, {0}"
 }

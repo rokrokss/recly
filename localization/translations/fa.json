@@ -216,7 +216,6 @@
   "Provider": "ارائه‌دهنده",
   "Provider privacy information": "اطلاعات حریم خصوصی ارائه‌دهنده",
   "Quit": "خروج",
-  "REC": "ضبط",
   "Reading from the local folder…": "در حال خواندن از پوشه محلی…",
   "Receiving from the watch": "در حال دریافت از ساعت",
   "Recly Record": "ضبط Recly",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} در انتظار",
   "{0} failed": "{0} ناموفق",
   "Something went wrong at the provider.": "در سمت ارائه‌دهنده مشکلی پیش آمد.",
-  "Open data folder": "باز کردن پوشهٔ داده"
+  "Open data folder": "باز کردن پوشهٔ داده",
+  "Recording, {0}": "در حال ضبط، {0}"
 }

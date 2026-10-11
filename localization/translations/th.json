@@ -216,7 +216,6 @@
   "Provider": "ผู้ให้บริการ",
   "Provider privacy information": "ข้อมูลความเป็นส่วนตัวของผู้ให้บริการ",
   "Quit": "ออก",
-  "REC": "บันทึก",
   "Reading from the local folder…": "กำลังอ่านจากโฟลเดอร์ในเครื่อง…",
   "Receiving from the watch": "กำลังรับจากนาฬิกา",
   "Recly Record": "Recly บันทึกเสียง",
@@ -566,5 +565,6 @@
   "{0} waiting": "รอ {0}",
   "{0} failed": "ล้มเหลว {0}",
   "Something went wrong at the provider.": "เกิดปัญหาที่ฝั่งผู้ให้บริการ",
-  "Open data folder": "เปิดโฟลเดอร์ข้อมูล"
+  "Open data folder": "เปิดโฟลเดอร์ข้อมูล",
+  "Recording, {0}": "กำลังบันทึก {0}"
 }

@@ -16,10 +16,10 @@
     <string name="tile_start">开始录音</string>
     <string name="quick_start_label">Recly录音</string>
     <string name="entry_ready">空闲</string>
-    <string name="complication_recording">录音</string>
     <string name="complication_pending">等待中</string>
     <string name="complication_sending">正在发送</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">正在录音，%1$s</string>
     <string name="info_open">帮助</string>
     <string name="info_back">关闭</string>
     <string name="info_shortcut_title">双击主屏幕键→录音</string>

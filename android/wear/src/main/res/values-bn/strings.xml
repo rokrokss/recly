@@ -16,10 +16,10 @@
     <string name="tile_start">রেকর্ডিং শুরু করুন</string>
     <string name="quick_start_label">Recly রেকর্ড</string>
     <string name="entry_ready">প্রস্তুত</string>
-    <string name="complication_recording">রেকর্ড</string>
     <string name="complication_pending">অপেক্ষায়</string>
     <string name="complication_sending">পাঠানো হচ্ছে</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">রেকর্ড হচ্ছে, %1$s</string>
     <string name="info_open">সাহায্য</string>
     <string name="info_back">বন্ধ করুন</string>
     <string name="info_shortcut_title">হোম বোতাম দুবার → রেকর্ড</string>

@@ -16,10 +16,10 @@
     <string name="tile_start">रिकॉर्डिंग शुरू करें</string>
     <string name="quick_start_label">Recly रिकॉर्ड</string>
     <string name="entry_ready">निष्क्रिय</string>
-    <string name="complication_recording">रिकॉर्ड</string>
     <string name="complication_pending">प्रतीक्षा में</string>
     <string name="complication_sending">भेजा जा रहा है</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">रिकॉर्ड हो रहा है, %1$s</string>
     <string name="info_open">मदद</string>
     <string name="info_back">बंद करें</string>
     <string name="info_shortcut_title">होम बटन दो बार → रिकॉर्डिंग</string>

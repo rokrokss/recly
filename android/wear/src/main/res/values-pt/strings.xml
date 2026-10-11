@@ -16,10 +16,10 @@
     <string name="tile_start">Iniciar gravação</string>
     <string name="quick_start_label">Recly Gravar</string>
     <string name="entry_ready">Inativo</string>
-    <string name="complication_recording">GRAV</string>
     <string name="complication_pending">Aguardando</string>
     <string name="complication_sending">Enviando</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Gravando, %1$s</string>
     <string name="info_open">Ajuda</string>
     <string name="info_back">Fechar</string>
     <string name="info_shortcut_title">Pressionar início duas vezes → gravar</string>

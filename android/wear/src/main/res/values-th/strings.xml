@@ -16,10 +16,10 @@
     <string name="tile_start">เริ่มบันทึกเสียง</string>
     <string name="quick_start_label">Recly บันทึกเสียง</string>
     <string name="entry_ready">พร้อม</string>
-    <string name="complication_recording">บันทึก</string>
     <string name="complication_pending">กำลังรอ</string>
     <string name="complication_sending">กำลังส่ง</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">กำลังบันทึก %1$s</string>
     <string name="info_open">ความช่วยเหลือ</string>
     <string name="info_back">ปิด</string>
     <string name="info_shortcut_title">กดปุ่มโฮมสองครั้ง → บันทึกเสียง</string>

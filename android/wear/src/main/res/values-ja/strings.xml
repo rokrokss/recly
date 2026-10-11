@@ -16,10 +16,10 @@
     <string name="tile_start">録音を開始</string>
     <string name="quick_start_label">Recly録音</string>
     <string name="entry_ready">待機中</string>
-    <string name="complication_recording">録音</string>
     <string name="complication_pending">待機中</string>
     <string name="complication_sending">送信中</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">録音中、%1$s</string>
     <string name="info_open">ヘルプ</string>
     <string name="info_back">閉じる</string>
     <string name="info_shortcut_title">ホームキーを2回押す→録音</string>

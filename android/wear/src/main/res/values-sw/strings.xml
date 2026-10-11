@@ -16,10 +16,10 @@
     <string name="tile_start">Anza kurekodi</string>
     <string name="quick_start_label">Recly Rekodi</string>
     <string name="entry_ready">Tayari</string>
-    <string name="complication_recording">REKODI</string>
     <string name="complication_pending">Inasubiri</string>
     <string name="complication_sending">Inatuma</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">Inarekodi, %1$s</string>
     <string name="info_open">Usaidizi</string>
     <string name="info_back">Funga</string>
     <string name="info_shortcut_title">Kitufe cha mwanzo mara mbili → rekodi</string>

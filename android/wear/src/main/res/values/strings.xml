@@ -25,7 +25,6 @@
     <!-- The second launcher entry (QuickStartActivity): what the double-press setting lists. -->
     <string name="quick_start_label">Recly Record</string>
     <string name="entry_ready">Idle</string>
-    <string name="complication_recording">REC</string>
     <string name="complication_pending">Waiting</string>
     <string name="complication_sending">Sending</string>
     <string name="complication_idle">Recly</string>

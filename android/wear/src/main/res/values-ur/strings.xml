@@ -16,10 +16,10 @@
     <string name="tile_start">ریکارڈنگ شروع کریں</string>
     <string name="quick_start_label">Recly ریکارڈ</string>
     <string name="entry_ready">تیار</string>
-    <string name="complication_recording">ریکارڈ</string>
     <string name="complication_pending">منتظر</string>
     <string name="complication_sending">بھیجا جا رہا ہے</string>
     <string name="complication_idle">Recly</string>
+    <string name="complication_recording_description">ریکارڈنگ جاری، %1$s</string>
     <string name="info_open">مدد</string>
     <string name="info_back">بند کریں</string>
     <string name="info_shortcut_title">ہوم بٹن دو بار ← ریکارڈ</string>

@@ -216,7 +216,6 @@
   "Provider": "Fornecedor",
   "Provider privacy information": "Informações de privacidade do fornecedor",
   "Quit": "Sair",
-  "REC": "GRAV",
   "Reading from the local folder…": "A ler da pasta local…",
   "Receiving from the watch": "A receber do relógio",
   "Recly Record": "Recly Gravar",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} em espera",
   "{0} failed": "{0} com falha",
   "Something went wrong at the provider.": "Algo correu mal no fornecedor.",
-  "Open data folder": "Abrir pasta de dados"
+  "Open data folder": "Abrir pasta de dados",
+  "Recording, {0}": "A gravar, {0}"
 }

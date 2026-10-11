@@ -216,7 +216,6 @@
   "Provider": "Provider",
   "Provider privacy information": "Impormasyon sa privacy ng provider",
   "Quit": "Umalis",
-  "REC": "REC",
   "Reading from the local folder…": "Binabasa ang lokal na folder…",
   "Receiving from the watch": "Tumatanggap mula sa relo",
   "Recly Record": "Recly Mag-record",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} naghihintay",
   "{0} failed": "{0} nabigo",
   "Something went wrong at the provider.": "May nangyaring mali sa provider.",
-  "Open data folder": "Buksan ang data folder"
+  "Open data folder": "Buksan ang data folder",
+  "Recording, {0}": "Nagre-record, {0}"
 }

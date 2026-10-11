@@ -178,7 +178,6 @@
   "How to turn it off": "如何关闭",
   "I turned off model training in my ElevenLabs account.": "我已在ElevenLabs账号中关闭模型训练。",
   "Quit": "退出",
-  "REC": "录音",
   "Receiving from the watch": "正在从手表接收",
   "Recly Record": "Recly录音",
   "Recly Settings": "Recly设置",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0}项等待",
   "{0} failed": "{0}项失败",
   "Something went wrong at the provider.": "服务提供方出现问题。",
-  "Open data folder": "打开数据文件夹"
+  "Open data folder": "打开数据文件夹",
+  "Recording, {0}": "正在录音，{0}"
 }

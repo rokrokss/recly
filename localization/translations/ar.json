@@ -178,7 +178,6 @@
   "How to turn it off": "كيفية إيقافه",
   "I turned off model training in my ElevenLabs account.": "أوقفتُ تدريب النماذج في حسابي على ElevenLabs.",
   "Quit": "خروج",
-  "REC": "تسجيل",
   "Receiving from the watch": "جارٍ الاستلام من الساعة",
   "Recly Record": "تسجيل Recly",
   "Recly Settings": "إعدادات Recly",
@@ -566,5 +565,6 @@
   "{0} waiting": "{0} منتظر",
   "{0} failed": "{0} فاشل",
   "Something went wrong at the provider.": "حدث خطأ لدى مزوّد الخدمة.",
-  "Open data folder": "فتح مجلد البيانات"
+  "Open data folder": "فتح مجلد البيانات",
+  "Recording, {0}": "جارٍ التسجيل، {0}"
 }
