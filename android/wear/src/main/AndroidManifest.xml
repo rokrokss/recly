@@ -87,6 +87,7 @@
         <service
             android:name=".entry.RecComplicationService"
             android:exported="true"
+            android:icon="@drawable/ic_complication_record"
             android:label="@string/app_name"
             android:permission="com.google.android.wearable.permission.BIND_COMPLICATION_PROVIDER">
             <intent-filter>
