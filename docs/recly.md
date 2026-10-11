@@ -2235,7 +2235,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
    `Retry` (**in the failure states `FAILED` · `NEEDS_AUTH` · `NEEDS_SPACE`, and in `RETRY`, which waits for backoff after a failure** (all four shells, 2026-09-04; excluding `TRANSCRIBING`, where the provider is transcribing — that is someone else's clock) **only**) · `Check the key` (`AUTH_REJECTED`) ·
    `Details` (opens the detail screen — on desktop, the window of the same name) · Delete (except while recording, importing or receiving from the watch;
    an upload, this device's or another's, offers it since 2026-10-08 — the core stops a running upload first, §3 "Retention · deletion"). On phones these
-   buttons are laid out in one flow from the row's title cell to the right edge, and `Delete` stands at the right end of the last line — if there is no room
+   buttons are laid out in one flow to the right edge — on Android from the row's title cell, on the iPhone from the row's leading gutter (2026-10-12: past
+   the time column, at 393–402 pt, a done row's three buttons did not fit one line) — and `Delete` stands at the right end of the last line — if there is no room
    for it, at the right end of the next line (2026-09-29, Android `ActionFlow` · Apple `ActionFlowLayout`). Previously `Delete` stood apart in its own cell under the status badge,
    and the other buttons wrapped by its width. An expanded row stays expanded only while the user stays on that screen: on phones, tapping the list
    tab again or going to another tab and back shows the initial list with every row collapsed (2026-10-01, both phones). Tapping the list

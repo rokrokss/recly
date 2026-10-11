@@ -1,9 +1,32 @@
 import SwiftUI
 
-/// docs/09 screen principle 2: the ledger's four columns, in the widths the mockup sets.
+/// docs/09 screen principle 2: the ledger's four columns, in the widths the mockup sets, and the gap between two of
+/// them — Android's `COLUMN_GAP`. The length column is measured instead ([LengthColumn]).
 private enum Column {
     static let time: CGFloat = 62
-    static let length: CGFloat = 44
+    static let gap: CGFloat = Space.s
+}
+
+/// The length column: as wide as the placeholder `--:--` in the ledger's mono at the type size in use — what
+/// any length under the hour takes, as Android measures its own — and wider where the content is, aligned to
+/// its trailing edge. A row past the hour (`01:02:33`) takes the room from its own title; a heading wider than
+/// the lengths (`Length`) takes it from the header's title column, so neither is cut and the rows keep it.
+private struct LengthColumn<Content: View>: View {
+    @Environment(\.blueprint) private var blueprint
+    private let content: Content
+
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Text(verbatim: LedgerFormat.noLength)
+                .font(blueprint.fonts.monoSmall)
+                .hidden()
+            content.fixedSize()
+        }
+    }
 }
 
 /// The status column: as wide as the widest badge the ledger can show, measured at the type size
@@ -121,10 +144,10 @@ public struct LedgerHeader: View {
 
     private var columns: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 10) {
+            HStack(spacing: Column.gap) {
                 heading(time).frame(width: Column.time, alignment: .leading)
                 heading(title).frame(maxWidth: .infinity, alignment: .leading)
-                heading(length).frame(width: Column.length, alignment: .trailing)
+                LengthColumn { heading(length) }
                 StatusColumn { heading(status) }
             }
             .padding(.horizontal, Space.m)
@@ -267,14 +290,10 @@ public struct LedgerRow<Trailing: View>: View {
 
     /// Four columns, as docs/09 screen principle 2 draws the ledger.
     private var columns: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Column.gap) {
             when.frame(width: Column.time, alignment: .leading)
             what.frame(maxWidth: .infinity, alignment: .leading)
-            // At least the column's width, and wider for a recording past the hour (`01:02:33`)
-            // rather than cut: the row's title gives way, and the right edges still line up.
-            howLong
-                .fixedSize()
-                .frame(minWidth: Column.length, alignment: .trailing)
+            LengthColumn { howLong }
             StatusColumn {
                 StatusBadge(status, wraps: true)
                     .background {

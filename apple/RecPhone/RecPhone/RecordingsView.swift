@@ -12,7 +12,6 @@ struct RecordingsView: View {
     /// Changes whenever the List tab is tapped: the ledger goes back to every row closed.
     var collapse = 0
     @Environment(\.blueprint) private var blueprint
-    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var expanded: String?
     /// docs/08 "Result files": the recording whose transcript is being read, as a page over the list —
     /// the ledger has no navigation stack to push onto (docs/09 screen principle 2).
@@ -261,9 +260,9 @@ struct RecordingsView: View {
             // what the chips elsewhere do.
             actions(item)
         }
-        // The row's own time column is what the detail is indented past; at an accessibility size
-        // that column is no longer where the eye is, and the width matters more than the alignment.
-        .padding(.leading, typeSize.isAccessibilitySize ? Space.m : 78)
+        // From the row's own leading gutter, not the title column (2026-10-12): past the time column the three
+        // buttons of a done row no longer fit one line at 393–402 pt, and Delete went to a line of its own.
+        .padding(.leading, Space.m)
         .padding(.trailing, Space.m)
         .padding(.top, 10)
         .padding(.bottom, 12)
