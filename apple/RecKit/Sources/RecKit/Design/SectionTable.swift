@@ -70,7 +70,9 @@ public struct ScreenHeader<Trailing: View>: View {
                     .lineLimit(lines)
                 if let meta {
                     Text(verbatim: meta)
-                        .font(blueprint.fonts.monoSmall)
+                        // 2026-10-11 (N3): a count line with words in it (`3 · 대기 1`) takes the sans
+                        // for Hangul, Kana and Han.
+                        .font(blueprint.fonts.mono(TypeSize.small, words: meta))
                         .foregroundStyle(blueprint.palette.textMuted)
                         #if os(iOS) || os(macOS)
                         .textSelection(.enabled)
@@ -139,16 +141,21 @@ public struct SectionRow<Trailing: View>: View {
     /// A small link under the subtitle — the web page the row's account is managed on — so it takes no
     /// row of its own (docs/09, 2026-10-09).
     private let link: TextLink?
+    /// 2026-10-11 (N8): the whole value behind a short [title] — a folder's path behind its name. Never
+    /// drawn: the pointer's tooltip and the title's accessibility value only.
+    private let titleDetail: String?
     private let trailing: Trailing
 
     public init(
         title: String, subtitle: String? = nil, subtitleColor: Color? = nil, link: TextLink? = nil,
+        titleDetail: String? = nil,
         @ViewBuilder trailing: () -> Trailing
     ) {
         self.title = title
         self.subtitle = subtitle
         self.subtitleColor = subtitleColor
         self.link = link
+        self.titleDetail = titleDetail
         self.trailing = trailing()
     }
 
@@ -156,9 +163,7 @@ public struct SectionRow<Trailing: View>: View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(verbatim: title)
-                        .font(blueprint.fonts.bodySmall)
-                        .foregroundStyle(blueprint.palette.text)
+                    titleText
                     if let subtitle {
                         Text(verbatim: subtitle)
                             .font(blueprint.fonts.sans(TypeSize.small))
@@ -175,6 +180,19 @@ public struct SectionRow<Trailing: View>: View {
             HairLine()
         }
         .background(blueprint.palette.surface)
+    }
+
+    @ViewBuilder private var titleText: some View {
+        let text = Text(verbatim: title)
+            .font(blueprint.fonts.bodySmall)
+            .foregroundStyle(blueprint.palette.text)
+        if let titleDetail {
+            text
+                .help(titleDetail)
+                .accessibilityValue(Text(verbatim: titleDetail))
+        } else {
+            text
+        }
     }
 }
 
@@ -355,7 +373,8 @@ public struct Banner: View {
     }
 
     public var body: some View {
-        Text(verbatim: text)
+        // 2026-10-11 (N2): a word wider than the line breaks at a hyphen, never between two letters.
+        WrappingText(text)
             .font(blueprint.fonts.sans(TypeSize.bodySmall))
             .foregroundStyle(tone.ink(blueprint.palette))
             .frame(maxWidth: .infinity, alignment: .leading)

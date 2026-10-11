@@ -24,7 +24,7 @@ public struct AlertBanner: View {
                 ForEach(alerts) { alert in
                     if alert.reason == .needsAuth {
                         HStack(spacing: Space.s) {
-                            Text(verbatim: RecKitStrings.localized("alert.uploadsWaiting", String(alert.count)))
+                            WrappingText(RecKitStrings.localized("alert.uploadsWaiting", String(alert.count)))
                                 .font(blueprint.fonts.bodySmall)
                                 .foregroundStyle(blueprint.palette.textMuted)
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -73,6 +73,10 @@ private struct ModelWaitLine: View {
 /// One reason: what it is, how many recordings are behind it, the code, and the fix. The line is
 /// red for a failure and the badge's warning tone for a job that is only waiting (docs/09
 /// "Every state is color + text": red means failed).
+///
+/// 2026-10-11 (N5): on the phone the fix sits under its sentence, so the sentence keeps the row's width
+/// beside its badge rather than a column of single words; the Mac's popover has the width for the
+/// three side by side.
 private struct AlertLine<Action: View>: View {
     @Environment(\.blueprint) private var blueprint
     let alert: JobAlert
@@ -81,39 +85,58 @@ private struct AlertLine<Action: View>: View {
     @ViewBuilder let action: () -> Action
 
     var body: some View {
-        HStack(spacing: Space.s) {
-            Button { fix(alert) } label: {
-                HStack(spacing: Space.s) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(verbatim: line)
-                            .font(blueprint.fonts.bodySmall)
-                            .foregroundStyle(alert.reason.isWait ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.danger)
-                        Text(verbatim: alert.waiting)
-                            .font(blueprint.fonts.sans(TypeSize.small))
-                            .foregroundStyle(blueprint.palette.textMuted)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    // 2026-10-10 (A-A25): a badge that says Failed is in the failure's red, as its line is.
-                    StatusBadge(LedgerStatus(code: alert.reason.code, tone: alert.reason.isWait ? .warning : .danger))
-                }
+        #if os(iOS)
+        VStack(alignment: .leading, spacing: 0) {
+            reason
+            fixButton
                 .padding(.leading, Space.m)
-                .padding(.vertical, Space.s)
-                .frame(minHeight: minTouch)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and
-            // a code read out as three separate things (the same rule as `LedgerRow`).
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: "\(line) \(alert.waiting)"))
-            .accessibilityAddTraits(.isButton)
-            // docs/10: "A tap goes to the screen that can fix it". The row goes there when it is
-            // pressed, but only the button says *where* — a line that is tappable
-            // without saying what the tap opens is a fix the user has to guess at, and
-            // the Windows banner has named its surface all along.
-            action()
-                .accessibilityIdentifier("alert-fix")
+                .padding(.bottom, Space.s)
         }
         .padding(.trailing, Space.m)
+        #else
+        HStack(spacing: Space.s) {
+            reason
+            fixButton
+        }
+        .padding(.trailing, Space.m)
+        #endif
+    }
+
+    private var reason: some View {
+        Button { fix(alert) } label: {
+            HStack(spacing: Space.s) {
+                VStack(alignment: .leading, spacing: 2) {
+                    // 2026-10-11 (N2): a word wider than the line breaks at a hyphen.
+                    WrappingText(line)
+                        .font(blueprint.fonts.bodySmall)
+                        .foregroundStyle(alert.reason.isWait ? BadgeTone.warning.ink(blueprint.palette) : blueprint.palette.danger)
+                    WrappingText(alert.waiting)
+                        .font(blueprint.fonts.sans(TypeSize.small))
+                        .foregroundStyle(blueprint.palette.textMuted)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                // 2026-10-10 (A-A25): a badge that says Failed is in the failure's red, as its line is.
+                StatusBadge(LedgerStatus(code: alert.reason.code, tone: alert.reason.isWait ? .warning : .danger))
+            }
+            .padding(.leading, Space.m)
+            .padding(.vertical, Space.s)
+            .frame(minHeight: minTouch)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        // docs/09 "Accessibility": one node with a sentence in it, not a reason, a count and
+        // a code read out as three separate things (the same rule as `LedgerRow`).
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(line) \(alert.waiting)"))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    /// docs/10: "A tap goes to the screen that can fix it". The row goes there when it is
+    /// pressed, but only the button says *where* — a line that is tappable
+    /// without saying what the tap opens is a fix the user has to guess at, and
+    /// the Windows banner has named its surface all along.
+    private var fixButton: some View {
+        action()
+            .accessibilityIdentifier("alert-fix")
     }
 }

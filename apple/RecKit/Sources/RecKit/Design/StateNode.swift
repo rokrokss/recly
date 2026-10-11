@@ -29,7 +29,7 @@ public struct NodeSpec: Identifiable, Equatable, Sendable {
     }
 }
 
-/// A square node with a label and a monospace value.
+/// A square node with a label and a monospace value (the sans for Hangul, Kana and Han).
 public struct StateNode: View {
     @Environment(\.blueprint) private var blueprint
     private let spec: NodeSpec
@@ -40,7 +40,8 @@ public struct StateNode: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
-            Text(verbatim: spec.label)
+            // 2026-10-11 (N2): a word wider than the node breaks at a hyphen, never between two letters.
+            WrappingText(spec.label)
                 .font(blueprint.fonts.label)
                 .tracking(0.6)
                 .foregroundStyle(blueprint.palette.textMuted)
@@ -48,8 +49,9 @@ public struct StateNode: View {
                 if spec.busy {
                     BlueprintLoader(color: spec.valueColor ?? blueprint.palette.text)
                 }
-                Text(verbatim: spec.value)
-                    .font(blueprint.fonts.monoBodySmall)
+                WrappingText(spec.value)
+                    // 2026-10-11 (N3): Hangul, Kana and Han in the sans.
+                    .font(blueprint.fonts.mono(TypeSize.bodySmall, words: spec.value))
                     .foregroundStyle(spec.valueColor ?? blueprint.palette.text)
             }
         }

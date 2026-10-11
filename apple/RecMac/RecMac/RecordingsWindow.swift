@@ -19,6 +19,9 @@ struct RecordingsWindow: View {
     /// Files are being dragged over the list.
     @State private var dropping = false
     @FocusState private var searchFocused: Bool
+    /// Where each row's badge starts inside its status column, so the open row's Delete ends where its
+    /// badge ends (the popover's `statusTrailingInsets`).
+    @State private var statusTrailingInsets: [String: CGFloat] = [:]
 
     var body: some View {
         HSplitView {
@@ -187,13 +190,13 @@ struct RecordingsWindow: View {
     /// element with the whole sentence in it, and a real button rather than a tap gesture, so it is
     /// announced as something you can press and can be reached from the keyboard.
     ///
-    /// What the row cannot hold goes beside or under it, outside the button, because a button with
-    /// buttons inside it is one target that swallows the others: the delete as a chip beside the
-    /// state, on the state's own line and at the state's own size, and the reason a job is stuck —
-    /// with the two things to do about it — underneath.
+    /// 2026-10-11 (N1): a row is the recording and nothing else — time, title, length, state. What can be
+    /// done about a recording goes under the one that is open beside the list, outside the row's button
+    /// (a button with buttons inside it is one target that swallows the others): see [actions].
     @ViewBuilder
     private func row(_ item: RecentItem) -> some View {
         let length = LedgerFormat.length(item.durationSec)
+        let opened = menu.detail?.recordingId == item.id
         LedgerRow(
             date: LedgerFormat.date(item.startedAt),
             time: LedgerFormat.time(item.startedAt),
@@ -210,55 +213,84 @@ struct RecordingsWindow: View {
                 state: item.stateLabel
             ),
             // 2026-10-10 (A-A9): the row whose recording is open beside the list says so.
-            opened: menu.detail?.recordingId == item.id,
+            opened: opened,
             action: { menu.showDetail(item) }
-        ) {
-            // docs/03: a recording being written to, imported, or arriving from the watch is not one
-            // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
-            if item.canDelete {
-                BadgeButton(loc("Delete"), tone: .danger) {
-                    menu.confirmDelete(item, from: .recordingsWindow)
-                }
-                    .accessibilityIdentifier("delete")
-            }
-        }
+        )
         .accessibilityIdentifier("open-detail")
-        // docs/08 "Errors": what to do about it, and — for a key — where to do it. docs/07 §5:
-        // `lastError` is a core message key, and a row an older build wrote is prose that
-        // `CoreMessages` shows as it stands.
-        let fixes = item.needsKey || item.alert == .needsSpace || item.waitingForModel
-        if (item.alert != .needsAuth && item.reason != nil) || fixes {
-            VStack(alignment: .leading, spacing: Space.xs) {
-                // Red for a failure, the badge's warning tone for a job that is only waiting.
-                RowReason(item: item, download: menu.modelDownload, showsDetail: false)
-                if fixes {
-                    FlowLayout {
-                        // docs/05 "Fixed processing settings": the model this recording waits for, first.
-                        if item.waitingForModel, let download = menu.modelDownload {
-                            ModelDownloadButton(download: download, language: item.localLanguage)
-                                .accessibilityIdentifier("download-model")
+        .onPreferenceChange(LedgerStatusTrailingInset.self) { statusTrailingInsets[item.id] = $0 }
+        if opened, hasActions(item) {
+            actions(item)
+        }
+    }
+
+    /// Whether the open row has anything to say or offer under it.
+    private func hasActions(_ item: RecentItem) -> Bool {
+        (item.alert != .needsAuth && item.reason != nil) || item.canDelete || item.canRetry
+            || item.needsKey || item.alert == .needsSpace || item.waitingForModel
+    }
+
+    /// 2026-10-11 (N1): under the open row only, on its tint and behind its accent bar — the popover's
+    /// expanded row, less what the detail beside it already offers (Open, Open in Drive, Show in Finder):
+    /// why the job is stuck, the things to do about it, Retry for a job that has stopped, and the red
+    /// Delete at the end, its edge on the badge's. The other rows carry no buttons at all.
+    private func actions(_ item: RecentItem) -> some View {
+        VStack(alignment: .leading, spacing: Space.s) {
+            // docs/08 "Errors": what to do about it, and — for a key — where to do it. docs/07 §5:
+            // `lastError` is a core message key, and a row an older build wrote is prose that
+            // `CoreMessages` shows as it stands. Red for a failure, the badge's warning tone for a job
+            // that is only waiting; the diagnostic under it, as the popover and Windows' Details list
+            // show it.
+            if item.alert != .needsAuth, item.reason != nil {
+                RowReason(item: item, download: menu.modelDownload)
+            }
+            HStack(alignment: .top, spacing: Space.s) {
+                FlowLayout {
+                    // docs/05 "Fixed processing settings": the model this recording waits for, first.
+                    if item.waitingForModel, let download = menu.modelDownload {
+                        ModelDownloadButton(download: download, language: item.localLanguage)
+                            .accessibilityIdentifier("download-model")
+                    }
+                    // docs/10: a retry is for a job that has stopped. One that is waiting out a backoff
+                    // comes back on its own `next_run_at`, and asking now is all the row can add.
+                    if item.canRetry {
+                        ProcessingButton(loc("Retry"), state: menu.action) { menu.retry(item) }
+                    }
+                    if item.needsKey {
+                        BlueprintButton(RecordingDetailStrings.checkKey) {
+                            // The settings are a window of their own (`LSUIElement`), and it
+                            // may not be open.
+                            openWindow(id: "processing-settings")
                         }
-                        if item.needsKey {
-                            BlueprintButton(RecordingDetailStrings.checkKey) {
-                                // The settings are a window of their own (`LSUIElement`), and it
-                                // may not be open.
-                                openWindow(id: "processing-settings")
-                            }
-                            .accessibilityIdentifier("check-key")
+                        .accessibilityIdentifier("check-key")
+                    }
+                    if item.alert == .needsSpace {
+                        BlueprintButton(loc("Open Drive storage")) {
+                            menu.openDriveStorage()
                         }
-                        if item.alert == .needsSpace {
-                            BlueprintButton(loc("Open Drive storage")) {
-                                menu.openDriveStorage()
-                            }
-                            .accessibilityIdentifier("open-storage")
-                        }
+                        .accessibilityIdentifier("open-storage")
                     }
                 }
+                Spacer(minLength: 0)
+                // docs/03: a recording being written to, imported, or arriving from the watch is not one
+                // to delete ([RecentItem.canDelete]). An upload is: the core stops it first.
+                if item.canDelete {
+                    BlueprintButton(loc("Delete"), tone: .danger) {
+                        menu.confirmDelete(item, from: .recordingsWindow)
+                    }
+                    .accessibilityIdentifier("delete")
+                    .fixedSize(horizontal: true, vertical: false)
+                    .padding(.trailing, statusTrailingInsets[item.id] ?? 0)
+                }
             }
-            .padding(.horizontal, Space.m)
-            .padding(.bottom, Space.s)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(blueprint.palette.surface)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        // Under the title column (16 + the 62pt time column), as the popover's expanded row is.
+        .padding(.leading, 78)
+        .padding(.trailing, Space.m)
+        .padding(.vertical, 10)
+        .background(blueprint.palette.background)
+        .overlay(alignment: .leading) {
+            Rectangle().fill(blueprint.palette.accent).frame(width: 2)
         }
     }
 }

@@ -23,7 +23,8 @@ public final class StorageChoice: ObservableObject {
     @Published public private(set) var selected: StorageKind = .drive
     @Published public private(set) var icloud: ICloud = .unavailable
     @Published public private(set) var folder: Folder = .notChosen
-    /// The picked folder's absolute path, which its row names; nil while none is picked.
+    /// The picked folder's absolute path on the Mac (the row names it by its last component) and its name
+    /// on the iPhone; nil while none is picked.
     @Published public private(set) var folderPath: String?
     @Published public private(set) var busy = false
     @Published public private(set) var message: UiMessage?
@@ -243,14 +244,34 @@ public struct StorageSection: View {
             SectionRow(title: loc("No folder chosen")) { pickButton(loc("Choose folder")) }
                 .accessibilityIdentifier("folder-status")
         case .available:
-            SectionRow(title: choice.folderPath ?? "") { pickButton(loc("Change folder")) }
+            SectionRow(title: folderName, titleDetail: folderDetail) { pickButton(loc("Change folder")) }
                 .accessibilityIdentifier("folder-status")
         case .unavailable:
-            SectionRow(title: choice.folderPath ?? "", subtitle: loc("This folder cannot be reached. Choose it again.")) {
+            SectionRow(title: folderName, subtitle: loc("This folder cannot be reached. Choose it again."), titleDetail: folderDetail) {
                 pickButton(loc("Choose folder"))
             }
             .accessibilityIdentifier("folder-status")
         }
+    }
+
+    /// 2026-10-11 (N8): the folder is named by its name, as Finder and the iPhone's Files name it — the
+    /// path is a technical value, and on the Mac it is the row's tooltip and accessibility value only.
+    private var folderName: String {
+        guard let path = choice.folderPath else { return "" }
+        #if os(macOS)
+        return FileManager.default.displayName(atPath: path)
+        #else
+        // The iPhone's row already holds the picked folder's name (`PickedFolder.name`).
+        return path
+        #endif
+    }
+
+    private var folderDetail: String? {
+        #if os(macOS)
+        choice.folderPath
+        #else
+        nil
+        #endif
     }
 
     private func loc(_ key: String) -> String { RecKitStrings.localized(key) }
