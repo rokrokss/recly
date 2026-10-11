@@ -83,7 +83,6 @@ import app.recly.android.ui.component.ActionFlow
 import app.recly.android.ui.component.LedgerHeader
 import app.recly.android.ui.component.LedgerRow
 import app.recly.android.ui.component.LedgerStatus
-import app.recly.android.ui.component.LedgerTitleInset
 import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
@@ -362,9 +361,9 @@ private fun ExpandedRow(
             .fillMaxWidth()
             .bringIntoViewRequester(reveal)
             .background(palette.background)
-            // Indented to the ledger's own title column, so the expansion sits under the recording
-            // it belongs to rather than under a number somebody picked.
-            .padding(start = LedgerTitleInset, end = Space.m, top = Space.s, bottom = 12.dp),
+            // From the row's own leading gutter, as on the iPhone (2026-10-12): past the time column a done
+            // row's three buttons do not always fit one line, and Delete went to a line of its own.
+            .padding(start = Space.m, end = Space.m, top = Space.s, bottom = 12.dp),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
