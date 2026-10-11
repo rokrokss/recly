@@ -123,4 +123,14 @@ class LanguageSettingTest {
             assertEquals(AppLanguage.SYSTEM, AppLanguage.of(it), "tag '$it'")
         }
     }
+
+    /** N9: whatever changed the app's language, the core hears the activity's locale in this form. */
+    @Test
+    fun `the core is told the locale's tag, and Chinese by its script`() {
+        assertEquals("ko-KR", coreLocaleTag(Locale.KOREA))
+        assertEquals("de", coreLocaleTag(Locale.GERMAN))
+        assertEquals("pt-BR", coreLocaleTag(Locale.forLanguageTag("pt-BR")))
+        assertEquals("zh-Hant", coreLocaleTag(Locale.TAIWAN))
+        assertEquals("zh-Hans", coreLocaleTag(Locale.forLanguageTag("zh-Hans-CN")))
+    }
 }

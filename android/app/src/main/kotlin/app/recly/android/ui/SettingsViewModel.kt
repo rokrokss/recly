@@ -38,8 +38,10 @@ data class SettingsUiState(
     val theme: AppTheme = AppTheme.SYSTEM,
     /** docs/03 "Storage location": where new recordings go from this phone. */
     val storage: StorageKind = StorageKind.DRIVE,
-    /** The picked local folder as its row names it; null while none is picked. */
+    /** The picked local folder as its row names it — the folder's own name; null while none is picked. */
     val folder: String? = null,
+    /** Where that folder is (`Documents/Notes`), which the row gives TalkBack rather than the eye (N8). */
+    val folderPath: String? = null,
     /** Whether the picked folder can be used now — picked, its grant held, and still there. */
     val folderReachable: Boolean = false,
     /** A storage switch is being saved; the chips wait for it. */
@@ -88,12 +90,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     /**
      * docs/07 rule 3: the platform recreates the activities on this, so the screens redraw in the
      * new language without a restart. What it does not recreate — the recording notification, the
-     * home widget — [AppSurfaces] asks for. Nothing is written here; the store is the platform's.
+     * home widget — [AppSurfaces] asks for; the core hears of it from the recreated activity
+     * (`MainActivity.onCreate`). Nothing is written here; the store is the platform's.
      */
     fun setLanguage(value: AppLanguage) {
         language.select(value)
-        // The core is not recreated with the activities: its summaries and Ask presets are told the language here.
-        viewModelScope.launch { CoreModule.get(getApplication()).core.summaries.setLocale(value.tag) }
     }
 
     /**
@@ -156,7 +157,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         val storage = graph.core.processingSettings.storage()
         val folder = graph.folder.label()
         val reachable = graph.folder.available()
-        _state.update { it.copy(storage = storage, folder = folder, folderReachable = reachable) }
+        _state.update { it.copy(storage = storage, folder = folder?.name, folderPath = folder?.path, folderReachable = reachable) }
     }
 
     private fun storageFailed(reason: String) {

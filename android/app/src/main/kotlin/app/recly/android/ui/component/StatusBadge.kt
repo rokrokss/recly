@@ -13,6 +13,7 @@ import androidx.compose.ui.res.stringResource
 import app.recly.android.R
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -21,6 +22,7 @@ import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import app.recly.android.ui.theme.monoWords
 
 /**
  * docs/09 screen principle 2: state is never colour alone. The tone picks the colour, the word is the text,
@@ -52,11 +54,12 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
         if (status.busy) BlueprintLoader(status.tone.ink())
         // UX decisions of 2026-10-08: a word wider than the column ([statusColumnWidth]'s cap) takes a
         // second line inside its badge, centred and never ellipsized — between words, and inside one
-        // only when that one word alone is wider than the column. Phrase breaking keeps a Korean word
-        // whole, where the default would break between any two syllables.
+        // only when that one word alone is wider than the column, and then at a hyphen in the language's
+        // own places (N2, 2026-10-11). Phrase breaking keeps a Korean word whole, where the default would
+        // break between any two syllables; the Korean word itself is in the sans ([monoWords]).
         Text(
-            text = badgeLabel(status.code),
-            style = mono.small.copy(lineBreak = BADGE_LINE_BREAK),
+            text = monoWords(badgeLabel(status.code)),
+            style = mono.small.copy(lineBreak = BADGE_LINE_BREAK, hyphens = Hyphens.Auto),
             color = status.tone.ink(),
             textAlign = TextAlign.Center,
         )
@@ -66,7 +69,7 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
 /** What the badge puts between its border and its letters, on each side. */
 private val BADGE_PAD = Space.s
 
-/** Lines break between words — Korean ones too — and inside a word only when nothing else fits. */
+/** Lines break between words — Korean ones too — and inside a word only when nothing else fits (at a hyphen, N2). */
 private val BADGE_LINE_BREAK = LineBreak(
     strategy = LineBreak.Strategy.Simple,
     strictness = LineBreak.Strictness.Normal,
@@ -89,7 +92,7 @@ private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
 @Composable
 fun statusColumnWidth(codes: List<String>): Dp = statusColumn(
     // A dp of slack on both: a word measured to the pixel must not wrap on the pixel the layout rounds away.
-    widest = textColumnWidth(codes.map { badgeLabel(it) }, mono.small, padding = 1.dp),
+    widest = textColumnWidth(codes.map { monoWords(badgeLabel(it)) }, mono.small, padding = 1.dp),
     line = blueprint.line,
     cap = textColumnWidth(listOf(STATUS_CAP_SAMPLE), mono.small, padding = 1.dp),
 )

@@ -117,8 +117,8 @@ class SafFolder(
         }
     }
 
-    /** What the settings row calls the picked folder, or null while none is picked ([folderLabel]). */
-    suspend fun label(): String? = withContext(io) {
+    /** What the settings row calls the picked folder, or null while none is picked ([pickedFolderLabel]). */
+    suspend fun label(): PickedFolderLabel? = withContext(io) {
         val tree = tree() ?: return@withContext null
         val id = DocumentsContract.getTreeDocumentId(tree)
         val name = try {
@@ -126,7 +126,7 @@ class SafFolder(
         } catch (e: Exception) {
             null
         }
-        folderLabel(tree.authority, id, name)
+        pickedFolderLabel(tree.authority, id, name)
     }
 
     private suspend fun tree(): Uri? = settings.localFolder.first()?.let(Uri::parse)
@@ -247,6 +247,19 @@ internal fun folderLabel(authority: String?, treeDocumentId: String, displayName
         if (path.isNotEmpty()) return path
     }
     return displayName?.takeIf { it.isNotBlank() } ?: treeDocumentId
+}
+
+/** The picked folder as the settings row shows it: its [name], and the [path] it is at ([folderLabel]). */
+data class PickedFolderLabel(val name: String, val path: String)
+
+/**
+ * N8 (UX decisions of 2026-10-11, "no technical values"): the row names the folder as the system's picker
+ * showed it — its own name — and keeps the path for TalkBack, which is where telling two `Notes` apart is
+ * worth the words.
+ */
+internal fun pickedFolderLabel(authority: String?, treeDocumentId: String, displayName: String?): PickedFolderLabel {
+    val path = folderLabel(authority, treeDocumentId, displayName)
+    return PickedFolderLabel(name = displayName?.takeIf { it.isNotBlank() } ?: path.substringAfterLast('/'), path = path)
 }
 
 /** The system's own provider for the device's storage and SD cards (`ExternalStorageProvider`). */

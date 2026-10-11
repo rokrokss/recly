@@ -82,6 +82,14 @@ enum class AppLanguage(val tag: String) {
 }
 
 /**
+ * The tag the core is told the app's language by — at its start and whenever the activity comes back in
+ * another one: the locale's own, except Chinese, which goes by its script (`zh-Hans`, `zh-Hant`) as the
+ * app's choices do.
+ */
+fun coreLocaleTag(locale: Locale): String =
+    if (locale.language == "zh") AppLanguage.effective(locale).tag else locale.toLanguageTag()
+
+/**
  * Where the choice lives. Behind an interface because the platform service is not something the JVM
  * test can drive, and because the persistence is not ours: the system stores the per-app locale,
  * which is what makes the choice survive a restart and appear in the system's own per-app language

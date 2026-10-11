@@ -24,6 +24,15 @@ class FolderLabelTest {
     }
 
     @Test
+    fun `the row shows the folder's own name and keeps the path for TalkBack`() {
+        assertEquals(PickedFolderLabel("Notes", "Documents/Notes"), pickedFolderLabel(EXTERNAL_STORAGE_AUTHORITY, "primary:Documents/Notes", "Notes"))
+        // No name from the provider: the path's last folder is still the folder's name.
+        assertEquals(PickedFolderLabel("Recly", "Music/Recly"), pickedFolderLabel(EXTERNAL_STORAGE_AUTHORITY, "1A2B-3C4D:Music/Recly", null))
+        assertEquals(PickedFolderLabel("Pixel 9", "Pixel 9"), pickedFolderLabel(EXTERNAL_STORAGE_AUTHORITY, "primary:", "Pixel 9"))
+        assertEquals(PickedFolderLabel("Notes", "Notes"), pickedFolderLabel("com.example.provider", "acc=1;doc=8f3a", "Notes"))
+    }
+
+    @Test
     fun `a core path is its folder names in order`() {
         assertEquals(emptyList(), folderSegments(""))
         assertEquals(listOf("recly", "memo", "2026-10-03_0900"), folderSegments("recly/memo/2026-10-03_0900"))

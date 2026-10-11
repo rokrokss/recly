@@ -8,29 +8,38 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.TextMeasurer
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
+import app.recly.android.ui.theme.monoWords
 
 /** One node of the recording dashboard: a label and the value under it (docs/09 screen principle 1). */
 data class NodeSpec(
@@ -48,9 +57,12 @@ data class NodeSpec(
     val onClickLabel: String? = null,
 )
 
-/** A square node with a label and a monospace value. */
+/**
+ * A square node with a label and a monospace value. [valueStyle] is the value's size as [fitValue] chose it
+ * for the room the node has.
+ */
 @Composable
-fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
+fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier, valueStyle: TextStyle = mono.bodySmall) {
     val palette = blueprint
     Column(
         modifier = modifier
@@ -80,11 +92,13 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             .padding(Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.xs),
     ) {
+        // N2 (UX decisions of 2026-10-11): a label wider than the node ("Transkription" at a large font)
+        // takes a second line, broken at a hyphen, rather than being cut to `Transkri…`.
         Text(
             spec.label,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelSmall.copy(hyphens = Hyphens.Auto),
             color = palette.textMuted,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
         Row(
@@ -92,49 +106,79 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (spec.busy) BlueprintLoader(spec.valueColor ?: palette.text)
-            val value = mono.bodySmall
-            // RecKit's `minimumScaleFactor(0.7)`, which is what a node this narrow needs: a third of
-            // a 360dp row, less the loader, is not nine characters of `UPLOADING` at full size, and
-            // a state code truncated to `UPLOAD…` is the one thing docs/09 screen principle 1 keeps when it
-            // takes everything else away. Smaller, then, rather than shorter.
-            BasicText(
-                spec.value,
-                style = value.copy(color = spec.valueColor ?: palette.text),
-                maxLines = 1,
+            Text(
+                monoWords(spec.value),
+                style = valueStyle,
+                color = spec.valueColor ?: palette.text,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = value.fontSize * MIN_SCALE,
-                    maxFontSize = value.fontSize,
-                    stepSize = 1.sp,
-                ),
             )
         }
     }
 }
 
-/** How far a value may shrink to stay whole — the Mac's own floor. */
+/**
+ * The value's size for [width] px of node. RecKit's `minimumScaleFactor(0.7)` first, which is what a node
+ * this narrow needs: a third of a 360dp row, less the loader, is not nine characters of `UPLOADING` at full
+ * size, and a state truncated to `UPLOAD…` is the one thing docs/09 screen principle 1 keeps when it takes
+ * everything else away — smaller, then, rather than shorter. A value too wide for one line even at that
+ * floor (`Wird hochgeladen` on a 360dp phone) takes two, at the largest size two hold, broken between words
+ * or at a hyphen (N2, UX decisions of 2026-10-11). Null when not even two lines hold it: the row then stacks
+ * its nodes, as it does at the largest font sizes. Sized here rather than by `autoSize`, so the row can ask
+ * each node its height and give all three the tallest.
+ */
+internal fun fitValue(measurer: TextMeasurer, text: AnnotatedString, style: TextStyle, width: Int): TextStyle? {
+    val max = style.fontSize.value
+    val sizes = generateSequence(max) { it - 1f }.takeWhile { it >= max * MIN_SCALE }.map { style.copy(fontSize = it.sp) }.toList()
+    fun fits(candidate: TextStyle, lines: Int) = !measurer.measure(
+        text, candidate, maxLines = lines, constraints = Constraints(maxWidth = width.coerceAtLeast(0)),
+    ).hasVisualOverflow
+    return sizes.firstOrNull { fits(it, 1) } ?: sizes.firstOrNull { fits(it, 2) }
+}
+
+/** How far a value may shrink to stay on one line — the Mac's own floor. */
 private const val MIN_SCALE = 0.7f
 
-/** The three dashboard nodes, joined edge to edge by straight 20dp connectors. */
+/**
+ * The three dashboard nodes, joined edge to edge by straight 20dp connectors. A node whose words took a
+ * second line makes the row taller, and all three with it: they stay one height. Where a value would not
+ * fit a third of the row even in two lines, the nodes stack, each the full width.
+ */
 @Composable
 fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
     val palette = blueprint
+    val measurer = rememberTextMeasurer()
+    val value = mono.bodySmall.copy(hyphens = Hyphens.Auto)
     BoxWithConstraints(modifier) {
-        if (LocalDensity.current.fontScale > 1.3f || maxWidth < 300.dp) {
+        val density = LocalDensity.current
+        val narrow = density.fontScale > 1.3f || maxWidth < 300.dp
+        // Each value's size in a node of [share]: its padding and border on each side, and the loader while it works, off.
+        fun fit(share: Dp): List<TextStyle?> = nodes.map { spec ->
+            val room = share - (Space.s + palette.line) * 2 - if (spec.busy) LOADER + Space.xs else 0.dp
+            fitValue(measurer, monoWords(spec.value), value, with(density) { room.roundToPx() })
+        }
+        val (stacked, styles) = remember(nodes.map { it.value to it.busy }, maxWidth, value, density, narrow) {
+            val row = if (narrow) null else fit((maxWidth - CONNECTOR * (nodes.size - 1)) / nodes.size)
+            if (row != null && row.none { it == null }) false to row else true to fit(maxWidth)
+        }
+        if (stacked) {
             Column(verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                nodes.forEach { StateNode(it, Modifier.fillMaxWidth()) }
+                nodes.forEachIndexed { index, spec -> StateNode(spec, Modifier.fillMaxWidth(), styles[index] ?: value) }
             }
         } else {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.height(IntrinsicSize.Max), verticalAlignment = Alignment.CenterVertically) {
                 nodes.forEachIndexed { index, spec ->
-                    StateNode(spec, Modifier.weight(1f))
-                    if (index != nodes.lastIndex) Box(Modifier.width(20.dp).height(palette.line)
+                    StateNode(spec, Modifier.weight(1f).fillMaxHeight(), styles[index] ?: value)
+                    if (index != nodes.lastIndex) Box(Modifier.width(CONNECTOR).height(palette.line)
                         .background(palette.text).clearAndSetSemantics {})
                 }
             }
         }
     }
 }
+
+/** The straight line between two nodes. */
+private val CONNECTOR = 20.dp
 
 /** docs/09 "Typography": the timer is the one piece of data big enough to be the screen. */
 @Composable

@@ -188,9 +188,13 @@ internal data class SummaryDraft(val original: String, val text: String) {
     }
 }
 
-/** Transcript | Summary, once there is a summary or the user has just asked for one — never while editing. */
-internal fun showsSummaryChips(summary: SummaryState, asked: Boolean, editing: Boolean): Boolean =
-    !editing && (asked || summary !is SummaryState.None)
+/**
+ * Transcript | Summary, once there is a summary or the user has just asked for one — never while editing the
+ * transcript, nor while the summary editor has the keyboard up ([typing], N6): the text keeps that room, and
+ * the chips are back when the keyboard goes.
+ */
+internal fun showsSummaryChips(summary: SummaryState, asked: Boolean, editing: Boolean, typing: Boolean = false): Boolean =
+    !editing && !typing && (asked || summary !is SummaryState.None)
 
 /** The reasons whose own sentence is the whole notice: each says what to do. */
 private val SPOKEN = setOf(
