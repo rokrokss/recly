@@ -1,0 +1,137 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<!--
+  The README's and recly.dev's iPhone promo images, 540×1173 with rounded corners. ?lang=en|ko&shot=1..4.
+  The screens are real captures of the iPhone and Apple Watch apps on throwaway simulators holding demo
+  recordings (build/app-store-assets/captures/<lang>/, README.md), framed like the Play set: dot-grid ground,
+  brand, headline, one device. Shot 4 adds the Apple Watch the subtitle names.
+-->
+<style>
+  :root {
+    --ground: #0E0F12; --ink: #F2F2F0; --muted: #9A9CA3;
+    --sans: -apple-system, "SF Pro Display", "Apple SD Gothic Neo", system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  /* The card, not body, carries the ground: a body background would paint the whole canvas, corners included. */
+  html, body { width: 540px; height: 1173px; overflow: hidden; }
+  .card { position: relative; width: 540px; height: 1173px; overflow: hidden; border-radius: 24px; background: var(--ground);
+    font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; word-break: keep-all; }
+  .dots { position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 1px 1px, rgba(154,156,163,0.16) 1px, transparent 1.4px);
+    background-size: 22px 22px; background-position: 10px 12px; }
+
+  .head { position: absolute; left: 0; right: 0; top: 48px; text-align: center; }
+  .brand { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 31px; }
+  .mark { width: 32px; height: 32px; border-radius: 8px; background: #fff; display: grid; place-items: center; }
+  .mark i { width: 17px; height: 17px; border: 2.5px solid #111; border-radius: 2px; display: grid; place-items: center; }
+  .mark i::after { content: ""; width: 7px; height: 7px; background: #DA1E28; border-radius: 1px; }
+  .brand span { font-size: 21px; font-weight: 700; letter-spacing: -0.2px; }
+  h1 { font-size: 41px; line-height: 1.05; font-weight: 800; letter-spacing: -1.2px; white-space: nowrap; }
+  .sub { margin-top: 7px; font-size: 19.5px; line-height: 1.3; font-weight: 500; color: var(--muted); white-space: nowrap; letter-spacing: -0.2px; }
+
+  /* The iPhone's own screen, edge to edge as the simulator captures it (mask=black draws the Dynamic Island). */
+  .phone { position: absolute; left: 59px; top: 243px; width: 422px; height: 911px; border-radius: 72px; background: #020305;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06); }
+  .phone .screen { position: absolute; left: 3px; top: 3px; width: 416px; height: 905px; border-radius: 69px; overflow: hidden; background: #F7F7F5; }
+  .phone .screen img { display: block; width: 100%; height: 100%; }
+
+  /* An Apple Watch, the case after the App Store header's; the screen is the app's own capture. */
+  .watch { position: absolute; }
+  .watch .band { position: absolute; left: 50%; transform: translateX(-50%); background: linear-gradient(90deg, #1b1d22, #272a30 50%, #1b1d22);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45); }
+  .watch .band::after { content: ""; position: absolute; inset: 0; border-radius: inherit;
+    background: repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 6px); }
+  .watch .case { position: absolute; left: 0; top: 0; background: linear-gradient(145deg, #4a4e57, #23252b 40%, #15161a 70%, #3a3d45);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.7), inset 0 1px 2px rgba(255,255,255,0.25); }
+  .watch .crown { position: absolute; border-radius: 5px; background: repeating-linear-gradient(0deg, #5a5e67 0 2px, #34373e 2px 4px);
+    box-shadow: inset -2px 0 3px rgba(0,0,0,0.5); }
+  .watch .button { position: absolute; border-radius: 4px; background: #2c2f36; }
+  .watch .screen { position: absolute; overflow: hidden; background: #0E0F12; box-shadow: 0 0 0 2px #000; }
+  .watch .screen img { display: block; width: 100%; height: 100%; }
+  /* watchOS draws its own clock, which `simctl status_bar` cannot reach: the phone's 9:41 over it. */
+  .watch .clock { position: absolute; background: #0E0F12; color: #fff; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="dots"></div>
+  <div class="head">
+    <div class="brand"><div class="mark"><i></i></div><span>Recly</span></div>
+    <h1 id="h1"></h1>
+    <p class="sub" id="sub"></p>
+  </div>
+  <div class="phone"><div class="screen"><img id="screen"></div></div>
+  <div id="device"></div>
+</div>
+
+<script>
+  const q = new URLSearchParams(location.search);
+  const lang = q.get('lang') === 'ko' ? 'ko' : 'en';
+  const shot = Number(q.get('shot') || 1);
+  document.documentElement.lang = lang;
+
+  // The README's alt texts say the same.
+  const COPY = {
+    en: {
+      1: ['Record for your AI', 'Your recordings, your Drive, your choice of transcription.'],
+      2: ['Transcribe on device', 'Read along, then jump to any moment.'],
+      3: ['Saved to your Drive', 'No Recly account. No Recly server.'],
+      4: ['Record in one tap', 'On iPhone or Apple Watch.'],
+    },
+    ko: {
+      1: ['내 AI를 위한 녹음기', '녹음은 내 드라이브에, 전사는 원하는 방식으로'],
+      2: ['기기에서 바로 전사', '읽으면서 원하는 순간으로 이동'],
+      3: ['내 Google 드라이브에 저장', 'Recly 계정도, Recly 서버도 없습니다'],
+      4: ['탭 한 번으로 녹음', 'iPhone과 Apple Watch에서'],
+    },
+  };
+  // 1 the list, 2 a transcript after its second timestamp was tapped, 3 the first row opened, 4 the Record tab.
+  const SCREEN = { 1: 'list', 2: 'detail', 3: 'expand', 4: 'record' };
+  const [h1, sub] = COPY[lang][shot];
+  document.getElementById('h1').textContent = h1;
+  document.getElementById('sub').textContent = sub;
+  if (lang === 'ko') {
+    document.getElementById('h1').style.letterSpacing = '-1.8px';
+    document.getElementById('sub').style.letterSpacing = '-0.5px';
+  }
+  const img = name => `../../build/app-store-assets/captures/${lang}/${name}.png`;
+  document.getElementById('screen').src = img(SCREEN[shot]);
+
+  if (shot === 4) {
+    // The 46 mm watch's 416×496 screen at 0.36, its case around it, bottom right over the phone's empty side.
+    const s = 0.36, sw = 416 * s, sh = 496 * s, rim = 11, cw = sw + rim * 2, ch = sh + rim * 2;
+    const left = 338, top = 712, bandW = cw * 0.74, band = 74;
+    const w = document.createElement('div'); w.className = 'watch';
+    Object.assign(w.style, { left: left + 'px', top: top + 'px', width: cw + 'px', height: ch + 'px' });
+    w.innerHTML = `
+      <div class="band" style="top:${-band}px;width:${bandW}px;height:${band + 30}px;border-radius:16px 16px 0 0"></div>
+      <div class="band" style="top:${ch - 30}px;width:${bandW}px;height:${band + 30}px;border-radius:0 0 16px 16px"></div>
+      <div class="case" style="width:${cw}px;height:${ch}px;border-radius:${cw * 0.25}px"></div>
+      <div class="crown" style="left:${cw - 4}px;top:${ch * 0.24}px;width:10px;height:${ch * 0.17}px"></div>
+      <div class="button" style="left:${cw - 3}px;top:${ch * 0.5}px;width:6px;height:${ch * 0.2}px"></div>
+      <div class="screen" style="left:${rim}px;top:${rim}px;width:${sw}px;height:${sh}px;border-radius:${sw * 0.2}px">
+        <img src="${img('watch-idle')}">
+        <div class="clock" style="left:${290 * s}px;top:${30 * s}px;width:${92 * s}px;height:${40 * s}px;font-size:${30 * s}px;line-height:${42 * s}px">9:41</div>
+      </div>`;
+    document.getElementById('device').appendChild(w);
+  }
+
+  // What spills: copy wider than the canvas, or the headline block running into the device.
+  window.addEventListener('load', () => {
+    const r = e => e.getBoundingClientRect();
+    const text = e => { const g = document.createRange(); g.selectNodeContents(e); return g.getBoundingClientRect(); };
+    const out = [];
+    for (const id of ['h1', 'sub']) {
+      const b = text(document.getElementById(id));
+      if (b.left < 24 || b.right > 540 - 24) out.push(`${id} ${Math.round(b.left)}..${Math.round(b.right)}`);
+    }
+    const headBottom = r(document.getElementById('sub')).bottom;
+    if (headBottom > r(document.querySelector('.phone')).top - 24) out.push(`head ends ${Math.round(headBottom)}`);
+    if ([...document.images].some(i => !i.complete || i.naturalWidth === 0)) out.push('image missing');
+    document.body.dataset.m = JSON.stringify({ out, headBottom: Math.round(headBottom) });
+  });
+</script>
+</body>
+</html>
