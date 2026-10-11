@@ -93,9 +93,12 @@
                 <action android:name="android.support.wearable.complications.ACTION_COMPLICATION_UPDATE_REQUEST" />
             </intent-filter>
 
+            <!-- The manifest names types by their wire tag, not the androidx class: a
+                 MonochromaticImageComplicationData is `ICON`. "MONOCHROMATIC_IMAGE" here is an unknown
+                 tag the system drops, and an image-only slot never offers this source. -->
             <meta-data
                 android:name="android.support.wearable.complications.SUPPORTED_TYPES"
-                android:value="SHORT_TEXT,MONOCHROMATIC_IMAGE" />
+                android:value="SHORT_TEXT,ICON" />
             <!-- How often the watch face asks again on its own. A recording starting or a transfer
                  finishing is pushed sooner than that, through
                  `ComplicationDataSourceUpdateRequester`. -->
