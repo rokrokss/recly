@@ -2,14 +2,15 @@
 
 Templates and scripts for the Google Play listing graphics. The app's screens in them are real captures from
 emulators holding demo recordings, not mock-ups. Captures and renders live in `build/play-store-assets/`
-(gitignored, like the App Store set in `build/app-store-assets/`).
+(gitignored, like the App Store set in `build/app-store-assets/`). The set to upload with the next release is
+committed in `docs/design/play-store/`, a copy of `out/`.
 
 `clients.html` uses the same captures for the top-level README's Clients image (Galaxy Watch handing off to
 the Android phone), which `render.mjs` writes to `docs/design/screenshots/<lang>/clients.png` (committed).
 
 ## Upload map (Play Console → Grow users → Store presence → Main store listing)
 
-| Field | File in `build/play-store-assets/out/` | Spec it meets |
+| Field | File in `docs/design/play-store/` | Spec it meets |
 |---|---|---|
 | App icon | `icon-512.png` | 512×512, 32-bit PNG, fully opaque, full bleed from `docs/design/icon.svg` (Play adds the rounded mask and shadow) |
 | Feature graphic | `<lang>/feature-graphic-b.png` | 1024×500, 24-bit PNG, no alpha |
@@ -52,4 +53,5 @@ iPhone, Apple Watch or iCloud, and on-device transcription only on phones with 8
    frame.
 5. **Render.** `node scripts/play-store/render.mjs` frames the phone captures in `screenshot.html`, draws
    `feature.html`, renders the icon, flattens everything but the icon to 24-bit, and stops if any copy spills
-   past the edges or into the device.
+   past the edges or into the device. Then replace `docs/design/play-store/` with a copy of
+   `build/play-store-assets/out/` and commit it.
