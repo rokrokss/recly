@@ -14,7 +14,7 @@
     <string name="sending_badge">در حال ارسال</string>
     <string name="transfer_failed_badge">انتقال ناموفق بود</string>
     <string name="tile_start">شروع ضبط</string>
-    <string name="quick_start_label">ضبط Recly</string>
+    <string name="quick_start_label">ضبط فوری Recly</string>
     <string name="entry_ready">آماده</string>
     <string name="complication_pending">در انتظار</string>
     <string name="complication_sending">در حال ارسال</string>
@@ -23,7 +23,7 @@
     <string name="info_open">راهنما</string>
     <string name="info_back">بستن</string>
     <string name="info_shortcut_title">دو بار فشردن کلید صفحه اصلی ← ضبط</string>
-    <string name="info_shortcut_body">تنظیمات ساعت ← ویژگی‌های پیشرفته ← سفارشی‌سازی کلیدها ← دو بار فشردن کلید صفحه اصلی ← باز کردن برنامه، و «ضبط Recly» را انتخاب کنید. از آن پس ضبط با دو بار فشردن و بدون باز کردن برنامه شروع می‌شود. اگر فقط می‌خواهید برنامه باز شود، «Recly» را انتخاب کنید.</string>
+    <string name="info_shortcut_body">تنظیمات ساعت ← ویژگی‌های پیشرفته ← سفارشی‌سازی کلیدها ← دو بار فشردن کلید صفحه اصلی ← باز کردن برنامه، و «ضبط فوری Recly» را انتخاب کنید. از آن پس ضبط با دو بار فشردن و بدون باز کردن برنامه شروع می‌شود. اگر فقط می‌خواهید برنامه باز شود، «Recly» را انتخاب کنید.</string>
     <string name="info_battery_title">بهینه‌سازی باتری را برای Galaxy Wearable خاموش کنید</string>
     <string name="info_battery_body">در تلفن: تنظیمات ← باتری ← محدودیت‌های استفاده در پس‌زمینه، و Galaxy Wearable را از فهرست خارج کنید. با روشن بودن بهینه‌سازی، اتصال Bluetooth قطع می‌شود و ضبط‌ها هرگز به تلفن نمی‌رسند.</string>
     <string name="info_transfer_title">انتقال</string>

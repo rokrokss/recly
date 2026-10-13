@@ -14,7 +14,7 @@
     <string name="sending_badge">Wysyłanie</string>
     <string name="transfer_failed_badge">Błąd przekazywania</string>
     <string name="tile_start">Rozpocznij nagrywanie</string>
-    <string name="quick_start_label">Recly Nagraj</string>
+    <string name="quick_start_label">Recly Nagraj teraz</string>
     <string name="entry_ready">W gotowości</string>
     <string name="complication_pending">Oczekiwanie</string>
     <string name="complication_sending">Wysyłanie</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Pomoc</string>
     <string name="info_back">Zamknij</string>
     <string name="info_shortcut_title">2× przycisk Home → nagrywanie</string>
-    <string name="info_shortcut_body">Na zegarku: Ustawienia → Zaawansowane funkcje → Dostosowanie klawiszy → Naciśn. dwukrotnie → Otwórz aplikację i wybierz „Recly Nagraj”. Nagrywanie rozpocznie się wtedy po podwójnym naciśnięciu, bez wcześniejszego otwierania aplikacji. Wybierz „Recly”, aby tylko otwierać aplikację.</string>
+    <string name="info_shortcut_body">Na zegarku: Ustawienia → Zaawansowane funkcje → Dostosowanie klawiszy → Naciśn. dwukrotnie → Otwórz aplikację i wybierz „Recly Nagraj teraz”. Nagrywanie rozpocznie się wtedy po podwójnym naciśnięciu, bez wcześniejszego otwierania aplikacji. Wybierz „Recly”, aby tylko otwierać aplikację.</string>
     <string name="info_battery_title">Wyłącz optymalizację baterii dla Galaxy Wearable</string>
     <string name="info_battery_body">Na telefonie: Ustawienia → Bateria → Limity użycia w tle — usuń Galaxy Wearable z listy. Przy włączonej optymalizacji połączenie Bluetooth się zrywa i nagrania nigdy nie docierają do telefonu.</string>
     <string name="info_transfer_title">Przekazywanie</string>

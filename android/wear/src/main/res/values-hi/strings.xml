@@ -14,7 +14,7 @@
     <string name="sending_badge">भेजा जा रहा है</string>
     <string name="transfer_failed_badge">ट्रांसफ़र विफल</string>
     <string name="tile_start">रिकॉर्डिंग शुरू करें</string>
-    <string name="quick_start_label">Recly रिकॉर्ड</string>
+    <string name="quick_start_label">Recly तुरंत रिकॉर्ड</string>
     <string name="entry_ready">निष्क्रिय</string>
     <string name="complication_pending">प्रतीक्षा में</string>
     <string name="complication_sending">भेजा जा रहा है</string>
@@ -23,7 +23,7 @@
     <string name="info_open">मदद</string>
     <string name="info_back">बंद करें</string>
     <string name="info_shortcut_title">होम बटन दो बार → रिकॉर्डिंग</string>
-    <string name="info_shortcut_body">घड़ी की सेटिंग → उन्नत सुविधाएँ → बटन कस्टमाइज़ करें → होम बटन दो बार → ऐप खोलें में “Recly रिकॉर्ड” चुनें। फिर ऐप पहले खोले बिना दो बार दबाने से रिकॉर्डिंग शुरू होगी। सिर्फ़ ऐप खोलने के लिए “Recly” चुनें।</string>
+    <string name="info_shortcut_body">घड़ी की सेटिंग → उन्नत सुविधाएँ → बटन कस्टमाइज़ करें → होम बटन दो बार → ऐप खोलें में “Recly तुरंत रिकॉर्ड” चुनें। फिर ऐप पहले खोले बिना दो बार दबाने से रिकॉर्डिंग शुरू होगी। सिर्फ़ ऐप खोलने के लिए “Recly” चुनें।</string>
     <string name="info_battery_title">Galaxy Wearable के लिए बैटरी ऑप्टिमाइज़ेशन बंद करें</string>
     <string name="info_battery_body">फ़ोन पर: सेटिंग → बैटरी → बैकग्राउंड उपयोग सीमाएँ। सूची से Galaxy Wearable हटाएँ। ऑप्टिमाइज़ेशन चालू होने पर Bluetooth टूटता है और रिकॉर्डिंग फ़ोन तक नहीं पहुँचती।</string>
     <string name="info_transfer_title">ट्रांसफ़र</string>

@@ -14,7 +14,7 @@
     <string name="sending_badge">正在傳送</string>
     <string name="transfer_failed_badge">傳輸失敗</string>
     <string name="tile_start">開始錄音</string>
-    <string name="quick_start_label">Recly錄音</string>
+    <string name="quick_start_label">Recly一鍵錄音</string>
     <string name="entry_ready">閒置</string>
     <string name="complication_pending">等待中</string>
     <string name="complication_sending">正在傳送</string>
@@ -23,7 +23,7 @@
     <string name="info_open">說明</string>
     <string name="info_back">關閉</string>
     <string name="info_shortcut_title">按兩下首頁鍵→錄音</string>
-    <string name="info_shortcut_body">在手錶上開啟「設定→進階功能→自訂按鍵→按兩下首頁鍵→開啟應用程式」，選擇「Recly錄音」。之後按兩下即可直接開始錄音，不必先開啟應用程式。若只需開啟應用程式，請選擇「Recly」。</string>
+    <string name="info_shortcut_body">在手錶上開啟「設定→進階功能→自訂按鍵→按兩下首頁鍵→開啟應用程式」，選擇「Recly一鍵錄音」。之後按兩下即可直接開始錄音，不必先開啟應用程式。若只需開啟應用程式，請選擇「Recly」。</string>
     <string name="info_battery_title">關閉Galaxy Wearable的電池最佳化</string>
     <string name="info_battery_body">在手機上開啟「設定→電池→背景使用限制」，將Galaxy Wearable移出清單。啟用最佳化會導致藍牙中斷，錄音無法傳到手機。</string>
     <string name="info_transfer_title">傳輸</string>

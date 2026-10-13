@@ -14,7 +14,7 @@
     <string name="sending_badge">Inatuma</string>
     <string name="transfer_failed_badge">Imeshindwa kutuma</string>
     <string name="tile_start">Anza kurekodi</string>
-    <string name="quick_start_label">Recly Rekodi</string>
+    <string name="quick_start_label">Recly Rekodi sasa</string>
     <string name="entry_ready">Tayari</string>
     <string name="complication_pending">Inasubiri</string>
     <string name="complication_sending">Inatuma</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Usaidizi</string>
     <string name="info_back">Funga</string>
     <string name="info_shortcut_title">Kitufe cha mwanzo mara mbili → rekodi</string>
-    <string name="info_shortcut_body">Kwenye saa: Mipangilio → Vipengele vya kina → Weka mapendeleo ya vitufe → Bonyeza mara mbili kitufe cha mwanzo → Fungua programu, kisha uchague “Recly Rekodi”. Kurekodi kutaanza kwa kubonyeza mara mbili, bila kufungua programu kwanza. Badala yake chagua “Recly” ili ufungue programu tu.</string>
+    <string name="info_shortcut_body">Kwenye saa: Mipangilio → Vipengele vya kina → Weka mapendeleo ya vitufe → Bonyeza mara mbili kitufe cha mwanzo → Fungua programu, kisha uchague “Recly Rekodi sasa”. Kurekodi kutaanza kwa kubonyeza mara mbili, bila kufungua programu kwanza. Badala yake chagua “Recly” ili ufungue programu tu.</string>
     <string name="info_battery_title">Zima uboreshaji wa betri kwa Galaxy Wearable</string>
     <string name="info_battery_body">Kwenye simu: Mipangilio → Betri → Vikomo vya matumizi ya chinichini, kisha uondoe Galaxy Wearable kwenye orodha. Uboreshaji ukiwa umewashwa, muunganisho wa Bluetooth hukatika na rekodi hazifiki kwenye simu.</string>
     <string name="info_transfer_title">Uhamishaji</string>

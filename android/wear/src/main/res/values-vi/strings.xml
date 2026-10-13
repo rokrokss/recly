@@ -14,7 +14,7 @@
     <string name="sending_badge">Đang gửi</string>
     <string name="transfer_failed_badge">Chuyển dữ liệu thất bại</string>
     <string name="tile_start">Bắt đầu ghi âm</string>
-    <string name="quick_start_label">Recly Ghi âm</string>
+    <string name="quick_start_label">Recly Ghi âm nhanh</string>
     <string name="entry_ready">Sẵn sàng</string>
     <string name="complication_pending">Đang chờ</string>
     <string name="complication_sending">Đang gửi</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Trợ giúp</string>
     <string name="info_back">Đóng</string>
     <string name="info_shortcut_title">Nhấn hai lần phím Home → ghi âm</string>
-    <string name="info_shortcut_body">Trên đồng hồ: Cài đặt → Tính năng nâng cao → Tùy chỉnh phím → Nhấn hai lần phím Home → Mở ứng dụng, rồi chọn “Recly Ghi âm”. Khi đó, chỉ cần nhấn hai lần là bắt đầu ghi âm mà không phải mở ứng dụng trước. Chọn “Recly” nếu chỉ muốn mở ứng dụng.</string>
+    <string name="info_shortcut_body">Trên đồng hồ: Cài đặt → Tính năng nâng cao → Tùy chỉnh phím → Nhấn hai lần phím Home → Mở ứng dụng, rồi chọn “Recly Ghi âm nhanh”. Khi đó, chỉ cần nhấn hai lần là bắt đầu ghi âm mà không phải mở ứng dụng trước. Chọn “Recly” nếu chỉ muốn mở ứng dụng.</string>
     <string name="info_battery_title">Tắt tối ưu hóa pin cho Galaxy Wearable</string>
     <string name="info_battery_body">Trên điện thoại: Cài đặt → Pin → Giới hạn sử dụng trong nền, rồi xóa Galaxy Wearable khỏi danh sách. Khi bật tối ưu hóa, kết nối Bluetooth sẽ bị ngắt và bản ghi âm sẽ không đến được điện thoại.</string>
     <string name="info_transfer_title">Chuyển dữ liệu</string>

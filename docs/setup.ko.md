@@ -122,7 +122,7 @@ ElevenLabs와 Rev AI의 별도 EU 데이터 보관 계정에서 받은 키는 �
 
 ## 5. 녹음하기
 
-- **Galaxy Watch**: 앱이나 타일, 또는 **Recly 녹음**을 연결한 홈 키 두 번 누르기([설치 안내](install.ko.md#galaxy-watch)).
+- **Galaxy Watch**: 앱이나 타일, 또는 **Recly 바로 녹음**을 연결한 홈 키 두 번 누르기([설치 안내](install.ko.md#galaxy-watch)).
   폰에서 Galaxy Wearable의 배터리 최적화를 꺼 두세요. 켜져 있으면 전송이 멈춥니다.
 - **Apple Watch**: 앱이나 컴플리케이션. Ultra는 액션 버튼도 됩니다.
 - **Android 폰**: 녹음 탭, 빠른 설정 타일, 홈 화면 위젯, 앱 아이콘 바로가기.

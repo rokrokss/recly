@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The quick-start variant's foreground (docs/09 "App icon"): the record square alone, no node round
+     it, at 36 of the 108dp canvas — the filled square that already means recording on the
+     complication. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#DA1E28"
+        android:pathData="M39.6,36 H68.4 A3.6,3.6 0 0 1 72,39.6 V68.4 A3.6,3.6 0 0 1 68.4,72 H39.6 A3.6,3.6 0 0 1 36,68.4 V39.6 A3.6,3.6 0 0 1 39.6,36 Z" />
+</vector>

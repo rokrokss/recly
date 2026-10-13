@@ -14,7 +14,7 @@
     <string name="sending_badge">A enviar</string>
     <string name="transfer_failed_badge">Falha no envio</string>
     <string name="tile_start">Iniciar gravação</string>
-    <string name="quick_start_label">Recly Gravar</string>
+    <string name="quick_start_label">Recly Gravar já</string>
     <string name="entry_ready">Pronto</string>
     <string name="complication_pending">Em espera</string>
     <string name="complication_sending">A enviar</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Ajuda</string>
     <string name="info_back">Fechar</string>
     <string name="info_shortcut_title">Premir Início duas vezes → gravar</string>
-    <string name="info_shortcut_body">Nas Definições do relógio → Funcionalidades avançadas → Personalizar teclas → Premir duas vezes a tecla Início → Abrir aplicação, escolha «Recly Gravar». A gravação começa então ao premir duas vezes, sem abrir primeiro a aplicação. Escolha «Recly» para apenas abrir a aplicação.</string>
+    <string name="info_shortcut_body">Nas Definições do relógio → Funcionalidades avançadas → Personalizar teclas → Premir duas vezes a tecla Início → Abrir aplicação, escolha «Recly Gravar já». A gravação começa então ao premir duas vezes, sem abrir primeiro a aplicação. Escolha «Recly» para apenas abrir a aplicação.</string>
     <string name="info_battery_title">Desative a otimização da bateria para o Galaxy Wearable</string>
     <string name="info_battery_body">No telemóvel: Definições → Bateria → Limites de utilização em segundo plano, e retire o Galaxy Wearable da lista. Com a otimização ativa, a ligação Bluetooth cai e as gravações nunca chegam ao telemóvel.</string>
     <string name="info_transfer_title">Envio</string>

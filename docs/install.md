@@ -65,9 +65,9 @@ With the phone app installed, open Play Store on the watch and install Recly, or
 watch from Google Play on the phone.
 
 *Double press home key → record*: on the watch, Settings → Advanced features → Customise keys →
-Double press home key → Open app, and choose **"Recly Record"** (the second launcher entry;
-"Recly" only opens the app). Take Galaxy Wearable off the phone's background-battery limits or the
-Bluetooth link drops.
+Double press home key → Open app, and choose **"Recly Quick Rec"** (the second launcher entry,
+the red square; "Recly" only opens the app). Take Galaxy Wearable off the phone's background-battery
+limits or the Bluetooth link drops.
 
 **Sideloading instead**: install the phone APK as well — the watch and phone apps must come from
 the same place. Wear OS has no browser and no APK installer, so `Recly-WearOS-<version>-<build>.apk`

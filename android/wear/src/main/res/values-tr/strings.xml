@@ -14,7 +14,7 @@
     <string name="sending_badge">Gönderiliyor</string>
     <string name="transfer_failed_badge">Aktarım başarısız</string>
     <string name="tile_start">Kaydı başlat</string>
-    <string name="quick_start_label">Recly Kayıt</string>
+    <string name="quick_start_label">Recly Hızlı Kayıt</string>
     <string name="entry_ready">Hazır</string>
     <string name="complication_pending">Bekliyor</string>
     <string name="complication_sending">Gönderiliyor</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Yardım</string>
     <string name="info_back">Kapat</string>
     <string name="info_shortcut_title">Ana Ekran tuşuna çift bas → kayıt</string>
-    <string name="info_shortcut_body">Saatte Ayarlar → Gelişmiş özellikler → Tuşları özelleştir → Ana Ekran tuşuna çift basma → Uygulama aç yolunu izleyin ve “Recly Kayıt” seçeneğini belirleyin. Böylece kayıt, önce uygulamayı açmadan çift basışla başlar. Yalnızca uygulamayı açmak için bunun yerine “Recly” seçeneğini belirleyin.</string>
+    <string name="info_shortcut_body">Saatte Ayarlar → Gelişmiş özellikler → Tuşları özelleştir → Ana Ekran tuşuna çift basma → Uygulama aç yolunu izleyin ve “Recly Hızlı Kayıt” seçeneğini belirleyin. Böylece kayıt, önce uygulamayı açmadan çift basışla başlar. Yalnızca uygulamayı açmak için bunun yerine “Recly” seçeneğini belirleyin.</string>
     <string name="info_battery_title">Galaxy Wearable için pil optimizasyonunu kapatın</string>
     <string name="info_battery_body">Telefonda Ayarlar → Pil → Arka plan kullanım sınırları bölümünü açın ve Galaxy Wearable\'ı listeden çıkarın. Optimizasyon açıkken Bluetooth bağlantısı kopar ve kayıtlar telefona hiç ulaşmaz.</string>
     <string name="info_transfer_title">Aktarım</string>

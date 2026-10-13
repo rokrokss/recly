@@ -14,7 +14,7 @@
     <string name="sending_badge">Wird gesendet</string>
     <string name="transfer_failed_badge">Übertragung fehlgeschlagen</string>
     <string name="tile_start">Aufnahme starten</string>
-    <string name="quick_start_label">Recly Aufnahme</string>
+    <string name="quick_start_label">Recly Sofortaufnahme</string>
     <string name="entry_ready">Bereit</string>
     <string name="complication_pending">Wartend</string>
     <string name="complication_sending">Wird gesendet</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Hilfe</string>
     <string name="info_back">Schließen</string>
     <string name="info_shortcut_title">Home-Taste zweimal drücken → aufnehmen</string>
-    <string name="info_shortcut_body">Auf der Uhr: Einstellungen → Erweiterte Funktionen → Tasten anpassen → Home-Taste zweimal drücken → App öffnen. Wählen Sie „Recly Aufnahme“, um durch Doppeldruck direkt aufzunehmen. „Recly“ öffnet nur die App.</string>
+    <string name="info_shortcut_body">Auf der Uhr: Einstellungen → Erweiterte Funktionen → Tasten anpassen → Home-Taste zweimal drücken → App öffnen. Wählen Sie „Recly Sofortaufnahme“, um durch Doppeldruck direkt aufzunehmen. „Recly“ öffnet nur die App.</string>
     <string name="info_battery_title">Akkuoptimierung für Galaxy Wearable deaktivieren</string>
     <string name="info_battery_body">Auf dem Telefon: Einstellungen → Akku → Grenzen der Hintergrundnutzung. Entfernen Sie Galaxy Wearable aus der Liste. Die Optimierung trennt Bluetooth und verhindert die Übertragung der Aufnahmen.</string>
     <string name="info_transfer_title">Übertragung</string>

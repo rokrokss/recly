@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- docs/09 "App icon": the quick-start variant, QuickStartActivity's own launcher icon. The ground is
+     the app icon's; the node gives way to the record square alone. Also its round icon. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@drawable/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_quick_start_foreground" />
+    <monochrome android:drawable="@drawable/ic_quick_start_monochrome" />
+</adaptive-icon>

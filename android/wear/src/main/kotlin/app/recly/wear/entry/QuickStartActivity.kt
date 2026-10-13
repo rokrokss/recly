@@ -6,7 +6,7 @@ import android.os.Bundle
 import app.recly.wear.ui.MainActivity
 
 /**
- * docs/11 W5: the second launcher entry, "Recly Record". Samsung's "Double press home key" setting
+ * docs/11 W5: the second launcher entry, "Recly Quick Rec". Samsung's "Double press home key" setting
  * can only name an app, and launches it with a bare `MAIN`/`LAUNCHER` intent — no extras, so it
  * cannot ask [MainActivity] to auto-start the way the tile does. This entry exists to be the app
  * that setting names: it forwards to [MainActivity] with [MainActivity.EXTRA_AUTO_START] and is

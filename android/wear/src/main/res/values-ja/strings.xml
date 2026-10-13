@@ -14,7 +14,7 @@
     <string name="sending_badge">送信中</string>
     <string name="transfer_failed_badge">転送に失敗</string>
     <string name="tile_start">録音を開始</string>
-    <string name="quick_start_label">Recly録音</string>
+    <string name="quick_start_label">Reclyすぐ録音</string>
     <string name="entry_ready">待機中</string>
     <string name="complication_pending">待機中</string>
     <string name="complication_sending">送信中</string>
@@ -23,7 +23,7 @@
     <string name="info_open">ヘルプ</string>
     <string name="info_back">閉じる</string>
     <string name="info_shortcut_title">ホームキーを2回押す→録音</string>
-    <string name="info_shortcut_body">ウォッチの「設定→便利な機能→キーをカスタマイズ→ホームキーを2回押す→アプリを開く」で「Recly録音」を選択します。アプリを開かずに2回押すだけで録音できます。起動だけにする場合は「Recly」を選択してください。</string>
+    <string name="info_shortcut_body">ウォッチの「設定→便利な機能→キーをカスタマイズ→ホームキーを2回押す→アプリを開く」で「Reclyすぐ録音」を選択します。アプリを開かずに2回押すだけで録音できます。起動だけにする場合は「Recly」を選択してください。</string>
     <string name="info_battery_title">Galaxy Wearableのバッテリー最適化を無効にしてください</string>
     <string name="info_battery_body">スマートフォンの「設定→バッテリー→バックグラウンド使用制限」でGalaxy Wearableを対象から外してください。最適化が有効だとBluetooth接続が切れ、録音が届きません。</string>
     <string name="info_transfer_title">転送</string>

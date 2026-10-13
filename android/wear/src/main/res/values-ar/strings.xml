@@ -14,7 +14,7 @@
     <string name="sending_badge">جارٍ الإرسال</string>
     <string name="transfer_failed_badge">فشل النقل</string>
     <string name="tile_start">بدء التسجيل</string>
-    <string name="quick_start_label">تسجيل Recly</string>
+    <string name="quick_start_label">تسجيل Recly السريع</string>
     <string name="entry_ready">خامل</string>
     <string name="complication_pending">قيد الانتظار</string>
     <string name="complication_sending">جارٍ الإرسال</string>
@@ -23,7 +23,7 @@
     <string name="info_open">المساعدة</string>
     <string name="info_back">إغلاق</string>
     <string name="info_shortcut_title">ضغط زر الرئيسية مرتين ← تسجيل</string>
-    <string name="info_shortcut_body">في الساعة: الإعدادات ← الميزات المتقدمة ← تخصيص الأزرار ← ضغط زر الرئيسية مرتين ← فتح تطبيق. اختر «تسجيل Recly» لبدء التسجيل مباشرة بضغطتين. اختر «Recly» لفتح التطبيق فقط.</string>
+    <string name="info_shortcut_body">في الساعة: الإعدادات ← الميزات المتقدمة ← تخصيص الأزرار ← ضغط زر الرئيسية مرتين ← فتح تطبيق. اختر «تسجيل Recly السريع» لبدء التسجيل مباشرة بضغطتين. اختر «Recly» لفتح التطبيق فقط.</string>
     <string name="info_battery_title">عطّل تحسين البطارية لتطبيق Galaxy Wearable</string>
     <string name="info_battery_body">على الهاتف: الإعدادات ← البطارية ← حدود الاستخدام في الخلفية. أزل Galaxy Wearable من القائمة. يقطع التحسين اتصال Bluetooth ويمنع وصول التسجيلات.</string>
     <string name="info_transfer_title">النقل</string>

@@ -14,7 +14,7 @@
     <string name="sending_badge">正在发送</string>
     <string name="transfer_failed_badge">传输失败</string>
     <string name="tile_start">开始录音</string>
-    <string name="quick_start_label">Recly录音</string>
+    <string name="quick_start_label">Recly一键录音</string>
     <string name="entry_ready">空闲</string>
     <string name="complication_pending">等待中</string>
     <string name="complication_sending">正在发送</string>
@@ -23,7 +23,7 @@
     <string name="info_open">帮助</string>
     <string name="info_back">关闭</string>
     <string name="info_shortcut_title">双击主屏幕键→录音</string>
-    <string name="info_shortcut_body">在手表上打开“设置→高级功能→自定义按键→双击主屏幕键→打开应用”，选择“Recly录音”。之后双击即可直接开始录音，无需先打开应用。若只需打开应用，请选择“Recly”。</string>
+    <string name="info_shortcut_body">在手表上打开“设置→高级功能→自定义按键→双击主屏幕键→打开应用”，选择“Recly一键录音”。之后双击即可直接开始录音，无需先打开应用。若只需打开应用，请选择“Recly”。</string>
     <string name="info_battery_title">关闭Galaxy Wearable的电池优化</string>
     <string name="info_battery_body">在手机上打开“设置→电池→后台使用限制”，将Galaxy Wearable移出列表。启用优化会导致蓝牙断开，录音无法传到手机。</string>
     <string name="info_transfer_title">传输</string>

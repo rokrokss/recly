@@ -2144,6 +2144,10 @@ The master is the single **`docs/design/icon.svg`** ("A · Record node", 1024×1
    border drops below one pixel and disappears.
 3. The **recording variant** exists only in the menu bar and tray. Only the inner square is red (Light `#DA1E28` / Dark `#FA4D56`); the outer one keeps the body
    color.
+4. The **quick-start variant** exists only on the watch's second launcher item, "Recly Quick Rec" (§11 W5), so the two launcher items do not look like
+   one app twice (2026-10-14). The master's ground with the record square alone, no node: on the 108dp adaptive canvas a `#DA1E28` square x36 y36 w36 h36
+   radius 3.6, the same filled square as its `monochrome` layer — the square the complication already shows while recording
+   (`mipmap-anydpi-v26/ic_quick_start.xml` + `drawable/ic_quick_start_{foreground,monochrome}.xml`).
 
 Platform outputs: Android phone and watch use vector adaptive icons (`res/mipmap-anydpi-v26/ic_launcher*.xml` +
 `res/drawable/ic_launcher_{background,foreground,monochrome}.xml`, inside the 66dp safe zone of a 108dp canvas), Apple uses each
@@ -3055,7 +3059,7 @@ android/
 | W2 | Main screen: large start/stop button, ~~workflow picker (summaries received over `DataClient`; if none was picked on the watch, **"Phone's workflow"** — both watches say the same thing)~~ (retired 2026-09-24), elapsed time, recordings waiting to transfer (`Sending` while it is finding the phone and handing them over — only while a pass has the channel open, 2026-09-04; in the status line without a count, §9 screen principle 7). The record screen fills the first screen, and Help sits below it, reached by touch or bezel scroll (2026-10-05). There are only two screens and no navigation library — the only journey on the watch is "record" |
 | W3 | `OngoingActivity` (Wear OS 6) / Live Updates (7): watch face chip, tapping opens the app |
 | W4 | `TransferQueue`: finds the phone node with `CapabilityClient`, `ChannelClient.openChannel` → `sendFile` per part, waits for the ack (5-minute timeout), deletes on ack, keeps the queue on failure or no connection, retries on connection events. The acceptance criterion is **"record with the phone off → turn the phone on → automatic transfer completes"**, and until then the watch screen honestly says "the phone does not have it yet" |
-| W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Record"** (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
+| W5 | Entry points: tile (`launchAction`), complication (state — the app's square record glyph; while recording the filled square and the elapsed time the face counts itself, where the slot has room, instead of `REC`; 2026-10-11), **a second launcher item "Recly Quick Rec"** with its own icon (§9 "App icon"; 2026-10-14) (`QuickStartActivity` — Samsung's "Double press home key" setting can only pick an app and cannot pass extras, so this item attaches the auto-start extra, hands off to MainActivity and disappears), **a setup guide screen** ("Double home key → record"). The criteria are **"tap the tile → recording starts at once"** and **"double home key → recording starts at once"** |
 | W6 | Haptics: CLICK on start, DOUBLE_CLICK on stop, tick on transfer complete |
 | W7 | Battery: no Wi-Fi request while recording, no keep-screen-on; transfer prefers charging (optional) |
 

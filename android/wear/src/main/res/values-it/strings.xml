@@ -14,7 +14,7 @@
     <string name="sending_badge">Invio in corso</string>
     <string name="transfer_failed_badge">Trasferimento non riuscito</string>
     <string name="tile_start">Avvia registrazione</string>
-    <string name="quick_start_label">Recly Registra</string>
+    <string name="quick_start_label">Recly Registra ora</string>
     <string name="entry_ready">Pronto</string>
     <string name="complication_pending">In attesa</string>
     <string name="complication_sending">Invio in corso</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Aiuto</string>
     <string name="info_back">Chiudi</string>
     <string name="info_shortcut_title">Doppia pressione Home → registra</string>
-    <string name="info_shortcut_body">Impostazioni dell’orologio → Funzioni avanzate → Personalizza tasti → Doppia pressione tasto Home → Apri app, e scegli “Recly Registra”. La registrazione si avvia così con la doppia pressione, senza dover prima aprire l’app. Scegli invece “Recly” per aprire soltanto l’app.</string>
+    <string name="info_shortcut_body">Impostazioni dell’orologio → Funzioni avanzate → Personalizza tasti → Doppia pressione tasto Home → Apri app, e scegli “Recly Registra ora”. La registrazione si avvia così con la doppia pressione, senza dover prima aprire l’app. Scegli invece “Recly” per aprire soltanto l’app.</string>
     <string name="info_battery_title">Disattiva l’ottimizzazione della batteria per Galaxy Wearable</string>
     <string name="info_battery_body">Sul telefono: Impostazioni → Batteria → Limiti di utilizzo in background, e togli Galaxy Wearable dall’elenco. Con l’ottimizzazione attiva, il collegamento Bluetooth si interrompe e le registrazioni non arrivano mai al telefono.</string>
     <string name="info_transfer_title">Trasferimento</string>

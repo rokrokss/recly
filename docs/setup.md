@@ -128,7 +128,7 @@ If you said no, Recly shows where to turn it back on.
 ## 5. Record
 
 - **Galaxy Watch**: the app or the tile, or a double press of the home key set to
-  **Recly Record** ([install guide](install.md#galaxy-watch)). Turn off battery optimisation for
+  **Recly Quick Rec** ([install guide](install.md#galaxy-watch)). Turn off battery optimisation for
   Galaxy Wearable on the phone, or transfers stop.
 - **Apple Watch**: the app or the complication; on an Ultra, the Action button.
 - **Android phone**: the Record tab, the Quick Settings tile, the home-screen widget or the app icon's

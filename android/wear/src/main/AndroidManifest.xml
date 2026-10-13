@@ -34,15 +34,18 @@
             </intent-filter>
         </activity>
 
-        <!-- docs/11 W5: "Recly Record", the launcher entry for Samsung's "Double press home key"
+        <!-- docs/11 W5: "Recly Quick Rec", the launcher entry for Samsung's "Double press home key"
              setting — it can name an app but cannot pass an extra, so this one forwards to
-             MainActivity with the tile's auto-start extra and finishes. -->
+             MainActivity with the tile's auto-start extra and finishes. Its own icon (docs/09
+             "App icon") keeps it from looking like a second copy of the app. -->
         <activity
             android:name=".entry.QuickStartActivity"
             android:excludeFromRecents="true"
             android:exported="true"
+            android:icon="@mipmap/ic_quick_start"
             android:label="@string/quick_start_label"
             android:noHistory="true"
+            android:roundIcon="@mipmap/ic_quick_start"
             android:theme="@android:style/Theme.NoDisplay">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

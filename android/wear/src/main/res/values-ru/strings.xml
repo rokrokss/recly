@@ -14,7 +14,7 @@
     <string name="sending_badge">Отправка</string>
     <string name="transfer_failed_badge">Сбой передачи</string>
     <string name="tile_start">Начать запись</string>
-    <string name="quick_start_label">Recly Запись</string>
+    <string name="quick_start_label">Recly Быстрая запись</string>
     <string name="entry_ready">Ожидание</string>
     <string name="complication_pending">Ожидание</string>
     <string name="complication_sending">Отправка</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Справка</string>
     <string name="info_back">Закрыть</string>
     <string name="info_shortcut_title">Двойное нажатие «Домой» → запись</string>
-    <string name="info_shortcut_body">На часах: Настройки → Дополнительные функции → Настройка кнопок → Двойное нажатие «Домой» → Открыть приложение. Выберите «Recly Запись», чтобы сразу записывать двойным нажатием. Для простого открытия выберите «Recly».</string>
+    <string name="info_shortcut_body">На часах: Настройки → Дополнительные функции → Настройка кнопок → Двойное нажатие «Домой» → Открыть приложение. Выберите «Recly Быстрая запись», чтобы сразу записывать двойным нажатием. Для простого открытия выберите «Recly».</string>
     <string name="info_battery_title">Отключите оптимизацию батареи для Galaxy Wearable</string>
     <string name="info_battery_body">На телефоне: Настройки → Батарея → Ограничения в фоновом режиме. Уберите Galaxy Wearable из списка. Оптимизация разрывает Bluetooth-соединение, и записи не доходят до телефона.</string>
     <string name="info_transfer_title">Передача</string>

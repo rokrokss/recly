@@ -14,7 +14,7 @@
     <string name="sending_badge">Enviando</string>
     <string name="transfer_failed_badge">Transferencia fallida</string>
     <string name="tile_start">Iniciar grabación</string>
-    <string name="quick_start_label">Recly Grabar</string>
+    <string name="quick_start_label">Recly Grabar ya</string>
     <string name="entry_ready">Inactivo</string>
     <string name="complication_pending">En espera</string>
     <string name="complication_sending">Enviando</string>
@@ -23,7 +23,7 @@
     <string name="info_open">Ayuda</string>
     <string name="info_back">Cerrar</string>
     <string name="info_shortcut_title">Doble pulsación de inicio → grabar</string>
-    <string name="info_shortcut_body">En el reloj: Ajustes → Funciones avanzadas → Personalizar teclas → Doble pulsación de inicio → Abrir app. Elige «Recly Grabar» para grabar con una doble pulsación sin abrir primero la app. Elige «Recly» para solo abrirla.</string>
+    <string name="info_shortcut_body">En el reloj: Ajustes → Funciones avanzadas → Personalizar teclas → Doble pulsación de inicio → Abrir app. Elige «Recly Grabar ya» para grabar con una doble pulsación sin abrir primero la app. Elige «Recly» para solo abrirla.</string>
     <string name="info_battery_title">Desactiva la optimización de batería para Galaxy Wearable</string>
     <string name="info_battery_body">En el teléfono: Ajustes → Batería → Límites de uso en segundo plano. Quita Galaxy Wearable de la lista. La optimización corta el enlace Bluetooth e impide que lleguen las grabaciones.</string>
     <string name="info_transfer_title">Transferencia</string>
