@@ -218,6 +218,7 @@ class AutoFillTest {
         val (first, second) = f.h.server.requests.filter { it.url.endsWith("/responses") }.map { it.json() }
         assertEquals("medium", first["reasoning"]!!.jsonObject["effort"]!!.jsonPrimitive.content)
         assertNull(second["reasoning"])
+        assertTrue("summary.fill.effort.refused" in f.h.logger.events, "the fallback says so in the log")
     }
 
     @Test

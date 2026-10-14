@@ -362,12 +362,14 @@ class Summaries internal constructor(
         val chosen = FILL_MODELS.firstOrNull { (id, _) -> id in offered }
         val model = chosen?.first ?: account.model() ?: throw ChatGptFailure(CoreMessage.CHATGPT_SIGN_IN_REQUIRED.code())
         val instructions = fillInstructions(SummaryLanguage.of(transcript.language, locale.value), title, speakers, transcript.speakers.any { it.me == true })
+        deps.logger.log(Logger.Level.INFO, "summary.fill.model", mapOf("model" to model, "effort" to (chosen?.second ?: "default")))
         // The transcript waits for this before it goes up: a model that has not answered in two minutes is not waited for.
         val answer = try {
             complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC, effort = chosen?.second)
         } catch (e: ChatGptFailure) {
             // The plan's API documents no `reasoning` field either way: refused, the request goes again without it.
             if (chosen == null || !e.reason.startsWith(CoreMessage.PROVIDER_ERROR.code(detail = "400"))) throw e
+            deps.logger.log(Logger.Level.WARN, "summary.fill.effort.refused", mapOf("model" to model))
             complete(model, instructions, text, timeoutSec = FILL_TIMEOUT_SEC)
         }
         return FillAnswer.parse(answer, title, speakers)

@@ -2088,8 +2088,8 @@ and so do recly-events' event and its `get_transcript` (§15 §9).
   call them when talking to them, without honorifics that go with a name (`님`, `씨`, `さん`, `Mr.`), a form of address used alone
   (`팀장님`) kept — else null. A name said to someone is the listener's, and someone only talked about is no speaker. The
   model is the first of `Summaries.FILL_MODELS` the plan offers — `gpt-6.1-sol` at reasoning effort `low`, then `gpt-5.6-terra` at
-  `medium` — else the one Settings picked, at its own effort; a plan that refuses `reasoning` (it is not in OpenAI's list of fields to
-  leave out, nor confirmed) is asked again without it. The order was measured with Codex CLI on 2026-10-15: twelve transcripts in
+  `medium` — else the one Settings picked, at its own effort; a plan that refuses `reasoning` is asked again without it (it is not in OpenAI's list of fields to leave
+  out; a real request on the Mac on 2026-10-15, gpt-6.1-sol at `low`, was accepted). The order was measured with Codex CLI on 2026-10-15: twelve transcripts in
   Korean, English, Japanese and a mix — meetings, a call, a lecture, a memo, names only talked about — twice each; `gpt-6.1-sol` at
   `low` named all 56 speakers right and invented none, in 7.5 s median, `gpt-5.6-terra` at `medium` invented one in 5.9 s, `gpt-6-luna`
   invented two or three at any effort, and `gpt-6-astra` took about 50 s. It is given two minutes (`Summaries.FILL_TIMEOUT_SEC`).
@@ -2102,7 +2102,7 @@ and so do recly-events' event and its `get_transcript` (§15 §9).
   is tried, so a publication that has to try again finds nothing left to ask. When the user's edit is what goes up (a failed publication
   retried after an edit, §8 "Editing"), only the local copy is rewritten.
 - **Never in the way.** A skip or a failure publishes the transcript as it was, and the step is not retried for it
-  (`summary.fill.start`, `.done`, `.skipped`, `.failed`; ids and counts only, never a title or a name). Signed out, or ChatGPT not offered
+  (`summary.fill.start`, `.model` — the model and effort asked — `.done`, `.skipped`, `.failed`, and `.effort.refused` when the plan refused `reasoning` and was asked again without it; ids, counts and the model only, never a title or a name). Signed out, or ChatGPT not offered
   in the storefront: skipped, the switches stay on. iPhone: skipped until ChatGPT is an allowed destination (§15 "iPhone providers"); the
   shell asks for that permission when a switch is turned on. OpenAI asks apps to stop requests at the usage limit and when the plan no
   longer covers the app (developers.openai.com/siwc "Errors and recovery", 2026-10-15): `CHATGPT_USAGE_LIMIT` pauses the fills for five
