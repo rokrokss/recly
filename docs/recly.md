@@ -2151,10 +2151,24 @@ The principle in one line: **intent, not decoration**.
     grid lines and secondary text are promoted to the body color, accent saturation is kept, borders are 2dp.
   - The **input field border** is `inputBorder` (the secondary text color), separate from the decorative grid. It is at least 3:1 in light and dark,
     and focus uses the accent color and a thicker border.
+  - **Derived tokens** (2026-10-15, written down from what the shells already share): `warningInk` `#8A6800` / `#F1C21B` — warning *text*
+    (the warning hue itself is only for borders and fills); `onAccent` · `onDanger` `#FFFFFF` light / `#0E0F12` dark — text on an accent or
+    danger fill; `selectedLine` = the line width + 1 — focus and selection edges; the search match tint, the accent at 16 % (the current match 40 %);
+    **`disabled`** = the secondary color at 50 % opacity — the ink of anything disabled. Being an opacity of the secondary color, it stays
+    lighter than enabled ink in high contrast, where the secondary color becomes the body color.
+  - **`grid` is decoration only**: dividers, the dot grid, the waveform loader's ghost ticks. It is never a control's ink or edge — a disabled
+    control draws in `disabled`, and the edge of a chip, a dialog card or a menu is `inputBorder` (2026-10-15).
+  - Every copy of the palette outside the shells' theme files — the Android and iPhone widgets, the Live Activity, the Wear tile and
+    complication, the Apple Watch widgets, the Windows tray icon — takes the **dark** value on a dark ground and the light value on a light one
+    (2026-10-15: the Live Activity's `Stop` was the light red on its dark ground, 3.8:1). A test reads every copy against the theme files.
 - **Typography**: UI body = the platform system sans-serif (Roboto / SF Pro / Segoe UI — no bundled local fonts; Korean glyphs
   are guaranteed). **Data = monospace** (Android `FontFamily.Monospace`/Roboto Mono, Apple SF Mono, Windows
   Cascadia/Consolas): timer `12:34`, part `p001`, file names, bytes, status words (`Waiting for Drive`), device ID. Scale:
-  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation.
+  12 / 14 / 16 (body) / 20 / 28 / 44 (timer) — fluid interpolation. Nothing is smaller than 12, watches included. The timer is mono at regular
+  weight with 1 of tracking on every shell; a button's label is 14 whether it is sans or mono (2026-10-15). Line height is 1.4 for sans and 1.35
+  for mono on the Kotlin shells; Apple keeps the platform's own.
+  - **Watches** have their own sizes, fitted to the round and square faces they were laid out on (2026-09-29 Play review): Wear timer 34, label 13,
+    small 12; Apple Watch timer 20, status 14. Status words are mono there too.
 - **Time format** (2026-10-08, user decision): under an hour `MM:SS` (`02:03`), from an hour `HH:MM:SS` (`01:02:03`). Every time inside one
   recording's screen — the detail clock, transcript time buttons, highlight ticks and their menus, find and search hit times — takes its format
   from the recording's total length, so they share one width; live timers (record screens, popover, tray, both watches, the `Highlight · …`
@@ -2169,9 +2183,29 @@ The principle in one line: **intent, not decoration**.
   `Cancel` and data buttons in the fixed-width font (utterance times) keep their own width (user decision). At 360dp · 375pt, in Korean and English,
   this was tuned so that no new line breaks appear — list rows were changed to the flow of screen principle 2 below, and the mobile data confirmation dialog (three buttons)
   always stacks vertically. Desktop is unchanged.
-- **Spacing**: multiples of 4, base rhythm 8/16/24. Visible grid: 8dp dotted background (6% opacity, off in high contrast).
+- **Spacing**: multiples of 4, base rhythm 8/16/24. Visible grid: 8dp dotted background (6% opacity, off in high contrast). The named steps are
+  `xxs` 2 (a label and its value) · `xs` 4 · `s` 8 · `sm` 12 · `m` 16 · `l` 24 · `xl` 32; a literal is for artwork only.
+- **Component measurements** (2026-10-15): one table for every shell, so a component is the same size wherever it is drawn. The rule that chose
+  them: where two shells agreed the third moved, where all three differed the value on the 4 grid won, and the minimum touch size decides a
+  control's height, so its vertical padding is the small one.
+
+  | Component | Measure |
+  |---|---|
+  | Button | padding 8 × 4, height at least the touch minimum, label 14 |
+  | Status badge | padding 8 × 4, radius 2, up to two lines broken between words, centered; fades 150 ms when its state changes |
+  | State node | padding 12 × 8, label up to two lines, centered |
+  | Table row, switch row | 12 top and bottom, 16 at the sides, height at least the touch minimum |
+  | Section header | 8 below |
+  | Ledger row | 12 top and bottom; the time column as wide as the longest time in that shell's mono font (62 Android and Apple, 68 Windows) |
+  | Text field | inset 12 × 8; focus: accent at `selectedLine` |
+  | Chip | label 14; room for its `✓` kept while unselected, so selecting moves nothing; edge `inputBorder` |
+  | Switch | thumb radius 2; disabled: a dashed track in `disabled` |
+  | Dialog | title 20; card edge `inputBorder` |
+  | Empty list | title 16, hint 14 |
+  | Focus ring | accent at `selectedLine`, inside the control, square like it — every focusable control, not only fields |
 - **Lines**: connectors and dividers 1dp (2dp in high contrast), straight lines and right angles only.
-- **Motion**: standard easing `ease-in-out 200ms`, status-transition badges `fade 150ms`, processing state shown for at least 400ms (kept even when the real work is faster,
+- **Motion**: standard easing `ease-in-out 200ms` — `cubic-bezier(0.42, 0, 0.58, 1)`, the curve SwiftUI's `easeInOut` is, on the Kotlin
+  shells too — status-transition badges `fade 150ms`, processing state shown for at least 400ms (kept even when the real work is faster,
   at most 800ms). **With `reduce motion`, "instant transition + text status only"** — what is turned off is the *transition*; the text
   status itself, such as "…" and "✓", stays.
 - **Icons**: geometric thin lines (1.5dp), platform system icons first (Material Symbols Outlined / SF Symbols light).
@@ -2238,7 +2272,8 @@ python3 scripts/make-ico.py --check windows/app/src/main/icons/recly.ico
      (the detail screen in screen principle 2). The waveform loader does not rise and fall or flow like playback and recording waveforms, and does not leave the places it has passed filled —
      flowing waves, bouncing bars, breathing and filling from the left are playback or recording indicators on the various platforms, so they are not used (2026-09-26 research)) — with `reduce
      motion`, the code only. While recording, `REC` takes precedence. The ledger is updated even mid-pass through the core's job row observation (`jobs.observe()`)
-     (Apple · Android · Windows 2026-09-03; Windows has no reduce motion signal, so its loader always spins).
+     (Apple · Android · Windows 2026-09-03; Windows reads Settings → Accessibility → Visual effects → Animation effects,
+     `SPI_GETCLIENTAREAANIMATION`, 2026-10-15).
      Windows also uses the shell states `OPENING` (before the helper starts) · `NO_HELPER` · `NAMING` (a title is being entered), written `Opening` ·
      `Helper missing` · `Naming`.
      **Phones (Android · iPhone) borrow one more**: when idle and there is a row being received from the watch, it shows `RECEIVING` (accent, the same
@@ -2352,7 +2387,7 @@ cleanup (which deletes only the parts), so the waveform is drawn even before the
      `Could not import this file` with the core's reason, on the row or, without one, as a notice. Several files are imported one after another, each
      its own row.
    - **Search**: phones put a field at the top of the list (Android a Blueprint field, `inputBorder`, radius 4, a leading search icon and a trailing
-     clear `×`; iPhone `.searchable` in the navigation bar), the Mac and Windows Details windows above their list; the popover and tray ledgers have none.
+     clear `×`; iPhone the same field, RecKit's `ListSearchField`), the Mac and Windows Details windows above their list; the popover and tray ledgers have none.
      Placeholder `Search titles and transcripts`, 200 ms after the last keystroke, at most 50 results. While the field has text the results replace the
      ledger: the time column · the title with its matches tinted · up to two snippet lines (secondary; a match's background is the accent at 16 %) · the
      mono time of the first transcript hit at the row end. A result opens the detail at that hit, every match tinted, with the **find bar** at the top of
@@ -2594,6 +2629,14 @@ has the string table insert U+2060 between Hangul syllables inside a word when t
 **Size notation** in every shell uses decimal units: whole MB below 1,000 MB (`988 MB`), and GB with one decimal place from there up (`1.2 GB`). Tab order and
 screen reader labels are resources (§7), and an element that opens a screen when pressed, like a row, states that role in its label (e.g. list row =
 `row, button`).
+**Disabled, focus and structure** (2026-10-15). A disabled control draws in `disabled` and, when it has an edge, a dashed one — buttons, chips,
+switches, icon buttons, the find bar's arrows alike — so it never looks enabled in high contrast. Every focusable control shows the focus ring of
+"Component measurements" under keyboard, Switch Access or full keyboard access, links included. Screen and section headers are headings
+(`heading()`, `.isHeader`); a status line that changes while the user looks at it — the record screens', both watches', the popover's and the
+tray's — is announced politely (a polite live region; on Apple an announcement when its text changes). Windows ships `jdk.accessibility` in its
+runtime, so NVDA and JAWS read the app through the Java Access Bridge (turned on with `jabswitch /enable`), and it follows the system text size
+(`TextScaleFactor`), the animation setting above, and the app's light or dark choice in its title bars. Times, the waveform and its highlight
+ticks are laid out left to right in every language, so what is drawn and what is tapped stay in one place in Arabic, Persian and Urdu.
 
 ---
 
