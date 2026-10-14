@@ -107,8 +107,10 @@ class LedgerStatusTest {
                 assertTrue(key.message().ledgerStatus(strings).label in labels, "${badge.code} is not measured")
             }
         }
-        // The widest label, plus the badge's padding and border either side.
-        assertEquals(100.dp, statusColumn(widest = 86.dp, line = 1.dp))
+        // The widest label, plus the badge's padding and border either side (docs/09 "Component measurements": 8 × 4)…
+        assertEquals(104.dp, statusColumn(widest = 86.dp, line = 1.dp))
+        // …up to the cap, past which a word wraps in its badge rather than widening the column.
+        assertEquals(98.dp, statusColumn(widest = 120.dp, line = 1.dp, cap = 80.dp))
     }
 
     /**

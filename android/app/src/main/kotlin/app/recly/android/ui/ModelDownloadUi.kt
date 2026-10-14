@@ -144,7 +144,7 @@ fun ModelPromptCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .border(palette.line, palette.grid, shape)
+            .border(palette.line, palette.inputBorder, shape)
             .background(palette.surface, shape)
             .padding(Space.m)
             .testTag("model-prompt"),

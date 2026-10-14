@@ -36,37 +36,28 @@ public struct ListSearchField: View {
                     Text(verbatim: "×")
                         .font(blueprint.fonts.sans(TypeSize.body))
                         .foregroundStyle(blueprint.palette.textMuted)
-                        .frame(width: Self.clearSide, height: Self.clearSide)
+                        .frame(width: minTouch, height: minTouch)
                         .contentShape(Rectangle())
+                        .blueprintFocusRing()
                 }
                 .buttonStyle(.plain)
+                .focusEffectDisabled()
                 .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Close search")))
                 .accessibilityIdentifier("list-search-clear")
             }
         }
-        .padding(.leading, Space.s)
-        // 2026-10-10 (A-A23): the × brings its own 44pt target to the end on the phone; with nothing typed the
-        // field keeps its inset there, so the placeholder does not run into the edge.
-        .padding(.trailing, Self.clearSide == minTouch && !text.isEmpty ? 0 : Space.s)
-        .frame(minHeight: Self.height)
-        .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.node)
-                .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
-        }
+        // 2026-10-10 (A-A23): the × brings its own 44pt target to the end; with nothing typed the field keeps its
+        // inset there, so the placeholder does not run into the edge. No inset above and below: the field is the
+        // touch minimum tall on the Mac too (2026-10-15), which leaves the words more room than 8 each way.
+        .frame(minHeight: minTouch)
+        .fieldBox(
+            focused: focus.wrappedValue,
+            inset: EdgeInsets(top: 0, leading: Space.sm, bottom: 0, trailing: text.isEmpty ? Space.sm : 0)
+        )
         .padding(.horizontal, Space.m)
         .padding(.bottom, Space.s)
     }
 
     private var placeholder: String { RecKitStrings.localized("Search titles and transcripts") }
-
-    /// A finger on the phone needs the whole 44pt target; the Mac's pointer is served by a smaller field.
-    #if os(iOS)
-    private static let height: CGFloat = minTouch
-    private static let clearSide: CGFloat = minTouch
-    #else
-    private static let height: CGFloat = 32
-    private static let clearSide: CGFloat = 24
-    #endif
 }
 #endif

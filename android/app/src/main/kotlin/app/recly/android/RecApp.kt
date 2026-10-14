@@ -22,6 +22,9 @@ import kotlinx.coroutines.launch
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
 import recly.core.platform.Logger
+import kotlinx.coroutines.flow.distinctUntilChanged
+import app.recly.android.settings.AppSettings
+import android.app.UiModeManager
 
 /**
  * Three things only. `RecorderService` lives in `:android:recording`, which cannot see [CoreModule],
@@ -61,6 +64,20 @@ class RecApp : Application(), RecorderHost {
         // reason has been fixed, so the notifications live off it rather than off the failures.
         scope.launch { JobAlertNotifier(this@RecApp).run(core()) }
         scope.launch { publishRecorderState() }
+        scope.launch { applyTheme() }
+    }
+
+    /**
+     * docs/09 "Accessibility": the theme setting, told to the system as well as to Compose, at every start and every
+     * change, so the launch window draws the theme the app is about to — not the system's, for a moment, under a
+     * Light or Dark override. Read from the store itself, never from a screen's state, whose default before the store
+     * has answered is `SYSTEM`: telling the system that first would recreate the activity into the same default.
+     */
+    private suspend fun applyTheme() {
+        val modes = getSystemService(UiModeManager::class.java)
+        AppSettings(this).theme.distinctUntilChanged().collect { theme ->
+            runCatching { modes.setApplicationNightMode(theme.nightMode) }
+        }
     }
 
     /**

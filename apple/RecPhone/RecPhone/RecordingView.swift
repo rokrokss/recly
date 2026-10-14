@@ -89,7 +89,7 @@ struct RecordingView: View {
         VStack(spacing: 0) {
             nodes.padding(.horizontal, Space.m)
 
-            VStack(spacing: 12) {
+            VStack(spacing: Space.sm) {
                 // 2026-10-08 §4: the recording's length stays up while it is saved; `00:00` once idle.
                 MonoTimer(model.state == .idle || model.elapsed.isEmpty ? LedgerFormat.elapsed(0) : model.elapsed)
                     .accessibilityIdentifier("elapsed")
@@ -104,7 +104,7 @@ struct RecordingView: View {
             }
             .frame(maxHeight: .infinity)
 
-            VStack(spacing: 10) {
+            VStack(spacing: Space.s) {
                 // docs/09 "Highlights": the Highlight node beside the record node while recording — laid over
                 // its end side, so the record node stays centred and nothing moves when it appears.
                 recordNode
@@ -131,6 +131,8 @@ struct RecordingView: View {
                     .padding(.horizontal, Space.m)
                     .accessibilityIdentifier("status")
                     .accessibilityHidden(model.status.isEmpty && model.highlightedAtSec == nil)
+                    // docs/09 "Disabled, focus and structure": the line is news, so it is announced when it changes.
+                    .announcesChanges(of: model.status)
                 if model.microphoneDenied {
                     VStack(spacing: Space.s) {
                         // 2026-10-10 (2.10): something to put right in Settings, not a failure — the warning tone.
@@ -150,17 +152,26 @@ struct RecordingView: View {
 
     // MARK: - The three nodes
 
-    /// The row opens the recording processing settings while nothing is being recorded.
-    @ViewBuilder
     private var nodes: some View {
-        Button { model.tab = .settings } label: { StateNodeRow(specs) }
-            .buttonStyle(.plain).disabled(model.isRecording)
+        StateNodeRow(specs)
     }
 
+    /// docs/09 screen principle 1: the transcription node is the only one that takes a tap — it opens the recording
+    /// processing settings while nothing is being recorded. The device and the state are readouts, as on Android.
     private var specs: [NodeSpec] {
-        [
+        var openSettings: (@MainActor @Sendable () -> Void)?
+        if !model.isRecording {
+            let model = model
+            openSettings = { model.tab = .settings }
+        }
+        return [
             NodeSpec(label: loc("Device"), value: StateNodeWords.device(.phone)),
-            NodeSpec(label: RecKitStrings.localized("Transcription"), value: model.processingSummary),
+            NodeSpec(
+                label: RecKitStrings.localized("Transcription"),
+                value: model.processingSummary,
+                onClick: openSettings,
+                onClickLabel: RecKitStrings.localized("Recording processing")
+            ),
             stateNode,
         ]
     }

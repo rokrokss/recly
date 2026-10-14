@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.Hyphens
 import androidx.compose.ui.unit.dp
@@ -55,8 +57,10 @@ fun ScreenHeader(
         val stacked = stackable && (maxWidth < 400.dp || (maxWidth < 560.dp && LocalDensity.current.fontScale > 1.3f))
         val heading: @Composable () -> Unit = {
             Column(verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+                // docs/09 "Disabled, focus and structure": the screen's title is a heading, so a reader can jump to it.
                 Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
-                    maxLines = if (compact || singleLine) 1 else 3, overflow = TextOverflow.Ellipsis)
+                    maxLines = if (compact || singleLine) 1 else 3, overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() })
                 meta?.let { value ->
                     // Counts in mono, the words between them in the sans where they are Korean (N3).
                     SelectionContainer { Text(monoWords(value), style = mono.small, color = blueprint.textMuted, maxLines = if (compact) 1 else Int.MAX_VALUE, overflow = TextOverflow.Ellipsis) }
@@ -69,7 +73,7 @@ fun ScreenHeader(
                 if (trailing != null) Box(Modifier.fillMaxWidth(), contentAlignment = trailingAlignment) { trailing() }
             }
         } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Space.sm), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { heading() }
                 trailing?.invoke()
             }
@@ -86,7 +90,8 @@ fun ScreenHeader(
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        modifier = modifier.padding(top = Space.m, bottom = Space.s),
+        // docs/09 "Component measurements": 8 below. A heading, for a reader's heading navigation.
+        modifier = modifier.padding(top = Space.m, bottom = Space.s).semantics { heading() },
         style = MaterialTheme.typography.labelSmall,
         color = blueprint.textMuted,
     )
@@ -112,11 +117,12 @@ fun TableRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Space.m, vertical = Space.m),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                // docs/09 "Component measurements": 12 top and bottom, 16 at the sides.
+                .padding(horizontal = Space.m, vertical = Space.sm),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 // A word longer than the column (German "Zusammenfassungsformat") breaks with a hyphen, not mid-word.
                 Text(title, style = MaterialTheme.typography.bodyMedium.copy(hyphens = Hyphens.Auto), color = palette.text)
                 subtitle?.let {
@@ -157,7 +163,7 @@ fun SwitchRow(
 ) {
     TableRow(
         title = title,
-        modifier = modifier.toggleable(
+        modifier = modifier.focusRing(blueprint).toggleable(
             value = checked,
             enabled = enabled,
             role = Role.Switch,
@@ -169,15 +175,16 @@ fun SwitchRow(
 }
 
 /**
- * docs/09 "Shape": no rounded pills, so the switch is a square track with a square thumb. The track
+ * docs/09 "Shape": no rounded pills, so the switch is a square track with a square thumb (radius 2). The track
  * is 40x22, drawn inside a [MinTouch] box so that whoever makes it toggleable — [SwitchRow], or the
- * editor's own inspector row — never ends up with a target smaller than the rule.
+ * editor's own inspector row — never ends up with a target smaller than the rule. Disabled, the track is
+ * dashed and both are `disabled` (docs/09 "Component measurements").
  */
 @Composable
 fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = Modifier) {
     val palette = blueprint
     val ink = when {
-        !enabled -> palette.grid
+        !enabled -> palette.disabled
         checked -> palette.accent
         else -> palette.textMuted
     }
@@ -186,8 +193,14 @@ fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = 
             modifier = Modifier
                 .size(width = 40.dp, height = 22.dp)
                 // docs/09 "Lines": the same token as every other border, rather than a 1.5 of its own.
-                .border(palette.line, ink, RoundedCornerShape(Radius.badge))
-                .padding(2.dp),
+                .then(
+                    if (enabled) {
+                        Modifier.border(palette.line, ink, RoundedCornerShape(Radius.badge))
+                    } else {
+                        Modifier.dashedBorder(palette.line, ink, Radius.badge)
+                    },
+                )
+                .padding(Space.xxs),
             horizontalArrangement = if (checked) Arrangement.End else Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {

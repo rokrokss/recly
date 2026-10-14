@@ -41,7 +41,7 @@
   "Could not disconnect Drive. Try again in Settings. ({0})": "Не удалось отключить Drive. Повторите попытку в настройках. ({0})",
   "Could not fetch from Drive": "Не удалось получить из Drive",
   "Could not finish saving — it is recovered on the next run": "Не удалось завершить сохранение; запись будет восстановлена при следующем запуске",
-  "Could not finish saving — recovered next time": "Не удалось завершить сохранение; запись будет восстановлена при следующем запуске",
+  "Could not finish saving — recovered next time": "Сохранено не полностью — восстановим позже",
   "Could not load the transcript. Try again.": "Не удалось загрузить расшифровку. Повторите попытку.",
   "Could not play this recording. Try playing it again.": "Не удалось воспроизвести запись. Повторите попытку.",
   "Could not read transfer permissions": "Не удалось прочитать разрешения на передачу",

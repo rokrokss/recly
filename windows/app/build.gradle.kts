@@ -156,7 +156,9 @@ compose.desktop {
             // (found the hard way: the packaged app died on `java.sql.DriverManager`); `java.naming`
             // and `jdk.crypto.ec` are what TLS needs for Drive; `jdk.unsupported` is JNA's.
             // `jdk.management` is the total-memory read that decides whether the on-device engine runs.
-            modules("java.sql", "java.naming", "jdk.crypto.ec", "jdk.unsupported", "jdk.management")
+            // `jdk.accessibility` is the Java Access Bridge NVDA and JAWS read the app through (docs/09 "Disabled,
+            // focus and structure").
+            modules("java.sql", "java.naming", "jdk.crypto.ec", "jdk.unsupported", "jdk.management", "jdk.accessibility")
             packageName = "Recly"
             packageVersion = installerVersion
             vendor = "Recly"

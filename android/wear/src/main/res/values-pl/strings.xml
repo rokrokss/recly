@@ -8,7 +8,7 @@
     <string name="recording_active">Nagrywanie</string>
     <string name="recording_stopping">Zapisywanie…</string>
     <string name="recording_mic_denied">Wymagane uprawnienie do mikrofonu</string>
-    <string name="recording_save_deferred">Nie dokończono zapisu — nagranie zostanie odzyskane później</string>
+    <string name="recording_save_deferred">Zapis niepełny — odzyskany później</string>
     <string name="recording_failed">Niepowodzenie: %1$s</string>
     <string name="pending_badge">Czeka na wysłanie</string>
     <string name="sending_badge">Wysyłanie</string>

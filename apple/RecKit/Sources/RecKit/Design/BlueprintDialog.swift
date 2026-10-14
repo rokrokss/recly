@@ -28,10 +28,12 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
     }
 
     public var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.sm) {
+            // docs/09 "Component measurements" — Dialog: a title of 20, and it is the heading of what is up.
             Text(verbatim: title)
                 .font(blueprint.fonts.title)
                 .foregroundStyle(blueprint.palette.text)
+                .accessibilityAddTraits(.isHeader)
                 // docs/09 Fluid typography: three lines is what the header may take. Every title here is
                 // a short question; the one thing that can outgrow it is the user's own recording
                 // name inside "Delete ‘…’?", and cutting *that* in the middle is what keeps the
@@ -67,8 +69,9 @@ public struct BlueprintDialog<Actions: View, Content: View>: View {
         .frame(maxWidth: Self.maxWidth)
         .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
         .overlay {
+            // …and a card edge in `inputBorder`: the grid's colour is decoration (2026-10-15).
             RoundedRectangle(cornerRadius: Radius.node)
-                .strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+                .strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
         }
     }
 
@@ -247,6 +250,7 @@ public struct BlueprintRadioRow: View {
             OptionRow(label: label, selected: selected, filled: false)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .accessibilityAddTraits(selected ? [.isButton, .isSelected] : .isButton)
     }
 }
@@ -267,6 +271,7 @@ public struct BlueprintCheckRow: View {
             OptionRow(label: label, selected: isOn, filled: true)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .accessibilityRepresentation {
             Toggle(isOn: $isOn) { Text(verbatim: label) }
         }
@@ -293,6 +298,7 @@ private struct OptionRow: View {
         .padding(.vertical, Space.s)
         .frame(minHeight: minTouch)
         .contentShape(Rectangle())
+        .blueprintFocusRing(radius: 0)
     }
 }
 
@@ -349,7 +355,9 @@ public struct BlueprintDialogLink: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: minTouch, alignment: .leading)
                 .contentShape(Rectangle())
+                .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
     }
 }

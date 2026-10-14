@@ -31,6 +31,7 @@ struct RecordingLiveActivityWidget: Widget {
                 Label {
                     Text("Recording")
                         .font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(WidgetTokens.text)
                 } icon: {
                     // docs/09 "Shape": a filled square, not a circle — the same mark the recording
                     // node on the phone's dashboard wears.
@@ -41,11 +42,14 @@ struct RecordingLiveActivityWidget: Widget {
                 Spacer()
                 elapsed(context.state.startedAt)
                     .font(.system(.title3, design: .monospaced))
+                    .foregroundStyle(WidgetTokens.text)
                 stopButton
             }
             .padding()
-            // docs/09 "Tokens": the palette's own page black rather than a translucent system one.
-            .activityBackgroundTint(WidgetTokens.background.opacity(0.6))
+            // docs/09 "Tokens": the palette's own page black rather than a translucent system one — and
+            // opaque, so the ground the dark copies are measured against is the ground they are drawn on,
+            // whatever the wallpaper under it (2026-10-15).
+            .activityBackgroundTint(WidgetTokens.background)
             .environment(\.locale, context.state.appLocale)
             .environment(\.layoutDirection, context.state.appLocale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         } dynamicIsland: { context in
@@ -60,6 +64,7 @@ struct RecordingLiveActivityWidget: Widget {
                 DynamicIslandExpandedRegion(.center) {
                     elapsed(context.state.startedAt)
                         .font(.system(.title2, design: .monospaced))
+                        .foregroundStyle(WidgetTokens.text)
                         .environment(\.locale, locale)
                         .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
                 }
@@ -72,6 +77,7 @@ struct RecordingLiveActivityWidget: Widget {
             } compactTrailing: {
                 elapsed(context.state.startedAt)
                     .font(.system(.caption, design: .monospaced))
+                    .foregroundStyle(WidgetTokens.text)
                     .environment(\.locale, locale)
                     .environment(\.layoutDirection, locale.language.characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
             } minimal: {
@@ -99,8 +105,9 @@ struct RecordingLiveActivityWidget: Widget {
             Text("Stop")
                 .font(.system(.subheadline, weight: .medium))
                 .foregroundStyle(WidgetTokens.danger)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
+                // docs/09 "Component measurements": a button's 8 × 4.
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
                 .overlay {
                     RoundedRectangle(cornerRadius: WidgetTokens.Radius.node)
                         .stroke(WidgetTokens.danger, lineWidth: 1)
@@ -218,12 +225,12 @@ struct RecordWidgetView: View {
             if let startedAt = status.startedAt, status.recording {
                 Text(timerInterval: startedAt ... Date.distantFuture, countsDown: false)
                     .font(.system(.title3, design: .monospaced))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(WidgetTokens.text)
                     .multilineTextAlignment(.center)
             } else {
                 Text(verbatim: "Recly")
                     .font(.system(.subheadline, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(WidgetTokens.text)
             }
             toggle {
                 ZStack {

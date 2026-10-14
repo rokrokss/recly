@@ -35,6 +35,13 @@ data class BlueprintColors(
     /** Input boundaries stay visible independently of the decorative grid. */
     val inputBorder: Color get() = textMuted
 
+    /**
+     * docs/09 "Derived tokens": the ink of anything disabled — the secondary colour at 50 %. An opacity of it rather
+     * than a colour of its own, so in high contrast, where the secondary colour becomes the body colour, a disabled
+     * control still draws lighter than an enabled one. Never [grid], which is decoration only.
+     */
+    val disabled: Color get() = textMuted.copy(alpha = 0.5f)
+
     /** docs/09 "Lines": 1dp, and 2dp in high contrast. Connectors, dividers, node borders. */
     val line: Dp get() = if (highContrast) 2.dp else 1.dp
 

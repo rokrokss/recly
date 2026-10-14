@@ -1,7 +1,9 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.defaultMinSize
@@ -16,9 +18,11 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.input.InputMode
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalInputModeManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
@@ -46,6 +50,10 @@ fun TextLink(
     val palette = blueprint
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
+    // docs/09 "Disabled, focus and structure": links too wear the focus ring under the keyboard — around the words, since
+    // the target around them is invisible and reaches over the lines next to it ([focusRing]'s rule otherwise).
+    val focused by interaction.collectIsFocusedAsState()
+    val keyboard = LocalInputModeManager.current.inputMode == InputMode.Keyboard
     // Written while the text is measured, and read in the same pass: not state, which would measure twice.
     val text = remember { arrayOfNulls<TextLayoutResult>(1) }
     val dots = palette.accent.copy(alpha = UNDERLINE_ALPHA)
@@ -64,6 +72,7 @@ fun TextLink(
         Text(
             label,
             modifier = Modifier
+                .then(if (focused && keyboard) Modifier.border(palette.selectedLine, palette.accent) else Modifier)
                 .alpha(if (pressed) PRESSED_ALPHA else 1f)
                 .drawBehind {
                     val layout = text[0] ?: return@drawBehind

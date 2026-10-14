@@ -32,10 +32,12 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-/** docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm. */
+/** docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm, and 2 between a label and its value. */
 object Space {
+    val xxs: Dp = 2.dp
     val xs: Dp = 4.dp
     val s: Dp = 8.dp
+    val sm: Dp = 12.dp
     val m: Dp = 16.dp
     val l: Dp = 24.dp
     val xl: Dp = 32.dp
@@ -70,6 +72,12 @@ val LocalBlueprintColors: ProvidableCompositionLocal<BlueprintColors> =
 
 val LocalMonoType: ProvidableCompositionLocal<MonoType> =
     staticCompositionLocalOf { monoType(1f) }
+
+/**
+ * docs/09 "Motion": the system asked for no animation (`SPI_GETCLIENTAREAANIMATION` off, see [systemAnimationsOn]) —
+ * transitions are instant, and the text status they carried stays. False wherever nobody said so.
+ */
+val LocalReduceMotion: ProvidableCompositionLocal<Boolean> = staticCompositionLocalOf { false }
 
 /**
  * docs/09 "High-contrast mode": Windows publishes its high-contrast switch — AWT carries
@@ -122,7 +130,8 @@ val mono: MonoType
  * theme measures rather than taking a number: a 640dp tray popup and a 1280dp editor are two sizes
  * of the same window on one screen, and a single app-wide scale would be wrong for one of them.
  *
- * [dark] defaults to the system's setting; the settings window passes an override over it.
+ * [dark] defaults to the system's setting; the settings window passes an override over it. [reduceMotion] is the
+ * system's animation setting, read by the window that draws this ([LocalReduceMotion]).
  */
 @Composable
 fun ReclyDesktopTheme(
@@ -134,6 +143,7 @@ fun ReclyDesktopTheme(
      * those too, which would double the spacing inside a Korean word.
      */
     tracked: Boolean = true,
+    reduceMotion: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val palette = remember(dark, highContrast) { blueprintColors(dark, highContrast) }
@@ -144,6 +154,7 @@ fun ReclyDesktopTheme(
         CompositionLocalProvider(
             LocalBlueprintColors provides palette,
             LocalMonoType provides monospace,
+            LocalReduceMotion provides reduceMotion,
         ) {
             MaterialTheme(
                 colorScheme = palette.toColorScheme(),

@@ -41,7 +41,7 @@
   "Could not disconnect Drive. Try again in Settings. ({0})": "Drive डिस्कनेक्ट नहीं हो सका। सेटिंग में फिर कोशिश करें। ({0})",
   "Could not fetch from Drive": "Drive से प्राप्त नहीं हो सका",
   "Could not finish saving — it is recovered on the next run": "सहेजना पूरा नहीं हो सका; अगली बार खोलने पर बहाल होगा",
-  "Could not finish saving — recovered next time": "सहेजना पूरा नहीं हो सका; अगली बार खोलने पर बहाल होगा",
+  "Could not finish saving — recovered next time": "सहेजना अधूरा — बाद में बहाल होगा",
   "Could not load the transcript. Try again.": "ट्रांसक्रिप्ट लोड नहीं हो सकी। फिर कोशिश करें।",
   "Could not play this recording. Try playing it again.": "रिकॉर्डिंग चल नहीं सकी। फिर चलाने की कोशिश करें।",
   "Could not read transfer permissions": "ट्रांसफ़र अनुमतियाँ पढ़ी नहीं जा सकीं",

@@ -21,6 +21,7 @@ struct AskPanel: View {
     let seekableSec: Double
     let onSeek: ((Double) -> Void)?
     @State private var copied = false
+    @FocusState private var questionFocused: Bool
     @Environment(\.blueprint) private var blueprint
     @Environment(\.locale) private var locale
 
@@ -45,10 +46,7 @@ struct AskPanel: View {
                     // 2026-10-10 (2.13): the user's words in their own direction.
                     .contentDirection(question)
                     .frame(minHeight: minTouch)
-                    .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
-                    }
+                    .fieldBox(focused: questionFocused, inset: EdgeInsets())
                     .disabled(running)
                     .accessibilityLabel(Text(verbatim: loc("Ask your own question")))
                     .accessibilityIdentifier("ask-question")
@@ -107,16 +105,17 @@ struct AskPanel: View {
     @ViewBuilder
     private var questionField: some View {
         #if os(macOS)
-        GrowingTextEditor(text: $question, placeholder: loc("Ask your own question"), lines: 1...4, onReturn: askOwn)
-            .padding(.horizontal, 10 - GrowingTextEditor.inset)
-            .padding(.vertical, 9)
+        GrowingTextEditor(
+            text: $question, placeholder: loc("Ask your own question"), lines: 1...4, focused: $questionFocused, onReturn: askOwn
+        )
+            .padding(FieldInset.textView)
         #else
         TextField("", text: $question, prompt: FieldPlaceholder.prompt(loc("Ask your own question"), blueprint.palette), axis: .vertical)
             .lineLimit(1...4)
             .textFieldStyle(.plain)
+            .focused($questionFocused)
             .onSubmit(askOwn)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 9)
+            .padding(FieldInset.field)
         #endif
     }
 
@@ -170,12 +169,13 @@ struct AskFrame<Content: View>: View {
         #else
         // 2026-10-10 (3.3): the title row and its close icon stay put; the body under them scrolls once the card
         // is as tall as the window lets it be.
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Space.sm) {
             HStack(spacing: Space.s) {
                 Text(verbatim: RecKitStrings.localized("Ask about this recording"))
                     .font(blueprint.fonts.title)
                     .foregroundStyle(blueprint.palette.text)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityAddTraits(.isHeader)
                 closeButton
             }
             ScrollView {
@@ -189,16 +189,15 @@ struct AskFrame<Content: View>: View {
         .frame(maxWidth: BlueprintDialog<EmptyView, EmptyView>.maxWidth)
         .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
         .overlay {
-            RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.grid, lineWidth: blueprint.line)
+            // docs/09 "Component measurements" — Dialog: the card's edge is `inputBorder`; the grid is decoration.
+            RoundedRectangle(cornerRadius: Radius.node).strokeBorder(blueprint.palette.inputBorder, lineWidth: blueprint.line)
         }
         .onExitCommand(perform: close)
         #endif
     }
 
     private var closeButton: some View {
-        Button(action: close) { HeaderIcon(systemName: "xmark") }
-            .buttonStyle(.plain)
-            .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Close")))
+        BlueprintIconButton("xmark", label: RecKitStrings.localized("Close"), action: close)
             .accessibilityIdentifier("ask-close")
     }
 }

@@ -8,7 +8,7 @@
     <string name="recording_active">Идёт запись</string>
     <string name="recording_stopping">Сохранение…</string>
     <string name="recording_mic_denied">Нужно разрешение на микрофон</string>
-    <string name="recording_save_deferred">Не удалось завершить сохранение; запись будет восстановлена при следующем запуске</string>
+    <string name="recording_save_deferred">Сохранено не полностью — восстановим позже</string>
     <string name="recording_failed">Ошибка: %1$s</string>
     <string name="pending_badge">Ожидает отправки</string>
     <string name="sending_badge">Отправка</string>

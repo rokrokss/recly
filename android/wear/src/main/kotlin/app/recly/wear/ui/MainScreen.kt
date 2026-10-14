@@ -63,6 +63,11 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 import kotlinx.coroutines.delay
 import kotlin.time.Clock as TimeClock
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.platform.ViewConfiguration
+import androidx.compose.ui.platform.LocalViewConfiguration
 
 /**
  * docs/11 W2. Two screens and no navigation library: on a watch the only journey is "record", and
@@ -141,6 +146,7 @@ private fun RecordScreen(
                         // should not move the stop node, and a Korean sentence must not break inside a word.
                         BasicText(
                             text = monoWords(line.first),
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                             style = WearBlueprint.small.copy(color = line.second, textAlign = TextAlign.Center),
                             maxLines = 1,
                             autoSize = TextAutoSize.StepBased(
@@ -151,7 +157,13 @@ private fun RecordScreen(
                         )
                     } else Text(
                         text = monoWords(line?.first ?: stringResource(R.string.recording_active)),
-                        modifier = if (line == null) Modifier.clearAndSetSemantics {} else Modifier,
+                        // docs/09 "Disabled, focus and structure": said politely when it changes. Blank, the node keeps the
+                        // live region, so news arriving is a change of its text rather than a node appearing.
+                        modifier = if (line == null) {
+                            Modifier.clearAndSetSemantics { liveRegion = LiveRegionMode.Polite }
+                        } else {
+                            Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        },
                         style = WearBlueprint.small,
                         color = line?.second ?: Color.Transparent,
                         textAlign = TextAlign.Center,
@@ -167,9 +179,13 @@ private fun RecordScreen(
                         enter = expandVertically(tween(MOTION_MS)),
                         exit = shrinkVertically(tween(MOTION_MS)),
                     ) {
+                        // The node's touch target reaches past its drawing on a small face (see [FitToWatch]), and the
+                        // slide clips to its own box: the box takes that reach as invisible padding — out of the gap
+                        // above, so the node itself does not move — or a tap at the edge of the target would miss.
+                        val reach = ((LocalViewConfiguration.current.minimumTouchTargetSize.height - HIGHLIGHT_NODE) / 2).coerceIn(0.dp, 8.dp)
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Spacer(Modifier.height(8.dp))
-                            HighlightButton(onHighlight)
+                            Spacer(Modifier.height(8.dp - reach))
+                            HighlightButton(onHighlight, Modifier.padding(reach))
                         }
                     }
                 }
@@ -221,15 +237,27 @@ private fun statusLine(state: WearUiState): Pair<String, Color>? {
  * docs/09 "Fluid typography": the record screen is drawn for a large round watch, and a smaller one gets
  * the same screen scaled down to its width — at the drawn size the Help button sat under the curve
  * of a 192dp watch. Larger watches keep the drawn size.
+ *
+ * docs/09 "Typography": the touch targets are the exception — they stay 48 at the face's real density. What
+ * is drawn shrinks; the reach does not: the minimum touch target, which Compose extends a smaller control's
+ * hit area to without moving anything, is raised by the same factor the density was lowered by.
  */
 @Composable
 private fun FitToWatch(content: @Composable () -> Unit) {
     val scale = (LocalConfiguration.current.screenWidthDp / DRAWN_FOR_WIDTH_DP).coerceAtMost(1f)
     val density = LocalDensity.current
+    val view = LocalViewConfiguration.current
     CompositionLocalProvider(
         LocalDensity provides Density(density.density * scale, density.fontScale),
+        LocalViewConfiguration provides remember(view, scale) { FullSizeTouch(view, scale) },
         content = content,
     )
+}
+
+/** [base], with its minimum touch target divided by [scale] — 48 real dp, written in the scaled density's units. */
+private class FullSizeTouch(base: ViewConfiguration, scale: Float) : ViewConfiguration by base {
+    override val minimumTouchTargetSize: DpSize =
+        DpSize(base.minimumTouchTargetSize.width / scale, base.minimumTouchTargetSize.height / scale)
 }
 
 /** The large round watch (454 px at xhdpi) the record screen's sizes were chosen on. */
@@ -237,6 +265,9 @@ private const val DRAWN_FOR_WIDTH_DP = 227f
 
 /** docs/09 "Motion": the standard 200 ms; the system's own animation scale switches it off. */
 private const val MOTION_MS = 200
+
+/** The highlight node's drawn size, at the layout basis. */
+private val HIGHLIGHT_NODE = 48.dp
 
 /** How far the mark's line may shrink to stay on one line. */
 private const val HIGHLIGHT_MIN_SCALE = 0.7f
@@ -249,17 +280,17 @@ private fun stamp(seconds: Long): String = formatElapsed(seconds)
  * small filled accent square, no word. The name is for screen readers only.
  */
 @Composable
-private fun HighlightButton(onClick: () -> Unit) {
+private fun HighlightButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
     val label = stringResource(R.string.highlight)
     Box(
-        modifier = Modifier
-            .size(48.dp)
+        modifier = modifier
+            .size(HIGHLIGHT_NODE)
             .border(1.5.dp, WearBlueprint.accent, RoundedCornerShape(WearBlueprint.radius))
             .clickable(onClickLabel = label, role = Role.Button, onClick = onClick)
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
-        Box(Modifier.size(12.dp).background(WearBlueprint.accent, RoundedCornerShape(2.dp)))
+        Box(Modifier.size(12.dp).background(WearBlueprint.accent, RoundedCornerShape(WearBlueprint.badge)))
     }
 }
 
@@ -280,8 +311,9 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
         modifier = Modifier
             .size(56.dp)
             .border(WearBlueprint.nodeEdge, WearBlueprint.danger, RoundedCornerShape(WearBlueprint.radius))
+            // docs/09 "Typography" (watches): an idle node is filled with the surface, as on the phones.
             .background(
-                if (recording) WearBlueprint.danger else WearBlueprint.background,
+                if (recording) WearBlueprint.danger else WearBlueprint.surface,
                 RoundedCornerShape(WearBlueprint.radius),
             )
             .clickable(enabled = !busy, onClickLabel = label, role = Role.Button, onClick = onClick)
@@ -293,7 +325,7 @@ private fun RecordNode(recording: Boolean, busy: Boolean, onClick: () -> Unit) {
                 .size(18.dp)
                 .background(
                     if (recording) WearBlueprint.onDanger else WearBlueprint.danger,
-                    RoundedCornerShape(2.dp),
+                    RoundedCornerShape(WearBlueprint.badge),
                 ),
         )
     }

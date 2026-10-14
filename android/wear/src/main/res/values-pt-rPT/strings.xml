@@ -8,7 +8,7 @@
     <string name="recording_active">A gravar</string>
     <string name="recording_stopping">A guardar…</string>
     <string name="recording_mic_denied">É necessária a permissão do microfone</string>
-    <string name="recording_save_deferred">Não foi possível guardar — será recuperada da próxima vez</string>
+    <string name="recording_save_deferred">Gravação incompleta — recuperada depois</string>
     <string name="recording_failed">Falhou: %1$s</string>
     <string name="pending_badge">Envio pendente</string>
     <string name="sending_badge">A enviar</string>

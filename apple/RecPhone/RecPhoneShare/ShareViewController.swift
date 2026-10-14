@@ -8,11 +8,11 @@ import UniformTypeIdentifiers
 final class ShareViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        view.backgroundColor = .systemBackground
+        view.backgroundColor = ShareTokens.background
         let line = UILabel()
         line.text = String(localized: "Open Recly to import.")
         line.font = .preferredFont(forTextStyle: .body)
-        line.textColor = .secondaryLabel
+        line.textColor = ShareTokens.textMuted
         line.textAlignment = .center
         line.numberOfLines = 0
         line.translatesAutoresizingMaskIntoConstraints = false
@@ -74,5 +74,27 @@ final class ShareViewController: UIViewController {
     private static var inbox: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.app.recly")?
             .appendingPathComponent("Inbox", isDirectory: true)
+    }
+}
+
+/// docs/09 "Tokens": the page and the secondary ink, light and dark, for an extension that links no RecKit — the
+/// same sRGB hexes `BlueprintPalette` holds, which `BlueprintTokenTests` reads them against. High contrast promotes
+/// the secondary ink to the body colour, as the palette does.
+private enum ShareTokens {
+    static let background = color(light: 0xF7F7F5, dark: 0x0E0F12)
+    static let textMuted = color(light: 0x5E5E5A, dark: 0x9A9CA3, contrastLight: 0x111111, contrastDark: 0xF2F2F0)
+
+    private static func color(light: UInt32, dark: UInt32, contrastLight: UInt32? = nil, contrastDark: UInt32? = nil) -> UIColor {
+        UIColor { traits in
+            let isDark = traits.userInterfaceStyle == .dark
+            let contrast = traits.accessibilityContrast == .high
+            let hex = isDark ? (contrast ? contrastDark ?? dark : dark) : (contrast ? contrastLight ?? light : light)
+            return UIColor(
+                red: CGFloat((hex >> 16) & 0xFF) / 255,
+                green: CGFloat((hex >> 8) & 0xFF) / 255,
+                blue: CGFloat(hex & 0xFF) / 255,
+                alpha: 1
+            )
+        }
     }
 }

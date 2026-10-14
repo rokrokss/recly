@@ -32,6 +32,8 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -82,13 +84,16 @@ fun BlueprintDialog(
             modifier = modifier
                 .fillMaxWidth()
                 .heightIn(max = maxHeight)
-                .border(palette.line, palette.grid, shape)
+                // docs/09 "Component measurements": the card's edge is the input border — the grid is decoration only.
+                .border(palette.line, palette.inputBorder, shape)
                 .background(palette.surface, shape)
                 .padding(Space.m),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(Space.sm),
         ) {
+            // docs/09 "Component measurements": the title is 20 — and a heading.
             Text(
                 title,
+                modifier = Modifier.semantics { heading() },
                 style = MaterialTheme.typography.titleLarge,
                 color = palette.text,
                 maxLines = TITLE_LINES,
@@ -241,7 +246,7 @@ fun BlueprintCheckRow(
 @Composable
 private fun OptionRow(label: String, modifier: Modifier, mark: @Composable () -> Unit) {
     Row(
-        modifier = modifier.fillMaxWidth().defaultMinSize(minHeight = MinTouch),
+        modifier = Modifier.focusRing(blueprint).then(modifier).fillMaxWidth().defaultMinSize(minHeight = MinTouch),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -291,6 +296,7 @@ fun BlueprintDialogLink(label: String, onClick: () -> Unit, modifier: Modifier =
     Row(
         modifier = modifier
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(blueprint)
             .clickable(role = Role.Button, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
     ) {

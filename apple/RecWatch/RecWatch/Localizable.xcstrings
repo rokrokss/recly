@@ -2039,91 +2039,91 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudo terminar de guardar; se recuperará al volver a abrir"
+            "value": "Guardado incompleto — se recupera después"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enregistrement incomplet ; récupération au prochain lancement"
+            "value": "Enregistrement incomplet — repris plus tard"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Speichern nicht abgeschlossen; Wiederherstellung beim nächsten Start"
+            "value": "Nicht fertig gespeichert — später repariert"
           }
         },
         "ar": {
           "stringUnit": {
             "state": "translated",
-            "value": "تعذّر إتمام الحفظ؛ ستتم الاستعادة عند التشغيل التالي"
+            "value": "لم يكتمل الحفظ — ستتم الاستعادة لاحقًا"
           }
         },
         "hi": {
           "stringUnit": {
             "state": "translated",
-            "value": "सहेजना पूरा नहीं हो सका; अगली बार खोलने पर बहाल होगा"
+            "value": "सहेजना अधूरा — बाद में बहाल होगा"
           }
         },
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не удалось завершить сохранение; запись будет восстановлена при следующем запуске"
+            "value": "Сохранено не полностью — восстановим позже"
           }
         },
         "pt-BR": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível concluir o salvamento; será recuperado na próxima execução"
+            "value": "Salvamento incompleto — recupera depois"
           }
         },
         "pt-PT": {
           "stringUnit": {
             "state": "translated",
-            "value": "Não foi possível guardar — será recuperada da próxima vez"
+            "value": "Gravação incompleta — recuperada depois"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Salvataggio non completato: recupero al prossimo avvio"
+            "value": "Salvataggio incompleto — recupero dopo"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nie dokończono zapisu — nagranie zostanie odzyskane później"
+            "value": "Zapis niepełny — odzyskany później"
           }
         },
         "tr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kaydetme tamamlanamadı — sonraki açılışta kurtarılacak"
+            "value": "Kayıt tamamlanmadı — sonra kurtarılacak"
           }
         },
         "fil": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hindi natapos ang pag-save — mababawi sa susunod"
+            "value": "Kulang ang pag-save — mababawi mamaya"
           }
         },
         "bn": {
           "stringUnit": {
             "state": "translated",
-            "value": "সেভ করা শেষ হয়নি; পরের বার পুনরুদ্ধার করা হবে"
+            "value": "সেভ অসম্পূর্ণ — পরে পুনরুদ্ধার হবে"
           }
         },
         "ur": {
           "stringUnit": {
             "state": "translated",
-            "value": "محفوظ کرنا مکمل نہیں ہو سکا — اگلی بار بحال ہو گا"
+            "value": "محفوظ کرنا ادھورا — بعد میں بحال ہو گا"
           }
         },
         "sw": {
           "stringUnit": {
             "state": "translated",
-            "value": "Imeshindwa kumaliza kuhifadhi — itarejeshwa wakati ujao"
+            "value": "Uhifadhi haujakamilika — itarejeshwa baadaye"
           }
         },
         "vi": {

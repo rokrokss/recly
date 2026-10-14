@@ -1,5 +1,6 @@
 package app.recly.android.settings
 
+import android.app.UiModeManager
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -35,5 +36,13 @@ class AppThemeTest {
         assertFalse(AppTheme.SYSTEM.isDark(system = false))
         assertFalse(AppTheme.LIGHT.isDark(system = true))
         assertTrue(AppTheme.DARK.isDark(system = false))
+    }
+
+    /** The launch window's night mode (docs/09 "Accessibility"): an override is said outright, the default defers. */
+    @Test
+    fun `the system is told the same choice`() {
+        assertEquals(UiModeManager.MODE_NIGHT_AUTO, AppTheme.SYSTEM.nightMode)
+        assertEquals(UiModeManager.MODE_NIGHT_NO, AppTheme.LIGHT.nightMode)
+        assertEquals(UiModeManager.MODE_NIGHT_YES, AppTheme.DARK.nightMode)
     }
 }

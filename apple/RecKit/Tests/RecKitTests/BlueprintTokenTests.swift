@@ -42,6 +42,91 @@ final class BlueprintContrastTests: XCTestCase {
     }
     #endif
 
+    #if os(macOS)
+    /// docs/09 "Disabled, focus and structure" (2026-10-15): a button showing its own work — `…`, `✓` — takes no press
+    /// but keeps its ink and edge, drawn exactly as the live button is; only a disabled one is drawn otherwise.
+    @MainActor
+    func testAButtonShowingItsWorkKeepsItsInk() throws {
+        for (name, palette) in Self.palettes {
+            for tone in [ButtonTone.primary, .accent, .quiet] {
+                let live = try Self.drawn(BlueprintButton("…", tone: tone) {}, on: palette).tiffRepresentation
+                let working = try Self.drawn(BlueprintButton("…", tone: tone) {}.showingWork(), on: palette).tiffRepresentation
+                let disabled = try Self.drawn(BlueprintButton("…", tone: tone) {}.disabled(true), on: palette).tiffRepresentation
+                XCTAssertEqual(working, live, "\(name)/\(tone) is dimmed while it works")
+                XCTAssertNotEqual(disabled, live, "\(name)/\(tone) disabled looks live")
+            }
+        }
+    }
+
+    /// docs/09 "Disabled, focus and structure": a disabled control is drawn in `disabled` — the secondary colour at half
+    /// opacity — and nothing lighter: the plain button style's own dimming on top of it made it fainter than §9 says.
+    /// The inkiest pixel drawn — the fully covered middle of the dashed edge or of a stem — is that ink over the page,
+    /// as a swatch of `disabled` drawn the same way shows it.
+    @MainActor
+    func testADisabledControlIsDrawnInTheDisabledInkAndNoLighter() throws {
+        for (name, palette) in Self.palettes {
+            let page = palette.hex(.background)
+            let swatch = try Self.drawn(Rectangle().fill(palette.disabled).frame(width: 24, height: 24), on: palette)
+            let wanted = try XCTUnwrap(Self.inkiest(swatch, from: page))
+            let controls: [(String, AnyView)] = [
+                ("button", AnyView(BlueprintButton("MMMM", tone: .quiet) {}.disabled(true))),
+                ("primary button", AnyView(BlueprintButton("MMMM", tone: .primary) {}.disabled(true))),
+                ("chip", AnyView(BlueprintChip("MMMM", selected: false) {}.disabled(true))),
+                ("icon button", AnyView(BlueprintIconButton("square.and.arrow.down", label: "Import") {}.disabled(true))),
+                ("dropdown", AnyView(BlueprintDropdown("Language", options: [Choice.one], selection: .constant(Choice.one)) { _ in "MMMM" }.disabled(true))),
+            ]
+            for (control, view) in controls {
+                let drawn = try Self.drawn(view, on: palette)
+                let inkiest = try XCTUnwrap(Self.inkiest(drawn, from: page), "\(name)/\(control) drew nothing")
+                for shift in [UInt32(16), 8, 0] {
+                    let got = Int((inkiest >> shift) & 0xFF)
+                    let expected = Int((wanted >> shift) & 0xFF)
+                    XCTAssertLessThanOrEqual(
+                        abs(got - expected), 4,
+                        "\(name)/\(control) is drawn in \(String(format: "%06X", inkiest)), not `disabled` \(String(format: "%06X", wanted))"
+                    )
+                }
+            }
+        }
+    }
+
+    private enum Choice: String, Identifiable, Hashable { case one; var id: String { rawValue } }
+
+    /// [view] in a window, on [palette]'s page, as the screen draws it.
+    @MainActor
+    private static func drawn(_ view: some View, on palette: BlueprintPalette) throws -> NSBitmapImageRep {
+        let host = NSHostingView(rootView: view
+            .environment(\.blueprint, Blueprint(palette: palette))
+            .padding(Space.s)
+            .background(palette.background))
+        host.setFrameSize(host.fittingSize)
+        let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = host
+        host.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: bitmap)
+        return bitmap
+    }
+
+    /// The drawn pixel farthest from the page, as an sRGB hex.
+    private static func inkiest(_ bitmap: NSBitmapImageRep, from page: UInt32) -> UInt32? {
+        func channels(_ hex: UInt32) -> [Int] { [Int((hex >> 16) & 0xFF), Int((hex >> 8) & 0xFF), Int(hex & 0xFF)] }
+        let ground = channels(page)
+        var best: (distance: Int, hex: UInt32)?
+        for x in 0..<bitmap.pixelsWide {
+            for y in 0..<bitmap.pixelsHigh {
+                guard let colour = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB), colour.alphaComponent > 0.99 else { continue }
+                let hex = UInt32((colour.redComponent * 255).rounded()) << 16
+                    | UInt32((colour.greenComponent * 255).rounded()) << 8
+                    | UInt32((colour.blueComponent * 255).rounded())
+                let distance = zip(channels(hex), ground).map { abs($0 - $1) }.reduce(0, +)
+                if distance > (best?.distance ?? 0) { best = (distance, hex) }
+            }
+        }
+        return best?.hex
+    }
+    #endif
+
     func testEveryTextPairClears4_5To1InEveryPalette() {
         for (name, palette) in Self.palettes {
             for ink in Self.inks {
@@ -83,38 +168,107 @@ final class BlueprintContrastTests: XCTestCase {
     /// core would carry the database with it (docs/13) — so the handful of values they draw are
     /// written out in their own `WidgetTokens.swift`. This is what keeps those copies honest: a
     /// hex that moves in the palette has to move there too, or this fails.
+    ///
+    /// 2026-10-15: every ground those extensions draw on is dark — the Live Activity, the Dynamic Island, the
+    /// widget's container, a watch face — so every colour copied there is the **dark** palette's, read here by
+    /// its name. The light red on the activity's page black was 3.8:1.
     func testTheWidgetsCopyOfTheTokensIsThePalettes() throws {
-        let source = try String(
-            contentsOf: LocalizationCatalogTests.appleRoot
-                .appendingPathComponent("RecPhone/RecPhoneWidgets/WidgetTokens.swift"),
-            encoding: .utf8
-        )
-        for (name, token) in [("danger", BlueprintToken.danger), ("background", .background)] {
-            let hex = String(format: "0x%06X", name == "danger"
-                ? BlueprintPalette.light.hex(token)
-                : BlueprintPalette.dark.hex(token))
-            XCTAssertTrue(
-                source.contains(hex),
-                "the phone widget's \(name) is not the palette's \(hex)"
-            )
+        let source = try Self.source("RecPhone/RecPhoneWidgets/WidgetTokens.swift")
+        let phone = try Self.widgetColours(in: source)
+        XCTAssertEqual(Set(phone.keys), ["danger", "text", "background"], "the phone widget's copies changed")
+        for (name, hex) in phone {
+            let token = try XCTUnwrap(Self.token(named: name), "\(name) is not a palette token")
+            XCTAssertEqual(hex, BlueprintPalette.dark.hex(token), "the phone widget's \(name) is not the dark palette's")
         }
         XCTAssertTrue(source.contains("node: CGFloat = \(Int(Radius.node))"))
         XCTAssertTrue(source.contains("badge: CGFloat = \(Int(Radius.badge))"))
         XCTAssertTrue(source.contains("minTouch: CGFloat = \(Int(minTouch))"))
+        // What the activity draws in words on that ground — the red Stop, the white clock — reads as text does.
+        for ink in [BlueprintToken.danger, .text] {
+            assertContrast(.dark, ink, on: .background, atLeast: 4.5, in: "widget")
+        }
 
-        let watch = try String(
-            contentsOf: LocalizationCatalogTests.appleRoot
-                .appendingPathComponent("RecWatch/RecWatchWidgets/WidgetTokens.swift"),
-            encoding: .utf8
-        )
+        let watch = try Self.source("RecWatch/RecWatchWidgets/WidgetTokens.swift")
         XCTAssertTrue(watch.contains("iconSize: CGFloat = 19"), "the complication's glyph size drifted")
-        // 2026-10-11 (N4): the complication's recording mark is the palette's red too.
-        XCTAssertTrue(
-            watch.contains(String(format: "0x%06X", BlueprintPalette.light.hex(.danger))),
-            "the complication's danger is not the palette's"
-        )
+        // 2026-10-11 (N4): the complication's recording mark is the palette's red too — on a watch face, the dark one.
+        XCTAssertEqual(try Self.widgetColours(in: watch), ["danger": BlueprintPalette.dark.hex(.danger)])
         XCTAssertTrue(watch.contains("node: CGFloat = \(Int(Radius.node))"))
         XCTAssertTrue(watch.contains("badge: CGFloat = \(Int(Radius.badge))"))
+    }
+
+    /// docs/09 "Tokens": the share extension's line and page are the palette's too — the light value on the light
+    /// page, the dark on the dark, and the secondary ink promoted to the body colour in high contrast.
+    func testTheShareExtensionsCopyOfTheTokensIsThePalettes() throws {
+        let source = try Self.source("RecPhone/RecPhoneShare/ShareViewController.swift")
+        let regex = try NSRegularExpression(
+            pattern: #"static let (\w+) = color\(light: 0x([0-9A-Fa-f]{6}), dark: 0x([0-9A-Fa-f]{6})(?:, contrastLight: 0x([0-9A-Fa-f]{6}), contrastDark: 0x([0-9A-Fa-f]{6}))?\)"#
+        )
+        let matches = regex.matches(in: source, range: NSRange(source.startIndex..., in: source))
+        XCTAssertEqual(matches.count, 2, "the share extension's copies changed")
+        for match in matches {
+            func group(_ index: Int) -> String? {
+                Range(match.range(at: index), in: source).map { String(source[$0]) }
+            }
+            let name = try XCTUnwrap(group(1))
+            let token = try XCTUnwrap(Self.token(named: name), "\(name) is not a palette token")
+            XCTAssertEqual(group(2), String(format: "%06X", BlueprintPalette.light.hex(token)), "\(name), light")
+            XCTAssertEqual(group(3), String(format: "%06X", BlueprintPalette.dark.hex(token)), "\(name), dark")
+            if token == .textMuted {
+                XCTAssertEqual(group(4), String(format: "%06X", BlueprintPalette.palette(dark: false, highContrast: true).hex(token)))
+                XCTAssertEqual(group(5), String(format: "%06X", BlueprintPalette.palette(dark: true, highContrast: true).hex(token)))
+            }
+        }
+    }
+
+    private static func source(_ path: String) throws -> String {
+        try String(contentsOf: LocalizationCatalogTests.appleRoot.appendingPathComponent(path), encoding: .utf8)
+    }
+
+    /// `static let <name> = Color(widgetHex: 0x……)`, as name → hex.
+    private static func widgetColours(in source: String) throws -> [String: UInt32] {
+        let regex = try NSRegularExpression(pattern: #"static let (\w+) = Color\(widgetHex: 0x([0-9A-Fa-f]{6})\)"#)
+        var colours: [String: UInt32] = [:]
+        for match in regex.matches(in: source, range: NSRange(source.startIndex..., in: source)) {
+            guard let name = Range(match.range(at: 1), in: source), let hex = Range(match.range(at: 2), in: source) else { continue }
+            colours[String(source[name])] = UInt32(source[hex], radix: 16)
+        }
+        return colours
+    }
+
+    private static func token(named name: String) -> BlueprintToken? {
+        BlueprintToken.allCases.first { String(describing: $0) == name }
+    }
+
+    /// docs/09 "Derived tokens" (2026-10-15): `disabled` is the secondary colour at half opacity, so it is lighter than
+    /// enabled ink in every palette — in high contrast too, where the secondary colour is the body colour and a disabled
+    /// control drawn in it would look live.
+    func testDisabledInkIsLighterThanEnabledInkInEveryPalette() {
+        for (name, palette) in Self.palettes {
+            for ground in [BlueprintToken.surface, .background] {
+                let page = palette.hex(ground)
+                let disabled = Self.composite(palette.hex(.textMuted), opacity: BlueprintPalette.disabledOpacity, over: page)
+                XCTAssertLessThan(
+                    WCAG.contrast(disabled, page), WCAG.contrast(palette.hex(.textMuted), page),
+                    "\(name)/disabled on \(ground) is no lighter than the secondary ink"
+                )
+                XCTAssertLessThan(WCAG.contrast(disabled, page), WCAG.contrast(palette.hex(.text), page), "\(name)/\(ground)")
+            }
+        }
+    }
+
+    /// docs/09 "Spacing": the named steps, 2 to 32, every one a multiple of two and the ones past `xxs` of four.
+    func testTheSpacingStepsAreTheNamedOnes() {
+        XCTAssertEqual([Space.xxs, Space.xs, Space.s, Space.sm, Space.m, Space.l, Space.xl], [2, 4, 8, 12, 16, 24, 32])
+    }
+
+    /// [ink] at [opacity] over [ground], channel by channel in sRGB — what drawing it does.
+    private static func composite(_ ink: UInt32, opacity: Double, over ground: UInt32) -> UInt32 {
+        func channel(_ shift: UInt32) -> UInt32 {
+            let top = Double((ink >> shift) & 0xFF)
+            let bottom = Double((ground >> shift) & 0xFF)
+            return UInt32((top * opacity + bottom * (1 - opacity)).rounded()) << shift
+        }
+        return channel(16) | channel(8) | channel(0)
     }
 
     /// The check itself, on a pair whose answer is known: black on white is 21:1.

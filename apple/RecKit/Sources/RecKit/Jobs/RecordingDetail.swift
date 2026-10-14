@@ -972,9 +972,7 @@ public struct RecordingDetailView: View {
                         // docs/09 "Share / export": Share opens the sheet of formats. The Mac's is in its
                         // window toolbar.
                         if !model.loading {
-                            Button { sharing = true } label: { HeaderIcon(systemName: "square.and.arrow.up") }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text(verbatim: loc("Share")))
+                            BlueprintIconButton("square.and.arrow.up", label: loc("Share")) { sharing = true }
                                 .accessibilityIdentifier("detail-share")
                         }
                         #endif
@@ -1007,13 +1005,11 @@ public struct RecordingDetailView: View {
                             // Leaving the page stops what it was playing: the sheet is gone but this view
                             // is not torn down synchronously with it. 2026-10-08 §9: an icon in the row
                             // Share and More are in, as quiet as they are, rather than a bordered word.
-                            Button {
+                            BlueprintIconButton("xmark", label: loc("Close")) {
                                 player.stop()
                                 onClose()
-                            } label: { HeaderIcon(systemName: "xmark") }
-                                .buttonStyle(.plain)
-                                .accessibilityLabel(Text(verbatim: loc("Close")))
-                                .accessibilityIdentifier("detail-close")
+                            }
+                            .accessibilityIdentifier("detail-close")
                         }
                     }
                 }
@@ -1386,6 +1382,13 @@ public struct RecordingDetailView: View {
             seek(toSec: positionSec + Waveform.stepSec)
             return .handled
         }
+        // Space plays and pauses from the same focus stop, as Play does — only here, where a key press cannot be a
+        // space typed into a field.
+        .onKeyPress(.space) {
+            guard canPlay else { return .ignored }
+            togglePlayback()
+            return .handled
+        }
         #endif
         // docs/09 "Highlights": a tap within 12 pt of a tick opens its menu — Go to, Remove — and a screen
         // reader finds each tick as an element of its own with the same two actions.
@@ -1598,21 +1601,13 @@ public struct RecordingDetailView: View {
                 // Nor while the trip to Drive is still being decided: what this page will play is
                 // not settled yet, and a Play offered now would be answered by whatever the player
                 // last held. The clock stays, so the bar does not change shape when it appears.
-                if !model.deviceRecording, !player.captureBlocked, model.driveFetch != .deciding {
+                if canPlay {
                     BlueprintButton(
                         player.active ? loc("Pause") : loc("Play"),
                         tone: .primary,
-                        minWidth: playbackButtonMinWidth
-                    ) {
-                        if player.active {
-                            player.pause()
-                        } else {
-                            // This model's audio, at the press: the player holds nothing between
-                            // one recording and the next (see `RecordingPlayer.stop`).
-                            player.load(model.audio)
-                            player.play()
-                        }
-                    }
+                        minWidth: playbackButtonMinWidth,
+                        action: togglePlayback
+                    )
                     .accessibilityIdentifier("play-pause")
                 }
                 // docs/07 rule 4: a clock is a stamp, not a sentence.
@@ -1797,6 +1792,23 @@ public struct RecordingDetailView: View {
 
     /// The player may be holding nothing at all (see `RecordingPlayer.stop`), so it is handed this
     /// model's audio first — the same thing the press of Play does.
+    /// Play is offered: not while this device is recording, nor while the player is blocked by a capture or the trip to
+    /// Drive is still being decided (the player bar says why).
+    private var canPlay: Bool {
+        !model.deviceRecording && !player.captureBlocked && model.driveFetch != .deciding
+    }
+
+    private func togglePlayback() {
+        if player.active {
+            player.pause()
+        } else {
+            // This model's audio, at the press: the player holds nothing between
+            // one recording and the next (see `RecordingPlayer.stop`).
+            player.load(model.audio)
+            player.play()
+        }
+    }
+
     private func seek(toSec sec: Double) {
         player.load(model.audio)
         player.seek(toSec: sec)

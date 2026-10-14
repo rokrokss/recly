@@ -59,22 +59,6 @@ public enum ShareFormat: CaseIterable, Identifiable, Sendable {
 
 #if os(iOS) || os(macOS)
 
-/// The detail header's icon buttons (docs/09 "Detail header and More menu"): an SF Symbol in the quiet ink, a
-/// 44pt target.
-struct HeaderIcon: View {
-    let systemName: String
-    @Environment(\.blueprint) private var blueprint
-    @Environment(\.isEnabled) private var isEnabled
-
-    var body: some View {
-        Image(systemName: systemName)
-            .font(blueprint.fonts.sans(TypeSize.body))
-            .foregroundStyle(isEnabled ? blueprint.palette.textMuted : blueprint.palette.grid)
-            .frame(width: minTouch, height: minTouch)
-            .contentShape(Rectangle())
-    }
-}
-
 /// One item of a menu that can say why it is off: the reason is the item's second line (docs/09 "Detail
 /// header and More menu").
 struct ReasonedMenuItem: View {
@@ -145,10 +129,11 @@ struct DetailMoreMenu: View {
                 action: addHighlight
             )
         } label: {
-            HeaderIcon(systemName: "ellipsis.circle")
+            BlueprintIconLabel("ellipsis.circle")
         }
         .menuIndicator(.hidden)
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
+        .focusEffectDisabled()
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("More")))
         .accessibilityIdentifier("detail-more")
@@ -194,7 +179,8 @@ struct SpeakerBadge: View {
             .font(mono ? blueprint.fonts.monoBodySmall : blueprint.fonts.sans(TypeSize.small, weight: .medium))
             .foregroundStyle(blueprint.palette.textMuted)
             .lineLimit(1)
-            .padding(.horizontal, 10)
+            // The time button's box: a button's 8 at the sides.
+            .padding(.horizontal, Space.s)
             .frame(minWidth: minTouch, minHeight: minTouch)
             .overlay {
                 // 2026-10-08 §12: the secondary colour, so the badge reads as one against the page.
@@ -267,8 +253,10 @@ public struct FindBar: View {
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(width: minTouch, height: minTouch)
                     .contentShape(Rectangle())
+                    .blueprintFocusRing()
             }
-            .buttonStyle(.plain)
+            .buttonStyle(BlueprintPressStyle())
+            .focusEffectDisabled()
             .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Close search")))
             .accessibilityIdentifier("find-close")
         }
@@ -282,11 +270,14 @@ public struct FindBar: View {
         Button(action: action) {
             Text(verbatim: glyph)
                 .font(blueprint.fonts.sans(TypeSize.title))
-                .foregroundStyle(count > 1 ? blueprint.palette.accent : blueprint.palette.grid)
+                // docs/09 "Disabled, focus and structure": off, the `disabled` ink — never the grid's, which is decoration.
+                .foregroundStyle(count > 1 ? blueprint.palette.accent : blueprint.palette.disabled)
                 .frame(width: minTouch, height: minTouch)
                 .contentShape(Rectangle())
+                .blueprintFocusRing()
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BlueprintPressStyle())
+        .focusEffectDisabled()
         .disabled(count < 2)
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized(label)))
     }
@@ -308,15 +299,15 @@ public struct SearchResultRow: View {
 
     public var body: some View {
         Button(action: action) {
-            HStack(alignment: .top, spacing: 10) {
+            HStack(alignment: .top, spacing: Space.s) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(verbatim: LedgerFormat.date(hit.startedAt))
                     Text(verbatim: LedgerFormat.time(hit.startedAt))
                 }
                 .font(blueprint.fonts.monoBodySmall)
                 .foregroundStyle(blueprint.palette.textMuted)
-                .frame(width: 62, alignment: .leading)
-                VStack(alignment: .leading, spacing: 2) {
+                .frame(width: LedgerMetrics.timeColumn, alignment: .leading)
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(Self.marked(title, ranges: hit.titleRanges, tint: blueprint.palette.accent, background: nil))
                         .font(blueprint.fonts.bodySmall)
                         .foregroundStyle(blueprint.palette.text)
@@ -345,12 +336,15 @@ public struct SearchResultRow: View {
                         .foregroundStyle(blueprint.palette.textMuted)
                 }
             }
+            // docs/09 "Component measurements": a ledger row's 12 top and bottom.
             .padding(.horizontal, Space.m)
-            .padding(.vertical, 10)
+            .padding(.vertical, Space.sm)
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
+            .blueprintFocusRing(radius: 0)
         }
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .overlay(alignment: .bottom) { HairLine() }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("search-result")
@@ -447,12 +441,12 @@ struct DetailShareSheet: View {
         return Button {
             share(format)
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.sm) {
                 Image(systemName: format.glyph)
                     .font(blueprint.fonts.sans(TypeSize.body))
                     .foregroundStyle(blueprint.palette.textMuted)
                     .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(verbatim: format.title)
                         .font(blueprint.fonts.bodySmall)
                         .foregroundStyle(reason == nil ? blueprint.palette.text : blueprint.palette.textMuted)
@@ -481,12 +475,12 @@ struct DetailShareSheet: View {
             model.copyAll()
             copied = true
         } label: {
-            HStack(spacing: 12) {
+            HStack(spacing: Space.sm) {
                 Image(systemName: copied ? "checkmark" : "doc.on.doc")
                     .font(blueprint.fonts.sans(TypeSize.body))
                     .foregroundStyle(copied ? blueprint.palette.success : blueprint.palette.textMuted)
                     .frame(width: 24)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Space.xxs) {
                     Text(verbatim: RecKitStrings.localized("Copy all"))
                         .font(blueprint.fonts.bodySmall)
                         .foregroundStyle(model.document == nil ? blueprint.palette.textMuted : blueprint.palette.text)

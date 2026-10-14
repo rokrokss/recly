@@ -85,11 +85,13 @@ struct PlaybackSpeedChip: View {
                     }
                 }
                 .contentShape(Rectangle())
+                .blueprintFocusRing()
         }
         .menuIndicator(.hidden)
         // The speeds in reading order, slowest first, wherever the menu opens.
         .menuOrder(.fixed)
         .buttonStyle(.plain)
+        .focusEffectDisabled()
         .fixedSize()
         .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Speed")))
         .accessibilityValue(Text(verbatim: player.skipSilence

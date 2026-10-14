@@ -41,7 +41,7 @@
   "Could not disconnect Drive. Try again in Settings. ({0})": "تعذّر فصل Drive. أعد المحاولة من الإعدادات. ({0})",
   "Could not fetch from Drive": "تعذّر الجلب من Drive",
   "Could not finish saving — it is recovered on the next run": "تعذّر إتمام الحفظ؛ ستتم الاستعادة عند التشغيل التالي",
-  "Could not finish saving — recovered next time": "تعذّر إتمام الحفظ؛ ستتم الاستعادة عند التشغيل التالي",
+  "Could not finish saving — recovered next time": "لم يكتمل الحفظ — ستتم الاستعادة لاحقًا",
   "Could not load the transcript. Try again.": "تعذّر تحميل النص. أعد المحاولة.",
   "Could not play this recording. Try playing it again.": "تعذّر تشغيل التسجيل. أعد المحاولة.",
   "Could not read transfer permissions": "تعذّرت قراءة أذونات النقل",

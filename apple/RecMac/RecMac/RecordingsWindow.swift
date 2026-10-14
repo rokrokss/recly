@@ -28,18 +28,10 @@ struct RecordingsWindow: View {
             VStack(spacing: 0) {
                 ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)") {
                     // ux §7: an agent app shows no menu bar, so the list header's button carries ⌘I.
-                    Button { pickFiles() } label: {
-                        Image(systemName: "square.and.arrow.down")
-                            .font(blueprint.fonts.sans(TypeSize.body))
-                            .foregroundStyle(blueprint.palette.textMuted)
-                            .frame(width: minTouch, height: minTouch)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .keyboardShortcut("i")
-                    .help(loc("Import audio…"))
-                    .accessibilityLabel(Text(verbatim: RecKitStrings.localized("Import audio")))
-                    .accessibilityIdentifier("import-audio")
+                    BlueprintIconButton("square.and.arrow.down", label: RecKitStrings.localized("Import audio")) { pickFiles() }
+                        .keyboardShortcut("i")
+                        .help(loc("Import audio…"))
+                        .accessibilityIdentifier("import-audio")
                 }
                 // ux §6: titles and transcripts, above the ledger.
                 ListSearchField(text: $menu.searchQuery, focus: $searchFocused)
@@ -284,10 +276,10 @@ struct RecordingsWindow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        // Under the title column (16 + the 62pt time column), as the popover's expanded row is.
-        .padding(.leading, 78)
+        // Under the title column (the row's inset and its time column), as the popover's expanded row is.
+        .padding(.leading, Space.m + LedgerMetrics.timeColumn)
         .padding(.trailing, Space.m)
-        .padding(.vertical, 10)
+        .padding(.vertical, Space.sm)
         .background(blueprint.palette.background)
         .overlay(alignment: .leading) {
             Rectangle().fill(blueprint.palette.accent).frame(width: 2)

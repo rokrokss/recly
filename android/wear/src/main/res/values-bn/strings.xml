@@ -8,7 +8,7 @@
     <string name="recording_active">রেকর্ড হচ্ছে</string>
     <string name="recording_stopping">সেভ হচ্ছে…</string>
     <string name="recording_mic_denied">মাইক্রোফোনের অনুমতি প্রয়োজন</string>
-    <string name="recording_save_deferred">সেভ করা শেষ হয়নি; পরের বার পুনরুদ্ধার করা হবে</string>
+    <string name="recording_save_deferred">সেভ অসম্পূর্ণ — পরে পুনরুদ্ধার হবে</string>
     <string name="recording_failed">ব্যর্থ: %1$s</string>
     <string name="pending_badge">পাঠানোর অপেক্ষায়</string>
     <string name="sending_badge">পাঠানো হচ্ছে</string>

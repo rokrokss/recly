@@ -25,6 +25,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -38,7 +41,9 @@ import app.recly.windows.i18n.text
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
 import app.recly.windows.ui.component.BlueprintButton
+import app.recly.windows.ui.component.BannerRow
 import app.recly.windows.ui.component.ButtonTone
+import app.recly.windows.ui.component.EmptyList
 import app.recly.windows.ui.component.HairLine
 import app.recly.windows.ui.component.LedgerAction
 import app.recly.windows.ui.component.LedgerHeader
@@ -49,7 +54,6 @@ import app.recly.windows.ui.component.NodeSpec
 import app.recly.windows.ui.component.ProcessingButton
 import app.recly.windows.ui.component.ScreenHeader
 import app.recly.windows.ui.component.StateNodeRow
-import app.recly.windows.ui.component.StatusBadge
 import app.recly.windows.ui.component.statusColumnWidth
 import app.recly.windows.ui.component.textColumnWidth
 import app.recly.windows.ui.theme.BlueprintColors
@@ -129,7 +133,7 @@ private fun Header(model: ShellModel, strings: Strings) {
         // docs/09 §Fluid typography · i18n: four buttons of Korean labels are wider than a 520dp popup, so
         // the row wraps rather than pushing the last of them off the window.
         FlowRow(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.sm),
             horizontalArrangement = Arrangement.spacedBy(Space.s),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
@@ -279,19 +283,15 @@ private fun Ledger(
             RecentRow(item, model, strings, expanded == item.id, statusWidth) { onExpand(item.id) }
         }
         if (model.recents.isEmpty()) {
-            item {
-                Text(
-                    strings[Str.LEDGER_EMPTY],
-                    modifier = Modifier.padding(Space.l),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = palette.textMuted,
-                )
-            }
+            item { EmptyList(strings[Str.LEDGER_EMPTY], Modifier.fillMaxWidth()) }
         }
         if (statusLineShown(model.status, model.alerts)) item {
             Text(
                 model.status.text(strings),
-                modifier = Modifier.fillMaxWidth().padding(horizontal = Space.m, vertical = Space.s),
+                // docs/09 "Disabled, focus and structure": a status line that changes while the user looks at it is
+                // announced politely.
+                modifier = Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }
+                    .padding(horizontal = Space.m, vertical = Space.s),
                 style = MaterialTheme.typography.bodySmall,
                 color = palette.textMuted,
             )
@@ -327,47 +327,41 @@ private fun AlertBanner(model: ShellModel, strings: Strings) {
             HairLine()
             return@forEach
         }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(palette.surface)
-                .padding(horizontal = Space.m, vertical = Space.s),
-            horizontalArrangement = Arrangement.spacedBy(Space.s),
-            verticalAlignment = Alignment.CenterVertically,
+        val waitingForDrive = alert.reason == AlertReason.NEEDS_AUTH
+        BannerRow(
+            badge = if (waitingForDrive) null else alert.reason.badge().worded(strings),
+            action = {
+                // The sign-in is the one fix that happens here rather than on another screen, so it is
+                // the one that has a result to show (docs/09 trend 2).
+                if (alert.reason.fix == FixSurface.SIGN_IN) {
+                    ProcessingButton(
+                        label = strings[alert.reason.fix.label],
+                        state = model.action,
+                        strings = strings,
+                        onClick = { model.fix(alert) },
+                    )
+                } else {
+                    BlueprintButton(strings[alert.reason.fix.label], { model.fix(alert) })
+                }
+            },
         ) {
-            if (alert.reason == AlertReason.NEEDS_AUTH) {
+            if (waitingForDrive) {
                 Text(
                     strings[Str.ALERT_UPLOADS_WAITING, alert.count],
-                    modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyMedium,
                     color = palette.textMuted,
                 )
             } else {
-                StatusBadge(alert.reason.badge().worded(strings))
-                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        strings[alert.reason.label],
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = palette.text,
-                    )
-                    Text(
-                        strings[Str.ALERT_WAITING, alert.count],
-                        style = MaterialTheme.typography.bodySmall,
-                        color = palette.textMuted,
-                    )
-                }
-            }
-            // The sign-in is the one fix that happens here rather than on another screen, so it is
-            // the one that has a result to show (docs/09 trend 2).
-            if (alert.reason.fix == FixSurface.SIGN_IN) {
-                ProcessingButton(
-                    label = strings[alert.reason.fix.label],
-                    state = model.action,
-                    strings = strings,
-                    onClick = { model.fix(alert) },
+                Text(
+                    strings[alert.reason.label],
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = palette.text,
                 )
-            } else {
-                BlueprintButton(strings[alert.reason.fix.label], { model.fix(alert) })
+                Text(
+                    strings[Str.ALERT_WAITING, alert.count],
+                    style = MaterialTheme.typography.bodySmall,
+                    color = palette.textMuted,
+                )
             }
         }
         HairLine()
@@ -408,7 +402,7 @@ private fun RecentRow(
                 .fillMaxWidth()
                 .background(blueprint.background)
                 .padding(start = EXPANSION_INSET, end = Space.m)
-                .padding(vertical = 10.dp),
+                .padding(vertical = Space.sm),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
             // docs/08 "Errors": why this row is stuck and what to do about it, in the window the user

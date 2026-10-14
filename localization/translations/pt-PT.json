@@ -53,7 +53,7 @@
   "Could not fetch from Drive": "Não foi possível obter do Drive",
   "Could not fetch from iCloud": "Não foi possível obter do iCloud",
   "Could not finish saving — it is recovered on the next run": "Não foi possível terminar de guardar — será recuperada na próxima execução",
-  "Could not finish saving — recovered next time": "Não foi possível guardar — será recuperada da próxima vez",
+  "Could not finish saving — recovered next time": "Gravação incompleta — recuperada depois",
   "Could not load the transcript. Try again.": "Não foi possível carregar a transcrição. Tente novamente.",
   "Could not play this recording. Try playing it again.": "Não foi possível reproduzir esta gravação. Tente reproduzi-la novamente.",
   "Could not read from the local folder": "Não foi possível ler da pasta local",

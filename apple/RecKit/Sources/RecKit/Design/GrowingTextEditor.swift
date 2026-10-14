@@ -51,7 +51,7 @@ struct GrowingTextEditor: View {
     }
 
     /// What the text view keeps of its own at each side (its line fragment padding).
-    static let inset: CGFloat = 5
+    static let inset: CGFloat = FieldInset.textViewSide
 
     /// [text] with at least [lines]'s lower bound of lines, and a last line that is empty still counted. The filler
     /// is a letter, never seen: a `Text` drops the whitespace a line of nothing but a space would be.

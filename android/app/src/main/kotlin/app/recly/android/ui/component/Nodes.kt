@@ -66,6 +66,7 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier, valueStyle: TextSty
     val palette = blueprint
     Column(
         modifier = modifier
+            .then(if (spec.onClick != null) Modifier.focusRing(palette, Radius.node) else Modifier)
             .border(
                 width = palette.line,
                 // Quiet, but still the 3:1 a control's edge needs on the page (UX decisions of 2026-10-08).
@@ -87,9 +88,9 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier, valueStyle: TextSty
                     Modifier
                 },
             )
-            // docs/09 "Spacing": the same 8dp as the vertical, which is what a 320dp phone has to
-            // spare — a third of that row is nine characters of `UPLOADING` and little else.
-            .padding(Space.s),
+            // docs/09 "Component measurements": 12 at the sides, 8 above and below. A value the 12 leaves too
+            // little room for shrinks or takes a second line ([fitValue]) rather than being cut.
+            .padding(horizontal = NODE_PAD, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.xs),
     ) {
         // N2 (UX decisions of 2026-10-11): a label wider than the node ("Transkription" at a large font)
@@ -154,7 +155,7 @@ fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
         val narrow = density.fontScale > 1.3f || maxWidth < 300.dp
         // Each value's size in a node of [share]: its padding and border on each side, and the loader while it works, off.
         fun fit(share: Dp): List<TextStyle?> = nodes.map { spec ->
-            val room = share - (Space.s + palette.line) * 2 - if (spec.busy) LOADER + Space.xs else 0.dp
+            val room = share - (NODE_PAD + palette.line) * 2 - if (spec.busy) LOADER + Space.xs else 0.dp
             fitValue(measurer, monoWords(spec.value), value, with(density) { room.roundToPx() })
         }
         val (stacked, styles) = remember(nodes.map { it.value to it.busy }, maxWidth, value, density, narrow) {
@@ -179,6 +180,9 @@ fun StateNodeRow(nodes: List<NodeSpec>, modifier: Modifier = Modifier) {
 
 /** The straight line between two nodes. */
 private val CONNECTOR = 20.dp
+
+/** What a node puts between its edge and its words at each side. */
+private val NODE_PAD = Space.sm
 
 /** docs/09 "Typography": the timer is the one piece of data big enough to be the screen. */
 @Composable

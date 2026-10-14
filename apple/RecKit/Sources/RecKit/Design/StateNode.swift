@@ -12,13 +12,21 @@ public struct NodeSpec: Identifiable, Equatable, Sendable {
     public let active: Bool
     /// Work is running behind the value, and the node turns a loader beside it to say so.
     public let busy: Bool
+    /// docs/09 screen principle 1: set only on the one node that takes a tap — the transcription node. The device and
+    /// the state beside it are readouts, and a readout with a tap on it is a control a screen reader announces and a
+    /// user cannot use (Android's `NodeSpec.onClick`).
+    public let onClick: (@MainActor @Sendable () -> Void)?
+    /// What tapping it does, in words, because the node itself is a label and a value.
+    public let onClickLabel: String?
 
     public init(
         label: String,
         value: String,
         valueColor: Color? = nil,
         active: Bool = true,
-        busy: Bool = false
+        busy: Bool = false,
+        onClick: (@MainActor @Sendable () -> Void)? = nil,
+        onClickLabel: String? = nil
     ) {
         id = label
         self.label = label
@@ -26,6 +34,15 @@ public struct NodeSpec: Identifiable, Equatable, Sendable {
         self.valueColor = valueColor
         self.active = active
         self.busy = busy
+        self.onClick = onClick
+        self.onClickLabel = onClickLabel
+    }
+
+    /// What the node shows, and whether it takes a tap — not which closure it would run.
+    public static func == (lhs: NodeSpec, rhs: NodeSpec) -> Bool {
+        lhs.id == rhs.id && lhs.label == rhs.label && lhs.value == rhs.value && lhs.valueColor == rhs.valueColor
+            && lhs.active == rhs.active && lhs.busy == rhs.busy && (lhs.onClick == nil) == (rhs.onClick == nil)
+            && lhs.onClickLabel == rhs.onClickLabel
     }
 }
 
@@ -39,6 +56,17 @@ public struct StateNode: View {
     }
 
     public var body: some View {
+        if let onClick = spec.onClick {
+            Button { onClick() } label: { node.blueprintFocusRing() }
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
+                .accessibilityHint(Text(verbatim: spec.onClickLabel ?? ""))
+        } else {
+            node
+        }
+    }
+
+    private var node: some View {
         VStack(alignment: .leading, spacing: Space.xs) {
             // 2026-10-11 (N2): a word wider than the node breaks at a hyphen, never between two letters.
             WrappingText(spec.label)
@@ -60,8 +88,9 @@ public struct StateNode: View {
         .lineLimit(2)
         .minimumScaleFactor(0.7)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        // docs/09 "Component measurements" — State node: padding 12 × 8.
+        .padding(.horizontal, Space.sm)
+        .padding(.vertical, Space.s)
         .background(blueprint.palette.surface, in: RoundedRectangle(cornerRadius: Radius.node))
         .overlay {
             RoundedRectangle(cornerRadius: Radius.node)
@@ -154,7 +183,9 @@ public struct MonoTimer: View {
 
     public var body: some View {
         Text(verbatim: text)
+            // docs/09 "Typography" (2026-10-15): mono at regular weight, with 1 of tracking.
             .font(blueprint.fonts.monoTimer)
+            .tracking(timerTracking)
             .foregroundStyle(color ?? blueprint.palette.text)
             .lineLimit(1)
             .minimumScaleFactor(0.5)

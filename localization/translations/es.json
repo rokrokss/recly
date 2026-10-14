@@ -41,7 +41,7 @@
   "Could not disconnect Drive. Try again in Settings. ({0})": "No se pudo desconectar Drive. Inténtalo en Ajustes. ({0})",
   "Could not fetch from Drive": "No se pudo obtener de Drive",
   "Could not finish saving — it is recovered on the next run": "No se pudo terminar de guardar; se recuperará al volver a abrir",
-  "Could not finish saving — recovered next time": "No se pudo terminar de guardar; se recuperará al volver a abrir",
+  "Could not finish saving — recovered next time": "Guardado incompleto — se recupera después",
   "Could not load the transcript. Try again.": "No se pudo cargar la transcripción. Inténtalo de nuevo.",
   "Could not play this recording. Try playing it again.": "No se pudo reproducir esta grabación. Inténtalo de nuevo.",
   "Could not read transfer permissions": "No se pudieron leer los permisos de transferencia",

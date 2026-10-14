@@ -45,10 +45,15 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import app.recly.android.settings.AppTheme
 
-/** docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm. */
+/**
+ * docs/09 "Spacing": multiples of four, with 8 / 16 / 24 as the rhythm, and the named steps between them —
+ * [xxs] for a label and its value, [sm] for a row's 12. A literal is for artwork only.
+ */
 object Space {
+    val xxs: Dp = 2.dp
     val xs: Dp = 4.dp
     val s: Dp = 8.dp
+    val sm: Dp = 12.dp
     val m: Dp = 16.dp
     val l: Dp = 24.dp
     val xl: Dp = 32.dp

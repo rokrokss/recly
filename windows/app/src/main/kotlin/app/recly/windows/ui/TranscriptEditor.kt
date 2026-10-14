@@ -124,7 +124,8 @@ internal fun TranscriptEditor(
                             .semantics { contentDescription = spoken }
                             // The accent while it has the focus, and the direction of its own words (2026-10-10).
                             .fieldBox()
-                            .padding(horizontal = Space.s, vertical = Space.s),
+                            // docs/09 "Component measurements": a field's inset, 12 × 8.
+                            .padding(horizontal = Space.sm, vertical = Space.s),
                         textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text, textDirection = TextDirection.Content),
                         cursorBrush = SolidColor(palette.accent),
                     )
