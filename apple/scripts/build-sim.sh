@@ -11,9 +11,11 @@
 #   apple/scripts/build-sim.sh Recly "iOS Simulator" "iPhone 17" test -only-testing:ReclyUITests
 set -euo pipefail
 here="$(cd "$(dirname "$0")" && pwd)"
-# `make core-mac` refreshed only the macOS slice; the simulator slices beside it predate the change.
-if [[ -f "$here/../RecKit/Frameworks/ReclyCore.partial" ]]; then
-  echo "build-sim: the staged core has only a fresh macOS slice ($(cat "$here/../RecKit/Frameworks/ReclyCore.partial")) — run \`make core\` first" >&2
+# A partial core (`make core-mac`, `make core-sim`) names its fresh slices; the iPhone app embeds the watch
+# app, so both simulator slices have to be among them — `make core-mac` leaves them older than the change.
+partial="$here/../RecKit/Frameworks/ReclyCore.partial"
+if [[ -f "$partial" ]] && ! { grep -q 'ios-arm64-simulator' "$partial" && grep -q 'watchos-arm64-simulator' "$partial"; }; then
+  echo "build-sim: the staged core has only a fresh macOS slice ($(cat "$partial")) — run \`make core-sim\` or \`make core\` first" >&2
   exit 1
 fi
 scheme="$1" platform="$2" device="$3"

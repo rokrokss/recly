@@ -42,6 +42,7 @@ path for Gradle, `ARCHS=arm64` for simulators, `-collect-test-diagnostics never`
 make test        # core · android · windows unit tests (JVM)
 make core        # build the XCFramework and stage it into apple/RecKit (do this first on a Mac)
 make core-mac    # after a core change, refresh only the macOS slice before make mac / mac-test
+make core-sim    # after a core change, refresh the macOS and simulator slices before make ios / watch
 make mac         # build Recly Mac          make mac-test   # RecKit tests on macOS
 make ios         # Recly on the iOS simulator        make watch      # Recly Watch on the watch simulator
 make apk         # phone debug APK          make spec       # validate spec/examples

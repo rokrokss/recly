@@ -8,6 +8,15 @@ plugins {
     alias(libs.plugins.skie)
 }
 
+// ADR-022 holds the apps to no telemetry, and the build holds itself to the same: SKIE otherwise captures
+// and uploads analytics on every link — hardware, Git statistics, a hashed project id
+// (https://skie.touchlab.co/Analytics, checked 2026-10-15) — and spends half a minute doing it.
+skie {
+    analytics {
+        enabled.set(false)
+    }
+}
+
 kotlin {
     jvmToolchain(21)
 

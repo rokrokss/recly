@@ -58,6 +58,7 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 | `make events` / `make events-test` | build recly-events / its tests (`go test -race`); `make events-release` builds its release archives (docs/development.md) |
 | `make core` | build the XCFramework and stage it into `apple/RecKit` — do this first on a Mac |
 | `make core-mac` | refresh only the macOS slice — one Kotlin/Native target instead of six; enough for `make mac` / `make mac-test` |
+| `make core-sim` | refresh the macOS and both simulator slices — three targets instead of six; enough for `make mac`, `make ios`, `make watch` |
 | `make mac` / `make mac-test` | build Recly Mac / run RecKit tests on macOS |
 | `make ios` / `make watch` | simulator builds (`IOS_SIM=` / `WATCH_SIM=` override the device) |
 | `make spec` | validate `spec/examples` against the JSON Schemas |
@@ -65,8 +66,9 @@ export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
 
 Apple work requires macOS. `make core` before any Apple build or test — the XCFramework is a
 Gradle output, not a checked-in artifact. Once it is staged, a `core/` change that you only need to
-check on the Mac takes `make core-mac`; iOS/watch simulator builds refuse to run until a full
-`make core` has refreshed their slices, and the release scripts always build all of them.
+check on the Mac takes `make core-mac`, and one you check on the simulators too `make core-sim`; iOS/watch
+simulator builds refuse to run until `make core-sim` or a full `make core` has refreshed their slices, and the
+release scripts always build all six.
 
 ## Rules that are contracts
 

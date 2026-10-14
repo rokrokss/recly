@@ -7,7 +7,9 @@
 # history.
 #
 # Pinned to one Hugging Face commit, every file by size and SHA-256. A file already there with the
-# right hash is kept, so a second run costs nothing and needs no network.
+# right hash is kept, so a second run costs nothing and needs no network. Downloads are also kept in a
+# per-machine cache (`RECLY_MODEL_CACHE`), so a new checkout or worktree copies them — a clone on APFS —
+# instead of downloading them again: 22 files took 3m37s on 2026-10-15.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -42,7 +44,9 @@ b314cf25a93e46b4076883a6f5a2f8848b73c3851bd9d36074d067f35a1c7945 2749 PldaRho.ml
 0964a66893fa5c3a574758257d30d2944669f44eeed5784b30ec3bab902012b3 1925 NOTICE.md
 "
 
-fetched=0
+cache="${RECLY_MODEL_CACHE:-$HOME/Library/Caches/recly/speaker-models}/$revision"
+
+fetched=0 copied=0
 while read -r sha size path; do
   [[ -n "$path" ]] || continue
   target="$dest/$path"
@@ -50,6 +54,12 @@ while read -r sha size path; do
     continue
   fi
   mkdir -p "$(dirname "$target")"
+  cached="$cache/$path"
+  if [[ -f "$cached" ]] && [[ "$(shasum -a 256 "$cached" | cut -d' ' -f1)" == "$sha" ]]; then
+    cp -c "$cached" "$target" 2>/dev/null || cp "$cached" "$target"
+    copied=$((copied + 1))
+    continue
+  fi
   curl -fsSL --retry 3 -o "$target.part" "https://huggingface.co/$repo/resolve/$revision/$path"
   actual="$(shasum -a 256 "$target.part" | cut -d' ' -f1)"
   if [[ "$actual" != "$sha" || "$(stat -f %z "$target.part")" != "$size" ]]; then
@@ -58,7 +68,9 @@ while read -r sha size path; do
     exit 1
   fi
   mv "$target.part" "$target"
+  mkdir -p "$(dirname "$cached")"
+  cp -c "$target" "$cached" 2>/dev/null || cp "$target" "$cached"
   fetched=$((fetched + 1))
 done <<< "$files"
 
-echo "fetch-speaker-models: $dest ($fetched fetched)"
+echo "fetch-speaker-models: $dest ($fetched fetched, $copied from $cache)"

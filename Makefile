@@ -20,13 +20,14 @@ WATCH_SIM ?= Apple Watch Series 11 (46mm)
 CORE_GRADLE_ARGS ?=
 SIM_BUILD_ARGS ?=
 
-.PHONY: help test core core-mac core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
+.PHONY: help test core core-mac core-sim core-test android-test windows-test apk wear-apk aab android-release-apk windows-run windows-msi helper-test ios-archive ios-upload mac-release \
         mac mac-test ios watch spec skills ios-release-test events events-test events-release
 
 help:
 	@echo "make test           core · android · windows unit tests (JVM)"
 	@echo "make core           build the XCFramework and stage it into apple/RecKit"
 	@echo "make core-mac       refresh only the macOS slice — the fast loop before make mac / mac-test"
+	@echo "make core-sim       refresh the macOS and simulator slices — enough for make mac, ios, watch"
 	@echo "make mac            build Recly Mac"
 	@echo "make mac-test       RecKit tests on macOS"
 	@echo "make ios            build Recly for the iOS simulator   (IOS_SIM=\"$(IOS_SIM)\")"
@@ -113,6 +114,9 @@ core:
 
 core-mac:
 	CORE_SLICES=macos ./apple/scripts/build-core.sh $(CORE_GRADLE_ARGS)
+
+core-sim:
+	CORE_SLICES=sim ./apple/scripts/build-core.sh $(CORE_GRADLE_ARGS)
 
 mac:
 	$(XCODEBUILD) -scheme 'Recly Mac' -destination 'platform=macOS' build
