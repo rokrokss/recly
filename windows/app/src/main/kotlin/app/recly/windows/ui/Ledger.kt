@@ -107,6 +107,8 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  * diagnostic that came with it never, on its own line in monospace under it. What to do about it is in the
  * row's actions line ([CheckKeyButton]).
  *
+ * And above it, while a provider is transcribing, how many minutes it has been.
+ *
  * Written once and drawn twice: the tray popup's expanded row and the recordings window's sidebar
  * are two views of the same recording, and a row that named a failure in one place and stayed
  * silent in the other was two answers to one question (the Mac's popover draws both from `row`).
@@ -114,6 +116,14 @@ private const val UNKNOWN_STATE = "UNKNOWN"
  */
 @Composable
 fun FailureReason(item: RecentItem, strings: Strings) {
+    // A provider transcribing: how long it has been, drawn and not only spoken, so the wait does not read as stuck (D12).
+    item.waitingMinutes?.let { minutes ->
+        Text(
+            strings[Str.STATE_WAITING_TRANSCRIPTION, minutes],
+            style = MaterialTheme.typography.bodySmall,
+            color = blueprint.textMuted,
+        )
+    }
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_AUTH) return
     // Waiting for the speech model is not a failure: the state and the row's Download say it.
     if (item.jobStatus == recly.core.job.JobStatus.NEEDS_MODEL) return

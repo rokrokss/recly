@@ -142,7 +142,7 @@ class DesktopAcceptance {
             delay(RECORD_MS)
             recorder.stop()
             val outcome = withTimeout(FINALIZE_MS) { finalized.await() }
-            val enqueued = completeRecording(core, outcome.recordingId, TITLE)
+            val enqueued = completeRecording(core, outcome.recordingId, TITLE).enqueued
             val jobId = (enqueued as? EnqueueResult.Enqueued)?.jobId
                 ?: error("enqueue: ${enqueued::class.simpleName}")
             accept(

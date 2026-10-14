@@ -56,6 +56,7 @@ import app.recly.windows.ui.DisconnectDialog
 import app.recly.windows.ui.ByteFormat
 import app.recly.windows.ui.ChatGptWelcomeDialog
 import app.recly.windows.ui.MeteredDownloadDialog
+import app.recly.windows.ui.MicrophoneDialog
 import app.recly.windows.ui.RecordingsWindow
 import app.recly.windows.ui.RenameDialog
 import app.recly.windows.ui.RetranscribeDialog
@@ -194,6 +195,17 @@ fun main(args: Array<String>) {
         // cancelling means no recording.
         if (model.consentRequest != null) {
             ConsentPrompt(model, strings, themed)
+        }
+
+        // docs/14 "Permissions": a start refused because the microphone is off for desktop apps — from here, since the
+        // popup that asked may be gone by the time it is answered.
+        if (model.micPrompt) {
+            MicrophoneDialog(
+                strings = strings,
+                theme = themed,
+                onClose = model::closeMicPrompt,
+                onOpenSettings = model::openMicPromptSettings,
+            )
         }
 
         // docs/03 "Deleting in the app" · "Disconnect": both are questions with a destructive answer, and both
@@ -510,15 +522,16 @@ private fun ConsentPrompt(
     var dontAskAgain by remember { mutableStateOf(false) }
     BlueprintDialog(
         title = strings[Consent.QUESTION],
-        // The window's close button is the cancel — this is a question, and "no" has to be possible.
-        onDismissRequest = model::consentCancelled,
+        // The window's close button is the cancel — this is a question, and "no" has to be possible. The box counts
+        // whichever way it is answered.
+        onDismissRequest = { model.consentCancelled(dontAskAgain) },
         theme = themed,
         width = CONSENT_WIDTH.dp,
         height = CONSENT_HEIGHT.dp,
         // The reminder alone, the link and the box: sized to them.
         fitContent = true,
         actions = {
-            BlueprintButton(strings[Consent.CANCEL], model::consentCancelled, tone = ButtonTone.QUIET, minWidth = MinTouch)
+            BlueprintButton(strings[Consent.CANCEL], { model.consentCancelled(dontAskAgain) }, tone = ButtonTone.QUIET, minWidth = MinTouch)
             BlueprintButton(
                 label = strings[Consent.CONFIRM],
                 onClick = { model.consentConfirmed(dontAskAgain) },

@@ -41,6 +41,11 @@ data class RecordingOutcome(
     val recordingId: String,
     val parts: Int,
     val durationSec: Double,
+    /**
+     * The helper died under it rather than the user stopping it: what was filed is finalized all the same, and the
+     * shell queues it untitled and says the recording failed instead of asking for a name.
+     */
+    val failed: Boolean = false,
 )
 
 /** What a stop made of the recording. The Mac's `StopResult` has the same three answers. */
@@ -138,6 +143,13 @@ class WindowsRecorder(
      * hundred floats ten times a second through a Compose state would redraw the whole popup.
      */
     fun livePeaks(): List<Float> = session?.live?.peaks ?: emptyList()
+
+    /**
+     * How much audio the recording that is running has written, in seconds — the helper's own clock, read off the
+     * levels it reports for what reached the file ([LiveWaveform.writtenSec]); null when none is running. A highlight
+     * marked from the tray is at this moment of the recording, not at the wall clock's.
+     */
+    fun writtenSec(): Double? = session?.live?.writtenSec
 
     /**
      * Creates the row and `meta.json`, then tells the helper where to write. Null when there is
@@ -245,7 +257,7 @@ class WindowsRecorder(
         )
         onState(false)
         onHelperDied()
-        finish(open, title = null)
+        finish(open, title = null, failed = true)
     }
 
     private suspend fun apply(open: Session, event: HelperEvent) {
@@ -333,7 +345,7 @@ class WindowsRecorder(
     }
 
     /** Finalizes once, whichever ending got here first. */
-    private suspend fun finish(open: Session, title: String?): StopResult {
+    private suspend fun finish(open: Session, title: String?, failed: Boolean = false): StopResult {
         val mine = mutex.withLock { (session === open).also { if (it) session = null } }
         if (!mine) return StopResult.NotRecording
         val pending = settle(open)
@@ -355,7 +367,7 @@ class WindowsRecorder(
             durationSec = open.recordedSec,
             title = title,
         )
-        val outcome = RecordingOutcome(open.recordingId, finalized.meta.parts.size, open.recordedSec)
+        val outcome = RecordingOutcome(open.recordingId, finalized.meta.parts.size, open.recordedSec, failed)
         onFinalized(outcome)
         return StopResult.Finalized(outcome)
     }

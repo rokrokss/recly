@@ -56,7 +56,7 @@ fun trayMenu(model: ShellModel, strings: Strings, quit: () -> Unit): List<TrayEn
     } else {
         // The same start as the popup's. A recording waiting for its name would lose its job to a
         // second one.
-        val startable = model.ready && !model.helperMissing && model.titlePrompt == null
+        val startable = model.ready && !model.helperMissing && model.titlePrompt == null && model.transition == null
         add(TrayEntry.Item(strings[Str.TRAY_START], enabled = startable, onClick = model::start))
         // docs/14 "Detection": an AWT balloon has no buttons, so clicking the balloon is the whole of its
         // interaction and **the reliable way to take an offer is this item** ([MeetingNotifier]).

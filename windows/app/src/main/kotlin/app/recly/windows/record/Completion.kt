@@ -1,7 +1,14 @@
 package app.recly.windows.record
 
+import app.recly.windows.i18n.Str
 import recly.core.ReclyCore
 import recly.core.job.EnqueueResult
+
+/**
+ * What naming and queuing a finished recording came to: the queue's answer, and whether a name (or the count of
+ * people in the room) arrived after the job had already read the meta, so it was not saved.
+ */
+data class Completion(val enqueued: EnqueueResult, val titleTooLate: Boolean = false)
 
 /**
  * docs/03 · docs/14 "Detection": the title is asked for *after* the recording has ended, and the job is
@@ -21,10 +28,27 @@ suspend fun completeRecording(
     recordingId: String,
     title: String?,
     participants: Int? = null,
-): EnqueueResult {
+): Completion {
     val named = title?.trim()?.takeIf { it.isNotEmpty() }
-    if (named != null || participants != null) {
+    val saved = if (named != null || participants != null) {
         core.recordings.updateTitle(recordingId, named, participants)
+    } else {
+        true
     }
-    return core.enqueue(recordingId)
+    return Completion(core.enqueue(recordingId), titleTooLate = !saved)
+}
+
+/**
+ * ADR-016's selection rules in the words of the person who just saved a recording — Android's `describe()`: the name
+ * that came too late first, then what the queue did with it. A recording queued as asked is not news, so null.
+ */
+fun Completion.line(): Str? = when {
+    titleTooLate -> Str.RECORDING_TITLE_TOO_LATE
+    else -> when (enqueued) {
+        EnqueueResult.NoWorkflow -> Str.ENQUEUE_NO_WORKFLOW
+        EnqueueResult.PartsPurged -> Str.ENQUEUE_PARTS_PURGED
+        is EnqueueResult.SkippedShort -> Str.ENQUEUE_SKIPPED_SHORT
+        EnqueueResult.AlreadySynced, is EnqueueResult.AlreadyDone -> Str.ENQUEUE_ALREADY_DONE
+        is EnqueueResult.Enqueued -> null
+    }
 }

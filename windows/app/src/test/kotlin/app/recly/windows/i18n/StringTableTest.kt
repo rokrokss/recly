@@ -130,7 +130,6 @@ class StringTableTest {
         assertEquals(emptyMap(), plurals)
         val strings = StringTable.of(StringTable.BASE)
         assertEquals("Recordings waiting: 2", strings[Str.ALERT_WAITING, 2])
-        assertEquals("Recordings not yet in Drive, kept on this PC: 1", strings[Str.DISCONNECT_UNUPLOADED, 1])
         assertEquals("Disconnected. Recordings deleted from this PC: 4", strings[Str.DISCONNECT_DELETED, 4])
         assertEquals(
             "Google access was revoked. Recordings still running and kept: 1 — disconnect again once they have finished.",

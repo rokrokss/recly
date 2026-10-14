@@ -57,6 +57,7 @@ import app.recly.windows.ui.component.SectionHeader
 import app.recly.windows.ui.component.SectionFootnote
 import app.recly.windows.ui.component.SwitchRow
 import app.recly.windows.ui.component.TableRow
+import app.recly.windows.ui.component.ink
 import app.recly.windows.ui.theme.MinTouch
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -115,7 +116,11 @@ private fun Storage(model: ShellModel, strings: Strings) {
         ),
         selected = model.storage,
         onSelect = model::selectStorage,
+        // Off while a chip's save is in flight, so the chips never mark one the core does not hold yet.
+        enabled = !model.storageBusy,
     )
+    // Why the last chip did not take, under the chips, as the phone says it.
+    model.storageMessage?.let { SectionFootnote(it.text(strings)) }
     if (model.storage == StorageKind.FOLDER) LocalFolderRow(model, strings) else Account(model, strings)
 }
 
@@ -164,10 +169,20 @@ private fun Account(model: ShellModel, strings: Strings) {
             title = strings[Str.SETTINGS_SIGNED_OUT],
             subtitle = strings[if (model.clientConfigured) Str.DRIVE_OPTIONAL else Str.SETTINGS_NO_CLIENT],
             trailing = {
+                // An accent outline, as on the phones (D26): the one filled button of the shell is the recording's.
                 ProcessingButton(label = strings[Str.SIGN_IN], state = model.action, strings = strings,
-                    onClick = model::signIn, tone = ButtonTone.PRIMARY,
+                    onClick = model::signIn, tone = ButtonTone.ACCENT,
                     enabled = model.clientConfigured && signInBlocker == null)
             },
+        )
+    }
+    // D21: what the last connect or disconnect came to, under the row that did it — a failure in the danger colour.
+    model.driveNote?.let { note ->
+        Text(
+            note.message.text(strings),
+            modifier = Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.s),
+            style = MaterialTheme.typography.bodySmall,
+            color = note.tone.ink(),
         )
     }
     if (model.revokeDebt && !model.disconnecting) {
@@ -236,21 +251,23 @@ private fun Capture(model: ShellModel, strings: Strings) {
     // the dialog's own "Do not ask again" cannot do.
     SwitchRow(
         title = strings[Str.SETTINGS_CONSENT_REMINDER],
+        subtitle = strings[Str.SETTINGS_CONSENT_REMINDER_NOTE],
         checked = model.consentReminder,
         onCheckedChange = model::toggleConsentReminder,
     )
-    // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while this is off — and
-    // a row that only says where the switch is leaves the user to find it. Its own row rather than a
-    // line under the reminder, because it has something to be done about it: the page itself, which
-    // is how the Mac answers the same refusal.
-    if (model.micAccess == MicAccess.DENIED) {
-        TableRow(
-            title = strings[MicrophoneAccess.GUIDANCE],
-            trailing = {
-                BlueprintButton(strings[Str.SETTINGS_OPEN_MICROPHONE], model::openMicrophoneSettings)
-            },
-        )
-    }
+    // docs/14 "Permissions": there is no prompt, so silence is all that is recorded while the switch is off. The row is
+    // always here, quiet, with the page that holds the switch (D5); while it is off it says where, in the warning ink.
+    // Read again whenever this window comes to the front: the switch is flipped in Windows Settings, not here.
+    val focused = LocalWindowInfo.current.isWindowFocused
+    LaunchedEffect(focused) { if (focused) model.refreshMicrophone() }
+    TableRow(
+        title = strings[Str.SETTINGS_MICROPHONE],
+        subtitle = if (model.micAccess == MicAccess.DENIED) strings[MicrophoneAccess.GUIDANCE] else null,
+        subtitleColor = if (model.micAccess == MicAccess.DENIED) blueprint.warningInk else null,
+        trailing = {
+            BlueprintButton(strings[Str.SETTINGS_OPEN_MICROPHONE], model::openMicrophoneSettings, tone = ButtonTone.QUIET)
+        },
+    )
     if (model.helperUnavailable) {
         SettingsCard {
             // A message, at 12 in its tone, as every message in Settings (2026-10-10).
@@ -476,6 +493,9 @@ private fun About(model: ShellModel, strings: Strings) {
             color = palette.textMuted,
         )
         Mono(strings[Str.SETTINGS_OPEN_SOURCE_VALUE])
+        // The privacy policy the phones link, in the app's language where there is one (D23).
+        TextLink(strings[Str.SETTINGS_PRIVACY_POLICY], { model.openPrivacyPolicy(strings.language) },
+            modifier = Modifier.padding(top = Space.s), style = MaterialTheme.typography.bodySmall)
         BlueprintButton(strings[Str.SETTINGS_OPEN_DATA_FOLDER], model::openDataDir, tone = ButtonTone.QUIET,
             modifier = Modifier.align(Alignment.End).padding(top = Space.s))
     }
@@ -512,7 +532,7 @@ private fun Section(title: String) {
 
 /** A row of the choices for a setting that has a few of them and will not grow — the storage, the theme. */
 @Composable
-private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit) {
+private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (T) -> Unit, enabled: Boolean = true) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -521,7 +541,7 @@ private fun <T> ChipRow(options: List<Pair<T, String>>, selected: T, onSelect: (
         horizontalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         options.forEach { (value, label) ->
-            BlueprintChip(label = label, selected = selected == value, onClick = { onSelect(value) })
+            BlueprintChip(label = label, selected = selected == value, onClick = { onSelect(value) }, enabled = enabled)
         }
     }
     HairLine()

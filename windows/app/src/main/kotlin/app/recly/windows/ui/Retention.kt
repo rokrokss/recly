@@ -87,6 +87,11 @@ data class DeleteRequest(
      * Drive, so the dialog's lines name that folder ([Retention.storageOf]).
      */
     val folder: Boolean = false,
+    /**
+     * Something of it has reached its folder in Drive or the local folder — a link or a folder path on the row. Without
+     * one there is nothing to delete there, and the dialog does not ask (Android's `DeleteRequest.hasDriveFolder`).
+     */
+    val hasDriveFolder: Boolean = true,
 )
 
 /**

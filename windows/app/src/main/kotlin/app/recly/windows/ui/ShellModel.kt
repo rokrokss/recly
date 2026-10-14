@@ -17,6 +17,7 @@ import app.recly.windows.detect.MeetingDetector
 import app.recly.windows.detect.MeetingNotifier
 import app.recly.windows.detect.MicAccess
 import app.recly.windows.detect.MicrophoneAccess
+import app.recly.windows.detect.UnknownMicrophoneAccess
 import app.recly.windows.detect.NoDetection
 import app.recly.windows.detect.RunningApps
 import app.recly.windows.helper.CaptureHelper
@@ -33,16 +34,19 @@ import app.recly.windows.jobs.CoreJobQueue
 import app.recly.windows.jobs.JobRunner
 import app.recly.windows.jobs.RecentItem
 import app.recly.windows.jobs.Recents
+import app.recly.windows.record.Completion
 import app.recly.windows.record.RecordingOutcome
 import app.recly.windows.record.RecordingRecovery
 import app.recly.windows.record.StopResult
 import app.recly.windows.record.WindowsRecorder
 import app.recly.windows.record.completeRecording
+import app.recly.windows.record.line
 import app.recly.windows.settings.AppTheme
 import app.recly.windows.settings.LaunchAtLogin
 import app.recly.windows.settings.LaunchAtLogins
 import app.recly.windows.settings.RecordingMode
 import app.recly.windows.settings.Settings
+import app.recly.windows.ui.component.BadgeTone
 import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.ProcessingState
 import java.awt.Desktop
@@ -50,6 +54,8 @@ import java.awt.FileDialog
 import java.awt.Frame
 import java.io.File
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.attribute.BasicFileAttributes
 import java.util.prefs.BackingStoreException
 import javax.swing.JFileChooser
 import kotlin.time.ExperimentalTime
@@ -104,6 +110,45 @@ enum class Transition { STARTING, STOPPING }
  */
 internal fun helperUnavailable(windows: Boolean, ready: Boolean, missing: Boolean, version: String?): Boolean =
     windows && ready && (missing || version == null)
+
+/**
+ * What the line says once a stopped recording has been handed to the queue: a job that could not be made comes first,
+ * then a recording the helper's death ended, then what the queue did with it ([line]) — and back to waiting when it
+ * was simply queued.
+ */
+internal fun completionLine(failed: Boolean, completion: Completion?): Str = when {
+    completion == null -> Str.ENQUEUE_FAILED
+    failed -> Str.RECORDING_FAILED
+    else -> completion.line() ?: Str.STATUS_WAITING
+}
+
+/**
+ * D21 · D22: a disconnect's outcome under the Drive row — what failed in the danger colour, what is in the way in the
+ * warning ink, the rest muted — and nothing where the revoke-debt rows under it already say it.
+ */
+internal fun disconnectNote(message: UiMessage): ShellNotice? {
+    val tone = when ((message as? UiMessage.Res)?.key) {
+        Str.DISCONNECT_STILL_LISTED -> return null
+        Str.DISCONNECT_REVOKE_FAILED, Str.DISCONNECT_CLEANUP_FAILED, Str.DISCONNECT_SAVE_FAILED -> BadgeTone.DANGER
+        Str.DISCONNECT_BUSY, Str.DISCONNECT_STOP_RECORDING, Str.PLAYER_STOP_FAILED -> BadgeTone.WARNING
+        else -> BadgeTone.NEUTRAL
+    }
+    return ShellNotice(message, tone)
+}
+
+/** The privacy policy's canonical page, as the phones open it (`SettingsScreen.privacyPolicyUrl`). */
+internal fun privacyPolicyUrl(language: String): String =
+    "https://recly.dev/policy/" + if (language == "ko") "privacy-policy.ko" else "privacy-policy"
+
+/** A wait for the Drive connection is ended by connecting Drive, not by asking the queue again (D8). */
+internal fun retriesBySigningIn(status: JobStatus?): Boolean = status == JobStatus.NEEDS_AUTH
+
+/**
+ * docs/03 "Naming rules": an imported file's start — when the file was created, where the file system keeps that, and
+ * when it was last written otherwise. Zero or less is a file system that does not keep it.
+ */
+internal fun importStartMillis(createdMillis: Long?, modifiedMillis: Long): Long =
+    createdMillis?.takeIf { it > 0 } ?: modifiedMillis
 
 /** What the detail window shows for one recording (docs/08 "Result files"). */
 data class RecordingDetail(
@@ -183,6 +228,12 @@ enum class DriveFetch {
     FETCHING,
     FAILED,
 }
+
+/**
+ * A sentence a surface says about what the user just did, in its tone (docs/09 "Every state is color + text"): a
+ * failure in the danger colour, a wait or a refusal in the warning ink, anything else muted.
+ */
+data class ShellNotice(val message: UiMessage, val tone: BadgeTone)
 
 /**
  * docs/03: the recording the rename dialog is asking about, and the name the field opened on. Plain
@@ -344,6 +395,39 @@ class ShellModel(
     var renameRequest: RenameRequest? by mutableStateOf(null)
         private set
 
+    /**
+     * What the last delete or retry of a list row had to say, above the Details list (D9) — and nothing for a delete
+     * that did what was asked. The tray's status line carries the same sentence. Put away by a click on it.
+     */
+    var listMessage: ShellNotice? by mutableStateOf(null)
+        private set
+
+    fun dismissListMessage() {
+        listMessage = null
+    }
+
+    /** A list action's outcome, in the Details window above its list and on the tray's line. */
+    private fun sayAboutList(message: UiMessage, tone: BadgeTone) {
+        listMessage = ShellNotice(message, tone)
+        status = message
+    }
+
+    /**
+     * The tray's Details on a row while the Details window is already up: the window takes it through the same leave
+     * as its own list ([RecordingsWindow]), so a transcript or summary being edited asks before it goes (D7).
+     */
+    var detailAsked: RecentItem? by mutableStateOf(null)
+        private set
+
+    fun showDetail(item: RecentItem) {
+        if (recordingsOpen) detailAsked = item else openDetail(item)
+        recordingsOpen = true
+    }
+
+    fun detailAnswered() {
+        detailAsked = null
+    }
+
     /** docs/10 "Re-transcription": the confirmation, while it is up. */
     var retranscribeRequest: RetranscribeRequest? by mutableStateOf(null)
         private set
@@ -367,6 +451,13 @@ class ShellModel(
         private set
 
     var skipSilence: Boolean by mutableStateOf(settings.skipSilence)
+        private set
+
+    /**
+     * D21: what the last Drive connect or disconnect came to, said under the Drive row in Settings — a connection that
+     * failed in the danger colour, never with the raw reason; null once there is nothing to say.
+     */
+    var driveNote: ShellNotice? by mutableStateOf(null)
         private set
 
     /** docs/03 "Disconnect": the warning dialog, and the counts it has to name, while it is up. */
@@ -472,6 +563,16 @@ class ShellModel(
     var micAccess: MicAccess by mutableStateOf(MicAccess.UNKNOWN)
         private set
 
+    /** The registry switch [micAccess] is read from — again at every start, since the user can flip it at any time. */
+    private var microphone: MicrophoneAccess = UnknownMicrophoneAccess
+
+    /**
+     * A start refused because the microphone is off for desktop apps: the dialog that says so and offers the page
+     * that turns it back on, as the Mac's `presentMicrophoneDenied` does.
+     */
+    var micPrompt: Boolean by mutableStateOf(false)
+        private set
+
     /** deliverable 3: what the bundled helper says it is, or null when it would not run. Said in `shell.ready`. */
     var helperVersion: String? by mutableStateOf(null)
         private set
@@ -479,10 +580,6 @@ class ShellModel(
     /** Settings' one line about the capture helper: there is none, or it does not answer ([helperUnavailable]). */
     val helperUnavailable: Boolean
         get() = helperUnavailable(Host.isWindows, ready, helperMissing, helperVersion)
-
-    /** The helper died under a running recording; the recording was finalized and a restart offered. */
-    var helperCrashed: Boolean by mutableStateOf(false)
-        private set
 
     /**
      * docs/07 rule 2: what the settings window's language picker shows as chosen — the language the
@@ -513,8 +610,13 @@ class ShellModel(
     var localFolderAvailable: Boolean by mutableStateOf(false)
         private set
 
-    /** A chip's save in flight, so a second tap does not race its read-back ([selectStorage]). */
-    @Volatile private var storageBusy: Boolean = false
+    /** A chip's save in flight, so a second tap does not race its read-back ([selectStorage]); the chips are off for it. */
+    var storageBusy: Boolean by mutableStateOf(false)
+        private set
+
+    /** Why the last chip did not take, said as a footnote under the chips; null once one has. */
+    var storageMessage: UiMessage? by mutableStateOf(null)
+        private set
 
     /**
      * Whether the recording that is ending gets to be named. False only on the way out: the user
@@ -632,6 +734,7 @@ class ShellModel(
     suspend fun load(
         dataDirectory: Path = Host.dataDir(),
         helperCommand: List<String>? = CaptureHelper.command(),
+        microphoneAccess: (Logger) -> MicrophoneAccess = MicrophoneAccess::create,
     ) {
         val graph = runCatching {
             AppModule.build(dataDir = dataDirectory, localization = localization)
@@ -647,7 +750,8 @@ class ShellModel(
         launcher = LaunchAtLogins.create(logger)
         launchAtLogin = launcher.isEnabled()
         consentReminder = settings.consentReminder
-        micAccess = MicrophoneAccess.create(logger).state()
+        microphone = microphoneAccess(logger)
+        micAccess = microphone.state()
         chatGpt = ChatGptViewModel(graph.core.chatGpt, graph.core.summaries, graph.loopback, scope, logger).also { it.start() }
 
         val command = helperCommand
@@ -679,10 +783,11 @@ class ShellModel(
             helper = { command?.let { HelperClient(it, graph.core.deps.io, logger) } },
             onFinalized = { outcome ->
                 // docs/03: the name is asked for after the recording has ended, and the job waits
-                // for the answer. A quit does not ask.
+                // for the answer. A quit does not ask, and neither does a recording the helper's death
+                // ended: the user did not stop it, so it is queued untitled and the line says it failed.
                 // A second recording finishing while the first is still unnamed does not take the
                 // prompt from it: that one is queued as it stands rather than losing its job.
-                if (askTitle && titles.publish(outcome)) {
+                if (askTitle && !outcome.failed && titles.publish(outcome)) {
                     status = TITLE_PROMPT.message()
                 } else {
                     complete(outcome, title = null)
@@ -715,10 +820,8 @@ class ShellModel(
                 if (isRecording) playbackGate.raise(capture) else playbackGate.lower(capture)
             },
             detection = detector ?: NoDetection,
-            onHelperDied = {
-                helperCrashed = true
-                status = HELPER_DIED.message()
-            },
+            // Said here as well as when the finalize queues it: a stop deferred to the next launch never gets there.
+            onHelperDied = { status = Str.RECORDING_FAILED.message() },
         )
 
         waveforms = WaveformPrecompute(
@@ -813,12 +916,21 @@ class ShellModel(
      */
     fun start() {
         val mode = RecordingMode.MEETING
-        if (recorder == null || titlePrompt != null || consentRequest != null) return
+        // Nor while one is still coming up or being saved: the record control is off for both (STARTING, STOPPING).
+        if (recorder == null || titlePrompt != null || consentRequest != null || transition != null) return
         // docs/03: the clean-up half of a disconnect walks the recording directory, so a capture
         // started inside it would be one its own delete pass is writing over. Say what is in the
         // way rather than starting something that is about to be taken away.
         DisconnectGate.startBlocker()?.let {
             status = it
+            return
+        }
+        // docs/14 "Permissions": read again now rather than trusted from the launch — the switch is the user's to
+        // flip at any time, and with it off the capture would be silence. Refused, with the way to turn it back on.
+        micAccess = microphone.state()
+        if (micAccess == MicAccess.DENIED) {
+            status = MIC_DENIED.message()
+            micPrompt = true
             return
         }
         if (mode.remindsConsent && consentReminder) {
@@ -869,14 +981,34 @@ class ShellModel(
         askToDisconnect()
     }
 
-    /** Cancel — the question has to mean something, so this is the end of it. */
-    fun consentCancelled() {
+    /**
+     * Cancel — the question has to mean something, so this is the end of it. [dontAskAgain] counts whichever way the
+     * question was answered: the box is about the question, not about this one recording.
+     */
+    fun consentCancelled(dontAskAgain: Boolean) {
+        consentRequest ?: return
         consentRequest = null
+        if (dialogMode.acts && dontAskAgain) toggleConsentReminder(false)
+    }
+
+    /** The microphone dialog's Close. */
+    fun closeMicPrompt() {
+        micPrompt = false
+    }
+
+    /** Its Open Windows Settings: the page, and the dialog is done. */
+    fun openMicPromptSettings() {
+        micPrompt = false
+        openMicrophoneSettings()
+    }
+
+    /** The settings window has come to the front: the switch may have been flipped while it was behind. */
+    fun refreshMicrophone() {
+        micAccess = microphone.state()
     }
 
     private fun begin(mode: RecordingMode) {
         val recorder = recorder ?: return
-        helperCrashed = false
         // The tray menu is a snapshot: the recording that just ended may still be waiting for its
         // name, and a second one would take the prompt's place and lose the first one's job.
         if (titlePrompt != null) return
@@ -914,12 +1046,16 @@ class ShellModel(
                     when {
                         id != null -> Str.STATUS_RECORDING
                         titlePrompt != null -> TITLE_PROMPT
-                        else -> Str.STATUS_CANNOT_START
+                        else -> Str.RECORDING_FAILED
                     }.message()
                 }
                     // A gate held by the disconnect says so; one held by another start that is
                     // already opening is the same answer the recorder itself would have given this.
-                    ?: DisconnectGate.startBlocker() ?: Str.STATUS_CANNOT_START.message()
+                    ?: DisconnectGate.startBlocker() ?: Str.RECORDING_FAILED.message()
+            } catch (e: Exception) {
+                // A start that threw failed as much as one that was refused; the throw still goes on to the scope.
+                status = Str.RECORDING_FAILED.message()
+                throw e
             } finally {
                 // A capture that never opened has nothing to keep the gate up for; one that did
                 // keeps it until `onState(false)`, and `STARTING` with it.
@@ -1012,17 +1148,21 @@ class ShellModel(
         }
     }
 
-    /** docs/03: name it, then queue it — never the other way round (see [completeRecording]). */
+    /**
+     * docs/03: name it, then queue it — never the other way round (see [completeRecording]). The line then says what
+     * the queue made of it ([completionLine]).
+     */
     private suspend fun complete(outcome: RecordingOutcome, title: String?, participants: Int? = null) {
         val graph = graph ?: return
-        runCatching { completeRecording(graph.core, outcome.recordingId, title, participants) }
+        val completion = runCatching { completeRecording(graph.core, outcome.recordingId, title, participants) }
             .onFailure { graph.core.deps.logger.log(Logger.Level.ERROR, "rec.enqueue.failed", error = it) }
+            .getOrNull()
         // Kept, so its shape is worked out now, and the first open draws it at once.
         waveforms?.enqueue(outcome.recordingId)
         // docs/12/14 "Runner" (a): the job exists now, so a pass runs immediately rather than
         // waiting for the five-minute timer.
         runner?.jobsDue()
-        status = Str.STATUS_WAITING.message()
+        status = completionLine(outcome.failed, completion).message()
     }
 
     // --- executor (docs/14 "Runner") --------------------------------------------------------------
@@ -1130,18 +1270,34 @@ class ShellModel(
         scope.launch(graph.core.deps.io) { graph.core.pullRemoteRecordings(force = true) }
     }
 
-    /** Retry: the job the row failed on is made due now. Only a failure offers it (docs/09). */
+    /**
+     * Retry: the job the row failed on is made due now. Only a failure offers it (docs/09). A row waiting for the Drive
+     * connection is connected instead ([retriesBySigningIn]); a retry the queue refuses says so, and the button does not
+     * wear a check for it.
+     */
     fun retry(item: RecentItem) {
+        if (retriesBySigningIn(item.jobStatus)) {
+            signIn()
+            return
+        }
         val graph = graph ?: return
         val jobId = item.jobId ?: return
+        listMessage = null
         scope.launch {
             runTracked {
-                graph.core.jobs.retry(jobId)
-                runner?.jobsDue()
-                true
+                val retried = graph.core.jobs.retry(jobId)
+                if (retried) {
+                    runner?.jobsDue()
+                } else {
+                    sayAboutList(Str.RECENT_RETRY_UNAVAILABLE.message(), BadgeTone.WARNING)
+                }
+                retried
             }
         }
     }
+
+    /** docs/10 "Drive out of space": Google's own storage page — the space is Google's to give back. */
+    fun openDriveStorage() = open(DRIVE_STORAGE_URL)
 
     fun openInDrive(item: RecentItem) {
         item.link?.let { open(it) }
@@ -1243,15 +1399,15 @@ class ShellModel(
     }
 
     /**
-     * docs/03 "Metadata": the moment the recording that is running has reached, marked from the tray. The
-     * clock is the popup's own, so what the line says is what the timer showed.
+     * docs/03 "Metadata": the moment the recording that is running has reached, marked from the tray. The clock is the
+     * recorder's written audio ([WindowsRecorder.writtenSec]), so the mark is where that moment is in the file.
      */
     fun highlightNow() {
         val graph = graph ?: return
         if (!recording) return
         val recordingId = recorder?.recordingId ?: return
-        val since = recordingSince ?: return
-        val atSec = (System.currentTimeMillis() - since) / 1000.0
+        // The written audio's clock, not the wall's: the mark is where that moment is in the file.
+        val atSec = recorder?.writtenSec() ?: return
         scope.launch {
             if (!graph.core.recordings.addHighlight(recordingId, atSec)) return@launch
             // For two seconds, then the line is the recording's again.
@@ -1621,6 +1777,7 @@ class ShellModel(
                 remote = item.remote,
                 // Another device's recording was read out of Drive; the local folder is never listed.
                 folder = !item.remote && Retention.storageOf(graph.core, item.id) == StorageKind.FOLDER,
+                hasDriveFolder = item.link != null || item.localFolderPath != null,
             )
         }
     }
@@ -1642,6 +1799,7 @@ class ShellModel(
         }
         val graph = graph ?: return
         deleteRequest = null
+        listMessage = null
         scope.launch {
             // Before the files go, not after, and with Play off the bar for the whole of it: the
             // recording being deleted is the one the detail is showing, and the detail is what plays.
@@ -1651,36 +1809,37 @@ class ShellModel(
                 // same one — `MenuModel.delete`). Inside the gate, so a decoder that outlived the
                 // bound leaves the detail alone along with the files.
                 if (detail?.recordingId == request.recordingId) detail = null
-                status = runCatching { graph.core.recordings.delete(request.recordingId, deleteDrive) }
+                // D9: a delete that did what was asked is not announced — the row going is the answer.
+                runCatching { graph.core.recordings.delete(request.recordingId, deleteDrive) }
                     .fold(
                         onSuccess = { result ->
                             when (result) {
-                                is DeleteResult.Deleted -> result.driveError
-                                    ?.let { refused ->
-                                        // docs/03 "Storage location": the other half was the local folder's.
-                                        (if (request.folder) Str.DELETE_FOLDER_FAILED else Str.DELETE_DRIVE_FAILED)
-                                            .message(refused)
-                                    }
-                                    ?: Str.DELETE_DONE.message()
+                                is DeleteResult.Deleted -> result.driveError?.let { refused ->
+                                    // docs/03 "Storage location": the other half was the local folder's.
+                                    val half = if (request.folder) Str.DELETE_FOLDER_FAILED else Str.DELETE_DRIVE_FAILED
+                                    ShellNotice(half.message(refused), BadgeTone.DANGER)
+                                }
 
-                                DeleteResult.Busy -> Str.DELETE_BUSY.message()
+                                DeleteResult.Busy -> ShellNotice(Str.DELETE_BUSY.message(), BadgeTone.WARNING)
                                 // Already gone — by a previous attempt whose row this window had not
                                 // caught up with.
-                                DeleteResult.NotFound -> Str.DELETE_DONE.message()
+                                DeleteResult.NotFound -> null
                             }
                         },
                         onFailure = { error ->
                             graph.core.deps.logger.log(Logger.Level.ERROR, "rec.delete.failed", error = error)
-                            Str.CORE_STEP_FAILED.message(error.message ?: error::class.simpleName.orEmpty())
+                            val reason = error.message ?: error::class.simpleName.orEmpty()
+                            ShellNotice(Str.CORE_STEP_FAILED.message(reason), BadgeTone.DANGER)
                         },
                     )
+                    ?.let { sayAboutList(it.message, it.tone) }
                 refreshRecents()
                 runner?.jobsDue()
                 true
             }
             // Nothing was deleted: the decoder outlived the bound and the row is still here to try
             // again with, which is the whole point of not having deleted it.
-            if (deleted == null) status = Str.PLAYER_STOP_FAILED.message()
+            if (deleted == null) sayAboutList(Str.PLAYER_STOP_FAILED.message(), BadgeTone.WARNING)
         }
     }
 
@@ -1726,6 +1885,7 @@ class ShellModel(
         if (disconnecting) return
         disconnecting = true
         disconnectPrompt = null
+        driveNote = null
         scope.launch {
             try {
                 // The dialog may have stood while a recording finished or an upload failed — every
@@ -1752,7 +1912,7 @@ class ShellModel(
                     runTracked { DisconnectGate.hold { runDisconnect(graph, alsoDeleteRecordings) } }
                     true
                 }
-                if (ran == null) status = Str.PLAYER_STOP_FAILED.message()
+                if (ran == null) sayAboutDrive(Str.PLAYER_STOP_FAILED.message())
             } finally {
                 disconnecting = false
             }
@@ -1767,7 +1927,7 @@ class ShellModel(
         // The recorder is read again here and not only when the warning opened: the dialog may have
         // stood while something started a capture, and the gate cannot refuse one already running.
         DisconnectGuard.liveBlocker(recording)?.let {
-            status = it
+            sayAboutDrive(it)
             return false
         }
         var revoked: RevokeResult? = null
@@ -1795,7 +1955,7 @@ class ShellModel(
                 // The store would not commit what this disconnect is about to do, so it did not do
                 // it: nothing was revoked, no credential was deleted and the PC is exactly as it
                 // was — including the sign-in, which is why this returns before it is cleared.
-                status = DisconnectGuard.saveFailed()
+                sayAboutDrive(DisconnectGuard.saveFailed())
                 graph.core.deps.logger.log(Logger.Level.ERROR, "auth.disconnect.refused.store")
                 return false
             }
@@ -1809,7 +1969,7 @@ class ShellModel(
             // A phase that would not commit is the graver of the two: the credentials are already
             // gone and this row is what is left to finish the job with.
             val owed = persistPhase(DisconnectPhase.REVOKED_CLEANUP_OWED)
-            status = if (owed) racing else DisconnectGuard.saveFailed()
+            sayAboutDrive(if (owed) racing else DisconnectGuard.saveFailed())
             return false
         }
         // Caught separately from the revoke, because the two fail for different reasons and only one
@@ -1825,7 +1985,7 @@ class ShellModel(
                 // null is the store refusing the phase rather than a clean-up that found nothing:
                 // none of it was tried, so the tokens and the queue are all still here and there is
                 // nothing to report but the store.
-                status = DisconnectGuard.saveFailed()
+                sayAboutDrive(DisconnectGuard.saveFailed())
                 graph.core.deps.logger.log(Logger.Level.ERROR, "auth.disconnect.refused.store")
                 return false
             }
@@ -1836,7 +1996,7 @@ class ShellModel(
         }
         // Never a plain "disconnected" over an owed debt — including the restart path, where the
         // revoke was skipped and there is no [RevokeResult] here to say the grant is still up.
-        status = DisconnectGuard.completion(revoked, cleanupFailure, result, revokeDebt)
+        sayAboutDrive(DisconnectGuard.completion(revoked, cleanupFailure, result, revokeDebt))
         // The queue is gone with everything else, so nothing is blocked on anything any more.
         needsAuth = false
         alerts = emptyList()
@@ -1845,6 +2005,12 @@ class ShellModel(
         // button must not say done over it.
         return revoked !is RevokeResult.Failed && cleanupFailure == null &&
             result?.busyRecordings.isNullOrEmpty()
+    }
+
+    /** A disconnect's outcome: the tray's line, and under the Drive row in Settings in its tone ([disconnectNote]). */
+    private fun sayAboutDrive(message: UiMessage) {
+        status = message
+        driveNote = disconnectNote(message)
     }
 
     /**
@@ -1889,7 +2055,7 @@ class ShellModel(
      * rather than dropping it: the row is still there on the next launch either way.
      */
     fun revokeDebtSettled() {
-        if (!persistRevokeDebt(false)) status = DisconnectGuard.saveFailed()
+        if (!persistRevokeDebt(false)) sayAboutDrive(DisconnectGuard.saveFailed())
     }
 
     /** The consent dialog's link (docs/12 M8) — a browser, so it does not dismiss the question. */
@@ -1920,6 +2086,7 @@ class ShellModel(
         scope.launch {
             action = ProcessingState.PROCESSING
             status = Str.STATUS_SIGNING_IN.message()
+            driveNote = null
             // Fails the button rather than leaving it "…" if the post-auth unpark throws; the
             // throwable carries on to the scope as before.
             try {
@@ -1937,7 +2104,11 @@ class ShellModel(
                     }
 
                     is SignInResult.Failed -> {
-                        status = Str.STATUS_SIGN_IN_FAILED.message(result.reason)
+                        // The reason is Google's or the loopback's own words, and goes to the log (`auth.*`); the
+                        // user is told that Drive was not connected, under the row that connects it (D21).
+                        val failed = Str.DRIVE_CONNECT_FAILED.message()
+                        driveNote = ShellNotice(failed, BadgeTone.DANGER)
+                        status = failed
                         settle(ProcessingState.FAILED)
                     }
                 }
@@ -1995,7 +2166,7 @@ class ShellModel(
     /**
      * Files picked or dropped: each becomes a recording of this PC's, titled after its name, its row in the
      * list from the start (`IMPORTING`) and its job queued once it is whole. The file's own time is its
-     * start. Nothing during a disconnect's clean-up, which walks the directory an import writes into.
+     * start — when it was created where the file system says, else when it was last written ([importStartMillis]). Nothing during a disconnect's clean-up, which walks the directory an import writes into.
      */
     fun importFiles(files: List<File>) {
         val graph = graph ?: return
@@ -2009,7 +2180,8 @@ class ShellModel(
                         return@withLock
                     }
                     val result = runCatching {
-                        graph.core.importAudio(file.path, file.name, Instant.fromEpochMilliseconds(file.lastModified()), FfmpegImporter(graph.core.deps.io))
+                        val started = importStartMillis(createdMillis(file), file.lastModified())
+                        graph.core.importAudio(file.path, file.name, Instant.fromEpochMilliseconds(started), FfmpegImporter(graph.core.deps.io))
                     }.getOrElse {
                         graph.core.deps.logger.log(Logger.Level.ERROR, "rec.import.failed", error = it)
                         ImportResult.Failed(recly.core.message.CoreMessage.IMPORT_UNREADABLE.code(detail = it.message))
@@ -2028,6 +2200,11 @@ class ShellModel(
             }
         }
     }
+
+    /** The file's creation time, or null where it cannot be read. */
+    private fun createdMillis(file: File): Long? = runCatching {
+        Files.readAttributes(file.toPath(), BasicFileAttributes::class.java).creationTime().toMillis()
+    }.getOrNull()
 
     // --- the speech model (docs/05) ------------------------------------------------------------
 
@@ -2097,12 +2274,22 @@ class ShellModel(
         // otherwise race each other's read-back and leave the wrong one marked.
         if (kind == storage || storageBusy) return
         storageBusy = true
+        storageMessage = null
         scope.launch {
             try {
-                if (graph.core.processingSettings.setStorage(kind) is ProcessingSaveResult.Saved) {
-                    processing?.storageChanged()
+                storageMessage = when (val result = graph.core.processingSettings.setStorage(kind)) {
+                    is ProcessingSaveResult.Saved -> {
+                        processing?.storageChanged()
+                        null
+                    }
+                    is ProcessingSaveResult.Invalid -> coreMessage(recly.core.message.CoreMessage.STEP_FAILED, result.errors.joinToString("\n"))
+                    // The phone's mapping (`SettingsViewModel.selectStorage`): anything else is settings this build cannot read.
+                    else -> Str.PROCESSING_UNREADABLE.message()
                 }
                 readStorage(graph)
+            } catch (e: Exception) {
+                graph.core.deps.logger.log(Logger.Level.ERROR, "shell.storage.failed", error = e)
+                storageMessage = coreMessage(recly.core.message.CoreMessage.STEP_FAILED, e.message.orEmpty())
             } finally {
                 storageBusy = false
             }
@@ -2151,6 +2338,9 @@ class ShellModel(
         localFolderAvailable = graph.core.deps.localFolder?.available() == true
     }
 
+    /** About's Privacy Policy: the canonical page the phones link (recly.dev), in Korean for the Korean app. */
+    fun openPrivacyPolicy(language: String) = open(privacyPolicyUrl(language))
+
     fun openDataDir() {
         graph?.dataDir?.let { open(it.toString()) }
     }
@@ -2173,7 +2363,7 @@ class ShellModel(
     private suspend fun openSettingsFile(): String? {
         val chosen = fileDialog(FileDialog.LOAD, null) ?: return null
         return withContext(Dispatchers.IO) {
-            require(chosen.length() <= 1_048_576) { "Settings file is too large" }
+            if (chosen.length() > SETTINGS_FILE_MAX_BYTES) throw SettingsFileTooLarge()
             chosen.readText()
         }
     }
@@ -2278,7 +2468,6 @@ class ShellModel(
     companion object {
         /** docs/14 deliverable 5: the same words Settings says (2026-10-10). */
         val HELPER_MISSING = Str.HELPER_UNAVAILABLE
-        val HELPER_DIED = Str.STATUS_HELPER_DIED
         val MIC_DENIED = Str.STATUS_MIC_DENIED
         val NEEDS_AUTH_NOTICE = Str.STATUS_SIGN_IN_NEEDED
         val TITLE_PROMPT = Str.STATUS_NAMING
