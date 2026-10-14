@@ -159,7 +159,11 @@ struct RecordingView: View {
     /// docs/09 screen principle 1: the transcription node is the only one that takes a tap — it opens the recording
     /// processing settings while nothing is being recorded. The device and the state are readouts, as on Android.
     private var specs: [NodeSpec] {
-        let openSettings: (@MainActor @Sendable () -> Void)? = model.isRecording ? nil : { [model] in model.tab = .settings }
+        var openSettings: (@MainActor @Sendable () -> Void)?
+        if !model.isRecording {
+            let model = model
+            openSettings = { model.tab = .settings }
+        }
         return [
             NodeSpec(label: loc("Device"), value: StateNodeWords.device(.phone)),
             NodeSpec(
