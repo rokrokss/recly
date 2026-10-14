@@ -23,17 +23,13 @@ import app.recly.android.ui.component.GlyphIcon
 import recly.core.recording.SearchHit
 import recly.core.recording.SearchRange
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -42,13 +38,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -59,10 +52,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.Hyphens
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import app.recly.android.R
@@ -83,13 +72,10 @@ import app.recly.android.ui.component.LedgerStatus
 import app.recly.android.ui.component.ProcessingButton
 import app.recly.android.ui.component.ProcessingState
 import app.recly.android.ui.component.ScreenHeader
-import app.recly.android.ui.component.StatusBadge
 import app.recly.android.ui.component.ink
 import app.recly.android.ui.component.ledgerColumns
 import app.recly.android.ui.component.ledgerLayout
-import app.recly.android.ui.component.statusColumnWidth
 import app.recly.android.ui.theme.MinTouch
-import app.recly.android.ui.theme.Radius
 import app.recly.android.ui.theme.Space
 import app.recly.android.ui.theme.blueprint
 import app.recly.android.ui.theme.mono
@@ -105,6 +91,9 @@ import recly.core.message.CoreMessage
 import recly.core.message.CoreMessageRef
 import app.recly.android.ui.component.focusRing
 import app.recly.android.ui.component.BlueprintField
+import app.recly.android.ui.component.MessageBanner
+import app.recly.android.ui.component.AlertLine
+import app.recly.android.ui.component.EmptyList
 
 /**
  * docs/11 A4, drawn as docs/09 screen principle 2 asks: a ledger. One row per recording — when, what, how
@@ -214,29 +203,21 @@ fun JobsScreen(
                 // A list of one page-sized item, so the pull reaches it however little is in it.
                 LazyColumn(Modifier.fillMaxSize()) {
                     item {
-                        Column(
-                            modifier = Modifier.fillParentMaxSize().padding(Space.l),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            if (state.loading) {
+                        if (state.loading) {
+                            Column(
+                                modifier = Modifier.fillParentMaxSize().padding(Space.l),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
                                 Text(stringResource(R.string.list_loading), color = palette.textMuted)
-                            } else {
-                                // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
-                                Text(
-                                    stringResource(R.string.jobs_empty),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = palette.text,
-                                    textAlign = TextAlign.Center,
-                                )
-                                Text(
-                                    stringResource(R.string.jobs_empty_hint),
-                                    modifier = Modifier.padding(top = Space.xs),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = palette.textMuted,
-                                    textAlign = TextAlign.Center,
-                                )
                             }
+                        } else {
+                            // docs/09 screen principle 8: no button here — the tab bar right below already says Record.
+                            EmptyList(
+                                title = stringResource(R.string.jobs_empty),
+                                hint = stringResource(R.string.jobs_empty_hint),
+                                modifier = Modifier.fillParentMaxSize(),
+                            )
                         }
                     }
                 }
@@ -586,105 +567,6 @@ private fun AlertBanner(
 }
 
 /**
- * One reason: what it is, how many recordings are behind it, the code (none for the Drive wait), and what
- * to press — the iPhone's `AlertLine`. On a phone the sentence has the row's whole width and the code and
- * the button sit under it, at the end (N5, UX decisions of 2026-10-11): beside it, they squeezed a
- * sentence such as the quota's to a few words a line. A wider window keeps them beside it, in at most
- * half the row, folding onto a second line there when they do not fit side by side, so a long code such
- * as `LOCAL_TRANSCRIPTION_UNAVAILABLE` never squeezes the sentence to a word per line. Either way a word
- * too long for its line breaks at a hyphen, not anywhere (N2).
- */
-@Composable
-private fun AlertLine(
-    code: String?,
-    lines: @Composable ColumnScope.() -> Unit,
-    tone: BadgeTone = BadgeTone.WARNING,
-    description: String? = null,
-    onClick: (() -> Unit)? = null,
-    action: @Composable () -> Unit,
-) {
-    val sentence = Modifier
-        .then(if (onClick != null) Modifier.focusRing(blueprint).clickable(onClick = onClick) else Modifier)
-        .then(
-            if (description != null) {
-                Modifier.semantics(mergeDescendants = true) { contentDescription = description }
-            } else {
-                Modifier
-            },
-        )
-    val trailing: @Composable () -> Unit = {
-        code?.let { StatusBadge(LedgerStatus(it, tone)) }
-        action()
-    }
-    CompositionLocalProvider(LocalTextStyle provides LocalTextStyle.current.copy(hyphens = Hyphens.Auto)) {
-        BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = Space.m)) {
-            if (maxWidth + Space.m * 2 < PHONE_WIDTH) {
-                Column(Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = sentence.fillMaxWidth().padding(vertical = Space.s),
-                        verticalArrangement = Arrangement.spacedBy(Space.xxs),
-                        content = lines,
-                    )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth().padding(bottom = Space.s),
-                        horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(Space.xs),
-                        itemVerticalAlignment = Alignment.CenterVertically,
-                    ) { trailing() }
-                }
-                return@BoxWithConstraints
-            }
-            // Half the row, or the code's own width where that is more: a code is never cut.
-            val half = maxOf(maxWidth / 2, code?.let { statusColumnWidth(listOf(it)) } ?: 0.dp)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(Space.s),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(
-                    modifier = sentence.weight(1f).padding(vertical = Space.s),
-                    verticalArrangement = Arrangement.spacedBy(Space.xxs),
-                    content = lines,
-                )
-                FlowRow(
-                    modifier = Modifier.widthIn(max = half).padding(vertical = Space.s),
-                    horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
-                    verticalArrangement = Arrangement.spacedBy(Space.xs),
-                    itemVerticalAlignment = Alignment.CenterVertically,
-                ) { trailing() }
-            }
-        }
-    }
-}
-
-/** A window narrower than this is a phone's (the compact width class): the banner stacks its lines. */
-private val PHONE_WIDTH = 600.dp
-
-/**
- * What the last delete or retry had to say, as the iPhone's warning banner: the sentence in the
- * warning's ink on the surface, inside the warning's edge. A tap puts it away.
- */
-@Composable
-private fun MessageBanner(text: String, onDismiss: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = blueprint
-    val shape = RoundedCornerShape(Radius.node)
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .defaultMinSize(minHeight = MinTouch)
-            .focusRing(palette, Radius.node)
-            .background(palette.surface, shape)
-            .border(palette.line, palette.warning, shape)
-            .clickable(onClickLabel = stringResource(R.string.action_close), onClick = onDismiss)
-            .padding(horizontal = Space.sm, vertical = Space.s)
-            .testTag("message"),
-        contentAlignment = Alignment.CenterStart,
-    ) {
-        Text(text, style = MaterialTheme.typography.bodySmall, color = palette.warningInk)
-    }
-}
-
-/**
  * docs/03: a pull is the user asking for everything — this phone's list and what the other devices
  * have put in Drive. docs/09 "Motion": the platform's own pull indicator, the one place the system's
  * spinner is allowed (2026-09-29): it follows the finger and settles back without a word, so a pull
@@ -1002,11 +884,7 @@ private fun SearchResults(
         return
     }
     if (hits.isEmpty()) {
-        Column(modifier.padding(Space.l), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(stringResource(R.string.search_empty), style = MaterialTheme.typography.bodyMedium, color = palette.text, textAlign = TextAlign.Center)
-            Text(stringResource(R.string.search_empty_hint), Modifier.padding(top = Space.xs), style = MaterialTheme.typography.bodySmall,
-                color = palette.textMuted, textAlign = TextAlign.Center)
-        }
+        EmptyList(stringResource(R.string.search_empty), stringResource(R.string.search_empty_hint), modifier)
         return
     }
     val tint = palette.accent.copy(alpha = MATCH_TINT)
