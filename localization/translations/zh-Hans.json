@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "本设备转录录音时，会把转写文本发送给ChatGPT，为对话中被叫到名字的说话人命名。这会计入你的ChatGPT用量。",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "开启“自动填写标题”或“自动填写说话人名称”时，这台iPhone转录的每段录音的转写文本也会发送到这里。",
   "Still transcribing on this device — try again once it has finished": "此设备仍在转录——完成后再试一次",
-  "Asked once, before the first recording.": "仅在第一次录音前询问一次。"
+  "Asked once, before the first recording.": "仅在第一次录音前询问一次。",
+  "Asked before every recording.": "每次录音前都会询问。"
 }

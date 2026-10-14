@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kifaa hiki kinaponukuu rekodi, nakala hutumwa kwa ChatGPT ili kuwapa majina wazungumzaji wanaoitwa kwa majina ndani yake. Hii huhesabiwa katika matumizi yako ya ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Jaza vichwa kiotomatiki au Jaza majina ya wazungumzaji kiotomatiki ikiwa imewashwa, nakala ya kila rekodi inayonukuliwa na iPhone hii pia hutumwa hapa.",
   "Still transcribing on this device — try again once it has finished": "Bado inanukuu kwenye kifaa hiki — jaribu tena itakapokamilika",
-  "Asked once, before the first recording.": "Huulizwa mara moja, kabla ya rekodi ya kwanza."
+  "Asked once, before the first recording.": "Huulizwa mara moja, kabla ya rekodi ya kwanza.",
+  "Asked before every recording.": "Huulizwa kabla ya kila rekodi."
 }

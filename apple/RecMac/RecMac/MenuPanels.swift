@@ -58,19 +58,3 @@ struct PermissionPanel: View {
         }
     }
 }
-
-/// A failure with nothing to do about it in the app — said, and acknowledged.
-struct NoticePanel: View {
-    let title: String
-    let message: String
-    let done: () -> Void
-
-    var body: some View {
-        BlueprintDialog(title: title) {
-            BlueprintButton(loc("OK"), tone: .primary, minWidth: minTouch, action: done)
-                .keyboardShortcut(.defaultAction)
-        } content: {
-            BlueprintDialogText(message)
-        }
-    }
-}

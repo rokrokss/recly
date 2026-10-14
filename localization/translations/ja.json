@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "この端末で録音を文字起こしすると、会話の中で名前を呼ばれた話者に名前を付けるために文字起こしをChatGPTに送ります。ChatGPTの使用量に含まれます。",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "「タイトルを自動で入力」または「話者の名前を自動で入力」がオンのときは、このiPhoneで文字起こしした各録音の文字起こしもここへ送信します。",
   "Still transcribing on this device — try again once it has finished": "この端末でまだ文字起こし中です。終わってからもう一度お試しください",
-  "Asked once, before the first recording.": "最初の録音の前に一度だけ確認します。"
+  "Asked once, before the first recording.": "最初の録音の前に一度だけ確認します。",
+  "Asked before every recording.": "録音のたびに確認します。"
 }

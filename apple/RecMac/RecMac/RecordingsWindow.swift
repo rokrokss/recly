@@ -26,7 +26,9 @@ struct RecordingsWindow: View {
     var body: some View {
         HSplitView {
             VStack(spacing: 0) {
-                ScreenHeader(title: loc("Details"), meta: "\(menu.recordingCount)") {
+                // docs/09 screen principle 2: how many, and how many of them are waiting or have stopped — the
+                // phones' line (Recents.summary), over every recording though the list is a page.
+                ScreenHeader(title: loc("Details"), meta: Recents.summary(menu.recents, count: menu.recordingCount)) {
                     // ux §7: an agent app shows no menu bar, so the list header's button carries ⌘I.
                     BlueprintIconButton("square.and.arrow.down", label: RecKitStrings.localized("Import audio")) { pickFiles() }
                         .keyboardShortcut("i")
@@ -36,6 +38,15 @@ struct RecordingsWindow: View {
                 // ux §6: titles and transcripts, above the ledger.
                 ListSearchField(text: $menu.searchQuery, focus: $searchFocused)
                 HairLine()
+                // What the last delete or retry from a list came to, above the list, as the phone says it — it goes
+                // when it is clicked.
+                if let message = menu.listMessage {
+                    Button { menu.dismissListMessage() } label: { Banner(message.text, tone: .warning) }
+                        .buttonStyle(.plain)
+                        .padding(Space.s)
+                        .accessibilityAction(named: Text(verbatim: RecKitStrings.localized("Close"))) { menu.dismissListMessage() }
+                        .accessibilityIdentifier("list-message")
+                }
                 if let failure = menu.importFailure {
                     Banner(
                         ([RecKitStrings.localized("Could not import this file")]
@@ -71,13 +82,17 @@ struct RecordingsWindow: View {
                     Rectangle().strokeBorder(blueprint.palette.accent, lineWidth: blueprint.line + 1)
                 }
             }
-            // ux §2·§6: ⌘F is the search field's; with a recording open and a query in the field, its
-            // transcript's find bar opens on that query too.
+            // docs/10 "Search": ⌘F finds in the transcript that is open — its find bar, with a field of its own and the
+            // cursor in it, every press — and is the list's search when there is no transcript to find in (Windows'
+            // Ctrl+F).
             .background {
                 Button("") {
-                    searchFocused = true
-                    let query = menu.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !query.isEmpty, let detail = menu.detail { detail.find = TranscriptFind(query: query, atSec: 0) }
+                    if let detail = menu.detail, detail.findable {
+                        if detail.find == nil { detail.find = TranscriptFind(query: "", atSec: 0) }
+                        detail.findFocus += 1
+                    } else {
+                        searchFocused = true
+                    }
                 }
                 .keyboardShortcut("f")
                 .opacity(0)
@@ -87,6 +102,9 @@ struct RecordingsWindow: View {
             Group {
                 if let detail = menu.detail {
                     RecordingDetailView(model: detail)
+                        // docs/09 "Editing and speakers": closing the window is one more way out of an editor, and asks
+                        // as the others do.
+                        .background(WindowCloseGuard { menu.mayLeaveDetail() })
                 } else {
                     Text(verbatim: loc("Pick a recording."))
                         .font(blueprint.fonts.bodySmall)
@@ -218,7 +236,7 @@ struct RecordingsWindow: View {
     /// Whether the open row has anything to say or offer under it.
     private func hasActions(_ item: RecentItem) -> Bool {
         (item.alert != .needsAuth && item.reason != nil) || item.canDelete || item.canRetry
-            || item.needsKey || item.alert == .needsSpace || item.waitingForModel
+            || item.needsKey || item.alert == .needsSpace || item.waitingForModel || item.waitingMinutes != nil
     }
 
     /// 2026-10-11 (N1): under the open row only, on its tint and behind its accent bar — the popover's
@@ -227,6 +245,13 @@ struct RecordingsWindow: View {
     /// Delete at the end, its edge on the badge's. The other rows carry no buttons at all.
     private func actions(_ item: RecentItem) -> some View {
         VStack(alignment: .leading, spacing: Space.s) {
+            // docs/08 "Polling · status": a transcription in flight has no "when", only how long it has been
+            // waiting — the line every other surface draws under the row.
+            if item.waitingMinutes != nil {
+                Text(verbatim: item.stateLabel)
+                    .font(blueprint.fonts.sans(TypeSize.small))
+                    .foregroundStyle(blueprint.palette.textMuted)
+            }
             // docs/08 "Errors": what to do about it, and — for a key — where to do it. docs/07 §5:
             // `lastError` is a core message key, and a row an older build wrote is prose that
             // `CoreMessages` shows as it stands. Red for a failure, the badge's warning tone for a job

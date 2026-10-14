@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Quando este dispositivo transcreve uma gravação, a transcrição vai para o ChatGPT para dar nome aos falantes chamados pelo nome nela. Isso conta no seu uso do ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Com Preencher títulos ou Preencher nomes dos falantes ativado, a transcrição de cada gravação que este iPhone transcreve também é enviada para cá.",
   "Still transcribing on this device — try again once it has finished": "Ainda transcrevendo neste dispositivo — tente de novo quando terminar",
-  "Asked once, before the first recording.": "Perguntado uma vez, antes da primeira gravação."
+  "Asked once, before the first recording.": "Perguntado uma vez, antes da primeira gravação.",
+  "Asked before every recording.": "Perguntado antes de cada gravação."
 }

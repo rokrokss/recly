@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "Kapag nag-transcribe ang device na ito ng recording, ipinapadala ang transcript sa ChatGPT para pangalanan ang mga nagsasalitang tinatawag sa pangalan dito. Kasama ito sa paggamit mo ng ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "Kapag naka-on ang Kusang lagyan ng pamagat o Kusang lagyan ng pangalan ang mga nagsasalita, ipinapadala rin dito ang transcript ng bawat recording na tina-transcribe ng iPhone na ito.",
   "Still transcribing on this device — try again once it has finished": "Nagta-transcribe pa sa device na ito — subukan ulit kapag tapos na",
-  "Asked once, before the first recording.": "Itinatanong nang isang beses, bago ang unang recording."
+  "Asked once, before the first recording.": "Itinatanong nang isang beses, bago ang unang recording.",
+  "Asked before every recording.": "Itinatanong bago ang bawat recording."
 }

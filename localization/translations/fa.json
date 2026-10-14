@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "وقتی این دستگاه ضبطی را رونویسی می‌کند، رونوشت به ChatGPT فرستاده می‌شود تا گوینده‌هایی که در آن با نام صدا زده می‌شوند نام بگیرند. این جزو مصرف ChatGPT شما حساب می‌شود.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "وقتی «تکمیل خودکار عنوان‌ها» یا «تکمیل خودکار نام گوینده‌ها» روشن است، رونوشت هر ضبطی که این iPhone رونویسی می‌کند نیز به اینجا فرستاده می‌شود.",
   "Still transcribing on this device — try again once it has finished": "هنوز روی این دستگاه رونویسی می‌شود — پس از پایان دوباره امتحان کنید",
-  "Asked once, before the first recording.": "یک بار، پیش از نخستین ضبط، پرسیده می‌شود."
+  "Asked once, before the first recording.": "یک بار، پیش از نخستین ضبط، پرسیده می‌شود.",
+  "Asked before every recording.": "پیش از هر ضبط پرسیده می‌شود."
 }

@@ -572,5 +572,6 @@
   "When this device transcribes a recording, the transcript goes to ChatGPT to name the speakers called by name in it. It counts toward your ChatGPT usage.": "عندما ينسخ هذا الجهاز تسجيلًا، يُرسَل نص النسخة إلى ChatGPT لتسمية المتحدثين الذين يُنادَون بأسمائهم فيه. يُحتسب ذلك ضمن استخدامك لـ ChatGPT.",
   "With Fill in titles or Fill in speaker names on, the transcript of each recording this iPhone transcribes is sent here too.": "عند تشغيل «ملء العناوين تلقائيًا» أو «ملء أسماء المتحدثين تلقائيًا»، يُرسَل إلى هنا أيضًا نص النسخة لكل تسجيل ينسخه هذا الـ iPhone.",
   "Still transcribing on this device — try again once it has finished": "لا يزال النسخ جاريًا على هذا الجهاز — حاول مجددًا بعد انتهائه",
-  "Asked once, before the first recording.": "يُطرح السؤال مرة واحدة قبل أول تسجيل."
+  "Asked once, before the first recording.": "يُطرح السؤال مرة واحدة قبل أول تسجيل.",
+  "Asked before every recording.": "يُطرح السؤال قبل كل تسجيل."
 }
