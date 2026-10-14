@@ -112,6 +112,14 @@ Download `Recly-<version>.msi` from the newest
 MSI is not code-signed, so SmartScreen shows "Windows protected your PC": choose **More info** →
 **Run anyway**.
 
+NVDA and JAWS read Recly through the Java Access Bridge, which is off until it is turned on once.
+`jabswitch` comes with any Java Development Kit for Windows; run it, then restart Recly and the
+screen reader:
+
+```
+jabswitch /enable
+```
+
 ## Updating
 
 The phone and watch apps update through Google Play or the App Store. A sideloaded APK updates when

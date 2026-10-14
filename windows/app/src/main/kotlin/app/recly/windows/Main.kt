@@ -24,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.painter.Painter
@@ -32,7 +31,9 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.FrameWindowScope
 import androidx.compose.ui.window.MenuScope
@@ -72,10 +73,17 @@ import app.recly.windows.ui.component.BlueprintTextField
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.DialogTone
 import app.recly.windows.ui.devFlags
+import app.recly.windows.ui.theme.BlueprintDark
+import app.recly.windows.ui.theme.BlueprintLight
 import app.recly.windows.ui.theme.ReclyDesktopTheme
 import app.recly.windows.ui.theme.Space
+import app.recly.windows.ui.theme.TitleBarTheme
 import app.recly.windows.ui.theme.highContrastOf
 import app.recly.windows.ui.theme.observeSystemHighContrast
+import app.recly.windows.ui.theme.reduceMotionOf
+import app.recly.windows.ui.theme.systemAnimationsOn
+import app.recly.windows.ui.theme.systemTextScale
+import app.recly.windows.ui.theme.textScaleOf
 import app.recly.windows.ui.trayMenu
 import recly.core.processing.TranscriptionMode
 import java.util.Locale
@@ -171,6 +179,7 @@ fun main(args: Array<String>) {
                 title = strings[Str.WINDOW_RECORDINGS],
                 state = rememberWindowState(width = RECORDINGS_WIDTH.dp, height = RECORDINGS_HEIGHT.dp),
             ) {
+                TitleBarTheme(appDark(model, dev))
                 Themed(model, dev) { RecordingsWindow(model, strings, themed) }
             }
         }
@@ -265,6 +274,7 @@ fun main(args: Array<String>) {
                 title = strings[Str.WINDOW_SETTINGS],
                 state = rememberWindowState(width = SETTINGS_WIDTH.dp, height = SETTINGS_HEIGHT.dp),
             ) {
+                TitleBarTheme(appDark(model, dev))
                 Themed(model, dev) { SettingsWindow(model, strings) }
             }
         }
@@ -275,27 +285,40 @@ fun main(args: Array<String>) {
  * docs/09: dark comes from the system unless the settings window overrides it, and high contrast
  * comes from the system alone. Every window is wrapped in this rather than one theme around the
  * application, because the type scale is interpolated from the width of the window it is in.
+ *
+ * docs/09 "Disabled, focus and structure": the animation switch and the text size are the system's too. Windows
+ * announces neither to an AWT app, so both are read again whenever the window comes forward or goes back — a change
+ * made in Settings shows the next time the user returns to the window.
  */
 @Composable
 private fun Themed(model: ShellModel, dev: DevFlags, content: @Composable () -> Unit) {
     val strings by model.localization.strings.collectAsState()
-    val systemDark = isSystemInDarkTheme()
-    val theme = dev.theme ?: model.theme
     // Observed, not read once: AWT fires a property change when the user flips the Windows
     // setting, and an open window follows it. Null off Windows.
     val systemContrast = observeSystemHighContrast()
-    ReclyDesktopTheme(
-        dark = when (theme) {
-            AppTheme.SYSTEM -> systemDark
-            AppTheme.LIGHT -> false
-            AppTheme.DARK -> true
-        },
-        highContrast = dev.highContrast ?: highContrastOf(systemContrast),
-        tracked = strings.language != StringTable.KOREAN,
-        content = {
-            CompositionLocalProvider(LocalLayoutDirection provides if (strings.language in setOf("ar", "ur", "fa")) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
-        },
-    )
+    val focused = LocalWindowInfo.current.isWindowFocused
+    val reduceMotion = remember(focused) { reduceMotionOf(systemAnimationsOn()) }
+    val textScale = remember(focused) { textScaleOf(systemTextScale()) }
+    val density = LocalDensity.current
+    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * textScale)) {
+        ReclyDesktopTheme(
+            dark = appDark(model, dev),
+            highContrast = dev.highContrast ?: highContrastOf(systemContrast),
+            tracked = strings.language != StringTable.KOREAN,
+            reduceMotion = reduceMotion,
+            content = {
+                CompositionLocalProvider(LocalLayoutDirection provides if (strings.language in setOf("ar", "ur", "fa")) LayoutDirection.Rtl else LayoutDirection.Ltr) { content() }
+            },
+        )
+    }
+}
+
+/** The app's light or dark: the Theme setting, or the system's under `System` — the windows and their title bars alike. */
+@Composable
+private fun appDark(model: ShellModel, dev: DevFlags): Boolean = when (dev.theme ?: model.theme) {
+    AppTheme.SYSTEM -> isSystemInDarkTheme()
+    AppTheme.LIGHT -> false
+    AppTheme.DARK -> true
 }
 
 /**
@@ -522,7 +545,8 @@ private fun ConsentPrompt(
  *
  * Windows does not template-tint a tray icon, so the ink has to be chosen for the taskbar it sits
  * in: the dark palette on a dark taskbar (also the macOS menu bar on the development host, where
- * a dark mark was an icon nobody could find), the light palette on a light one (Sol icon r1).
+ * a dark mark was an icon nobody could find), the light palette on a light one (Sol icon r1). The
+ * colours are the palette's own tokens, not copies of them (docs/09 "Tokens", 2026-10-15).
  */
 private class StatusIcon(
     private val recording: Boolean,
@@ -536,8 +560,9 @@ private class StatusIcon(
         // The template's 22 grid: outer 16 at (3,3) radius 2 stroke 1.5, inner 6 at (8,8) radius 1.
         val unit = size.minDimension / GRID
         val stroke = 1.5f * unit
-        val ink = if (lightTaskbar) INK_ON_LIGHT else INK_ON_DARK
-        val record = if (lightTaskbar) RECORD_ON_LIGHT else RECORD_ON_DARK
+        val palette = if (lightTaskbar) BlueprintLight else BlueprintDark
+        val ink = palette.text
+        val record = palette.danger
         drawRoundRect(
             color = ink,
             // A stroke is centred on its path, so the rectangle is inset by half of it.
@@ -557,7 +582,8 @@ private class StatusIcon(
         // not only a hue. The same badge RecMac puts on its menu bar item.
         if (blocked) {
             drawRoundRect(
-                color = if (lightTaskbar) WARNING_ON_LIGHT else WARNING_ON_DARK,
+                // On a light taskbar the warning *ink*: the amber itself is 3:1 at best against a light ground.
+                color = if (lightTaskbar) BlueprintLight.warningInk else BlueprintDark.warning,
                 topLeft = Offset(13f * unit, 13f * unit),
                 size = Size(7f * unit, 7f * unit),
                 cornerRadius = CornerRadius(1f * unit),
@@ -568,13 +594,6 @@ private class StatusIcon(
     private companion object {
         // The template's own grid, which is also the size the tray is asked for.
         const val GRID = 22f
-        // docs/09 tokens: ink and record for each ground.
-        val INK_ON_DARK = Color(0xFFF2F2F0)
-        val RECORD_ON_DARK = Color(0xFFFA4D56)
-        val INK_ON_LIGHT = Color(0xFF111111)
-        val RECORD_ON_LIGHT = Color(0xFFDA1E28)
-        val WARNING_ON_DARK = Color(0xFFF1C21B)
-        val WARNING_ON_LIGHT = Color(0xFFB28600)
     }
 }
 

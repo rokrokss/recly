@@ -17,14 +17,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
 import app.recly.windows.i18n.Strings
 import app.recly.windows.i18n.text
+import app.recly.windows.ui.component.BannerRow
 import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
-import app.recly.windows.ui.component.StatusBadge
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
@@ -90,9 +89,10 @@ fun ModelCard(model: ShellModel, strings: Strings) {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = Space.m, vertical = Space.s)
-            .border(palette.line, palette.grid, shape)
+            // A card's edge is the input border — the grid is decoration only (docs/09 "Tokens").
+            .border(palette.line, palette.inputBorder, shape)
             .background(palette.surface, shape)
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         Text(strings[Str.PROCESSING_MODEL_CARD_TITLE], style = MaterialTheme.typography.titleSmall, color = palette.text)
@@ -145,38 +145,32 @@ fun ModelDownloadChip(model: ShellModel, strings: Strings, language: String?) {
 fun ModelBanner(model: ShellModel, strings: Strings, alert: JobAlert) {
     val download = model.modelDownload ?: return
     val palette = blueprint
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(palette.surface)
-            .padding(horizontal = Space.m, vertical = Space.s),
-        horizontalArrangement = Arrangement.spacedBy(Space.s),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        StatusBadge(alert.reason.badge().worded(strings))
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+    BannerRow(
+        badge = alert.reason.badge().worded(strings),
+        action = {
             if (download.running) {
-                LoadingText(downloadingText(strings, download.info?.progress), MaterialTheme.typography.bodyMedium, palette.text)
-                downloadedBytesText(strings, download.info)?.let {
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
-                }
+                BlueprintButton(strings[Str.PROCESSING_MODEL_CANCEL], download::cancel, tone = ButtonTone.QUIET)
             } else {
-                Text(strings[alert.reason.label], style = MaterialTheme.typography.bodyMedium, color = palette.text)
-                Text(strings[Str.ALERT_WAITING, alert.count], style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
-                // A download that stopped short is a failure, and says so in the failure colour.
-                download.failure?.let {
-                    Text(it.text(strings), style = MaterialTheme.typography.bodySmall, color = palette.danger)
-                }
+                BlueprintButton(
+                    label = strings[Str.PROCESSING_PREPARE],
+                    onClick = { model.downloadModel() },
+                    enabled = model.modelDownloadAllowed && download.meteredPrompt == null,
+                )
             }
-        }
+        },
+    ) {
         if (download.running) {
-            BlueprintButton(strings[Str.PROCESSING_MODEL_CANCEL], download::cancel, tone = ButtonTone.QUIET)
+            LoadingText(downloadingText(strings, download.info?.progress), MaterialTheme.typography.bodyMedium, palette.text)
+            downloadedBytesText(strings, download.info)?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+            }
         } else {
-            BlueprintButton(
-                label = strings[Str.PROCESSING_PREPARE],
-                onClick = { model.downloadModel() },
-                enabled = model.modelDownloadAllowed && download.meteredPrompt == null,
-            )
+            Text(strings[alert.reason.label], style = MaterialTheme.typography.bodyMedium, color = palette.text)
+            Text(strings[Str.ALERT_WAITING, alert.count], style = MaterialTheme.typography.bodySmall, color = palette.textMuted)
+            // A download that stopped short is a failure, and says so in the failure colour.
+            download.failure?.let {
+                Text(it.text(strings), style = MaterialTheme.typography.bodySmall, color = palette.danger)
+            }
         }
     }
 }

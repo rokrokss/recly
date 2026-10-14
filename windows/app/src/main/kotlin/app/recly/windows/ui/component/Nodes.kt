@@ -58,14 +58,15 @@ fun StateNode(spec: NodeSpec, modifier: Modifier = Modifier) {
                 shape = RoundedCornerShape(Radius.node),
             )
             .background(palette.surface, RoundedCornerShape(Radius.node))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            // docs/09 "Component measurements": 12 × 8, the label on up to two lines from the start edge.
+            .padding(horizontal = Space.sm, vertical = Space.s),
         verticalArrangement = Arrangement.spacedBy(Space.xs),
     ) {
         Text(
             spec.label,
             style = MaterialTheme.typography.labelSmall,
             color = palette.textMuted,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
         Row(

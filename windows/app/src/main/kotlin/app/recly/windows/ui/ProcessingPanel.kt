@@ -21,7 +21,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.*
 import app.recly.windows.ui.component.*
 import app.recly.windows.ui.theme.Space
@@ -57,14 +56,14 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
     // On the surface, with the same inset as the other settings sections' blocks (SettingsWindow
     // `SettingsCard`): one left edge and one right edge for every label, row and button group in it.
     Column(
-        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.sm),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
         // Every line here says its colour (2026-10-10): a forgotten one was near-black on the dark page.
         if (model.importing) Text(strings[Str.PROCESSING_IMPORT_BODY], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
         // Only for recordings kept in a local folder (2026-10-09): Drive always files them a folder a month.
         if (showsFolderChoice(model.stored)) StorageFolder(draft.folder, { v -> model.edit { it.folder = v } }, strings)
-        BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION])
+        BlueprintTextField(draft.minimumSeconds, { v -> model.edit { it.minimumSeconds = v } }, strings[Str.FIELD_MIN_DURATION], monospace = true)
         SectionHeader(strings[Str.PROCESSING_TRANSCRIPTION])
         FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
             // No on-device engine in this build: offer `local` only to a draft that already holds it.
@@ -107,8 +106,8 @@ fun ProcessingPanel(model: ProcessingViewModel, strings: Strings, preparationAll
                 Text(strings[Str.PROCESSING_KEY_CLIENT_PAIR], style = MaterialTheme.typography.bodySmall, color = blueprint.textMuted)
             }
             ProcessingKey(model, draft.secretRef, strings) { deletingKey = draft.secretRef }
-            if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL], placeholder = draft.invokeUrlHint)
-            if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL])
+            if (WorkflowParser.invokeUrlUse(draft.provider) != InvokeUrlUse.NONE) BlueprintTextField(draft.invokeUrl, { v -> model.edit { it.invokeUrl = v } }, strings[Str.FIELD_INVOKE_URL], placeholder = draft.invokeUrlHint, monospace = true)
+            if (draft.acceptsModel) BlueprintTextField(draft.model, { v -> model.edit { it.model = v } }, strings[Str.PROCESSING_MODEL], monospace = true)
         }
         // The last setting of either method, and a labelled row like the provider's.
         if (draft.mode != TranscriptionMode.OFF) {
@@ -158,7 +157,7 @@ fun ProcessingSettingsFile(model: ProcessingViewModel, strings: Strings) {
     SectionHeader(strings[Str.PROCESSING_SETTINGS_FILE], Modifier.padding(horizontal = Space.m))
     HairLine()
     FlowRow(
-        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = 12.dp),
+        Modifier.fillMaxWidth().background(blueprint.surface).padding(horizontal = Space.m, vertical = Space.sm),
         horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End),
     ) {
         BlueprintButton(strings[Str.PROCESSING_EXPORT], { model.export() }, tone = ButtonTone.QUIET, enabled = model.stored is ProcessingSettingsState.Ready && !model.dirty)
@@ -192,6 +191,7 @@ private fun ProcessingKey(model: ProcessingViewModel, name: String, strings: Str
             label = strings[Str.FIELD_API_KEY],
             hint = if (name.isBlank() || replacing) null else strings[Str.PROCESSING_KEY_NOT_ON_DEVICE],
             secret = true,
+            monospace = true,
         )
         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Space.s, Alignment.End)) {
             if (replacing) BlueprintButton(strings[Str.CANCEL], { value = ""; replacing = false }, tone = ButtonTone.QUIET)
@@ -275,12 +275,14 @@ private fun Vocabulary(model: ProcessingViewModel, draft: ProcessingDraft, strin
 private fun TermChip(term: String, removeLabel: String, onRemove: () -> Unit) {
     val palette = blueprint
     Row(
-        Modifier.border(palette.line, palette.grid, RoundedCornerShape(Radius.node)).padding(start = Space.s),
+        // docs/09 "Component measurements": a chip's edge is the input border — the grid is decoration only.
+        Modifier.border(palette.line, palette.inputBorder, RoundedCornerShape(Radius.node)).padding(start = Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(term, style = MaterialTheme.typography.labelLarge, color = palette.text)
         Box(
-            Modifier.size(MinTouch).clickable(role = Role.Button, onClick = onRemove).semantics { contentDescription = removeLabel },
+            Modifier.size(MinTouch).focusRing(RoundedCornerShape(Radius.node)).clickable(role = Role.Button, onClick = onRemove)
+                .semantics { contentDescription = removeLabel },
             contentAlignment = Alignment.Center,
         ) {
             Text("×", style = MaterialTheme.typography.labelLarge, color = palette.textMuted, modifier = Modifier.clearAndSetSemantics { })

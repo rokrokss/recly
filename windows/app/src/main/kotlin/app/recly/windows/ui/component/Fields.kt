@@ -34,6 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -84,8 +86,8 @@ fun BlueprintTextField(
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     enabled: Boolean = true,
-    /** Monospace by default: nearly every field in this app holds data rather than prose. */
-    monospace: Boolean = true,
+    /** Monospace for a field that holds data — a key, a URL, a model id, a number — and sans for what a person writes. */
+    monospace: Boolean = false,
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
     /** A key: drawn as dots, never as what was typed. */
@@ -121,7 +123,7 @@ fun BlueprintTextField(
     minLines: Int = 1,
     maxLines: Int = if (singleLine) 1 else Int.MAX_VALUE,
     enabled: Boolean = true,
-    monospace: Boolean = true,
+    monospace: Boolean = false,
     minHeight: Dp = MinTouch,
     placeholder: String? = null,
     focusRequester: FocusRequester? = null,
@@ -182,9 +184,10 @@ private fun FieldFrame(
                 }
                 .then(focusRequester?.let { Modifier.focusRequester(it) } ?: Modifier)
                 .defaultMinSize(minHeight = minHeight)
-                .fieldBox()
-                .padding(horizontal = Space.s, vertical = 10.dp),
-            style.copy(color = if (enabled) palette.text else palette.textMuted),
+                .fieldBox(enabled)
+                // docs/09 "Component measurements": inset 12 × 8.
+                .padding(horizontal = Space.sm, vertical = Space.s),
+            style.copy(color = if (enabled) palette.text else palette.disabled),
         ) { innerTextField ->
             Box {
                 placeholder?.let { Text(it, style = style, color = palette.textMuted) }
@@ -219,14 +222,22 @@ internal fun fieldSemantics(label: String, hint: String?): FieldSemantics =
 /**
  * docs/09 "Shape": the box every field is drawn in — the search fields and the editors' as much as
  * [BlueprintTextField]'s (2026-10-10): the input border, and the accent a step heavier while the field has the focus,
- * which is the same cue the chips and the graph nodes use.
+ * which is the same cue the chips and the graph nodes use. Disabled, a dashed edge in the disabled ink (docs/09
+ * "Disabled, focus and structure").
  */
-fun Modifier.fieldBox(): Modifier = composed {
+fun Modifier.fieldBox(enabled: Boolean = true): Modifier = composed {
     val palette = blueprint
     var focused by remember { mutableStateOf(false) }
+    val shape = RoundedCornerShape(Radius.node)
     onFocusChanged { focused = it.hasFocus }
-        .border(if (focused) palette.selectedLine else palette.line, if (focused) palette.accent else palette.inputBorder, RoundedCornerShape(Radius.node))
-        .background(palette.surface, RoundedCornerShape(Radius.node))
+        .then(
+            when {
+                !enabled -> Modifier.dashedBorder(palette.line, palette.disabled, Radius.node)
+                focused -> Modifier.border(palette.selectedLine, palette.accent, shape)
+                else -> Modifier.border(palette.line, palette.inputBorder, shape)
+            },
+        )
+        .background(palette.surface, shape)
 }
 
 /**
@@ -326,19 +337,20 @@ fun BlueprintMenuRow(
     trailing: (@Composable () -> Unit)? = null,
 ) {
     val palette = blueprint
-    val ink = if (enabled) palette.text else palette.textMuted
+    val ink = if (enabled) palette.text else palette.disabled
     val style = MaterialTheme.typography.labelLarge
     Row(
         Modifier
             .fillMaxWidth()
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing()
             .clickable(enabled = enabled, role = Role.Button, onClick = onClick)
-            .padding(horizontal = Space.s + Space.xs, vertical = 6.dp),
+            .padding(horizontal = Space.sm, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         mark?.let { Box(Modifier.width(MARK_COLUMN)) { Text(it, style = style, color = ink) } }
-        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             Text(label, style = if (ltr) style.copy(textDirection = TextDirection.Ltr) else style, color = ink)
             secondary?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = palette.textMuted) }
         }
@@ -385,19 +397,36 @@ fun <T> BlueprintDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
     val current = options.firstOrNull { it.first == selected }?.second.orEmpty()
+    val palette = blueprint
+    val shape = RoundedCornerShape(Radius.node)
+    // Data — a provider id — reads left to right in every language (docs/09 "Typography"), at a button's 14.
+    val style = if (monospace) mono.bodySmall.copy(textDirection = TextDirection.Ltr) else MaterialTheme.typography.labelLarge
     Box(modifier) {
-        BlueprintButton(
-            label = "$current $DROPDOWN_MARK",
-            onClick = { expanded = true },
-            // docs/09 "Accessibility": the button says the value, and the row above it says what the value
-            // is of — a reader given only the value would hear "한국어, button" and no question.
-            modifier = Modifier.semantics {
-                contentDescription = label
-                stateDescription = current
-            },
-            tone = ButtonTone.QUIET,
-            monospace = monospace,
-        )
+        // The phone's box (`android/.../component/Dropdown.kt`): the input border, the value and [DROPDOWN_MARK] as two
+        // texts — the mark is what says "this is a choice" — and a button's padding.
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minWidth = MinTouch, minHeight = MinTouch)
+                .border(palette.line, palette.inputBorder, shape)
+                .focusRing(shape)
+                .clickable(role = Role.Button) { expanded = true }
+                // One element: the value and the mark are two texts, and a reader walking them would say the value and
+                // then "down-pointing triangle". Cleared after the click, so the role and the action stay; it says what
+                // the value is of and then the value — given only the value it would say "한국어, button" and no question.
+                .clearAndSetSemantics {
+                    contentDescription = label
+                    stateDescription = current
+                }
+                .padding(horizontal = Space.s, vertical = Space.xs),
+            horizontalArrangement = Arrangement.spacedBy(Space.xs, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            // A value is read whole: at a narrow width or a large type it wraps, rather than losing its end — and it
+            // never pushes the mark out.
+            Text(current, style = style, color = palette.textMuted, maxLines = 3, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false))
+            Text(DROPDOWN_MARK, style = MaterialTheme.typography.labelLarge, color = palette.textMuted)
+        }
         // A menu like the detail's (2026-10-10): flat rows under the box, its end on the box's end, as wide as its
         // longest choice.
         BlueprintMenu(expanded = expanded, onDismissRequest = { expanded = false }, end = true) {

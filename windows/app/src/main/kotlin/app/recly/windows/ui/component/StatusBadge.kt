@@ -1,5 +1,7 @@
 package app.recly.windows.ui.component
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -22,6 +24,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.recly.windows.i18n.Str
+import app.recly.windows.ui.theme.LocalReduceMotion
+import app.recly.windows.ui.theme.Motion
 import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.blueprint
 import app.recly.windows.ui.theme.forWord
@@ -58,29 +62,57 @@ fun StatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
     Row(
         modifier = modifier
             .border(palette.line, status.tone.line(), RoundedCornerShape(Radius.badge))
-            .padding(horizontal = BADGE_PAD, vertical = 3.dp),
+            .padding(horizontal = BADGE_PAD, vertical = Space.xs),
         horizontalArrangement = Arrangement.spacedBy(Space.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         if (status.busy) BlueprintLoader(status.tone.ink())
+        // docs/09 "Component measurements": words wider than the column ([statusColumnWidth]'s cap) wrap inside the
+        // badge, between words and centred — no word is ever cut short. Korean words carry their joiners
+        // (`joinKoreanWords`), so they break between words as well.
         Text(
             text = status.label,
             style = mono.small.forWord(status.label),
             color = status.tone.ink(),
-            maxLines = 1,
             textAlign = TextAlign.Center,
         )
     }
 }
 
-/** The badge's own inset either side of its code. */
-private val BADGE_PAD: Dp = 6.dp
+/**
+ * docs/09 "Motion": a badge whose state changes in place fades, [Motion.BADGE_FADE_MS] on the standard easing — the one
+ * transition a list row has — and with reduce motion the new state is simply there.
+ */
+@Composable
+fun FadingStatusBadge(status: LedgerStatus, modifier: Modifier = Modifier) {
+    if (LocalReduceMotion.current) {
+        StatusBadge(status, modifier)
+    } else {
+        Crossfade(
+            targetState = status,
+            modifier = modifier,
+            animationSpec = tween(durationMillis = Motion.BADGE_FADE_MS, easing = Motion.Standard),
+        ) { swapped ->
+            StatusBadge(swapped)
+        }
+    }
+}
+
+/** The badge's own inset either side of its code (docs/09 "Component measurements": 8 × 4). */
+private val BADGE_PAD: Dp = Space.s
+
+/**
+ * The cap on the status column (UX decisions of 2026-10-08, the phones' rule): as wide as the old code `TRANSCRIBING`
+ * in the badge's font, so the title column is never narrower than it was when the badges said codes. A word wider than
+ * that wraps in its badge instead of widening the column.
+ */
+private const val STATUS_CAP_SAMPLE = "TRANSCRIBING"
 
 /**
  * The ledger's status column, measured rather than guessed: the widest of every [labels] the ledger
  * can show, in the badge's own type — so the fluid scale and the language come with it, and no badge
- * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp). Android's `statusColumnWidth` is the same
- * rule.
+ * is ever cut to fit (`NEEDS_MODEL` was, at a fixed 92dp) — up to the cap of [STATUS_CAP_SAMPLE].
+ * Android's `statusColumnWidth` is the same rule.
  */
 @Composable
 fun statusColumnWidth(labels: List<String>): Dp {
@@ -99,13 +131,18 @@ fun statusColumnWidth(labels: List<String>): Dp {
             }
             measurer.measure(text, style.forWord(word), maxLines = 1).size.width
         } ?: 0
-        with(density) { px.toDp() }
+        // A dp of slack: a word measured to the pixel must not wrap on the pixel the layout rounds away.
+        with(density) { px.toDp() } + 1.dp
     }
-    return statusColumn(widest, blueprint.line)
+    val cap = textColumnWidth(listOf(STATUS_CAP_SAMPLE), style) + 1.dp
+    return statusColumn(widest, blueprint.line, cap)
 }
 
-/** The widest code, plus the badge's padding and border on each side. */
-internal fun statusColumn(widest: Dp, line: Dp): Dp = widest + (BADGE_PAD + line) * 2
+/**
+ * The widest code up to [cap], plus the badge's padding and border on each side. Up to the cap no word wraps; past it
+ * the badge takes a second line.
+ */
+internal fun statusColumn(widest: Dp, line: Dp, cap: Dp = Dp.Infinity): Dp = minOf(widest, cap) + (BADGE_PAD + line) * 2
 
 /** The widest of [samples] on one line, in [style]. */
 @Composable

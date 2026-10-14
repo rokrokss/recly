@@ -332,7 +332,8 @@ internal fun SummaryEditor(draft: SummaryDraft, note: Str, enabled: Boolean, str
                 .semantics { contentDescription = strings[Str.SUMMARY_TAB] }
                 // The accent while it has the focus, as every other field (2026-10-10).
                 .fieldBox()
-                .padding(Space.s),
+                // docs/09 "Component measurements": a field's inset, 12 × 8.
+                .padding(horizontal = Space.sm, vertical = Space.s),
             enabled = enabled,
             textStyle = MaterialTheme.typography.bodyMedium.copy(color = palette.text, textDirection = TextDirection.Content),
             cursorBrush = SolidColor(palette.accent),

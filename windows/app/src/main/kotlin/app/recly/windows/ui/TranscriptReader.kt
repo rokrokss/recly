@@ -12,13 +12,16 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.style.TextDirection
@@ -37,7 +40,10 @@ import app.recly.windows.ui.component.BlueprintButton
 import app.recly.windows.ui.component.ButtonTone
 import app.recly.windows.ui.component.LoadingText
 import app.recly.windows.ui.component.SELECTION_MARK
+import app.recly.windows.ui.component.focusRing
+import app.recly.windows.ui.theme.LocalReduceMotion
 import app.recly.windows.ui.theme.MinTouch
+import app.recly.windows.ui.theme.Radius
 import app.recly.windows.ui.theme.Space
 import app.recly.windows.ui.theme.blueprint
 import kotlinx.coroutines.flow.filter
@@ -92,12 +98,14 @@ internal fun TranscriptReader(
     LaunchedEffect(list) {
         snapshotFlow { list.isScrollInProgress }.filter { it }.collect { if (!moving && playing) following = false }
     }
+    // docs/09 "Motion": with reduce motion the list jumps where it would have glided.
+    val still by rememberUpdatedState(LocalReduceMotion.current)
     /** The group at [index] in the upper third of the list, 200 ms there, as a move of the reader's own. */
     suspend fun bringUp(index: Int) {
         moving = true
         try {
             val height = snapshotFlow { list.layoutInfo.viewportSize.height }.first { it > 0 }
-            list.animateScrollToItem(index, -height / 3)
+            if (still) list.scrollToItem(index, -height / 3) else list.animateScrollToItem(index, -height / 3)
         } finally {
             moving = false
         }
@@ -151,7 +159,9 @@ internal fun TranscriptReader(
         }
         menu?.let { open ->
             val close = { menu = null }
-            Box(Modifier.offset { IntOffset(open.at.x.roundToInt(), open.at.y.roundToInt()) }) {
+            // Where it was clicked is a point of the window, not of the reading order: placed from the left whatever
+            // the language, or in Arabic, Persian and Urdu it hung from the mirror image of the badge.
+            Box(Modifier.align(AbsoluteAlignment.TopLeft).absoluteOffset { IntOffset(open.at.x.roundToInt(), open.at.y.roundToInt()) }) {
                 open.speaker?.let { speaker ->
                     SpeakerMenu(transcript.speakers, speaker, close, { onRenameSpeaker(open.block, speaker) }, { onChangeSpeaker(open.block, ranges[open.block], it) }, strings)
                 }
@@ -174,7 +184,7 @@ private fun Group(
     isActive: Boolean,
     canSeek: Boolean,
     onSeek: (Double) -> Unit,
-    /** Where the badge or the flag is on screen, for the menu the reader hangs there. */
+    /** Where the badge or the highlight's square is on screen — its start edge, at its foot — for the menu hung there. */
     onSpeakerMenu: (Offset) -> Unit,
     onHighlightMenu: (Offset, Double) -> Unit,
     saving: InlineSave?,
@@ -184,6 +194,7 @@ private fun Group(
 ) {
     val palette = blueprint
     val stamp = LedgerFormat.clock(start, spanSec)
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min)) {
         Box(Modifier.width(2.dp).fillMaxHeight().background(if (isActive) palette.accent else Color.Transparent))
         Column(Modifier.padding(start = Space.m - 2.dp, end = Space.m)) {
@@ -197,13 +208,13 @@ private fun Group(
                 )
                 if (markSlot) {
                     Box(Modifier.size(HIGHLIGHT_MARK), contentAlignment = Alignment.Center) {
-                        highlight?.let { at -> HighlightFlag(at, strings) { place -> onHighlightMenu(place, at) } }
+                        highlight?.let { at -> HighlightMarkButton(at, rtl, strings) { place -> onHighlightMenu(place, at) } }
                     }
                 }
                 if (speaker.isNotEmpty()) {
                     var place by remember { mutableStateOf(Offset.Zero) }
                     // Its menu opens under it (2026-10-10).
-                    Box(Modifier.onGloballyPositioned { place = it.positionInRoot() + Offset(0f, it.size.height.toFloat()) }) {
+                    Box(Modifier.onGloballyPositioned { place = it.positionInRoot() + startFoot(it.size.width, it.size.height, rtl) }) {
                         SpeakerBadge(speaker, speakerName(transcript.speakers.firstOrNull { it.id == speaker }, strings), speakerEnabled) { onSpeakerMenu(place) }
                     }
                 }
@@ -230,7 +241,7 @@ private fun Group(
  * speaker after it stays where every other group's is; where it reaches over the time beside it, it is the target.
  */
 @Composable
-private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> Unit) {
+private fun HighlightMarkButton(atSec: Double, rtl: Boolean, strings: Strings, onMenu: (Offset) -> Unit) {
     var place by remember { mutableStateOf(Offset.Zero) }
     val label = strings[Str.HIGHLIGHT_TICK, LedgerFormat.elapsed((atSec * 1000).toLong())]
     HighlightMark()
@@ -241,11 +252,15 @@ private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> U
                 val target = measurable.measure(Constraints.fixed(reach, reach))
                 layout(0, 0) { target.place(-reach / 2, -reach / 2) }
             }
-            .onGloballyPositioned { place = it.positionInRoot() + Offset(0f, it.size.height.toFloat()) }
+            .onGloballyPositioned { place = it.positionInRoot() + startFoot(it.size.width, it.size.height, rtl) }
+            .focusRing(RoundedCornerShape(Radius.node))
             .clickable(role = Role.Button) { onMenu(place) }
             .semantics { contentDescription = label },
     )
 }
+
+/** The start edge's foot of a box of [width] × [height], from its top left: the right edge in a right-to-left language. */
+private fun startFoot(width: Int, height: Int, rtl: Boolean): Offset = Offset(if (rtl) width.toFloat() else 0f, height.toFloat())
 
 /**
  * docs/09 "Screen principles": the pill that takes the list back to where playback is — 32 tall to look at, and
@@ -254,10 +269,11 @@ private fun HighlightFlag(atSec: Double, strings: Strings, onMenu: (Offset) -> U
 @Composable
 private fun BackToPlayback(label: String, modifier: Modifier, onClick: () -> Unit) {
     val palette = blueprint
-    val shape = RoundedCornerShape(8.dp)
+    val shape = RoundedCornerShape(Radius.card)
     Box(
         modifier
             .defaultMinSize(minHeight = MinTouch)
+            .focusRing(shape)
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

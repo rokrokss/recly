@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextDirection
@@ -49,13 +50,14 @@ fun ScreenHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(start = Space.m, end = Space.m, top = Space.m, bottom = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+            .padding(start = Space.m, end = Space.m, top = Space.m, bottom = Space.sm),
+        horizontalArrangement = Arrangement.spacedBy(Space.sm),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xs)) {
+            // docs/09 "Disabled, focus and structure": a screen's title is a heading a reader can jump to.
             Text(title, style = MaterialTheme.typography.titleMedium, color = blueprint.text,
-                maxLines = 3, overflow = TextOverflow.Ellipsis)
+                maxLines = 3, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
             meta?.let { SelectionContainer { Text(it, style = mono.small, color = blueprint.textMuted) } }
         }
         trailing?.invoke()
@@ -71,7 +73,8 @@ fun ScreenHeader(
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Text(
         text,
-        modifier = modifier.padding(top = Space.m, bottom = 6.dp),
+        // docs/09 "Component measurements": 8 below. A heading, as the screen's title is.
+        modifier = modifier.semantics { heading() }.padding(top = Space.m, bottom = Space.s),
         style = MaterialTheme.typography.labelSmall,
         color = blueprint.textMuted,
     )
@@ -105,11 +108,12 @@ fun TableRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = Space.m, vertical = 10.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                // docs/09 "Component measurements": 12 top and bottom, 16 at the sides.
+                .padding(horizontal = Space.m, vertical = Space.sm),
+            horizontalArrangement = Arrangement.spacedBy(Space.sm),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                 if (titleDetail == null) {
                     Text(title, style = MaterialTheme.typography.bodyMedium, color = palette.text)
                 } else {
@@ -183,7 +187,7 @@ fun SwitchRow(
 ) {
     TableRow(
         title = title,
-        modifier = modifier.toggleable(
+        modifier = modifier.focusRing().toggleable(
             value = checked,
             enabled = enabled,
             role = Role.Switch,
@@ -197,13 +201,14 @@ fun SwitchRow(
 /**
  * docs/09 "Shape": no rounded pills, so the switch is a square track with a square thumb. The track
  * is 40x22, drawn inside a [MinTouch] box so that whoever makes it toggleable — [SwitchRow], or the
- * editor's own inspector row — never ends up with a target smaller than the rule.
+ * editor's own inspector row — never ends up with a target smaller than the rule. Disabled, the track
+ * is dashed in the disabled ink (docs/09 "Component measurements"), never the grid, which is decoration.
  */
 @Composable
 fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = Modifier) {
     val palette = blueprint
     val ink = when {
-        !enabled -> palette.grid
+        !enabled -> palette.disabled
         checked -> palette.accent
         else -> palette.textMuted
     }
@@ -214,12 +219,18 @@ fun SwitchTrack(checked: Boolean, enabled: Boolean = true, modifier: Modifier = 
                 .height(22.dp)
                 // docs/09 "Lines": the hairline token, so high contrast thickens this the way it
                 // thickens every other border rather than leaving the switch at a fixed 1.5dp.
-                .border(palette.line, ink, RoundedCornerShape(Radius.badge))
-                .padding(2.dp),
+                .then(
+                    if (enabled) {
+                        Modifier.border(palette.line, ink, RoundedCornerShape(Radius.badge))
+                    } else {
+                        Modifier.dashedBorder(palette.line, ink, Radius.badge)
+                    },
+                )
+                .padding(Space.xxs),
             horizontalArrangement = if (checked) Arrangement.End else Arrangement.Start,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(14.dp).background(ink, RoundedCornerShape(1.dp)))
+            Box(Modifier.size(14.dp).background(ink, RoundedCornerShape(Radius.badge)))
         }
     }
 }
